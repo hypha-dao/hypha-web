@@ -8,12 +8,14 @@ import {
   Circle,
   Disc,
   FileText,
+  Loader2,
   Mic,
   MicOff,
   MicVocal,
   Music2,
   Pause,
   Play,
+  RefreshCw,
   SlidersHorizontal,
   Square,
   Video,
@@ -87,6 +89,10 @@ type HumanChatPanelInCallControlsProps = {
   canRetryRecordingUpload?: boolean;
   onRetryRecordingUpload?: () => void;
   onLeave: () => void;
+  /** #2456: reconnect this tab's own session with a fresh identity — same "Refresh call"
+   * mechanism used to rejoin from a different tab, now also offered on the tab that already
+   * holds the live session. Only rendered in `leave_only` mode, next to the hangup button. */
+  onRefresh?: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
   /** Compact row alignment for dock/banner usage. */
@@ -138,6 +144,7 @@ export function HumanChatPanelInCallControls({
   canRetryRecordingUpload = false,
   onRetryRecordingUpload,
   onLeave,
+  onRefresh,
   variant = 'inBanner',
   inBannerLayout = 'inline',
   density = 'default',
@@ -228,6 +235,12 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40',
         bannerCircleSize,
       );
+  /** #2456: same round footprint as `leaveBtn`, neutral (not red) — a reconnect action, not a
+   * destructive one. */
+  const refreshBtn = cn(
+    'inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+    bannerCircleSize,
+  );
   const micMutedBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : isCompact
@@ -1270,6 +1283,26 @@ export function HumanChatPanelInCallControls({
                   strokeWidth={lucideStroke}
                 />
               </button>
+              {leaveOnly && onRefresh ? (
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  disabled={controlsDisabled}
+                  className={cn(refreshBtn, 'disabled:cursor-not-allowed')}
+                  title={t('callRefreshWithVideoShort')}
+                  aria-label={t('callRefreshWithVideoShort')}
+                  aria-busy={controlsDisabled}
+                >
+                  {controlsDisabled ? (
+                    <Loader2
+                      className={cn(icon, 'animate-spin')}
+                      strokeWidth={lucideStroke}
+                    />
+                  ) : (
+                    <RefreshCw className={icon} strokeWidth={lucideStroke} />
+                  )}
+                </button>
+              ) : null}
             </div>
           )}
         </div>

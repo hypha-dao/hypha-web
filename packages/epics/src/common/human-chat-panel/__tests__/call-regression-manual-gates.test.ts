@@ -351,17 +351,6 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
     expect(source).toContain('useCallJoinInvitation');
   });
 
-  it('follower tab shows call-specific leadership prompt', () => {
-    const panel = readCommonSource('human-right-panel.tsx');
-    const banner = readCommonSource(
-      'human-chat-panel/human-chat-panel-connection-banner.tsx',
-    );
-    expect(panel).toContain('useActiveCallInAnotherTab');
-    expect(panel).toContain('activeCallInAnotherTab={activeCallInAnotherTab}');
-    expect(banner).toContain('callActiveInAnotherTabTitle');
-    expect(banner).toContain('callFollowerSyncPausedDescription');
-  });
-
   it('signal deep-link lookup retries before surfacing errors', () => {
     const source = readCommonSource('human-right-panel.tsx');
     expect(source).toContain('resolveSignalDeepLinkWithRetry');

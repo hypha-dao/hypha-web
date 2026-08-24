@@ -2,7 +2,11 @@
 
 import React from 'react';
 import {
+  getRemoteGroupCallHold,
+  isRemoteGroupCallHoldActive,
+  requestRemoteGroupCallLeave,
   setGroupCallSessionActive,
+  subscribeGroupCallPleaseLeave,
   useMatrix,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
@@ -23,6 +27,31 @@ type PendingJoin = {
   kind: 'audio' | 'video';
   roomId: string;
   threadRootEventId?: string;
+  /** #2456 D2c/D2e: 'refresh' evicts a stale participant first (see `call.rejoinCall`) instead of
+   * a plain join. Defaults to 'join' behavior wherever unset (existing callers). */
+  mode?: 'join' | 'refresh';
+};
+
+/**
+ * #2456 D2 scenario 0 (same tab, different room): captured when `startAudioForRoom`/
+ * `startVideoForRoom` is blocked by an in-progress call in a different room, instead of the old
+ * silent no-op. Drives a confirm dialog ("Leave it and join this one?") in
+ * `GlobalCallDockOverlay`; `confirmRoomSwitch()`/`cancelRoomSwitch()` act on it.
+ */
+export type PendingRoomSwitchConfirm = {
+  kind: 'audio' | 'video';
+  mode?: 'join' | 'refresh';
+  fromRoomId: string;
+  targetRoomId: string;
+  targetSpaceSlug: string | null;
+  targetAuthToken: string | null;
+  threadRootEventId?: string;
+  launchContext: CallLaunchContext | null;
+  /** #2456 D2d: the blocking call is in *another tab* of this browser, not this one — on
+   * confirm, broadcast a `please-leave` request instead of calling this tab's own `leave()`,
+   * and join immediately (this tab was never in a session, so there's no local teardown to
+   * wait for). */
+  crossTab?: boolean;
 };
 
 const DOCK_MODE_KEY = 'hypha-global-call-dock-mode-v1';
@@ -111,7 +140,7 @@ function applyCallResumeSnapshot(
 }
 
 function useGlobalCallDockValue() {
-  const { isMatrixSyncLeader, client } = useMatrix();
+  const { client } = useMatrix();
   const [boundRoomId, setBoundRoomId] = React.useState<string | null>(null);
   const [boundSpaceSlug, setBoundSpaceSlug] = React.useState<string | null>(
     null,
@@ -132,6 +161,8 @@ function useGlobalCallDockValue() {
   const [pendingJoin, setPendingJoin] = React.useState<PendingJoin | null>(
     null,
   );
+  const [pendingRoomSwitchConfirm, setPendingRoomSwitchConfirm] =
+    React.useState<PendingRoomSwitchConfirm | null>(null);
   const [dockMode, setDockMode] =
     React.useState<GlobalCallDockMode>('thumbnail');
   const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
@@ -139,11 +170,9 @@ function useGlobalCallDockValue() {
   const restoreTimerRef = React.useRef<number | null>(null);
   const resumeAttemptAtRef = React.useRef<number | null>(null);
   const resumeAttemptKeyRef = React.useRef<string | null>(null);
-  const releasingForTransferRef = React.useRef(false);
   const lastPersistedResumeSignatureRef = React.useRef<string | null>(null);
   /** Blocks resume/pending-join after an explicit hang-up (same tab, same render). */
   const userDismissedCallRef = React.useRef(false);
-  const wasMatrixSyncLeaderRef = React.useRef(isMatrixSyncLeader);
   const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
   /** Room pinned for the active call — survives chat panel room/null transitions. */
   const callSessionRoomIdRef = React.useRef<string | null>(null);
@@ -303,11 +332,22 @@ function useGlobalCallDockValue() {
   }, [call.callState, call.recordingStatus]);
 
   React.useEffect(() => {
-    if (!isMatrixSyncLeader) return;
     if (inSession || pendingJoin) return;
     if (userDismissedCallRef.current) return;
     const snapshot = readCallResumeSnapshot();
     if (!snapshot) return;
+    /** Avoid every tab of this browser auto-resuming the same call simultaneously — skip if
+     * another tab already holds (or is about to hold) this room's call. A hold with `roomId:
+     * null` means the holder hasn't reported its room yet (mid-`restoreInProgressRef`) — treat
+     * that as ambiguous-but-risky and skip too, rather than risking two tabs auto-resuming the
+     * same call. */
+    const remoteHold = getRemoteGroupCallHold();
+    if (
+      remoteHold &&
+      (remoteHold.roomId === null || remoteHold.roomId === snapshot.roomId)
+    ) {
+      return;
+    }
     const attemptKey = `${snapshot.roomId}:${snapshot.callKind}:${snapshot.updatedAt}`;
     if (resumeAttemptKeyRef.current === attemptKey) return;
     resumeAttemptKeyRef.current = attemptKey;
@@ -324,37 +364,7 @@ function useGlobalCallDockValue() {
       restoreInProgressRef,
       restoreTimerRef,
     });
-  }, [inSession, isMatrixSyncLeader, pendingJoin]);
-
-  React.useEffect(() => {
-    if (isMatrixSyncLeader && !wasMatrixSyncLeaderRef.current) {
-      resumeAttemptKeyRef.current = null;
-      if (call.callState === 'error' && call.errorCode === 'NO_CLIENT') {
-        call.dismissCallError();
-      }
-    }
-    if (wasMatrixSyncLeaderRef.current && !isMatrixSyncLeader) {
-      resumeAttemptAtRef.current = null;
-      resumeAttemptKeyRef.current = null;
-      restoreInProgressRef.current = false;
-      setPendingJoin(null);
-      if (inSessionRef.current) {
-        setIsReleasingForTransfer(true);
-        releasingForTransferRef.current = true;
-        void call.releaseLocalCallForTabTransfer().finally(() => {
-          releasingForTransferRef.current = false;
-          setIsReleasingForTransfer(false);
-        });
-      }
-    }
-    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
-  }, [
-    call.dismissCallError,
-    call.callState,
-    call.errorCode,
-    call.releaseLocalCallForTabTransfer,
-    isMatrixSyncLeader,
-  ]);
+  }, [inSession, pendingJoin]);
 
   React.useEffect(() => {
     if (restoreInProgressRef.current) return;
@@ -369,6 +379,7 @@ function useGlobalCallDockValue() {
 
   const enterAudio = call.enterAudio;
   const enterVideo = call.enterVideo;
+  const rejoinCall = call.rejoinCall;
 
   React.useEffect(() => {
     if (!pendingJoin) return;
@@ -376,13 +387,17 @@ function useGlobalCallDockValue() {
       setPendingJoin(null);
       return;
     }
-    if (!isMatrixSyncLeader || !client) return;
+    if (!client) return;
     if (activeRoomId !== pendingJoin.roomId) return;
     if (!activeAuthToken) return;
 
     const join = pendingJoin;
     setPendingJoin(null);
     restoreInProgressRef.current = false;
+    if (join.mode === 'refresh') {
+      void rejoinCall(join.kind, join.threadRootEventId);
+      return;
+    }
     if (join.kind === 'audio') {
       void enterAudio(join.threadRootEventId);
       return;
@@ -393,9 +408,9 @@ function useGlobalCallDockValue() {
     activeAuthToken,
     activeRoomId,
     client,
+    rejoinCall,
     enterAudio,
     enterVideo,
-    isMatrixSyncLeader,
   ]);
 
   React.useEffect(() => {
@@ -422,7 +437,13 @@ function useGlobalCallDockValue() {
     }
     const callKind = pendingJoin?.kind ?? call.callKind;
     if (!activeRoomId || !callKind) {
-      if (isMatrixSyncLeader && call.callState === 'idle' && !pendingJoin) {
+      /** Only clear the (shared, cross-tab) resume snapshot when no tab of this browser holds
+       * a call — this tab being idle says nothing about another tab's active session. */
+      if (
+        !isRemoteGroupCallHoldActive() &&
+        call.callState === 'idle' &&
+        !pendingJoin
+      ) {
         clearCallResumeSnapshot();
       }
       return;
@@ -460,7 +481,6 @@ function useGlobalCallDockValue() {
     call.callState,
     call.threadContext?.threadRootEventId,
     dockMode,
-    isMatrixSyncLeader,
     pendingJoin,
   ]);
 
@@ -472,6 +492,50 @@ function useGlobalCallDockValue() {
     };
   }, []);
 
+  /**
+   * The actual join, once all "are we allowed to do this" guards have already passed — shared by
+   * `startAudioForRoom`/`startVideoForRoom` (fresh calls, guards run just above) and
+   * `firePendingRoomSwitchJoin` (a room switch the user already confirmed). The switch path must
+   * NOT re-run `getRemoteGroupCallHold()`: that reflects the *other* tab's last heartbeat,
+   * which still reads as "held" for several real seconds after that tab starts leaving (no
+   * explicit ack — only a `release` broadcast once its own `leave()` fully finishes). Re-checking
+   * it immediately after sending `please-leave` re-triggers the same confirm state instead of
+   * proceeding, silently looping back into "another tab holds a call" instead of actually joining.
+   */
+  const joinRoomAfterGuardsPass = React.useCallback(
+    (
+      kind: 'audio' | 'video',
+      targetRoomId: string,
+      targetSpaceSlug: string | null,
+      threadRootEventId: string | undefined,
+      targetAuthToken: string | null,
+      launchContext: CallLaunchContext | null,
+    ) => {
+      userDismissedCallRef.current = false;
+      clearCallDismissedByUser();
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
+      if (activeRoomId !== targetRoomId) {
+        setBoundRoomId(targetRoomId);
+        setBoundSpaceSlug(targetSpaceSlug);
+        setBoundAuthToken(targetAuthToken);
+        setActiveRoomId(targetRoomId);
+        setActiveSpaceSlug(targetSpaceSlug);
+        setActiveAuthToken(targetAuthToken);
+        setPendingJoin({ kind, roomId: targetRoomId, threadRootEventId });
+        return;
+      }
+      void (kind === 'audio'
+        ? call.enterAudio(threadRootEventId)
+        : call.enterVideo(threadRootEventId));
+    },
+    [activeRoomId, call],
+  );
+
   const startAudioForRoom = React.useCallback(
     async (
       roomId: string | null | undefined,
@@ -482,39 +546,49 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
-      userDismissedCallRef.current = false;
-      clearCallDismissedByUser();
-      callLaunchContextRef.current =
-        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
-          ? launchContext
-          : threadRootEventId?.trim()
-          ? { threadRootEventId: threadRootEventId.trim() }
-          : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
       const pinnedCallRoomId =
         callSessionRoomIdRef.current ??
         (inSessionRef.current ? activeRoomId : null);
       if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
-        return;
-      }
-      if (activeRoomId !== targetRoomId) {
-        setBoundRoomId(targetRoomId);
-        setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(targetAuthToken);
-        setActiveRoomId(targetRoomId);
-        setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(targetAuthToken);
-        setPendingJoin({
+        setPendingRoomSwitchConfirm({
           kind: 'audio',
-          roomId: targetRoomId,
+          fromRoomId: pinnedCallRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
           threadRootEventId,
+          launchContext: launchContext ?? null,
         });
         return;
       }
-      await call.enterAudio(threadRootEventId);
+      /** #2456 D2d: no local session pinning us, but another tab of this browser holds one
+       * in a different room. */
+      const remoteHold = getRemoteGroupCallHold();
+      if (remoteHold && remoteHold.roomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'audio',
+          fromRoomId: remoteHold.roomId ?? '',
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+          crossTab: true,
+        });
+        return;
+      }
+      joinRoomAfterGuardsPass(
+        'audio',
+        targetRoomId,
+        targetSpaceSlug,
+        threadRootEventId,
+        targetAuthToken,
+        launchContext ?? null,
+      );
     },
-    [activeRoomId, boundAuthToken, call],
+    [activeRoomId, boundAuthToken, joinRoomAfterGuardsPass],
   );
 
   const startVideoForRoom = React.useCallback(
@@ -527,6 +601,99 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'video',
+          fromRoomId: pinnedCallRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+        });
+        return;
+      }
+      const remoteHold = getRemoteGroupCallHold();
+      if (remoteHold && remoteHold.roomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'video',
+          fromRoomId: remoteHold.roomId ?? '',
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+          crossTab: true,
+        });
+        return;
+      }
+      joinRoomAfterGuardsPass(
+        'video',
+        targetRoomId,
+        targetSpaceSlug,
+        threadRootEventId,
+        targetAuthToken,
+        launchContext ?? null,
+      );
+    },
+    [activeRoomId, boundAuthToken, joinRoomAfterGuardsPass],
+  );
+
+  /**
+   * #2456 D2c/D2e "Refresh call": same pinned-room guard and rebind/pendingJoin sequencing as
+   * `startAudioForRoom`/`startVideoForRoom` above, but tagged `mode: 'refresh'` so the eventual
+   * join goes through `call.rejoinCall` (evicts the stale participant first) instead of a plain
+   * `enterAudio`/`enterVideo`.
+   */
+  const refreshRoomCall = React.useCallback(
+    async (
+      kind: 'audio' | 'video',
+      roomId: string | null | undefined,
+      spaceSlug?: string | null,
+      threadRootEventId?: string,
+      authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
+    ) => {
+      const targetRoomId = roomId?.trim();
+      if (!targetRoomId) return;
+      const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind,
+          mode: 'refresh',
+          fromRoomId: pinnedCallRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+        });
+        return;
+      }
+      const remoteHold = getRemoteGroupCallHold();
+      if (remoteHold && remoteHold.roomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind,
+          mode: 'refresh',
+          fromRoomId: remoteHold.roomId ?? '',
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+          crossTab: true,
+        });
+        return;
+      }
       userDismissedCallRef.current = false;
       clearCallDismissedByUser();
       callLaunchContextRef.current =
@@ -535,14 +702,6 @@ function useGlobalCallDockValue() {
           : threadRootEventId?.trim()
           ? { threadRootEventId: threadRootEventId.trim() }
           : null;
-      const targetSpaceSlug = spaceSlug?.trim() ?? null;
-      const targetAuthToken = authToken?.trim() || boundAuthToken;
-      const pinnedCallRoomId =
-        callSessionRoomIdRef.current ??
-        (inSessionRef.current ? activeRoomId : null);
-      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
-        return;
-      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
@@ -551,56 +710,243 @@ function useGlobalCallDockValue() {
         setActiveSpaceSlug(targetSpaceSlug);
         setActiveAuthToken(targetAuthToken);
         setPendingJoin({
-          kind: 'video',
+          kind,
+          mode: 'refresh',
           roomId: targetRoomId,
           threadRootEventId,
         });
         return;
       }
-      await call.enterVideo(threadRootEventId);
+      await call.rejoinCall(kind, threadRootEventId);
     },
     [activeRoomId, boundAuthToken, call],
   );
 
-  const leaveCall = React.useCallback(async () => {
-    const dismissedRoomId =
-      activeRoomId?.trim() ||
-      callSessionRoomIdRef.current?.trim() ||
-      boundRoomId?.trim() ||
-      null;
-    userDismissedCallRef.current = true;
-    markCallDismissedByUser(dismissedRoomId);
-    clearCallResumeSnapshot();
-    resumeAttemptAtRef.current = null;
-    resumeAttemptKeyRef.current = null;
-    lastPersistedResumeSignatureRef.current = null;
-    restoreInProgressRef.current = false;
-    setPendingJoin(null);
-    await call.leave();
-  }, [activeRoomId, boundRoomId, call]);
+  /**
+   * #2456 D2c/D2e entry point for the "Refresh call" button: same browser (another tab already
+   * holds this room's call, per `isRemoteGroupCallHoldActive()`) acts immediately; a different
+   * device shows a confirm dialog first ("Move this call here?").
+   */
+  const [pendingRefreshDeviceConfirm, setPendingRefreshDeviceConfirm] =
+    React.useState<{
+      kind: 'audio' | 'video';
+      roomId: string;
+      spaceSlug: string | null;
+      threadRootEventId?: string;
+      authToken: string | null;
+      launchContext: CallLaunchContext | null;
+    } | null>(null);
 
-  const [isReleasingForTransfer, setIsReleasingForTransfer] =
-    React.useState(false);
+  const refreshCall = React.useCallback(
+    (
+      kind: 'audio' | 'video',
+      roomId: string | null | undefined,
+      spaceSlug?: string | null,
+      threadRootEventId?: string,
+      authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
+    ) => {
+      const targetRoomId = roomId?.trim();
+      if (!targetRoomId) return;
+      if (isRemoteGroupCallHoldActive()) {
+        /**
+         * #2456: if it's *another* tab of this browser holding the call (not this one
+         * refreshing itself), ask it to actually leave via the same real `leave()` path the
+         * "hangup elsewhere" button already uses — proven reliable, unlike the SFU-side
+         * identity-based eviction `enterWithKind` also attempts, which depends on parsing
+         * LiveKit participant identity/metadata and has been unreliable in practice. This isn't
+         * awaited — #2456 D1's tab-scoped LiveKit identity means a brief overlap while the other
+         * tab's leave completes is harmless, not a silent kick.
+         */
+        if (!inSessionRef.current) {
+          requestRemoteGroupCallLeave();
+        }
+        void refreshRoomCall(
+          kind,
+          targetRoomId,
+          spaceSlug,
+          threadRootEventId,
+          authToken,
+          launchContext,
+        );
+        return;
+      }
+      setPendingRefreshDeviceConfirm({
+        kind,
+        roomId: targetRoomId,
+        spaceSlug: spaceSlug?.trim() ?? null,
+        threadRootEventId,
+        authToken: authToken?.trim() || boundAuthToken,
+        launchContext: launchContext ?? null,
+      });
+    },
+    [refreshRoomCall, boundAuthToken],
+  );
 
-  const showFloatingDock =
-    isMatrixSyncLeader && (inSession || call.recordingStatus === 'uploading');
-  const holdsMatrixSyncForCall =
-    (isMatrixSyncLeader || isReleasingForTransfer) &&
-    (inSession ||
-      call.recordingStatus === 'uploading' ||
-      pendingJoin != null ||
-      restoreInProgressRef.current ||
-      call.isCallRecovering);
+  const confirmRefreshDevice = React.useCallback(() => {
+    const pending = pendingRefreshDeviceConfirm;
+    if (!pending) return;
+    setPendingRefreshDeviceConfirm(null);
+    void refreshRoomCall(
+      pending.kind,
+      pending.roomId,
+      pending.spaceSlug,
+      pending.threadRootEventId,
+      pending.authToken,
+      pending.launchContext,
+    );
+  }, [pendingRefreshDeviceConfirm, refreshRoomCall]);
+
+  const cancelRefreshDevice = React.useCallback(() => {
+    setPendingRefreshDeviceConfirm(null);
+  }, []);
+
+  const leaveCall = React.useCallback(
+    async (options?: { markDismissed?: boolean }) => {
+      const markDismissed = options?.markDismissed ?? true;
+      if (markDismissed) {
+        const dismissedRoomId =
+          activeRoomId?.trim() ||
+          callSessionRoomIdRef.current?.trim() ||
+          boundRoomId?.trim() ||
+          null;
+        userDismissedCallRef.current = true;
+        markCallDismissedByUser(dismissedRoomId);
+      }
+      clearCallResumeSnapshot();
+      resumeAttemptAtRef.current = null;
+      resumeAttemptKeyRef.current = null;
+      lastPersistedResumeSignatureRef.current = null;
+      restoreInProgressRef.current = false;
+      setPendingJoin(null);
+      await call.leave();
+    },
+    [activeRoomId, boundRoomId, call],
+  );
+
+  /**
+   * #2456 D2 scenario 0's "Leave & Join" confirm action. `activeRoomId` only clears via the
+   * effect below reacting to `callState === 'idle'`, not synchronously when `leave()`'s promise
+   * resolves — awaiting it and immediately joining would race that (same reasoning as
+   * `space-call-join-hero-banner.tsx`'s `pendingCallSwitch`, which predates this and follows the
+   * identical pattern).
+   */
+  const [pendingRoomSwitchJoin, setPendingRoomSwitchJoin] =
+    React.useState<PendingRoomSwitchConfirm | null>(null);
+
+  const confirmRoomSwitch = React.useCallback(async () => {
+    const pending = pendingRoomSwitchConfirm;
+    if (!pending) return;
+    setPendingRoomSwitchConfirm(null);
+    setPendingRoomSwitchJoin(pending);
+    /** #2456 D2d: the blocking call is in another tab — ask it to leave instead of leaving our
+     * own (nonexistent) session. This tab was never in a call, so there's nothing to await:
+     * the effect below fires as soon as `activeRoomId` already matches the target (which it
+     * typically does immediately, since the room the "Join call" button belongs to is usually
+     * already bound). */
+    if (pending.crossTab) {
+      requestRemoteGroupCallLeave();
+      return;
+    }
+    try {
+      await leaveCall();
+    } catch {
+      setPendingRoomSwitchJoin((prev) => (prev === pending ? null : prev));
+    }
+  }, [pendingRoomSwitchConfirm, leaveCall, activeRoomId]);
+
+  const cancelRoomSwitch = React.useCallback(() => {
+    setPendingRoomSwitchConfirm(null);
+    /** Defensive: if a pending switch is somehow still set (e.g. the crossTab path is waiting on
+     * `activeRoomId` to converge and never does), don't leave it dangling — this doesn't
+     * currently fire from the UI since the dialog disables Cancel while `pendingRoomSwitchJoin`
+     * is set, but keeps this callback correct if that changes. */
+    setPendingRoomSwitchJoin(null);
+  }, []);
+
+  const firePendingRoomSwitchJoin = React.useCallback(
+    (pending: PendingRoomSwitchConfirm) => {
+      setPendingRoomSwitchJoin((prev) => (prev === pending ? null : prev));
+      if (pending.mode === 'refresh') {
+        void refreshRoomCall(
+          pending.kind,
+          pending.targetRoomId,
+          pending.targetSpaceSlug,
+          pending.threadRootEventId,
+          pending.targetAuthToken,
+          pending.launchContext,
+        );
+      } else {
+        /** Deliberately `joinRoomAfterGuardsPass`, not `startAudioForRoom`/`startVideoForRoom` —
+         * see that function's doc comment for why re-running the pin/remote-hold guards here
+         * caused the "sometimes doesn't start" bug. */
+        joinRoomAfterGuardsPass(
+          pending.kind,
+          pending.targetRoomId,
+          pending.targetSpaceSlug,
+          pending.threadRootEventId,
+          pending.targetAuthToken,
+          pending.launchContext,
+        );
+      }
+    },
+    [refreshRoomCall, joinRoomAfterGuardsPass],
+  );
 
   React.useEffect(() => {
-    setGroupCallSessionActive(holdsMatrixSyncForCall);
-  }, [holdsMatrixSyncForCall]);
+    if (!pendingRoomSwitchJoin) return;
+    const blocked =
+      activeRoomId?.trim() &&
+      activeRoomId.trim() !== pendingRoomSwitchJoin.targetRoomId;
+    if (blocked) {
+      /** Last-resort safety net, not the fix for anything: the real reliability fix is
+       * `joinRoomAfterGuardsPass` bypassing the stale remote-hold re-check above. This timer
+       * only exists so the confirm dialog can never get stuck busy forever if `activeRoomId`
+       * genuinely never converges to the target room (an edge case we haven't observed, not a
+       * known failure mode) — it gives up and releases the dialog rather than guessing the join
+       * succeeded, so the user can see nothing happened and retry. */
+      const releaseTimer = window.setTimeout(() => {
+        setPendingRoomSwitchJoin((prev) =>
+          prev === pendingRoomSwitchJoin ? null : prev,
+        );
+      }, 15_000);
+      return () => window.clearTimeout(releaseTimer);
+    }
+    firePendingRoomSwitchJoin(pendingRoomSwitchJoin);
+  }, [pendingRoomSwitchJoin, activeRoomId, firePendingRoomSwitchJoin]);
+
+  const showFloatingDock = inSession || call.recordingStatus === 'uploading';
+  const holdsMatrixSyncForCall =
+    inSession ||
+    call.recordingStatus === 'uploading' ||
+    pendingJoin != null ||
+    restoreInProgressRef.current ||
+    call.isCallRecovering;
+
+  React.useEffect(() => {
+    setGroupCallSessionActive(
+      holdsMatrixSyncForCall,
+      holdsMatrixSyncForCall
+        ? callSessionRoomIdRef.current ?? activeRoomId
+        : null,
+    );
+  }, [holdsMatrixSyncForCall, activeRoomId]);
 
   React.useEffect(() => {
     return () => {
       setGroupCallSessionActive(false);
     };
   }, []);
+
+  /** #2456 D2d: another tab of this browser asked us to leave (cross-tab room switch). This
+   * tab's user didn't dismiss anything — another tab is taking over the call — so don't mark
+   * dismissal here; doing so would wrongly suppress resume/join affordances for this room in
+   * *this* tab afterward. */
+  React.useEffect(() => {
+    return subscribeGroupCallPleaseLeave(() => {
+      void leaveCall({ markDismissed: false });
+    });
+  }, [leaveCall]);
 
   return {
     bindRoomContext,
@@ -614,6 +960,17 @@ function useGlobalCallDockValue() {
     showFloatingDock,
     startAudioForRoom,
     startVideoForRoom,
+    pendingRoomSwitchConfirm,
+    confirmRoomSwitch,
+    cancelRoomSwitch,
+    /** #2456: true from the confirm click until the actual leave-then-join for that switch has
+     * fired — the confirm dialog stays open (busy, buttons disabled) through this window instead
+     * of vanishing the instant you click, with nothing visible happening until the join lands. */
+    isRoomSwitchPending: Boolean(pendingRoomSwitchJoin),
+    refreshCall,
+    pendingRefreshDeviceConfirm,
+    confirmRefreshDevice,
+    cancelRefreshDevice,
     ...call,
     ...callReactions,
     leave: leaveCall,

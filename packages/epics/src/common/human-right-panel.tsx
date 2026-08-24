@@ -57,6 +57,7 @@ import {
   looksLikeTechnicalSpaceMemoryName,
   type SignalTeamNotice,
   replacePlainTextMatrixMxidsWithLabels,
+  requestRemoteGroupCallLeave,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -122,7 +123,6 @@ import {
 } from './human-chat-panel/use-call-join-chime';
 import { useCallJoinInvitation } from './human-chat-panel/use-call-join-invitation';
 import { HumanChatPanelCallJoinInvitation } from './human-chat-panel/human-chat-panel-call-join-invitation';
-import { useActiveCallInAnotherTab } from './human-chat-panel/use-active-call-in-another-tab';
 import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
 import { resolveSignalDeepLinkWithRetry } from './human-chat-panel/resolve-signal-deep-link';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
@@ -991,9 +991,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     isMatrixAvailable,
     isAuthenticated: isMatrixAuthenticated,
-    isMatrixSyncLeader,
     connectionStatus,
-    claimMatrixSyncLeadership,
     retryMatrixConnection,
     connectionRetryFailed,
     refreshSession,
@@ -1133,7 +1131,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
-  const wasMatrixSyncLeaderRef = useRef(isMatrixSyncLeader);
 
   useEffect(() => {
     setMentionDisplayOverride({});
@@ -1142,21 +1139,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setAutoLoadOlderPaused(false);
   }, [roomId]);
 
-  useEffect(() => {
-    const wasLeader = wasMatrixSyncLeaderRef.current;
-    if (wasLeader && !isMatrixSyncLeader) {
-      setHasMoreOlderMessages(false);
-      setLoadingOlderMessages(false);
-      setAutoLoadOlderPaused(false);
-    }
-    if (!wasLeader && isMatrixSyncLeader) {
-      joinedRef.current = null;
-      setHasMoreOlderMessages(false);
-      setLoadingOlderMessages(false);
-      setAutoLoadOlderPaused(false);
-    }
-    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
-  }, [isMatrixSyncLeader]);
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
@@ -1220,6 +1202,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     callKind: spaceCallKind,
     startAudioForRoom,
     startVideoForRoom,
+    refreshCall: refreshSpaceCall,
+    selfStaleCallPresence: spaceCallSelfStalePresence,
+    selfPresenceChecked: spaceCallSelfPresenceChecked,
     leave: leaveSpaceCall,
     setMicrophoneMuted: setSpaceCallMicMuted,
     setCameraMuted: setSpaceCallCameraMuted,
@@ -1315,27 +1300,36 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
   ]);
 
-  const callUiEnabled = useMemo(
-    () =>
-      Boolean(roomId) &&
-      isMatrixAvailable &&
-      isMatrixAuthenticated &&
-      isSpaceMember &&
-      isMatrixSyncLeader,
-    [
-      roomId,
-      isMatrixAvailable,
-      isMatrixAuthenticated,
-      isSpaceMember,
-      isMatrixSyncLeader,
-    ],
-  );
-
   const inSpaceCall =
     spaceCallState === 'connected' ||
     spaceCallState === 'connecting' ||
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'initializing';
+
+  /**
+   * #2456: right after opening/switching to a room, `spaceCallSelfPresenceChecked` is briefly
+   * false while the Matrix room object syncs locally — until then we can't reliably tell whether
+   * this user already holds a live session elsewhere.
+   */
+  const callUiEnabled = useMemo(
+    () =>
+      Boolean(roomId) &&
+      isMatrixAvailable &&
+      isMatrixAuthenticated &&
+      isSpaceMember,
+    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
+  );
+
+  /**
+   * #2456: whether it's safe to let the user *start a brand-new* call session from this room —
+   * distinct from `callUiEnabled`, which only gates whether call chrome shows at all. A premature
+   * click before the self-stale-presence check has run could either fail with a misleading "call
+   * server not ready" error, or start a genuine duplicate session. Rather than hiding the whole
+   * sidebar call chrome (banner/join-strip/alerts) while this settles, only the toolbar's
+   * "start a call" buttons wait for it, showing a skeleton in the meantime — see
+   * `showSidebarCallChrome` usage at the toolbar render site below.
+   */
+  const callActionsChecked = inSpaceCall || spaceCallSelfPresenceChecked;
 
   const callAppliesToCurrentChatRoom = useMemo(() => {
     const chatRoomId = roomId?.trim() || null;
@@ -1486,6 +1480,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       inSpaceCall,
     ],
   );
+  /**
+   * #2456 D2c/D2e: the join-strip's *own* render gate — unlike `spaceCallShowJoinUi` above
+   * (which also drives the join chime/invitation, deliberately left unwidened: a lone stale
+   * self-presence with nobody else in the room isn't "someone joined," so it shouldn't chime),
+   * this also covers the case where the only "call in progress" signal is the local user's own
+   * stale presence.
+   */
+  const spaceCallShowRefreshUi =
+    spaceCallShowJoinUi ||
+    (showSidebarCallChrome &&
+      spaceCallShowJoinStrip &&
+      spaceCallSelfStalePresence &&
+      !inSpaceCall);
 
   const spaceCallShowJoinChime = spaceCallShowJoinUi;
 
@@ -1530,7 +1537,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId,
     showJoinOpportunity: showJoinInvitationOpportunity,
   });
-  const activeCallInAnotherTab = useActiveCallInAnotherTab();
   const showCallScaleWarning = shouldShowCallScaleWarning(
     spaceCallRoomGroupDeviceCount,
   );
@@ -1577,24 +1583,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'connecting';
 
+  const resolveCallLaunchContext = useCallback(() => {
+    return mode === 'coherence' && coherenceTitle?.trim()
+      ? {
+          signalTitle: coherenceTitle.trim(),
+          signalSlug: coherenceSlug?.trim() || undefined,
+          roomTitle: coherenceTitle.trim(),
+        }
+      : (() => {
+          const roomTitle = resolveCallRecordingRoomTitle(
+            client,
+            roomId,
+            space?.title,
+          );
+          return roomTitle ? { roomTitle } : undefined;
+        })();
+  }, [client, coherenceSlug, coherenceTitle, mode, roomId, space?.title]);
+
   const handleCallAudio = useCallback(() => {
     if (inSpaceCall) return;
     markPendingCallStartNotify();
-    const launchContext =
-      mode === 'coherence' && coherenceTitle?.trim()
-        ? {
-            signalTitle: coherenceTitle.trim(),
-            signalSlug: coherenceSlug?.trim() || undefined,
-            roomTitle: coherenceTitle.trim(),
-          }
-        : (() => {
-            const roomTitle = resolveCallRecordingRoomTitle(
-              client,
-              roomId,
-              space?.title,
-            );
-            return roomTitle ? { roomTitle } : undefined;
-          })();
+    const launchContext = resolveCallLaunchContext();
+    if (spaceCallSelfStalePresence) {
+      refreshSpaceCall(
+        'audio',
+        roomId,
+        spaceSlug ?? null,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startAudioForRoom(
       roomId,
       spaceSlug ?? null,
@@ -1604,36 +1624,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     authToken,
-    client,
-    coherenceSlug,
-    coherenceTitle,
-    mode,
+    inSpaceCall,
+    markPendingCallStartNotify,
+    refreshSpaceCall,
+    resolveCallLaunchContext,
     roomId,
-    space?.title,
+    spaceCallSelfStalePresence,
     spaceSlug,
     startAudioForRoom,
-    markPendingCallStartNotify,
-    inSpaceCall,
   ]);
 
   const handleCallVideo = useCallback(() => {
     if (inSpaceCall) return;
     markPendingCallStartNotify();
-    const launchContext =
-      mode === 'coherence' && coherenceTitle?.trim()
-        ? {
-            signalTitle: coherenceTitle.trim(),
-            signalSlug: coherenceSlug?.trim() || undefined,
-            roomTitle: coherenceTitle.trim(),
-          }
-        : (() => {
-            const roomTitle = resolveCallRecordingRoomTitle(
-              client,
-              roomId,
-              space?.title,
-            );
-            return roomTitle ? { roomTitle } : undefined;
-          })();
+    const launchContext = resolveCallLaunchContext();
+    if (spaceCallSelfStalePresence) {
+      refreshSpaceCall(
+        'video',
+        roomId,
+        spaceSlug ?? null,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startVideoForRoom(
       roomId,
       spaceSlug ?? null,
@@ -1643,16 +1658,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     authToken,
-    client,
-    coherenceSlug,
-    coherenceTitle,
-    mode,
+    inSpaceCall,
+    markPendingCallStartNotify,
+    refreshSpaceCall,
+    resolveCallLaunchContext,
     roomId,
-    space?.title,
+    spaceCallSelfStalePresence,
     spaceSlug,
     startVideoForRoom,
-    markPendingCallStartNotify,
-    inSpaceCall,
   ]);
 
   /**
@@ -2023,17 +2036,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
-  const isChatFollowerTab = connectionStatus === 'follower';
   const chatComposerLocked =
-    blockSpaceChatForMembership ||
-    !canInteractWithSignalThread ||
-    isChatFollowerTab;
+    blockSpaceChatForMembership || !canInteractWithSignalThread;
   const chatComposerLockedMessage = blockSpaceChatForMembership
     ? tCommon('joinSpaceToUse')
     : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
-    : isChatFollowerTab
-    ? t('connectionFollowerTitle')
     : undefined;
   const canJoinSignalThreadCall =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
@@ -2044,7 +2052,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!callUiEnabled || !roomId?.trim() || !spaceSlug?.trim() || !authToken) {
       return;
     }
-    if (!isMatrixSyncLeader) return;
 
     const stableRoomId = roomId.trim();
     if (callStartedNotifyRoomRef.current === stableRoomId) return;
@@ -2103,7 +2110,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceTitle,
     currentUserId,
     hasSignalTeamPolicy,
-    isMatrixSyncLeader,
     isSignalThread,
     me?.name,
     me?.nickname,
@@ -2233,12 +2239,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleLoadOlderMessages = useCallback(
     async (source: 'auto' | 'manual' = 'manual') => {
       const targetRoomId = roomId?.trim();
-      if (
-        !targetRoomId ||
-        !isMatrixSyncLeader ||
-        loadingOlderMessages ||
-        !hasMoreOlderMessages
-      ) {
+      if (!targetRoomId || loadingOlderMessages || !hasMoreOlderMessages) {
         return;
       }
       setLoadingOlderMessages(true);
@@ -2272,20 +2273,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setLoadingOlderMessages(false);
       }
     },
-    [
-      hasMoreOlderMessages,
-      isMatrixSyncLeader,
-      loadingOlderMessages,
-      roomId,
-      syncRoomMessages,
-    ],
+    [hasMoreOlderMessages, loadingOlderMessages, roomId, syncRoomMessages],
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled =
-    canInteractWithSignalThread &&
-    !isChatFollowerTab &&
-    mentionCandidates.length > 0;
+    canInteractWithSignalThread && mentionCandidates.length > 0;
   const signalTeamRosterMembers = useMemo(
     () =>
       buildSpaceRosterSignalTeamMembers({
@@ -4136,7 +4129,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSend = useCallback(async () => {
     if (!roomId) return;
-    if (isChatFollowerTab) return;
     if (blockSpaceChatForMembership) {
       setComposerError(tCommon('joinSpaceToUse'));
       return;
@@ -4396,7 +4388,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     input,
     roomId,
-    isChatFollowerTab,
     canInteractWithSignalThread,
     replyDraft,
     editDraft,
@@ -4464,26 +4455,39 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   {showSidebarCallChrome &&
                   !inSpaceCall &&
                   !spaceCallShowJoinStrip ? (
-                    <HumanChatPanelCallToolbar
-                      callState={spaceCallState}
-                      callKind={spaceCallKind}
-                      disabled={!callUiEnabled}
-                      roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                      onAudio={() => {
-                        if (!canJoinSignalThreadCall && isSignalThread) {
-                          void requestSignalTeamAccess();
-                          return;
-                        }
-                        handleCallAudio();
-                      }}
-                      onVideo={() => {
-                        if (!canJoinSignalThreadCall && isSignalThread) {
-                          void requestSignalTeamAccess();
-                          return;
-                        }
-                        handleCallVideo();
-                      }}
-                    />
+                    callActionsChecked ? (
+                      <HumanChatPanelCallToolbar
+                        callState={spaceCallState}
+                        callKind={spaceCallKind}
+                        disabled={!callUiEnabled}
+                        roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                        onAudio={() => {
+                          if (!canJoinSignalThreadCall && isSignalThread) {
+                            void requestSignalTeamAccess();
+                            return;
+                          }
+                          handleCallAudio();
+                        }}
+                        onVideo={() => {
+                          if (!canJoinSignalThreadCall && isSignalThread) {
+                            void requestSignalTeamAccess();
+                            return;
+                          }
+                          handleCallVideo();
+                        }}
+                      />
+                    ) : (
+                      /** #2456: still confirming this user doesn't already hold a live session
+                       * elsewhere in this room — show a skeleton rather than either hiding the
+                       * toolbar outright or letting a click race ahead of that check. */
+                      <div
+                        className="flex shrink-0 items-center gap-0.5"
+                        aria-hidden
+                      >
+                        <Skeleton className="size-7 rounded-lg" />
+                        <Skeleton className="size-7 rounded-lg" />
+                      </div>
+                    )
                   ) : null}
                   {showAuthedUi && elsewhereCallEntries.length > 0 ? (
                     <HumanChatPanelElsewhereCallIndicator
@@ -4504,13 +4508,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               ) : null
             }
           />
-          {spaceCallShowJoinUi && (
+          {spaceCallShowRefreshUi && (
             <HumanChatPanelCallJoinStrip
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
               captureConsent={spaceCallCaptureConsent}
               roomId={roomId}
+              isRefresh={spaceCallSelfStalePresence}
+              othersInRoomCallCount={spaceCallOthersInRoom}
+              onHangupElsewhere={() => requestRemoteGroupCallLeave()}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();
@@ -4648,6 +4655,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }}
                 captureConsent={spaceCallCaptureConsent}
                 roomId={roomId}
+                onRefresh={() => {
+                  refreshSpaceCall(
+                    spaceCallKind ?? 'video',
+                    roomId,
+                    spaceSlug ?? null,
+                    undefined,
+                    authToken,
+                    resolveCallLaunchContext(),
+                  );
+                }}
                 controlsMode="leave_only"
                 canSendCallReactions={canSendCallReactions}
                 localHandRaised={localHandRaised}
@@ -4774,13 +4791,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 )}
                 <HumanChatPanelConnectionBanner
                   connectionStatus={connectionStatus}
-                  isMatrixSyncLeader={isMatrixSyncLeader}
-                  activeCallInAnotherTab={activeCallInAnotherTab}
                   connectionRetryFailed={connectionRetryFailed}
                   onRetry={() => {
                     void retryMatrixConnection();
                   }}
-                  onUseThisTab={claimMatrixSyncLeadership}
                 />
                 {showPanelInteractionPrompt ? (
                   <div className="mt-0 w-full border-b border-border/70 bg-muted/40 px-3 py-2">
@@ -5051,9 +5065,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     hasMoreOlderMessages={hasMoreOlderMessages}
                     loadingOlderMessages={loadingOlderMessages}
                     enableAutoLoadOlderMessages={
-                      isMatrixSyncLeader &&
-                      connectionStatus === 'connected' &&
-                      !autoLoadOlderPaused
+                      connectionStatus === 'connected' && !autoLoadOlderPaused
                     }
                     onLoadOlderMessages={handleLoadOlderMessages}
                   />

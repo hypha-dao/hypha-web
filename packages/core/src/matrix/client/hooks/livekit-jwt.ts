@@ -113,6 +113,7 @@ export async function fetchLivekitConnectCredentials(
   client: MatrixSdk.MatrixClient,
   roomId: string,
   jwtServiceUrl: string,
+  tabId: string,
 ): Promise<LiveKitConnectCredentials> {
   const openIdToken = await client.getOpenIdToken();
   const base = jwtServiceUrl.replace(/\/$/, '');
@@ -122,6 +123,9 @@ export async function fetchLivekitConnectCredentials(
     body: JSON.stringify({
       room: roomId,
       openid_token: openIdToken,
+      // Tab-unique, not the shared Matrix deviceId — see matrix-tab-id.ts. This is what
+      // disambiguates two tabs of the same login on the LiveKit SFU (DUPLICATE_IDENTITY otherwise).
+      device_id: tabId,
     }),
     signal: AbortSignal.timeout(10_000),
   });

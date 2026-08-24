@@ -4,3 +4,4 @@ export * from './actions';
 export * from './web3';
 export * from './turn-health';
 export * from './matrix-http-client';
+export * from './livekit-room-management';

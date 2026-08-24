@@ -11,6 +11,7 @@ export type ButtonNavItemProps = {
   classNames?: string;
   onClick?: React.MouseEventHandler;
   icon?: React.ReactNode;
+  disabled?: boolean;
 };
 
 export const ButtonNavItem = ({
@@ -19,6 +20,7 @@ export const ButtonNavItem = ({
   onClick,
   classNames,
   icon,
+  disabled = false,
 }: ButtonNavItemProps) => {
   const pathname = usePathname();
   const isActive = href && pathname.includes(href);
@@ -40,10 +42,16 @@ export const ButtonNavItem = ({
         'hover:bg-neutral-3',
         classNames,
       )}
-      asChild={!!href}
+      asChild={!disabled && !!href}
+      disabled={disabled}
+      aria-busy={disabled}
       onClick={onClick}
     >
-      {href ? <Link href={href}>{content}</Link> : <span>{content}</span>}
+      {!disabled && href ? (
+        <Link href={href}>{content}</Link>
+      ) : (
+        <span>{content}</span>
+      )}
     </Button>
   );
 };

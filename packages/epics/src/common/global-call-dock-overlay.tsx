@@ -32,6 +32,8 @@ import {
   HumanChatPanelCallStage,
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
+  HumanChatPanelCallSwitchConfirmDialog,
+  HumanChatPanelCallRefreshConfirmDialog,
   HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallRaisedHandsStrip,
   readCallFullViewLayoutFromStorage,
@@ -521,6 +523,13 @@ export function GlobalCallDockOverlay({
     showFloatingDock,
     dockMode,
     setDockMode,
+    pendingRoomSwitchConfirm,
+    confirmRoomSwitch,
+    cancelRoomSwitch,
+    isRoomSwitchPending,
+    pendingRefreshDeviceConfirm,
+    confirmRefreshDevice,
+    cancelRefreshDevice,
     callState,
     callKind,
     errorCode,
@@ -1122,7 +1131,33 @@ export function GlobalCallDockOverlay({
     router,
   ]);
 
-  if (!showFloatingDock || !activeRoomId) return null;
+  const callSwitchConfirmDialog = (
+    <HumanChatPanelCallSwitchConfirmDialog
+      open={Boolean(pendingRoomSwitchConfirm) || isRoomSwitchPending}
+      busy={isRoomSwitchPending}
+      onConfirm={() => {
+        void confirmRoomSwitch();
+      }}
+      onCancel={cancelRoomSwitch}
+    />
+  );
+
+  const callRefreshConfirmDialog = (
+    <HumanChatPanelCallRefreshConfirmDialog
+      open={Boolean(pendingRefreshDeviceConfirm)}
+      onConfirm={confirmRefreshDevice}
+      onCancel={cancelRefreshDevice}
+    />
+  );
+
+  if (!showFloatingDock || !activeRoomId) {
+    return (
+      <>
+        {callSwitchConfirmDialog}
+        {callRefreshConfirmDialog}
+      </>
+    );
+  }
 
   const captureUploadFinalizing =
     recordingStatus === 'uploading' &&
@@ -1822,6 +1857,8 @@ export function GlobalCallDockOverlay({
       <>
         {screenshareTabAudioPromptDialog}
         {screenshareTakeoverDialog}
+        {callSwitchConfirmDialog}
+        {callRefreshConfirmDialog}
         {dockContent}
       </>
     );
@@ -1838,6 +1875,8 @@ export function GlobalCallDockOverlay({
     <>
       {screenshareTabAudioPromptDialog}
       {screenshareTakeoverDialog}
+      {callSwitchConfirmDialog}
+      {callRefreshConfirmDialog}
       {createPortal(portalContent, portalTarget)}
     </>
   );

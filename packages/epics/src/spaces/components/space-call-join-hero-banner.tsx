@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJwt, useMatrix } from '@hypha-platform/core/client';
+import {
+  requestRemoteGroupCallLeave,
+  useJwt,
+  useMatrix,
+} from '@hypha-platform/core/client';
 import { HumanChatPanelCallJoinStrip } from '../../common/human-chat-panel/human-chat-panel-call-join-strip';
 import { useCallMembershipRegistry } from '../../common/human-chat-panel/use-call-membership-registry';
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
@@ -25,11 +29,8 @@ export function SpaceCallJoinHeroBanner({
   spaceTitle,
 }: SpaceCallJoinHeroBannerProps) {
   const { jwt: authToken } = useJwt();
-  const {
-    isMatrixAvailable,
-    isAuthenticated: isMatrixAuthenticated,
-    isMatrixSyncLeader,
-  } = useMatrix();
+  const { isMatrixAvailable, isAuthenticated: isMatrixAuthenticated } =
+    useMatrix();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
   const { userState, isLoading: isUserSpaceStateLoading } = useUserSpaceState({
     spaceSlug,
@@ -43,6 +44,8 @@ export function SpaceCallJoinHeroBanner({
     captureConsent,
     startAudioForRoom,
     startVideoForRoom,
+    refreshCall,
+    selfStaleCallPresence,
     pinnedCallSpaceSlug,
     activeRoomId,
     leave: leaveSpaceCall,
@@ -61,8 +64,7 @@ export function SpaceCallJoinHeroBanner({
     Boolean(canonicalRoomId) &&
     isMatrixAvailable &&
     isMatrixAuthenticated &&
-    isSpaceMember &&
-    isMatrixSyncLeader;
+    isSpaceMember;
 
   const inSpaceCall =
     callState === 'connected' ||
@@ -91,7 +93,7 @@ export function SpaceCallJoinHeroBanner({
     appliesToThisSpace &&
     roomMatches &&
     showRoomCallInProgress &&
-    roomGroupCallDeviceCount > 0 &&
+    (roomGroupCallDeviceCount > 0 || selfStaleCallPresence) &&
     !inSpaceCall;
 
   /**
@@ -127,6 +129,17 @@ export function SpaceCallJoinHeroBanner({
   }, [spaceTitle]);
 
   const handleJoinAudio = useCallback(() => {
+    if (selfStaleCallPresence) {
+      refreshCall(
+        'audio',
+        canonicalRoomId,
+        slug,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startAudioForRoom(
       canonicalRoomId,
       slug,
@@ -134,9 +147,28 @@ export function SpaceCallJoinHeroBanner({
       authToken,
       launchContext,
     );
-  }, [authToken, canonicalRoomId, launchContext, slug, startAudioForRoom]);
+  }, [
+    authToken,
+    canonicalRoomId,
+    launchContext,
+    refreshCall,
+    selfStaleCallPresence,
+    slug,
+    startAudioForRoom,
+  ]);
 
   const handleJoinVideo = useCallback(() => {
+    if (selfStaleCallPresence) {
+      refreshCall(
+        'video',
+        canonicalRoomId,
+        slug,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startVideoForRoom(
       canonicalRoomId,
       slug,
@@ -144,7 +176,15 @@ export function SpaceCallJoinHeroBanner({
       authToken,
       launchContext,
     );
-  }, [authToken, canonicalRoomId, launchContext, slug, startVideoForRoom]);
+  }, [
+    authToken,
+    canonicalRoomId,
+    launchContext,
+    refreshCall,
+    selfStaleCallPresence,
+    slug,
+    startVideoForRoom,
+  ]);
 
   /**
    * Same sequencing as the right panel's `handleJoinCurrentRoomCallInstead`
@@ -242,6 +282,8 @@ export function SpaceCallJoinHeroBanner({
       roomId={canonicalRoomId}
       onJoinAudio={handleJoinAudio}
       onJoinVideo={handleJoinVideo}
+      isRefresh={selfStaleCallPresence}
+      onHangupElsewhere={() => requestRemoteGroupCallLeave()}
     />
   );
 }

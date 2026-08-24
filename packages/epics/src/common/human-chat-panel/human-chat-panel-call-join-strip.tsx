@@ -6,6 +6,7 @@ import { Button } from '@hypha-platform/ui';
 import type { SpaceGroupCallCaptureConsent } from '@hypha-platform/core/client';
 import { Phone, Video, X } from 'lucide-react';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
+import { HumanChatPanelInCallStatusRow } from './human-chat-panel-in-call-status-row';
 
 type HumanChatPanelCallJoinStripProps = {
   deviceCount: number;
@@ -22,6 +23,17 @@ type HumanChatPanelCallJoinStripProps = {
   onDismissDurable?: () => void;
   /** Space hero: accent strip above the banner image. */
   variant?: 'sidebar' | 'hero';
+  /** #2456 D2c/D2e: this user already has a stale presence in this room's call — render the
+   * same "In this call" status + hangup/refresh row `HumanChatPanelCallBanner` uses (via the
+   * shared `HumanChatPanelInCallStatusRow`), not a distinct "Refresh call" look, so the state
+   * reads identically regardless of which tab shows it. */
+  isRefresh?: boolean;
+  /** #2456: participants other than self. Only read when `isRefresh` is set. */
+  othersInRoomCallCount?: number;
+  /** #2456: this tab holds no local session for this call — hanging up means asking whichever
+   * tab does hold it (same browser) to leave, not disconnecting a session this tab doesn't have.
+   * Only rendered when `isRefresh` is set. */
+  onHangupElsewhere?: () => void;
 };
 
 const joinBannerSurfaceClass =
@@ -41,9 +53,50 @@ export function HumanChatPanelCallJoinStrip({
   durableMessage,
   onDismissDurable,
   variant = 'sidebar',
+  isRefresh = false,
+  othersInRoomCallCount = 0,
+  onHangupElsewhere,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
   const isHero = variant === 'hero';
+
+  if (isRefresh) {
+    /** #2456: same conceptual "In this call" state as the connected `HumanChatPanelCallBanner`
+     * — delegates to the same `HumanChatPanelInCallStatusRow` so the two can't drift apart, only
+     * owning the outer surface (plain row, no accent "opportunity" styling — see
+     * `useProminentJoinBanner` below) and the capture-consent banner. */
+    return (
+      <div
+        className={
+          isHero
+            ? 'mb-2 border-b border-border'
+            : 'border-b border-border bg-muted/30'
+        }
+      >
+        {captureConsent ? (
+          <HumanChatPanelCaptureConsentBanner
+            consent={captureConsent}
+            roomId={roomId}
+            variant="join"
+            className="border-border/60"
+          />
+        ) : null}
+        <HumanChatPanelInCallStatusRow
+          /** #2456: `deviceCount` here is others-only (unlike the connected tab's
+           * `participantCount`, which is LiveKit's raw self-inclusive roster count) — add 1 so
+           * both places count the same way ("N members" including yourself) instead of showing
+           * different numbers for the same call depending on which tab you're looking from. */
+          participantCount={deviceCount + 1}
+          othersInRoomCallCount={othersInRoomCallCount}
+          disabled={disabled}
+          busy={busy}
+          onLeave={onHangupElsewhere ?? (() => undefined)}
+          onRefresh={onJoinVideo}
+        />
+      </div>
+    );
+  }
+
   const isJoinOpportunity = deviceCount > 0;
   const hasDurable = Boolean(durableMessage);
   const statusLine = t('callJoinStripLine', { count: deviceCount });
