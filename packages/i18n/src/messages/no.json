@@ -133,16 +133,16 @@
     }
   },
   "OnboardingAdventure": {
-    "heroEyebrow": "DEN INTELLIGENTE ORGANISASJONEN",
-    "title": "Du har en kraftfull visjon for verden.",
-    "titleLine1": "Du har en kraftfull",
-    "titleLine2": "visjon for verden.",
+    "heroEyebrow": "Begynn med en visjon",
+    "title": "Gi visjonen din et hjem.",
+    "titleLine1": "Gi visjonen din",
+    "titleLine2": "et hjem.",
     "continueAdventure": "Velkommen tilbake",
-    "subtitle": "Gjør den om til en modig, intelligent organisasjon som handler på den.",
-    "returnSubtitle": "Fortsett reisen din — eller spør Hypha AI om hva du bør gjøre videre.",
+    "subtitle": "AI går med deg fra den første setningen til den første avstemningen — formål, mennesker og hvordan dere vil beslutte sammen.",
+    "returnSubtitle": "Fortsett reisen — eller si til AI hva du vil gjøre nå.",
     "heroPill": {
-      "build": "Bygg",
-      "together": ", sammen.",
+      "build": "Et hjem for",
+      "together": ".",
       "rotating": {
         "anything": "Hva som helst",
         "projects": "Prosjekter",
@@ -174,19 +174,19 @@
       }
     },
     "aiHero": {
-      "title": "Bygg hva som helst, sammen",
-      "description": "Fortell Hypha AI hva du vil bygge — den veileder deg gjennom oppsettet steg for steg.",
-      "placeholder": "Opprett et rom, bli med i ett, utforsk nettverket eller finansier en kasse — beskriv målet ditt, så veileder AI deg.",
+      "title": "Gi en visjon et hjem",
+      "description": "Fortell AI hva du vil bygge — den blir med deg i hvert steg.",
+      "placeholder": "Opprett et rom, bli med i ett, gå nettverket eller gi en kasse midler — beskriv steget, så går AI med deg.",
       "rotating": {
-        "launchCooperative": "Be Hypha AI om å starte et samvirke med delt eierskap...",
-        "tokenEconomy": "Be Hypha AI om å utforme en tokenøkonomi for nettverket ditt...",
-        "createSpace": "Be Hypha AI om å opprette et rom for oppdraget ditt...",
-        "governance": "Be Hypha AI om å utarbeide styring for fellesskapet ditt...",
-        "joinSpace": "Be Hypha AI om å hjelpe deg med å finne riktig rom...",
-        "treasury": "Be Hypha AI om å sette opp et rom klart for kasse...",
-        "explore": "Be Hypha AI om å finne muligheter på tvers av nettverket..."
+        "launchCooperative": "Hjelp meg å starte et samvirke med delt eierskap...",
+        "tokenEconomy": "Hjelp meg å utforme hvordan dette nettverket deler verdi...",
+        "createSpace": "Hjelp meg å opprette et rom for oppdraget vårt...",
+        "governance": "Hjelp meg å navngi hvordan vi skal beslutte sammen...",
+        "joinSpace": "Hjelp meg å finne et rom som føles som hjem...",
+        "treasury": "Hjelp meg å sette opp et rom som kan bære en kasse...",
+        "explore": "Hjelp meg å se hva som allerede er i bevegelse i nettverket..."
       },
-      "cta": "Start med AI",
+      "cta": "Begynn med AI",
       "starting": "Starter...",
       "openingAi": "Åpner AI-panelet...",
       "sending": "Sender forespørselen din til AI...",
@@ -215,7 +215,7 @@
       "onboardingEntryMethodSetToken": "Inngangsmetode: Tokenbasert medlemskap",
       "ariaLabel": "AI-onboardingforespørsel",
       "flow": {
-        "badge": "Enkelt. Kraftfullt. Med hensikt.",
+        "badge": "AI går med deg",
         "reviewingTitle": "Gjennomgår forespørselen din",
         "reviewingDescription": "AI kartlegger den beste veien mot målet ditt.",
         "reviewingDescriptionPersonalized": "{firstName}, AI kartlegger den beste veien mot målet ditt.",
@@ -235,18 +235,18 @@
     "noSpacesFound": "Ingen rom funnet.",
     "loadingSpaces": "Laster inn rom...",
     "explore": {
-      "title": "Utforsk nettverket",
-      "description": "Oppdag fellesskap og muligheter på tvers av nettverket.",
-      "cta": "Utforsk nå"
+      "title": "Gå gjennom nettverket",
+      "description": "Hvert rom er en praksis. Se deg om, kjenn etter et sted, og bli med når det åpner seg.",
+      "cta": "Gå gjennom nettverket"
     },
     "create": {
-      "title": "Opprett ditt rom",
-      "description": "Start et nytt rom og inviter andre til å samarbeide.",
+      "title": "Opprett et rom",
+      "description": "AI går med deg gjennom hvert steg — formål, mennesker og hvordan dere vil beslutte sammen.",
       "cta": "Opprett et rom"
     },
     "join": {
       "title": "Bli med i et rom",
-      "description": "Velg et rom og hopp rett inn i aktiviteten.",
+      "description": "Velg en krets og tre inn når du er klar.",
       "cta": "Åpne valgt rom",
       "unavailable": "Ingen rom er tilgjengelige å bli med i for øyeblikket."
     },
@@ -4517,6 +4517,9 @@
     "mapLead": "A human map of the circles growing this work.",
     "mapHint": "Spaces appear as they share a place.",
     "mapTotals": "{places} places · {hubs} hubs",
+    "mapInteract": "Rull for å zoome, dra for å flytte.",
+    "mapZoomIn": "Zoom inn",
+    "mapZoomOut": "Zoom ut",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

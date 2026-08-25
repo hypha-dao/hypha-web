@@ -134,16 +134,16 @@
     }
   },
   "OnboardingAdventure": {
-    "heroEyebrow": "THE INTELLIGENT ORGANISATION",
-    "title": "You have a powerful vision for the world.",
-    "titleLine1": "You have a powerful",
-    "titleLine2": "vision for the world.",
+    "heroEyebrow": "Start with a vision",
+    "title": "Ready to give a vision a home?",
+    "titleLine1": "Ready to give a vision",
+    "titleLine2": "a home?",
     "continueAdventure": "Welcome back",
-    "subtitle": "Turn it into a bold, intelligent organisation that acts on it.",
-    "returnSubtitle": "Continue your journey — or ask Hypha AI what to do next.",
+    "subtitle": "AI walks with you from the first sentence to the first vote — purpose, people, and how you will decide together.",
+    "returnSubtitle": "Continue your journey — or tell AI what you want to do next.",
     "heroPill": {
-      "build": "Build",
-      "together": ", Together.",
+      "build": "A home for",
+      "together": ".",
       "rotating": {
         "anything": "Anything",
         "projects": "Projects",
@@ -175,19 +175,19 @@
       }
     },
     "aiHero": {
-      "title": "Build Anything, Together",
-      "description": "Tell Hypha AI what you want to build — it guides setup step by step.",
-      "placeholder": "Create a space, join one, explore the network, or fund a treasury — describe your goal and AI will guide you.",
+      "title": "Give a vision a home",
+      "description": "Tell AI what you want to build — it stays with you through every step.",
+      "placeholder": "Create a space, join one, walk the network, or resource a treasury — describe the move and AI will walk with you.",
       "rotating": {
-        "launchCooperative": "Ask Hypha AI to launch a cooperative with shared ownership...",
-        "tokenEconomy": "Ask Hypha AI to design a token economy for your network...",
-        "createSpace": "Ask Hypha AI to create a space for your mission...",
-        "governance": "Ask Hypha AI to draft governance for your community...",
-        "joinSpace": "Ask Hypha AI to help you join the right space...",
-        "treasury": "Ask Hypha AI to set up a treasury-ready space...",
-        "explore": "Ask Hypha AI to find opportunities across the network..."
+        "launchCooperative": "Help me start a cooperative with shared ownership...",
+        "tokenEconomy": "Help me design how this network shares value...",
+        "createSpace": "Help me create a space for our mission...",
+        "governance": "Help me name how we will decide together...",
+        "joinSpace": "Help me find a space that feels like home...",
+        "treasury": "Help me set up a space that can hold a treasury...",
+        "explore": "Help me find what is already moving across the network..."
       },
-      "cta": "Start with AI",
+      "cta": "Begin with AI",
       "starting": "Starting...",
       "openingAi": "Opening AI panel...",
       "sending": "Sending your prompt to AI...",
@@ -216,7 +216,7 @@
       "onboardingEntryMethodSetToken": "Entry method: Token-based membership",
       "ariaLabel": "AI onboarding prompt",
       "flow": {
-        "badge": "Simple. Powerful. By design.",
+        "badge": "AI walks with you",
         "reviewingTitle": "Reviewing your request",
         "reviewingDescription": "AI is mapping the best path for your goal.",
         "reviewingDescriptionPersonalized": "{firstName}, AI is mapping the best path for your goal.",
@@ -236,18 +236,18 @@
     "noSpacesFound": "No spaces found.",
     "loadingSpaces": "Loading spaces...",
     "explore": {
-      "title": "Explore the Network",
-      "description": "Discover communities and opportunities across the network.",
-      "cta": "Explore now"
+      "title": "Walk the network",
+      "description": "Every space is a practice. Browse, feel into a place, and join when something opens.",
+      "cta": "Walk the network"
     },
     "create": {
-      "title": "Create your Space",
-      "description": "Start a new space and invite others to collaborate.",
+      "title": "Create a space",
+      "description": "AI walks with you through every step — purpose, people, and how you will decide together.",
       "cta": "Create a space"
     },
     "join": {
-      "title": "Join a Space",
-      "description": "Pick a space and jump directly into its activity.",
+      "title": "Join a space",
+      "description": "Pick a circle and step in when you are ready.",
       "cta": "Open selected space",
       "unavailable": "No spaces are currently available to join."
     },
@@ -4520,6 +4520,9 @@
     "mapLead": "A human map of the circles growing this work.",
     "mapHint": "Spaces appear as they share a place.",
     "mapTotals": "{places} places · {hubs} hubs",
+    "mapInteract": "Scroll to zoom, drag to pan.",
+    "mapZoomIn": "Zoom in",
+    "mapZoomOut": "Zoom out",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

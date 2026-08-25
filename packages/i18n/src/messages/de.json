@@ -134,16 +134,16 @@
     }
   },
   "OnboardingAdventure": {
-    "heroEyebrow": "DIE INTELLIGENTE ORGANISATION",
-    "title": "Du hast eine kraftvolle Vision für die Welt.",
-    "titleLine1": "Du hast eine",
-    "titleLine2": "kraftvolle Vision für die Welt.",
+    "heroEyebrow": "Beginne mit einer Vision",
+    "title": "Bereit, einer Vision ein Zuhause zu geben?",
+    "titleLine1": "Bereit, einer Vision",
+    "titleLine2": "ein Zuhause zu geben?",
     "continueAdventure": "Willkommen zurück",
-    "subtitle": "Mach daraus eine mutige, intelligente Organisation, die handelt.",
-    "returnSubtitle": "Mach weiter — oder frag Hypha AI, was als Nächstes zu tun ist.",
+    "subtitle": "Die AI geht mit dir vom ersten Satz bis zur ersten Abstimmung — Zweck, Menschen und wie ihr gemeinsam entscheidet.",
+    "returnSubtitle": "Mach weiter — oder sag der AI, was als Nächstes dran ist.",
     "heroPill": {
-      "build": "Baue",
-      "together": ", gemeinsam.",
+      "build": "Ein Zuhause für",
+      "together": ".",
       "rotating": {
         "anything": "Alles",
         "projects": "Projekte",
@@ -175,19 +175,19 @@
       }
     },
     "aiHero": {
-      "title": "Build Anything, Together",
-      "description": "Sag Hypha AI, was du aufbauen willst — sie führt dich Schritt für Schritt.",
-      "placeholder": "Space erstellen, beitreten, Netzwerk erkunden oder Treasury finanzieren — beschreibe dein Ziel, AI leitet dich.",
+      "title": "Gib einer Vision ein Zuhause",
+      "description": "Sag der AI, was du aufbauen willst — sie bleibt bei dir, Schritt für Schritt.",
+      "placeholder": "Space erstellen, beitreten, das Netzwerk gehen oder eine Treasury ausstatten — beschreibe den Schritt, die AI geht mit.",
       "rotating": {
-        "launchCooperative": "Frag Hypha AI, eine Genossenschaft mit gemeinsamem Eigentum zu starten...",
-        "tokenEconomy": "Frag Hypha AI, eine Token-Ökonomie für dein Netzwerk zu entwerfen...",
-        "createSpace": "Frag Hypha AI, einen Space für deine Mission zu erstellen...",
-        "governance": "Frag Hypha AI, Governance für deine Community zu entwerfen...",
-        "joinSpace": "Frag Hypha AI, den passenden Space zu finden...",
-        "treasury": "Frag Hypha AI, einen treasury-fähigen Space einzurichten...",
-        "explore": "Frag Hypha AI, Chancen im Netzwerk zu finden..."
+        "launchCooperative": "Hilf mir, eine Genossenschaft mit gemeinsamem Eigentum zu starten...",
+        "tokenEconomy": "Hilf mir, zu gestalten, wie dieses Netzwerk Wert teilt...",
+        "createSpace": "Hilf mir, einen Space für unsere Mission zu erstellen...",
+        "governance": "Hilf mir, zu benennen, wie wir gemeinsam entscheiden...",
+        "joinSpace": "Hilf mir, einen Space zu finden, der sich nach Zuhause anfühlt...",
+        "treasury": "Hilf mir, einen Space einzurichten, der eine Treasury tragen kann...",
+        "explore": "Hilf mir, zu finden, was im Netzwerk schon in Bewegung ist..."
       },
-      "cta": "Mit AI starten",
+      "cta": "Mit AI beginnen",
       "starting": "Wird gestartet...",
       "openingAi": "AI-Panel wird geöffnet...",
       "sending": "Dein Prompt wird an die AI gesendet...",
@@ -216,7 +216,7 @@
       "onboardingEntryMethodSetToken": "Beitrittsmethode: Token-basierte Mitgliedschaft",
       "ariaLabel": "AI-Onboarding-Prompt",
       "flow": {
-        "badge": "Simple. Powerful. By design.",
+        "badge": "Die AI geht mit dir",
         "reviewingTitle": "Deine Anfrage wird analysiert",
         "reviewingDescription": "Die AI plant gerade den besten Weg für dein Ziel.",
         "reviewingDescriptionPersonalized": "{firstName}, die AI plant gerade den besten Weg für dein Ziel.",
@@ -237,18 +237,18 @@
     "loadingSpaces": "Spaces werden geladen...",
     "loadSpacesError": "Spaces konnten gerade nicht geladen werden. Bitte versuche es erneut.",
     "explore": {
-      "title": "Netzwerk erkunden",
-      "description": "Entdecke Communities und Möglichkeiten im Netzwerk.",
-      "cta": "Jetzt erkunden"
+      "title": "Das Netzwerk gehen",
+      "description": "Jeder Space ist eine Praxis. Schau dich um, spüre einen Ort, und tritt ein, wenn etwas sich öffnet.",
+      "cta": "Das Netzwerk gehen"
     },
     "create": {
-      "title": "Erstelle deinen Space",
-      "description": "Starte einen neuen Space und lade andere ein.",
+      "title": "Einen Space erstellen",
+      "description": "Die AI geht mit dir durch jeden Schritt — Zweck, Menschen und wie ihr gemeinsam entscheidet.",
       "cta": "Space erstellen"
     },
     "join": {
       "title": "Einem Space beitreten",
-      "description": "Wähle einen Space und öffne ihn direkt.",
+      "description": "Wähle einen Kreis und tritt ein, wenn du bereit bist.",
       "cta": "Ausgewählten Space öffnen",
       "unavailable": "Derzeit sind keine Spaces zum Beitreten verfügbar."
     },
@@ -4512,6 +4512,9 @@
     "mapLead": "A human map of the circles growing this work.",
     "mapHint": "Spaces appear as they share a place.",
     "mapTotals": "{places} places · {hubs} hubs",
+    "mapInteract": "Scrollen zum Zoomen, ziehen zum Verschieben.",
+    "mapZoomIn": "Vergrößern",
+    "mapZoomOut": "Verkleinern",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

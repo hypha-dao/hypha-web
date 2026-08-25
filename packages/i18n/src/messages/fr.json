@@ -134,16 +134,16 @@
     }
   },
   "OnboardingAdventure": {
-    "heroEyebrow": "L'ORGANISATION INTELLIGENTE",
-    "title": "Vous avez une vision puissante du monde.",
-    "titleLine1": "Vous avez une",
-    "titleLine2": "vision puissante pour le monde.",
+    "heroEyebrow": "Commencez par une vision",
+    "title": "Offrez un foyer à votre vision.",
+    "titleLine1": "Offrez un foyer",
+    "titleLine2": "à votre vision.",
     "continueAdventure": "Bon retour",
-    "subtitle": "Transformez-la en organisation intelligente et audacieuse qui agit.",
-    "returnSubtitle": "Poursuivez — ou demandez à Hypha AI la prochaine étape.",
+    "subtitle": "L’AI marche avec vous de la première phrase au premier vote — le but, les personnes, et comment vous déciderez ensemble.",
+    "returnSubtitle": "Poursuivez — ou dites à l’AI ce que vous voulez faire ensuite.",
     "heroPill": {
-      "build": "Construisez",
-      "together": ", ensemble.",
+      "build": "Un foyer pour",
+      "together": ".",
       "rotating": {
         "anything": "Tout",
         "projects": "Projets",
@@ -175,17 +175,17 @@
       }
     },
     "aiHero": {
-      "title": "Build Anything, Together",
-      "description": "Dites à Hypha AI ce que vous voulez construire — elle guide la mise en place étape par étape.",
-      "placeholder": "Créer un espace, en rejoindre un, explorer le réseau ou financer une trésorerie — décrivez votre objectif, l’AI vous guide.",
+      "title": "Offrez un foyer à une vision",
+      "description": "Dites à l’AI ce que vous voulez construire — elle reste avec vous à chaque étape.",
+      "placeholder": "Créez un espace, rejoignez-en un, parcourez le réseau ou nourrissez une trésorerie — décrivez le geste, l’AI marche avec vous.",
       "rotating": {
-        "launchCooperative": "Demandez à Hypha AI de lancer une coopérative à propriété partagée...",
-        "tokenEconomy": "Demandez à Hypha AI de concevoir une économie de jetons pour votre réseau...",
-        "createSpace": "Demandez à Hypha AI de créer un espace pour votre mission...",
-        "governance": "Demandez à Hypha AI de proposer une gouvernance pour votre communauté...",
-        "joinSpace": "Demandez à Hypha AI de trouver le bon espace...",
-        "treasury": "Demandez à Hypha AI de préparer un espace prêt pour la trésorerie...",
-        "explore": "Demandez à Hypha AI d’identifier des opportunités dans le réseau..."
+        "launchCooperative": "Aidez-moi à lancer une coopérative à propriété partagée...",
+        "tokenEconomy": "Aidez-moi à concevoir comment ce réseau partage la valeur...",
+        "createSpace": "Aidez-moi à créer un espace pour notre mission...",
+        "governance": "Aidez-moi à nommer comment nous déciderons ensemble...",
+        "joinSpace": "Aidez-moi à trouver un espace qui ressemble à un foyer...",
+        "treasury": "Aidez-moi à préparer un espace qui peut porter une trésorerie...",
+        "explore": "Aidez-moi à voir ce qui bouge déjà dans le réseau..."
       },
       "cta": "Commencer avec l’AI",
       "starting": "Démarrage...",
@@ -216,7 +216,7 @@
       "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token",
       "ariaLabel": "Invite d’onboarding AI",
       "flow": {
-        "badge": "Simple. Powerful. By design.",
+        "badge": "L’AI marche avec vous",
         "reviewingTitle": "Analyse de votre demande",
         "reviewingDescription": "L’AI prépare le meilleur parcours pour votre objectif.",
         "reviewingDescriptionPersonalized": "{firstName}, l’AI prépare le meilleur parcours pour votre objectif.",
@@ -237,18 +237,18 @@
     "loadingSpaces": "Chargement des espaces...",
     "loadSpacesError": "Impossible de charger les espaces pour le moment. Veuillez réessayer.",
     "explore": {
-      "title": "Explorer le réseau",
-      "description": "Découvrez des communautés et des opportunités dans le réseau.",
-      "cta": "Explorer maintenant"
+      "title": "Parcourir le réseau",
+      "description": "Chaque espace est une pratique. Regardez, sentez un lieu, et rejoignez-le quand il s’ouvre.",
+      "cta": "Parcourir le réseau"
     },
     "create": {
-      "title": "Créer votre espace",
-      "description": "Lancez un nouvel espace et invitez d'autres personnes à collaborer.",
+      "title": "Créer un espace",
+      "description": "L’AI marche avec vous à chaque étape — le propos, les personnes, et comment vous déciderez ensemble.",
       "cta": "Créer un espace"
     },
     "join": {
       "title": "Rejoindre un espace",
-      "description": "Choisissez un espace et accédez directement à son activité.",
+      "description": "Choisissez un cercle et entrez quand vous serez prêt.",
       "cta": "Ouvrir l'espace sélectionné",
       "unavailable": "Aucun espace n'est actuellement disponible pour rejoindre."
     },
@@ -4508,6 +4508,9 @@
     "mapLead": "A human map of the circles growing this work.",
     "mapHint": "Spaces appear as they share a place.",
     "mapTotals": "{places} places · {hubs} hubs",
+    "mapInteract": "Défilez pour zoomer, faites glisser pour déplacer.",
+    "mapZoomIn": "Zoom avant",
+    "mapZoomOut": "Zoom arrière",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",
