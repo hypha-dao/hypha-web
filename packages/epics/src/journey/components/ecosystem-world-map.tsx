@@ -1,16 +1,27 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import * as d3 from 'd3';
+import { Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Card, CardContent } from '@hypha-platform/ui';
+import { Button, Card, CardContent } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@hypha-platform/core/client';
+import { hasSpaceMapLocation, Space } from '@hypha-platform/core/client';
 import { getDhoPathDefaultLanding } from '../../common/get-path-function';
+import { loadLandGeo } from '../../network-map/lib/load-land-geo';
 import {
   WELLBEING_DIMENSIONS,
   type WellbeingDimension,
 } from '../wellbeing-model';
+import {
+  createWorldProjection,
+  dimensionForSpace,
+  ECOSYSTEM_MAP_HEIGHT,
+  ECOSYSTEM_MAP_SCALE_EXTENT,
+  ECOSYSTEM_MAP_WIDTH,
+  projectLngLat,
+} from '../ecosystem-map';
 import '../wellbeing-accents.css';
 
 type EcosystemWorldMapProps = {
@@ -28,27 +39,12 @@ const DIMENSION_DOT: Record<WellbeingDimension, string> = {
   acting: 'wb-fill-acting',
 };
 
-function project(lat: number, lng: number): { x: number; y: number } {
-  return {
-    x: ((lng + 180) / 360) * 1000,
-    y: ((90 - lat) / 180) * 480,
-  };
-}
-
-function dimensionForSpace(space: Space, index: number): WellbeingDimension {
-  const categories = space.categories ?? [];
-  if (categories.some((c) => /health|well|inner|care/i.test(c))) return 'being';
-  if (categories.some((c) => /educat|research|tech/i.test(c)))
-    return 'thinking';
-  if (categories.some((c) => /social|community|culture/i.test(c)))
-    return 'relating';
-  if (categories.some((c) => /govern|network|dao/i.test(c)))
-    return 'collaborating';
-  if (categories.some((c) => /energy|environment|food|econom/i.test(c))) {
-    return 'acting';
-  }
-  return WELLBEING_DIMENSIONS[index % WELLBEING_DIMENSIONS.length] ?? 'acting';
-}
+type MapPin = {
+  space: Space;
+  x: number;
+  y: number;
+  dimension: WellbeingDimension;
+};
 
 export function EcosystemWorldMap({
   lang,
@@ -57,43 +53,113 @@ export function EcosystemWorldMap({
   className,
 }: EcosystemWorldMapProps) {
   const t = useTranslations('Journey');
-  const located = useMemo(
-    () =>
-      spaces.filter(
-        (space) =>
-          typeof space.latitude === 'number' &&
-          typeof space.longitude === 'number',
-      ),
-    [spaces],
+  const rawId = useId();
+  const uid = rawId.replace(/:/g, '');
+  const svgRef = useRef<SVGSVGElement>(null);
+  const zoomLayerRef = useRef<SVGGElement>(null);
+  const zoomBehaviorRef = useRef<d3.ZoomBehavior<
+    SVGSVGElement,
+    unknown
+  > | null>(null);
+  const [landPath, setLandPath] = useState<string | null>(null);
+  const [projection, setProjection] = useState(() =>
+    createWorldProjection(null),
   );
 
-  const pins = useMemo(() => {
-    if (located.length > 0) {
-      return located.map((space, index) => ({
-        space,
-        ...project(space.latitude as number, space.longitude as number),
-        dimension: dimensionForSpace(space, index),
-      }));
-    }
-    return spaces.slice(0, 36).map((space, index) => {
-      const angle = (index / Math.max(spaces.length, 1)) * Math.PI * 2;
-      const radius = 90 + (index % 5) * 28;
-      return {
-        space,
-        x: 500 + Math.cos(angle) * radius,
-        y: 230 + Math.sin(angle) * (radius * 0.45),
-        dimension: dimensionForSpace(space, index),
-      };
-    });
-  }, [located, spaces]);
+  const located = useMemo(() => spaces.filter(hasSpaceMapLocation), [spaces]);
 
-  const content = (
+  const pins = useMemo(() => {
+    const next: MapPin[] = [];
+    located.forEach((space, index) => {
+      const point = projectLngLat(
+        projection,
+        space.latitude as number,
+        space.longitude as number,
+      );
+      if (!point) return;
+      next.push({
+        space,
+        ...point,
+        dimension: dimensionForSpace(space.categories, index),
+      });
+    });
+    return next;
+  }, [located, projection]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadLandGeo()
+      .then((land) => {
+        if (cancelled) return;
+        const nextProjection = createWorldProjection(land);
+        const path = d3.geoPath(nextProjection);
+        setProjection(() => nextProjection);
+        setLandPath(path(land) ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setProjection(() => createWorldProjection(null));
+          setLandPath(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    const layer = zoomLayerRef.current;
+    if (!svg || !layer) return;
+
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent(ECOSYSTEM_MAP_SCALE_EXTENT)
+      .extent([
+        [0, 0],
+        [ECOSYSTEM_MAP_WIDTH, ECOSYSTEM_MAP_HEIGHT],
+      ])
+      .translateExtent([
+        [0, 0],
+        [ECOSYSTEM_MAP_WIDTH, ECOSYSTEM_MAP_HEIGHT],
+      ])
+      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        d3.select(layer).attr('transform', event.transform.toString());
+      });
+
+    d3.select(svg).call(zoom);
+    zoomBehaviorRef.current = zoom;
+
+    return () => {
+      d3.select(svg).on('.zoom', null);
+      zoomBehaviorRef.current = null;
+    };
+  }, [landPath]);
+
+  const stepZoom = (factor: number) => {
+    const svg = svgRef.current;
+    const zoom = zoomBehaviorRef.current;
+    if (!svg || !zoom) return;
+    d3.select(svg).transition().duration(220).call(zoom.scaleBy, factor);
+  };
+
+  const title = href ? (
+    <Link href={href} className="hover:underline">
+      {t('mapTitle')}
+    </Link>
+  ) : (
+    t('mapTitle')
+  );
+
+  return (
     <Card className={`wb-scope craft-card overflow-hidden ${className ?? ''}`}>
       <CardContent className="p-4 sm:p-5">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div>
             <h3 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
-              {t('mapTitle')}
+              {title}
             </h3>
             <p className="mt-1 max-w-xl text-2 text-muted-foreground">
               {t('mapLead')}
@@ -101,42 +167,102 @@ export function EcosystemWorldMap({
           </div>
           <p className="text-1 text-muted-foreground">
             {t('mapTotals', {
-              places: located.length || spaces.length,
+              places: located.length,
               hubs: spaces.length,
             })}
           </p>
         </div>
         <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background">
           <svg
-            viewBox="0 0 1000 480"
-            className="h-auto w-full"
+            ref={svgRef}
+            viewBox={`0 0 ${ECOSYSTEM_MAP_WIDTH} ${ECOSYSTEM_MAP_HEIGHT}`}
+            className="h-auto w-full cursor-grab active:cursor-grabbing touch-none"
             role="img"
             aria-label={t('mapTitle')}
           >
-            <rect width="1000" height="480" fill="var(--background-1)" />
-            <g fill="var(--neutral-4)" stroke="none">
-              <ellipse cx="220" cy="170" rx="150" ry="90" />
-              <ellipse cx="280" cy="310" rx="70" ry="110" />
-              <ellipse cx="500" cy="150" rx="70" ry="50" />
-              <ellipse cx="520" cy="270" rx="85" ry="120" />
-              <ellipse cx="700" cy="190" rx="180" ry="110" />
-              <ellipse cx="820" cy="340" rx="55" ry="40" />
-            </g>
-            {pins.map(({ space, x, y, dimension }) => (
-              <circle
-                key={space.id}
-                cx={x}
-                cy={y}
-                r={located.length > 0 ? 5 : 4}
-                className={DIMENSION_DOT[dimension]}
+            <defs>
+              <pattern
+                id={`${uid}-ocean`}
+                width="10"
+                height="10"
+                patternUnits="userSpaceOnUse"
               >
-                <title>{space.title}</title>
-              </circle>
-            ))}
+                <circle cx="1" cy="1" r="0.45" fill="var(--neutral-6)" />
+              </pattern>
+              <pattern
+                id={`${uid}-land`}
+                width="5.5"
+                height="5.5"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="1.2" cy="1.2" r="0.95" fill="var(--neutral-8)" />
+              </pattern>
+            </defs>
+            <rect
+              width={ECOSYSTEM_MAP_WIDTH}
+              height={ECOSYSTEM_MAP_HEIGHT}
+              fill="var(--background-1)"
+            />
+            <g ref={zoomLayerRef}>
+              <rect
+                x={-ECOSYSTEM_MAP_WIDTH}
+                y={-ECOSYSTEM_MAP_HEIGHT}
+                width={ECOSYSTEM_MAP_WIDTH * 3}
+                height={ECOSYSTEM_MAP_HEIGHT * 3}
+                fill={`url(#${uid}-ocean)`}
+              />
+              {landPath ? (
+                <path d={landPath} fill={`url(#${uid}-land)`} />
+              ) : null}
+              {pins.map(({ space, x, y, dimension }) => (
+                <a
+                  key={space.id}
+                  href={spaceHrefForMap(lang, space.slug)}
+                  aria-label={space.title}
+                >
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={5.5}
+                    className={DIMENSION_DOT[dimension]}
+                    opacity={0.92}
+                    stroke="var(--background-1)"
+                    strokeWidth={1.25}
+                  >
+                    <title>{space.title}</title>
+                  </circle>
+                </a>
+              ))}
+            </g>
           </svg>
-          <p className="absolute bottom-2 right-3 text-1 text-muted-foreground">
-            {t('mapHint')}
-          </p>
+          <div className="absolute bottom-2 right-2 flex flex-col overflow-hidden rounded-chrome border border-border/70 bg-background/90 shadow-sm">
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="icon"
+              className="size-8 rounded-none"
+              onClick={() => stepZoom(1.35)}
+              aria-label={t('mapZoomIn')}
+            >
+              <Plus className="size-3.5" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="icon"
+              className="size-8 rounded-none border-t border-border/70"
+              onClick={() => stepZoom(1 / 1.35)}
+              aria-label={t('mapZoomOut')}
+            >
+              <Minus className="size-3.5" aria-hidden />
+            </Button>
+          </div>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-1 text-muted-foreground">
+          <p>{t('mapHint')}</p>
+          <p>{t('mapInteract')}</p>
         </div>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-1 text-muted-foreground">
           {WELLBEING_DIMENSIONS.map((key) => (
@@ -153,13 +279,6 @@ export function EcosystemWorldMap({
         </div>
       </CardContent>
     </Card>
-  );
-
-  if (!href) return content;
-  return (
-    <Link href={href} className="block">
-      {content}
-    </Link>
   );
 }
 

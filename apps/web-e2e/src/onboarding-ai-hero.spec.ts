@@ -8,15 +8,14 @@ test.describe('Onboarding AI Hero', () => {
     expect(a11y.violations).toEqual([]);
 
     await expect(
-      page.getByText('Describe the space you want to create'),
+      page.getByRole('heading', { name: /Ready to give a vision/i }),
     ).toBeVisible();
-    await expect(page.getByLabel('AI onboarding prompt')).toBeVisible();
 
     await expect(
-      page.getByRole('heading', { name: 'Explore the Network' }),
+      page.getByRole('heading', { name: 'Walk the network' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Create your Space' }),
+      page.getByRole('heading', { name: 'Create a space' }),
     ).toBeVisible();
   });
 });
