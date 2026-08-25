@@ -9,6 +9,7 @@ import {
   feelingFromScore,
   trendFromScores,
 } from '../wellbeing-model';
+import { WellbeingGauge } from './wellbeing-gauge';
 import '../wellbeing-accents.css';
 
 type WellbeingScoreCardProps = {
@@ -36,7 +37,6 @@ export function WellbeingScoreCard({
   const displayScore = score ?? 50;
   const feeling = feelingFromScore(displayScore);
   const trend = trendFromScores(displayScore, previousScore);
-  const progress = Math.max(0.04, displayScore / 100);
 
   return (
     <Card className={cn('wb-scope craft-card overflow-hidden', className)}>
@@ -68,33 +68,18 @@ export function WellbeingScoreCard({
           ) : null}
         </div>
 
-        <div className="mx-auto flex w-full max-w-[18rem] flex-col items-center">
-          <svg viewBox="0 0 200 118" className="w-full" aria-hidden>
-            <path
-              d="M18 108 A82 82 0 0 1 182 108"
-              fill="none"
-              stroke="var(--neutral-6)"
-              strokeWidth="8"
-              strokeLinecap="round"
-            />
-            <path
-              d="M18 108 A82 82 0 0 1 182 108"
-              fill="none"
-              stroke="var(--accent-9)"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={`${progress * 257} 257`}
-            />
-            <text
-              x="100"
-              y="86"
-              textAnchor="middle"
-              className="fill-foreground"
-              style={{ fontSize: '36px', fontWeight: 600 }}
-            >
-              {activated ? displayScore : '—'}
-            </text>
-          </svg>
+        <div className="mx-auto flex w-full max-w-[20rem] flex-col items-center">
+          <WellbeingGauge
+            score={activated ? displayScore : null}
+            comparisonScore={activated ? comparisonScore : null}
+            activated={activated}
+            innerLabel={
+              variant === 'personal' ? t('personalScore') : t('collectiveScore')
+            }
+            outerLabel={t('fieldArcLabel')}
+            sadLabel={t('axisFeltLow')}
+            happyLabel={t('axisFeltHigh')}
+          />
           <p className="text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
             {variant === 'personal' ? t('personalScore') : t('collectiveScore')}
           </p>
@@ -109,13 +94,17 @@ export function WellbeingScoreCard({
                 {t('youLabel', { score: displayScore })}
               </span>
               {comparisonScore != null ? (
-                <span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2 rounded-full border border-neutral-8" />
                   {variant === 'personal'
                     ? t('leadersLabel', { score: comparisonScore })
                     : t('fieldLabel', { score: comparisonScore })}
                 </span>
               ) : null}
             </div>
+            <p className="text-2 leading-relaxed text-muted-foreground">
+              {t('fractalLead')}
+            </p>
             <p className="text-2 leading-relaxed text-muted-foreground">
               {t(`insight.${feeling}`)}
             </p>
@@ -135,6 +124,15 @@ export function WellbeingScoreCard({
             </Button>
           </div>
         )}
+
+        <p className="flex items-center justify-center gap-2 text-1 uppercase tracking-[0.22em] text-muted-foreground">
+          <span>{t('poweredBy')}</span>
+          <img
+            src="/wellbeing/realifex-wordmark.png"
+            alt="REALIFEX"
+            className="h-3 w-auto invert dark:invert-0"
+          />
+        </p>
       </CardContent>
     </Card>
   );

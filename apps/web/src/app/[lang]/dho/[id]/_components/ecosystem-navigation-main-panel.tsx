@@ -13,6 +13,7 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   EcosystemWorldMap,
+  WellbeingEcosystemPulse,
   getDhoSpaceContextPath,
 } from '@hypha-platform/epics';
 import {
@@ -421,6 +422,7 @@ export function EcosystemNavigationMainPanel({
                 : []
             }
           />
+          <WellbeingEcosystemPulse />
           <EcosystemNavigationShell
             activeTab={activeTab}
             onTabChange={setActiveTab}

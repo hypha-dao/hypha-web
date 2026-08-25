@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_WELLBEING_MODE,
+  WELLBEING_MODES,
   averageScore,
+  extractTopics,
   feelingFromScore,
+  isWellbeingMode,
+  momentMode,
+  parseTopicsInput,
+  preferredModeFor,
   scoreFromAxes,
 } from '../wellbeing-model';
 
@@ -25,5 +32,56 @@ describe('wellbeing-model', () => {
     expect(averageScore([{ score: 40 } as never, { score: 60 } as never])).toBe(
       50,
     );
+  });
+
+  it('treats the mode enum as standard, idg, and nvc', () => {
+    expect(WELLBEING_MODES).toEqual(['standard', 'idg', 'nvc']);
+    expect(isWellbeingMode('idg')).toBe(true);
+    expect(isWellbeingMode('standard')).toBe(true);
+    expect(isWellbeingMode('nvc')).toBe(true);
+    expect(isWellbeingMode('other')).toBe(false);
+    expect(DEFAULT_WELLBEING_MODE).toBe('idg');
+  });
+
+  it('reads old moments without a mode as IDG', () => {
+    expect(momentMode({})).toBe('idg');
+    expect(momentMode({ mode: 'nvc' })).toBe('nvc');
+  });
+
+  it('prefers a space mode over the personal default', () => {
+    expect(
+      preferredModeFor(
+        {
+          version: 1,
+          personalActivated: true,
+          preferredMode: 'standard',
+          spaceModes: { circle: 'nvc' },
+          moments: [],
+          spaceAddons: {},
+        },
+        'circle',
+      ),
+    ).toBe('nvc');
+    expect(
+      preferredModeFor({
+        version: 1,
+        personalActivated: true,
+        preferredMode: 'standard',
+        moments: [],
+        spaceAddons: {},
+      }),
+    ).toBe('standard');
+  });
+
+  it('extracts and normalizes topics', () => {
+    expect(extractTopics('talk with #Manager about #Work')).toEqual([
+      'manager',
+      'work',
+    ]);
+    expect(parseTopicsInput('#Home, rest  Circle')).toEqual([
+      'home',
+      'rest',
+      'circle',
+    ]);
   });
 });

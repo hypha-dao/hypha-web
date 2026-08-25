@@ -11,7 +11,9 @@ import {
   recentMoments,
 } from '../wellbeing-model';
 import { WellbeingScoreCard } from './wellbeing-score-card';
+import { WellbeingInsightsCard } from './wellbeing-insights-card';
 import { CaptureMomentDialog } from './capture-moment-dialog';
+import { momentMode } from '../wellbeing-model';
 
 export function SpaceWellbeingPage({
   spaceSlug,
@@ -36,6 +38,12 @@ export function SpaceWellbeingPage({
   );
   const score = averageScore(moments);
   const previousScore = averageScore(moments.slice(1));
+  const comparisonScore = averageScore(
+    momentsForScope(journey.state.moments, {
+      scope: 'personal',
+      personSlug: person?.slug,
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-6 py-4">
@@ -54,11 +62,18 @@ export function SpaceWellbeingPage({
         variant="collective"
         score={score}
         previousScore={previousScore}
-        comparisonScore={61}
+        comparisonScore={comparisonScore ?? 61}
         activated={addons.wellbeing}
         onCapture={() => setCaptureOpen(true)}
         onActivate={() => journey.activateSpaceAddon(spaceSlug, 'wellbeing')}
       />
+      {addons.wellbeing ? (
+        <WellbeingInsightsCard
+          level="space"
+          moments={moments}
+          previousScore={previousScore}
+        />
+      ) : null}
       {addons.wellbeing && moments.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {recentMoments(moments, 12).map((moment) => (
@@ -66,7 +81,12 @@ export function SpaceWellbeingPage({
               key={moment.id}
               className="flex items-center justify-between rounded-xl border border-border/70 bg-background-2 px-3 py-3 text-2"
             >
-              <span className="min-w-0 truncate">{moment.title}</span>
+              <span className="min-w-0 truncate">
+                <span className="mr-2 text-1 uppercase tracking-[0.08em] text-muted-foreground">
+                  {t(`mode.${momentMode(moment)}`)}
+                </span>
+                {moment.title}
+              </span>
               <span className="shrink-0 text-muted-foreground">
                 {moment.score}
               </span>
