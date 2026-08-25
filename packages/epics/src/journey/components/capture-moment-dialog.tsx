@@ -38,10 +38,9 @@ import {
 import { useJourneyStore } from '../use-journey-store';
 import { RatingGrid } from './rating-grid';
 import {
-  EmotionHeartIcon,
   IdgDimensionIcon,
   MatrixHandle,
-  StandardCategoryIcon,
+  StandardCategoryMark,
 } from './wellbeing-icons';
 import '../wellbeing-accents.css';
 
