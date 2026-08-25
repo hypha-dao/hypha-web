@@ -197,6 +197,7 @@ export function insightContextFields(moment: WellbeingMoment): string[] {
   }
   if (momentMode(moment) === 'standard') {
     return [
+      moment.comment,
       moment.experience,
       moment.actionNote,
       moment.emotionNote,

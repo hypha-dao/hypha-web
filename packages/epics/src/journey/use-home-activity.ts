@@ -7,12 +7,14 @@ import type { Coherence, Document } from '@hypha-platform/core/client';
 import {
   HOME_ACTIVITY_ITEM_LIMIT,
   HOME_ACTIVITY_SPACE_LIMIT,
+  isActiveSignalRecommendation,
   sortVotes,
   votesFromDocuments,
   type HomeSignalItem,
   type HomeSpaceRef,
   type HomeVoteItem,
 } from './home-activity';
+import { fetchOutcomesBySpaceId, fetchProposalLiveness } from './vote-liveness';
 
 type CoherencePage = {
   data?: Coherence[];
@@ -37,7 +39,9 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
         .slice(0, HOME_ACTIVITY_SPACE_LIMIT),
     [spaces],
   );
-  const spaceKey = scopedSpaces.map((space) => space.slug).join(',');
+  const spaceKey = scopedSpaces
+    .map((space) => `${space.slug}:${space.web3SpaceId ?? ''}`)
+    .join(',');
   const shouldFetch =
     scopedSpaces.length > 0 && !isAuthLoading && accessTokenReady;
 
@@ -64,30 +68,52 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
             ),
           ]);
 
-          const votes = votesFromDocuments(documents ?? [], space);
-          const signals: HomeSignalItem[] = (signalsPage?.data ?? [])
-            .filter((signal) => !signal.archived)
-            .map((signal) => ({
-              id: `${space.slug}:${signal.id}`,
-              title: signal.title,
-              spaceSlug: space.slug,
-              spaceTitle: space.title,
-              signalSlug: signal.slug,
-            }));
-
-          return { votes, signals };
+          return { space, documents: documents ?? [], signalsPage };
         }),
       );
 
-      return {
-        votes: sortVotes(pages.flatMap((page) => page.votes)).slice(
-          0,
-          HOME_ACTIVITY_ITEM_LIMIT,
+      const outcomesBySpaceId = await fetchOutcomesBySpaceId(
+        scopedSpaces
+          .map((space) => space.web3SpaceId)
+          .filter((id): id is number => id != null),
+      );
+      const candidateProposalIds = pages.flatMap((page) =>
+        page.documents
+          .map((document) => document.web3ProposalId)
+          .filter((id): id is number => id != null),
+      );
+      const livenessByProposalId = await fetchProposalLiveness(
+        candidateProposalIds,
+      );
+
+      const votes = sortVotes(
+        pages.flatMap((page) =>
+          votesFromDocuments(page.documents, page.space, {
+            outcomes:
+              page.space.web3SpaceId != null
+                ? outcomesBySpaceId.get(page.space.web3SpaceId) ?? null
+                : null,
+            livenessByProposalId,
+          }),
         ),
-        signals: pages
-          .flatMap((page) => page.signals)
-          .slice(0, HOME_ACTIVITY_ITEM_LIMIT),
-      };
+      ).slice(0, HOME_ACTIVITY_ITEM_LIMIT);
+
+      const signals: HomeSignalItem[] = pages
+        .flatMap((page) =>
+          (page.signalsPage?.data ?? [])
+            .filter(isActiveSignalRecommendation)
+            .map((signal) => ({
+              id: `${page.space.slug}:${signal.id}`,
+              title: signal.title,
+              spaceSlug: page.space.slug,
+              spaceTitle: page.space.title,
+              spaceLogoUrl: page.space.logoUrl ?? null,
+              signalSlug: signal.slug,
+            })),
+        )
+        .slice(0, HOME_ACTIVITY_ITEM_LIMIT);
+
+      return { votes, signals };
     },
     {
       revalidateOnFocus: true,

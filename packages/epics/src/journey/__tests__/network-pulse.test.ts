@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isNetworkSharedDiscoverability,
   selectNetworkPulseCandidates,
+  spaceVisualsFromSpaces,
   storyContext,
   storyHref,
 } from '../network-pulse';
@@ -35,6 +36,17 @@ describe('network-pulse', () => {
     );
     expect(storyContext('a'.repeat(160))?.endsWith('…')).toBe(true);
     expect(storyContext('   ')).toBeNull();
+  });
+
+  it('indexes space logos and lead images for story tiles', () => {
+    expect(
+      spaceVisualsFromSpaces([
+        { slug: 'garden', logoUrl: '/garden.png', leadImage: '/garden.jpg' },
+        { slug: null, logoUrl: '/skip.png' },
+      ]),
+    ).toEqual({
+      garden: { logoUrl: '/garden.png', leadImage: '/garden.jpg' },
+    });
   });
 
   it('links votes and signals into the space', () => {

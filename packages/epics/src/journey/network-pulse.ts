@@ -32,9 +32,33 @@ export type NetworkStory = {
   title: string;
   spaceSlug: string;
   spaceTitle: string;
+  spaceLogoUrl?: string | null;
   targetSlug: string | null;
   context: string | null;
 };
+
+export type NetworkSpaceVisual = {
+  logoUrl?: string | null;
+  leadImage?: string | null;
+};
+
+export function spaceVisualsFromSpaces(
+  spaces: Array<{
+    slug?: string | null;
+    logoUrl?: string | null;
+    leadImage?: string | null;
+  }>,
+): Record<string, NetworkSpaceVisual> {
+  const visuals: Record<string, NetworkSpaceVisual> = {};
+  for (const space of spaces) {
+    if (!space.slug) continue;
+    visuals[space.slug] = {
+      logoUrl: space.logoUrl,
+      leadImage: space.leadImage,
+    };
+  }
+  return visuals;
+}
 
 export type NetworkPulseCandidate = {
   slug?: string | null;

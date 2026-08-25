@@ -10,7 +10,9 @@ import {
   Card,
   CardContent,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import type { NetworkPerson } from '../network-pulse';
+import { JourneyMark } from './journey-mark';
 
 function initials(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || 'P';
@@ -19,44 +21,74 @@ function initials(name: string): string {
 export function NetworkPeopleStrip({
   lang,
   people,
+  layout = 'field',
 }: {
   lang: Locale;
   people: NetworkPerson[];
+  layout?: 'field' | 'rail';
 }) {
   const t = useTranslations('Journey');
-  if (people.length === 0) return null;
+  if (people.length === 0 && layout === 'rail') return null;
 
   return (
     <Card className="craft-card">
       <CardContent className="flex flex-col gap-4 p-5">
-        <div>
-          <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
-            {t('connectTitle')}
-          </h2>
-          <p className="mt-1 text-2 text-muted-foreground">
-            {t('connectLead')}
-          </p>
+        <div className="flex items-start gap-3">
+          {layout === 'field' ? <JourneyMark kind="circles" /> : null}
+          <div>
+            <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
+              {t('connectTitle')}
+            </h2>
+            <p className="mt-1 text-2 text-muted-foreground">
+              {t('connectLead')}
+            </p>
+          </div>
         </div>
-        <ul className="flex flex-wrap gap-3">
-          {people.map((person) => (
-            <li key={person.slug}>
-              <Link
-                href={`/${lang}/profile/${person.slug}`}
-                className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-background-3/50"
-              >
-                <Avatar className="size-8 rounded-chrome">
-                  <AvatarImage src={person.avatarUrl ?? undefined} alt="" />
-                  <AvatarFallback className="rounded-chrome text-1">
-                    {initials(person.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="max-w-[12ch] truncate text-2">
-                  {person.name}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {people.length > 0 ? (
+          <ul
+            className={cn(
+              layout === 'field'
+                ? 'grid grid-cols-2 gap-3 sm:grid-cols-3'
+                : 'flex flex-col gap-1',
+            )}
+          >
+            {people.map((person) => (
+              <li key={person.slug}>
+                <Link
+                  href={`/${lang}/profile/${person.slug}`}
+                  className={cn(
+                    'craft-row-interactive rounded-xl',
+                    layout === 'field'
+                      ? 'flex flex-col items-center gap-2 px-2 py-3 text-center'
+                      : 'flex items-center gap-3 px-2 py-2',
+                  )}
+                >
+                  <Avatar
+                    className={cn(
+                      'rounded-chrome',
+                      layout === 'field' ? 'size-14' : 'size-10',
+                    )}
+                  >
+                    <AvatarImage src={person.avatarUrl ?? undefined} alt="" />
+                    <AvatarFallback className="rounded-chrome text-2">
+                      {initials(person.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span
+                    className={cn(
+                      'truncate text-2',
+                      layout === 'field' ? 'max-w-full' : 'max-w-[16ch]',
+                    )}
+                  >
+                    {person.name}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-2 text-muted-foreground">{t('connectEmpty')}</p>
+        )}
       </CardContent>
     </Card>
   );
