@@ -1,0 +1,44 @@
+.wb-scope {
+  --wb-being: oklch(0.72 0.08 75);
+  --wb-thinking: oklch(0.7 0.09 350);
+  --wb-relating: oklch(0.62 0.12 35);
+  --wb-collaborating: oklch(0.62 0.08 180);
+  --wb-acting: oklch(0.58 0.09 250);
+}
+
+.wb-dot-being {
+  background: var(--wb-being);
+}
+.wb-dot-thinking {
+  background: var(--wb-thinking);
+}
+.wb-dot-relating {
+  background: var(--wb-relating);
+}
+.wb-dot-collaborating {
+  background: var(--wb-collaborating);
+}
+.wb-dot-acting {
+  background: var(--wb-acting);
+}
+
+.wb-fill-being {
+  fill: var(--wb-being);
+  color: var(--wb-being);
+}
+.wb-fill-thinking {
+  fill: var(--wb-thinking);
+  color: var(--wb-thinking);
+}
+.wb-fill-relating {
+  fill: var(--wb-relating);
+  color: var(--wb-relating);
+}
+.wb-fill-collaborating {
+  fill: var(--wb-collaborating);
+  color: var(--wb-collaborating);
+}
+.wb-fill-acting {
+  fill: var(--wb-acting);
+  color: var(--wb-acting);
+}

@@ -75,7 +75,7 @@ export default async function ProfilePage(props: PageProps) {
       ) : null}
       <div className="mb-6 flex items-center w-full">
         <Link
-          href={`/${lang}/my-spaces`}
+          href={`/${lang}/home`}
           className="cursor-pointer flex items-center"
         >
           <ChevronLeftIcon width={16} height={16} />

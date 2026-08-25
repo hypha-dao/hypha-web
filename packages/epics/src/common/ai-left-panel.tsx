@@ -595,6 +595,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tCoherence('spaceMemory');
         case 'ecosystem-navigation':
           return tSelectNavigation('ecosystem');
+        case 'wellbeing':
+          return tCommon('wellbeing');
         default:
           return key;
       }
@@ -607,6 +609,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       energyEnabled: Boolean(spaceEnergyData?.enabled),
       coherenceEnabled: true,
       memoryEnabled: enableSpaceMemory,
+      wellbeingEnabled: true,
     }).map((item) => ({
       key: item.key === 'coherence' ? 'signals' : item.key,
       label: labelFor(item.key),
