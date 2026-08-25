@@ -76,18 +76,32 @@ function MouthOnlySmiley({
 function WorldGlobe({ x, y }: { x: number; y: number }) {
   return (
     <g transform={`translate(${x}, ${y})`}>
-      <circle r="8.4" fill="var(--neutral-11)" />
-      <path
+      <ellipse
+        rx="12.2"
+        ry="4"
+        fill="none"
+        stroke="var(--neutral-8)"
+        strokeWidth="1.15"
+        transform="rotate(-22)"
+      />
+      <circle
+        r="6.1"
         fill="var(--background-1)"
-        d="M-5.4-1.2C-3.8-4.8.2-5.6 2.4-3.6c1.1 1-0.1 2.2-1.6 2.1-1.2-.1-2 .9-1.4 1.8.8 1.2-.6 2.4-1.9 1.7-1.6-.8-2.2-2.8-2.9-2Z"
+        stroke="var(--neutral-11)"
+        strokeWidth="1.25"
+      />
+      <ellipse
+        rx="2.3"
+        ry="6.1"
+        fill="none"
+        stroke="var(--neutral-11)"
+        strokeWidth="0.85"
       />
       <path
-        fill="var(--background-1)"
-        d="M1.2-2.1C3.4-3.6 6.2-1.8 5.8 1.1 5.5 3.2 3.4 4.4 1.8 3.6 0.4 2.9.1.8 1.2-2.1Z"
-      />
-      <path
-        fill="var(--background-1)"
-        d="M-1.8 3.4c1.4.2 2.6 1.6 1.6 2.8-1.2 1.4-3.6.4-3.2-1.2.2-.8.9-1.6 1.6-1.6Z"
+        d="M-6.1 0 H6.1 M-4.9-3.1 H4.9 M-4.9 3.1 H4.9"
+        fill="none"
+        stroke="var(--neutral-11)"
+        strokeWidth="0.75"
       />
     </g>
   );
@@ -110,12 +124,12 @@ export function WellbeingGauge({
     comparisonScore != null ? polar(cx, cy, outerR, comparisonScore) : null;
   const innerSweep = Math.max(0.04, displayScore / 100);
   const arcLen = Math.PI * innerR;
-  const tick = polar(cx, cy, outerR, 50);
 
   return (
     <svg
       viewBox="0 0 240 148"
-      className={cn('w-full', className)}
+      preserveAspectRatio="xMidYMid meet"
+      className={cn('aspect-[240/148] h-auto w-full', className)}
       role="img"
       aria-label={
         activated
@@ -130,12 +144,6 @@ export function WellbeingGauge({
         fill="none"
         stroke="var(--neutral-6)"
         strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d={`M${tick.x} ${tick.y - 5} L${tick.x} ${tick.y + 2}`}
-        stroke="var(--neutral-8)"
-        strokeWidth="1.4"
         strokeLinecap="round"
       />
 

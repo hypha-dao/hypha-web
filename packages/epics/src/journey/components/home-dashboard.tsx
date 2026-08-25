@@ -21,8 +21,16 @@ import {
   CardContent,
   Container,
 } from '@hypha-platform/ui';
-import { ArrowRight, Bell, Compass, Vote, Wallet } from 'lucide-react';
+import {
+  ArrowRight,
+  Bell,
+  Compass,
+  Sparkles,
+  Vote,
+  Wallet,
+} from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useAiPanel } from '../../common/human-chat-panel-context';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { filterSpaces } from '../../spaces/components/my-filtered-spaces';
 import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
@@ -45,7 +53,7 @@ import { NetworkPeopleStrip } from './network-people-strip';
 import { HomeSpaceConstellation } from './home-space-constellation';
 import { JourneyMark } from './journey-mark';
 
-const SPACE_PREVIEW_LIMIT = 6;
+const SPACE_PREVIEW_LIMIT = 8;
 const WALLET_PREVIEW_LIMIT = 3;
 const MIN_REWARD_CLAIM_VALUE = 0.01;
 
@@ -78,12 +86,43 @@ function personInitial(
   return firstName(person).slice(0, 1).toUpperCase() || 'Y';
 }
 
+function PersonalAiCard() {
+  const t = useTranslations('Journey');
+  const { openAiPanel } = useAiPanel();
+
+  return (
+    <Card className="craft-card">
+      <CardContent className="flex flex-col gap-3 p-5">
+        <div className="flex items-start gap-3">
+          <span className="craft-icon-box shrink-0 text-accent-11" aria-hidden>
+            <Sparkles className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
+              {t('personalAiTitle')}
+            </h2>
+            <p className="mt-1 text-2 leading-relaxed text-muted-foreground">
+              {t('personalAiLead')}
+            </p>
+          </div>
+        </div>
+        <Button onClick={() => openAiPanel()} className="self-start rounded-xl">
+          <Sparkles className="size-4" aria-hidden />
+          {t('personalAiCta')}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function HomeDashboard({
   lang,
   spaces,
+  aiChatEnabled = true,
 }: {
   lang: Locale;
   spaces: Space[];
+  aiChatEnabled?: boolean;
 }) {
   const t = useTranslations('Journey');
   const format = useFormatter();
@@ -197,41 +236,9 @@ export function HomeDashboard({
   ];
 
   return (
-    <Container className="flex min-w-0 flex-col gap-8 py-8 md:py-10">
-      <header className="flex items-start gap-4">
-        {person?.slug ? (
-          <Link
-            href={`/${lang}/profile/${person.slug}`}
-            className="shrink-0"
-            aria-label={t('profileCta')}
-          >
-            <Avatar className="size-14 rounded-chrome">
-              <AvatarImage src={person.avatarUrl} alt="" />
-              <AvatarFallback className="rounded-chrome text-3">
-                {personInitial(person)}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
-        ) : (
-          <JourneyMark kind="circles" className="size-14" />
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-1 font-medium uppercase tracking-[0.08em] text-accent-11">
-            {t('homeKicker')}
-          </p>
-          <h1 className="craft-page-title max-w-[20ch] text-balance [font-family:var(--font-family-heading)] text-7 font-semibold tracking-[-0.02em] md:text-8">
-            {name
-              ? t('homeTitleNamed', { greeting, name })
-              : t('homeTitle', { greeting })}
-          </h1>
-          <p className="mt-2 max-w-[46ch] text-3 leading-relaxed text-muted-foreground">
-            {t('homeLead')}
-          </p>
-        </div>
-      </header>
-
-      <div className="grid items-start gap-8 lg:grid-cols-12">
-        <div className="flex min-w-0 flex-col gap-8 lg:col-span-8">
+    <Container size="lg" className="flex min-w-0 flex-col gap-8 py-8 md:py-10">
+      <div className="grid items-start gap-8 xl:grid-cols-12">
+        <aside className="order-2 flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-3 xl:sticky xl:top-6 xl:self-start">
           <HomeSpaceConstellation
             lang={lang}
             spaces={previewSpaces}
@@ -239,6 +246,41 @@ export function HomeDashboard({
             hiddenCount={hiddenSpaceCount}
             isAuthenticated={isAuthenticated}
           />
+          {aiChatEnabled ? <PersonalAiCard /> : null}
+        </aside>
+
+        <div className="order-1 flex min-w-0 flex-col gap-8 xl:order-2 xl:col-span-6">
+          <header className="flex items-start gap-4">
+            {person?.slug ? (
+              <Link
+                href={`/${lang}/profile/${person.slug}`}
+                className="shrink-0"
+                aria-label={t('profileCta')}
+              >
+                <Avatar className="size-14 rounded-chrome">
+                  <AvatarImage src={person.avatarUrl} alt="" />
+                  <AvatarFallback className="rounded-chrome text-3">
+                    {personInitial(person)}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            ) : (
+              <JourneyMark kind="circles" className="size-14" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-1 font-medium uppercase tracking-[0.08em] text-accent-11">
+                {t('homeKicker')}
+              </p>
+              <h1 className="craft-page-title max-w-[20ch] text-balance [font-family:var(--font-family-heading)] text-7 font-semibold tracking-[-0.02em] md:text-8">
+                {name
+                  ? t('homeTitleNamed', { greeting, name })
+                  : t('homeTitle', { greeting })}
+              </h1>
+              <p className="mt-2 max-w-[46ch] text-3 leading-relaxed text-muted-foreground">
+                {t('homeLead')}
+              </p>
+            </div>
+          </header>
 
           <section className="flex flex-col gap-4">
             <div className="flex items-start gap-3">
@@ -358,7 +400,18 @@ export function HomeDashboard({
           </section>
         </div>
 
-        <aside className="flex flex-col gap-4 lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
+        <aside className="order-3 flex flex-col gap-4 xl:col-span-3 xl:sticky xl:top-6 xl:self-start">
+          <WellbeingScoreCard
+            variant="personal"
+            score={score}
+            previousScore={previousScore}
+            comparisonScore={57}
+            activated={journey.state.personalActivated}
+            onCapture={() => setCaptureOpen(true)}
+            onActivate={journey.activatePersonal}
+            compact
+          />
+
           <Card className="craft-card">
             <CardContent className="flex flex-col gap-4 p-5">
               <p className="inline-flex items-center gap-2 text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -424,17 +477,6 @@ export function HomeDashboard({
             </CardContent>
           </Card>
 
-          <WellbeingScoreCard
-            variant="personal"
-            score={score}
-            previousScore={previousScore}
-            comparisonScore={57}
-            activated={journey.state.personalActivated}
-            onCapture={() => setCaptureOpen(true)}
-            onActivate={journey.activatePersonal}
-            compact
-          />
-
           <Card className="craft-card">
             <CardContent className="flex flex-col gap-4 p-5">
               <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
@@ -443,7 +485,7 @@ export function HomeDashboard({
               <p className="text-2 leading-relaxed text-muted-foreground">
                 {t('createLead')}
               </p>
-              <Button asChild variant="ghost" colorVariant="neutral">
+              <Button asChild className="self-start rounded-xl">
                 <Link href={getOnboardingPath(lang)}>
                   {t('createCta')}
                   <ArrowRight className="size-4" aria-hidden />

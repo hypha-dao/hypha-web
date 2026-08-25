@@ -2,11 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import {
-  DEFAULT_SPACE_AVATAR_IMAGE,
-  DEFAULT_SPACE_LEAD_IMAGE,
-  Space,
-} from '@hypha-platform/core/client';
+import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Avatar,
@@ -41,11 +37,11 @@ export function HomeSpaceConstellation({
   const tCommon = useTranslations('Common');
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
+    <section className="flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-3">
           <JourneyMark kind="circles" />
-          <div>
+          <div className="min-w-0">
             <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
               {t('spacesTitle')}
             </h2>
@@ -62,54 +58,46 @@ export function HomeSpaceConstellation({
       </div>
 
       {isLoading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <ul className="-mx-1 flex gap-2 overflow-x-auto pb-1 xl:mx-0 xl:flex-col xl:overflow-visible xl:pb-0">
           {[0, 1, 2].map((key) => (
-            <div key={key} className="craft-card overflow-hidden">
-              <div className="journey-field h-24" />
-              <div className="p-3 pt-8">
-                <Skeleton loading className="h-4 w-28" />
-              </div>
-            </div>
+            <li
+              key={key}
+              className="flex w-[13.5rem] shrink-0 items-center gap-3 rounded-xl px-2 py-2 xl:w-auto"
+            >
+              <Skeleton loading className="size-10 shrink-0 rounded-chrome" />
+              <Skeleton loading className="h-4 w-24" />
+            </li>
           ))}
-        </div>
+        </ul>
       ) : spaces.length > 0 ? (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="-mx-1 flex gap-1 overflow-x-auto pb-1 xl:mx-0 xl:flex-col xl:overflow-visible xl:pb-0">
           {spaces.map((space) => (
-            <li key={space.id}>
+            <li key={space.id} className="w-[13.5rem] shrink-0 xl:w-auto">
               <Link
                 href={getDhoPathDefaultLanding(lang, space.slug as string)}
-                className="craft-card-interactive relative flex flex-col overflow-hidden"
+                className="craft-row-interactive flex items-center gap-3 rounded-xl px-2 py-2"
               >
-                <div className="relative h-24 overflow-hidden">
-                  <img
-                    src={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+                <Avatar className="size-10 shrink-0 rounded-chrome">
+                  <AvatarImage
+                    src={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
                     alt=""
-                    className="size-full object-cover"
                   />
-                </div>
-                <div className="flex items-start gap-3 px-3.5 pb-3.5 pt-2">
-                  <Avatar className="-mt-8 size-12 shrink-0 rounded-chrome border border-background-2">
-                    <AvatarImage
-                      src={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
-                      alt=""
-                    />
-                    <AvatarFallback className="rounded-chrome text-2">
-                      {spaceInitial(space.title)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 pt-6">
-                    <p className="truncate text-2 font-medium">{space.title}</p>
-                    <p className="text-1 text-muted-foreground">
-                      {space.memberCount ?? 0} {tCommon('Members')}
-                    </p>
-                  </div>
+                  <AvatarFallback className="rounded-chrome text-2">
+                    {spaceInitial(space.title)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate text-2 font-medium">{space.title}</p>
+                  <p className="text-1 text-muted-foreground">
+                    {space.memberCount ?? 0} {tCommon('Members')}
+                  </p>
                 </div>
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <div className="craft-card flex flex-col items-start gap-3 p-5">
+        <div className="craft-card flex flex-col items-start gap-3 p-4">
           <p className="text-2 text-muted-foreground">{t('spacesEmpty')}</p>
           <p className="text-1 text-muted-foreground">{t('spacesEmptyHint')}</p>
           <CreateSpaceButton lang={lang} isAuthenticated={isAuthenticated} />

@@ -79,8 +79,8 @@ export function WellbeingScoreCard({
 
         <div
           className={cn(
-            'mx-auto flex w-full flex-col items-center',
-            compact ? 'max-w-[13rem]' : 'max-w-[20rem]',
+            'flex w-full flex-col items-center',
+            compact && 'mx-auto max-w-[13rem]',
           )}
         >
           <WellbeingGauge
@@ -143,13 +143,8 @@ export function WellbeingScoreCard({
           </div>
         )}
 
-        <p className="flex items-center justify-center gap-2 text-1 uppercase tracking-[0.22em] text-muted-foreground">
-          <span>{t('poweredBy')}</span>
-          <img
-            src="/wellbeing/realifex-wordmark.png"
-            alt="REALIFEX"
-            className="h-3 w-auto invert dark:invert-0"
-          />
+        <p className="text-center text-1 uppercase tracking-[0.22em] text-muted-foreground">
+          {t('poweredBy')} REALIFEX
         </p>
       </CardContent>
     </Card>
