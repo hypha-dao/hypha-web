@@ -40,7 +40,7 @@ import { RatingGrid } from './rating-grid';
 import {
   IdgDimensionIcon,
   MatrixHandle,
-  StandardCategoryMark,
+  StandardCategoryIcon,
 } from './wellbeing-icons';
 import '../wellbeing-accents.css';
 
@@ -543,7 +543,7 @@ export function CaptureMomentDialog({
             feeling={feeling}
             handle={
               <MatrixHandle className="wb-dot-emotion">
-                <EmotionHeartIcon className="size-4" />
+                <StandardCategoryIcon category="emotion" className="size-4" />
               </MatrixHandle>
             }
             onChange={({ felt: nextFelt, impact: nextImpact }) => {
