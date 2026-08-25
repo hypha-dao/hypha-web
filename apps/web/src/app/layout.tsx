@@ -241,6 +241,8 @@ export default async function RootLayout({
   const navItems = journeyUxEnabled
     ? [
         { label: navHomeLabel, href: journeyHomeHref },
+        { label: navMySpacesLabel, href: `/${locale}/my-spaces` },
+        { label: navMyWalletLabel, href: `/${locale}/my-wallet` },
         { label: navNetworkLabel, href: `/${locale}/network` },
       ]
     : [
