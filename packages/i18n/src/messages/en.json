@@ -6,6 +6,7 @@
     "delegatedVotingMemberLabel": "Delegated voting member",
     "Treasury": "Treasury",
     "Energy": "Energy",
+    "wellbeing": "Wellbeing",
     "Agreements": "Agreements",
     "Spaces": "Spaces",
     "loadMore": "Load more",
@@ -18,7 +19,7 @@
     "signIn": "Please sign in to use this feature.",
     "joinSpaceToUse": "Please join this space to use this feature.",
     "back": "Back",
-    "home": "Dashboard",
+    "home": "Home",
     "remove": "Remove",
     "by": "by",
     "copyWalletAddress": "Copy wallet address",
@@ -108,7 +109,9 @@
     "signIn": "Sign in",
     "getStarted": "Get started",
     "ecosystemLogo": "Ecosystem Logo",
-    "continueAdventure": "Continue your adventure"
+    "continueAdventure": "Continue your adventure",
+    "home": "Home",
+    "settings": "Settings"
   },
   "NetworkFeedback": {
     "triggerLabel": "Shape Hypha",
@@ -4437,5 +4440,221 @@
     "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
     "errorGenericTitle": "Something went wrong",
     "errorGenericDescription": "We could not confirm this email. Please try again later."
+  },
+  "Journey": {
+    "homeKicker": "Start with you",
+    "homeTitle": "{greeting}. The next move is yours.",
+    "homeTitleNamed": "{greeting}, {name}. The next move is yours.",
+    "homeLead": "Your spaces, your means, and how life is feeling — gathered so you can act with a clear heart.",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "greetingNight": "Still here",
+    "loading": "Gathering your spaces…",
+    "createTitle": "Create a space",
+    "createLead": "AI walks with you through every step — purpose, people, and how you will decide together.",
+    "createCta": "Begin with AI",
+    "profileTitle": "You",
+    "profileLead": "Your face, your settings, your way of showing up.",
+    "profileCta": "Open profile",
+    "spacesTitle": "Your spaces",
+    "spacesLead": "The circles you already belong to. Step in when you are ready.",
+    "spacesEmpty": "No space is holding you yet.",
+    "spacesEmptyHint": "Create one, or walk the network until a circle feels like home.",
+    "viewAllSpaces": "See all spaces",
+    "walletTitle": "Your means",
+    "walletLead": "Tokens are how we resource the work. Keep them close, spend them with care.",
+    "walletCta": "Open wallet",
+    "walletEmpty": "Nothing waiting to claim. That can be a kind of quiet.",
+    "walletRewards": "There is something ready for you to claim.",
+    "activityTitle": "What you have been living",
+    "activityLead": "Moments you named. They become the path.",
+    "activityEmpty": "Capture a moment and this page will start to remember you.",
+    "networkTitle": "The Hypha network",
+    "networkLead": "A living map of people building new models so we can all thrive.",
+    "networkCta": "Walk the network",
+    "networkKicker": "Collective action",
+    "networkPageTitle": "Find the circles already moving",
+    "networkPageLead": "Every space is a practice. Browse, feel into a place, and join when something opens.",
+    "nextMoveCreate": "Ready to give a vision a home?",
+    "nextMoveCreateHint": "AI will stay with you from the first sentence to the first vote.",
+    "spaceKicker": "This circle",
+    "spaceHeading": "Where {title} is heading",
+    "spaceLead": "See the next human step, how the circle feels, and the ecosystem you are growing together.",
+    "nextStepsTitle": "Your next steps",
+    "nextStepsLead": "Not a backlog. A path. Take the one that wants you now.",
+    "step": {
+      "invite": "Invite the people who make this real",
+      "agree": "Name the first agreement",
+      "ecosystem": "See yourselves on the map",
+      "wellbeing": "Notice how the circle feels",
+      "treasury": "Resource the work"
+    },
+    "stepHint": {
+      "invite": "A space comes alive when more than one heart is in it.",
+      "agree": "Write what you will hold together. Keep it human.",
+      "ecosystem": "Your nested spaces and relationships, in one view.",
+      "wellbeing": "Collective wellbeing is an add-on — paid in tokens, lived in moments.",
+      "treasury": "Means follow meaning. Look at what you already hold."
+    },
+    "addonsTitle": "Add-ons for this space",
+    "addonsLead": "Activate the verticals you need — wellbeing first, then energy, water, culture.",
+    "addon": {
+      "wellbeing": "Holistic wellbeing",
+      "energy": "Energy",
+      "water": "Water",
+      "culture": "Culture"
+    },
+    "addonHint": {
+      "wellbeing": "Capture moments together. Turn feeling into collective intelligence.",
+      "energy": "Share, settle, and see energy as a commons.",
+      "water": "A coming vertical for places that steward water.",
+      "culture": "A coming vertical for living culture and memory."
+    },
+    "comingSoon": "Coming soon",
+    "activateWithTokens": "Activate with {price} HYPHA",
+    "activated": "Active in this space",
+    "openAddon": "Open",
+    "enableEnergy": "Enable energy",
+    "mapTitle": "Ecosystem view",
+    "mapLead": "A human map of the circles growing this work.",
+    "mapHint": "Spaces appear as they share a place.",
+    "mapTotals": "{places} places · {hubs} hubs",
+    "dimension": {
+      "being": "Being",
+      "thinking": "Thinking",
+      "relating": "Relating",
+      "collaborating": "Collaborating",
+      "acting": "Acting"
+    }
+  },
+  "Wellbeing": {
+    "personalKicker": "How your life feels",
+    "collectiveKicker": "How this circle feels",
+    "collectiveLead": "When a space activates wellbeing, moments become a shared compass for action.",
+    "lockedTitle": "Waiting to be named",
+    "lockedLead": "Wellbeing Intelligence is an add-on. Unlock it with tokens and start capturing the moments that shape how you thrive.",
+    "tokenNote": "Paid with HYPHA tokens. You can turn it off again in settings later.",
+    "unlockCta": "Unlock with {price} HYPHA",
+    "personalScore": "Wellbeing score",
+    "collectiveScore": "Collective wellbeing",
+    "outOf": "out of 100",
+    "youLabel": "You · {score}",
+    "leadersLabel": "People like you · {score}",
+    "fieldLabel": "This field · {score}",
+    "captureCta": "Capture a moment",
+    "rateCta": "Rate a moment",
+    "trendUp": "+{delta} since last",
+    "trendDown": "−{delta} since last",
+    "captureTitle": "Capture a moment",
+    "captureQuestion": "What have you been practising?",
+    "practiceQuestion": "What have you been practising in {dimension}?",
+    "rateQuestion": "How did that land with you?",
+    "rateHint": "Place one mark: how it felt, and how much it changes the outside.",
+    "dragHint": "Drag to where it landed.",
+    "axisFeltLow": "Draining",
+    "axisFeltHigh": "Energising",
+    "axisImpactLow": "Inner only",
+    "axisImpactHigh": "Outer change",
+    "nameLabel": "Name the moment",
+    "namePlaceholder": "A few words while it is still true",
+    "suggest": "Suggest",
+    "saveMoment": "Save moment",
+    "feeling": {
+      "thriving": "Thriving",
+      "deepening": "Deepening",
+      "steadying": "Steadying",
+      "footing": "Finding footing",
+      "tending": "Tending"
+    },
+    "insight": {
+      "thriving": "This is landing in your life. Keep the door open.",
+      "deepening": "Your inner work is starting to show up in what you decide.",
+      "steadying": "Your circle is solid, but no new door has opened lately.",
+      "footing": "The last moment did not land as well. Worth naming why.",
+      "tending": "Something wants care. You do not have to rush it."
+    },
+    "dimension": {
+      "being": "Being",
+      "thinking": "Thinking",
+      "relating": "Relating",
+      "collaborating": "Collaborating",
+      "acting": "Acting"
+    },
+    "dimensionSub": {
+      "being": "Cultivating our inner life",
+      "thinking": "Understanding our complex world",
+      "relating": "Caring for others and the world",
+      "collaborating": "Building trust and working together",
+      "acting": "Leading and enabling change"
+    },
+    "practice": {
+      "being": {
+        "presence": "Presence",
+        "innerLife": "Inner life",
+        "grounding": "Grounding",
+        "rest": "Rest",
+        "selfCompassion": "Self-compassion"
+      },
+      "thinking": {
+        "criticalThinking": "Critical thinking",
+        "complexityAwareness": "Complexity awareness",
+        "perspectiveSkills": "Perspective skills",
+        "senseMaking": "Sense-making",
+        "longTermOrientation": "Long-term orientation & visioning"
+      },
+      "relating": {
+        "empathy": "Empathy",
+        "humility": "Humility",
+        "care": "Care",
+        "interconnection": "Interconnection"
+      },
+      "collaborating": {
+        "trust": "Trust",
+        "coCreation": "Co-creation",
+        "inclusion": "Inclusion",
+        "communication": "Communication"
+      },
+      "acting": {
+        "courage": "Courage",
+        "perseverance": "Perseverance",
+        "creativity": "Creativity",
+        "stewardship": "Stewardship"
+      }
+    },
+    "suggestTitle": {
+      "being": {
+        "presence": "I came back to myself",
+        "innerLife": "I tended my inner life",
+        "grounding": "I found ground again",
+        "rest": "I let myself rest",
+        "selfCompassion": "I was kind to myself"
+      },
+      "thinking": {
+        "criticalThinking": "I questioned a claim I had accepted",
+        "complexityAwareness": "I held more than one truth",
+        "perspectiveSkills": "I saw it from another side",
+        "senseMaking": "Something finally made sense",
+        "longTermOrientation": "I chose the longer view"
+      },
+      "relating": {
+        "empathy": "I felt with someone",
+        "humility": "I let go of being right",
+        "care": "I offered care",
+        "interconnection": "I felt part of something larger"
+      },
+      "collaborating": {
+        "trust": "Trust grew in the room",
+        "coCreation": "We made something together",
+        "inclusion": "Someone was brought in",
+        "communication": "We said the true thing"
+      },
+      "acting": {
+        "courage": "I took the step anyway",
+        "perseverance": "I stayed with it",
+        "creativity": "A new form appeared",
+        "stewardship": "I looked after what we hold"
+      }
+    }
   }
 }

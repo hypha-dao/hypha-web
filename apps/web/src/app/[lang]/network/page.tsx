@@ -9,8 +9,11 @@ import {
   Space,
   SpaceOrder,
 } from '@hypha-platform/core/server';
-import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
-import { ExploreSpaces } from '@hypha-platform/epics';
+import {
+  getEnableJourneyUx,
+  getEnableNetworkMapAsync,
+} from '@hypha-platform/feature-flags';
+import { ExploreSpaces, NetworkJourneyIntro } from '@hypha-platform/epics';
 import { redirect } from 'next/navigation';
 
 type PageProps = {
@@ -54,7 +57,10 @@ export default async function Index(props: PageProps) {
       : SPACE_ORDERS[0];
 
   const { lang } = params;
-  const enableNetworkMap = await getEnableNetworkMapAsync();
+  const [enableNetworkMap, journeyUxEnabled] = await Promise.all([
+    getEnableNetworkMapAsync(),
+    getEnableJourneyUx(),
+  ]);
   const viewParam = searchParams?.view;
 
   if (enableNetworkMap && viewParam !== 'list' && viewParam !== 'map') {
@@ -88,6 +94,7 @@ export default async function Index(props: PageProps) {
 
   return (
     <Container className="flex flex-col gap-9 py-9">
+      {journeyUxEnabled ? <NetworkJourneyIntro /> : null}
       <ExploreSpaces
         lang={lang}
         query={query}
@@ -96,6 +103,7 @@ export default async function Index(props: PageProps) {
         order={order}
         uniqueCategoryGroups={uniqueCategoryGroups}
         enableNetworkMap={enableNetworkMap}
+        hideHeading={journeyUxEnabled}
       />
     </Container>
   );

@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Compass,
   Globe2,
+  House,
   LayoutGrid,
   Loader2,
   LogOutIcon,
@@ -81,6 +82,11 @@ const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 function resolveNavItemIcon(href?: string) {
   if (!href) {
     return null;
+  }
+  if (href.includes('/home')) {
+    return (
+      <House className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    );
   }
   if (href.includes('/my-spaces')) {
     return (

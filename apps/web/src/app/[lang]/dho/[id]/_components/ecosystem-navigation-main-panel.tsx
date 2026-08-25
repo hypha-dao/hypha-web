@@ -12,6 +12,7 @@ import {
   useCanMutateInSpace,
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
+  EcosystemWorldMap,
   getDhoSpaceContextPath,
 } from '@hypha-platform/epics';
 import {
@@ -409,23 +410,35 @@ export function EcosystemNavigationMainPanel({
           </div>
         </>
       ) : (
-        <EcosystemNavigationShell
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          tabs={tabs}
-          beforeTabsContent={
-            <header className="craft-page-header">
-              <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-                <span>{t('ecosystem')}</span>
-                <span className="text-3 font-normal text-muted-foreground">
-                  {format.number(ecosystemSpaceCount)}
-                </span>
-              </h1>
-              <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
-            </header>
-          }
-          visualizationClassName="min-h-0"
-        />
+        <>
+          <EcosystemWorldMap
+            lang={lang}
+            spaces={
+              nonArchivedSpaces.length > 0
+                ? nonArchivedSpaces
+                : currentSpace
+                ? [currentSpace]
+                : []
+            }
+          />
+          <EcosystemNavigationShell
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={tabs}
+            beforeTabsContent={
+              <header className="craft-page-header">
+                <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
+                  <span>{t('ecosystem')}</span>
+                  <span className="text-3 font-normal text-muted-foreground">
+                    {format.number(ecosystemSpaceCount)}
+                  </span>
+                </h1>
+                <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
+              </header>
+            }
+            visualizationClassName="min-h-0"
+          />
+        </>
       )}
     </section>
   );

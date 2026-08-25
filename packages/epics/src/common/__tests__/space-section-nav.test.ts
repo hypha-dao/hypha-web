@@ -18,19 +18,20 @@ describe('buildSpaceSectionNavItems', () => {
     const keys = items.map((i) => i.key);
     expect(keys).toEqual([
       'overview',
-      'coherence',
-      'agreements',
-      'treasury',
-      'calendar',
-      'members',
-      'rewards',
       'ecosystem-navigation',
+      'agreements',
+      'members',
+      'treasury',
+      'coherence',
+      'calendar',
+      'rewards',
     ]);
     expect(items.every((i) => i.group === SPACE_SECTION_NAV_GROUP[i.key])).toBe(
       true,
     );
-    expect(SPACE_SECTION_NAV_GROUP.coherence).toBe('primary');
-    expect(SPACE_SECTION_NAV_GROUP.members).toBe('more');
+    expect(SPACE_SECTION_NAV_GROUP['ecosystem-navigation']).toBe('primary');
+    expect(SPACE_SECTION_NAV_GROUP.members).toBe('primary');
+    expect(SPACE_SECTION_NAV_GROUP.coherence).toBe('more');
     expect(items.find((i) => i.key === 'overview')?.active).toBe(true);
     expect(items.filter((i) => i.active)).toHaveLength(1);
   });
@@ -42,18 +43,21 @@ describe('buildSpaceSectionNavItems', () => {
       memoryEnabled: false,
       pipelineEnabled: false,
       energyEnabled: false,
+      wellbeingEnabled: false,
     });
     const keys = items.map((i) => i.key);
     expect(keys).not.toContain('coherence');
     expect(keys).not.toContain('memory');
     expect(keys).not.toContain('pipeline');
     expect(keys).not.toContain('energy');
+    expect(keys).not.toContain('wellbeing');
   });
 
   it.each([
     ['pipeline', { pipelineEnabled: true }],
     ['energy', { energyEnabled: true }],
     ['memory', { memoryEnabled: true }],
+    ['wellbeing', { wellbeingEnabled: true }],
   ] as const)('includes %s when enabled', (key, flags) => {
     const items = buildSpaceSectionNavItems({ ...base, ...flags });
     expect(items.some((i) => i.key === key)).toBe(true);
@@ -72,6 +76,7 @@ describe('buildSpaceSectionNavItems', () => {
       'rewards',
       'memory',
       'ecosystem-navigation',
+      'wellbeing',
     ];
     for (const key of keys) {
       const items = buildSpaceSectionNavItems({
@@ -80,6 +85,7 @@ describe('buildSpaceSectionNavItems', () => {
         pipelineEnabled: true,
         energyEnabled: true,
         memoryEnabled: true,
+        wellbeingEnabled: true,
       });
       const active = items.filter((i) => i.active);
       expect(active).toHaveLength(1);
@@ -105,37 +111,37 @@ describe('partitionSpaceSectionNavForTabs', () => {
     const { primary, more } = partitionSpaceSectionNavForTabs(items);
     expect(primary.map((i) => i.key)).toEqual([
       'overview',
-      'coherence',
+      'ecosystem-navigation',
       'agreements',
+      'members',
       'treasury',
-      'calendar',
     ]);
     expect(more.map((i) => i.key)).toEqual([
-      'members',
+      'coherence',
+      'calendar',
       'rewards',
-      'ecosystem-navigation',
     ]);
   });
 
   it('promotes an active More item into the last primary slot', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
-      pathname: '/en/dho/hypha/ecosystem-navigation',
+      pathname: '/en/dho/hypha/calendar',
       memoryEnabled: true,
     });
     const { primary, more } = partitionSpaceSectionNavForTabs(items);
 
     expect(primary.map((i) => i.key)).toEqual([
       'overview',
-      'coherence',
-      'agreements',
-      'treasury',
       'ecosystem-navigation',
+      'agreements',
+      'members',
+      'calendar',
     ]);
     expect(primary.at(-1)?.active).toBe(true);
     expect(more.map((i) => i.key)).toEqual([
-      'calendar',
-      'members',
+      'treasury',
+      'coherence',
       'rewards',
       'memory',
     ]);
@@ -143,29 +149,27 @@ describe('partitionSpaceSectionNavForTabs', () => {
   });
 
   it('restores default grouping when navigating back to a primary key', () => {
-    const onEcosystem = partitionSpaceSectionNavForTabs(
+    const onCalendar = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems({
         ...base,
-        pathname: '/en/dho/hypha/ecosystem-navigation',
+        pathname: '/en/dho/hypha/calendar',
       }),
     );
-    expect(onEcosystem.primary.map((i) => i.key)).toContain(
-      'ecosystem-navigation',
-    );
-    expect(onEcosystem.more.map((i) => i.key)).toContain('calendar');
+    expect(onCalendar.primary.map((i) => i.key)).toContain('calendar');
+    expect(onCalendar.more.map((i) => i.key)).toContain('treasury');
 
     const onOverview = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems(base),
     );
     expect(onOverview.primary.map((i) => i.key)).toEqual([
       'overview',
-      'coherence',
+      'ecosystem-navigation',
       'agreements',
+      'members',
       'treasury',
-      'calendar',
     ]);
-    expect(onOverview.more.map((i) => i.key)).toContain('ecosystem-navigation');
-    expect(onOverview.more.map((i) => i.key)).not.toContain('calendar');
+    expect(onOverview.more.map((i) => i.key)).toContain('calendar');
+    expect(onOverview.more.map((i) => i.key)).not.toContain('treasury');
   });
 
   it('promotes gated More items when they are active and enabled', () => {
@@ -178,7 +182,7 @@ describe('partitionSpaceSectionNavForTabs', () => {
     );
     expect(primary.at(-1)?.key).toBe('pipeline');
     expect(primary.at(-1)?.active).toBe(true);
-    expect(more.map((i) => i.key)).toContain('calendar');
+    expect(more.map((i) => i.key)).toContain('treasury');
     expect(more.map((i) => i.key)).not.toContain('pipeline');
   });
 
@@ -189,10 +193,12 @@ describe('partitionSpaceSectionNavForTabs', () => {
       pipelineEnabled: false,
       energyEnabled: false,
       memoryEnabled: false,
+      wellbeingEnabled: false,
     });
     const { primary, more } = partitionSpaceSectionNavForTabs(items);
     expect([...primary, ...more].map((i) => i.key)).not.toContain('pipeline');
     expect([...primary, ...more].map((i) => i.key)).not.toContain('energy');
     expect([...primary, ...more].map((i) => i.key)).not.toContain('memory');
+    expect([...primary, ...more].map((i) => i.key)).not.toContain('wellbeing');
   });
 });

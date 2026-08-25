@@ -32,6 +32,7 @@ import {
   getEnableAiChat,
   getEnableSpaceMemory,
   getEnableHumanChat,
+  getEnableJourneyUx,
 } from '@hypha-platform/feature-flags';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
@@ -102,6 +103,8 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
+  let journeyUxEnabled = true;
+  let navHomeLabel = 'Home';
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
@@ -126,6 +129,7 @@ export default async function RootLayout({
     aiChatEnabledResult,
     spaceMemoryEnabledResult,
     humanChatEnabledResult,
+    journeyUxEnabledResult,
   ] = await Promise.allSettled([
     getShowLanguageSelect(),
     getLocale(),
@@ -135,6 +139,7 @@ export default async function RootLayout({
     getEnableAiChat(),
     getEnableSpaceMemory(),
     getEnableHumanChat(),
+    getEnableJourneyUx(),
   ]);
 
   if (languageSelectResult.status === 'fulfilled') {
@@ -163,6 +168,7 @@ export default async function RootLayout({
 
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
+    navHomeLabel = tNav('home');
     navMySpacesLabel = tNav('mySpaces');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
@@ -222,6 +228,29 @@ export default async function RootLayout({
     );
   }
 
+  if (journeyUxEnabledResult.status === 'fulfilled') {
+    journeyUxEnabled = journeyUxEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve journeyUxEnabled',
+      journeyUxEnabledResult.reason,
+    );
+  }
+
+  const journeyHomeHref = `/${locale}/home`;
+  const navItems = journeyUxEnabled
+    ? [
+        { label: navHomeLabel, href: journeyHomeHref },
+        { label: navNetworkLabel, href: `/${locale}/network` },
+      ]
+    : [
+        { label: navMySpacesLabel, href: `/${locale}/my-spaces` },
+        { label: navMyWalletLabel, href: `/${locale}/my-wallet` },
+        { label: navNetworkLabel, href: `/${locale}/network` },
+      ];
+  const baseRedirectPath = journeyUxEnabled ? '/home' : '/my-spaces';
+  const menuLogoHref = journeyUxEnabled ? journeyHomeHref : ROOT_URL;
+
   return (
     <Html lang={locale} className={hyphaFontVariables}>
       <ScrollUp />
@@ -273,7 +302,7 @@ export default async function RootLayout({
                           <div className="sticky top-0 z-30 shrink-0">
                             <ConnectedMenuTop
                               aiChatEnabled={aiChatEnabled}
-                              logoHref={ROOT_URL}
+                              logoHref={menuLogoHref}
                               openMenuLabel={navOpenMenuLabel}
                               closeMenuLabel={navCloseMenuLabel}
                               leadingAction={
@@ -294,21 +323,8 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
-                                  navItems={[
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
+                                  baseRedirectPath={baseRedirectPath}
+                                  navItems={navItems}
                                   showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
@@ -326,21 +342,8 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
-                                  navItems={[
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
+                                  baseRedirectPath={baseRedirectPath}
+                                  navItems={navItems}
                                   showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
