@@ -13,7 +13,7 @@ import {
   getEnableJourneyUx,
   getEnableNetworkMapAsync,
 } from '@hypha-platform/feature-flags';
-import { ExploreSpaces, NetworkJourneyIntro } from '@hypha-platform/epics';
+import { ExploreSpaces, NetworkLivingSurface } from '@hypha-platform/epics';
 import { redirect } from 'next/navigation';
 
 type PageProps = {
@@ -94,7 +94,9 @@ export default async function Index(props: PageProps) {
 
   return (
     <Container className="flex flex-col gap-9 py-9">
-      {journeyUxEnabled ? <NetworkJourneyIntro /> : null}
+      {journeyUxEnabled ? (
+        <NetworkLivingSurface lang={lang} spaces={sortedSpaces} />
+      ) : null}
       <ExploreSpaces
         lang={lang}
         query={query}
