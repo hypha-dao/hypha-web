@@ -137,6 +137,7 @@ export function useJourneyStore(personSlug: string | undefined) {
       impact: number;
       title: string;
       category?: StandardCategory;
+      comment?: string;
       experience?: string;
       actionNote?: string;
       emotionNote?: string;
@@ -161,6 +162,7 @@ export function useJourneyStore(personSlug: string | undefined) {
         score: scoreFromAxes(input.felt, input.impact),
         title: input.title.trim(),
         category: input.category,
+        comment: input.comment?.trim() || undefined,
         experience: input.experience?.trim() || undefined,
         actionNote: input.actionNote?.trim() || undefined,
         emotionNote: input.emotionNote?.trim() || undefined,

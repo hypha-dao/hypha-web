@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_WELLBEING_MODE,
   WELLBEING_MODES,
+  axesFromGridPointer,
   averageScore,
   extractTopics,
   feelingFromScore,
@@ -17,6 +18,12 @@ describe('wellbeing-model', () => {
     expect(scoreFromAxes(100, 0)).toBe(55);
     expect(scoreFromAxes(0, 100)).toBe(45);
     expect(scoreFromAxes(50, 50)).toBe(50);
+  });
+
+  it('maps grid x to sad→happy felt and y to high→low impact', () => {
+    expect(axesFromGridPointer(0, 1)).toEqual({ felt: 0, impact: 0 });
+    expect(axesFromGridPointer(1, 0)).toEqual({ felt: 100, impact: 100 });
+    expect(axesFromGridPointer(0.5, 0.5)).toEqual({ felt: 50, impact: 50 });
   });
 
   it('maps scores to feeling words', () => {

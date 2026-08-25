@@ -51,8 +51,6 @@ export function WellbeingEcosystemPulse() {
             activated={activated}
             innerLabel={t('collectiveScore')}
             outerLabel={t('fieldArcLabel')}
-            sadLabel={t('axisFeltLow')}
-            happyLabel={t('axisFeltHigh')}
           />
           <p className="text-2 leading-relaxed text-muted-foreground">
             {t('fractalLead')}

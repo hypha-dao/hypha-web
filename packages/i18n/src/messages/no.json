@@ -4574,6 +4574,8 @@
     "axisFeltHigh": "Energising",
     "axisImpactLow": "Inner only",
     "axisImpactHigh": "Outer change",
+    "feelingAxisImpactHigh": "HØY PÅVIRKNING",
+    "feelingAxisImpactLow": "LAV PÅVIRKNING",
     "nameLabel": "Name the moment",
     "namePlaceholder": "A few words while it is still true",
     "suggest": "Suggest",
@@ -4600,11 +4602,11 @@
       "acting": "Acting"
     },
     "dimensionSub": {
-      "being": "Cultivating our inner life",
-      "thinking": "Understanding our complex world",
-      "relating": "Caring for others and the world",
-      "collaborating": "Building trust and working together",
-      "acting": "Leading and enabling change"
+      "being": "Kultivere vårt indre liv",
+      "thinking": "Forstå vår komplekse verden",
+      "relating": "Omsorg for andre og verden",
+      "collaborating": "Bygge tillit og arbeide sammen",
+      "acting": "Lede og muliggjøre endring"
     },
     "practice": {
       "being": {
@@ -4684,9 +4686,9 @@
       "nvc": "Ikke-voldelig kommunikasjon"
     },
     "modeLead": {
-      "standard": "Velg en livskategori, og navngi det som skjedde i deler.",
+      "standard": "Velg en kategori, marker følelsen, og skriv ett notat.",
       "idg": "Velg en dimensjon og en praksis, og marker hvordan det kjentes.",
-      "nvc": "Fem steg: reaksjon, hva som skjedde, følelse, behov, anmodning."
+      "nvc": "Marker følelsen, deretter fem steg: reaksjon, hva som skjedde, følelse, behov, anmodning."
     },
     "category": {
       "experience": "Opplevelse",
@@ -4696,13 +4698,20 @@
       "discovery": "Oppdagelse"
     },
     "categoryLead": {
-      "experience": "Hva som skjedde, med dine ord og din sammenheng.",
-      "action": "Hva du gjorde — eller valgte å ikke gjøre — som svar.",
-      "emotion": "Hvordan det landet, mens følelsen fortsatt er sann.",
-      "decision": "Valget du tok, så følgene kan spores.",
-      "discovery": "Hva du lærte om deg selv i øyeblikket."
+      "experience": "Hva som skjedde, med personens egne ord og sammenheng.",
+      "action": "Hva de gjorde — eller valgte å ikke gjøre — som svar.",
+      "emotion": "Hvordan det landet, fanget mens følelsen fortsatt er sann.",
+      "decision": "Valget som ble tatt, så følgene kan spores senere.",
+      "discovery": "Hva de lærte om seg selv i øyeblikket."
     },
-    "standardQuestion": "Hvilken del av livet er dette øyeblikket?",
+    "standardQuestion": "Hva slags notat vil du lage?",
+    "standardNoteQuestion": "Skriv ett notat om dette øyeblikket.",
+    "standardNoteLabel": "Ditt notat",
+    "standardNotePlaceholder": "Skriv hva som skjedde, gjerne med #hashtags",
+    "topicsSelectLead": "Velg de relevante emnene for å legge dem til notatet",
+    "topicsFromNote": "Emner basert på notatet ditt",
+    "suggestedTopics": "Foreslåtte emner",
+    "saveNote": "Lagre notat",
     "standardFieldsQuestion": "Fortell øyeblikket i deler, ikke som én klump.",
     "standardWhatHappened": "Hva som skjedde",
     "standardHowLanded": "Hvordan det landet",
@@ -4748,8 +4757,8 @@
     "topicsPlaceholder": "Legg til et emne eller #hashtag",
     "timingLabel": "Når skjedde dette øyeblikket?",
     "timing": {
-      "now": "Nå",
-      "before": "Før"
+      "now": "NÅ",
+      "before": "FØR"
     },
     "poweredBy": "Powered by",
     "fractalLead": "Vi er summen av øyeblikkene våre. Kollektiv velvære er fraktal: person, rom, økosystem, nettverk — samme puls, i en annen skala.",

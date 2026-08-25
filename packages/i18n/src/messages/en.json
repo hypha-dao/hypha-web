@@ -4577,6 +4577,8 @@
     "axisFeltHigh": "Energising",
     "axisImpactLow": "Inner only",
     "axisImpactHigh": "Outer change",
+    "feelingAxisImpactHigh": "HIGH IMPACT",
+    "feelingAxisImpactLow": "LOW IMPACT",
     "nameLabel": "Name the moment",
     "namePlaceholder": "A few words while it is still true",
     "suggest": "Suggest",
@@ -4603,11 +4605,11 @@
       "acting": "Acting"
     },
     "dimensionSub": {
-      "being": "Cultivating our inner life",
-      "thinking": "Understanding our complex world",
-      "relating": "Caring for others and the world",
-      "collaborating": "Building trust and working together",
-      "acting": "Leading and enabling change"
+      "being": "Cultivating Our Inner Life",
+      "thinking": "Understanding Our Complex World",
+      "relating": "Caring for Others and the World",
+      "collaborating": "Building Trust and Working Together",
+      "acting": "Leading and Enabling Change"
     },
     "practice": {
       "being": {
@@ -4687,9 +4689,9 @@
       "nvc": "Nonviolent Communication"
     },
     "modeLead": {
-      "standard": "Pick a life category, then name what happened in parts.",
+      "standard": "Pick a category, mark how it felt, then write one note.",
       "idg": "Choose a dimension and practice, then mark how it felt.",
-      "nvc": "Walk five steps: reaction, what happened, feeling, need, request."
+      "nvc": "Mark how it felt, then walk five steps: reaction, what happened, feeling, need, request."
     },
     "category": {
       "experience": "Experience",
@@ -4699,13 +4701,20 @@
       "discovery": "Discovery"
     },
     "categoryLead": {
-      "experience": "What happened, in your own words and context.",
-      "action": "What you did — or chose not to do — in response.",
-      "emotion": "How it landed, while the feeling is still true.",
-      "decision": "The choice you made, so its consequences can be traced.",
-      "discovery": "What you learned about yourself from the moment."
+      "experience": "What happened, in the person's own words and context.",
+      "action": "What they did — or chose not to do — in response.",
+      "emotion": "How it landed, captured while the feeling is still true.",
+      "decision": "The choice made, so its consequences can be traced later.",
+      "discovery": "What they learned about themselves from the moment."
     },
-    "standardQuestion": "Which part of life is this moment?",
+    "standardQuestion": "What kind of note would you like to make?",
+    "standardNoteQuestion": "Write one note about this moment.",
+    "standardNoteLabel": "Your note",
+    "standardNotePlaceholder": "Write what happened, and use #hashtags if you like",
+    "topicsSelectLead": "Select the relevant topics below to add them to your note",
+    "topicsFromNote": "Topics based on your note",
+    "suggestedTopics": "Suggested topics",
+    "saveNote": "Save note",
     "standardFieldsQuestion": "Tell the moment in parts, not one blur.",
     "standardWhatHappened": "What happened",
     "standardHowLanded": "How it landed",
@@ -4751,8 +4760,8 @@
     "topicsPlaceholder": "Add a topic or #hashtag",
     "timingLabel": "When did this moment occur?",
     "timing": {
-      "now": "Now",
-      "before": "Before"
+      "now": "NOW",
+      "before": "BEFORE"
     },
     "poweredBy": "Powered by",
     "fractalLead": "We are the sum of our moments. Collective wellbeing is fractal: person, space, ecosystem, network — the same pulse, scaled.",

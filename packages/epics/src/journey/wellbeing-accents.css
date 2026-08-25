@@ -1,14 +1,14 @@
 .wb-scope {
-  --wb-being: oklch(0.72 0.08 75);
-  --wb-thinking: oklch(0.7 0.09 350);
-  --wb-relating: oklch(0.62 0.12 35);
-  --wb-collaborating: oklch(0.62 0.08 180);
-  --wb-acting: oklch(0.58 0.09 250);
-  --wb-experience: oklch(0.72 0.08 190);
-  --wb-action: oklch(0.74 0.12 55);
-  --wb-emotion: oklch(0.72 0.1 350);
-  --wb-decision: oklch(0.78 0.12 125);
-  --wb-discovery: oklch(0.62 0.09 270);
+  --wb-being: oklch(0.74 0.07 85);
+  --wb-thinking: oklch(0.64 0.2 340);
+  --wb-relating: oklch(0.56 0.2 25);
+  --wb-collaborating: oklch(0.68 0.16 55);
+  --wb-acting: oklch(0.42 0.12 18);
+  --wb-experience: oklch(0.68 0.1 195);
+  --wb-action: oklch(0.7 0.15 55);
+  --wb-emotion: oklch(0.68 0.16 350);
+  --wb-decision: oklch(0.78 0.16 125);
+  --wb-discovery: oklch(0.55 0.14 280);
 }
 
 .wb-dot-being {
@@ -62,4 +62,25 @@
 }
 .wb-dot-discovery {
   background: var(--wb-discovery);
+}
+
+.wb-fill-experience {
+  fill: var(--wb-experience);
+  color: var(--wb-experience);
+}
+.wb-fill-action {
+  fill: var(--wb-action);
+  color: var(--wb-action);
+}
+.wb-fill-emotion {
+  fill: var(--wb-emotion);
+  color: var(--wb-emotion);
+}
+.wb-fill-decision {
+  fill: var(--wb-decision);
+  color: var(--wb-decision);
+}
+.wb-fill-discovery {
+  fill: var(--wb-discovery);
+  color: var(--wb-discovery);
 }

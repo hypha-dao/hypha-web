@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Button,
@@ -37,6 +37,12 @@ import {
 } from '../wellbeing-model';
 import { useJourneyStore } from '../use-journey-store';
 import { RatingGrid } from './rating-grid';
+import {
+  EmotionHeartIcon,
+  IdgDimensionIcon,
+  MatrixHandle,
+  StandardCategoryIcon,
+} from './wellbeing-icons';
 import '../wellbeing-accents.css';
 
 export type CaptureMomentInput = {
@@ -50,6 +56,7 @@ export type CaptureMomentInput = {
   impact: number;
   title: string;
   category?: StandardCategory;
+  comment?: string;
   experience?: string;
   actionNote?: string;
   emotionNote?: string;
@@ -115,11 +122,7 @@ export function CaptureMomentDialog({
   const [dimension, setDimension] = useState<WellbeingDimension | null>(null);
   const [practiceId, setPracticeId] = useState<string | null>(null);
   const [category, setCategory] = useState<StandardCategory | null>(null);
-  const [experience, setExperience] = useState('');
-  const [actionNote, setActionNote] = useState('');
-  const [emotionNote, setEmotionNote] = useState('');
-  const [decisionNote, setDecisionNote] = useState('');
-  const [discoveryNote, setDiscoveryNote] = useState('');
+  const [comment, setComment] = useState('');
   const [nvc, setNvc] = useState(emptyNvc);
   const [topics, setTopics] = useState<string[]>([]);
   const [topicDraft, setTopicDraft] = useState('');
@@ -142,11 +145,7 @@ export function CaptureMomentDialog({
     setDimension(null);
     setPracticeId(null);
     setCategory(null);
-    setExperience('');
-    setActionNote('');
-    setEmotionNote('');
-    setDecisionNote('');
-    setDiscoveryNote('');
+    setComment('');
     setNvc(emptyNvc());
     setTopics([]);
     setTopicDraft('');
@@ -159,6 +158,9 @@ export function CaptureMomentDialog({
   const chooseMode = (next: WellbeingMode) => {
     setMode(next);
     setStep(1);
+    setDimension(null);
+    setPracticeId(null);
+    setCategory(null);
     onModeChange?.(next);
     journey.setPreferredMode(next, spaceSlug);
   };
@@ -168,34 +170,17 @@ export function CaptureMomentDialog({
       return t(`suggestTitle.${dimension}.${practiceId}`);
     }
     if (mode === 'standard' && category) {
-      return t(`standardSuggest.${category}`);
+      return comment.trim().slice(0, 72) || t(`standardSuggest.${category}`);
     }
     if (mode === 'nvc' && nvc.feeling.trim()) {
       return nvc.feeling.trim().slice(0, 72);
     }
     return '';
-  }, [category, dimension, mode, nvc.feeling, practiceId, t]);
+  }, [category, comment, dimension, mode, nvc.feeling, practiceId, t]);
 
   const detectedTopics = useMemo(
-    () =>
-      extractTopics(
-        experience,
-        actionNote,
-        emotionNote,
-        decisionNote,
-        discoveryNote,
-        ...Object.values(nvc),
-        title,
-      ),
-    [
-      actionNote,
-      decisionNote,
-      discoveryNote,
-      emotionNote,
-      experience,
-      nvc,
-      title,
-    ],
+    () => extractTopics(comment, ...Object.values(nvc), title),
+    [comment, nvc, title],
   );
 
   const handleOpenChange = (next: boolean) => {
@@ -218,8 +203,13 @@ export function CaptureMomentDialog({
     setTopicDraft('');
   };
 
+  const resolvedTitle = () =>
+    title.trim() || suggestedTitle || comment.trim().slice(0, 72);
+
   const saveStandard = () => {
-    if (!category || !title.trim()) return;
+    if (!category || !comment.trim()) return;
+    const nextTitle = resolvedTitle();
+    if (!nextTitle) return;
     onSave({
       personSlug,
       spaceSlug,
@@ -229,13 +219,10 @@ export function CaptureMomentDialog({
       practiceId: category,
       felt,
       impact,
-      title: title.trim(),
+      title: nextTitle,
       category,
-      experience,
-      actionNote,
-      emotionNote,
-      decisionNote,
-      discoveryNote,
+      comment: comment.trim(),
+      experience: comment.trim(),
       topics: [...new Set([...topics, ...detectedTopics])],
       timing,
     });
@@ -259,7 +246,8 @@ export function CaptureMomentDialog({
   };
 
   const saveNvc = () => {
-    if (!title.trim() || !nvc.happened.trim() || !nvc.feeling.trim()) return;
+    const nextTitle = resolvedTitle();
+    if (!nextTitle || !nvc.happened.trim() || !nvc.feeling.trim()) return;
     onSave({
       personSlug,
       spaceSlug,
@@ -269,7 +257,7 @@ export function CaptureMomentDialog({
       practiceId: 'nvc',
       felt,
       impact,
-      title: title.trim(),
+      title: nextTitle,
       nvc,
       topics: [...new Set([...topics, ...detectedTopics])],
       timing,
@@ -277,22 +265,25 @@ export function CaptureMomentDialog({
     handleOpenChange(false);
   };
 
-  const lastStep = mode === 'idg' ? 3 : 4;
   const description =
     step === 0
       ? t('modeQuestion')
       : mode === 'standard' && step === 1
       ? t('standardQuestion')
       : mode === 'standard' && step === 2
-      ? t('standardFieldsQuestion')
+      ? t('rateQuestion')
       : mode === 'standard' && step === 3
-      ? t('topicsQuestion')
+      ? t('standardNoteQuestion')
       : mode === 'idg' && step === 1
       ? t('captureQuestion')
       : mode === 'idg' && step === 2 && dimension
       ? t('practiceQuestion', { dimension: t(`dimension.${dimension}`) })
-      : mode === 'nvc' && step >= 1 && step <= 5
-      ? t(`nvcPrompt.${NVC_FIELDS[Math.min(step, 5) - 1] ?? 'reaction'}`)
+      : mode === 'nvc' && step === 1
+      ? t('rateQuestion')
+      : mode === 'nvc' && step >= 2 && step <= 6
+      ? t(`nvcPrompt.${NVC_FIELDS[step - 2] ?? 'reaction'}`)
+      : mode === 'nvc' && step === 7
+      ? t('topicsQuestion')
       : t('rateQuestion');
 
   return (
@@ -313,12 +304,7 @@ export function CaptureMomentDialog({
               <button
                 key={key}
                 type="button"
-                onClick={() => {
-                  setMode(key);
-                  setStep(1);
-                  onModeChange?.(key);
-                  journey.setPreferredMode(key, spaceSlug);
-                }}
+                onClick={() => chooseMode(key)}
                 className={cn(
                   'rounded-xl border px-2.5 py-1 text-1 font-medium transition-colors',
                   mode === key
@@ -353,91 +339,82 @@ export function CaptureMomentDialog({
         ) : null}
 
         {mode === 'standard' && step === 1 ? (
-          <div className="grid gap-2">
-            {STANDARD_CATEGORIES.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setCategory(key);
-                  setStep(2);
-                }}
-                className="flex items-center gap-3 rounded-xl border border-border/70 bg-background-2 px-3 py-3 text-left transition-colors hover:border-accent-8 hover:bg-accent-2"
-              >
-                <span
-                  className={cn(
-                    'size-9 shrink-0 rounded-xl',
-                    CATEGORY_DOT[key],
-                  )}
-                />
-                <span>
-                  <span className="block text-2 font-semibold text-foreground">
-                    {t(`category.${key}`)}
-                  </span>
-                  <span className="block text-1 text-muted-foreground">
-                    {t(`categoryLead.${key}`)}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
+          <CategorySpine
+            onChoose={(key) => {
+              setCategory(key);
+              setStep(2);
+            }}
+          />
         ) : null}
 
         {mode === 'standard' && step === 2 && category ? (
-          <div className="flex flex-col gap-3">
+          <FeelingMatrixStep
+            felt={felt}
+            impact={impact}
+            score={score}
+            feeling={feeling}
+            handle={
+              <MatrixHandle className={CATEGORY_DOT[category]}>
+                <StandardCategoryIcon category={category} className="size-4" />
+              </MatrixHandle>
+            }
+            onChange={({ felt: nextFelt, impact: nextImpact }) => {
+              setFelt(nextFelt);
+              setImpact(nextImpact);
+            }}
+            onBack={() => setStep(1)}
+            onNext={() => setStep(3)}
+            backLabel={t(`category.${category}`)}
+          />
+        ) : null}
+
+        {mode === 'standard' && step === 3 ? (
+          <div className="flex flex-col gap-4">
             <Button
               type="button"
               variant="ghost"
               colorVariant="neutral"
               className="self-start"
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
             >
               <ArrowLeft className="size-4" aria-hidden />
-              {t(`category.${category}`)}
+              {t('backToFields')}
             </Button>
-            <Field
-              label={t('standardWhatHappened')}
-              value={experience}
-              onChange={setExperience}
+            <label className="flex flex-col gap-1.5">
+              <span className="text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                {t('standardNoteLabel')}
+              </span>
+              <Textarea
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                rows={5}
+                className="rounded-xl"
+                placeholder={t('standardNotePlaceholder')}
+              />
+            </label>
+            <TopicsBlock
+              topics={topics}
+              detected={detectedTopics}
+              draft={topicDraft}
+              timing={timing}
+              onDraft={setTopicDraft}
+              onAddDraft={addDraftTopics}
+              onToggle={toggleTopic}
+              onTiming={setTiming}
             />
-            <Field
-              label={t('standardHowLanded')}
-              value={emotionNote}
-              onChange={setEmotionNote}
-            />
-            <Field
-              label={t('standardWhatChanged')}
-              value={actionNote}
-              onChange={setActionNote}
-            />
-            <Field
-              label={t('standardWhatLearned')}
-              value={discoveryNote}
-              onChange={setDiscoveryNote}
+            <NameField
+              title={title}
+              suggestedTitle={suggestedTitle}
+              onTitle={setTitle}
             />
             <Button
               className="w-full rounded-xl"
-              disabled={!experience.trim()}
-              onClick={() => setStep(3)}
+              disabled={!comment.trim()}
+              onClick={saveStandard}
             >
-              {t('continue')}
+              {t('saveNote')}
             </Button>
           </div>
-        ) : null}
-
-        {mode === 'standard' && step === 3 ? (
-          <TopicsStep
-            topics={topics}
-            detected={detectedTopics}
-            draft={topicDraft}
-            timing={timing}
-            onDraft={setTopicDraft}
-            onAddDraft={addDraftTopics}
-            onToggle={toggleTopic}
-            onTiming={setTiming}
-            onBack={() => setStep(2)}
-            onNext={() => setStep(4)}
-          />
         ) : null}
 
         {mode === 'idg' && step === 1 ? (
@@ -454,10 +431,12 @@ export function CaptureMomentDialog({
               >
                 <span
                   className={cn(
-                    'size-9 shrink-0 rounded-full',
+                    'flex size-10 shrink-0 items-center justify-center rounded-xl text-white',
                     DIMENSION_DOT[key],
                   )}
-                />
+                >
+                  <IdgDimensionIcon dimension={key} className="size-5" />
+                </span>
                 <span>
                   <span className="block text-2 font-semibold text-foreground">
                     {t(`dimension.${key}`)}
@@ -501,56 +480,21 @@ export function CaptureMomentDialog({
           </div>
         ) : null}
 
-        {mode === 'nvc' && step >= 1 && step <= 5 ? (
-          <NvcStep
-            field={NVC_FIELDS[step - 1] ?? 'reaction'}
-            value={nvc[NVC_FIELDS[step - 1] ?? 'reaction']}
-            onChange={(value) =>
-              setNvc((current) => ({
-                ...current,
-                [NVC_FIELDS[step - 1] ?? 'reaction']: value,
-              }))
-            }
-            onBack={() => setStep(step === 1 ? 0 : step - 1)}
-            onNext={() => setStep(step + 1)}
-          />
-        ) : null}
-
-        {mode === 'nvc' && step === 6 ? (
-          <TopicsStep
-            topics={topics}
-            detected={detectedTopics}
-            draft={topicDraft}
-            timing={timing}
-            onDraft={setTopicDraft}
-            onAddDraft={addDraftTopics}
-            onToggle={toggleTopic}
-            onTiming={setTiming}
-            onBack={() => setStep(5)}
-            onNext={() => setStep(7)}
-          />
-        ) : null}
-
-        {(mode === 'standard' && step === 4) ||
-        (mode === 'idg' && step === 3 && dimension && practiceId) ||
-        (mode === 'nvc' && step === 7) ? (
+        {mode === 'idg' && step === 3 && dimension && practiceId ? (
           <div className="flex flex-col gap-4">
             <Button
               type="button"
               variant="ghost"
               colorVariant="neutral"
               className="self-start"
-              onClick={() =>
-                setStep(mode === 'idg' ? lastStep - 1 : mode === 'nvc' ? 6 : 3)
-              }
+              onClick={() => setStep(2)}
             >
               <ArrowLeft className="size-4" aria-hidden />
-              {mode === 'idg' && dimension && practiceId
-                ? t(`practice.${dimension}.${practiceId}`)
-                : t('backToFields')}
+              {t(`practice.${dimension}.${practiceId}`)}
             </Button>
             <p className="text-2 text-muted-foreground">{t('rateHint')}</p>
             <RatingGrid
+              variant="idg"
               felt={felt}
               impact={impact}
               onChange={({ felt: nextFelt, impact: nextImpact }) => {
@@ -563,12 +507,10 @@ export function CaptureMomentDialog({
               impactHighLabel={t('axisImpactHigh')}
               dragHint={t('dragHint')}
               score={score}
-              markerClassName={
-                mode === 'idg' && dimension
-                  ? DIMENSION_DOT[dimension]
-                  : category
-                  ? CATEGORY_DOT[category]
-                  : 'wb-dot-emotion'
+              handle={
+                <MatrixHandle className={DIMENSION_DOT[dimension]}>
+                  <IdgDimensionIcon dimension={dimension} className="size-4" />
+                </MatrixHandle>
               }
             />
             <div className="rounded-xl border border-border/70 bg-background-2 p-3">
@@ -579,35 +521,90 @@ export function CaptureMomentDialog({
                 {t(`insight.${feeling}`)}
               </p>
             </div>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                {t('nameLabel')}
-              </span>
-              <Input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder={t('namePlaceholder')}
-              />
-              {suggestedTitle ? (
-                <button
-                  type="button"
-                  className="self-start text-1 text-accent-11 hover:underline"
-                  onClick={() => setTitle(suggestedTitle)}
-                >
-                  {t('suggest')}
-                </button>
-              ) : null}
-            </label>
+            <NameField
+              title={title}
+              suggestedTitle={suggestedTitle}
+              onTitle={setTitle}
+            />
             <Button
               className="w-full rounded-xl"
               disabled={!title.trim()}
-              onClick={() => {
-                if (mode === 'standard') saveStandard();
-                else if (mode === 'nvc') saveNvc();
-                else saveIdg();
-              }}
+              onClick={saveIdg}
             >
               {t('saveMoment')}
+            </Button>
+          </div>
+        ) : null}
+
+        {mode === 'nvc' && step === 1 ? (
+          <FeelingMatrixStep
+            felt={felt}
+            impact={impact}
+            score={score}
+            feeling={feeling}
+            handle={
+              <MatrixHandle className="wb-dot-emotion">
+                <EmotionHeartIcon className="size-4" />
+              </MatrixHandle>
+            }
+            onChange={({ felt: nextFelt, impact: nextImpact }) => {
+              setFelt(nextFelt);
+              setImpact(nextImpact);
+            }}
+            onBack={() => setStep(0)}
+            onNext={() => setStep(2)}
+            backLabel={t('mode.nvc')}
+          />
+        ) : null}
+
+        {mode === 'nvc' && step >= 2 && step <= 6 ? (
+          <NvcStep
+            field={NVC_FIELDS[step - 2] ?? 'reaction'}
+            value={nvc[NVC_FIELDS[step - 2] ?? 'reaction']}
+            onChange={(value) =>
+              setNvc((current) => ({
+                ...current,
+                [NVC_FIELDS[step - 2] ?? 'reaction']: value,
+              }))
+            }
+            onBack={() => setStep(step - 1)}
+            onNext={() => setStep(step + 1)}
+          />
+        ) : null}
+
+        {mode === 'nvc' && step === 7 ? (
+          <div className="flex flex-col gap-4">
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              className="self-start"
+              onClick={() => setStep(6)}
+            >
+              <ArrowLeft className="size-4" aria-hidden />
+              {t('backToFields')}
+            </Button>
+            <TopicsBlock
+              topics={topics}
+              detected={detectedTopics}
+              draft={topicDraft}
+              timing={timing}
+              onDraft={setTopicDraft}
+              onAddDraft={addDraftTopics}
+              onToggle={toggleTopic}
+              onTiming={setTiming}
+            />
+            <NameField
+              title={title}
+              suggestedTitle={suggestedTitle}
+              onTitle={setTitle}
+            />
+            <Button
+              className="w-full rounded-xl"
+              disabled={!nvc.happened.trim() || !nvc.feeling.trim()}
+              onClick={saveNvc}
+            >
+              {t('saveNote')}
             </Button>
           </div>
         ) : null}
@@ -616,26 +613,161 @@ export function CaptureMomentDialog({
   );
 }
 
-function Field({
-  label,
-  value,
-  onChange,
+function CategorySpine({
+  onChoose,
 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
+  onChoose: (category: StandardCategory) => void;
 }) {
+  const t = useTranslations('Wellbeing');
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-center text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {t('feelingAxisImpactHigh')}
+      </p>
+      <div className="relative py-1">
+        <span
+          className="absolute top-3 bottom-3 left-1/2 w-px -translate-x-1/2 bg-border"
+          aria-hidden
+        />
+        <div className="grid gap-3">
+          {STANDARD_CATEGORIES.map((key, index) => {
+            const labelOnRight = index % 2 === 0;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onChoose(key)}
+                className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-left"
+              >
+                <span
+                  className={cn(
+                    'min-w-0',
+                    labelOnRight ? 'col-start-3' : 'col-start-1 text-right',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'block text-2 font-semibold',
+                      `wb-fill-${key}`,
+                    )}
+                  >
+                    {t(`category.${key}`)}
+                  </span>
+                  <span className="block text-1 text-muted-foreground">
+                    {t(`categoryLead.${key}`)}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    'relative z-10 col-start-2 flex size-11 items-center justify-center rounded-full text-white',
+                    CATEGORY_DOT[key],
+                  )}
+                >
+                  <StandardCategoryIcon category={key} className="size-5" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <p className="text-center text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {t('feelingAxisImpactLow')}
+      </p>
+    </div>
+  );
+}
+
+function FeelingMatrixStep({
+  felt,
+  impact,
+  score,
+  feeling,
+  handle,
+  onChange,
+  onBack,
+  onNext,
+  backLabel,
+}: {
+  felt: number;
+  impact: number;
+  score: number;
+  feeling: ReturnType<typeof feelingFromScore>;
+  handle: ReactNode;
+  onChange: (next: { felt: number; impact: number }) => void;
+  onBack: () => void;
+  onNext: () => void;
+  backLabel: string;
+}) {
+  const t = useTranslations('Wellbeing');
+  return (
+    <div className="flex flex-col gap-4">
+      <Button
+        type="button"
+        variant="ghost"
+        colorVariant="neutral"
+        className="self-start"
+        onClick={onBack}
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        {backLabel}
+      </Button>
+      <RatingGrid
+        variant="feeling"
+        felt={felt}
+        impact={impact}
+        onChange={onChange}
+        feltLowLabel=""
+        feltHighLabel=""
+        impactLowLabel={t('feelingAxisImpactLow')}
+        impactHighLabel={t('feelingAxisImpactHigh')}
+        dragHint={t('dragHint')}
+        score={score}
+        handle={handle}
+      />
+      <div className="rounded-xl border border-border/70 bg-background-2 p-3">
+        <p className="text-2 font-semibold text-foreground">
+          {score} · {t(`feeling.${feeling}`)}
+        </p>
+        <p className="text-1 italic text-muted-foreground">
+          {t(`insight.${feeling}`)}
+        </p>
+      </div>
+      <Button className="w-full rounded-xl" onClick={onNext}>
+        {t('continue')}
+      </Button>
+    </div>
+  );
+}
+
+function NameField({
+  title,
+  suggestedTitle,
+  onTitle,
+}: {
+  title: string;
+  suggestedTitle: string;
+  onTitle: (value: string) => void;
+}) {
+  const t = useTranslations('Wellbeing');
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
+        {t('nameLabel')}
       </span>
-      <Textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={3}
-        className="rounded-xl"
+      <Input
+        value={title}
+        onChange={(event) => onTitle(event.target.value)}
+        placeholder={t('namePlaceholder')}
       />
+      {suggestedTitle ? (
+        <button
+          type="button"
+          className="self-start text-1 text-accent-11 hover:underline"
+          onClick={() => onTitle(suggestedTitle)}
+        >
+          {t('suggest')}
+        </button>
+      ) : null}
     </label>
   );
 }
@@ -665,7 +797,7 @@ function NvcStep({
         onClick={onBack}
       >
         <ArrowLeft className="size-4" aria-hidden />
-        {t(`nvcLens.${field}`)}
+        {t(`nvcPrompt.${field}`)}
       </Button>
       <p className="text-2 text-muted-foreground">{t(`nvcHint.${field}`)}</p>
       <Textarea
@@ -686,7 +818,7 @@ function NvcStep({
   );
 }
 
-function TopicsStep({
+function TopicsBlock({
   topics,
   detected,
   draft,
@@ -695,8 +827,6 @@ function TopicsStep({
   onAddDraft,
   onToggle,
   onTiming,
-  onBack,
-  onNext,
 }: {
   topics: string[];
   detected: string[];
@@ -706,40 +836,25 @@ function TopicsStep({
   onAddDraft: () => void;
   onToggle: (topic: string) => void;
   onTiming: (value: WellbeingTiming) => void;
-  onBack: () => void;
-  onNext: () => void;
 }) {
   const t = useTranslations('Wellbeing');
-  const chips = [...new Set([...detected, ...SUGGESTED_TOPICS, ...topics])];
   return (
     <div className="flex flex-col gap-4">
-      <Button
-        type="button"
-        variant="ghost"
-        colorVariant="neutral"
-        className="self-start"
-        onClick={onBack}
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {t('topicsLabel')}
-      </Button>
-      <div className="flex flex-wrap gap-1.5">
-        {chips.map((topic) => (
-          <button
-            key={topic}
-            type="button"
-            onClick={() => onToggle(topic)}
-            className={cn(
-              'rounded-xl border px-2.5 py-1 text-1 transition-colors',
-              topics.includes(topic)
-                ? 'border-accent-8 bg-accent-3 text-accent-12'
-                : 'border-border/70 bg-background-2 text-muted-foreground hover:border-accent-7',
-            )}
-          >
-            #{topic}
-          </button>
-        ))}
-      </div>
+      <p className="text-2 text-muted-foreground">{t('topicsSelectLead')}</p>
+      {detected.length > 0 ? (
+        <ChipGroup
+          label={t('topicsFromNote')}
+          items={detected}
+          selected={topics}
+          onToggle={onToggle}
+        />
+      ) : null}
+      <ChipGroup
+        label={t('suggestedTopics')}
+        items={[...SUGGESTED_TOPICS]}
+        selected={topics}
+        onToggle={onToggle}
+      />
       <div className="flex gap-2">
         <Input
           value={draft}
@@ -772,7 +887,7 @@ function TopicsStep({
               type="button"
               onClick={() => onTiming(value)}
               className={cn(
-                'flex-1 rounded-xl border px-3 py-2 text-2 font-medium',
+                'flex-1 rounded-xl border px-3 py-2 text-2 font-medium uppercase tracking-[0.08em]',
                 timing === value
                   ? 'border-accent-8 bg-accent-3 text-accent-12'
                   : 'border-border/70 bg-background-2 text-muted-foreground',
@@ -783,9 +898,41 @@ function TopicsStep({
           ))}
         </div>
       </div>
-      <Button className="w-full rounded-xl" onClick={onNext}>
-        {t('continue')}
-      </Button>
+    </div>
+  );
+}
+
+function ChipGroup({
+  label,
+  items,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  items: string[];
+  selected: string[];
+  onToggle: (topic: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-1 font-medium text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((topic) => (
+          <button
+            key={topic}
+            type="button"
+            onClick={() => onToggle(topic)}
+            className={cn(
+              'rounded-xl border px-2.5 py-1 text-1 transition-colors',
+              selected.includes(topic)
+                ? 'border-accent-8 bg-accent-3 text-accent-12'
+                : 'border-border/70 bg-background-2 text-muted-foreground hover:border-accent-7',
+            )}
+          >
+            #{topic}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

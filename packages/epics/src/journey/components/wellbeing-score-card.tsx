@@ -21,6 +21,7 @@ type WellbeingScoreCardProps = {
   onCapture: () => void;
   onActivate: () => void;
   className?: string;
+  compact?: boolean;
 };
 
 export function WellbeingScoreCard({
@@ -32,6 +33,7 @@ export function WellbeingScoreCard({
   onCapture,
   onActivate,
   className,
+  compact = false,
 }: WellbeingScoreCardProps) {
   const t = useTranslations('Wellbeing');
   const displayScore = score ?? 50;
@@ -40,7 +42,9 @@ export function WellbeingScoreCard({
 
   return (
     <Card className={cn('wb-scope craft-card overflow-hidden', className)}>
-      <CardContent className="flex flex-col gap-5 p-5">
+      <CardContent
+        className={cn('flex flex-col p-5', compact ? 'gap-4' : 'gap-5')}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-1 font-medium uppercase tracking-[0.08em] text-accent-11">
@@ -48,7 +52,12 @@ export function WellbeingScoreCard({
                 ? t('personalKicker')
                 : t('collectiveKicker')}
             </p>
-            <h2 className="mt-1 [font-family:var(--font-family-heading)] text-6 font-semibold tracking-[-0.02em] text-foreground">
+            <h2
+              className={cn(
+                'mt-1 [font-family:var(--font-family-heading)] font-semibold tracking-[-0.02em] text-foreground',
+                compact ? 'text-4' : 'text-6',
+              )}
+            >
               {activated ? t(`feeling.${feeling}`) : t('lockedTitle')}
             </h2>
           </div>
@@ -68,7 +77,12 @@ export function WellbeingScoreCard({
           ) : null}
         </div>
 
-        <div className="mx-auto flex w-full max-w-[20rem] flex-col items-center">
+        <div
+          className={cn(
+            'mx-auto flex w-full flex-col items-center',
+            compact ? 'max-w-[13rem]' : 'max-w-[20rem]',
+          )}
+        >
           <WellbeingGauge
             score={activated ? displayScore : null}
             comparisonScore={activated ? comparisonScore : null}
@@ -77,8 +91,6 @@ export function WellbeingScoreCard({
               variant === 'personal' ? t('personalScore') : t('collectiveScore')
             }
             outerLabel={t('fieldArcLabel')}
-            sadLabel={t('axisFeltLow')}
-            happyLabel={t('axisFeltHigh')}
           />
           <p className="text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
             {variant === 'personal' ? t('personalScore') : t('collectiveScore')}
@@ -102,12 +114,16 @@ export function WellbeingScoreCard({
                 </span>
               ) : null}
             </div>
-            <p className="text-2 leading-relaxed text-muted-foreground">
-              {t('fractalLead')}
-            </p>
-            <p className="text-2 leading-relaxed text-muted-foreground">
-              {t(`insight.${feeling}`)}
-            </p>
+            {compact ? null : (
+              <>
+                <p className="text-2 leading-relaxed text-muted-foreground">
+                  {t('fractalLead')}
+                </p>
+                <p className="text-2 leading-relaxed text-muted-foreground">
+                  {t(`insight.${feeling}`)}
+                </p>
+              </>
+            )}
             <Button onClick={onCapture} className="w-full rounded-xl">
               <Sparkles className="size-4" aria-hidden />
               {variant === 'personal' ? t('captureCta') : t('rateCta')}
@@ -118,7 +134,9 @@ export function WellbeingScoreCard({
             <p className="text-2 leading-relaxed text-muted-foreground">
               {t('lockedLead')}
             </p>
-            <p className="text-1 text-muted-foreground">{t('tokenNote')}</p>
+            {compact ? null : (
+              <p className="text-1 text-muted-foreground">{t('tokenNote')}</p>
+            )}
             <Button onClick={onActivate} className="w-full rounded-xl">
               {t('unlockCta', { price: WELLBEING_TOKEN_PRICE })}
             </Button>

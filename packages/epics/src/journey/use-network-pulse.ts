@@ -4,7 +4,10 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
 import type { Coherence, Document, Person } from '@hypha-platform/core/client';
-import { isOpenForVote } from './home-activity';
+import {
+  isActiveSignalRecommendation,
+  isActiveVoteRecommendation,
+} from './home-activity';
 import {
   NETWORK_PULSE_PEOPLE_SPACE_LIMIT,
   NETWORK_PULSE_SPACE_LIMIT,
@@ -14,6 +17,7 @@ import {
   type NetworkPerson,
   type NetworkStory,
 } from './network-pulse';
+import { fetchOutcomesBySpaceId, fetchProposalLiveness } from './vote-liveness';
 
 type CoherencePage = { data?: Coherence[] };
 type MembersPage = { persons?: { data?: Person[] } };
@@ -21,6 +25,8 @@ type MembersPage = { persons?: { data?: Person[] } };
 type PulseSpace = {
   slug: string;
   title: string;
+  logoUrl?: string | null;
+  web3SpaceId?: number | null;
 };
 
 async function fetchJson<T>(
@@ -42,7 +48,9 @@ export function useNetworkPulse(spaces: PulseSpace[]) {
         .slice(0, NETWORK_PULSE_SPACE_LIMIT),
     [spaces],
   );
-  const spaceKey = scopedSpaces.map((space) => space.slug).join(',');
+  const spaceKey = scopedSpaces
+    .map((space) => `${space.slug}:${space.web3SpaceId ?? ''}`)
+    .join(',');
   const shouldFetch =
     scopedSpaces.length > 0 && !isAuthLoading && accessTokenReady;
 
@@ -78,52 +86,91 @@ export function useNetworkPulse(spaces: PulseSpace[]) {
               : Promise.resolve(null),
           ]);
 
-          const stories: NetworkStory[] = [];
-          for (const document of documents ?? []) {
-            if (!isOpenForVote(document) || !document.slug) continue;
-            stories.push({
-              id: `vote:${space.slug}:${document.id}`,
-              kind: 'vote',
-              title: document.title,
-              spaceSlug: space.slug,
-              spaceTitle: space.title,
-              targetSlug: document.slug,
-              context: storyContext(document.description),
-            });
-          }
-          for (const signal of signalsPage?.data ?? []) {
-            if (signal.archived) continue;
-            stories.push({
-              id: `signal:${space.slug}:${signal.id}`,
-              kind: 'signal',
-              title: signal.title,
-              spaceSlug: space.slug,
-              spaceTitle: space.title,
-              targetSlug: signal.slug,
-              context: storyContext(signal.description),
-            });
-          }
-
-          const people: NetworkPerson[] = (membersPage?.persons?.data ?? [])
-            .filter((person) => Boolean(person.slug))
-            .map((person) => ({
-              slug: person.slug as string,
-              name:
-                [person.name, person.surname].filter(Boolean).join(' ') ||
-                person.nickname ||
-                (person.slug as string),
-              avatarUrl: person.avatarUrl,
-            }));
-
-          return { stories, people };
+          return {
+            space,
+            documents: documents ?? [],
+            signalsPage,
+            membersPage,
+          };
         }),
       );
 
+      const outcomesBySpaceId = await fetchOutcomesBySpaceId(
+        scopedSpaces
+          .map((space) => space.web3SpaceId)
+          .filter((id): id is number => id != null),
+      );
+      const candidateProposalIds = pages.flatMap((page) =>
+        page.documents
+          .map((document) => document.web3ProposalId)
+          .filter((id): id is number => id != null),
+      );
+      const livenessByProposalId = await fetchProposalLiveness(
+        candidateProposalIds,
+      );
+
+      const stories: NetworkStory[] = [];
+      for (const page of pages) {
+        const outcomes =
+          page.space.web3SpaceId != null
+            ? outcomesBySpaceId.get(page.space.web3SpaceId) ?? null
+            : null;
+        for (const document of page.documents) {
+          const proposalId = document.web3ProposalId;
+          if (
+            !isActiveVoteRecommendation(document, {
+              outcomes,
+              liveness:
+                proposalId != null
+                  ? livenessByProposalId.get(proposalId) ?? null
+                  : null,
+            }) ||
+            !document.slug
+          ) {
+            continue;
+          }
+          stories.push({
+            id: `vote:${page.space.slug}:${document.id}`,
+            kind: 'vote',
+            title: document.title,
+            spaceSlug: page.space.slug,
+            spaceTitle: page.space.title,
+            spaceLogoUrl: page.space.logoUrl ?? null,
+            targetSlug: document.slug,
+            context: storyContext(document.description),
+          });
+        }
+        for (const signal of page.signalsPage?.data ?? []) {
+          if (!isActiveSignalRecommendation(signal)) continue;
+          stories.push({
+            id: `signal:${page.space.slug}:${signal.id}`,
+            kind: 'signal',
+            title: signal.title,
+            spaceSlug: page.space.slug,
+            spaceTitle: page.space.title,
+            spaceLogoUrl: page.space.logoUrl ?? null,
+            targetSlug: signal.slug,
+            context: storyContext(signal.description),
+          });
+        }
+      }
+
+      const people: NetworkPerson[] = pages.flatMap((page) =>
+        (page.membersPage?.persons?.data ?? [])
+          .filter((person) => Boolean(person.slug))
+          .map((person) => ({
+            slug: person.slug as string,
+            name:
+              [person.name, person.surname].filter(Boolean).join(' ') ||
+              person.nickname ||
+              (person.slug as string),
+            avatarUrl: person.avatarUrl,
+          })),
+      );
+
       return {
-        stories: pages
-          .flatMap((page) => page.stories)
-          .slice(0, NETWORK_PULSE_STORY_LIMIT),
-        people: uniquePeople(pages.flatMap((page) => page.people)),
+        stories: stories.slice(0, NETWORK_PULSE_STORY_LIMIT),
+        people: uniquePeople(people),
       };
     },
     {

@@ -4567,6 +4567,8 @@
     "axisFeltHigh": "Energising",
     "axisImpactLow": "Inner only",
     "axisImpactHigh": "Outer change",
+    "feelingAxisImpactHigh": "ALTO IMPACTO",
+    "feelingAxisImpactLow": "BAIXO IMPACTO",
     "nameLabel": "Name the moment",
     "namePlaceholder": "A few words while it is still true",
     "suggest": "Suggest",
@@ -4593,11 +4595,11 @@
       "acting": "Acting"
     },
     "dimensionSub": {
-      "being": "Cultivating our inner life",
-      "thinking": "Understanding our complex world",
-      "relating": "Caring for others and the world",
-      "collaborating": "Building trust and working together",
-      "acting": "Leading and enabling change"
+      "being": "Cultivar a nossa vida interior",
+      "thinking": "Compreender o nosso mundo complexo",
+      "relating": "Cuidar dos outros e do mundo",
+      "collaborating": "Construir confiança e trabalhar em conjunto",
+      "acting": "Liderar e possibilitar a mudança"
     },
     "practice": {
       "being": {
@@ -4677,9 +4679,9 @@
       "nvc": "Comunicação não violenta"
     },
     "modeLead": {
-      "standard": "Escolhe uma categoria de vida e nomeia o que aconteceu por partes.",
+      "standard": "Escolhe uma categoria, marca o sentimento e escreve uma só nota.",
       "idg": "Escolhe uma dimensão e uma prática, depois marca como se sentiu.",
-      "nvc": "Cinco passos: reação, o que aconteceu, sentimento, necessidade, pedido."
+      "nvc": "Marca o sentimento e percorre cinco passos: reação, o que aconteceu, sentimento, necessidade, pedido."
     },
     "category": {
       "experience": "Experiência",
@@ -4689,13 +4691,20 @@
       "discovery": "Descoberta"
     },
     "categoryLead": {
-      "experience": "O que aconteceu, nas tuas palavras e no teu contexto.",
-      "action": "O que fizeste — ou escolheste não fazer — em resposta.",
-      "emotion": "Como aterrou, enquanto o sentimento ainda é verdadeiro.",
-      "decision": "A escolha que fizeste, para poderes seguir as consequências.",
-      "discovery": "O que aprendeste sobre ti neste momento."
+      "experience": "O que aconteceu, nas próprias palavras e no próprio contexto.",
+      "action": "O que fizeram — ou escolheram não fazer — em resposta.",
+      "emotion": "Como aterrou, captado enquanto o sentimento ainda é verdadeiro.",
+      "decision": "A escolha feita, para se poderem seguir as consequências mais tarde.",
+      "discovery": "O que aprenderam sobre si neste momento."
     },
-    "standardQuestion": "Que parte da vida é este momento?",
+    "standardQuestion": "Que tipo de nota gostarias de fazer?",
+    "standardNoteQuestion": "Escreve uma nota sobre este momento.",
+    "standardNoteLabel": "A tua nota",
+    "standardNotePlaceholder": "Escreve o que aconteceu, e usa #hashtags se quiseres",
+    "topicsSelectLead": "Seleciona os tópicos relevantes para os adicionar à tua nota",
+    "topicsFromNote": "Tópicos com base na tua nota",
+    "suggestedTopics": "Tópicos sugeridos",
+    "saveNote": "Guardar nota",
     "standardFieldsQuestion": "Conta o momento por partes, não como um único bloco.",
     "standardWhatHappened": "O que aconteceu",
     "standardHowLanded": "Como aterrou",
@@ -4741,8 +4750,8 @@
     "topicsPlaceholder": "Adiciona um tópico ou #hashtag",
     "timingLabel": "Quando aconteceu este momento?",
     "timing": {
-      "now": "Agora",
-      "before": "Antes"
+      "now": "AGORA",
+      "before": "ANTES"
     },
     "poweredBy": "Powered by",
     "fractalLead": "Somos a soma dos nossos momentos. O bem-estar coletivo é fractal: pessoa, espaço, ecossistema, rede — o mesmo pulso, noutra escala.",

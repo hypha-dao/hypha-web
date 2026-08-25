@@ -86,6 +86,8 @@ export type WellbeingMoment = {
   score: number;
   title: string;
   category?: StandardCategory;
+  /** Standard single note. Older moments may still hold the five split fields. */
+  comment?: string;
   experience?: string;
   actionNote?: string;
   emotionNote?: string;
@@ -150,6 +152,21 @@ export const JOURNEY_ADDONS: readonly {
 
 export function clampAxis(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+/**
+ * Feeling / Standard / NVC matrix:
+ * - X (`felt`): 0 = sad (left) → 100 = happy (right)
+ * - Y (`impact`): 0 = low impact (bottom) → 100 = high impact (top)
+ */
+export function axesFromGridPointer(
+  xRatio: number,
+  yFromTopRatio: number,
+): { felt: number; impact: number } {
+  return {
+    felt: clampAxis(xRatio * 100),
+    impact: clampAxis((1 - yFromTopRatio) * 100),
+  };
 }
 
 export function scoreFromAxes(felt: number, impact: number): number {

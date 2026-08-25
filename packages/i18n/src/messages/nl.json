@@ -4575,6 +4575,8 @@
     "axisFeltHigh": "Energising",
     "axisImpactLow": "Inner only",
     "axisImpactHigh": "Outer change",
+    "feelingAxisImpactHigh": "HOGE IMPACT",
+    "feelingAxisImpactLow": "LAGE IMPACT",
     "nameLabel": "Name the moment",
     "namePlaceholder": "A few words while it is still true",
     "suggest": "Suggest",
@@ -4601,11 +4603,11 @@
       "acting": "Acting"
     },
     "dimensionSub": {
-      "being": "Cultivating our inner life",
-      "thinking": "Understanding our complex world",
-      "relating": "Caring for others and the world",
-      "collaborating": "Building trust and working together",
-      "acting": "Leading and enabling change"
+      "being": "Ons innerlijk leven cultiveren",
+      "thinking": "Onze complexe wereld begrijpen",
+      "relating": "Zorgen voor anderen en de wereld",
+      "collaborating": "Vertrouwen opbouwen en samenwerken",
+      "acting": "Verandering leiden en mogelijk maken"
     },
     "practice": {
       "being": {
@@ -4685,9 +4687,9 @@
       "nvc": "Geweldloze communicatie"
     },
     "modeLead": {
-      "standard": "Kies een levenscategorie en noem wat er gebeurde, in delen.",
+      "standard": "Kies een categorie, markeer hoe het voelde, schrijf dan één notitie.",
       "idg": "Kies een dimensie en een praktijk, markeer dan hoe het voelde.",
-      "nvc": "Vijf stappen: reactie, wat gebeurde, gevoel, behoefte, verzoek."
+      "nvc": "Markeer hoe het voelde, dan vijf stappen: reactie, wat gebeurde, gevoel, behoefte, verzoek."
     },
     "category": {
       "experience": "Ervaring",
@@ -4697,13 +4699,20 @@
       "discovery": "Ontdekking"
     },
     "categoryLead": {
-      "experience": "Wat er gebeurde, in jouw woorden en context.",
-      "action": "Wat je deed — of bewust niet deed — als antwoord.",
-      "emotion": "Hoe het landde, terwijl het gevoel nog waar is.",
-      "decision": "De keuze die je maakte, zodat de gevolgen te volgen zijn.",
-      "discovery": "Wat je in dit moment over jezelf leerde."
+      "experience": "Wat er gebeurde, in de eigen woorden en context.",
+      "action": "Wat zij deden — of bewust niet deden — als antwoord.",
+      "emotion": "Hoe het landde, vastgelegd terwijl het gevoel nog waar is.",
+      "decision": "De gemaakte keuze, zodat de gevolgen later te volgen zijn.",
+      "discovery": "Wat zij in dit moment over zichzelf leerden."
     },
-    "standardQuestion": "Welk deel van het leven is dit moment?",
+    "standardQuestion": "Wat voor notitie wil je maken?",
+    "standardNoteQuestion": "Schrijf één notitie over dit moment.",
+    "standardNoteLabel": "Jouw notitie",
+    "standardNotePlaceholder": "Schrijf wat er gebeurde, en gebruik #hashtags als je wilt",
+    "topicsSelectLead": "Selecteer de relevante onderwerpen om ze aan je notitie toe te voegen",
+    "topicsFromNote": "Onderwerpen op basis van je notitie",
+    "suggestedTopics": "Voorgestelde onderwerpen",
+    "saveNote": "Notitie opslaan",
     "standardFieldsQuestion": "Vertel het moment in delen, niet als één wolk.",
     "standardWhatHappened": "Wat er gebeurde",
     "standardHowLanded": "Hoe het landde",
@@ -4749,8 +4758,8 @@
     "topicsPlaceholder": "Voeg een onderwerp of #hashtag toe",
     "timingLabel": "Wanneer gebeurde dit moment?",
     "timing": {
-      "now": "Nu",
-      "before": "Eerder"
+      "now": "NU",
+      "before": "EERDER"
     },
     "poweredBy": "Powered by",
     "fractalLead": "Wij zijn de som van onze momenten. Collectief welzijn is fractaal: mens, ruimte, ecosysteem, netwerk — dezelfde puls, op een andere schaal.",
