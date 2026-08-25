@@ -4664,6 +4664,114 @@
         "creativity": "A new form appeared",
         "stewardship": "I looked after what we hold"
       }
+    },
+    "continue": "Continuer",
+    "addTopic": "Ajouter",
+    "backToFields": "Retour",
+    "modeQuestion": "Comment veux-tu saisir ce moment ?",
+    "mode": {
+      "standard": "Standard",
+      "idg": "Inner Development Goals",
+      "nvc": "Communication non violente"
+    },
+    "modeLead": {
+      "standard": "Choisis une catégorie de vie, puis nomme l’expérience par parties.",
+      "idg": "Choisis une dimension et une pratique, puis marque comment cela s’est senti.",
+      "nvc": "Cinq pas : réaction, ce qui s’est passé, sentiment, besoin, demande."
+    },
+    "category": {
+      "experience": "Expérience",
+      "action": "Action",
+      "emotion": "Émotion",
+      "decision": "Décision",
+      "discovery": "Découverte"
+    },
+    "categoryLead": {
+      "experience": "Ce qui s’est passé, avec tes mots et ton contexte.",
+      "action": "Ce que tu as fait — ou choisi de ne pas faire — en réponse.",
+      "emotion": "Comment cela a atterri, tant que le sentiment est encore vrai.",
+      "decision": "Le choix que tu as fait, pour en suivre les conséquences.",
+      "discovery": "Ce que tu as appris sur toi dans ce moment."
+    },
+    "standardQuestion": "Quelle part de la vie est ce moment ?",
+    "standardFieldsQuestion": "Raconte le moment par parties, pas comme un seul bloc.",
+    "standardWhatHappened": "Ce qui s’est passé",
+    "standardHowLanded": "Comment cela a atterri",
+    "standardWhatChanged": "Ce que tu as fait ou choisi",
+    "standardWhatLearned": "Ce que tu as appris",
+    "standardSuggest": {
+      "experience": "Quelque chose s’est passé et est resté",
+      "action": "J’ai choisi comment l’accueillir",
+      "emotion": "Un sentiment est venu et je suis resté avec",
+      "decision": "J’ai fait un choix que je peux suivre",
+      "discovery": "J’ai appris quelque chose sur moi"
+    },
+    "nvcPrompt": {
+      "reaction": "Quelle a été ta première réaction ?",
+      "happened": "Que s’est-il vraiment passé ?",
+      "feeling": "Que ressens-tu maintenant ?",
+      "need": "De quoi as-tu besoin ?",
+      "request": "Quelle est ta demande ?"
+    },
+    "nvcHint": {
+      "reaction": "La première histoire de ton corps, avant que tu la ranges.",
+      "happened": "Seulement ce qu’une caméra verrait. Sans verdict.",
+      "feeling": "Nomme le sentiment tant qu’il est encore chaud.",
+      "need": "Le besoin vivant sous le sentiment.",
+      "request": "Une demande claire à laquelle quelqu’un peut dire oui ou non."
+    },
+    "nvcPlaceholder": {
+      "reaction": "Je me suis dit…",
+      "happened": "Quand j’ai entendu…",
+      "feeling": "Je ressens…",
+      "need": "J’ai besoin…",
+      "request": "Serais-tu prêt à…"
+    },
+    "nvcLens": {
+      "reaction": "Action",
+      "happened": "Expérience",
+      "feeling": "Émotion",
+      "need": "Décision",
+      "request": "Découverte"
+    },
+    "topicsQuestion": "Quels mots veulent voyager avec ce moment ?",
+    "topicsLabel": "Sujets",
+    "topicsPlaceholder": "Ajouter un sujet ou un #hashtag",
+    "timingLabel": "Quand ce moment a-t-il eu lieu ?",
+    "timing": {
+      "now": "Maintenant",
+      "before": "Avant"
+    },
+    "poweredBy": "Powered by",
+    "fractalLead": "Nous sommes la somme de nos moments. Le bien-être collectif est fractal : personne, espace, écosystème, réseau — le même pouls, à une autre échelle.",
+    "fieldArcLabel": "Le champ",
+    "insightsKicker": "Le pouls",
+    "insightsTitle": {
+      "personal": "Ce que disent tes moments",
+      "space": "Ce que ce cercle n’a pas encore nommé",
+      "ecosystem": "Le champ entre ces espaces",
+      "network": "Une écoute plus large"
+    },
+    "insightsLevel": {
+      "personal": "ta vie",
+      "space": "ce cercle",
+      "ecosystem": "cet écosystème",
+      "network": "le réseau"
+    },
+    "insightsAskAi": "Demander à Hypha AI",
+    "insightsCopied": "Invite copiée — ouvre le panneau IA",
+    "insights": {
+      "empty": "Pas encore de moments dans {level}. Le premier donnera au pouls quelque chose à tenir.",
+      "firstMoment": "Ce premier moment — {title} — est une graine. Continue d’écouter ; le motif n’est pas encore là.",
+      "driftUp": "Le score a monté de {delta}. Quelque chose dans les moments récents te nourrit.",
+      "driftDown": "Le score a baissé de {delta}. Pas un échec — un signal qui veut un nom.",
+      "steady": "Le pouls est {feeling}. Stable n’est pas coincé ; c’est un lieu d’où voir.",
+      "topicFocus": "#{topic} revient sans cesse. Il y a un fil que tu es peut-être trop près pour voir.",
+      "dimensionFocus": "Ta pratique penche vers {dimension}. Vois ce que cette pente coûte, et ce qu’elle nourrit.",
+      "categoryFocus": "La plupart de ces moments ont atterri comme {category}. C’est la porte que tu continues de franchir.",
+      "nvcNeed": "Un besoin a été dit : {need}. Un besoin nommé n’a plus à crier.",
+      "modeMix": "Tu saisis à travers {mode}. La lentille façonne ce que tu peux voir.",
+      "fractal": "Ce nombre est la même métrique à {level} — un moment, puis une personne, puis un cercle, puis le champ."
     }
   }
 }

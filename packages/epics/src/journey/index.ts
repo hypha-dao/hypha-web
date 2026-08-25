@@ -7,7 +7,11 @@ export { NetworkJourneyIntro } from './components/network-journey-intro';
 export { NetworkLivingSurface } from './components/network-living-surface';
 export { EcosystemWorldMap } from './components/ecosystem-world-map';
 export { WellbeingScoreCard } from './components/wellbeing-score-card';
+export { WellbeingGauge } from './components/wellbeing-gauge';
+export { WellbeingInsightsCard } from './components/wellbeing-insights-card';
+export { WellbeingEcosystemPulse } from './components/wellbeing-ecosystem-pulse';
 export { CaptureMomentDialog } from './components/capture-moment-dialog';
+export { buildWellbeingInsights } from './wellbeing-insights';
 export { SpaceAddonsStrip } from './components/space-addons-strip';
 export {
   SpaceNextSteps,

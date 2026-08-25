@@ -12,6 +12,7 @@ import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
 import { useJourneyStore } from '../use-journey-store';
 import { averageScore, momentsForScope } from '../wellbeing-model';
 import { WellbeingScoreCard } from './wellbeing-score-card';
+import { WellbeingInsightsCard } from './wellbeing-insights-card';
 import { CaptureMomentDialog } from './capture-moment-dialog';
 import { EcosystemWorldMap } from './ecosystem-world-map';
 import { SpaceAddonsStrip } from './space-addons-strip';
@@ -47,8 +48,16 @@ export function SpaceJourneyHome({
       }),
     [journey.state.moments, spaceSlug],
   );
+  const ecosystemMoments = useMemo(
+    () =>
+      momentsForScope(journey.state.moments, {
+        scope: 'collective',
+      }),
+    [journey.state.moments],
+  );
   const score = averageScore(collectiveMoments);
   const previousScore = averageScore(collectiveMoments.slice(1));
+  const ecosystemScore = averageScore(ecosystemMoments);
   const steps = useMemo(
     () =>
       buildSpaceNextSteps({
@@ -87,7 +96,7 @@ export function SpaceJourneyHome({
             variant="collective"
             score={score}
             previousScore={previousScore}
-            comparisonScore={61}
+            comparisonScore={ecosystemScore ?? 61}
             activated={addons.wellbeing}
             onCapture={() => setCaptureOpen(true)}
             onActivate={() =>
@@ -97,10 +106,22 @@ export function SpaceJourneyHome({
         </div>
       </div>
 
+      <WellbeingInsightsCard
+        level="space"
+        moments={collectiveMoments}
+        previousScore={previousScore}
+      />
+
       <EcosystemWorldMap
         lang={lang}
         spaces={mapSpaces}
         href={getDhoPathEcosystem(lang, spaceSlug)}
+      />
+
+      <WellbeingInsightsCard
+        level="ecosystem"
+        moments={ecosystemMoments}
+        previousScore={averageScore(ecosystemMoments.slice(1))}
       />
 
       <SpaceAddonsStrip

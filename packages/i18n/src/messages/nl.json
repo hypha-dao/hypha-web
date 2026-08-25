@@ -4674,6 +4674,114 @@
         "creativity": "A new form appeared",
         "stewardship": "I looked after what we hold"
       }
+    },
+    "continue": "Verder",
+    "addTopic": "Toevoegen",
+    "backToFields": "Terug",
+    "modeQuestion": "Hoe wil je dit moment vastleggen?",
+    "mode": {
+      "standard": "Standaard",
+      "idg": "Inner Development Goals",
+      "nvc": "Geweldloze communicatie"
+    },
+    "modeLead": {
+      "standard": "Kies een levenscategorie en noem wat er gebeurde, in delen.",
+      "idg": "Kies een dimensie en een praktijk, markeer dan hoe het voelde.",
+      "nvc": "Vijf stappen: reactie, wat gebeurde, gevoel, behoefte, verzoek."
+    },
+    "category": {
+      "experience": "Ervaring",
+      "action": "Actie",
+      "emotion": "Emotie",
+      "decision": "Beslissing",
+      "discovery": "Ontdekking"
+    },
+    "categoryLead": {
+      "experience": "Wat er gebeurde, in jouw woorden en context.",
+      "action": "Wat je deed — of bewust niet deed — als antwoord.",
+      "emotion": "Hoe het landde, terwijl het gevoel nog waar is.",
+      "decision": "De keuze die je maakte, zodat de gevolgen te volgen zijn.",
+      "discovery": "Wat je in dit moment over jezelf leerde."
+    },
+    "standardQuestion": "Welk deel van het leven is dit moment?",
+    "standardFieldsQuestion": "Vertel het moment in delen, niet als één wolk.",
+    "standardWhatHappened": "Wat er gebeurde",
+    "standardHowLanded": "Hoe het landde",
+    "standardWhatChanged": "Wat je deed of koos",
+    "standardWhatLearned": "Wat je leerde",
+    "standardSuggest": {
+      "experience": "Er gebeurde iets dat bij me bleef",
+      "action": "Ik koos hoe ik het zou ontmoeten",
+      "emotion": "Er kwam een gevoel en ik bleef erbij",
+      "decision": "Ik maakte een keuze die ik kan volgen",
+      "discovery": "Ik leerde iets over mezelf"
+    },
+    "nvcPrompt": {
+      "reaction": "Wat was je eerste reactie?",
+      "happened": "Wat gebeurde er echt?",
+      "feeling": "Wat voel je nu?",
+      "need": "Wat heb je nodig?",
+      "request": "Wat is je verzoek?"
+    },
+    "nvcHint": {
+      "reaction": "Het eerste verhaal van je lichaam, voordat je het gladstreek.",
+      "happened": "Alleen wat een camera zou zien. Geen oordeel.",
+      "feeling": "Noem het gevoel terwijl het nog warm is.",
+      "need": "De levende behoefte onder het gevoel.",
+      "request": "Een helder verzoek waarop iemand ja of nee kan zeggen."
+    },
+    "nvcPlaceholder": {
+      "reaction": "Ik zei tegen mezelf…",
+      "happened": "Toen ik hoorde…",
+      "feeling": "Ik voel…",
+      "need": "Ik heb nodig…",
+      "request": "Zou je bereid zijn…"
+    },
+    "nvcLens": {
+      "reaction": "Actie",
+      "happened": "Ervaring",
+      "feeling": "Emotie",
+      "need": "Beslissing",
+      "request": "Ontdekking"
+    },
+    "topicsQuestion": "Welke woorden willen met dit moment meereizen?",
+    "topicsLabel": "Onderwerpen",
+    "topicsPlaceholder": "Voeg een onderwerp of #hashtag toe",
+    "timingLabel": "Wanneer gebeurde dit moment?",
+    "timing": {
+      "now": "Nu",
+      "before": "Eerder"
+    },
+    "poweredBy": "Powered by",
+    "fractalLead": "Wij zijn de som van onze momenten. Collectief welzijn is fractaal: mens, ruimte, ecosysteem, netwerk — dezelfde puls, op een andere schaal.",
+    "fieldArcLabel": "Het veld",
+    "insightsKicker": "De puls",
+    "insightsTitle": {
+      "personal": "Wat je momenten zeggen",
+      "space": "Wat deze cirkel nog niet heeft benoemd",
+      "ecosystem": "Het veld tussen deze ruimtes",
+      "network": "Een wijder luisteren"
+    },
+    "insightsLevel": {
+      "personal": "jouw leven",
+      "space": "deze cirkel",
+      "ecosystem": "dit ecosysteem",
+      "network": "het netwerk"
+    },
+    "insightsAskAi": "Vraag Hypha AI",
+    "insightsCopied": "Prompt gekopieerd — open het AI-paneel",
+    "insights": {
+      "empty": "Nog geen momenten in {level}. De eerste geeft de puls iets om vast te houden.",
+      "firstMoment": "Dit eerste moment — {title} — is een zaad. Blijf luisteren; het patroon is er nog niet.",
+      "driftUp": "De score steeg met {delta}. Iets in de recente momenten voedt je.",
+      "driftDown": "De score daalde met {delta}. Geen falen — een signaal dat een naam wil.",
+      "steady": "De puls is {feeling}. Stabiel is niet vast; het is een plek om vanuit te kijken.",
+      "topicFocus": "#{topic} keert steeds terug. Er is een draad die je misschien te dichtbij bent om te zien.",
+      "dimensionFocus": "Je praktijk helt naar {dimension}. Zie wat die helling kost, en wat ze voedt.",
+      "categoryFocus": "De meeste momenten landden als {category}. Dat is de deur waar je steeds door loopt.",
+      "nvcNeed": "Er werd een behoefte uitgesproken: {need}. Genoemde behoeften hoeven niet meer te schreeuwen.",
+      "modeMix": "Je legt vast via {mode}. De lens vormt wat je kunt zien.",
+      "fractal": "Dit getal is dezelfde metriek op {level} — één moment, dan een mens, dan een cirkel, dan het veld."
     }
   }
 }

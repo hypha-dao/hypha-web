@@ -4673,6 +4673,114 @@
         "creativity": "A new form appeared",
         "stewardship": "I looked after what we hold"
       }
+    },
+    "continue": "Fortsett",
+    "addTopic": "Legg til",
+    "backToFields": "Tilbake",
+    "modeQuestion": "Hvordan vil du fange dette øyeblikket?",
+    "mode": {
+      "standard": "Standard",
+      "idg": "Inner Development Goals",
+      "nvc": "Ikke-voldelig kommunikasjon"
+    },
+    "modeLead": {
+      "standard": "Velg en livskategori, og navngi det som skjedde i deler.",
+      "idg": "Velg en dimensjon og en praksis, og marker hvordan det kjentes.",
+      "nvc": "Fem steg: reaksjon, hva som skjedde, følelse, behov, anmodning."
+    },
+    "category": {
+      "experience": "Opplevelse",
+      "action": "Handling",
+      "emotion": "Følelse",
+      "decision": "Beslutning",
+      "discovery": "Oppdagelse"
+    },
+    "categoryLead": {
+      "experience": "Hva som skjedde, med dine ord og din sammenheng.",
+      "action": "Hva du gjorde — eller valgte å ikke gjøre — som svar.",
+      "emotion": "Hvordan det landet, mens følelsen fortsatt er sann.",
+      "decision": "Valget du tok, så følgene kan spores.",
+      "discovery": "Hva du lærte om deg selv i øyeblikket."
+    },
+    "standardQuestion": "Hvilken del av livet er dette øyeblikket?",
+    "standardFieldsQuestion": "Fortell øyeblikket i deler, ikke som én klump.",
+    "standardWhatHappened": "Hva som skjedde",
+    "standardHowLanded": "Hvordan det landet",
+    "standardWhatChanged": "Hva du gjorde eller valgte",
+    "standardWhatLearned": "Hva du lærte",
+    "standardSuggest": {
+      "experience": "Noe skjedde som ble værende",
+      "action": "Jeg valgte hvordan jeg skulle møte det",
+      "emotion": "En følelse kom, og jeg ble hos den",
+      "decision": "Jeg tok et valg jeg kan følge",
+      "discovery": "Jeg lærte noe om meg selv"
+    },
+    "nvcPrompt": {
+      "reaction": "Hva var din første reaksjon?",
+      "happened": "Hva skjedde egentlig?",
+      "feeling": "Hva føler du nå?",
+      "need": "Hva trenger du?",
+      "request": "Hva er anmodningen din?"
+    },
+    "nvcHint": {
+      "reaction": "Den første historien kroppen din fortalte, før du ryddet den.",
+      "happened": "Bare det et kamera ville sett. Ingen dom.",
+      "feeling": "Gi følelsen et navn mens den ennå er varm.",
+      "need": "Det levende behovet under følelsen.",
+      "request": "En tydelig anmodning noen kan si ja eller nei til."
+    },
+    "nvcPlaceholder": {
+      "reaction": "Jeg sa til meg selv…",
+      "happened": "Da jeg hørte…",
+      "feeling": "Jeg føler…",
+      "need": "Jeg trenger…",
+      "request": "Ville du vært villig til…"
+    },
+    "nvcLens": {
+      "reaction": "Handling",
+      "happened": "Opplevelse",
+      "feeling": "Følelse",
+      "need": "Beslutning",
+      "request": "Oppdagelse"
+    },
+    "topicsQuestion": "Hvilke ord vil reise med dette øyeblikket?",
+    "topicsLabel": "Emner",
+    "topicsPlaceholder": "Legg til et emne eller #hashtag",
+    "timingLabel": "Når skjedde dette øyeblikket?",
+    "timing": {
+      "now": "Nå",
+      "before": "Før"
+    },
+    "poweredBy": "Powered by",
+    "fractalLead": "Vi er summen av øyeblikkene våre. Kollektiv velvære er fraktal: person, rom, økosystem, nettverk — samme puls, i en annen skala.",
+    "fieldArcLabel": "Feltet",
+    "insightsKicker": "Pulsen",
+    "insightsTitle": {
+      "personal": "Hva øyeblikkene dine sier",
+      "space": "Det denne sirkelen ennå ikke har navngitt",
+      "ecosystem": "Feltet mellom disse rommene",
+      "network": "En videre lytting"
+    },
+    "insightsLevel": {
+      "personal": "livet ditt",
+      "space": "denne sirkelen",
+      "ecosystem": "dette økosystemet",
+      "network": "nettverket"
+    },
+    "insightsAskAi": "Spør Hypha AI",
+    "insightsCopied": "Prompt kopiert — åpne AI-panelet",
+    "insights": {
+      "empty": "Ingen øyeblikk ennå i {level}. Det første gir pulsen noe å holde.",
+      "firstMoment": "Dette første øyeblikket — {title} — er et frø. Fortsett å lytte; mønsteret er ikke her ennå.",
+      "driftUp": "Poengsummen steg med {delta}. Noe i de siste øyeblikkene nærer deg.",
+      "driftDown": "Poengsummen sank med {delta}. Ikke et nederlag — et signal som vil ha et navn.",
+      "steady": "Pulsen er {feeling}. Stabil er ikke fastlåst; det er et sted å se fra.",
+      "topicFocus": "#{topic} kommer tilbake. Det er en tråd du kanskje står for nær til å se.",
+      "dimensionFocus": "Praksisen din har lutet mot {dimension}. Se hva den lutingen koster, og hva den nærer.",
+      "categoryFocus": "De fleste av disse øyeblikkene landet som {category}. Det er døren du blir ved å gå gjennom.",
+      "nvcNeed": "Et behov ble sagt: {need}. Behov som er navngitt trenger ikke lenger å rope.",
+      "modeMix": "Du har fanget gjennom {mode}. Linsen former det du kan se.",
+      "fractal": "Dette tallet er samme måling i {level} — ett øyeblikk, så et menneske, så en sirkel, så feltet."
     }
   }
 }

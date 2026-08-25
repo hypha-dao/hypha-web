@@ -4676,6 +4676,114 @@
         "creativity": "A new form appeared",
         "stewardship": "I looked after what we hold"
       }
+    },
+    "continue": "Continue",
+    "addTopic": "Add",
+    "backToFields": "Back",
+    "modeQuestion": "How do you want to capture this moment?",
+    "mode": {
+      "standard": "Standard",
+      "idg": "Inner Development Goals",
+      "nvc": "Nonviolent Communication"
+    },
+    "modeLead": {
+      "standard": "Pick a life category, then name what happened in parts.",
+      "idg": "Choose a dimension and practice, then mark how it felt.",
+      "nvc": "Walk five steps: reaction, what happened, feeling, need, request."
+    },
+    "category": {
+      "experience": "Experience",
+      "action": "Action",
+      "emotion": "Emotion",
+      "decision": "Decision",
+      "discovery": "Discovery"
+    },
+    "categoryLead": {
+      "experience": "What happened, in your own words and context.",
+      "action": "What you did — or chose not to do — in response.",
+      "emotion": "How it landed, while the feeling is still true.",
+      "decision": "The choice you made, so its consequences can be traced.",
+      "discovery": "What you learned about yourself from the moment."
+    },
+    "standardQuestion": "Which part of life is this moment?",
+    "standardFieldsQuestion": "Tell the moment in parts, not one blur.",
+    "standardWhatHappened": "What happened",
+    "standardHowLanded": "How it landed",
+    "standardWhatChanged": "What you did or chose",
+    "standardWhatLearned": "What you learned",
+    "standardSuggest": {
+      "experience": "Something happened that stayed with me",
+      "action": "I chose how to meet it",
+      "emotion": "A feeling arrived and I stayed with it",
+      "decision": "I made a choice I can trace",
+      "discovery": "I learned something about myself"
+    },
+    "nvcPrompt": {
+      "reaction": "What was your first reaction?",
+      "happened": "What actually happened?",
+      "feeling": "What do you feel now?",
+      "need": "What do you need?",
+      "request": "What is your request?"
+    },
+    "nvcHint": {
+      "reaction": "The first story your body told, before you cleaned it up.",
+      "happened": "Just what a camera would see. No verdict.",
+      "feeling": "Name the feeling while it is still warm.",
+      "need": "The living need underneath the feeling.",
+      "request": "A clear ask someone could say yes or no to."
+    },
+    "nvcPlaceholder": {
+      "reaction": "I told myself…",
+      "happened": "When I heard…",
+      "feeling": "I feel…",
+      "need": "I need…",
+      "request": "Would you be willing to…"
+    },
+    "nvcLens": {
+      "reaction": "Action",
+      "happened": "Experience",
+      "feeling": "Emotion",
+      "need": "Decision",
+      "request": "Discovery"
+    },
+    "topicsQuestion": "Which words want to travel with this moment?",
+    "topicsLabel": "Topics",
+    "topicsPlaceholder": "Add a topic or #hashtag",
+    "timingLabel": "When did this moment occur?",
+    "timing": {
+      "now": "Now",
+      "before": "Before"
+    },
+    "poweredBy": "Powered by",
+    "fractalLead": "We are the sum of our moments. Collective wellbeing is fractal: person, space, ecosystem, network — the same pulse, scaled.",
+    "fieldArcLabel": "The field",
+    "insightsKicker": "The pulse",
+    "insightsTitle": {
+      "personal": "What your moments are saying",
+      "space": "What this circle has not named yet",
+      "ecosystem": "The field between these spaces",
+      "network": "A wider listening"
+    },
+    "insightsLevel": {
+      "personal": "your life",
+      "space": "this circle",
+      "ecosystem": "this ecosystem",
+      "network": "the network"
+    },
+    "insightsAskAi": "Ask Hypha AI",
+    "insightsCopied": "Prompt copied — open the AI panel",
+    "insights": {
+      "empty": "No moments yet in {level}. The first one will give the pulse something to hold.",
+      "firstMoment": "This first moment — {title} — is a seed. Keep listening; the pattern is not here yet.",
+      "driftUp": "The score rose by {delta}. Something in the recent moments is feeding you.",
+      "driftDown": "The score eased by {delta}. Not a failure — a signal that wants a name.",
+      "steady": "The pulse is {feeling}. Steady is not stuck; it is a place you can see from.",
+      "topicFocus": "#{topic} keeps returning. There is a thread here you may be too close to notice.",
+      "dimensionFocus": "Your practice has been leaning into {dimension}. Notice what that leaning costs, and what it feeds.",
+      "categoryFocus": "Most of these moments landed as {category}. That is the doorway you keep walking through.",
+      "nvcNeed": "A need was spoken: {need}. Needs that are named stop having to shout.",
+      "modeMix": "You have been capturing through {mode}. The lens is shaping what you can see.",
+      "fractal": "This number is the same metric at {level} — one moment, then a person, then a circle, then the field."
     }
   }
 }

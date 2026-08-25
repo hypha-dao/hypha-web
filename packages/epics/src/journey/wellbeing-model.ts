@@ -17,6 +17,58 @@ export type WellbeingFeeling =
 
 export type WellbeingScope = 'personal' | 'collective';
 
+export const WELLBEING_MODES = ['standard', 'idg', 'nvc'] as const;
+
+export type WellbeingMode = (typeof WELLBEING_MODES)[number];
+
+export const DEFAULT_WELLBEING_MODE: WellbeingMode = 'idg';
+
+export const STANDARD_CATEGORIES = [
+  'experience',
+  'action',
+  'emotion',
+  'decision',
+  'discovery',
+] as const;
+
+export type StandardCategory = (typeof STANDARD_CATEGORIES)[number];
+
+export const NVC_FIELDS = [
+  'reaction',
+  'happened',
+  'feeling',
+  'need',
+  'request',
+] as const;
+
+export type NvcField = (typeof NVC_FIELDS)[number];
+
+export const WELLBEING_TIMINGS = ['now', 'before'] as const;
+
+export type WellbeingTiming = (typeof WELLBEING_TIMINGS)[number];
+
+export const SUGGESTED_TOPICS = [
+  'friends',
+  'work',
+  'health',
+  'happiness',
+  'money',
+  'stress',
+  'home',
+  'circle',
+] as const;
+
+export const CATEGORY_TO_DIMENSION: Record<
+  StandardCategory,
+  WellbeingDimension
+> = {
+  experience: 'being',
+  action: 'acting',
+  emotion: 'relating',
+  decision: 'thinking',
+  discovery: 'collaborating',
+};
+
 export type JourneyAddonId = 'wellbeing' | 'energy' | 'water' | 'culture';
 
 export type WellbeingMoment = {
@@ -25,13 +77,30 @@ export type WellbeingMoment = {
   personSlug: string;
   spaceSlug?: string;
   scope: WellbeingScope;
+  /** Absent on pre-mode (IDG-only) moments — treat as `idg`. */
+  mode?: WellbeingMode;
   dimension: WellbeingDimension;
   practiceId: string;
   felt: number;
   impact: number;
   score: number;
   title: string;
+  category?: StandardCategory;
+  experience?: string;
+  actionNote?: string;
+  emotionNote?: string;
+  decisionNote?: string;
+  discoveryNote?: string;
+  nvc?: Partial<Record<NvcField, string>>;
+  topics?: string[];
+  timing?: WellbeingTiming;
 };
+
+export type WellbeingInsightLevel =
+  | 'personal'
+  | 'space'
+  | 'ecosystem'
+  | 'network';
 
 export type JourneyAddonState = {
   wellbeing: boolean;
@@ -43,6 +112,8 @@ export type JourneyStoreState = {
   version: 1;
   personalActivated: boolean;
   personalActivatedAt?: string;
+  preferredMode?: WellbeingMode;
+  spaceModes?: Record<string, WellbeingMode>;
   moments: WellbeingMoment[];
   spaceAddons: Record<string, JourneyAddonState>;
 };
@@ -137,10 +208,71 @@ export function momentsForScope(
   });
 }
 
+export function isWellbeingMode(value: unknown): value is WellbeingMode {
+  return (
+    typeof value === 'string' &&
+    (WELLBEING_MODES as readonly string[]).includes(value)
+  );
+}
+
+export function momentMode(
+  moment: Pick<WellbeingMoment, 'mode'>,
+): WellbeingMode {
+  return moment.mode ?? DEFAULT_WELLBEING_MODE;
+}
+
+export function preferredModeFor(
+  state: JourneyStoreState,
+  spaceSlug?: string,
+): WellbeingMode {
+  if (spaceSlug) {
+    return (
+      state.spaceModes?.[spaceSlug] ??
+      state.preferredMode ??
+      DEFAULT_WELLBEING_MODE
+    );
+  }
+  return state.preferredMode ?? DEFAULT_WELLBEING_MODE;
+}
+
+export function normalizeTopic(raw: string): string {
+  return raw
+    .replace(/^#/, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .slice(0, 32);
+}
+
+export function extractTopics(...parts: Array<string | undefined>): string[] {
+  const found = new Set<string>();
+  for (const part of parts) {
+    if (!part) continue;
+    for (const match of part.matchAll(/#([\p{L}\p{N}_-]{1,32})/gu)) {
+      const topic = normalizeTopic(match[1] ?? '');
+      if (topic) found.add(topic);
+    }
+  }
+  return [...found];
+}
+
+export function parseTopicsInput(raw: string): string[] {
+  return [
+    ...new Set(
+      raw
+        .split(/[,\s]+/)
+        .map(normalizeTopic)
+        .filter(Boolean),
+    ),
+  ];
+}
+
 export function createEmptyJourneyState(): JourneyStoreState {
   return {
     version: 1,
     personalActivated: false,
+    preferredMode: DEFAULT_WELLBEING_MODE,
+    spaceModes: {},
     moments: [],
     spaceAddons: {},
   };
