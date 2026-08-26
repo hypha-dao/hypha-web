@@ -23,7 +23,7 @@ export function toNetworkPerson(person: Person): NetworkPerson | null {
     slug,
     name: personDisplayName(person) || slug,
     avatarUrl: person.avatarUrl ?? null,
-    networkVisible: person.networkVisible !== false,
+    networkVisible: true,
   };
 }
 
