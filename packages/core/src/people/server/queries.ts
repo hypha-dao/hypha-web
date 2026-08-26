@@ -24,6 +24,7 @@ import {
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
+import { withOptionalNetworkVisibleColumn } from './optional-network-visible';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
   value === null ? undefined : value;
@@ -35,7 +36,8 @@ const nullToUndefined = <T>(value: T | null): T | undefined =>
 const isHumanPerson = () =>
   or(isNull(people.sub), notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`));
 
-export const getDefaultFields = () => {
+/** Columns that exist before migration 0077. Safe for auth / `/me`. */
+export const getCorePersonFields = () => {
   return {
     id: people.id,
     slug: people.slug,
@@ -51,7 +53,12 @@ export const getDefaultFields = () => {
     address: people.address,
     leadImageUrl: people.leadImageUrl,
     preferredCurrency: people.preferredCurrency,
-    networkVisible: people.networkVisible,
+  };
+};
+
+export const getDefaultFields = () => {
+  return {
+    ...getCorePersonFields(),
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
@@ -157,11 +164,15 @@ export const findPersonById = async (
   { id }: FindPersonByIdInput,
   { db }: DbConfig,
 ) => {
-  const [dbPerson] = await db
-    .select()
-    .from(people)
-    .where(eq(people.id, id))
-    .limit(1);
+  const [dbPerson] = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(eq(people.id, id)).limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.id, id))
+        .limit(1),
+  );
 
   if (!dbPerson) return null;
 
@@ -175,11 +186,20 @@ export const findPersonByWeb3Address = async (
   { address }: FindPersonByWeb3AddressInput,
   { db }: DbConfig,
 ) => {
-  const [person] = await db
-    .select()
-    .from(people)
-    .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
-    .limit(1);
+  const [person] = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .select()
+        .from(people)
+        .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
+        .limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
+        .limit(1),
+  );
   if (!person) return null;
 
   return mapToDomainPerson(person);
@@ -195,10 +215,18 @@ export const findPeopleByWeb3Addresses = async (
   if (addresses.length === 0) return [];
 
   const upperAddresses = addresses.map((addr) => addr.toUpperCase());
-  const dbPeople = await db
-    .select()
-    .from(people)
-    .where(inArray(sql`upper(${people.address})`, upperAddresses));
+  const dbPeople = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .select()
+        .from(people)
+        .where(inArray(sql`upper(${people.address})`, upperAddresses)),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(inArray(sql`upper(${people.address})`, upperAddresses)),
+  );
 
   return dbPeople.map(mapToDomainPerson);
 };
@@ -213,11 +241,20 @@ export const findPersonByEmail = async (
   const normalized = email.trim().toLowerCase();
   if (!normalized) return null;
 
-  const [person] = await db
-    .select()
-    .from(people)
-    .where(eq(sql`lower(${people.email})`, normalized))
-    .limit(1);
+  const [person] = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .select()
+        .from(people)
+        .where(eq(sql`lower(${people.email})`, normalized))
+        .limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(sql`lower(${people.email})`, normalized))
+        .limit(1),
+  );
   if (!person) return null;
 
   return mapToDomainPerson(person);
@@ -327,10 +364,14 @@ export const findPersonsBySlug = async (
 ) => {
   if (slugs.length === 0) return [];
 
-  const persons = await db
-    .select()
-    .from(people)
-    .where(inArray(people.slug, slugs));
+  const persons = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(inArray(people.slug, slugs)),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(inArray(people.slug, slugs)),
+  );
 
   return persons.map(mapToDomainPerson);
 };
@@ -342,11 +383,15 @@ export const findPersonBySlug = async (
   { slug }: FindPersonBySlugInput,
   { db }: DbConfig,
 ) => {
-  const [dbPerson] = await db
-    .select()
-    .from(people)
-    .where(eq(people.slug, slug))
-    .limit(1);
+  const [dbPerson] = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(eq(people.slug, slug)).limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.slug, slug))
+        .limit(1),
+  );
 
   if (!dbPerson) return null;
 
@@ -355,11 +400,20 @@ export const findPersonBySlug = async (
 
 export const findSelf = async ({ db }: DbConfig) => {
   try {
-    const [dbPerson] = await db
-      .select()
-      .from(people)
-      .where(sql`sub = auth.user_id()`)
-      .limit(1);
+    const [dbPerson] = await withOptionalNetworkVisibleColumn(
+      () =>
+        db
+          .select()
+          .from(people)
+          .where(sql`sub = auth.user_id()`)
+          .limit(1),
+      () =>
+        db
+          .select(getCorePersonFields())
+          .from(people)
+          .where(sql`sub = auth.user_id()`)
+          .limit(1),
+    );
 
     if (!dbPerson) {
       return null;
@@ -476,11 +530,15 @@ export const findPersonBySub = async (
   { sub }: FindPersonBySubInput,
   { db }: DbConfig,
 ) => {
-  const [person] = await db
-    .select()
-    .from(people)
-    .where(eq(people.sub, sub))
-    .limit(1);
+  const [person] = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(eq(people.sub, sub)).limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.sub, sub))
+        .limit(1),
+  );
   if (!person) return null;
 
   return mapToDomainPerson(person);
@@ -532,7 +590,6 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
     eq(spaces.isArchived, false),
     not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`),
     not(sql`${spaces.flags} @> '["archived"]'::jsonb`),
-    eq(people.networkVisible, true),
     isHumanPerson(),
   ];
 
@@ -548,13 +605,24 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
     );
   }
 
-  const idRows = await db
-    .selectDistinct({ id: people.id })
-    .from(people)
-    .innerJoin(memberships, eq(memberships.personId, people.id))
-    .innerJoin(spaces, eq(memberships.spaceId, spaces.id))
-    .where(and(...whereConditions))
-    .orderBy(people.id);
+  const listVisibleIds = (restrictToVisible: boolean) =>
+    db
+      .selectDistinct({ id: people.id })
+      .from(people)
+      .innerJoin(memberships, eq(memberships.personId, people.id))
+      .innerJoin(spaces, eq(memberships.spaceId, spaces.id))
+      .where(
+        and(
+          ...whereConditions,
+          ...(restrictToVisible ? [eq(people.networkVisible, true)] : []),
+        ),
+      )
+      .orderBy(people.id);
+
+  const idRows = await withOptionalNetworkVisibleColumn(
+    () => listVisibleIds(true),
+    () => listVisibleIds(false),
+  );
 
   const ids = idRows.map((row) => row.id);
   const total = ids.length;
