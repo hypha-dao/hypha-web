@@ -1,6 +1,10 @@
 import { DbConfig } from '../../server';
 import { people } from '@hypha-platform/storage-postgres';
-import { mapToDomainPerson } from './queries';
+import { getCorePersonFields, mapToDomainPerson } from './queries';
+import {
+  omitNetworkVisible,
+  withOptionalNetworkVisibleColumn,
+} from './optional-network-visible';
 import { Person } from '../types';
 import { eq } from 'drizzle-orm';
 
@@ -16,7 +20,14 @@ export const createPerson = async (
     email: person.email || null,
     slug,
   };
-  const [dbPerson] = await db.insert(people).values(insertData).returning();
+  const [dbPerson] = await withOptionalNetworkVisibleColumn(
+    () => db.insert(people).values(insertData).returning(),
+    () =>
+      db
+        .insert(people)
+        .values(omitNetworkVisible(insertData))
+        .returning(getCorePersonFields()),
+  );
   if (!dbPerson) {
     throw new Error('Failed to create person');
   }
@@ -34,11 +45,20 @@ export const updatePerson = async (
     email: person.email || null,
     slug,
   };
-  const [dbPerson] = await db
-    .update(people)
-    .set(updateData)
-    .where(eq(people.id, person.id))
-    .returning();
+  const [dbPerson] = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .update(people)
+        .set(updateData)
+        .where(eq(people.id, person.id))
+        .returning(),
+    () =>
+      db
+        .update(people)
+        .set(omitNetworkVisible(updateData))
+        .where(eq(people.id, person.id))
+        .returning(getCorePersonFields()),
+  );
   if (!dbPerson) {
     throw new Error('Failed to update person');
   }

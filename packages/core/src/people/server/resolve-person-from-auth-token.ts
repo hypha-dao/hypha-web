@@ -17,8 +17,15 @@ export async function resolvePersonFromAuthToken(
 
   const verified = await verifyPrivyAuthToken(authToken);
   if (verified.ok) {
-    const person = await findPersonBySub({ sub: verified.userId }, { db });
-    if (person) return person;
+    try {
+      const person = await findPersonBySub({ sub: verified.userId }, { db });
+      if (person) return person;
+    } catch (error) {
+      console.error(
+        '[resolvePersonFromAuthToken] findPersonBySub failed',
+        error,
+      );
+    }
   }
 
   try {
