@@ -2,6 +2,7 @@ import type { Document } from '@hypha-platform/core/client';
 
 export const HOME_ACTIVITY_SPACE_LIMIT = 8;
 export const HOME_ACTIVITY_ITEM_LIMIT = 5;
+export const ATTENTION_RECENT_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
 export type HomeSpaceRef = {
   slug: string;
@@ -17,6 +18,7 @@ export type HomeVoteItem = {
   spaceTitle: string;
   spaceLogoUrl?: string | null;
   proposalSlug: string;
+  happenedAt: number;
 };
 
 export type HomeSignalItem = {
@@ -26,7 +28,13 @@ export type HomeSignalItem = {
   spaceTitle: string;
   spaceLogoUrl?: string | null;
   signalSlug: string | null;
+  roomId?: string | null;
+  happenedAt: number;
 };
+
+export type HomeAttentionItem =
+  | (HomeVoteItem & { kind: 'vote' })
+  | (HomeSignalItem & { kind: 'signal' });
 
 export type ProposalOutcomeLookup = {
   accepted: ReadonlySet<string>;
@@ -179,11 +187,72 @@ export function votesFromDocuments(
         spaceTitle: space.title,
         spaceLogoUrl: space.logoUrl ?? null,
         proposalSlug: document.slug,
+        happenedAt: activityTimestamp(document.updatedAt ?? document.createdAt),
       },
     ];
   });
 }
 
+export function activityTimestamp(
+  value?: Date | string | number | null,
+): number {
+  if (value == null) return 0;
+  const time =
+    value instanceof Date
+      ? value.getTime()
+      : typeof value === 'number'
+      ? value
+      : new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
 export function sortVotes(items: HomeVoteItem[]): HomeVoteItem[] {
-  return [...items].sort((a, b) => a.title.localeCompare(b.title));
+  return [...items].sort((a, b) => b.happenedAt - a.happenedAt);
+}
+
+export function selectAttentionItems<
+  T extends { id: string; happenedAt: number },
+>(
+  items: T[],
+  {
+    now = new Date(),
+    limit = HOME_ACTIVITY_ITEM_LIMIT,
+    recentWindowMs = ATTENTION_RECENT_WINDOW_MS,
+  }: {
+    now?: Date;
+    limit?: number;
+    recentWindowMs?: number;
+  } = {},
+): T[] {
+  const sorted = [...items].sort((a, b) => {
+    if (b.happenedAt !== a.happenedAt) return b.happenedAt - a.happenedAt;
+    return a.id.localeCompare(b.id);
+  });
+  const nowMs = now.getTime();
+  const recent = sorted.filter(
+    (item) => item.happenedAt > 0 && nowMs - item.happenedAt <= recentWindowMs,
+  );
+  return (recent.length > 0 ? recent : sorted).slice(0, limit);
+}
+
+export function attentionSeeAllHref(
+  lang: string,
+  items: Array<{ kind: 'vote' | 'signal'; spaceSlug: string }>,
+  fallbackSpaces: Array<{ slug?: string | null }>,
+): string {
+  const slugs = [
+    ...new Set(items.map((item) => item.spaceSlug).filter(Boolean)),
+  ];
+  if (slugs.length === 1) {
+    const onlySignals =
+      items.length > 0 && items.every((item) => item.kind === 'signal');
+    return onlySignals
+      ? `/${lang}/dho/${slugs[0]}/coherence`
+      : `/${lang}/dho/${slugs[0]}/agreements`;
+  }
+  const fallback = fallbackSpaces.find((space) => space.slug?.trim());
+  if (fallback?.slug && fallbackSpaces.length === 1) {
+    return `/${lang}/dho/${fallback.slug}/agreements`;
+  }
+  return `/${lang}/my-spaces`;
 }

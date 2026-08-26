@@ -3,17 +3,25 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as d3 from 'd3';
-import { Minus, Plus } from 'lucide-react';
+import { ChevronRight, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button, Card, CardContent } from '@hypha-platform/ui';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Button,
+  Card,
+  CardContent,
+} from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
-import { hasSpaceMapLocation, Space } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  hasSpaceMapLocation,
+  Space,
+} from '@hypha-platform/core/client';
 import { getDhoPathDefaultLanding } from '../../common/get-path-function';
 import { loadLandGeo } from '../../network-map/lib/load-land-geo';
-import {
-  WELLBEING_DIMENSIONS,
-  type WellbeingDimension,
-} from '../wellbeing-model';
+import { type WellbeingDimension } from '../wellbeing-model';
 import {
   createWorldProjection,
   dimensionForSpace,
@@ -21,6 +29,7 @@ import {
   ECOSYSTEM_MAP_SCALE_EXTENT,
   ECOSYSTEM_MAP_WIDTH,
   projectLngLat,
+  spaceMapPreviewMeta,
 } from '../ecosystem-map';
 import '../wellbeing-accents.css';
 
@@ -65,6 +74,8 @@ export function EcosystemWorldMap({
   const [projection, setProjection] = useState(() =>
     createWorldProjection(null),
   );
+  const [activeSpaceId, setActiveSpaceId] = useState<number | null>(null);
+  const hideCardTimeoutRef = useRef<number | null>(null);
 
   const located = useMemo(() => spaces.filter(hasSpaceMapLocation), [spaces]);
 
@@ -85,6 +96,37 @@ export function EcosystemWorldMap({
     });
     return next;
   }, [located, projection]);
+
+  const activePin = useMemo(
+    () => pins.find((pin) => pin.space.id === activeSpaceId) ?? null,
+    [activeSpaceId, pins],
+  );
+
+  const showSpaceCard = (spaceId: number) => {
+    if (hideCardTimeoutRef.current != null) {
+      window.clearTimeout(hideCardTimeoutRef.current);
+      hideCardTimeoutRef.current = null;
+    }
+    setActiveSpaceId(spaceId);
+  };
+
+  const scheduleHideSpaceCard = () => {
+    if (hideCardTimeoutRef.current != null) {
+      window.clearTimeout(hideCardTimeoutRef.current);
+    }
+    hideCardTimeoutRef.current = window.setTimeout(() => {
+      setActiveSpaceId(null);
+      hideCardTimeoutRef.current = null;
+    }, 140);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hideCardTimeoutRef.current != null) {
+        window.clearTimeout(hideCardTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +219,7 @@ export function EcosystemWorldMap({
             ref={svgRef}
             viewBox={`0 0 ${ECOSYSTEM_MAP_WIDTH} ${ECOSYSTEM_MAP_HEIGHT}`}
             className="h-auto w-full cursor-grab active:cursor-grabbing touch-none"
-            role="img"
+            role="group"
             aria-label={t('mapTitle')}
           >
             <defs>
@@ -214,25 +256,32 @@ export function EcosystemWorldMap({
               {landPath ? (
                 <path d={landPath} fill={`url(#${uid}-land)`} />
               ) : null}
-              {pins.map(({ space, x, y, dimension }) => (
-                <a
-                  key={space.id}
-                  href={spaceHrefForMap(lang, space.slug)}
-                  aria-label={space.title}
-                >
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={5.5}
-                    className={DIMENSION_DOT[dimension]}
-                    opacity={0.92}
-                    stroke="var(--background-1)"
-                    strokeWidth={1.25}
+              {pins.map(({ space, x, y, dimension }) => {
+                const isActive = space.id === activeSpaceId;
+                return (
+                  <a
+                    key={space.id}
+                    href={spaceHrefForMap(lang, space.slug)}
+                    aria-label={t('mapOpenSpace', { title: space.title })}
+                    className="outline-none focus-visible:[outline:2px_solid_var(--ring)] focus-visible:[outline-offset:3px]"
+                    onMouseEnter={() => showSpaceCard(space.id)}
+                    onMouseLeave={scheduleHideSpaceCard}
+                    onFocus={() => showSpaceCard(space.id)}
+                    onBlur={scheduleHideSpaceCard}
                   >
-                    <title>{space.title}</title>
-                  </circle>
-                </a>
-              ))}
+                    <circle cx={x} cy={y} r={12} fill="transparent" />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={isActive ? 7 : 5.5}
+                      className={DIMENSION_DOT[dimension]}
+                      opacity={0.92}
+                      stroke="var(--background-1)"
+                      strokeWidth={isActive ? 2 : 1.25}
+                    />
+                  </a>
+                );
+              })}
             </g>
           </svg>
           <div className="absolute bottom-2 right-2 flex flex-col overflow-hidden rounded-chrome border border-border/70 bg-background/90 shadow-sm">
@@ -259,26 +308,86 @@ export function EcosystemWorldMap({
               <Minus className="size-3.5" aria-hidden />
             </Button>
           </div>
+          {activePin ? (
+            <EcosystemMapSpaceCard
+              lang={lang}
+              space={activePin.space}
+              onPointerEnter={() => showSpaceCard(activePin.space.id)}
+              onPointerLeave={scheduleHideSpaceCard}
+            />
+          ) : null}
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-1 text-muted-foreground">
           <p>{t('mapHint')}</p>
           <p>{t('mapInteract')}</p>
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-1 text-muted-foreground">
-          {WELLBEING_DIMENSIONS.map((key) => (
-            <span key={key} className="inline-flex items-center gap-1.5">
-              <span
-                className={`size-2 rounded-full ${DIMENSION_DOT[key].replace(
-                  'wb-fill',
-                  'wb-dot',
-                )}`}
-              />
-              {t(`dimension.${key}`)}
-            </span>
-          ))}
-        </div>
       </CardContent>
     </Card>
+  );
+}
+
+function spaceInitial(title: string): string {
+  return title.trim().slice(0, 1).toUpperCase() || 'S';
+}
+
+function EcosystemMapSpaceCard({
+  lang,
+  space,
+  onPointerEnter,
+  onPointerLeave,
+}: {
+  lang: Locale;
+  space: Space;
+  onPointerEnter: () => void;
+  onPointerLeave: () => void;
+}) {
+  const t = useTranslations('Journey');
+  const tCommon = useTranslations('Common');
+  const href = spaceHrefForMap(lang, space.slug);
+  const preview = spaceMapPreviewMeta(space);
+
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-2 right-14 z-20">
+      <Link
+        href={href}
+        tabIndex={-1}
+        aria-label={t('mapOpenSpace', { title: space.title })}
+        className="pointer-events-auto block"
+        onMouseEnter={onPointerEnter}
+        onMouseLeave={onPointerLeave}
+        onFocus={onPointerEnter}
+        onBlur={onPointerLeave}
+      >
+        <Card className="craft-card-interactive flex items-center gap-3 p-3">
+          <Avatar className="size-10 shrink-0 rounded-chrome">
+            <AvatarImage
+              src={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
+              alt=""
+            />
+            <AvatarFallback className="rounded-chrome text-2">
+              {spaceInitial(space.title)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-3 font-medium">{space.title}</p>
+            {preview?.kind === 'members' ? (
+              <p className="text-1 text-muted-foreground">
+                <span className="text-foreground/80">{preview.count}</span>{' '}
+                {tCommon('Members')}
+              </p>
+            ) : preview?.kind === 'description' ? (
+              <p className="line-clamp-2 text-1 text-muted-foreground">
+                {preview.text}
+              </p>
+            ) : null}
+          </div>
+          <ChevronRight
+            className="size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+        </Card>
+      </Link>
+    </div>
   );
 }
 

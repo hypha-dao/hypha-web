@@ -5,14 +5,14 @@ import useSWR from 'swr';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
 import type { Coherence, Document } from '@hypha-platform/core/client';
 import {
-  HOME_ACTIVITY_ITEM_LIMIT,
   HOME_ACTIVITY_SPACE_LIMIT,
+  activityTimestamp,
   isActiveSignalRecommendation,
-  sortVotes,
+  selectAttentionItems,
   votesFromDocuments,
+  type HomeAttentionItem,
   type HomeSignalItem,
   type HomeSpaceRef,
-  type HomeVoteItem,
 } from './home-activity';
 import { fetchOutcomesBySpaceId, fetchProposalLiveness } from './vote-liveness';
 
@@ -86,34 +86,37 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
         candidateProposalIds,
       );
 
-      const votes = sortVotes(
-        pages.flatMap((page) =>
-          votesFromDocuments(page.documents, page.space, {
-            outcomes:
-              page.space.web3SpaceId != null
-                ? outcomesBySpaceId.get(page.space.web3SpaceId) ?? null
-                : null,
-            livenessByProposalId,
-          }),
-        ),
-      ).slice(0, HOME_ACTIVITY_ITEM_LIMIT);
+      const votes = pages.flatMap((page) =>
+        votesFromDocuments(page.documents, page.space, {
+          outcomes:
+            page.space.web3SpaceId != null
+              ? outcomesBySpaceId.get(page.space.web3SpaceId) ?? null
+              : null,
+          livenessByProposalId,
+        }),
+      );
 
-      const signals: HomeSignalItem[] = pages
-        .flatMap((page) =>
-          (page.signalsPage?.data ?? [])
-            .filter(isActiveSignalRecommendation)
-            .map((signal) => ({
-              id: `${page.space.slug}:${signal.id}`,
-              title: signal.title,
-              spaceSlug: page.space.slug,
-              spaceTitle: page.space.title,
-              spaceLogoUrl: page.space.logoUrl ?? null,
-              signalSlug: signal.slug,
-            })),
-        )
-        .slice(0, HOME_ACTIVITY_ITEM_LIMIT);
+      const signals: HomeSignalItem[] = pages.flatMap((page) =>
+        (page.signalsPage?.data ?? [])
+          .filter(isActiveSignalRecommendation)
+          .map((signal) => ({
+            id: `${page.space.slug}:${signal.id}`,
+            title: signal.title,
+            spaceSlug: page.space.slug,
+            spaceTitle: page.space.title,
+            spaceLogoUrl: page.space.logoUrl ?? null,
+            signalSlug: signal.slug,
+            roomId: signal.roomId ?? null,
+            happenedAt: activityTimestamp(signal.updatedAt ?? signal.createdAt),
+          })),
+      );
 
-      return { votes, signals };
+      const items = selectAttentionItems<HomeAttentionItem>([
+        ...votes.map((item) => ({ ...item, kind: 'vote' as const })),
+        ...signals.map((item) => ({ ...item, kind: 'signal' as const })),
+      ]);
+
+      return { items };
     },
     {
       revalidateOnFocus: true,
@@ -122,8 +125,7 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
   );
 
   return {
-    votes: data?.votes ?? ([] as HomeVoteItem[]),
-    signals: data?.signals ?? ([] as HomeSignalItem[]),
+    items: data?.items ?? ([] as HomeAttentionItem[]),
     isLoading: shouldFetch && isLoading,
   };
 }

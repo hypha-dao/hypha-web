@@ -16,6 +16,7 @@ import {
   CardContent,
 } from '@hypha-platform/ui';
 import { Compass, Radio, Vote } from 'lucide-react';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   NETWORK_PULSE_HOME_STORY_LIMIT,
   storyHref,
@@ -50,6 +51,7 @@ export function NetworkPulseFeed({
   spaceVisuals?: Record<string, NetworkSpaceVisual>;
 }) {
   const t = useTranslations('Journey');
+  const { openHumanChatPanel } = useHumanChatPanel();
   const visible = compact
     ? stories.slice(0, NETWORK_PULSE_HOME_STORY_LIMIT)
     : stories;
@@ -115,6 +117,9 @@ export function NetworkPulseFeed({
                     <li key={story.id}>
                       <Link
                         href={storyHref(lang, story)}
+                        onClick={() => {
+                          if (story.kind === 'signal') openHumanChatPanel();
+                        }}
                         className="craft-row-interactive flex items-center gap-3 rounded-xl px-2 py-2"
                       >
                         <Avatar className="size-10 rounded-chrome">
@@ -173,10 +178,14 @@ function FeaturedStory({
   visual: NetworkSpaceVisual;
 }) {
   const t = useTranslations('Journey');
+  const { openHumanChatPanel } = useHumanChatPanel();
 
   return (
     <Link
       href={storyHref(lang, story)}
+      onClick={() => {
+        if (story.kind === 'signal') openHumanChatPanel();
+      }}
       className="craft-card-interactive overflow-hidden"
     >
       <div className="relative h-40 overflow-hidden sm:h-48">

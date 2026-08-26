@@ -35,6 +35,26 @@ export function projectLngLat(
   return { x, y };
 }
 
+export type SpaceMapPreviewMeta =
+  | { kind: 'members'; count: number }
+  | { kind: 'description'; text: string };
+
+export function spaceMapPreviewMeta(space: {
+  memberCount?: number | null;
+  members?: readonly unknown[] | null;
+  description?: string | null;
+}): SpaceMapPreviewMeta | null {
+  const count = space.memberCount ?? space.members?.length;
+  if (count != null) {
+    return { kind: 'members', count };
+  }
+  const text = space.description?.trim() ?? '';
+  if (text) {
+    return { kind: 'description', text };
+  }
+  return null;
+}
+
 export function dimensionForSpace(
   categories: readonly string[] | null | undefined,
   index: number,

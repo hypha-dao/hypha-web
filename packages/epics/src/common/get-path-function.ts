@@ -20,6 +20,27 @@ export const getProposalPath = (
   return `/${lang}/dho/${spaceSlug}/agreements/proposal/${proposalSlug}`;
 };
 
+/**
+ * Opens the signal's Coherence / Matrix human chat via HumanRightPanel
+ * (`?signal=` deep link + `openHumanChatPanel()`).
+ */
+export const getSignalChatPath = (
+  lang: Locale,
+  spaceSlug: string,
+  signalSlug: string,
+) => {
+  return `/${lang}/dho/${spaceSlug}?signal=${encodeURIComponent(signalSlug)}`;
+};
+
+export const getNetworkConnectPath = (
+  lang: Locale,
+  personSlug?: string | null,
+) => {
+  const path = `/${lang}/network/connect`;
+  const slug = personSlug?.trim();
+  return slug ? `${path}?person=${encodeURIComponent(slug)}` : path;
+};
+
 export const getProposalUrl = (
   lang: Locale,
   spaceSlug: string,

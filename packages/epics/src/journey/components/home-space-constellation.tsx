@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/ui';
 import { CreateSpaceButton } from '../../spaces/components/create-space-button';
 import { getDhoPathDefaultLanding } from '../../common/get-path-function';
+import { syncRecentSpacesForActiveSlug } from '../../common/recent-space-history';
 import { JourneyMark } from './journey-mark';
 import '../journey-surface.css';
 
@@ -58,11 +59,11 @@ export function HomeSpaceConstellation({
       </div>
 
       {isLoading ? (
-        <ul className="-mx-1 flex gap-2 overflow-x-auto pb-1 xl:mx-0 xl:flex-col xl:overflow-visible xl:pb-0">
+        <ul className="flex flex-col gap-1">
           {[0, 1, 2].map((key) => (
             <li
               key={key}
-              className="flex w-[13.5rem] shrink-0 items-center gap-3 rounded-xl px-2 py-2 xl:w-auto"
+              className="flex items-center gap-3 rounded-xl px-2 py-2"
             >
               <Skeleton loading className="size-10 shrink-0 rounded-chrome" />
               <Skeleton loading className="h-4 w-24" />
@@ -70,11 +71,14 @@ export function HomeSpaceConstellation({
           ))}
         </ul>
       ) : spaces.length > 0 ? (
-        <ul className="-mx-1 flex gap-1 overflow-x-auto pb-1 xl:mx-0 xl:flex-col xl:overflow-visible xl:pb-0">
+        <ul className="flex flex-col gap-1">
           {spaces.map((space) => (
-            <li key={space.id} className="w-[13.5rem] shrink-0 xl:w-auto">
+            <li key={space.id}>
               <Link
                 href={getDhoPathDefaultLanding(lang, space.slug as string)}
+                onClick={() => {
+                  if (space.slug) syncRecentSpacesForActiveSlug(space.slug);
+                }}
                 className="craft-row-interactive flex items-center gap-3 rounded-xl px-2 py-2"
               >
                 <Avatar className="size-10 shrink-0 rounded-chrome">

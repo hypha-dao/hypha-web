@@ -199,6 +199,7 @@ describe('home-activity recommendations', () => {
         spaceTitle: 'Garden',
         spaceLogoUrl: null,
         proposalSlug: 'proposal-1',
+        happenedAt: 0,
       },
     ]);
   });

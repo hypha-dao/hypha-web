@@ -67,9 +67,11 @@ export type NetworkPulseCandidate = {
 };
 
 export type NetworkPerson = {
+  id?: number;
   slug: string;
   name: string;
   avatarUrl?: string | null;
+  networkVisible?: boolean;
 };
 
 export function isNetworkSharedDiscoverability(
@@ -114,9 +116,9 @@ export function storyHref(lang: string, story: NetworkStory): string {
     return `/${lang}/dho/${story.spaceSlug}/agreements/proposal/${story.targetSlug}`;
   }
   if (story.kind === 'signal' && story.targetSlug) {
-    return `/${lang}/dho/${
-      story.spaceSlug
-    }/coherence?signal=${encodeURIComponent(story.targetSlug)}`;
+    return `/${lang}/dho/${story.spaceSlug}?signal=${encodeURIComponent(
+      story.targetSlug,
+    )}`;
   }
   return `/${lang}/dho/${story.spaceSlug}/${
     story.kind === 'vote' ? 'agreements' : 'coherence'
@@ -131,6 +133,7 @@ export function uniquePeople(
   const next: NetworkPerson[] = [];
   for (const person of people) {
     if (!person.slug || seen.has(person.slug)) continue;
+    if (person.networkVisible === false) continue;
     if (excludeSlug && person.slug === excludeSlug) continue;
     seen.add(person.slug);
     next.push(person);

@@ -2,9 +2,10 @@
 
 import { useMemo } from 'react';
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@hypha-platform/core/client';
+import { Space, useMe } from '@hypha-platform/core/client';
 import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
 import { useNetworkPulse } from '../use-network-pulse';
+import { useNetworkPeople } from '../use-network-people';
 import { spaceVisualsFromSpaces } from '../network-pulse';
 import { NetworkJourneyIntro } from './network-journey-intro';
 import { NetworkPulseFeed } from './network-pulse-feed';
@@ -33,7 +34,13 @@ export function NetworkLivingSurface({
     () => spaceVisualsFromSpaces(sharedSpaces),
     [sharedSpaces],
   );
-  const { stories, people, isLoading } = useNetworkPulse(pulseSpaces);
+  const { person } = useMe();
+  const { stories, isLoading } = useNetworkPulse(pulseSpaces);
+  const { people, isLoading: isLoadingPeople } = useNetworkPeople({
+    spaceSlugs: pulseSpaces.map((space) => space.slug),
+    excludeSlug: person?.slug,
+    pageSize: 12,
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,7 +55,12 @@ export function NetworkLivingSurface({
           />
         </div>
         <aside className="lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
-          <NetworkPeopleStrip lang={lang} people={people} layout="field" />
+          <NetworkPeopleStrip
+            lang={lang}
+            people={people}
+            isLoading={isLoadingPeople}
+            layout="field"
+          />
         </aside>
       </div>
     </div>
