@@ -5,6 +5,7 @@ export { SpaceJourneyHome } from './components/space-journey-home';
 export { SpaceWellbeingPage } from './components/space-wellbeing-page';
 export { NetworkJourneyIntro } from './components/network-journey-intro';
 export { NetworkLivingSurface } from './components/network-living-surface';
+export { NetworkConnectPage } from './components/network-connect-page';
 export { EcosystemWorldMap } from './components/ecosystem-world-map';
 export { WellbeingScoreCard } from './components/wellbeing-score-card';
 export { WellbeingGauge } from './components/wellbeing-gauge';

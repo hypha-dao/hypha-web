@@ -10,7 +10,17 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import { sql, eq, inArray, and, notLike, or, isNull } from 'drizzle-orm';
+import {
+  sql,
+  eq,
+  inArray,
+  and,
+  not,
+  notLike,
+  ne,
+  or,
+  isNull,
+} from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
@@ -41,6 +51,7 @@ export const getDefaultFields = () => {
     address: people.address,
     leadImageUrl: people.leadImageUrl,
     preferredCurrency: people.preferredCurrency,
+    networkVisible: people.networkVisible,
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
@@ -64,6 +75,7 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     preferredCurrency: nullToUndefined(dbPerson.preferredCurrency ?? null),
+    networkVisible: dbPerson.networkVisible !== false,
     links: nullToUndefined(dbPerson.links ?? null),
     createdAt: dbPerson.createdAt!,
     updatedAt: dbPerson.updatedAt!,
@@ -472,4 +484,116 @@ export const findPersonBySub = async (
   if (!person) return null;
 
   return mapToDomainPerson(person);
+};
+
+export const NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP = 24;
+
+export type FindNetworkVisiblePeopleBySpaceSlugsInput = {
+  spaceSlugs: string[];
+  excludeSlug?: string | null;
+  searchTerm?: string;
+  pagination: PaginationParams<Person>;
+};
+
+/**
+ * Directory of human members in caller-supplied spaces who opted into
+ * network discovery. Does not change in-space member lists.
+ */
+export const findNetworkVisiblePeopleBySpaceSlugs = async (
+  {
+    spaceSlugs,
+    excludeSlug,
+    searchTerm,
+    pagination,
+  }: FindNetworkVisiblePeopleBySpaceSlugsInput,
+  { db }: DbConfig,
+): Promise<PaginatedResponse<Person>> => {
+  const cappedSlugs = [
+    ...new Set(spaceSlugs.map((slug) => slug.trim()).filter(Boolean)),
+  ].slice(0, NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP);
+
+  const page = pagination.page ?? 1;
+  const pageSize = Math.min(Math.max(pagination.pageSize ?? 20, 1), 40);
+  const empty: PaginatedResponse<Person> = {
+    data: [],
+    pagination: {
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: page > 1,
+    },
+  };
+  if (cappedSlugs.length === 0) return empty;
+
+  const whereConditions = [
+    inArray(spaces.slug, cappedSlugs),
+    eq(spaces.isArchived, false),
+    not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`),
+    not(sql`${spaces.flags} @> '["archived"]'::jsonb`),
+    eq(people.networkVisible, true),
+    isHumanPerson(),
+  ];
+
+  const excluded = excludeSlug?.trim();
+  if (excluded) {
+    whereConditions.push(ne(people.slug, excluded));
+  }
+
+  if (searchTerm?.trim()) {
+    const term = `%${searchTerm.trim()}%`;
+    whereConditions.push(
+      sql`(${people.name} ILIKE ${term} OR ${people.surname} ILIKE ${term} OR ${people.nickname} ILIKE ${term})`,
+    );
+  }
+
+  const idRows = await db
+    .selectDistinct({ id: people.id })
+    .from(people)
+    .innerJoin(memberships, eq(memberships.personId, people.id))
+    .innerJoin(spaces, eq(memberships.spaceId, spaces.id))
+    .where(and(...whereConditions))
+    .orderBy(people.id);
+
+  const ids = idRows.map((row) => row.id);
+  const total = ids.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const offset = (page - 1) * pageSize;
+  const pageIds = ids.slice(offset, offset + pageSize);
+  if (pageIds.length === 0) {
+    return {
+      data: [],
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasNextPage: false,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  const result = await db
+    .select(getDefaultFields())
+    .from(people)
+    .where(inArray(people.id, pageIds));
+
+  const byId = new Map(result.map((row) => [row.id, row]));
+  const ordered = pageIds
+    .map((id) => byId.get(id))
+    .filter((row): row is (typeof result)[number] => Boolean(row));
+
+  return {
+    data: ordered.map(mapToDomainPerson),
+    pagination: {
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  };
 };

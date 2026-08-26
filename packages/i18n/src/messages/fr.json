@@ -803,7 +803,8 @@
       "labels": {
         "email": "E-mail",
         "location": "Localisation",
-        "preferredCurrency": "Devise préférée"
+        "preferredCurrency": "Devise préférée",
+        "networkVisible": "Visible sur le réseau"
       },
       "placeholders": {
         "firstName": "Prénom",
@@ -818,6 +819,7 @@
         "retry": "Réessayer",
         "save": "Enregistrer"
       },
+      "networkVisibleHint": "Si c’est activé, les membres des espaces visibles sur le réseau peuvent vous trouver sur Accueil et Connecter.",
       "errors": {
         "firstNameRequired": "Veuillez saisir votre prénom",
         "lastNameRequired": "Veuillez saisir votre nom",
@@ -4454,6 +4456,10 @@
     "personalAiTitle": "IA personnelle",
     "personalAiLead": "Demandez à Hypha de vous aider à naviguer.",
     "personalAiCta": "Demander à Hypha IA",
+    "personalAiTalk": "Parler",
+    "personalAiAsk": "Demander",
+    "personalAiVoiceHint": "La voix utilise {space}",
+    "personalAiNoSpace": "Rejoignez un espace pour parler à voix.",
     "moreSpaces": "+{count} de plus",
     "walletTitle": "Votre portefeuille",
     "walletLead": "Ce que vous détenez maintenant. Ouvrez le portefeuille complet pour les transferts et la banque.",
@@ -4463,7 +4469,12 @@
     "walletEmpty": "Nothing waiting to claim. That can be a kind of quiet.",
     "walletRewards": "Il y a quelque chose à réclamer.",
     "activityTitle": "A besoin de vous",
-    "activityLead": "Des propositions attendent votre vote.",
+    "activityLead": "Votes et signaux ouverts qui ont besoin de vous.",
+    "attentionSeeAll": "Tout voir",
+    "attentionVote": "Voter",
+    "attentionOpen": "Ouvrir",
+    "attentionVoteKind": "Vote",
+    "attentionSignalKind": "Signal",
     "activityVotes": "Propositions à voter",
     "activitySignals": "Signaux à voir",
     "activityLoading": "On rassemble ce qui a besoin de vous…",
@@ -4485,6 +4496,16 @@
     "connectTitle": "Des personnes à rencontrer",
     "connectLead": "Membres d'espaces qui ont choisi d'être visibles sur le réseau.",
     "connectEmpty": "Pas encore de visages à montrer.",
+    "connectSeeAll": "Tout voir",
+    "connectPageTitle": "Connecter",
+    "connectPageLead": "Personnes des espaces qui ont choisi d’être visibles. Les messages s’ouvrent à droite.",
+    "connectMessagesEmpty": "Choisissez quelqu’un pour commencer une conversation.",
+    "connectChatTitle": "Messages",
+    "connectSend": "Envoyer",
+    "connectDmError": "Impossible d’ouvrir cette conversation.",
+    "connectDmUnavailable": "Le chat n’est pas encore disponible pour cette personne.",
+    "connectLoading": "Recherche de personnes…",
+    "connectComposerPlaceholder": "Écrire un message…",
     "nextMoveCreate": "Ready to give a vision a home?",
     "nextMoveCreateHint": "AI will stay with you from the first sentence to the first vote.",
     "spaceKicker": "This circle",
@@ -4532,6 +4553,7 @@
     "mapInteract": "Défilez pour zoomer, faites glisser pour déplacer.",
     "mapZoomIn": "Zoom avant",
     "mapZoomOut": "Zoom arrière",
+    "mapOpenSpace": "Ouvrir {title}",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

@@ -5,6 +5,7 @@ import {
   spaceVisualsFromSpaces,
   storyContext,
   storyHref,
+  uniquePeople,
 } from '../network-pulse';
 
 describe('network-pulse', () => {
@@ -71,6 +72,19 @@ describe('network-pulse', () => {
         targetSlug: 'need-hands',
         context: null,
       }),
-    ).toBe('/en/dho/garden/coherence?signal=need-hands');
+    ).toBe('/en/dho/garden?signal=need-hands');
+  });
+
+  it('hides opted-out people from the network directory', () => {
+    expect(
+      uniquePeople(
+        [
+          { slug: 'ada', name: 'Ada', networkVisible: false },
+          { slug: 'me', name: 'Me' },
+          { slug: 'lin', name: 'Lin' },
+        ],
+        'me',
+      ).map((person) => person.slug),
+    ).toEqual(['lin']);
   });
 });

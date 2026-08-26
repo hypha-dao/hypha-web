@@ -1374,7 +1374,8 @@
       "labels": {
         "email": "E-mail",
         "location": "Locatie",
-        "preferredCurrency": "Voorkeursvaluta"
+        "preferredCurrency": "Voorkeursvaluta",
+        "networkVisible": "Zichtbaar in het netwerk"
       },
       "placeholders": {
         "firstName": "Voornaam",
@@ -1389,6 +1390,7 @@
         "retry": "Opnieuw proberen",
         "save": "Opslaan"
       },
+      "networkVisibleHint": "Als dit aan staat, kunnen leden van netwerkzichtbare spaces je vinden op Home en Verbinden.",
       "errors": {
         "firstNameRequired": "Voer uw voornaam in",
         "lastNameRequired": "Voer uw achternaam in",
@@ -4464,6 +4466,10 @@
     "personalAiTitle": "Persoonlijke AI",
     "personalAiLead": "Vraag Hypha je te helpen navigeren.",
     "personalAiCta": "Vraag Hypha AI",
+    "personalAiTalk": "Praten",
+    "personalAiAsk": "Vragen",
+    "personalAiVoiceHint": "Stem gebruikt {space}",
+    "personalAiNoSpace": "Word lid van een space om met stem te praten.",
     "moreSpaces": "+{count} meer",
     "walletTitle": "Je wallet",
     "walletLead": "Wat je nu vasthoudt. Open de volledige wallet voor transfers en bankieren.",
@@ -4473,7 +4479,12 @@
     "walletEmpty": "Nothing waiting to claim. That can be a kind of quiet.",
     "walletRewards": "Er staat iets klaar om op te halen.",
     "activityTitle": "Heeft jouw aandacht nodig",
-    "activityLead": "Voorstellen die op je stem wachten.",
+    "activityLead": "Open stemmingen en signalen die jou nodig hebben.",
+    "attentionSeeAll": "Alles zien",
+    "attentionVote": "Stemmen",
+    "attentionOpen": "Openen",
+    "attentionVoteKind": "Stemming",
+    "attentionSignalKind": "Signaal",
     "activityVotes": "Voorstellen om te stemmen",
     "activitySignals": "Signalen om te zien",
     "activityLoading": "Verzamelen wat jou nodig heeft…",
@@ -4495,6 +4506,16 @@
     "connectTitle": "Mensen die je kunt ontmoeten",
     "connectLead": "Leden van spaces die kozen zichtbaar te zijn op het netwerk.",
     "connectEmpty": "Nog geen gezichten te tonen.",
+    "connectSeeAll": "Alles zien",
+    "connectPageTitle": "Verbinden",
+    "connectPageLead": "Mensen uit spaces die zichtbaar willen zijn. Berichten openen rechts.",
+    "connectMessagesEmpty": "Kies iemand om een gesprek te starten.",
+    "connectChatTitle": "Berichten",
+    "connectSend": "Versturen",
+    "connectDmError": "Dit gesprek kon niet worden geopend.",
+    "connectDmUnavailable": "Chat is voor deze persoon nog niet beschikbaar.",
+    "connectLoading": "Mensen zoeken…",
+    "connectComposerPlaceholder": "Schrijf een bericht…",
     "nextMoveCreate": "Ready to give a vision a home?",
     "nextMoveCreateHint": "AI will stay with you from the first sentence to the first vote.",
     "spaceKicker": "This circle",
@@ -4542,6 +4563,7 @@
     "mapInteract": "Scroll om te zoomen, sleep om te verschuiven.",
     "mapZoomIn": "Inzoomen",
     "mapZoomOut": "Uitzoomen",
+    "mapOpenSpace": "{title} openen",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

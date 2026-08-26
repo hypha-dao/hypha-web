@@ -1573,7 +1573,8 @@
       "labels": {
         "email": "Correo electrónico",
         "location": "Ubicación",
-        "preferredCurrency": "Moneda preferida"
+        "preferredCurrency": "Moneda preferida",
+        "networkVisible": "Visible en la red"
       },
       "placeholders": {
         "firstName": "Nombre de pila",
@@ -1588,6 +1589,7 @@
         "retry": "Reintentar",
         "save": "Guardar"
       },
+      "networkVisibleHint": "Si está activo, los miembros de espacios visibles en la red pueden encontrarte en Inicio y Conectar.",
       "errors": {
         "firstNameRequired": "Por favor ingresa tu nombre",
         "lastNameRequired": "Por favor ingresa tu apellido",
@@ -4458,6 +4460,10 @@
     "personalAiTitle": "IA personal",
     "personalAiLead": "Pide a Hypha que te ayude a navegar.",
     "personalAiCta": "Preguntar a Hypha IA",
+    "personalAiTalk": "Hablar",
+    "personalAiAsk": "Preguntar",
+    "personalAiVoiceHint": "La voz usa {space}",
+    "personalAiNoSpace": "Únete a un espacio para hablar con voz.",
     "moreSpaces": "+{count} más",
     "walletTitle": "Tu billetera",
     "walletLead": "Lo que tienes ahora. Abre la billetera completa para transferencias y banca.",
@@ -4467,7 +4473,12 @@
     "walletEmpty": "Nothing waiting to claim. That can be a kind of quiet.",
     "walletRewards": "Hay algo listo para reclamar.",
     "activityTitle": "Necesita tu atención",
-    "activityLead": "Propuestas que esperan tu voto.",
+    "activityLead": "Votos y señales abiertas que te necesitan.",
+    "attentionSeeAll": "Ver todo",
+    "attentionVote": "Votar",
+    "attentionOpen": "Abrir",
+    "attentionVoteKind": "Voto",
+    "attentionSignalKind": "Señal",
     "activityVotes": "Propuestas para votar",
     "activitySignals": "Señales para ver",
     "activityLoading": "Reuniendo lo que te necesita…",
@@ -4489,6 +4500,16 @@
     "connectTitle": "Personas a quienes conocer",
     "connectLead": "Miembros de espacios que eligieron ser visibles en la red.",
     "connectEmpty": "Aún no hay rostros que mostrar.",
+    "connectSeeAll": "Ver todo",
+    "connectPageTitle": "Conectar",
+    "connectPageLead": "Personas de espacios que eligieron ser visibles. Los mensajes se abren a la derecha.",
+    "connectMessagesEmpty": "Elige a alguien para empezar una conversación.",
+    "connectChatTitle": "Mensajes",
+    "connectSend": "Enviar",
+    "connectDmError": "No se pudo abrir esta conversación.",
+    "connectDmUnavailable": "El chat aún no está disponible para esta persona.",
+    "connectLoading": "Buscando personas…",
+    "connectComposerPlaceholder": "Escribe un mensaje…",
     "nextMoveCreate": "Ready to give a vision a home?",
     "nextMoveCreateHint": "AI will stay with you from the first sentence to the first vote.",
     "spaceKicker": "This circle",
@@ -4536,6 +4557,7 @@
     "mapInteract": "Desplaza para acercar, arrastra para mover.",
     "mapZoomIn": "Acercar",
     "mapZoomOut": "Alejar",
+    "mapOpenSpace": "Abrir {title}",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

@@ -4,6 +4,7 @@ import {
   createWorldProjection,
   dimensionForSpace,
   projectLngLat,
+  spaceMapPreviewMeta,
 } from '../ecosystem-map';
 
 describe('ecosystem-map', () => {
@@ -48,5 +49,26 @@ describe('ecosystem-map', () => {
 
     expect(path).toBeTruthy();
     expect(path).toContain('M');
+  });
+
+  it('prefers member count over description for pin previews', () => {
+    expect(
+      spaceMapPreviewMeta({
+        memberCount: 12,
+        description: 'A circle in the field',
+      }),
+    ).toEqual({ kind: 'members', count: 12 });
+    expect(
+      spaceMapPreviewMeta({
+        members: [{}, {}],
+        description: 'A circle in the field',
+      }),
+    ).toEqual({ kind: 'members', count: 2 });
+    expect(
+      spaceMapPreviewMeta({
+        description: '  A circle in the field  ',
+      }),
+    ).toEqual({ kind: 'description', text: 'A circle in the field' });
+    expect(spaceMapPreviewMeta({})).toBeNull();
   });
 });

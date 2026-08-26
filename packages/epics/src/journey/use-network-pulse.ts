@@ -3,7 +3,12 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
-import type { Coherence, Document, Person } from '@hypha-platform/core/client';
+import {
+  type Coherence,
+  type Document,
+  type Person,
+  useMe,
+} from '@hypha-platform/core/client';
 import {
   isActiveSignalRecommendation,
   isActiveVoteRecommendation,
@@ -39,6 +44,7 @@ async function fetchJson<T>(
 }
 
 export function useNetworkPulse(spaces: PulseSpace[]) {
+  const { person } = useMe();
   const { getAccessToken, isAuthLoading, accessTokenReady } =
     useAccessTokenReady();
   const scopedSpaces = useMemo(
@@ -55,7 +61,7 @@ export function useNetworkPulse(spaces: PulseSpace[]) {
     scopedSpaces.length > 0 && !isAuthLoading && accessTokenReady;
 
   const { data, isLoading } = useSWR(
-    shouldFetch ? ['network-pulse', spaceKey] : null,
+    shouldFetch ? ['network-pulse', spaceKey, person?.slug ?? ''] : null,
     async () => {
       const token = await getAccessToken();
       const headers: HeadersInit = token
@@ -157,20 +163,24 @@ export function useNetworkPulse(spaces: PulseSpace[]) {
 
       const people: NetworkPerson[] = pages.flatMap((page) =>
         (page.membersPage?.persons?.data ?? [])
-          .filter((person) => Boolean(person.slug))
-          .map((person) => ({
-            slug: person.slug as string,
+          .filter(
+            (member) => Boolean(member.slug) && member.networkVisible !== false,
+          )
+          .map((member) => ({
+            id: member.id,
+            slug: member.slug as string,
             name:
-              [person.name, person.surname].filter(Boolean).join(' ') ||
-              person.nickname ||
-              (person.slug as string),
-            avatarUrl: person.avatarUrl,
+              [member.name, member.surname].filter(Boolean).join(' ') ||
+              member.nickname ||
+              (member.slug as string),
+            avatarUrl: member.avatarUrl,
+            networkVisible: member.networkVisible !== false,
           })),
       );
 
       return {
         stories: stories.slice(0, NETWORK_PULSE_STORY_LIMIT),
-        people: uniquePeople(people),
+        people: uniquePeople(people, person?.slug),
       };
     },
     {

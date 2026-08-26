@@ -1373,7 +1373,8 @@
       "labels": {
         "email": "E-post",
         "location": "Sted",
-        "preferredCurrency": "Foretrukket valuta"
+        "preferredCurrency": "Foretrukket valuta",
+        "networkVisible": "Synlig i nettverket"
       },
       "placeholders": {
         "firstName": "Fornavn",
@@ -1388,6 +1389,7 @@
         "retry": "Prøv igjen",
         "save": "Lagre"
       },
+      "networkVisibleHint": "Når dette er på, kan medlemmer av nettverkssynlige spaces finne deg på Hjem og Koble til.",
       "errors": {
         "firstNameRequired": "Skriv inn fornavnet ditt",
         "lastNameRequired": "Skriv inn etternavnet ditt",
@@ -4463,6 +4465,10 @@
     "personalAiTitle": "Personlig KI",
     "personalAiLead": "Be Hypha om å hjelpe deg å navigere.",
     "personalAiCta": "Spør Hypha KI",
+    "personalAiTalk": "Snakk",
+    "personalAiAsk": "Spør",
+    "personalAiVoiceHint": "Stem bruker {space}",
+    "personalAiNoSpace": "Bli med i et space for å snakke med stemme.",
     "moreSpaces": "+{count} mer",
     "walletTitle": "Lommeboken din",
     "walletLead": "Det du holder nå. Åpne hele lommeboken for overføringer og bank.",
@@ -4472,7 +4478,12 @@
     "walletEmpty": "Nothing waiting to claim. That can be a kind of quiet.",
     "walletRewards": "Det er noe klart til å hentes.",
     "activityTitle": "Trenger din oppmerksomhet",
-    "activityLead": "Forslag som venter på din stemme.",
+    "activityLead": "Åpne avstemninger og signaler som trenger deg.",
+    "attentionSeeAll": "Se alle",
+    "attentionVote": "Stem",
+    "attentionOpen": "Åpne",
+    "attentionVoteKind": "Avstemning",
+    "attentionSignalKind": "Signal",
     "activityVotes": "Forslag å stemme på",
     "activitySignals": "Signaler å se",
     "activityLoading": "Samler det som trenger deg…",
@@ -4494,6 +4505,16 @@
     "connectTitle": "Folk du kan møte",
     "connectLead": "Medlemmer av rom som valgte å være synlige på nettverket.",
     "connectEmpty": "Ingen ansikter å vise ennå.",
+    "connectSeeAll": "Se alle",
+    "connectPageTitle": "Koble til",
+    "connectPageLead": "Folk fra spaces som valgte å være synlige. Meldinger åpnes til høyre.",
+    "connectMessagesEmpty": "Velg noen for å starte en samtale.",
+    "connectChatTitle": "Meldinger",
+    "connectSend": "Send",
+    "connectDmError": "Kunne ikke åpne denne samtalen.",
+    "connectDmUnavailable": "Chat er ikke tilgjengelig for denne personen ennå.",
+    "connectLoading": "Finner folk…",
+    "connectComposerPlaceholder": "Skriv en melding…",
     "nextMoveCreate": "Ready to give a vision a home?",
     "nextMoveCreateHint": "AI will stay with you from the first sentence to the first vote.",
     "spaceKicker": "This circle",
@@ -4541,6 +4562,7 @@
     "mapInteract": "Rull for å zoome, dra for å flytte.",
     "mapZoomIn": "Zoom inn",
     "mapZoomOut": "Zoom ut",
+    "mapOpenSpace": "Åpne {title}",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",

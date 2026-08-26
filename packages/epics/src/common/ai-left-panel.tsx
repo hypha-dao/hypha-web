@@ -11,7 +11,12 @@ import {
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -322,12 +327,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());
+  const searchParams = useSearchParams();
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
   );
-  /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. */
-  const spaceSlug = spaceSlugFromPath ?? params?.id;
+  const spaceSlugFromQuery = searchParams.get('space')?.trim() || undefined;
+  /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. Home Personal AI can pass `?space=` so Live Voice has a space context without leaving Home. */
+  const spaceSlug = spaceSlugFromPath ?? params?.id ?? spaceSlugFromQuery;
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tModalAside = useTranslations('ModalAside');

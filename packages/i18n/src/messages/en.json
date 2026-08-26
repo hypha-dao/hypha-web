@@ -1374,7 +1374,8 @@
       "labels": {
         "email": "Email",
         "location": "Location",
-        "preferredCurrency": "Preferred currency"
+        "preferredCurrency": "Preferred currency",
+        "networkVisible": "Visible on the network"
       },
       "placeholders": {
         "firstName": "First Name",
@@ -1389,6 +1390,7 @@
         "retry": "Retry",
         "save": "Save"
       },
+      "networkVisibleHint": "When on, members of network-visible spaces can find you on Home and Connect.",
       "errors": {
         "firstNameRequired": "Please enter your first name",
         "lastNameRequired": "Please enter your last name",
@@ -4466,6 +4468,10 @@
     "personalAiTitle": "Personal AI",
     "personalAiLead": "Ask Hypha to help you navigate.",
     "personalAiCta": "Ask Hypha AI",
+    "personalAiTalk": "Talk",
+    "personalAiAsk": "Ask",
+    "personalAiVoiceHint": "Voice uses {space}",
+    "personalAiNoSpace": "Join a space to talk with voice.",
     "moreSpaces": "+{count} more",
     "walletTitle": "Your wallet",
     "walletLead": "What you hold right now. Open the full wallet for transfers and banking.",
@@ -4475,7 +4481,12 @@
     "walletEmpty": "Nothing waiting to claim. That can be a kind of quiet.",
     "walletRewards": "There is something ready for you to claim.",
     "activityTitle": "Needs your attention",
-    "activityLead": "Proposals waiting for a vote.",
+    "activityLead": "Open votes and signals that need you.",
+    "attentionSeeAll": "See all",
+    "attentionVote": "Vote",
+    "attentionOpen": "Open",
+    "attentionVoteKind": "Vote",
+    "attentionSignalKind": "Signal",
     "activityVotes": "Proposals to vote",
     "activitySignals": "Signals to see",
     "activityLoading": "Gathering what needs you…",
@@ -4497,6 +4508,16 @@
     "connectTitle": "People you can meet",
     "connectLead": "Members of spaces that chose to be visible on the network.",
     "connectEmpty": "No faces to show yet.",
+    "connectSeeAll": "See all",
+    "connectPageTitle": "Connect",
+    "connectPageLead": "People from spaces that chose to be visible. Messages open on the right.",
+    "connectMessagesEmpty": "Choose someone to start a conversation.",
+    "connectChatTitle": "Messages",
+    "connectSend": "Send",
+    "connectDmError": "Could not open this conversation.",
+    "connectDmUnavailable": "Chat is not available for this person yet.",
+    "connectLoading": "Finding people…",
+    "connectComposerPlaceholder": "Write a message…",
     "nextMoveCreate": "Ready to give a vision a home?",
     "nextMoveCreateHint": "AI will stay with you from the first sentence to the first vote.",
     "spaceKicker": "This circle",
@@ -4544,6 +4565,7 @@
     "mapInteract": "Scroll to zoom, drag to pan.",
     "mapZoomIn": "Zoom in",
     "mapZoomOut": "Zoom out",
+    "mapOpenSpace": "Open {title}",
     "dimension": {
       "being": "Being",
       "thinking": "Thinking",
