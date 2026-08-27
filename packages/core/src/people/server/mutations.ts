@@ -22,11 +22,14 @@ export const createPerson = async (
   };
   const [dbPerson] = await withOptionalNetworkVisibleColumn(
     () => db.insert(people).values(insertData).returning(),
-    () =>
-      db
-        .insert(people)
-        .values(omitNetworkVisible(insertData))
-        .returning(getCorePersonFields()),
+    async () => {
+      await db.insert(people).values(omitNetworkVisible(insertData));
+      return db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.slug, slug))
+        .limit(1);
+    },
   );
   if (!dbPerson) {
     throw new Error('Failed to create person');
@@ -52,12 +55,17 @@ export const updatePerson = async (
         .set(updateData)
         .where(eq(people.id, person.id))
         .returning(),
-    () =>
-      db
+    async () => {
+      await db
         .update(people)
         .set(omitNetworkVisible(updateData))
+        .where(eq(people.id, person.id));
+      return db
+        .select(getCorePersonFields())
+        .from(people)
         .where(eq(people.id, person.id))
-        .returning(getCorePersonFields()),
+        .limit(1);
+    },
   );
   if (!dbPerson) {
     throw new Error('Failed to update person');

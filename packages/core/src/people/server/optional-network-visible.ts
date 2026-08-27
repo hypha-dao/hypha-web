@@ -37,10 +37,10 @@ export function isMissingNetworkVisibleColumn(error: unknown): boolean {
   );
 }
 
-export async function withOptionalNetworkVisibleColumn<T>(
-  withColumn: () => Promise<T>,
-  withoutColumn: () => Promise<T>,
-): Promise<T> {
+export async function withOptionalNetworkVisibleColumn<TWith, TWithout>(
+  withColumn: () => Promise<TWith>,
+  withoutColumn: () => Promise<TWithout>,
+): Promise<TWith | TWithout> {
   try {
     return await withColumn();
   } catch (error) {
