@@ -48,7 +48,11 @@ import { useHomeActivity } from '../use-home-activity';
 import { useRecentSpaceUsage } from '../use-recent-space-usage';
 import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
 import { useNetworkPulse } from '../use-network-pulse';
-import { spaceVisualsFromSpaces } from '../network-pulse';
+import {
+  selectNetworkPulseCandidates,
+  spaceVisualsFromSpaces,
+  uniquePeople,
+} from '../network-pulse';
 import { WellbeingScoreCard } from './wellbeing-score-card';
 import { CaptureMomentDialog } from './capture-moment-dialog';
 import { EcosystemWorldMap } from './ecosystem-world-map';
@@ -60,7 +64,7 @@ import { HomeSpaceConstellation } from './home-space-constellation';
 import { JourneyMark } from './journey-mark';
 
 const SPACE_PREVIEW_LIMIT = 8;
-const WALLET_PREVIEW_LIMIT = 3;
+const WALLET_PREVIEW_LIMIT = 5;
 const MIN_REWARD_CLAIM_VALUE = 0.01;
 
 function greetingKey(
@@ -122,7 +126,7 @@ function PersonalAiCard({
   );
 
   return (
-    <Card className="craft-card">
+    <Card className="craft-card shrink-0">
       <CardContent className="flex flex-col gap-3 p-5">
         <div className="flex items-start gap-3">
           <span className="craft-icon-box shrink-0 text-accent-11" aria-hidden>
@@ -255,21 +259,27 @@ export function HomeDashboard({
     people: pulsePeople,
     isLoading: isLoadingPulse,
   } = useNetworkPulse(pulseSpaces);
+  const peopleSpaceSlugs = useMemo(() => {
+    const shared = pulseSpaces.map((space) => space.slug).filter(Boolean);
+    if (shared.length > 0) return shared;
+    return selectNetworkPulseCandidates(spaces)
+      .map((space) => space.slug)
+      .filter((slug): slug is string => Boolean(slug));
+  }, [pulseSpaces, spaces]);
   const {
     people: directoryPeople,
     isLoading: isLoadingPeople,
     error: peopleError,
     retry: retryPeople,
   } = useNetworkPeople({
-    spaceSlugs: pulseSpaces.map((space) => space.slug),
+    spaceSlugs: peopleSpaceSlugs,
     excludeSlug: person?.slug,
     pageSize: 12,
   });
   const people = useMemo(() => {
     if (directoryPeople.length > 0) return directoryPeople;
-    if (peopleError) return pulsePeople;
-    return directoryPeople;
-  }, [directoryPeople, peopleError, pulsePeople]);
+    return uniquePeople(pulsePeople, person?.slug);
+  }, [directoryPeople, person?.slug, pulsePeople]);
 
   const rankedSpaces = useMemo(
     () =>
@@ -321,6 +331,7 @@ export function HomeDashboard({
         isLoading={isLoadingSpaces}
         hiddenCount={hiddenSpaceCount}
         isAuthenticated={isAuthenticated}
+        className="min-h-0 flex-1"
       />
     </>
   );
@@ -328,9 +339,9 @@ export function HomeDashboard({
   return (
     <Container
       size="lg"
-      className="flex min-w-0 flex-col gap-8 py-8 md:py-10 xl:h-[calc(100dvh-var(--menu-top-height,70px))] xl:overflow-hidden xl:py-6"
+      className="flex min-h-0 min-w-0 flex-col gap-6 py-6 md:py-8 xl:h-[calc(100dvh-var(--menu-top-height,70px))] xl:overflow-hidden xl:py-5"
     >
-      <header className="flex items-start gap-4">
+      <header className="flex shrink-0 items-start gap-4">
         {person?.slug ? (
           <Link
             href={`/${lang}/profile/${person.slug}`}
@@ -362,24 +373,26 @@ export function HomeDashboard({
         </div>
       </header>
 
-      <div className="flex min-h-0 min-w-0 flex-col gap-8 xl:grid xl:h-full xl:grid-cols-12 xl:overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 xl:grid xl:grid-cols-12 xl:overflow-hidden">
         <aside className="flex min-w-0 flex-col gap-4 xl:hidden">
           {leftRail}
         </aside>
-        <aside className="hidden min-w-0 flex-col gap-4 xl:col-span-3 xl:flex xl:h-full xl:overflow-y-auto">
+        <aside className="hidden min-h-0 min-w-0 flex-col gap-4 xl:col-span-3 xl:flex xl:overflow-y-auto">
           {leftRail}
         </aside>
 
-        <div className="flex min-w-0 flex-col gap-8 xl:col-span-6 xl:h-full xl:overflow-y-auto">
-          <HomeAttentionList
-            lang={lang}
-            items={attentionItems}
-            isLoading={isLoadingActivity}
-            fallbackSpaces={rankedSpaces}
-          />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 xl:col-span-6 xl:overflow-y-auto">
+          <div className="shrink-0">
+            <HomeAttentionList
+              lang={lang}
+              items={attentionItems}
+              isLoading={isLoadingActivity}
+              fallbackSpaces={rankedSpaces}
+            />
+          </div>
 
-          <section className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
+          <section className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
               <div className="flex items-start gap-3">
                 <JourneyMark kind="pulse" />
                 <div>
@@ -398,13 +411,15 @@ export function HomeDashboard({
                 </Link>
               </Button>
             </div>
-            <NetworkPulseFeed
-              lang={lang}
-              stories={stories}
-              isLoading={isLoadingShared || isLoadingPulse}
-              spaceVisuals={spaceVisuals}
-              compact
-            />
+            <div className="shrink-0">
+              <NetworkPulseFeed
+                lang={lang}
+                stories={stories}
+                isLoading={isLoadingShared || isLoadingPulse}
+                spaceVisuals={spaceVisuals}
+                compact
+              />
+            </div>
             <EcosystemWorldMap
               lang={lang}
               spaces={spaces}
@@ -413,7 +428,7 @@ export function HomeDashboard({
           </section>
         </div>
 
-        <aside className="flex flex-col gap-4 xl:col-span-3 xl:h-full xl:overflow-y-auto">
+        <aside className="flex min-h-0 flex-col gap-4 xl:col-span-3 xl:overflow-y-auto">
           <WellbeingScoreCard
             variant="personal"
             score={score}
@@ -423,10 +438,10 @@ export function HomeDashboard({
             onCapture={() => setCaptureOpen(true)}
             onActivate={journey.activatePersonal}
             compact
-            className="shrink-0"
+            className="order-first shrink-0"
           />
 
-          <Card className="craft-card">
+          <Card className="craft-card shrink-0">
             <CardContent className="flex flex-col gap-4 p-5">
               <p className="inline-flex items-center gap-2 text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
                 <Wallet className="size-3.5" aria-hidden />
@@ -491,7 +506,7 @@ export function HomeDashboard({
             </CardContent>
           </Card>
 
-          <Card className="craft-card">
+          <Card className="craft-card shrink-0">
             <CardContent className="flex flex-col gap-4 p-5">
               <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
                 {t('createTitle')}
