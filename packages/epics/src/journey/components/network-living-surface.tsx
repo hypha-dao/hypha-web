@@ -6,7 +6,11 @@ import { Space, useMe } from '@hypha-platform/core/client';
 import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
 import { useNetworkPulse } from '../use-network-pulse';
 import { useNetworkPeople } from '../use-network-people';
-import { spaceVisualsFromSpaces } from '../network-pulse';
+import {
+  selectNetworkPulseCandidates,
+  spaceVisualsFromSpaces,
+  uniquePeople,
+} from '../network-pulse';
 import { NetworkJourneyIntro } from './network-journey-intro';
 import { NetworkPulseFeed } from './network-pulse-feed';
 import { NetworkPeopleStrip } from './network-people-strip';
@@ -40,21 +44,27 @@ export function NetworkLivingSurface({
     people: pulsePeople,
     isLoading,
   } = useNetworkPulse(pulseSpaces);
+  const peopleSpaceSlugs = useMemo(() => {
+    const shared = pulseSpaces.map((space) => space.slug).filter(Boolean);
+    if (shared.length > 0) return shared;
+    return selectNetworkPulseCandidates(spaces)
+      .map((space) => space.slug)
+      .filter((slug): slug is string => Boolean(slug));
+  }, [pulseSpaces, spaces]);
   const {
     people: directoryPeople,
     isLoading: isLoadingPeople,
     error: peopleError,
     retry: retryPeople,
   } = useNetworkPeople({
-    spaceSlugs: pulseSpaces.map((space) => space.slug),
+    spaceSlugs: peopleSpaceSlugs,
     excludeSlug: person?.slug,
     pageSize: 12,
   });
   const people = useMemo(() => {
     if (directoryPeople.length > 0) return directoryPeople;
-    if (peopleError) return pulsePeople;
-    return directoryPeople;
-  }, [directoryPeople, peopleError, pulsePeople]);
+    return uniquePeople(pulsePeople, person?.slug);
+  }, [directoryPeople, person?.slug, pulsePeople]);
 
   return (
     <div className="flex flex-col gap-8">

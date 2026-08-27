@@ -14,6 +14,7 @@ import {
 import { CreateSpaceButton } from '../../spaces/components/create-space-button';
 import { getDhoPathDefaultLanding } from '../../common/get-path-function';
 import { syncRecentSpacesForActiveSlug } from '../../common/recent-space-history';
+import { cn } from '@hypha-platform/ui-utils';
 import { JourneyMark } from './journey-mark';
 import '../journey-surface.css';
 
@@ -27,18 +28,20 @@ export function HomeSpaceConstellation({
   isLoading,
   hiddenCount,
   isAuthenticated,
+  className,
 }: {
   lang: Locale;
   spaces: Space[];
   isLoading: boolean;
   hiddenCount: number;
   isAuthenticated: boolean;
+  className?: string;
 }) {
   const t = useTranslations('Journey');
   const tCommon = useTranslations('Common');
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className={cn('flex min-h-0 flex-col gap-3', className)}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-3">
           <JourneyMark kind="circles" />
@@ -71,7 +74,7 @@ export function HomeSpaceConstellation({
           ))}
         </ul>
       ) : spaces.length > 0 ? (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {spaces.map((space) => (
             <li key={space.id}>
               <Link

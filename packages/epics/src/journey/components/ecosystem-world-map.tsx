@@ -14,6 +14,7 @@ import {
   CardContent,
 } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
+import { cn } from '@hypha-platform/ui-utils';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   hasSpaceMapLocation,
@@ -196,9 +197,14 @@ export function EcosystemWorldMap({
   );
 
   return (
-    <Card className={`wb-scope craft-card overflow-hidden ${className ?? ''}`}>
-      <CardContent className="p-4 sm:p-5">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+    <Card
+      className={cn(
+        'wb-scope craft-card flex min-h-[28rem] flex-col overflow-hidden xl:min-h-[32rem] xl:flex-1',
+        className,
+      )}
+    >
+      <CardContent className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
+        <div className="mb-3 flex shrink-0 flex-wrap items-end justify-between gap-2">
           <div>
             <h3 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
               {title}
@@ -214,11 +220,11 @@ export function EcosystemWorldMap({
             })}
           </p>
         </div>
-        <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background">
+        <div className="relative min-h-[22rem] flex-1 overflow-hidden rounded-xl border border-border/60 bg-background xl:min-h-[28rem]">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${ECOSYSTEM_MAP_WIDTH} ${ECOSYSTEM_MAP_HEIGHT}`}
-            className="h-auto w-full cursor-grab active:cursor-grabbing touch-none"
+            className="absolute inset-0 h-full w-full cursor-grab touch-none active:cursor-grabbing"
             role="group"
             aria-label={t('mapTitle')}
           >
@@ -317,7 +323,7 @@ export function EcosystemWorldMap({
             />
           ) : null}
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-1 text-muted-foreground">
+        <div className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-2 text-1 text-muted-foreground">
           <p>{t('mapHint')}</p>
           <p>{t('mapInteract')}</p>
         </div>
