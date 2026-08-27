@@ -52,3 +52,17 @@ export const findBankCustomerByPersonAndProvider = async (
 
   return row ?? null;
 };
+
+/** Looks up the pending confirmation row a confirmation-JWT `jti` correlates to (#2288). */
+export const findBankCustomerByNonce = async (
+  jwtNonce: string,
+  { db }: DbConfig,
+): Promise<BankCustomer | null> => {
+  const [row] = await db
+    .select()
+    .from(bankCustomers)
+    .where(eq(bankCustomers.jwtNonce, jwtNonce))
+    .limit(1);
+
+  return row ?? null;
+};

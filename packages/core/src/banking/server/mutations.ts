@@ -11,8 +11,11 @@ import {
 export type InsertBankCustomerInput = {
   entityType: BankEntityType;
   provider: BankProvider;
+  /** Null while an email-ownership confirmation is pending (#2288) — no KYC link exists yet. */
   providerCustomerId: string | null;
-  providerKycLinkId: string;
+  providerKycLinkId: string | null;
+  /** Set only while a confirmation is pending; unset (undefined) for a direct/bypass create. */
+  jwtNonce?: string;
   requestedRails: BankCustomerRequestedRails;
 } & (
   | { spaceId: number; personId?: undefined }
@@ -37,6 +40,8 @@ export type UpdateBankCustomerInput = {
   providerCustomerId?: string | null;
   providerKycLinkId?: string;
   requestedRails?: BankCustomerRequestedRails;
+  /** Pass `null` to clear (confirmation finalized), a uuid to rotate (resend, D3), or omit to leave as-is. */
+  jwtNonce?: string | null;
 };
 
 export const updateBankCustomer = async (
@@ -55,6 +60,9 @@ export const updateBankCustomer = async (
   }
   if (input.requestedRails !== undefined) {
     patch.requestedRails = input.requestedRails;
+  }
+  if (input.jwtNonce !== undefined) {
+    patch.jwtNonce = input.jwtNonce;
   }
 
   const [row] = await db

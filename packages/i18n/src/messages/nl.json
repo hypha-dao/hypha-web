@@ -1036,7 +1036,9 @@
         "organizationHint": "Je gegevens worden ter verificatie naar onze bankpartner gestuurd en worden niet op Hypha opgeslagen.",
         "legalName": "Volledige naam",
         "currenciesDescription": "Selecteer de valuta die u wilt gebruiken voor bankuitbetalingen. U wordt eenmalig geverifieerd bij onze bankpartner."
-      }
+      },
+      "bypassEligibleHint": "This is your own verified email — no extra confirmation step needed.",
+      "confirmationRequiredHint": "We'll send a confirmation link to this address before enabling it, since it's not your own verified email on file."
     },
     "notStarted": {
       "description": "Bankieren is nog niet ingesteld voor deze ruimte.",
@@ -1253,6 +1255,12 @@
         "title": "Status niet beschikbaar",
         "description": "We kunnen de huidige verificatiestatus niet vaststellen. Probeer te vernieuwen."
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirm your Bridge customer email",
+      "description": "We sent a confirmation link to the email address you entered. Click it to continue setting up banking — we won't contact Bridge until you confirm.",
+      "resendCta": "Resend confirmation email",
+      "resending": "Resending…"
     }
   },
   "TreasuryTab": {
@@ -4413,5 +4421,19 @@
     "support": "De rustige werkruimte voor collectieve actie.",
     "ctaEnter": "Binnenkomen",
     "ctaExplore": "Netwerk verkennen"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Confirming your email…",
+    "loadingDescription": "Hang tight while we verify your confirmation link.",
+    "successTitle": "Email confirmed",
+    "successDescription": "Thanks — {ownerLabel} can now continue with Bridge verification.",
+    "errorExpiredTitle": "Link expired",
+    "errorExpiredDescription": "This confirmation link has expired. Go back to Banking settings and resend it.",
+    "errorInvalidTitle": "Link no longer valid",
+    "errorInvalidDescription": "This confirmation link is no longer valid — it may have already been used, or replaced by a newer request.",
+    "errorAlreadyConfirmedTitle": "Already confirmed",
+    "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
+    "errorGenericTitle": "Something went wrong",
+    "errorGenericDescription": "We could not confirm this email. Please try again later."
   }
 }

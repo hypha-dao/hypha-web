@@ -56,6 +56,8 @@ export type BankEndorsementPublicStatus = {
 export type BankOnboardingResult = {
   provider: BankProvider;
   created: boolean;
+  /** Set when a #2288 email-ownership confirmation was sent instead of creating the customer now. */
+  pendingEmailConfirmation?: boolean;
   spaceTitle: string;
   requesterSlug: string | null;
   kycLink: string | null;
@@ -88,6 +90,8 @@ export type RequestPersonalBankOnboardingInput = {
 export type PersonalBankOnboardingResult = {
   provider: BankProvider;
   created: boolean;
+  /** Set when a #2288 email-ownership confirmation was sent instead of creating the customer now. */
+  pendingEmailConfirmation?: boolean;
   /** Person display/legal name — used to personalize the KYC email. */
   ownerName: string;
   requesterSlug: string | null;

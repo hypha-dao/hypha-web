@@ -11,7 +11,6 @@ import {
   useBankCustomerStatus,
   useTransfers,
   useVaults,
-  useVirtualAccounts,
 } from '@hypha-platform/epics';
 import {
   Tabs,
@@ -49,14 +48,12 @@ export function TreasuryTabs({
   const { transfers } = useTransfers({ spaceSlug });
   const { vaults } = useVaults({ spaceSlug });
   const { status: bankCustomerStatus } = useBankCustomerStatus({ spaceSlug });
-  const { accounts: virtualAccounts } = useVirtualAccounts({
-    spaceSlug,
-    enabled: Boolean(bankCustomerStatus),
-  });
   const walletCount = assets.filter((asset) => asset.value > 0).length;
   const transactionCount = transfers.length;
   const vaultCount = vaults.length;
-  const bankAccountCount = virtualAccounts.length;
+  // Count linked Bridge customers, not currencies (a bundled #2288 fix) — one space has at most
+  // one bank customer per provider, regardless of how many deposit currencies it uses.
+  const bankAccountCount = bankCustomerStatus?.hasCustomer ? 1 : 0;
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">

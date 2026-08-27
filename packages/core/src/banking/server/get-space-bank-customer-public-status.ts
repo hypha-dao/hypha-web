@@ -1,7 +1,10 @@
 import type { DatabaseInstance } from '../../common/server/types';
 import type { Space } from '../../space/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
-import { DEFAULT_BANK_PROVIDER } from '../constants';
+import {
+  DEFAULT_BANK_PROVIDER,
+  PENDING_EMAIL_CONFIRMATION_VALIDATION,
+} from '../constants';
 import type {
   BankEndorsementPublicStatus,
   BankPendingRequirements,
@@ -47,6 +50,12 @@ export type SpaceBankCustomerPublicStatus = {
   requestedRails: string[];
   /** Missing requirements that need user action beyond the main KYB flow. */
   pendingRequirements?: BankPendingRequirements;
+  /**
+   * Set when a #2288 email-ownership confirmation is pending — no Bridge KYC link exists yet, so
+   * none of the provider-derived fields above are meaningful. Drives the "confirm your email"
+   * task card instead of the normal onboarding/status UI.
+   */
+  pendingEmailConfirmation?: { requestedRails: string[] };
 };
 
 function mapCurrencyStatuses(
@@ -88,6 +97,23 @@ export async function buildPublicStatusFromCustomer(
   customer: BankCustomer,
   { db }: { db: DatabaseInstance },
 ): Promise<SpaceBankCustomerPublicStatus> {
+  if (!customer.providerKycLinkId) {
+    return {
+      hasCustomer: true,
+      isApproved: false,
+      approvalRegistered: false,
+      procedures: {
+        tos: PENDING_EMAIL_CONFIRMATION_VALIDATION,
+        kyc: PENDING_EMAIL_CONFIRMATION_VALIDATION,
+      },
+      railStatuses: [],
+      endorsementStatuses: [],
+      currencyStatuses: [],
+      requestedRails: customer.requestedRails ?? [],
+      pendingEmailConfirmation: { requestedRails: customer.requestedRails ?? [] },
+    };
+  }
+
   const state = await loadBankingProviderState(customer);
   const validations = buildCustomerValidations(state.kycLink);
   const railStatuses = buildRailStatuses({ customer, state });

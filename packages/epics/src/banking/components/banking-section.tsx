@@ -39,6 +39,7 @@ import { CreateTransferDialog } from './create-transfer-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
+import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
@@ -126,6 +127,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const [addPayoutDialogOpen, setAddPayoutDialogOpen] = useState(false);
   const [detailAccount, setDetailAccount] =
     useState<BankPayoutAccountPublic | null>(null);
+  /** #2288 — re-shows BankingInitialSetup so the submitter can retype the email and resend. */
+  const [showEmailConfirmationResend, setShowEmailConfirmationResend] =
+    useState(false);
 
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
@@ -224,6 +228,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
         contactEmail: input.contactEmail,
         requestedRails: input.currencies,
       });
+      setShowEmailConfirmationResend(false);
       const updated = await refresh();
       openBankVerificationFlowLink(updated ?? undefined);
     },
@@ -242,7 +247,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
     );
   }
 
-  if (!hasCustomer) {
+  if (!hasCustomer || (status?.pendingEmailConfirmation && showEmailConfirmationResend)) {
     if (!canManage) {
       return (
         <p className="text-2 text-muted-foreground">
@@ -258,6 +263,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
         isSubmitting={isOnboarding}
         error={onboardingError}
         onSubmit={handleInitialSetupSubmit}
+      />
+    );
+  }
+
+  if (status?.pendingEmailConfirmation) {
+    return (
+      <PendingEmailConfirmationCard
+        onResend={() => setShowEmailConfirmationResend(true)}
       />
     );
   }

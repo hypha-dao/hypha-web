@@ -88,6 +88,8 @@ export type BankCustomerPublicStatus = {
   railStatuses: BankRailPublicStatus[];
   requestedRails: string[];
   pendingRequirements?: BankPendingRequirements;
+  /** Set when a #2288 email-ownership confirmation is pending — no Bridge KYC link exists yet. */
+  pendingEmailConfirmation?: { requestedRails: string[] };
 };
 
 export type ProviderFormData = {

@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Input, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { isBypassEligible } from '@hypha-platform/core/client';
 
 import {
   BANK_CURRENCY_METAS,
@@ -130,6 +131,11 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
               required
               disabled={isSubmitting}
             />
+            <p className="text-1 text-muted-foreground">
+              {isBypassEligible(initialContactEmail, contactEmail)
+                ? t('bypassEligibleHint')
+                : t('confirmationRequiredHint')}
+            </p>
           </div>
         </div>
       </section>

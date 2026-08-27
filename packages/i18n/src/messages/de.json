@@ -1105,7 +1105,9 @@
         "organizationHint": "Ihre Angaben werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
         "legalName": "Vollständiger Name",
         "currenciesDescription": "Wählen Sie die Währungen aus, die Sie für Bankauszahlungen verwenden möchten. Sie werden einmalig von unserem Banking-Partner verifiziert."
-      }
+      },
+      "bypassEligibleHint": "This is your own verified email — no extra confirmation step needed.",
+      "confirmationRequiredHint": "We'll send a confirmation link to this address before enabling it, since it's not your own verified email on file."
     },
     "corridors": {
       "provisioning": "Wird eingerichtet…",
@@ -1254,6 +1256,12 @@
         "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYC-Daten simulieren",
         "cta": "KYC-Freigabe simulieren"
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirm your Bridge customer email",
+      "description": "We sent a confirmation link to the email address you entered. Click it to continue setting up banking — we won't contact Bridge until you confirm.",
+      "resendCta": "Resend confirmation email",
+      "resending": "Resending…"
     }
   },
   "TreasuryTab": {
@@ -4407,5 +4415,19 @@
     "support": "Der ruhige Workspace für kollektives Handeln — Governance, Treasury und Community an einem Ort.",
     "ctaEnter": "Eintreten",
     "ctaExplore": "Netzwerk erkunden"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Confirming your email…",
+    "loadingDescription": "Hang tight while we verify your confirmation link.",
+    "successTitle": "Email confirmed",
+    "successDescription": "Thanks — {ownerLabel} can now continue with Bridge verification.",
+    "errorExpiredTitle": "Link expired",
+    "errorExpiredDescription": "This confirmation link has expired. Go back to Banking settings and resend it.",
+    "errorInvalidTitle": "Link no longer valid",
+    "errorInvalidDescription": "This confirmation link is no longer valid — it may have already been used, or replaced by a newer request.",
+    "errorAlreadyConfirmedTitle": "Already confirmed",
+    "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
+    "errorGenericTitle": "Something went wrong",
+    "errorGenericDescription": "We could not confirm this email. Please try again later."
   }
 }
