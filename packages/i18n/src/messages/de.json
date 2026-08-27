@@ -4500,6 +4500,8 @@
     "connectTitle": "Menschen, denen du begegnen kannst",
     "connectLead": "Mitglieder von Spaces, die sich entschieden haben, im Netzwerk sichtbar zu sein.",
     "connectEmpty": "Noch keine Gesichter zu zeigen.",
+    "connectError": "Menschen konnten gerade nicht geladen werden.",
+    "connectRetry": "Erneut versuchen",
     "connectSeeAll": "Alle ansehen",
     "connectPageTitle": "Verbinden",
     "connectPageLead": "Menschen aus Spaces, die sichtbar sein wollen. Nachrichten öffnen rechts.",

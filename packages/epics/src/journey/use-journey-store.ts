@@ -20,9 +20,14 @@ import {
 } from './wellbeing-model';
 
 const STORAGE_PREFIX = 'hypha.journey.wellbeing.v1';
+export const LOCAL_JOURNEY_PERSON_SLUG = 'local';
 
 function storageKey(personSlug: string): string {
   return `${STORAGE_PREFIX}:${personSlug}`;
+}
+
+function resolvedPersonSlug(personSlug?: string | null): string {
+  return personSlug?.trim() || LOCAL_JOURNEY_PERSON_SLUG;
 }
 
 function parseState(raw: string | null): JourneyStoreState {
@@ -49,14 +54,19 @@ function parseState(raw: string | null): JourneyStoreState {
 }
 
 function readState(personSlug: string | undefined): JourneyStoreState {
-  if (!personSlug || typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return createEmptyJourneyState();
   }
-  return parseState(window.localStorage.getItem(storageKey(personSlug)));
+  return parseState(
+    window.localStorage.getItem(storageKey(resolvedPersonSlug(personSlug))),
+  );
 }
 
-function writeState(personSlug: string, state: JourneyStoreState) {
-  window.localStorage.setItem(storageKey(personSlug), JSON.stringify(state));
+function writeState(personSlug: string | undefined, state: JourneyStoreState) {
+  window.localStorage.setItem(
+    storageKey(resolvedPersonSlug(personSlug)),
+    JSON.stringify(state),
+  );
 }
 
 function emptyAddonState(): JourneyAddonState {
@@ -78,9 +88,7 @@ export function useJourneyStore(personSlug: string | undefined) {
     (updater: (current: JourneyStoreState) => JourneyStoreState) => {
       setState((current) => {
         const next = updater(current);
-        if (personSlug) {
-          writeState(personSlug, next);
-        }
+        writeState(personSlug, next);
         return next;
       });
     },

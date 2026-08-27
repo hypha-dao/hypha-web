@@ -4506,6 +4506,8 @@
     "connectTitle": "Mensen die je kunt ontmoeten",
     "connectLead": "Leden van spaces die kozen zichtbaar te zijn op het netwerk.",
     "connectEmpty": "Nog geen gezichten te tonen.",
+    "connectError": "Mensen laden lukt nu niet.",
+    "connectRetry": "Opnieuw proberen",
     "connectSeeAll": "Alles zien",
     "connectPageTitle": "Verbinden",
     "connectPageLead": "Mensen uit spaces die zichtbaar willen zijn. Berichten openen rechts.",

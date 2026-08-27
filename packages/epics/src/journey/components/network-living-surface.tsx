@@ -35,12 +35,26 @@ export function NetworkLivingSurface({
     [sharedSpaces],
   );
   const { person } = useMe();
-  const { stories, isLoading } = useNetworkPulse(pulseSpaces);
-  const { people, isLoading: isLoadingPeople } = useNetworkPeople({
+  const {
+    stories,
+    people: pulsePeople,
+    isLoading,
+  } = useNetworkPulse(pulseSpaces);
+  const {
+    people: directoryPeople,
+    isLoading: isLoadingPeople,
+    error: peopleError,
+    retry: retryPeople,
+  } = useNetworkPeople({
     spaceSlugs: pulseSpaces.map((space) => space.slug),
     excludeSlug: person?.slug,
     pageSize: 12,
   });
+  const people = useMemo(() => {
+    if (directoryPeople.length > 0) return directoryPeople;
+    if (peopleError) return pulsePeople;
+    return directoryPeople;
+  }, [directoryPeople, peopleError, pulsePeople]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -58,7 +72,9 @@ export function NetworkLivingSurface({
           <NetworkPeopleStrip
             lang={lang}
             people={people}
-            isLoading={isLoadingPeople}
+            isLoading={isLoadingPeople || isLoadingShared}
+            error={peopleError && people.length === 0}
+            onRetry={retryPeople}
             layout="field"
           />
         </aside>

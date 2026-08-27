@@ -4500,6 +4500,8 @@
     "connectTitle": "Personas a quienes conocer",
     "connectLead": "Miembros de espacios que eligieron ser visibles en la red.",
     "connectEmpty": "Aún no hay rostros que mostrar.",
+    "connectError": "No se pudieron cargar las personas ahora.",
+    "connectRetry": "Reintentar",
     "connectSeeAll": "Ver todo",
     "connectPageTitle": "Conectar",
     "connectPageLead": "Personas de espacios que eligieron ser visibles. Los mensajes se abren a la derecha.",

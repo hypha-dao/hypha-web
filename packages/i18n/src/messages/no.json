@@ -4505,6 +4505,8 @@
     "connectTitle": "Folk du kan møte",
     "connectLead": "Medlemmer av rom som valgte å være synlige på nettverket.",
     "connectEmpty": "Ingen ansikter å vise ennå.",
+    "connectError": "Kunne ikke laste personer akkurat nå.",
+    "connectRetry": "Prøv igjen",
     "connectSeeAll": "Se alle",
     "connectPageTitle": "Koble til",
     "connectPageLead": "Folk fra spaces som valgte å være synlige. Meldinger åpnes til høyre.",

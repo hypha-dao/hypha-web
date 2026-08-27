@@ -4496,6 +4496,8 @@
     "connectTitle": "Des personnes à rencontrer",
     "connectLead": "Membres d'espaces qui ont choisi d'être visibles sur le réseau.",
     "connectEmpty": "Pas encore de visages à montrer.",
+    "connectError": "Impossible de charger les personnes pour le moment.",
+    "connectRetry": "Réessayer",
     "connectSeeAll": "Tout voir",
     "connectPageTitle": "Connecter",
     "connectPageLead": "Personnes des espaces qui ont choisi d’être visibles. Les messages s’ouvrent à droite.",

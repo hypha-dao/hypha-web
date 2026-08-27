@@ -45,7 +45,8 @@ export function NetworkConnectPage({
     initialPersonSlug?.trim() || searchParams.get('person')?.trim() || '';
   const { person } = useMe();
   const { getAccessToken } = useAccessTokenReady();
-  const { sharedSpaces } = useNetworkSharedSpaces(spaces);
+  const { sharedSpaces, isLoading: isLoadingShared } =
+    useNetworkSharedSpaces(spaces);
   const spaceSlugs = useMemo(
     () =>
       sharedSpaces
@@ -53,7 +54,7 @@ export function NetworkConnectPage({
         .filter((slug): slug is string => Boolean(slug)),
     [sharedSpaces],
   );
-  const { people, isLoading } = useNetworkPeople({
+  const { people, isLoading, error, retry } = useNetworkPeople({
     spaceSlugs,
     excludeSlug: person?.slug,
     pageSize: 40,
@@ -201,10 +202,25 @@ export function NetworkConnectPage({
             <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold">
               {t('connectTitle')}
             </h2>
-            {isLoading ? (
+            {isLoading || isLoadingShared ? (
               <p className="text-2 text-muted-foreground">
                 {t('connectLoading')}
               </p>
+            ) : error && people.length === 0 ? (
+              <div className="flex flex-col items-start gap-2">
+                <p className="text-2 text-muted-foreground">
+                  {t('connectError')}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  onClick={retry}
+                  className="self-start rounded-xl"
+                >
+                  {t('connectRetry')}
+                </Button>
+              </div>
             ) : people.length === 0 ? (
               <p className="text-2 text-muted-foreground">
                 {t('connectEmpty')}

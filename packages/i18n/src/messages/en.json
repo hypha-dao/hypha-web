@@ -4508,6 +4508,8 @@
     "connectTitle": "People you can meet",
     "connectLead": "Members of spaces that chose to be visible on the network.",
     "connectEmpty": "No faces to show yet.",
+    "connectError": "Couldn't load people right now.",
+    "connectRetry": "Try again",
     "connectSeeAll": "See all",
     "connectPageTitle": "Connect",
     "connectPageLead": "People from spaces that chose to be visible. Messages open on the right.",

@@ -10,17 +10,7 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import {
-  sql,
-  eq,
-  inArray,
-  and,
-  not,
-  notLike,
-  ne,
-  or,
-  isNull,
-} from 'drizzle-orm';
+import { sql, eq, inArray, and, notLike, ne, or, isNull } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
@@ -554,8 +544,9 @@ export type FindNetworkVisiblePeopleBySpaceSlugsInput = {
 };
 
 /**
- * Directory of human members in caller-supplied spaces who opted into
- * network discovery. Does not change in-space member lists.
+ * Directory of human members in caller-supplied spaces who have not
+ * opted out of network discovery. Visibility defaults on — there is no
+ * explicit opt-in. Does not change in-space member lists.
  */
 export const findNetworkVisiblePeopleBySpaceSlugs = async (
   {
@@ -588,8 +579,8 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
   const whereConditions = [
     inArray(spaces.slug, cappedSlugs),
     eq(spaces.isArchived, false),
-    not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`),
-    not(sql`${spaces.flags} @> '["archived"]'::jsonb`),
+    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["sandbox"]'::jsonb`,
+    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["archived"]'::jsonb`,
     isHumanPerson(),
   ];
 
@@ -614,7 +605,16 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
       .where(
         and(
           ...whereConditions,
-          ...(restrictToVisible ? [eq(people.networkVisible, true)] : []),
+          ...(restrictToVisible
+            ? [
+                // Default visible: only an explicit false hides someone.
+                // NULL (pre-0077 / unmigrated rows) must stay in the directory.
+                or(
+                  isNull(people.networkVisible),
+                  eq(people.networkVisible, true),
+                ),
+              ]
+            : []),
         ),
       )
       .orderBy(people.id);
