@@ -4,27 +4,82 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
 import type { PaginatedResponse, Person } from '@hypha-platform/core/client';
-import type { NetworkPerson } from './network-pulse';
+import { toNetworkPerson } from './network-people';
+import {
+  NETWORK_PULSE_PEOPLE_SPACE_LIMIT,
+  uniquePeople,
+  type NetworkPerson,
+} from './network-pulse';
 
-function personDisplayName(person: Person): string {
-  return (
-    [person.name, person.surname].filter(Boolean).join(' ') ||
-    person.nickname ||
-    person.slug ||
-    ''
-  );
+const MEMBERS_FALLBACK_PAGE_SIZE = 8;
+
+export { personAvatarUrl, toNetworkPerson } from './network-people';
+export type { PersonDirectorySource } from './network-people';
+
+type MembersPage = { persons?: { data?: Person[] } };
+
+async function fetchDirectoryPeople({
+  token,
+  spaceSlugs,
+  excludeSlug,
+  pageSize,
+}: {
+  token: string | null;
+  spaceSlugs: string[];
+  excludeSlug?: string | null;
+  pageSize: number;
+}): Promise<NetworkPerson[]> {
+  const params = new URLSearchParams({
+    spaceSlugs: spaceSlugs.join(','),
+    page: '1',
+    pageSize: String(pageSize),
+  });
+  if (excludeSlug?.trim()) params.set('excludeSlug', excludeSlug.trim());
+  const response = await fetch(`/api/v1/network/people?${params}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    throw new Error(`network-people ${response.status}`);
+  }
+  const page = (await response.json()) as PaginatedResponse<Person>;
+  return (page.data ?? [])
+    .map(toNetworkPerson)
+    .filter((person): person is NetworkPerson => Boolean(person));
 }
 
-export function toNetworkPerson(person: Person): NetworkPerson | null {
-  const slug = person.slug?.trim();
-  if (!slug || person.networkVisible === false) return null;
-  return {
-    id: person.id,
-    slug,
-    name: personDisplayName(person) || slug,
-    avatarUrl: person.avatarUrl ?? null,
-    networkVisible: true,
-  };
+async function fetchMembersFallbackPeople({
+  token,
+  spaceSlugs,
+  excludeSlug,
+}: {
+  token: string | null;
+  spaceSlugs: string[];
+  excludeSlug?: string | null;
+}): Promise<NetworkPerson[]> {
+  const headers: HeadersInit = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+  const pages = await Promise.all(
+    spaceSlugs.slice(0, NETWORK_PULSE_PEOPLE_SPACE_LIMIT).map(async (slug) => {
+      const response = await fetch(
+        `/api/v1/spaces/${encodeURIComponent(
+          slug,
+        )}/members?page=1&pageSize=${MEMBERS_FALLBACK_PAGE_SIZE}`,
+        { headers },
+      );
+      if (!response.ok) return [] as Person[];
+      const page = (await response.json()) as MembersPage;
+      return page.persons?.data ?? [];
+    }),
+  );
+  return uniquePeople(
+    pages.flatMap((members) =>
+      members
+        .map(toNetworkPerson)
+        .filter((person): person is NetworkPerson => Boolean(person)),
+    ),
+    excludeSlug,
+  );
 }
 
 export function useNetworkPeople({
@@ -46,10 +101,10 @@ export function useNetworkPeople({
       ),
     [spaceSlugs],
   );
-  const shouldFetch =
-    scopedSlugs.length > 0 && !isAuthLoading && accessTokenReady;
+  const awaitingAuth = isAuthLoading || !accessTokenReady;
+  const shouldFetch = scopedSlugs.length > 0 && !awaitingAuth;
 
-  const { data, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     shouldFetch
       ? [
           'network-people',
@@ -60,20 +115,22 @@ export function useNetworkPeople({
       : null,
     async () => {
       const token = await getAccessToken();
-      const params = new URLSearchParams({
-        spaceSlugs: scopedSlugs.join(','),
-        page: '1',
-        pageSize: String(pageSize),
-      });
-      if (excludeSlug?.trim()) params.set('excludeSlug', excludeSlug.trim());
-      const response = await fetch(`/api/v1/network/people?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!response.ok) return [] as NetworkPerson[];
-      const page = (await response.json()) as PaginatedResponse<Person>;
-      return (page.data ?? [])
-        .map(toNetworkPerson)
-        .filter((person): person is NetworkPerson => Boolean(person));
+      try {
+        return await fetchDirectoryPeople({
+          token,
+          spaceSlugs: scopedSlugs,
+          excludeSlug,
+          pageSize,
+        });
+      } catch (directoryError) {
+        const fallback = await fetchMembersFallbackPeople({
+          token,
+          spaceSlugs: scopedSlugs,
+          excludeSlug,
+        });
+        if (fallback.length > 0) return fallback;
+        throw directoryError;
+      }
     },
     {
       revalidateOnFocus: true,
@@ -83,6 +140,10 @@ export function useNetworkPeople({
 
   return {
     people: data ?? ([] as NetworkPerson[]),
-    isLoading: shouldFetch && isLoading,
+    isLoading: awaitingAuth || (shouldFetch && isLoading),
+    error: Boolean(error) && (data?.length ?? 0) === 0,
+    retry: () => {
+      void mutate();
+    },
   };
 }

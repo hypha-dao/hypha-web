@@ -38,7 +38,10 @@ import { filterSpaces } from '../../spaces/components/my-filtered-spaces';
 import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
 import { getOnboardingPath } from '../../common/get-path-function';
 import { useUserAssets } from '../../treasury/hooks';
-import { useJourneyStore } from '../use-journey-store';
+import {
+  LOCAL_JOURNEY_PERSON_SLUG,
+  useJourneyStore,
+} from '../use-journey-store';
 import { averageScore, momentsForScope } from '../wellbeing-model';
 import { sortSpacesByMostUsed } from '../home-space-order';
 import { useHomeActivity } from '../use-home-activity';
@@ -247,12 +250,26 @@ export function HomeDashboard({
     () => spaceVisualsFromSpaces(sharedSpaces),
     [sharedSpaces],
   );
-  const { stories, isLoading: isLoadingPulse } = useNetworkPulse(pulseSpaces);
-  const { people, isLoading: isLoadingPeople } = useNetworkPeople({
+  const {
+    stories,
+    people: pulsePeople,
+    isLoading: isLoadingPulse,
+  } = useNetworkPulse(pulseSpaces);
+  const {
+    people: directoryPeople,
+    isLoading: isLoadingPeople,
+    error: peopleError,
+    retry: retryPeople,
+  } = useNetworkPeople({
     spaceSlugs: pulseSpaces.map((space) => space.slug),
     excludeSlug: person?.slug,
     pageSize: 12,
   });
+  const people = useMemo(() => {
+    if (directoryPeople.length > 0) return directoryPeople;
+    if (peopleError) return pulsePeople;
+    return directoryPeople;
+  }, [directoryPeople, peopleError, pulsePeople]);
 
   const rankedSpaces = useMemo(
     () =>
@@ -406,6 +423,7 @@ export function HomeDashboard({
             onCapture={() => setCaptureOpen(true)}
             onActivate={journey.activatePersonal}
             compact
+            className="shrink-0"
           />
 
           <Card className="craft-card">
@@ -493,21 +511,21 @@ export function HomeDashboard({
           <NetworkPeopleStrip
             lang={lang}
             people={people}
-            isLoading={isLoadingPeople}
+            isLoading={isLoadingPeople || isLoadingShared}
+            error={peopleError && people.length === 0}
+            onRetry={retryPeople}
             layout="field"
           />
         </aside>
       </div>
 
-      {person?.slug ? (
-        <CaptureMomentDialog
-          open={captureOpen}
-          onOpenChange={setCaptureOpen}
-          scope="personal"
-          personSlug={person.slug}
-          onSave={journey.addMoment}
-        />
-      ) : null}
+      <CaptureMomentDialog
+        open={captureOpen}
+        onOpenChange={setCaptureOpen}
+        scope="personal"
+        personSlug={person?.slug ?? LOCAL_JOURNEY_PERSON_SLUG}
+        onSave={journey.addMoment}
+      />
     </Container>
   );
 }

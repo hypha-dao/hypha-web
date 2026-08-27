@@ -26,14 +26,19 @@ export function NetworkPeopleStrip({
   people,
   layout = 'field',
   isLoading = false,
+  error = false,
+  onRetry,
 }: {
   lang: Locale;
   people: NetworkPerson[];
   layout?: 'field' | 'rail';
   isLoading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
 }) {
   const t = useTranslations('Journey');
-  if (people.length === 0 && !isLoading && layout === 'rail') return null;
+  if (people.length === 0 && !isLoading && !error && layout === 'rail')
+    return null;
 
   return (
     <Card className="craft-card">
@@ -59,6 +64,21 @@ export function NetworkPeopleStrip({
         </div>
         {isLoading ? (
           <p className="text-2 text-muted-foreground">{t('connectLoading')}</p>
+        ) : error && people.length === 0 ? (
+          <div className="flex flex-col items-start gap-2">
+            <p className="text-2 text-muted-foreground">{t('connectError')}</p>
+            {onRetry ? (
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                onClick={onRetry}
+                className="rounded-xl"
+              >
+                {t('connectRetry')}
+              </Button>
+            ) : null}
+          </div>
         ) : people.length > 0 ? (
           <ul
             className={cn(
