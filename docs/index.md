@@ -18,6 +18,7 @@ The product intent and the memory architecture that serves it. Read these two to
 | Document                                                                                           | Description                                                                                   | Status |
 | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------ |
 | [Intelligent Org — Exploration](./product/intelligent-org-exploration.md)                          | What intelligent means, Shaper / DRI loop, Buzz vs Hypha and which route to take              | draft  |
+| [Intelligent Org — Buzz additions](./product/intelligent-org-buzz-additions.md)                    | Buzz fork: Shapers chat, talk→work, My Work / All Work / Org, talk moves tickets               | draft  |
 | [The Intelligent Organization](./product/intelligent-org.md)                                       | Short brief: what it is, Shaper and DRI, mandate / ticket, payments, screens                  | draft  |
 | [Intelligent Organization — Screens](./product/intelligent-org-screens.md)                         | Each UI screen: what it is for and what happens there                                         | draft  |
 | [User Journeys](./product/user-journeys.md)                                                        | Target-state journeys: roles, decisions, funding — how we intend people to use Hypha          | draft  |

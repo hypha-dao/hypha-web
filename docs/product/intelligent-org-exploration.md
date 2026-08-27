@@ -104,6 +104,16 @@ This loop needs a place to live. Two routes.
 
 The intelligent-org idea is a conversation that puts the next action in front of the right person. Buzz already is that room. Hypha is a governance console. Building the room inside the console is a rewrite that still looks like the old app.
 
+### Which architecture fits
+
+An intelligent org needs one loop: hear what happened → draft the next action → a person accepts → remember the outcome. That only works if talk, suggestions, approvals, and work live in the same log, and if an agent is the same kind of member as a person.
+
+**Buzz is architecturally closer.** One event log. One identity (a key) for humans and agents. Chat, a project suggestion, a Shaper approval, and a ticket are the same kind of object — signed, searchable, in one room. The org does not have to stitch chat to tickets to decisions. They are already the same substrate.
+
+**Hypha is architecturally closer to a DAO toolkit.** Spaces, members, treasury, and on-chain proposals are strong. They are also separate systems: Postgres, the chain, optional chat, optional AI. Chat is not the source of truth. Agents are not members. Closing the intelligence loop means glue across those layers. That is why a Hypha path is a redesign, not a feature.
+
+Hypha wins on money. Buzz wins on the loop. Intelligent org *is* the loop. So build the loop where the log is already one thing.
+
 What I would do:
 
 1. Run the Shaper → project → DRI → ticket loop on Buzz, in one community, with an org agent in the channel.
