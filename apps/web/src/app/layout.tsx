@@ -108,6 +108,7 @@ export default async function RootLayout({
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
+  let navConnectLabel = 'Connect';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
   let navSelectLanguageLabel = 'Select language';
@@ -172,6 +173,7 @@ export default async function RootLayout({
     navMySpacesLabel = tNav('mySpaces');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
+    navConnectLabel = tNav('connect');
     navOpenMenuLabel = tNav('openMenu');
     navCloseMenuLabel = tNav('closeMenu');
     navSelectLanguageLabel = tNav('selectLanguage');
@@ -244,11 +246,13 @@ export default async function RootLayout({
         { label: navMySpacesLabel, href: `/${locale}/my-spaces` },
         { label: navMyWalletLabel, href: `/${locale}/my-wallet` },
         { label: navNetworkLabel, href: `/${locale}/network` },
+        { label: navConnectLabel, href: `/${locale}/network/connect` },
       ]
     : [
         { label: navMySpacesLabel, href: `/${locale}/my-spaces` },
         { label: navMyWalletLabel, href: `/${locale}/my-wallet` },
         { label: navNetworkLabel, href: `/${locale}/network` },
+        { label: navConnectLabel, href: `/${locale}/network/connect` },
       ];
   const baseRedirectPath = journeyUxEnabled ? '/home' : '/my-spaces';
   const menuLogoHref = journeyUxEnabled ? journeyHomeHref : ROOT_URL;

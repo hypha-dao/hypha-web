@@ -1,7 +1,8 @@
 import type { Document } from '@hypha-platform/core/client';
 
-export const HOME_ACTIVITY_SPACE_LIMIT = 8;
+export const HOME_ACTIVITY_SPACE_LIMIT = 16;
 export const HOME_ACTIVITY_ITEM_LIMIT = 5;
+export const ATTENTION_MAX_PER_SPACE = 2;
 export const ATTENTION_RECENT_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
 export type HomeSpaceRef = {
@@ -187,23 +188,27 @@ export function votesFromDocuments(
         spaceTitle: space.title,
         spaceLogoUrl: space.logoUrl ?? null,
         proposalSlug: document.slug,
-        happenedAt: activityTimestamp(document.updatedAt ?? document.createdAt),
+        happenedAt: activityTimestamp(document.updatedAt, document.createdAt),
       },
     ];
   });
 }
 
 export function activityTimestamp(
-  value?: Date | string | number | null,
+  ...values: Array<Date | string | number | null | undefined>
 ): number {
-  if (value == null) return 0;
-  const time =
-    value instanceof Date
-      ? value.getTime()
-      : typeof value === 'number'
-      ? value
-      : new Date(value).getTime();
-  return Number.isNaN(time) ? 0 : time;
+  let newest = 0;
+  for (const value of values) {
+    if (value == null) continue;
+    const time =
+      value instanceof Date
+        ? value.getTime()
+        : typeof value === 'number'
+        ? value
+        : new Date(value).getTime();
+    if (!Number.isNaN(time) && time > newest) newest = time;
+  }
+  return newest;
 }
 
 export function sortVotes(items: HomeVoteItem[]): HomeVoteItem[] {
@@ -211,28 +216,65 @@ export function sortVotes(items: HomeVoteItem[]): HomeVoteItem[] {
 }
 
 export function selectAttentionItems<
-  T extends { id: string; happenedAt: number },
+  T extends {
+    id: string;
+    happenedAt: number;
+    spaceSlug?: string;
+    kind?: 'vote' | 'signal';
+  },
 >(
   items: T[],
   {
     now = new Date(),
     limit = HOME_ACTIVITY_ITEM_LIMIT,
     recentWindowMs = ATTENTION_RECENT_WINDOW_MS,
+    maxPerSpace = ATTENTION_MAX_PER_SPACE,
   }: {
     now?: Date;
     limit?: number;
     recentWindowMs?: number;
+    maxPerSpace?: number;
   } = {},
 ): T[] {
+  const kindRank = (kind?: 'vote' | 'signal') => (kind === 'vote' ? 0 : 1);
   const sorted = [...items].sort((a, b) => {
+    const byKind = kindRank(a.kind) - kindRank(b.kind);
+    if (byKind !== 0) return byKind;
     if (b.happenedAt !== a.happenedAt) return b.happenedAt - a.happenedAt;
     return a.id.localeCompare(b.id);
   });
   const nowMs = now.getTime();
-  const recent = sorted.filter(
-    (item) => item.happenedAt > 0 && nowMs - item.happenedAt <= recentWindowMs,
+  const dated = sorted.filter((item) => item.happenedAt > 0);
+  const recent = dated.filter(
+    (item) => nowMs - item.happenedAt <= recentWindowMs,
   );
-  return (recent.length > 0 ? recent : sorted).slice(0, limit);
+  const pool = (recent.length > 0 ? recent : dated).length
+    ? recent.length > 0
+      ? recent
+      : dated
+    : sorted;
+
+  const picked: T[] = [];
+  const seen = new Set<string>();
+  const perSpace = new Map<string, number>();
+
+  const take = (allowOverCap: boolean) => {
+    for (const item of pool) {
+      if (picked.length >= limit) break;
+      const key = `${item.kind ?? 'item'}:${item.id}`;
+      if (seen.has(key)) continue;
+      const slug = item.spaceSlug ?? '';
+      const count = perSpace.get(slug) ?? 0;
+      if (!allowOverCap && slug && count >= maxPerSpace) continue;
+      seen.add(key);
+      picked.push(item);
+      perSpace.set(slug, count + 1);
+    }
+  };
+
+  take(false);
+  if (picked.length < limit) take(true);
+  return picked;
 }
 
 export function attentionSeeAllHref(

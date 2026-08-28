@@ -862,6 +862,7 @@
   },
   "Navigation": {
     "network": "Red",
+    "connect": "Conectar",
     "mySpaces": "Mis espacios",
     "myWallet": "Mi billetera",
     "openMenu": "Abrir menú",

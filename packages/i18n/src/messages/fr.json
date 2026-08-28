@@ -91,6 +91,7 @@
   },
   "Navigation": {
     "network": "Réseau",
+    "connect": "Connecter",
     "mySpaces": "Mes espaces",
     "myWallet": "Mon portefeuille",
     "openMenu": "Ouvrir le menu",

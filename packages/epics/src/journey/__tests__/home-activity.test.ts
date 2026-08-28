@@ -3,6 +3,7 @@ import {
   isActiveSignalRecommendation,
   isActiveVoteRecommendation,
   isOpenForVote,
+  selectAttentionItems,
   votesFromDocuments,
 } from '../home-activity';
 
@@ -202,6 +203,72 @@ describe('home-activity recommendations', () => {
         happenedAt: 0,
       },
     ]);
+  });
+
+  it('prefers open votes and mixes spaces instead of one stale batch', () => {
+    const weekAgo = new Date('2026-08-01T12:00:00.000Z').getTime();
+    const yesterday = new Date('2026-08-27T12:00:00.000Z').getTime();
+    const items = selectAttentionItems(
+      [
+        {
+          id: 'acaw:1',
+          kind: 'signal' as const,
+          spaceSlug: 'acaw',
+          happenedAt: weekAgo,
+        },
+        {
+          id: 'acaw:2',
+          kind: 'signal' as const,
+          spaceSlug: 'acaw',
+          happenedAt: weekAgo,
+        },
+        {
+          id: 'acaw:3',
+          kind: 'signal' as const,
+          spaceSlug: 'acaw',
+          happenedAt: weekAgo,
+        },
+        {
+          id: 'acaw:4',
+          kind: 'signal' as const,
+          spaceSlug: 'acaw',
+          happenedAt: weekAgo,
+        },
+        {
+          id: 'acaw:5',
+          kind: 'signal' as const,
+          spaceSlug: 'acaw',
+          happenedAt: weekAgo,
+        },
+        {
+          id: 'garden:9',
+          kind: 'vote' as const,
+          spaceSlug: 'garden',
+          happenedAt: yesterday,
+        },
+        {
+          id: 'honey:2',
+          kind: 'signal' as const,
+          spaceSlug: 'honey',
+          happenedAt: yesterday,
+        },
+        {
+          id: 'hypha:1',
+          kind: 'signal' as const,
+          spaceSlug: 'hypha',
+          happenedAt: yesterday,
+        },
+      ],
+      { now: new Date('2026-08-28T12:00:00.000Z'), limit: 5 },
+    );
+
+    expect(items[0]).toMatchObject({ id: 'garden:9', kind: 'vote' });
+    expect(items.map((item) => item.spaceSlug)).toEqual(
+      expect.arrayContaining(['garden', 'honey', 'hypha', 'acaw']),
+    );
+    expect(
+      items.filter((item) => item.spaceSlug === 'acaw').length,
+    ).toBeLessThanOrEqual(2);
   });
 
   it('hides archived and completed signals', () => {

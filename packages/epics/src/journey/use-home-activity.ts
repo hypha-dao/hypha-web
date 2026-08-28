@@ -63,7 +63,7 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
             fetchJson<CoherencePage>(
               `/api/v1/spaces/${encodeURIComponent(
                 space.slug,
-              )}/coherences?page=1&pageSize=8&orderBy=mostrecent`,
+              )}/coherences?page=1&pageSize=16&orderBy=mostrecent`,
               headers,
             ),
           ]);
@@ -107,7 +107,7 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
             spaceLogoUrl: page.space.logoUrl ?? null,
             signalSlug: signal.slug,
             roomId: signal.roomId ?? null,
-            happenedAt: activityTimestamp(signal.updatedAt ?? signal.createdAt),
+            happenedAt: activityTimestamp(signal.updatedAt, signal.createdAt),
           })),
       );
 
