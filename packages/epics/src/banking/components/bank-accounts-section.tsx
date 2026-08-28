@@ -12,10 +12,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 
-import {
-  SpaceAccessDenied,
-  UserSpaceState,
-} from '../../spaces';
+import { SpaceAccessDenied, UserSpaceState } from '../../spaces';
 import { ApprovedBankingDeposits } from './approved-banking-deposits';
 import type { ApprovedBankingDepositsProps } from './approved-banking-deposits';
 import { ApprovedBankingPayouts } from './approved-banking-payouts';

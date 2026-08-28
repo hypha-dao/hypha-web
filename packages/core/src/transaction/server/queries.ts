@@ -56,7 +56,11 @@ export const findTransfersByTransactionHashes = async (
     memo: string | null;
   }> = [];
 
-  for (let index = 0; index < uniqueHashes.length; index += TRANSFER_HASH_BATCH_SIZE) {
+  for (
+    let index = 0;
+    index < uniqueHashes.length;
+    index += TRANSFER_HASH_BATCH_SIZE
+  ) {
     const batch = uniqueHashes.slice(index, index + TRANSFER_HASH_BATCH_SIZE);
     const rows = await db
       .select({
