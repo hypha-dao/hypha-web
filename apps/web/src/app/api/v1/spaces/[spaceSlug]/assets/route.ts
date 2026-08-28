@@ -3,6 +3,7 @@ import {
   web3Client,
   findSpaceBySlug,
   getTokenPrice,
+  getTokenBalancesByAddress,
   getBalance,
   getTokenMeta,
   findAllTokens,
@@ -20,9 +21,11 @@ import {
   ALLOWED_SPACES,
   getTokenDecimals,
   isHiddenToken,
+  selectKnownHeldTokens,
   getEnergyCommunityTokensForSpace,
   getAllEnergyCommunityTokens,
   getEnergyCommunityToken,
+  getEnergyCommunityTokenAddresses,
   getEnergyCommunityDisplayDecimals,
   isHyphaToken,
   HYPHA_PRICE_USD,
@@ -218,9 +221,30 @@ export async function GET(
       }
     });
 
-    // Do not merge Alchemy ERC-20 discovery here — it floods the treasury with
-    // spam tokens that have no DB row. Balances for known addresses come from
-    // getBalance below; catalogue + space-issued + DB cover legit assets.
+    // Discover tokens this treasury holds that were issued by other spaces.
+    // Alchemy lists ERC-20s at the executor; keep only DB / catalogue /
+    // energy-community addresses so spam stays out (same filter as person
+    // wallets). Do not mark these issuedBySpace — the UI already shows
+    // non-issued tokens when their balance is > 0.
+    const dbKnownAddresses = new Set(
+      rawDbTokens
+        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
+        .map((t) => t.address!.toLowerCase()),
+    );
+    for (const address of getEnergyCommunityTokenAddresses()) {
+      dbKnownAddresses.add(address);
+    }
+
+    try {
+      const held = await getTokenBalancesByAddress(spaceAddress);
+      for (const token of selectKnownHeldTokens(held, dbKnownAddresses)) {
+        const lower = token.address.toLowerCase();
+        if (addressMap.has(lower)) continue;
+        addressMap.set(lower, getEnergyCommunityToken(lower) ?? token);
+      }
+    } catch (error: unknown) {
+      console.warn('Failed to fetch held token balances:', error);
+    }
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
       (token) => !isHiddenToken(token.address),

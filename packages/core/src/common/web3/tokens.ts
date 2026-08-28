@@ -130,6 +130,53 @@ export function isKnownTreasuryToken(
   return knownAddresses.has(lower) || isCatalogueToken(lower);
 }
 
+const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/i;
+
+/** Alchemy (or other indexer) ERC-20 balance row used to discover held tokens. */
+export type HeldTokenBalance = {
+  tokenAddress?: string;
+  balance?: number;
+  symbol?: string | null;
+  name?: string | null;
+  logo?: string | null;
+};
+
+/**
+ * Keep indexer-discovered holdings that are already known to the platform
+ * (DB-registered, catalogue, or otherwise in `knownAddresses`). Drops spam,
+ * zero balances, and invalid addresses. Used so a space treasury can show
+ * tokens issued by another space after they are transferred in.
+ */
+export function selectKnownHeldTokens(
+  held: readonly HeldTokenBalance[],
+  knownAddresses: ReadonlySet<string>,
+): Token[] {
+  const selected: Token[] = [];
+  const seen = new Set<string>();
+  for (const token of held) {
+    const address = token.tokenAddress;
+    if (
+      !address ||
+      (token.balance ?? 0) <= 0 ||
+      !EVM_ADDRESS.test(address) ||
+      !isKnownTreasuryToken(address, knownAddresses)
+    ) {
+      continue;
+    }
+    const lower = address.toLowerCase();
+    if (seen.has(lower)) continue;
+    seen.add(lower);
+    selected.push({
+      symbol: token.symbol || 'UNKNOWN',
+      name: token.name || 'Unnamed',
+      address: address as `0x${string}`,
+      icon: token.logo || '/placeholder/token-icon.svg',
+      type: 'utility',
+    });
+  }
+  return selected;
+}
+
 export const ERC20_TOKEN_TRANSFER_ADDRESSES = [
   '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
   '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42',

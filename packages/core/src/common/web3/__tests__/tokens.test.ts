@@ -8,6 +8,7 @@ import {
   isCatalogueToken,
   isHyphaToken,
   isKnownTreasuryToken,
+  selectKnownHeldTokens,
 } from '../tokens';
 import {
   ASSET_PRICE_FEED_BY_TOKEN,
@@ -115,6 +116,68 @@ describe('isKnownTreasuryToken', () => {
 
   it('drops unknown spam addresses', () => {
     expect(isKnownTreasuryToken(spam, known)).toBe(false);
+  });
+});
+
+describe('selectKnownHeldTokens', () => {
+  const dbToken = '0x2222222222222222222222222222222222222222';
+  const spam = '0x1111111111111111111111111111111111111111';
+  const known = new Set([dbToken.toLowerCase()]);
+
+  it('keeps a positive-balance DB token issued by another space', () => {
+    const selected = selectKnownHeldTokens(
+      [
+        {
+          tokenAddress: dbToken,
+          balance: 12.5,
+          symbol: 'OTHR',
+          name: 'Other Space Token',
+        },
+      ],
+      known,
+    );
+    expect(selected).toHaveLength(1);
+    expect(selected[0]?.address).toBe(dbToken);
+    expect(selected[0]?.symbol).toBe('OTHR');
+  });
+
+  it('keeps catalogue tokens even when they are not in knownAddresses', () => {
+    const selected = selectKnownHeldTokens(
+      [
+        {
+          tokenAddress: TOKENS[0].address,
+          balance: 1,
+          symbol: TOKENS[0].symbol,
+        },
+      ],
+      new Set(),
+    );
+    expect(selected).toHaveLength(1);
+    expect(selected[0]?.address).toBe(TOKENS[0].address);
+  });
+
+  it('drops zero-balance, spam, and invalid addresses', () => {
+    expect(
+      selectKnownHeldTokens(
+        [
+          { tokenAddress: dbToken, balance: 0, symbol: 'OTHR' },
+          { tokenAddress: spam, balance: 99, symbol: 'SPAM' },
+          { tokenAddress: 'not-an-address', balance: 5, symbol: 'BAD' },
+        ],
+        known,
+      ),
+    ).toEqual([]);
+  });
+
+  it('dedupes the same held address', () => {
+    const selected = selectKnownHeldTokens(
+      [
+        { tokenAddress: dbToken, balance: 1, symbol: 'OTHR' },
+        { tokenAddress: dbToken.toUpperCase(), balance: 2, symbol: 'OTHR' },
+      ],
+      known,
+    );
+    expect(selected).toHaveLength(1);
   });
 });
 
