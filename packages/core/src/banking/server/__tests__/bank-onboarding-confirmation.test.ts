@@ -264,6 +264,39 @@ describe('requestBankOnboardingWithConfirmation', () => {
     const newNonce = updateBankCustomer.mock.calls[0][0].jwtNonce;
     expect(newNonce).not.toBe('old-nonce');
   });
+
+  it('updates (not inserts) on resend even while a concurrent confirm has momentarily cleared the nonce', async () => {
+    // Simulates the mid-claim window: a confirm claimed the row (jwtNonce -> null) but hasn't
+    // finalized providerKycLinkId yet.
+    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+      id: 1,
+      providerKycLinkId: null,
+      providerCustomerId: null,
+      jwtNonce: null,
+      requestedRails: ['eur'],
+    });
+
+    const result = await requestBankOnboardingWithConfirmation(
+      {
+        ownerRef: spaceOwner,
+        entityType: 'business',
+        legalName: 'Acme Foundation Ltd.',
+        contactEmail: 'compliance@acme.org',
+        submitterPersonId: 10,
+        submitterEmail: 'me@example.com',
+        sendConfirmationEmail,
+      },
+      { db: mockDb },
+      { kycProvider: mockProvider },
+    );
+
+    expect(result.kind).toBe('pendingConfirmation');
+    expect(insertBankCustomer).not.toHaveBeenCalled();
+    expect(updateBankCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, jwtNonce: expect.any(String) }),
+      expect.any(Object),
+    );
+  });
 });
 
 describe('confirmBankEmail', () => {
@@ -362,6 +395,28 @@ describe('confirmBankEmail', () => {
     );
     expect(result).toEqual({ ok: false, reason: 'invalid' });
     expect(mockProvider.createKycLink).not.toHaveBeenCalled();
+  });
+
+  it('uses a stable per-token idempotency key so a retried finalize replays instead of duplicating', async () => {
+    const token = await signAndStorePending();
+    updateBankCustomer.mockResolvedValue({ id: 1 });
+
+    await confirmBankEmail(
+      token,
+      { db: mockDb },
+      { kycProvider: mockProvider },
+    );
+    await confirmBankEmail(
+      token,
+      { db: mockDb },
+      { kycProvider: mockProvider },
+    );
+
+    const keys = (
+      mockProvider.createKycLink as ReturnType<typeof vi.fn>
+    ).mock.calls.map(([arg]) => arg.idempotencyKey);
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toBe(keys[1]);
   });
 
   it('restores the nonce if the provider call fails after claiming, so the link stays usable', async () => {

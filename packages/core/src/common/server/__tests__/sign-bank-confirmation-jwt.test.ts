@@ -38,6 +38,20 @@ describe('signBankConfirmationJwt / verifyBankConfirmationJwt', () => {
     }
   });
 
+  it('does not leak claims in plaintext — encrypted (JWE), not just signed', async () => {
+    const { token } = await signBankConfirmationJwt(payload);
+
+    // A bare signed JWS would have a base64url-readable payload segment; decoding every segment
+    // of this token without the key must not reveal any claim value.
+    const segments = token.split('.');
+    for (const segment of segments) {
+      if (!segment) continue;
+      const decoded = Buffer.from(segment, 'base64url').toString('utf8');
+      expect(decoded).not.toContain(payload.contactEmail);
+      expect(decoded).not.toContain(payload.legalName);
+    }
+  });
+
   it('produces a fresh nonce on every sign call', async () => {
     const first = await signBankConfirmationJwt(payload);
     const second = await signBankConfirmationJwt(payload);
@@ -46,7 +60,12 @@ describe('signBankConfirmationJwt / verifyBankConfirmationJwt', () => {
 
   it('rejects a tampered token as invalid', async () => {
     const { token } = await signBankConfirmationJwt(payload);
-    const tampered = token.slice(0, -1) + (token.endsWith('a') ? 'b' : 'a');
+    // Flip a character in the middle (ciphertext/IV), not the last one: the final base64url
+    // character of a segment can carry unused padding bits, so flipping only that one
+    // occasionally decodes to the same underlying bytes and doesn't actually corrupt anything.
+    const mid = Math.floor(token.length / 2);
+    const flipped = token[mid] === 'a' ? 'b' : 'a';
+    const tampered = token.slice(0, mid) + flipped + token.slice(mid + 1);
 
     const result = await verifyBankConfirmationJwt(tampered);
     expect(result.valid).toBe(false);

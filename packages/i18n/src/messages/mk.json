@@ -962,7 +962,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Условите не се прифатени",
+        "title": "Верификацијата не е започната",
         "description": "Прифатете ги условите за користење за да продолжите."
       },
       "approved": {
@@ -1010,15 +1010,15 @@
       "currenciesHint": "Можете да додадете повеќе валути подоцна од Банкарските поставки.",
       "submit": "Продолжи",
       "legalName": "Legal entity name",
-      "contactEmail": "Contact email",
+      "contactEmail": "Е-пошта на клиентот на Bridge",
       "person": {
         "organizationLegend": "Your details",
         "organizationHint": "Your details are sent to our banking partner for verification and are not stored on Hypha.",
         "legalName": "Full name",
         "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
       },
-      "bypassEligibleHint": "This is your own verified email — no extra confirmation step needed.",
-      "confirmationRequiredHint": "We'll send a confirmation link to this address before enabling it, since it's not your own verified email on file."
+      "bypassEligibleHint": "Ова е вашата сопствена верификувана е-пошта — не е потребен дополнителен чекор за потврда.",
+      "confirmationRequiredHint": "Ќе испратиме линк за потврда на оваа адреса пред да ја овозможиме, бидејќи не е вашата сопствена верификувана е-пошта."
     },
     "notStarted": {
       "description": "Банкарството сè уште не е поставено за овој простор.",
@@ -1237,10 +1237,10 @@
       }
     },
     "pendingEmailConfirmation": {
-      "title": "Confirm your Bridge customer email",
-      "description": "We sent a confirmation link to the email address you entered. Click it to continue setting up banking — we won't contact Bridge until you confirm.",
-      "resendCta": "Resend confirmation email",
-      "resending": "Resending…"
+      "title": "Потврдете ја вашата е-пошта на клиентот на Bridge",
+      "description": "Испративме линк за потврда на е-поштата што ја внесовте. Кликнете на него за да продолжите со поставувањето на банкарството — нема да контактираме со Bridge додека не потврдите.",
+      "resendCta": "Испрати ја повторно е-поштата за потврда",
+      "resending": "Се испраќа повторно…"
     }
   },
   "TreasuryTab": {
@@ -4404,17 +4404,17 @@
     "ctaExplore": "Истражи мрежа"
   },
   "VerifyBanking": {
-    "loadingTitle": "Confirming your email…",
-    "loadingDescription": "Hang tight while we verify your confirmation link.",
-    "successTitle": "Email confirmed",
-    "successDescription": "Thanks — {ownerLabel} can now continue with Bridge verification.",
-    "errorExpiredTitle": "Link expired",
-    "errorExpiredDescription": "This confirmation link has expired. Go back to Banking settings and resend it.",
-    "errorInvalidTitle": "Link no longer valid",
-    "errorInvalidDescription": "This confirmation link is no longer valid — it may have already been used, or replaced by a newer request.",
-    "errorAlreadyConfirmedTitle": "Already confirmed",
-    "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
-    "errorGenericTitle": "Something went wrong",
-    "errorGenericDescription": "We could not confirm this email. Please try again later."
+    "loadingTitle": "Ја потврдуваме вашата е-пошта…",
+    "loadingDescription": "Почекајте додека го верификуваме вашиот линк за потврда.",
+    "successTitle": "Е-поштата е потврдена",
+    "successDescription": "Ви благодариме — {ownerLabel} сега може да продолжи со верификацијата на Bridge.",
+    "errorExpiredTitle": "Линкот истече",
+    "errorExpiredDescription": "Овој линк за потврда истече. Вратете се во поставките за банкарство и испратете го повторно.",
+    "errorInvalidTitle": "Линкот повеќе не е валиден",
+    "errorInvalidDescription": "Овој линк за потврда повеќе не е валиден — можеби веќе бил искористен или заменет со поново барање.",
+    "errorAlreadyConfirmedTitle": "Веќе потврдено",
+    "errorAlreadyConfirmedDescription": "Оваа е-пошта е веќе потврдена.",
+    "errorGenericTitle": "Нешто тргна наопаку",
+    "errorGenericDescription": "Не можевме да ја потврдиме оваа е-пошта. Обидете се повторно подоцна."
   }
 }

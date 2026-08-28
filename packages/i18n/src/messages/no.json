@@ -981,7 +981,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Vilkår ikke godtatt",
+        "title": "Verifisering ikke startet",
         "description": "Godta tjenestevilkårene for å fortsette."
       },
       "approved": {
@@ -1025,7 +1025,7 @@
       "organizationLegend": "Organisasjonsdetaljer",
       "organizationHint": "Organisasjonsdetaljer sendes til bankpartneren vår for verifisering og lagres ikke på Hypha.",
       "legalName": "Juridisk enhetsnavn",
-      "contactEmail": "Kontakt-e-post",
+      "contactEmail": "E-post for Bridge-kunde",
       "currenciesTitle": "Valutaer du vil bruke",
       "currenciesDescription": "Velg valutaene dette rommet skal bruke til bankinnskudd og utbetalinger. Organisasjonen din verifiseres én gang hos bankpartneren vår.",
       "currenciesHint": "Du kan legge til flere valutaer senere fra Bankinnstillinger.",
@@ -1036,8 +1036,8 @@
         "legalName": "Fullt navn",
         "currenciesDescription": "Velg valutaene du vil bruke til bankutbetalinger. Du verifiseres én gang hos bankpartneren vår."
       },
-      "bypassEligibleHint": "This is your own verified email — no extra confirmation step needed.",
-      "confirmationRequiredHint": "We'll send a confirmation link to this address before enabling it, since it's not your own verified email on file."
+      "bypassEligibleHint": "Dette er din egen verifiserte e-post — ingen ekstra bekreftelse nødvendig.",
+      "confirmationRequiredHint": "Vi sender en bekreftelseslenke til denne adressen før den aktiveres, siden det ikke er din egen registrerte, verifiserte e-post."
     },
     "notStarted": {
       "description": "Bank er ikke satt opp for dette rommet ennå.",
@@ -1256,10 +1256,10 @@
       }
     },
     "pendingEmailConfirmation": {
-      "title": "Confirm your Bridge customer email",
-      "description": "We sent a confirmation link to the email address you entered. Click it to continue setting up banking — we won't contact Bridge until you confirm.",
-      "resendCta": "Resend confirmation email",
-      "resending": "Resending…"
+      "title": "Bekreft e-posten din for Bridge-kunde",
+      "description": "Vi har sendt en bekreftelseslenke til e-postadressen du oppga. Klikk på den for å fortsette å sette opp banktjenester — vi kontakter ikke Bridge før du har bekreftet.",
+      "resendCta": "Send bekreftelses-e-post på nytt",
+      "resending": "Sender på nytt…"
     }
   },
   "TreasuryTab": {
@@ -4422,17 +4422,17 @@
     "ctaExplore": "Utforsk nettverk"
   },
   "VerifyBanking": {
-    "loadingTitle": "Confirming your email…",
-    "loadingDescription": "Hang tight while we verify your confirmation link.",
-    "successTitle": "Email confirmed",
-    "successDescription": "Thanks — {ownerLabel} can now continue with Bridge verification.",
-    "errorExpiredTitle": "Link expired",
-    "errorExpiredDescription": "This confirmation link has expired. Go back to Banking settings and resend it.",
-    "errorInvalidTitle": "Link no longer valid",
-    "errorInvalidDescription": "This confirmation link is no longer valid — it may have already been used, or replaced by a newer request.",
-    "errorAlreadyConfirmedTitle": "Already confirmed",
-    "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
-    "errorGenericTitle": "Something went wrong",
-    "errorGenericDescription": "We could not confirm this email. Please try again later."
+    "loadingTitle": "Bekrefter e-posten din…",
+    "loadingDescription": "Vent litt mens vi verifiserer bekreftelseslenken din.",
+    "successTitle": "E-post bekreftet",
+    "successDescription": "Takk — {ownerLabel} kan nå fortsette med Bridge-verifiseringen.",
+    "errorExpiredTitle": "Lenken har utløpt",
+    "errorExpiredDescription": "Denne bekreftelseslenken har utløpt. Gå tilbake til bankinnstillingene og send den på nytt.",
+    "errorInvalidTitle": "Lenken er ikke lenger gyldig",
+    "errorInvalidDescription": "Denne bekreftelseslenken er ikke lenger gyldig — den kan allerede være brukt, eller erstattet av en nyere forespørsel.",
+    "errorAlreadyConfirmedTitle": "Allerede bekreftet",
+    "errorAlreadyConfirmedDescription": "Denne e-posten er allerede bekreftet.",
+    "errorGenericTitle": "Noe gikk galt",
+    "errorGenericDescription": "Vi kunne ikke bekrefte denne e-posten. Prøv igjen senere."
   }
 }

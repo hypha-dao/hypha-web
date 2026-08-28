@@ -1,3 +1,4 @@
+import 'server-only';
 import { sendEmailNotificationsTemplateToEmails } from '@hypha-platform/notifications/server';
 import { getAbsoluteAppUrl } from '@hypha-platform/core/server';
 

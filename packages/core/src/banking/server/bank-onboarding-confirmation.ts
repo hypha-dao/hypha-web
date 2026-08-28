@@ -63,13 +63,20 @@ async function buildKycLinkAndValidations(
     contactEmail: string;
     requestedRails?: string[];
     redirectUri?: string;
+    /**
+     * Stable across retries of the *same* confirmation (e.g. the confirm path passes the token's
+     * `jti`) so a retry after a persistence failure replays against Bridge instead of minting a
+     * second KYC link for the same request. Defaults to a fresh key for call sites that don't need
+     * that (direct/bypass create has no retry-after-partial-failure path to protect).
+     */
+    idempotencyKey?: string;
   },
   options?: BankOnboardingConfirmationOptions,
 ): Promise<KycLinkAndValidations> {
   const normalizedRails =
     input.requestedRails?.map((r) => r.toLowerCase()) ?? [];
   const endorsements = currenciesToEndorsements(normalizedRails);
-  const idempotencyKey = randomUUID();
+  const idempotencyKey = input.idempotencyKey ?? randomUUID();
   const kycProvider =
     options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
 
@@ -163,6 +170,7 @@ async function finalizePendingBankCustomerWithKycLink(
     contactEmail: string;
     requestedRails?: string[];
     redirectUri?: string;
+    idempotencyKey?: string;
   },
   { db }: { db: DatabaseInstance },
   options?: BankOnboardingConfirmationOptions,
@@ -282,9 +290,13 @@ export async function requestBankOnboardingWithConfirmation(
     submitterPersonId: input.submitterPersonId,
   });
 
-  if (existing?.jwtNonce) {
-    // Resend: rotate the nonce on the existing pending row (D3) instead of inserting a duplicate
-    // (would violate the owner+provider unique index anyway).
+  if (existing) {
+    // Resend (or a retry landing here while a confirm-in-progress has momentarily cleared the
+    // nonce, mid-claim): rotate/set the nonce on the existing pending row (D3) instead of
+    // inserting a duplicate (would violate the owner+provider unique index anyway). Keyed on
+    // `existing` rather than `existing.jwtNonce` so this still works while a row is claimed
+    // (jwtNonce temporarily null) — `existing` only ever reaches this branch unconfirmed
+    // (the providerKycLinkId check above already returned for a linked row).
     await updateBankCustomer(
       { id: existing.id, jwtNonce: nonce, requestedRails: normalizedRails },
       { db },
@@ -368,6 +380,12 @@ export async function confirmBankEmail(
     result = await finalizePendingBankCustomerWithKycLink(
       claimed.id,
       {
+        // Stable per-token idempotency key (not a fresh randomUUID() per attempt): if
+        // finalization fails after Bridge already created the KYC link (e.g. the DB update
+        // throws, or a resend/retry replays this same claim), Bridge treats a retry with the
+        // same key as the original request and returns the existing resource instead of
+        // minting a second one.
+        idempotencyKey: `bank-confirm:${claims.jti}`,
         entityType: claims.entityType,
         legalName: claims.legalName,
         contactEmail: claims.contactEmail,
