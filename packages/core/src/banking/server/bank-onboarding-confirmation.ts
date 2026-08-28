@@ -23,6 +23,7 @@ import {
   claimBankCustomerForConfirmation,
   finalizeClaimedBankCustomer,
   insertBankCustomer,
+  releaseBankCustomerClaim,
   updateBankCustomer,
 } from './mutations';
 import { getBankKycProvider } from './providers';
@@ -193,15 +194,14 @@ async function finalizePendingBankCustomerWithKycLink(
 }
 
 /**
- * Confirm path's final write (#2288) — conditioned on `confirming_nonce` still matching the claim
- * this attempt holds, not just the row id (see `finalizeClaimedBankCustomer`). Returns `null`,
- * rather than throwing, if a resend revoked this attempt's claim while the provider call was in
+ * Confirm path's final write (#2288) — conditioned on `jwt_nonce` still being `NULL` (the state
+ * the claim step left it in), not just the row id (see `finalizeClaimedBankCustomer`). Returns
+ * `null`, rather than throwing, if a resend rotated `jwt_nonce` while the provider call was in
  * flight: that's not a failure of the provider call (which may well have succeeded), it means this
  * attempt lost the race and must not report success — see `confirmBankEmail`.
  */
 async function finalizeClaimedBankCustomerWithKycLink(
   bankCustomerId: number,
-  expectedConfirmingNonce: string,
   input: {
     entityType: BankEntityType;
     legalName: string;
@@ -218,7 +218,6 @@ async function finalizeClaimedBankCustomerWithKycLink(
   const row = await finalizeClaimedBankCustomer(
     {
       id: bankCustomerId,
-      expectedConfirmingNonce,
       providerCustomerId: result.providerCustomerId,
       providerKycLinkId: result.providerKycLinkId,
       requestedRails: result.normalizedRails,
@@ -329,25 +328,20 @@ export async function requestBankOnboardingWithConfirmation(
   });
 
   if (existing) {
-    // Resend (or a retry landing here while a confirm-in-progress has claimed the row, its
-    // `confirming_nonce` set): rotate/set the nonce on the existing pending row (D3) instead of
-    // inserting a duplicate (would violate the owner+provider unique index anyway). Keyed on
-    // `existing` rather than `existing.jwtNonce` so this still works while a row is claimed —
-    // `existing` only ever reaches this branch unconfirmed (the providerKycLinkId check above
-    // already returned for a linked row).
+    // Resend (or a retry landing here while a confirm-in-progress has claimed the row, jwtNonce
+    // momentarily null): set the nonce on the existing pending row (D3) instead of inserting a
+    // duplicate (would violate the owner+provider unique index anyway). Keyed on `existing`
+    // rather than `existing.jwtNonce` so this still works while a row is claimed — `existing`
+    // only ever reaches this branch unconfirmed (the providerKycLinkId check above already
+    // returned for a linked row).
     //
-    // Also clears `confirmingNonce`: this is what makes resend an *instant* revocation of an
-    // in-flight confirmation, not just of future clicks of the old link — without it, a
-    // confirmation already claimed under the old nonce could still finish and overwrite this
-    // resend's new nonce (see `finalizeClaimedBankCustomer`'s CAS on confirmingNonce for the
-    // other half of this).
+    // This unconditional write is also what makes resend an *instant* revocation of an in-flight
+    // confirmation, not just of future clicks of the old link: it always sets jwtNonce to a fresh
+    // non-null value, so a confirmation that already claimed the row (jwtNonce -> null) finds its
+    // final write's `WHERE jwt_nonce IS NULL` no longer matches once this commits — see
+    // `finalizeClaimedBankCustomer`.
     await updateBankCustomer(
-      {
-        id: existing.id,
-        jwtNonce: nonce,
-        confirmingNonce: null,
-        requestedRails: normalizedRails,
-      },
+      { id: existing.id, jwtNonce: nonce, requestedRails: normalizedRails },
       { db },
     );
   } else {
@@ -428,7 +422,6 @@ export async function confirmBankEmail(
   try {
     result = await finalizeClaimedBankCustomerWithKycLink(
       claimed.id,
-      claims.jti,
       {
         // Stable per-token idempotency key (not a fresh randomUUID() per attempt): if
         // finalization fails after Bridge already created the KYC link (e.g. the DB update
@@ -446,19 +439,23 @@ export async function confirmBankEmail(
       options,
     );
   } catch (error) {
-    // Release the claim (not "restore the nonce" — jwt_nonce was never touched by the claim
-    // step) so a retry of this same link, or a resend, can proceed instead of finding the row
-    // stuck mid-claim forever.
-    await updateBankCustomer({ id: claimed.id, confirmingNonce: null }, { db });
+    // Restore the nonce so this same confirmation link (or a resend) can still complete the row
+    // instead of leaving it permanently stuck: not pending (jwt_nonce null) but not confirmed
+    // either. Conditioned on jwt_nonce still being NULL (same recheck as the success path) — if a
+    // resend already rotated it while the provider call was failing, this is a no-op rather than
+    // clobbering the resend's new nonce.
+    await releaseBankCustomerClaim(
+      { id: claimed.id, restoreNonce: claims.jti },
+      { db },
+    );
     throw error;
   }
 
   if (!result) {
-    // A resend revoked this attempt's claim while the provider call was in flight (D3): the row
-    // has already moved on to a new nonce. Don't report success for a link that's no longer the
-    // live one — the resent link's own confirmation will complete normally, and Bridge's
-    // email-based dedup (D7/D8) means it lands on the same customer this call may have just
-    // created, so nothing is lost.
+    // A resend rotated jwt_nonce while the provider call was in flight (D3): the row has already
+    // moved on to a new link. Don't report success for one that's no longer live — the resent
+    // link's own confirmation will complete normally, and Bridge's email-based dedup (D7/D8)
+    // means it lands on the same customer this call may have just created, so nothing is lost.
     return { ok: false, reason: 'invalid' };
   }
 

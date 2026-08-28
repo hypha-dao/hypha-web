@@ -37,18 +37,14 @@ export const bankCustomers = pgTable(
     providerKycLinkId: text('provider_kyc_link_id'),
     /**
      * The nonce a confirmation link must present (`jti` of the JWT) to be considered live for
-     * this row (#2288); cleared once confirmed. A resend rotates this to a new UUID, instantly
-     * invalidating any previously issued link.
+     * this row (#2288). Set while pending; cleared to `NULL` the instant a confirmation claims the
+     * row (before calling the provider) and stays `NULL` through to persisting the result — the
+     * confirm path's final write is itself conditioned on this still being `NULL`
+     * (`finalizeClaimedBankCustomer`), so a resend racing in in the middle (which always sets a
+     * fresh non-null value, instantly revoking whatever was claimed) makes that write a no-op
+     * instead of silently completing a stale confirmation. See `bank-onboarding-confirmation.ts`.
      */
     jwtNonce: uuid('jwt_nonce'),
-    /**
-     * Distinct from `jwt_nonce`: set only while a specific confirmation click is actively being
-     * processed (claimed, Bridge call in flight), cleared once that attempt finishes or fails.
-     * Kept separate from `jwt_nonce` so a resend arriving mid-confirmation can revoke the
-     * in-flight attempt (by clearing this) without racing the attempt's own final write, which is
-     * itself conditioned on this value still matching — see `bank-onboarding-confirmation.ts`.
-     */
-    confirmingNonce: uuid('confirming_nonce'),
     requestedRails: jsonb('requested_rails')
       .$type<BankCustomerRequestedRails>()
       .notNull()

@@ -19,6 +19,7 @@ const insertBankCustomer = vi.fn();
 const updateBankCustomer = vi.fn();
 const claimBankCustomerForConfirmation = vi.fn();
 const finalizeClaimedBankCustomer = vi.fn();
+const releaseBankCustomerClaim = vi.fn();
 const bridgeGetKycLink = vi.fn();
 const bridgeFindCustomerByEmail = vi.fn();
 
@@ -38,6 +39,8 @@ vi.mock('../mutations', () => ({
     claimBankCustomerForConfirmation(...args),
   finalizeClaimedBankCustomer: (...args: unknown[]) =>
     finalizeClaimedBankCustomer(...args),
+  releaseBankCustomerClaim: (...args: unknown[]) =>
+    releaseBankCustomerClaim(...args),
 }));
 
 vi.mock('../../../common/server/bridge-client', async () => {
@@ -261,13 +264,7 @@ describe('requestBankOnboardingWithConfirmation', () => {
     expect(result.kind).toBe('pendingConfirmation');
     expect(insertBankCustomer).not.toHaveBeenCalled();
     expect(updateBankCustomer).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 1,
-        jwtNonce: expect.any(String),
-        // D3: clearing confirmingNonce is what makes resend an instant revocation of an
-        // in-flight confirmation, not only of future clicks of the old link.
-        confirmingNonce: null,
-      }),
+      expect.objectContaining({ id: 1, jwtNonce: expect.any(String) }),
       expect.any(Object),
     );
     const newNonce = updateBankCustomer.mock.calls[0][0].jwtNonce;
@@ -275,14 +272,13 @@ describe('requestBankOnboardingWithConfirmation', () => {
   });
 
   it('updates (not inserts) on resend even while a confirm has the row claimed', async () => {
-    // Simulates the claimed window: a confirm claimed the row (confirmingNonce set) but hasn't
-    // finalized providerKycLinkId yet.
+    // Simulates the claimed window: a confirm claimed the row (jwtNonce -> null, per
+    // claimBankCustomerForConfirmation) but hasn't finalized providerKycLinkId yet.
     findBankCustomerBySpaceAndProvider.mockResolvedValue({
       id: 1,
       providerKycLinkId: null,
       providerCustomerId: null,
-      jwtNonce: 'old-nonce',
-      confirmingNonce: 'claimed-nonce',
+      jwtNonce: null,
       requestedRails: ['eur'],
     });
 
@@ -303,11 +299,7 @@ describe('requestBankOnboardingWithConfirmation', () => {
     expect(result.kind).toBe('pendingConfirmation');
     expect(insertBankCustomer).not.toHaveBeenCalled();
     expect(updateBankCustomer).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 1,
-        jwtNonce: expect.any(String),
-        confirmingNonce: null,
-      }),
+      expect.objectContaining({ id: 1, jwtNonce: expect.any(String) }),
       expect.any(Object),
     );
   });
@@ -317,12 +309,11 @@ describe('confirmBankEmail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     bridgeFindCustomerByEmail.mockResolvedValue(null);
-    // Default: the compare-and-swap claim succeeds (row still matches the nonce being confirmed,
-    // and nothing else has it claimed).
+    // Default: the compare-and-swap claim succeeds (row still matches the nonce being confirmed).
     claimBankCustomerForConfirmation.mockImplementation(
-      async ({ id, expectedNonce }: { id: number; expectedNonce: string }) => ({
+      async ({ id }: { id: number; expectedNonce: string }) => ({
         id,
-        confirmingNonce: expectedNonce,
+        jwtNonce: null,
         providerKycLinkId: null,
       }),
     );
@@ -414,7 +405,7 @@ describe('confirmBankEmail', () => {
   it('rejects a concurrent confirm that loses the compare-and-swap claim', async () => {
     const token = await signAndStorePending();
     // Simulates a second in-flight confirm of the same token: the row is already claimed by the
-    // first request (confirmingNonce already set).
+    // first request (jwt_nonce already cleared, so this claim's WHERE no longer matches).
     claimBankCustomerForConfirmation.mockResolvedValue(null);
 
     const result = await confirmBankEmail(
@@ -428,8 +419,9 @@ describe('confirmBankEmail', () => {
 
   it('rejects (without throwing) when a resend revokes this claim while the provider call is in flight', async () => {
     const token = await signAndStorePending();
-    // Simulates: claim succeeded, but a resend cleared confirmingNonce before the final write —
-    // finalizeClaimedBankCustomer's CAS then matches 0 rows and returns null.
+    // Simulates: claim succeeded (jwt_nonce -> null), but a resend rotated jwt_nonce to a new
+    // value before the final write — finalizeClaimedBankCustomer's CAS then matches 0 rows and
+    // returns null.
     finalizeClaimedBankCustomer.mockResolvedValue(null);
 
     const result = await confirmBankEmail(
@@ -443,9 +435,10 @@ describe('confirmBankEmail', () => {
     // means the resent link's eventual confirmation lands on the same customer) — what matters is
     // that this superseded attempt doesn't report success or corrupt the row.
     expect(mockProvider.createKycLink).toHaveBeenCalled();
-    // No restoration write here: a resend already moved the row on to a new nonce/claim state,
-    // and clobbering that back would reintroduce the exact bug being fixed.
+    // No restoration write here: nothing threw, so the failure-recovery path never runs — a
+    // resend already moved the row on, and there's nothing to release or restore.
     expect(updateBankCustomer).not.toHaveBeenCalled();
+    expect(releaseBankCustomerClaim).not.toHaveBeenCalled();
   });
 
   it('uses a stable per-token idempotency key so a retried finalize replays instead of duplicating', async () => {
@@ -479,8 +472,8 @@ describe('confirmBankEmail', () => {
       confirmBankEmail(token, { db: mockDb }, { kycProvider: mockProvider }),
     ).rejects.toThrow('bridge down');
 
-    expect(updateBankCustomer).toHaveBeenCalledWith(
-      { id: 1, confirmingNonce: null },
+    expect(releaseBankCustomerClaim).toHaveBeenCalledWith(
+      { id: 1, restoreNonce: expect.any(String) },
       expect.any(Object),
     );
   });

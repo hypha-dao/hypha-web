@@ -42,27 +42,13 @@ export type UpdateBankCustomerInput = {
   requestedRails?: BankCustomerRequestedRails;
   /** Pass `null` to clear (confirmation finalized), a uuid to rotate (resend, D3), or omit to leave as-is. */
   jwtNonce?: string | null;
-  /**
-   * Pass `null` to release/revoke an in-flight confirmation claim (resend does this, D3 — an
-   * outstanding confirmation attempt is revoked the same instant a new link is issued, not only
-   * future clicks of the old one), or omit to leave as-is. Never set to a value here — only
-   * `claimBankCustomerForConfirmation` sets it, atomically.
-   */
-  confirmingNonce?: null;
 };
 
 /**
- * Atomically claims a pending row for confirmation (#2288): sets `confirming_nonce` only if
- * `jwt_nonce` still matches `expectedNonce` *and* no other confirmation already has it claimed
- * (`confirming_nonce IS NULL`). Returns `null` if either fails (already claimed by a concurrent
- * confirmation, or the link was rotated by a resend) — the caller must treat that as an invalid
- * confirmation rather than proceeding to call the provider twice for the same row.
- *
- * Deliberately a separate column from `jwt_nonce` rather than clearing `jwt_nonce` itself: a
- * resend needs to be able to revoke *this specific in-flight attempt* (by clearing
- * `confirming_nonce` via `updateBankCustomer`) independently of rotating `jwt_nonce` to the next
- * link, and the attempt's own final write (`finalizeClaimedBankCustomer`) needs something stable
- * to condition on that a concurrent resend hasn't already repurposed.
+ * Atomically claims a pending row for confirmation (#2288): clears `jwt_nonce` only if it still
+ * matches `expectedNonce`. Returns `null` if it doesn't (already claimed by a concurrent
+ * confirmation, or rotated by a resend) — the caller must treat that as an invalid confirmation
+ * rather than proceeding to call the provider twice for the same row.
  */
 export const claimBankCustomerForConfirmation = async (
   { id, expectedNonce }: { id: number; expectedNonce: string },
@@ -70,13 +56,9 @@ export const claimBankCustomerForConfirmation = async (
 ): Promise<BankCustomer | null> => {
   const [row] = await db
     .update(bankCustomers)
-    .set({ confirmingNonce: expectedNonce, updatedAt: new Date() })
+    .set({ jwtNonce: null, updatedAt: new Date() })
     .where(
-      and(
-        eq(bankCustomers.id, id),
-        eq(bankCustomers.jwtNonce, expectedNonce),
-        isNull(bankCustomers.confirmingNonce),
-      ),
+      and(eq(bankCustomers.id, id), eq(bankCustomers.jwtNonce, expectedNonce)),
     )
     .returning();
 
@@ -85,8 +67,6 @@ export const claimBankCustomerForConfirmation = async (
 
 export type FinalizeClaimedBankCustomerInput = {
   id: number;
-  /** Must match the row's current `confirming_nonce` — see `claimBankCustomerForConfirmation`. */
-  expectedConfirmingNonce: string;
   providerCustomerId: string | null;
   providerKycLinkId: string;
   requestedRails: BankCustomerRequestedRails;
@@ -94,9 +74,12 @@ export type FinalizeClaimedBankCustomerInput = {
 
 /**
  * Persists a successful provider call for a claimed row (#2288 confirm path) — conditioned on
- * `confirming_nonce` still matching, not just the row id. Returns `null` if a resend cleared the
- * claim in the meantime (superseded): the caller must not report success in that case, even though
- * the provider call itself already succeeded — see `confirmBankEmail`.
+ * `jwt_nonce` still being `NULL`, i.e. still the exact state `claimBankCustomerForConfirmation`
+ * left it in, not just the row id. Returns `null` if a resend rotated `jwt_nonce` to a new value in
+ * the meantime (superseded): the caller must not report success in that case, even though the
+ * provider call itself already succeeded — see `confirmBankEmail`. This recheck-at-write, not just
+ * recheck-at-read, is the actual fix for the race: a resend arriving between the claim and this
+ * write is what a plain `WHERE id = ?` write misses.
  */
 export const finalizeClaimedBankCustomer = async (
   input: FinalizeClaimedBankCustomerInput,
@@ -108,19 +91,31 @@ export const finalizeClaimedBankCustomer = async (
       providerCustomerId: input.providerCustomerId,
       providerKycLinkId: input.providerKycLinkId,
       requestedRails: input.requestedRails,
-      jwtNonce: null,
-      confirmingNonce: null,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(bankCustomers.id, input.id),
-        eq(bankCustomers.confirmingNonce, input.expectedConfirmingNonce),
-      ),
-    )
+    .where(and(eq(bankCustomers.id, input.id), isNull(bankCustomers.jwtNonce)))
     .returning();
 
   return row ?? null;
+};
+
+/**
+ * Releases a claim after a failed provider call (#2288 confirm path), restoring `jwt_nonce` so the
+ * same link (or a resend) can retry — conditioned on `jwt_nonce` still being `NULL`, same as
+ * `finalizeClaimedBankCustomer`. If a resend already rotated it in the meantime, this is a no-op:
+ * restoring the *old* nonce unconditionally would silently undo that resend, the exact bug this
+ * whole claim/finalize design exists to prevent, just on the failure path instead of the success
+ * one.
+ */
+export const releaseBankCustomerClaim = async (
+  { id, restoreNonce }: { id: number; restoreNonce: string },
+  { db }: DbConfig,
+): Promise<void> => {
+  await db
+    .update(bankCustomers)
+    .set({ jwtNonce: restoreNonce, updatedAt: new Date() })
+    .where(and(eq(bankCustomers.id, id), isNull(bankCustomers.jwtNonce)))
+    .execute();
 };
 
 export const updateBankCustomer = async (
@@ -142,9 +137,6 @@ export const updateBankCustomer = async (
   }
   if (input.jwtNonce !== undefined) {
     patch.jwtNonce = input.jwtNonce;
-  }
-  if (input.confirmingNonce !== undefined) {
-    patch.confirmingNonce = input.confirmingNonce;
   }
 
   const [row] = await db
