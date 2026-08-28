@@ -15,7 +15,6 @@ import {
   findAllTokens,
   findAllTransfers,
   web3Client,
-  getDb,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -42,12 +41,7 @@ export async function GET(
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
-  const { nextUrl, headers } = request;
-
-  const authToken = headers.get('Authorization')?.split(' ')[1] || '';
-  if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const { nextUrl } = request;
 
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
@@ -84,10 +78,7 @@ export async function GET(
       limit,
     });
 
-    const dbTransfers = await findAllTransfers(
-      { db: getDb({ authToken }) },
-      {},
-    );
+    const dbTransfers = await findAllTransfers({ db }, {});
 
     const memoMap = new Map(
       dbTransfers.map((dbTransfer) => [
