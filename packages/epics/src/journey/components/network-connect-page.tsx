@@ -24,7 +24,10 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
 import { useNetworkPeople } from '../use-network-people';
-import type { NetworkPerson } from '../network-pulse';
+import {
+  selectNetworkPulseCandidates,
+  type NetworkPerson,
+} from '../network-pulse';
 
 function initials(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || 'P';
@@ -47,13 +50,15 @@ export function NetworkConnectPage({
   const { getAccessToken } = useAccessTokenReady();
   const { sharedSpaces, isLoading: isLoadingShared } =
     useNetworkSharedSpaces(spaces);
-  const spaceSlugs = useMemo(
-    () =>
-      sharedSpaces
-        .map((space) => space.slug)
-        .filter((slug): slug is string => Boolean(slug)),
-    [sharedSpaces],
-  );
+  const spaceSlugs = useMemo(() => {
+    const shared = sharedSpaces
+      .map((space) => space.slug)
+      .filter((slug): slug is string => Boolean(slug));
+    if (shared.length > 0) return shared;
+    return selectNetworkPulseCandidates(spaces)
+      .map((space) => space.slug)
+      .filter((slug): slug is string => Boolean(slug));
+  }, [sharedSpaces, spaces]);
   const { people, isLoading, error, retry } = useNetworkPeople({
     spaceSlugs,
     excludeSlug: person?.slug,

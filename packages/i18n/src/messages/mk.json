@@ -91,6 +91,7 @@
   },
   "Navigation": {
     "network": "Мрежа",
+    "connect": "Поврзи",
     "mySpaces": "Мои простори",
     "myWallet": "Мој паричник",
     "openMenu": "Отвори мени",

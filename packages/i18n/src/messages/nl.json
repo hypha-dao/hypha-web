@@ -91,6 +91,7 @@
   },
   "Navigation": {
     "network": "Netwerk",
+    "connect": "Verbinden",
     "mySpaces": "Mijn ruimtes",
     "myWallet": "Mijn portemonnee",
     "openMenu": "Menu openen",

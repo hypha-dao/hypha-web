@@ -90,6 +90,7 @@
   },
   "Navigation": {
     "network": "Nettverk",
+    "connect": "Koble til",
     "mySpaces": "Mine rom",
     "myWallet": "Min lommebok",
     "openMenu": "Åpne meny",
