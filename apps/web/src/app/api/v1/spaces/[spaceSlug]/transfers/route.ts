@@ -13,7 +13,7 @@ import {
   getTokenMeta,
   findPeopleByWeb3Addresses,
   findAllTokens,
-  findAllTransfers,
+  findTransfersByTransactionHashes,
   web3Client,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -78,15 +78,6 @@ export async function GET(
       limit,
     });
 
-    const dbTransfers = await findAllTransfers({ db }, {});
-
-    const memoMap = new Map(
-      dbTransfers.map((dbTransfer) => [
-        dbTransfer.transactionHash.toLowerCase(),
-        dbTransfer.memo,
-      ]),
-    );
-
     const rawDbTokens = await findAllTokens({ db }, { search: undefined });
 
     // Mints emit Transfer(0x0 -> recipient) and never reference the space
@@ -136,6 +127,17 @@ export async function GET(
       )
       .sort((a, b) => b.block_number - a.block_number)
       .slice(0, limit);
+
+    const dbTransfers = await findTransfersByTransactionHashes(
+      { db },
+      allTransfers.map((transfer) => transfer.transaction_hash),
+    );
+    const memoMap = new Map(
+      dbTransfers.map((dbTransfer) => [
+        dbTransfer.transactionHash.toLowerCase(),
+        dbTransfer.memo,
+      ]),
+    );
 
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
