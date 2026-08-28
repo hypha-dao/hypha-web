@@ -36,11 +36,19 @@ export const bankCustomers = pgTable(
      */
     providerKycLinkId: text('provider_kyc_link_id'),
     /**
-     * Set while an email-ownership confirmation is pending (#2288); cleared once confirmed and
-     * the KYC link is created. Resend/change-email rotates this to a new UUID, which instantly
-     * invalidates the previously issued confirmation JWT (its `jti` no longer matches).
+     * The nonce a confirmation link must present (`jti` of the JWT) to be considered live for
+     * this row (#2288); cleared once confirmed. A resend rotates this to a new UUID, instantly
+     * invalidating any previously issued link.
      */
     jwtNonce: uuid('jwt_nonce'),
+    /**
+     * Distinct from `jwt_nonce`: set only while a specific confirmation click is actively being
+     * processed (claimed, Bridge call in flight), cleared once that attempt finishes or fails.
+     * Kept separate from `jwt_nonce` so a resend arriving mid-confirmation can revoke the
+     * in-flight attempt (by clearing this) without racing the attempt's own final write, which is
+     * itself conditioned on this value still matching — see `bank-onboarding-confirmation.ts`.
+     */
+    confirmingNonce: uuid('confirming_nonce'),
     requestedRails: jsonb('requested_rails')
       .$type<BankCustomerRequestedRails>()
       .notNull()
