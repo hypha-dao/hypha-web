@@ -46,12 +46,13 @@ export async function sendBankEmailConfirmationEmail({
         'EMAIL_TEMPLATE_BANK_EMAIL_CONFIRMATION is not set — cannot send the bank email confirmation link',
       );
     }
+    // Not redacted here (unlike the success log below): this branch is structurally
+    // unreachable in production (the throw above always fires there instead), so the token can
+    // only ever land in a developer's local console — and doing so is the point, since this is
+    // the supported way to test the confirmation flow without a real OneSignal template.
     console.log(
       '[bank-email-confirmation] Skipping OneSignal send — EMAIL_TEMPLATE_BANK_EMAIL_CONFIRMATION is not set. Would send:',
-      {
-        recipientEmail,
-        customData: { ...customData, verify_link: redactedVerifyLink },
-      },
+      { recipientEmail, customData },
     );
     return;
   }

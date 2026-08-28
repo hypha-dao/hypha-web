@@ -1009,13 +1009,13 @@
       "currenciesDescription": "Изберете ги валутите што овој простор ќе ги користи за банкарски депозити и исплати. Вашата организација ќе биде верификувана еднаш кај нашиот банкарски партнер.",
       "currenciesHint": "Можете да додадете повеќе валути подоцна од Банкарските поставки.",
       "submit": "Продолжи",
-      "legalName": "Legal entity name",
+      "legalName": "Правно име на субјектот",
       "contactEmail": "Е-пошта на клиентот на Bridge",
       "person": {
-        "organizationLegend": "Your details",
-        "organizationHint": "Your details are sent to our banking partner for verification and are not stored on Hypha.",
-        "legalName": "Full name",
-        "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
+        "organizationLegend": "Вашите податоци",
+        "organizationHint": "Вашите податоци се испраќаат до нашиот банкарски партнер за верификација и не се чуваат на Hypha.",
+        "legalName": "Целосно име",
+        "currenciesDescription": "Изберете ги валутите што сакате да ги користите за банкарски исплати. Ќе бидете верификувани еднаш кај нашиот банкарски партнер."
       },
       "bypassEligibleHint": "Ова е вашата сопствена верификувана е-пошта — не е потребен дополнителен чекор за потврда.",
       "confirmationRequiredHint": "Ќе испратиме линк за потврда на оваа адреса пред да ја овозможиме, бидејќи не е вашата сопствена верификувана е-пошта."

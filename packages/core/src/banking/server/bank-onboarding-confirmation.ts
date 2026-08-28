@@ -27,6 +27,7 @@ import {
   updateBankCustomer,
 } from './mutations';
 import { getBankKycProvider } from './providers';
+import { BankOnboardingError } from './errors';
 import type { BankKycProvider } from './providers/types';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
 
@@ -163,36 +164,6 @@ export async function createBankCustomerWithKycLink(
   return result;
 }
 
-/** Confirm path (D6) — finalizes a pending row (created by `requestBankOnboardingWithConfirmation` below). */
-async function finalizePendingBankCustomerWithKycLink(
-  bankCustomerId: number,
-  input: {
-    entityType: BankEntityType;
-    legalName: string;
-    contactEmail: string;
-    requestedRails?: string[];
-    redirectUri?: string;
-    idempotencyKey?: string;
-  },
-  { db }: { db: DatabaseInstance },
-  options?: BankOnboardingConfirmationOptions,
-): Promise<KycLinkAndValidations> {
-  const result = await buildKycLinkAndValidations(input, options);
-
-  await updateBankCustomer(
-    {
-      id: bankCustomerId,
-      providerCustomerId: result.providerCustomerId,
-      providerKycLinkId: result.providerKycLinkId,
-      requestedRails: result.normalizedRails,
-      jwtNonce: null,
-    },
-    { db },
-  );
-
-  return result;
-}
-
 /**
  * Confirm path's final write (#2288) — conditioned on `jwt_nonce` still being `NULL` (the state
  * the claim step left it in), not just the row id (see `finalizeClaimedBankCustomer`). Returns
@@ -295,21 +266,52 @@ export async function requestBankOnboardingWithConfirmation(
 
   if (isBypassEligible(submitterEmail, contactEmail)) {
     // A pending (unconfirmed) row from an earlier non-bypass attempt already occupies the
-    // owner+provider unique slot — finalize it in place rather than inserting a duplicate, which
-    // would violate that constraint after Bridge's KYC link is already created.
-    const result = existing
-      ? await finalizePendingBankCustomerWithKycLink(
-          existing.id,
-          { entityType, legalName, contactEmail, requestedRails, redirectUri },
-          { db },
-          options,
-        )
-      : await createBankCustomerWithKycLink(
-          ownerRef,
-          { entityType, legalName, contactEmail, requestedRails, redirectUri },
-          { db },
-          options,
+    // owner+provider unique slot — take it over rather than inserting a duplicate, which would
+    // violate that constraint after Bridge's KYC link is already created. Goes through the same
+    // claim/finalize CAS as the confirm path (not a plain update by id): a resend or an in-flight
+    // confirmation racing this bypass request must not have either write silently clobber the
+    // other's result.
+    let result: KycLinkAndValidations;
+    if (existing) {
+      if (!existing.jwtNonce) {
+        // Already claimed by an in-flight confirmation (nonce cleared, not yet finalized) —
+        // nothing valid to atomically take over from here.
+        throw new BankOnboardingError(
+          'A confirmation for this owner is already being processed. Please try again in a moment.',
+          409,
         );
+      }
+      const claimed = await claimBankCustomerForConfirmation(
+        { id: existing.id, expectedNonce: existing.jwtNonce },
+        { db },
+      );
+      if (!claimed) {
+        throw new BankOnboardingError(
+          'This request just changed — please try again.',
+          409,
+        );
+      }
+      const finalized = await finalizeClaimedBankCustomerWithKycLink(
+        claimed.id,
+        { entityType, legalName, contactEmail, requestedRails, redirectUri },
+        { db },
+        options,
+      );
+      if (!finalized) {
+        throw new BankOnboardingError(
+          'This request just changed — please try again.',
+          409,
+        );
+      }
+      result = finalized;
+    } else {
+      result = await createBankCustomerWithKycLink(
+        ownerRef,
+        { entityType, legalName, contactEmail, requestedRails, redirectUri },
+        { db },
+        options,
+      );
+    }
     return { kind: 'created', ...result };
   }
 

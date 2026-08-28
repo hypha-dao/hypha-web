@@ -1257,7 +1257,7 @@
       }
     },
     "pendingEmailConfirmation": {
-      "title": "Bevestig uw e-mailadres van de Bridge-klant",
+      "title": "Bevestig het e-mailadres van de Bridge-klant",
       "description": "We hebben een bevestigingslink gestuurd naar het e-mailadres dat u hebt ingevoerd. Klik erop om door te gaan met het instellen van banking — we nemen pas contact op met Bridge zodra u heeft bevestigd.",
       "resendCta": "Bevestigingsmail opnieuw versturen",
       "resending": "Opnieuw verzenden…"

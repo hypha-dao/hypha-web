@@ -1025,7 +1025,7 @@
       "organizationLegend": "Organisasjonsdetaljer",
       "organizationHint": "Organisasjonsdetaljer sendes til bankpartneren vår for verifisering og lagres ikke på Hypha.",
       "legalName": "Juridisk enhetsnavn",
-      "contactEmail": "E-post for Bridge-kunde",
+      "contactEmail": "E-postadresse til Bridge-kunden",
       "currenciesTitle": "Valutaer du vil bruke",
       "currenciesDescription": "Velg valutaene dette rommet skal bruke til bankinnskudd og utbetalinger. Organisasjonen din verifiseres én gang hos bankpartneren vår.",
       "currenciesHint": "Du kan legge til flere valutaer senere fra Bankinnstillinger.",
@@ -1256,7 +1256,7 @@
       }
     },
     "pendingEmailConfirmation": {
-      "title": "Bekreft e-posten din for Bridge-kunde",
+      "title": "Bekreft e-postadressen til Bridge-kunden",
       "description": "Vi har sendt en bekreftelseslenke til e-postadressen du oppga. Klikk på den for å fortsette å sette opp banktjenester — vi kontakter ikke Bridge før du har bekreftet.",
       "resendCta": "Send bekreftelses-e-post på nytt",
       "resending": "Sender på nytt…"

@@ -205,7 +205,7 @@ describe('requestBankOnboardingWithConfirmation', () => {
     expect(insertBankCustomer).not.toHaveBeenCalled();
   });
 
-  it('finalizes an existing pending row on bypass instead of inserting a duplicate', async () => {
+  it('claims and finalizes an existing pending row on bypass instead of inserting a duplicate', async () => {
     findBankCustomerBySpaceAndProvider.mockResolvedValue({
       id: 7,
       providerKycLinkId: null,
@@ -213,7 +213,8 @@ describe('requestBankOnboardingWithConfirmation', () => {
       jwtNonce: 'old-nonce',
       requestedRails: ['eur'],
     });
-    updateBankCustomer.mockResolvedValue({ id: 7 });
+    claimBankCustomerForConfirmation.mockResolvedValue({ id: 7 });
+    finalizeClaimedBankCustomer.mockResolvedValue({ id: 7 });
 
     const result = await requestBankOnboardingWithConfirmation(
       {
@@ -232,10 +233,72 @@ describe('requestBankOnboardingWithConfirmation', () => {
 
     expect(result.kind).toBe('created');
     expect(insertBankCustomer).not.toHaveBeenCalled();
-    expect(updateBankCustomer).toHaveBeenCalledWith(
+    expect(claimBankCustomerForConfirmation).toHaveBeenCalledWith(
+      { id: 7, expectedNonce: 'old-nonce' },
+      expect.any(Object),
+    );
+    expect(finalizeClaimedBankCustomer).toHaveBeenCalledWith(
       expect.objectContaining({ id: 7, providerKycLinkId: 'link_1' }),
       expect.any(Object),
     );
+  });
+
+  it('rejects a bypass request when the row is already claimed by an in-flight confirmation', async () => {
+    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+      id: 7,
+      providerKycLinkId: null,
+      providerCustomerId: null,
+      jwtNonce: null,
+      requestedRails: ['eur'],
+    });
+
+    await expect(
+      requestBankOnboardingWithConfirmation(
+        {
+          ownerRef: spaceOwner,
+          entityType: 'business',
+          legalName: 'Acme Foundation Ltd.',
+          contactEmail: 'me+sandbox@example.com',
+          requestedRails: ['eur'],
+          submitterPersonId: 10,
+          submitterEmail: 'me@example.com',
+          sendConfirmationEmail,
+        },
+        { db: mockDb },
+        { kycProvider: mockProvider },
+      ),
+    ).rejects.toThrow(/already being processed/i);
+    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
+    expect(claimBankCustomerForConfirmation).not.toHaveBeenCalled();
+  });
+
+  it('rejects a bypass request that loses the claim to a concurrent resend or confirm', async () => {
+    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+      id: 7,
+      providerKycLinkId: null,
+      providerCustomerId: null,
+      jwtNonce: 'old-nonce',
+      requestedRails: ['eur'],
+    });
+    claimBankCustomerForConfirmation.mockResolvedValue(null);
+
+    await expect(
+      requestBankOnboardingWithConfirmation(
+        {
+          ownerRef: spaceOwner,
+          entityType: 'business',
+          legalName: 'Acme Foundation Ltd.',
+          contactEmail: 'me+sandbox@example.com',
+          requestedRails: ['eur'],
+          submitterPersonId: 10,
+          submitterEmail: 'me@example.com',
+          sendConfirmationEmail,
+        },
+        { db: mockDb },
+        { kycProvider: mockProvider },
+      ),
+    ).rejects.toThrow(/just changed/i);
+    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
   });
 
   it('rotates the nonce and clears any in-flight claim on resend instead of inserting a duplicate', async () => {
