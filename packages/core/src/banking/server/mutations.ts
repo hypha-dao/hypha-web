@@ -1,6 +1,6 @@
 import type { DbConfig } from '../../common/server/types';
 import type { BankEntityType, BankProvider } from '../types';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import {
   bankCustomers,
@@ -42,6 +42,27 @@ export type UpdateBankCustomerInput = {
   requestedRails?: BankCustomerRequestedRails;
   /** Pass `null` to clear (confirmation finalized), a uuid to rotate (resend, D3), or omit to leave as-is. */
   jwtNonce?: string | null;
+};
+
+/**
+ * Atomically claims a pending row for confirmation (#2288): clears `jwt_nonce` only if it still
+ * matches `expectedNonce`. Returns `null` if it doesn't (already claimed by a concurrent
+ * confirmation, or rotated by a resend) — the caller must treat that as an invalid confirmation
+ * rather than proceeding to call the provider twice for the same row.
+ */
+export const claimBankCustomerForConfirmation = async (
+  { id, expectedNonce }: { id: number; expectedNonce: string },
+  { db }: DbConfig,
+): Promise<BankCustomer | null> => {
+  const [row] = await db
+    .update(bankCustomers)
+    .set({ jwtNonce: null, updatedAt: new Date() })
+    .where(
+      and(eq(bankCustomers.id, id), eq(bankCustomers.jwtNonce, expectedNonce)),
+    )
+    .returning();
+
+  return row ?? null;
 };
 
 export const updateBankCustomer = async (

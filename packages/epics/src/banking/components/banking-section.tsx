@@ -247,7 +247,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
     );
   }
 
-  if (!hasCustomer || (status?.pendingEmailConfirmation && showEmailConfirmationResend)) {
+  if (
+    !hasCustomer ||
+    (status?.pendingEmailConfirmation && showEmailConfirmationResend)
+  ) {
     if (!canManage) {
       return (
         <p className="text-2 text-muted-foreground">
@@ -270,7 +273,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
   if (status?.pendingEmailConfirmation) {
     return (
       <PendingEmailConfirmationCard
-        onResend={() => setShowEmailConfirmationResend(true)}
+        onResend={
+          canManage ? () => setShowEmailConfirmationResend(true) : undefined
+        }
       />
     );
   }

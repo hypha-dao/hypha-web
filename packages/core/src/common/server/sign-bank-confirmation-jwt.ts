@@ -32,7 +32,9 @@ const BANK_CONFIRMATION_JWT_EXPIRY_SECONDS = 72 * 60 * 60; // 72h, per decisions
 function getInternalJwtSecret(): Uint8Array {
   const secret = process.env.INTERNAL_JWT_SECRET;
   if (!secret) {
-    throw new Error('Missing required environment variable: INTERNAL_JWT_SECRET');
+    throw new Error(
+      'Missing required environment variable: INTERNAL_JWT_SECRET',
+    );
   }
   return new TextEncoder().encode(secret);
 }
@@ -72,10 +74,7 @@ export async function verifyBankConfirmationJwt(
       claims: payload as unknown as BankConfirmationJwtClaims,
     };
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.name === 'JWTExpired'
-    ) {
+    if (error instanceof Error && error.name === 'JWTExpired') {
       return { valid: false, reason: 'expired' };
     }
     return { valid: false, reason: 'invalid' };

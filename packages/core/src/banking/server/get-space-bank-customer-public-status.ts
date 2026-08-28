@@ -110,7 +110,9 @@ export async function buildPublicStatusFromCustomer(
       endorsementStatuses: [],
       currencyStatuses: [],
       requestedRails: customer.requestedRails ?? [],
-      pendingEmailConfirmation: { requestedRails: customer.requestedRails ?? [] },
+      pendingEmailConfirmation: {
+        requestedRails: customer.requestedRails ?? [],
+      },
     };
   }
 

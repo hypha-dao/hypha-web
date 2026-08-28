@@ -8,8 +8,12 @@ import { Button } from '@hypha-platform/ui';
 import { BANKING_EMPTY_STATE_CLASS } from '../banking-ui';
 
 export type PendingEmailConfirmationCardProps = {
-  /** Re-opens the setup form so the submitter can retype the email and resend (#2288, D3: rotates the nonce). */
-  onResend: () => void;
+  /**
+   * Re-opens the setup form so the submitter can retype the email and resend (#2288, D3: rotates
+   * the nonce). Omit for viewers who can't manage banking — resend requires filling in the form
+   * again, so it's only offered to whoever `canManage` gates the rest of this tab for.
+   */
+  onResend?: () => void;
 };
 
 /**
@@ -29,14 +33,16 @@ export const PendingEmailConfirmationCard: FC<
       <p className="max-w-md text-2 text-muted-foreground">
         {t('description')}
       </p>
-      <Button
-        type="button"
-        variant="outline"
-        colorVariant="neutral"
-        onClick={onResend}
-      >
-        {t('resendCta')}
-      </Button>
+      {onResend ? (
+        <Button
+          type="button"
+          variant="outline"
+          colorVariant="neutral"
+          onClick={onResend}
+        >
+          {t('resendCta')}
+        </Button>
+      ) : null}
     </div>
   );
 };

@@ -17,6 +17,7 @@ const findBankCustomerByPersonAndProvider = vi.fn();
 const findBankCustomerByNonce = vi.fn();
 const insertBankCustomer = vi.fn();
 const updateBankCustomer = vi.fn();
+const claimBankCustomerForConfirmation = vi.fn();
 const bridgeGetKycLink = vi.fn();
 const bridgeFindCustomerByEmail = vi.fn();
 
@@ -32,6 +33,8 @@ vi.mock('../queries', () => ({
 vi.mock('../mutations', () => ({
   insertBankCustomer: (...args: unknown[]) => insertBankCustomer(...args),
   updateBankCustomer: (...args: unknown[]) => updateBankCustomer(...args),
+  claimBankCustomerForConfirmation: (...args: unknown[]) =>
+    claimBankCustomerForConfirmation(...args),
 }));
 
 vi.mock('../../../common/server/bridge-client', async () => {
@@ -196,6 +199,39 @@ describe('requestBankOnboardingWithConfirmation', () => {
     expect(insertBankCustomer).not.toHaveBeenCalled();
   });
 
+  it('finalizes an existing pending row on bypass instead of inserting a duplicate', async () => {
+    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+      id: 7,
+      providerKycLinkId: null,
+      providerCustomerId: null,
+      jwtNonce: 'old-nonce',
+      requestedRails: ['eur'],
+    });
+    updateBankCustomer.mockResolvedValue({ id: 7 });
+
+    const result = await requestBankOnboardingWithConfirmation(
+      {
+        ownerRef: spaceOwner,
+        entityType: 'business',
+        legalName: 'Acme Foundation Ltd.',
+        contactEmail: 'me+sandbox@example.com',
+        requestedRails: ['eur'],
+        submitterPersonId: 10,
+        submitterEmail: 'me@example.com',
+        sendConfirmationEmail,
+      },
+      { db: mockDb },
+      { kycProvider: mockProvider },
+    );
+
+    expect(result.kind).toBe('created');
+    expect(insertBankCustomer).not.toHaveBeenCalled();
+    expect(updateBankCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 7, providerKycLinkId: 'link_1' }),
+      expect.any(Object),
+    );
+  });
+
   it('rotates the nonce on the existing pending row on resend instead of inserting a duplicate', async () => {
     findBankCustomerBySpaceAndProvider.mockResolvedValue({
       id: 1,
@@ -234,6 +270,13 @@ describe('confirmBankEmail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     bridgeFindCustomerByEmail.mockResolvedValue(null);
+    // Default: the compare-and-swap claim succeeds (row still matches the nonce being confirmed).
+    claimBankCustomerForConfirmation.mockImplementation(
+      async ({ id }: { id: number; expectedNonce: string }) => ({
+        id,
+        providerKycLinkId: null,
+      }),
+    );
   });
 
   async function signAndStorePending(nonce?: string) {
@@ -304,6 +347,37 @@ describe('confirmBankEmail', () => {
     );
     expect(result).toEqual({ ok: false, reason: 'invalid' });
     expect(mockProvider.createKycLink).not.toHaveBeenCalled();
+  });
+
+  it('rejects a concurrent confirm that loses the compare-and-swap claim', async () => {
+    const token = await signAndStorePending();
+    // Simulates a second in-flight confirm of the same token: the row's nonce no longer matches by
+    // the time this request tries to claim it (already claimed by the first request).
+    claimBankCustomerForConfirmation.mockResolvedValue(null);
+
+    const result = await confirmBankEmail(
+      token,
+      { db: mockDb },
+      { kycProvider: mockProvider },
+    );
+    expect(result).toEqual({ ok: false, reason: 'invalid' });
+    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
+  });
+
+  it('restores the nonce if the provider call fails after claiming, so the link stays usable', async () => {
+    const token = await signAndStorePending();
+    (
+      mockProvider.createKycLink as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(new Error('bridge down'));
+
+    await expect(
+      confirmBankEmail(token, { db: mockDb }, { kycProvider: mockProvider }),
+    ).rejects.toThrow('bridge down');
+
+    expect(updateBankCustomer).toHaveBeenCalledWith(
+      { id: 1, jwtNonce: expect.any(String) },
+      expect.any(Object),
+    );
   });
 
   it('rejects an already-confirmed row', async () => {

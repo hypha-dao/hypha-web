@@ -81,7 +81,10 @@ export async function requestSpaceBankOnboarding(
       sendConfirmationEmail: options.sendConfirmationEmail,
     },
     { db },
-    { kycProvider: options.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER) },
+    {
+      kycProvider:
+        options.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER),
+    },
   );
 
   if (result.kind === 'pendingConfirmation') {

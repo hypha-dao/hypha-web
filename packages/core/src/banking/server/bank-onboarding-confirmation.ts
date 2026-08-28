@@ -19,7 +19,11 @@ import {
   findBankCustomerBySpaceAndProvider,
   findBankCustomerByPersonAndProvider,
 } from './queries';
-import { insertBankCustomer, updateBankCustomer } from './mutations';
+import {
+  claimBankCustomerForConfirmation,
+  insertBankCustomer,
+  updateBankCustomer,
+} from './mutations';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
@@ -62,7 +66,8 @@ async function buildKycLinkAndValidations(
   },
   options?: BankOnboardingConfirmationOptions,
 ): Promise<KycLinkAndValidations> {
-  const normalizedRails = input.requestedRails?.map((r) => r.toLowerCase()) ?? [];
+  const normalizedRails =
+    input.requestedRails?.map((r) => r.toLowerCase()) ?? [];
   const endorsements = currenciesToEndorsements(normalizedRails);
   const idempotencyKey = randomUUID();
   const kycProvider =
@@ -244,12 +249,22 @@ export async function requestBankOnboardingWithConfirmation(
   }
 
   if (isBypassEligible(submitterEmail, contactEmail)) {
-    const result = await createBankCustomerWithKycLink(
-      ownerRef,
-      { entityType, legalName, contactEmail, requestedRails, redirectUri },
-      { db },
-      options,
-    );
+    // A pending (unconfirmed) row from an earlier non-bypass attempt already occupies the
+    // owner+provider unique slot — finalize it in place rather than inserting a duplicate, which
+    // would violate that constraint after Bridge's KYC link is already created.
+    const result = existing
+      ? await finalizePendingBankCustomerWithKycLink(
+          existing.id,
+          { entityType, legalName, contactEmail, requestedRails, redirectUri },
+          { db },
+          options,
+        )
+      : await createBankCustomerWithKycLink(
+          ownerRef,
+          { entityType, legalName, contactEmail, requestedRails, redirectUri },
+          { db },
+          options,
+        );
     return { kind: 'created', ...result };
   }
 
@@ -289,7 +304,11 @@ export async function requestBankOnboardingWithConfirmation(
     );
   }
 
-  await sendConfirmationEmail({ token, ownerLabel: ownerRef.label, contactEmail });
+  await sendConfirmationEmail({
+    token,
+    ownerLabel: ownerRef.label,
+    contactEmail,
+  });
 
   return { kind: 'pendingConfirmation' };
 }
@@ -329,22 +348,41 @@ export async function confirmBankEmail(
     return { ok: false, reason: 'already_confirmed' };
   }
 
+  // Atomically claim the row before calling the provider: a concurrent confirm of the same link
+  // (double-click, or a race with a resend that rotates the nonce) fails this compare-and-swap and
+  // is rejected here rather than both requests creating their own KYC link for the same owner.
+  const claimed = await claimBankCustomerForConfirmation(
+    { id: row.id, expectedNonce: claims.jti },
+    { db },
+  );
+  if (!claimed) {
+    return { ok: false, reason: 'invalid' };
+  }
+
   const existingBridgeCustomer = await bridgeFindCustomerByEmail(
     claims.contactEmail,
   ).catch(() => null);
 
-  const result = await finalizePendingBankCustomerWithKycLink(
-    row.id,
-    {
-      entityType: claims.entityType,
-      legalName: claims.legalName,
-      contactEmail: claims.contactEmail,
-      requestedRails: claims.requestedRails,
-      redirectUri: claims.redirectUri,
-    },
-    { db },
-    options,
-  );
+  let result: KycLinkAndValidations;
+  try {
+    result = await finalizePendingBankCustomerWithKycLink(
+      claimed.id,
+      {
+        entityType: claims.entityType,
+        legalName: claims.legalName,
+        contactEmail: claims.contactEmail,
+        requestedRails: claims.requestedRails,
+        redirectUri: claims.redirectUri,
+      },
+      { db },
+      options,
+    );
+  } catch (error) {
+    // Restore the nonce so the same confirmation link (or a resend) can still complete the row
+    // instead of leaving it permanently stuck: not pending (no nonce) but not confirmed either.
+    await updateBankCustomer({ id: claimed.id, jwtNonce: claims.jti }, { db });
+    throw error;
+  }
 
   return {
     ok: true,

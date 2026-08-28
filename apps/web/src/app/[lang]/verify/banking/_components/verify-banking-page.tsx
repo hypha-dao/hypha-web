@@ -8,7 +8,10 @@ import { Container } from '@hypha-platform/ui';
 type ConfirmState =
   | { status: 'loading' }
   | { status: 'success'; ownerLabel: string }
-  | { status: 'error'; reason: 'expired' | 'invalid' | 'already_confirmed' | 'generic' };
+  | {
+      status: 'error';
+      reason: 'expired' | 'invalid' | 'already_confirmed' | 'generic';
+    };
 
 type VerifyBankingPageProps = {
   token: string | null;
