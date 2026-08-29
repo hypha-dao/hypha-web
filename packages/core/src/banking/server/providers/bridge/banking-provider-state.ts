@@ -35,6 +35,7 @@ import type {
   BankRailPublicStatus,
   BankValidationRequirement,
 } from '../../../types';
+import { BankOnboardingError } from '../../errors';
 
 const PENDING_BRIDGE_ENDORSEMENT_STATUSES = new Set([
   'incomplete',
@@ -77,6 +78,15 @@ export function laPairKey(
 export async function loadBankingProviderState(
   customer: BankCustomer,
 ): Promise<BankingProviderState> {
+  if (!customer.providerKycLinkId) {
+    // Should not happen: callers only reach here for a customer with a confirmed Bridge link
+    // (#2288 — a pending-email-confirmation row is handled upstream, before this is called).
+    throw new BankOnboardingError(
+      'Bank customer has no Bridge KYC link yet.',
+      422,
+    );
+  }
+
   const kycLink = await bridgeGetKycLink(customer.providerKycLinkId);
 
   let bridgeCustomer: BridgeGetCustomerResponse | null = null;

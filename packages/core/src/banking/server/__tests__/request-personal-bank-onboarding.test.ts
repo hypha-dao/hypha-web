@@ -6,6 +6,7 @@ import { requestPersonalBankOnboarding } from '../request-personal-bank-onboardi
 import type { BankKycProvider } from '../providers/types';
 
 const findPersonBySlug = vi.fn();
+const findPersonById = vi.fn();
 const authorizePersonalBankOnboarding = vi.fn();
 const findBankCustomerByPersonAndProvider = vi.fn();
 const insertBankCustomer = vi.fn();
@@ -13,6 +14,7 @@ const bridgeGetKycLink = vi.fn();
 
 vi.mock('../../../people/server/queries', () => ({
   findPersonBySlug: (...args: unknown[]) => findPersonBySlug(...args),
+  findPersonById: (...args: unknown[]) => findPersonById(...args),
 }));
 
 vi.mock('../authorize-personal-bank-onboarding', () => ({
@@ -66,6 +68,8 @@ const mockProvider: BankKycProvider = {
   }),
 };
 
+const sendConfirmationEmail = vi.fn().mockResolvedValue(undefined);
+
 describe('requestPersonalBankOnboarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -78,6 +82,13 @@ describe('requestPersonalBankOnboarding', () => {
     authorizePersonalBankOnboarding.mockResolvedValue({
       authorized: true,
       person: { id: 10, slug: 'alice' },
+    });
+    // Submitter's own email matches contactEmail below — bypass-eligible (D5), so these tests
+    // exercise the direct-create path (no confirmation email round-trip).
+    findPersonById.mockResolvedValue({
+      id: 10,
+      slug: 'alice',
+      email: 'alice@example.org',
     });
     findBankCustomerByPersonAndProvider.mockResolvedValue(null);
     insertBankCustomer.mockResolvedValue({
@@ -97,7 +108,7 @@ describe('requestPersonalBankOnboarding', () => {
           requestedRails: [...onboardingInput.requestedRails],
         },
         { db: mockDb },
-        { kycProvider: mockProvider },
+        { kycProvider: mockProvider, sendConfirmationEmail },
       ),
     ).rejects.toMatchObject({
       status: 404,
@@ -119,7 +130,7 @@ describe('requestPersonalBankOnboarding', () => {
           requestedRails: [...onboardingInput.requestedRails],
         },
         { db: mockDb },
-        { kycProvider: mockProvider },
+        { kycProvider: mockProvider, sendConfirmationEmail },
       ),
     ).rejects.toMatchObject({ status: 403 });
     expect(mockProvider.createKycLink).not.toHaveBeenCalled();
@@ -148,7 +159,7 @@ describe('requestPersonalBankOnboarding', () => {
         requestedRails: [...onboardingInput.requestedRails],
       },
       { db: mockDb },
-      { kycProvider: mockProvider },
+      { kycProvider: mockProvider, sendConfirmationEmail },
     );
 
     expect(result.created).toBe(false);
@@ -169,7 +180,7 @@ describe('requestPersonalBankOnboarding', () => {
         requestedRails: [...onboardingInput.requestedRails],
       },
       { db: mockDb },
-      { kycProvider: mockProvider },
+      { kycProvider: mockProvider, sendConfirmationEmail },
     );
 
     expect(mockProvider.createKycLink).toHaveBeenCalledWith(

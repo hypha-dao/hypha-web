@@ -12,6 +12,13 @@ export async function resolveBridgeCustomerId(
     return { customerId: customer.providerCustomerId, customer };
   }
 
+  if (!customer.providerKycLinkId) {
+    throw new BankOnboardingError(
+      'Bridge customer ID is not available yet. Open the verification form once, then try again.',
+      422,
+    );
+  }
+
   const link = await bridgeGetKycLink(customer.providerKycLinkId);
   const customerId = link.customer_id ?? null;
 

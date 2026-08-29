@@ -962,7 +962,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Условите не се прифатени",
+        "title": "Верификацијата не е започната",
         "description": "Прифатете ги условите за користење за да продолжите."
       },
       "approved": {
@@ -1009,14 +1009,16 @@
       "currenciesDescription": "Изберете ги валутите што овој простор ќе ги користи за банкарски депозити и исплати. Вашата организација ќе биде верификувана еднаш кај нашиот банкарски партнер.",
       "currenciesHint": "Можете да додадете повеќе валути подоцна од Банкарските поставки.",
       "submit": "Продолжи",
-      "legalName": "Legal entity name",
-      "contactEmail": "Contact email",
+      "legalName": "Правно име на субјектот",
+      "contactEmail": "Е-пошта на клиентот на Bridge",
       "person": {
-        "organizationLegend": "Your details",
-        "organizationHint": "Your details are sent to our banking partner for verification and are not stored on Hypha.",
-        "legalName": "Full name",
-        "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
-      }
+        "organizationLegend": "Вашите податоци",
+        "organizationHint": "Вашите податоци се испраќаат до нашиот банкарски партнер за верификација и не се чуваат на Hypha.",
+        "legalName": "Целосно име",
+        "currenciesDescription": "Изберете ги валутите што сакате да ги користите за банкарски исплати. Ќе бидете верификувани еднаш кај нашиот банкарски партнер."
+      },
+      "bypassEligibleHint": "Ова е вашата сопствена верификувана е-пошта — не е потребен дополнителен чекор за потврда.",
+      "confirmationRequiredHint": "Ќе испратиме линк за потврда на оваа адреса пред да ја овозможиме, бидејќи не е вашата сопствена верификувана е-пошта."
     },
     "notStarted": {
       "description": "Банкарството сè уште не е поставено за овој простор.",
@@ -1233,6 +1235,12 @@
         "title": "Статусот не е достапен",
         "description": "Не можевме да го утврдиме тековниот статус на верификацијата. Обидете се да освежите."
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Потврдете ја вашата е-пошта на клиентот на Bridge",
+      "description": "Испративме линк за потврда на е-поштата што ја внесовте. Кликнете на него за да продолжите со поставувањето на банкарството — нема да контактираме со Bridge додека не потврдите.",
+      "resendCta": "Испрати ја повторно е-поштата за потврда",
+      "resending": "Се испраќа повторно…"
     }
   },
   "TreasuryTab": {
@@ -4394,5 +4402,19 @@
     "support": "Мирниот работен простор за колективно дејствување.",
     "ctaEnter": "Влези",
     "ctaExplore": "Истражи мрежа"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Ја потврдуваме вашата е-пошта…",
+    "loadingDescription": "Почекајте додека го верификуваме вашиот линк за потврда.",
+    "successTitle": "Е-поштата е потврдена",
+    "successDescription": "Ви благодариме — {ownerLabel} сега може да продолжи со верификацијата на Bridge.",
+    "errorExpiredTitle": "Линкот истече",
+    "errorExpiredDescription": "Овој линк за потврда истече. Вратете се во поставките за банкарство и испратете го повторно.",
+    "errorInvalidTitle": "Линкот повеќе не е валиден",
+    "errorInvalidDescription": "Овој линк за потврда повеќе не е валиден — можеби веќе бил искористен или заменет со поново барање.",
+    "errorAlreadyConfirmedTitle": "Веќе потврдено",
+    "errorAlreadyConfirmedDescription": "Оваа е-пошта е веќе потврдена.",
+    "errorGenericTitle": "Нешто тргна наопаку",
+    "errorGenericDescription": "Не можевме да ја потврдиме оваа е-пошта. Обидете се повторно подоцна."
   }
 }

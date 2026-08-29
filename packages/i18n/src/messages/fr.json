@@ -3528,7 +3528,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Conditions non acceptées",
+        "title": "Vérification non commencée",
         "description": "Acceptez les conditions d'utilisation pour continuer."
       },
       "approved": {
@@ -3572,7 +3572,7 @@
       "organizationLegend": "Informations sur l'organisation",
       "organizationHint": "Les informations sur l'organisation sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
       "legalName": "Nom légal de l'entité",
-      "contactEmail": "E-mail de contact",
+      "contactEmail": "E-mail du client Bridge",
       "currenciesTitle": "Devises que vous souhaitez utiliser",
       "currenciesDescription": "Sélectionnez les devises que cet espace utilisera pour les dépôts et paiements bancaires. Votre organisation sera vérifiée une fois avec notre partenaire bancaire.",
       "currenciesHint": "Vous pourrez ajouter d'autres devises plus tard depuis les paramètres bancaires.",
@@ -3582,7 +3582,9 @@
         "organizationHint": "Vos informations sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
         "legalName": "Nom complet",
         "currenciesDescription": "Sélectionnez les devises que vous souhaitez utiliser pour les paiements bancaires. Vous serez vérifié une fois avec notre partenaire bancaire."
-      }
+      },
+      "bypassEligibleHint": "Il s'agit de votre propre e-mail vérifié — aucune étape de confirmation supplémentaire n'est nécessaire.",
+      "confirmationRequiredHint": "Nous enverrons un lien de confirmation à cette adresse avant de l'activer, car ce n'est pas votre e-mail vérifié enregistré."
     },
     "notStarted": {
       "description": "Les services bancaires ne sont pas encore configurés pour ce space.",
@@ -3799,6 +3801,12 @@
         "title": "Statut indisponible",
         "description": "Impossible de déterminer le statut de vérification actuel. Essayez d'actualiser."
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirmez votre e-mail client Bridge",
+      "description": "Nous avons envoyé un lien de confirmation à l'adresse e-mail que vous avez indiquée. Cliquez dessus pour continuer la configuration bancaire — nous ne contacterons pas Bridge tant que vous n'aurez pas confirmé.",
+      "resendCta": "Renvoyer l'e-mail de confirmation",
+      "resending": "Envoi en cours…"
     }
   },
   "Calendar": {
@@ -4403,5 +4411,19 @@
     "support": "L’espace de travail calme pour l’action collective — gouvernance, trésorerie et communauté.",
     "ctaEnter": "Entrer",
     "ctaExplore": "Explorer le réseau"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Confirmation de votre e-mail…",
+    "loadingDescription": "Un instant, nous vérifions votre lien de confirmation.",
+    "successTitle": "E-mail confirmé",
+    "successDescription": "Merci — {ownerLabel} peut désormais poursuivre la vérification Bridge.",
+    "errorExpiredTitle": "Lien expiré",
+    "errorExpiredDescription": "Ce lien de confirmation a expiré. Retournez aux paramètres bancaires et renvoyez-le.",
+    "errorInvalidTitle": "Lien non valide",
+    "errorInvalidDescription": "Ce lien de confirmation n'est plus valide — il a peut-être déjà été utilisé ou remplacé par une demande plus récente.",
+    "errorAlreadyConfirmedTitle": "Déjà confirmé",
+    "errorAlreadyConfirmedDescription": "Cet e-mail a déjà été confirmé.",
+    "errorGenericTitle": "Un problème est survenu",
+    "errorGenericDescription": "Nous n'avons pas pu confirmer cet e-mail. Veuillez réessayer plus tard."
   }
 }

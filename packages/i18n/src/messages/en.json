@@ -982,7 +982,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Terms not accepted",
+        "title": "Verification not started",
         "description": "Accept the terms of service to continue."
       },
       "approved": {
@@ -1026,7 +1026,9 @@
       "organizationLegend": "Organization details",
       "organizationHint": "Organization details are sent to our banking partner for verification and are not stored on Hypha.",
       "legalName": "Legal entity name",
-      "contactEmail": "Contact email",
+      "contactEmail": "Bridge customer email",
+      "bypassEligibleHint": "This is your own verified email — no extra confirmation step needed.",
+      "confirmationRequiredHint": "We'll send a confirmation link to this address before enabling it, since it's not your own verified email on file.",
       "currenciesTitle": "Currencies you want to use",
       "currenciesDescription": "Select the currencies this space will use for bank deposits and payouts. Your organization will be verified once with our banking partner.",
       "currenciesHint": "You can add more currencies later from Banking settings.",
@@ -1037,6 +1039,12 @@
         "legalName": "Full name",
         "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirm your Bridge customer email",
+      "description": "We sent a confirmation link to the email address you entered. Click it to continue setting up banking — we won't contact Bridge until you confirm.",
+      "resendCta": "Resend confirmation email",
+      "resending": "Resending…"
     },
     "notStarted": {
       "description": "Banking is not set up for this space yet.",
@@ -4415,5 +4423,19 @@
     "support": "The calm workspace for collective action — governance, treasury, and community in one place.",
     "ctaEnter": "Enter",
     "ctaExplore": "Explore network"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Confirming your email…",
+    "loadingDescription": "Hang tight while we verify your confirmation link.",
+    "successTitle": "Email confirmed",
+    "successDescription": "Thanks — {ownerLabel} can now continue with Bridge verification.",
+    "errorExpiredTitle": "Link expired",
+    "errorExpiredDescription": "This confirmation link has expired. Go back to Banking settings and resend it.",
+    "errorInvalidTitle": "Link no longer valid",
+    "errorInvalidDescription": "This confirmation link is no longer valid — it may have already been used, or replaced by a newer request.",
+    "errorAlreadyConfirmedTitle": "Already confirmed",
+    "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
+    "errorGenericTitle": "Something went wrong",
+    "errorGenericDescription": "We could not confirm this email. Please try again later."
   }
 }

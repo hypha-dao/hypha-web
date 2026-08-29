@@ -1,8 +1,16 @@
-import type { BankProvider } from './types';
+import type { BankProvider, BankValidationRequirement } from './types';
 import type { BridgeEndorsement } from './server/providers/bridge/endorsements';
 
 /** Default banking provider for space onboarding (Stage 1). */
 export const DEFAULT_BANK_PROVIDER: BankProvider = 'bridge';
+
+/** Placeholder tos/kyc validation shown while a #2288 email-ownership confirmation is pending. */
+export const PENDING_EMAIL_CONFIRMATION_VALIDATION: BankValidationRequirement =
+  {
+    key: 'pending_email_confirmation',
+    status: null,
+    isComplete: false,
+  };
 
 /** Source currencies supported for Bridge virtual accounts (Stage 2). */
 export const BANK_VIRTUAL_ACCOUNT_CURRENCIES = [

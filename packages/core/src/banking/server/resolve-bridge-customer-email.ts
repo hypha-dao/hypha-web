@@ -26,6 +26,13 @@ function readEmailFromRecord(value: unknown): string | null {
 export async function resolveBridgeCustomerEmail(
   customer: Pick<BankCustomer, 'providerKycLinkId' | 'providerCustomerId'>,
 ): Promise<string> {
+  if (!customer.providerKycLinkId) {
+    throw new BankOnboardingError(
+      'Could not resolve contact email from Bridge. Complete base verification first.',
+      422,
+    );
+  }
+
   const kycLink = await bridgeGetKycLink(customer.providerKycLinkId);
   const fromLink = readEmailFromRecord(kycLink);
   if (fromLink) {

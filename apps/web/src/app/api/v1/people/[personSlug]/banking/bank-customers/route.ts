@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authenticatePersonalBankCustomerRequest } from '@web/lib/bank-customers/authenticate-personal-bank-customer-request';
 import { sendBankOnboardingEmail } from '@web/lib/bank-customers/send-onboarding-email';
+import { sendBankEmailConfirmationEmail } from '@web/lib/bank-customers/send-email-confirmation';
 
 type Params = { personSlug: string };
 
@@ -95,6 +96,14 @@ export async function POST(
         requestedRails: requestedRails ?? endorsements,
       },
       { db },
+      {
+        sendConfirmationEmail: ({ token, ownerLabel }) =>
+          sendBankEmailConfirmationEmail({
+            recipientEmail: contactEmail,
+            ownerLabel,
+            token,
+          }),
+      },
     );
 
     if (result.created && result.kycLink) {

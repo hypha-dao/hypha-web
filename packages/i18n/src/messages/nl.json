@@ -982,7 +982,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Voorwaarden niet geaccepteerd",
+        "title": "Verificatie nog niet gestart",
         "description": "Accepteer de servicevoorwaarden om door te gaan."
       },
       "approved": {
@@ -1026,7 +1026,7 @@
       "organizationLegend": "Organisatiegegevens",
       "organizationHint": "Organisatiegegevens worden ter verificatie naar onze bankpartner gestuurd en worden niet op Hypha opgeslagen.",
       "legalName": "Naam van juridische entiteit",
-      "contactEmail": "E-mailadres voor contact",
+      "contactEmail": "E-mailadres van de Bridge-klant",
       "currenciesTitle": "Valuta's die u wilt gebruiken",
       "currenciesDescription": "Selecteer de valuta's die deze ruimte zal gebruiken voor bankstortingen en uitbetalingen. Uw organisatie wordt eenmalig geverifieerd bij onze bankpartner.",
       "currenciesHint": "U kunt later meer valuta's toevoegen via Bankinstellingen.",
@@ -1036,7 +1036,9 @@
         "organizationHint": "Je gegevens worden ter verificatie naar onze bankpartner gestuurd en worden niet op Hypha opgeslagen.",
         "legalName": "Volledige naam",
         "currenciesDescription": "Selecteer de valuta die u wilt gebruiken voor bankuitbetalingen. U wordt eenmalig geverifieerd bij onze bankpartner."
-      }
+      },
+      "bypassEligibleHint": "Dit is uw eigen geverifieerde e-mailadres — geen extra bevestigingsstap nodig.",
+      "confirmationRequiredHint": "We sturen een bevestigingslink naar dit adres voordat we het inschakelen, omdat dit niet uw eigen geverifieerde e-mailadres is."
     },
     "notStarted": {
       "description": "Bankieren is nog niet ingesteld voor deze ruimte.",
@@ -1253,6 +1255,12 @@
         "title": "Status niet beschikbaar",
         "description": "We kunnen de huidige verificatiestatus niet vaststellen. Probeer te vernieuwen."
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Bevestig het e-mailadres van de Bridge-klant",
+      "description": "We hebben een bevestigingslink gestuurd naar het e-mailadres dat u hebt ingevoerd. Klik erop om door te gaan met het instellen van banking — we nemen pas contact op met Bridge zodra u heeft bevestigd.",
+      "resendCta": "Bevestigingsmail opnieuw versturen",
+      "resending": "Opnieuw verzenden…"
     }
   },
   "TreasuryTab": {
@@ -4413,5 +4421,19 @@
     "support": "De rustige werkruimte voor collectieve actie.",
     "ctaEnter": "Binnenkomen",
     "ctaExplore": "Netwerk verkennen"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Uw e-mail wordt bevestigd…",
+    "loadingDescription": "Een moment geduld terwijl we uw bevestigingslink verifiëren.",
+    "successTitle": "E-mail bevestigd",
+    "successDescription": "Bedankt — {ownerLabel} kan nu doorgaan met de Bridge-verificatie.",
+    "errorExpiredTitle": "Link verlopen",
+    "errorExpiredDescription": "Deze bevestigingslink is verlopen. Ga terug naar de bankinstellingen en verstuur deze opnieuw.",
+    "errorInvalidTitle": "Link niet meer geldig",
+    "errorInvalidDescription": "Deze bevestigingslink is niet meer geldig — deze is mogelijk al gebruikt of vervangen door een nieuwer verzoek.",
+    "errorAlreadyConfirmedTitle": "Al bevestigd",
+    "errorAlreadyConfirmedDescription": "Dit e-mailadres is al bevestigd.",
+    "errorGenericTitle": "Er is iets misgegaan",
+    "errorGenericDescription": "We konden dit e-mailadres niet bevestigen. Probeer het later opnieuw."
   }
 }
