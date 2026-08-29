@@ -43,7 +43,7 @@ function toPayoutTokens(tokens: ExtendedToken[]): PayoutToken[] {
     icon: token.icon,
     symbol: token.symbol,
     space: token.space,
-    type: token.type === 'liquid' ? null : token.type,
+    type: token.type,
   }));
 }
 

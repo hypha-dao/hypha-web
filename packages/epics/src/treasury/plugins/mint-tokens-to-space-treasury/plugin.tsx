@@ -12,21 +12,14 @@ import {
   FormLabel,
 } from '@hypha-platform/ui';
 import { TokenPayoutField } from '../../../agreements/plugins/components/common/token-payout-field';
-import { useTokens, useTokenSupply } from '../../hooks';
+import { useTokens, useTokenSupply, type ExtendedToken } from '../../hooks';
 import { useFormContext } from 'react-hook-form';
-import { DbToken, Token } from '@hypha-platform/core/client';
+import { DbToken } from '@hypha-platform/core/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useDbTokens } from '../../../hooks';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
-
-interface ExtendedToken extends Token {
-  space?: {
-    title: string;
-    slug: string;
-  };
-}
 
 export const MintTokensToSpaceTreasuryPlugin = ({
   spaceSlug,

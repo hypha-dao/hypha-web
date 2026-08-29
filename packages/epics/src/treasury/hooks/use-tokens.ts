@@ -1,15 +1,37 @@
 'use client';
 
-import { TOKENS } from '@hypha-platform/core/client';
+import {
+  TOKENS,
+  Token,
+  TokenType,
+  validTokenTypes,
+} from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import React from 'react';
-import { Token } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-export interface ExtendedToken extends Token {
+export interface ExtendedToken extends Omit<Token, 'type'> {
+  type: TokenType | null;
   space?: {
     title: string;
     slug: string;
+  };
+}
+
+function toPickerTokenType(type: Token['type']): TokenType | null {
+  if (type != null && (validTokenTypes as readonly string[]).includes(type)) {
+    return type as TokenType;
+  }
+  return null;
+}
+
+function toExtendedToken(
+  asset: Token & { space?: ExtendedToken['space'] },
+): ExtendedToken {
+  return {
+    ...asset,
+    type: toPickerTokenType(asset.type),
+    space: asset.space,
   };
 }
 
@@ -71,16 +93,8 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
     },
   );
 
-  const tokens = React.useMemo(() => {
-    if (!data) return TOKENS;
-    return data.map((asset) => ({
-      address: asset.address,
-      icon: asset.icon,
-      name: asset.name,
-      type: asset.type,
-      symbol: asset.symbol,
-      space: asset.space,
-    }));
+  const tokens = React.useMemo((): ExtendedToken[] => {
+    return (data ?? TOKENS).map(toExtendedToken);
   }, [data]);
 
   return {
@@ -133,14 +147,7 @@ export function useWalletTransferableTokens({
     if (!data?.assets) return [];
     return (data.assets as ExtendedToken[])
       .filter((asset) => asset.transferable !== false)
-      .map((asset) => ({
-        address: asset.address,
-        icon: asset.icon,
-        name: asset.name,
-        type: asset.type,
-        symbol: asset.symbol,
-        space: asset.space,
-      }));
+      .map(toExtendedToken);
   }, [data]);
 
   return {
