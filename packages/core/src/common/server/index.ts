@@ -19,6 +19,7 @@ export * from './get-token-balances-by-address';
 
 export * from './alchemy-client';
 export * from './bridge-client';
+export * from './sign-bank-confirmation-jwt';
 export * from './bridge-sandbox';
 export * from './get-app-url';
 export * from './verify-privy-auth-token';

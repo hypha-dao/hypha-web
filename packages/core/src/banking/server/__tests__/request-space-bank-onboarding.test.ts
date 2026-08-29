@@ -7,12 +7,17 @@ import type { BankKycProvider } from '../providers/types';
 
 const findSpaceBySlug = vi.fn();
 const authorizeSpaceBankOnboarding = vi.fn();
+const findPersonById = vi.fn();
 const findBankCustomerBySpaceAndProvider = vi.fn();
 const insertBankCustomer = vi.fn();
 const bridgeGetKycLink = vi.fn();
 
 vi.mock('../../../space/server/queries', () => ({
   findSpaceBySlug: (...args: unknown[]) => findSpaceBySlug(...args),
+}));
+
+vi.mock('../../../people/server/queries', () => ({
+  findPersonById: (...args: unknown[]) => findPersonById(...args),
 }));
 
 vi.mock('../authorize-space-bank-onboarding', () => ({
@@ -66,6 +71,8 @@ const mockProvider: BankKycProvider = {
   }),
 };
 
+const sendConfirmationEmail = vi.fn().mockResolvedValue(undefined);
+
 describe('requestSpaceBankOnboarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,6 +86,13 @@ describe('requestSpaceBankOnboarding', () => {
     authorizeSpaceBankOnboarding.mockResolvedValue({
       authorized: true,
       person: { id: 10, slug: 'alice' },
+    });
+    // Submitter's own email matches contactEmail below — bypass-eligible (D5), so these tests
+    // exercise the direct-create path (no confirmation email round-trip).
+    findPersonById.mockResolvedValue({
+      id: 10,
+      slug: 'alice',
+      email: 'compliance@acme.org',
     });
     findBankCustomerBySpaceAndProvider.mockResolvedValue(null);
     insertBankCustomer.mockResolvedValue({
@@ -98,7 +112,7 @@ describe('requestSpaceBankOnboarding', () => {
           requestedRails: [...onboardingInput.requestedRails],
         },
         { db: mockDb },
-        { kycProvider: mockProvider },
+        { kycProvider: mockProvider, sendConfirmationEmail },
       ),
     ).rejects.toMatchObject({
       status: 404,
@@ -129,7 +143,7 @@ describe('requestSpaceBankOnboarding', () => {
         requestedRails: [...onboardingInput.requestedRails],
       },
       { db: mockDb },
-      { kycProvider: mockProvider },
+      { kycProvider: mockProvider, sendConfirmationEmail },
     );
 
     expect(result.created).toBe(false);
@@ -150,7 +164,7 @@ describe('requestSpaceBankOnboarding', () => {
         requestedRails: [...onboardingInput.requestedRails],
       },
       { db: mockDb },
-      { kycProvider: mockProvider },
+      { kycProvider: mockProvider, sendConfirmationEmail },
     );
 
     expect(mockProvider.createKycLink).toHaveBeenCalledWith(

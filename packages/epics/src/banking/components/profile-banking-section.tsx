@@ -29,6 +29,7 @@ import { BankingAdvancedDialog } from './banking-advanced-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
+import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import { PayoutAccountDetailDialog } from './payout-account-detail-dialog';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
@@ -131,6 +132,9 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   const [addPayoutDialogOpen, setAddPayoutDialogOpen] = useState(false);
   const [detailAccount, setDetailAccount] =
     useState<BankPayoutAccountPublic | null>(null);
+  /** #2288 — re-shows BankingInitialSetup so the submitter can retype the email and resend. */
+  const [showEmailConfirmationResend, setShowEmailConfirmationResend] =
+    useState(false);
 
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
@@ -223,6 +227,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
         contactEmail: input.contactEmail,
         requestedRails: input.currencies,
       });
+      setShowEmailConfirmationResend(false);
       const updated = await refresh();
       openBankVerificationFlowLink(updated ?? undefined);
     },
@@ -239,7 +244,10 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     );
   }
 
-  if (!hasCustomer) {
+  if (
+    !hasCustomer ||
+    (status?.pendingEmailConfirmation && showEmailConfirmationResend)
+  ) {
     if (!canManage) {
       return (
         <p className="text-2 text-muted-foreground">
@@ -256,6 +264,16 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
         error={onboardingError}
         ownerContext="person"
         onSubmit={handleInitialSetupSubmit}
+      />
+    );
+  }
+
+  if (status?.pendingEmailConfirmation) {
+    return (
+      <PendingEmailConfirmationCard
+        onResend={
+          canManage ? () => setShowEmailConfirmationResend(true) : undefined
+        }
       />
     );
   }

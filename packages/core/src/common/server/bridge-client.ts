@@ -526,6 +526,26 @@ export async function bridgeUpdateCustomer(
   });
 }
 
+/**
+ * Bridge dedups customers by email (#2288) — this surfaces an existing customer under `email`
+ * *before* calling `bridgeCreateKycLink`, so the ownership-confirmation flow can inform the user
+ * rather than only finding out via `bridgeCreateKycLink`'s reactive `existing_kyc_link` 400-fallback
+ * (which stays in place as a safety net regardless — see decisions D7/D8). Called only after
+ * ownership of `email` is proven (bypass match or clicked confirmation link) — result informs, does
+ * not block (D7).
+ */
+export async function bridgeFindCustomerByEmail(
+  email: string,
+): Promise<BridgeGetCustomerResponse | null> {
+  const parsed = await bridgeRequest(
+    `/v0/customers?email=${encodeURIComponent(email)}`,
+    { method: 'GET' },
+  );
+
+  const { data } = parseBridgeListResponse(parsed, isBridgeCustomerRecord);
+  return data[0] ?? null;
+}
+
 export async function bridgeCreateVirtualAccount(
   customerId: string,
   body: BridgeCreateVirtualAccountRequest,

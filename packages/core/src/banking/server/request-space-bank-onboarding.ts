@@ -1,30 +1,40 @@
-import { randomUUID } from 'node:crypto';
-
 import type { DatabaseInstance } from '../../common/server/types';
-import { DEFAULT_BANK_PROVIDER } from '../constants';
+import {
+  DEFAULT_BANK_PROVIDER,
+  PENDING_EMAIL_CONFIRMATION_VALIDATION,
+} from '../constants';
 import { findSpaceBySlug } from '../../space/server/queries';
+import { findPersonById } from '../../people/server/queries';
 import type {
   BankOnboardingResult,
   RequestSpaceBankOnboardingInput,
 } from '../types';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
-import { insertBankCustomer } from './mutations';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
-import { currenciesToEndorsements } from '../constants';
-import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
-import { bridgeGetKycLink } from '../../common/server/bridge-client';
-import { findBankCustomerBySpaceAndProvider } from './queries';
+import {
+  requestBankOnboardingWithConfirmation,
+  type BankOnboardingOwnerRef,
+} from './bank-onboarding-confirmation';
 
 export type RequestSpaceBankOnboardingOptions = {
   kycProvider?: BankKycProvider;
+  /**
+   * Sends the #2288 ownership-confirmation email. Never receives anything but the token to embed
+   * in the link — the token itself must never appear in this function's return value (D6).
+   */
+  sendConfirmationEmail: (input: {
+    token: string;
+    ownerLabel: string;
+    contactEmail: string;
+  }) => Promise<void>;
 };
 
 export async function requestSpaceBankOnboarding(
   input: RequestSpaceBankOnboardingInput,
   { db }: { db: DatabaseInstance },
-  options?: RequestSpaceBankOnboardingOptions,
+  options: RequestSpaceBankOnboardingOptions,
 ): Promise<BankOnboardingResult> {
   const {
     spaceSlug,
@@ -49,81 +59,57 @@ export async function requestSpaceBankOnboarding(
     throw new BankOnboardingError(auth.message, auth.httpStatus);
   }
 
-  const emailMeta = {
-    spaceTitle: space.title,
-    requesterSlug: auth.person.slug ?? null,
+  const submitter = await findPersonById({ id: auth.person.id }, { db });
+
+  const ownerRef: BankOnboardingOwnerRef = {
+    type: 'space',
+    id: space.id,
+    slug: space.slug,
+    label: space.title,
   };
 
-  const existing = await findBankCustomerBySpaceAndProvider(
-    { spaceId: space.id, provider: DEFAULT_BANK_PROVIDER },
+  const result = await requestBankOnboardingWithConfirmation(
+    {
+      ownerRef,
+      entityType: 'business',
+      legalName,
+      contactEmail,
+      requestedRails,
+      redirectUri,
+      submitterPersonId: auth.person.id,
+      submitterEmail: submitter?.email ?? null,
+      sendConfirmationEmail: options.sendConfirmationEmail,
+    },
     { db },
+    {
+      kycProvider:
+        options.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER),
+    },
   );
 
-  if (existing) {
-    const kycLink = await bridgeGetKycLink(existing.providerKycLinkId);
-    const validations = buildCustomerValidations(kycLink);
-
+  if (result.kind === 'pendingConfirmation') {
     return {
       provider: DEFAULT_BANK_PROVIDER,
       created: false,
-      spaceTitle: emailMeta.spaceTitle,
-      requesterSlug: emailMeta.requesterSlug,
-      kycLink: validations.kycLink,
-      tosLink: validations.tosLink,
+      pendingEmailConfirmation: true,
+      spaceTitle: space.title,
+      requesterSlug: auth.person.slug ?? null,
+      kycLink: null,
+      tosLink: null,
       procedures: {
-        tos: validations.tos,
-        kyc: validations.kyc,
+        tos: PENDING_EMAIL_CONFIRMATION_VALIDATION,
+        kyc: PENDING_EMAIL_CONFIRMATION_VALIDATION,
       },
     };
   }
 
-  const normalizedRails = requestedRails?.map((r) => r.toLowerCase()) ?? [];
-  const endorsements = currenciesToEndorsements(normalizedRails);
-
-  const idempotencyKey = randomUUID();
-  const kycProvider =
-    options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
-
-  const kycLinkResult = await kycProvider.createKycLink({
-    entityType: 'business',
-    legalName,
-    contactEmail,
-    idempotencyKey,
-    endorsements,
-    redirectUri,
-  });
-
-  await insertBankCustomer(
-    {
-      spaceId: space.id,
-      entityType: 'business',
-      provider: DEFAULT_BANK_PROVIDER,
-      providerCustomerId: kycLinkResult.providerCustomerId,
-      providerKycLinkId: kycLinkResult.providerKycLinkId,
-      requestedRails: normalizedRails,
-    },
-    { db },
-  );
-
-  const validations = buildCustomerValidations({
-    id: kycLinkResult.providerKycLinkId,
-    kyc_link: kycLinkResult.kycLink,
-    kyc_status: kycLinkResult.kycStatus,
-    tos_status: kycLinkResult.tosStatus,
-    tos_link: kycLinkResult.tosLink,
-    customer_id: kycLinkResult.providerCustomerId,
-  });
-
   return {
     provider: DEFAULT_BANK_PROVIDER,
-    created: true,
-    spaceTitle: emailMeta.spaceTitle,
-    requesterSlug: emailMeta.requesterSlug,
-    kycLink: validations.kycLink,
-    tosLink: validations.tosLink,
-    procedures: {
-      tos: validations.tos,
-      kyc: validations.kyc,
-    },
+    created: result.kind === 'created',
+    spaceTitle: space.title,
+    requesterSlug: auth.person.slug ?? null,
+    kycLink: result.kycLink,
+    tosLink: result.tosLink,
+    procedures: result.procedures,
   };
 }

@@ -1051,7 +1051,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Bedingungen nicht akzeptiert",
+        "title": "Verifizierung nicht gestartet",
         "description": "Akzeptieren Sie die Nutzungsbedingungen, um fortzufahren."
       },
       "approved": {
@@ -1095,7 +1095,7 @@
       "organizationLegend": "Organisationsdetails",
       "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
       "legalName": "Rechtlicher Name der Organisation",
-      "contactEmail": "Kontakt-E-Mail",
+      "contactEmail": "Bridge-Kunden-E-Mail",
       "currenciesTitle": "Gewünschte Währungen",
       "currenciesDescription": "Wählen Sie die Währungen, die dieser Space für Bankeinzahlungen und Auszahlungen verwenden soll. Ihre Organisation wird einmalig von unserem Banking-Partner verifiziert.",
       "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
@@ -1105,7 +1105,9 @@
         "organizationHint": "Ihre Angaben werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
         "legalName": "Vollständiger Name",
         "currenciesDescription": "Wählen Sie die Währungen aus, die Sie für Bankauszahlungen verwenden möchten. Sie werden einmalig von unserem Banking-Partner verifiziert."
-      }
+      },
+      "bypassEligibleHint": "Dies ist Ihre eigene verifizierte E-Mail-Adresse — kein zusätzlicher Bestätigungsschritt erforderlich.",
+      "confirmationRequiredHint": "Wir senden einen Bestätigungslink an diese Adresse, bevor sie aktiviert wird, da dies nicht Ihre eigene hinterlegte, verifizierte E-Mail-Adresse ist."
     },
     "corridors": {
       "provisioning": "Wird eingerichtet…",
@@ -1254,6 +1256,12 @@
         "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYC-Daten simulieren",
         "cta": "KYC-Freigabe simulieren"
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Bestätigen Sie Ihre Bridge-Kunden-E-Mail",
+      "description": "Wir haben einen Bestätigungslink an die von Ihnen eingegebene E-Mail-Adresse gesendet. Klicken Sie darauf, um mit der Einrichtung des Bankings fortzufahren — wir kontaktieren Bridge erst, wenn Sie bestätigt haben.",
+      "resendCta": "Bestätigungs-E-Mail erneut senden",
+      "resending": "Wird erneut gesendet…"
     }
   },
   "TreasuryTab": {
@@ -4407,5 +4415,19 @@
     "support": "Der ruhige Workspace für kollektives Handeln — Governance, Treasury und Community an einem Ort.",
     "ctaEnter": "Eintreten",
     "ctaExplore": "Netzwerk erkunden"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "E-Mail wird bestätigt…",
+    "loadingDescription": "Einen Moment, wir überprüfen Ihren Bestätigungslink.",
+    "successTitle": "E-Mail bestätigt",
+    "successDescription": "Danke — {ownerLabel} kann nun mit der Bridge-Verifizierung fortfahren.",
+    "errorExpiredTitle": "Link abgelaufen",
+    "errorExpiredDescription": "Dieser Bestätigungslink ist abgelaufen. Gehen Sie zurück zu den Banking-Einstellungen und senden Sie ihn erneut.",
+    "errorInvalidTitle": "Link nicht mehr gültig",
+    "errorInvalidDescription": "Dieser Bestätigungslink ist nicht mehr gültig — er wurde möglicherweise bereits verwendet oder durch eine neuere Anfrage ersetzt.",
+    "errorAlreadyConfirmedTitle": "Bereits bestätigt",
+    "errorAlreadyConfirmedDescription": "Diese E-Mail-Adresse wurde bereits bestätigt.",
+    "errorGenericTitle": "Etwas ist schiefgelaufen",
+    "errorGenericDescription": "Wir konnten diese E-Mail-Adresse nicht bestätigen. Bitte versuchen Sie es später erneut."
   }
 }

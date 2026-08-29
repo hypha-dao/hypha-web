@@ -3532,7 +3532,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Términos no aceptados",
+        "title": "Verificación no iniciada",
         "description": "Acepte los términos del servicio para continuar."
       },
       "approved": {
@@ -3576,7 +3576,7 @@
       "organizationLegend": "Datos de la organización",
       "organizationHint": "Los datos de la organización se envían a nuestro socio bancario para verificación y no se almacenan en Hypha.",
       "legalName": "Nombre legal de la entidad",
-      "contactEmail": "Correo de contacto",
+      "contactEmail": "Correo del cliente de Bridge",
       "currenciesTitle": "Monedas que desea utilizar",
       "currenciesDescription": "Seleccione las monedas que este space utilizará para depósitos y pagos bancarios. Su organización será verificada una vez con nuestro socio bancario.",
       "currenciesHint": "Puede añadir más monedas más tarde desde la configuración bancaria.",
@@ -3586,7 +3586,9 @@
         "organizationHint": "Sus datos se envían a nuestro socio bancario para verificación y no se almacenan en Hypha.",
         "legalName": "Nombre completo",
         "currenciesDescription": "Seleccione las monedas que desea utilizar para pagos bancarios. Será verificado una vez con nuestro socio bancario."
-      }
+      },
+      "bypassEligibleHint": "Este es su propio correo verificado — no se necesita un paso de confirmación adicional.",
+      "confirmationRequiredHint": "Enviaremos un enlace de confirmación a esta dirección antes de habilitarla, ya que no es su propio correo verificado registrado."
     },
     "notStarted": {
       "description": "La banca aún no está configurada para este space.",
@@ -3803,6 +3805,12 @@
         "title": "Estado no disponible",
         "description": "No pudimos determinar el estado de verificación actual. Intente actualizar."
       }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirme su correo del cliente de Bridge",
+      "description": "Enviamos un enlace de confirmación a la dirección de correo que ingresó. Haga clic en él para continuar con la configuración bancaria — no contactaremos a Bridge hasta que confirme.",
+      "resendCta": "Reenviar correo de confirmación",
+      "resending": "Reenviando…"
     }
   },
   "Calendar": {
@@ -4407,5 +4415,19 @@
     "support": "El espacio de trabajo calmado para la acción colectiva.",
     "ctaEnter": "Entrar",
     "ctaExplore": "Explorar red"
+  },
+  "VerifyBanking": {
+    "loadingTitle": "Confirmando su correo…",
+    "loadingDescription": "Espere un momento mientras verificamos su enlace de confirmación.",
+    "successTitle": "Correo confirmado",
+    "successDescription": "Gracias — {ownerLabel} ya puede continuar con la verificación de Bridge.",
+    "errorExpiredTitle": "Enlace expirado",
+    "errorExpiredDescription": "Este enlace de confirmación ha expirado. Vuelva a la configuración de Banca y reenvíelo.",
+    "errorInvalidTitle": "Enlace ya no válido",
+    "errorInvalidDescription": "Este enlace de confirmación ya no es válido — es posible que ya se haya usado o que haya sido reemplazado por una solicitud más reciente.",
+    "errorAlreadyConfirmedTitle": "Ya confirmado",
+    "errorAlreadyConfirmedDescription": "Este correo ya ha sido confirmado.",
+    "errorGenericTitle": "Algo salió mal",
+    "errorGenericDescription": "No pudimos confirmar este correo. Inténtelo de nuevo más tarde."
   }
 }

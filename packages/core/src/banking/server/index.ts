@@ -6,6 +6,7 @@ export * from './queries';
 export * from './mutations';
 export * from './authorize-space-bank-onboarding';
 export * from './request-space-bank-onboarding';
+export * from './bank-onboarding-confirmation';
 export * from './get-space-bank-customer-public-status';
 export * from './get-space-bank-virtual-accounts';
 export * from './get-space-bank-transfers';
