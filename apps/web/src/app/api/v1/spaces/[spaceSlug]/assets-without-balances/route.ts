@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getTokenMeta,
+  getTokenBalancesByAddress,
   web3Client,
   findAllTokens,
 } from '@hypha-platform/core/server';
@@ -13,7 +14,10 @@ import {
   TOKENS,
   ALLOWED_SPACES,
   isHiddenToken,
+  selectKnownHeldTokens,
   getEnergyCommunityTokensForSpace,
+  getEnergyCommunityToken,
+  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -186,8 +190,29 @@ export async function GET(
       addressMap.set(token.address.toLowerCase(), token);
     });
 
-    // Do not merge Alchemy ERC-20 discovery — spam tokens with no DB/on-chain
-    // space registration must not appear in asset pickers.
+    // Include tokens this treasury holds that were issued by other spaces so
+    // proposal pickers (Deploy Funds, Pay for Expenses, …) match the treasury
+    // list. Alchemy discovers ERC-20s; keep only DB / catalogue /
+    // energy-community addresses so spam stays out.
+    const dbKnownAddresses = new Set(
+      rawDbTokens
+        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
+        .map((t) => t.address!.toLowerCase()),
+    );
+    for (const address of getEnergyCommunityTokenAddresses()) {
+      dbKnownAddresses.add(address);
+    }
+
+    try {
+      const held = await getTokenBalancesByAddress(spaceAddress);
+      for (const token of selectKnownHeldTokens(held, dbKnownAddresses)) {
+        const lower = token.address.toLowerCase();
+        if (addressMap.has(lower)) continue;
+        addressMap.set(lower, getEnergyCommunityToken(lower) ?? token);
+      }
+    } catch (error: unknown) {
+      console.warn('Failed to fetch held token balances:', error);
+    }
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
       (token) => !isHiddenToken(token.address),
