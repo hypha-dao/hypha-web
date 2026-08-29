@@ -78,11 +78,20 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
       const collected: ExtendedToken[] = [];
       let page = 1;
       let hasNextPage = true;
-      while (hasNextPage && page <= PICKER_MAX_PAGES) {
+      while (hasNextPage) {
+        if (page > PICKER_MAX_PAGES) {
+          throw new Error(
+            `Token picker exceeded ${PICKER_MAX_PAGES} pages of ${PICKER_PAGE_SIZE} tokens.`,
+          );
+        }
         const endpoint = `/api/v1/spaces/${slug}/assets-without-balances?page=${page}&pageSize=${PICKER_PAGE_SIZE}`;
-        const payload = (await fetch(endpoint, { headers }).then((res) =>
-          res.json(),
-        )) as AssetsWithoutBalancesPage;
+        const response = await fetch(endpoint, { headers });
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch assets without balances: ${response.status}`,
+          );
+        }
+        const payload = (await response.json()) as AssetsWithoutBalancesPage;
         const { items, hasNextPage: more } =
           readAssetsWithoutBalancesPage(payload);
         collected.push(...items);
