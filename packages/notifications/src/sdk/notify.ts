@@ -21,6 +21,14 @@ export async function notify(notification: Notification): Promise<string> {
 
     return response.id;
   } catch (error) {
+    // OneSignal's SDK throws an ApiException carrying the actual rejection reason in `body`
+    // (e.g. an invalid template_id) — log it here, since callers further up only see the
+    // generic message below and would otherwise have no way to tell what OneSignal objected to.
+    const apiError = error as { code?: number; body?: unknown };
+    console.error('[notifications] OneSignal createNotification failed', {
+      code: apiError?.code,
+      body: apiError?.body,
+    });
     throw new Error('Failed to create a notification', { cause: error });
   }
 }
