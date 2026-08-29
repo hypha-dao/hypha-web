@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getTokenMeta,
+  getTokenBalancesByAddress,
   web3Client,
   findAllTokens,
+  selectKnownHeldTokens,
+  getEnergyCommunityTokensForSpace,
+  getEnergyCommunityToken,
+  getEnergyCommunityTokenAddresses,
+  parseHttpPaginationParams,
+  buildPaginatedResponse,
 } from '@hypha-platform/core/server';
 import {
   getSpaceRegularTokens,
@@ -13,12 +20,16 @@ import {
   TOKENS,
   ALLOWED_SPACES,
   isHiddenToken,
-  getEnergyCommunityTokensForSpace,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
+/**
+ * Catalogue of tokens a space can pick in proposal forms (issued + held).
+ * Paginated via `page` / `pageSize`; pickers request a large page so the
+ * dropdown stays complete.
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -186,14 +197,35 @@ export async function GET(
       addressMap.set(token.address.toLowerCase(), token);
     });
 
-    // Do not merge Alchemy ERC-20 discovery — spam tokens with no DB/on-chain
-    // space registration must not appear in asset pickers.
+    // Include tokens this treasury holds that were issued by other spaces so
+    // proposal pickers (Deploy Funds, Pay for Expenses, …) match the treasury
+    // list. Alchemy discovers ERC-20s; keep only DB / catalogue /
+    // energy-community addresses so spam stays out.
+    const dbKnownAddresses = new Set(
+      rawDbTokens
+        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
+        .map((t) => t.address!.toLowerCase()),
+    );
+    for (const address of getEnergyCommunityTokenAddresses()) {
+      dbKnownAddresses.add(address);
+    }
+
+    try {
+      const held = await getTokenBalancesByAddress(spaceAddress);
+      for (const token of selectKnownHeldTokens(held, dbKnownAddresses)) {
+        const lower = token.address.toLowerCase();
+        if (addressMap.has(lower)) continue;
+        addressMap.set(lower, getEnergyCommunityToken(lower) ?? token);
+      }
+    } catch (error: unknown) {
+      console.warn('Failed to fetch held token balances:', error);
+    }
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
       (token) => !isHiddenToken(token.address),
     );
 
-    const assets = await Promise.all(
+    const resolvedAssets = await Promise.all(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
@@ -211,11 +243,26 @@ export async function GET(
       }),
     );
 
-    const validAssets = assets.filter((a) => a !== null) as NonNullable<
-      (typeof assets)[0]
+    const validAssets = resolvedAssets.filter((a) => a !== null) as NonNullable<
+      (typeof resolvedAssets)[0]
     >[];
 
-    return NextResponse.json({ assets: validAssets });
+    const { page, pageSize, offset } = parseHttpPaginationParams(
+      new URL(request.url),
+      { defaultPageSize: 500, maxPageSize: 500 },
+    );
+    const pageAssets = validAssets.slice(offset, offset + pageSize);
+
+    const payload = buildPaginatedResponse(
+      pageAssets,
+      validAssets.length,
+      page,
+      pageSize,
+    );
+    return NextResponse.json({
+      ...payload,
+      assets: payload.data,
+    });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
     return NextResponse.json(
