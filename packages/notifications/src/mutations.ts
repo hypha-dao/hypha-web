@@ -228,7 +228,7 @@ export const sendEmailNotificationsToEmails = async ({
   console.log('Send email to addresses...');
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
-    alias: { email_to: recipients },
+    alias: { include_email_tokens: recipients },
     content: { email_body: body, email_subject: subject },
   });
 };
@@ -256,7 +256,7 @@ export const sendEmailNotificationsTemplateToEmails = async ({
   console.log('Send email to addresses...');
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
-    alias: { email_to: recipients },
+    alias: { include_email_tokens: recipients },
     content: { template_id: templateId, custom_data: customData },
   });
 };
