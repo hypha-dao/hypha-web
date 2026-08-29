@@ -13,34 +13,67 @@ export interface ExtendedToken extends Token {
   };
 }
 
+const PICKER_PAGE_SIZE = 500;
+const PICKER_MAX_PAGES = 20;
+
+type AssetsWithoutBalancesPage = {
+  data?: ExtendedToken[];
+  assets?: ExtendedToken[];
+  pagination?: { hasNextPage?: boolean };
+};
+
+/** Read one picker page and whether more pages remain. */
+export function readAssetsWithoutBalancesPage(
+  payload: AssetsWithoutBalancesPage | null | undefined,
+): { items: ExtendedToken[]; hasNextPage: boolean } {
+  const list = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.assets)
+    ? payload.assets
+    : [];
+  return {
+    items: list,
+    hasNextPage: payload?.pagination?.hasNextPage === true,
+  };
+}
+
+/**
+ * Space token catalogue for proposal pickers. Follows
+ * `/assets-without-balances` pagination until every page is loaded.
+ */
 export function useTokens({ spaceSlug }: { spaceSlug: string }) {
   const { getAccessToken } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () =>
-      `/api/v1/spaces/${spaceSlug}/assets-without-balances?page=1&pageSize=500`,
-    [spaceSlug],
+  const { data, isLoading, mutate } = useSWR(
+    spaceSlug ? [spaceSlug, 'assets-without-balances'] : null,
+    async ([slug]: [string]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const collected: ExtendedToken[] = [];
+      let page = 1;
+      let hasNextPage = true;
+      while (hasNextPage && page <= PICKER_MAX_PAGES) {
+        const endpoint = `/api/v1/spaces/${slug}/assets-without-balances?page=${page}&pageSize=${PICKER_PAGE_SIZE}`;
+        const payload = (await fetch(endpoint, { headers }).then((res) =>
+          res.json(),
+        )) as AssetsWithoutBalancesPage;
+        const { items, hasNextPage: more } =
+          readAssetsWithoutBalancesPage(payload);
+        collected.push(...items);
+        hasNextPage = more;
+        page += 1;
+      }
+      return collected;
+    },
   );
 
-  const { data, isLoading, mutate } = useSWR([endpoint], async ([endpoint]) => {
-    const token = await getAccessToken();
-    const headers: HeadersInit = {};
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    return fetch(endpoint, { headers }).then((res) => res.json());
-  });
-
   const tokens = React.useMemo(() => {
-    const list = Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.assets)
-      ? data.assets
-      : null;
-    if (!list) return TOKENS;
-    const formattedAssets = list.map((asset: ExtendedToken) => ({
+    if (!data) return TOKENS;
+    return data.map((asset) => ({
       address: asset.address,
       icon: asset.icon,
       name: asset.name,
@@ -48,7 +81,6 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
       symbol: asset.symbol,
       space: asset.space,
     }));
-    return formattedAssets;
   }, [data]);
 
   return {

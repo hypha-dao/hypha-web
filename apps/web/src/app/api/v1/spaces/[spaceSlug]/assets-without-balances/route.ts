@@ -225,14 +225,8 @@ export async function GET(
       (token) => !isHiddenToken(token.address),
     );
 
-    const { page, pageSize, offset } = parseHttpPaginationParams(
-      new URL(request.url),
-      { defaultPageSize: 500, maxPageSize: 500 },
-    );
-    const pageTokens = allTokens.slice(offset, offset + pageSize);
-
-    const assets = await Promise.all(
-      pageTokens.map(async (token) => {
+    const resolvedAssets = await Promise.all(
+      allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
           if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
@@ -249,13 +243,19 @@ export async function GET(
       }),
     );
 
-    const validAssets = assets.filter((a) => a !== null) as NonNullable<
-      (typeof assets)[0]
+    const validAssets = resolvedAssets.filter((a) => a !== null) as NonNullable<
+      (typeof resolvedAssets)[0]
     >[];
 
+    const { page, pageSize, offset } = parseHttpPaginationParams(
+      new URL(request.url),
+      { defaultPageSize: 500, maxPageSize: 500 },
+    );
+    const pageAssets = validAssets.slice(offset, offset + pageSize);
+
     const payload = buildPaginatedResponse(
-      validAssets,
-      allTokens.length,
+      pageAssets,
+      validAssets.length,
       page,
       pageSize,
     );
