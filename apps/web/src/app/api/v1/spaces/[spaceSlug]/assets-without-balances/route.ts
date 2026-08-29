@@ -5,6 +5,12 @@ import {
   getTokenBalancesByAddress,
   web3Client,
   findAllTokens,
+  selectKnownHeldTokens,
+  getEnergyCommunityTokensForSpace,
+  getEnergyCommunityToken,
+  getEnergyCommunityTokenAddresses,
+  parseHttpPaginationParams,
+  buildPaginatedResponse,
 } from '@hypha-platform/core/server';
 import {
   getSpaceRegularTokens,
@@ -14,15 +20,16 @@ import {
   TOKENS,
   ALLOWED_SPACES,
   isHiddenToken,
-  selectKnownHeldTokens,
-  getEnergyCommunityTokensForSpace,
-  getEnergyCommunityToken,
-  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
+/**
+ * Catalogue of tokens a space can pick in proposal forms (issued + held).
+ * Paginated via `page` / `pageSize`; pickers request a large page so the
+ * dropdown stays complete.
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -218,8 +225,14 @@ export async function GET(
       (token) => !isHiddenToken(token.address),
     );
 
+    const { page, pageSize, offset } = parseHttpPaginationParams(
+      new URL(request.url),
+      { defaultPageSize: 500, maxPageSize: 500 },
+    );
+    const pageTokens = allTokens.slice(offset, offset + pageSize);
+
     const assets = await Promise.all(
-      allTokens.map(async (token) => {
+      pageTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
           if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
@@ -240,7 +253,16 @@ export async function GET(
       (typeof assets)[0]
     >[];
 
-    return NextResponse.json({ assets: validAssets });
+    const payload = buildPaginatedResponse(
+      validAssets,
+      allTokens.length,
+      page,
+      pageSize,
+    );
+    return NextResponse.json({
+      ...payload,
+      assets: payload.data,
+    });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
     return NextResponse.json(

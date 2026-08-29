@@ -8,6 +8,12 @@ export * from './get-currency-rates';
 // Pure helpers, re-exported here so server code can apply rates without
 // reaching into the client entry point.
 export * from '../web3/currency-conversion';
+export { selectKnownHeldTokens } from '../web3/tokens';
+export {
+  getEnergyCommunityTokensForSpace,
+  getEnergyCommunityToken,
+  getEnergyCommunityTokenAddresses,
+} from '../web3/energy-community-tokens';
 export * from './get-transfers-by-address';
 export * from './get-token-balances-by-address';
 

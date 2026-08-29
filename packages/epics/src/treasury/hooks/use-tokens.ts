@@ -17,7 +17,8 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
   const { getAccessToken } = useAuthentication();
 
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces/${spaceSlug}/assets-without-balances`,
+    () =>
+      `/api/v1/spaces/${spaceSlug}/assets-without-balances?page=1&pageSize=500`,
     [spaceSlug],
   );
 
@@ -33,8 +34,13 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
   });
 
   const tokens = React.useMemo(() => {
-    if (!data?.assets) return TOKENS;
-    const formattedAssets = data.assets.map((asset: ExtendedToken) => ({
+    const list = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.assets)
+      ? data.assets
+      : null;
+    if (!list) return TOKENS;
+    const formattedAssets = list.map((asset: ExtendedToken) => ({
       address: asset.address,
       icon: asset.icon,
       name: asset.name,
