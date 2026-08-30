@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 
+import { SpaceAccessDenied, UserSpaceState } from '../../spaces';
 import { ApprovedBankingDeposits } from './approved-banking-deposits';
 import type { ApprovedBankingDepositsProps } from './approved-banking-deposits';
 import { ApprovedBankingPayouts } from './approved-banking-payouts';
@@ -197,9 +198,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
         </div>
 
         {!isAuthenticated ? (
-          <p className="text-2 text-muted-foreground">
-            {tAccounts('signInHint')}
-          </p>
+          <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
         ) : activeTab === 'deposits' ? (
           <div className="flex flex-col gap-8">
             <section className="flex flex-col gap-4">

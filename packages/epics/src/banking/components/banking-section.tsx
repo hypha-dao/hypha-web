@@ -12,7 +12,11 @@ import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import { Empty } from '../../common';
-import { useSpaceMember } from '../../spaces';
+import {
+  SpaceAccessDenied,
+  useSpaceMember,
+  UserSpaceState,
+} from '../../spaces';
 import {
   useBankCustomerStatus,
   useBankTransfers,
@@ -179,15 +183,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
     hasOnChainSpace &&
     hasTreasuryAddress;
 
-  const blockerMessage = !isAuthenticated
-    ? tCommon('signIn')
-    : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : !hasOnChainSpace
-    ? t('blockers.notOnChain')
-    : !hasTreasuryAddress
-    ? t('blockers.noTreasury')
-    : null;
+  const blockerMessage =
+    !isMember && !isDelegate
+      ? tCommon('joinSpaceToUse')
+      : !hasOnChainSpace
+      ? t('blockers.notOnChain')
+      : !hasTreasuryAddress
+      ? t('blockers.noTreasury')
+      : null;
 
   const verificationInProgress = isBankVerificationInProgress(status);
 
@@ -237,6 +240,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
+  }
+
+  if (!isAuthenticated) {
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
   if (isStatusError) {

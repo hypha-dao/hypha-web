@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useMe } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 
+import { SpaceAccessDenied, UserSpaceState } from '../../spaces';
 import {
   useBankCustomerStatus,
   useBankTransfers,
@@ -51,7 +52,6 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   isMyProfile,
 }) => {
   const t = useTranslations('BankingTab');
-  const tCommon = useTranslations('Common');
   const tNotStarted = useTranslations('BankingTab.notStarted');
   const { isAuthenticated } = useAuthentication();
   const { person } = useMe();
@@ -167,9 +167,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   const hasWalletAddress = Boolean(person?.address);
   const canManageDeposits = canManage && hasWalletAddress;
 
-  const blockerMessage = !isAuthenticated
-    ? tCommon('signIn')
-    : !isMyProfile
+  const blockerMessage = !isMyProfile
     ? tNotStarted('person.description')
     : null;
 
@@ -236,6 +234,10 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
 
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
+  }
+
+  if (!isAuthenticated) {
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
   if (isStatusError) {
