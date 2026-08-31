@@ -62,15 +62,33 @@ believes. L1 is searched only for receipts. That split is what RAG-only designs 
 
 Where each layer physically lives:
 
-**L1 — substrate.** Already mostly exists: Matrix room events (coherence chat), uploaded
-documents, and — new — **call transcripts** posted back into the room after a huddle. One
-ingestion path: every new L1 event lands in Postgres (searchable, FTS) with a stable id the
-other layers can point at.
+**L1 — substrate.** Uploaded documents exist; chat does **not** — and this is the largest
+single build item in the design, not plumbing. Today Postgres holds only coherence room
+*metadata* (`roomId`, message counters); the message bodies live on the Matrix homeserver, and
+server-side access works through per-user access tokens. There is no appservice, bot, or sync
+worker. Getting to "every L1 event lands in Postgres (searchable, FTS) with a stable id" means
+building one: a Matrix appservice or bot user with reliable delivery, backfill for existing
+rooms, and an explicit privacy decision about mirroring room content into the app database
+(which rooms consent, what happens with E2EE). Call transcripts are new too, but they are the
+easy half — they arrive through our own ingest. The HEAR pass and features 2, 3, 5, and 9 all
+sit on this; treat it as its own project with its own owner.
 
 **L2 — activity ledger.** A Drizzle table (`activity_ledger`): `(space_id, actor, verb,
 object_type, object_id, evidence_event_id, created_at)`. The events table already sketched in
 the memory architecture — this design makes it real. Every work-object state change writes a
 row. Reviews and receipts are queries over this table.
+
+Two decisions this table forces:
+
+- **Relationship to the existing `events` table.** `storage-postgres` already has a
+  polymorphic `events` table (`type`, `referenceEntity`, `referenceId`, `params`). Two
+  half-overlapping event streams is a split-brain waiting to happen. Either extend `events`
+  with the ledger fields, or keep `activity_ledger` separate and state what `events` remains
+  for — decide before the first migration, not after.
+- **Completeness is enforced, not hoped for.** A ledger with holes is worse than none — reviews
+  and receipts would silently lie. "Every state change writes a row" must live in one shared
+  mutation helper that every work-object mutation goes through (or a DB trigger), not as a
+  convention each mutation remembers.
 
 **L3 — beliefs.** The Space Intelligence artifacts (markdown, versioned, human-approved — PR
 #2461). The **Shapers chat** is the write path: the agent drafts a new version, a Shaper
@@ -100,11 +118,15 @@ Rules enforced in mutations, not in the UI:
 - Only a **Shaper** promotes a project draft (and sets budget indication + review date).
 - Only the **project DRI** promotes a ticket draft (and sets estimated completion).
 - Only the **named person** accepts or declines an offer.
+- **Offers expire.** An offer nobody answers renotifies once, then returns to whoever made it
+  after a set window. Tickets stuck in `offered` forever are what erodes trust in My Work.
 - Every state change writes an L2 row with the evidence pointer.
 
-Shapers are a space role on the existing membership model (like today's member/admin flags —
-one new flag, no parallel roster). The Shapers chat is a private coherence room; its membership
-mirrors the flag.
+Shapers are a flag on the membership row. Note this is new ground, not a copy of an existing
+pattern: the `memberships` table today has no role flags at all (admin is not a DB column), so
+this is the first one. The Shapers chat is a private coherence room whose membership mirrors
+the flag — a Postgres ↔ Matrix consistency loop that needs an owner: the flag mutation updates
+room membership, and a periodic reconcile catches drift.
 
 Money stays out: `budget_indication` is a number on the project. Payment happens later through
 the existing proposal/treasury system; the agent may draft that proposal referencing the
@@ -120,6 +142,7 @@ worker beside it — same OpenRouter/AI SDK stack):
 ```
 1. HEAR    new L1 events (Matrix webhook / transcript ingest)
               ↓ batched per room, debounced
+              ↓ deterministic pre-filter: only candidate batches go on
 2. THINK   agent call: latest L3 (always) + recent room context (L1 window)
            + open work for this space (L2/projects/tickets) + relevant L4
               ↓ outputs structured drafts, or nothing
@@ -127,13 +150,29 @@ worker beside it — same OpenRouter/AI SDK stack):
            (Shaper for projects, project DRI for tickets, named DRI for done)
 ```
 
-Pass 2 is deliberately picky: most messages produce nothing. A draft carries `needs:
-shaper` or `needs: dri:<person>` — routing is data, and only that person's confirm mutation
-promotes it. Duplicate detection: before creating a draft, check open drafts for the same gap
-(embedding similarity is fine *here* — it's deduplication, not truth).
+The pre-filter matters. The memory architecture names "a model as the proactive trigger" an
+anti-pattern — *rules trigger; models explain* — and without a filter, THINK is exactly that,
+running on every batch of chat with unbounded cost. So cheap deterministic rules decide which
+batches reach the model at all: mentions of open work or its DRIs, question marks addressed to
+the room, commitment verbs, activity spikes, transcript ingests. The model then judges
+*candidates*, which is judgment, not triggering. This also caps spend: cost scales with
+candidate batches, not with everything everyone says.
+
+Pass 2 is deliberately picky on top of that: most candidates still produce nothing. A draft
+carries `needs: shaper` or `needs: dri:<person>` — routing is data, and only that person's
+confirm mutation promotes it. Duplicate detection: before creating a draft, check open drafts
+for the same gap (embedding similarity is fine *here* — it's deduplication, not truth).
 
 Confirm is an ordinary server mutation with the role check, called from a card in the UI or a
 reply in chat. Notifications ride the existing OneSignal path.
+
+**Done-from-talk is propose-then-confirm too.** "The ticket becomes done and the DRI can
+reopen" would be publish-then-review — an AI write on inferred speech, violating principle 2
+exactly where inference is weakest (transcript speaker attribution). Instead, talk produces a
+**done draft** with the receipt attached; the DRI one-taps it, or it auto-confirms after a
+silent objection window (say 48h) — the same Tier-2 mechanism from the memory architecture.
+Same felt experience — say it where you already talk, the board agrees — with no broken
+invariant and no silent state change to walk back.
 
 "Ask the org anything" (feature 9) is the same context recipe in reverse: answer from L3 +
 live L2 aggregates, search L1 for receipts, cite event ids. Live numbers (treasury) fetched at
@@ -164,7 +203,7 @@ the same log as chat.
 | 2. The org listens             | —                        | L1 (automatic)                |
 | 3. Talk becomes work           | L1 window + L3 + L4      | project/ticket drafts         |
 | 4. Offered, never assigned     | work tables              | accept/decline + L2           |
-| 5. Talk moves work             | L1                       | ticket state + L2 (+ receipt) |
+| 5. Talk moves work             | L1                       | done draft → DRI confirm / silent window + L2 (+ receipt) |
 | 6. Homes (My/All Work, Org)    | work tables + L2 + L3    | —                             |
 | 7. Money via proposals         | project + L2 trail       | draft proposal (existing system) |
 | 8. Reviews write themselves    | L2 + L4 for the project  | review summary draft          |
@@ -180,12 +219,36 @@ the same log as chat.
 2. **Surfaces.** My Work, All Work, Org. Visible progress, forces the queries to be right.
 3. **Shapers chat → L3 write path.** Standing room, draft-and-confirm brief. (L3 storage
    exists; this adds the conversational write path.)
-4. **The agent, pass by pass.** Hear (ingest + transcripts) → Think (drafts only, measured
-   precision) → Route. Tune pickiness on a real space before widening.
-5. **Done-from-talk.** Needs trust in transcripts and receipts; last for a reason.
-6. **L4 + reviews.** Once decisions flow, record outcomes and assemble reviews.
+4. **L1 ingestion.** The Matrix appservice/bot, backfill, and transcript ingest — its own
+   project (see the L1 section), and the long pole for everything after it. Can start in
+   parallel with 1–3.
+5. **The agent, pass by pass.** Hear (on the ingestion from step 4) → pre-filter → Think
+   (drafts only, measured precision) → Route. Tune pickiness on a real space before widening.
+6. **Done-from-talk.** As done drafts with confirm or a silent window. Needs trust in
+   transcripts and receipts; last for a reason.
+7. **L4 + reviews.** Once decisions flow, record outcomes and assemble reviews.
 
 Each step ships value without the ones after it.
+
+---
+
+## Known risks
+
+Ranked, with where each is addressed:
+
+1. **L1 ingestion is the long pole.** Chat bodies live on Matrix, not in Postgres; no
+   appservice exists today. The most novel infrastructure here, and half the features sit on
+   it. (L1 section, build step 4.)
+2. **Two event streams.** The new ledger vs. the existing `events` table must be reconciled
+   before the first migration, and ledger writes enforced through one shared path. (L2
+   section.)
+3. **Model-as-trigger cost and auditability.** Without the deterministic pre-filter, THINK
+   contradicts the memory architecture's own anti-pattern and its cost is unbounded. (Agent
+   section.)
+4. **Silent AI state changes.** Done-from-talk must stay propose-then-confirm; transcript
+   attribution errors are exactly where publish-then-review would hurt. (Agent section.)
+5. **Flag ↔ room drift.** The Shaper flag and Shapers-room membership are two systems; the
+   reconcile loop needs an owner. (Work objects section.)
 
 ---
 
@@ -194,3 +257,11 @@ Each step ships value without the ones after it.
 - No fine-tuning, no knowledge graph, no autonomous memory writes.
 - No AI-initiated payments — money moves only through the existing proposal system.
 - No assignment. There is no code path that puts work on a person without their accept.
+
+---
+
+## Related
+
+- [The Intelligent Organization — What it is](../product/intelligent-org-features.md) — the target
+- [The Intelligent Organization — Current State](./intelligent-org-current-state.md) — what is shipped vs designed
+- [Organizational Intelligence — Memory Architecture](./organizational-intelligence.md) — the four layers

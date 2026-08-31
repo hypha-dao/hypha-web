@@ -104,8 +104,10 @@ goes back to whoever offered it.
 
 ### 5. Talk moves work
 
-If someone says on a call or in a channel that a ticket is done, the ticket becomes done. The
-agent posts the receipt: which line, which call. The DRI can reopen. No silent state changes.
+If someone says on a call or in a channel that a ticket is done, the agent drafts the done and
+posts the receipt: which line, which call. The DRI one-taps to confirm — or says nothing, and
+it confirms itself after a quiet window. The AI never flips state on its own; no silent state
+changes.
 
 Done first; other obvious moves (took it, dropped it) later.
 
@@ -186,3 +188,5 @@ for anything.
 - [Intelligent Org — Exploration](./intelligent-org-exploration.md) — how we got here, Buzz vs Hypha
 - [Intelligent Org — Buzz additions](./intelligent-org-buzz-additions.md) — the Buzz fork sketch this supersedes for Hypha
 - [Organizational Intelligence — Memory Architecture](../architecture/organizational-intelligence.md) — the memory that makes feature 9 possible
+- [The Intelligent Organization — Current State](../architecture/intelligent-org-current-state.md) — what is shipped vs designed
+- [The Intelligent Organization — Design](../architecture/intelligent-org-design.md) — how to build the features above

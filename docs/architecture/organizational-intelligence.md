@@ -549,3 +549,4 @@ Worth resolving before or during build, but not blocking the shape above.
   [PR #2461](https://github.com/hypha-dao/hypha-web/pull/2461) at `docs/plans/space-intelligence.md`
 - [Documents and media overview](./documents-and-media-overview.md) — where L1 raw media lives
 - [Space Memory panel](../plans/space-memory-panel.md) — current aggregation surface
+- [The Intelligent Organization — Current State](./intelligent-org-current-state.md) — what is shipped vs designed
