@@ -298,6 +298,41 @@ export async function matrixCreateRoom(
   return roomId;
 }
 
+/**
+ * Read a room's recent timeline backwards (`dir=b`). Used by the notification reconciler
+ * (#2483) as a bounded backstop for events that bypassed the AS endpoint — walk the last
+ * `limit` messages of a room and dispatch any not already in `notification_processed_events`.
+ * Not a full backfill: the caller bounds it by time.
+ */
+export async function matrixListRoomMessages(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+  options: { limit?: number; from?: string } = {},
+): Promise<{ chunk: unknown[]; start?: string; end?: string }> {
+  const params = new URLSearchParams({
+    dir: 'b',
+    limit: String(Math.max(1, Math.min(1000, options.limit ?? 100))),
+  });
+  if (options.from) params.set('from', options.from);
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/messages?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{
+    chunk?: unknown[];
+    start?: string;
+    end?: string;
+  }>(res);
+  return {
+    chunk: Array.isArray(data.chunk) ? data.chunk : [],
+    start: data.start,
+    end: data.end,
+  };
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,
