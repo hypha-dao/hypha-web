@@ -29,19 +29,6 @@ type ConnectedButtonProfileProps = {
   compact?: boolean;
 };
 
-type ErrorUser = {
-  error: string;
-};
-
-const isErrorUser = (obj: unknown): obj is ErrorUser => {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'error' in obj &&
-    typeof (obj as { error?: unknown }).error === 'string'
-  );
-};
-
 export const ConnectedButtonProfile = ({
   useAuthentication,
   useMe,
@@ -62,7 +49,7 @@ export const ConnectedButtonProfile = ({
     user,
     isLoading: isAuthLoading,
   } = useAuthentication();
-  const { person, isLoading: isPersonLoading } = useMe();
+  const { person, isLoading: isPersonLoading, meError } = useMe();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -95,36 +82,46 @@ export const ConnectedButtonProfile = ({
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
       return;
     }
-    if (user) {
-      if (person) {
-        if (isErrorUser(person)) {
-          if (person.error !== 'Internal Server Error') {
-            router.push(localizedSignupPath);
-          }
-        } else if (
-          isLoggingIn &&
-          pathname !== newUserRedirectPath &&
-          pathname !== localizedSignupPath
-        ) {
-          if (!pathname.includes('/onboarding')) {
-            router.push(
-              resolvePostAuthRedirectPathOrDefault({
-                pathname,
-                lang: typeof lang === 'string' ? lang : undefined,
-                baseRedirectPath,
-              }),
-            );
-          }
-          setLoggingIn(false);
-        }
-      } else {
-        logout();
+    // /me 5xx (or a not-yet-ready JWT) must not log the user out or send them
+    // to signup — that is what broke brand-new Privy email/Gmail sessions.
+    if (meError) {
+      return;
+    }
+    if (!user) {
+      return;
+    }
+    if (person === null) {
+      if (
+        pathname !== newUserRedirectPath &&
+        pathname !== localizedSignupPath &&
+        !pathname.includes('/profile/signup')
+      ) {
+        router.push(localizedSignupPath);
       }
+      return;
+    }
+    if (
+      person &&
+      isLoggingIn &&
+      pathname !== newUserRedirectPath &&
+      pathname !== localizedSignupPath
+    ) {
+      if (!pathname.includes('/onboarding')) {
+        router.push(
+          resolvePostAuthRedirectPathOrDefault({
+            pathname,
+            lang: typeof lang === 'string' ? lang : undefined,
+            baseRedirectPath,
+          }),
+        );
+      }
+      setLoggingIn(false);
     }
   }, [
     isPersonLoading,
     isAuthLoading,
     isAuthenticated,
+    meError,
     person,
     user,
     router,
@@ -171,7 +168,7 @@ export const ConnectedButtonProfile = ({
   return (
     <ButtonProfile
       address={user?.wallet?.address}
-      person={person}
+      person={person ?? undefined}
       isConnected={isAuthenticated}
       onLogin={login}
       onLogout={handleLogout}

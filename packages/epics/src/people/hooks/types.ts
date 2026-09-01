@@ -6,8 +6,10 @@ import {
 } from '@hypha-platform/core/client';
 
 export type UseMeReturn = {
-  person: Person | undefined;
+  /** `undefined` while loading; `null` when authenticated but no profile (GET /me 404). */
+  person: Person | null | undefined;
   isLoading: boolean;
+  meError?: Error;
 };
 export type UseMe = () => UseMeReturn;
 

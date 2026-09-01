@@ -8,7 +8,16 @@ export const useJwt = () => {
     useAuthentication();
   const { data: jwt, isLoading: isLoadingJwt } = useSWR(
     !isLoading && isAuthenticated && user?.id ? [user.id, 'jwt'] : null,
-    () => getAccessToken(),
+    async () => {
+      const token = await getAccessToken();
+      // Privy can report `authenticated` before the first Bearer token exists
+      // (typical for brand-new email/Gmail signups). Caching `null` would
+      // skip `/me` until the 5-minute refresh and look like "no profile".
+      if (!token) {
+        throw new Error('Access token not ready');
+      }
+      return token;
+    },
     {
       // Privy returns a cached token and only refreshes it when it is close to
       // expiry, so there is no need to poll every second. Refreshing every few
@@ -23,5 +32,9 @@ export const useJwt = () => {
     },
   );
 
-  return { jwt, isLoadingJwt };
+  return {
+    jwt,
+    isLoadingJwt:
+      isLoading || isLoadingJwt || Boolean(isAuthenticated && user?.id && !jwt),
+  };
 };

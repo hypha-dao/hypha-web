@@ -3,15 +3,18 @@
 import React from 'react';
 import useSWR from 'swr';
 import { Person, useJwt } from '@hypha-platform/core/client';
+import { readPersonFromMeResponse } from './read-person-from-me-response';
 
 export const useMe = (): {
-  person: Person | undefined;
+  /** `undefined` while loading; `null` when authenticated but no profile row (GET /me 404). */
+  person: Person | null | undefined;
   isLoading: boolean;
+  meError: Error | undefined;
   /**
    * Refetch `/me`, or set cache from a known-good `Person` (e.g. right after save)
    * without waiting for a network round-trip.
    */
-  revalidate: (next?: Person) => Promise<Person | undefined>;
+  revalidate: (next?: Person) => Promise<Person | null | undefined>;
   isMe: (personSlug: string) => boolean;
 } => {
   const { jwt, isLoadingJwt } = useJwt();
@@ -21,8 +24,9 @@ export const useMe = (): {
   const {
     data: person,
     isLoading: isLoadingPerson,
+    error: meError,
     mutate,
-  } = useSWR<Person>(
+  } = useSWR<Person | null>(
     jwt ? [endpoint, jwt] : null,
     async ([endpoint, jwt]) => {
       const res = await fetch(endpoint, {
@@ -31,12 +35,7 @@ export const useMe = (): {
           'Content-Type': 'application/json',
         },
       });
-      // A 500 body like `{ error: "..." }` must not be cached as a Person —
-      // that clears `slug` and sends the wallet into a full-page loader.
-      if (!res.ok) {
-        throw new Error(`Failed to fetch profile: ${res.status}`);
-      }
-      return (await res.json()) as Person;
+      return readPersonFromMeResponse(res);
     },
     {
       // JWT refresh changes the SWR key; keep the last good profile so the
@@ -55,7 +54,7 @@ export const useMe = (): {
   );
 
   const revalidate = React.useCallback(
-    (next?: Person): Promise<Person | undefined> => {
+    (next?: Person): Promise<Person | null | undefined> => {
       if (next) {
         return mutate(next, { revalidate: false });
       }
@@ -67,6 +66,7 @@ export const useMe = (): {
   return {
     person,
     isLoading: isLoadingJwt || isLoadingPerson,
+    meError: meError as Error | undefined,
     revalidate,
     isMe,
   };
