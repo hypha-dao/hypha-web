@@ -16,5 +16,6 @@ export async function readPersonFromMeResponse(
   if (!res.ok) {
     throw new Error(`Failed to fetch profile: ${res.status}`);
   }
+  // JSON dates stay ISO strings; callers already treat Person dates as optional display values.
   return (await res.json()) as Person;
 }
