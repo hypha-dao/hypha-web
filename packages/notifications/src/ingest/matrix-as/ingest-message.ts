@@ -73,6 +73,7 @@ export async function ingestParsedMessage(
   const event: ChatNotificationEvent = {
     type: mentionsForOthers.length > 0 ? 'chat.mention' : 'chat.message',
     source: { kind: 'matrix', matrixEventId: parsed.matrixEventId },
+    roomId: parsed.roomId,
     actor: { matrixUserId: parsed.senderMxid },
     context,
     payload: {

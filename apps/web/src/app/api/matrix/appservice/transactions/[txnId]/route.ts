@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
   getSuppressedBotUserIds,
-  loggingDispatch,
   receiveTransaction,
   type MatrixTransactionBody,
 } from '@hypha-platform/notifications/ingest';
 import { assertHsToken } from '../../_lib';
+// #2485 POC — wraps loggingDispatch (Callout 1); revert to `loggingDispatch` to remove.
+import { pocDispatch } from '@web/lib/ai-bot-poc';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -53,7 +54,8 @@ export async function PUT(
       {
         db,
         // TODO(#2470): swap for the real notification decision/delivery dispatch().
-        dispatch: loggingDispatch,
+        // #2485 POC: pocDispatch calls loggingDispatch first, then runs the AI-bot handler.
+        dispatch: pocDispatch,
         botUserIds: getSuppressedBotUserIds(),
       },
     );

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  loggingDispatch,
-  reconcileMatrixNotifications,
-} from '@hypha-platform/notifications/ingest';
+import { reconcileMatrixNotifications } from '@hypha-platform/notifications/ingest';
 import { assertCronAuth } from '../_lib/assert-cron-auth';
+// #2485 POC — wraps loggingDispatch (Callout 1); revert to `loggingDispatch` to remove.
+import { pocDispatch } from '@web/lib/ai-bot-poc';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -44,7 +43,8 @@ export async function GET(request: Request) {
       {
         db,
         // TODO(#2470): swap for the real notification decision/delivery dispatch().
-        dispatch: loggingDispatch,
+        // #2485 POC: pocDispatch calls loggingDispatch first, then runs the AI-bot handler.
+        dispatch: pocDispatch,
       },
     );
     return NextResponse.json(result, { status: result.ok ? 200 : 503 });
