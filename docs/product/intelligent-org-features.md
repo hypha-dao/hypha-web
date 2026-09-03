@@ -77,27 +77,30 @@ Nobody files anything. There is no "new ticket" button.
 
 The AI drafts work from what it hears. Who can make it real depends on what it is:
 
-| What                  | Who makes it real   | Date it carries          |
-| --------------------- | ------------------- | ------------------------ |
-| **Project / mandate** | A **Shaper**        | **Review date**          |
-| **Ticket**            | The **project DRI** | **Estimated completion** |
+| What                        | Who makes it real                    | Date it carries          |
+| --------------------------- | ------------------------------------ | ------------------------ |
+| **Project / mandate**       | A **Shaper**                         | **Review date**          |
+| **Ticket** (under anything) | The **DRI of what it sits under**    | **Estimated completion** |
 
-If no project covers a need, the draft goes to Shapers. If one does, the ticket draft goes to
-that DRI — for themselves or someone on their team. Anyone's talk is context; only the right
-role can stamp it live. Same gap mentioned twice stays one card.
+One rule at every level: whoever holds the thing above you makes your draft real. If no project
+covers a need, the draft goes to Shapers. If one does, the ticket draft goes to that project's
+DRI. And a ticket can have tickets under it — the person holding a ticket can split it and
+offer the pieces to others, as deep as the work needs, without going back up to the project DRI.
+Anyone's talk is context; only the right role can stamp it live. Same gap mentioned twice stays
+one card.
 
-When a Shaper approves a project they also indicate a **budget** — what the org is willing to
-pay for this job. That is an indication, not a payment (see feature 7).
+A project carries no budget and a ticket carries no pay. If a job should be paid, that is a
+conversation between the person taking it and the person offering it (see feature 7).
 
-**A Shaper can:** approve a project the AI suggested, name a DRI, set the budget and review date
-— in chat.
+**A Shaper can:** approve a project the AI suggested, name a DRI, set the review date — in chat.
 **A DRI can:** write "Lea, can you take covers?" and have that become a ticket offer, without a
 form.
+**A ticket holder can:** say "Jun, could you print the rota?" and offer a piece of their own
+ticket to Jun — Jun holds that piece, they still hold the whole.
 
 ### 4. Work is offered, never assigned
 
-The named person sees one clear screen: the job, why them, the dates, the budget if any. They
-accept or decline. Decline is respected — _not my thing_ or _no room right now_ — and the card
+The named person sees one clear screen: the job, why them, the dates. They accept or decline. Decline is respected — _not my thing_ or _no room right now_ — and the card
 goes back to whoever offered it.
 
 **A member can:** decline work without explaining themselves to the whole org.
@@ -127,26 +130,30 @@ Empty states say so: *Nothing needs you.*
 
 **Anyone can:** see the whole org — who shapes, who holds, what is open — without asking.
 
-### 7. Money stays in the proposal system
+### 7. Money is agreed in chat and moved by proposal
 
-Work flow and money flow are **separate**.
+Work flow and money flow are **separate**. No sum lives on a project or a ticket. Money is in
+two places only: **Proposals** (where it moves) and **My Profile** (what a person was paid).
 
-A project carries a budget the Shaper indicated. That number is a commitment of intent — it
-tells the DRI what the job is worth and tells the org what was promised. The actual payment
-happens later, through Hypha's existing proposal and treasury system, referencing the project
-and what was done.
+How pay works: the person holding the work and the person above them — a ticket holder with
+the project DRI, a DRI with a Shaper — agree a sum where they already talk. The agent remembers
+that line. When the work is done, either of them tells their personal assistant *"draft a
+proposal for the Shapers for this work — 150 USDC"*, or *"…whatever we agreed"*. The draft
+carries the agreement, the done receipt, and the sum; if the sum named differs from the one
+agreed, the draft shows both. The Shapers decide, as with any proposal, and the payment lands on
+the profile.
 
-The AI never moves money. It can draft the payment proposal when work completes — a person
-still takes it through governance.
+The AI never moves money. It remembers what was agreed and drafts on request — a person still
+takes it through governance.
 
-**A DRI can:** see what a job is worth before accepting it, and point at the finished work when
-the payment proposal is made.
+**A member can:** agree pay in a sentence, and get paid without filling in a form.
+**A DRI can:** ask for the pay proposal for someone under them by saying "what we agreed".
 
 ### 8. Reviews write themselves
 
 Every project has a review date. When it arrives, the Shaper gets the story prepared: what was
-held, what was done, what was not, how it compares to the budget indicated. They extend, resize,
-close, or re-offer — in the same chat.
+held, what was done, what was not, what was paid out through proposals. They extend, close, or
+re-offer — in the same chat.
 
 **A Shaper can:** review a project in minutes because the evidence is already assembled.
 

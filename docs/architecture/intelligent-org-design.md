@@ -104,23 +104,45 @@ when drafting similar suggestions.
 
 ## Work objects
 
-Two new tables in `storage-postgres`, following the existing schema conventions:
+Work is **one recursive tree**, not two tables. A project is a ticket with no parent; a ticket
+is a piece of work under something. Anyone who holds a piece of work can split it further and
+offer the pieces — to any depth. This is what lets a DRI hand a sub-task to a third person
+without going back up to the project DRI, and it is what keeps the authority rule simple.
 
-**`projects`** (the mandate): `space_id`, `title`, `brief`, `dri_person_id?`, `budget_indication`,
-`review_at`, `state` (`draft → offered → active → in_review → closed`), `created_from_event_id`.
+One new table in `storage-postgres`, following the existing schema conventions:
 
-**`tickets`**: `project_id`, `title`, `dri_person_id?`, `due_at`, `state`
-(`draft → offered → accepted → done | declined`), `created_from_event_id`,
-`done_evidence_event_id?`.
+**`work_items`**: `space_id`, `parent_id?` (null = project), `title`, `brief`, `dri_person_id?`,
+`due_at?` (review date on a project, estimated completion below it),
+`state` (`draft → offered → accepted → in_review → done | declined`), `created_from_event_id`,
+`done_evidence_event_id?`. No money column — see "Money" below.
+
+A `depth` column and a materialised `path` (`root_id`, ancestors array) are denormalised for
+the board queries — "everything under this project" is one indexed read, not a recursive CTE
+on every page load.
 
 Rules enforced in mutations, not in the UI:
 
-- Only a **Shaper** promotes a project draft (and sets budget indication + review date).
-- Only the **project DRI** promotes a ticket draft (and sets estimated completion).
+- **One promotion rule.** A draft is promoted by whoever holds its parent. At the root the
+  parent is the org, so a **Shaper** promotes (and sets the review date). Below the root the
+  **parent's DRI** promotes (and sets estimated completion). The same rule applies at every
+  depth; there is no separate ticket rule.
+- **Holding a piece means you can split it.** A DRI may draft children under their own item and
+  offer them. They cannot offer work under an item they do not hold.
 - Only the **named person** accepts or declines an offer.
 - **Offers expire.** An offer nobody answers renotifies once, then returns to whoever made it
-  after a set window. Tickets stuck in `offered` forever are what erodes trust in My Work.
+  after a set window. Items stuck in `offered` forever are what erodes trust in My Work.
+- **Completion cascades up, never down.** An item with open children cannot be marked done; the
+  done draft for it is offered when its last child closes. Marking a parent done does not close
+  children. Declining or closing a parent returns its open children to the parent's DRI.
 - Every state change writes an L2 row with the evidence pointer.
+
+Boards read the same tree at different cuts: **All Work** groups by root; **My Work** filters by
+`dri = me` at any depth and shows the path above each item as a breadcrumb; a project or ticket
+page shows its direct children. Depth is a display concern, not a schema concern.
+
+The agent routes drafts with the same rule: a heard need is drafted under the nearest open item
+the speaker holds, or the item the talk was about; the draft's `needs:` is that item's DRI. If
+nothing covers it, it becomes a root draft and goes to Shapers.
 
 Shapers are a flag on the membership row. Note this is new ground, not a copy of an existing
 pattern: the `memberships` table today has no role flags at all (admin is not a DB column), so
@@ -128,9 +150,31 @@ this is the first one. The Shapers chat is a private coherence room whose member
 the flag — a Postgres ↔ Matrix consistency loop that needs an owner: the flag mutation updates
 room membership, and a periodic reconcile catches drift.
 
-Money stays out: `budget_indication` is a number on the project. Payment happens later through
-the existing proposal/treasury system; the agent may draft that proposal referencing the
-project and its ledger trail, and it goes through governance like any other proposal.
+### Money
+
+For the MVP, **no sum lives on a work item** — no budget indication on projects, no pay on
+tickets. Money exists in exactly two places: proposals (the movement) and profiles (the
+record of what a person was paid).
+
+How a person gets paid:
+
+1. **Agreed in chat.** Whoever holds the work and whoever holds the item above it name a sum
+   where they already talk — a ticket holder with the project DRI, a DRI with a Shaper. That
+   line is L1 evidence; the HEAR pass tags it as a pay agreement (L2 `pay_agreed` row pointing
+   at the work item and the message), so it can be found later without re-reading the room.
+2. **Drafted on request.** When the item is done, anyone involved tells their personal
+   assistant "draft a proposal for the Shapers for this work — 150 USDC", or "…whatever we
+   agreed". The agent drafts a money proposal carrying the amount, the agreement line, the
+   item's done evidence, and its path. If the named sum differs from the agreed line, the draft
+   shows both — the agent never silently picks one.
+3. **Decided by Shapers.** The proposal goes through the existing proposal/treasury path like
+   any other. When it passes, the payment shows on the payee's profile with the agreement and
+   the proposal as receipts.
+
+Why this shape: it removes the two hardest design questions (salary vs. per-project, and how
+budgets cascade down a tree) from the data model entirely. Pay stays a human conversation; the
+system's job is to remember it and turn it into a proposal on demand. If later a community wants
+budgets on projects or per-period stipends, those are proposals too — nothing here has to change.
 
 ---
 
@@ -144,10 +188,10 @@ worker beside it — same OpenRouter/AI SDK stack):
               ↓ batched per room, debounced
               ↓ deterministic pre-filter: only candidate batches go on
 2. THINK   agent call: latest L3 (always) + recent room context (L1 window)
-           + open work for this space (L2/projects/tickets) + relevant L4
+           + open work for this space (L2/work_items) + relevant L4
               ↓ outputs structured drafts, or nothing
 3. ROUTE   draft → the one person who can make it real
-           (Shaper for projects, project DRI for tickets, named DRI for done)
+           (Shaper for root items, parent's DRI below that, named DRI for done)
 ```
 
 The pre-filter matters. The memory architecture names "a model as the proactive trigger" an
@@ -186,8 +230,8 @@ Three new routes in `apps/web`, all reads over the work tables and ledger — no
 
 | Surface     | Query                                                                     |
 | ----------- | -------------------------------------------------------------------------- |
-| **My Work** | projects + tickets where `dri = me`, plus open offers naming me. Dates on cards. |
-| **All Work**| all projects grouped with their tickets, DRI or *open*, review/due dates.  |
+| **My Work** | work items at any depth where `dri = me`, plus open offers naming me. Breadcrumb and dates on cards. |
+| **All Work**| root items grouped with their subtree, DRI or *open*, review/due dates. Any item opens its own page with its children. |
 | **Org**     | latest confirmed L3 brief, established date, founder, Shapers, members, DRIs. |
 
 Offer, accept, decline, done are the same mutations everywhere — a card is another door onto
@@ -201,7 +245,7 @@ the same log as chat.
 | ------------------------------ | ------------------------ | ----------------------------- |
 | 1. Direction stays current     | L3                       | L3 (Shaper confirm)           |
 | 2. The org listens             | —                        | L1 (automatic)                |
-| 3. Talk becomes work           | L1 window + L3 + L4      | project/ticket drafts         |
+| 3. Talk becomes work           | L1 window + L3 + L4      | work-item drafts (root or under the nearest held item) |
 | 4. Offered, never assigned     | work tables              | accept/decline + L2           |
 | 5. Talk moves work             | L1                       | done draft → DRI confirm / silent window + L2 (+ receipt) |
 | 6. Homes (My/All Work, Org)    | work tables + L2 + L3    | —                             |
@@ -214,8 +258,9 @@ the same log as chat.
 
 ## Build order
 
-1. **L2 ledger + work tables + mutations with role checks.** The spine. No AI yet — cards can
-   be created from an agent later; the objects and rules come first.
+1. **L2 ledger + `work_items` tree + mutations with role checks.** The spine. No AI yet —
+   cards can be created from an agent later; the objects, the promotion rule, and the cascade
+   rules come first.
 2. **Surfaces.** My Work, All Work, Org. Visible progress, forces the queries to be right.
 3. **Shapers chat → L3 write path.** Standing room, draft-and-confirm brief. (L3 storage
    exists; this adds the conversational write path.)
@@ -249,6 +294,12 @@ Ranked, with where each is addressed:
    attribution errors are exactly where publish-then-review would hurt. (Agent section.)
 5. **Flag ↔ room drift.** The Shaper flag and Shapers-room membership are two systems; the
    reconcile loop needs an owner. (Work objects section.)
+6. **Depth without discipline.** A recursive tree lets work fragment into trees nobody can
+   read. The cascade rule (done bubbles up, never down) holds the one invariant that matters;
+   keeping money off the tree removes the other. The boards hold the readability — All Work shows
+   roots and one level, everything deeper is behind the item's own page. Watch median depth on
+   a real space; if it passes three, the product has a problem the schema cannot fix. (Work
+   objects section.)
 
 ---
 

@@ -124,7 +124,7 @@ From [What it is](../product/intelligent-org-features.md) and
 | **L2 activity ledger** | `events` table exists and is barely used. Not the typed ledger. |
 | **L3 beliefs** (org brief, objectives) | Built on `feat/org-memory`, not merged. No Shapers chat write path. |
 | **L4 decision memory** | Does not exist |
-| Projects / tickets / DRI / offer–accept | Do not exist |
+| Work items tree (projects / tickets, any depth) / DRI / offer–accept | Do not exist |
 | Hear → Think → Route agent | Does not exist. Chat is pull (member asks), not a listener on rooms. |
 | My Work / All Work / Org homes | Do not exist |
 | Reviews that write themselves | Do not exist |
