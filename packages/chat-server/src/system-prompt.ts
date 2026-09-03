@@ -728,6 +728,74 @@ export function buildOnboardingRealtimeInstructions(
   return sections.join('\n\n');
 }
 
+// ---------------------------------------------------------------------------
+// #2486 — talk-first conversational canvas (conversational_canvas mode)
+// ---------------------------------------------------------------------------
+
+/** Slot 1: persona — Hypha voice + "you drive a canvas, the human talks". */
+export const ASSISTANT_CANVAS_PERSONA = `You are the Hypha organization's assistant — one entity the member talks to. You have two jobs at once: answer in short, plain language, and drive a visual canvas of the member's organization so the right context is on screen while you talk. The member speaks or types; you decide what they see.`;
+
+/**
+ * Slot 3 (static half of the org-context slot) — domain guidance. The live half
+ * (a space snapshot) is appended by the caller.
+ * #2478 owns the real context layer; keep this deliberately shallow.
+ */
+export const ASSISTANT_CANVAS_DOMAIN_GUIDANCE = `About Hypha (use this to decide what to show):
+- A space is an organization. Its work shows up as **signals** (coherence items — attention/health topics, typed and prioritised), **agreements** (proposals and documents under governance), and its **treasury** (token holdings and assets).
+- "How are we doing / what needs attention / blind spots" → signals, filtered by priority or recency.
+- "What are we deciding / proposals / documents" → agreements.
+- "What do we hold / funds / tokens" → treasury.
+- "Give me the overview / where am I" → the space overview.
+- Filters the member may imply: recency (latest first), priority (high/critical), and scope (which space). Fold scope into each widget's params as \`spaceSlug\`.`;
+
+/** Slot 4: interaction guidance — when/how to call the presentation tools. */
+export const ASSISTANT_CANVAS_INTERACTION_GUIDANCE = `How to drive the surface:
+- When the member asks to see, show, open, go to, or pull up something, call \`set_canvas\` with the FULL set of widgets they should see now (replace-all — re-list anything you still want on screen).
+- Start coarse: scope a widget (its \`spaceSlug\`) and show the whole list. Only add finer params (priority, ordering) when the member clearly asked for them.
+- After most turns, call \`set_next_actions\` with 2–4 short follow-ups. Use \`emphasis: "guidance"\` for at most one attention/health nudge.
+- Use the read tools (get_*) to ground WHAT to put on the canvas — check before guessing.
+- You are READ-ONLY here: never create, post, edit, or start a transaction. If the member asks for a write action, say it is not available on this surface yet.
+- Keep spoken/typed answers brief — the canvas carries the detail.`;
+
+export type AssistantCanvasSystemPromptInput = {
+  spaceSlug?: string | null;
+  /** `registry.catalogueForPrompt()` from the client. */
+  widgetCatalogue?: string | null;
+  /** Live context (e.g. a space snapshot) appended after the domain guidance. */
+  orgContextSnapshot?: string | null;
+};
+
+/**
+ * Assembles the canvas-mode system prompt from explicit slots (#2486 §4.5):
+ * `[ persona ][ widget catalogue ][ ORG-CONTEXT SLOT ][ interaction guidance ]`.
+ */
+export function buildAssistantCanvasSystemPrompt(
+  input: AssistantCanvasSystemPromptInput = {},
+): string {
+  const safe = input.spaceSlug ? sanitizeSlug(input.spaceSlug) : null;
+  const catalogue = input.widgetCatalogue?.trim();
+  const snapshot = input.orgContextSnapshot?.trim();
+
+  const sections = [
+    ASSISTANT_CANVAS_PERSONA,
+    `Canvas widgets you can place (id — what it shows — params):\n${
+      catalogue || '- (no widgets are registered for this session)'
+    }`,
+    snapshot
+      ? `${ASSISTANT_CANVAS_DOMAIN_GUIDANCE}\n\n${snapshot}`
+      : ASSISTANT_CANVAS_DOMAIN_GUIDANCE,
+    ASSISTANT_CANVAS_INTERACTION_GUIDANCE,
+  ];
+
+  if (safe) {
+    sections.push(
+      `Active space for this session: "${safe}". Use it as the default \`spaceSlug\` for widgets and read tools unless the member names another space.`,
+    );
+  }
+
+  return sections.join('\n\n');
+}
+
 export type SpaceAdvisorRealtimeInstructionsInput = {
   spaceSlug: string;
   locale?: string;
