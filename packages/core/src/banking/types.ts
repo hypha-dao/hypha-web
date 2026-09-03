@@ -1,4 +1,4 @@
-export type BankProvider = 'bridge';
+export type BankProvider = 'bridge' | 'audd';
 
 export type BankPendingUbo = {
   id: string;
