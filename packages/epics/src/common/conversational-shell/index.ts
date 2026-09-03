@@ -36,3 +36,8 @@ export {
   NextActionsStrip,
   type NextActionsStripProps,
 } from './next-actions-strip';
+export {
+  AssistantShell,
+  type AssistantShellProps,
+  type AssistantTransportConfig,
+} from './assistant-shell';

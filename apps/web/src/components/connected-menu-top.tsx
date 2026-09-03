@@ -18,9 +18,9 @@ import { Space } from '@hypha-platform/core/client';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Pencil } from 'lucide-react';
-import { ConnectedAssistantInteractionBar } from './connected-assistant-interaction-bar';
 
-/** `/[lang]/assistant` — the #2486 talk-first route (spec §2.2). */
+/** `/[lang]/assistant` — the #2486 talk-first route. `AssistantShell` owns the
+ *  top interaction bar there, so the app navbar renders nothing (spec §2.2). */
 const ASSISTANT_ROUTE_RE = /^\/[^/]+\/assistant(?:\/|$)/;
 
 type ConnectedMenuTopProps = {
@@ -203,10 +203,10 @@ export function ConnectedMenuTop({
   const useReplacementLogoNode =
     Boolean(logoNode) && !(overlayVisible && isSpaceRoute);
 
-  // On /[lang]/assistant the navbar *becomes* the interaction bar (spec §2.2):
-  // no logo, nav menu or AI-panel triggers — mode toggle + voice + history + avatar.
+  // On /[lang]/assistant the navbar gives way entirely — `AssistantShell`
+  // renders its own sticky interaction bar as the top region (spec §2.2).
   if (ASSISTANT_ROUTE_RE.test(pathname)) {
-    return <ConnectedAssistantInteractionBar />;
+    return null;
   }
 
   return (

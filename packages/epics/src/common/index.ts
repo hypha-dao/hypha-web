@@ -215,3 +215,7 @@ export {
 } from './formatted-local-date-time';
 export * from './composer';
 export * from './conversational-shell';
+export {
+  readRecentSpaceSlugs,
+  MAX_VISIBLE_RECENT_SPACES,
+} from './recent-space-history';
