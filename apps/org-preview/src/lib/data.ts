@@ -203,7 +203,7 @@ export const projectsData: Record<RiverProjectId, StaticProject> = {
     id: 'stall',
     title: 'Saturday stall',
     dri: 'Sam',
-    review: '1 Jun',
+    review: '1 Jun 2026',
     approved: '12 May',
     brief:
       'Run the Saturday stall every week: growers, tables, cash box, and the people to hold it.',
@@ -215,7 +215,7 @@ export const projectsData: Record<RiverProjectId, StaticProject> = {
     id: 'weekday',
     title: 'Weekday hall',
     dri: null,
-    review: '1 Aug',
+    review: '1 Aug 2026',
     approved: null,
     brief:
       'Find a weekday hall and hold it: the licence, the deposit, the keys.',
@@ -227,7 +227,7 @@ export const projectsData: Record<RiverProjectId, StaticProject> = {
     id: 'growers',
     title: 'Grower onboarding',
     dri: 'Jun',
-    review: '1 Oct',
+    review: '1 Oct 2026',
     approved: '3 May',
     brief:
       'Five growers by autumn, each paid the week they sell — the visits, the delivery days, the welcome sheet.',
@@ -296,7 +296,7 @@ export const projectsData: Record<RiverProjectId, StaticProject> = {
     id: 'currency',
     title: 'RIVER currency launch',
     dri: 'Maya',
-    review: '1 Sep',
+    review: '1 Sep 2026',
     approved: '20 Apr',
     brief:
       'Paper RIVER vouchers earned at the stall, spendable with any grower — the design, the float, and the rules on one page.',
@@ -398,7 +398,7 @@ export const projectsData: Record<RiverProjectId, StaticProject> = {
     id: 'harvest',
     title: 'Autumn harvest fair',
     dri: null,
-    review: '15 Oct',
+    review: '15 Oct 2026',
     approved: null,
     brief:
       'One Saturday in October that is bigger than a stall: all five growers, music, the hall open all day.',
@@ -451,12 +451,6 @@ export type RiverTicketId = keyof typeof ticketsData;
 export type EnergyTicketId = 'e-summary' | 'e-muni';
 export type TicketId = RiverTicketId | EnergyTicketId;
 
-export type ProposalEvidence = {
-  label: string;
-  go: 'ticket' | 'thread' | 'project';
-  id: string;
-};
-
 export type Proposal = {
   id: string;
   /** Only two things ever become proposals: money moving, or a project approved. */
@@ -471,7 +465,10 @@ export type Proposal = {
   no: number;
   needed: number;
   openedBy?: string;
-  evidence?: ProposalEvidence[];
+  /** project approvals — what the project is */
+  description?: string;
+  /** project approvals — when the piece ends / comes up for review */
+  ends?: string;
 };
 
 export const seedProposals: Proposal[] = [
@@ -479,28 +476,22 @@ export const seedProposals: Proposal[] = [
     id: 'reimburse-sam',
     kind: 'money',
     title: 'Reimburse Sam 85 USDC for ice and the cash float',
-    sub: 'Stall expenses from the last two Saturdays · drafted from Sam’s DM, opened by Sam',
+    sub: 'Stall expenses from the last two Saturdays',
     amount: 85,
     state: 'open',
     yes: 0,
     no: 0,
     needed: 2,
     openedBy: 'Sam',
-    evidence: [
-      {
-        label:
-          'Sam — “Ice is in the van. I will put it on the stall expenses.”',
-        go: 'thread',
-        id: 'sam-dm',
-      },
-      { label: 'Project — Saturday stall', go: 'project', id: 'stall' },
-    ],
   },
   {
     id: 'fund-stall',
     kind: 'project',
     title: 'Approve project: Saturday stall',
-    sub: 'Sam as DRI · drafted by the agent from the founding chat',
+    sub: 'Sam as DRI',
+    description:
+      'Run the Saturday stall every week: growers, tables, cash box, and the people to hold it.',
+    ends: '1 Jun 2026',
     state: 'passed',
     decided: '12 May',
     yes: 2,
@@ -512,7 +503,7 @@ export const seedProposals: Proposal[] = [
     id: 'lea-saturdays',
     kind: 'money',
     title: 'Pay Lea 80 USDC — four Saturdays hosted in May',
-    sub: 'Agreed with Sam in “Saturday stall” — 20 USDC a Saturday · the ledger shows 4 of 4 stalls happened · drafted 1 Jun, opened by Sam',
+    sub: 'Agreed with Sam in “Saturday stall” — 20 USDC a Saturday · the ledger shows 4 of 4 stalls happened',
     amount: 80,
     state: 'passed',
     decided: '2 Jun',
@@ -520,24 +511,12 @@ export const seedProposals: Proposal[] = [
     no: 0,
     needed: 2,
     openedBy: 'Sam',
-    evidence: [
-      {
-        label: 'Ledger — 4 Saturdays in May, all held',
-        go: 'project',
-        id: 'stall',
-      },
-      {
-        label: 'Ticket — Host the stall on Saturdays',
-        go: 'ticket',
-        id: 'stall',
-      },
-    ],
   },
   {
     id: 'sam-stipend',
     kind: 'money',
     title: 'Pay Sam 60 USDC — held Saturday stall through May',
-    sub: 'Agreed with Maya in “Shapers” when Sam took the stall · the ledger shows 3 offers answered, review on time · drafted 1 Jun, opened by Maya',
+    sub: 'Agreed with Maya in “Shapers” when Sam took the stall · the ledger shows 3 offers answered, review on time',
     amount: 60,
     state: 'passed',
     decided: '2 Jun',
@@ -550,7 +529,10 @@ export const seedProposals: Proposal[] = [
     id: 'approve-growers',
     kind: 'project',
     title: 'Approve project: Grower onboarding',
-    sub: 'Jun as DRI · drafted from the Growers room',
+    sub: 'Jun as DRI',
+    description:
+      'Five growers by autumn, each paid the week they sell — the visits, the delivery days, the welcome sheet.',
+    ends: '1 Oct 2026',
     state: 'passed',
     decided: '3 May',
     yes: 2,
@@ -575,7 +557,7 @@ export const seedProposals: Proposal[] = [
     id: 'pay-priya',
     kind: 'money',
     title: 'Pay Priya 120 USDC for the voucher design',
-    sub: 'Agreed with Maya in “Growers” before she started · the ticket is done, receipt attached · opened by Maya',
+    sub: 'Agreed with Maya in “Growers” before she started · the ticket is done, receipt attached',
     amount: 120,
     state: 'passed',
     decided: '2 May',
@@ -583,13 +565,6 @@ export const seedProposals: Proposal[] = [
     no: 0,
     needed: 2,
     openedBy: 'Maya',
-    evidence: [
-      {
-        label: 'Project — RIVER currency launch',
-        go: 'project',
-        id: 'currency',
-      },
-    ],
   },
   {
     id: 'van',
@@ -608,7 +583,10 @@ export const seedProposals: Proposal[] = [
     id: 'approve-currency',
     kind: 'project',
     title: 'Approve project: RIVER currency launch',
-    sub: 'Maya as DRI · drafted from the founding chat',
+    sub: 'Maya as DRI',
+    description:
+      'Paper RIVER vouchers earned at the stall, spendable with any grower — the design, the float, and the rules on one page.',
+    ends: '1 Sep 2026',
     state: 'passed',
     decided: '20 Apr',
     yes: 2,
@@ -797,7 +775,7 @@ export const energyOrg = {
       id: 'iberia',
       title: 'Iberia pilots',
       dri: 'Pedro',
-      review: 'Q3 2026',
+      review: '30 Sep 2026',
       approved: 'Nov 2025',
       brief:
         'Live energy communities in Portugal and Spain — onboard municipalities, land the EECF money, keep Coopérnico close.',
@@ -868,7 +846,7 @@ export const energyOrg = {
       id: 'ems',
       title: 'Energy management systems',
       dri: 'Surya',
-      review: 'Q3 2026',
+      review: '30 Sep 2026',
       approved: '2024',
       brief:
         'The AI that decides where energy flows between members — batteries, markets, and a fair split of the value.',
@@ -971,7 +949,7 @@ export const energyOrg = {
       id: 'islands',
       title: 'Island grids',
       dri: 'Marcus',
-      review: 'Q4 2026',
+      review: '31 Dec 2026',
       approved: 'Jan 2026',
       brief:
         'Resilient energy sharing for islands — Ameland first, with tokenised credits inside the EU Blockchain Sandbox.',
@@ -1017,7 +995,7 @@ export const energyOrg = {
       id: 'carbon',
       title: 'Carbon credits module',
       dri: null,
-      review: 'Q1 2028',
+      review: '31 Mar 2028',
       approved: null,
       brief:
         'Measure the CO₂ each community avoids, sell the reductions, and fund new setups from the savings they create.',
@@ -1035,7 +1013,7 @@ export const energyOrg = {
       id: 'playbook',
       title: 'Community onboarding playbook',
       dri: 'Suzana',
-      review: 'Q4 2026',
+      review: '15 Dec 2026',
       approved: 'Mar 2026',
       brief:
         'Everything a new community needs to go from first call to first kWh shared — guides, legal templates, a video, in three languages.',
@@ -1152,7 +1130,7 @@ export const energyOrg = {
       id: 'hardware',
       title: 'Hardware group-buy',
       dri: null,
-      review: 'Q1 2028',
+      review: '31 Mar 2028',
       approved: null,
       brief:
         'Pool member demand for panels and batteries, negotiate one price, and deliver the installs through local partners.',
@@ -1208,47 +1186,31 @@ export const energyOrg = {
       id: 'e-eecf',
       kind: 'money',
       title: 'Fund EECF round-2 applications — 6,000 EURC',
-      sub: 'Application support for six emerging communities · opened by Pedro',
+      sub: 'Application support for six emerging communities',
       amount: 6000,
       state: 'open',
       yes: 1,
       no: 0,
       needed: 3,
       openedBy: 'Pedro',
-      evidence: [
-        {
-          label: 'Pedro — “six communities ready to apply”',
-          go: 'thread',
-          id: 'e-pilots',
-        },
-        { label: 'Project — Iberia pilots', go: 'project', id: 'iberia' },
-      ],
     },
     {
       id: 'e-marcus-travel',
       kind: 'money',
       title: 'Reimburse Marcus 640 EURC — Ameland travel',
-      sub: 'Two ferry trips and a night on the island for the sandbox close-out · opened by Marcus',
+      sub: 'Two ferry trips and a night on the island for the sandbox close-out',
       amount: 640,
       state: 'open',
       yes: 0,
       no: 0,
       needed: 3,
       openedBy: 'Marcus',
-      evidence: [
-        {
-          label: 'Marcus — “Ameland report is live”',
-          go: 'thread',
-          id: 'e-pilots',
-        },
-        { label: 'Project — Island grids', go: 'project', id: 'islands' },
-      ],
     },
     {
       id: 'e-pedro-stipend',
       kind: 'money',
       title: 'Pay Pedro 1,200 EURC — held Iberia pilots through May',
-      sub: 'Agreed with Alex in “Pilots” when Pedro took Iberia · the ledger shows two tickets offered, one accepted, sync notes on time · drafted 1 Jun, opened by Alex',
+      sub: 'Agreed with Alex in “Pilots” when Pedro took Iberia · the ledger shows two tickets offered, one accepted, sync notes on time',
       amount: 1200,
       state: 'passed',
       decided: '3 Jun',
@@ -1256,15 +1218,12 @@ export const energyOrg = {
       no: 0,
       needed: 3,
       openedBy: 'Alex',
-      evidence: [
-        { label: 'Project — Iberia pilots', go: 'project', id: 'iberia' },
-      ],
     },
     {
       id: 'e-rowan-oncall',
       kind: 'money',
       title: 'Pay Rowan 400 EURC — Ameland EMS on-call, May',
-      sub: 'Agreed with Surya in “Tech team” — 400 EURC a month on call · 31 days up, two incidents closed in the ledger · drafted 1 Jun, opened by Surya',
+      sub: 'Agreed with Surya in “Tech team” — 400 EURC a month on call · 31 days up, two incidents closed in the ledger',
       amount: 400,
       state: 'passed',
       decided: '3 Jun',
@@ -1277,7 +1236,7 @@ export const energyOrg = {
       id: 'e-pay-rowan',
       kind: 'money',
       title: 'Pay Rowan 3,000 EURC — battery optimisation v2',
-      sub: 'Agreed with Surya in “Tech team” before he started · the ticket is done, receipt attached · opened by Surya',
+      sub: 'Agreed with Surya in “Tech team” before he started · the ticket is done, receipt attached',
       amount: 3000,
       state: 'passed',
       decided: 'last week',
@@ -1285,24 +1244,15 @@ export const energyOrg = {
       no: 0,
       needed: 3,
       openedBy: 'Surya',
-      evidence: [
-        {
-          label: 'Rowan — “v2 is distributing value fairly”',
-          go: 'thread',
-          id: 'e-tech',
-        },
-        {
-          label: 'Project — Energy management systems',
-          go: 'project',
-          id: 'ems',
-        },
-      ],
     },
     {
       id: 'e-approve-playbook',
       kind: 'project',
       title: 'Approve project: Community onboarding playbook',
-      sub: 'Suzana as DRI · drafted from the pilots room',
+      sub: 'Suzana as DRI',
+      description:
+        'Everything a new community needs to go from first call to first kWh shared — guides, legal templates, a video, in three languages.',
+      ends: '15 Dec 2026',
       state: 'passed',
       decided: 'Mar 2026',
       yes: 3,
@@ -1314,7 +1264,7 @@ export const energyOrg = {
       id: 'e-coopernico',
       kind: 'money',
       title: 'Pay Coopérnico facilitation — 2,000 EURC',
-      sub: 'EECF national facilitator for Portugal · opened by Suzana',
+      sub: 'EECF national facilitator for Portugal',
       amount: 2000,
       state: 'passed',
       decided: 'Feb 2026',
@@ -1327,7 +1277,10 @@ export const energyOrg = {
       id: 'e-ameland',
       kind: 'project',
       title: 'Approve project: Island grids',
-      sub: 'Marcus as DRI · Ameland first, inside the EU Blockchain Sandbox',
+      sub: 'Marcus as DRI',
+      description:
+        'Resilient energy sharing for islands — Ameland first, with tokenised credits inside the EU Blockchain Sandbox.',
+      ends: '31 Dec 2026',
       state: 'passed',
       decided: 'Jan 2026',
       yes: 3,
@@ -1352,7 +1305,10 @@ export const energyOrg = {
       id: 'e-approve-iberia',
       kind: 'project',
       title: 'Approve project: Iberia pilots',
-      sub: 'Pedro as DRI · drafted from the pilots room',
+      sub: 'Pedro as DRI',
+      description:
+        'Live energy communities in Portugal and Spain — onboard municipalities, land the EECF money, keep Coopérnico close.',
+      ends: '30 Sep 2026',
       state: 'passed',
       decided: 'Nov 2025',
       yes: 3,
@@ -1579,7 +1535,7 @@ export const jobs = [
     kind: 'project' as const,
     title: 'Hold Weekday hall',
     project: 'Weekday hall',
-    review: '1 Aug',
+    review: '1 Aug 2026',
     why: 'Nobody holds this. Someone who can sign a simple licence.',
   },
   {
@@ -1603,11 +1559,11 @@ export const founding = {
     { label: 'Shapers', value: 'Maya, Sam' },
     {
       label: 'Project — Saturday stall',
-      value: 'Sam · review 1 Jun',
+      value: 'Sam · review 1 Jun 2026',
     },
     {
       label: 'Project — Weekday hall',
-      value: 'Open · review 1 Aug',
+      value: 'Open · review 1 Aug 2026',
     },
     { label: 'Door', value: 'Anyone can join' },
   ],

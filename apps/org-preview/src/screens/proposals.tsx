@@ -12,7 +12,7 @@ import {
 } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import { useStore } from '@/lib/store';
-import { energyOrg, unitFor, type ProjectId, type Proposal } from '@/lib/data';
+import { energyOrg, unitFor, type Proposal } from '@/lib/data';
 
 export function Proposals() {
   const s = useStore();
@@ -87,7 +87,10 @@ function ProposalCard({ p }: { p: Proposal }) {
             : `${p.state} · ${p.decided}`}
         </span>
       </div>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-sub">{p.sub}</p>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-sub">
+        {p.description ?? p.sub}
+        {p.ends ? ` · ends ${p.ends}` : ''}
+      </p>
     </Card>
   );
 }
@@ -133,34 +136,21 @@ export function ProposalDetail() {
         <h1 className="rise mb-2 text-[26px] font-semibold leading-tight tracking-[-0.03em]">
           {p.title}
         </h1>
-        <p className="rise-1 mb-6 text-[14px] text-sub">{p.sub}</p>
-
-        {p.evidence && (
-          <Card className="rise-1 mb-5 p-5">
-            <Kicker>Evidence — attached by the agent</Kicker>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {p.evidence.map((e) => (
-                <button
-                  key={e.label}
-                  type="button"
-                  onClick={() => {
-                    if (e.go === 'thread') s.openThread(e.id);
-                    else if (e.go === 'ticket') s.openProject('stall');
-                    else s.openProject(e.id as ProjectId);
-                  }}
-                  className="rounded-full border border-hair bg-paper px-3.5 py-1.5 text-[13px] font-medium transition-colors hover:border-ink"
-                >
-                  {e.label} →
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 text-[12px] text-faint">
-              Every claim carries a receipt. No receipt, no trust.
-            </p>
-          </Card>
+        <p
+          className={cn(
+            'rise-1 text-[14px] text-sub',
+            p.description ? 'mb-2' : 'mb-6',
+          )}
+        >
+          {p.sub}
+        </p>
+        {p.description && (
+          <p className="rise-1 mb-6 max-w-xl text-[15px] leading-relaxed">
+            {p.description}
+          </p>
         )}
 
-        <Card className="rise-2 p-5">
+        <Card className="rise-1 p-5">
           <div className="flex items-baseline justify-between">
             <Kicker>Shaper approval</Kicker>
             <span className="text-[12px] text-faint">
@@ -214,15 +204,14 @@ export function ProposalDetail() {
           )}
           {!isShaper && p.state === 'open' && (
             <p className="mt-4 text-[13px] text-faint">
-              Shapers decide this one. You see everything — the draft, the
-              evidence, the outcome.
+              Shapers decide this one. You see the draft and the outcome.
             </p>
           )}
         </Card>
 
-        <div className="rise-3 mt-5">
-          <Row label="Drafted by" value="the agent, from talk and the trail" />
+        <div className="rise-2 mt-5">
           <Row label="Opened by" value={p.openedBy ?? 'a member'} />
+          {p.ends && <Row label="Ends" value={p.ends} />}
           <Row
             label="Decides"
             value={`the Shapers — ${shaperNames}, ${

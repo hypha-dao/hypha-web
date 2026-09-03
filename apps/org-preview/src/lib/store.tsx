@@ -428,7 +428,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                       id: 'approve-weekday',
                       kind: 'project' as const,
                       title: 'Approve project: Weekday hall',
-                      sub: 'Rafi as DRI · drafted from Jun’s licence question',
+                      sub: 'Rafi as DRI',
+                      description:
+                        'Find a weekday hall and hold it: the licence, the deposit, the keys.',
+                      ends: '1 Aug 2026',
                       state: 'passed' as const,
                       decided: 'today',
                       yes: 2,
@@ -657,33 +660,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             `Agreed between ${a.who} and ${a.withWhom} in “${a.roomName}”, ${a.when}` +
             (draft.amount !== draft.agreed
               ? ` — the line says ${money(draft.agreed)}`
-              : '') +
-            ` · drafted by the agent, opened by ${draft.by}`,
+              : ''),
           amount: draft.amount,
           state: 'open',
           yes: 0,
           no: 0,
           needed: energy ? 3 : 2,
           openedBy: draft.by,
-          evidence: [
-            {
-              label: `Where the pay was agreed — “${a.roomName}”, ${a.when}`,
-              go: 'thread',
-              id: a.room,
-            },
-            energy
-              ? {
-                  label: 'Ticket — municipalities, done',
-                  go: 'project',
-                  id: 'iberia',
-                }
-              : { label: 'Ticket — covers, done', go: 'ticket', id: 'covers' },
-            {
-              label: `Confirmed done in “${a.roomName}”`,
-              go: 'thread',
-              id: a.room,
-            },
-          ],
         };
         (energy ? setEProposals : setProposals)((ps) =>
           ps.some((p) => p.id === id) ? ps : [proposal, ...ps],
@@ -807,7 +790,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     id: 'e-approve-carbon',
                     kind: 'project' as const,
                     title: 'Approve project: Carbon credits module',
-                    sub: 'Rowan as DRI · drafted from the roadmap discussion',
+                    sub: 'Rowan as DRI',
+                    description:
+                      'Measure the CO₂ each community avoids, sell the reductions, and fund new setups from the savings they create.',
+                    ends: '31 Mar 2028',
                     state: 'passed' as const,
                     decided: 'today',
                     yes: 3,
