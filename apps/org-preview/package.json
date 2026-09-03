@@ -1,0 +1,28 @@
+{
+  "name": "org-preview",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3010",
+    "build": "next build",
+    "start": "next start --port 3010"
+  },
+  "dependencies": {
+    "next": "^15.4.8",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.8",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "nanoid": "^3.3.8",
+    "picocolors": "^1.1.1",
+    "postcss": "^8.5.3",
+    "source-map-js": "^1.2.1",
+    "tailwindcss": "^4.0.8",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,186 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #ffffff;
+  --color-wash: #f7f7f4;
+  --color-chip: #f0f0ea;
+  --color-hair: #e9e9e3;
+  --color-ink: #1b1b15;
+  --color-sub: #6c6c62;
+  --color-faint: #a9a99d;
+  --color-agent: #0c7a68;
+  --color-agent-soft: #ecf5f2;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.35rem;
+  --radius-3xl: 1.75rem;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+::selection {
+  background: #e5efe9;
+}
+
+*,
+*::before,
+*::after {
+  border-color: var(--color-hair);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  font: inherit;
+}
+
+/* entrance */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.38s cubic-bezier(0.21, 0.6, 0.35, 1) both;
+}
+.rise-1 {
+  animation: rise 0.38s cubic-bezier(0.21, 0.6, 0.35, 1) 0.05s both;
+}
+.rise-2 {
+  animation: rise 0.38s cubic-bezier(0.21, 0.6, 0.35, 1) 0.12s both;
+}
+.rise-3 {
+  animation: rise 0.38s cubic-bezier(0.21, 0.6, 0.35, 1) 0.19s both;
+}
+
+/* timeline */
+@keyframes drawline {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.tl-line {
+  transform-origin: top;
+  animation: drawline 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+}
+@keyframes popdot {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.tl-dot {
+  animation: popdot 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.tl-item {
+  animation: rise 0.38s cubic-bezier(0.21, 0.6, 0.35, 1) both;
+}
+@keyframes drawx {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.tl-rail-x {
+  transform-origin: left;
+  animation: drawx 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}
+@keyframes tlfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.tl-fade {
+  animation: tlfade 0.7s ease 1s both;
+}
+@keyframes pulsenow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(12, 122, 104, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(12, 122, 104, 0);
+  }
+}
+.tl-now {
+  animation:
+    popdot 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    pulsenow 2.2s ease-out 0.5s infinite;
+}
+
+/* typing dots */
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.dot {
+  animation: blink 1.2s infinite both;
+}
+.dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #dcdcd4 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #dcdcd4;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
