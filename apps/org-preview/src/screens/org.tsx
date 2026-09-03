@@ -213,14 +213,14 @@ export function OrgPage() {
   // same four numbers for every org — comparable at a glance
   const statsView = isEnergy
     ? [
-        { n: '12', label: 'projects completed' },
+        { n: '12', label: 'projects' },
         {
           n: String(
             148 +
               (s.eSummary === 'done' ? 1 : 0) +
               (s.eMuni === 'done' ? 1 : 0),
           ),
-          label: 'tickets done',
+          label: 'tickets',
         },
         { n: String(18 + (s.eJoin ? 1 : 0)), label: 'active contributors' },
         {
@@ -229,8 +229,8 @@ export function OrgPage() {
         },
       ]
     : [
-        { n: s.review === 'closed' ? '4' : '3', label: 'projects completed' },
-        { n: String(ticketsDone), label: 'tickets done' },
+        { n: s.review === 'closed' ? '4' : '3', label: 'projects' },
+        { n: String(ticketsDone), label: 'tickets' },
         { n: String(members), label: 'active contributors' },
         { n: leaPaid ? '1,950' : '1,800', label: 'USDC distributed' },
       ];
@@ -275,8 +275,7 @@ export function OrgPage() {
               )}
             </div>
             <p className="mt-3 text-[12px] text-faint">
-              Every version was confirmed by a Shaper. Everything the agent
-              drafts reads from the latest one.
+              Every version was confirmed by a Shaper.
             </p>
           </Card>
 

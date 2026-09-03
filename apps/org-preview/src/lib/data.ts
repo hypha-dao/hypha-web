@@ -1378,6 +1378,14 @@ export const energyOrg = {
       preview: 'Nordpool connector in review.',
       time: 'Tue',
     },
+    {
+      id: 'e-marcus-dm',
+      kind: 'dm' as const,
+      title: 'Marcus',
+      sub: 'Direct',
+      preview: 'Ameland report is live.',
+      time: 'Yesterday',
+    },
   ],
 };
 
@@ -1470,6 +1478,14 @@ export const seedMessages: Record<string, Msg[]> = {
       from: 'Rowan',
       text: 'v2 is distributing value fairly on all three test communities.',
     },
+  ],
+  'e-marcus-dm': [
+    {
+      id: 'emd1',
+      from: 'Marcus',
+      text: 'Ameland report is live. I put the sandbox cycle notes in the pilots room.',
+    },
+    { id: 'emd2', from: 'you', text: 'Got it — thanks.' },
   ],
   agent: [
     {

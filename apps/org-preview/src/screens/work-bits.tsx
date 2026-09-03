@@ -483,26 +483,3 @@ export function Waiting({ who }: { who: string }) {
     </div>
   );
 }
-
-export function Trail({
-  rows,
-}: {
-  rows: { when: string; what: string; receipt?: string }[];
-}) {
-  return (
-    <div className="mt-2">
-      {rows.map((row) => (
-        <div
-          key={row.what}
-          className="flex items-baseline justify-between gap-4 border-b border-hair py-2.5 last:border-0"
-        >
-          <span className="text-[14px]">{row.what}</span>
-          <span className="shrink-0 text-[12px] text-faint">
-            {row.when}
-            {row.receipt ? ` · ${row.receipt}` : ''}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}

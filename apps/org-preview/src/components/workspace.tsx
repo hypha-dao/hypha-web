@@ -230,14 +230,49 @@ function NavButton({ item }: { item: NavItem }) {
   );
 }
 
-/* ---------- sidebar chats — every conversation lives here ---------- */
+/* ---------- sidebar chats — DMs and groups, separately ---------- */
+
+type ChatRow = { id: string; kind: string; title: string };
+
+function ChatLink({
+  id,
+  title,
+  kind,
+}: {
+  id: string;
+  title: string;
+  kind: string;
+}) {
+  const s = useStore();
+  return (
+    <button
+      type="button"
+      onClick={() => s.openThread(id)}
+      className={cn(
+        'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors',
+        s.route === 'thread' && s.threadId === id
+          ? 'bg-paper font-medium text-ink'
+          : 'text-sub hover:text-ink',
+      )}
+    >
+      {kind === 'agent' ? (
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-agent" />
+      ) : kind === 'shapers' ? (
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full ring-1 ring-agent" />
+      ) : (
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-hair" />
+      )}
+      <span className="truncate">{title}</span>
+    </button>
+  );
+}
 
 function ChatsSection() {
   const s = useStore();
   const [drafting, setDrafting] = useState(false);
   const [name, setName] = useState('');
 
-  const rooms = [
+  const listed: ChatRow[] = [
     ...(s.org === 'energy'
       ? energyOrg.threads
       : threads.filter(
@@ -251,46 +286,32 @@ function ChatsSection() {
       .filter((c) => c.org === s.org)
       .map((c) => ({
         id: c.id,
-        kind: 'room' as const,
+        kind: 'group' as const,
         title: c.title,
       })),
   ];
 
-  const rowCls = (active: boolean) =>
-    cn(
-      'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors',
-      active ? 'bg-paper text-ink font-medium' : 'text-sub hover:text-ink',
-    );
+  const groups = listed.filter((t) => t.kind !== 'dm');
+  const dms = listed.filter((t) => t.kind === 'dm');
 
   return (
     <div className="mt-6 min-h-0 px-3">
       <p className="pb-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
-        Chats
+        DMs
       </p>
       <div className="flex flex-col gap-0.5">
-        <button
-          type="button"
-          onClick={() => s.openThread('agent')}
-          className={rowCls(s.route === 'thread' && s.threadId === 'agent')}
-        >
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-agent" />
-          <span className="truncate">Personal Assistant</span>
-        </button>
+        <ChatLink id="agent" title="Personal Assistant" kind="agent" />
+        {dms.map((t) => (
+          <ChatLink key={t.id} id={t.id} title={t.title} kind={t.kind} />
+        ))}
+      </div>
 
-        {rooms.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => s.openThread(t.id)}
-            className={rowCls(s.route === 'thread' && s.threadId === t.id)}
-          >
-            {t.kind === 'shapers' ? (
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full ring-1 ring-agent" />
-            ) : (
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-hair" />
-            )}
-            <span className="truncate">{t.title}</span>
-          </button>
+      <p className="pb-1.5 pt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
+        Group chats
+      </p>
+      <div className="flex flex-col gap-0.5">
+        {groups.map((t) => (
+          <ChatLink key={t.id} id={t.id} title={t.title} kind={t.kind} />
         ))}
 
         {drafting ? (

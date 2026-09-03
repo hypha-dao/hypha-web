@@ -47,7 +47,6 @@ import {
   Section,
   StateChip,
   TicketList,
-  Trail,
   Waiting,
   countUnder,
   offerRow,
@@ -831,7 +830,7 @@ function RiverAllWork() {
 }
 
 /* =========================================================
-   Project detail — brief, tickets, trail
+   Project detail — brief, tickets
    ========================================================= */
 
 export function ProjectDetail() {
@@ -902,85 +901,6 @@ function LiveRiverProjectDetail() {
   const isStall = p.id === 'stall';
   const stallHealth = useStallHealth();
   const weekdayHealth = useWeekdayHealth();
-
-  const trail: { when: string; what: string; receipt?: string }[] = isStall
-    ? [
-        {
-          when: '12 May',
-          what: 'Approved by the Shapers — Sam as DRI',
-          receipt: 'Proposals',
-        },
-        {
-          when: '20 May',
-          what: 'Covers ticket accepted by Lea',
-          receipt: '“Saturday stall”',
-        },
-        ...(s.subCovers === 'offered' ||
-        s.subCovers === 'accepted' ||
-        s.subCovers === 'done'
-          ? [
-              {
-                when: 'today',
-                what:
-                  s.subCovers === 'offered'
-                    ? 'Lea split the covers ticket — the rota offered to Jun'
-                    : 'Lea split the covers ticket — Jun holds the rota',
-                receipt: 'Personal Assistant',
-              },
-            ]
-          : []),
-        ...(s.subCovers === 'done'
-          ? [
-              {
-                when: 'today',
-                what: 'Rota printed — done, confirmed by Jun',
-                receipt: '“Saturday stall”',
-              },
-            ]
-          : []),
-        ...(s.covers === 'draftDone'
-          ? [
-              {
-                when: 'today',
-                what: 'Done drafted from talk — waiting on Lea',
-                receipt: '“Saturday stall”',
-              },
-            ]
-          : []),
-        ...(s.covers === 'done'
-          ? [
-              {
-                when: 'today',
-                what: 'Covers done — confirmed by Lea',
-                receipt: '“Saturday stall”',
-              },
-            ]
-          : []),
-        ...(s.proposals.find((x) => x.id === PAY_LEA_ID)?.state === 'passed'
-          ? [
-              {
-                when: 'today',
-                what: 'Lea paid for the covers — both Shapers agreed',
-                receipt: 'Proposals',
-              },
-            ]
-          : []),
-      ]
-    : s.weekday === 'held'
-    ? [
-        {
-          when: 'today',
-          what: 'Approved by the Shapers — Rafi as DRI',
-          receipt: 'Proposals',
-        },
-      ]
-    : [
-        {
-          when: '2h ago',
-          what: 'Drafted from Jun’s licence question',
-          receipt: '“Saturday stall”',
-        },
-      ];
 
   return (
     <Workspace>
@@ -1054,15 +974,6 @@ function LiveRiverProjectDetail() {
             </p>
           </div>
         )}
-
-        <div className="rise-3">
-          <Kicker>Trail — every state change, with its receipt</Kicker>
-          <Trail rows={trail} />
-          <p className="mt-4 max-w-md text-[13px] leading-relaxed text-faint">
-            No money lives on a project — pay is agreed in chat and moves only
-            through a proposal. Check Proposals for the decisions.
-          </p>
-        </div>
       </Page>
     </Workspace>
   );

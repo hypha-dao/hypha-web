@@ -29,7 +29,6 @@ import {
   Section,
   StateChip,
   TicketList,
-  Trail,
   Waiting,
   offerRow,
   type TicketRow,
@@ -655,59 +654,8 @@ export function EnergyProjectDetail() {
   const health = useEnergyHealth();
   const id = (s.projectId in P ? s.projectId : 'iberia') as EnergyProjectId;
   const p = P[id];
-  const paid =
-    s.eProposals.find((x) => x.id === PAY_ROGERIO_ID)?.state === 'passed';
 
   const dri = id === 'carbon' ? (s.eCarbon === 'held' ? 'Rowan' : null) : p.dri;
-
-  const trail = [
-    ...p.trail,
-    ...(id === 'iberia' && s.eMuni === 'draftDone'
-      ? [
-          {
-            when: 'today',
-            what: 'Done drafted from talk — waiting on Rogerio',
-            receipt: '“Pilots”',
-          },
-        ]
-      : []),
-    ...(id === 'iberia' && s.eMuni === 'done'
-      ? [
-          {
-            when: 'today',
-            what: 'Municipalities done — confirmed by Rogerio',
-            receipt: '“Pilots”',
-          },
-        ]
-      : []),
-    ...(id === 'iberia' && paid
-      ? [
-          {
-            when: 'today',
-            what: 'Rogerio paid for the municipalities — all three Shapers agreed',
-            receipt: 'Proposals',
-          },
-        ]
-      : []),
-    ...(id === 'islands' && s.eSummary === 'done'
-      ? [
-          {
-            when: 'today',
-            what: 'Ameland summary written — done, by you',
-            receipt: 'Ticket',
-          },
-        ]
-      : []),
-    ...(id === 'carbon' && s.eCarbon === 'held'
-      ? [
-          {
-            when: 'today',
-            what: 'Approved by the Shapers — Rowan as DRI',
-            receipt: 'Proposals',
-          },
-        ]
-      : []),
-  ];
 
   return (
     <Workspace>
@@ -751,15 +699,6 @@ export function EnergyProjectDetail() {
             />
           </div>
         )}
-
-        <div className="rise-3">
-          <Kicker>Trail — every state change, with its receipt</Kicker>
-          <Trail rows={trail} />
-          <p className="mt-4 max-w-md text-[13px] leading-relaxed text-faint">
-            {p.from}. No money lives on a project — pay is agreed in chat and
-            moves only through a proposal the Shapers passed.
-          </p>
-        </div>
       </Page>
     </Workspace>
   );

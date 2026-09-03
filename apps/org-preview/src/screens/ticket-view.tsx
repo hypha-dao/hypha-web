@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, Button, Card, Kicker } from '@/components/primitives';
+import { Avatar, Button, Card } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import {
   energyOrg,
@@ -11,7 +11,7 @@ import {
   type TicketView,
 } from '@/lib/data';
 import { useStore } from '@/lib/store';
-import { ChildList, Fact, StateChip, Trail } from './work-bits';
+import { ChildList, Fact, StateChip } from './work-bits';
 
 /* =========================================================
    Any ticket, opened by anyone — read-only. Only the person
@@ -44,66 +44,6 @@ export function TicketViewScreen() {
     : projectDri;
   const above = t.parent ?? null;
   const rows = t.children ?? [];
-
-  const trail = [
-    ...(holder && holder !== 'created via the assistant'
-      ? [
-          {
-            when: 'earlier',
-            what:
-              offeredBy === holder
-                ? `${holder} split the piece above and kept this one`
-                : `Offered by ${offeredBy} — accepted by ${holder}`,
-            receipt: `“${roomName}”`,
-          },
-        ]
-      : holder === 'created via the assistant'
-      ? [
-          {
-            when: 'today',
-            what: 'Drafted through the assistant — open, nobody holds it yet',
-            receipt: 'Personal Assistant',
-          },
-        ]
-      : [
-          {
-            when: 'earlier',
-            what: `Drafted under “${
-              above ? above.title : t.projectTitle
-            }” — open, nobody holds it yet`,
-            receipt: `“${roomName}”`,
-          },
-        ]),
-    ...(rows.length > 0 && holder
-      ? [
-          {
-            when: 'earlier',
-            what: `${holder} split it — ${rows.length} piece${
-              rows.length === 1 ? '' : 's'
-            } offered, each to one person`,
-            receipt: `“${roomName}”`,
-          },
-        ]
-      : []),
-    ...(t.state === 'waiting' && t.stateLabel?.includes('done draft')
-      ? [
-          {
-            when: 'today',
-            what: `Done drafted from talk — waiting on ${holder}`,
-            receipt: `“${roomName}”`,
-          },
-        ]
-      : []),
-    ...(t.state === 'done'
-      ? [
-          {
-            when: 'earlier',
-            what: `Done — confirmed by ${holder}`,
-            receipt: `“${roomName}”`,
-          },
-        ]
-      : []),
-  ];
 
   // every ticket above this one, top first — each is a click away
   const chain: TicketView[] = [];
@@ -201,11 +141,6 @@ export function TicketViewScreen() {
             <ChildList parent={t} rows={rows} />
           </div>
         )}
-
-        <div className="rise-3">
-          <Kicker>Trail — every state change, with its receipt</Kicker>
-          <Trail rows={trail} />
-        </div>
 
         <div className="rise-3 mt-6 flex flex-wrap gap-2">
           {isYou && t.state !== 'done' && (

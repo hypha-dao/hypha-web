@@ -5,17 +5,15 @@ import { Page, Workspace } from '@/components/workspace';
 import {
   type Health,
   type StaticProject,
-  type TrailRow,
   type WorkTicketRow,
 } from '@/lib/data';
 import { useStore } from '@/lib/store';
-import { Fact, HealthCard, TicketList, Trail, openUnder } from './work-bits';
+import { Fact, HealthCard, TicketList, openUnder } from './work-bits';
 
 /* =========================================================
-   A project whose story does not move in the demo — brief,
-   tickets (with whatever sits under them), and the trail.
-   No money on it: pay is agreed in chat and moved by
-   proposal. Both orgs use it.
+   A project whose story does not move in the demo — brief
+   and tickets (with whatever sits under them). Both orgs
+   use it.
    ========================================================= */
 
 /** "5 tickets · 2 open" — counting everything under the project, any depth */
@@ -63,12 +61,10 @@ export function ProjectHealth({
 export function StaticProjectDetail({
   project,
   tickets = project.tickets,
-  trail = project.trail,
   health = project.health,
 }: {
   project: StaticProject;
   tickets?: WorkTicketRow[];
-  trail?: TrailRow[];
   health?: Health;
 }) {
   const s = useStore();
@@ -119,15 +115,6 @@ export function StaticProjectDetail({
             splits the work.
           </p>
         )}
-
-        <div className="rise-3">
-          <Kicker>Trail — every state change, with its receipt</Kicker>
-          <Trail rows={trail} />
-          <p className="mt-4 max-w-md text-[13px] leading-relaxed text-faint">
-            {p.from}. No money lives on a project — pay is agreed in chat and
-            moves only through a proposal the Shapers passed.
-          </p>
-        </div>
       </Page>
     </Workspace>
   );
