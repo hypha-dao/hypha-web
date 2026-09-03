@@ -21,3 +21,16 @@ export function getEnableOnboardingVoiceRealtime(): boolean {
 export function getEnableCallDocumentPip(): boolean {
   return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP) ?? true;
 }
+
+/**
+ * Client-safe build-time gate for the #2486 talk-first assistant entrypoint.
+ * Defaults off; the server reads toolbar overrides too via `getEnableAssistantAsync`.
+ */
+export function getEnableAssistant(): boolean {
+  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT) ?? false;
+}
+
+/** Client-safe build-time gate for real voice in the #2486 assistant canvas. */
+export function getEnableAssistantVoice(): boolean {
+  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE) ?? false;
+}

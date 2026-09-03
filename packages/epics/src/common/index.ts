@@ -214,3 +214,4 @@ export {
   SpaceCreatedOnText,
 } from './formatted-local-date-time';
 export * from './composer';
+export * from './conversational-shell';

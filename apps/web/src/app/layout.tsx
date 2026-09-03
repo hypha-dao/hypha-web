@@ -33,6 +33,7 @@ import {
   getEnableSpaceMemory,
   getEnableHumanChat,
 } from '@hypha-platform/feature-flags';
+import { resolveAssistantFirst } from '@web/lib/assistant-first';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -101,6 +102,12 @@ export default async function RootLayout({
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
+
+  // #2486: with the assistant enabled and no explicit classic opt-out, the
+  // post-auth landing is the talk-first entrypoint instead of /my-spaces.
+  const baseRedirectPath = (await resolveAssistantFirst())
+    ? '/assistant'
+    : '/my-spaces';
 
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
@@ -294,7 +301,7 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={baseRedirectPath}
                                   navItems={[
                                     {
                                       label: navMySpacesLabel,
@@ -326,7 +333,7 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={baseRedirectPath}
                                   navItems={[
                                     {
                                       label: navMySpacesLabel,
