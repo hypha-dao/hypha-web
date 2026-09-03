@@ -7,7 +7,7 @@ import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
 import { useNetworkPulse } from '../use-network-pulse';
 import { useNetworkPeople } from '../use-network-people';
 import {
-  selectNetworkPulseCandidates,
+  selectDirectorySpaceSlugs,
   spaceVisualsFromSpaces,
   uniquePeople,
 } from '../network-pulse';
@@ -44,13 +44,10 @@ export function NetworkLivingSurface({
     people: pulsePeople,
     isLoading,
   } = useNetworkPulse(pulseSpaces);
-  const peopleSpaceSlugs = useMemo(() => {
-    const shared = pulseSpaces.map((space) => space.slug).filter(Boolean);
-    if (shared.length > 0) return shared;
-    return selectNetworkPulseCandidates(spaces)
-      .map((space) => space.slug)
-      .filter((slug): slug is string => Boolean(slug));
-  }, [pulseSpaces, spaces]);
+  const peopleSpaceSlugs = useMemo(
+    () => selectDirectorySpaceSlugs(spaces),
+    [spaces],
+  );
   const {
     people: directoryPeople,
     isLoading: isLoadingPeople,

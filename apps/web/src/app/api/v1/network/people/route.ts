@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         spaceSlugs,
         excludeSlug,
         searchTerm: searchTerm || undefined,
+        callerPersonId: caller.id,
         pagination: { page, pageSize },
       },
       { db },

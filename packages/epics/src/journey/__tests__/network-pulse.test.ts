@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isNetworkSharedDiscoverability,
+  selectDirectorySpaceSlugs,
   selectNetworkPulseCandidates,
   spaceVisualsFromSpaces,
   storyContext,
@@ -15,6 +16,17 @@ describe('network-pulse', () => {
     expect(isNetworkSharedDiscoverability(2)).toBe(false);
     expect(isNetworkSharedDiscoverability(3)).toBe(false);
     expect(isNetworkSharedDiscoverability(undefined)).toBe(false);
+  });
+
+  it('includes spaces without a web3 id in the people directory', () => {
+    expect(
+      selectDirectorySpaceSlugs([
+        { slug: 'garden', flags: [] },
+        { slug: 'lab', flags: ['sandbox'] },
+        { slug: 'old', flags: ['archived'] },
+        { slug: '  ', flags: [] },
+      ]),
+    ).toEqual(['garden']);
   });
 
   it('skips sandbox, archived, and spaces without a network id', () => {
@@ -73,6 +85,14 @@ describe('network-pulse', () => {
         context: null,
       }),
     ).toBe('/en/dho/garden?signal=need-hands');
+  });
+
+  it('keeps more than eight people when a higher limit is passed', () => {
+    const people = Array.from({ length: 12 }, (_, index) => ({
+      slug: `p${index}`,
+      name: `Person ${index}`,
+    }));
+    expect(uniquePeople(people, null, 40)).toHaveLength(12);
   });
 
   it('hides opted-out people from the network directory', () => {

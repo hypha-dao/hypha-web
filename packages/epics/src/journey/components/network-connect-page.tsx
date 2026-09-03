@@ -22,10 +22,9 @@ import {
   Input,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
 import { useNetworkPeople } from '../use-network-people';
 import {
-  selectNetworkPulseCandidates,
+  selectDirectorySpaceSlugs,
   type NetworkPerson,
 } from '../network-pulse';
 
@@ -48,17 +47,7 @@ export function NetworkConnectPage({
     initialPersonSlug?.trim() || searchParams.get('person')?.trim() || '';
   const { person } = useMe();
   const { getAccessToken } = useAccessTokenReady();
-  const { sharedSpaces, isLoading: isLoadingShared } =
-    useNetworkSharedSpaces(spaces);
-  const spaceSlugs = useMemo(() => {
-    const shared = sharedSpaces
-      .map((space) => space.slug)
-      .filter((slug): slug is string => Boolean(slug));
-    if (shared.length > 0) return shared;
-    return selectNetworkPulseCandidates(spaces)
-      .map((space) => space.slug)
-      .filter((slug): slug is string => Boolean(slug));
-  }, [sharedSpaces, spaces]);
+  const spaceSlugs = useMemo(() => selectDirectorySpaceSlugs(spaces), [spaces]);
   const { people, isLoading, error, retry } = useNetworkPeople({
     spaceSlugs,
     excludeSlug: person?.slug,
@@ -207,7 +196,7 @@ export function NetworkConnectPage({
             <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold">
               {t('connectTitle')}
             </h2>
-            {isLoading || isLoadingShared ? (
+            {isLoading ? (
               <p className="text-2 text-muted-foreground">
                 {t('connectLoading')}
               </p>

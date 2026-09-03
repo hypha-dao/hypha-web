@@ -97,6 +97,27 @@ export function selectNetworkPulseCandidates<T extends NetworkPulseCandidate>(
     .slice(0, limit);
 }
 
+/**
+ * Space slugs for the people directory. Unlike pulse candidates, this
+ * does not require a web3 id or PUBLIC/NETWORK discoverability — those
+ * gates were emptying Connect when on-chain visibility was empty.
+ */
+export function selectDirectorySpaceSlugs<
+  T extends { slug?: string | null; flags?: string[] | null },
+>(spaces: T[]): string[] {
+  return [
+    ...new Set(
+      spaces
+        .filter((space) => {
+          if (!space.slug?.trim()) return false;
+          const flags = space.flags ?? [];
+          return !flags.includes('archived') && !flags.includes('sandbox');
+        })
+        .map((space) => space.slug!.trim()),
+    ),
+  ];
+}
+
 export function storyContext(
   text?: string | null,
   max = NETWORK_PULSE_CONTEXT_MAX,
@@ -128,6 +149,7 @@ export function storyHref(lang: string, story: NetworkStory): string {
 export function uniquePeople(
   people: NetworkPerson[],
   excludeSlug?: string | null,
+  limit = NETWORK_PULSE_PEOPLE_LIMIT,
 ): NetworkPerson[] {
   const seen = new Set<string>();
   const next: NetworkPerson[] = [];
@@ -137,7 +159,7 @@ export function uniquePeople(
     if (excludeSlug && person.slug === excludeSlug) continue;
     seen.add(person.slug);
     next.push(person);
-    if (next.length >= NETWORK_PULSE_PEOPLE_LIMIT) break;
+    if (next.length >= limit) break;
   }
   return next;
 }

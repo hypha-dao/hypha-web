@@ -4,16 +4,20 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
 import type { PaginatedResponse, Person } from '@hypha-platform/core/client';
-import { toNetworkPerson } from './network-people';
+import { networkPeopleCacheKey, toNetworkPerson } from './network-people';
 import {
   NETWORK_PULSE_PEOPLE_SPACE_LIMIT,
   uniquePeople,
   type NetworkPerson,
 } from './network-pulse';
 
-const MEMBERS_FALLBACK_PAGE_SIZE = 8;
+const MEMBERS_FALLBACK_PAGE_SIZE = 20;
 
-export { personAvatarUrl, toNetworkPerson } from './network-people';
+export {
+  networkPeopleCacheKey,
+  personAvatarUrl,
+  toNetworkPerson,
+} from './network-people';
 export type { PersonDirectorySource } from './network-people';
 
 type MembersPage = { persons?: { data?: Person[] } };
@@ -51,11 +55,14 @@ async function fetchMembersFallbackPeople({
   token,
   spaceSlugs,
   excludeSlug,
+  limit,
 }: {
   token: string | null;
   spaceSlugs: string[];
   excludeSlug?: string | null;
+  limit: number;
 }): Promise<NetworkPerson[]> {
+  if (spaceSlugs.length === 0) return [];
   const headers: HeadersInit = token
     ? { Authorization: `Bearer ${token}` }
     : {};
@@ -79,6 +86,7 @@ async function fetchMembersFallbackPeople({
         .filter((person): person is NetworkPerson => Boolean(person)),
     ),
     excludeSlug,
+    limit,
   );
 }
 
@@ -102,35 +110,38 @@ export function useNetworkPeople({
     [spaceSlugs],
   );
   const awaitingAuth = isAuthLoading || !accessTokenReady;
-  const shouldFetch = scopedSlugs.length > 0 && !awaitingAuth;
+  const cacheKey = networkPeopleCacheKey({
+    awaitingAuth,
+    spaceSlugs: scopedSlugs,
+    excludeSlug,
+    pageSize,
+  });
 
   const { data, error, isLoading, mutate } = useSWR(
-    shouldFetch
-      ? [
-          'network-people',
-          scopedSlugs.join(','),
-          excludeSlug ?? '',
-          String(pageSize),
-        ]
-      : null,
+    cacheKey,
     async () => {
       const token = await getAccessToken();
+      let directoryError: unknown;
       try {
-        return await fetchDirectoryPeople({
+        const directory = await fetchDirectoryPeople({
           token,
           spaceSlugs: scopedSlugs,
           excludeSlug,
           pageSize,
         });
-      } catch (directoryError) {
-        const fallback = await fetchMembersFallbackPeople({
-          token,
-          spaceSlugs: scopedSlugs,
-          excludeSlug,
-        });
-        if (fallback.length > 0) return fallback;
-        throw directoryError;
+        if (directory.length > 0) return directory;
+      } catch (error) {
+        directoryError = error;
       }
+      const fallback = await fetchMembersFallbackPeople({
+        token,
+        spaceSlugs: scopedSlugs,
+        excludeSlug,
+        limit: pageSize,
+      });
+      if (fallback.length > 0) return fallback;
+      if (directoryError) throw directoryError;
+      return [] as NetworkPerson[];
     },
     {
       revalidateOnFocus: true,
@@ -140,7 +151,7 @@ export function useNetworkPeople({
 
   return {
     people: data ?? ([] as NetworkPerson[]),
-    isLoading: awaitingAuth || (shouldFetch && isLoading),
+    isLoading: awaitingAuth || (Boolean(cacheKey) && isLoading),
     error: Boolean(error) && (data?.length ?? 0) === 0,
     retry: () => {
       void mutate();

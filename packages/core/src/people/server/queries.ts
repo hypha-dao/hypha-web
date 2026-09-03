@@ -540,62 +540,60 @@ export type FindNetworkVisiblePeopleBySpaceSlugsInput = {
   spaceSlugs: string[];
   excludeSlug?: string | null;
   searchTerm?: string;
+  callerPersonId?: number | null;
   pagination: PaginationParams<Person>;
 };
 
-/**
- * Directory of human members in caller-supplied spaces who have not
- * opted out of network discovery. Visibility defaults on — there is no
- * explicit opt-in. Does not change in-space member lists.
- */
-export const findNetworkVisiblePeopleBySpaceSlugs = async (
+const notSandboxOrArchivedSpace = () =>
+  and(
+    eq(spaces.isArchived, false),
+    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["sandbox"]'::jsonb`,
+    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["archived"]'::jsonb`,
+  );
+
+const personNameSearch = (searchTerm?: string) => {
+  if (!searchTerm?.trim()) return undefined;
+  const term = `%${searchTerm.trim()}%`;
+  return sql`(${people.name} ILIKE ${term} OR ${people.surname} ILIKE ${term} OR ${people.nickname} ILIKE ${term})`;
+};
+
+const visibleUnlessOptedOut = (restrictToVisible: boolean) =>
+  restrictToVisible
+    ? or(isNull(people.networkVisible), eq(people.networkVisible, true))
+    : undefined;
+
+async function findCallerDirectorySpaceSlugs(
+  personId: number,
+  db: DatabaseInstance,
+): Promise<string[]> {
+  const rows = await db
+    .select({ slug: spaces.slug })
+    .from(spaces)
+    .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
+    .where(
+      and(eq(memberships.personId, personId), notSandboxOrArchivedSpace()),
+    );
+  return [
+    ...new Set(
+      rows
+        .map((row) => row.slug?.trim())
+        .filter((slug): slug is string => Boolean(slug)),
+    ),
+  ].slice(0, NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP);
+}
+
+async function listDirectoryIdsInSpaces(
   {
     spaceSlugs,
     excludeSlug,
     searchTerm,
-    pagination,
-  }: FindNetworkVisiblePeopleBySpaceSlugsInput,
-  { db }: DbConfig,
-): Promise<PaginatedResponse<Person>> => {
-  const cappedSlugs = [
-    ...new Set(spaceSlugs.map((slug) => slug.trim()).filter(Boolean)),
-  ].slice(0, NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP);
-
-  const page = pagination.page ?? 1;
-  const pageSize = Math.min(Math.max(pagination.pageSize ?? 20, 1), 40);
-  const empty: PaginatedResponse<Person> = {
-    data: [],
-    pagination: {
-      total: 0,
-      page,
-      pageSize,
-      totalPages: 0,
-      hasNextPage: false,
-      hasPreviousPage: page > 1,
-    },
-  };
-  if (cappedSlugs.length === 0) return empty;
-
-  const whereConditions = [
-    inArray(spaces.slug, cappedSlugs),
-    eq(spaces.isArchived, false),
-    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["sandbox"]'::jsonb`,
-    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["archived"]'::jsonb`,
-    isHumanPerson(),
-  ];
-
-  const excluded = excludeSlug?.trim();
-  if (excluded) {
-    whereConditions.push(ne(people.slug, excluded));
-  }
-
-  if (searchTerm?.trim()) {
-    const term = `%${searchTerm.trim()}%`;
-    whereConditions.push(
-      sql`(${people.name} ILIKE ${term} OR ${people.surname} ILIKE ${term} OR ${people.nickname} ILIKE ${term})`,
-    );
-  }
-
+  }: {
+    spaceSlugs: string[];
+    excludeSlug?: string;
+    searchTerm?: string;
+  },
+  db: DatabaseInstance,
+): Promise<number[]> {
   const listVisibleIds = (restrictToVisible: boolean) =>
     db
       .selectDistinct({ id: people.id })
@@ -604,17 +602,12 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
       .innerJoin(spaces, eq(memberships.spaceId, spaces.id))
       .where(
         and(
-          ...whereConditions,
-          ...(restrictToVisible
-            ? [
-                // Default visible: only an explicit false hides someone.
-                // NULL (pre-0077 / unmigrated rows) must stay in the directory.
-                or(
-                  isNull(people.networkVisible),
-                  eq(people.networkVisible, true),
-                ),
-              ]
-            : []),
+          inArray(spaces.slug, spaceSlugs),
+          notSandboxOrArchivedSpace(),
+          isHumanPerson(),
+          excludeSlug ? ne(people.slug, excludeSlug) : undefined,
+          personNameSearch(searchTerm),
+          visibleUnlessOptedOut(restrictToVisible),
         ),
       )
       .orderBy(people.id);
@@ -623,8 +616,46 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
     () => listVisibleIds(true),
     () => listVisibleIds(false),
   );
+  return idRows.map((row) => row.id);
+}
 
-  const ids = idRows.map((row) => row.id);
+async function listGlobalDirectoryIds(
+  {
+    excludeSlug,
+    searchTerm,
+  }: {
+    excludeSlug?: string;
+    searchTerm?: string;
+  },
+  db: DatabaseInstance,
+): Promise<number[]> {
+  const listVisibleIds = (restrictToVisible: boolean) =>
+    db
+      .select({ id: people.id })
+      .from(people)
+      .where(
+        and(
+          isHumanPerson(),
+          excludeSlug ? ne(people.slug, excludeSlug) : undefined,
+          personNameSearch(searchTerm),
+          visibleUnlessOptedOut(restrictToVisible),
+        ),
+      )
+      .orderBy(people.id);
+
+  const idRows = await withOptionalNetworkVisibleColumn(
+    () => listVisibleIds(true),
+    () => listVisibleIds(false),
+  );
+  return idRows.map((row) => row.id);
+}
+
+async function hydratePeoplePage(
+  ids: number[],
+  page: number,
+  pageSize: number,
+  db: DatabaseInstance,
+): Promise<PaginatedResponse<Person>> {
   const total = ids.length;
   const totalPages = Math.ceil(total / pageSize);
   const offset = (page - 1) * pageSize;
@@ -664,4 +695,51 @@ export const findNetworkVisiblePeopleBySpaceSlugs = async (
       hasPreviousPage: page > 1,
     },
   };
+}
+
+/**
+ * Directory of people who have not opted out of network discovery.
+ * Visibility defaults on. An empty slug list is not treated as zero
+ * people — fall back to the caller's spaces, then the public directory
+ * (`findAllPeople`). Does not change in-space member lists.
+ */
+export const findNetworkVisiblePeopleBySpaceSlugs = async (
+  {
+    spaceSlugs,
+    excludeSlug,
+    searchTerm,
+    callerPersonId,
+    pagination,
+  }: FindNetworkVisiblePeopleBySpaceSlugsInput,
+  { db }: DbConfig,
+): Promise<PaginatedResponse<Person>> => {
+  let cappedSlugs = [
+    ...new Set(spaceSlugs.map((slug) => slug.trim()).filter(Boolean)),
+  ].slice(0, NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP);
+
+  const page = pagination.page ?? 1;
+  const pageSize = Math.min(Math.max(pagination.pageSize ?? 20, 1), 40);
+  const excluded = excludeSlug?.trim() || undefined;
+
+  if (cappedSlugs.length === 0 && callerPersonId) {
+    cappedSlugs = await findCallerDirectorySpaceSlugs(callerPersonId, db);
+  }
+
+  let ids: number[] = [];
+  if (cappedSlugs.length > 0) {
+    ids = await listDirectoryIdsInSpaces(
+      { spaceSlugs: cappedSlugs, excludeSlug: excluded, searchTerm },
+      db,
+    );
+  }
+  // No PUBLIC/NETWORK slugs, empty memberships, or a missing
+  // network_visible column must not become an empty directory.
+  if (ids.length === 0) {
+    ids = await listGlobalDirectoryIds(
+      { excludeSlug: excluded, searchTerm },
+      db,
+    );
+  }
+
+  return hydratePeoplePage(ids, page, pageSize, db);
 };
