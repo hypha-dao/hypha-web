@@ -27,6 +27,26 @@ export function personAvatarUrl(person: PersonDirectorySource): string | null {
   return trimmed || null;
 }
 
+export function networkPeopleCacheKey({
+  awaitingAuth,
+  spaceSlugs,
+  excludeSlug,
+  pageSize,
+}: {
+  awaitingAuth: boolean;
+  spaceSlugs: string[];
+  excludeSlug?: string | null;
+  pageSize: number;
+}) {
+  if (awaitingAuth) return null;
+  return [
+    'network-people',
+    spaceSlugs.join(','),
+    excludeSlug ?? '',
+    String(pageSize),
+  ] as const;
+}
+
 export function toNetworkPerson(
   person: PersonDirectorySource,
 ): NetworkPerson | null {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { personAvatarUrl, toNetworkPerson } from '../network-people';
+import {
+  networkPeopleCacheKey,
+  personAvatarUrl,
+  toNetworkPerson,
+} from '../network-people';
 
 describe('toNetworkPerson', () => {
   it('keeps people visible when networkVisible is omitted', () => {
@@ -46,6 +50,29 @@ describe('toNetworkPerson', () => {
   it('drops people without a slug', () => {
     expect(
       toNetworkPerson({ name: 'No Slug', avatarUrl: '/x.png' }),
+    ).toBeNull();
+  });
+});
+
+describe('networkPeopleCacheKey', () => {
+  it('still fetches when there are no PUBLIC space slugs', () => {
+    expect(
+      networkPeopleCacheKey({
+        awaitingAuth: false,
+        spaceSlugs: [],
+        excludeSlug: 'me',
+        pageSize: 40,
+      }),
+    ).toEqual(['network-people', '', 'me', '40']);
+  });
+
+  it('waits for auth instead of treating it as an empty directory', () => {
+    expect(
+      networkPeopleCacheKey({
+        awaitingAuth: true,
+        spaceSlugs: ['garden'],
+        pageSize: 40,
+      }),
     ).toBeNull();
   });
 });
