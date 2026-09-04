@@ -28,14 +28,14 @@ loop: hear → remember → offer work → watch outcomes → revise beliefs.
 Stack: **Vercel AI SDK + OpenRouter** (default `openai/gpt-4o-mini`). Contract everywhere: **the
 AI drafts, the member confirms.**
 
-The system prompt’s north star is *THE AI DOES IT FOR ME* — propose, pre-fill, navigate; the
+The system prompt’s north star is _THE AI DOES IT FOR ME_ — propose, pre-fill, navigate; the
 member reacts yes / tweak / no.
 
-| Surface | What it does | Flag (default) |
-| ------- | ------------ | -------------- |
-| **Left AI panel** on space pages | Ongoing advisor: reads space data, drafts proposals, creates signals, opens the right screen | `enable-ai-chat` (on) |
-| **Onboarding hero** | Conversational space creation — purpose, governance, visuals, nested spaces. Optional Live Voice (OpenAI Realtime) | `enable-onboarding-ai-hero` (on), `enable-onboarding-write-tools` (on), `enable-onboarding-voice-realtime` (off) |
-| **MCP server** (`packages/mcp-server`) | Same tools for Cursor / external agents | always, stdio |
+| Surface                                | What it does                                                                                                       | Flag (default)                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Left AI panel** on space pages       | Ongoing advisor: reads space data, drafts proposals, creates signals, opens the right screen                       | `enable-ai-chat` (on)                                                                                            |
+| **Onboarding hero**                    | Conversational space creation — purpose, governance, visuals, nested spaces. Optional Live Voice (OpenAI Realtime) | `enable-onboarding-ai-hero` (on), `enable-onboarding-write-tools` (on), `enable-onboarding-voice-realtime` (off) |
+| **MCP server** (`packages/mcp-server`) | Same tools for Cursor / external agents                                                                            | always, stdio                                                                                                    |
 
 A model actually runs in those three places. Almost everything else that looks “smart” is
 arithmetic, heuristics, or a template.
@@ -78,9 +78,9 @@ Discussion summaries are **not** model-written. They take the last few messages 
 
 A cron **signal orchestrator** watches memory ingest (new transcript, summary, upload) and may
 emit a signal. Scoring is **arithmetic** — asset counts, title overlap, cooldowns, daily caps.
-Copy is templated (*“Recent space-memory activity indicates a coordination opportunity.”*).
+Copy is templated (_“Recent space-memory activity indicates a coordination opportunity.”_).
 
-The AI *can* also create a signal from chat (`create_space_signal_by_slug`) and relay one to a
+The AI _can_ also create a signal from chat (`create_space_signal_by_slug`) and relay one to a
 connected space. That path is model-driven.
 
 ### Onboarding AI
@@ -88,7 +88,8 @@ connected space. That path is model-driven.
 Conversational wizard: interviews for purpose and principles; infers voting / entry /
 transparency; looks at other Hypha ecosystems and proposes a nested-space blueprint; generates
 logo/banner images; creates the space on-chain after confirmation. Optionally continues in Live
-Voice.
+Voice. The purpose answers land in the space `description`; they are not yet carried forward as
+the first mission / vision drafts the design calls for.
 
 ### MCP for external agents
 
@@ -118,17 +119,17 @@ of Postgres / Matrix.
 From [What it is](../product/intelligent-org-features.md) and
 [Design](./intelligent-org-design.md):
 
-| Layer / feature | Status |
-| --------------- | ------ |
-| **L1 substrate** | Partial: files, transcripts, and summaries ship as Space Memory. Chat message bodies stay on Matrix — no ingestion into Postgres (the design's long pole). |
-| **L2 activity ledger** | `events` table exists and is barely used. Not the typed ledger. |
-| **L3 beliefs** (org brief, objectives) | Built on `feat/org-memory`, not merged. No Shapers chat write path. |
-| **L4 decision memory** | Does not exist |
-| Work items tree (projects / tickets, any depth) / DRI / offer–accept | Do not exist |
-| Hear → Think → Route agent | Does not exist. Chat is pull (member asks), not a listener on rooms. |
-| My Work / All Work / Org homes | Do not exist |
-| Reviews that write themselves | Do not exist |
-| “Ask the org anything” with receipts | Partial: chat can query memory, no L3+L4 grounding or citation contract |
+| Layer / feature                                                      | Status                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **L1 substrate**                                                     | Partial: files, transcripts, and summaries ship as Space Memory. Chat message bodies stay on Matrix — no ingestion into Postgres (the design's long pole).                                                                                                                                                                                  |
+| **L2 activity ledger**                                               | `events` table exists and is barely used. Not the typed ledger.                                                                                                                                                                                                                                                                             |
+| **L3 beliefs** (mission, vision, objectives, strategy)               | Artifact storage built on `feat/org-memory`, not merged. No reserved `mission` / `vision` / `objectives` / `strategy` slots, no draft-and-confirm write path from the Shapers room or a lone Shaper's assistant chat. The Overview tab today shows the space `description` written at creation — a listing one-liner, not confirmed belief. |
+| **L4 decision memory**                                               | Does not exist                                                                                                                                                                                                                                                                                                                              |
+| Work items tree (projects / tickets, any depth) / DRI / offer–accept | Do not exist                                                                                                                                                                                                                                                                                                                                |
+| Hear → Think → Route agent                                           | Does not exist. Chat is pull (member asks), not a listener on rooms.                                                                                                                                                                                                                                                                        |
+| My Work / All Work / Org homes                                       | Do not exist                                                                                                                                                                                                                                                                                                                                |
+| Reviews that write themselves                                        | Do not exist                                                                                                                                                                                                                                                                                                                                |
+| “Ask the org anything” with receipts                                 | Partial: chat can query memory, no L3+L4 grounding or citation contract                                                                                                                                                                                                                                                                     |
 
 Scorecard from [Organizational Intelligence — Memory Architecture](./organizational-intelligence.md):
 

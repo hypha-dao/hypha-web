@@ -40,11 +40,11 @@ Two rules hold everywhere:
 
 ## Who is who
 
-| Who        | What they are                                                                    |
-| ---------- | -------------------------------------------------------------------------------- |
-| **Member** | Joined. No job until they accept one.                                            |
-| **DRI**    | Accepted a project (holds the job) or a ticket (does the work). A relationship, not a title. |
-| **Shaper** | Sets direction: what the org believes, which projects exist, what they are worth. |
+| Who        | What they are                                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------------------- |
+| **Member** | Joined. No job until they accept one.                                                                           |
+| **DRI**    | Accepted a project (holds the job) or a ticket (does the work). A relationship, not a title.                    |
+| **Shaper** | Sets direction: the org's mission, vision, objectives, and strategy; which projects exist; what they are worth. |
 
 The founder is the first Shaper. One person can be all three at once.
 
@@ -55,14 +55,34 @@ The founder is the first Shaper. One person can be all three at once.
 ### 1. Direction stays current
 
 Shapers have a standing chat with the org agent. They talk about what the org is for, drop
-documents and links, say "we now care about X." The agent drafts the **org brief** and
-**objectives**; a Shaper confirms each version.
+documents and links, say "we now care about X." The agent drafts four things from that talk;
+a Shaper confirms each version:
+
+| Direction      | Answers                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| **Mission**    | Why we exist — what we do, for whom.                                                        |
+| **Vision**     | Where we are going — what the world looks like if we succeed.                               |
+| **Objectives** | What we aim to have done soon — a short list of near-term outcomes, each with a rough date. |
+| **Strategy**   | How we get there — the few bets and priorities that guide which work we take on.            |
+
+Each is a short text with a version. Mission and vision change rarely; strategy changes as the
+org learns; objectives change most often — when one is reached or dropped, the list is redrawn.
+Objectives are also where direction meets work: a project the org takes on should serve one of
+them, and a review asks whether it did. There is no separate "org brief" — these four are what
+the org believes about its own direction.
+
+Where the talk happens depends on how many Shapers there are. With several, it is the
+**Shapers room**: everyone there sees the draft, one of them confirms. With one Shaper — the
+founder in a new org — the same conversation happens in **their own chat with the assistant**.
+No room to open, no one to wait for. The moment a second Shaper is added, the conversation
+moves to the Shapers room; nothing confirmed is lost.
 
 This is not a one-time founding interview. The chat never closes. Everything else the AI does
-reads from the latest confirmed brief.
+reads from the latest confirmed mission, vision, objectives, and strategy.
 
-**A Shaper can:** update what the org believes by talking, any day, and see that reflected in
-what the AI suggests next.
+**A Shaper can:** set or change the mission, vision, objectives, or strategy by talking, any
+day, and see that reflected in what the AI suggests next.
+**A founder can:** formulate all four alone, in their own chat, before anyone else joins.
 
 ### 2. The org listens
 
@@ -77,10 +97,10 @@ Nobody files anything. There is no "new ticket" button.
 
 The AI drafts work from what it hears. Who can make it real depends on what it is:
 
-| What                        | Who makes it real                    | Date it carries          |
-| --------------------------- | ------------------------------------ | ------------------------ |
-| **Project / mandate**       | A **Shaper**                         | **Review date**          |
-| **Ticket** (under anything) | The **DRI of what it sits under**    | **Estimated completion** |
+| What                        | Who makes it real                 | Date it carries          |
+| --------------------------- | --------------------------------- | ------------------------ |
+| **Project / mandate**       | A **Shaper**                      | **Review date**          |
+| **Ticket** (under anything) | The **DRI of what it sits under** | **Estimated completion** |
 
 One rule at every level: whoever holds the thing above you makes your draft real. If no project
 covers a need, the draft goes to Shapers. If one does, the ticket draft goes to that project's
@@ -107,10 +127,10 @@ goes back to whoever offered it.
 
 ### 5. Talk moves work
 
-If someone says on a call or in a channel that a ticket is done, the agent drafts the done and
-posts the receipt: which line, which call. The DRI one-taps to confirm — or says nothing, and
-it confirms itself after a quiet window. The AI never flips state on its own; no silent state
-changes.
+If the **DRI** says on a call or in a channel that their ticket is done, the agent marks it done
+and posts the receipt: which line, which call. The DRI's own words are the confirm — no card,
+no waiting window. Anyone else saying it changes nothing; the agent may nudge the DRI, that is
+all. A done with open children under it is refused with the reason.
 
 Done first; other obvious moves (took it, dropped it) later.
 
@@ -120,13 +140,13 @@ Done first; other obvious moves (took it, dropped it) later.
 
 Three surfaces, one glance each:
 
-| Surface      | What it answers                                                                  |
-| ------------ | -------------------------------------------------------------------------------- |
-| **My Work**  | What do I hold, what am I doing, what can I take? Dates on every card.           |
-| **All Work** | Who is working on what? Every project and ticket, DRI or *open*, dates visible.  |
-| **Org**      | Who are we? Brief, established, founder, Shapers, members, who holds which job.  |
+| Surface      | What it answers                                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------------------------------- |
+| **My Work**  | What do I hold, what am I doing, what can I take? Dates on every card.                                          |
+| **All Work** | Who is working on what? Every project and ticket, DRI or _open_, dates visible.                                 |
+| **Org**      | Who are we? Mission, vision, objectives, strategy, established, founder, Shapers, members, who holds which job. |
 
-Empty states say so: *Nothing needs you.*
+Empty states say so: _Nothing needs you._
 
 **Anyone can:** see the whole org — who shapes, who holds, what is open — without asking.
 
@@ -137,8 +157,8 @@ two places only: **Proposals** (where it moves) and **My Profile** (what a perso
 
 How pay works: the person holding the work and the person above them — a ticket holder with
 the project DRI, a DRI with a Shaper — agree a sum where they already talk. The agent remembers
-that line. When the work is done, either of them tells their personal assistant *"draft a
-proposal for the Shapers for this work — 150 USDC"*, or *"…whatever we agreed"*. The draft
+that line. When the work is done, either of them tells their personal assistant _"draft a
+proposal for the Shapers for this work — 150 USDC"_, or _"…whatever we agreed"_. The draft
 carries the agreement, the done receipt, and the sum; if the sum named differs from the one
 agreed, the draft shows both. The Shapers decide, as with any proposal, and the payment lands on
 the profile.
@@ -151,11 +171,23 @@ takes it through governance.
 
 ### 8. Reviews write themselves
 
-Every project has a review date. When it arrives, the Shaper gets the story prepared: what was
-held, what was done, what was not, what was paid out through proposals. They extend, close, or
-re-offer — in the same chat.
+Every project has an exact end date and **closes on it by default**. As the date nears — two
+weeks out, not on the day — the Shapers get a **brief** and a **recommendation**. The brief is
+the story: what was held, what was done, what was not, what was paid out through proposals,
+whether the objective it served moved.
 
-**A Shaper can:** review a project in minutes because the evidence is already assembled.
+The recommendation answers one question: _does anything follow this?_ Either the agent drafts a
+**follow-up project** — the next piece in the same domain, with a suggested DRI, description, and
+end date, because the objective is still live or the brief shows a clear next step — or it says
+**no further work in this domain is needed**, with the reasoning and receipts. Extending the
+existing project is possible but is the override, not the default.
+
+The Shaper closes and opens the follow-up, or closes and moves on. The agent never closes,
+extends, or opens a project by itself. What the Shaper chose, and what happened after, is
+remembered so the next recommendation is sharper.
+
+**A Shaper can:** end a project cleanly on its date and know, before it ends, whether something
+should come next.
 
 ### 9. Ask the org anything
 
@@ -172,7 +204,7 @@ next depends on how they arrived:
 - **No specific Space in mind.** The AI suggests Spaces that might fit — based on their profile:
   purpose, place, the kind of work they like. They pick one and join from its public page.
 - **Invited into a specific Space.** They land there as a member, nothing more. The AI tells
-  them: *"I'll let the others know about your skills and that you're available for work."* The
+  them: _"I'll let the others know about your skills and that you're available for work."_ The
   org now knows who they are; offers come when there is a fit.
 
 No work queue on day one. The path is stranger → member → DRI, one accept at a time.
@@ -192,6 +224,7 @@ for anything.
 
 ## Related
 
+- [The Intelligent Organization — User Journeys](./intelligent-org-journeys.md) — DRI, Shaper, member-not-yet-DRI, and the org agent through the app
 - [Intelligent Org — Exploration](./intelligent-org-exploration.md) — how we got here, Buzz vs Hypha
 - [Intelligent Org — Buzz additions](./intelligent-org-buzz-additions.md) — the Buzz fork sketch this supersedes for Hypha
 - [Organizational Intelligence — Memory Architecture](../architecture/organizational-intelligence.md) — the memory that makes feature 9 possible
