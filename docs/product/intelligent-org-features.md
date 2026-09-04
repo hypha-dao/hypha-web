@@ -157,7 +157,7 @@ Three surfaces, one glance each:
 | ------------ | --------------------------------------------------------------------------------------------------------------- |
 | **My Work**  | What do I hold, what am I doing, what can I take? Dates on every card.                                          |
 | **All Work** | Who is working on what? Every project and ticket, DRI or _open_, dates visible.                                 |
-| **Org**      | Who are we? Mission, vision, objectives, strategy, established, founder, Shapers, members, who holds which job. |
+| **Org**      | Who are we? Mission, vision, objectives, strategy, established, founder, Shapers, members, who holds which job. Each direction card opens to its full text, every version, and the proofs behind each line — with receipts. |
 
 Empty states say so: _Nothing needs you._
 

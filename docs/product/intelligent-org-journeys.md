@@ -150,9 +150,21 @@ In the prototype: **Maya** and **Sam** (River); **Alex, Edgar, Zekeriya** (Energ
 1. Open **Overview**.
 2. Read the four direction cards — **Mission**, **Vision**, **Objectives**,
    **Strategy** — each with its version and when it was confirmed. An empty
-   card says _Not set yet_. Each objective shows the projects that serve it.
-3. Read glance numbers: projects, tickets, contributors, distributed.
-4. Read the timeline — upcoming reviews and decisions.
+   card says _Not set yet_. Objectives and strategy are plain one-sentence
+   bullets; a met objective is simply gone from the next version, not struck
+   through. Which project serves an objective is shown on the project and its
+   approval card, not here.
+3. Click any card. It opens on its own page: the full text (the statement
+   and the paragraph or two behind it), then — for objectives and strategy,
+   under each line — the **proofs**: ledger facts that bear it out, each with
+   a date and a link to the receipt (the proposal that passed, the project
+   that moved, the room where it was said). Where the agent has a read
+   against the ledger (“3 of 5 growers — two visits booked”), it sits under
+   the line, marked as the agent's. Below that, **every version** — number,
+   date, who confirmed, what changed. A Shaper sees a door back to the room
+   to change it. Nothing here is a claim without a place to check it.
+4. Read glance numbers: projects, tickets, contributors, distributed.
+5. Read the timeline — upcoming reviews and decisions.
 
 ### 2.2 Set direction for the first time — one Shaper
 
