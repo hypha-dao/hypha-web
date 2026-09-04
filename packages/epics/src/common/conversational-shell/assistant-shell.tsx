@@ -42,6 +42,12 @@ export interface AssistantShellProps {
   modeToggleSlot?: React.ReactNode;
   /** Trailing slot in the interaction bar (profile avatar). */
   trailingSlot?: React.ReactNode;
+  /**
+   * D5 guidance beat — one host-computed health nudge, always pinned to the
+   * strip (alongside the fallback or model-set actions). A model-set
+   * `emphasis: 'guidance'` chip takes precedence over this one.
+   */
+  guidanceAction?: NextAction | null;
   /** Voice control node (milestone 7); absent → decorative mic. */
   voiceControl?: React.ReactNode;
   /** Waveform node (milestone 7); absent → decorative pulse. */
@@ -87,6 +93,7 @@ export function AssistantShell({
   sessionId = 'assistant-global',
   modeToggleSlot,
   trailingSlot,
+  guidanceAction,
   voiceControl,
   waveform,
   className,
@@ -207,8 +214,15 @@ export function AssistantShell({
 
   const [historyExpanded, setHistoryExpanded] = React.useState(false);
 
-  const stripActions =
-    nextActions.length > 0 ? nextActions : greeting.nextActions;
+  const stripActions = React.useMemo(() => {
+    const base = nextActions.length > 0 ? nextActions : greeting.nextActions;
+    if (!guidanceAction) return base;
+    // One guidance chip at a time — a model-set nudge wins over the host's.
+    const hasGuidance = base.some(
+      (a) => a.emphasis === 'guidance' || a.id === guidanceAction.id,
+    );
+    return hasGuidance ? base : [...base, guidanceAction];
+  }, [nextActions, greeting.nextActions, guidanceAction]);
 
   return (
     <div className={cn('flex w-full flex-col', className)}>

@@ -7,12 +7,13 @@ import { ArrowLeftRight } from 'lucide-react';
 import { AssistantShell, readRecentSpaceSlugs } from '@hypha-platform/epics';
 import type { GreetingContext } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useMe } from '@hypha-platform/core/client';
+import { useMe, useFindCoherences } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { setCookie, HYPHA_ASSISTANT_MODE } from '@hypha-platform/cookie';
 
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { hyphaAssistantConfig } from './config';
+import { computeGuidanceAction } from './guidance';
 
 const COOKIE_MAX_AGE_DAYS = 365;
 
@@ -25,14 +26,27 @@ export function AssistantPageClient() {
   const [recentSpaceSlugs] = useState<string[]>(() =>
     typeof window === 'undefined' ? [] : readRecentSpaceSlugs(),
   );
+  const primarySpaceSlug = recentSpaceSlugs[0];
 
   const greetingContext = useMemo<GreetingContext>(
     () => ({
       displayName: person?.name ?? undefined,
-      primarySpaceSlug: recentSpaceSlugs[0],
+      primarySpaceSlug,
       recentSpaceSlugs,
     }),
-    [person?.name, recentSpaceSlugs],
+    [person?.name, primarySpaceSlug, recentSpaceSlugs],
+  );
+
+  // D5 guidance beat — one nudge derived from the primary space's signals.
+  // `useFindCoherences` no-ops (null SWR key) when there is no slug.
+  const { coherences } = useFindCoherences({ spaceSlug: primarySpaceSlug });
+  const guidanceAction = useMemo(
+    () =>
+      computeGuidanceAction({
+        spaceSlug: primarySpaceSlug,
+        signals: coherences ?? [],
+      }),
+    [primarySpaceSlug, coherences],
   );
 
   const transport = useMemo(
@@ -63,6 +77,7 @@ export function AssistantPageClient() {
       config={hyphaAssistantConfig}
       greetingContext={greetingContext}
       transport={transport}
+      guidanceAction={guidanceAction}
       modeToggleSlot={
         <Button
           type="button"
