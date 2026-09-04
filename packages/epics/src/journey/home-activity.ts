@@ -1,7 +1,7 @@
 import type { Document } from '@hypha-platform/core/client';
 
 export const HOME_ACTIVITY_SPACE_LIMIT = 16;
-export const HOME_ACTIVITY_ITEM_LIMIT = 5;
+export const HOME_ACTIVITY_ITEM_LIMIT = 12;
 export const ATTENTION_MAX_PER_SPACE = 2;
 export const ATTENTION_RECENT_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -20,6 +20,7 @@ export type HomeVoteItem = {
   spaceLogoUrl?: string | null;
   proposalSlug: string;
   happenedAt: number;
+  closesAt: number | null;
 };
 
 export type HomeSignalItem = {
@@ -189,9 +190,17 @@ export function votesFromDocuments(
         spaceLogoUrl: space.logoUrl ?? null,
         proposalSlug: document.slug,
         happenedAt: activityTimestamp(document.updatedAt, document.createdAt),
+        closesAt: livenessClosesAt(liveness),
       },
     ];
   });
+}
+
+function livenessClosesAt(liveness?: ProposalLiveness | null): number | null {
+  if (liveness?.endTime == null) return null;
+  const end = new Date(liveness.endTime);
+  const time = end.getTime();
+  return Number.isNaN(time) ? null : time;
 }
 
 export function activityTimestamp(
@@ -221,6 +230,7 @@ export function selectAttentionItems<
     happenedAt: number;
     spaceSlug?: string;
     kind?: 'vote' | 'signal';
+    closesAt?: number | null;
   },
 >(
   items: T[],
@@ -236,14 +246,22 @@ export function selectAttentionItems<
     maxPerSpace?: number;
   } = {},
 ): T[] {
+  const nowMs = now.getTime();
   const kindRank = (kind?: 'vote' | 'signal') => (kind === 'vote' ? 0 : 1);
+  const closeRank = (item: T) => {
+    if (item.kind === 'vote' && item.closesAt && item.closesAt > nowMs) {
+      return item.closesAt;
+    }
+    return Number.POSITIVE_INFINITY;
+  };
   const sorted = [...items].sort((a, b) => {
     const byKind = kindRank(a.kind) - kindRank(b.kind);
     if (byKind !== 0) return byKind;
+    const byClose = closeRank(a) - closeRank(b);
+    if (byClose !== 0) return byClose;
     if (b.happenedAt !== a.happenedAt) return b.happenedAt - a.happenedAt;
     return a.id.localeCompare(b.id);
   });
-  const nowMs = now.getTime();
   const dated = sorted.filter((item) => item.happenedAt > 0);
   const recent = dated.filter(
     (item) => nowMs - item.happenedAt <= recentWindowMs,

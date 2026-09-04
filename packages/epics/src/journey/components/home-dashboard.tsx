@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
   Address,
@@ -21,18 +20,8 @@ import {
   CardContent,
   Container,
 } from '@hypha-platform/ui';
-import {
-  ArrowRight,
-  Compass,
-  MessageSquareText,
-  Sparkles,
-  Wallet,
-} from 'lucide-react';
-import { LiveVoiceMicIcon } from '../../common/ai-panel/live-voice-mic-icon';
+import { ArrowRight, Wallet } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useAiPanel } from '../../common/human-chat-panel-context';
-import { saveSpaceDiscoveryMode } from '../../common/ai-panel-discovery-mode';
-import type { OnboardingDiscoveryMode } from '../../common/onboarding-discovery-mode';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { filterSpaces } from '../../spaces/components/my-filtered-spaces';
 import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
@@ -46,20 +35,12 @@ import { averageScore, momentsForScope } from '../wellbeing-model';
 import { sortSpacesByMostUsed } from '../home-space-order';
 import { useHomeActivity } from '../use-home-activity';
 import { useRecentSpaceUsage } from '../use-recent-space-usage';
-import { useNetworkSharedSpaces } from '../use-network-shared-spaces';
-import { useNetworkPulse } from '../use-network-pulse';
-import {
-  selectDirectorySpaceSlugs,
-  spaceVisualsFromSpaces,
-  uniquePeople,
-} from '../network-pulse';
+import { selectDirectorySpaceSlugs } from '../network-pulse';
 import { WellbeingScoreCard } from './wellbeing-score-card';
 import { CaptureMomentDialog } from './capture-moment-dialog';
-import { EcosystemWorldMap } from './ecosystem-world-map';
 import { useNetworkPeople } from '../use-network-people';
-import { NetworkPulseFeed } from './network-pulse-feed';
 import { NetworkPeopleStrip } from './network-people-strip';
-import { HomeAttentionList } from './home-attention-list';
+import { HomeUsefulSurface } from './home-useful-surface';
 import { HomeSpaceConstellation } from './home-space-constellation';
 import { JourneyMark } from './journey-mark';
 
@@ -96,88 +77,12 @@ function personInitial(
   return firstName(person).slice(0, 1).toUpperCase() || 'Y';
 }
 
-function PersonalAiCard({
-  spaceSlug,
-  spaceTitle,
-}: {
-  spaceSlug?: string | null;
-  spaceTitle?: string | null;
-}) {
-  const t = useTranslations('Journey');
-  const pathname = usePathname();
-  const router = useRouter();
-  const { openAiPanel } = useAiPanel();
-
-  const startPersonalAi = useCallback(
-    (mode: OnboardingDiscoveryMode) => {
-      const slug = spaceSlug?.trim();
-      if (slug) {
-        saveSpaceDiscoveryMode(slug, mode);
-        const next = new URLSearchParams(
-          typeof window !== 'undefined' ? window.location.search : '',
-        );
-        next.set('space', slug);
-        const qs = next.toString();
-        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-      }
-      openAiPanel();
-    },
-    [openAiPanel, pathname, router, spaceSlug],
-  );
-
-  return (
-    <Card className="craft-card shrink-0">
-      <CardContent className="flex flex-col gap-3 p-5">
-        <div className="flex items-start gap-3">
-          <span className="craft-icon-box shrink-0 text-accent-11" aria-hidden>
-            <Sparkles className="size-4" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
-              {t('personalAiTitle')}
-            </h2>
-            <p className="mt-1 text-2 leading-relaxed text-muted-foreground">
-              {t('personalAiLead')}
-            </p>
-            <p className="mt-1 text-1 text-muted-foreground">
-              {spaceTitle
-                ? t('personalAiVoiceHint', { space: spaceTitle })
-                : t('personalAiNoSpace')}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => startPersonalAi('voice_interview')}
-            className="self-start rounded-xl"
-            disabled={!spaceSlug}
-          >
-            <LiveVoiceMicIcon size="sm" />
-            {t('personalAiTalk')}
-          </Button>
-          <Button
-            onClick={() => startPersonalAi('chat')}
-            variant="outline"
-            colorVariant="neutral"
-            className="self-start rounded-xl"
-          >
-            <MessageSquareText className="size-4" aria-hidden />
-            {t('personalAiAsk')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function HomeDashboard({
   lang,
   spaces,
-  aiChatEnabled = true,
 }: {
   lang: Locale;
   spaces: Space[];
-  aiChatEnabled?: boolean;
 }) {
   const t = useTranslations('Journey');
   const format = useFormatter();
@@ -238,33 +143,12 @@ export function HomeDashboard({
   const { items: attentionItems, isLoading: isLoadingActivity } =
     useHomeActivity(activitySpaces);
   const { recentSlugs, lastActiveSlug } = useRecentSpaceUsage();
-  const { sharedSpaces, isLoading: isLoadingShared } =
-    useNetworkSharedSpaces(spaces);
-  const pulseSpaces = useMemo(
-    () =>
-      sharedSpaces.map((space) => ({
-        slug: space.slug as string,
-        title: space.title,
-        logoUrl: space.logoUrl,
-        web3SpaceId: space.web3SpaceId ?? null,
-      })),
-    [sharedSpaces],
-  );
-  const spaceVisuals = useMemo(
-    () => spaceVisualsFromSpaces(sharedSpaces),
-    [sharedSpaces],
-  );
-  const {
-    stories,
-    people: pulsePeople,
-    isLoading: isLoadingPulse,
-  } = useNetworkPulse(pulseSpaces);
   const peopleSpaceSlugs = useMemo(
     () => selectDirectorySpaceSlugs(spaces),
     [spaces],
   );
   const {
-    people: directoryPeople,
+    people,
     isLoading: isLoadingPeople,
     error: peopleError,
     retry: retryPeople,
@@ -273,10 +157,6 @@ export function HomeDashboard({
     excludeSlug: person?.slug,
     pageSize: 12,
   });
-  const people = useMemo(() => {
-    if (directoryPeople.length > 0) return directoryPeople;
-    return uniquePeople(pulsePeople, person?.slug);
-  }, [directoryPeople, person?.slug, pulsePeople]);
 
   const rankedSpaces = useMemo(
     () =>
@@ -292,7 +172,6 @@ export function HomeDashboard({
     rankedSpaces.length - previewSpaces.length,
     0,
   );
-  const personalAiSpace = rankedSpaces.find((space) => Boolean(space.slug));
   const previewAssets = useMemo(
     () =>
       [...assets]
@@ -315,22 +194,18 @@ export function HomeDashboard({
   const name = firstName(person);
   const greeting = t(greetingKey());
   const leftRail = (
-    <>
-      {aiChatEnabled ? (
-        <PersonalAiCard
-          spaceSlug={personalAiSpace?.slug}
-          spaceTitle={personalAiSpace?.title}
+    <Card className="craft-card flex min-h-0 flex-1 flex-col">
+      <CardContent className="flex min-h-0 flex-1 flex-col p-5">
+        <HomeSpaceConstellation
+          lang={lang}
+          spaces={previewSpaces}
+          isLoading={isLoadingSpaces}
+          hiddenCount={hiddenSpaceCount}
+          isAuthenticated={isAuthenticated}
+          className="min-h-0 flex-1"
         />
-      ) : null}
-      <HomeSpaceConstellation
-        lang={lang}
-        spaces={previewSpaces}
-        isLoading={isLoadingSpaces}
-        hiddenCount={hiddenSpaceCount}
-        isAuthenticated={isAuthenticated}
-        className="min-h-0 flex-1"
-      />
-    </>
+      </CardContent>
+    </Card>
   );
 
   return (
@@ -378,51 +253,16 @@ export function HomeDashboard({
           {leftRail}
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 xl:col-span-6 xl:overflow-y-auto">
-          <div className="shrink-0">
-            <HomeAttentionList
-              lang={lang}
-              items={attentionItems}
-              isLoading={isLoadingActivity}
-              fallbackSpaces={rankedSpaces}
-            />
-          </div>
-
-          <section className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <JourneyMark kind="pulse" />
-                <div>
-                  <h2 className="[font-family:var(--font-family-heading)] text-5 font-semibold tracking-[-0.015em]">
-                    {t('networkTitle')}
-                  </h2>
-                  <p className="mt-1 max-w-xl text-2 text-muted-foreground">
-                    {t('networkLead')}
-                  </p>
-                </div>
-              </div>
-              <Button asChild variant="outline" colorVariant="neutral">
-                <Link href={`/${lang}/network`}>
-                  <Compass className="size-4" aria-hidden />
-                  {t('networkCta')}
-                </Link>
-              </Button>
-            </div>
-            <div className="shrink-0">
-              <NetworkPulseFeed
-                lang={lang}
-                stories={stories}
-                isLoading={isLoadingShared || isLoadingPulse}
-                spaceVisuals={spaceVisuals}
-                compact
-              />
-            </div>
-            <EcosystemWorldMap
-              lang={lang}
-              spaces={spaces}
-              href={`/${lang}/network`}
-            />
-          </section>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col xl:col-span-6 xl:overflow-hidden">
+          <HomeUsefulSurface
+            lang={lang}
+            items={attentionItems}
+            isLoading={isLoadingActivity}
+            fallbackSpaces={rankedSpaces}
+            firstName={name}
+            onCapture={() => setCaptureOpen(true)}
+            className="min-h-0 flex-1"
+          />
         </div>
 
         <aside className="flex min-h-0 flex-col gap-4 xl:col-span-3 xl:overflow-y-auto">
@@ -523,7 +363,7 @@ export function HomeDashboard({
           <NetworkPeopleStrip
             lang={lang}
             people={people}
-            isLoading={isLoadingPeople || isLoadingShared}
+            isLoading={isLoadingPeople}
             error={peopleError && people.length === 0}
             onRetry={retryPeople}
             layout="field"
