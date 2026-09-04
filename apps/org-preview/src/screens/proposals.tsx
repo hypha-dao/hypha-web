@@ -199,7 +199,7 @@ export function ProposalDetail() {
           )}
           {p.state === 'rejected' && (
             <p className="mt-4 text-[14px] text-sub">
-              Rejected — and remembered. The brief says why.
+              Rejected — and remembered. The strategy says why.
             </p>
           )}
           {!isShaper && p.state === 'open' && (

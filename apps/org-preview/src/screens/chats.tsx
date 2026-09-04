@@ -257,8 +257,8 @@ export function Thread() {
     if (askish) {
       agentReply(
         s.weekday === 'held'
-          ? 'Yes — twice. The council licence came up in “Saturday stall”; nobody held it, so a project was drafted and Rafi holds Weekday hall now. And the org already decided about outside money: the brand sponsorship was rejected on 2 May, and the brief says no brand money. Receipts below.'
-          : 'Yes — twice. Jun raised the council licence in “Saturday stall”; nobody held it, so I drafted the Weekday hall project — it is with the Shapers now. And on outside money: the brand sponsorship was rejected on 2 May, and the brief says no brand money. Receipts below.',
+          ? 'Yes — twice. The council licence came up in “Saturday stall”; nobody held it, so a project was drafted and Rafi holds Weekday hall now. And the org already decided about outside money: the brand sponsorship was rejected on 2 May, and the strategy says no brand money. Receipts below.'
+          : 'Yes — twice. Jun raised the council licence in “Saturday stall”; nobody held it, so I drafted the Weekday hall project — it is with the Shapers now. And on outside money: the brand sponsorship was rejected on 2 May, and the strategy says no brand money. Receipts below.',
         {
           receipts: [
             {
@@ -502,7 +502,7 @@ export function Thread() {
             {t.kind === 'agent'
               ? 'Your personal AI · creates tickets, moves your work, answers with receipts — decides nothing'
               : t.kind === 'shapers'
-              ? 'Private · where the brief gets confirmed'
+              ? 'Private · where mission, vision, objectives and strategy get confirmed'
               : t.sub}
           </p>
         </div>
@@ -514,7 +514,7 @@ export function Thread() {
           agentTyping,
           s.covers,
           s.subCovers,
-          s.briefPending,
+          s.strategyPending,
           s.eMuni,
         ]}
       >
@@ -598,7 +598,7 @@ function MsgBlock({
       {msg.card === 'payment-draft' && <PaymentDraftCard />}
       {msg.card === 'done-draft' && <DoneDraftCard />}
       {msg.card === 'e-done-draft' && <EnergyDoneDraftCard />}
-      {msg.card === 'brief-draft' && <BriefDraftCard />}
+      {msg.card === 'strategy-draft' && <StrategyDraftCard />}
       {msg.card === 'ticket-draft' && <TicketDraftCard />}
       {msg.card === 'sub-ticket-draft' && <SubTicketDraftCard />}
     </div>
@@ -917,15 +917,15 @@ function EnergyDoneDraftCard() {
   );
 }
 
-function BriefDraftCard() {
+function StrategyDraftCard() {
   const s = useStore();
-  const decided = !s.briefPending;
-  const confirmed = s.briefVersion === 5;
+  const decided = !s.strategyPending;
+  const confirmed = s.strategyVersion === 5;
   return (
     <Card className={cn('ml-11 max-w-md p-4', !decided && 'border-agent/30')}>
       <div className="flex items-center justify-between">
         <Kicker className={decided ? undefined : 'text-agent'}>
-          Brief v5 — one line added
+          Strategy v5 — one line added
         </Kicker>
         {decided && <Chip>{confirmed ? 'confirmed' : 'kept v4'}</Chip>}
       </div>
@@ -933,15 +933,16 @@ function BriefDraftCard() {
         “We do not take the brand sponsorship. Not this year.”
       </p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-sub">
-        From Tuesday’s call · consistent with the vote on 2 May. Everything I
-        draft reads from the confirmed brief.
+        From Tuesday’s call · consistent with the vote on 2 May. Mission, vision
+        and objectives unchanged. Everything I draft reads from the confirmed
+        direction.
       </p>
       {!decided && (s.persona === 'maya' || s.persona === 'sam') && (
         <div className="mt-3 flex gap-2">
-          <Button size="sm" onClick={s.confirmBrief}>
+          <Button size="sm" onClick={s.confirmStrategy}>
             Confirm v5
           </Button>
-          <Button size="sm" variant="ghost" onClick={s.rejectBrief}>
+          <Button size="sm" variant="ghost" onClick={s.rejectStrategy}>
             That is not what we decided
           </Button>
         </div>

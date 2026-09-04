@@ -7,7 +7,7 @@ export type Receipt = {
 export type MsgCardType =
   | 'payment-draft'
   | 'done-draft'
-  | 'brief-draft'
+  | 'strategy-draft'
   | 'project-draft'
   | 'ticket-draft'
   | 'sub-ticket-draft'
@@ -35,26 +35,337 @@ export const space = {
   working: 'Two days a week, five growers, hall paid without a whip-round.',
 };
 
-/** L3 — the confirmed brief, versioned, human-approved. */
-export const brief = {
-  version: 4,
-  confirmedBy: 'Maya',
-  confirmedOn: '14 May',
-  lines: [
-    'A street food hub from people we know, not a supermarket.',
-    'For neighbours, and the three growers we already buy from.',
-    'No restaurant.',
-  ],
-  draft: {
-    version: 5,
-    source: 'Tuesday’s call',
-    added: 'We do not take the brand sponsorship. Not this year.',
+/**
+ * L3 — direction. Four reserved artifacts, each versioned on its own and
+ * confirmed by a Shaper: mission (why), vision (where), objectives (what,
+ * soon), strategy (how). Together they replace the old single "brief".
+ */
+export type DirectionVersion = {
+  version: number;
+  confirmedBy: string;
+  confirmedOn: string;
+};
+
+export type DirectionKind = 'mission' | 'vision' | 'objectives' | 'strategy';
+
+/**
+ * A proof is an L2 ledger fact that bears on an L3 line — a proposal that
+ * passed, a project that closed, a line someone said in a room. It links to
+ * the receipt when there is one. Never a claim without a place to check it.
+ */
+export type Proof = {
+  when: string;
+  what: string;
+  go?: Receipt['go'];
+  id?: string;
+};
+
+/** one line of objectives or strategy — the sentence, and what backs it */
+export type DirectionLine = {
+  text: string;
+  /** the agent's one-line read against the ledger — where this stands today */
+  read?: string;
+  proofs: Proof[];
+};
+
+/** one confirmed version — what changed, who confirmed, when */
+export type DirectionHistory = DirectionVersion & { change: string };
+
+type Artifact = DirectionVersion & {
+  /** the full document behind the card — a paragraph or two, at most */
+  body: string[];
+  history: DirectionHistory[];
+};
+
+export type Direction = {
+  mission: Artifact & { text: string; proofs: Proof[] };
+  vision: Artifact & { text: string; proofs: Proof[] };
+  /** one short sentence each — the timing is part of the sentence; a met
+   *  objective is simply dropped in the next version, never struck through */
+  objectives: Artifact & { items: DirectionLine[] };
+  /** one bullet per strategic bet */
+  strategy: Artifact & { lines: DirectionLine[] };
+};
+
+export const direction: Direction = {
+  mission: {
+    version: 1,
+    confirmedBy: 'Maya',
+    confirmedOn: 'March',
+    text: 'A street food hub from people we know, not a supermarket — for neighbours, and the three growers we already buy from.',
+    body: [
+      'We already buy from three growers — Ana, Tomasz and the Ferreira family. The hub exists so the whole street can do the same without a supermarket in between, and so the growers see the money the same week.',
+      'It is a stall, then a hall, run by people who live here. Not a restaurant, not a marketplace app, not a brand’s community programme.',
+    ],
+    proofs: [
+      {
+        when: 'since March',
+        what: 'Every USDC paid out so far went to a grower or a neighbour who hosted — none to a middleman.',
+        go: 'proposal',
+        id: 'lea-saturdays',
+      },
+      {
+        when: '2 May',
+        what: 'A drinks brand offered 2,000 USDC. Both Shapers rejected it.',
+        go: 'proposal',
+        id: 'sponsor',
+      },
+      {
+        when: 'April',
+        what: 'The three growers from the mission are the three selling at the stall.',
+        go: 'project',
+        id: 'growers',
+      },
+    ],
+    history: [
+      {
+        version: 1,
+        confirmedBy: 'Maya',
+        confirmedOn: 'March',
+        change:
+          'Written the day the space opened — Maya alone, in her own chat, from what she told the agent at creation.',
+      },
+    ],
   },
-  objectives: [
-    'Saturday held every week',
-    'A weekday hall before August',
-    'Growers paid the same week they sell',
-  ],
+  vision: {
+    version: 1,
+    confirmedBy: 'Maya',
+    confirmedOn: 'March',
+    text: 'A neighbourhood that feeds itself two days a week: five growers, a hall paid without a whip-round, every grower paid the week they sell.',
+    body: [
+      'Two days a week means the Saturday stall and a weekday hall. Five growers is what a hall can carry without a van. “Paid the week they sell” is the whole point — no invoices, no waiting, no one fronting the money.',
+    ],
+    proofs: [
+      {
+        when: 'since March',
+        what: 'Saturday stall every week — one of the two days is real.',
+        go: 'project',
+        id: 'stall',
+      },
+      {
+        when: 'May',
+        what: 'Three growers selling of the five. Two visits booked.',
+        go: 'project',
+        id: 'growers',
+      },
+      {
+        when: '2 Jun',
+        what: 'Lea paid 80 USDC for four Saturdays — the week after the fourth.',
+        go: 'proposal',
+        id: 'lea-saturdays',
+      },
+    ],
+    history: [
+      {
+        version: 1,
+        confirmedBy: 'Maya',
+        confirmedOn: 'March',
+        change: 'Confirmed with the mission, the same day.',
+      },
+    ],
+  },
+  objectives: {
+    version: 3,
+    confirmedBy: 'Maya',
+    confirmedOn: '14 May',
+    body: [
+      'What we mean to have done soon. One sentence each, with the timing inside it. When one is met, it leaves the list in the next version — the proof stays here.',
+    ],
+    items: [
+      {
+        text: 'The Saturday stall runs every week, all season.',
+        read: 'Holding — every Saturday since March, none missed.',
+        proofs: [
+          {
+            when: '12 May',
+            what: 'Saturday stall approved as a project — Sam holds it.',
+            go: 'proposal',
+            id: 'fund-stall',
+          },
+          {
+            when: '2 Jun',
+            what: 'The ledger shows 4 of 4 May stalls happened — Lea paid for hosting them.',
+            go: 'proposal',
+            id: 'lea-saturdays',
+          },
+          {
+            when: 'May',
+            what: 'Sam reviewed on time; three offers answered.',
+            go: 'proposal',
+            id: 'sam-stipend',
+          },
+        ],
+      },
+      {
+        text: 'A weekday hall is open before August.',
+        proofs: [
+          {
+            when: 'April',
+            what: 'Added after the April Shapers call — the second of the two days.',
+            go: 'thread',
+            id: 'shapers',
+          },
+        ],
+      },
+      {
+        text: 'Five growers by autumn, each paid the week they sell.',
+        read: '3 of 5 — two visits booked, both paid on time so far.',
+        proofs: [
+          {
+            when: '3 May',
+            what: 'Grower onboarding approved — Jun holds it, ends 1 Oct.',
+            go: 'proposal',
+            id: 'approve-growers',
+          },
+          {
+            when: '2 May',
+            what: 'Priya paid 120 USDC the week the voucher design was done.',
+            go: 'proposal',
+            id: 'pay-priya',
+          },
+          {
+            when: 'May',
+            what: 'Three growers selling; the welcome sheet is in progress.',
+            go: 'project',
+            id: 'growers',
+          },
+        ],
+      },
+    ],
+    history: [
+      {
+        version: 1,
+        confirmedBy: 'Maya',
+        confirmedOn: 'March',
+        change: 'Two lines: a stall every Saturday; two more growers.',
+      },
+      {
+        version: 2,
+        confirmedBy: 'Maya',
+        confirmedOn: 'April',
+        change: 'Weekday hall added, from the April Shapers call.',
+      },
+      {
+        version: 3,
+        confirmedBy: 'Maya',
+        confirmedOn: '14 May',
+        change:
+          'Growers raised to five with a date, once Grower onboarding was approved. “Two more growers” met and dropped.',
+      },
+    ],
+  },
+  strategy: {
+    version: 4,
+    confirmedBy: 'Maya',
+    confirmedOn: '14 May',
+    body: [
+      'How we get there — the bets, and what we say no to. Every project draft and every proposal the agent writes is checked against these lines.',
+    ],
+    lines: [
+      {
+        text: 'Small money, many hands — the stall funds the hall, not a grant round.',
+        proofs: [
+          {
+            when: '2 Jun',
+            what: 'Two payments this month, 80 and 60 USDC — small, on time, from the stall’s takings.',
+            go: 'proposal',
+            id: 'lea-saturdays',
+          },
+          {
+            when: 'May',
+            what: 'The 4,200 USDC grant is the only outside money. It only moves through proposals.',
+            go: 'proposal',
+            id: 'sam-stipend',
+          },
+        ],
+      },
+      {
+        text: 'No restaurant. Two days a week, not a fleet.',
+        proofs: [
+          {
+            when: '25 Apr',
+            what: 'A second-hand van at 3,500 USDC — rejected. This line was written the week after.',
+            go: 'proposal',
+            id: 'van',
+          },
+        ],
+      },
+      {
+        text: 'RIVER vouchers keep value with the growers, not the middle.',
+        proofs: [
+          {
+            when: '20 Apr',
+            what: 'RIVER currency launch approved — Maya holds it, ends 1 Sep.',
+            go: 'proposal',
+            id: 'approve-currency',
+          },
+          {
+            when: '2 May',
+            what: 'Voucher design done and paid.',
+            go: 'proposal',
+            id: 'pay-priya',
+          },
+        ],
+      },
+    ],
+    history: [
+      {
+        version: 1,
+        confirmedBy: 'Maya',
+        confirmedOn: 'March',
+        change: 'One line: small money, many hands.',
+      },
+      {
+        version: 2,
+        confirmedBy: 'Maya',
+        confirmedOn: 'April',
+        change:
+          '“Two days a week, not a fleet” — the week after the van was rejected.',
+      },
+      {
+        version: 3,
+        confirmedBy: 'Maya',
+        confirmedOn: '20 Apr',
+        change: 'RIVER vouchers line, with the currency project.',
+      },
+      {
+        version: 4,
+        confirmedBy: 'Maya',
+        confirmedOn: '14 May',
+        change: 'Wording tightened; “the stall funds the hall” made explicit.',
+      },
+    ],
+  },
+};
+
+/** The one direction change that moves in the demo — a strategy line. */
+export const strategyDraft = {
+  version: 5,
+  source: 'Tuesday’s call',
+  added: 'We do not take the brand sponsorship. Not this year.',
+  line: {
+    text: 'We do not take the brand sponsorship. Not this year.',
+    proofs: [
+      {
+        when: '2 May',
+        what: 'The 2,000 USDC sponsorship was rejected by both Shapers.',
+        go: 'proposal',
+        id: 'sponsor',
+      },
+      {
+        when: 'Tuesday',
+        what: 'Said on the Shapers call; the agent drafted the line from the transcript.',
+        go: 'thread',
+        id: 'shapers',
+      },
+    ],
+  } as DirectionLine,
+  history: {
+    version: 5,
+    confirmedBy: 'Maya',
+    confirmedOn: 'today',
+    change: '“No brand sponsorship” put in writing, from Tuesday’s call.',
+  } as DirectionHistory,
 };
 
 export const personas = [
@@ -80,7 +391,7 @@ export const personas = [
     id: 'maya',
     name: 'Maya',
     role: 'Shaper',
-    line: 'Direction, projects, the brief.',
+    line: 'Direction, projects, money.',
   },
   {
     id: 'eli',
@@ -570,7 +881,7 @@ export const seedProposals: Proposal[] = [
     id: 'van',
     kind: 'money',
     title: 'Buy a second-hand van — 3,500 USDC',
-    sub: 'For grower pickups · raised by Sam · the brief says two days a week, not a fleet',
+    sub: 'For grower pickups · raised by Sam · the strategy says two days a week, not a fleet',
     amount: 3500,
     state: 'rejected',
     decided: '25 Apr',
@@ -679,7 +990,7 @@ export const energyOrg = {
       id: 'maya',
       name: 'Alex',
       role: 'Shaper',
-      line: 'Direction, projects, the brief.',
+      line: 'Direction, projects, money.',
     },
     {
       id: 'eli',
@@ -688,16 +999,270 @@ export const energyOrg = {
       line: 'Funded the sandbox. Looks in.',
     },
   ] as PersonaView[],
-  brief: {
-    version: 3,
-    confirmedBy: 'Alex',
-    confirmedOn: 'Jan 2026',
-    lines: [
-      'Energy should create value where it is produced — ownership, income, and control stay local.',
-      '10,000 energy hubs by 2030. Members save 20–80% and co-own the assets.',
-      'We handle the complexity; communities just enjoy cheaper, cleaner energy.',
-    ],
-  },
+  direction: {
+    mission: {
+      version: 2,
+      confirmedBy: 'Alex',
+      confirmedOn: 'Jan 2024',
+      text: 'Energy should create value where it is produced — ownership, income, and control stay local.',
+      body: [
+        'A community that produces its own energy should own the panels, keep the income and set the rules. We build the software and the legal scaffolding so that is the easy path, not the hard one.',
+        'Everything else — the hardware, the connectors, the credits — is in service of that. If a decision moves value away from the community, it is the wrong decision.',
+      ],
+      proofs: [
+        {
+          when: '2024 →',
+          what: 'Live communities in three countries producing and sharing locally.',
+          go: 'project',
+          id: 'iberia',
+        },
+        {
+          when: '2026',
+          what: 'Ameland: tokenised credits inside the EU sandbox — the credits belong to the members, not to us.',
+          go: 'project',
+          id: 'islands',
+        },
+        {
+          when: 'Dec 2025',
+          what: 'A 4,000 EURC conference booth was rejected — pilots come first.',
+          go: 'proposal',
+          id: 'e-conference',
+        },
+      ],
+      history: [
+        {
+          version: 1,
+          confirmedBy: 'Alex',
+          confirmedOn: '2022',
+          change: 'Cheaper, cleaner energy for communities.',
+        },
+        {
+          version: 2,
+          confirmedBy: 'Alex',
+          confirmedOn: 'Jan 2024',
+          change:
+            'Ownership and control added after the first pilots showed savings alone did not keep communities together.',
+        },
+      ],
+    },
+    vision: {
+      version: 1,
+      confirmedBy: 'Alex',
+      confirmedOn: '2022',
+      text: '10,000 energy hubs by 2030 — the largest renewable ecosystem, where members save 20–80% and co-own the assets.',
+      body: [
+        'A hub is one community with its own production, sharing rules and settlement. Ten thousand of them is a grid that belongs to the people on it. The 20–80% is measured, not promised — every pilot publishes its numbers.',
+      ],
+      proofs: [
+        {
+          when: '2024',
+          what: 'First pilot communities live in three countries.',
+          go: 'project',
+          id: 'iberia',
+        },
+        {
+          when: '2025',
+          what: 'Four white papers published free — the R&D distilled.',
+        },
+        {
+          when: '2026',
+          what: 'Ameland runs a full tokenised-credits cycle in the EU Blockchain Sandbox.',
+          go: 'proposal',
+          id: 'e-ameland',
+        },
+      ],
+      history: [
+        {
+          version: 1,
+          confirmedBy: 'Alex',
+          confirmedOn: '2022',
+          change: 'Written at founding, with Edgar and Zekeriya.',
+        },
+      ],
+    },
+    objectives: {
+      version: 6,
+      confirmedBy: 'Edgar',
+      confirmedOn: 'Jan 2026',
+      body: [
+        'What we mean to have done this year. One sentence each, with the timing inside it. When one is met, it leaves the list in the next version — the proof stays here.',
+      ],
+      items: [
+        {
+          text: 'Six Iberian communities are ready for EECF round 2 by spring.',
+          proofs: [
+            {
+              when: 'Nov 2025',
+              what: 'Iberia pilots approved — Pedro holds it, ends 30 Sep.',
+              go: 'proposal',
+              id: 'e-approve-iberia',
+            },
+            {
+              when: 'Feb 2026',
+              what: 'Coopérnico paid 2,000 EURC as national facilitator for Portugal.',
+              go: 'proposal',
+              id: 'e-coopernico',
+            },
+            {
+              when: 'open',
+              what: '6,000 EURC for the round-2 applications — 1 of 3 Shapers so far.',
+              go: 'proposal',
+              id: 'e-eecf',
+            },
+          ],
+        },
+        {
+          text: 'The Nordpool connector is live for the pilots by Q3.',
+          read: 'In review — the connector is in Tech team; the EMS it feeds has 31 days up.',
+          proofs: [
+            {
+              when: 'Tue',
+              what: 'Connector in review in Tech team.',
+              go: 'thread',
+              id: 'e-tech',
+            },
+            {
+              when: '3 Jun',
+              what: 'Rowan paid 400 EURC for May on-call — 31 days up, two incidents closed.',
+              go: 'proposal',
+              id: 'e-rowan-oncall',
+            },
+          ],
+        },
+        {
+          text: 'The onboarding playbook exists in three languages by Q4.',
+          proofs: [
+            {
+              when: 'Mar 2026',
+              what: 'Community onboarding playbook approved — Suzana holds it, ends 15 Dec.',
+              go: 'proposal',
+              id: 'e-approve-playbook',
+            },
+          ],
+        },
+        {
+          text: 'A second island runs the Ameland model by December.',
+          read: 'Ameland done. The second island is not picked yet.',
+          proofs: [
+            {
+              when: 'Jan 2026',
+              what: 'Island grids approved — Marcus holds it, ends 31 Dec.',
+              go: 'proposal',
+              id: 'e-ameland',
+            },
+            {
+              when: '2026',
+              what: 'Ameland completed a full tokenised-credits cycle in the EU sandbox.',
+              go: 'project',
+              id: 'islands',
+            },
+          ],
+        },
+      ],
+      history: [
+        {
+          version: 4,
+          confirmedBy: 'Alex',
+          confirmedOn: 'Jan 2025',
+          change: 'Ameland sandbox cycle; first Iberian municipality.',
+        },
+        {
+          version: 5,
+          confirmedBy: 'Edgar',
+          confirmedOn: 'Jul 2025',
+          change: 'Nordpool connector added; playbook given a language count.',
+        },
+        {
+          version: 6,
+          confirmedBy: 'Edgar',
+          confirmedOn: 'Jan 2026',
+          change:
+            'Ameland cycle met and dropped; second island added. Iberia raised to six communities for EECF round 2.',
+        },
+      ],
+    },
+    strategy: {
+      version: 3,
+      confirmedBy: 'Alex',
+      confirmedOn: 'Jan 2026',
+      body: [
+        'How we get to ten thousand hubs — the bets, and what we say no to. Every project draft and every proposal the agent writes is checked against these lines.',
+      ],
+      lines: [
+        {
+          text: 'Pilots before promotion — every claim backed by a live community.',
+          proofs: [
+            {
+              when: 'Dec 2025',
+              what: 'Conference booth at 4,000 EURC rejected — two Shapers said the pilots come first.',
+              go: 'proposal',
+              id: 'e-conference',
+            },
+            {
+              when: '2026',
+              what: 'The Ameland report is public before any Ameland marketing.',
+              go: 'thread',
+              id: 'e-pilots',
+            },
+          ],
+        },
+        {
+          text: 'We handle the complexity; communities just enjoy cheaper, cleaner energy.',
+          proofs: [
+            {
+              when: 'last week',
+              what: 'Battery optimisation v2 delivered and paid — 3,000 EURC.',
+              go: 'proposal',
+              id: 'e-pay-rowan',
+            },
+            {
+              when: 'May',
+              what: 'EMS on-call held all month; the community saw none of the two incidents.',
+              go: 'proposal',
+              id: 'e-rowan-oncall',
+            },
+          ],
+        },
+        {
+          text: 'Publish the research free; sell the operating, not the knowledge.',
+          proofs: [
+            {
+              when: '2025',
+              what: 'Four white papers, free to download.',
+            },
+            {
+              when: 'Mar 2026',
+              what: 'The playbook — guides, legal templates, video — is a free, public project.',
+              go: 'project',
+              id: 'playbook',
+            },
+          ],
+        },
+      ],
+      history: [
+        {
+          version: 1,
+          confirmedBy: 'Alex',
+          confirmedOn: '2022',
+          change: 'Research first; pilots when the models hold.',
+        },
+        {
+          version: 2,
+          confirmedBy: 'Zekeriya',
+          confirmedOn: '2024',
+          change:
+            '“We handle the complexity” — from the first pilot retrospectives.',
+        },
+        {
+          version: 3,
+          confirmedBy: 'Alex',
+          confirmedOn: 'Jan 2026',
+          change:
+            'Promotion line dropped after the booth was rejected; “pilots before promotion” written in its place.',
+        },
+      ],
+    },
+  } as Direction,
   timeline: [
     {
       when: '2022',
@@ -1359,7 +1924,7 @@ export const threads = [
     kind: 'shapers' as const,
     title: 'Shapers',
     sub: 'Maya, Sam · private',
-    preview: 'Brief v5 drafted from Tuesday’s call.',
+    preview: 'Strategy v5 drafted from Tuesday’s call.',
     time: '1h',
   },
   {
@@ -1447,14 +2012,14 @@ export const seedMessages: Record<string, Msg[]> = {
     {
       id: 'a1',
       from: 'agent',
-      text: 'I read the threads, the calls, and the brief. Ask me anything about this org. Tell me what work is needed and I will draft the ticket. Say your ticket is done and I will move it, receipt attached. Nothing I draft is real until the right person confirms it.',
+      text: 'I read the threads, the calls, and the direction the Shapers confirmed — mission, vision, objectives, strategy. Ask me anything about this org. Tell me what work is needed and I will draft the ticket. Say your ticket is done and I will move it, receipt attached. Nothing I draft is real until the right person confirms it.',
     },
   ],
   'e-agent': [
     {
       id: 'ea1',
       from: 'agent',
-      text: 'Same assistant, different org — here I read the Pilots and Tech rooms, the four white papers, and the Hypha Energy brief. Ask me about Ameland, the EECF money, or who holds what. Say a ticket is done and I move it, receipt attached. I decide nothing.',
+      text: 'Same assistant, different org — here I read the Pilots and Tech rooms, the four white papers, and the direction the Shapers confirmed. Ask me about Ameland, the EECF money, or who holds what. Say a ticket is done and I move it, receipt attached. I decide nothing.',
     },
   ],
   shapers: [
@@ -1467,8 +2032,8 @@ export const seedMessages: Record<string, Msg[]> = {
     {
       id: 'sh2',
       from: 'agent',
-      text: 'On Tuesday you decided against the drinks-brand sponsorship — the vote on 2 May already went the same way. I drafted brief v5 with one line added. Everything I do reads from the confirmed brief, so confirm it or correct me.',
-      card: 'brief-draft',
+      text: 'On Tuesday you decided against the drinks-brand sponsorship — the vote on 2 May already went the same way. That is a matter of strategy, not mission or objectives, so I drafted strategy v5 with one line added. Everything I do reads from the confirmed direction, so confirm it or correct me.',
+      card: 'strategy-draft',
     },
   ],
   saturday: [
@@ -1555,7 +2120,16 @@ export const founding = {
     'Is there money? Who can move it, and does anything need a second signature?',
   ],
   cards: [
-    { label: 'Purpose', value: 'A street food hub from people we know.' },
+    { label: 'Mission', value: 'A street food hub from people we know.' },
+    {
+      label: 'Vision',
+      value: 'A neighbourhood that feeds itself two days a week.',
+    },
+    {
+      label: 'Objectives — 90 days',
+      value: 'Saturday stall every week · a weekday hall before August',
+    },
+    { label: 'Strategy', value: 'Small money, many hands. No brand money.' },
     { label: 'Shapers', value: 'Maya, Sam' },
     {
       label: 'Project — Saturday stall',
@@ -1589,7 +2163,7 @@ export const uiMapping = [
   {
     old: 'Space Memory tab',
     now: 'Overview + receipts in chat',
-    why: 'The confirmed brief is the memory people see; raw files surface as receipts when a claim needs proof.',
+    why: 'The confirmed mission, vision, objectives and strategy are the memory people see; raw files surface as receipts when a claim needs proof.',
   },
   {
     old: 'Members tab',

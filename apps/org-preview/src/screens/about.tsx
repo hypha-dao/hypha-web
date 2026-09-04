@@ -36,8 +36,8 @@ export function About() {
               Work is offered, never assigned.
             </p>
             <p className="mt-2 text-[13px] leading-relaxed text-sub">
-              There is no code path that moves money, changes the brief, or puts
-              work on a person without a named human’s confirm.
+              There is no code path that moves money, changes the direction, or
+              puts work on a person without a named human’s confirm.
             </p>
           </Card>
 
@@ -105,7 +105,7 @@ export function About() {
               </li>
               <li>
                 As Maya: approve the payment (both Shapers must agree), confirm
-                brief v5 in the Shapers chat, run the Stall review, offer
+                strategy v5 in the Shapers chat, run the Stall review, offer
                 Weekday hall until Rafi holds it.
               </li>
               <li>

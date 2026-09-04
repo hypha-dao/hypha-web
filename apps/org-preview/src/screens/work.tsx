@@ -484,7 +484,7 @@ function MayaWork() {
   if (s.review === 'due') decisions.push(<ReviewCard key="review" />);
   if (s.weekday !== 'held') decisions.push(<WeekdayCard key="weekday" />);
   if (!s.rafiJoined) decisions.push(<RafiCard key="rafi" />);
-  if (s.briefPending) decisions.push(<BriefCard key="brief" />);
+  if (s.strategyPending) decisions.push(<StrategyCard key="strategy" />);
 
   return (
     <div className="space-y-7">
@@ -690,23 +690,24 @@ function RafiCard() {
   );
 }
 
-function BriefCard() {
+function StrategyCard() {
   const s = useStore();
   return (
     <Card className="p-5" delay={3}>
-      <Chip tone="agent">Brief v5 — drafted from Tuesday’s call</Chip>
+      <Chip tone="agent">Strategy v5 — drafted from Tuesday’s call</Chip>
       <p className="mt-3 text-[15px] font-medium">
         “We do not take the brand sponsorship. Not this year.”
       </p>
       <p className="mt-1 text-[13px] leading-relaxed text-sub">
-        One line added to what the org believes. Confirm it and everything the
-        agent does reads from v5 — including holding you to it.
+        One line added to the strategy; mission, vision and objectives stay as
+        they are. Confirm it and everything the agent does reads from v5 —
+        including holding you to it.
       </p>
       <div className="mt-4 flex gap-2">
-        <Button size="sm" onClick={s.confirmBrief}>
+        <Button size="sm" onClick={s.confirmStrategy}>
           Confirm v5
         </Button>
-        <Button size="sm" variant="ghost" onClick={s.rejectBrief}>
+        <Button size="sm" variant="ghost" onClick={s.rejectStrategy}>
           That is not what we decided
         </Button>
         <Button

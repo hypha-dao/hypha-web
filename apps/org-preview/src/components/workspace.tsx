@@ -33,7 +33,7 @@ function useNav(): NavItem[] {
       needsMe =
         (s.weekday !== 'held' ? 1 : 0) +
         (s.rafiJoined ? 0 : 1) +
-        (s.briefPending ? 1 : 0) +
+        (s.strategyPending ? 1 : 0) +
         (s.review === 'due' ? 1 : 0) +
         s.proposals.filter((p) => p.state === 'open' && !s.myVotes[p.id])
           .length;
@@ -63,7 +63,7 @@ function useNav(): NavItem[] {
       key: 'org',
       label: 'Overview',
       open: goRoute('org'),
-      isActive: s.route === 'org',
+      isActive: s.route === 'org' || s.route === 'direction',
       group: 'org',
     },
     {

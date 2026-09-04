@@ -112,7 +112,7 @@ export function Onboarding() {
       agentSay(founding.questions[idx], () => setStep(`f${idx + 1}` as Step));
     } else {
       agentSay(
-        'That is enough to open the doors. I drafted the space — the brief, first Shapers, two projects, and the door. Nothing is invented; reject anything.',
+        'That is enough to open the doors. I drafted the space — a first mission, vision, objectives and strategy, the first Shapers, two projects, and the door. Until a second Shaper accepts, you confirm direction here, in this chat; after that, in the Shapers room. Nothing is invented; reject anything.',
         () => setStep('review'),
       );
     }

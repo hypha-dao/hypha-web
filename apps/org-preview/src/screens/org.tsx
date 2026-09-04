@@ -1,8 +1,19 @@
 'use client';
 
+import { DIRECTION_LABEL, DirectionMark } from '@/components/direction-mark';
 import { Avatar, Card, Chip, Kicker, cn } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
-import { brief, energyOrg, projectsData, space, treasury } from '@/lib/data';
+import {
+  direction,
+  energyOrg,
+  projectsData,
+  space,
+  strategyDraft,
+  treasury,
+  type Direction,
+  type DirectionKind,
+  type DirectionVersion,
+} from '@/lib/data';
 import { useStore, PAY_LEA_ID, PAY_ROGERIO_ID } from '@/lib/store';
 import { HealthCard } from './work-bits';
 
@@ -18,7 +29,7 @@ type TlItem = {
 
 export function OrgPage() {
   const s = useStore();
-  const v5 = s.briefVersion === 5;
+  const v5 = s.strategyVersion === 5;
   const leaPaid =
     s.proposals.find((p) => p.id === PAY_LEA_ID)?.state === 'passed';
 
@@ -28,7 +39,8 @@ export function OrgPage() {
       when: 'March',
       title: 'Founded by Maya',
       short: 'Founded',
-      detail: 'River Commons opens — brief v1 confirmed the same day.',
+      detail:
+        'River Commons opens — Maya confirms mission v1 and vision v1 the same day, alone, in her own chat.',
       kind: 'past',
     },
     {
@@ -86,8 +98,8 @@ export function OrgPage() {
       ? [
           {
             when: 'today',
-            title: 'Brief v5 confirmed',
-            short: 'Brief v5',
+            title: 'Strategy v5 confirmed',
+            short: 'Strategy v5',
             detail: '“No brand money” is now in writing.',
             kind: 'now' as const,
           },
@@ -119,7 +131,7 @@ export function OrgPage() {
       title: 'Saturday stall review',
       short: 'Stall review',
       detail:
-        'Brief and a recommendation land with the Shapers in the last fifth of its run.',
+        'A review brief and a recommendation land with the Shapers in the last fifth of its run — did the objective move?',
       kind: 'future',
     },
     {
@@ -144,23 +156,15 @@ export function OrgPage() {
   const isEnergy = s.org === 'energy';
   const orgSpace = isEnergy ? energyOrg.space : space;
 
-  const briefView = isEnergy
-    ? {
-        chipTone: 'neutral' as const,
-        chipText: `v${energyOrg.brief.version} · confirmed by ${energyOrg.brief.confirmedBy}, ${energyOrg.brief.confirmedOn}`,
-        lines: energyOrg.brief.lines,
-        added: null as string | null,
-      }
-    : {
-        chipTone: (v5 ? 'agent' : 'neutral') as 'agent' | 'neutral',
-        chipText: `v${s.briefVersion} · ${
-          v5
-            ? 'confirmed by Maya, today'
-            : `confirmed by ${brief.confirmedBy}, ${brief.confirmedOn}`
-        }`,
-        lines: brief.lines,
-        added: v5 ? brief.draft.added : null,
-      };
+  /* ---- direction: four L3 artifacts, each versioned on its own ---- */
+  const dir: Direction = isEnergy ? energyOrg.direction : direction;
+  // River's strategy is the one artifact that moves in the demo (v4 → v5)
+  const strategyMeta: DirectionVersion = isEnergy
+    ? dir.strategy
+    : v5
+    ? { version: 5, confirmedBy: 'Maya', confirmedOn: 'today' }
+    : dir.strategy;
+  const strategyAdded = !isEnergy && v5 ? strategyDraft.added : null;
 
   /* ---- energy: live additions to the static story ---- */
   const rogerioPaid =
@@ -257,28 +261,47 @@ export function OrgPage() {
     <Workspace>
       <Page kicker="Who we are" title="Organization overview" wide>
         <div className="space-y-2.5">
-          {/* the brief — L3, versioned, human-confirmed */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <Kicker>The brief — what this org believes</Kicker>
-              <Chip tone={briefView.chipTone}>{briefView.chipText}</Chip>
-            </div>
-            <div className="mt-3 space-y-1.5">
-              {briefView.lines.map((line) => (
-                <p key={line} className="text-[15px] leading-relaxed">
-                  {line}
-                </p>
-              ))}
-              {briefView.added && (
-                <p className="rise text-[15px] font-medium leading-relaxed text-agent">
-                  {briefView.added}
-                </p>
-              )}
-            </div>
-            <p className="mt-3 text-[12px] text-faint">
-              Every version was confirmed by a Shaper.
-            </p>
-          </Card>
+          {/* direction — four L3 artifacts, each versioned, human-confirmed */}
+          <div className="grid gap-2.5 md:grid-cols-2">
+            <DirectionCard
+              index={0}
+              mark="mission"
+              meta={dir.mission}
+              lines={[dir.mission.text]}
+              onOpen={() => s.openDirection('mission')}
+            />
+            <DirectionCard
+              index={1}
+              mark="vision"
+              meta={dir.vision}
+              lines={[dir.vision.text]}
+              onOpen={() => s.openDirection('vision')}
+            />
+            <DirectionCard
+              index={2}
+              mark="objectives"
+              meta={dir.objectives}
+              lines={dir.objectives.items.map((o) => o.text)}
+              bullets="ring"
+              onOpen={() => s.openDirection('objectives')}
+            />
+            <DirectionCard
+              index={3}
+              mark="strategy"
+              meta={strategyMeta}
+              lines={dir.strategy.lines.map((l) => l.text)}
+              bullets="dot"
+              added={strategyAdded}
+              onOpen={() => s.openDirection('strategy')}
+            />
+          </div>
+          <p className="px-1 text-[12px] leading-relaxed text-faint">
+            Four things the Shapers wrote by talking — in the Shapers room, or
+            alone in their own chat when there is one Shaper. The agent drafts;
+            a Shaper confirms every version. Everything the agent does reads
+            from the latest. Open a card for the full text, every version, and
+            the proofs behind each line.
+          </p>
 
           {/* highlights — horizontal timeline on desktop, vertical on mobile */}
           <Card className="p-5" delay={1}>
@@ -413,7 +436,7 @@ export function OrgPage() {
               delay={3}
               health={healthView}
               kicker="Org health — the agent’s read"
-              footnote="Read from the activity ledger and the brief — what was said vs what actually happened. Receipts, not vibes. Every project has its own bar on its page."
+              footnote="Read from the activity ledger against the objectives and strategy — what was said vs what actually happened. Receipts, not vibes. Every project has its own bar on its page."
             />
           </>
 
@@ -458,6 +481,121 @@ export function OrgPage() {
         </p>
       </Page>
     </Workspace>
+  );
+}
+
+/* ---------- direction cards (L3) ---------- */
+
+/** timing of the write-in choreography, in ms */
+const CARD_STAGGER = 140;
+const FIRST_LINE = 320;
+const LINE_STAGGER = 170;
+
+function DirectionCard({
+  index,
+  mark,
+  meta,
+  lines,
+  bullets,
+  added,
+  onOpen,
+}: {
+  /** position in the grid — drives the stagger */
+  index: number;
+  mark: DirectionKind;
+  meta: DirectionVersion;
+  lines: string[];
+  /** render each line as its own point — ring for objectives (targets), dot for strategy (bets) */
+  bullets?: 'ring' | 'dot';
+  /** a line confirmed in this session — written last, in the agent colour */
+  added?: string | null;
+  /** the card is a door — full text, every version, and the proofs behind each line */
+  onOpen: () => void;
+}) {
+  const base = index * CARD_STAGGER;
+  const lineAt = (i: number) => base + FIRST_LINE + i * LINE_STAGGER;
+  const all = added ? [...lines, added] : lines;
+  const stampAt = lineAt(all.length) + 120;
+  const live = !!added;
+  const label = DIRECTION_LABEL[mark];
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        'dir-card group flex flex-col rounded-2xl border border-hair bg-paper p-5 text-left transition-all duration-150 hover:border-faint/50 hover:bg-wash active:scale-[0.995]',
+        live && 'dir-card-live',
+      )}
+      style={{ animationDelay: `${base}ms` }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <DirectionMark
+            kind={mark}
+            live={live}
+            style={{ animationDelay: `${base + 120}ms` }}
+          />
+          <Kicker>
+            {label.title} — {label.question}
+          </Kicker>
+        </div>
+        <span
+          className="dir-stamp inline-flex shrink-0"
+          style={{ animationDelay: `${stampAt}ms` }}
+        >
+          <Chip tone={live ? 'agent' : 'neutral'}>
+            v{meta.version} · {meta.confirmedBy}, {meta.confirmedOn}
+          </Chip>
+        </span>
+      </div>
+      <span
+        className={cn(
+          'dir-rule mt-2 h-px w-10',
+          live ? 'bg-agent' : 'bg-ink/50',
+        )}
+        style={{ animationDelay: `${base + 180}ms` }}
+      />
+
+      <div className="mt-3 flex-1">
+        <ul className={bullets ? 'space-y-2' : 'space-y-1.5'}>
+          {all.map((line, i) => {
+            const isAdded = !!added && i === all.length - 1;
+            return (
+              <li key={line} className="flex gap-3">
+                {bullets && (
+                  <span
+                    className={cn(
+                      'dir-bullet mt-[7px] h-2.5 w-2.5 shrink-0 rounded-full',
+                      bullets === 'ring' &&
+                        'border-[1.5px] border-ink bg-paper',
+                      bullets === 'dot' && !isAdded && 'bg-ink',
+                      bullets === 'dot' && isAdded && 'bg-agent',
+                    )}
+                    style={{ animationDelay: `${lineAt(i) + 80}ms` }}
+                  />
+                )}
+                <p
+                  className={cn(
+                    'dir-line text-[15px] leading-relaxed',
+                    isAdded && 'font-medium text-agent',
+                  )}
+                  style={{ animationDelay: `${lineAt(i)}ms` }}
+                >
+                  {line}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <span
+        className="dir-stamp mt-4 text-[12px] font-medium text-faint transition-colors group-hover:text-sub"
+        style={{ animationDelay: `${stampAt + 100}ms` }}
+      >
+        Full text, versions and proofs →
+      </span>
+    </button>
   );
 }
 

@@ -142,9 +142,10 @@ function energyProfile(s: ReturnType<typeof useStore>): ProfileData {
         payments: [],
         history: [
           {
-            what: 'Confirmed brief v3 — the org reads from it',
+            what: 'Confirmed strategy v3 — the org reads from it',
             when: 'Jan 2026',
           },
+          { what: 'Confirmed mission v2', when: 'Jan 2024' },
           { what: 'Decided 14 proposals as Shaper', when: '2024–2026' },
           {
             what: 'Founded Hypha Energy with Edgar and Zekeriya',
@@ -153,7 +154,7 @@ function energyProfile(s: ReturnType<typeof useStore>): ProfileData {
         ],
         trust: {
           label: 'Consistent',
-          text: 'Every brief version confirmed matches what the org then did — four white papers promised, four published. Rejects drafts as often as he confirms them, which is what keeps the record honest.',
+          text: 'Every direction version he confirmed matches what the org then did — four white papers promised, four published. Rejects drafts as often as he confirms them, which is what keeps the record honest.',
         },
       };
     case 'eli':
@@ -317,15 +318,17 @@ export function ProfileScreen() {
           payments: [],
           history: [
             {
-              what: `Confirmed brief v${s.briefVersion} — the org reads from it`,
-              when: s.briefVersion === 5 ? 'today' : '12 May',
+              what: `Confirmed strategy v${s.strategyVersion} — the org reads from it`,
+              when: s.strategyVersion === 5 ? 'today' : '14 May',
             },
+            { what: 'Confirmed objectives v3', when: '14 May' },
+            { what: 'Confirmed mission v1 and vision v1', when: 'March' },
             { what: 'Decided 3 proposals as Shaper', when: 'May' },
             { what: 'Founded River Commons', when: 'March' },
           ],
           trust: {
             label: 'Consistent',
-            text: 'Every brief version she confirmed matches what the org then actually did — said and done line up. She rejects drafts as often as she confirms them, which is what keeps the record honest.',
+            text: 'Every direction version she confirmed matches what the org then actually did — said and done line up. She rejects drafts as often as she confirms them, which is what keeps the record honest.',
           },
         };
       case 'eli':

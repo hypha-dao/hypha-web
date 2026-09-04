@@ -15,6 +15,7 @@ import {
   personaName,
   seedProposals,
   unitFor,
+  type DirectionKind,
   type Msg,
   type OrgId,
   type PersonaId,
@@ -23,6 +24,7 @@ import {
   type TicketId,
   type TicketView,
 } from './data';
+import { ENTRIES, type Entry } from './entries';
 
 export type Route =
   // pre-space
@@ -42,6 +44,7 @@ export type Route =
   | 'ticket-view'
   | 'offer'
   | 'proposal'
+  | 'direction'
   | 'about';
 
 export type YouStage = 'chat' | 'member';
@@ -134,6 +137,8 @@ type Store = {
   projectId: ProjectId;
   ticketId: TicketId;
   proposalId: string;
+  /** which direction artifact is open on its own page */
+  directionKind: DirectionKind;
   // you (newcomer)
   youStage: YouStage;
   profile: Profile;
@@ -145,8 +150,8 @@ type Store = {
   coversQuote: string | null;
   weekday: WeekdayState;
   rafiJoined: boolean;
-  briefVersion: 4 | 5;
-  briefPending: boolean;
+  strategyVersion: 4 | 5;
+  strategyPending: boolean;
   review: ReviewState;
   proposals: Proposal[];
   myVotes: Record<string, 'yes' | 'no'>;
@@ -162,6 +167,8 @@ type Store = {
   ticketView: TicketView | null;
   viewTicket: (t: TicketView) => void;
   openProposal: (id: string) => void;
+  /** full text, versions and proofs of one direction artifact */
+  openDirection: (kind: DirectionKind) => void;
   switchPersona: (id: PersonaId) => void;
   // onboarding
   setProfile: (p: Partial<Profile>) => void;
@@ -177,9 +184,9 @@ type Store = {
   // weekday project (Maya)
   offerWeekday: (to: 'lea' | 'rafi') => void;
   acceptRafi: () => void;
-  // brief (Maya)
-  confirmBrief: () => void;
-  rejectBrief: () => void;
+  // strategy — the one direction change in the demo (Maya)
+  confirmStrategy: () => void;
+  rejectStrategy: () => void;
   // done-from-talk (covers)
   triggerDoneDraft: (quote: string, threadId?: string) => void;
   confirmCoversDone: () => void;
@@ -252,13 +259,24 @@ function uid() {
 export const PAY_LEA_ID = 'pay-lea';
 export const PAY_ROGERIO_ID = 'e-pay-rogerio';
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [persona, setPersona] = useState<PersonaId>('you');
-  const [route, setRoute] = useState<Route>('onboarding');
+export function StoreProvider({
+  children,
+  entry = ENTRIES.onboarding,
+}: {
+  children: ReactNode;
+  entry?: Entry;
+}) {
+  const [persona, setPersona] = useState<PersonaId>(entry.persona);
+  const [route, setRoute] = useState<Route>(entry.route);
   const [threadId, setThreadId] = useState('agent');
-  const [projectId, setProjectId] = useState<ProjectId>('stall');
-  const [ticketId, setTicketId] = useState<TicketId>('covers');
+  const [projectId, setProjectId] = useState<ProjectId>(
+    entry.org === 'energy' ? 'iberia' : 'stall',
+  );
+  const [ticketId, setTicketId] = useState<TicketId>(
+    entry.org === 'energy' ? 'e-summary' : 'covers',
+  );
   const [proposalId, setProposalId] = useState('');
+  const [directionKind, setDirectionKind] = useState<DirectionKind>('mission');
   const [ticketView, setTicketView] = useState<TicketView | null>(null);
 
   const [youStage, setYouStage] = useState<YouStage>('chat');
@@ -274,8 +292,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     useState<Record<OfferId, OfferState>>(initialOffers);
   const [weekday, setWeekday] = useState<WeekdayState>('draft');
   const [rafiJoined, setRafiJoined] = useState(false);
-  const [briefVersion, setBriefVersion] = useState<4 | 5>(4);
-  const [briefPending, setBriefPending] = useState(true);
+  const [strategyVersion, setStrategyVersion] = useState<4 | 5>(4);
+  const [strategyPending, setStrategyPending] = useState(true);
   const [review, setReview] = useState<ReviewState>('due');
   const [proposals, setProposals] = useState<Proposal[]>(seedProposals);
   const [myVotes, setMyVotes] = useState<Record<string, 'yes' | 'no'>>({});
@@ -284,7 +302,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [customChats, setCustomChats] = useState<
     { id: string; title: string; org: OrgId }[]
   >([]);
-  const [org, setOrg] = useState<OrgId>('river');
+  const [org, setOrg] = useState<OrgId>(entry.org);
   const [extraMsgs, setExtraMsgs] = useState<Record<string, Msg[]>>({});
 
   const [eSummary, setESummary] = useState<SummaryState>('accepted');
@@ -325,6 +343,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       projectId,
       ticketId,
       proposalId,
+      directionKind,
       youStage,
       profile,
       intent,
@@ -334,8 +353,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       coversQuote,
       weekday,
       rafiJoined,
-      briefVersion,
-      briefPending,
+      strategyVersion,
+      strategyPending,
       review,
       proposals,
       myVotes,
@@ -364,6 +383,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openProposal: (id) => {
         setProposalId(id);
         setRoute('proposal');
+      },
+      openDirection: (kind) => {
+        setDirectionKind(kind);
+        setRoute('direction');
       },
       switchPersona: (id) => {
         setPersona(id);
@@ -459,15 +482,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
       },
 
-      confirmBrief: () => {
-        setBriefVersion(5);
-        setBriefPending(false);
+      confirmStrategy: () => {
+        setStrategyVersion(5);
+        setStrategyPending(false);
         toast(
-          'Brief v5 confirmed. Everything the agent does now reads from it.',
+          'Strategy v5 confirmed. Everything the agent does now reads from it.',
         );
       },
-      rejectBrief: () => {
-        setBriefPending(false);
+      rejectStrategy: () => {
+        setStrategyPending(false);
         toast('Rejected. The agent keeps reading v4 — and remembers why.');
       },
 
@@ -855,11 +878,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sendMsg,
       toast,
       reset: () => {
-        setPersona('you');
-        setRoute('onboarding');
+        setPersona(entry.persona);
+        setRoute(entry.route);
         setThreadId('agent');
-        setProjectId('stall');
-        setTicketId('covers');
+        setProjectId(entry.org === 'energy' ? 'iberia' : 'stall');
+        setTicketId(entry.org === 'energy' ? 'e-summary' : 'covers');
         setProposalId('');
         setTicketView(null);
         setYouStage('chat');
@@ -873,15 +896,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setOffers(initialOffers);
         setWeekday('draft');
         setRafiJoined(false);
-        setBriefVersion(4);
-        setBriefPending(true);
+        setStrategyVersion(4);
+        setStrategyPending(true);
         setReview('due');
         setProposals(seedProposals);
         setMyVotes({});
         setPayDraft(null);
         setChatTicket(null);
         setCustomChats([]);
-        setOrg('river');
+        setOrg(entry.org);
         setExtraMsgs({});
         setNotice(null);
         setESummary('accepted');
@@ -921,8 +944,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     offers,
     weekday,
     rafiJoined,
-    briefVersion,
-    briefPending,
+    strategyVersion,
+    strategyPending,
     review,
     proposals,
     myVotes,
@@ -934,6 +957,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     notice,
     toast,
     sendMsg,
+    entry,
   ]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
