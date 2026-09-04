@@ -1,38 +1,40 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useFormatter, useTranslations } from 'next-intl';
-import {
-  DEFAULT_SPACE_AVATAR_IMAGE,
-  useJwt,
-  usePatchCoherenceTask,
-} from '@hypha-platform/core/client';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { useJwt, usePatchCoherenceTask } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Button,
-  Card,
-  CardContent,
-} from '@hypha-platform/ui';
+import { Button, Card, CardContent } from '@hypha-platform/ui';
 import { Compass, Sparkles } from 'lucide-react';
 import { getOnboardingPath } from '../../common/get-path-function';
-import { dispatchAiPromptSeed } from '../../common/ai-prompt-seed';
+import {
+  AI_CHAT_MIRROR_EVENT,
+  dispatchAiPromptSeed,
+  type AiChatMirrorDetail,
+} from '../../common/ai-prompt-seed';
 import {
   useAiPanel,
   useHumanChatPanel,
 } from '../../common/human-chat-panel-context';
+import { speakOnboardingText } from '../../common/onboarding-voice-speech';
 import { cn } from '@hypha-platform/ui-utils';
 import { attentionSeeAllHref, type HomeAttentionItem } from '../home-activity';
+import {
+  agendaKeysInThread,
+  appendAgendaBlock,
+  appendLocalAiBlock,
+  appendUserBlock,
+  attentionItemKey,
+  nextUnseenAttentionItem,
+  remainingAfterSeen,
+  upsertChatAiBlock,
+  type UsefulThreadBlock,
+} from '../home-useful-thread';
 import { UsefulHarvestArt } from './journey-mark';
 import { HomeVotePanel } from './home-vote-panel';
 import { HomeAiComposer } from './home-ai-composer';
-
-function itemKey(item: HomeAttentionItem) {
-  return `${item.kind}:${item.id}`;
-}
+import { HomePayOverlay } from './home-pay-overlay';
 
 function openClosesAt(item: HomeAttentionItem, nowMs: number): number | null {
   if (item.kind === 'signal') return null;
@@ -48,6 +50,10 @@ function kindLabel(
   if (item.kind === 'vote') return t('usefulKindVote');
   if (item.kind === 'task') return t('usefulKindTask');
   return t('usefulKindSignal');
+}
+
+function newBlockId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function HomeUsefulSurface({
@@ -70,69 +76,223 @@ export function HomeUsefulSurface({
   className?: string;
 }) {
   const t = useTranslations('Journey');
+  const locale = useLocale();
   const format = useFormatter();
   const { openAiPanel } = useAiPanel();
-  const { openCoherenceChat } = useHumanChatPanel();
+  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const { jwt } = useJwt();
-  const [skipped, setSkipped] = useState<string[]>([]);
-  const [pinnedKey, setPinnedKey] = useState<string | null>(null);
-  const [weighingIn, setWeighingIn] = useState(false);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const knownChatIds = useRef(new Set<string>());
+  const mirrorReady = useRef(false);
+  const spokenAiIds = useRef(new Set<string>());
+  const seededItemKeys = useRef(new Set<string>());
+
+  const [blocks, setBlocks] = useState<UsefulThreadBlock[]>([]);
+  const [seen, setSeen] = useState<string[]>([]);
+  const [weighing, setWeighing] = useState<string[]>([]);
   const [claimState, setClaimState] = useState<
-    'idle' | 'claiming' | 'claimed' | 'error'
-  >('idle');
+    Record<string, 'idle' | 'claiming' | 'claimed' | 'error'>
+  >({});
+  const [payOpen, setPayOpen] = useState(false);
+  const [sensing, setSensing] = useState(false);
+
+  const itemsByKey = useMemo(() => {
+    const map = new Map<string, HomeAttentionItem>();
+    for (const item of items) map.set(attentionItemKey(item), item);
+    return map;
+  }, [items]);
+
+  const current = useMemo(() => {
+    const keys = agendaKeysInThread(blocks);
+    for (let i = keys.length - 1; i >= 0; i -= 1) {
+      const key = keys[i];
+      if (!key || seen.includes(key)) continue;
+      const item = itemsByKey.get(key);
+      if (item) return item;
+    }
+    return nextUnseenAttentionItem(items, seen);
+  }, [blocks, items, itemsByKey, seen]);
+
+  const { patchTask, isPatching } = usePatchCoherenceTask(
+    current?.kind === 'task' ? current.spaceSlug : undefined,
+  );
+
   const now = new Date();
   const nowMs = now.getTime();
-
-  const visible = useMemo(
-    () => items.filter((item) => !skipped.includes(itemKey(item))),
-    [items, skipped],
-  );
-  const featured = useMemo(() => {
-    if (pinnedKey) {
-      const pinned = visible.find((item) => itemKey(item) === pinnedKey);
-      if (pinned) return pinned;
-    }
-    return visible[0] ?? null;
-  }, [pinnedKey, visible]);
-  const queue = useMemo(
-    () =>
-      featured
-        ? visible.filter((item) => itemKey(item) !== itemKey(featured))
-        : visible,
-    [featured, visible],
+  const currentClosesAt = current ? openClosesAt(current, nowMs) : null;
+  const currentRelative = currentClosesAt
+    ? format.relativeTime(new Date(currentClosesAt), now)
+    : null;
+  const remaining = remainingAfterSeen(
+    items.length,
+    Math.max(seen.length, agendaKeysInThread(blocks).length),
   );
   const seeAllHref = attentionSeeAllHref(lang, items, fallbackSpaces);
-  const remaining = Math.max(visible.length - 1, 0);
-  const featuredClosesAt = featured ? openClosesAt(featured, nowMs) : null;
-  const featuredRelative = featuredClosesAt
-    ? format.relativeTime(new Date(featuredClosesAt), now)
-    : null;
-  const { patchTask, isPatching } = usePatchCoherenceTask(
-    featured?.kind === 'task' ? featured.spaceSlug : undefined,
-  );
 
-  const skipFeatured = (tellAi = false) => {
-    if (!featured) return;
-    const key = itemKey(featured);
-    setSkipped((current) =>
-      current.includes(key) ? current : [...current, key],
-    );
-    setPinnedKey(null);
-    setWeighingIn(false);
-    setClaimState('idle');
-    if (tellAi) {
-      dispatchAiPromptSeed(t('aiSuggestionSkipped'));
-      openAiPanel();
+  const urgency = (() => {
+    if (!current && items.length === 0) return null;
+    if (currentRelative) {
+      return remaining > 0
+        ? t('usefulUrgencyClosing', {
+            time: currentRelative,
+            count: remaining,
+          })
+        : t('usefulUrgencyClosingLast', { time: currentRelative });
     }
+    if (!current) return null;
+    return remaining > 0
+      ? t('usefulUrgencyOpen', { count: remaining })
+      : t('usefulUrgencyOpenLast');
+  })();
+
+  const bodyFor = (item: HomeAttentionItem) => {
+    const name = firstName?.trim();
+    const title = item.title;
+    const space = item.spaceTitle;
+    if (item.kind === 'vote') {
+      const closesAt = openClosesAt(item, nowMs);
+      const relative = closesAt
+        ? format.relativeTime(new Date(closesAt), now)
+        : null;
+      if (relative) {
+        const closes = t('usefulCloses', { time: relative });
+        return name
+          ? t('usefulBodyVoteClosingNamed', { name, title, space, closes })
+          : t('usefulBodyVoteClosing', { title, space, closes });
+      }
+      return name
+        ? t('usefulBodyVoteNamed', { name, title, space })
+        : t('usefulBodyVote', { title, space });
+    }
+    if (item.kind === 'task') {
+      return name
+        ? t('usefulBodyTaskNamed', { name, title, space })
+        : t('usefulBodyTask', { title, space });
+    }
+    return name
+      ? t('usefulBodySignalNamed', { name, title, space })
+      : t('usefulBodySignal', { title, space });
   };
+
+  const scrollToEnd = () => {
+    const node = threadRef.current;
+    if (!node) return;
+    node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
+  };
+
+  const speak = (id: string, text: string) => {
+    if (!text.trim() || spokenAiIds.current.has(id)) return;
+    spokenAiIds.current.add(id);
+    speakOnboardingText(text, { lang: locale });
+  };
+
+  const revealItem = (item: HomeAttentionItem) => {
+    const key = attentionItemKey(item);
+    setBlocks((currentBlocks) => {
+      let next = appendAgendaBlock(currentBlocks, key, newBlockId('agenda'));
+      if (!seededItemKeys.current.has(key)) {
+        seededItemKeys.current.add(key);
+        next = appendLocalAiBlock(next, bodyFor(item), newBlockId('ai-local'));
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (isLoading) return;
+    const next = nextUnseenAttentionItem(items, [
+      ...seen,
+      ...agendaKeysInThread(blocks),
+    ]);
+    if (next) revealItem(next);
+    // First paint only needs the latest unseen item; later actions append explicitly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed from live attention, not every block change
+  }, [isLoading, items]);
+
+  useEffect(() => {
+    const lastAi = [...blocks].reverse().find((block) => block.type === 'ai');
+    if (lastAi?.type === 'ai' && lastAi.text && !lastAi.streaming) {
+      speak(lastAi.id, lastAi.text);
+    }
+    scrollToEnd();
+  }, [blocks]);
+
+  useEffect(() => {
+    const onMirror = (event: Event) => {
+      const detail = (event as CustomEvent<AiChatMirrorDetail>).detail;
+      if (!detail) return;
+      const streaming =
+        detail.status === 'streaming' || detail.status === 'submitted';
+      setSensing(streaming);
+      if (!mirrorReady.current) {
+        for (const message of detail.messages) {
+          if (message.role === 'assistant') {
+            knownChatIds.current.add(message.id);
+          }
+        }
+        mirrorReady.current = true;
+        return;
+      }
+      for (const message of detail.messages) {
+        if (message.role !== 'assistant' || !message.text.trim()) continue;
+        if (
+          knownChatIds.current.has(message.id) &&
+          !streaming &&
+          message.id !== detail.messages.at(-1)?.id
+        ) {
+          continue;
+        }
+        knownChatIds.current.add(message.id);
+        setBlocks((currentBlocks) =>
+          upsertChatAiBlock(
+            currentBlocks,
+            message.id,
+            message.text,
+            streaming && message.id === detail.messages.at(-1)?.id,
+          ),
+        );
+      }
+    };
+    window.addEventListener(AI_CHAT_MIRROR_EVENT, onMirror);
+    return () => {
+      window.removeEventListener(AI_CHAT_MIRROR_EVENT, onMirror);
+    };
+  }, []);
 
   const talkToAi = (prompt: string) => {
     dispatchAiPromptSeed(prompt);
     openAiPanel();
   };
 
+  const appendUserAndAdvance = (
+    text: string,
+    item: HomeAttentionItem,
+    tellAi: string | null,
+  ) => {
+    const key = attentionItemKey(item);
+    setSeen((currentSeen) =>
+      currentSeen.includes(key) ? currentSeen : [...currentSeen, key],
+    );
+    setWeighing((currentWeighing) =>
+      currentWeighing.filter((value) => value !== key),
+    );
+    setBlocks((currentBlocks) =>
+      appendUserBlock(currentBlocks, text, newBlockId('user')),
+    );
+    if (tellAi) talkToAi(tellAi);
+    const next = nextUnseenAttentionItem(items, [...seen, key]);
+    if (next) {
+      window.setTimeout(() => revealItem(next), 80);
+    }
+  };
+
+  const skipItem = (item: HomeAttentionItem) => {
+    appendUserAndAdvance(t('usefulNotNow'), item, t('aiSuggestionSkipped'));
+  };
+
   const respondToSignal = (
     item: Extract<HomeAttentionItem, { kind: 'signal' | 'task' }>,
+    help = false,
   ) => {
     if (item.signalSlug) {
       openCoherenceChat(
@@ -142,84 +302,50 @@ export function HomeUsefulSurface({
         item.description,
       );
     }
-    talkToAi(t('aiSuggestionSignal', { title: item.title }));
+    appendUserAndAdvance(
+      help ? t('usefulHelp') : t('usefulRespond'),
+      item,
+      t('aiSuggestionSignal', { title: item.title }),
+    );
   };
 
-  const takeTask = async () => {
-    if (featured?.kind !== 'task' || !featured.signalSlug) return;
+  const takeTask = async (
+    item: Extract<HomeAttentionItem, { kind: 'task' }>,
+  ) => {
+    const key = attentionItemKey(item);
+    if (!item.signalSlug) return;
     if (!personId || !jwt) {
-      setClaimState('error');
+      setClaimState((currentState) => ({ ...currentState, [key]: 'error' }));
       return;
     }
-    if (featured.assigneeIds.includes(personId)) {
-      setClaimState('claimed');
-      respondToSignal(featured);
+    if (item.assigneeIds.includes(personId)) {
+      setClaimState((currentState) => ({ ...currentState, [key]: 'claimed' }));
+      respondToSignal(item);
       return;
     }
-    setClaimState('claiming');
+    setClaimState((currentState) => ({ ...currentState, [key]: 'claiming' }));
     try {
       await patchTask({
-        slug: featured.signalSlug,
-        assigneeIds: [...featured.assigneeIds, personId],
+        slug: item.signalSlug,
+        assigneeIds: [...item.assigneeIds, personId],
       });
-      setClaimState('claimed');
-      talkToAi(t('aiSuggestionTaskTake', { title: featured.title }));
-      skipFeatured(false);
+      setClaimState((currentState) => ({ ...currentState, [key]: 'claimed' }));
+      appendUserAndAdvance(
+        t('usefulTakeIt'),
+        item,
+        t('aiSuggestionTaskTake', { title: item.title }),
+      );
     } catch {
-      setClaimState('error');
+      setClaimState((currentState) => ({ ...currentState, [key]: 'error' }));
     }
   };
 
-  const urgency = (() => {
-    if (!featured) return null;
-    if (featuredRelative) {
-      return remaining > 0
-        ? t('usefulUrgencyClosing', {
-            time: featuredRelative,
-            count: remaining,
-          })
-        : t('usefulUrgencyClosingLast', { time: featuredRelative });
-    }
-    return remaining > 0
-      ? t('usefulUrgencyOpen', { count: remaining })
-      : t('usefulUrgencyOpenLast');
-  })();
-
-  const body = (() => {
-    if (!featured) return null;
-    const name = firstName?.trim();
-    const title = featured.title;
-    const space = featured.spaceTitle;
-    if (featured.kind === 'vote') {
-      if (featuredRelative) {
-        const closes = t('usefulCloses', { time: featuredRelative });
-        return name
-          ? t('usefulBodyVoteClosingNamed', { name, title, space, closes })
-          : t('usefulBodyVoteClosing', { title, space, closes });
-      }
-      return name
-        ? t('usefulBodyVoteNamed', { name, title, space })
-        : t('usefulBodyVote', { title, space });
-    }
-    if (featured.kind === 'task') {
-      return name
-        ? t('usefulBodyTaskNamed', { name, title, space })
-        : t('usefulBodyTask', { title, space });
-    }
-    return name
-      ? t('usefulBodySignalNamed', { name, title, space })
-      : t('usefulBodySignal', { title, space });
-  })();
-
-  const holdingTask =
-    featured?.kind === 'task' &&
-    personId != null &&
-    featured.assigneeIds.includes(personId);
+  const empty = !isLoading && items.length === 0 && blocks.length === 0;
 
   return (
     <Card className={cn('craft-card flex min-h-0 flex-1 flex-col', className)}>
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-5 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+        <header className="flex shrink-0 flex-wrap items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
           <div className="min-w-0">
             <UsefulHarvestArt className="mb-3 h-14 w-[8.5rem]" />
             <h2 className="[font-family:var(--font-family-heading)] text-5 font-semibold tracking-[-0.015em]">
@@ -231,233 +357,301 @@ export function HomeUsefulSurface({
               {urgency}
             </p>
           ) : null}
-        </div>
+        </header>
 
-        {isLoading ? (
-          <p className="text-2 text-muted-foreground">{t('usefulLoading')}</p>
-        ) : featured ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start gap-3">
-              <span
-                className="mt-2 size-2.5 shrink-0 rounded-full bg-success-9"
-                aria-hidden
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-3 font-medium leading-snug">
-                  {featured.title}
-                </p>
-                <p className="mt-1 text-1 text-muted-foreground">
-                  <span>{featured.spaceTitle}</span>
-                  <span aria-hidden> · </span>
-                  <span>{kindLabel(featured, (key) => t(key))}</span>
-                  {featuredRelative ? (
-                    <>
-                      <span aria-hidden> · </span>
-                      <span className="text-warning-11">
-                        {t('usefulCloses', { time: featuredRelative })}
-                      </span>
-                    </>
-                  ) : null}
-                </p>
+        <div
+          ref={threadRef}
+          className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-5 py-5"
+        >
+          {isLoading && blocks.length === 0 ? (
+            <p className="text-2 text-muted-foreground">{t('usefulLoading')}</p>
+          ) : null}
+
+          {empty ? (
+            <div className="flex flex-col gap-4">
+              <p className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
+                {t('usefulEmptyTitle')}
+              </p>
+              <p className="max-w-[46ch] text-2 leading-relaxed text-muted-foreground">
+                {t('usefulEmptyLead')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {onCapture ? (
+                  <Button
+                    type="button"
+                    className="rounded-xl"
+                    onClick={onCapture}
+                  >
+                    <Sparkles className="size-4" aria-hidden />
+                    {t('usefulEmptyCapture')}
+                  </Button>
+                ) : null}
+                <Button asChild variant="outline" colorVariant="neutral">
+                  <Link href={getOnboardingPath(lang)}>
+                    {t('usefulEmptyCreate')}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" colorVariant="neutral">
+                  <Link href={`/${lang}/network`}>
+                    <Compass className="size-4" aria-hidden />
+                    {t('usefulEmptyExplore')}
+                  </Link>
+                </Button>
               </div>
             </div>
+          ) : null}
 
-            {featured.kind === 'vote' && weighingIn ? (
-              <HomeVotePanel
-                item={featured}
-                onVoted={() => skipFeatured(false)}
-              />
-            ) : featured.kind === 'vote' ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setWeighingIn(true);
-                    talkToAi(t('aiSuggestionVote', { title: featured.title }));
-                  }}
-                >
-                  {t('usefulWeighIn')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="rounded-xl"
-                  onClick={() => skipFeatured(true)}
-                >
-                  {t('usefulNotNow')}
-                </Button>
-              </div>
-            ) : featured.kind === 'task' ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    className="rounded-xl"
-                    disabled={isPatching || claimState === 'claiming'}
-                    onClick={() => void takeTask()}
-                  >
-                    {holdingTask || claimState === 'claimed'
-                      ? t('usefulClaimed')
-                      : t('usefulTakeIt')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="rounded-xl"
-                    onClick={() => respondToSignal(featured)}
-                  >
-                    {t('usefulRespond')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="rounded-xl"
-                    onClick={() => skipFeatured(true)}
-                  >
-                    {t('usefulNotNow')}
-                  </Button>
+          {blocks.map((block) => {
+            if (block.type === 'user') {
+              return (
+                <div key={block.id} className="flex justify-end">
+                  <p className="max-w-[85%] rounded-xl bg-accent-9 px-4 py-2.5 text-2 font-medium text-accent-contrast">
+                    {block.text}
+                  </p>
                 </div>
-                {claimState === 'claiming' ? (
-                  <p className="text-1 text-muted-foreground">
-                    {t('usefulClaiming')}
+              );
+            }
+            if (block.type === 'ai') {
+              return (
+                <div key={block.id} className="flex flex-col gap-1">
+                  <p className="text-1 font-medium uppercase tracking-[0.08em] text-accent-11">
+                    {t('usefulAiName')}
                   </p>
-                ) : null}
-                {claimState === 'error' ? (
-                  <p className="text-2 text-error-11">
-                    {t('usefulClaimError')}
+                  <p className="max-w-[46ch] text-3 leading-snug">
+                    {block.text || (block.streaming ? t('usefulSensing') : '')}
                   </p>
-                ) : null}
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  className="rounded-xl"
-                  onClick={() => respondToSignal(featured)}
-                >
-                  {t('usefulRespond')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="rounded-xl"
-                  onClick={() => skipFeatured(true)}
-                >
-                  {t('usefulNotNow')}
-                </Button>
-              </div>
-            )}
+                </div>
+              );
+            }
+            const item = itemsByKey.get(block.itemKey);
+            if (!item) return null;
+            const acted = seen.includes(block.itemKey);
+            const closesAt = openClosesAt(item, nowMs);
+            const relative = closesAt
+              ? format.relativeTime(new Date(closesAt), now)
+              : null;
+            const itemClaim = claimState[block.itemKey] ?? 'idle';
+            const holdingTask =
+              item.kind === 'task' &&
+              personId != null &&
+              item.assigneeIds.includes(personId);
+            const showVote =
+              item.kind === 'vote' && weighing.includes(block.itemKey);
 
-            {body && !(featured.kind === 'vote' && weighingIn) ? (
-              <p className="max-w-[46ch] text-2 leading-relaxed text-muted-foreground">
-                {body}
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <p className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-[-0.015em]">
-              {t('usefulEmptyTitle')}
-            </p>
+            return (
+              <article key={block.id} className="flex flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <span
+                    className="mt-2 size-2.5 shrink-0 rounded-full bg-success-9"
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-3 font-medium leading-snug">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-1 text-muted-foreground">
+                      <span>{item.spaceTitle}</span>
+                      <span aria-hidden> · </span>
+                      <span>{kindLabel(item, (key) => t(key))}</span>
+                      {relative ? (
+                        <>
+                          <span aria-hidden> · </span>
+                          <span className="text-warning-11">
+                            {t('usefulCloses', { time: relative })}
+                          </span>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                </div>
+
+                {acted && !(item.kind === 'vote' && showVote) ? (
+                  <p className="text-2 text-muted-foreground">
+                    {itemClaim === 'claimed' || holdingTask
+                      ? t('usefulClaimed')
+                      : t('usefulPassed')}
+                  </p>
+                ) : null}
+
+                {item.kind === 'vote' && showVote ? (
+                  <HomeVotePanel
+                    item={item}
+                    onVoted={(vote) => {
+                      const key = attentionItemKey(item);
+                      setSeen((currentSeen) =>
+                        currentSeen.includes(key)
+                          ? currentSeen
+                          : [...currentSeen, key],
+                      );
+                      setBlocks((currentBlocks) =>
+                        appendUserBlock(
+                          currentBlocks,
+                          vote === 'yes'
+                            ? t('usefulVotedYes')
+                            : t('usefulVotedNo'),
+                          newBlockId('user'),
+                        ),
+                      );
+                      const next = nextUnseenAttentionItem(items, [
+                        ...seen,
+                        key,
+                      ]);
+                      if (next) {
+                        window.setTimeout(() => revealItem(next), 80);
+                      }
+                    }}
+                  />
+                ) : item.kind === 'vote' && !acted ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      className="rounded-xl"
+                      onClick={() => {
+                        setWeighing((currentWeighing) =>
+                          currentWeighing.includes(block.itemKey)
+                            ? currentWeighing
+                            : [...currentWeighing, block.itemKey],
+                        );
+                        setBlocks((currentBlocks) =>
+                          appendUserBlock(
+                            currentBlocks,
+                            t('usefulWeighIn'),
+                            newBlockId('user'),
+                          ),
+                        );
+                        talkToAi(t('aiSuggestionVote', { title: item.title }));
+                      }}
+                    >
+                      {t('usefulWeighIn')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="rounded-xl"
+                      onClick={() => skipItem(item)}
+                    >
+                      {t('usefulNotNow')}
+                    </Button>
+                  </div>
+                ) : item.kind === 'task' && !acted ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        className="rounded-xl"
+                        disabled={isPatching || itemClaim === 'claiming'}
+                        onClick={() => void takeTask(item)}
+                      >
+                        {holdingTask || itemClaim === 'claimed'
+                          ? t('usefulClaimed')
+                          : t('usefulTakeIt')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        colorVariant="neutral"
+                        className="rounded-xl"
+                        onClick={() => respondToSignal(item)}
+                      >
+                        {t('usefulRespond')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        colorVariant="neutral"
+                        className="rounded-xl"
+                        onClick={() => skipItem(item)}
+                      >
+                        {t('usefulNotNow')}
+                      </Button>
+                    </div>
+                    {itemClaim === 'claiming' ? (
+                      <p className="text-1 text-muted-foreground">
+                        {t('usefulClaiming')}
+                      </p>
+                    ) : null}
+                    {itemClaim === 'error' ? (
+                      <p className="text-2 text-error-11">
+                        {t('usefulClaimError')}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : item.kind === 'signal' && !acted ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      className="rounded-xl"
+                      onClick={() => respondToSignal(item, true)}
+                    >
+                      {t('usefulHelp')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="rounded-xl"
+                      onClick={() => {
+                        openHumanChatPanel();
+                      }}
+                    >
+                      {t('usefulCall')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="rounded-xl"
+                      onClick={() => setPayOpen(true)}
+                    >
+                      {t('usefulSendTokens')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="rounded-xl"
+                      onClick={() => skipItem(item)}
+                    >
+                      {t('usefulNotNow')}
+                    </Button>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+
+          {sensing ? (
+            <p className="text-2 text-muted-foreground">{t('usefulSensing')}</p>
+          ) : null}
+
+          {!isLoading && items.length > 0 && !current && remaining === 0 ? (
             <p className="max-w-[46ch] text-2 leading-relaxed text-muted-foreground">
               {t('usefulEmptyLead')}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {onCapture ? (
-                <Button
-                  type="button"
-                  className="rounded-xl"
-                  onClick={onCapture}
-                >
-                  <Sparkles className="size-4" aria-hidden />
-                  {t('usefulEmptyCapture')}
-                </Button>
-              ) : null}
-              <Button asChild variant="outline" colorVariant="neutral">
-                <Link href={getOnboardingPath(lang)}>
-                  {t('usefulEmptyCreate')}
-                </Link>
-              </Button>
-              <Button asChild variant="outline" colorVariant="neutral">
-                <Link href={`/${lang}/network`}>
-                  <Compass className="size-4" aria-hidden />
-                  {t('usefulEmptyExplore')}
-                </Link>
-              </Button>
-            </div>
+          ) : null}
+        </div>
+
+        <div className="shrink-0 border-t border-border/70 px-5 py-4">
+          <HomeAiComposer
+            featured={current}
+            onCapture={onCapture}
+            onPay={() => setPayOpen(true)}
+            onCall={() => openHumanChatPanel()}
+            onSend={(prompt) => {
+              setBlocks((currentBlocks) =>
+                appendUserBlock(currentBlocks, prompt, newBlockId('user')),
+              );
+            }}
+          />
+          <div className="mt-3 flex justify-end">
+            <Button asChild variant="ghost" colorVariant="neutral">
+              <Link href={seeAllHref}>{t('attentionSeeAll')}</Link>
+            </Button>
           </div>
-        )}
-
-        {queue.length > 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            <p className="text-1 font-medium uppercase tracking-[0.08em] text-muted-foreground">
-              {t('usefulQueueTitle')}
-            </p>
-            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
-              {queue.map((item) => {
-                const closesAt = openClosesAt(item, nowMs);
-                const relative = closesAt
-                  ? format.relativeTime(new Date(closesAt), now)
-                  : null;
-                return (
-                  <li key={itemKey(item)}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPinnedKey(itemKey(item));
-                        setWeighingIn(false);
-                        setClaimState('idle');
-                      }}
-                      className="craft-row-interactive flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left"
-                    >
-                      <Avatar className="size-9 shrink-0 rounded-chrome">
-                        <AvatarImage
-                          src={item.spaceLogoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
-                          alt=""
-                        />
-                        <AvatarFallback className="rounded-chrome text-1">
-                          {item.spaceTitle.slice(0, 1).toUpperCase() || 'S'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-2 font-medium">
-                          {item.title}
-                        </span>
-                        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-1 text-muted-foreground">
-                          <span>{item.spaceTitle}</span>
-                          <span aria-hidden>·</span>
-                          <span>{kindLabel(item, (key) => t(key))}</span>
-                          {relative ? (
-                            <>
-                              <span aria-hidden>·</span>
-                              <span className="text-warning-11">
-                                {t('usefulCloses', { time: relative })}
-                              </span>
-                            </>
-                          ) : null}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null}
-
-        <HomeAiComposer featured={featured} onCapture={onCapture} />
-
-        <div className="flex justify-end">
-          <Button asChild variant="ghost" colorVariant="neutral">
-            <Link href={seeAllHref}>{t('attentionSeeAll')}</Link>
-          </Button>
         </div>
       </CardContent>
+      <HomePayOverlay lang={lang} open={payOpen} onOpenChange={setPayOpen} />
     </Card>
   );
 }

@@ -5,17 +5,32 @@ import { useTranslations } from 'next-intl';
 import { Button, Textarea } from '@hypha-platform/ui';
 import { ArrowUp } from 'lucide-react';
 import { useAiPanel } from '../../common/human-chat-panel-context';
-import { dispatchAiPromptSeed } from '../../common/ai-prompt-seed';
+import { LiveVoiceMicIcon } from '../../common/ai-panel/live-voice-mic-icon';
+import {
+  dispatchAiPromptSeed,
+  dispatchAiVoiceStart,
+} from '../../common/ai-prompt-seed';
 import type { HomeAttentionItem } from '../home-activity';
 
-type Chip = { id: string; label: string; prompt: string };
+type Chip = {
+  id: string;
+  label: string;
+  prompt?: string;
+  action?: 'capture' | 'pay' | 'call';
+};
 
 export function HomeAiComposer({
   featured,
   onCapture,
+  onPay,
+  onCall,
+  onSend,
 }: {
   featured: HomeAttentionItem | null;
   onCapture?: () => void;
+  onPay?: () => void;
+  onCall?: () => void;
+  onSend?: (prompt: string) => void;
 }) {
   const t = useTranslations('Journey');
   const { openAiPanel } = useAiPanel();
@@ -68,46 +83,67 @@ export function HomeAiComposer({
       label: t('aiSuggestionSpaceTag'),
       prompt: t('aiSuggestionSpace'),
     });
-    if (!featured) {
+    if (onCall) {
       items.push({
-        id: 'people',
-        label: t('aiSuggestionPeopleTag'),
-        prompt: t('aiSuggestionPeople'),
+        id: 'call',
+        label: t('aiSuggestionCallTag'),
+        action: 'call',
       });
     }
-    return items.slice(0, 4);
-  }, [featured, t]);
+    if (onPay) {
+      items.push({ id: 'pay', label: t('aiSuggestionPayTag'), action: 'pay' });
+    }
+    if (onCapture) {
+      items.push({
+        id: 'capture',
+        label: t('aiSuggestionCaptureTag'),
+        action: 'capture',
+      });
+    }
+    return items.slice(0, 6);
+  }, [featured, onCall, onCapture, onPay, t]);
 
   const send = (prompt: string) => {
     const text = prompt.trim();
     if (!text) return;
+    onSend?.(text);
     dispatchAiPromptSeed(text);
     openAiPanel();
     setDraft('');
   };
 
+  const talk = () => {
+    dispatchAiVoiceStart();
+    openAiPanel();
+  };
+
   return (
-    <div className="mt-auto flex flex-col gap-3 border-t border-border/70 pt-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-1.5">
         {chips.map((chip) => (
           <button
             key={chip.id}
             type="button"
-            onClick={() => send(chip.prompt)}
+            onClick={() => {
+              if (chip.action === 'capture') {
+                onCapture?.();
+                return;
+              }
+              if (chip.action === 'pay') {
+                onPay?.();
+                return;
+              }
+              if (chip.action === 'call') {
+                onCall?.();
+                return;
+              }
+              if (chip.prompt) send(chip.prompt);
+            }}
             className="rounded-xl border border-border/70 bg-background-2 px-2.5 py-1 text-1 text-foreground transition-colors hover:border-accent-7 hover:bg-accent-2"
           >
             {chip.label}
           </button>
         ))}
-        {onCapture ? (
-          <button
-            type="button"
-            onClick={onCapture}
-            className="rounded-xl border border-border/70 bg-background-2 px-2.5 py-1 text-1 text-foreground transition-colors hover:border-accent-7 hover:bg-accent-2"
-          >
-            {t('aiSuggestionCaptureTag')}
-          </button>
-        ) : null}
       </div>
       <form
         className="flex items-end gap-2"
@@ -129,6 +165,18 @@ export function HomeAiComposer({
           rows={1}
           className="min-h-[44px] max-h-28 resize-none rounded-xl"
         />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          colorVariant="neutral"
+          className="size-11 shrink-0 rounded-xl p-0"
+          onClick={talk}
+          aria-label={t('usefulTalk')}
+          title={t('usefulTalkHint')}
+        >
+          <LiveVoiceMicIcon size="md" />
+        </Button>
         <Button
           type="submit"
           size="sm"

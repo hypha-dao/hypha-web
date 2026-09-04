@@ -102,6 +102,8 @@ import {
 } from './ai-agent-competencies';
 import {
   AI_PROMPT_SEED_EVENT,
+  AI_VOICE_START_EVENT,
+  dispatchAiChatMirror,
   type AiPromptSeedDetail,
 } from './ai-prompt-seed';
 import {
@@ -971,6 +973,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  useEffect(() => {
+    dispatchAiChatMirror({
+      status,
+      messages: (messages as ChatUIMessage[]).map((message) => ({
+        id: message.id,
+        role: message.role === 'assistant' ? 'assistant' : 'user',
+        text:
+          message.role === 'assistant'
+            ? extractAssistantTextFromMessage(message)
+            : (message.parts ?? [])
+                .filter(
+                  (part): part is { type: 'text'; text: string } =>
+                    part.type === 'text',
+                )
+                .map((part) => part.text)
+                .join('\n')
+                .trim(),
+      })),
+    });
+  }, [messages, status]);
+
   const hasUserMessage = useMemo(
     () =>
       (messages as ChatUIMessage[]).some((message) => message.role === 'user'),
@@ -1249,6 +1272,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       window.removeEventListener(AI_PROMPT_SEED_EVENT, onPromptSeed);
     };
   }, [openAiPanel, setAiOverlayVisible]);
+
+  useEffect(() => {
+    const onVoiceStart = () => {
+      openAiPanel();
+      setAiOverlayVisible(false);
+      if (!spaceSlug?.trim()) return;
+      saveSpaceDiscoveryMode(spaceSlug, 'voice_interview');
+      setSpaceDiscoveryMode('voice_interview');
+    };
+    window.addEventListener(AI_VOICE_START_EVENT, onVoiceStart);
+    return () => {
+      window.removeEventListener(AI_VOICE_START_EVENT, onVoiceStart);
+    };
+  }, [openAiPanel, setAiOverlayVisible, setSpaceDiscoveryMode, spaceSlug]);
 
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
