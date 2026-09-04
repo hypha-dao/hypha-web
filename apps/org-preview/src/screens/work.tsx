@@ -43,6 +43,7 @@ import {
   Fact,
   HeldCard,
   OfferCard,
+  OfferWhere,
   ProjectBlock,
   Section,
   StateChip,
@@ -207,9 +208,11 @@ function YouWork() {
         <p className="mt-2 text-[16px] font-medium tracking-[-0.015em]">
           {setup.title}
         </p>
-        <p className="mt-1 text-[13px] text-sub">
-          Under Saturday stall · due {setup.due}. Why you: {setup.why}
-        </p>
+        <OfferWhere
+          project="Saturday stall"
+          projectId="stall"
+          due={setup.due}
+        />
         <div className="mt-3 flex items-center gap-2">
           <Button size="sm" onClick={s.acceptSetup}>
             Accept
@@ -534,12 +537,17 @@ function ReviewCard() {
   const s = useStore();
   return (
     <Card className="border-ink/15 p-5">
-      <Chip tone="agent">Review due — the story is already written</Chip>
+      <div className="flex items-center justify-between gap-3">
+        <Chip tone="agent">Ends 1 Jun 2026 — in two weeks</Chip>
+        <StateChip state="waiting" label="Shapers decide" />
+      </div>
       <p className="mt-3 text-[17px] font-semibold tracking-[-0.02em]">
-        Saturday stall — review, 1 Jun
+        Saturday stall closes on 1 Jun — does anything follow it?
       </p>
-      <div className="mt-3">
-        <Row label="Held" value="every Saturday since March" />
+
+      <Kicker className="mt-4">Brief</Kicker>
+      <div className="mt-1">
+        <Row label="Held" value="every Saturday since March, Sam as DRI" />
         <Row
           label="Done"
           value={
@@ -548,22 +556,43 @@ function ReviewCard() {
         />
         <Row label="Not done" value="setup doc still open" />
         <Row label="Money moved" value="2 payments, both by proposal" />
+        <Row
+          label="Objective"
+          value="“Saturday held every week” — still live"
+        />
       </div>
-      <div className="mt-4 flex gap-2">
-        <Button size="sm" onClick={s.reviewExtend}>
-          Extend to 1 Sep
+
+      <div className="mt-4 rounded-xl bg-agent-soft px-4 py-3">
+        <Kicker className="text-agent">
+          Recommendation — a follow-up project
+        </Kicker>
+        <p className="mt-1.5 text-[15px] font-medium tracking-[-0.015em]">
+          Saturday stall — summer season
+        </p>
+        <p className="mt-0.5 text-[13px] text-sub">
+          Sam as DRI · ends 31 Oct 2026
+        </p>
+        <p className="mt-2 text-[14px] leading-relaxed">
+          The objective is not done — the season runs to October and the growers
+          expect the Saturdays to continue. The setup doc carries over as the
+          first ticket. Same shape, new dates, nothing invented.
+        </p>
+        <p className="mt-1.5 text-[12px] text-faint">
+          From the ledger and “Saturday stall”. If nothing pointed to more work
+          here, I would say so instead. The stall closes on 1 Jun either way —
+          your tap is only about what follows, and it is the approval.
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button size="sm" variant="agent" onClick={s.reviewCloseFollowUp}>
+          Open the follow-up
         </Button>
         <Button size="sm" variant="outline" onClick={s.reviewClose}>
-          Close the project
+          Nothing more
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() =>
-            s.toast('Resize is the same tap — new indication, same evidence.')
-          }
-        >
-          Resize
+        <Button size="sm" variant="ghost" onClick={s.reviewExtend}>
+          Keep the stall open until 1 Sep
         </Button>
       </div>
     </Card>

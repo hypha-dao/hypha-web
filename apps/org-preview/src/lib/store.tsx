@@ -82,6 +82,7 @@ export const OFFERS: Record<
     title: string;
     from: string;
     project: string;
+    projectId: ProjectId;
     due: string;
     why: string;
   }
@@ -90,6 +91,7 @@ export const OFFERS: Record<
     title: 'Photograph each grower’s stand for the welcome sheet',
     from: 'Jun',
     project: 'Grower onboarding',
+    projectId: 'growers',
     due: '21 Jun',
     why: 'You said you have a decent camera. One Saturday morning.',
   },
@@ -97,6 +99,7 @@ export const OFFERS: Record<
     title: 'Translate the member FAQ into Portuguese',
     from: 'Suzana',
     project: 'Community onboarding playbook',
+    projectId: 'playbook',
     due: '31 Jul',
     why: 'You wrote the Ameland summary — same voice, other language.',
   },
@@ -224,9 +227,10 @@ type Store = {
   reopenMuni: () => void;
   offerCarbon: () => void;
   acceptEnergyJoin: () => void;
-  // review (Maya)
+  // review (Maya) — projects close on their date; the question is what follows
   reviewExtend: () => void;
   reviewClose: () => void;
+  reviewCloseFollowUp: () => void;
   // chat
   sendMsg: (threadId: string, msg: Msg) => void;
   toast: (text: string) => void;
@@ -734,11 +738,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       reviewExtend: () => {
         setReview('extended');
-        toast('Extended to 1 Sep. One tap — the story was already written.');
+        toast(
+          'Kept open until 1 Sep — against the recommendation. Remembered for next time.',
+        );
       },
       reviewClose: () => {
         setReview('closed');
-        toast('Closed. The project and its trail stay readable forever.');
+        toast(
+          'Stall closes 1 Jun, nothing follows. The project stays readable forever.',
+        );
+      },
+      reviewCloseFollowUp: () => {
+        setReview('closed');
+        setProposals((ps) =>
+          ps.some((p) => p.id === 'approve-stall-summer')
+            ? ps
+            : [
+                {
+                  id: 'approve-stall-summer',
+                  kind: 'project' as const,
+                  title: 'Approve project: Saturday stall — summer season',
+                  sub: 'Sam as DRI · follow-up to Saturday stall',
+                  description:
+                    'Keep the Saturday stall running through the summer: the growers, the tables, the cash box, and the setup doc so anyone can open. Follows the spring project, closed 1 Jun.',
+                  ends: '31 Oct 2026',
+                  state: 'passed' as const,
+                  decided: 'today',
+                  yes: 2,
+                  no: 0,
+                  needed: 2,
+                  openedBy: 'Maya',
+                },
+                ...ps,
+              ],
+        );
+        toast(
+          'Stall closes 1 Jun. Summer season is live — offered to Sam, recorded in Proposals.',
+        );
       },
 
       /* ---- Hypha Energy ---- */

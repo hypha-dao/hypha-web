@@ -118,7 +118,8 @@ export function OrgPage() {
       when: s.review === 'extended' ? '1 Sep' : '1 Jun',
       title: 'Saturday stall review',
       short: 'Stall review',
-      detail: 'Held vs planned — the story writes itself.',
+      detail:
+        'Brief and a recommendation land with the Shapers two weeks before.',
       kind: 'future',
     },
     {

@@ -376,6 +376,34 @@ export function TicketList({
   );
 }
 
+/** Project + due on an offer — project opens, due sits under it. */
+export function OfferWhere({
+  project,
+  projectId,
+  due,
+}: {
+  project: string;
+  projectId: ProjectId;
+  due: string;
+}) {
+  const s = useStore();
+  return (
+    <div className="mt-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
+        Project
+      </p>
+      <button
+        type="button"
+        onClick={() => s.openProject(projectId)}
+        className="mt-0.5 text-left text-[14px] font-medium text-ink underline-offset-2 transition-colors hover:underline"
+      >
+        {project}
+      </button>
+      <p className="mt-1 text-[13px] text-sub">Due {due}</p>
+    </div>
+  );
+}
+
 /** An offer to You, in "Needs your answer" — accept or send it back, in place. */
 export function OfferCard({ id }: { id: OfferId }) {
   const s = useStore();
@@ -390,9 +418,7 @@ export function OfferCard({ id }: { id: OfferId }) {
       <p className="mt-2 text-[16px] font-medium tracking-[-0.015em]">
         {o.title}
       </p>
-      <p className="mt-1 text-[13px] leading-relaxed text-sub">
-        Under {o.project} · due {o.due}. Why you: {o.why}
-      </p>
+      <OfferWhere project={o.project} projectId={o.projectId} due={o.due} />
       <div className="mt-3 flex gap-2">
         <Button size="sm" onClick={() => s.answerOffer(id, true)}>
           Accept
