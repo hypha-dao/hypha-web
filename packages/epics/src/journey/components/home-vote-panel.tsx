@@ -12,7 +12,7 @@ export function HomeVotePanel({
   onVoted,
 }: {
   item: HomeVoteItem;
-  onVoted?: () => void;
+  onVoted?: (vote: 'yes' | 'no') => void;
 }) {
   const t = useTranslations('Journey');
   const { jwt } = useJwt();
@@ -40,7 +40,7 @@ export function HomeVotePanel({
       if (support) await handleAccept();
       else await handleReject();
       await mutate();
-      onVoted?.();
+      onVoted?.(support ? 'yes' : 'no');
     } catch {
       setLocalVote(null);
       setError(true);
