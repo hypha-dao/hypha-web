@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
-import { StoreProvider } from '@/lib/store';
 import './globals.css';
 
 const geist = Geist({
@@ -21,9 +20,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={geist.variable}>
-      <body className="font-sans antialiased">
-        <StoreProvider>{children}</StoreProvider>
-      </body>
+      {/* each route mounts its own StoreProvider with its entry point — see app.tsx */}
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }
