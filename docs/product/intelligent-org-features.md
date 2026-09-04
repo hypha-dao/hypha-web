@@ -109,10 +109,23 @@ offer the pieces to others, as deep as the work needs, without going back up to 
 Anyone's talk is context; only the right role can stamp it live. Same gap mentioned twice stays
 one card.
 
+**Not only from talk.** The agent also holds the confirmed direction next to the live work tree
+and drafts the gap between them, unprompted: a **project** for an objective nothing serves, to
+the Shapers; a **ticket** for a piece of a project that no ticket covers, to that project's DRI.
+Same cards, same confirm — the receipt is the objective or the project description instead of a
+message, and the card says _suggested by the agent, nobody asked_. It looks at three moments
+only: right after a Shaper confirms a new direction version, right after a project goes live,
+and on a weekly scan — never per message. One open suggestion per objective or project; a
+dismissed one is not raised again until something changed.
+
 A project carries no budget and a ticket carries no pay. If a job should be paid, that is a
 conversation between the person taking it and the person offering it (see feature 7).
 
 **A Shaper can:** approve a project the AI suggested, name a DRI, set the review date — in chat.
+**A Shaper can:** confirm a new objective and, without asking, get a project draft for it if
+nothing in the tree serves it yet.
+**A project DRI can:** be told "your project names a licence and no ticket covers it — here is
+a draft" before anyone raises it in the room.
 **A DRI can:** write "Lea, can you take covers?" and have that become a ticket offer, without a
 form.
 **A ticket holder can:** say "Jun, could you print the rota?" and offer a piece of their own
@@ -161,7 +174,8 @@ that line. When the work is done, either of them tells their personal assistant 
 proposal for the Shapers for this work — 150 USDC"_, or _"…whatever we agreed"_. The draft
 carries the agreement, the done receipt, and the sum; if the sum named differs from the one
 agreed, the draft shows both. The Shapers decide, as with any proposal, and the payment lands on
-the profile.
+the profile. In the MVP **every payment is a Shaper decision** — no sum is small enough to skip
+them, and no DRI approves pay for the people under them.
 
 The AI never moves money. It remembers what was agreed and drafts on request — a person still
 takes it through governance.
@@ -171,8 +185,9 @@ takes it through governance.
 
 ### 8. Reviews write themselves
 
-Every project has an exact end date and **closes on it by default**. As the date nears — two
-weeks out, not on the day — the Shapers get a **brief** and a **recommendation**. The brief is
+Every project has an exact end date and **closes on it by default**. As the date nears — in the
+**last fifth of the project's run**, not on the day, so a two-week project is briefed three days
+out and a year-long one ten weeks out — the Shapers get a **brief** and a **recommendation**. The brief is
 the story: what was held, what was done, what was not, what was paid out through proposals,
 whether the objective it served moved.
 

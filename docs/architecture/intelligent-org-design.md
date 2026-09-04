@@ -204,8 +204,9 @@ How a person gets paid:
    item's done evidence, and its path. If the named sum differs from the agreed line, the draft
    shows both — the agent never silently picks one.
 3. **Decided by Shapers.** The proposal goes through the existing proposal/treasury path like
-   any other. When it passes, the payment shows on the payee's profile with the agreement and
-   the proposal as receipts.
+   any other. In the MVP every money proposal needs the Shapers — no threshold below which a
+   DRI can approve pay for the people under them. When it passes, the payment shows on the
+   payee's profile with the agreement and the proposal as receipts.
 
 Why this shape: it removes the two hardest design questions (salary vs. per-project, and how
 budgets cascade down a tree) from the data model entirely. Pay stays a human conversation; the
@@ -239,6 +240,25 @@ in the Shapers room or their own assistant chat (direction talk is always a cand
 room and the role are the filter). The model then judges
 _candidates_, which is judgment, not triggering. This also caps spend: cost scales with
 candidate batches, not with everything everyone says.
+
+Chat is not the only way into THINK. Two more trigger sources, both rules, feed the same pass
+with the same context and go out through the same ROUTE — this is where the agent is
+_proactive_ rather than reactive:
+
+- **L3 confirm hook.** When a `mission` / `vision` / `objectives` / `strategy` version is
+  confirmed, diff the new objectives against live root items: each objective with no root
+  citing it, and each strategy line nothing acts on, is a THINK candidate for a root draft
+  (`needs: shaper`). Also when a root item is promoted: its description against its (empty)
+  children is a candidate for first ticket drafts (`needs: dri:<holder>`).
+- **Weekly gap scan.** A scheduled job over `work_items` + L3: objectives with no live root;
+  live roots with no open child and no L2 `done` in the window; objectives whose rough date is
+  near with little under them; items offered past the window with no holder. Each finding is a
+  candidate, not a draft — THINK still judges.
+
+Drafts carry `origin: talk | gap` and, for gap drafts, a `gap_key` (objective ref or item id).
+Dedup and dismissal are enforced per key: one open draft per key, and a dismissed key is
+suppressed until the L3 version or the subtree it points at changes. This is what keeps
+unprompted suggestions rare enough to be read.
 
 Pass 2 is deliberately picky on top of that: most candidates still produce nothing. A draft
 carries `needs: shaper` or `needs: dri:<person>` — routing is data, and only that person's
@@ -283,7 +303,7 @@ the same log as chat.
 | --------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Direction stays current  | L3                                             | `mission` / `vision` / `objectives` / `strategy` drafts → Shaper confirm (Shapers room, or own chat if one Shaper)                                                                |
 | 2. The org listens          | —                                              | L1 (automatic)                                                                                                                                                                    |
-| 3. Talk becomes work        | L1 window + L3 + L4                            | work-item drafts (root or under the nearest held item)                                                                                                                            |
+| 3. Talk becomes work        | L1 window + L3 + L4 + work tree                | work-item drafts (root or under the nearest held item); triggered by chat candidates, the L3 confirm hook, or the weekly gap scan (`origin: talk \| gap`)                         |
 | 4. Offered, never assigned  | work tables                                    | accept/decline + L2                                                                                                                                                               |
 | 5. Talk moves work          | L1                                             | DRI's own message → `done` mutation + L2 (message = receipt)                                                                                                                      |
 | 6. Homes (My/All Work, Org) | work tables + L2 + L3                          | —                                                                                                                                                                                 |
@@ -309,12 +329,17 @@ the same log as chat.
    parallel with 1–3.
 5. **The agent, pass by pass.** Hear (on the ingestion from step 4) → pre-filter → Think
    (drafts only, measured precision) → Route. Tune pickiness on a real space before widening.
+   Then the two proactive triggers — the L3 confirm hook first (it needs no scheduler and
+   fires rarely), the weekly gap scan after, once dismissal suppression per `gap_key` is in
+   place so it cannot nag.
 6. **Done-from-talk.** The DRI's own chat message calls the done mutation; transcripts only
    nudge. Needs reliable sender attribution and receipts; last for a reason.
 7. **L4 + reviews.** Once decisions flow, record outcomes and assemble reviews. A root item
    **closes on `due_at` by default** — the same scheduled job that fires the review moves it to
-   `done` when the date passes unless a Shaper has set a new `due_at`. A fixed window before
-   that (a date trigger, so a rule, not a model — not the HEAR pass) THINK drafts the brief from
+   `done` when the date passes unless a Shaper has set a new `due_at`. When the item enters the
+   last fifth of its run — `now ≥ due_at − 0.2 × (due_at − approved_at)`, floor two days; a
+   share, not a fixed window, so short projects are not briefed before they start — a date
+   trigger (a rule, not a model — not the HEAR pass) has THINK draft the brief from
    L2/L4 and the L3 objective the item cites, plus one recommendation: either a **follow-up root
    draft** (title, suggested DRI, brief, `due_at`, same `objective_ref`) or an explicit **"no
    further work in this domain"**. ROUTE sends it `needs: shaper`. The Shaper's confirm on the follow-up

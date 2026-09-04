@@ -98,7 +98,8 @@ chat changes nothing.
 ### 1.7 Ask for the pay proposal (after done)
 
 No sum lives on the ticket. When the work is done, the person names the sum
-and the agent drafts the proposal.
+and the agent drafts the proposal. In the MVP **every payment is approved by
+the Shapers**, whatever the sum and wherever the ticket sits in the tree.
 
 1. Mark done first (1.2 – 1.4).
 2. Open **Personal Assistant**.
@@ -123,7 +124,9 @@ later without naming the sum again.
 
 ### 1.9 Project DRI — promote a ticket drafted under your project
 
-1. Someone says a need in the room; the agent drafts a ticket under your project.
+1. Someone says a need in the room and the agent drafts a ticket under your
+   project — or the agent noticed on its own that your project names a piece
+   no ticket covers (4.4). The card says which.
 2. Open **My Work → Needs your answer** — the ticket draft is there.
 3. Click **Confirm** (make it real) or **Discard**.
 4. Offer it to a named person, or leave it open with no DRI.
@@ -201,7 +204,9 @@ shows it was the wrong one.
 ### 2.4 Approve a project
 
 1. Open **Proposals → Waiting on the Shapers**, or **My Work → Needs your answer**.
-2. Click the **project approval** card.
+2. Click the **project approval** card. It came either from talk (someone
+   asked for it) or from the agent alone — _suggested by the agent, nobody
+   asked: objective X has nothing serving it_ (4.4). Same decision either way.
 3. Read: DRI, description, exact end date, opened by, and **which objective
    it serves** (or _none_ — the agent flags a project that serves no
    objective, so you can approve it anyway, or redraw the objectives first).
@@ -238,7 +243,10 @@ A project **closes on its end date by default**. The Shaper does not decide
 whether to keep it alive; they decide whether anything should follow it.
 Ahead of the date the agent writes the brief and says which.
 
-1. Two weeks before the end date, a **review card** lands on
+1. When the project enters the **last fifth of its run** (20% of approval →
+   end date; about two and a half weeks for a three-month project, the last
+   three days for a two-week one; never less than two days), a **review
+   card** lands on
    **My Work → Needs your answer** (and in the **Shapers room** if there is
    more than one Shaper).
 2. Read the **brief**: what was held, what was done, what was not, what was
@@ -403,7 +411,57 @@ assigns**. Every flow below ends with a human tap or with nothing.
 6. Stops. Confirm is a human mutation; the agent never promotes its own
    draft.
 
-### 4.4 Split a ticket on request
+### 4.4 Suggest work nobody asked for
+
+Talk is not the only input. The agent also holds the confirmed direction
+next to the live work tree and drafts the gap between them. This is the one
+place it acts without a sentence to point at, so it happens only at fixed
+moments, never per message, and with a hard cap on how much it says.
+
+**When it looks:**
+
+1. **Right after direction is confirmed** (4.2 step 5). A new objectives or
+   strategy version is the strongest signal. The agent walks each objective
+   and asks: is there a live project serving this? Does a strategy line
+   name something nothing is acting on?
+2. **Right after a project goes live.** Reads the project's description
+   against its children: does it name a piece no ticket covers? (What
+   follows a project that closes is 4.10, not here.)
+3. **On a slow rule — once a week.** A scan of the tree for: objectives
+   with no live project; live projects with no open ticket and nothing done
+   in the last few weeks; an objective's rough date near with little under
+   it; a piece of a project that stayed open with no holder past the offer
+   window.
+
+Not on every message — that is 4.1, and an agent that proposes on every
+sentence stops being read.
+
+**What it drafts:**
+
+4. **For the Shapers** — an objective nothing serves, or a strategy line
+   nothing acts on → a **project draft**: title, description, the objective
+   it serves, a suggested DRI (whoever did the nearest related work), an
+   exact end date before the objective's rough date. Marked _suggested by
+   the agent — nobody asked_. Receipt: the objective and the gap, not a
+   message. Lands on the Shapers' My Work and in the Shapers room.
+5. **For a project DRI** — a piece the project's description names that no
+   ticket covers, or the last ticket went done and the description is not
+   yet met → a **ticket draft** under that project, with a suggested holder
+   from who did similar work. Lands on the DRI's My Work as a ticket draft
+   (1.9) — same card as a talk-derived one, different receipt.
+
+**Discipline:**
+
+6. One open suggestion per objective and per project at a time. Never two
+   drafts for the same gap.
+7. A dismissed suggestion is not raised again until something changed — a
+   new direction version, a project closed, a new person with the skills.
+8. Confirm, Correct me, or Discard is a human tap. What happened to each
+   suggestion — taken, amended, dismissed — goes into outcome memory
+   (4.13), so the agent learns which kinds of suggestion this org acts on
+   and gets quieter about the rest.
+
+### 4.5 Split a ticket on request
 
 1. A ticket holder says “Jun, could you print the rota?” in the room or the
    assistant.
@@ -413,7 +471,7 @@ assigns**. Every flow below ends with a human tap or with nothing.
    holds the whole; the child chip on the parent's ticket tracks
    _offered → on it → done_.
 
-### 4.5 Carry an offer
+### 4.6 Carry an offer
 
 1. An offer is made (by a person, from a draft or a card). Agent notifies
    the named person once.
@@ -424,7 +482,7 @@ assigns**. Every flow below ends with a human tap or with nothing.
 5. Window passes with no answer → same as decline. Nothing stays “offered”
    forever.
 
-### 4.6 Mark done from talk — the DRI's own words only
+### 4.7 Mark done from talk — the DRI's own words only
 
 1. Hears “Found both covers — done.”
 2. Checks the author: is this the DRI of a ticket that matches? If not, it
@@ -436,7 +494,7 @@ assigns**. Every flow below ends with a human tap or with nothing.
 4. Otherwise marks done and posts the receipt — the DRI's own message. Done
    moves up the tree, never down.
 
-### 4.7 Nudge the person above
+### 4.8 Nudge the person above
 
 1. A ticket goes done.
 2. Agent posts a **“work finished”** card to the project DRI's My Work
@@ -445,7 +503,7 @@ assigns**. Every flow below ends with a human tap or with nothing.
 3. Offers the next step in one line: “Ask me for the pay proposal when you
    are ready.” No sum guessed.
 
-### 4.8 Draft the pay proposal on request
+### 4.9 Draft the pay proposal on request
 
 1. Someone involved tells the assistant: “draft a proposal for the Shapers
    for my work — 150 USDC” (or for someone under them).
@@ -454,11 +512,15 @@ assigns**. Every flow below ends with a human tap or with nothing.
    asked. Future (1.8): if a sum was agreed in a room, it carries that
    line; if the named sum differs, it shows both.
 4. On **Open as a proposal**, the proposal enters the existing governance
-   path. The agent never moves money; Shapers vote as always.
+   path. **In the MVP every payment goes to the Shapers** — any sum, any
+   level of the tree, whoever asked. No thresholds, no delegated approvers.
+   The agent never moves money.
 
-### 4.9 Watch the end date
+### 4.10 Watch the end date
 
-1. A date rule — not a model — fires two weeks before a project's end date.
+1. A date rule — not a model — fires when a project enters the last fifth
+   of its run (20% of approval → end date, floor two days). Proportional, so
+   a two-week project gets its brief three days out, not before it starts.
 2. Agent assembles the **brief** from the ledger: held, done, not done, paid
    through proposals, and whether the objective it cites moved.
 3. Writes one **recommendation**: a **follow-up project** draft (title,
@@ -470,9 +532,9 @@ assigns**. Every flow below ends with a human tap or with nothing.
 5. On the date, closes the project — the same scheduled rule — unless a
    Shaper set a new end date.
 6. Records what the Shapers chose against what it recommended: accepted,
-   amended, rejected. That is what makes the next brief sharper (4.12).
+   amended, rejected. That is what makes the next brief sharper (4.13).
 
-### 4.10 Redraw beliefs after a decision
+### 4.11 Redraw beliefs after a decision
 
 1. A review closes a project, a proposal is rejected, or a Shaper says “the
    hall is off the table this year.”
@@ -483,7 +545,7 @@ assigns**. Every flow below ends with a human tap or with nothing.
 3. Posts the draft to the Shapers (4.2 from step 3). Confirm or dismiss.
    The rejection or close alone changes nothing in direction.
 
-### 4.11 Answer with receipts
+### 4.12 Answer with receipts
 
 1. Anyone asks the assistant: “Have we dealt with the council before?” /
    “What is this org for?” / “Who holds the stall?”
@@ -493,17 +555,18 @@ assigns**. Every flow below ends with a human tap or with nothing.
 3. Every claim links to its receipt — a message, a proposal, a project.
    Live numbers (treasury) are fetched at question time, never remembered.
 
-### 4.12 Learn from outcomes
+### 4.13 Learn from outcomes
 
 1. Every decision and what followed it is kept: offer → accepted or
-   declined; recommendation → taken, amended, or rejected; project → done
-   on time, extended, or closed with work open.
+   declined; recommendation → taken, amended, or rejected; unprompted
+   suggestion (4.4) → confirmed or dismissed; project → done on time,
+   extended, or closed with work open.
 2. Next time it drafts something similar — a holder to suggest, a follow-up
    to propose, an end date to set — it reads those outcomes first.
-3. It never rewrites a belief from an outcome by itself; it drafts (4.10)
+3. It never rewrites a belief from an outcome by itself; it drafts (4.11)
    and a Shaper confirms.
 
-### 4.13 Welcome a newcomer
+### 4.14 Welcome a newcomer
 
 1. First login: talks the person through their profile; each card is
    confirmed by them.
@@ -514,10 +577,12 @@ assigns**. Every flow below ends with a human tap or with nothing.
 4. Puts nothing on their My Work. Offers come from people, when there is a
    fit.
 
-### 4.14 What it never does
+### 4.15 What it never does
 
 - Decide money, membership, or direction.
 - Assign work, or promote its own draft.
+- Suggest on every message, or raise a dismissed suggestion again with
+  nothing new behind it.
 - Close, extend, or open a project without a Shaper's tap — except the
   scheduled close on an end date a Shaper already set.
 - Mark anything done on someone else's word.
@@ -534,8 +599,10 @@ assigns**. Every flow below ends with a human tap or with nothing.
    v5 (2.3); opens the follow-up the agent drafted when the stall closes on
    its date (2.8); offers Weekday hall until someone holds it (2.5).
 4. **The agent** heard each of those lines (4.1), drafted the ticket, the
-   strategy version, the pay proposal and the follow-up (4.3, 4.2, 4.8,
-   4.9), and kept what each person chose (4.12) — without deciding any of it.
+   strategy version, the pay proposal and the follow-up (4.3, 4.2, 4.9,
+   4.10), noticed after strategy v5 that one objective had nothing serving
+   it and drafted a project for it (4.4), and kept what each person chose
+   (4.13) — without deciding any of it.
 
 Same doors, different cards.
 
