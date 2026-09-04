@@ -538,7 +538,7 @@ function ReviewCard() {
   return (
     <Card className="border-ink/15 p-5">
       <div className="flex items-center justify-between gap-3">
-        <Chip tone="agent">Ends 1 Jun 2026 — in two weeks</Chip>
+        <Chip tone="agent">Ends 1 Jun 2026 — last fifth of its run</Chip>
         <StateChip state="waiting" label="Shapers decide" />
       </div>
       <p className="mt-3 text-[17px] font-semibold tracking-[-0.02em]">

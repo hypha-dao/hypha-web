@@ -119,7 +119,7 @@ export function OrgPage() {
       title: 'Saturday stall review',
       short: 'Stall review',
       detail:
-        'Brief and a recommendation land with the Shapers two weeks before.',
+        'Brief and a recommendation land with the Shapers in the last fifth of its run.',
       kind: 'future',
     },
     {
