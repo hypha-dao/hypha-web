@@ -201,8 +201,35 @@ describe('home-activity recommendations', () => {
         spaceLogoUrl: null,
         proposalSlug: 'proposal-1',
         happenedAt: 0,
+        closesAt: new Date(future).getTime(),
       },
     ]);
+  });
+
+  it('prefers votes that close soon over newer votes that close later', () => {
+    const soon = new Date('2026-08-28T13:00:00.000Z').getTime();
+    const later = new Date('2026-08-31T12:00:00.000Z').getTime();
+    const items = selectAttentionItems(
+      [
+        {
+          id: 'later',
+          kind: 'vote' as const,
+          spaceSlug: 'honey',
+          happenedAt: new Date('2026-08-28T11:00:00.000Z').getTime(),
+          closesAt: later,
+        },
+        {
+          id: 'soon',
+          kind: 'vote' as const,
+          spaceSlug: 'garden',
+          happenedAt: new Date('2026-08-27T12:00:00.000Z').getTime(),
+          closesAt: soon,
+        },
+      ],
+      { now: new Date('2026-08-28T12:00:00.000Z'), limit: 2 },
+    );
+
+    expect(items[0]).toMatchObject({ id: 'soon' });
   });
 
   it('prefers open votes and mixes spaces instead of one stale batch', () => {
