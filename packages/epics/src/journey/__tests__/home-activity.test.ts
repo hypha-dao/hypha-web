@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  excerptText,
   isActiveSignalRecommendation,
   isActiveVoteRecommendation,
   isOpenForVote,
+  isTaskRecommendation,
   selectAttentionItems,
   votesFromDocuments,
 } from '../home-activity';
@@ -200,6 +202,10 @@ describe('home-activity recommendations', () => {
         spaceTitle: 'Garden',
         spaceLogoUrl: null,
         proposalSlug: 'proposal-1',
+        documentId: 1,
+        web3ProposalId: 101,
+        web3SpaceId: null,
+        description: null,
         happenedAt: 0,
         closesAt: new Date(future).getTime(),
       },
@@ -296,6 +302,16 @@ describe('home-activity recommendations', () => {
     expect(
       items.filter((item) => item.spaceSlug === 'acaw').length,
     ).toBeLessThanOrEqual(2);
+  });
+
+  it('maps pipeline and due-date signals to tasks, not backlog chatter', () => {
+    expect(isTaskRecommendation({ progressStatus: 'backlog' })).toBe(false);
+    expect(isTaskRecommendation({ progressStatus: 'todo' })).toBe(true);
+    expect(isTaskRecommendation({ progressStatus: 'in_progress' })).toBe(true);
+    expect(isTaskRecommendation({ dueAt: '2026-08-26T12:00:00.000Z' })).toBe(
+      true,
+    );
+    expect(excerptText('<p>Hello  world</p>', 20)).toBe('Hello world');
   });
 
   it('hides archived and completed signals', () => {

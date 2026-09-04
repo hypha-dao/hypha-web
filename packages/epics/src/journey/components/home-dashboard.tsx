@@ -260,6 +260,7 @@ export function HomeDashboard({
             isLoading={isLoadingActivity}
             fallbackSpaces={rankedSpaces}
             firstName={name}
+            personId={person?.id}
             onCapture={() => setCaptureOpen(true)}
             className="min-h-0 flex-1"
           />

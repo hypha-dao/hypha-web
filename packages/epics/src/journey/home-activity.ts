@@ -19,6 +19,10 @@ export type HomeVoteItem = {
   spaceTitle: string;
   spaceLogoUrl?: string | null;
   proposalSlug: string;
+  documentId: number;
+  web3ProposalId: number | null;
+  web3SpaceId: number | null;
+  description: string | null;
   happenedAt: number;
   closesAt: number | null;
 };
@@ -31,12 +35,21 @@ export type HomeSignalItem = {
   spaceLogoUrl?: string | null;
   signalSlug: string | null;
   roomId?: string | null;
+  description: string | null;
+  type: string | null;
+  dueAt: number | null;
+  progressStatus: string | null;
+  board: string | null;
+  assigneeIds: number[];
   happenedAt: number;
 };
 
+export type HomeTaskItem = HomeSignalItem;
+
 export type HomeAttentionItem =
   | (HomeVoteItem & { kind: 'vote' })
-  | (HomeSignalItem & { kind: 'signal' });
+  | (HomeSignalItem & { kind: 'signal' })
+  | (HomeTaskItem & { kind: 'task'; closesAt?: number | null });
 
 export type ProposalOutcomeLookup = {
   accepted: ReadonlySet<string>;
@@ -66,6 +79,19 @@ const INACTIVE_SIGNAL_PROGRESS = new Set([
   'completed',
   'closed',
   'archived',
+]);
+
+/** Active pipeline statuses — Hypha has no standalone task entity. */
+const TASK_PROGRESS = new Set([
+  'todo',
+  'to_do',
+  'to-do',
+  'in_progress',
+  'in-progress',
+  'doing',
+  'blocked',
+  'review',
+  'in_review',
 ]);
 
 export function proposalIdKey(
@@ -160,6 +186,41 @@ export function isActiveSignalRecommendation(signal: {
   return true;
 }
 
+/**
+ * Hypha models work items as signals with due dates or pipeline status.
+ * Default `backlog` stays a signal; todo / in progress / due dates become tasks.
+ */
+export function isTaskRecommendation(signal: {
+  dueAt?: Date | string | number | null;
+  progressStatus?: string | null;
+  board?: string | null;
+}): boolean {
+  if (dueAtMs(signal.dueAt) != null) return true;
+  const status = signal.progressStatus?.trim().toLowerCase();
+  return Boolean(status && TASK_PROGRESS.has(status));
+}
+
+export function dueAtMs(value?: Date | string | number | null): number | null {
+  if (value == null || value === '') return null;
+  const time =
+    value instanceof Date
+      ? value.getTime()
+      : typeof value === 'number'
+      ? value
+      : new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+export function excerptText(value?: string | null, max = 180): string | null {
+  if (!value) return null;
+  const plain = value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!plain) return null;
+  return plain.length > max ? `${plain.slice(0, max - 1)}…` : plain;
+}
+
 export function votesFromDocuments(
   documents: Document[],
   space: HomeSpaceRef,
@@ -189,6 +250,10 @@ export function votesFromDocuments(
         spaceTitle: space.title,
         spaceLogoUrl: space.logoUrl ?? null,
         proposalSlug: document.slug,
+        documentId: document.id,
+        web3ProposalId: document.web3ProposalId ?? null,
+        web3SpaceId: space.web3SpaceId ?? null,
+        description: excerptText(document.description),
         happenedAt: activityTimestamp(document.updatedAt, document.createdAt),
         closesAt: livenessClosesAt(liveness),
       },
@@ -229,7 +294,7 @@ export function selectAttentionItems<
     id: string;
     happenedAt: number;
     spaceSlug?: string;
-    kind?: 'vote' | 'signal';
+    kind?: 'vote' | 'signal' | 'task';
     closesAt?: number | null;
   },
 >(
@@ -247,9 +312,14 @@ export function selectAttentionItems<
   } = {},
 ): T[] {
   const nowMs = now.getTime();
-  const kindRank = (kind?: 'vote' | 'signal') => (kind === 'vote' ? 0 : 1);
+  const kindRank = (kind?: 'vote' | 'signal' | 'task') =>
+    kind === 'vote' ? 0 : kind === 'task' ? 1 : 2;
   const closeRank = (item: T) => {
-    if (item.kind === 'vote' && item.closesAt && item.closesAt > nowMs) {
+    if (
+      (item.kind === 'vote' || item.kind === 'task') &&
+      item.closesAt &&
+      item.closesAt > nowMs
+    ) {
       return item.closesAt;
     }
     return Number.POSITIVE_INFINITY;
@@ -297,7 +367,7 @@ export function selectAttentionItems<
 
 export function attentionSeeAllHref(
   lang: string,
-  items: Array<{ kind: 'vote' | 'signal'; spaceSlug: string }>,
+  items: Array<{ kind: 'vote' | 'signal' | 'task'; spaceSlug: string }>,
   fallbackSpaces: Array<{ slug?: string | null }>,
 ): string {
   const slugs = [
