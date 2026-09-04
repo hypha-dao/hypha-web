@@ -7,7 +7,10 @@ import type { Coherence, Document } from '@hypha-platform/core/client';
 import {
   HOME_ACTIVITY_SPACE_LIMIT,
   activityTimestamp,
+  dueAtMs,
+  excerptText,
   isActiveSignalRecommendation,
+  isTaskRecommendation,
   selectAttentionItems,
   votesFromDocuments,
   type HomeAttentionItem,
@@ -96,23 +99,41 @@ export function useHomeActivity(spaces: HomeSpaceRef[]) {
         }),
       );
 
-      const signals: HomeSignalItem[] = pages.flatMap((page) =>
+      const mappedSignals = pages.flatMap((page) =>
         (page.signalsPage?.data ?? [])
           .filter(isActiveSignalRecommendation)
-          .map((signal) => ({
-            id: `${page.space.slug}:${signal.id}`,
-            title: signal.title,
-            spaceSlug: page.space.slug,
-            spaceTitle: page.space.title,
-            spaceLogoUrl: page.space.logoUrl ?? null,
-            signalSlug: signal.slug,
-            roomId: signal.roomId ?? null,
-            happenedAt: activityTimestamp(signal.updatedAt, signal.createdAt),
-          })),
+          .map((signal) => {
+            const due = dueAtMs(signal.dueAt);
+            const item: HomeSignalItem = {
+              id: `${page.space.slug}:${signal.id}`,
+              title: signal.title,
+              spaceSlug: page.space.slug,
+              spaceTitle: page.space.title,
+              spaceLogoUrl: page.space.logoUrl ?? null,
+              signalSlug: signal.slug,
+              roomId: signal.roomId ?? null,
+              description: excerptText(signal.description),
+              type: signal.type ?? null,
+              dueAt: due,
+              progressStatus: signal.progressStatus ?? null,
+              board: signal.board ?? null,
+              assigneeIds: signal.assigneeIds ?? [],
+              happenedAt: activityTimestamp(signal.updatedAt, signal.createdAt),
+            };
+            return item;
+          }),
       );
+      const tasks = mappedSignals.filter(isTaskRecommendation);
+      const taskIds = new Set(tasks.map((item) => item.id));
+      const signals = mappedSignals.filter((item) => !taskIds.has(item.id));
 
       const items = selectAttentionItems<HomeAttentionItem>([
         ...votes.map((item) => ({ ...item, kind: 'vote' as const })),
+        ...tasks.map((item) => ({
+          ...item,
+          kind: 'task' as const,
+          closesAt: item.dueAt,
+        })),
         ...signals.map((item) => ({ ...item, kind: 'signal' as const })),
       ]);
 

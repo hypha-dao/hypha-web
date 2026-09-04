@@ -101,6 +101,10 @@ import {
   transferMobilizedAiAgentsToSpace,
 } from './ai-agent-competencies';
 import {
+  AI_PROMPT_SEED_EVENT,
+  type AiPromptSeedDetail,
+} from './ai-prompt-seed';
+import {
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
   applyOnboardingContextForUserText,
@@ -1227,12 +1231,22 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       openAiPanel();
       setAiOverlayVisible(false);
     };
+    const onPromptSeed = (event: Event) => {
+      const prompt = (event as CustomEvent<AiPromptSeedDetail>).detail?.prompt;
+      if (!prompt?.trim()) return;
+      pendingSeedPromptRef.current = prompt;
+      pendingSeedAttachmentsRef.current = [];
+      openAiPanel();
+      setAiOverlayVisible(false);
+    };
     window.addEventListener(AI_ONBOARDING_SEED_EVENT, onSeed as EventListener);
+    window.addEventListener(AI_PROMPT_SEED_EVENT, onPromptSeed);
     return () => {
       window.removeEventListener(
         AI_ONBOARDING_SEED_EVENT,
         onSeed as EventListener,
       );
+      window.removeEventListener(AI_PROMPT_SEED_EVENT, onPromptSeed);
     };
   }, [openAiPanel, setAiOverlayVisible]);
 

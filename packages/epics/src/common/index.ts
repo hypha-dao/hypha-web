@@ -25,6 +25,7 @@ export * from './screen-toolbar';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
+export { AI_PROMPT_SEED_EVENT, dispatchAiPromptSeed } from './ai-prompt-seed';
 export {
   AI_ONBOARDING_SEED_ACK_EVENT,
   AI_ONBOARDING_SEED_EVENT,
