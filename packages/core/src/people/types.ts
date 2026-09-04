@@ -13,6 +13,11 @@ export interface Person {
   address?: string;
   /** ISO 4217 code balances are shown in. Undefined means USD. */
   preferredCurrency?: string;
+  /**
+   * Network discovery. `false` hides the person from Home / connect.
+   * Omitted or `true` means visible (the default).
+   */
+  networkVisible?: boolean;
   links?: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -34,4 +39,5 @@ export interface EditPersonInput {
   nickname?: string;
   description?: string;
   leadImageUrl?: string;
+  networkVisible?: boolean;
 }

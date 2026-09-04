@@ -33,6 +33,7 @@ import {
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
+  matrixResolveRoomAlias,
   matrixWhoAmI,
 } from './matrix-http-client';
 
@@ -200,18 +201,52 @@ async function joinAdditionalBotsToRoom(
 export async function createBotOwnedRoomAction({
   title,
   grantPl100ToMatrixUserId,
+  aliasLocalpart,
 }: {
   title: string;
   grantPl100ToMatrixUserId?: string;
+  aliasLocalpart?: string;
 }): Promise<{ roomId: string } | null> {
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
   if (!homeserver || !botToken) return null;
 
+  const localpart = aliasLocalpart?.trim();
+  if (localpart) {
+    try {
+      const existing = await matrixResolveRoomAlias(
+        `#${localpart}:${new URL(homeserver).host}`,
+        botToken,
+        homeserver,
+      );
+      if (existing) return { roomId: existing };
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Alias lookup failed:',
+        localpart,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
   let roomId: string;
   try {
-    roomId = await matrixCreateRoom(title, botToken, homeserver);
+    roomId = await matrixCreateRoom(title, botToken, homeserver, {
+      aliasLocalpart: localpart,
+    });
   } catch (error) {
+    if (localpart) {
+      try {
+        const existing = await matrixResolveRoomAlias(
+          `#${localpart}:${new URL(homeserver).host}`,
+          botToken,
+          homeserver,
+        );
+        if (existing) return { roomId: existing };
+      } catch {
+        // Fall through to the create failure below.
+      }
+    }
     console.warn(
       '[MatrixBot] Failed to create bot-owned room:',
       title,

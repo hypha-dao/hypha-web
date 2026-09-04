@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { getEnableJourneyUxClient } from '@hypha-platform/feature-flags/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
@@ -13,12 +14,15 @@ export function LandingPage({ lang }: { lang: Locale }) {
   const t = useTranslations('Landing');
   const { isAuthenticated, isLoading, login } = useAuthentication();
   const router = useRouter();
+  const afterAuthPath = getEnableJourneyUxClient()
+    ? `/${lang}/home`
+    : `/${lang}/my-spaces`;
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace(`/${lang}/my-spaces`);
+      router.replace(afterAuthPath);
     }
-  }, [isLoading, isAuthenticated, lang, router]);
+  }, [afterAuthPath, isLoading, isAuthenticated, router]);
 
   return (
     <div
@@ -64,7 +68,7 @@ export function LandingPage({ lang }: { lang: Locale }) {
             className="rounded-xl px-6"
             onClick={() => {
               if (isAuthenticated) {
-                router.push(`/${lang}/my-spaces`);
+                router.push(afterAuthPath);
                 return;
               }
               void login?.();

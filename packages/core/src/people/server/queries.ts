@@ -10,10 +10,11 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import { sql, eq, inArray, and, notLike, or, isNull } from 'drizzle-orm';
+import { sql, eq, inArray, and, notLike, ne, or, isNull } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
+import { withOptionalNetworkVisibleColumn } from './optional-network-visible';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
   value === null ? undefined : value;
@@ -25,7 +26,8 @@ const nullToUndefined = <T>(value: T | null): T | undefined =>
 const isHumanPerson = () =>
   or(isNull(people.sub), notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`));
 
-export const getDefaultFields = () => {
+/** Columns that exist before migration 0077. Safe for auth / `/me`. */
+export const getCorePersonFields = () => {
   return {
     id: people.id,
     slug: people.slug,
@@ -41,6 +43,12 @@ export const getDefaultFields = () => {
     address: people.address,
     leadImageUrl: people.leadImageUrl,
     preferredCurrency: people.preferredCurrency,
+  };
+};
+
+export const getDefaultFields = () => {
+  return {
+    ...getCorePersonFields(),
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
@@ -64,6 +72,7 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     preferredCurrency: nullToUndefined(dbPerson.preferredCurrency ?? null),
+    networkVisible: dbPerson.networkVisible !== false,
     links: nullToUndefined(dbPerson.links ?? null),
     createdAt: dbPerson.createdAt!,
     updatedAt: dbPerson.updatedAt!,
@@ -145,11 +154,15 @@ export const findPersonById = async (
   { id }: FindPersonByIdInput,
   { db }: DbConfig,
 ) => {
-  const [dbPerson] = await db
-    .select()
-    .from(people)
-    .where(eq(people.id, id))
-    .limit(1);
+  const [dbPerson] = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(eq(people.id, id)).limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.id, id))
+        .limit(1),
+  );
 
   if (!dbPerson) return null;
 
@@ -163,11 +176,20 @@ export const findPersonByWeb3Address = async (
   { address }: FindPersonByWeb3AddressInput,
   { db }: DbConfig,
 ) => {
-  const [person] = await db
-    .select()
-    .from(people)
-    .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
-    .limit(1);
+  const [person] = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .select()
+        .from(people)
+        .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
+        .limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
+        .limit(1),
+  );
   if (!person) return null;
 
   return mapToDomainPerson(person);
@@ -183,10 +205,18 @@ export const findPeopleByWeb3Addresses = async (
   if (addresses.length === 0) return [];
 
   const upperAddresses = addresses.map((addr) => addr.toUpperCase());
-  const dbPeople = await db
-    .select()
-    .from(people)
-    .where(inArray(sql`upper(${people.address})`, upperAddresses));
+  const dbPeople = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .select()
+        .from(people)
+        .where(inArray(sql`upper(${people.address})`, upperAddresses)),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(inArray(sql`upper(${people.address})`, upperAddresses)),
+  );
 
   return dbPeople.map(mapToDomainPerson);
 };
@@ -201,11 +231,20 @@ export const findPersonByEmail = async (
   const normalized = email.trim().toLowerCase();
   if (!normalized) return null;
 
-  const [person] = await db
-    .select()
-    .from(people)
-    .where(eq(sql`lower(${people.email})`, normalized))
-    .limit(1);
+  const [person] = await withOptionalNetworkVisibleColumn(
+    () =>
+      db
+        .select()
+        .from(people)
+        .where(eq(sql`lower(${people.email})`, normalized))
+        .limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(sql`lower(${people.email})`, normalized))
+        .limit(1),
+  );
   if (!person) return null;
 
   return mapToDomainPerson(person);
@@ -315,10 +354,14 @@ export const findPersonsBySlug = async (
 ) => {
   if (slugs.length === 0) return [];
 
-  const persons = await db
-    .select()
-    .from(people)
-    .where(inArray(people.slug, slugs));
+  const persons = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(inArray(people.slug, slugs)),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(inArray(people.slug, slugs)),
+  );
 
   return persons.map(mapToDomainPerson);
 };
@@ -330,11 +373,15 @@ export const findPersonBySlug = async (
   { slug }: FindPersonBySlugInput,
   { db }: DbConfig,
 ) => {
-  const [dbPerson] = await db
-    .select()
-    .from(people)
-    .where(eq(people.slug, slug))
-    .limit(1);
+  const [dbPerson] = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(eq(people.slug, slug)).limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.slug, slug))
+        .limit(1),
+  );
 
   if (!dbPerson) return null;
 
@@ -343,11 +390,20 @@ export const findPersonBySlug = async (
 
 export const findSelf = async ({ db }: DbConfig) => {
   try {
-    const [dbPerson] = await db
-      .select()
-      .from(people)
-      .where(sql`sub = auth.user_id()`)
-      .limit(1);
+    const [dbPerson] = await withOptionalNetworkVisibleColumn(
+      () =>
+        db
+          .select()
+          .from(people)
+          .where(sql`sub = auth.user_id()`)
+          .limit(1),
+      () =>
+        db
+          .select(getCorePersonFields())
+          .from(people)
+          .where(sql`sub = auth.user_id()`)
+          .limit(1),
+    );
 
     if (!dbPerson) {
       return null;
@@ -464,12 +520,226 @@ export const findPersonBySub = async (
   { sub }: FindPersonBySubInput,
   { db }: DbConfig,
 ) => {
-  const [person] = await db
-    .select()
-    .from(people)
-    .where(eq(people.sub, sub))
-    .limit(1);
+  const [person] = await withOptionalNetworkVisibleColumn(
+    () => db.select().from(people).where(eq(people.sub, sub)).limit(1),
+    () =>
+      db
+        .select(getCorePersonFields())
+        .from(people)
+        .where(eq(people.sub, sub))
+        .limit(1),
+  );
   if (!person) return null;
 
   return mapToDomainPerson(person);
+};
+
+export const NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP = 24;
+
+export type FindNetworkVisiblePeopleBySpaceSlugsInput = {
+  spaceSlugs: string[];
+  excludeSlug?: string | null;
+  searchTerm?: string;
+  callerPersonId?: number | null;
+  pagination: PaginationParams<Person>;
+};
+
+const notSandboxOrArchivedSpace = () =>
+  and(
+    eq(spaces.isArchived, false),
+    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["sandbox"]'::jsonb`,
+    sql`not coalesce(${spaces.flags}, '[]'::jsonb) @> '["archived"]'::jsonb`,
+  );
+
+const personNameSearch = (searchTerm?: string) => {
+  if (!searchTerm?.trim()) return undefined;
+  const term = `%${searchTerm.trim()}%`;
+  return sql`(${people.name} ILIKE ${term} OR ${people.surname} ILIKE ${term} OR ${people.nickname} ILIKE ${term})`;
+};
+
+const visibleUnlessOptedOut = (restrictToVisible: boolean) =>
+  restrictToVisible
+    ? or(isNull(people.networkVisible), eq(people.networkVisible, true))
+    : undefined;
+
+async function findCallerDirectorySpaceSlugs(
+  personId: number,
+  db: DatabaseInstance,
+): Promise<string[]> {
+  const rows = await db
+    .select({ slug: spaces.slug })
+    .from(spaces)
+    .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
+    .where(
+      and(eq(memberships.personId, personId), notSandboxOrArchivedSpace()),
+    );
+  return [
+    ...new Set(
+      rows
+        .map((row) => row.slug?.trim())
+        .filter((slug): slug is string => Boolean(slug)),
+    ),
+  ].slice(0, NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP);
+}
+
+async function listDirectoryIdsInSpaces(
+  {
+    spaceSlugs,
+    excludeSlug,
+    searchTerm,
+  }: {
+    spaceSlugs: string[];
+    excludeSlug?: string;
+    searchTerm?: string;
+  },
+  db: DatabaseInstance,
+): Promise<number[]> {
+  const listVisibleIds = (restrictToVisible: boolean) =>
+    db
+      .selectDistinct({ id: people.id })
+      .from(people)
+      .innerJoin(memberships, eq(memberships.personId, people.id))
+      .innerJoin(spaces, eq(memberships.spaceId, spaces.id))
+      .where(
+        and(
+          inArray(spaces.slug, spaceSlugs),
+          notSandboxOrArchivedSpace(),
+          isHumanPerson(),
+          excludeSlug ? ne(people.slug, excludeSlug) : undefined,
+          personNameSearch(searchTerm),
+          visibleUnlessOptedOut(restrictToVisible),
+        ),
+      )
+      .orderBy(people.id);
+
+  const idRows = await withOptionalNetworkVisibleColumn(
+    () => listVisibleIds(true),
+    () => listVisibleIds(false),
+  );
+  return idRows.map((row) => row.id);
+}
+
+async function listGlobalDirectoryIds(
+  {
+    excludeSlug,
+    searchTerm,
+  }: {
+    excludeSlug?: string;
+    searchTerm?: string;
+  },
+  db: DatabaseInstance,
+): Promise<number[]> {
+  const listVisibleIds = (restrictToVisible: boolean) =>
+    db
+      .select({ id: people.id })
+      .from(people)
+      .where(
+        and(
+          isHumanPerson(),
+          excludeSlug ? ne(people.slug, excludeSlug) : undefined,
+          personNameSearch(searchTerm),
+          visibleUnlessOptedOut(restrictToVisible),
+        ),
+      )
+      .orderBy(people.id);
+
+  const idRows = await withOptionalNetworkVisibleColumn(
+    () => listVisibleIds(true),
+    () => listVisibleIds(false),
+  );
+  return idRows.map((row) => row.id);
+}
+
+async function hydratePeoplePage(
+  ids: number[],
+  page: number,
+  pageSize: number,
+  db: DatabaseInstance,
+): Promise<PaginatedResponse<Person>> {
+  const total = ids.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const offset = (page - 1) * pageSize;
+  const pageIds = ids.slice(offset, offset + pageSize);
+  if (pageIds.length === 0) {
+    return {
+      data: [],
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasNextPage: false,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  const result = await db
+    .select(getDefaultFields())
+    .from(people)
+    .where(inArray(people.id, pageIds));
+
+  const byId = new Map(result.map((row) => [row.id, row]));
+  const ordered = pageIds
+    .map((id) => byId.get(id))
+    .filter((row): row is (typeof result)[number] => Boolean(row));
+
+  return {
+    data: ordered.map(mapToDomainPerson),
+    pagination: {
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  };
+}
+
+/**
+ * Directory of people who have not opted out of network discovery.
+ * Visibility defaults on. An empty slug list is not treated as zero
+ * people — fall back to the caller's spaces, then the public directory
+ * (`findAllPeople`). Does not change in-space member lists.
+ */
+export const findNetworkVisiblePeopleBySpaceSlugs = async (
+  {
+    spaceSlugs,
+    excludeSlug,
+    searchTerm,
+    callerPersonId,
+    pagination,
+  }: FindNetworkVisiblePeopleBySpaceSlugsInput,
+  { db }: DbConfig,
+): Promise<PaginatedResponse<Person>> => {
+  let cappedSlugs = [
+    ...new Set(spaceSlugs.map((slug) => slug.trim()).filter(Boolean)),
+  ].slice(0, NETWORK_VISIBLE_PEOPLE_SPACE_SLUG_CAP);
+
+  const page = pagination.page ?? 1;
+  const pageSize = Math.min(Math.max(pagination.pageSize ?? 20, 1), 40);
+  const excluded = excludeSlug?.trim() || undefined;
+
+  if (cappedSlugs.length === 0 && callerPersonId) {
+    cappedSlugs = await findCallerDirectorySpaceSlugs(callerPersonId, db);
+  }
+
+  let ids: number[] = [];
+  if (cappedSlugs.length > 0) {
+    ids = await listDirectoryIdsInSpaces(
+      { spaceSlugs: cappedSlugs, excludeSlug: excluded, searchTerm },
+      db,
+    );
+  }
+  // No PUBLIC/NETWORK slugs, empty memberships, or a missing
+  // network_visible column must not become an empty directory.
+  if (ids.length === 0) {
+    ids = await listGlobalDirectoryIds(
+      { excludeSlug: excluded, searchTerm },
+      db,
+    );
+  }
+
+  return hydratePeoplePage(ids, page, pageSize, db);
 };

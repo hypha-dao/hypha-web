@@ -45,6 +45,7 @@ interface ExploreSpacesProps {
   order?: SpaceOrder;
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
+  hideHeading?: boolean;
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -124,6 +125,7 @@ export function ExploreSpaces({
   order,
   uniqueCategoryGroups,
   enableNetworkMap = false,
+  hideHeading = false,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
   const tCommon = useTranslations('Common');
@@ -419,16 +421,18 @@ export function ExploreSpaces({
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex flex-col"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
+      {hideHeading ? null : (
+        <Heading
+          size="9"
+          color="secondary"
+          weight="medium"
+          align="center"
+          className="flex flex-col"
+        >
+          <span>{t('manySpaces')}</span>
+          <span>{t('oneVibrantNetwork')}</span>
+        </Heading>
+      )}
 
       <div className="flex min-w-0 flex-col">
         {sharedHeader}

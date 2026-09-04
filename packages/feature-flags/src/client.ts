@@ -21,3 +21,8 @@ export function getEnableOnboardingVoiceRealtime(): boolean {
 export function getEnableCallDocumentPip(): boolean {
   return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP) ?? true;
 }
+
+/** Client-safe build-time gate for the Home-first journey IA. Defaults on. */
+export function getEnableJourneyUxClient(): boolean {
+  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_JOURNEY_UX) ?? true;
+}

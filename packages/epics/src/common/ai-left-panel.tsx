@@ -11,7 +11,12 @@ import {
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -95,6 +100,12 @@ import {
   recordMobilizedAiAgentsForQuestion,
   transferMobilizedAiAgentsToSpace,
 } from './ai-agent-competencies';
+import {
+  AI_PROMPT_SEED_EVENT,
+  AI_VOICE_START_EVENT,
+  dispatchAiChatMirror,
+  type AiPromptSeedDetail,
+} from './ai-prompt-seed';
 import {
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
@@ -322,12 +333,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());
+  const searchParams = useSearchParams();
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
   );
-  /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. */
-  const spaceSlug = spaceSlugFromPath ?? params?.id;
+  const spaceSlugFromQuery = searchParams.get('space')?.trim() || undefined;
+  /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. Home Personal AI can pass `?space=` so Live Voice has a space context without leaving Home. */
+  const spaceSlug = spaceSlugFromPath ?? params?.id ?? spaceSlugFromQuery;
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tModalAside = useTranslations('ModalAside');
@@ -595,6 +608,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tCoherence('spaceMemory');
         case 'ecosystem-navigation':
           return tSelectNavigation('ecosystem');
+        case 'wellbeing':
+          return tCommon('wellbeing');
         default:
           return key;
       }
@@ -607,6 +622,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       energyEnabled: Boolean(spaceEnergyData?.enabled),
       coherenceEnabled: true,
       memoryEnabled: enableSpaceMemory,
+      wellbeingEnabled: true,
     }).map((item) => ({
       key: item.key === 'coherence' ? 'signals' : item.key,
       label: labelFor(item.key),
@@ -957,6 +973,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  useEffect(() => {
+    dispatchAiChatMirror({
+      status,
+      messages: (messages as ChatUIMessage[]).map((message) => ({
+        id: message.id,
+        role: message.role === 'assistant' ? 'assistant' : 'user',
+        text:
+          message.role === 'assistant'
+            ? extractAssistantTextFromMessage(message)
+            : (message.parts ?? [])
+                .filter(
+                  (part): part is { type: 'text'; text: string } =>
+                    part.type === 'text',
+                )
+                .map((part) => part.text)
+                .join('\n')
+                .trim(),
+      })),
+    });
+  }, [messages, status]);
+
   const hasUserMessage = useMemo(
     () =>
       (messages as ChatUIMessage[]).some((message) => message.role === 'user'),
@@ -1217,14 +1254,38 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       openAiPanel();
       setAiOverlayVisible(false);
     };
+    const onPromptSeed = (event: Event) => {
+      const prompt = (event as CustomEvent<AiPromptSeedDetail>).detail?.prompt;
+      if (!prompt?.trim()) return;
+      pendingSeedPromptRef.current = prompt;
+      pendingSeedAttachmentsRef.current = [];
+      openAiPanel();
+      setAiOverlayVisible(false);
+    };
     window.addEventListener(AI_ONBOARDING_SEED_EVENT, onSeed as EventListener);
+    window.addEventListener(AI_PROMPT_SEED_EVENT, onPromptSeed);
     return () => {
       window.removeEventListener(
         AI_ONBOARDING_SEED_EVENT,
         onSeed as EventListener,
       );
+      window.removeEventListener(AI_PROMPT_SEED_EVENT, onPromptSeed);
     };
   }, [openAiPanel, setAiOverlayVisible]);
+
+  useEffect(() => {
+    const onVoiceStart = () => {
+      openAiPanel();
+      setAiOverlayVisible(false);
+      if (!spaceSlug?.trim()) return;
+      saveSpaceDiscoveryMode(spaceSlug, 'voice_interview');
+      setSpaceDiscoveryMode('voice_interview');
+    };
+    window.addEventListener(AI_VOICE_START_EVENT, onVoiceStart);
+    return () => {
+      window.removeEventListener(AI_VOICE_START_EVENT, onVoiceStart);
+    };
+  }, [openAiPanel, setAiOverlayVisible, setSpaceDiscoveryMode, spaceSlug]);
 
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;

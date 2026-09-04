@@ -9,11 +9,11 @@ type PageProps = {
 export default async function OrganisationPage(props: PageProps) {
   const params = await props.params;
 
-  const { id } = params;
+  const { id, lang } = params;
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <SpaceOpsHome spaceSlug={id} />
+      <SpaceOpsHome lang={lang} spaceSlug={id} />
     </SpaceTabAccessWrapper>
   );
 }

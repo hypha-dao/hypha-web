@@ -26,7 +26,7 @@ export function OnboardingDiscoveryModeToggle({
   return (
     <div
       className={cn(
-        'inline-flex rounded-full border border-border/70 bg-background/80 p-0.5 shadow-sm',
+        'inline-flex rounded-xl border border-border/70 bg-background-2 p-0.5',
         className,
       )}
       role="group"
@@ -37,10 +37,10 @@ export function OnboardingDiscoveryModeToggle({
         disabled={disabled}
         onClick={() => onChange('chat')}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+          'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
           mode === 'chat'
-            ? 'bg-foreground text-background'
-            : 'text-muted-foreground hover:text-foreground',
+            ? 'bg-accent-9 text-accent-contrast'
+            : 'text-muted-foreground hover:bg-background-3/60 hover:text-foreground',
         )}
       >
         <MessageSquareText className="size-3.5" aria-hidden />
@@ -51,10 +51,10 @@ export function OnboardingDiscoveryModeToggle({
         disabled={disabled}
         onClick={() => onChange('voice_interview')}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+          'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
           mode === 'voice_interview'
-            ? 'bg-foreground text-background'
-            : 'text-muted-foreground hover:text-foreground',
+            ? 'bg-accent-9 text-accent-contrast'
+            : 'text-muted-foreground hover:bg-background-3/60 hover:text-foreground',
         )}
       >
         <LiveVoiceMicIcon size="sm" />

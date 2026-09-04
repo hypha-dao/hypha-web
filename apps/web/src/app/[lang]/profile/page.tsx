@@ -52,7 +52,7 @@ export default function Profile() {
     <Container className="flex flex-col space-y-6 py-4">
       <div className="flex items-center">
         <Link
-          href={`/${lang}/my-spaces`}
+          href={`/${lang}/home`}
           className="cursor-pointer flex items-center"
         >
           <ChevronLeftIcon width={16} height={16} />
