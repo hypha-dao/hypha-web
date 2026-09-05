@@ -24,7 +24,7 @@ export const ProposalEntryInfo = ({ joinMethod }: ProposalEntryInfoProps) => {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">
+        <div className="text-1 text-neutral-11 w-full font-bold">
           {tProposalDetails('labels.entryMethod')}
         </div>
         <div className="text-1 text-nowrap">
