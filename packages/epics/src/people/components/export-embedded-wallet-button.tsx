@@ -22,6 +22,7 @@ export const ExportEmbeddedWalletButton = ({
         variant="ghost"
         onClick={onExportEmbeededWallet}
         className="px-1 md:px-3"
+        aria-label={label}
       >
         <RxDownload height={16} width={16} className="size-5 md:size-4" />
         <span className="hidden md:flex">{label}</span>
