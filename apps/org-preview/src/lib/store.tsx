@@ -431,7 +431,7 @@ export function StoreProvider({
       finishSetup: () => {
         setSetup('done');
         setRoute('my');
-        toast('Done. Sam sees it on All Work — with your name on it.');
+        toast('Done. Sam sees it on Projects — with your name on it.');
       },
 
       offerWeekday: (to) => {
@@ -470,7 +470,7 @@ export function StoreProvider({
                   ],
             );
             toast(
-              'Rafi accepted — he holds Weekday hall. Recorded as a Shaper approval in Proposals.',
+              'Rafi accepted — he holds Weekday hall. Recorded as a Shaper approval in Decisions.',
             );
           }, 1800);
         }
@@ -485,8 +485,28 @@ export function StoreProvider({
       confirmStrategy: () => {
         setStrategyVersion(5);
         setStrategyPending(false);
+        setProposals((ps) =>
+          ps.some((p) => p.id === 'dir-strategy-v5')
+            ? ps
+            : [
+                {
+                  id: 'dir-strategy-v5',
+                  kind: 'direction' as const,
+                  artifact: 'strategy' as const,
+                  title: 'Confirm strategy v5',
+                  sub: 'We do not take the brand sponsorship. Not this year.',
+                  state: 'passed' as const,
+                  decided: 'today',
+                  yes: 2,
+                  no: 0,
+                  needed: 2,
+                  openedBy: 'Maya',
+                },
+                ...ps,
+              ],
+        );
         toast(
-          'Strategy v5 confirmed. Everything the agent does now reads from it.',
+          'Strategy v5 confirmed. Recorded in Decisions. Everything the agent does now reads from it.',
         );
       },
       rejectStrategy: () => {
@@ -539,7 +559,7 @@ export function StoreProvider({
         const from = OFFERS[id].from;
         toast(
           yes
-            ? `You are the DRI of this piece only. It is on My Work — ${from} sees it on All Work.`
+            ? `You are the DRI of this piece only. It is on My Work — ${from} sees it on Projects.`
             : `Sent back to ${from}. Nothing held against you.`,
         );
       },
@@ -600,8 +620,8 @@ export function StoreProvider({
         setChatTicket((t) => (t ? { ...t, state: 'created' } : t));
         toast(
           org === 'energy'
-            ? 'Ticket created under Iberia pilots — open, no DRI yet. It is on All Work.'
-            : 'Ticket created under Saturday stall — open, no DRI yet. It is on All Work.',
+            ? 'Ticket created under Iberia pilots — open, no DRI yet. It is on Projects.'
+            : 'Ticket created under Saturday stall — open, no DRI yet. It is on Projects.',
         );
       },
       routeChatTicket: () => {
@@ -736,6 +756,10 @@ export function StoreProvider({
                       ).toLocaleString()} ${unitFor(
                         org,
                       )} moves from the treasury.`
+                    : p.kind === 'direction'
+                    ? `${
+                        isEnergy ? 'All three' : 'Both'
+                      } Shapers agreed. The new version is live.`
                     : `${
                         isEnergy ? 'All three' : 'Both'
                       } Shapers agreed. The project is live.`,
@@ -796,7 +820,7 @@ export function StoreProvider({
               ],
         );
         toast(
-          'Stall closes 1 Jun. Summer season is live — offered to Sam, recorded in Proposals.',
+          'Stall closes 1 Jun. Summer season is live — offered to Sam, recorded in Decisions.',
         );
       },
 
@@ -812,7 +836,7 @@ export function StoreProvider({
       finishSummary: () => {
         setESummary('done');
         setRoute('my');
-        toast('Done. Marcus sees it on All Work — with your name on it.');
+        toast('Done. Marcus sees it on Projects — with your name on it.');
       },
       triggerMuniDone: (quote, threadId = 'e-pilots') => {
         setEMuni('draftDone');
@@ -864,7 +888,7 @@ export function StoreProvider({
                 ],
           );
           toast(
-            'Rowan accepted — he holds Carbon credits. Recorded as a Shaper approval in Proposals.',
+            'Rowan accepted — he holds Carbon credits. Recorded as a Shaper approval in Decisions.',
           );
         }, 2000);
       },

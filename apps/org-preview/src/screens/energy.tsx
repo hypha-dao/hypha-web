@@ -25,11 +25,12 @@ import {
   Fact,
   HeldCard,
   OfferCard,
+  OpenProjectCard,
   ProjectBlock,
   Section,
-  StateChip,
   TicketList,
   Waiting,
+  WorkBoard,
   offerRow,
   type TicketRow,
 } from './work-bits';
@@ -146,7 +147,6 @@ function YouEnergy() {
     faq === 'accepted' ? (
       <HeldCard
         key="faq"
-        approvedBy="Suzana"
         delay={1}
         view={{
           ...offerRow('e-faq'),
@@ -167,7 +167,7 @@ function YouEnergy() {
     return (
       <EmptyState
         title="Nothing needs you."
-        sub="The summary is done — Marcus sees it on All Work, with your name on it."
+        sub="The summary is done — Marcus sees it on Projects, with your name on it."
       />
     );
   }
@@ -181,14 +181,11 @@ function YouEnergy() {
       <Section title="You hold">
         <Card className="p-6" onClick={() => s.openTicket('e-summary')}>
           <div className="mb-2 flex items-center gap-2">
-            <Chip>Island grids · approved by Marcus</Chip>
+            <Chip>Island grids</Chip>
             <Chip>due {t.due}</Chip>
           </div>
           <p className="text-[19px] font-semibold leading-snug tracking-[-0.02em]">
             {t.title}
-          </p>
-          <p className="mt-2 text-[14px] leading-relaxed text-sub">
-            Why you: {t.why}
           </p>
           <p className="mt-4 text-[13px] font-medium text-ink">
             Open the draft →
@@ -206,7 +203,6 @@ function RogerioWork() {
   const notes = (
     <HeldCard
       key="notes"
-      approvedBy="Pedro"
       delay={1}
       view={{
         ...rogerioNotes,
@@ -219,7 +215,6 @@ function RogerioWork() {
   const galiciaCard = (
     <HeldCard
       key="galicia"
-      approvedBy="Pedro"
       delay={2}
       view={{
         ...galicia,
@@ -288,14 +283,11 @@ function RogerioWork() {
     <Section title="You hold">
       <Card className="p-6" onClick={() => s.openTicket('e-muni')}>
         <div className="mb-2 flex items-center gap-2">
-          <Chip>Iberia pilots · approved by Pedro</Chip>
+          <Chip>Iberia pilots</Chip>
           <Chip>due {t.due}</Chip>
         </div>
         <p className="text-[19px] font-semibold leading-snug tracking-[-0.02em]">
           {t.title}
-        </p>
-        <p className="mt-2 text-[14px] leading-relaxed text-sub">
-          Why you: {t.why}
         </p>
         <p className="mt-4 text-[13px] font-medium text-ink">
           Open the draft →
@@ -368,7 +360,6 @@ function PedroWork() {
           </div>
         </Card>
         <HeldCard
-          approvedBy="you"
           delay={1}
           view={{
             ...pedroShortlist,
@@ -568,79 +559,52 @@ function useEnergyHealth(): Record<EnergyProjectId, Health | undefined> {
 
 export function EnergyAllWork() {
   const s = useStore();
-  const live = useLiveTickets();
   const health = useEnergyHealth();
-  const carbonStatus =
-    s.eCarbon === 'draft'
-      ? 'draft — with the Shapers'
-      : s.eCarbon === 'offering'
-      ? 'offered to Rowan — his yes or no'
-      : 'held';
 
   return (
     <Workspace>
-      <Page kicker="Who is working on what" title="All Work">
-        <div className="space-y-7">
-          <Section title="Not accepted yet — waiting for someone to hold it">
-            {s.eCarbon !== 'held' && (
-              <Card className="p-5" onClick={() => s.openProject('carbon')}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[16px] font-semibold tracking-[-0.02em]">
-                    {P.carbon.title}
-                  </p>
-                  <StateChip state="open" label="needs a DRI" />
-                </div>
-                <p className="mt-1 text-[13px] leading-relaxed text-sub">
-                  Project · {projectMeta('carbon')} · {carbonStatus}
-                </p>
-              </Card>
-            )}
-            <Card className="p-5" onClick={() => s.openProject('hardware')}>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[16px] font-semibold tracking-[-0.02em]">
-                  {P.hardware.title}
-                </p>
-                <StateChip state="open" label="needs a DRI" />
-              </div>
-              <p className="mt-1 text-[13px] leading-relaxed text-sub">
-                Project · {projectMeta('hardware')} · draft — with the Shapers
-              </p>
-            </Card>
-          </Section>
-
-          <Section title="Ongoing — accepted, someone holds each one">
-            {HELD.map((id) => (
-              <ProjectBlock
-                key={id}
-                projectId={id}
-                title={P[id].title}
-                dri={P[id].dri ?? 'open'}
-                meta={projectMeta(id)}
-                onOpen={() => s.openProject(id)}
-                tickets={live[id]}
-                health={health[id]}
+      <Page kicker="Who is working on what" title="Projects" wide="board">
+        <WorkBoard
+          waiting={
+            <>
+              {s.eCarbon !== 'held' && (
+                <OpenProjectCard
+                  title={P.carbon.title}
+                  review={projectMeta('carbon')}
+                  onOpen={() => s.openProject('carbon')}
+                />
+              )}
+              <OpenProjectCard
+                title={P.hardware.title}
+                review={projectMeta('hardware')}
+                onOpen={() => s.openProject('hardware')}
               />
-            ))}
-            {s.eCarbon === 'held' && (
-              <ProjectBlock
-                projectId="carbon"
-                title={P.carbon.title}
-                dri="Rowan"
-                meta={projectMeta('carbon')}
-                onOpen={() => s.openProject('carbon')}
-                tickets={[]}
-                health={health.carbon}
-              />
-            )}
-          </Section>
-        </div>
-
-        <p className="pt-6 text-[13px] leading-relaxed text-faint">
-          Every project with its tickets — who holds each one, its state, its
-          date. “n under it” means the holder split that ticket further; open it
-          to see the pieces. Nothing here was filed; it is what the org heard in
-          the rooms and someone confirmed.
-        </p>
+            </>
+          }
+          accepted={
+            <>
+              {HELD.map((id) => (
+                <ProjectBlock
+                  key={id}
+                  title={P[id].title}
+                  dri={P[id].dri ?? 'open'}
+                  meta={projectMeta(id)}
+                  onOpen={() => s.openProject(id)}
+                  health={health[id]}
+                />
+              ))}
+              {s.eCarbon === 'held' && (
+                <ProjectBlock
+                  title={P.carbon.title}
+                  dri="Rowan"
+                  meta={projectMeta('carbon')}
+                  onOpen={() => s.openProject('carbon')}
+                  health={health.carbon}
+                />
+              )}
+            </>
+          }
+        />
       </Page>
     </Workspace>
   );
@@ -665,7 +629,7 @@ export function EnergyProjectDetail() {
           onClick={() => s.go('all')}
           className="rise mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
         >
-          ← All Work
+          ← Projects
         </button>
         <h1 className="rise mb-2 text-[28px] font-semibold leading-tight tracking-[-0.03em]">
           {p.title}

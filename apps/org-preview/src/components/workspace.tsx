@@ -68,7 +68,7 @@ function useNav(): NavItem[] {
     },
     {
       key: 'all',
-      label: 'All Work',
+      label: 'Projects',
       open: goRoute('all'),
       isActive:
         s.route === 'all' || s.route === 'project' || s.route === 'ticket-view',
@@ -76,7 +76,7 @@ function useNav(): NavItem[] {
     },
     {
       key: 'proposals',
-      label: 'Proposals',
+      label: 'Decisions',
       badge: s.persona === 'eli' ? 0 : openProposals,
       open: goRoute('proposals'),
       isActive: s.route === 'proposals' || s.route === 'proposal',
@@ -528,14 +528,14 @@ export function Page({
   kicker?: string;
   title?: string;
   children: ReactNode;
-  wide?: boolean;
+  wide?: boolean | 'board';
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div
         className={cn(
           'mx-auto px-5 py-8 md:px-10 md:py-12',
-          wide ? 'max-w-3xl' : 'max-w-xl',
+          wide === 'board' ? 'max-w-5xl' : wide ? 'max-w-3xl' : 'max-w-xl',
         )}
       >
         {kicker && (

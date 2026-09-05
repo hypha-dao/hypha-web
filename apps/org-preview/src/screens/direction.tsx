@@ -98,7 +98,10 @@ export function DirectionDetail() {
         {/* mission / vision — one list of proofs for the whole statement */}
         {proofs && (
           <Card className="rise-1 mt-6 p-5">
-            <Kicker>Proofs — how the ledger bears this out</Kicker>
+            <Kicker>
+              How we are achieving the{' '}
+              {kind === 'mission' ? 'mission' : 'vision'}
+            </Kicker>
             <ProofList proofs={proofs} />
           </Card>
         )}

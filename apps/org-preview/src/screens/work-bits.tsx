@@ -36,6 +36,22 @@ export function Section({
   );
 }
 
+/** All Work board: stacked on mobile, waiting | accepted on desktop. */
+export function WorkBoard({
+  waiting,
+  accepted,
+}: {
+  waiting: ReactNode;
+  accepted: ReactNode;
+}) {
+  return (
+    <div className="grid items-start gap-7 md:grid-cols-2 md:gap-6">
+      <Section title="Not accepted yet">{waiting}</Section>
+      <Section title="Ongoing">{accepted}</Section>
+    </div>
+  );
+}
+
 export type WorkState = 'done' | 'doing' | 'waiting' | 'open';
 
 export function StateChip({
@@ -302,56 +318,70 @@ export function ChildList({
   );
 }
 
+export function OpenProjectCard({
+  title,
+  review,
+  onOpen,
+}: {
+  title: string;
+  review: string;
+  onOpen: () => void;
+}) {
+  return (
+    <Card className="p-5" onClick={onOpen}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[16px] font-semibold leading-snug tracking-[-0.02em]">
+            {title}
+          </p>
+          <p className="mt-1 text-[13px] leading-snug text-sub">{review}</p>
+          <p className="text-[13px] leading-snug text-sub">
+            Shapers need to decide
+          </p>
+        </div>
+        <StateChip state="open" label="needs a DRI" />
+      </div>
+    </Card>
+  );
+}
+
 export function ProjectBlock({
-  projectId,
   title,
   dri,
   meta,
   onOpen,
-  tickets,
   health,
 }: {
-  projectId: ProjectId;
   title: string;
   dri: string;
   meta: string;
   onOpen: () => void;
-  tickets: TicketRow[];
   health?: Health;
 }) {
-  const openTicket = useTicketOpener(projectId, title);
   return (
     <Card className="p-0">
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center justify-between gap-3 rounded-t-2xl border-b border-hair px-5 py-4 text-left transition-colors hover:bg-wash"
+        className="flex w-full items-start justify-between gap-3 rounded-2xl px-5 py-4 text-left transition-colors hover:bg-wash"
       >
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <Avatar name={dri} size="md" />
           <div className="min-w-0">
-            <p className="truncate text-[16px] font-semibold tracking-[-0.02em]">
+            <p className="text-[16px] font-semibold leading-snug tracking-[-0.02em]">
               {title}
             </p>
-            <p className="text-[12px] text-sub">
-              {dri} holds it · {meta}
+            <p className="mt-1 text-[12px] leading-snug text-sub">
+              {dri} holds it
             </p>
+            <p className="text-[12px] leading-snug text-sub">{meta}</p>
           </div>
         </div>
-        <span className="flex shrink-0 items-center gap-3">
+        <span className="flex shrink-0 items-center gap-3 pt-0.5">
           {health && <HealthPill health={health} />}
           <span className="text-[13px] font-medium text-ink">Open →</span>
         </span>
       </button>
-      {tickets.length === 0 ? (
-        <p className="px-5 py-4 text-[13px] text-faint">No tickets yet.</p>
-      ) : (
-        <div className="px-5 py-1">
-          {tickets.map((t) => (
-            <TicketLine key={t.title} t={t} onOpen={() => openTicket(t)} />
-          ))}
-        </div>
-      )}
     </Card>
   );
 }
@@ -411,10 +441,7 @@ export function OfferCard({ id }: { id: OfferId }) {
   if (s.offers[id] !== 'offered') return null;
   return (
     <Card className="border-ink/15 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <Kicker className="text-ink">{o.from} is asking you</Kicker>
-        <StateChip state="waiting" label="offer — yes or no" />
-      </div>
+      <Kicker className="text-ink">{o.from} is asking you</Kicker>
       <p className="mt-2 text-[16px] font-medium tracking-[-0.015em]">
         {o.title}
       </p>
@@ -449,11 +476,9 @@ export function offerRow(id: OfferId): TicketRow {
 /** Something you hold that does not move in the demo — opens read-only. */
 export function HeldCard({
   view,
-  approvedBy,
   delay,
 }: {
   view: TicketView;
-  approvedBy?: string;
   delay?: 1 | 2 | 3;
 }) {
   const s = useStore();
@@ -464,7 +489,6 @@ export function HeldCard({
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <Chip>
           {t.parent ? `${t.projectTitle} › ${t.parent.title}` : t.projectTitle}
-          {approvedBy ? ` · approved by ${approvedBy}` : ''}
         </Chip>
         {t.due && <Chip>due {t.due}</Chip>}
         {under > 0 && (

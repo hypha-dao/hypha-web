@@ -77,7 +77,7 @@ function payHowReply(org: OrgId, persona: string): string {
         ? ' Nothing is agreed for your summary ticket yet. If it should pay, say a number to Marcus in “Pilots” — I remember the line, and when the ticket is done you ask me to draft the proposal.'
         : ' Nothing is agreed for your setup ticket — Sam offered it as a favour. If you think it should pay, say a number to Sam in “Saturday stall”; I remember the line, and when the ticket is done you ask me to draft the proposal.'
       : persona === 'maya'
-      ? ' As a Shaper you see every pay proposal on Proposals and on My Work — you agree or not. Sums are never on tickets; they are in the rooms and in the proposals.'
+      ? ' As a Shaper you see every pay proposal on Decisions and on My Work — you agree or not. Sums are never on tickets; they are in the rooms and in the proposals.'
       : '';
   return (
     `No salaries, no invoices, no numbers on tickets or projects. Pay is agreed where you already talk — a ticket holder with the project DRI, or a DRI with a Shaper — and I remember the line. When the work is done, anyone involved tells me “draft a proposal for the Shapers for this work” with a sum, or “whatever we agreed”, and I draft it with the agreement and the done receipt attached. ${shapers} agree, the money moves, and it shows on the profile. I never move money myself.` +
@@ -216,7 +216,7 @@ export function Thread() {
     if (payish) {
       if (s.proposals.some((p) => p.id === PAY_LEA_ID)) {
         agentReply(
-          'That proposal is already open — the Shapers are deciding. It is on the Proposals page.',
+          'That proposal is already open — the Shapers are deciding. It is on the Decisions page.',
         );
       } else if (s.payDraft) {
         agentReply(
@@ -286,7 +286,7 @@ export function Thread() {
       if (s.chatTicket?.org === 'river') {
         agentReply(
           s.chatTicket.state === 'created'
-            ? 'That ticket exists — open, under Saturday stall. It is on All Work.'
+            ? 'That ticket exists — open, under Saturday stall. It is on Projects.'
             : s.chatTicket.state === 'routed'
             ? 'The draft is with Sam — it exists when he confirms.'
             : 'The draft is above — create it, or send it to Sam.',
@@ -355,7 +355,7 @@ export function Thread() {
     if (payish) {
       if (s.eProposals.some((p) => p.id === PAY_ROGERIO_ID)) {
         agentReply(
-          'That proposal is already open — the three Shapers are deciding. It is on the Proposals page.',
+          'That proposal is already open — the three Shapers are deciding. It is on the Decisions page.',
         );
       } else if (s.ePayDraft) {
         agentReply(
@@ -400,7 +400,7 @@ export function Thread() {
       if (s.chatTicket?.org === 'energy') {
         agentReply(
           s.chatTicket.state === 'created'
-            ? 'That ticket exists — open, under Iberia pilots. It is on All Work.'
+            ? 'That ticket exists — open, under Iberia pilots. It is on Projects.'
             : s.chatTicket.state === 'routed'
             ? 'The draft is with Pedro — it exists when he confirms.'
             : 'The draft is above — create it, or send it to Pedro.',

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Button,
   Card,
@@ -12,23 +13,68 @@ import {
 } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import { useStore } from '@/lib/store';
-import { energyOrg, unitFor, type Proposal } from '@/lib/data';
+import {
+  energyOrg,
+  unitFor,
+  type Proposal,
+  type ProposalKind,
+} from '@/lib/data';
+
+type DecisionFilter = 'all' | ProposalKind;
+
+const FILTERS: { id: DecisionFilter; label: string }[] = [
+  { id: 'all', label: 'All decisions' },
+  { id: 'project', label: 'Projects' },
+  { id: 'money', label: 'Money' },
+  { id: 'direction', label: 'Direction' },
+];
+
+function kindChip(p: Proposal): string {
+  if (p.kind === 'money') return 'money';
+  if (p.kind === 'project') return 'project';
+  return p.artifact ?? 'direction';
+}
+
+function kindTone(p: Proposal): 'money' | 'agent' | 'neutral' {
+  if (p.kind === 'money') return 'money';
+  if (p.kind === 'direction') return 'neutral';
+  return 'agent';
+}
 
 export function Proposals() {
   const s = useStore();
-  const list = s.org === 'energy' ? s.eProposals : s.proposals;
+  const [filter, setFilter] = useState<DecisionFilter>('all');
+  const list = (s.org === 'energy' ? s.eProposals : s.proposals).filter((p) =>
+    filter === 'all' ? true : p.kind === filter,
+  );
   const open = list.filter((p) => p.state === 'open');
   const decided = list.filter((p) => p.state !== 'open');
 
   return (
     <Workspace>
-      <Page kicker="Money and projects — Shapers decide" title="Proposals">
-        {open.length === 0 ? (
-          <EmptyState
-            title="Nothing to decide."
-            sub="Only two things ever land here: money moving, or a project being approved. The agent drafts them from work that actually happened."
-          />
-        ) : (
+      <Page
+        kicker="Projects, money, and direction — Shapers decide"
+        title="Decisions"
+      >
+        <div className="mb-6 flex flex-wrap gap-1.5">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setFilter(f.id)}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors',
+                filter === f.id
+                  ? 'bg-ink text-white'
+                  : 'border border-hair bg-paper text-sub hover:border-faint hover:text-ink',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {open.length > 0 && (
           <div className="space-y-2.5">
             <Kicker>Waiting on the Shapers</Kicker>
             {open.map((p) => (
@@ -37,20 +83,21 @@ export function Proposals() {
           </div>
         )}
 
-        <div className="mt-8 space-y-2.5">
-          <Kicker>Decided</Kicker>
-          {decided.map((p) => (
-            <ProposalCard key={p.id} p={p} />
-          ))}
-        </div>
+        {open.length === 0 && decided.length === 0 && (
+          <EmptyState
+            title="Nothing here."
+            sub="Three kinds land here: a project, money moving, or a change to mission, vision, objectives or strategy."
+          />
+        )}
 
-        <p className="pt-5 text-[13px] leading-relaxed text-faint">
-          Two kinds only: <strong>money movements</strong> (“pay Lea for the
-          covers”) and <strong>project approvals</strong> (“Weekday hall — Rafi
-          as DRI”). This is the only place a sum lives. Pay is agreed in chat;
-          the agent drafts from that line and the receipts, a person opens it,
-          the Shapers agree — and everyone sees everything.
-        </p>
+        {decided.length > 0 && (
+          <div className="mt-8 space-y-2.5">
+            <Kicker>Decided</Kicker>
+            {decided.map((p) => (
+              <ProposalCard key={p.id} p={p} />
+            ))}
+          </div>
+        )}
       </Page>
     </Workspace>
   );
@@ -62,11 +109,8 @@ function ProposalCard({ p }: { p: Proposal }) {
     <Card className="p-5" onClick={() => s.openProposal(p.id)}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2">
-          <Chip
-            className="mt-0.5 shrink-0"
-            tone={p.kind === 'money' ? 'money' : 'agent'}
-          >
-            {p.kind === 'money' ? 'money' : 'project'}
+          <Chip className="mt-0.5 shrink-0" tone={kindTone(p)}>
+            {kindChip(p)}
           </Chip>
           <p className="text-[15px] font-semibold leading-snug tracking-[-0.015em]">
             {p.title}
@@ -116,18 +160,22 @@ export function ProposalDetail() {
 
   return (
     <Workspace>
-      <Page kicker="Proposal" wide>
+      <Page kicker="Decision" wide>
         <button
           type="button"
           onClick={() => s.go('proposals')}
           className="rise mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
         >
-          ← Proposals
+          ← Decisions
         </button>
 
         <div className="rise mb-1 flex items-center gap-2">
-          <Chip tone={p.kind === 'money' ? 'money' : 'agent'}>
-            {p.kind === 'money' ? 'money movement' : 'project approval'}
+          <Chip tone={kindTone(p)}>
+            {p.kind === 'money'
+              ? 'money movement'
+              : p.kind === 'direction'
+              ? `direction · ${p.artifact ?? 'direction'}`
+              : 'project approval'}
           </Chip>
           <Chip>
             {p.state === 'open' ? 'open' : `${p.state} · ${p.decided}`}
@@ -174,7 +222,11 @@ export function ProposalDetail() {
           {canVote && (
             <div className="mt-4 flex gap-2">
               <Button onClick={() => s.vote(p.id, 'yes')}>
-                {p.kind === 'money' ? 'Agree — pay it' : 'Agree — approve it'}
+                {p.kind === 'money'
+                  ? 'Agree — pay it'
+                  : p.kind === 'direction'
+                  ? 'Agree — confirm it'
+                  : 'Agree — approve it'}
               </Button>
               <Button variant="outline" onClick={() => s.vote(p.id, 'no')}>
                 Reject
@@ -194,6 +246,8 @@ export function ProposalDetail() {
                 ? `${(p.amount ?? 0).toLocaleString()} ${unitFor(
                     s.org,
                   )} moves from the treasury.`
+                : p.kind === 'direction'
+                ? 'The new version is live. Everything the agent drafts now reads from it.'
                 : 'The project is live — the DRI holds it.'}
             </p>
           )}

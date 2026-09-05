@@ -78,7 +78,7 @@ export function StaticProjectDetail({
           onClick={() => s.go('all')}
           className="rise mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
         >
-          ← All Work
+          ← Projects
         </button>
         <h1 className="rise mb-2 text-[28px] font-semibold leading-tight tracking-[-0.03em]">
           {p.title}

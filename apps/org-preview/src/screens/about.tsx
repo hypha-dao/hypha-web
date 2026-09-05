@@ -53,7 +53,7 @@ export function About() {
               Assistant “draft a proposal for the Shapers for my work — 150
               USDC”, or “…whatever we agreed”. The draft carries the agreement
               and the done receipt; the Shapers agree; the payment lands on the
-              profile. Money lives in two places only: Proposals and My Profile.
+              profile. Money lives in two places only: Decisions and My Profile.
             </p>
           </Card>
 

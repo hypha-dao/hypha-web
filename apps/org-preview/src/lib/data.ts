@@ -82,9 +82,9 @@ export type Direction = {
   vision: Artifact & { text: string; proofs: Proof[] };
   /** one short sentence each — the timing is part of the sentence; a met
    *  objective is simply dropped in the next version, never struck through */
-  objectives: Artifact & { items: DirectionLine[] };
+  objectives: Artifact & { text: string; items: DirectionLine[] };
   /** one bullet per strategic bet */
-  strategy: Artifact & { lines: DirectionLine[] };
+  strategy: Artifact & { text: string; lines: DirectionLine[] };
 };
 
 export const direction: Direction = {
@@ -168,6 +168,7 @@ export const direction: Direction = {
     version: 3,
     confirmedBy: 'Maya',
     confirmedOn: '14 May',
+    text: 'This season: Saturday every week, a weekday hall by August, and five growers paid the week they sell.',
     body: [
       'What we mean to have done soon. One sentence each, with the timing inside it. When one is met, it leaves the list in the next version — the proof stays here.',
     ],
@@ -258,6 +259,7 @@ export const direction: Direction = {
     version: 4,
     confirmedBy: 'Maya',
     confirmedOn: '14 May',
+    text: 'Small money and many neighbours — the stall pays for the hall, not a grant or a restaurant.',
     body: [
       'How we get there — the bets, and what we say no to. Every project draft and every proposal the agent writes is checked against these lines.',
     ],
@@ -762,10 +764,14 @@ export type RiverTicketId = keyof typeof ticketsData;
 export type EnergyTicketId = 'e-summary' | 'e-muni';
 export type TicketId = RiverTicketId | EnergyTicketId;
 
+export type ProposalKind = 'money' | 'project' | 'direction';
+
 export type Proposal = {
   id: string;
-  /** Only two things ever become proposals: money moving, or a project approved. */
-  kind: 'money' | 'project';
+  /** Money, a project, or a change to mission / vision / objectives / strategy. */
+  kind: ProposalKind;
+  /** direction only — which of the four was confirmed */
+  artifact?: DirectionKind;
   title: string;
   sub: string;
   /** money proposals only — project approvals carry no number */
@@ -904,6 +910,58 @@ export const seedProposals: Proposal[] = [
     no: 0,
     needed: 2,
     openedBy: 'Sam',
+  },
+  {
+    id: 'dir-objectives-v3',
+    kind: 'direction',
+    artifact: 'objectives',
+    title: 'Confirm objectives v3',
+    sub: 'This season: Saturday every week, a weekday hall by August, and five growers paid the week they sell.',
+    state: 'passed',
+    decided: '14 May',
+    yes: 2,
+    no: 0,
+    needed: 2,
+    openedBy: 'Maya',
+  },
+  {
+    id: 'dir-strategy-v4',
+    kind: 'direction',
+    artifact: 'strategy',
+    title: 'Confirm strategy v4',
+    sub: 'Small money and many neighbours — the stall pays for the hall, not a grant or a restaurant.',
+    state: 'passed',
+    decided: '14 May',
+    yes: 2,
+    no: 0,
+    needed: 2,
+    openedBy: 'Maya',
+  },
+  {
+    id: 'dir-mission-v1',
+    kind: 'direction',
+    artifact: 'mission',
+    title: 'Confirm mission v1',
+    sub: 'A street food hub from people we know, not a supermarket — for neighbours, and the three growers we already buy from.',
+    state: 'passed',
+    decided: 'March',
+    yes: 1,
+    no: 0,
+    needed: 1,
+    openedBy: 'Maya',
+  },
+  {
+    id: 'dir-vision-v1',
+    kind: 'direction',
+    artifact: 'vision',
+    title: 'Confirm vision v1',
+    sub: 'A neighbourhood that feeds itself two days a week: five growers, a hall paid without a whip-round, every grower paid the week they sell.',
+    state: 'passed',
+    decided: 'March',
+    yes: 1,
+    no: 0,
+    needed: 1,
+    openedBy: 'Maya',
   },
 ];
 
@@ -1084,6 +1142,7 @@ export const energyOrg = {
       version: 6,
       confirmedBy: 'Edgar',
       confirmedOn: 'Jan 2026',
+      text: 'This year: more towns producing their own energy, the tools they need running, and a second island proving it works.',
       body: [
         'What we mean to have done this year. One sentence each, with the timing inside it. When one is met, it leaves the list in the next version — the proof stays here.',
       ],
@@ -1185,6 +1244,7 @@ export const energyOrg = {
       version: 3,
       confirmedBy: 'Alex',
       confirmedOn: 'Jan 2026',
+      text: 'Prove it in real towns first. We take the hard parts; they get cheaper, cleaner energy. The knowledge is free.',
       body: [
         'How we get to ten thousand hubs — the bets, and what we say no to. Every project draft and every proposal the agent writes is checked against these lines.',
       ],
@@ -1881,6 +1941,58 @@ export const energyOrg = {
       needed: 3,
       openedBy: 'Alex',
     },
+    {
+      id: 'e-dir-objectives-v6',
+      kind: 'direction',
+      artifact: 'objectives',
+      title: 'Confirm objectives v6',
+      sub: 'This year: more towns producing their own energy, the tools they need running, and a second island proving it works.',
+      state: 'passed',
+      decided: 'Jan 2026',
+      yes: 3,
+      no: 0,
+      needed: 3,
+      openedBy: 'Edgar',
+    },
+    {
+      id: 'e-dir-strategy-v3',
+      kind: 'direction',
+      artifact: 'strategy',
+      title: 'Confirm strategy v3',
+      sub: 'Prove it in real towns first. We take the hard parts; they get cheaper, cleaner energy. The knowledge is free.',
+      state: 'passed',
+      decided: 'Jan 2026',
+      yes: 3,
+      no: 0,
+      needed: 3,
+      openedBy: 'Alex',
+    },
+    {
+      id: 'e-dir-mission-v2',
+      kind: 'direction',
+      artifact: 'mission',
+      title: 'Confirm mission v2',
+      sub: 'Energy should create value where it is produced — ownership, income, and control stay local.',
+      state: 'passed',
+      decided: 'Jan 2024',
+      yes: 3,
+      no: 0,
+      needed: 3,
+      openedBy: 'Alex',
+    },
+    {
+      id: 'e-dir-vision-v1',
+      kind: 'direction',
+      artifact: 'vision',
+      title: 'Confirm vision v1',
+      sub: '10,000 energy hubs by 2030 — members save 20–80% and co-own the assets.',
+      state: 'passed',
+      decided: '2022',
+      yes: 3,
+      no: 0,
+      needed: 3,
+      openedBy: 'Alex',
+    },
   ] as Proposal[],
   threads: [
     {
@@ -2147,7 +2259,7 @@ export const founding = {
 export const uiMapping = [
   {
     old: 'Signals board (Coherence)',
-    now: 'All Work',
+    now: 'Projects',
     why: 'A signal was talk about work. Now talk becomes a drafted project or ticket with a named confirm — the board shows the work itself.',
   },
   {
@@ -2157,8 +2269,8 @@ export const uiMapping = [
   },
   {
     old: 'Proposals tab + voting aside',
-    now: 'Proposals',
-    why: 'Kept, but narrowed: only money movements and project approvals land here, and the Shapers decide them. Approving stays a deliberate, visible act.',
+    now: 'Decisions',
+    why: 'Kept, but narrowed: money, project approvals, and direction (mission, vision, objectives, strategy). The Shapers decide them. Approving stays a deliberate, visible act.',
   },
   {
     old: 'Space Memory tab',

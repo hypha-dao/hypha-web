@@ -281,27 +281,18 @@ export function OrgPage() {
               index={2}
               mark="objectives"
               meta={dir.objectives}
-              lines={dir.objectives.items.map((o) => o.text)}
-              bullets="ring"
+              lines={[dir.objectives.text]}
               onOpen={() => s.openDirection('objectives')}
             />
             <DirectionCard
               index={3}
               mark="strategy"
               meta={strategyMeta}
-              lines={dir.strategy.lines.map((l) => l.text)}
-              bullets="dot"
+              lines={[dir.strategy.text]}
               added={strategyAdded}
               onOpen={() => s.openDirection('strategy')}
             />
           </div>
-          <p className="px-1 text-[12px] leading-relaxed text-faint">
-            Four things the Shapers wrote by talking — in the Shapers room, or
-            alone in their own chat when there is one Shaper. The agent drafts;
-            a Shaper confirms every version. Everything the agent does reads
-            from the latest. Open a card for the full text, every version, and
-            the proofs behind each line.
-          </p>
 
           {/* highlights — horizontal timeline on desktop, vertical on mobile */}
           <Card className="p-5" delay={1}>
@@ -314,131 +305,121 @@ export function OrgPage() {
             </div>
           </Card>
 
-          <>
-            <Card className="p-5" delay={2}>
-              <Kicker>At a glance</Kicker>
-              <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
-                {statsView.map((st) => (
-                  <Stat key={st.label} n={st.n} label={st.label} />
-                ))}
+          <Card className="p-5" delay={2}>
+            <Kicker>At a glance</Kicker>
+            <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+              {statsView.map((st) => (
+                <Stat key={st.label} n={st.n} label={st.label} />
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-x-6 md:grid-cols-2">
+              <div>
+                <p className="pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
+                  Shapers
+                </p>
+                <div className="flex flex-col gap-1">
+                  {orgSpace.shapers.map((name) => (
+                    <div
+                      key={name}
+                      className="flex items-center gap-2.5 rounded-xl px-2 py-2"
+                    >
+                      <Avatar name={name} size="sm" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13px] font-medium">
+                          {name}
+                          {name === orgSpace.founder && ' · founder'}
+                        </span>
+                        <span className="block text-[12px] text-faint">
+                          shapes projects and money —{' '}
+                          {orgSpace.shapers.length > 2
+                            ? 'all must agree'
+                            : 'both must agree'}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-5 grid gap-x-6 md:grid-cols-2">
-                <div>
-                  <p className="pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
-                    Shapers
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {orgSpace.shapers.map((name) => (
-                      <div
-                        key={name}
-                        className="flex items-center gap-2.5 rounded-xl px-2 py-2"
-                      >
-                        <Avatar name={name} size="sm" />
-                        <span className="min-w-0">
-                          <span className="block truncate text-[13px] font-medium">
-                            {name}
-                            {name === orgSpace.founder && ' · founder'}
-                          </span>
-                          <span className="block text-[12px] text-faint">
-                            shapes projects and money —{' '}
-                            {orgSpace.shapers.length > 2
-                              ? 'all must agree'
-                              : 'both must agree'}
-                          </span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 md:mt-0">
-                  <p className="pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
-                    Who holds a project
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {isEnergy ? (
-                      <>
-                        {(
-                          ['iberia', 'ems', 'islands', 'playbook'] as const
-                        ).map((id) => (
+              <div className="mt-4 md:mt-0">
+                <p className="pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
+                  Who holds a project
+                </p>
+                <div className="flex flex-col gap-1">
+                  {isEnergy ? (
+                    <>
+                      {(['iberia', 'ems', 'islands', 'playbook'] as const).map(
+                        (id) => (
                           <DriRow
                             key={id}
                             name={energyOrg.projects[id].dri ?? 'open'}
                             project={energyOrg.projects[id].title}
                             onOpen={() => s.openProject(id)}
                           />
-                        ))}
-                        {s.eCarbon === 'held' ? (
-                          <DriRow
-                            name="Rowan"
-                            project={energyOrg.projects.carbon.title}
-                            onOpen={() => s.openProject('carbon')}
-                          />
-                        ) : (
-                          <OpenDriRow
-                            project={energyOrg.projects.carbon.title}
-                            onOpen={() => s.openProject('carbon')}
-                          />
-                        )}
+                        ),
+                      )}
+                      {s.eCarbon === 'held' ? (
+                        <DriRow
+                          name="Rowan"
+                          project={energyOrg.projects.carbon.title}
+                          onOpen={() => s.openProject('carbon')}
+                        />
+                      ) : (
                         <OpenDriRow
-                          project={energyOrg.projects.hardware.title}
-                          onOpen={() => s.openProject('hardware')}
+                          project={energyOrg.projects.carbon.title}
+                          onOpen={() => s.openProject('carbon')}
                         />
-                      </>
-                    ) : (
-                      <>
+                      )}
+                      <OpenDriRow
+                        project={energyOrg.projects.hardware.title}
+                        onOpen={() => s.openProject('hardware')}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <DriRow
+                        name="Sam"
+                        project="Saturday stall"
+                        onOpen={() => s.openProject('stall')}
+                      />
+                      <DriRow
+                        name="Jun"
+                        project={projectsData.growers.title}
+                        onOpen={() => s.openProject('growers')}
+                      />
+                      <DriRow
+                        name="Maya"
+                        project={projectsData.currency.title}
+                        onOpen={() => s.openProject('currency')}
+                      />
+                      {s.weekday === 'held' ? (
                         <DriRow
-                          name="Sam"
-                          project="Saturday stall"
-                          onOpen={() => s.openProject('stall')}
+                          name="Rafi"
+                          project="Weekday hall"
+                          onOpen={() => s.openProject('weekday')}
                         />
-                        <DriRow
-                          name="Jun"
-                          project={projectsData.growers.title}
-                          onOpen={() => s.openProject('growers')}
-                        />
-                        <DriRow
-                          name="Maya"
-                          project={projectsData.currency.title}
-                          onOpen={() => s.openProject('currency')}
-                        />
-                        {s.weekday === 'held' ? (
-                          <DriRow
-                            name="Rafi"
-                            project="Weekday hall"
-                            onOpen={() => s.openProject('weekday')}
-                          />
-                        ) : (
-                          <OpenDriRow
-                            project="Weekday hall"
-                            onOpen={() => s.openProject('weekday')}
-                          />
-                        )}
+                      ) : (
                         <OpenDriRow
-                          project={projectsData.harvest.title}
-                          onOpen={() => s.openProject('harvest')}
+                          project="Weekday hall"
+                          onOpen={() => s.openProject('weekday')}
                         />
-                      </>
-                    )}
-                  </div>
+                      )}
+                      <OpenDriRow
+                        project={projectsData.harvest.title}
+                        onOpen={() => s.openProject('harvest')}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
+            </div>
 
-              <p className="mt-4 text-[12px] leading-relaxed text-faint">
-                Every number comes from the ledger — click through and check the
-                receipts.
-              </p>
-            </Card>
-
-            {/* org health — the agent's read on how the org is doing */}
-            <HealthCard
-              delay={3}
-              health={healthView}
-              kicker="Org health — the agent’s read"
-              footnote="Read from the activity ledger against the objectives and strategy — what was said vs what actually happened. Receipts, not vibes. Every project has its own bar on its page."
-            />
-          </>
+            <p className="mt-4 text-[12px] leading-relaxed text-faint">
+              Every number comes from the ledger — click through and check the
+              receipts.
+            </p>
+          </Card>
 
           <Card className="p-5" delay={3}>
             <Kicker>Treasury</Kicker>
@@ -470,9 +451,17 @@ export function OrgPage() {
             <p className="mt-3 text-[12px] leading-relaxed text-faint">
               Nothing here moves without a proposal{' '}
               {isEnergy ? 'all three' : 'both'} Shapers agreed to — every
-              movement is on the Proposals page.
+              movement is on the Decisions page.
             </p>
           </Card>
+
+          {/* org health — the agent's read on how the org is doing */}
+          <HealthCard
+            delay={3}
+            health={healthView}
+            kicker="Org health — the agent’s read"
+            footnote="Read from the activity ledger against the objectives and strategy — what was said vs what actually happened. Receipts, not vibes. Every project has its own bar on its page."
+          />
         </div>
 
         <p className="pt-5 text-[13px] leading-relaxed text-faint">

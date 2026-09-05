@@ -44,11 +44,13 @@ import {
   HeldCard,
   OfferCard,
   OfferWhere,
+  OpenProjectCard,
   ProjectBlock,
   Section,
   StateChip,
   TicketList,
   Waiting,
+  WorkBoard,
   countUnder,
   offerRow,
 } from './work-bits';
@@ -181,10 +183,6 @@ export function MyWork() {
     <Workspace>
       <Page kicker="What needs me, what I hold" title="My Work">
         {body}
-        <p className="pt-6 text-[13px] leading-relaxed text-faint">
-          Two piles, nothing else: things waiting on <em>your</em> yes or no,
-          and things you hold. Other people’s work never lands here.
-        </p>
       </Page>
     </Workspace>
   );
@@ -201,10 +199,7 @@ function YouWork() {
   if (s.setup === 'offered')
     asks.push(
       <Card key="setup" className="border-ink/15 p-5">
-        <div className="flex items-center justify-between">
-          <Kicker className="text-ink">Sam is asking you</Kicker>
-          <StateChip state="waiting" label="offer — yes or no" />
-        </div>
+        <Kicker className="text-ink">Sam is asking you</Kicker>
         <p className="mt-2 text-[16px] font-medium tracking-[-0.015em]">
           {setup.title}
         </p>
@@ -252,7 +247,6 @@ function YouWork() {
     held.push(
       <HeldCard
         key="photo"
-        approvedBy="Jun"
         view={{
           ...offerRow('photo'),
           projectId: 'growers',
@@ -287,9 +281,7 @@ function YouWork() {
 function LeaWork() {
   const s = useStore();
   const t = ticketsData.covers;
-  const teaches = (
-    <HeldCard key="teaches" view={leaTeaches} approvedBy="Tom" delay={1} />
-  );
+  const teaches = <HeldCard key="teaches" view={leaTeaches} delay={1} />;
 
   if (s.covers === 'done') {
     return (
@@ -339,7 +331,7 @@ function LeaWork() {
     <Section title="You hold">
       <Card className="p-6" onClick={() => s.openTicket('covers')}>
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Chip>Saturday stall · approved by Sam</Chip>
+          <Chip>Saturday stall</Chip>
           <Chip>due {t.due}</Chip>
           {s.subCovers === 'offered' && <Chip>rota — offered to Jun</Chip>}
           {s.subCovers === 'accepted' && (
@@ -349,9 +341,6 @@ function LeaWork() {
         </div>
         <p className="text-[19px] font-semibold leading-snug tracking-[-0.02em]">
           {t.title}
-        </p>
-        <p className="mt-2 text-[14px] leading-relaxed text-sub">
-          Why you: {t.why}
         </p>
         <p className="mt-4 text-[13px] font-medium text-ink">
           Open the draft →
@@ -424,7 +413,6 @@ function SamWork() {
             projectId: 'stall',
             projectTitle: 'Saturday stall',
           }}
-          approvedBy="you"
           delay={1}
         />
       </Section>
@@ -733,27 +721,6 @@ export function AllWork() {
   return <RiverAllWork />;
 }
 
-function OpenProjectCard({
-  id,
-  title,
-  meta,
-}: {
-  id: RiverProjectId;
-  title: string;
-  meta: string;
-}) {
-  const s = useStore();
-  return (
-    <Card className="p-5" onClick={() => s.openProject(id)}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[16px] font-semibold tracking-[-0.02em]">{title}</p>
-        <StateChip state="open" label="needs a DRI" />
-      </div>
-      <p className="mt-1 text-[13px] leading-relaxed text-sub">{meta}</p>
-    </Card>
-  );
-}
-
 /** Grower onboarding's rows, plus the photo ticket once You accept it */
 function useGrowerTickets(): WorkTicketRow[] {
   const s = useStore();
@@ -763,97 +730,72 @@ function useGrowerTickets(): WorkTicketRow[] {
 
 function RiverAllWork() {
   const s = useStore();
-  const stallTickets = useStallTickets();
-  const growerTickets = useGrowerTickets();
   const stallHealth = useStallHealth();
   const weekdayHealth = useWeekdayHealth();
   const growers = projectsData.growers;
   const currency = projectsData.currency;
   const harvest = projectsData.harvest;
 
-  const weekdayStatus =
-    s.weekday === 'draft'
-      ? 'draft — with the Shapers'
-      : s.weekday === 'offering-lea'
-      ? 'offered to Lea — her yes or no'
-      : s.weekday === 'declined-lea'
-      ? 'Lea declined — back with the Shapers'
-      : s.weekday === 'offering-rafi'
-      ? 'offered to Rafi — his yes or no'
-      : 'held';
-
   return (
     <Workspace>
-      <Page kicker="Who is working on what" title="All Work">
-        <div className="space-y-7">
-          <Section title="Not accepted yet — waiting for someone to hold it">
-            {s.weekday !== 'held' && (
+      <Page kicker="Who is working on what" title="Projects" wide="board">
+        <WorkBoard
+          waiting={
+            <>
+              {s.weekday !== 'held' && (
+                <OpenProjectCard
+                  title="Weekday hall"
+                  review="review 1 Aug"
+                  onOpen={() => s.openProject('weekday')}
+                />
+              )}
               <OpenProjectCard
-                id="weekday"
-                title="Weekday hall"
-                meta={`Project · review 1 Aug · ${weekdayStatus}`}
+                title={harvest.title}
+                review={`review ${harvest.review}`}
+                onOpen={() => s.openProject('harvest')}
               />
-            )}
-            <OpenProjectCard
-              id="harvest"
-              title={harvest.title}
-              meta={`Project · review ${harvest.review} · draft — with the Shapers`}
-            />
-          </Section>
-
-          <Section title="Ongoing — accepted, someone holds each one">
-            <ProjectBlock
-              projectId="stall"
-              title="Saturday stall"
-              dri="Sam"
-              meta={`review ${s.review === 'extended' ? '1 Sep' : '1 Jun'}${
-                s.review === 'closed' ? ' · closed' : ''
-              }`}
-              onOpen={() => s.openProject('stall')}
-              tickets={stallTickets}
-              health={stallHealth}
-            />
-
-            {s.weekday === 'held' && (
+            </>
+          }
+          accepted={
+            <>
               <ProjectBlock
-                projectId="weekday"
-                title="Weekday hall"
-                dri="Rafi"
-                meta="review 1 Aug"
-                onOpen={() => s.openProject('weekday')}
-                tickets={[]}
-                health={weekdayHealth}
+                title="Saturday stall"
+                dri="Sam"
+                meta={`review ${s.review === 'extended' ? '1 Sep' : '1 Jun'}${
+                  s.review === 'closed' ? ' · closed' : ''
+                }`}
+                onOpen={() => s.openProject('stall')}
+                health={stallHealth}
               />
-            )}
 
-            <ProjectBlock
-              projectId="growers"
-              title={growers.title}
-              dri={growers.dri ?? 'open'}
-              meta={`review ${growers.review}`}
-              onOpen={() => s.openProject('growers')}
-              tickets={growerTickets}
-              health={growers.health}
-            />
+              {s.weekday === 'held' && (
+                <ProjectBlock
+                  title="Weekday hall"
+                  dri="Rafi"
+                  meta="review 1 Aug"
+                  onOpen={() => s.openProject('weekday')}
+                  health={weekdayHealth}
+                />
+              )}
 
-            <ProjectBlock
-              projectId="currency"
-              title={currency.title}
-              dri={currency.dri ?? 'open'}
-              meta={`review ${currency.review}`}
-              onOpen={() => s.openProject('currency')}
-              tickets={currency.tickets}
-              health={currency.health}
-            />
-          </Section>
-        </div>
+              <ProjectBlock
+                title={growers.title}
+                dri={growers.dri ?? 'open'}
+                meta={`review ${growers.review}`}
+                onOpen={() => s.openProject('growers')}
+                health={growers.health}
+              />
 
-        <p className="pt-6 text-[13px] leading-relaxed text-faint">
-          Every project with its tickets — who holds each one, its state, its
-          date. “n under it” means the holder split that ticket further; open it
-          to see the pieces. Nothing here was filed; it is what the org heard in
-          chat and someone confirmed.
-        </p>
+              <ProjectBlock
+                title={currency.title}
+                dri={currency.dri ?? 'open'}
+                meta={`review ${currency.review}`}
+                onOpen={() => s.openProject('currency')}
+                health={currency.health}
+              />
+            </>
+          }
+        />
       </Page>
     </Workspace>
   );
@@ -949,7 +891,7 @@ function LiveRiverProjectDetail() {
           onClick={() => s.go('all')}
           className="rise mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
         >
-          ← All Work
+          ← Projects
         </button>
         <h1 className="rise mb-2 text-[28px] font-semibold leading-tight tracking-[-0.03em]">
           {p.title}
