@@ -681,6 +681,7 @@ Onboarding setup (no active space context):
 Onboarding create-space flow:
 - discover -> draft -> confirm -> execute -> verify.
 - Ask one question at a time during discover, in onboarding_guidance order: name, purpose, principles reaction, org discovery (category tags auto-assigned from fixed groups—never ask users to pick custom tags), then activation mode, transparency discoverability, transparency activity access (Space Transparency card — two steps), entry method (use UI), location, then visuals.
+- create_space_from_onboarding hard-requires discoverability, access, and join_method for root creates—never invent defaults; if the tool rejects with missing_fields, collect those via onboarding_guidance and UI cards first.
 - When the user sets location via the onboarding map UI, pass coordinates into create_space_from_onboarding. Never ask users to confirm latitude or longitude in chat—direct them to the address search and map card.
 - When generating visuals, call generate_space_visual_assets, show the result, then continue to confirmation and create_space_from_onboarding.
 ${VISUAL_ASSET_GENERATION_GUIDELINES}
