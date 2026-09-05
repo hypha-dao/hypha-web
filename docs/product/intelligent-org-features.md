@@ -156,7 +156,7 @@ Three surfaces, one glance each:
 | Surface      | What it answers                                                                                                 |
 | ------------ | --------------------------------------------------------------------------------------------------------------- |
 | **My Work**  | What do I hold, what am I doing, what can I take? Dates on every card.                                          |
-| **All Work** | Who is working on what? Every project and ticket, DRI or _open_, dates visible.                                 |
+| **Projects** | Who is working on what? Every project and ticket, DRI or _open_, dates visible.                                 |
 | **Org**      | Who are we? Mission, vision, objectives, strategy, established, founder, Shapers, members, who holds which job. Each direction card opens to its full text, every version, and the proofs behind each line — with receipts. |
 
 Empty states say so: _Nothing needs you._
@@ -166,7 +166,7 @@ Empty states say so: _Nothing needs you._
 ### 7. Money is agreed in chat and moved by proposal
 
 Work flow and money flow are **separate**. No sum lives on a project or a ticket. Money is in
-two places only: **Proposals** (where it moves) and **My Profile** (what a person was paid).
+two places only: **Decisions** (where it moves) and **My Profile** (what a person was paid).
 
 How pay works: the person holding the work and the person above them — a ticket holder with
 the project DRI, a DRI with a Shaper — agree a sum where they already talk. The agent remembers

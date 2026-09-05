@@ -29,9 +29,9 @@ Everyone sees the same left menu. Only the contents change.
 | Door            | What it answers                                                            |
 | --------------- | -------------------------------------------------------------------------- |
 | **Overview**    | Who are we — mission, vision, objectives, strategy, people, glance numbers |
-| **All Work**    | The whole tree — every project and what sits under it                      |
+| **Projects**    | The whole tree — every project and what sits under it                      |
 | **My Work**     | What needs _my_ yes or no, and what I hold                                 |
-| **Proposals**   | Money movements and project approvals — Shapers decide                     |
+| **Decisions**   | Money, project approvals, and direction — Shapers decide                   |
 | **My Profile**  | Who I am, what I was paid                                                  |
 | **DMs**         | Personal Assistant, then one-to-one chats                                  |
 | **Group chats** | Rooms per project or team, plus the Shapers room                           |
@@ -53,14 +53,14 @@ In the prototype: **Lea** (ticket), **Sam** (project).
      ask the assistant for the pay proposal
 3. Read **You hold** — every piece with your name, its project, its due date.
 4. Click a card → the ticket page: draft, children, who is waiting.
-5. Optional: open **All Work** to see the parent and what sits beside you.
+5. Optional: open **Projects** to see the parent and what sits beside you.
 
 ### 1.2 Report done — via the Personal Assistant
 
 1. Open **DMs → Personal Assistant**.
 2. Type: “Found both covers — done.”
 3. Agent marks your ticket done and replies with the receipt (your message).
-4. Ticket shows done on My Work and All Work.
+4. Ticket shows done on My Work and Projects.
 
 Only the DRI can close their own ticket this way. Someone else saying it in
 chat changes nothing.
@@ -70,7 +70,7 @@ chat changes nothing.
 1. Open **Group chats → the project room** (e.g. “Saturday stall”).
 2. Type the same sentence: “Found both covers — done.”
 3. Agent marks your ticket done and posts the receipt in the room.
-4. Ticket shows done on My Work and All Work.
+4. Ticket shows done on My Work and Projects.
 
 ### 1.4 Report done — on the ticket
 
@@ -106,7 +106,7 @@ the Shapers**, whatever the sum and wherever the ticket sits in the tree.
 3. Type: “draft a proposal for the Shapers for my work — 150 USDC”.
 4. Agent shows a **payment draft** card: the sum, the ticket, the done receipt.
 5. Click **Open as a proposal**.
-6. Proposal appears under **Proposals → Waiting on the Shapers**.
+6. Proposal appears under **Decisions → Waiting on the Shapers**.
 7. When it passes, the payment shows on **My Profile → Paid to you**.
 
 ### 1.8 Agree pay in chat — _future, not MVP_
@@ -215,7 +215,7 @@ shows it was the wrong one.
 
 ### 2.4 Approve a project
 
-1. Open **Proposals → Waiting on the Shapers**, or **My Work → Needs your answer**.
+1. Open **Decisions → Waiting on the Shapers**, or **My Work → Needs your answer**.
 2. Click the **project approval** card. It came either from talk (someone
    asked for it) or from the agent alone — _suggested by the agent, nobody
    asked: objective X has nothing serving it_ (4.4). Same decision either way.
@@ -223,18 +223,18 @@ shows it was the wrong one.
    it serves** (or _none_ — the agent flags a project that serves no
    objective, so you can approve it anyway, or redraw the objectives first).
 4. Click **Agree — approve it** (or **Reject**).
-5. When all Shapers agree, the project is live under **All Work**; the DRI holds it.
+5. When all Shapers agree, the project is live under **Projects**; the DRI holds it.
 
 ### 2.5 Offer a project that has no DRI
 
 1. Open **My Work → Needs your answer** — the open project card (e.g. Weekday hall).
 2. Click **Offer to …** and pick a person.
 3. If they decline, the card comes back — pick someone else.
-4. When someone accepts, the approval is recorded under **Proposals**.
+4. When someone accepts, the approval is recorded under **Decisions**.
 
 ### 2.6 Approve a payment
 
-1. Open **Proposals → Waiting on the Shapers**.
+1. Open **Decisions → Waiting on the Shapers**.
 2. Click the **money movement** card.
 3. Read: the sum, the ticket, the done receipt, opened by.
 4. Click **Agree — pay it** (or **Reject**).
@@ -275,15 +275,15 @@ Ahead of the date the agent writes the brief and says which.
 4. Click **Open the follow-up** or **Nothing more**. The project closes on
    its date either way — the buttons are only about what comes next.
    Opening the follow-up _is_ the project approval: it goes live under
-   **All Work** with the suggested DRI offered, and is recorded under
-   **Proposals → Decided** like any other approval. No second vote.
+   **Projects** with the suggested DRI offered, and is recorded under
+   **Decisions → Decided** like any other approval. No second vote.
 5. Override is available but not the default: **Keep it open until …** sets a
    new end date instead. A Shaper taps; the agent never closes, extends, or
    opens a project on its own.
 6. If several Shapers, the card collects their taps — it shows who has
    answered, and the follow-up goes live when enough have agreed. Still one
    decision, in one place.
-7. Overview timeline and All Work update: the project shows closed, the
+7. Overview timeline and Projects update: the project shows closed, the
    follow-up shows live (or offered, until the DRI accepts). The decision and what followed
    go into decision memory, so the next recommendation for a similar
    project is better.
@@ -320,8 +320,8 @@ In the prototype: **You**, first login.
 ### 3.2 Look around
 
 1. Open **Overview** — mission, vision, objectives, strategy, who shapes, who holds what.
-2. Open **All Work** — every project, its DRI, what is open.
-3. Open **Proposals** — you can read every decision; you cannot vote.
+2. Open **Projects** — every project, its DRI, what is open.
+3. Open **Decisions** — you can read every decision; you cannot vote.
 4. Open **My Work** — _Nothing needs you._ That is the honest state.
 
 ### 3.3 Accept work
@@ -375,7 +375,7 @@ In the prototype: **You**, first login.
 Not a role, not a chatbot. One agent per org, running the loop
 _hear → remember → offer → watch → revise_ server-side. It has no door of
 its own: it shows up as cards on My Work, drafts in rooms, replies in the
-Personal Assistant, and lines on Overview and Proposals.
+Personal Assistant, and lines on Overview and Decisions.
 
 Two rules it never breaks: it **drafts, never decides**; it **offers, never
 assigns**. Every flow below ends with a human tap or with nothing.
