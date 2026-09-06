@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 
 import { buildOnboardingRealtimeInstructions } from '../system-prompt';
 import { buildSpaceAdvisorRealtimeInstructions } from '../system-prompt';
+import { buildCoherentCanvasRealtimeInstructions } from '../system-prompt';
 import type { RealtimeVoiceSessionRequest } from './request-schema';
 import { assertVoiceDiscoverySessionContext } from './request-schema';
 import {
@@ -96,18 +97,26 @@ export async function createRealtimeVoiceSession(
     payload.conversationContext.locale?.trim() ||
     'en';
 
-  const instructions =
-    payload.conversationContext.mode === 'space_advisor'
-      ? buildSpaceAdvisorRealtimeInstructions({
-          spaceSlug: payload.conversationContext.spaceSlug,
-          locale,
-          recentTranscriptSummary: payload.recentTranscriptSummary,
-        })
-      : buildOnboardingRealtimeInstructions({
-          setupPhase: payload.conversationContext.setupPhase,
-          locale,
-          recentTranscriptSummary: payload.recentTranscriptSummary,
-        });
+  let instructions: string;
+  if (payload.conversationContext.mode === 'space_advisor') {
+    instructions = buildSpaceAdvisorRealtimeInstructions({
+      spaceSlug: payload.conversationContext.spaceSlug,
+      locale,
+      recentTranscriptSummary: payload.recentTranscriptSummary,
+    });
+  } else if (payload.conversationContext.mode === 'conversational_canvas') {
+    instructions = buildCoherentCanvasRealtimeInstructions({
+      spaceSlug: payload.conversationContext.spaceSlug,
+      locale,
+      recentTranscriptSummary: payload.recentTranscriptSummary,
+    });
+  } else {
+    instructions = buildOnboardingRealtimeInstructions({
+      setupPhase: payload.conversationContext.setupPhase,
+      locale,
+      recentTranscriptSummary: payload.recentTranscriptSummary,
+    });
+  }
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,

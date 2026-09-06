@@ -1532,6 +1532,9 @@ export async function createChatStreamResult(
           orgContextSnapshot: spaceContextSnapshot,
           scopeLocked: canvasScopeLocked,
           knownSpaces: canvasKnownSpaces,
+          voice:
+            (normalizedConversationContext as { voice?: unknown }).voice ===
+            true,
         })
       : normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${

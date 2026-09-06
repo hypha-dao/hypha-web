@@ -137,12 +137,12 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
-  enableAssistantVoice: {
-    key: 'enable-assistant-voice',
+  enableCoherentVoice: {
+    key: 'enable-coherent-voice',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE) ?? false,
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_COHERENT_VOICE) ?? false,
     description:
-      'Real voice (OpenAI Realtime) for the #2486 Coherent canvas. Sub-feature of enable-coherent-intelligent-system; degrades to text-only when off or OPENAI_API_KEY is absent. Opt in: NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE=true',
+      'Real voice (OpenAI Realtime, speech-to-text + text-to-speech) for the #2486 Coherent entrypoint. Sub-feature of enable-coherent-intelligent-system; degrades to text-only when off or OPENAI_API_KEY is absent. Opt in: NEXT_PUBLIC_ENABLE_COHERENT_VOICE=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -261,10 +261,10 @@ export async function getEnableCoherentIntelligentSystemAsync(): Promise<boolean
   );
 }
 
-export async function getEnableAssistantVoiceAsync(): Promise<boolean> {
+export async function getEnableCoherentVoiceAsync(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
-    'enable-assistant-voice',
-    process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE,
+    'enable-coherent-voice',
+    process.env.NEXT_PUBLIC_ENABLE_COHERENT_VOICE,
     false,
   );
 }
@@ -274,5 +274,5 @@ export {
   getEnableOnboardingVoiceRealtime,
   getEnableCallDocumentPip,
   getEnableCoherentIntelligentSystem,
-  getEnableAssistantVoice,
+  getEnableCoherentVoice,
 } from './client';

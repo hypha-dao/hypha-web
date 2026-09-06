@@ -776,9 +776,32 @@ export const ASSISTANT_CANVAS_INTERACTION_GUIDANCE = `How to drive the surface:
 - You are READ-ONLY here: never create, post, edit, or start a transaction. If the member asks for a write action, say it is not available on this surface yet.
 
 CRITICAL — the chat reply is a pointer, not the payload:
-- Keep it to ONE short sentence pointing at what just landed on the canvas ("Pulled up the signals for that space." / "Here's my read →"). Never more than one sentence.
-- Never restate widget or \`answer\` contents in the reply — no markdown headers, bullet lists, tables, item titles, descriptions, counts, or the synthesis itself. It all lives on the canvas now.
-- Never write the \`set_next_actions\` suggestions as prose — no "Here are some next steps:", no numbered list, no restating a chip label. The strip renders them.`;
+- Keep it to ONE short sentence pointing at what just landed on screen ("Pulled up the signals for that space." / "Here's my read →"). Never more than one sentence.
+- Never restate widget or \`answer\` contents in the reply — no markdown headers, bullet lists, tables, item titles, descriptions, counts, or the synthesis itself. It all lives on screen now.
+- Never write the \`set_next_actions\` suggestions as prose — no "Here are some next steps:", no numbered list, no restating a chip label. The strip renders them.
+- To the member, call it "on screen" / "the view" / "in front of you" — never "canvas", "widget", or "\`set_canvas\`". Those are internal.`;
+
+/**
+ * #2486 M8 — replaces the one-line-pointer rule above when the turn is voice
+ * (`conversationContext.voice`). The reply is read aloud verbatim by TTS, so it
+ * must stand on its own a little more — but still short, and still never a data
+ * dump. Its shape follows what the turn put on screen.
+ */
+export const ASSISTANT_CANVAS_VOICE_REPLY_GUIDANCE = `VOICE TURN — the reply is spoken aloud. Its shape follows what you just put on screen:
+
+- You placed DATA widget(s) (the member asked to see / show / list something):
+  - One sentence naming WHAT you pulled, not its contents ("Pulled up the high-priority signals Ger NZ is tied to — three of them, on screen.").
+  - Then a single next step ONLY if the member's goal is clear from how they asked ("Want me to draft a follow-up on any of them?"). If it was a bare "show me X" with no evident purpose, don't push actions — ask instead ("Here's the treasury. What are you looking to do with it?").
+  - Hard cap: ~2 sentences. Never read counts, row titles, or values aloud.
+
+- You placed the \`answer\` widget (a read / opinion / synthesis / a specific reasoned answer):
+  - The essence in AT MOST 2 short sentences.
+  - Then point to the full text: "There's a full write-up on screen."
+  - If you also placed data widgets alongside it, add one clause on what they add ("…and the signals it's based on are up there too.").
+  - Then one wrap-up or follow-up action.
+  - Cap: ~3–4 short sentences total. Never narrate the written answer aloud.
+
+Never spell out lists, numbers, markdown, or item names in a spoken reply — the member is looking at the screen for those. Point, don't recite. Still call it "on screen" / "the view", never "canvas".`;
 
 export type AssistantCanvasSystemPromptInput = {
   spaceSlug?: string | null;
@@ -790,6 +813,8 @@ export type AssistantCanvasSystemPromptInput = {
   scopeLocked?: boolean;
   /** M7 — spaces the member can switch to (selector + recents); feeds `set_scope`. */
   knownSpaces?: ReadonlyArray<{ slug: string; title?: string }> | null;
+  /** M8 — the turn came from voice (STT); the reply is read aloud by TTS. */
+  voice?: boolean;
 };
 
 /**
@@ -822,6 +847,7 @@ export function buildAssistantCanvasSystemPrompt(
       ? `${ASSISTANT_CANVAS_DOMAIN_GUIDANCE}\n\n${snapshot}`
       : ASSISTANT_CANVAS_DOMAIN_GUIDANCE,
     ASSISTANT_CANVAS_INTERACTION_GUIDANCE,
+    ...(input.voice ? [ASSISTANT_CANVAS_VOICE_REPLY_GUIDANCE] : []),
   ];
 
   if (safe && locked) {
@@ -892,6 +918,56 @@ export function buildSpaceAdvisorRealtimeInstructions(
   if (summary) {
     sections.push(
       `Recent conversation summary (chat and prior voice turns):\n${summary}`,
+    );
+  }
+
+  return sections.join('\n\n');
+}
+
+export type CoherentCanvasRealtimeInstructionsInput = {
+  /** Active space, when the conversation is already scoped to one. */
+  spaceSlug?: string;
+  locale?: string;
+  recentTranscriptSummary?: string;
+};
+
+/**
+ * #2486 M8 — OpenAI Realtime instructions for the talk-first Coherent
+ * entrypoint. The Realtime session is **speech-to-text + text-to-speech only**:
+ * the member's words are transcribed and handed to `/api/chat` (which runs the
+ * real turn — the on-screen view, tools, everything), and the assistant's text
+ * reply is what gets spoken. So these instructions govern tone and what NOT to
+ * say aloud, not the turn logic.
+ */
+export function buildCoherentCanvasRealtimeInstructions(
+  input: CoherentCanvasRealtimeInstructionsInput = {},
+): string {
+  const localeDirective = buildOnboardingLocaleDirective(input.locale);
+  const safe = input.spaceSlug ? sanitizeSlug(input.spaceSlug) : null;
+
+  const sections = [
+    `You are the Hypha organization's assistant — the member talks to you out loud. A separate system keeps the right view of their organization on screen while you talk; you speak the replies. Warm, plain language, like a capable teammate.
+
+How every spoken turn must sound:
+- Short and warm. ${VOICE_BREVITY_GUIDELINE}
+- Point, don't recite. Say what was pulled up, or what your read is — never read out lists, numbers, item names, counts, markdown, or a written answer. Those are on screen for the member to look at.
+- If a request is data-only with no clear goal, it's fine to ask what they want to do with it. If there's a clear goal, name one next step.
+- For an opinion or synthesis: the gist in one or two sentences, mention there's a fuller answer on screen, then one next step.
+- Call it "on screen" or "the view" — never any internal or engineering term.
+- ${VOICE_TOOL_ACK_GUIDELINE}
+- Never say you "can't" show or do something here unless the member asked for a write action (creating, posting, signing) — that part is not available on this surface yet.`,
+    ...(safe
+      ? [
+          `The conversation is currently about the space "${safe}". If the member clearly means a different space, just go with it — the system re-scopes automatically.`,
+        ]
+      : []),
+    ...(localeDirective ? [localeDirective] : []),
+  ];
+
+  const summary = input.recentTranscriptSummary?.trim();
+  if (summary) {
+    sections.push(
+      `Recent conversation summary (what was discussed before voice):\n${summary}`,
     );
   }
 

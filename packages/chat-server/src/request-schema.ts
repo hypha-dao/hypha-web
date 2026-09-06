@@ -98,6 +98,12 @@ export const conversationContextSchema =
      * offered and the active-space grounding stays strict.
      */
     scopeLocked: z.boolean().optional(),
+    /**
+     * #2486 M8 — the turn originated from voice (STT). The reply is read aloud
+     * verbatim by TTS, so the canvas prompt swaps its one-line-pointer rule for
+     * the voice reply shaping (Case A / Case B).
+     */
+    voice: z.boolean().optional(),
   });
 
 export const chatRequestSchema = z.object({

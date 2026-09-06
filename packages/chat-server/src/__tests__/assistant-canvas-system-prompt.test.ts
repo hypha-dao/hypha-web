@@ -93,6 +93,31 @@ describe('buildAssistantCanvasSystemPrompt', () => {
     expect(prompt).toContain('OVERRIDES any different space named earlier');
   });
 
+  it('M8: appends the voice reply shaping only when voice is set', () => {
+    const withVoice = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+      voice: true,
+    });
+    const withoutVoice = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+    });
+    expect(withVoice).toContain('VOICE TURN — the reply is spoken aloud');
+    expect(withVoice).toContain('AT MOST 2 short sentences');
+    expect(withVoice).toContain('full write-up on screen');
+    expect(withoutVoice).not.toContain(
+      'VOICE TURN — the reply is spoken aloud',
+    );
+  });
+
+  it('M8: never tells the member to look at a "canvas"', () => {
+    const prompt = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+      voice: true,
+    });
+    // The interaction guidance addresses the member with "on screen" / "the view".
+    expect(prompt).toContain('call it "on screen" / "the view"');
+  });
+
   it('sanitises the space slug', () => {
     const prompt = buildAssistantCanvasSystemPrompt({
       spaceSlug: '../../etc/passwd',

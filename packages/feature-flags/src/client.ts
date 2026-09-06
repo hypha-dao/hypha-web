@@ -34,7 +34,7 @@ export function getEnableCoherentIntelligentSystem(): boolean {
   );
 }
 
-/** Client-safe build-time gate for real voice in the #2486 Coherent canvas. */
-export function getEnableAssistantVoice(): boolean {
-  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE) ?? false;
+/** Client-safe build-time gate for real voice in the #2486 Coherent entrypoint. */
+export function getEnableCoherentVoice(): boolean {
+  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_COHERENT_VOICE) ?? false;
 }
