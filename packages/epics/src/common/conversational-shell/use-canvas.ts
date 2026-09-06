@@ -22,6 +22,49 @@ export const EMPTY_CANVAS_STATE: CanvasState = {
 /** TEMP DIAG (#2486 M7) — signatures of set_canvas calls already logged. */
 const DIAG_SEEN = new Set<string>();
 
+/**
+ * #2486 T1 — synthesis fallback. When the model answers a "what do you think…"
+ * question with a substantial written reply but never drives the canvas, surface
+ * that prose as this widget so the canvas is never empty. The host registers a
+ * widget with this id (Hypha's `answer` widget) whose params take `{ markdown }`.
+ */
+const SYNTHESIS_FALLBACK_WIDGET_ID = 'answer';
+/** Below this, the reply is treated as a legit one-line pointer — no fallback. */
+const SYNTHESIS_FALLBACK_MIN_CHARS = 240;
+
+/** Concatenated text of the newest assistant message, plus its id/flags. */
+function readLatestAssistantText(messages: ConversationMessage[]): {
+  id: string;
+  text: string;
+  hasSetCanvasPart: boolean;
+} | null {
+  for (let m = messages.length - 1; m >= 0; m -= 1) {
+    const message = messages[m];
+    if (!message || message.role !== 'assistant') continue;
+
+    const parts = Array.isArray(message.parts) ? message.parts : [];
+    let text = '';
+    let hasSetCanvasPart = false;
+    for (const part of parts) {
+      if (!part || typeof part !== 'object') continue;
+      const type = (part as { type?: unknown }).type;
+      if (type === 'tool-set_canvas') hasSetCanvasPart = true;
+      if (type === 'text') {
+        const t = (part as { text?: unknown }).text;
+        if (typeof t === 'string') text += t;
+      }
+    }
+    if (
+      !text &&
+      typeof (message as { content?: unknown }).content === 'string'
+    ) {
+      text = (message as { content: string }).content;
+    }
+    return { id: message.id ?? `m-${m}`, text: text.trim(), hasSetCanvasPart };
+  }
+  return null;
+}
+
 const LAYOUT_HINTS: readonly LayoutHint[] = ['full', 'half', 'aside'];
 const EMPHASES: readonly NextActionEmphasis[] = [
   'primary',
@@ -276,7 +319,7 @@ export function selectCanvasState(
   }
 
   // TEMP DIAG (#2486 M7) — trace every set_canvas call + reduce outcome, once each.
-  return calls.reduce<CanvasState>((acc, call, i) => {
+  const reduced = calls.reduce<CanvasState>((acc, call, i) => {
     const intents = extractCanvasIntents(call.output);
     const next = reduceCanvas(acc, intents, registry, call.messageId);
     const sig = `${call.messageId}:${JSON.stringify(call.output)}`;
@@ -296,6 +339,37 @@ export function selectCanvasState(
     }
     return next;
   }, EMPTY_CANVAS_STATE);
+
+  // #2486 T1 — synthesis fallback. The model wrote a substantial reply this turn
+  // but drove no widget (no `set_canvas` part in its message, and the canvas
+  // still reflects an earlier turn). Render that prose as the `answer` widget so
+  // "what do you think…" questions are never a blank canvas. A real `set_canvas`
+  // on a later turn outranks this (higher message order in the reducer above).
+  if (registry.get(SYNTHESIS_FALLBACK_WIDGET_ID)) {
+    const latest = readLatestAssistantText(messages);
+    if (
+      latest &&
+      !latest.hasSetCanvasPart &&
+      latest.text.length >= SYNTHESIS_FALLBACK_MIN_CHARS &&
+      reduced.updatedFromMessageId !== latest.id
+    ) {
+      return reduceCanvas(
+        reduced,
+        [
+          {
+            widgetId: SYNTHESIS_FALLBACK_WIDGET_ID,
+            params: { markdown: latest.text },
+            layoutHint: undefined,
+            key: `answer-fallback:${latest.id}`,
+          },
+        ],
+        registry,
+        latest.id,
+      );
+    }
+  }
+
+  return reduced;
 }
 
 // ---------------------------------------------------------------------------

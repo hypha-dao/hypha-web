@@ -1324,7 +1324,7 @@ async function buildSpaceContextSnapshot(
         : []),
       strict
         ? `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`
-        : `- Default every widget and read tool to "${safe}". If the member clearly means a different space, use \`set_scope\` and then the new slug — do not refuse.`,
+        : `- The active space is now "${safe}". This OVERRIDES any different space named earlier in this conversation — treat those earlier references as stale. Answer about "${safe}" unless the member, in their latest message, explicitly asks about another space by name. Default every widget and read tool to "${safe}". If the member clearly means a different space, use \`set_scope\` and then the new slug — do not refuse.`,
       strict
         ? `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`
         : `- For "which space am I in" / "where am I": answer with "${title}" (slug "${safe}").`,

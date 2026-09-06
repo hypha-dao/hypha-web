@@ -387,14 +387,24 @@ export function AssistantShell({
   }, []);
 
   const stripActions = React.useMemo(() => {
-    const base = nextActions.length > 0 ? nextActions : greeting.nextActions;
+    // The model's `set_next_actions` wins. Otherwise fall back to the greeting
+    // actions ONLY while scope is still the seed — those are keyed to the seed
+    // slug, so once the member (or the model) has moved scope they point at the
+    // wrong space. Better an empty strip (plus the guidance chip) than stale
+    // wrong-space chips.
+    const base =
+      nextActions.length > 0
+        ? nextActions
+        : scope.source === 'seed'
+        ? greeting.nextActions
+        : [];
     if (!guidanceAction) return base;
     // One guidance chip at a time — a model-set nudge wins over the host's.
     const hasGuidance = base.some(
       (a) => a.emphasis === 'guidance' || a.id === guidanceAction.id,
     );
     return hasGuidance ? base : [...base, guidanceAction];
-  }, [nextActions, greeting.nextActions, guidanceAction]);
+  }, [nextActions, greeting.nextActions, guidanceAction, scope.source]);
 
   return (
     <div className={cn('flex w-full flex-col', className)}>

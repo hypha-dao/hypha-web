@@ -221,3 +221,69 @@ describe('selectCanvasState', () => {
     ).toEqual(EMPTY_CANVAS_STATE);
   });
 });
+
+describe('selectCanvasState — synthesis fallback (#2486 T1)', () => {
+  const withAnswer = registryWith(
+    fakeWidget('signals', requiresSpaceSlugSchema()),
+    fakeWidget('treasury'),
+    fakeWidget('answer'),
+  );
+
+  const longText = 'x'.repeat(300);
+
+  function assistantText(id: string, text: string): ConversationMessage {
+    return { id, role: 'assistant', parts: [{ type: 'text', text }] };
+  }
+
+  it('renders a substantial no-canvas reply as the answer widget', () => {
+    const messages: ConversationMessage[] = [
+      canvasMessage('m1', [{ widgetId: 'treasury', params: {} }]),
+      { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'what gaps?' }] },
+      assistantText('a2', longText),
+    ];
+    const state = selectCanvasState(messages, withAnswer);
+    expect(state.widgets.map((w) => w.widgetId)).toEqual(['answer']);
+    expect(state.widgets[0]?.params).toEqual({ markdown: longText });
+    expect(state.updatedFromMessageId).toBe('a2');
+  });
+
+  it('leaves the canvas alone for a short pointer reply', () => {
+    const messages: ConversationMessage[] = [
+      canvasMessage('m1', [{ widgetId: 'treasury', params: {} }]),
+      assistantText('a2', 'Pulled up the agreements for that space.'),
+    ];
+    const state = selectCanvasState(messages, withAnswer);
+    expect(state.widgets.map((w) => w.widgetId)).toEqual(['treasury']);
+  });
+
+  it('does not fire when the same turn drove the canvas', () => {
+    const messages: ConversationMessage[] = [
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: longText },
+          {
+            type: 'tool-set_canvas',
+            state: 'output-available',
+            output: {
+              ok: true,
+              canvas: [{ widgetId: 'signals', params: { spaceSlug: 'hypha' } }],
+            },
+          },
+        ],
+      },
+    ];
+    const state = selectCanvasState(messages, withAnswer);
+    expect(state.widgets.map((w) => w.widgetId)).toEqual(['signals']);
+  });
+
+  it('is inert when no answer widget is registered', () => {
+    const messages: ConversationMessage[] = [
+      canvasMessage('m1', [{ widgetId: 'treasury', params: {} }]),
+      assistantText('a2', longText),
+    ];
+    const state = selectCanvasState(messages, registry);
+    expect(state.widgets.map((w) => w.widgetId)).toEqual(['treasury']);
+  });
+});

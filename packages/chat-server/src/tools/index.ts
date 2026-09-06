@@ -62,29 +62,43 @@ export function createChatTools(
     conversationContext,
   });
   if (isConversationalCanvasContext(conversationContext)) {
+    // #2486 M7 — the read tools here are grounding only. The model kept reading
+    // data and answering in prose, skipping the canvas; the note reinforces the
+    // system-prompt hard rule at the tool level.
+    const grounding = (name: string, tool: ChatRouteTool): ChatRouteTool => {
+      const wrapped = safeChatTool(name, tool);
+      const base =
+        typeof (wrapped as { description?: unknown }).description === 'string'
+          ? (wrapped as { description: string }).description
+          : '';
+      return {
+        ...wrapped,
+        description: `${base} GROUNDING ONLY — reading this shows the member nothing; you must still call set_canvas this turn to put a widget on screen.`,
+      };
+    };
     return {
-      get_space_by_slug: safeChatTool('get_space_by_slug', getSpaceBySlugTool),
-      get_ecosystem_by_space_slug: safeChatTool(
+      get_space_by_slug: grounding('get_space_by_slug', getSpaceBySlugTool),
+      get_ecosystem_by_space_slug: grounding(
         'get_ecosystem_by_space_slug',
         createGetEcosystemBySpaceSlugTool(authToken),
       ),
-      get_signals_by_space_slug: safeChatTool(
+      get_signals_by_space_slug: grounding(
         'get_signals_by_space_slug',
         createGetSignalsBySpaceSlugTool(authToken),
       ),
-      get_documents_by_space_slug: safeChatTool(
+      get_documents_by_space_slug: grounding(
         'get_documents_by_space_slug',
         createGetDocumentsBySpaceSlugTool(authToken),
       ),
-      get_token_holdings_by_space_slug: safeChatTool(
+      get_token_holdings_by_space_slug: grounding(
         'get_token_holdings_by_space_slug',
         createGetTokenHoldingsBySpaceSlugTool(authToken),
       ),
-      get_people_by_space_slug: safeChatTool(
+      get_people_by_space_slug: grounding(
         'get_people_by_space_slug',
         createGetPeopleBySpaceSlugTool(authToken),
       ),
-      get_org_memory_by_space_slug: safeChatTool(
+      get_org_memory_by_space_slug: grounding(
         'get_org_memory_by_space_slug',
         createGetOrgMemoryBySpaceSlugTool(
           authToken,

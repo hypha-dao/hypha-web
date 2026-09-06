@@ -168,6 +168,33 @@ describe('resolveScopeTarget', () => {
     });
   });
 
+  it('resolves a loose numbered paraphrase to the known space carrying that number', () => {
+    const numbered = [
+      { slug: 'ger-de-bot-031', title: 'Ger de bot 031' },
+      { slug: 'ger-test-video-032' },
+      { slug: 'bot-ger-test-030', title: 'BOT Ger Test 030' },
+    ];
+    // "test 031" would otherwise be minted into the dead slug "test031".
+    expect(resolveScopeTarget('test 031', numbered)).toEqual({
+      slug: 'ger-de-bot-031',
+      title: 'Ger de bot 031',
+    });
+    expect(resolveScopeTarget('the 030 one', numbered)?.slug).toBe(
+      'bot-ger-test-030',
+    );
+    // Leading-zero-insensitive, but not so loose it matches "032".
+    expect(resolveScopeTarget('31', numbered)?.slug).toBe('ger-de-bot-031');
+  });
+
+  it('does not digit-match when two known spaces share the number', () => {
+    const ambiguous = [
+      { slug: 'alpha-01', title: 'Alpha 01' },
+      { slug: 'beta-01', title: 'Beta 01' },
+    ];
+    // Ambiguous → falls through; "gamma 01" is not slug-shaped → null.
+    expect(resolveScopeTarget('gamma 01', ambiguous)).toBeNull();
+  });
+
   it('rejects a lone-article free-text reference', () => {
     expect(resolveScopeTarget('the finance one!!', [])).toBeNull();
     expect(resolveScopeTarget('!!!', [])).toBeNull();
@@ -190,10 +217,35 @@ describe('createSetScopeTool', () => {
     expect(result.knownSpaces).toEqual(['Hypha']);
   });
 
-  it('slugifies a plausible typed name even if not in the known list', async () => {
-    const tool = createSetScopeTool([{ slug: 'hypha', title: 'Hypha' }]);
+  it('slugifies a plausible typed name when there is no candidate list yet', async () => {
+    const tool = createSetScopeTool([]);
     const result = await tool.execute({ space: 'BOT Ger Test 030' } as never);
     expect(result).toEqual({ ok: true, spaceSlug: 'bot-ger-test-030' });
+  });
+
+  it('errors (does not mint a slug) for an unresolvable name once candidates are known', async () => {
+    const tool = createSetScopeTool([
+      { slug: 'ger-de-bot-031', title: 'Ger de bot 031' },
+      { slug: 'hypha', title: 'Hypha' },
+    ]);
+    const result = (await tool.execute({
+      space: 'the marketing space',
+    } as never)) as { ok: boolean; spaceSlug?: string };
+    expect(result.ok).toBe(false);
+    expect(result.spaceSlug).toBeUndefined();
+  });
+
+  it('resolves a loose numbered paraphrase against the candidate list', async () => {
+    const tool = createSetScopeTool([
+      { slug: 'ger-de-bot-031', title: 'Ger de bot 031' },
+      { slug: 'hypha', title: 'Hypha' },
+    ]);
+    const result = await tool.execute({ space: 'the test 031 one' } as never);
+    expect(result).toEqual({
+      ok: true,
+      spaceSlug: 'ger-de-bot-031',
+      title: 'Ger de bot 031',
+    });
   });
 });
 

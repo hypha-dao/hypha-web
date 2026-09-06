@@ -2,8 +2,11 @@
 
 import { z } from 'zod';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
+import type { Document } from '@hypha-platform/core/client';
 import type { WidgetDefinition } from '@hypha-platform/epics';
 import { Badge } from '@hypha-platform/ui';
+
+import { useSpaceJson } from './use-space-json';
 
 /**
  * #2486 v0 `space-overview` widget — a thin adapter over `useSpaceBySlug`.
@@ -25,8 +28,29 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+interface MembersResponse {
+  persons?: { data?: unknown[]; pagination?: { total?: number } };
+}
+
 function SpaceOverviewWidget({ params }: { params: SpaceOverviewParams }) {
   const { space, isLoading } = useSpaceBySlug(params.spaceSlug);
+
+  // `/api/v1/spaces/<slug>` (findSpaceBySlug) does not populate memberCount /
+  // documentCount — those exist only on the web3 space variant. Pull the counts
+  // from the same routes the `members` / `agreements` widgets render so this
+  // card agrees with them.
+  const { data: membersData } = useSpaceJson<MembersResponse>(
+    `/api/v1/spaces/${params.spaceSlug}/members?pageSize=1`,
+  );
+  const { data: documentsData } = useSpaceJson<Document[]>(
+    `/api/v1/spaces/${params.spaceSlug}/documents/all?order=-createdAt`,
+  );
+
+  const memberCount =
+    membersData?.persons?.pagination?.total ?? space?.memberCount ?? 0;
+  const documentCount = Array.isArray(documentsData)
+    ? documentsData.length
+    : space?.documentCount ?? 0;
 
   if (isLoading && !space) {
     return (
@@ -62,8 +86,8 @@ function SpaceOverviewWidget({ params }: { params: SpaceOverviewParams }) {
       ) : null}
 
       <div className="mb-3 flex flex-wrap gap-x-6 gap-y-2">
-        <Stat label="Members" value={space.memberCount ?? 0} />
-        <Stat label="Agreements" value={space.documentCount ?? 0} />
+        <Stat label="Members" value={memberCount} />
+        <Stat label="Agreements" value={documentCount} />
         {subspaceCount > 0 ? (
           <Stat label="Subspaces" value={subspaceCount} />
         ) : null}

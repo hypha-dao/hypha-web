@@ -4,6 +4,7 @@ import { signalsWidget } from './signals-widget';
 import { agreementsWidget } from './agreements-widget';
 import { treasuryWidget } from './treasury-widget';
 import { spaceOverviewWidget } from './space-overview-widget';
+import { membersWidget } from './members-widget';
 import { answerWidget } from './answer-widget';
 
 /**
@@ -15,5 +16,6 @@ export function registerHyphaWidgets(registry: WidgetRegistry): void {
   registry.register(agreementsWidget);
   registry.register(treasuryWidget);
   registry.register(spaceOverviewWidget);
+  registry.register(membersWidget);
   registry.register(answerWidget);
 }

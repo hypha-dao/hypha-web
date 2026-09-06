@@ -70,6 +70,29 @@ describe('buildAssistantCanvasSystemPrompt', () => {
     expect(prompt).toContain('`set_scope`');
   });
 
+  it('M7: hard rules sit right after the persona, before the catalogue', () => {
+    const prompt = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+      widgetCatalogue: '- signals: shows this space signals. params: spaceSlug',
+    });
+    const personaAt = prompt.indexOf(ASSISTANT_CANVAS_PERSONA);
+    const rulesAt = prompt.indexOf('NON-NEGOTIABLE — every substantive turn');
+    const catalogueAt = prompt.indexOf('- signals: shows this space signals');
+    expect(rulesAt).toBeGreaterThan(personaAt);
+    expect(catalogueAt).toBeGreaterThan(rulesAt);
+    // The read tools must not be presentable as a substitute for set_canvas.
+    expect(prompt).toContain('grounding only');
+    expect(prompt).toContain('set_next_actions');
+  });
+
+  it('M7: unlocked active space warns that it overrides earlier turns', () => {
+    const prompt = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+      scopeLocked: false,
+    });
+    expect(prompt).toContain('OVERRIDES any different space named earlier');
+  });
+
   it('sanitises the space slug', () => {
     const prompt = buildAssistantCanvasSystemPrompt({
       spaceSlug: '../../etc/passwd',
