@@ -9,12 +9,12 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe, useFindCoherences } from '@hypha-platform/core/client';
 
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
-import { AssistantModeToggle } from '@web/components/assistant-mode-toggle';
+import { CoherentModeToggle } from '@web/components/coherent-mode-toggle';
 import { hyphaAssistantConfig } from './config';
 import { computeGuidanceAction } from './guidance';
 import { useScopeCandidates } from './use-scope-candidates';
 
-export function AssistantPageClient() {
+export function CoherentPageClient() {
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { getAccessToken } = useAuthentication();
@@ -84,11 +84,11 @@ export function AssistantPageClient() {
       scopeCandidates={scopeCandidates}
       onActiveScopeChange={setActiveScopeSlug}
       guidanceAction={guidanceAction}
-      modeToggleSlot={<AssistantModeToggle activeMode="assistant" />}
+      modeToggleSlot={<CoherentModeToggle activeMode="coherent" />}
       trailingSlot={
         <ConnectedButtonProfile
           newUserRedirectPath="/profile/signup"
-          baseRedirectPath="/assistant"
+          baseRedirectPath="/coherent-intelligent-system"
           navItems={[
             { label: 'My Spaces', href: `/${lang}/my-spaces` },
             { label: 'My Wallet', href: `/${lang}/my-wallet` },

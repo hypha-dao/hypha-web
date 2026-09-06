@@ -126,12 +126,14 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
-  enableAssistant: {
-    key: 'enable-assistant',
+  enableCoherentIntelligentSystem: {
+    key: 'enable-coherent-intelligent-system',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT) ?? false,
+      parseBoolean(
+        process.env.NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM,
+      ) ?? false,
     description:
-      'Talk-first conversational entrypoint at /[lang]/assistant (#2486). When on, the assistant is the default landing experience and the classic mouse-driven app is the persisted opt-out (HYPHA_ASSISTANT_MODE=classic cookie). Opt in: NEXT_PUBLIC_ENABLE_ASSISTANT=true',
+      'Talk-first conversational entrypoint at /[lang]/coherent-intelligent-system (#2486). When on, Coherent is the default landing experience and the classic mouse-driven app is the persisted opt-out (HYPHA_COHERENT_MODE=classic cookie). Opt in: NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -140,7 +142,7 @@ export const flagDefinitionsForDiscovery = {
     defaultValue:
       parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE) ?? false,
     description:
-      'Real voice (OpenAI Realtime) for the #2486 assistant canvas. Sub-feature of enable-assistant; degrades to text-only when off or OPENAI_API_KEY is absent. Opt in: NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE=true',
+      'Real voice (OpenAI Realtime) for the #2486 Coherent canvas. Sub-feature of enable-coherent-intelligent-system; degrades to text-only when off or OPENAI_API_KEY is absent. Opt in: NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -251,10 +253,10 @@ export async function getEnableOnboardingVoiceRealtimeAsync(): Promise<boolean> 
   );
 }
 
-export async function getEnableAssistantAsync(): Promise<boolean> {
+export async function getEnableCoherentIntelligentSystemAsync(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
-    'enable-assistant',
-    process.env.NEXT_PUBLIC_ENABLE_ASSISTANT,
+    'enable-coherent-intelligent-system',
+    process.env.NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM,
     false,
   );
 }
@@ -271,6 +273,6 @@ export {
   getEnableNetworkMap,
   getEnableOnboardingVoiceRealtime,
   getEnableCallDocumentPip,
-  getEnableAssistant,
+  getEnableCoherentIntelligentSystem,
   getEnableAssistantVoice,
 } from './client';

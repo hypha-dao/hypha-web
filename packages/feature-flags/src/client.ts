@@ -23,14 +23,18 @@ export function getEnableCallDocumentPip(): boolean {
 }
 
 /**
- * Client-safe build-time gate for the #2486 talk-first assistant entrypoint.
- * Defaults off; the server reads toolbar overrides too via `getEnableAssistantAsync`.
+ * Client-safe build-time gate for the #2486 talk-first Coherent entrypoint.
+ * Defaults off; the server reads toolbar overrides too via
+ * `getEnableCoherentIntelligentSystemAsync`.
  */
-export function getEnableAssistant(): boolean {
-  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT) ?? false;
+export function getEnableCoherentIntelligentSystem(): boolean {
+  return (
+    parseBoolean(process.env.NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM) ??
+    false
+  );
 }
 
-/** Client-safe build-time gate for real voice in the #2486 assistant canvas. */
+/** Client-safe build-time gate for real voice in the #2486 Coherent canvas. */
 export function getEnableAssistantVoice(): boolean {
   return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_VOICE) ?? false;
 }

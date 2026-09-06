@@ -9,7 +9,7 @@ import { Button } from '@hypha-platform/ui';
 /**
  * Generic conversational interaction bar — the persistent talk-first input surface.
  *
- * On `/[lang]/assistant` this renders **in place of** the app navbar (#2486 §2.2):
+ * On `/[lang]/coherent-intelligent-system` this renders **in place of** the app navbar (#2486 §2.2):
  * mode toggle + voice + waveform + history toggle + a trailing app slot (avatar).
  *
  * Presentational only. It knows nothing Hypha-specific: the host passes the mode

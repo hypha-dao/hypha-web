@@ -19,9 +19,6 @@ export const EMPTY_CANVAS_STATE: CanvasState = {
   updatedFromMessageId: null,
 };
 
-/** TEMP DIAG (#2486 M7) — signatures of set_canvas calls already logged. */
-const DIAG_SEEN = new Set<string>();
-
 /**
  * #2486 T1 — synthesis fallback. When the model answers a "what do you think…"
  * question with a substantial written reply but never drives the canvas, surface
@@ -318,26 +315,9 @@ export function selectCanvasState(
     }
   }
 
-  // TEMP DIAG (#2486 M7) — trace every set_canvas call + reduce outcome, once each.
-  const reduced = calls.reduce<CanvasState>((acc, call, i) => {
+  const reduced = calls.reduce<CanvasState>((acc, call) => {
     const intents = extractCanvasIntents(call.output);
-    const next = reduceCanvas(acc, intents, registry, call.messageId);
-    const sig = `${call.messageId}:${JSON.stringify(call.output)}`;
-    if (!DIAG_SEEN.has(sig)) {
-      DIAG_SEEN.add(sig);
-      console.warn(
-        `[use-canvas][DIAG] set_canvas #${i} @${call.messageId} | raw output:`,
-        call.output,
-        '| intents:',
-        intents.map((x) => `${x.widgetId}(${JSON.stringify(x.params)})`),
-        next === acc
-          ? '| REDUCE KEPT PREV (no valid widgets in this call)'
-          : `| REDUCE APPLIED → ${next.widgets
-              .map((w) => `${w.widgetId}(${JSON.stringify(w.params)})`)
-              .join(', ')}`,
-      );
-    }
-    return next;
+    return reduceCanvas(acc, intents, registry, call.messageId);
   }, EMPTY_CANVAS_STATE);
 
   // #2486 T1 — synthesis fallback. The model wrote a substantial reply this turn

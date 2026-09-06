@@ -19,11 +19,12 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Pencil } from 'lucide-react';
 
-import { AssistantModeToggle } from '@web/components/assistant-mode-toggle';
+import { CoherentModeToggle } from '@web/components/coherent-mode-toggle';
 
-/** `/[lang]/assistant` — the #2486 talk-first route. `AssistantShell` owns the
- *  top interaction bar there, so the app navbar renders nothing (spec §2.2). */
-const ASSISTANT_ROUTE_RE = /^\/[^/]+\/assistant(?:\/|$)/;
+/** `/[lang]/coherent-intelligent-system` — the #2486 talk-first route.
+ *  `AssistantShell` owns the top interaction bar there, so the app navbar
+ *  renders nothing (spec §2.2). */
+const COHERENT_ROUTE_RE = /^\/[^/]+\/coherent-intelligent-system(?:\/|$)/;
 
 type ConnectedMenuTopProps = {
   children?: ReactNode;
@@ -35,8 +36,9 @@ type ConnectedMenuTopProps = {
   openMenuLabel?: string;
   closeMenuLabel?: string;
   aiChatEnabled: boolean;
-  /** `enable-assistant` — gates the bidirectional assistant/classic mode toggle. */
-  assistantEnabled?: boolean;
+  /** `enable-coherent-intelligent-system` — gates the bidirectional
+   *  Coherent/classic mode toggle. */
+  coherentEnabled?: boolean;
 };
 
 function hasCustomRootLogo(logoUrl: string): boolean {
@@ -53,7 +55,7 @@ export function ConnectedMenuTop({
   openMenuLabel,
   closeMenuLabel,
   aiChatEnabled,
-  assistantEnabled = false,
+  coherentEnabled = false,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -142,8 +144,8 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
-  const modeToggle = assistantEnabled ? (
-    <AssistantModeToggle activeMode="classic" />
+  const modeToggle = coherentEnabled ? (
+    <CoherentModeToggle activeMode="classic" />
   ) : null;
 
   const resolvedLeadingAction = aiChatEnabled ? (
@@ -218,9 +220,10 @@ export function ConnectedMenuTop({
   const useReplacementLogoNode =
     Boolean(logoNode) && !(overlayVisible && isSpaceRoute);
 
-  // On /[lang]/assistant the navbar gives way entirely — `AssistantShell`
-  // renders its own sticky interaction bar as the top region (spec §2.2).
-  if (ASSISTANT_ROUTE_RE.test(pathname)) {
+  // On /[lang]/coherent-intelligent-system the navbar gives way entirely —
+  // `AssistantShell` renders its own sticky interaction bar as the top region
+  // (spec §2.2).
+  if (COHERENT_ROUTE_RE.test(pathname)) {
     return null;
   }
 

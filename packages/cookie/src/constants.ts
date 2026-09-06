@@ -8,10 +8,10 @@ export const HYPHA_ENABLE_COHERENCE = 'HYPHA_ENABLE_COHERENCE';
 export const HYPHA_ENABLE_SPACE_MEMORY = 'HYPHA_ENABLE_SPACE_MEMORY';
 /**
  * Persisted interaction-mode choice for the #2486 talk-first entrypoint.
- * `'classic'` = user opted out of the assistant; the assistant-first redirect
- * is then suppressed. Absent / `'assistant'` = default (assistant-first when
- * `enable-assistant` is on).
+ * `'classic'` = user opted out of Coherent; the coherent-first redirect is then
+ * suppressed. Absent / `'coherent'` = default (coherent-first when
+ * `enable-coherent-intelligent-system` is on).
  */
-export const HYPHA_ASSISTANT_MODE = 'HYPHA_ASSISTANT_MODE';
+export const HYPHA_COHERENT_MODE = 'HYPHA_COHERENT_MODE';
 /** IANA timezone persisted from the browser for server-side date formatting. */
 export const HYPHA_TIMEZONE = 'HYPHA_TIMEZONE';

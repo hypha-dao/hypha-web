@@ -12,7 +12,7 @@ import { Badge } from '@hypha-platform/ui';
  * v0 renders a compact read-only list rather than the full `SignalSection`:
  * `SignalSection` / `SignalCard` read the space slug from `useParams().id`
  * (spec §5.3 invariant #1 — a widget must take params, not route context), which
- * is `undefined` on `/[lang]/assistant`. Swapping in the full component behind a
+ * is `undefined` on `/[lang]/coherent-intelligent-system`. Swapping in the full component behind a
  * route-param bridge is a fidelity upgrade the adapter boundary keeps cheap.
  */
 const signalsParams = z.object({

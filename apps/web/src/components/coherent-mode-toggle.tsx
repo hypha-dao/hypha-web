@@ -4,31 +4,32 @@ import { useParams, useRouter } from 'next/navigation';
 import { MessagesSquare, MousePointer2 } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
-import { setCookie, HYPHA_ASSISTANT_MODE } from '@hypha-platform/cookie';
+import { setCookie, HYPHA_COHERENT_MODE } from '@hypha-platform/cookie';
 
 const COOKIE_MAX_AGE_DAYS = 365;
+const COHERENT_ROUTE = 'coherent-intelligent-system';
 
-type Mode = 'assistant' | 'classic';
+type Mode = 'coherent' | 'classic';
 
-export interface AssistantModeToggleProps {
+export interface CoherentModeToggleProps {
   /** Which surface is showing now — that segment renders active. */
   activeMode: Mode;
   className?: string;
 }
 
 /**
- * #2486 M7 — bidirectional switch between the talk-first assistant and the
- * classic mouse-driven app. Persists the choice via `HYPHA_ASSISTANT_MODE`
- * (`classic` suppresses the assistant-first redirects; any other value restores
+ * #2486 M7 — bidirectional switch between the talk-first Coherent entrypoint and
+ * the classic mouse-driven app. Persists the choice via `HYPHA_COHERENT_MODE`
+ * (`classic` suppresses the coherent-first redirects; any other value restores
  * them) and navigates to the matching home.
  *
- * Rendered in the classic navbar (`ConnectedMenuTop`) and as the assistant
+ * Rendered in the classic navbar (`ConnectedMenuTop`) and as the Coherent
  * shell's mode-toggle slot.
  */
-export function AssistantModeToggle({
+export function CoherentModeToggle({
   activeMode,
   className,
-}: AssistantModeToggleProps) {
+}: CoherentModeToggleProps) {
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
@@ -36,12 +37,12 @@ export function AssistantModeToggle({
   const go = (mode: Mode) => {
     if (mode === activeMode) return;
     setCookie(
-      HYPHA_ASSISTANT_MODE,
+      HYPHA_COHERENT_MODE,
       mode,
       new Date(Date.now() + COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000),
     );
     router.push(
-      mode === 'assistant' ? `/${lang}/assistant` : `/${lang}/my-spaces`,
+      mode === 'coherent' ? `/${lang}/${COHERENT_ROUTE}` : `/${lang}/my-spaces`,
     );
   };
 
@@ -52,22 +53,22 @@ export function AssistantModeToggle({
         className,
       )}
       role="group"
-      aria-label="Switch between the assistant and the classic app"
+      aria-label="Switch between Coherent and the classic app"
     >
       <button
         type="button"
-        onClick={() => go('assistant')}
-        aria-pressed={activeMode === 'assistant'}
-        title="Assistant"
+        onClick={() => go('coherent')}
+        aria-pressed={activeMode === 'coherent'}
+        title="Coherent"
         className={cn(
           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-          activeMode === 'assistant'
+          activeMode === 'coherent'
             ? 'bg-foreground text-background'
             : 'text-muted-foreground hover:text-foreground',
         )}
       >
         <MessagesSquare className="size-3.5" aria-hidden />
-        <span className="hidden sm:inline">Assistant</span>
+        <span className="hidden sm:inline">Coherent</span>
       </button>
       <button
         type="button"

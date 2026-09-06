@@ -91,9 +91,6 @@ function isCompletedToolState(state: unknown): boolean {
   );
 }
 
-/** TEMP DIAG (#2486 M7) — set_scope parts already logged. */
-const DIAG_SCOPE_SEEN = new Set<string>();
-
 interface ModelScopeEvent {
   slug: string;
   order: number;
@@ -114,17 +111,6 @@ export function selectModelScopeEvent(
       if (!isCompletedToolState((part as { state?: unknown }).state)) continue;
       const output = (part as { output?: unknown }).output;
       if (!output || typeof output !== 'object') continue;
-      // TEMP DIAG (#2486 M7)
-      const sig = `${m}:${JSON.stringify(output)}`;
-      if (!DIAG_SCOPE_SEEN.has(sig)) {
-        DIAG_SCOPE_SEEN.add(sig);
-        console.warn(
-          '[useScope][DIAG] set_scope part @msg',
-          m,
-          'output:',
-          output,
-        );
-      }
       if ((output as { ok?: unknown }).ok === false) continue;
       const slug =
         typeof (output as { spaceSlug?: unknown }).spaceSlug === 'string'
@@ -175,13 +161,6 @@ export function useScope(
 
   const setManualScope = React.useCallback(
     (slug: string | null) => {
-      // TEMP DIAG (#2486 M7)
-      console.warn(
-        '[useScope][DIAG] setManualScope',
-        slug,
-        '@msg',
-        messageCount,
-      );
       setPref((prev) => ({
         ...prev,
         manualSlug: slug && slug.trim() ? slug.trim() : null,
@@ -192,8 +171,6 @@ export function useScope(
   );
 
   const setLocked = React.useCallback((locked: boolean) => {
-    // TEMP DIAG (#2486 M7)
-    console.warn('[useScope][DIAG] setLocked', locked);
     setPref((prev) => ({ ...prev, locked }));
   }, []);
 

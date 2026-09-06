@@ -32,9 +32,9 @@ import {
   getEnableAiChat,
   getEnableSpaceMemory,
   getEnableHumanChat,
-  getEnableAssistant,
+  getEnableCoherentIntelligentSystem,
 } from '@hypha-platform/feature-flags';
-import { resolveAssistantFirst } from '@web/lib/assistant-first';
+import { resolveCoherentFirst } from '@web/lib/coherent-first';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -103,12 +103,12 @@ export default async function RootLayout({
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
-  let assistantEnabled = false;
+  let coherentEnabled = false;
 
-  // #2486: with the assistant enabled and no explicit classic opt-out, the
+  // #2486: with Coherent enabled and no explicit classic opt-out, the
   // post-auth landing is the talk-first entrypoint instead of /my-spaces.
-  const baseRedirectPath = (await resolveAssistantFirst())
-    ? '/assistant'
+  const baseRedirectPath = (await resolveCoherentFirst())
+    ? '/coherent-intelligent-system'
     : '/my-spaces';
 
   let navMySpacesLabel = 'My Spaces';
@@ -135,7 +135,7 @@ export default async function RootLayout({
     aiChatEnabledResult,
     spaceMemoryEnabledResult,
     humanChatEnabledResult,
-    assistantEnabledResult,
+    coherentEnabledResult,
   ] = await Promise.allSettled([
     getShowLanguageSelect(),
     getLocale(),
@@ -145,7 +145,7 @@ export default async function RootLayout({
     getEnableAiChat(),
     getEnableSpaceMemory(),
     getEnableHumanChat(),
-    getEnableAssistant(),
+    getEnableCoherentIntelligentSystem(),
   ]);
 
   if (languageSelectResult.status === 'fulfilled') {
@@ -233,12 +233,12 @@ export default async function RootLayout({
     );
   }
 
-  if (assistantEnabledResult.status === 'fulfilled') {
-    assistantEnabled = assistantEnabledResult.value === true;
+  if (coherentEnabledResult.status === 'fulfilled') {
+    coherentEnabled = coherentEnabledResult.value === true;
   } else {
     console.error(
-      '[app/layout] Failed to resolve assistantEnabled',
-      assistantEnabledResult.reason,
+      '[app/layout] Failed to resolve coherentEnabled',
+      coherentEnabledResult.reason,
     );
   }
 
@@ -293,7 +293,7 @@ export default async function RootLayout({
                           <div className="sticky top-0 z-30 shrink-0">
                             <ConnectedMenuTop
                               aiChatEnabled={aiChatEnabled}
-                              assistantEnabled={assistantEnabled}
+                              coherentEnabled={coherentEnabled}
                               logoHref={ROOT_URL}
                               openMenuLabel={navOpenMenuLabel}
                               closeMenuLabel={navCloseMenuLabel}

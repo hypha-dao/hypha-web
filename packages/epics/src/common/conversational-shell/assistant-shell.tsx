@@ -207,98 +207,6 @@ export function AssistantShell({
 
   const busy = status === 'streaming' || status === 'submitted';
 
-  // TEMP DIAG (#2486 M7 — remove once canvas-update + render-loop are settled).
-  const diagRef = React.useRef<{
-    count: number;
-    windowStart: number;
-    warned: boolean;
-    prev: Record<string, unknown>;
-    lastToolSig: string;
-  }>({
-    count: 0,
-    windowStart: Date.now(),
-    warned: false,
-    prev: {},
-    lastToolSig: '',
-  });
-  {
-    const d = diagRef.current;
-    const now = Date.now();
-    if (now - d.windowStart > 1000) {
-      d.count = 0;
-      d.windowStart = now;
-      d.warned = false;
-    }
-    d.count += 1;
-
-    // What tool parts are actually in the message array right now?
-    const toolCounts: Record<string, number> = {};
-    for (const m of messages as unknown as ConversationMessage[]) {
-      const parts = Array.isArray(m.parts) ? m.parts : [];
-      for (const p of parts) {
-        const t = (p as { type?: unknown })?.type;
-        if (typeof t === 'string' && t.startsWith('tool-')) {
-          const st = String((p as { state?: unknown }).state ?? '?');
-          const key = `${t}:${st}`;
-          toolCounts[key] = (toolCounts[key] ?? 0) + 1;
-        }
-      }
-    }
-    const toolSig = JSON.stringify(toolCounts);
-    const stateSig = `${toolSig}|${spaceSlug}|${scope.source}|${
-      (scopeCandidates ?? []).length
-    }|${canvasState.widgets.map((w) => w.key).join(',')}`;
-    if (stateSig !== d.lastToolSig) {
-      d.lastToolSig = stateSig;
-      console.warn(
-        '[AssistantShell][DIAG] tool parts:',
-        toolCounts,
-        '| canvas widgets:',
-        canvasState.widgets.map(
-          (w) => `${w.widgetId}(${JSON.stringify(w.params)})`,
-        ),
-        '| scope:',
-        spaceSlug,
-        `(${scope.source}, locked=${scope.locked})`,
-        '| scopeCandidates:',
-        (scopeCandidates ?? []).length,
-        '| status:',
-        status,
-      );
-    }
-
-    const snap: Record<string, unknown> = {
-      status,
-      busy,
-      msgCount: messages.length,
-      spaceSlug,
-      scopeSource: scope.source,
-      locked: scope.locked,
-      canvasKey: canvasState.updatedFromMessageId,
-      widgetKeys: canvasState.widgets.map((w) => w.key).join('|'),
-      nextActionsLen: nextActions.length,
-      scopeCandidatesLen: (scopeCandidates ?? []).length,
-      guidanceId: guidanceAction?.id,
-    };
-    if (d.count > 60 && !d.warned) {
-      d.warned = true;
-      const changed = Object.fromEntries(
-        Object.entries(snap)
-          .filter(([k, v]) => d.prev[k] !== v)
-          .map(([k, v]) => [k, [d.prev[k], v]]),
-      );
-      console.warn(
-        `[AssistantShell][DIAG] render burst: ${d.count} renders in ${
-          now - d.windowStart
-        }ms — changed:`,
-        changed,
-        'snap:',
-        snap,
-      );
-    }
-    d.prev = snap;
-  }
-
   // Notify the host only once a turn settles — never mid-stream. A confused
   // model can call `set_scope` more than once in a turn (ping-ponging the
   // resolved space); propagating every intermediate value up to the host
@@ -311,8 +219,6 @@ export function AssistantShell({
     if (busy) return;
     if (lastNotifiedScopeRef.current === spaceSlug) return;
     lastNotifiedScopeRef.current = spaceSlug;
-    // TEMP DIAG (#2486 M7)
-    console.warn('[AssistantShell][DIAG] notify host scope →', spaceSlug);
     onActiveScopeChange?.(spaceSlug);
   }, [spaceSlug, onActiveScopeChange, busy]);
 
