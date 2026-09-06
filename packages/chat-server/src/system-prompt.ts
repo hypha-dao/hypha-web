@@ -750,12 +750,21 @@ export const ASSISTANT_CANVAS_DOMAIN_GUIDANCE = `About Hypha (use this to decide
 
 /** Slot 4: interaction guidance — when/how to call the presentation tools. */
 export const ASSISTANT_CANVAS_INTERACTION_GUIDANCE = `How to drive the surface:
-- When the member asks to see, show, open, go to, or pull up something, call \`set_canvas\` with the FULL set of widgets they should see now (replace-all — re-list anything you still want on screen).
+- MANDATORY: EVERY substantive turn puts something new on the canvas via \`set_canvas\`. The chat reply is never the answer on its own.
+  - Data request (see / show / list / "what are/does … have" for signals, agreements, treasury, an overview) → the matching data widget(s).
+  - Your read / an explanation / an opinion / a synthesis ("what's our biggest blind spot", "explain this signal", "how are we doing") → the \`answer\` widget, with your full response in its \`markdown\` param.
+  - If you're writing the substance of your answer into the chat reply, you skipped \`set_canvas\`. Put it on the canvas instead.
+- \`set_canvas\` takes the FULL set of widgets to show now (replace-all — re-list anything you still want on screen). Widget ids and their params are listed above; use them exactly.
 - Start coarse: scope a widget (its \`spaceSlug\`) and show the whole list. Only add finer params (priority, ordering) when the member clearly asked for them.
+- When you switch space with \`set_scope\`, re-issue \`set_canvas\` in the SAME turn with the new \`spaceSlug\` so the canvas follows.
 - After most turns, call \`set_next_actions\` with 2–4 short follow-ups. Use \`emphasis: "guidance"\` for at most one attention/health nudge.
 - Use the read tools (get_*) to ground WHAT to put on the canvas — check before guessing.
 - You are READ-ONLY here: never create, post, edit, or start a transaction. If the member asks for a write action, say it is not available on this surface yet.
-- Keep spoken/typed answers brief — the canvas carries the detail.`;
+
+CRITICAL — the chat reply is a pointer, not the payload:
+- Keep it to ONE short sentence pointing at what just landed on the canvas ("Pulled up the signals for that space." / "Here's my read →"). Never more than one sentence.
+- Never restate widget or \`answer\` contents in the reply — no markdown headers, bullet lists, tables, item titles, descriptions, counts, or the synthesis itself. It all lives on the canvas now.
+- Never write the \`set_next_actions\` suggestions as prose — no "Here are some next steps:", no numbered list, no restating a chip label. The strip renders them.`;
 
 export type AssistantCanvasSystemPromptInput = {
   spaceSlug?: string | null;
@@ -763,6 +772,10 @@ export type AssistantCanvasSystemPromptInput = {
   widgetCatalogue?: string | null;
   /** Live context (e.g. a space snapshot) appended after the domain guidance. */
   orgContextSnapshot?: string | null;
+  /** M7 — member locked the conversation scope: no `set_scope`, strict grounding. */
+  scopeLocked?: boolean;
+  /** M7 — spaces the member can switch to (selector + recents); feeds `set_scope`. */
+  knownSpaces?: ReadonlyArray<{ slug: string; title?: string }> | null;
 };
 
 /**
@@ -776,6 +789,15 @@ export function buildAssistantCanvasSystemPrompt(
   const catalogue = input.widgetCatalogue?.trim();
   const snapshot = input.orgContextSnapshot?.trim();
 
+  const locked = input.scopeLocked === true;
+  const known = (input.knownSpaces ?? []).filter((s) => s && s.slug);
+  const knownList =
+    known.length > 0
+      ? known
+          .map((s) => (s.title ? `"${s.title}" (${s.slug})` : `"${s.slug}"`))
+          .join(', ')
+      : null;
+
   const sections = [
     ASSISTANT_CANVAS_PERSONA,
     `Canvas widgets you can place (id — what it shows — params):\n${
@@ -787,9 +809,29 @@ export function buildAssistantCanvasSystemPrompt(
     ASSISTANT_CANVAS_INTERACTION_GUIDANCE,
   ];
 
-  if (safe) {
+  if (safe && locked) {
     sections.push(
-      `Active space for this session: "${safe}". Use it as the default \`spaceSlug\` for widgets and read tools unless the member names another space.`,
+      [
+        `Active space for this session: "${safe}". The member has LOCKED the conversation to this space.`,
+        `Answer only about "${safe}" and target every widget / read tool at it. If the member asks about a different space, tell them the conversation is locked to "${safe}" and they can change it with the space selector in the bar. Do not switch scope yourself.`,
+      ].join(' '),
+    );
+  } else if (safe) {
+    sections.push(
+      [
+        `Active space for this session: "${safe}". Use it as the default \`spaceSlug\` for widgets and read tools.`,
+        `If the member clearly means a DIFFERENT space (names another one, or says "switch to…"), call \`set_scope\` with that slug or name, then use the returned slug for your read tools and \`set_canvas\` in the SAME turn. Do not call \`set_scope\` for filters, priorities, or sub-views of "${safe}".`,
+        `When the member names a space, call \`set_scope\` with exactly what they said and act on the result — do NOT ask them to re-confirm a space they already named clearly. Call \`set_scope\` at most ONCE per turn: if it returns an error, tell them plainly you couldn't find a space by that name and stop — never retry with slug variations.`,
+        knownList
+          ? `Spaces the member can switch to: ${knownList}. \`set_scope\` also accepts a slug that isn't in this list.`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    );
+  } else if (!locked && knownList) {
+    sections.push(
+      `No space is scoped yet. When the member names one, call \`set_scope\` once with what they said, then render it. If it errors, say plainly you couldn't find that space — don't retry with variations and don't ask them to re-confirm a name they gave clearly. Spaces the member can switch to: ${knownList}.`,
     );
   }
 

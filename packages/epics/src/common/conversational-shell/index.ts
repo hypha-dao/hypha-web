@@ -31,6 +31,17 @@ export {
   summarizeTurn,
   DEFAULT_RECAP_CAP,
 } from './use-recap';
+export {
+  useScope,
+  selectModelScopeEvent,
+  clearPersistedScope,
+  type UseScopeOptions,
+} from './use-scope';
+export {
+  ScopeSelector,
+  humaniseSlug,
+  type ScopeSelectorProps,
+} from './scope-selector';
 export { CanvasSurface, type CanvasSurfaceProps } from './canvas-surface';
 export {
   NextActionsStrip,

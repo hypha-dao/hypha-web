@@ -4,6 +4,7 @@ import { signalsWidget } from './signals-widget';
 import { agreementsWidget } from './agreements-widget';
 import { treasuryWidget } from './treasury-widget';
 import { spaceOverviewWidget } from './space-overview-widget';
+import { answerWidget } from './answer-widget';
 
 /**
  * #2486 widget manifest — registration is data. Adding a widget is one import +
@@ -14,4 +15,5 @@ export function registerHyphaWidgets(registry: WidgetRegistry): void {
   registry.register(agreementsWidget);
   registry.register(treasuryWidget);
   registry.register(spaceOverviewWidget);
+  registry.register(answerWidget);
 }

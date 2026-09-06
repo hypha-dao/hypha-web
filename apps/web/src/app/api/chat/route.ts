@@ -90,6 +90,14 @@ export async function POST(req: Request) {
 
   const parsed = chatRequestSchema.safeParse(body);
   if (!parsed.success) {
+    console.warn('[chat][route][validation_failed]', {
+      debugRequestId,
+      issues: parsed.error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        code: issue.code,
+        message: issue.message,
+      })),
+    });
     return createChatFailureStreamResponse({
       debugRequestId,
       errorType: 'validation_failed',

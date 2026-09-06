@@ -37,6 +37,39 @@ describe('buildAssistantCanvasSystemPrompt', () => {
     expect(prompt).not.toContain('Active space for this session');
   });
 
+  it('M7: unlocked scope invites set_scope and lists known spaces', () => {
+    const prompt = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+      scopeLocked: false,
+      knownSpaces: [
+        { slug: 'hypha', title: 'Hypha' },
+        { slug: 'ateneo-de-manila', title: 'Ateneo de Manila' },
+      ],
+    });
+    expect(prompt).toContain('`set_scope`');
+    expect(prompt).toContain('"Ateneo de Manila" (ateneo-de-manila)');
+    expect(prompt).not.toContain('LOCKED');
+  });
+
+  it('M7: locked scope forbids set_scope and stays strict', () => {
+    const prompt = buildAssistantCanvasSystemPrompt({
+      spaceSlug: 'hypha',
+      scopeLocked: true,
+      knownSpaces: [{ slug: 'hypha' }],
+    });
+    expect(prompt).toContain('LOCKED');
+    expect(prompt).toContain('space selector');
+    expect(prompt).not.toContain('call `set_scope`');
+  });
+
+  it('M7: no active space but known spaces — still points at set_scope', () => {
+    const prompt = buildAssistantCanvasSystemPrompt({
+      knownSpaces: [{ slug: 'hypha', title: 'Hypha' }],
+    });
+    expect(prompt).toContain('No space is scoped yet');
+    expect(prompt).toContain('`set_scope`');
+  });
+
   it('sanitises the space slug', () => {
     const prompt = buildAssistantCanvasSystemPrompt({
       spaceSlug: '../../etc/passwd',
@@ -62,6 +95,19 @@ describe('conversationContextSchema (canvas mode)', () => {
       mode: 'onboarding_setup',
     });
     expect(parsed.mode).toBe('onboarding_setup');
+  });
+
+  it('M7: accepts knownSpaces + scopeLocked on a canvas context', () => {
+    const parsed = conversationContextSchema.parse({
+      mode: 'conversational_canvas',
+      knownSpaces: [
+        { slug: 'hypha', title: 'Hypha' },
+        { slug: 'ateneo-de-manila' },
+      ],
+      scopeLocked: true,
+    });
+    expect(parsed.scopeLocked).toBe(true);
+    expect(parsed.knownSpaces).toHaveLength(2);
   });
 
   it('rejects an unknown mode', () => {

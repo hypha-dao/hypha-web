@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Mic, ScrollText, ArrowUp } from 'lucide-react';
+import { Mic, ScrollText, ArrowUp, SquarePen } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 import { Button } from '@hypha-platform/ui';
@@ -33,6 +33,12 @@ export interface InteractionBarProps {
 
   /** Leading slot: the interaction <-> navigation mode toggle. */
   modeToggleSlot?: React.ReactNode;
+  /** Leading slot: the conversational-scope selector (which space). */
+  scopeSlot?: React.ReactNode;
+  /** Starts a fresh conversation (clears persistence). Absent → no button. */
+  onNewConversation?: () => void;
+  /** Accessible label for the new-conversation button. */
+  newConversationLabel?: string;
   /** Voice control (mic button). When absent, a decorative disabled mic shows. */
   voiceControl?: React.ReactNode;
   /** Waveform / pulse visual beside the mic. When absent, a static bar shows. */
@@ -60,6 +66,9 @@ export function InteractionBar({
   disabled = false,
   busy = false,
   modeToggleSlot,
+  scopeSlot,
+  onNewConversation,
+  newConversationLabel = 'Start a new conversation',
   voiceControl,
   waveform,
   trailingSlot,
@@ -113,6 +122,9 @@ export function InteractionBar({
       {/* Control row. */}
       <div className="mx-auto flex w-full max-w-4xl items-center gap-2 px-4 py-2">
         {modeToggleSlot && <div className="shrink-0">{modeToggleSlot}</div>}
+        {scopeSlot && (
+          <div className="hidden shrink-0 sm:block">{scopeSlot}</div>
+        )}
 
         <div className="flex min-w-0 flex-1 items-center gap-2 rounded-chrome border border-input bg-background px-3 py-1.5">
           <input
@@ -160,6 +172,20 @@ export function InteractionBar({
             <ArrowUp className="size-4" />
           </Button>
         </div>
+
+        {onNewConversation && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onNewConversation}
+            aria-label={newConversationLabel}
+            title={newConversationLabel}
+            className="shrink-0"
+          >
+            <SquarePen className="size-4" />
+          </Button>
+        )}
 
         {onToggleHistory && (
           <Button

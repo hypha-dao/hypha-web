@@ -19,6 +19,9 @@ export const EMPTY_CANVAS_STATE: CanvasState = {
   updatedFromMessageId: null,
 };
 
+/** TEMP DIAG (#2486 M7) — signatures of set_canvas calls already logged. */
+const DIAG_SEEN = new Set<string>();
+
 const LAYOUT_HINTS: readonly LayoutHint[] = ['full', 'half', 'aside'];
 const EMPHASES: readonly NextActionEmphasis[] = [
   'primary',
@@ -272,16 +275,27 @@ export function selectCanvasState(
     }
   }
 
-  return calls.reduce<CanvasState>(
-    (acc, call) =>
-      reduceCanvas(
-        acc,
-        extractCanvasIntents(call.output),
-        registry,
-        call.messageId,
-      ),
-    EMPTY_CANVAS_STATE,
-  );
+  // TEMP DIAG (#2486 M7) — trace every set_canvas call + reduce outcome, once each.
+  return calls.reduce<CanvasState>((acc, call, i) => {
+    const intents = extractCanvasIntents(call.output);
+    const next = reduceCanvas(acc, intents, registry, call.messageId);
+    const sig = `${call.messageId}:${JSON.stringify(call.output)}`;
+    if (!DIAG_SEEN.has(sig)) {
+      DIAG_SEEN.add(sig);
+      console.warn(
+        `[use-canvas][DIAG] set_canvas #${i} @${call.messageId} | raw output:`,
+        call.output,
+        '| intents:',
+        intents.map((x) => `${x.widgetId}(${JSON.stringify(x.params)})`),
+        next === acc
+          ? '| REDUCE KEPT PREV (no valid widgets in this call)'
+          : `| REDUCE APPLIED → ${next.widgets
+              .map((w) => `${w.widgetId}(${JSON.stringify(w.params)})`)
+              .join(', ')}`,
+      );
+    }
+    return next;
+  }, EMPTY_CANVAS_STATE);
 }
 
 // ---------------------------------------------------------------------------

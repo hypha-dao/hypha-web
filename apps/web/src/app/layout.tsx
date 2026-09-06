@@ -32,6 +32,7 @@ import {
   getEnableAiChat,
   getEnableSpaceMemory,
   getEnableHumanChat,
+  getEnableAssistant,
 } from '@hypha-platform/feature-flags';
 import { resolveAssistantFirst } from '@web/lib/assistant-first';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
@@ -102,6 +103,7 @@ export default async function RootLayout({
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
+  let assistantEnabled = false;
 
   // #2486: with the assistant enabled and no explicit classic opt-out, the
   // post-auth landing is the talk-first entrypoint instead of /my-spaces.
@@ -133,6 +135,7 @@ export default async function RootLayout({
     aiChatEnabledResult,
     spaceMemoryEnabledResult,
     humanChatEnabledResult,
+    assistantEnabledResult,
   ] = await Promise.allSettled([
     getShowLanguageSelect(),
     getLocale(),
@@ -142,6 +145,7 @@ export default async function RootLayout({
     getEnableAiChat(),
     getEnableSpaceMemory(),
     getEnableHumanChat(),
+    getEnableAssistant(),
   ]);
 
   if (languageSelectResult.status === 'fulfilled') {
@@ -229,6 +233,15 @@ export default async function RootLayout({
     );
   }
 
+  if (assistantEnabledResult.status === 'fulfilled') {
+    assistantEnabled = assistantEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve assistantEnabled',
+      assistantEnabledResult.reason,
+    );
+  }
+
   return (
     <Html lang={locale} className={hyphaFontVariables}>
       <ScrollUp />
@@ -280,6 +293,7 @@ export default async function RootLayout({
                           <div className="sticky top-0 z-30 shrink-0">
                             <ConnectedMenuTop
                               aiChatEnabled={aiChatEnabled}
+                              assistantEnabled={assistantEnabled}
                               logoHref={ROOT_URL}
                               openMenuLabel={navOpenMenuLabel}
                               closeMenuLabel={navCloseMenuLabel}

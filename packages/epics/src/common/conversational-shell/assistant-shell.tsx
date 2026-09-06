@@ -12,11 +12,14 @@ import { NextActionsStrip } from './next-actions-strip';
 import { createWidgetRegistry } from './widget-registry';
 import { useCanvas } from './use-canvas';
 import { useRecap } from './use-recap';
+import { useScope, clearPersistedScope } from './use-scope';
+import { ScopeSelector } from './scope-selector';
 import type {
   AssistantSessionConfig,
   ConversationMessage,
   GreetingContext,
   NextAction,
+  ScopeCandidate,
   WidgetEvent,
 } from './types';
 
@@ -38,6 +41,13 @@ export interface AssistantShellProps {
   transport: AssistantTransportConfig;
   /** Stable id for `useChat` + persistence. Defaults to `assistant-global`. */
   sessionId?: string;
+  /**
+   * Spaces the member can scope the conversation to (M7). Feeds the scope
+   * selector and the model's `set_scope` name↔slug resolution.
+   */
+  scopeCandidates?: ScopeCandidate[];
+  /** Notified whenever the resolved active space changes (drives host guidance). */
+  onActiveScopeChange?: (spaceSlug: string | undefined) => void;
   /** Leading slot in the interaction bar (mode toggle). */
   modeToggleSlot?: React.ReactNode;
   /** Trailing slot in the interaction bar (profile avatar). */
@@ -81,6 +91,15 @@ function persist(sessionId: string, messages: unknown): void {
   }
 }
 
+function clearPersisted(sessionId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(`${PERSIST_PREFIX}${sessionId}`);
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Generic talk-first shell (#2486 §5.1). Composes the interaction bar, the
  * conversation transport (`useChat`), the canvas reducer and the recency stack.
@@ -91,6 +110,8 @@ export function AssistantShell({
   greetingContext,
   transport,
   sessionId = 'assistant-global',
+  scopeCandidates,
+  onActiveScopeChange,
   modeToggleSlot,
   trailingSlot,
   guidanceAction,
@@ -109,7 +130,7 @@ export function AssistantShell({
     [config, greetingContext],
   );
 
-  const spaceSlug = React.useMemo(
+  const seedSlug = React.useMemo(
     () => config.scopeResolver.resolveSpaceSlug(greetingContext),
     [config, greetingContext],
   );
@@ -144,6 +165,13 @@ export function AssistantShell({
   const { messages, sendMessage, status, error, setMessages } = useChat({
     id: sessionId,
     transport: chatTransport,
+    // Coalesce streamed message updates: without this, every token
+    // synchronously re-renders the shell and re-runs the canvas / recap /
+    // scope reducers (each a full-message-array scan). A tool-heavy turn
+    // bursts those fast enough to trip React's nested-update guard
+    // ("Maximum update depth exceeded"). ~30 fps is imperceptible here since
+    // the canvas, not the token stream, carries the detail.
+    experimental_throttle: 33,
     onError: (chatError) =>
       console.error('[AssistantShell][useChat]', chatError),
   });
@@ -172,7 +200,144 @@ export function AssistantShell({
   );
   const recap = useRecap(conversationMessages);
 
+  // M7 — stateful conversational scope (manual selector + model `set_scope`),
+  // seeded once by `scopeResolver`.
+  const scope = useScope(conversationMessages, { seedSlug, sessionId });
+  const spaceSlug = scope.activeSpaceSlug;
+
   const busy = status === 'streaming' || status === 'submitted';
+
+  // TEMP DIAG (#2486 M7 — remove once canvas-update + render-loop are settled).
+  const diagRef = React.useRef<{
+    count: number;
+    windowStart: number;
+    warned: boolean;
+    prev: Record<string, unknown>;
+    lastToolSig: string;
+  }>({
+    count: 0,
+    windowStart: Date.now(),
+    warned: false,
+    prev: {},
+    lastToolSig: '',
+  });
+  {
+    const d = diagRef.current;
+    const now = Date.now();
+    if (now - d.windowStart > 1000) {
+      d.count = 0;
+      d.windowStart = now;
+      d.warned = false;
+    }
+    d.count += 1;
+
+    // What tool parts are actually in the message array right now?
+    const toolCounts: Record<string, number> = {};
+    for (const m of messages as unknown as ConversationMessage[]) {
+      const parts = Array.isArray(m.parts) ? m.parts : [];
+      for (const p of parts) {
+        const t = (p as { type?: unknown })?.type;
+        if (typeof t === 'string' && t.startsWith('tool-')) {
+          const st = String((p as { state?: unknown }).state ?? '?');
+          const key = `${t}:${st}`;
+          toolCounts[key] = (toolCounts[key] ?? 0) + 1;
+        }
+      }
+    }
+    const toolSig = JSON.stringify(toolCounts);
+    const stateSig = `${toolSig}|${spaceSlug}|${scope.source}|${
+      (scopeCandidates ?? []).length
+    }|${canvasState.widgets.map((w) => w.key).join(',')}`;
+    if (stateSig !== d.lastToolSig) {
+      d.lastToolSig = stateSig;
+      console.warn(
+        '[AssistantShell][DIAG] tool parts:',
+        toolCounts,
+        '| canvas widgets:',
+        canvasState.widgets.map(
+          (w) => `${w.widgetId}(${JSON.stringify(w.params)})`,
+        ),
+        '| scope:',
+        spaceSlug,
+        `(${scope.source}, locked=${scope.locked})`,
+        '| scopeCandidates:',
+        (scopeCandidates ?? []).length,
+        '| status:',
+        status,
+      );
+    }
+
+    const snap: Record<string, unknown> = {
+      status,
+      busy,
+      msgCount: messages.length,
+      spaceSlug,
+      scopeSource: scope.source,
+      locked: scope.locked,
+      canvasKey: canvasState.updatedFromMessageId,
+      widgetKeys: canvasState.widgets.map((w) => w.key).join('|'),
+      nextActionsLen: nextActions.length,
+      scopeCandidatesLen: (scopeCandidates ?? []).length,
+      guidanceId: guidanceAction?.id,
+    };
+    if (d.count > 60 && !d.warned) {
+      d.warned = true;
+      const changed = Object.fromEntries(
+        Object.entries(snap)
+          .filter(([k, v]) => d.prev[k] !== v)
+          .map(([k, v]) => [k, [d.prev[k], v]]),
+      );
+      console.warn(
+        `[AssistantShell][DIAG] render burst: ${d.count} renders in ${
+          now - d.windowStart
+        }ms — changed:`,
+        changed,
+        'snap:',
+        snap,
+      );
+    }
+    d.prev = snap;
+  }
+
+  // Notify the host only once a turn settles — never mid-stream. A confused
+  // model can call `set_scope` more than once in a turn (ping-ponging the
+  // resolved space); propagating every intermediate value up to the host
+  // would fan out into a host-owned refetch (guidance) per change and risks
+  // a render-storm across two component trees while tokens are still
+  // arriving. Settling to the final value avoids that regardless of how many
+  // times it flip-flopped mid-turn.
+  const lastNotifiedScopeRef = React.useRef<string | undefined>(undefined);
+  React.useEffect(() => {
+    if (busy) return;
+    if (lastNotifiedScopeRef.current === spaceSlug) return;
+    lastNotifiedScopeRef.current = spaceSlug;
+    // TEMP DIAG (#2486 M7)
+    console.warn('[AssistantShell][DIAG] notify host scope →', spaceSlug);
+    onActiveScopeChange?.(spaceSlug);
+  }, [spaceSlug, onActiveScopeChange, busy]);
+
+  const knownSpaces = React.useMemo(
+    () =>
+      (scopeCandidates ?? [])
+        .filter((c) => c.slug)
+        .map((c) => ({
+          slug: c.slug,
+          ...(c.title?.trim() ? { title: c.title.trim() } : {}),
+        })),
+    [scopeCandidates],
+  );
+
+  const [historyExpanded, setHistoryExpanded] = React.useState(false);
+
+  const onNewConversation = React.useCallback(() => {
+    setMessages([]);
+    clearPersisted(sessionId);
+    clearPersistedScope(sessionId);
+    scope.setManualScope(null);
+    scope.setLocked(false);
+    setHistoryExpanded(false);
+  }, [sessionId, setMessages, scope]);
+
   const hasConversation = messages.length > 0;
 
   const buildBody = React.useCallback(async () => {
@@ -184,10 +349,19 @@ export function AssistantShell({
         widgetCatalogue,
         widgetIds,
         ...(spaceSlug ? { spaceSlug } : {}),
+        ...(knownSpaces.length > 0 ? { knownSpaces } : {}),
+        scopeLocked: scope.locked,
       },
       ...extra,
     };
-  }, [transport, spaceSlug, widgetCatalogue, widgetIds]);
+  }, [
+    transport,
+    spaceSlug,
+    widgetCatalogue,
+    widgetIds,
+    knownSpaces,
+    scope.locked,
+  ]);
 
   const submit = React.useCallback(
     async (text: string) => {
@@ -212,8 +386,6 @@ export function AssistantShell({
     console.debug('[AssistantShell] widget event', event);
   }, []);
 
-  const [historyExpanded, setHistoryExpanded] = React.useState(false);
-
   const stripActions = React.useMemo(() => {
     const base = nextActions.length > 0 ? nextActions : greeting.nextActions;
     if (!guidanceAction) return base;
@@ -232,6 +404,17 @@ export function AssistantShell({
           busy={busy}
           disabled={false}
           modeToggleSlot={modeToggleSlot}
+          scopeSlot={
+            <ScopeSelector
+              candidates={scopeCandidates ?? []}
+              activeSpaceSlug={spaceSlug}
+              locked={scope.locked}
+              source={scope.source}
+              onSelect={scope.setManualScope}
+              onToggleLock={scope.setLocked}
+            />
+          }
+          onNewConversation={hasConversation ? onNewConversation : undefined}
           trailingSlot={trailingSlot}
           voiceControl={voiceControl}
           waveform={waveform}

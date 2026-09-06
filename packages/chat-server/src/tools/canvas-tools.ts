@@ -110,6 +110,176 @@ export function createSetCanvasTool(
   };
 }
 
+// ---------------------------------------------------------------------------
+// set_scope (#2486 M7) — move the conversation to another space.
+// ---------------------------------------------------------------------------
+
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export interface KnownSpace {
+  slug: string;
+  title?: string;
+}
+
+const setScopeInput = z.object({
+  space: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      'The space to switch to — its slug (e.g. "ateneo-de-manila") or the name the member said (e.g. "Ateneo de Manila").',
+    ),
+});
+
+/** lowercase, non-alphanumerics → single space, trimmed. */
+function normalise(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** normalised, spaces → hyphens. */
+function slugify(value: string): string {
+  return normalise(value).replace(/ +/g, '-');
+}
+
+/**
+ * Resolve a member-supplied space reference to a slug. Prefers an exact/loose
+ * match against `knownSpaces` (so spoken names resolve deterministically);
+ * falls back to the input itself when it is already a well-formed slug.
+ */
+export function resolveScopeTarget(
+  input: string,
+  knownSpaces: readonly KnownSpace[],
+): { slug: string; title?: string } | null {
+  const raw = input.trim();
+  if (!raw) return null;
+
+  const normInput = normalise(raw);
+  const slugInput = slugify(raw);
+
+  for (const candidate of knownSpaces) {
+    if (!candidate.slug) continue;
+    if (
+      candidate.slug === raw ||
+      candidate.slug === slugInput ||
+      normalise(candidate.slug) === normInput ||
+      (candidate.title ? normalise(candidate.title) === normInput : false)
+    ) {
+      return {
+        slug: candidate.slug,
+        ...(candidate.title ? { title: candidate.title } : {}),
+      };
+    }
+  }
+
+  // Partial contains match on titles (e.g. "manila" → "Ateneo de Manila").
+  if (normInput.length >= 3) {
+    const partial = knownSpaces.find(
+      (c) =>
+        c.title &&
+        (normalise(c.title).includes(normInput) ||
+          normInput.includes(normalise(c.title))),
+    );
+    if (partial) {
+      return {
+        slug: partial.slug,
+        ...(partial.title ? { title: partial.title } : {}),
+      };
+    }
+  }
+
+  // Already slug-shaped and just not in the known list.
+  if (SLUG_RE.test(raw)) return { slug: raw };
+
+  // Fall back to a slugified guess of a name the member typed
+  // ("BOT Ger Test 030" → "bot-ger-test-030"). `knownSpaces` is often empty on
+  // the first turn (memberships still loading), so this is the common path.
+  // Guard against obvious non-references (a lone article, or nothing usable).
+  if (
+    SLUG_RE.test(slugInput) &&
+    slugInput.length >= 2 &&
+    slugInput.length <= 80 &&
+    !/^(the|a|an|my|our|this|that|it)-/.test(slugInput)
+  ) {
+    return { slug: slugInput };
+  }
+
+  return null;
+}
+
+/**
+ * `set_scope` — switch the conversation to another space. The client applies
+ * the echoed `spaceSlug` to every following turn (and re-grounds the prompt).
+ * Only offered when the member has NOT locked scope.
+ */
+export function createSetScopeTool(
+  knownSpaces: readonly KnownSpace[] = [],
+): ChatRouteTool<typeof setScopeInput> {
+  return {
+    description:
+      'Switch the conversation to another space when the member clearly means a different one than the active space. Pass the slug or the name they used. On success the canvas and later turns follow the new space — in the SAME turn, call your read tools and set_canvas with the new slug. Do not call this for filters or sub-views of the current space.',
+    inputSchema: setScopeInput,
+    execute: async (args) => {
+      const parsed = setScopeInput.safeParse(args);
+      if (!parsed.success) {
+        return { ok: false, error: parsed.error.message };
+      }
+      const resolved = resolveScopeTarget(parsed.data.space, knownSpaces);
+      if (!resolved) {
+        return {
+          ok: false,
+          note: `Couldn't resolve "${parsed.data.space}" to a space. Ask the member for the exact space name, or tell them it isn't one of their recent spaces.`,
+          ...(knownSpaces.length > 0
+            ? { knownSpaces: knownSpaces.map((s) => s.title || s.slug) }
+            : {}),
+        };
+      }
+      return {
+        ok: true,
+        spaceSlug: resolved.slug,
+        ...(resolved.title ? { title: resolved.title } : {}),
+      };
+    },
+  };
+}
+
+/** Reads `knownSpaces` from the request conversation context. */
+export function readKnownSpaces(conversationContext: unknown): KnownSpace[] {
+  if (
+    conversationContext &&
+    typeof conversationContext === 'object' &&
+    'knownSpaces' in conversationContext
+  ) {
+    const raw = (conversationContext as { knownSpaces?: unknown }).knownSpaces;
+    if (Array.isArray(raw)) {
+      return raw
+        .filter(
+          (e): e is { slug: string; title?: string } =>
+            !!e &&
+            typeof e === 'object' &&
+            typeof (e as { slug?: unknown }).slug === 'string' &&
+            !!(e as { slug: string }).slug,
+        )
+        .map((e) => ({
+          slug: e.slug,
+          ...(typeof e.title === 'string' && e.title ? { title: e.title } : {}),
+        }));
+    }
+  }
+  return [];
+}
+
+/** `true` when the member has locked the conversation scope. */
+export function readScopeLocked(conversationContext: unknown): boolean {
+  return (
+    !!conversationContext &&
+    typeof conversationContext === 'object' &&
+    (conversationContext as { scopeLocked?: unknown }).scopeLocked === true
+  );
+}
+
 /** `set_next_actions` — declare the suggested-next-steps strip (replace-all). */
 export function createSetNextActionsTool(): ChatRouteTool<
   typeof setNextActionsInput

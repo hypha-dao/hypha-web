@@ -24,7 +24,10 @@ import { getSpaceBySlugTool } from './get-space-by-slug';
 import {
   createSetCanvasTool,
   createSetNextActionsTool,
+  createSetScopeTool,
   readAllowedWidgetIds,
+  readKnownSpaces,
+  readScopeLocked,
 } from './canvas-tools';
 
 /** #2486: canvas mode is read-only — the read tools for grounding + the two
@@ -98,6 +101,17 @@ export function createChatTools(
         'set_next_actions',
         createSetNextActionsTool() as unknown as ChatRouteTool,
       ),
+      // M7 — scope switching, unless the member has locked scope.
+      ...(readScopeLocked(conversationContext)
+        ? {}
+        : {
+            set_scope: safeChatTool(
+              'set_scope',
+              createSetScopeTool(
+                readKnownSpaces(conversationContext),
+              ) as unknown as ChatRouteTool,
+            ),
+          }),
     };
   }
 

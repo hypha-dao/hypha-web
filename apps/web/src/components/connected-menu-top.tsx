@@ -19,6 +19,8 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Pencil } from 'lucide-react';
 
+import { AssistantModeToggle } from '@web/components/assistant-mode-toggle';
+
 /** `/[lang]/assistant` — the #2486 talk-first route. `AssistantShell` owns the
  *  top interaction bar there, so the app navbar renders nothing (spec §2.2). */
 const ASSISTANT_ROUTE_RE = /^\/[^/]+\/assistant(?:\/|$)/;
@@ -33,6 +35,8 @@ type ConnectedMenuTopProps = {
   openMenuLabel?: string;
   closeMenuLabel?: string;
   aiChatEnabled: boolean;
+  /** `enable-assistant` — gates the bidirectional assistant/classic mode toggle. */
+  assistantEnabled?: boolean;
 };
 
 function hasCustomRootLogo(logoUrl: string): boolean {
@@ -49,6 +53,7 @@ export function ConnectedMenuTop({
   openMenuLabel,
   closeMenuLabel,
   aiChatEnabled,
+  assistantEnabled = false,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -137,14 +142,24 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
+  const modeToggle = assistantEnabled ? (
+    <AssistantModeToggle activeMode="classic" />
+  ) : null;
+
   const resolvedLeadingAction = aiChatEnabled ? (
     <div className="flex items-center gap-1.5 sm:gap-2">
+      {modeToggle}
       {!overlayVisible ? (
         <div className="md:hidden">
           <AiSidebarTrigger />
         </div>
       ) : null}
       <AiPanelTrigger />
+    </div>
+  ) : modeToggle ? (
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      {modeToggle}
+      {leadingAction}
     </div>
   ) : (
     leadingAction

@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   createSetCanvasTool,
   createSetNextActionsTool,
+  createSetScopeTool,
   readAllowedWidgetIds,
+  readKnownSpaces,
+  readScopeLocked,
+  resolveScopeTarget,
 } from '../canvas-tools';
 
 describe('createSetCanvasTool', () => {
@@ -118,5 +122,100 @@ describe('readAllowedWidgetIds', () => {
     ]);
     expect(readAllowedWidgetIds({})).toEqual([]);
     expect(readAllowedWidgetIds(undefined)).toEqual([]);
+  });
+});
+
+describe('resolveScopeTarget', () => {
+  const known = [
+    { slug: 'hypha', title: 'Hypha' },
+    { slug: 'ateneo-de-manila', title: 'Ateneo de Manila' },
+    { slug: 'ger-test-video-032' },
+  ];
+
+  it('matches an exact slug', () => {
+    expect(resolveScopeTarget('ateneo-de-manila', known)).toEqual({
+      slug: 'ateneo-de-manila',
+      title: 'Ateneo de Manila',
+    });
+  });
+
+  it('matches a spoken/display name', () => {
+    expect(resolveScopeTarget('Ateneo de Manila', known)).toEqual({
+      slug: 'ateneo-de-manila',
+      title: 'Ateneo de Manila',
+    });
+  });
+
+  it('matches a spaced form of a title-less slug', () => {
+    expect(resolveScopeTarget('ger test video 032', known)).toEqual({
+      slug: 'ger-test-video-032',
+    });
+  });
+
+  it('matches a partial title', () => {
+    expect(resolveScopeTarget('manila', known)?.slug).toBe('ateneo-de-manila');
+  });
+
+  it('accepts a well-formed slug not in the known list', () => {
+    expect(resolveScopeTarget('some-other-space', known)).toEqual({
+      slug: 'some-other-space',
+    });
+  });
+
+  it('slugifies a typed name not in the known list (empty candidates)', () => {
+    expect(resolveScopeTarget('BOT Ger Test 030', [])).toEqual({
+      slug: 'bot-ger-test-030',
+    });
+  });
+
+  it('rejects a lone-article free-text reference', () => {
+    expect(resolveScopeTarget('the finance one!!', [])).toBeNull();
+    expect(resolveScopeTarget('!!!', [])).toBeNull();
+  });
+});
+
+describe('createSetScopeTool', () => {
+  it('echoes the resolved slug + title on success', async () => {
+    const tool = createSetScopeTool([{ slug: 'hypha', title: 'Hypha' }]);
+    const result = await tool.execute({ space: 'Hypha' } as never);
+    expect(result).toEqual({ ok: true, spaceSlug: 'hypha', title: 'Hypha' });
+  });
+
+  it('reports failure (with known-space names) only when nothing usable is given', async () => {
+    const tool = createSetScopeTool([{ slug: 'hypha', title: 'Hypha' }]);
+    const result = (await tool.execute({
+      space: '?!?!',
+    } as never)) as { ok: boolean; knownSpaces?: string[] };
+    expect(result.ok).toBe(false);
+    expect(result.knownSpaces).toEqual(['Hypha']);
+  });
+
+  it('slugifies a plausible typed name even if not in the known list', async () => {
+    const tool = createSetScopeTool([{ slug: 'hypha', title: 'Hypha' }]);
+    const result = await tool.execute({ space: 'BOT Ger Test 030' } as never);
+    expect(result).toEqual({ ok: true, spaceSlug: 'bot-ger-test-030' });
+  });
+});
+
+describe('readKnownSpaces / readScopeLocked', () => {
+  it('reads known spaces, dropping malformed entries', () => {
+    expect(
+      readKnownSpaces({
+        knownSpaces: [
+          { slug: 'hypha', title: 'Hypha' },
+          { slug: 'x' },
+          { title: 'no slug' },
+          null,
+        ],
+      }),
+    ).toEqual([{ slug: 'hypha', title: 'Hypha' }, { slug: 'x' }]);
+    expect(readKnownSpaces({})).toEqual([]);
+  });
+
+  it('reads the scope lock flag', () => {
+    expect(readScopeLocked({ scopeLocked: true })).toBe(true);
+    expect(readScopeLocked({ scopeLocked: false })).toBe(false);
+    expect(readScopeLocked({})).toBe(false);
+    expect(readScopeLocked(undefined)).toBe(false);
   });
 });

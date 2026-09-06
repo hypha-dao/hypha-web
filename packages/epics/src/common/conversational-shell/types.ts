@@ -154,6 +154,34 @@ export interface ScopeResolver {
   resolveSpaceSlug: (ctx: GreetingContext) => string | undefined;
 }
 
+// ---------------------------------------------------------------------------
+// Conversational scope (#2486 M7) — which space the conversation is about.
+// Session-pinned in M6; M7 makes it stateful (manual selector + model
+// `set_scope`) with a lock toggle.
+// ---------------------------------------------------------------------------
+
+/** One space the member can scope the conversation to (selector + name↔slug hint). */
+export interface ScopeCandidate {
+  slug: string;
+  /** Human label for the selector; falls back to a humanised slug when absent. */
+  title?: string;
+  /** Where it came from — drives grouping / ordering in the selector. */
+  source?: 'recent' | 'membership' | 'active';
+}
+
+/** Resolved conversational scope + controls, from `useScope`. */
+export interface ScopeState {
+  /** The space every turn targets right now (may be undefined before any pin). */
+  activeSpaceSlug: string | undefined;
+  /** `true` → the model's `set_scope` is ignored; only the member can switch. */
+  locked: boolean;
+  /** What last set `activeSpaceSlug`. */
+  source: 'manual' | 'model' | 'seed' | 'none';
+  /** Pin the conversation to `slug`; `null` clears the manual pin (back to auto). */
+  setManualScope: (slug: string | null) => void;
+  setLocked: (locked: boolean) => void;
+}
+
 /**
  * The swappable org-context slot (#2486 §4.5). v0 fills it with static domain
  * guidance + `buildSpaceContextSnapshot`; #2478 swaps in the real context layer

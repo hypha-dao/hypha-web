@@ -80,6 +80,24 @@ export const conversationContextSchema =
     widgetCatalogue: z.string().optional(),
     /** Valid widget ids — the `set_canvas` tool validates `widget_id` against these. */
     widgetIds: z.array(z.string().trim().min(1)).optional(),
+    /**
+     * #2486 M7 — spaces the member can scope the conversation to (selector +
+     * recents). Feeds `set_scope` name↔slug resolution.
+     */
+    knownSpaces: z
+      .array(
+        z.object({
+          slug: z.string().trim().min(1),
+          title: z.string().trim().min(1).optional(),
+        }),
+      )
+      .max(60)
+      .optional(),
+    /**
+     * #2486 M7 — when `true` the member has locked scope: `set_scope` is not
+     * offered and the active-space grounding stays strict.
+     */
+    scopeLocked: z.boolean().optional(),
   });
 
 export const chatRequestSchema = z.object({
