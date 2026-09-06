@@ -211,8 +211,8 @@ export function InteractionBar({
   );
 }
 
-/** Static three-bar pulse used until the real waveform lands (voice, milestone 7). */
-function DecorativeWaveform({ active = false }: { active?: boolean }) {
+/** Three-bar pulse — flat when idle, animates while `active` (voice listening/speaking). */
+export function DecorativeWaveform({ active = false }: { active?: boolean }) {
   return (
     <div
       className="flex h-4 items-center gap-0.5"

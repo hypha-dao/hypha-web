@@ -6,7 +6,7 @@ import { DefaultChatTransport } from 'ai';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-import { InteractionBar } from './interaction-bar';
+import { InteractionBar, DecorativeWaveform } from './interaction-bar';
 import { CanvasSurface } from './canvas-surface';
 import { NextActionsStrip } from './next-actions-strip';
 import { createWidgetRegistry } from './widget-registry';
@@ -14,6 +14,8 @@ import { useCanvas } from './use-canvas';
 import { useRecap } from './use-recap';
 import { useScope, clearPersistedScope } from './use-scope';
 import { ScopeSelector } from './scope-selector';
+import { useCoherentVoice } from './use-coherent-voice';
+import { VoiceMicControl } from './voice-mic-control';
 import type {
   AssistantSessionConfig,
   ConversationMessage,
@@ -58,9 +60,15 @@ export interface AssistantShellProps {
    * `emphasis: 'guidance'` chip takes precedence over this one.
    */
   guidanceAction?: NextAction | null;
-  /** Voice control node (milestone 7); absent → decorative mic. */
+  /**
+   * M8 — turn on the built-in voice loop (mic toggle + STT→turn→TTS). The host
+   * passes the `enable-coherent-voice` flag here. When on, the shell renders its
+   * own mic control + waveform and `voiceControl` / `waveform` are ignored.
+   */
+  voiceEnabled?: boolean;
+  /** Voice control node override (used only when `voiceEnabled` is false). */
   voiceControl?: React.ReactNode;
-  /** Waveform node (milestone 7); absent → decorative pulse. */
+  /** Waveform node override (used only when `voiceEnabled` is false). */
   waveform?: React.ReactNode;
   className?: string;
 }
@@ -115,6 +123,7 @@ export function AssistantShell({
   modeToggleSlot,
   trailingSlot,
   guidanceAction,
+  voiceEnabled = false,
   voiceControl,
   waveform,
   className,
@@ -162,7 +171,7 @@ export function AssistantShell({
     [endpoint, transport],
   );
 
-  const { messages, sendMessage, status, error, setMessages } = useChat({
+  const { messages, sendMessage, status, error, setMessages, stop } = useChat({
     id: sessionId,
     transport: chatTransport,
     // Coalesce streamed message updates: without this, every token
@@ -270,12 +279,47 @@ export function AssistantShell({
   ]);
 
   const submit = React.useCallback(
-    async (text: string) => {
+    async (text: string, opts?: { voice?: boolean }) => {
       const body = await buildBody();
+      if (opts?.voice && body.conversationContext) {
+        (body.conversationContext as Record<string, unknown>).voice = true;
+      }
       await sendMessage({ text }, { body });
     },
     [buildBody, sendMessage],
   );
+
+  // M8 — text of the newest assistant message, spoken back by the voice loop.
+  const lastAssistantText = React.useMemo(() => {
+    for (let i = conversationMessages.length - 1; i >= 0; i -= 1) {
+      const m = conversationMessages[i];
+      if (!m || m.role !== 'assistant') continue;
+      const parts = Array.isArray(m.parts) ? m.parts : [];
+      const text = parts
+        .filter(
+          (p): p is { type: 'text'; text: string } =>
+            !!p &&
+            typeof p === 'object' &&
+            (p as { type?: unknown }).type === 'text' &&
+            typeof (p as { text?: unknown }).text === 'string',
+        )
+        .map((p) => p.text)
+        .join('')
+        .trim();
+      return text;
+    }
+    return '';
+  }, [conversationMessages]);
+
+  const voice = useCoherentVoice({
+    enabled: voiceEnabled,
+    activeSpaceSlug: spaceSlug,
+    lastAssistantText,
+    isChatStreaming: busy,
+    getAuthToken: transport.getAuthToken,
+    onStopChat: stop,
+    submitTranscript: (text) => submit(text, { voice: true }),
+  });
 
   const onSelectAction = React.useCallback(
     (action: NextAction) => {
@@ -312,6 +356,20 @@ export function AssistantShell({
     return hasGuidance ? base : [...base, guidanceAction];
   }, [nextActions, greeting.nextActions, guidanceAction, scope.source]);
 
+  // M8 — while a voice turn is being processed, skeleton the strip so it doesn't
+  // show the previous turn's chips. Debounce the trailing edge (~800ms) so it
+  // doesn't flash between rapid back-to-back turns.
+  const voiceTurnBusy = voiceEnabled && voice.listening && busy;
+  const [stripLoading, setStripLoading] = React.useState(false);
+  React.useEffect(() => {
+    if (voiceTurnBusy) {
+      setStripLoading(true);
+      return;
+    }
+    const t = window.setTimeout(() => setStripLoading(false), 800);
+    return () => window.clearTimeout(t);
+  }, [voiceTurnBusy]);
+
   return (
     <div className={cn('flex w-full flex-col', className)}>
       <div className="sticky top-0 z-20">
@@ -332,8 +390,20 @@ export function AssistantShell({
           }
           onNewConversation={hasConversation ? onNewConversation : undefined}
           trailingSlot={trailingSlot}
-          voiceControl={voiceControl}
-          waveform={waveform}
+          voiceControl={
+            voiceEnabled ? <VoiceMicControl voice={voice} /> : voiceControl
+          }
+          waveform={
+            voiceEnabled ? (
+              <DecorativeWaveform
+                active={
+                  voice.phase === 'listening' || voice.phase === 'speaking'
+                }
+              />
+            ) : (
+              waveform
+            )
+          }
           historyExpanded={historyExpanded}
           onToggleHistory={() => setHistoryExpanded((v) => !v)}
           recencySlot={
@@ -348,7 +418,11 @@ export function AssistantShell({
       </div>
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6">
-        <NextActionsStrip actions={stripActions} onSelect={onSelectAction} />
+        <NextActionsStrip
+          actions={stripActions}
+          onSelect={onSelectAction}
+          loading={stripLoading}
+        />
 
         {error && (
           <p className="text-sm text-destructive" role="alert">

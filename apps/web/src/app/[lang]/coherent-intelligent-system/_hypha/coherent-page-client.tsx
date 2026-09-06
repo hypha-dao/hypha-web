@@ -7,6 +7,7 @@ import { AssistantShell, readRecentSpaceSlugs } from '@hypha-platform/epics';
 import type { GreetingContext } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe, useFindCoherences } from '@hypha-platform/core/client';
+import { getEnableCoherentVoice } from '@hypha-platform/feature-flags';
 
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { CoherentModeToggle } from '@web/components/coherent-mode-toggle';
@@ -84,6 +85,7 @@ export function CoherentPageClient() {
       scopeCandidates={scopeCandidates}
       onActiveScopeChange={setActiveScopeSlug}
       guidanceAction={guidanceAction}
+      voiceEnabled={getEnableCoherentVoice()}
       modeToggleSlot={<CoherentModeToggle activeMode="coherent" />}
       trailingSlot={
         <ConnectedButtonProfile
