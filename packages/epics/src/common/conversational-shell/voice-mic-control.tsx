@@ -10,6 +10,8 @@ import type { CoherentVoiceState } from './use-coherent-voice';
 
 export interface VoiceMicControlProps {
   voice: CoherentVoiceState;
+  /** #2486 M10 — the mic sits on the teal waveform panel: white circle, teal icon. */
+  onAccent?: boolean;
   className?: string;
 }
 
@@ -20,7 +22,17 @@ export interface VoiceMicControlProps {
  * on that click). Icon states: connecting / listening / assistant-speaking —
  * and while the assistant speaks the button doubles as a "stop talking" control.
  */
-export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
+export function VoiceMicControl({
+  voice,
+  onAccent = false,
+  className,
+}: VoiceMicControlProps) {
+  // On the teal waveform panel the button is always a white circle with a teal
+  // icon — it must not switch to the primary fill on "listening".
+  const accentSkin = onAccent
+    ? 'rounded-full bg-white text-accent-9 hover:bg-white/90'
+    : undefined;
+
   if (!voice.available) {
     return (
       <Button
@@ -30,7 +42,7 @@ export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
         disabled
         aria-label="Voice (unavailable)"
         title="Voice isn't available right now"
-        className={className}
+        className={cn(accentSkin, className)}
       >
         <MicOff className="size-4 opacity-40" />
       </Button>
@@ -53,7 +65,9 @@ export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
   return (
     <Button
       type="button"
-      variant={voice.listening || speaking ? 'default' : 'ghost'}
+      variant={
+        onAccent ? 'ghost' : voice.listening || speaking ? 'default' : 'ghost'
+      }
       size="icon"
       onClick={speaking ? voice.stopSpeaking : voice.toggle}
       aria-pressed={voice.sessionOn}
@@ -62,6 +76,7 @@ export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
       className={cn(
         // Live listening: strong pulse, in concert with the waveform bar.
         voice.listening && !speaking && 'animate-pulse',
+        accentSkin,
         className,
       )}
     >

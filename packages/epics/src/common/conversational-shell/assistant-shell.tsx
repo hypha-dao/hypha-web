@@ -11,7 +11,6 @@ import { CanvasSurface } from './canvas-surface';
 import { NextActionsStrip } from './next-actions-strip';
 import { createWidgetRegistry } from './widget-registry';
 import { useCanvas } from './use-canvas';
-import { useRecap } from './use-recap';
 import { useScope, clearPersistedScope } from './use-scope';
 import { ScopeSelector } from './scope-selector';
 import { useCoherentVoice } from './use-coherent-voice';
@@ -79,7 +78,15 @@ export interface AssistantShellProps {
   /** Notified whenever the resolved active space changes (drives host guidance). */
   onActiveScopeChange?: (spaceSlug: string | undefined) => void;
   /** Leading slot in the interaction bar (mode toggle). */
+  /** Left slot in the interaction bar, above the mode toggle: the Hypha logo. */
+  logoSlot?: React.ReactNode;
   modeToggleSlot?: React.ReactNode;
+  /**
+   * #2486 M10 — a permanent column to the right of the canvas (personal
+   * wellbeing rail). Host-owned; the model never places or touches it. Hidden
+   * below `xl` so the canvas keeps its width on smaller screens.
+   */
+  personalRailSlot?: React.ReactNode;
   /** Trailing slot in the interaction bar (profile avatar). */
   trailingSlot?: React.ReactNode;
   /**
@@ -153,7 +160,9 @@ export function AssistantShell({
   sessionId = 'assistant-global',
   scopeCandidates,
   onActiveScopeChange,
+  logoSlot,
   modeToggleSlot,
+  personalRailSlot,
   trailingSlot,
   guidanceAction,
   voiceEnabled = false,
@@ -259,7 +268,6 @@ export function AssistantShell({
     conversationMessages,
     registry,
   );
-  const recap = useRecap(conversationMessages);
 
   // M7 — stateful conversational scope (manual selector + model `set_scope`),
   // seeded once by `scopeResolver`.
@@ -402,6 +410,37 @@ export function AssistantShell({
     for (let i = conversationMessages.length - 1; i >= 0; i -= 1) {
       const m = conversationMessages[i];
       if (!m || m.role !== 'assistant') continue;
+      const parts = Array.isArray(m.parts) ? m.parts : [];
+      const text = parts
+        .filter(
+          (p): p is { type: 'text'; text: string } =>
+            !!p &&
+            typeof p === 'object' &&
+            (p as { type?: unknown }).type === 'text' &&
+            typeof (p as { text?: unknown }).text === 'string',
+        )
+        .map((p) => p.text)
+        .join('')
+        .trim();
+      return text;
+    }
+    return '';
+  }, [conversationMessages]);
+
+  // M10 — the member's latest input, shown in the bar below the waveform. A
+  // "dig deeper" turn shows its item label, not the generic prompt it carried.
+  const lastUserText = React.useMemo(() => {
+    for (let i = conversationMessages.length - 1; i >= 0; i -= 1) {
+      const m = conversationMessages[i];
+      if (!m || m.role !== 'user') continue;
+      const meta = (m as { metadata?: unknown }).metadata;
+      const drill =
+        meta && typeof meta === 'object'
+          ? (meta as { coherentDrill?: { label?: unknown } }).coherentDrill
+          : undefined;
+      if (drill && typeof drill.label === 'string' && drill.label.trim()) {
+        return `↳ ${drill.label.trim()}`;
+      }
       const parts = Array.isArray(m.parts) ? m.parts : [];
       const text = parts
         .filter(
@@ -610,6 +649,7 @@ export function AssistantShell({
           onSubmit={(text) => void submit(text)}
           busy={busy}
           disabled={false}
+          logoSlot={logoSlot}
           modeToggleSlot={modeToggleSlot}
           scopeSlot={
             <ScopeSelector
@@ -624,79 +664,75 @@ export function AssistantShell({
           onNewConversation={hasConversation ? onNewConversation : undefined}
           trailingSlot={trailingSlot}
           voiceControl={
-            voiceEnabled ? <VoiceMicControl voice={voice} /> : voiceControl
+            voiceEnabled ? (
+              <VoiceMicControl voice={voice} onAccent />
+            ) : (
+              voiceControl
+            )
           }
           waveform={
             voiceEnabled ? (
               <DecorativeWaveform
+                onAccent
                 active={
-                  voice.phase === 'listening' || voice.phase === 'speaking'
+                  voice.phase === 'listening' ||
+                  voice.phase === 'speaking' ||
+                  busy
                 }
               />
             ) : (
-              waveform
+              waveform ?? <DecorativeWaveform onAccent active={busy} />
             )
           }
+          lastReplyText={hasConversation ? lastAssistantText : undefined}
+          lastUserText={hasConversation ? lastUserText : undefined}
+          emptyReplyText={greeting.text}
           historyExpanded={historyExpanded}
           onToggleHistory={() => setHistoryExpanded((v) => !v)}
-          recencySlot={
-            hasConversation ? (
-              <RecencyStack recap={recap} />
-            ) : (
-              <span className="text-muted-foreground">{greeting.text}</span>
-            )
-          }
           transcriptSlot={<Transcript messages={conversationMessages} />}
         />
       </div>
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6">
-        <NextActionsStrip
-          actions={stripActions}
-          onSelect={onSelectAction}
-          loading={stripLoading}
-        />
-
-        {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {error.message || 'Something went wrong. Try again.'}
-          </p>
+      <div
+        className={cn(
+          'mx-auto flex w-full gap-6 px-4 py-6',
+          personalRailSlot ? 'max-w-6xl' : 'max-w-5xl',
         )}
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <NextActionsStrip
+            actions={stripActions}
+            onSelect={onSelectAction}
+            loading={stripLoading}
+          />
 
-        <CanvasSurface
-          canvasState={canvasState}
-          registry={registry}
-          onWidgetEvent={onWidgetEvent}
-          onDrillIn={onDrillIn}
-          getDrillDescriptor={getDrillDescriptor}
-          drillBusy={busy}
-          emptyState={
-            <div className="min-h-[50vh] rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
-              {greeting.text}
-            </div>
-          }
-        />
-      </div>
-    </div>
-  );
-}
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error.message || 'Something went wrong. Try again.'}
+            </p>
+          )}
 
-function RecencyStack({ recap }: { recap: ReturnType<typeof useRecap> }) {
-  if (recap.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-0.5">
-      {recap.map((entry) => (
-        <div
-          key={entry.messageId}
-          className="truncate"
-          style={{ opacity: Math.max(0.35, 1 - entry.ageRank * 0.3) }}
-        >
-          <span className="text-muted-foreground">{entry.askSummary}</span>
-          {entry.answerSummary ? (
-            <span className="text-foreground/80"> · {entry.answerSummary}</span>
-          ) : null}
+          <CanvasSurface
+            canvasState={canvasState}
+            registry={registry}
+            onWidgetEvent={onWidgetEvent}
+            onDrillIn={onDrillIn}
+            getDrillDescriptor={getDrillDescriptor}
+            drillBusy={busy}
+            emptyState={
+              <div className="min-h-[50vh] rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                {greeting.text}
+              </div>
+            }
+          />
         </div>
-      ))}
+
+        {personalRailSlot && (
+          <div className="hidden w-[300px] shrink-0 xl:block">
+            {personalRailSlot}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -723,16 +759,20 @@ function Transcript({ messages }: { messages: ConversationMessage[] }) {
     return <p className="text-sm text-muted-foreground">No messages yet.</p>;
   }
   return (
-    <div className="flex flex-col gap-3 text-sm">
+    <div className="flex flex-col gap-2 text-sm">
       {messages.map((message, index) => {
         const key = `${message.id ?? 'noid'}-${index}`;
+        const isUser = message.role === 'user';
 
-        // #2486 M9 — a "dig deeper" turn: render a muted history entry, not the
-        // generic prompt text. Clearly not a re-runnable affordance.
-        const drill = message.role === 'user' ? readDrillMeta(message) : null;
+        // #2486 M9 — a "dig deeper" turn: a muted history entry, not the generic
+        // prompt text. Clearly not a re-runnable affordance.
+        const drill = isUser ? readDrillMeta(message) : null;
         if (drill) {
           return (
-            <div key={key} className="text-muted-foreground">
+            <div
+              key={key}
+              className="max-w-[75%] self-end text-right text-muted-foreground"
+            >
               ↳ dig deeper: <span className="italic">{drill.label}</span>
             </div>
           );
@@ -750,12 +790,19 @@ function Transcript({ messages }: { messages: ConversationMessage[] }) {
           .join('')
           .trim();
         if (!text) return null;
+        // #2486 M10 — no speaker labels: the member's turns sit right, the IO's
+        // left, in a chat-bubble treatment.
         return (
-          <div key={key}>
-            <span className="font-semibold">
-              {message.role === 'user' ? 'You' : 'Organization'}:{' '}
-            </span>
-            <span className="whitespace-pre-wrap">{text}</span>
+          <div
+            key={key}
+            className={cn(
+              'max-w-[78%] whitespace-pre-wrap rounded-lg px-3 py-2',
+              isUser
+                ? 'self-end bg-accent-3 text-foreground'
+                : 'self-start bg-muted/50 text-foreground',
+            )}
+          >
+            {text}
           </div>
         );
       })}

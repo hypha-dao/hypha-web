@@ -8,12 +8,14 @@ import type { GreetingContext } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe, useFindCoherences } from '@hypha-platform/core/client';
 import { getEnableCoherentVoice } from '@hypha-platform/feature-flags/client';
+import { Logo } from '@hypha-platform/ui';
 
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { CoherentModeToggle } from '@web/components/coherent-mode-toggle';
 import { hyphaAssistantConfig } from './config';
 import { computeGuidanceAction } from './guidance';
 import { useScopeCandidates } from './use-scope-candidates';
+import { PersonalRail } from './personal-rail';
 
 export function CoherentPageClient() {
   const params = useParams<{ lang?: string }>();
@@ -86,7 +88,11 @@ export function CoherentPageClient() {
       onActiveScopeChange={setActiveScopeSlug}
       guidanceAction={guidanceAction}
       voiceEnabled={getEnableCoherentVoice()}
+      logoSlot={
+        <Logo width={92} href={`/${lang}/coherent-intelligent-system`} />
+      }
       modeToggleSlot={<CoherentModeToggle activeMode="coherent" />}
+      personalRailSlot={<PersonalRail />}
       trailingSlot={
         <ConnectedButtonProfile
           newUserRedirectPath="/profile/signup"
