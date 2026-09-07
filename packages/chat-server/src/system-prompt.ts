@@ -787,6 +787,38 @@ CRITICAL — the chat reply is a pointer, not the payload:
  * must stand on its own a little more — but still short, and still never a data
  * dump. Its shape follows what the turn put on screen.
  */
+/**
+ * #2486 M9 — guidance for a turn started by a "dig deeper" affordance
+ * (`conversationContext.exploreIntent`) rather than typed input. The member gave
+ * no words; the hint says which item. GUIDANCE, not a command — the model
+ * composes the question and picks what to render.
+ */
+export function buildAssistantCanvasExploreIntentGuidance(intent: {
+  sourceWidgetId: string;
+  itemKind: string;
+  label: string;
+  scope?: 'widget' | 'item';
+  itemSlug?: string;
+}): string {
+  const clean = (s: string) =>
+    s
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+      .slice(0, 200);
+  const label = clean(intent.label);
+  const kind = clean(intent.itemKind);
+  const source = clean(intent.sourceWidgetId);
+  const slug = intent.itemSlug ? clean(intent.itemSlug) : null;
+  const target =
+    intent.scope === 'item'
+      ? `the ${kind} "${label}"${slug ? ` (slug: ${slug})` : ''}`
+      : `the ${kind} view ("${label}")`;
+  return `DIG-DEEPER TURN — the member did not type this turn. They clicked "dig deeper" on ${target} in the ${source} view. Treat it as a request to go further on that${
+    intent.scope === 'item' ? ' item' : ''
+  }. Compose the question yourself and answer it, guided by what the member has been exploring in this conversation so far. Decide what best serves them — a focused widget for that item (e.g. \`single-signal\` / \`single-agreement\` when registered), the item shown in context, or a short synthesis in the \`answer\` widget. You are NOT restricted to any one widget. Still obey the non-negotiable rule: call \`set_canvas\` this turn.`;
+}
+
 export const ASSISTANT_CANVAS_VOICE_REPLY_GUIDANCE = `VOICE TURN — the reply is spoken aloud. Its shape follows what you just put on screen:
 
 - You placed DATA widget(s) (the member asked to see / show / list something):
@@ -815,6 +847,15 @@ export type AssistantCanvasSystemPromptInput = {
   knownSpaces?: ReadonlyArray<{ slug: string; title?: string }> | null;
   /** M8 — the turn came from voice (STT); the reply is read aloud by TTS. */
   voice?: boolean;
+  /** M9 — the turn was started by a "dig deeper" affordance; guidance, not a command. */
+  exploreIntent?: {
+    sourceWidgetId: string;
+    itemKind: string;
+    label: string;
+    scope?: 'widget' | 'item';
+    itemId?: string;
+    itemSlug?: string;
+  } | null;
 };
 
 /**
@@ -847,6 +888,9 @@ export function buildAssistantCanvasSystemPrompt(
       ? `${ASSISTANT_CANVAS_DOMAIN_GUIDANCE}\n\n${snapshot}`
       : ASSISTANT_CANVAS_DOMAIN_GUIDANCE,
     ASSISTANT_CANVAS_INTERACTION_GUIDANCE,
+    ...(input.exploreIntent
+      ? [buildAssistantCanvasExploreIntentGuidance(input.exploreIntent)]
+      : []),
     ...(input.voice ? [ASSISTANT_CANVAS_VOICE_REPLY_GUIDANCE] : []),
   ];
 

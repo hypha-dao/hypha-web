@@ -4,9 +4,13 @@ import * as React from 'react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import { WidgetFrame } from './widget-frame';
 import type {
   CanvasState,
+  CanvasWidgetState,
+  DrillDescriptor,
   LayoutHint,
+  WidgetDefinition,
   WidgetEvent,
   WidgetRegistry,
 } from './types';
@@ -61,6 +65,25 @@ export interface CanvasSurfaceProps {
   emptyState?: React.ReactNode;
   /** Label for a crashed widget (host provides an i18n string). */
   widgetErrorLabel?: string;
+  /**
+   * #2486 M9 — fires a "dig deeper" turn for a widget. When set (with a
+   * descriptor from `getDrillDescriptor`), each widget gets the frame control.
+   * `sourceWidgetId` is the id of the widget the drill was triggered from.
+   */
+  onDrillIn?: (descriptor: DrillDescriptor, sourceWidgetId: string) => void;
+  /**
+   * Per-widget drill descriptor. Return `undefined` to leave a widget plain
+   * (e.g. the synthesis `answer` widget). Only consulted when `onDrillIn` is
+   * set.
+   */
+  getDrillDescriptor?: (
+    widget: CanvasWidgetState,
+    def: WidgetDefinition,
+  ) => DrillDescriptor | undefined;
+  /** A turn is in flight — disables every "dig deeper" control. */
+  drillBusy?: boolean;
+  /** Localised "dig deeper" control label. */
+  drillLabel?: string;
   className?: string;
 }
 
@@ -75,6 +98,10 @@ export function CanvasSurface({
   onWidgetEvent,
   emptyState = null,
   widgetErrorLabel = 'This view could not be loaded.',
+  onDrillIn,
+  getDrillDescriptor,
+  drillBusy = false,
+  drillLabel,
   className,
 }: CanvasSurfaceProps) {
   if (canvasState.widgets.length === 0) {
@@ -87,6 +114,10 @@ export function CanvasSurface({
         const def = registry.get(widget.widgetId);
         if (!def) return null;
         const Component = def.component;
+        const drill =
+          onDrillIn && getDrillDescriptor
+            ? getDrillDescriptor(widget, def)
+            : undefined;
         return (
           <section
             key={widget.key}
@@ -97,7 +128,19 @@ export function CanvasSurface({
               widgetId={widget.widgetId}
               fallbackLabel={widgetErrorLabel}
             >
-              <Component params={widget.params} onEvent={onWidgetEvent} />
+              <WidgetFrame
+                title={def.title}
+                drill={drill}
+                onDrillIn={
+                  drill && onDrillIn
+                    ? (d) => onDrillIn(d, widget.widgetId)
+                    : undefined
+                }
+                busy={drillBusy}
+                drillLabel={drillLabel}
+              >
+                <Component params={widget.params} onEvent={onWidgetEvent} />
+              </WidgetFrame>
             </WidgetErrorBoundary>
           </section>
         );

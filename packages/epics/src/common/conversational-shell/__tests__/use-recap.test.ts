@@ -90,4 +90,27 @@ describe('buildRecap', () => {
       answerSummary: 'plain reply',
     });
   });
+
+  it('#2486 M9: a "dig deeper" turn summarises as its item label, not the prompt', () => {
+    const recap = buildRecap([
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Take me deeper into this.' }],
+        metadata: {
+          coherentDrill: {
+            label: 'Treasury gap',
+            itemKind: 'signal',
+            scope: 'item',
+          },
+        },
+      },
+      turn('a1', 'assistant', 'Here is the Treasury gap signal.'),
+    ]);
+    expect(recap[0]).toMatchObject({
+      messageId: 'u1',
+      askSummary: '↳ Treasury gap',
+      answerSummary: 'Here is the Treasury gap signal.',
+    });
+  });
 });

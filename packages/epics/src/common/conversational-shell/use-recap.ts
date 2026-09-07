@@ -7,8 +7,21 @@ import type { ConversationMessage, ConversationRecap } from './types';
 export const DEFAULT_RECAP_CAP = 3;
 const SUMMARY_MAX = 140;
 
-/** Plain-text of a message: joins text parts, falls back to `content`. */
+/** Plain-text of a message: joins text parts, falls back to `content`. A
+ * "dig deeper" turn (#2486 M9) summarises as its item label, not the generic
+ * prompt the model actually received. */
 function messageText(message: ConversationMessage): string {
+  const meta = (message as { metadata?: unknown }).metadata;
+  if (meta && typeof meta === 'object') {
+    const drill = (meta as { coherentDrill?: unknown }).coherentDrill;
+    const label =
+      drill && typeof drill === 'object'
+        ? (drill as { label?: unknown }).label
+        : undefined;
+    if (typeof label === 'string' && label.trim()) {
+      return `↳ ${label.trim()}`;
+    }
+  }
   const parts = Array.isArray(message.parts) ? message.parts : [];
   const fromParts = parts
     .map((part) => {

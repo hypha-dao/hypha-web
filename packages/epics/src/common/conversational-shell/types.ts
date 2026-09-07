@@ -83,6 +83,36 @@ export interface NextAction {
 }
 
 // ---------------------------------------------------------------------------
+// Guided drill-in (#2486 M9) — a "dig deeper" affordance on a widget (or, from
+// slice 2, on a row inside it) fires a NORMAL model turn carrying a structured
+// hint. The model composes the question and decides what to render; it is not
+// bound to any target widget. Kept as a general navigation-intent shape so the
+// later free-navigation milestone (M12) reuses the vocabulary.
+// ---------------------------------------------------------------------------
+
+/**
+ * What a widget hands the frame to make something drillable. Widget-level
+ * (`scope: 'widget'`) needs only `label`; item-level (`scope: 'item'`, M9
+ * slice 2) also carries the item's `id` / `slug`.
+ */
+export interface DrillDescriptor {
+  /** Coarse target kind — e.g. `'signal'`, `'agreement'`, or a widget id. */
+  itemKind: string;
+  /** Human label — shown in the affordance and the transcript entry. */
+  label: string;
+  /** `'widget'` = the whole view; `'item'` = one row/entity inside it. */
+  scope?: 'widget' | 'item';
+  itemId?: string;
+  itemSlug?: string;
+}
+
+/** The hint attached to `conversationContext` on a drill-in turn. */
+export interface ExploreIntent extends DrillDescriptor {
+  /** Widget the drill-in was triggered from. */
+  sourceWidgetId: string;
+}
+
+// ---------------------------------------------------------------------------
 // Widget registry (#2486 §4.3)
 // ---------------------------------------------------------------------------
 
@@ -216,4 +246,17 @@ export interface ConversationMessage {
   toolInvocations?: unknown;
   /** Legacy: plain-text content. */
   content?: unknown;
+  /**
+   * Client-only decoration. `metadata.coherentDrill` marks a turn started by a
+   * "dig deeper" affordance (#2486 M9) so the transcript / recency stack render
+   * it as a muted entry instead of the generic prompt text.
+   */
+  metadata?: unknown;
+}
+
+/** Shape of `ConversationMessage.metadata.coherentDrill` (#2486 M9). */
+export interface CoherentDrillMeta {
+  label: string;
+  itemKind: string;
+  scope?: 'widget' | 'item';
 }

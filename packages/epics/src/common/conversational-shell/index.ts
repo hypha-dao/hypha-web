@@ -43,6 +43,7 @@ export {
   type ScopeSelectorProps,
 } from './scope-selector';
 export { CanvasSurface, type CanvasSurfaceProps } from './canvas-surface';
+export { WidgetFrame, type WidgetFrameProps } from './widget-frame';
 export {
   NextActionsStrip,
   type NextActionsStripProps,

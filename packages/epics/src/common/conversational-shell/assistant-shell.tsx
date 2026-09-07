@@ -18,12 +18,27 @@ import { useCoherentVoice } from './use-coherent-voice';
 import { VoiceMicControl } from './voice-mic-control';
 import type {
   AssistantSessionConfig,
+  CanvasWidgetState,
   ConversationMessage,
+  CoherentDrillMeta,
+  DrillDescriptor,
+  ExploreIntent,
   GreetingContext,
   NextAction,
   ScopeCandidate,
+  WidgetDefinition,
   WidgetEvent,
 } from './types';
+
+/** Fixed, item-agnostic prompt for a "dig deeper" turn — the specificity rides
+ * in `conversationContext.exploreIntent`, and the model composes the question
+ * (#2486 M9, decision M9-1). Shown only as a fallback if the drill metadata is
+ * lost; the transcript normally renders a muted entry instead. */
+const DRILL_TURN_TEXT = 'Take me deeper into this.';
+
+/** Widgets that never get a widget-level "dig deeper" control. `answer` is the
+ * model's own synthesis prose (§ use-canvas `SYNTHESIS_FALLBACK_WIDGET_ID`). */
+const DRILL_EXCLUDED_WIDGET_IDS = new Set(['answer']);
 
 /** Everything the shell needs from the host to reach the chat backend. */
 export interface AssistantTransportConfig {
@@ -303,16 +318,33 @@ export function AssistantShell({
   ]);
 
   const submit = React.useCallback(
-    async (text: string, opts?: { voice?: boolean; detach?: boolean }) => {
+    async (
+      text: string,
+      opts?: {
+        voice?: boolean;
+        detach?: boolean;
+        /** #2486 M9 — structured "dig deeper" hint for this turn. */
+        exploreIntent?: ExploreIntent;
+        /** #2486 M9 — decoration kept on the user message (transcript rendering). */
+        messageMetadata?: Record<string, unknown>;
+      },
+    ) => {
       const body = await buildBody();
       if (opts?.voice && body.conversationContext) {
         (body.conversationContext as Record<string, unknown>).voice = true;
+      }
+      if (opts?.exploreIntent && body.conversationContext) {
+        (body.conversationContext as Record<string, unknown>).exploreIntent =
+          opts.exploreIntent;
       }
       if (DIAG) {
         const ctx = (body.conversationContext ?? {}) as Record<string, unknown>;
         console.log('[coherent][DIAG][submit] turn', {
           voice: opts?.voice === true,
           detach: opts?.detach === true,
+          explore: opts?.exploreIntent
+            ? `${opts.exploreIntent.itemKind}:${opts.exploreIntent.label}`
+            : null,
           textPreview: text.slice(0, 80),
           bodySpaceSlug: (body as { spaceSlug?: unknown }).spaceSlug ?? null,
           ctxKeys: Object.keys(ctx),
@@ -325,7 +357,16 @@ export function AssistantShell({
             : 0,
         });
       }
-      const streamed = sendMessage({ text }, { body });
+      const streamed = opts?.messageMetadata
+        ? sendMessage(
+            {
+              role: 'user',
+              parts: [{ type: 'text', text }],
+              metadata: opts.messageMetadata,
+            },
+            { body },
+          )
+        : sendMessage({ text }, { body });
       // Voice path: resolve on *dispatch*, not on stream completion. `useChat`'s
       // sendMessage only settles when the whole turn (tokens + tool round-trips)
       // is done — but the voice hook uses this promise to know "the turn is in
@@ -410,6 +451,62 @@ export function AssistantShell({
     // v0: widgets behave as the real epic components; no conversation side-effect.
     console.debug('[AssistantShell] widget event', event);
   }, []);
+
+  // #2486 M9 — a "dig deeper" affordance fires a normal turn through the same
+  // funnel as the next-action chips: `busy`-guarded, voice-aware, barge-in
+  // parity. The turn carries a structured `exploreIntent`; the model composes
+  // the question and decides what to render.
+  const onDrillIn = React.useCallback(
+    (descriptor: DrillDescriptor, sourceWidgetId: string) => {
+      if (busy) return;
+      const exploreIntent: ExploreIntent = {
+        ...descriptor,
+        sourceWidgetId,
+      };
+      const drillMeta: CoherentDrillMeta = {
+        label: descriptor.label,
+        itemKind: descriptor.itemKind,
+        scope: descriptor.scope,
+      };
+      const inVoiceSession = voice.available && voice.listening;
+      if (inVoiceSession && voice.phase === 'speaking') voice.stopSpeaking();
+      void submit(DRILL_TURN_TEXT, {
+        exploreIntent,
+        messageMetadata: { coherentDrill: drillMeta },
+        ...(inVoiceSession ? { voice: true, detach: true } : {}),
+      });
+    },
+    [
+      busy,
+      submit,
+      voice.available,
+      voice.listening,
+      voice.phase,
+      voice.stopSpeaking,
+    ],
+  );
+
+  // Widget-level drill descriptor (slice 1). Generic: kind = widget id, label =
+  // widget title, slug lifted from params when present. `answer` stays plain.
+  const getDrillDescriptor = React.useCallback(
+    (
+      widget: CanvasWidgetState,
+      def: WidgetDefinition,
+    ): DrillDescriptor | undefined => {
+      if (DRILL_EXCLUDED_WIDGET_IDS.has(widget.widgetId)) return undefined;
+      const slug =
+        typeof widget.params.spaceSlug === 'string'
+          ? widget.params.spaceSlug
+          : undefined;
+      return {
+        itemKind: widget.widgetId,
+        label: def.title,
+        scope: 'widget',
+        ...(slug ? { itemSlug: slug } : {}),
+      };
+    },
+    [],
+  );
 
   const stripActions = React.useMemo(() => {
     // The model's `set_next_actions` wins. Otherwise fall back to the greeting
@@ -509,6 +606,9 @@ export function AssistantShell({
           canvasState={canvasState}
           registry={registry}
           onWidgetEvent={onWidgetEvent}
+          onDrillIn={onDrillIn}
+          getDrillDescriptor={getDrillDescriptor}
+          drillBusy={busy}
           emptyState={
             <div className="min-h-[50vh] rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
               {greeting.text}
@@ -540,6 +640,23 @@ function RecencyStack({ recap }: { recap: ReturnType<typeof useRecap> }) {
   );
 }
 
+/** Reads `message.metadata.coherentDrill` (#2486 M9), if present and well-shaped. */
+function readDrillMeta(message: ConversationMessage): CoherentDrillMeta | null {
+  const meta = (message as { metadata?: unknown }).metadata;
+  if (!meta || typeof meta !== 'object') return null;
+  const drill = (meta as { coherentDrill?: unknown }).coherentDrill;
+  if (!drill || typeof drill !== 'object') return null;
+  const label = (drill as { label?: unknown }).label;
+  const itemKind = (drill as { itemKind?: unknown }).itemKind;
+  if (typeof label !== 'string' || typeof itemKind !== 'string') return null;
+  const scope = (drill as { scope?: unknown }).scope;
+  return {
+    label,
+    itemKind,
+    scope: scope === 'widget' || scope === 'item' ? scope : undefined,
+  };
+}
+
 function Transcript({ messages }: { messages: ConversationMessage[] }) {
   if (messages.length === 0) {
     return <p className="text-sm text-muted-foreground">No messages yet.</p>;
@@ -547,6 +664,19 @@ function Transcript({ messages }: { messages: ConversationMessage[] }) {
   return (
     <div className="flex flex-col gap-3 text-sm">
       {messages.map((message, index) => {
+        const key = `${message.id ?? 'noid'}-${index}`;
+
+        // #2486 M9 — a "dig deeper" turn: render a muted history entry, not the
+        // generic prompt text. Clearly not a re-runnable affordance.
+        const drill = message.role === 'user' ? readDrillMeta(message) : null;
+        if (drill) {
+          return (
+            <div key={key} className="text-muted-foreground">
+              ↳ dig deeper: <span className="italic">{drill.label}</span>
+            </div>
+          );
+        }
+
         const parts = Array.isArray(message.parts) ? message.parts : [];
         const text = parts
           .map((part) =>
@@ -560,7 +690,7 @@ function Transcript({ messages }: { messages: ConversationMessage[] }) {
           .trim();
         if (!text) return null;
         return (
-          <div key={`${message.id ?? 'noid'}-${index}`}>
+          <div key={key}>
             <span className="font-semibold">
               {message.role === 'user' ? 'You' : 'Organization'}:{' '}
             </span>

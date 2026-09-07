@@ -1523,6 +1523,22 @@ export async function createChatStreamResult(
           }
         ).knownSpaces ?? null
       : null;
+  // #2486 M9 — "dig deeper" hint for this turn (validated by request-schema).
+  const canvasExploreIntent =
+    normalizedConversationContext?.mode === 'conversational_canvas'
+      ? (
+          normalizedConversationContext as {
+            exploreIntent?: {
+              sourceWidgetId: string;
+              itemKind: string;
+              label: string;
+              scope?: 'widget' | 'item';
+              itemId?: string;
+              itemSlug?: string;
+            };
+          }
+        ).exploreIntent ?? null
+      : null;
 
   // #2486 M8 TEMP DIAG — confirm what the canvas turn received (voice flag,
   // scope, snapshot) before the model runs. Pairs with the client
@@ -1539,6 +1555,9 @@ export async function createChatStreamResult(
         : 0,
       hasWidgetCatalogue: typeof canvasWidgetCatalogue === 'string',
       hasOrgContextSnapshot: Boolean(spaceContextSnapshot),
+      exploreIntent: canvasExploreIntent
+        ? `${canvasExploreIntent.itemKind}:${canvasExploreIntent.label}`
+        : null,
     });
   }
 
@@ -1550,6 +1569,7 @@ export async function createChatStreamResult(
           orgContextSnapshot: spaceContextSnapshot,
           scopeLocked: canvasScopeLocked,
           knownSpaces: canvasKnownSpaces,
+          exploreIntent: canvasExploreIntent,
           voice:
             (normalizedConversationContext as { voice?: unknown }).voice ===
             true,

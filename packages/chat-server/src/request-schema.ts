@@ -104,6 +104,22 @@ export const conversationContextSchema =
      * the voice reply shaping (Case A / Case B).
      */
     voice: z.boolean().optional(),
+    /**
+     * #2486 M9 — the turn was started by a "dig deeper" affordance on a widget
+     * instead of typed input. A structured hint only: the model composes the
+     * question and decides what to render (it is NOT bound to a target widget).
+     * Transient — sent only on that turn, never persisted server-side.
+     */
+    exploreIntent: z
+      .object({
+        sourceWidgetId: z.string().trim().min(1).max(120),
+        itemKind: z.string().trim().min(1).max(120),
+        label: z.string().trim().min(1).max(200),
+        scope: z.enum(['widget', 'item']).optional(),
+        itemId: z.string().trim().min(1).max(200).optional(),
+        itemSlug: z.string().trim().min(1).max(200).optional(),
+      })
+      .optional(),
   });
 
 export const chatRequestSchema = z.object({
