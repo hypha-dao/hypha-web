@@ -47,6 +47,8 @@ export const hyphaAssistantConfig: AssistantSessionConfig = {
             emphasis: 'primary',
           },
         ],
+        // M11 — the Coherence Overview is the default canvas on a fresh session.
+        canvas: [{ widgetId: 'coherence-overview', params: {} }],
       };
     }
 
@@ -77,6 +79,9 @@ export const hyphaAssistantConfig: AssistantSessionConfig = {
           prompt: `Show me ${spaceSlug}’s treasury`,
         },
       ],
+      // M11 — the Coherence Overview is the default canvas on a fresh session;
+      // any real turn or `set_canvas` replaces it.
+      canvas: [{ widgetId: 'coherence-overview', params: { spaceSlug } }],
     };
   },
 };

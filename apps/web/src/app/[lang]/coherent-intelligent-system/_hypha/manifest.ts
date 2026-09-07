@@ -1,5 +1,6 @@
 import type { WidgetRegistry } from '@hypha-platform/epics';
 
+import { coherenceOverviewWidget } from './coherence-overview-widget';
 import { signalsWidget } from './signals-widget';
 import { singleSignalWidget } from './single-signal-widget';
 import { agreementsWidget } from './agreements-widget';
@@ -14,6 +15,7 @@ import { answerWidget } from './answer-widget';
  * one `register` line here, no orchestrator change.
  */
 export function registerHyphaWidgets(registry: WidgetRegistry): void {
+  registry.register(coherenceOverviewWidget);
   registry.register(signalsWidget);
   registry.register(singleSignalWidget);
   registry.register(agreementsWidget);

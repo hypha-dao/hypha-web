@@ -255,9 +255,11 @@ export function InteractionBar({
           </div>
         </div>
 
-        {/* FAR RIGHT — profile, kept toward the top. */}
+        {/* FAR RIGHT — profile, kept toward the top, a touch enlarged. */}
         {trailingSlot && (
-          <div className="shrink-0 self-start py-0.5">{trailingSlot}</div>
+          <div className="shrink-0 self-start py-1 [&>*]:origin-top-right [&>*]:scale-[1.15]">
+            {trailingSlot}
+          </div>
         )}
       </div>
     </div>

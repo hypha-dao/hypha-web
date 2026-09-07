@@ -10,7 +10,7 @@ import { InteractionBar, DecorativeWaveform } from './interaction-bar';
 import { CanvasSurface } from './canvas-surface';
 import { NextActionsStrip } from './next-actions-strip';
 import { createWidgetRegistry } from './widget-registry';
-import { useCanvas } from './use-canvas';
+import { useCanvas, reduceCanvas, EMPTY_CANVAS_STATE } from './use-canvas';
 import { useScope, clearPersistedScope } from './use-scope';
 import { ScopeSelector } from './scope-selector';
 import { useCoherentVoice } from './use-coherent-voice';
@@ -50,6 +50,8 @@ const DRILL_EXCLUDED_WIDGET_IDS = new Set([
   'single-signal',
   'single-agreement',
   'treasury',
+  // #2486 M11 — the loop's own stages are the drill affordance.
+  'coherence-overview',
 ]);
 
 /** Everything the shell needs from the host to reach the chat backend. */
@@ -314,6 +316,17 @@ export function AssistantShell({
   }, [sessionId, setMessages, scope]);
 
   const hasConversation = messages.length > 0;
+
+  // #2486 M11 — before any conversation, and again after "new conversation",
+  // show the config's seed canvas (`greeting.canvas` — e.g. the Coherence
+  // Overview). A real `set_canvas` or the message-derived canvas takes over the
+  // moment there is one.
+  const effectiveCanvasState = React.useMemo(() => {
+    if (canvasState.widgets.length > 0 || hasConversation) return canvasState;
+    const seed = greeting.canvas;
+    if (!seed || seed.length === 0) return canvasState;
+    return reduceCanvas(EMPTY_CANVAS_STATE, seed, registry, null);
+  }, [canvasState, hasConversation, greeting.canvas, registry]);
 
   const buildBody = React.useCallback(async () => {
     const extra = (await transport.buildRequestBody?.()) ?? {};
@@ -714,7 +727,7 @@ export function AssistantShell({
           )}
 
           <CanvasSurface
-            canvasState={canvasState}
+            canvasState={effectiveCanvasState}
             registry={registry}
             onWidgetEvent={onWidgetEvent}
             onDrillIn={onDrillIn}
