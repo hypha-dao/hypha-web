@@ -7,7 +7,7 @@ import type {
   WidgetDefinition,
 } from '@hypha-platform/epics';
 import { Badge, Button } from '@hypha-platform/ui';
-import { Telescope, Vote } from 'lucide-react';
+import { Check, Telescope, X } from 'lucide-react';
 
 import { useSpaceJson } from './use-space-json';
 
@@ -67,13 +67,13 @@ function AgreementsWidget({
   });
   const documents = filtered.slice(0, params.limit ?? DEFAULT_LIMIT);
 
-  const emitDrill = (doc: Document, purpose: 'open' | 'vote') =>
+  const emitDrill = (doc: Document, stance?: 'Yes' | 'No') =>
     onEvent?.({
       type: 'drill',
       sourceWidgetId: 'agreements',
       descriptor: {
-        itemKind: purpose === 'vote' ? 'agreement-vote' : 'agreement',
-        label: doc.title,
+        itemKind: stance ? 'agreement-vote' : 'agreement',
+        label: stance ? `${doc.title} — leaning ${stance}` : doc.title,
         scope: 'item',
         itemSlug: doc.slug ?? String(doc.id),
         itemId: String(doc.id),
@@ -110,18 +110,32 @@ function AgreementsWidget({
                   {doc.title}
                 </span>
                 {onEvent && openOnly ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-6 shrink-0 gap-1 px-2 text-1"
-                    aria-label={`Weigh in on ${doc.title}`}
-                    title={`Weigh in on ${doc.title}`}
-                    onClick={() => emitDrill(doc, 'vote')}
-                  >
-                    <Vote className="size-3.5" />
-                    Vote
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 gap-1 px-2 text-1 hover:border-accent-8 hover:bg-accent-3 hover:text-accent-11"
+                      aria-label={`Vote yes on ${doc.title}`}
+                      title={`Vote yes on ${doc.title}`}
+                      onClick={() => emitDrill(doc, 'Yes')}
+                    >
+                      <Check className="size-3.5" />
+                      Yes
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 gap-1 px-2 text-1 hover:border-error-8 hover:bg-error-3 hover:text-error-11"
+                      aria-label={`Vote no on ${doc.title}`}
+                      title={`Vote no on ${doc.title}`}
+                      onClick={() => emitDrill(doc, 'No')}
+                    >
+                      <X className="size-3.5" />
+                      No
+                    </Button>
+                  </div>
                 ) : onEvent ? (
                   <Button
                     type="button"
@@ -130,7 +144,7 @@ function AgreementsWidget({
                     className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
                     aria-label={`Dig deeper: ${doc.title}`}
                     title={`Dig deeper: ${doc.title}`}
-                    onClick={() => emitDrill(doc, 'open')}
+                    onClick={() => emitDrill(doc)}
                   >
                     <Telescope className="size-3.5" />
                   </Button>

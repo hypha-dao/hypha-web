@@ -269,9 +269,9 @@ export function InteractionBar({
           </div>
         </div>
 
-        {/* FAR RIGHT — profile, kept toward the top, a touch enlarged. */}
+        {/* FAR RIGHT — profile, kept toward the top, sized up for the taller bar. */}
         {trailingSlot && (
-          <div className="shrink-0 self-start py-1 [&>*]:origin-top-right [&>*]:scale-[1.15]">
+          <div className="shrink-0 self-start py-1 [&_button]:!size-12 [&_button]:!min-h-12 [&_button]:!min-w-12 [&_img]:size-full">
             {trailingSlot}
           </div>
         )}
