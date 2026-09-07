@@ -17,6 +17,9 @@ import { computeGuidanceAction } from './guidance';
 import { useScopeCandidates } from './use-scope-candidates';
 import { PersonalRail } from './personal-rail';
 
+// #2486 — the Coherent surface is gated by
+// `NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM`; voice by
+// `NEXT_PUBLIC_ENABLE_COHERENT_VOICE` (+ `OPENAI_API_KEY`). See PR #2487.
 export function CoherentPageClient() {
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
