@@ -728,7 +728,7 @@ export function AssistantShell({
         </div>
 
         {personalRailSlot && (
-          <div className="hidden w-[300px] shrink-0 xl:block">
+          <div className="hidden w-[280px] shrink-0 xl:block">
             {personalRailSlot}
           </div>
         )}

@@ -37,7 +37,7 @@ function AnswerWidget({ params }: { params: AnswerParams }) {
   const lines = params.markdown.replace(/\r\n/g, '\n').split('\n');
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="flex flex-col p-4">
       {params.title ? (
         <h2 className="mb-2 text-sm font-semibold">{params.title}</h2>
       ) : null}

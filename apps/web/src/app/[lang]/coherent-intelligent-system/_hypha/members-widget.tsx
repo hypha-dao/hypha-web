@@ -60,12 +60,9 @@ function MembersWidget({ params }: { params: MembersParams }) {
   const members = all.slice(0, params.limit ?? DEFAULT_LIMIT);
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold">Members</h2>
-        <span className="text-xs text-muted-foreground">
-          {isLoading ? 'Loading…' : `${total}`}
-        </span>
+    <div className="flex flex-col p-4">
+      <div className="mb-3 flex items-baseline justify-end text-xs text-muted-foreground">
+        <span>{isLoading ? 'Loading…' : `${total} members`}</span>
       </div>
 
       {!isLoading && members.length === 0 ? (

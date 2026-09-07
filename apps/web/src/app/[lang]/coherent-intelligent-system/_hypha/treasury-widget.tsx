@@ -56,10 +56,10 @@ function TreasuryWidget({ params }: { params: TreasuryParams }) {
   const visible = assets.slice(0, params.limit ?? DEFAULT_LIMIT);
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold">Treasury</h2>
-        <span className="text-xs text-muted-foreground">
+    <div className="flex flex-col p-4">
+      <div className="mb-3 flex items-baseline justify-between text-xs text-muted-foreground">
+        <span>Total balance</span>
+        <span className="font-medium text-foreground">
           {isLoading && assets.length === 0
             ? 'Loading…'
             : formatUsd(data?.balance)}

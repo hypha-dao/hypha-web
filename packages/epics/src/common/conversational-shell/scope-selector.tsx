@@ -39,7 +39,7 @@ function labelFor(
   slug: string | undefined,
   candidates: ScopeCandidate[],
 ): string {
-  if (!slug) return 'Pick a space';
+  if (!slug) return 'Choose a context';
   const hit = candidates.find((c) => c.slug === slug);
   return hit?.title?.trim() || humaniseSlug(slug);
 }
@@ -89,7 +89,16 @@ export function ScopeSelector({
           ) : (
             <Sparkles className="size-3.5 shrink-0 opacity-70" aria-hidden />
           )}
-          <span className="truncate">{activeLabel}</span>
+          <span className="truncate">
+            {activeSpaceSlug ? (
+              <>
+                <span className="text-muted-foreground">In:&nbsp;</span>
+                {activeLabel}
+              </>
+            ) : (
+              activeLabel
+            )}
+          </span>
           <ChevronsUpDown
             className="size-3.5 shrink-0 opacity-50"
             aria-hidden

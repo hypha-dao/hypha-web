@@ -42,7 +42,7 @@ function SingleSignalWidget({ params }: { params: SingleSignalParams }) {
   );
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="flex flex-col p-4">
       {isLoading && !signal ? (
         <p className="text-sm text-muted-foreground">Loading signal…</p>
       ) : !signal ? (

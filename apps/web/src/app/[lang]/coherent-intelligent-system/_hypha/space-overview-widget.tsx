@@ -54,7 +54,7 @@ function SpaceOverviewWidget({ params }: { params: SpaceOverviewParams }) {
 
   if (isLoading && !space) {
     return (
-      <div className="rounded-lg border border-border bg-background p-4 text-sm text-muted-foreground">
+      <div className="flex flex-col p-4 text-sm text-muted-foreground">
         Loading…
       </div>
     );
@@ -62,7 +62,7 @@ function SpaceOverviewWidget({ params }: { params: SpaceOverviewParams }) {
 
   if (!space?.slug) {
     return (
-      <div className="rounded-lg border border-border bg-background p-4 text-sm text-muted-foreground">
+      <div className="flex flex-col p-4 text-sm text-muted-foreground">
         Couldn’t find “{params.spaceSlug}”.
       </div>
     );
@@ -71,7 +71,7 @@ function SpaceOverviewWidget({ params }: { params: SpaceOverviewParams }) {
   const subspaceCount = space.subspaces?.length ?? 0;
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="flex flex-col p-4">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h2 className="truncate text-sm font-semibold">{space.title}</h2>
         <span className="shrink-0 text-xs text-muted-foreground">

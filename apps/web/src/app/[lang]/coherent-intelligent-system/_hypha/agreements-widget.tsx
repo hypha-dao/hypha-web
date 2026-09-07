@@ -65,14 +65,10 @@ function AgreementsWidget({
     });
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold">
-          Agreements{params.label ? ` · ${params.label}` : ''}
-        </h2>
-        <span className="text-xs text-muted-foreground">
-          {isLoading ? 'Loading…' : `${filtered.length}`}
-        </span>
+    <div className="flex flex-col p-4">
+      <div className="mb-3 flex items-baseline justify-between text-xs text-muted-foreground">
+        <span>{params.label ? `Label: ${params.label}` : 'All'}</span>
+        <span>{isLoading ? 'Loading…' : `${filtered.length}`}</span>
       </div>
 
       {!isLoading && documents.length === 0 ? (

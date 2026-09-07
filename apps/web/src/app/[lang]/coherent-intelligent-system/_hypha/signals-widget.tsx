@@ -60,15 +60,10 @@ function SignalsWidget({
     });
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold">
-          Signals
-          {priorityFilter ? ` · ${priorityFilter}` : ''}
-        </h2>
-        <span className="text-xs text-muted-foreground">
-          {isLoading ? 'Loading…' : `${signals.length}`}
-        </span>
+    <div className="flex flex-col p-4">
+      <div className="mb-3 flex items-baseline justify-between text-xs text-muted-foreground">
+        <span>{priorityFilter ? `Priority: ${priorityFilter}` : 'All'}</span>
+        <span>{isLoading ? 'Loading…' : `${signals.length}`}</span>
       </div>
 
       {!isLoading && signals.length === 0 ? (

@@ -72,7 +72,7 @@ export function InteractionBar({
   value,
   onValueChange,
   onSubmit,
-  placeholder = 'Ask the organization…',
+  placeholder = 'Ask the Coherent Intelligence…',
   disabled = false,
   busy = false,
   logoSlot,
@@ -129,14 +129,14 @@ export function InteractionBar({
 
       {/* Control row — three blocks, space-between. */}
       <div className="mx-auto flex w-full max-w-6xl items-stretch justify-between gap-6 px-4 py-3 lg:gap-10">
-        {/* LEFT — wordmark top, mode toggle bottom, centred. */}
-        <div className="flex shrink-0 flex-col items-center justify-between gap-3 py-0.5">
+        {/* LEFT — wordmark + mode toggle, centred vertically. */}
+        <div className="flex shrink-0 flex-col items-center justify-center gap-3 py-0.5">
           {logoSlot}
           {modeToggleSlot}
         </div>
 
         {/* MAIN BLOCK — centre container + context / controls. */}
-        <div className="flex min-w-0 shrink items-start gap-4">
+        <div className="flex min-w-0 shrink items-center gap-4">
           {/* Centre container — the anchor. */}
           <div className="flex w-full min-w-0 max-w-2xl flex-col gap-2.5 rounded-xl border border-border bg-background p-3 shadow-sm">
             {/* IO's latest reply. */}
@@ -147,24 +147,27 @@ export function InteractionBar({
               {replyText || <span className="text-muted-foreground">…</span>}
             </div>
 
-            {/* Waveform panel — solid Hypha teal, white content, inverted mic. */}
-            <div className="flex items-center gap-3 rounded-xl bg-accent-9 px-3.5 py-3 text-white">
+            {/* Waveform panel — solid Hypha teal, the wave fills full width, the
+                inverted mic floats over the right edge. */}
+            <div className="relative flex items-center rounded-xl bg-accent-9 px-3.5 py-3 text-white">
               <div className="min-w-0 flex-1">
                 {waveform ?? <DecorativeWaveform active={busy} onAccent />}
               </div>
-              {voiceControl ?? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled
-                  aria-label="Voice (unavailable)"
-                  title="Voice (unavailable)"
-                  className="shrink-0 rounded-full bg-white text-accent-9 hover:bg-white/90"
-                >
-                  <Mic className="size-4 opacity-40" />
-                </Button>
-              )}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                {voiceControl ?? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    aria-label="Voice (unavailable)"
+                    title="Voice (unavailable)"
+                    className="size-9 shrink-0 rounded-full bg-white text-accent-9 shadow-sm hover:bg-white/90"
+                  >
+                    <Mic className="size-4 opacity-40" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Member's latest input. */}
@@ -211,8 +214,9 @@ export function InteractionBar({
             </div>
           </div>
 
-          {/* Context selector on top, controls row below. */}
-          <div className="flex shrink-0 flex-col gap-2.5">
+          {/* Context selector on top, controls row below — centred against the
+              container. */}
+          <div className="flex shrink-0 flex-col gap-2.5 self-center">
             {scopeSlot && <div className="max-w-[13rem]">{scopeSlot}</div>}
             <div className="flex gap-2">
               {onToggleHistory && (
@@ -251,7 +255,7 @@ export function InteractionBar({
 
         {/* FAR RIGHT — profile, separated. */}
         {trailingSlot && (
-          <div className="shrink-0 self-start py-0.5">{trailingSlot}</div>
+          <div className="shrink-0 self-center py-0.5">{trailingSlot}</div>
         )}
       </div>
     </div>
@@ -259,9 +263,17 @@ export function InteractionBar({
 }
 
 /**
- * Waveform visual. `onAccent` renders white bars for the teal panel; otherwise
- * muted bars. `active` (voice listening/speaking, or a streaming turn) animates.
+ * Waveform visual for the teal panel.
+ *
+ * - **inactive** → a single flat resting line.
+ * - **active** (voice listening/speaking, or a streaming turn) → a lively,
+ *   full-width equaliser: each bar rides its own sine on a staggered delay, with
+ *   a centre-weighted envelope so it reads as "voice", not a loading bar.
+ *
+ * `onAccent` picks the palette (white for the teal panel, muted elsewhere).
  */
+const WAVE_BAR_COUNT = 56;
+
 export function DecorativeWaveform({
   active = false,
   onAccent = false,
@@ -269,33 +281,56 @@ export function DecorativeWaveform({
   active?: boolean;
   onAccent?: boolean;
 }) {
+  const barColor = onAccent ? 'bg-white' : 'bg-accent-9';
+
   return (
     <div
-      className="flex h-5 w-full items-center gap-[3px] overflow-hidden"
+      className="relative flex h-6 w-full items-center justify-between"
       aria-hidden
       data-active={active || undefined}
     >
-      {WAVE_BARS.map((base, i) => (
-        <span
-          key={i}
-          className={cn(
-            'w-1 shrink-0 rounded-full transition-[height,opacity] duration-300',
-            onAccent ? 'bg-white' : 'bg-muted-foreground/50',
-            active && 'animate-pulse',
-          )}
-          style={{
-            height: active ? `${40 + ((i * 37) % 60)}%` : `${base}%`,
-            opacity: onAccent && !active ? 0.7 : 1,
-          }}
-        />
-      ))}
+      {/* Resting line — fades out as the bars come alive. */}
+      <div
+        className={cn(
+          'absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-opacity duration-500',
+          onAccent ? 'bg-white/45' : 'bg-accent-9/40',
+          active ? 'opacity-0' : 'opacity-100',
+        )}
+      />
+      <style>{WAVE_KEYFRAMES}</style>
+      {Array.from({ length: WAVE_BAR_COUNT }).map((_, i) => {
+        // Centre-weighted envelope: 1 at the middle, ~0.35 at the edges.
+        const t = i / (WAVE_BAR_COUNT - 1);
+        const env = 0.35 + 0.65 * Math.sin(Math.PI * t);
+        return (
+          <span
+            key={i}
+            className={cn(
+              'w-[3px] shrink-0 origin-center rounded-full transition-[transform,opacity] duration-500',
+              barColor,
+            )}
+            style={{
+              height: '100%',
+              transform: active ? undefined : 'scaleY(0.06)',
+              opacity: active ? 1 : 0,
+              animation: active
+                ? `coherent-wave ${820 + (i % 7) * 90}ms ease-in-out ${
+                    (i % 11) * 70
+                  }ms infinite`
+                : undefined,
+              // Feeds the keyframe's peak height.
+              ['--wave-env' as string]: env.toFixed(3),
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
 
-/** Idle bar heights (%) — a gentle, irregular resting waveform. */
-const WAVE_BARS = [
-  30, 55, 80, 45, 65, 25, 90, 50, 70, 35, 95, 55, 20, 75, 45, 85, 30, 60, 40,
-  90, 50, 25, 70, 45, 80, 35, 60, 90, 30, 55, 65, 25, 80, 45, 60, 35, 85, 40,
-  20, 70, 45, 75, 30, 55, 40, 25, 70, 45, 60, 30,
-];
+const WAVE_KEYFRAMES = `
+@keyframes coherent-wave {
+  0%, 100% { transform: scaleY(0.14); }
+  50% { transform: scaleY(var(--wave-env, 0.8)); }
+}
+`;
