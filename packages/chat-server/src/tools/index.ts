@@ -20,6 +20,25 @@ import { createGetProposalFormStateTool } from './get-proposal-form-state';
 import type { ActiveProposalFormSnapshot } from './proposal-form-state';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
 import { resolveChatLocale } from '../locale-ui-labels';
+import { getSpaceBySlugTool } from './get-space-by-slug';
+import {
+  createSetCanvasTool,
+  createSetNextActionsTool,
+  createSetScopeTool,
+  readAllowedWidgetIds,
+  readKnownSpaces,
+  readScopeLocked,
+} from './canvas-tools';
+
+/** #2486: canvas mode is read-only — the read tools for grounding + the two
+ *  presentation tools. No write tools, no onboarding tools. */
+function isConversationalCanvasContext(context: unknown): boolean {
+  return (
+    !!context &&
+    typeof context === 'object' &&
+    (context as { mode?: unknown }).mode === 'conversational_canvas'
+  );
+}
 
 /**
  * All AI SDK tools exposed by the chat route. Add new tools here and in the
@@ -42,6 +61,74 @@ export function createChatTools(
     locale: chatLocale,
     conversationContext,
   });
+  if (isConversationalCanvasContext(conversationContext)) {
+    // #2486 M7 — the read tools here are grounding only. The model kept reading
+    // data and answering in prose, skipping the canvas; the note reinforces the
+    // system-prompt hard rule at the tool level.
+    const grounding = (name: string, tool: ChatRouteTool): ChatRouteTool => {
+      const wrapped = safeChatTool(name, tool);
+      const base =
+        typeof (wrapped as { description?: unknown }).description === 'string'
+          ? (wrapped as { description: string }).description
+          : '';
+      return {
+        ...wrapped,
+        description: `${base} GROUNDING ONLY — reading this shows the member nothing; you must still call set_canvas this turn to put a widget on screen.`,
+      };
+    };
+    return {
+      get_space_by_slug: grounding('get_space_by_slug', getSpaceBySlugTool),
+      get_ecosystem_by_space_slug: grounding(
+        'get_ecosystem_by_space_slug',
+        createGetEcosystemBySpaceSlugTool(authToken),
+      ),
+      get_signals_by_space_slug: grounding(
+        'get_signals_by_space_slug',
+        createGetSignalsBySpaceSlugTool(authToken),
+      ),
+      get_documents_by_space_slug: grounding(
+        'get_documents_by_space_slug',
+        createGetDocumentsBySpaceSlugTool(authToken),
+      ),
+      get_token_holdings_by_space_slug: grounding(
+        'get_token_holdings_by_space_slug',
+        createGetTokenHoldingsBySpaceSlugTool(authToken),
+      ),
+      get_people_by_space_slug: grounding(
+        'get_people_by_space_slug',
+        createGetPeopleBySpaceSlugTool(authToken),
+      ),
+      get_org_memory_by_space_slug: grounding(
+        'get_org_memory_by_space_slug',
+        createGetOrgMemoryBySpaceSlugTool(
+          authToken,
+          requestUrlForSessionMatrix,
+        ),
+      ),
+      set_canvas: safeChatTool(
+        'set_canvas',
+        createSetCanvasTool(
+          readAllowedWidgetIds(conversationContext),
+        ) as unknown as ChatRouteTool,
+      ),
+      set_next_actions: safeChatTool(
+        'set_next_actions',
+        createSetNextActionsTool() as unknown as ChatRouteTool,
+      ),
+      // M7 — scope switching, unless the member has locked scope.
+      ...(readScopeLocked(conversationContext)
+        ? {}
+        : {
+            set_scope: safeChatTool(
+              'set_scope',
+              createSetScopeTool(
+                readKnownSpaces(conversationContext),
+              ) as unknown as ChatRouteTool,
+            ),
+          }),
+    };
+  }
+
   const onboardingTools = createOnboardingToolSet({
     authToken,
     conversationContext,
@@ -151,6 +238,11 @@ export { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-bluep
 export { createGetNetworkEcosystemPatternsTool } from './get-network-ecosystem-patterns';
 export { createProposeOrganisationBlueprintTool } from './propose-organisation-blueprint';
 export { createMcpNavigationTool } from './mcp-navigation';
+export {
+  createSetCanvasTool,
+  createSetNextActionsTool,
+  readAllowedWidgetIds,
+} from './canvas-tools';
 export { createOnboardingGuidanceTool } from './onboarding-guidance';
 export { createSearchSpacesTool } from './search-spaces';
 export { webSearchTool } from './web-search';

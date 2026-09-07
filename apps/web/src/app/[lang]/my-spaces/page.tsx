@@ -10,6 +10,8 @@ import {
 } from '@hypha-platform/core/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
+import { resolveCoherentFirst } from '@web/lib/coherent-first';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -30,6 +32,12 @@ export default async function Index(props: PageProps) {
       : SPACE_ORDERS[0];
 
   const { lang } = params;
+
+  // #2486: `my-spaces` is the classic app's home; bounce to the assistant unless
+  // the viewer has opted into classic (HYPHA_COHERENT_MODE=classic).
+  if (await resolveCoherentFirst()) {
+    redirect(`/${lang}/coherent-intelligent-system`);
+  }
 
   let mySpaces: Space[] = [];
   try {

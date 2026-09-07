@@ -24,6 +24,7 @@ import { ONBOARDING_TRANSPARENCY_GUIDELINES } from './tools/onboarding-transpare
 import {
   buildQuestionCompetencyDirective,
   buildSystemPrompt,
+  buildAssistantCanvasSystemPrompt,
   LEFT_PANEL_NAVIGATION_GUIDELINES,
   POST_CREATE_GOVERNANCE_SETUP_GUIDELINES,
   PROPOSAL_DISCOVERY_GUIDELINES,
@@ -64,6 +65,13 @@ CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS r
 - When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
+
+/**
+ * #2486 — server-side trace of the Coherent canvas turn (context received + the
+ * presentation tools the model called). Off after the M9 gate; flip to `true`
+ * (or wire to an env var) while debugging canvas / turn behaviour.
+ */
+const COHERENT_CANVAS_DIAG = false;
 
 /** Thrown before `streamText` when deployment is missing OpenRouter credentials (matches provider default env). */
 export const MISSING_OPENROUTER_KEY_MESSAGE =
@@ -1256,9 +1264,11 @@ function buildEffectiveSystemPrompt(
 async function buildSpaceContextSnapshot(
   spaceSlug: string,
   clientTitle?: string | null,
+  options?: { strict?: boolean },
 ): Promise<string | null> {
   const safe = sanitizeSlug(spaceSlug);
   if (!safe) return null;
+  const strict = options?.strict !== false;
 
   try {
     const result = await getSpaceBySlugTool.execute({ slug: safe });
@@ -1287,7 +1297,9 @@ async function buildSpaceContextSnapshot(
         : null;
 
     return [
-      'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):',
+      strict
+        ? 'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):'
+        : 'CURRENT SPACE CONTEXT (the conversation is scoped here now; it may move if the member switches spaces):',
       `- Active space slug for tools: ${safe}`,
       `- Display name: ${title}`,
       ...(clientTitle && clientTitle !== title
@@ -1317,8 +1329,12 @@ async function buildSpaceContextSnapshot(
             }`,
           ]
         : []),
-      `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
-      `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
+      strict
+        ? `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`
+        : `- The active space is now "${safe}". This OVERRIDES any different space named earlier in this conversation — treat those earlier references as stale. Answer about "${safe}" unless the member, in their latest message, explicitly asks about another space by name. Default every widget and read tool to "${safe}". If the member clearly means a different space, use \`set_scope\` and then the new slug — do not refuse.`,
+      strict
+        ? `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`
+        : `- For "which space am I in" / "where am I": answer with "${title}" (slug "${safe}").`,
       `- Privacy/transparency changes on existing spaces require create_space_setup_proposal (proposal_type space_transparency) and member vote — never claim updates via update_space_settings.`,
     ].join('\n');
   } catch {
@@ -1404,8 +1420,18 @@ export async function createChatStreamResult(
     authToken,
     debugRequestId,
   });
+  const canvasMode =
+    normalizedConversationContext?.mode === 'conversational_canvas';
+  const canvasScopeLocked =
+    canvasMode &&
+    (normalizedConversationContext as { scopeLocked?: unknown })
+      ?.scopeLocked === true;
+  // M7 — in canvas mode with scope unlocked, the member may switch spaces
+  // mid-conversation, so the snapshot must not hard-forbid other spaces.
   const spaceContextSnapshot = spaceSlug?.trim()
-    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
+    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle, {
+        strict: !canvasMode || canvasScopeLocked,
+      })
     : null;
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     spaceSlug,
@@ -1488,8 +1514,78 @@ export async function createChatStreamResult(
       normalizedConversationContext?.activeGovernanceProposal
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
+  const canvasWidgetCatalogue =
+    normalizedConversationContext?.mode === 'conversational_canvas' &&
+    typeof normalizedConversationContext.widgetCatalogue === 'string'
+      ? normalizedConversationContext.widgetCatalogue
+      : null;
+  const canvasKnownSpaces =
+    normalizedConversationContext?.mode === 'conversational_canvas' &&
+    Array.isArray(
+      (normalizedConversationContext as { knownSpaces?: unknown }).knownSpaces,
+    )
+      ? (
+          normalizedConversationContext as {
+            knownSpaces?: Array<{ slug: string; title?: string }>;
+          }
+        ).knownSpaces ?? null
+      : null;
+  // #2486 M9 — "dig deeper" hint for this turn (validated by request-schema).
+  const canvasExploreIntent =
+    normalizedConversationContext?.mode === 'conversational_canvas'
+      ? (
+          normalizedConversationContext as {
+            exploreIntent?: {
+              sourceWidgetId: string;
+              itemKind: string;
+              label: string;
+              scope?: 'widget' | 'item';
+              itemId?: string;
+              itemSlug?: string;
+            };
+          }
+        ).exploreIntent ?? null
+      : null;
+
+  // #2486 DIAG — confirm what the canvas turn received (voice flag, scope,
+  // snapshot, exploreIntent) before the model runs, and (below) which
+  // presentation tools it actually called. Off after the M9 gate; flip
+  // `COHERENT_CANVAS_DIAG` to re-enable while debugging.
+  if (
+    COHERENT_CANVAS_DIAG &&
+    normalizedConversationContext?.mode === 'conversational_canvas'
+  ) {
+    console.log('[coherent][DIAG][server] canvas turn in', {
+      debugRequestId,
+      voice:
+        (normalizedConversationContext as { voice?: unknown }).voice === true,
+      spaceSlug: spaceSlug ?? null,
+      scopeLocked: canvasScopeLocked,
+      knownSpaces: Array.isArray(canvasKnownSpaces)
+        ? canvasKnownSpaces.length
+        : 0,
+      hasWidgetCatalogue: typeof canvasWidgetCatalogue === 'string',
+      hasOrgContextSnapshot: Boolean(spaceContextSnapshot),
+      exploreIntent: canvasExploreIntent
+        ? `${canvasExploreIntent.itemKind}:${canvasExploreIntent.label}`
+        : null,
+    });
+  }
+
   const systemPrompt =
-    normalizedConversationContext?.mode === 'onboarding_setup'
+    normalizedConversationContext?.mode === 'conversational_canvas'
+      ? buildAssistantCanvasSystemPrompt({
+          spaceSlug,
+          widgetCatalogue: canvasWidgetCatalogue,
+          orgContextSnapshot: spaceContextSnapshot,
+          scopeLocked: canvasScopeLocked,
+          knownSpaces: canvasKnownSpaces,
+          exploreIntent: canvasExploreIntent,
+          voice:
+            (normalizedConversationContext as { voice?: unknown }).voice ===
+            true,
+        })
+      : normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
           normalizedConversationContext.setupPhase ?? 'discover'
         }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time on-chain with create_space_from_onboarding and parent_space_slug.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
@@ -1579,6 +1675,12 @@ export async function createChatStreamResult(
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
     system: systemPrompt,
+    // Cap the completion budget. Without this the provider/SDK default (16384)
+    // exceeds what an OpenRouter free-tier balance can reserve up-front
+    // ("requires more credits, or fewer max_tokens"). Chat replies never need
+    // this much — a synthesis into the `answer` widget is ~1-2k tokens — so a
+    // firm 8k cap keeps the free tier working without truncating real answers.
+    maxOutputTokens: 8192,
     messages:
       modelMessages.length > 0
         ? modelMessages
@@ -1594,6 +1696,26 @@ export async function createChatStreamResult(
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
+      // #2486 DIAG — which presentation tools did the model actually call this
+      // step? A canvas turn with an empty list here is the model answering in
+      // prose without driving the view. Gated by `COHERENT_CANVAS_DIAG`.
+      if (
+        COHERENT_CANVAS_DIAG &&
+        normalizedConversationContext?.mode === 'conversational_canvas'
+      ) {
+        const calls = Array.isArray(
+          (event as { toolCalls?: unknown }).toolCalls,
+        )
+          ? (event as { toolCalls: Array<{ toolName?: unknown }> }).toolCalls
+          : [];
+        console.log('[coherent][DIAG][server] step tools', {
+          debugRequestId,
+          step: event.stepNumber,
+          finishReason: event.finishReason,
+          tools: calls.map((c) => String(c?.toolName ?? '(unknown)')),
+        });
+      }
+
       if (!OPENROUTER_DEBUG) return;
 
       console.log('[chat][openrouter][step-finish]', {

@@ -67,6 +67,61 @@ export const onboardingConversationContextSchema = z.object({
   createdAt: z.string().optional(),
 });
 
+/**
+ * #2486: canvas mode reuses the onboarding conversation-context envelope plus a
+ * few canvas-only fields. Kept as one flat object (not a `discriminatedUnion`)
+ * so the many existing `conversationContext?.setupPhase`-style reads in
+ * `stream-chat.ts` keep type-checking — behaviour is gated on `mode` anyway.
+ */
+export const conversationContextSchema =
+  onboardingConversationContextSchema.extend({
+    mode: z.enum(['onboarding_setup', 'conversational_canvas']),
+    /** `registry.catalogueForPrompt()` — feeds the widget-catalogue prompt slot. */
+    widgetCatalogue: z.string().optional(),
+    /** Valid widget ids — the `set_canvas` tool validates `widget_id` against these. */
+    widgetIds: z.array(z.string().trim().min(1)).optional(),
+    /**
+     * #2486 M7 — spaces the member can scope the conversation to (selector +
+     * recents). Feeds `set_scope` name↔slug resolution.
+     */
+    knownSpaces: z
+      .array(
+        z.object({
+          slug: z.string().trim().min(1),
+          title: z.string().trim().min(1).optional(),
+        }),
+      )
+      .max(60)
+      .optional(),
+    /**
+     * #2486 M7 — when `true` the member has locked scope: `set_scope` is not
+     * offered and the active-space grounding stays strict.
+     */
+    scopeLocked: z.boolean().optional(),
+    /**
+     * #2486 M8 — the turn originated from voice (STT). The reply is read aloud
+     * verbatim by TTS, so the canvas prompt swaps its one-line-pointer rule for
+     * the voice reply shaping (Case A / Case B).
+     */
+    voice: z.boolean().optional(),
+    /**
+     * #2486 M9 — the turn was started by a "dig deeper" affordance on a widget
+     * instead of typed input. A structured hint only: the model composes the
+     * question and decides what to render (it is NOT bound to a target widget).
+     * Transient — sent only on that turn, never persisted server-side.
+     */
+    exploreIntent: z
+      .object({
+        sourceWidgetId: z.string().trim().min(1).max(120),
+        itemKind: z.string().trim().min(1).max(120),
+        label: z.string().trim().min(1).max(200),
+        scope: z.enum(['widget', 'item']).optional(),
+        itemId: z.string().trim().min(1).max(200).optional(),
+        itemSlug: z.string().trim().min(1).max(200).optional(),
+      })
+      .optional(),
+  });
+
 export const chatRequestSchema = z.object({
   messages: z.array(chatUiMessageSchema),
   spaceSlug: z.string().nullish(),
@@ -74,7 +129,7 @@ export const chatRequestSchema = z.object({
   activeSpaceTitle: z.string().trim().min(1).optional(),
   /** UI locale for localized tool labels (en, fr, pt, es, de). */
   locale: z.string().trim().min(2).max(16).optional(),
-  conversationContext: onboardingConversationContextSchema.optional(),
+  conversationContext: conversationContextSchema.optional(),
   /** Chat vs voice in the left AI panel when not in onboarding setup. */
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
   /** Live proposal form snapshot from the open Agreements create overlay. */

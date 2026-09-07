@@ -21,3 +21,20 @@ export function getEnableOnboardingVoiceRealtime(): boolean {
 export function getEnableCallDocumentPip(): boolean {
   return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP) ?? true;
 }
+
+/**
+ * Client-safe build-time gate for the #2486 talk-first Coherent entrypoint.
+ * Defaults off; the server reads toolbar overrides too via
+ * `getEnableCoherentIntelligentSystemAsync`.
+ */
+export function getEnableCoherentIntelligentSystem(): boolean {
+  return (
+    parseBoolean(process.env.NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM) ??
+    false
+  );
+}
+
+/** Client-safe build-time gate for real voice in the #2486 Coherent entrypoint. */
+export function getEnableCoherentVoice(): boolean {
+  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_COHERENT_VOICE) ?? false;
+}

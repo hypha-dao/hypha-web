@@ -32,7 +32,9 @@ import {
   getEnableAiChat,
   getEnableSpaceMemory,
   getEnableHumanChat,
+  getEnableCoherentIntelligentSystem,
 } from '@hypha-platform/feature-flags';
+import { resolveCoherentFirst } from '@web/lib/coherent-first';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -101,6 +103,13 @@ export default async function RootLayout({
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
+  let coherentEnabled = false;
+
+  // #2486: with Coherent enabled and no explicit classic opt-out, the
+  // post-auth landing is the talk-first entrypoint instead of /my-spaces.
+  const baseRedirectPath = (await resolveCoherentFirst())
+    ? '/coherent-intelligent-system'
+    : '/my-spaces';
 
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
@@ -126,6 +135,7 @@ export default async function RootLayout({
     aiChatEnabledResult,
     spaceMemoryEnabledResult,
     humanChatEnabledResult,
+    coherentEnabledResult,
   ] = await Promise.allSettled([
     getShowLanguageSelect(),
     getLocale(),
@@ -135,6 +145,7 @@ export default async function RootLayout({
     getEnableAiChat(),
     getEnableSpaceMemory(),
     getEnableHumanChat(),
+    getEnableCoherentIntelligentSystem(),
   ]);
 
   if (languageSelectResult.status === 'fulfilled') {
@@ -222,6 +233,15 @@ export default async function RootLayout({
     );
   }
 
+  if (coherentEnabledResult.status === 'fulfilled') {
+    coherentEnabled = coherentEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve coherentEnabled',
+      coherentEnabledResult.reason,
+    );
+  }
+
   return (
     <Html lang={locale} className={hyphaFontVariables}>
       <ScrollUp />
@@ -273,6 +293,7 @@ export default async function RootLayout({
                           <div className="sticky top-0 z-30 shrink-0">
                             <ConnectedMenuTop
                               aiChatEnabled={aiChatEnabled}
+                              coherentEnabled={coherentEnabled}
                               logoHref={ROOT_URL}
                               openMenuLabel={navOpenMenuLabel}
                               closeMenuLabel={navCloseMenuLabel}
@@ -294,7 +315,7 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={baseRedirectPath}
                                   navItems={[
                                     {
                                       label: navMySpacesLabel,
@@ -326,7 +347,7 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={baseRedirectPath}
                                   navItems={[
                                     {
                                       label: navMySpacesLabel,
