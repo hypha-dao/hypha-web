@@ -659,6 +659,7 @@ export function AssistantShell({
               source={scope.source}
               onSelect={scope.setManualScope}
               onToggleLock={scope.setLocked}
+              className="w-full max-w-none"
             />
           }
           onNewConversation={hasConversation ? onNewConversation : undefined}

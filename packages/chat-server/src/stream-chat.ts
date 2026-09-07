@@ -1675,6 +1675,12 @@ export async function createChatStreamResult(
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
     system: systemPrompt,
+    // Cap the completion budget. Without this the provider/SDK default (16384)
+    // exceeds what an OpenRouter free-tier balance can reserve up-front
+    // ("requires more credits, or fewer max_tokens"). Chat replies never need
+    // this much — a synthesis into the `answer` widget is ~1-2k tokens — so a
+    // firm 8k cap keeps the free tier working without truncating real answers.
+    maxOutputTokens: 8192,
     messages:
       modelMessages.length > 0
         ? modelMessages

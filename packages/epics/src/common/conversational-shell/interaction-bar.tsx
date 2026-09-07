@@ -215,47 +215,49 @@ export function InteractionBar({
           </div>
 
           {/* Context selector on top, controls row below — centred against the
-              container. */}
-          <div className="flex shrink-0 flex-col gap-2.5 self-center">
-            {scopeSlot && <div className="max-w-[13rem]">{scopeSlot}</div>}
-            <div className="flex gap-2">
-              {onToggleHistory && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={onToggleHistory}
-                  aria-pressed={historyExpanded}
-                  aria-label={historyToggleLabel}
-                  title={historyToggleLabel}
-                  className={cn(
-                    'size-9',
-                    historyExpanded && 'border-accent-8 text-accent-11',
-                  )}
-                >
-                  <ScrollText className="size-4" />
-                </Button>
-              )}
-              {onNewConversation && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={onNewConversation}
-                  aria-label={newConversationLabel}
-                  title={newConversationLabel}
-                  className="size-9"
-                >
-                  <SquarePen className="size-4" />
-                </Button>
-              )}
-            </div>
+              container. History + new-conversation split the column width. */}
+          <div className="flex w-[13rem] shrink-0 flex-col gap-2.5 self-center">
+            {scopeSlot}
+            {(onToggleHistory || onNewConversation) && (
+              <div className="grid grid-cols-2 gap-2">
+                {onToggleHistory && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onToggleHistory}
+                    aria-pressed={historyExpanded}
+                    aria-label={historyToggleLabel}
+                    title={historyToggleLabel}
+                    className={cn(
+                      'w-full',
+                      historyExpanded && 'border-accent-8 text-accent-11',
+                    )}
+                  >
+                    <ScrollText className="size-4" />
+                  </Button>
+                )}
+                {onNewConversation && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onNewConversation}
+                    aria-label={newConversationLabel}
+                    title={newConversationLabel}
+                    className={cn('w-full', !onToggleHistory && 'col-span-2')}
+                  >
+                    <SquarePen className="size-4" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* FAR RIGHT — profile, separated. */}
+        {/* FAR RIGHT — profile, kept toward the top. */}
         {trailingSlot && (
-          <div className="shrink-0 self-center py-0.5">{trailingSlot}</div>
+          <div className="shrink-0 self-start py-0.5">{trailingSlot}</div>
         )}
       </div>
     </div>
