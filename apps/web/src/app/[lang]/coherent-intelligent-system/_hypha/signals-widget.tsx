@@ -2,8 +2,12 @@
 
 import { z } from 'zod';
 import { useFindCoherences } from '@hypha-platform/core/client';
-import type { WidgetDefinition } from '@hypha-platform/epics';
-import { Badge } from '@hypha-platform/ui';
+import type {
+  WidgetComponentProps,
+  WidgetDefinition,
+} from '@hypha-platform/epics';
+import { Badge, Button } from '@hypha-platform/ui';
+import { Telescope } from 'lucide-react';
 
 /**
  * #2486 v0 `signals` widget — a thin adapter over the existing coherence data
@@ -17,7 +21,10 @@ import { Badge } from '@hypha-platform/ui';
  */
 const signalsParams = z.object({
   spaceSlug: z.string().trim().min(1),
-  priority: z.enum(['critical', 'high', 'medium', 'low']).optional(),
+  // `'all'` / omitted = no priority filter. Accepting `'all'` (rather than
+  // rejecting it) keeps a stray model param from dropping the widget → retry
+  // loop (#2486 M8 follow-up).
+  priority: z.enum(['all', 'critical', 'high', 'medium', 'low']).optional(),
   orderBy: z
     .enum(['mostrecent', 'mostmessages', 'mostviews', 'mostupvoted'])
     .optional(),
@@ -25,20 +32,39 @@ const signalsParams = z.object({
 
 type SignalsParams = z.infer<typeof signalsParams>;
 
-function SignalsWidget({ params }: { params: SignalsParams }) {
+function SignalsWidget({
+  params,
+  onEvent,
+}: WidgetComponentProps<SignalsParams>) {
+  const priorityFilter =
+    params.priority && params.priority !== 'all' ? params.priority : undefined;
   const { coherences, isLoading } = useFindCoherences({
     spaceSlug: params.spaceSlug,
-    priority: params.priority,
+    priority: priorityFilter,
     orderBy: params.orderBy ?? 'mostrecent',
   });
 
   const signals = coherences ?? [];
 
+  const emitDrill = (signal: (typeof signals)[number]) =>
+    onEvent?.({
+      type: 'drill',
+      sourceWidgetId: 'signals',
+      descriptor: {
+        itemKind: 'signal',
+        label: signal.title,
+        scope: 'item',
+        itemSlug: signal.slug ?? String(signal.id),
+        itemId: String(signal.id),
+      },
+    });
+
   return (
     <div className="rounded-lg border border-border bg-background p-4">
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">
-          Signals{params.priority ? ` · ${params.priority}` : ''}
+          Signals
+          {priorityFilter ? ` · ${priorityFilter}` : ''}
         </h2>
         <span className="text-xs text-muted-foreground">
           {isLoading ? 'Loading…' : `${signals.length}`}
@@ -58,9 +84,22 @@ function SignalsWidget({ params }: { params: SignalsParams }) {
                 <Badge variant="outline" className="shrink-0 capitalize">
                   {signal.priority}
                 </Badge>
-                <span className="truncate text-sm font-medium">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {signal.title}
                 </span>
+                {onEvent ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                    aria-label={`Dig deeper: ${signal.title}`}
+                    title={`Dig deeper: ${signal.title}`}
+                    onClick={() => emitDrill(signal)}
+                  >
+                    <Telescope className="size-3.5" />
+                  </Button>
+                ) : null}
               </div>
               {signal.description ? (
                 <p className="line-clamp-2 text-xs text-muted-foreground">
@@ -89,5 +128,5 @@ export const signalsWidget: WidgetDefinition<SignalsParams> = {
   paramsSchema: signalsParams,
   component: SignalsWidget,
   describeForModel: () =>
-    "signals — this space's signal board (coherence items). params: spaceSlug (required), priority? (critical|high|medium|low), orderBy? (mostrecent|mostmessages|mostviews|mostupvoted).",
+    "signals — this space's signal board (coherence items). params: spaceSlug (required), priority? (all|critical|high|medium|low — 'all' or omitted = no filter), orderBy? (mostrecent|mostmessages|mostviews|mostupvoted).",
 };

@@ -44,6 +44,7 @@ export {
 } from './scope-selector';
 export { CanvasSurface, type CanvasSurfaceProps } from './canvas-surface';
 export { WidgetFrame, type WidgetFrameProps } from './widget-frame';
+export { parseDrillEvent } from './drill';
 export {
   NextActionsStrip,
   type NextActionsStripProps,

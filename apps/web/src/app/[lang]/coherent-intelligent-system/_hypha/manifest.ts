@@ -1,7 +1,9 @@
 import type { WidgetRegistry } from '@hypha-platform/epics';
 
 import { signalsWidget } from './signals-widget';
+import { singleSignalWidget } from './single-signal-widget';
 import { agreementsWidget } from './agreements-widget';
+import { singleAgreementWidget } from './single-agreement-widget';
 import { treasuryWidget } from './treasury-widget';
 import { spaceOverviewWidget } from './space-overview-widget';
 import { membersWidget } from './members-widget';
@@ -13,7 +15,9 @@ import { answerWidget } from './answer-widget';
  */
 export function registerHyphaWidgets(registry: WidgetRegistry): void {
   registry.register(signalsWidget);
+  registry.register(singleSignalWidget);
   registry.register(agreementsWidget);
+  registry.register(singleAgreementWidget);
   registry.register(treasuryWidget);
   registry.register(spaceOverviewWidget);
   registry.register(membersWidget);

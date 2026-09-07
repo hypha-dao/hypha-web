@@ -2,8 +2,12 @@
 
 import { z } from 'zod';
 import type { Document } from '@hypha-platform/core/client';
-import type { WidgetDefinition } from '@hypha-platform/epics';
-import { Badge } from '@hypha-platform/ui';
+import type {
+  WidgetComponentProps,
+  WidgetDefinition,
+} from '@hypha-platform/epics';
+import { Badge, Button } from '@hypha-platform/ui';
+import { Telescope } from 'lucide-react';
 
 import { useSpaceJson } from './use-space-json';
 
@@ -31,7 +35,10 @@ function formatDate(value: Date | string | undefined): string {
     : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function AgreementsWidget({ params }: { params: AgreementsParams }) {
+function AgreementsWidget({
+  params,
+  onEvent,
+}: WidgetComponentProps<AgreementsParams>) {
   const { data, isLoading } = useSpaceJson<Document[]>(
     `/api/v1/spaces/${params.spaceSlug}/documents/all?order=-createdAt`,
   );
@@ -43,6 +50,19 @@ function AgreementsWidget({ params }: { params: AgreementsParams }) {
       )
     : all;
   const documents = filtered.slice(0, params.limit ?? DEFAULT_LIMIT);
+
+  const emitDrill = (doc: Document) =>
+    onEvent?.({
+      type: 'drill',
+      sourceWidgetId: 'agreements',
+      descriptor: {
+        itemKind: 'agreement',
+        label: doc.title,
+        scope: 'item',
+        itemSlug: doc.slug ?? String(doc.id),
+        itemId: String(doc.id),
+      },
+    });
 
   return (
     <div className="rounded-lg border border-border bg-background p-4">
@@ -70,9 +90,22 @@ function AgreementsWidget({ params }: { params: AgreementsParams }) {
                     {doc.label}
                   </Badge>
                 ) : null}
-                <span className="truncate text-sm font-medium">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {doc.title}
                 </span>
+                {onEvent ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                    aria-label={`Dig deeper: ${doc.title}`}
+                    title={`Dig deeper: ${doc.title}`}
+                    onClick={() => emitDrill(doc)}
+                  >
+                    <Telescope className="size-3.5" />
+                  </Button>
+                ) : null}
               </div>
               {doc.description ? (
                 <p className="line-clamp-2 text-xs text-muted-foreground">

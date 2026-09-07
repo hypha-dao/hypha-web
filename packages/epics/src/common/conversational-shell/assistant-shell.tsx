@@ -16,6 +16,7 @@ import { useScope, clearPersistedScope } from './use-scope';
 import { ScopeSelector } from './scope-selector';
 import { useCoherentVoice } from './use-coherent-voice';
 import { VoiceMicControl } from './voice-mic-control';
+import { parseDrillEvent } from './drill';
 import type {
   AssistantSessionConfig,
   CanvasWidgetState,
@@ -447,11 +448,6 @@ export function AssistantShell({
     ],
   );
 
-  const onWidgetEvent = React.useCallback((event: WidgetEvent) => {
-    // v0: widgets behave as the real epic components; no conversation side-effect.
-    console.debug('[AssistantShell] widget event', event);
-  }, []);
-
   // #2486 M9 — a "dig deeper" affordance fires a normal turn through the same
   // funnel as the next-action chips: `busy`-guarded, voice-aware, barge-in
   // parity. The turn carries a structured `exploreIntent`; the model composes
@@ -506,6 +502,21 @@ export function AssistantShell({
       };
     },
     [],
+  );
+
+  const onWidgetEvent = React.useCallback(
+    (event: WidgetEvent) => {
+      // #2486 M9 slice 2 — a row-level "dig deeper" affordance inside a widget
+      // reaches the shell through the existing widget-event channel.
+      const drill = parseDrillEvent(event);
+      if (drill) {
+        onDrillIn(drill.descriptor, drill.sourceWidgetId);
+        return;
+      }
+      // v0: widgets otherwise behave as the real epic components — no side-effect.
+      console.debug('[AssistantShell] widget event', event);
+    },
+    [onDrillIn],
   );
 
   const stripActions = React.useMemo(() => {
