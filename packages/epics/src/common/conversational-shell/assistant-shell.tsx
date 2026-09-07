@@ -481,6 +481,16 @@ export function AssistantShell({
     submitTranscript: (text) => submit(text, { voice: true, detach: true }),
   });
 
+  // #2486 M10 — the mic drives the equaliser; a typed / chip / dig-deeper turn
+  // only pulses the panel while it processes (it was not an audio note, so the
+  // equaliser would misrepresent it).
+  const waveformState: 'idle' | 'loading' | 'voice' =
+    voiceEnabled && (voice.listening || voice.phase === 'speaking')
+      ? 'voice'
+      : busy
+      ? 'loading'
+      : 'idle';
+
   const onSelectAction = React.useCallback(
     (action: NextAction) => {
       // A turn is already in flight — ignore. The strip also renders as
@@ -684,18 +694,12 @@ export function AssistantShell({
               voiceControl
             )
           }
+          waveformState={waveformState}
           waveform={
             voiceEnabled ? (
-              <DecorativeWaveform
-                onAccent
-                active={
-                  voice.phase === 'listening' ||
-                  voice.phase === 'speaking' ||
-                  busy
-                }
-              />
+              <DecorativeWaveform onAccent state={waveformState} />
             ) : (
-              waveform ?? <DecorativeWaveform onAccent active={busy} />
+              waveform ?? <DecorativeWaveform onAccent state={waveformState} />
             )
           }
           lastReplyText={hasConversation ? lastAssistantText : undefined}

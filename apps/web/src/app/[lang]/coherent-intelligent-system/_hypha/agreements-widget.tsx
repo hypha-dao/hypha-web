@@ -7,7 +7,7 @@ import type {
   WidgetDefinition,
 } from '@hypha-platform/epics';
 import { Badge, Button } from '@hypha-platform/ui';
-import { Telescope } from 'lucide-react';
+import { Telescope, Vote } from 'lucide-react';
 
 import { useSpaceJson } from './use-space-json';
 
@@ -21,11 +21,21 @@ const agreementsParams = z.object({
   spaceSlug: z.string().trim().min(1),
   limit: z.number().int().positive().max(20).optional(),
   label: z.string().trim().min(1).optional(),
+  /** `'open'` = still in play (discussion / proposal / on-voting) — shows a vote
+   *  affordance per row. `'all'` (default) = every document. */
+  status: z.enum(['open', 'all']).optional(),
 });
 
 type AgreementsParams = z.infer<typeof agreementsParams>;
 
 const DEFAULT_LIMIT = 5;
+
+/** A document not yet settled into a final agreement / memory. */
+function isOpen(doc: Document): boolean {
+  if (doc.status === 'onVoting') return true;
+  const state = String(doc.state ?? '').toLowerCase();
+  return state === 'discussion' || state === 'proposal';
+}
 
 function formatDate(value: Date | string | undefined): string {
   if (!value) return '';
@@ -43,20 +53,26 @@ function AgreementsWidget({
     `/api/v1/spaces/${params.spaceSlug}/documents/all?order=-createdAt`,
   );
 
+  const openOnly = params.status === 'open';
   const all = Array.isArray(data) ? data : [];
-  const filtered = params.label
-    ? all.filter(
-        (doc) => doc.label?.toLowerCase() === params.label?.toLowerCase(),
-      )
-    : all;
+  const filtered = all.filter((doc) => {
+    if (
+      params.label &&
+      doc.label?.toLowerCase() !== params.label.toLowerCase()
+    ) {
+      return false;
+    }
+    if (openOnly && !isOpen(doc)) return false;
+    return true;
+  });
   const documents = filtered.slice(0, params.limit ?? DEFAULT_LIMIT);
 
-  const emitDrill = (doc: Document) =>
+  const emitDrill = (doc: Document, purpose: 'open' | 'vote') =>
     onEvent?.({
       type: 'drill',
       sourceWidgetId: 'agreements',
       descriptor: {
-        itemKind: 'agreement',
+        itemKind: purpose === 'vote' ? 'agreement-vote' : 'agreement',
         label: doc.title,
         scope: 'item',
         itemSlug: doc.slug ?? String(doc.id),
@@ -67,12 +83,16 @@ function AgreementsWidget({
   return (
     <div className="flex flex-col p-4">
       <div className="mb-3 flex items-baseline justify-between text-xs text-muted-foreground">
-        <span>{params.label ? `Label: ${params.label}` : 'All'}</span>
+        <span>
+          {openOnly ? 'Open' : params.label ? `Label: ${params.label}` : 'All'}
+        </span>
         <span>{isLoading ? 'Loading…' : `${filtered.length}`}</span>
       </div>
 
       {!isLoading && documents.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No agreements to show.</p>
+        <p className="text-sm text-muted-foreground">
+          {openOnly ? 'Nothing open right now.' : 'No agreements to show.'}
+        </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {documents.map((doc) => (
@@ -89,7 +109,20 @@ function AgreementsWidget({
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {doc.title}
                 </span>
-                {onEvent ? (
+                {onEvent && openOnly ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 shrink-0 gap-1 px-2 text-1"
+                    aria-label={`Weigh in on ${doc.title}`}
+                    title={`Weigh in on ${doc.title}`}
+                    onClick={() => emitDrill(doc, 'vote')}
+                  >
+                    <Vote className="size-3.5" />
+                    Vote
+                  </Button>
+                ) : onEvent ? (
                   <Button
                     type="button"
                     variant="ghost"
@@ -97,7 +130,7 @@ function AgreementsWidget({
                     className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
                     aria-label={`Dig deeper: ${doc.title}`}
                     title={`Dig deeper: ${doc.title}`}
-                    onClick={() => emitDrill(doc)}
+                    onClick={() => emitDrill(doc, 'open')}
                   >
                     <Telescope className="size-3.5" />
                   </Button>
@@ -127,5 +160,5 @@ export const agreementsWidget: WidgetDefinition<AgreementsParams> = {
   paramsSchema: agreementsParams,
   component: AgreementsWidget,
   describeForModel: () =>
-    "agreements — this space's agreements / proposals (documents), newest first. params: spaceSlug (required), limit? (1-20, default 5), label? (filter by document label, e.g. a proposal type).",
+    "agreements — this space's agreements / proposals (documents), newest first. params: spaceSlug (required), limit? (1-20, default 5), label? (filter by document label), status? ('open' = still in discussion/proposal/on-voting, shows a vote affordance; 'all' = default).",
 };

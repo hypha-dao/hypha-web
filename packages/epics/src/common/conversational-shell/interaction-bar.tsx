@@ -48,6 +48,11 @@ export interface InteractionBarProps {
   voiceControl?: React.ReactNode;
   /** Waveform / pulse visual — fills the teal panel beside the mic. */
   waveform?: React.ReactNode;
+  /**
+   * Drives the panel: `voice` = the equaliser (mic live), `loading` = the panel
+   * pulses (a turn is processing — not an audio note), `idle` = resting.
+   */
+  waveformState?: WaveformState;
   /** Far-right block: host chrome, e.g. the profile avatar. */
   trailingSlot?: React.ReactNode;
 
@@ -82,6 +87,7 @@ export function InteractionBar({
   newConversationLabel = 'Start a new conversation',
   voiceControl,
   waveform,
+  waveformState = 'idle',
   trailingSlot,
   lastReplyText,
   lastUserText,
@@ -106,10 +112,10 @@ export function InteractionBar({
 
   const submit = React.useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || disabled) return;
+    if (!trimmed || disabled || busy) return;
     onSubmit?.(trimmed);
     if (!isControlled) setUncontrolled('');
-  }, [text, disabled, onSubmit, isControlled]);
+  }, [text, disabled, busy, onSubmit, isControlled]);
 
   const replyText = lastReplyText?.trim() || emptyReplyText?.trim() || '';
 
@@ -148,10 +154,18 @@ export function InteractionBar({
             </div>
 
             {/* Waveform panel — solid Hypha teal, the wave fills full width, the
-                inverted mic floats over the right edge. */}
-            <div className="relative flex items-center rounded-xl bg-accent-9 px-3.5 py-3 text-white">
+                inverted mic floats over the right edge. The panel itself pulses
+                only while a turn is processing (not a voice note). */}
+            <div
+              className={cn(
+                'relative flex items-center rounded-xl bg-accent-9 px-3.5 py-3 text-white',
+                waveformState === 'loading' && 'animate-pulse',
+              )}
+            >
               <div className="min-w-0 flex-1">
-                {waveform ?? <DecorativeWaveform active={busy} onAccent />}
+                {waveform ?? (
+                  <DecorativeWaveform state={waveformState} onAccent />
+                )}
               </div>
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
                 {voiceControl ?? (
@@ -203,7 +217,7 @@ export function InteractionBar({
                 type="button"
                 variant="ghost"
                 size="icon"
-                disabled={disabled || !text.trim()}
+                disabled={disabled || busy || !text.trim()}
                 onClick={submit}
                 aria-label="Send"
                 title="Send"
@@ -266,39 +280,46 @@ export function InteractionBar({
   );
 }
 
+/** Waveform states (#2486 M10): `voice` = the mic is live (equaliser), `loading`
+ * = a turn is processing (resting line pulses), `idle` = a flat resting line. */
+export type WaveformState = 'idle' | 'loading' | 'voice';
+
 /**
  * Waveform visual for the teal panel.
  *
- * - **inactive** → a single flat resting line.
- * - **active** (voice listening/speaking, or a streaming turn) → a lively,
- *   full-width equaliser: each bar rides its own sine on a staggered delay, with
- *   a centre-weighted envelope so it reads as "voice", not a loading bar.
+ * - `idle` → a single flat resting line.
+ * - `loading` → the resting line, pulsing (a turn is being processed — it was
+ *   NOT an audio note, so the equaliser would misrepresent it).
+ * - `voice` → a lively full-width equaliser: each bar rides its own sine on a
+ *   staggered delay under a centre-weighted envelope.
  *
  * `onAccent` picks the palette (white for the teal panel, muted elsewhere).
  */
 const WAVE_BAR_COUNT = 56;
 
 export function DecorativeWaveform({
-  active = false,
+  state = 'idle',
   onAccent = false,
 }: {
-  active?: boolean;
+  state?: WaveformState;
   onAccent?: boolean;
 }) {
   const barColor = onAccent ? 'bg-white' : 'bg-accent-9';
+  const voice = state === 'voice';
 
   return (
     <div
       className="relative flex h-6 w-full items-center justify-between"
       aria-hidden
-      data-active={active || undefined}
+      data-state={state}
     >
-      {/* Resting line — fades out as the bars come alive. */}
+      {/* Resting line — solid at idle, pulsing while loading, gone under voice. */}
       <div
         className={cn(
           'absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-opacity duration-500',
           onAccent ? 'bg-white/45' : 'bg-accent-9/40',
-          active ? 'opacity-0' : 'opacity-100',
+          voice ? 'opacity-0' : 'opacity-100',
+          state === 'loading' && 'animate-pulse',
         )}
       />
       <style>{WAVE_KEYFRAMES}</style>
@@ -315,9 +336,9 @@ export function DecorativeWaveform({
             )}
             style={{
               height: '100%',
-              transform: active ? undefined : 'scaleY(0.06)',
-              opacity: active ? 1 : 0,
-              animation: active
+              transform: voice ? undefined : 'scaleY(0.06)',
+              opacity: voice ? 1 : 0,
+              animation: voice
                 ? `coherent-wave ${820 + (i % 7) * 90}ms ease-in-out ${
                     (i % 11) * 70
                   }ms infinite`

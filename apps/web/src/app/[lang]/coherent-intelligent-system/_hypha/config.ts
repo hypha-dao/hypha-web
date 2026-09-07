@@ -79,9 +79,26 @@ export const hyphaAssistantConfig: AssistantSessionConfig = {
           prompt: `Show me ${spaceSlug}’s treasury`,
         },
       ],
-      // M11 — the Coherence Overview is the default canvas on a fresh session;
-      // any real turn or `set_canvas` replaces it.
-      canvas: [{ widgetId: 'coherence-overview', params: { spaceSlug } }],
+      // M11 — the default canvas on a fresh session: the coherence loop, plus
+      // the open agreements (with a vote affordance) and a recent-chat preview.
+      // Any real turn or `set_canvas` replaces it.
+      canvas: [
+        {
+          widgetId: 'coherence-overview',
+          params: { spaceSlug },
+          layoutHint: 'full',
+        },
+        {
+          widgetId: 'agreements',
+          params: { spaceSlug, status: 'open', limit: 4 },
+          layoutHint: 'half',
+        },
+        {
+          widgetId: 'space-chat',
+          params: { spaceSlug },
+          layoutHint: 'half',
+        },
+      ],
     };
   },
 };
