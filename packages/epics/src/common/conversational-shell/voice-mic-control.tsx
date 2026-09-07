@@ -14,10 +14,11 @@ export interface VoiceMicControlProps {
 }
 
 /**
- * #2486 M8 — the mic toggle in the interaction bar. One click opens a hands-free
- * voice session; the icon reflects the phase (connecting / listening / the
- * assistant speaking). While the assistant is speaking, the button doubles as a
- * "stop talking" control.
+ * #2486 M8 — the mic toggle in the interaction bar. Voice is never auto-started:
+ * on load the button sits in an "off but available" state with a soft invite
+ * pulse. One click opens a hands-free session (the mic-permission prompt happens
+ * on that click). Icon states: connecting / listening / assistant-speaking —
+ * and while the assistant speaks the button doubles as a "stop talking" control.
  */
 export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
   if (!voice.available) {
@@ -37,6 +38,10 @@ export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
   }
 
   const speaking = voice.phase === 'speaking';
+  // "Off but available" — the member hasn't opted in yet (always the state on a
+  // fresh page load / reload).
+  const idle = !voice.sessionOn && !voice.connecting;
+
   const label = voice.connecting
     ? 'Connecting…'
     : speaking
@@ -51,10 +56,14 @@ export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
       variant={voice.listening || speaking ? 'default' : 'ghost'}
       size="icon"
       onClick={speaking ? voice.stopSpeaking : voice.toggle}
-      aria-pressed={voice.listening}
+      aria-pressed={voice.sessionOn}
       aria-label={label}
       title={label}
-      className={cn(voice.listening && !speaking && 'animate-pulse', className)}
+      className={cn(
+        // Live listening: strong pulse, in concert with the waveform bar.
+        voice.listening && !speaking && 'animate-pulse',
+        className,
+      )}
     >
       {voice.connecting ? (
         <Loader2 className="size-4 animate-spin" />
@@ -63,7 +72,8 @@ export function VoiceMicControl({ voice, className }: VoiceMicControlProps) {
       ) : voice.listening ? (
         <Mic className="size-4" />
       ) : (
-        <Mic className="size-4 opacity-70" />
+        // Soft invite pulse to call attention to an un-started session.
+        <Mic className={cn('size-4 opacity-70', idle && 'animate-pulse')} />
       )}
     </Button>
   );

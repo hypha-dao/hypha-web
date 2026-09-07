@@ -1524,6 +1524,24 @@ export async function createChatStreamResult(
         ).knownSpaces ?? null
       : null;
 
+  // #2486 M8 TEMP DIAG — confirm what the canvas turn received (voice flag,
+  // scope, snapshot) before the model runs. Pairs with the client
+  // `[coherent][DIAG]` logs and the per-step tool tally below.
+  if (normalizedConversationContext?.mode === 'conversational_canvas') {
+    console.log('[coherent][DIAG][server] canvas turn in', {
+      debugRequestId,
+      voice:
+        (normalizedConversationContext as { voice?: unknown }).voice === true,
+      spaceSlug: spaceSlug ?? null,
+      scopeLocked: canvasScopeLocked,
+      knownSpaces: Array.isArray(canvasKnownSpaces)
+        ? canvasKnownSpaces.length
+        : 0,
+      hasWidgetCatalogue: typeof canvasWidgetCatalogue === 'string',
+      hasOrgContextSnapshot: Boolean(spaceContextSnapshot),
+    });
+  }
+
   const systemPrompt =
     normalizedConversationContext?.mode === 'conversational_canvas'
       ? buildAssistantCanvasSystemPrompt({
@@ -1641,6 +1659,23 @@ export async function createChatStreamResult(
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
+      // #2486 M8 TEMP DIAG — which presentation tools did the model actually
+      // call this step? A canvas turn with an empty list here is the model
+      // answering in prose without driving the view.
+      if (normalizedConversationContext?.mode === 'conversational_canvas') {
+        const calls = Array.isArray(
+          (event as { toolCalls?: unknown }).toolCalls,
+        )
+          ? (event as { toolCalls: Array<{ toolName?: unknown }> }).toolCalls
+          : [];
+        console.log('[coherent][DIAG][server] step tools', {
+          debugRequestId,
+          step: event.stepNumber,
+          finishReason: event.finishReason,
+          tools: calls.map((c) => String(c?.toolName ?? '(unknown)')),
+        });
+      }
+
       if (!OPENROUTER_DEBUG) return;
 
       console.log('[chat][openrouter][step-finish]', {

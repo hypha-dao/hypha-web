@@ -19,6 +19,62 @@ export const EMPTY_CANVAS_STATE: CanvasState = {
   updatedFromMessageId: null,
 };
 
+// #2486 M8 TEMP DIAG — trace how the model's presentation-tool calls turn (or
+// fail to turn) into on-screen widgets. Flip to false or delete once voice
+// canvas-update behaviour is settled. Grep: `TEMP DIAG` / `[coherent][DIAG]`.
+const DIAG = true;
+
+/** Newest-first, DIAG-only summary of the assistant's latest turn. */
+function diagScanLatestAssistant(messages: ConversationMessage[]): {
+  id: string | null;
+  role: string | null;
+  textLen: number;
+  setCanvasParts: string[];
+  setNextActionsParts: string[];
+  otherToolParts: string[];
+} {
+  for (let m = messages.length - 1; m >= 0; m -= 1) {
+    const msg = messages[m];
+    if (!msg || msg.role !== 'assistant') continue;
+    const parts = Array.isArray(msg.parts) ? msg.parts : [];
+    const setCanvasParts: string[] = [];
+    const setNextActionsParts: string[] = [];
+    const otherToolParts: string[] = [];
+    let textLen = 0;
+    for (const part of parts) {
+      if (!part || typeof part !== 'object') continue;
+      const type = String((part as { type?: unknown }).type ?? '');
+      const state = String((part as { state?: unknown }).state ?? '');
+      if (type === 'text') {
+        const t = (part as { text?: unknown }).text;
+        if (typeof t === 'string') textLen += t.length;
+      } else if (type === 'tool-set_canvas') {
+        setCanvasParts.push(state || '(no state)');
+      } else if (type === 'tool-set_next_actions') {
+        setNextActionsParts.push(state || '(no state)');
+      } else if (type.startsWith('tool-')) {
+        otherToolParts.push(`${type.slice(5)}:${state || '(no state)'}`);
+      }
+    }
+    return {
+      id: msg.id ?? `m-${m}`,
+      role: msg.role,
+      textLen,
+      setCanvasParts,
+      setNextActionsParts,
+      otherToolParts,
+    };
+  }
+  return {
+    id: null,
+    role: null,
+    textLen: 0,
+    setCanvasParts: [],
+    setNextActionsParts: [],
+    otherToolParts: [],
+  };
+}
+
 /**
  * #2486 T1 — synthesis fallback. When the model answers a "what do you think…"
  * question with a substantial written reply but never drives the canvas, surface
@@ -375,6 +431,24 @@ export function useCanvas(
     const nextActions = actionsResult
       ? extractNextActions(actionsResult.output)
       : [];
+
+    if (DIAG) {
+      const latest = diagScanLatestAssistant(messages);
+      console.log('[coherent][DIAG][canvas] recompute', {
+        messages: messages.length,
+        latestAssistant: latest,
+        canvasWidgets: canvasState.widgets.map((w) => w.widgetId),
+        canvasUpdatedFromMessageId: canvasState.updatedFromMessageId,
+        nextActions: nextActions.map((a) => a.label),
+        nextActionsFromMessageId: actionsResult?.messageId ?? null,
+        // The tell-tale: model wrote a reply but drove no widget this turn.
+        droveNoWidgetThisTurn:
+          latest.id != null &&
+          latest.setCanvasParts.length === 0 &&
+          canvasState.updatedFromMessageId !== latest.id,
+      });
+    }
+
     return { canvasState, nextActions };
   }, [messages, registry]);
 }

@@ -75,6 +75,11 @@ export interface AssistantShellProps {
 
 const PERSIST_PREFIX = 'hypha:assistant:v1:';
 
+// #2486 M8 TEMP DIAG — trace every turn the shell sends (voice vs typed, scope,
+// context payload) alongside `[coherent][DIAG][canvas]` on the receiving side.
+// Flip to false / delete once voice canvas-update behaviour is settled.
+const DIAG = true;
+
 function loadPersisted(sessionId: string): ConversationMessage[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -202,7 +207,26 @@ export function AssistantShell({
     persist(sessionId, messages);
   }, [sessionId, messages]);
 
-  const conversationMessages = messages as unknown as ConversationMessage[];
+  // Dedupe by message id. Overlapping turns (a barge-in, or a fast second
+  // utterance before the first stream settles) can leave `useChat` with two
+  // entries sharing an id — which crashes React's reconciler ("two children
+  // with the same key") and scrambles the transcript. Keep the last occurrence
+  // (the more complete one) and preserve order.
+  const conversationMessages = React.useMemo(() => {
+    const raw = messages as unknown as ConversationMessage[];
+    const seen = new Set<string>();
+    const out: ConversationMessage[] = [];
+    for (let i = raw.length - 1; i >= 0; i -= 1) {
+      const m = raw[i];
+      if (!m) continue;
+      const id = m.id ?? `idx-${i}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(m);
+    }
+    return out.reverse();
+  }, [messages]);
+
   const { canvasState, nextActions } = useCanvas(
     conversationMessages,
     registry,
@@ -279,12 +303,42 @@ export function AssistantShell({
   ]);
 
   const submit = React.useCallback(
-    async (text: string, opts?: { voice?: boolean }) => {
+    async (text: string, opts?: { voice?: boolean; detach?: boolean }) => {
       const body = await buildBody();
       if (opts?.voice && body.conversationContext) {
         (body.conversationContext as Record<string, unknown>).voice = true;
       }
-      await sendMessage({ text }, { body });
+      if (DIAG) {
+        const ctx = (body.conversationContext ?? {}) as Record<string, unknown>;
+        console.log('[coherent][DIAG][submit] turn', {
+          voice: opts?.voice === true,
+          detach: opts?.detach === true,
+          textPreview: text.slice(0, 80),
+          bodySpaceSlug: (body as { spaceSlug?: unknown }).spaceSlug ?? null,
+          ctxKeys: Object.keys(ctx),
+          ctxMode: ctx.mode ?? null,
+          ctxSpaceSlug: ctx.spaceSlug ?? null,
+          ctxVoice: ctx.voice ?? false,
+          ctxScopeLocked: ctx.scopeLocked ?? null,
+          ctxKnownSpaces: Array.isArray(ctx.knownSpaces)
+            ? ctx.knownSpaces.length
+            : 0,
+        });
+      }
+      const streamed = sendMessage({ text }, { body });
+      // Voice path: resolve on *dispatch*, not on stream completion. `useChat`'s
+      // sendMessage only settles when the whole turn (tokens + tool round-trips)
+      // is done — but the voice hook uses this promise to know "the turn is in
+      // flight, start watching for the reply to speak". Awaiting the full stream
+      // sets `awaitingAssistantSpeakRef` only after streaming already ended, so
+      // the spoken reply is silently dropped.
+      if (opts?.detach) {
+        streamed.catch((err) => {
+          if (DIAG) console.log('[coherent][DIAG][submit] stream error', err);
+        });
+        return;
+      }
+      await streamed;
     },
     [buildBody, sendMessage],
   );
@@ -318,17 +372,38 @@ export function AssistantShell({
     isChatStreaming: busy,
     getAuthToken: transport.getAuthToken,
     onStopChat: stop,
-    submitTranscript: (text) => submit(text, { voice: true }),
+    submitTranscript: (text) => submit(text, { voice: true, detach: true }),
   });
 
   const onSelectAction = React.useCallback(
     (action: NextAction) => {
-      if (action.prompt) void submit(action.prompt);
-      else if (action.href && typeof window !== 'undefined') {
+      // A turn is already in flight — ignore. The strip also renders as
+      // skeletons while `busy` (see below), so this is the belt to that braces:
+      // it stops a double-tap on the same render from firing two turns.
+      if (busy) return;
+      if (action.prompt) {
+        // In an open voice session a next-action chip is just another way to
+        // take a turn: speak the reply back and keep the session live (a chip
+        // must never tear down voice mode). If the assistant is mid-TTS, the
+        // chip barges in first.
+        const inVoiceSession = voice.available && voice.listening;
+        if (inVoiceSession && voice.phase === 'speaking') voice.stopSpeaking();
+        void submit(
+          action.prompt,
+          inVoiceSession ? { voice: true, detach: true } : undefined,
+        );
+      } else if (action.href && typeof window !== 'undefined') {
         window.location.assign(action.href);
       }
     },
-    [submit],
+    [
+      busy,
+      submit,
+      voice.available,
+      voice.listening,
+      voice.phase,
+      voice.stopSpeaking,
+    ],
   );
 
   const onWidgetEvent = React.useCallback((event: WidgetEvent) => {
@@ -356,19 +431,19 @@ export function AssistantShell({
     return hasGuidance ? base : [...base, guidanceAction];
   }, [nextActions, greeting.nextActions, guidanceAction, scope.source]);
 
-  // M8 — while a voice turn is being processed, skeleton the strip so it doesn't
-  // show the previous turn's chips. Debounce the trailing edge (~800ms) so it
-  // doesn't flash between rapid back-to-back turns.
-  const voiceTurnBusy = voiceEnabled && voice.listening && busy;
+  // While ANY turn is in flight (typed, chip, or voice), skeleton the strip:
+  // it hides the previous turn's chips AND makes them un-clickable so a
+  // second turn can't be fired mid-stream. Debounce the trailing edge (~800ms)
+  // so chips don't flash between rapid back-to-back turns.
   const [stripLoading, setStripLoading] = React.useState(false);
   React.useEffect(() => {
-    if (voiceTurnBusy) {
+    if (busy) {
       setStripLoading(true);
       return;
     }
     const t = window.setTimeout(() => setStripLoading(false), 800);
     return () => window.clearTimeout(t);
-  }, [voiceTurnBusy]);
+  }, [busy]);
 
   return (
     <div className={cn('flex w-full flex-col', className)}>
@@ -485,7 +560,7 @@ function Transcript({ messages }: { messages: ConversationMessage[] }) {
           .trim();
         if (!text) return null;
         return (
-          <div key={message.id ?? index}>
+          <div key={`${message.id ?? 'noid'}-${index}`}>
             <span className="font-semibold">
               {message.role === 'user' ? 'You' : 'Organization'}:{' '}
             </span>
