@@ -31,15 +31,27 @@ import type {
   WidgetEvent,
 } from './types';
 
-/** Fixed, item-agnostic prompt for a "dig deeper" turn — the specificity rides
- * in `conversationContext.exploreIntent`, and the model composes the question
- * (#2486 M9, decision M9-1). Shown only as a fallback if the drill metadata is
- * lost; the transcript normally renders a muted entry instead. */
-const DRILL_TURN_TEXT = 'Take me deeper into this.';
+/** Item-agnostic prompt text for a "dig deeper" turn — the specificity rides in
+ * `conversationContext.exploreIntent` (#2486 M9, decision M9-1). The transcript
+ * normally renders a muted entry instead; this is what the model sees as the
+ * user turn, and a fallback if the drill metadata is lost. Scope-specific: a
+ * row drill must read as "open THIS one", not "elaborate". */
+const DRILL_TURN_TEXT: Record<'widget' | 'item', string> = {
+  widget: 'Take me deeper into this.',
+  item: 'Open the specific item I just selected in its own focused view — I already have the list.',
+};
 
 /** Widgets that never get a widget-level "dig deeper" control. `answer` is the
- * model's own synthesis prose (§ use-canvas `SYNTHESIS_FALLBACK_WIDGET_ID`). */
-const DRILL_EXCLUDED_WIDGET_IDS = new Set(['answer']);
+ * model's own synthesis prose (§ use-canvas `SYNTHESIS_FALLBACK_WIDGET_ID`);
+ * `single-signal` / `single-agreement` are already leaves — "go deeper on this
+ * whole view" is meaningless there and just confuses the model; `treasury` has
+ * no deeper level in v0. Row-level drill inside a list widget is unaffected. */
+const DRILL_EXCLUDED_WIDGET_IDS = new Set([
+  'answer',
+  'single-signal',
+  'single-agreement',
+  'treasury',
+]);
 
 /** Everything the shell needs from the host to reach the chat backend. */
 export interface AssistantTransportConfig {
@@ -91,10 +103,10 @@ export interface AssistantShellProps {
 
 const PERSIST_PREFIX = 'hypha:assistant:v1:';
 
-// #2486 M8 TEMP DIAG — trace every turn the shell sends (voice vs typed, scope,
-// context payload) alongside `[coherent][DIAG][canvas]` on the receiving side.
-// Flip to false / delete once voice canvas-update behaviour is settled.
-const DIAG = true;
+// #2486 DIAG — trace every turn the shell sends (voice / typed / chip / drill),
+// scope, context payload. Off after the M9 gate; flip to `true` to re-enable
+// while debugging turn / canvas behaviour.
+const DIAG = false;
 
 function loadPersisted(sessionId: string): ConversationMessage[] {
   if (typeof window === 'undefined') return [];
@@ -452,9 +464,28 @@ export function AssistantShell({
   // funnel as the next-action chips: `busy`-guarded, voice-aware, barge-in
   // parity. The turn carries a structured `exploreIntent`; the model composes
   // the question and decides what to render.
+  //
+  // `drillInFlightRef` is a hard re-entrancy guard: a fast second tap can beat
+  // React committing `busy=true` (the frame button also has `disabled={busy}`,
+  // but a row control inside a widget does not), and two dispatched turns open
+  // two `/api/chat` streams into one `useChat` store → the transcript / canvas
+  // reducer thrash into "Maximum update depth exceeded".
+  const drillInFlightRef = React.useRef(false);
   const onDrillIn = React.useCallback(
     (descriptor: DrillDescriptor, sourceWidgetId: string) => {
-      if (busy) return;
+      if (busy || drillInFlightRef.current) {
+        if (DIAG)
+          console.log('[coherent][DIAG][drill] blocked', {
+            reason: busy ? 'busy' : 'in-flight',
+            label: descriptor.label,
+          });
+        return;
+      }
+      drillInFlightRef.current = true;
+      // Safety net in case the turn never settles (error before `busy` flips).
+      window.setTimeout(() => {
+        drillInFlightRef.current = false;
+      }, 15000);
       const exploreIntent: ExploreIntent = {
         ...descriptor,
         sourceWidgetId,
@@ -466,10 +497,24 @@ export function AssistantShell({
       };
       const inVoiceSession = voice.available && voice.listening;
       if (inVoiceSession && voice.phase === 'speaking') voice.stopSpeaking();
-      void submit(DRILL_TURN_TEXT, {
-        exploreIntent,
-        messageMetadata: { coherentDrill: drillMeta },
-        ...(inVoiceSession ? { voice: true, detach: true } : {}),
+      if (DIAG)
+        console.log('[coherent][DIAG][drill] fire', {
+          scope: descriptor.scope,
+          kind: descriptor.itemKind,
+          label: descriptor.label,
+          sourceWidgetId,
+        });
+      void Promise.resolve(
+        submit(
+          DRILL_TURN_TEXT[descriptor.scope === 'widget' ? 'widget' : 'item'],
+          {
+            exploreIntent,
+            messageMetadata: { coherentDrill: drillMeta },
+            ...(inVoiceSession ? { voice: true, detach: true } : {}),
+          },
+        ),
+      ).finally(() => {
+        drillInFlightRef.current = false;
       });
     },
     [
@@ -481,6 +526,11 @@ export function AssistantShell({
       voice.stopSpeaking,
     ],
   );
+
+  // Belt to the `drillInFlightRef` brace: also clear it whenever a turn settles.
+  React.useEffect(() => {
+    if (!busy) drillInFlightRef.current = false;
+  }, [busy]);
 
   // Widget-level drill descriptor (slice 1). Generic: kind = widget id, label =
   // widget title, slug lifted from params when present. `answer` stays plain.

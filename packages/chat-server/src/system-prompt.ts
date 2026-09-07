@@ -793,6 +793,12 @@ CRITICAL — the chat reply is a pointer, not the payload:
  * no words; the hint says which item. GUIDANCE, not a command — the model
  * composes the question and picks what to render.
  */
+/**
+ * #2486 M9 — this describes WHAT the member is asking about, in domain terms
+ * (a specific signal / agreement, or a whole view). It deliberately names no
+ * widget and no params — picking the surface that fits is the model's job,
+ * off the widget catalogue + hard rules already in this prompt.
+ */
 export function buildAssistantCanvasExploreIntentGuidance(intent: {
   sourceWidgetId: string;
   itemKind: string;
@@ -810,13 +816,19 @@ export function buildAssistantCanvasExploreIntentGuidance(intent: {
   const kind = clean(intent.itemKind);
   const source = clean(intent.sourceWidgetId);
   const slug = intent.itemSlug ? clean(intent.itemSlug) : null;
-  const target =
-    intent.scope === 'item'
-      ? `the ${kind} "${label}"${slug ? ` (slug: ${slug})` : ''}`
-      : `the ${kind} view ("${label}")`;
-  return `DIG-DEEPER TURN — the member did not type this turn. They clicked "dig deeper" on ${target} in the ${source} view. Treat it as a request to go further on that${
-    intent.scope === 'item' ? ' item' : ''
-  }. Compose the question yourself and answer it, guided by what the member has been exploring in this conversation so far. Decide what best serves them — a focused widget for that item (e.g. \`single-signal\` / \`single-agreement\` when registered), the item shown in context, or a short synthesis in the \`answer\` widget. You are NOT restricted to any one widget. Still obey the non-negotiable rule: call \`set_canvas\` this turn.`;
+
+  // Widget-scope: the member wants to go further on what a whole view covers —
+  // a synthesis / reframe, model's latitude.
+  if (intent.scope !== 'item') {
+    return `DIG-DEEPER TURN — the member did not type this turn. They asked to go deeper on the "${label}" view of ${source}. Treat it as: help me get more out of everything this view covers — the notable items, the synthesis, what to do next — guided by what they have been exploring so far. Answer that this turn.`;
+  }
+
+  // Item-scope: the member is asking about ONE specific entity, not the
+  // collection. Frame it conceptually; the model maps "a specific <kind>" to
+  // the right surface itself.
+  return `DIG-DEEPER TURN — the member did not type this turn. They are asking about ONE specific ${kind}: "${label}"${
+    slug ? ` (identifier: ${slug})` : ''
+  }. They want that single ${kind} itself — its own details, in focus — NOT the ${source} collection (they already have that list on screen). Answer about that one ${kind} this turn, and do not re-present the ${source} list. Keep the chat reply to a one-line pointer — the details belong on screen, not restated as prose. If the member's recent messages point at a different need, follow that instead.`;
 }
 
 export const ASSISTANT_CANVAS_VOICE_REPLY_GUIDANCE = `VOICE TURN — the reply is spoken aloud. Its shape follows what you just put on screen:

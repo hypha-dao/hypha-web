@@ -66,6 +66,13 @@ CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS r
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
+/**
+ * #2486 — server-side trace of the Coherent canvas turn (context received + the
+ * presentation tools the model called). Off after the M9 gate; flip to `true`
+ * (or wire to an env var) while debugging canvas / turn behaviour.
+ */
+const COHERENT_CANVAS_DIAG = false;
+
 /** Thrown before `streamText` when deployment is missing OpenRouter credentials (matches provider default env). */
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
@@ -1540,10 +1547,14 @@ export async function createChatStreamResult(
         ).exploreIntent ?? null
       : null;
 
-  // #2486 M8 TEMP DIAG — confirm what the canvas turn received (voice flag,
-  // scope, snapshot) before the model runs. Pairs with the client
-  // `[coherent][DIAG]` logs and the per-step tool tally below.
-  if (normalizedConversationContext?.mode === 'conversational_canvas') {
+  // #2486 DIAG — confirm what the canvas turn received (voice flag, scope,
+  // snapshot, exploreIntent) before the model runs, and (below) which
+  // presentation tools it actually called. Off after the M9 gate; flip
+  // `COHERENT_CANVAS_DIAG` to re-enable while debugging.
+  if (
+    COHERENT_CANVAS_DIAG &&
+    normalizedConversationContext?.mode === 'conversational_canvas'
+  ) {
     console.log('[coherent][DIAG][server] canvas turn in', {
       debugRequestId,
       voice:
@@ -1679,10 +1690,13 @@ export async function createChatStreamResult(
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
-      // #2486 M8 TEMP DIAG — which presentation tools did the model actually
-      // call this step? A canvas turn with an empty list here is the model
-      // answering in prose without driving the view.
-      if (normalizedConversationContext?.mode === 'conversational_canvas') {
+      // #2486 DIAG — which presentation tools did the model actually call this
+      // step? A canvas turn with an empty list here is the model answering in
+      // prose without driving the view. Gated by `COHERENT_CANVAS_DIAG`.
+      if (
+        COHERENT_CANVAS_DIAG &&
+        normalizedConversationContext?.mode === 'conversational_canvas'
+      ) {
         const calls = Array.isArray(
           (event as { toolCalls?: unknown }).toolCalls,
         )

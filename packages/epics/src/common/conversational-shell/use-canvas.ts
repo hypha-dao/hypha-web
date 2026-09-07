@@ -19,10 +19,10 @@ export const EMPTY_CANVAS_STATE: CanvasState = {
   updatedFromMessageId: null,
 };
 
-// #2486 M8 TEMP DIAG — trace how the model's presentation-tool calls turn (or
-// fail to turn) into on-screen widgets. Flip to false or delete once voice
-// canvas-update behaviour is settled. Grep: `TEMP DIAG` / `[coherent][DIAG]`.
-const DIAG = true;
+// #2486 DIAG — trace how the model's presentation-tool calls turn (or fail to
+// turn) into on-screen widgets. Off after the M9 gate; flip to `true` to
+// re-enable while debugging canvas / turn behaviour. Grep: `[coherent][DIAG]`.
+const DIAG = false;
 
 /** Newest-first, DIAG-only summary of the assistant's latest turn. */
 function diagScanLatestAssistant(messages: ConversationMessage[]): {

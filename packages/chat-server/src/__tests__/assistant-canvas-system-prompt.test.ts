@@ -4,6 +4,7 @@ import {
   ASSISTANT_CANVAS_DOMAIN_GUIDANCE,
   ASSISTANT_CANVAS_INTERACTION_GUIDANCE,
   ASSISTANT_CANVAS_PERSONA,
+  buildAssistantCanvasExploreIntentGuidance,
   buildAssistantCanvasSystemPrompt,
 } from '../system-prompt';
 import { conversationContextSchema } from '../request-schema';
@@ -124,25 +125,55 @@ describe('buildAssistantCanvasSystemPrompt', () => {
       spaceSlug: 'hypha',
     });
     expect(withIntent).toContain('DIG-DEEPER TURN');
-    expect(withIntent).toContain('the signal "Treasury gap"');
-    expect(withIntent).toContain('slug: treasury-gap');
-    expect(withIntent).toContain('NOT restricted to any one widget');
-    expect(withIntent).toContain('call `set_canvas` this turn');
+    expect(withIntent).toContain('ONE specific signal: "Treasury gap"');
+    expect(withIntent).toContain('identifier: treasury-gap');
     expect(withoutIntent).not.toContain('DIG-DEEPER TURN');
   });
 
-  it('M9: widget-scope dig-deeper phrases as a view, no slug clause', () => {
-    const prompt = buildAssistantCanvasSystemPrompt({
-      spaceSlug: 'hypha',
-      exploreIntent: {
-        sourceWidgetId: 'signals',
-        itemKind: 'signals',
-        label: 'Signals',
-        scope: 'widget',
-      },
+  it('M9: item-scope guidance frames one specific entity, forbids re-listing, names no widget/param', () => {
+    const g = buildAssistantCanvasExploreIntentGuidance({
+      sourceWidgetId: 'signals',
+      itemKind: 'signal',
+      label: 'Treasury gap',
+      scope: 'item',
+      itemSlug: 'treasury-gap',
     });
-    expect(prompt).toContain('the signals view ("Signals")');
-    expect(prompt).not.toContain('slug:');
+    expect(g).toContain('asking about ONE specific signal: "Treasury gap"');
+    expect(g).toContain('NOT the signals collection');
+    expect(g).toContain('do not re-present the signals list');
+    // Domain terms only — widget selection is the model's job off the catalogue.
+    expect(g).not.toContain('single-signal');
+    expect(g).not.toContain('signalSlug');
+    expect(g).not.toContain('widget');
+    expect(g).not.toContain('set_canvas');
+  });
+
+  it('M9: item-scope guidance works for any kind (agreement) without a widget map', () => {
+    const g = buildAssistantCanvasExploreIntentGuidance({
+      sourceWidgetId: 'agreements',
+      itemKind: 'agreement',
+      label: 'Q3 Budget',
+      scope: 'item',
+      itemSlug: 'q3-budget',
+    });
+    expect(g).toContain('asking about ONE specific agreement: "Q3 Budget"');
+    expect(g).toContain('do not re-present the agreements list');
+    expect(g).not.toContain('single-agreement');
+    expect(g).not.toContain('agreementSlug');
+    expect(g).not.toContain('widget');
+  });
+
+  it('M9: widget-scope guidance frames the whole view, no identifier clause, no widget names', () => {
+    const g = buildAssistantCanvasExploreIntentGuidance({
+      sourceWidgetId: 'signals',
+      itemKind: 'signals',
+      label: 'Signals',
+      scope: 'widget',
+    });
+    expect(g).toContain('go deeper on the "Signals" view of signals');
+    expect(g).not.toContain('identifier:');
+    expect(g).not.toContain('single-signal');
+    expect(g).not.toContain('widget');
   });
 
   it('M9: strips newlines/tabs from a hostile exploreIntent label', () => {

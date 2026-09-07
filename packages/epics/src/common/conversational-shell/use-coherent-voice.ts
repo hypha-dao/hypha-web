@@ -9,10 +9,11 @@ import type {
   VoiceInterviewPhase,
 } from '../use-onboarding-voice-interview';
 
-// #2486 M8 TEMP DIAG — trace the voice session lifecycle + every transcript
-// hand-off to the chat turn. Pairs with `[coherent][DIAG][submit]` /
-// `[coherent][DIAG][canvas]`. Flip to false / delete once settled.
-const DIAG = true;
+// #2486 DIAG — trace the voice session lifecycle + every transcript hand-off to
+// the chat turn. Off after the M9 gate; flip to `true` to re-enable (M11 voice
+// depth will likely want it). The "session ended unexpectedly" warn below stays
+// live regardless — it flags a real fault, not a trace.
+const DIAG = false;
 
 export interface UseCoherentVoiceOptions {
   /** Master gate — the `enable-coherent-voice` flag AND a host opt-in. */
@@ -214,7 +215,7 @@ export function useCoherentVoice({
     }
     if (wasLiveRef.current && active && !voiceError) {
       wasLiveRef.current = false;
-      console.warn('[coherent][DIAG][voice] session ended unexpectedly', {
+      console.warn('[coherent][voice] session ended unexpectedly', {
         phase,
         note: 'member did not toggle off; engine went idle. Re-toggle the mic to resume.',
       });
