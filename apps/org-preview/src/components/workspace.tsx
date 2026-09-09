@@ -13,7 +13,7 @@ type NavItem = {
   badge?: number;
   open: () => void;
   isActive: boolean;
-  group: 'org' | 'mine';
+  group: 'org' | 'network';
 };
 
 function useNav(): NavItem[] {
@@ -87,15 +87,19 @@ function useNav(): NavItem[] {
       label: 'My Work',
       badge: needsMe,
       open: goRoute('my'),
-      isActive: s.route === 'my' || s.route === 'ticket' || s.route === 'offer',
-      group: 'mine',
+      isActive:
+        s.route === 'my' ||
+        s.route === 'ticket' ||
+        s.route === 'offer' ||
+        s.route === 'shaper',
+      group: 'org',
     },
     {
       key: 'profile',
       label: 'My Profile',
-      open: goRoute('profile'),
-      isActive: s.route === 'profile',
-      group: 'mine',
+      open: () => s.openMyProfile(),
+      isActive: s.route === 'profile' && !s.viewingProfile,
+      group: 'network',
     },
   ];
 }
@@ -164,11 +168,11 @@ export function Workspace({ children }: { children: ReactNode }) {
           </div>
 
           <p className="px-1.5 pb-1.5 pt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
-            Mine
+            Network
           </p>
           <div className="flex flex-col gap-0.5">
             {items
-              .filter((i) => i.group === 'mine')
+              .filter((i) => i.group === 'network')
               .map((item) => (
                 <NavButton key={item.key} item={item} />
               ))}
@@ -535,7 +539,7 @@ export function Page({
       <div
         className={cn(
           'mx-auto px-5 py-8 md:px-10 md:py-12',
-          wide === 'board' ? 'max-w-5xl' : wide ? 'max-w-3xl' : 'max-w-xl',
+          wide === 'board' ? 'max-w-6xl' : wide ? 'max-w-3xl' : 'max-w-xl',
         )}
       >
         {kicker && (

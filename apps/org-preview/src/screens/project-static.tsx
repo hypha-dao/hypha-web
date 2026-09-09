@@ -1,5 +1,6 @@
 'use client';
 
+import { PersonLink } from '@/components/person';
 import { Kicker } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import {
@@ -53,7 +54,6 @@ export function ProjectHealth({
       className="rise-2 mb-6"
       health={health}
       kicker="Project health — the agent’s read"
-      footnote="Read from this project’s tickets, dates and payments — what the brief promised vs what the trail shows. The DRI can dispute it in one line."
     />
   );
 }
@@ -88,7 +88,10 @@ export function StaticProjectDetail({
         </p>
 
         <div className="rise-1 mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <Fact label="DRI" value={p.dri ?? 'open'} />
+          <Fact
+            label="DRI"
+            value={p.dri ? <PersonLink name={p.dri} /> : 'open'}
+          />
           <Fact label="Tickets" value={ticketCount(tickets)} />
           <Fact label="Review" value={p.review} />
           <Fact label="Approved" value={p.approved ?? 'not yet'} />

@@ -1,7 +1,8 @@
 'use client';
 
 import { DIRECTION_LABEL, DirectionMark } from '@/components/direction-mark';
-import { Avatar, Card, Chip, Kicker, cn } from '@/components/primitives';
+import { PersonLink } from '@/components/person';
+import { Avatar, Card, Kicker, cn } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import {
   direction,
@@ -12,7 +13,6 @@ import {
   treasury,
   type Direction,
   type DirectionKind,
-  type DirectionVersion,
 } from '@/lib/data';
 import { useStore, PAY_LEA_ID, PAY_ROGERIO_ID } from '@/lib/store';
 import { HealthCard } from './work-bits';
@@ -158,12 +158,6 @@ export function OrgPage() {
 
   /* ---- direction: four L3 artifacts, each versioned on its own ---- */
   const dir: Direction = isEnergy ? energyOrg.direction : direction;
-  // River's strategy is the one artifact that moves in the demo (v4 → v5)
-  const strategyMeta: DirectionVersion = isEnergy
-    ? dir.strategy
-    : v5
-    ? { version: 5, confirmedBy: 'Maya', confirmedOn: 'today' }
-    : dir.strategy;
   const strategyAdded = !isEnergy && v5 ? strategyDraft.added : null;
 
   /* ---- energy: live additions to the static story ---- */
@@ -266,28 +260,24 @@ export function OrgPage() {
             <DirectionCard
               index={0}
               mark="mission"
-              meta={dir.mission}
               lines={[dir.mission.text]}
               onOpen={() => s.openDirection('mission')}
             />
             <DirectionCard
               index={1}
               mark="vision"
-              meta={dir.vision}
               lines={[dir.vision.text]}
               onOpen={() => s.openDirection('vision')}
             />
             <DirectionCard
               index={2}
               mark="objectives"
-              meta={dir.objectives}
               lines={[dir.objectives.text]}
               onOpen={() => s.openDirection('objectives')}
             />
             <DirectionCard
               index={3}
               mark="strategy"
-              meta={strategyMeta}
               lines={[dir.strategy.text]}
               added={strategyAdded}
               onOpen={() => s.openDirection('strategy')}
@@ -316,7 +306,7 @@ export function OrgPage() {
             <div className="mt-5 grid gap-x-6 md:grid-cols-2">
               <div>
                 <p className="pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
-                  Shapers
+                  Shapers — set direction and control budget
                 </p>
                 <div className="flex flex-col gap-1">
                   {orgSpace.shapers.map((name) => (
@@ -325,17 +315,8 @@ export function OrgPage() {
                       className="flex items-center gap-2.5 rounded-xl px-2 py-2"
                     >
                       <Avatar name={name} size="sm" />
-                      <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-medium">
-                          {name}
-                          {name === orgSpace.founder && ' · founder'}
-                        </span>
-                        <span className="block text-[12px] text-faint">
-                          shapes projects and money —{' '}
-                          {orgSpace.shapers.length > 2
-                            ? 'all must agree'
-                            : 'both must agree'}
-                        </span>
+                      <span className="truncate text-[13px] font-medium">
+                        <PersonLink name={name} />
                       </span>
                     </div>
                   ))}
@@ -414,11 +395,6 @@ export function OrgPage() {
                 </div>
               </div>
             </div>
-
-            <p className="mt-4 text-[12px] leading-relaxed text-faint">
-              Every number comes from the ledger — click through and check the
-              receipts.
-            </p>
           </Card>
 
           <Card className="p-5" delay={3}>
@@ -444,15 +420,10 @@ export function OrgPage() {
                   symbol={c.symbol}
                   name={c.name}
                   amount={c.amount}
-                  note={c.note}
+                  note={(c as { note?: string }).note}
                 />
               ))}
             </div>
-            <p className="mt-3 text-[12px] leading-relaxed text-faint">
-              Nothing here moves without a proposal{' '}
-              {isEnergy ? 'all three' : 'both'} Shapers agreed to — every
-              movement is on the Decisions page.
-            </p>
           </Card>
 
           {/* org health — the agent's read on how the org is doing */}
@@ -460,14 +431,8 @@ export function OrgPage() {
             delay={3}
             health={healthView}
             kicker="Org health — the agent’s read"
-            footnote="Read from the activity ledger against the objectives and strategy — what was said vs what actually happened. Receipts, not vibes. Every project has its own bar on its page."
           />
         </div>
-
-        <p className="pt-5 text-[13px] leading-relaxed text-faint">
-          Anyone can look — members, investors, newcomers. Ask the agent
-          anything about this page and it answers with receipts.
-        </p>
       </Page>
     </Workspace>
   );
@@ -483,7 +448,6 @@ const LINE_STAGGER = 170;
 function DirectionCard({
   index,
   mark,
-  meta,
   lines,
   bullets,
   added,
@@ -492,7 +456,6 @@ function DirectionCard({
   /** position in the grid — drives the stagger */
   index: number;
   mark: DirectionKind;
-  meta: DirectionVersion;
   lines: string[];
   /** render each line as its own point — ring for objectives (targets), dot for strategy (bets) */
   bullets?: 'ring' | 'dot';
@@ -518,25 +481,15 @@ function DirectionCard({
       )}
       style={{ animationDelay: `${base}ms` }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <DirectionMark
-            kind={mark}
-            live={live}
-            style={{ animationDelay: `${base + 120}ms` }}
-          />
-          <Kicker>
-            {label.title} — {label.question}
-          </Kicker>
-        </div>
-        <span
-          className="dir-stamp inline-flex shrink-0"
-          style={{ animationDelay: `${stampAt}ms` }}
-        >
-          <Chip tone={live ? 'agent' : 'neutral'}>
-            v{meta.version} · {meta.confirmedBy}, {meta.confirmedOn}
-          </Chip>
-        </span>
+      <div className="flex items-center gap-2">
+        <DirectionMark
+          kind={mark}
+          live={live}
+          style={{ animationDelay: `${base + 120}ms` }}
+        />
+        <Kicker>
+          {label.title} — {label.question}
+        </Kicker>
       </div>
       <span
         className={cn(
@@ -787,11 +740,8 @@ function DriRow({
       className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-wash"
     >
       <Avatar name={name} size="sm" />
-      <span className="min-w-0">
-        <span className="block truncate text-[13px] font-medium">
-          {name} · {project} →
-        </span>
-        <span className="block text-[12px] text-faint">DRI — holds it</span>
+      <span className="min-w-0 truncate text-[13px] font-medium">
+        {name} · {project} →
       </span>
     </button>
   );

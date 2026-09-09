@@ -1,17 +1,19 @@
 'use client';
 
-import { Avatar, Button, Card } from '@/components/primitives';
+import { PersonLink } from '@/components/person';
+import { Button, Card } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import {
+  TICKET_SUGGESTED,
   energyOrg,
-  personaName,
+  isWaitingOnMe,
   projectsData,
   type EnergyProjectId,
   type RiverProjectId,
   type TicketView,
 } from '@/lib/data';
 import { useStore } from '@/lib/store';
-import { ChildList, Fact, StateChip } from './work-bits';
+import { ChildList, Fact, HolderFact, StateChip } from './work-bits';
 
 /* =========================================================
    Any ticket, opened by anyone — read-only. Only the person
@@ -27,10 +29,13 @@ export function TicketViewScreen() {
   if (!t) return null;
 
   const energy = s.org === 'energy';
-  const holder = t.who === 'open' || t.state === 'open' ? null : t.who;
+  const key = t.ticketKey ?? t.id;
+  const assigned = key ? s.ticketPerson[key] ?? t.who : t.who;
+  const accepted = t.state === 'doing' || t.state === 'done';
+  const holder = accepted && assigned && assigned !== 'open' ? assigned : null;
   const room = energy ? 'e-pilots' : 'saturday';
   const roomName = energy ? 'Pilots' : 'Saturday stall';
-  const isYou = holder === 'You' || holder === personaName(s.org, s.persona);
+  const isYou = assigned ? isWaitingOnMe(assigned, s.org, s.persona) : false;
   const projectDri =
     (energy
       ? energyOrg.projects[t.projectId as EnergyProjectId]?.dri
@@ -97,8 +102,28 @@ export function TicketViewScreen() {
         </h1>
 
         <div className="rise-1 mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <Fact label="Holds it" value={holder ?? 'nobody yet'} />
-          <Fact label="Offered by" value={offeredBy} />
+          {key && t.state !== 'open' ? (
+            <HolderFact
+              ticketKey={key}
+              current={assigned}
+              suggested={t.suggested ?? TICKET_SUGGESTED[key]}
+              accepted={accepted}
+              done={t.state === 'done'}
+            />
+          ) : (
+            <Fact label="Holds it" value="nobody yet" />
+          )}
+          <Fact
+            label="Offered by"
+            value={
+              offeredBy === 'the ticket holder' ||
+              offeredBy === 'the project DRI' ? (
+                offeredBy
+              ) : (
+                <PersonLink name={offeredBy} />
+              )
+            }
+          />
           <Fact label="Due" value={t.due ?? '—'} />
           <Fact
             label={above ? 'Under ticket' : 'Under project'}
@@ -106,27 +131,7 @@ export function TicketViewScreen() {
           />
         </div>
 
-        {holder && (
-          <Card className="rise-2 mb-4 p-5">
-            <div className="flex items-center gap-3">
-              <Avatar name={holder} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-medium">
-                  {holder} holds this{isYou ? ' — that is you' : ''}
-                </p>
-                <p className="text-[13px] leading-relaxed text-sub">
-                  {t.state === 'done'
-                    ? 'Finished, with the receipt attached. It stays readable forever.'
-                    : isYou
-                    ? 'Open it from My Work to edit the draft, split it, or mark it done.'
-                    : `Only ${holder} can mark it done or split it further. Say something about it in “${roomName}” and the agent hears it.`}
-                </p>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {!holder && (
+        {t.state === 'open' && (
           <Card className="rise-2 mb-4 border-ink/15 p-5">
             <p className="text-[15px] font-medium">Nobody holds this yet</p>
             <p className="mt-1 text-[13px] leading-relaxed text-sub">

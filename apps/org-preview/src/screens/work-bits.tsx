@@ -1,23 +1,30 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { PersonLink } from '@/components/person';
 import {
   Avatar,
   Button,
   Card,
   Chip,
+  EmptyState,
   Kicker,
   cn,
 } from '@/components/primitives';
 import {
+  HOLDERS,
+  TICKET_SUGGESTED,
+  displayPerson,
+  isWaitingOnMe,
   type Health,
+  type OrgId,
   type PersonaId,
   type ProjectId,
   type TicketId,
   type TicketView,
   type WorkTicketRow,
 } from '@/lib/data';
-import { OFFERS, useStore, type OfferId } from '@/lib/store';
+import { OFFERS, useStore, type OfferId, type ShaperAskId } from '@/lib/store';
 
 /* Shared pieces for the work surfaces — used by both orgs. */
 
@@ -49,6 +56,229 @@ export function WorkBoard({
       <Section title="Not accepted yet">{waiting}</Section>
       <Section title="Ongoing">{accepted}</Section>
     </div>
+  );
+}
+
+/** My Work: stacked on mobile, ask | hold | you offered | finished on desktop. */
+export function MyWorkBoard({
+  asks,
+  held,
+  offered,
+  finished,
+}: {
+  asks: ReactNode[];
+  held: ReactNode[];
+  offered: ReactNode[];
+  finished: ReactNode[];
+}) {
+  return (
+    <div className="grid items-start gap-7 lg:grid-cols-2 xl:grid-cols-4 xl:gap-5">
+      <div className={cn(asks.length === 0 && 'hidden lg:block')}>
+        <Section title="Needs your answer">{asks}</Section>
+      </div>
+      <div className={cn(held.length === 0 && 'hidden lg:block')}>
+        <Section title="You hold">{held}</Section>
+      </div>
+      <div className={cn(offered.length === 0 && 'hidden lg:block')}>
+        <Section title="You offered">{offered}</Section>
+      </div>
+      <div className={cn(finished.length === 0 && 'hidden lg:block')}>
+        <Section title="Finished">{finished}</Section>
+      </div>
+    </div>
+  );
+}
+
+export function myWorkOrEmpty(
+  asks: ReactNode[],
+  held: ReactNode[],
+  offered: ReactNode[],
+  finished: ReactNode[],
+  empty: { title: string; sub: string },
+) {
+  if (asks.length + held.length + offered.length + finished.length === 0) {
+    return <EmptyState title={empty.title} sub={empty.sub} />;
+  }
+  return (
+    <MyWorkBoard
+      asks={asks}
+      held={held}
+      offered={offered}
+      finished={finished}
+    />
+  );
+}
+
+export type OfferedState = 'draft' | 'open' | 'waiting' | 'held';
+
+export function useHolder(key: string): string {
+  const s = useStore();
+  return s.ticketPerson[key] ?? TICKET_SUGGESTED[key] ?? 'open';
+}
+
+/** Waiting-on-me stays in Needs your answer; otherwise You offered. */
+export function placeOffer(
+  asks: ReactNode[],
+  offered: ReactNode[],
+  to: string | undefined,
+  waiting: boolean,
+  org: OrgId,
+  persona: PersonaId,
+  card: ReactNode,
+) {
+  if (waiting && isWaitingOnMe(to, org, persona)) asks.push(card);
+  else offered.push(card);
+}
+
+/** List card for a Shaper ask — kind + title. Full brief is on the open page. */
+export function ShaperAskCard({
+  ask,
+  kind,
+  title,
+  delay,
+}: {
+  ask: ShaperAskId;
+  kind: string;
+  title: string;
+  delay?: 1 | 2 | 3;
+}) {
+  const s = useStore();
+  const tone =
+    kind === 'money' ? 'money' : kind === 'project' ? 'agent' : 'neutral';
+  return (
+    <Card className="p-5" delay={delay} onClick={() => s.openShaperAsk(ask)}>
+      <Chip className="px-2 py-0.5 text-[10px]" tone={tone}>
+        {kind}
+      </Chip>
+      <p className="mt-2 text-[15px] font-semibold leading-snug tracking-[-0.015em]">
+        {title}
+      </p>
+    </Card>
+  );
+}
+
+/** Same card in every My Work column: who / what / due. */
+export function WorkItemCard({
+  askedBy,
+  title,
+  due,
+  asking,
+  offered,
+  suggested,
+  delay,
+  onOpen,
+}: {
+  askedBy?: string;
+  title: string;
+  due?: string;
+  asking?: boolean;
+  offered?: { to?: string; state: OfferedState };
+  suggested?: string;
+  delay?: 1 | 2 | 3;
+  onOpen: () => void;
+}) {
+  const s = useStore();
+  const who = (name: string) => displayPerson(name, s.persona);
+  const kicker = offered ? (
+    offered.state === 'draft' ? (
+      'Draft'
+    ) : offered.state === 'open' ? (
+      'Open'
+    ) : offered.state === 'waiting' && offered.to ? (
+      <>
+        Waiting on <PersonLink name={who(offered.to)} />
+      </>
+    ) : offered.to ? (
+      <>
+        <PersonLink name={who(offered.to)} /> holds it
+      </>
+    ) : (
+      'Open'
+    )
+  ) : asking ? (
+    <>
+      <PersonLink name={who(askedBy ?? '')} /> is asking you
+    </>
+  ) : (
+    <>
+      Asked by <PersonLink name={who(askedBy ?? '')} />
+    </>
+  );
+
+  return (
+    <Card className="p-5" delay={delay} onClick={onOpen}>
+      <Kicker>{kicker}</Kicker>
+      <p className="mt-2 text-[16px] font-semibold leading-snug tracking-[-0.015em]">
+        {title}
+      </p>
+      {due && <p className="mt-2.5 text-[13px] text-sub">Due {due}</p>}
+    </Card>
+  );
+}
+
+/**
+ * Compact person picker for the metadata row.
+ * Waiting → “Offered to”. Accepted → “Holds it”.
+ */
+export function HolderFact({
+  ticketKey,
+  current,
+  accepted,
+  done,
+}: {
+  ticketKey: string;
+  current: string;
+  suggested?: string;
+  accepted: boolean;
+  done?: boolean;
+}) {
+  const s = useStore();
+  const options = HOLDERS[s.org];
+  const currentStored = s.ticketPerson[ticketKey] ?? current;
+  const label =
+    accepted || done
+      ? 'Holds it'
+      : currentStored && currentStored !== 'open'
+      ? 'Offered to'
+      : 'Holds it';
+  const shown = displayPerson(currentStored, s.persona);
+
+  if (done || currentStored === 'open') {
+    return (
+      <Fact
+        label={label}
+        value={
+          currentStored === 'open' ? 'nobody yet' : <PersonLink name={shown} />
+        }
+      />
+    );
+  }
+
+  return (
+    <Card className="p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
+        {label}
+      </p>
+      <div className="relative mt-1.5">
+        <select
+          value={currentStored === 'the new member' ? 'You' : currentStored}
+          onChange={(e) => s.setTicketPerson(ticketKey, e.target.value)}
+          className="w-full cursor-pointer appearance-none bg-transparent pr-5 text-[15px] font-semibold tracking-[-0.01em] outline-none"
+        >
+          {options.map((name) => {
+            const stored = name === 'the new member' ? 'You' : name;
+            return (
+              <option key={name} value={stored}>
+                {displayPerson(stored, s.persona)}
+              </option>
+            );
+          })}
+        </select>
+        <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[11px] text-faint">
+          ▾
+        </span>
+      </div>
+    </Card>
   );
 }
 
@@ -176,6 +406,13 @@ export function depthUnder(t: TicketRow): number {
 
 export function ticketMeta(t: TicketRow) {
   const bits = [t.who === 'open' ? 'nobody yet' : t.who];
+  const rest = ticketMetaRest(t);
+  if (rest) bits.push(rest);
+  return bits.join(' · ');
+}
+
+function ticketMetaRest(t: TicketRow) {
+  const bits: string[] = [];
   if (t.due && t.state !== 'done') bits.push(`due ${t.due}`);
   const under = countUnder(t);
   if (under > 0) {
@@ -211,7 +448,8 @@ export function useTicketOpener(
   const s = useStore();
   return (t: TicketRow) => {
     if (t.id && owner[t.id] === s.persona) {
-      if (t.id === 'setup' && s.setup === 'offered') return s.go('offer');
+      if (t.id === 'setup' && s.setup === 'offered')
+        return s.openOffer('setup');
       if (t.id !== 'setup' || s.setup === 'accepted') return s.openTicket(t.id);
     }
     s.viewTicket({ ...t, projectId, projectTitle, parent });
@@ -246,7 +484,10 @@ function TicketLine({
         >
           {t.title}
         </p>
-        <p className="mt-0.5 text-[12px] text-sub">{ticketMeta(t)}</p>
+        <p className="mt-0.5 text-[12px] text-sub">
+          {t.who === 'open' ? 'nobody yet' : <PersonLink name={t.who} />}
+          {ticketMetaRest(t) ? ` · ${ticketMetaRest(t)}` : ''}
+        </p>
       </div>
       <StateChip state={t.state} label={t.stateLabel} />
     </button>
@@ -335,9 +576,6 @@ export function OpenProjectCard({
             {title}
           </p>
           <p className="mt-1 text-[13px] leading-snug text-sub">{review}</p>
-          <p className="text-[13px] leading-snug text-sub">
-            Shapers need to decide
-          </p>
         </div>
         <StateChip state="open" label="needs a DRI" />
       </div>
@@ -372,7 +610,7 @@ export function ProjectBlock({
               {title}
             </p>
             <p className="mt-1 text-[12px] leading-snug text-sub">
-              {dri} holds it
+              <PersonLink name={dri} /> holds it
             </p>
             <p className="text-[12px] leading-snug text-sub">{meta}</p>
           </div>
@@ -440,25 +678,14 @@ export function OfferCard({ id }: { id: OfferId }) {
   const o = OFFERS[id];
   if (s.offers[id] !== 'offered') return null;
   return (
-    <Card className="border-ink/15 p-5">
-      <Kicker className="text-ink">{o.from} is asking you</Kicker>
-      <p className="mt-2 text-[16px] font-medium tracking-[-0.015em]">
-        {o.title}
-      </p>
-      <OfferWhere project={o.project} projectId={o.projectId} due={o.due} />
-      <div className="mt-3 flex gap-2">
-        <Button size="sm" onClick={() => s.answerOffer(id, true)}>
-          Accept
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => s.answerOffer(id, false)}
-        >
-          Not now
-        </Button>
-      </div>
-    </Card>
+    <WorkItemCard
+      asking
+      askedBy={o.from}
+      title={o.title}
+      due={o.due}
+      suggested={TICKET_SUGGESTED[id]}
+      onOpen={() => s.openOffer(id)}
+    />
   );
 }
 
@@ -476,39 +703,26 @@ export function offerRow(id: OfferId): TicketRow {
 /** Something you hold that does not move in the demo — opens read-only. */
 export function HeldCard({
   view,
+  askedBy,
   delay,
 }: {
   view: TicketView;
+  askedBy: string;
   delay?: 1 | 2 | 3;
 }) {
   const s = useStore();
-  const t = view;
-  const under = countUnder(t);
   return (
-    <Card className="p-5" delay={delay} onClick={() => s.viewTicket(t)}>
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <Chip>
-          {t.parent ? `${t.projectTitle} › ${t.parent.title}` : t.projectTitle}
-        </Chip>
-        {t.due && <Chip>due {t.due}</Chip>}
-        {under > 0 && (
-          <Chip tone="agent">
-            {under} under it{openUnder(t) > 0 ? `, ${openUnder(t)} open` : ''}
-          </Chip>
-        )}
-      </div>
-      <p className="text-[17px] font-semibold leading-snug tracking-[-0.02em]">
-        {t.title}
-      </p>
-      {t.stateLabel && (
-        <p className="mt-1 text-[13px] text-sub">{t.stateLabel}</p>
-      )}
-      <p className="mt-3 text-[13px] font-medium text-ink">Open →</p>
-    </Card>
+    <WorkItemCard
+      askedBy={askedBy}
+      title={view.title}
+      due={view.due}
+      delay={delay}
+      onOpen={() => s.viewTicket(view)}
+    />
   );
 }
 
-export function Fact({ label, value }: { label: string; value: string }) {
+export function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <Card className="p-4">
       <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
@@ -529,7 +743,7 @@ export function Waiting({ who }: { who: string }) {
         <span className="dot h-1.5 w-1.5 rounded-full bg-faint" />
         <span className="dot h-1.5 w-1.5 rounded-full bg-faint" />
       </span>
-      Offered to {who} — their yes or no, nobody else’s.
+      Offered to <PersonLink name={who} /> — their yes or no, nobody else’s.
     </div>
   );
 }

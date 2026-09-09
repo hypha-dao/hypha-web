@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { PersonLink } from '@/components/person';
 import {
   Avatar,
   Button,
@@ -12,6 +13,7 @@ import {
 } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import {
+  TICKET_SUGGESTED,
   energyOrg,
   type EnergyProjectId,
   type EnergyTicketId,
@@ -19,19 +21,26 @@ import {
   type TicketView,
 } from '@/lib/data';
 import { OFFERS, useStore, PAY_ROGERIO_ID } from '@/lib/store';
+import { ProposalCard } from './proposals';
 import { ProjectHealth, ticketCount } from './project-static';
 import {
   ChildList,
   Fact,
   HeldCard,
+  HolderFact,
+  myWorkOrEmpty,
   OfferCard,
   OpenProjectCard,
+  placeOffer,
   ProjectBlock,
   Section,
+  ShaperAskCard,
   TicketList,
   Waiting,
   WorkBoard,
+  WorkItemCard,
   offerRow,
+  useHolder,
   type TicketRow,
 } from './work-bits';
 
@@ -143,66 +152,84 @@ function YouEnergy() {
   const s = useStore();
   const t = T['e-summary'];
   const faq = s.offers['e-faq'];
-  const faqHeld =
-    faq === 'accepted' ? (
+  const summaryView: TicketView = {
+    id: 'e-summary',
+    ticketKey: 'e-summary',
+    title: t.title,
+    who: 'You',
+    suggested: TICKET_SUGGESTED['e-summary'],
+    state: s.eSummary === 'done' ? 'done' : 'doing',
+    due: t.due,
+    projectId: 'islands',
+    projectTitle: P.islands.title,
+  };
+
+  const asks: ReactNode[] = [];
+  if (faq === 'offered') asks.push(<OfferCard key="faq" id="e-faq" />);
+
+  const held: ReactNode[] = [];
+  if (s.eSummary !== 'done')
+    held.push(
+      <WorkItemCard
+        key="summary"
+        askedBy="Marcus"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED['e-summary']}
+        onOpen={() => s.openTicket('e-summary')}
+      />,
+    );
+  if (faq === 'accepted')
+    held.push(
       <HeldCard
         key="faq"
+        askedBy="Suzana"
         delay={1}
         view={{
           ...offerRow('e-faq'),
           projectId: 'playbook',
           projectTitle: P.playbook.title,
         }}
-      />
-    ) : null;
-
-  if (s.eSummary === 'done') {
-    if (faq === 'offered')
-      return (
-        <Section title="Needs your answer">
-          <OfferCard id="e-faq" />
-        </Section>
-      );
-    if (faqHeld) return <Section title="You hold">{faqHeld}</Section>;
-    return (
-      <EmptyState
-        title="Nothing needs you."
-        sub="The summary is done — Marcus sees it on Projects, with your name on it."
-      />
+      />,
     );
-  }
-  return (
-    <div className="space-y-7">
-      {faq === 'offered' && (
-        <Section title="Needs your answer">
-          <OfferCard id="e-faq" />
-        </Section>
-      )}
-      <Section title="You hold">
-        <Card className="p-6" onClick={() => s.openTicket('e-summary')}>
-          <div className="mb-2 flex items-center gap-2">
-            <Chip>Island grids</Chip>
-            <Chip>due {t.due}</Chip>
-          </div>
-          <p className="text-[19px] font-semibold leading-snug tracking-[-0.02em]">
-            {t.title}
-          </p>
-          <p className="mt-4 text-[13px] font-medium text-ink">
-            Open the draft →
-          </p>
-        </Card>
-        {faqHeld}
-      </Section>
-    </div>
-  );
+
+  const finished: ReactNode[] = [];
+  if (s.eSummary === 'done')
+    finished.push(
+      <WorkItemCard
+        key="summary-done"
+        askedBy="Marcus"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED['e-summary']}
+        onOpen={() => s.viewTicket({ ...summaryView, ticketKey: 'e-summary' })}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, held, [], finished, {
+    title: 'Nothing needs you.',
+    sub: 'When something fits you, it will be one card here — not a feed.',
+  });
 }
 
 function RogerioWork() {
   const s = useStore();
   const t = T['e-muni'];
+  const muniView: TicketView = {
+    id: 'e-muni',
+    ticketKey: 'e-muni',
+    title: t.title,
+    who: 'Rogerio',
+    suggested: TICKET_SUGGESTED['e-muni'],
+    state: s.eMuni === 'done' ? 'done' : 'doing',
+    due: t.due,
+    projectId: 'iberia',
+    projectTitle: P.iberia.title,
+  };
   const notes = (
     <HeldCard
       key="notes"
+      askedBy="Pedro"
       delay={1}
       view={{
         ...rogerioNotes,
@@ -215,6 +242,7 @@ function RogerioWork() {
   const galiciaCard = (
     <HeldCard
       key="galicia"
+      askedBy="Pedro"
       delay={2}
       view={{
         ...galicia,
@@ -229,201 +257,214 @@ function RogerioWork() {
     />
   );
 
-  if (s.eMuni === 'done') {
-    return (
-      <div className="space-y-7">
-        <Section title="You hold">
-          {notes}
-          {galiciaCard}
-        </Section>
-        <p className="text-[13px] leading-relaxed text-faint">
-          The municipalities are done, with the receipt on the ticket. Ask your
-          assistant to draft the pay proposal — whatever you and Pedro agreed in
-          “Pilots” — or Pedro will.
-        </p>
-      </div>
+  const asks: ReactNode[] = [];
+  if (s.eMuni === 'draftDone')
+    asks.push(
+      <WorkItemCard
+        key="muni"
+        asking
+        askedBy="Pedro"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED['e-muni']}
+        onOpen={() => s.openTicket('e-muni')}
+      />,
     );
-  }
 
-  if (s.eMuni === 'draftDone') {
-    return (
-      <div className="space-y-7">
-        <Section title="Needs your answer">
-          <Card className="border-agent/30 p-5">
-            <Chip tone="agent">Done — drafted from talk</Chip>
-            <p className="mt-3 text-[17px] font-semibold leading-snug tracking-[-0.02em]">
-              {t.title}
-            </p>
-            <blockquote className="mt-3 rounded-xl bg-wash px-3.5 py-2.5 text-[13px] leading-relaxed text-sub">
-              “{s.eMuniQuote}” — from “Pilots”, today
-            </blockquote>
-            <p className="mt-3 text-[13px] leading-relaxed text-sub">
-              Confirm, or it confirms itself in <strong>48h</strong> if nobody
-              objects. The agent never flips state on its own.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <Button size="sm" onClick={s.confirmMuniDone}>
-                Confirm — it is done
-              </Button>
-              <Button size="sm" variant="ghost" onClick={s.reopenMuni}>
-                Not done yet
-              </Button>
-            </div>
-          </Card>
-        </Section>
-        <Section title="You hold">
-          {notes}
-          {galiciaCard}
-        </Section>
-      </div>
+  const held: ReactNode[] = [notes, galiciaCard];
+  if (s.eMuni === 'doing')
+    held.unshift(
+      <WorkItemCard
+        key="muni"
+        askedBy="Pedro"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED['e-muni']}
+        onOpen={() => s.openTicket('e-muni')}
+      />,
     );
-  }
 
-  return (
-    <Section title="You hold">
-      <Card className="p-6" onClick={() => s.openTicket('e-muni')}>
-        <div className="mb-2 flex items-center gap-2">
-          <Chip>Iberia pilots</Chip>
-          <Chip>due {t.due}</Chip>
-        </div>
-        <p className="text-[19px] font-semibold leading-snug tracking-[-0.02em]">
-          {t.title}
-        </p>
-        <p className="mt-4 text-[13px] font-medium text-ink">
-          Open the draft →
-        </p>
-      </Card>
-      {notes}
-      {galiciaCard}
-    </Section>
-  );
+  const finished: ReactNode[] = [];
+  if (s.eMuni === 'done')
+    finished.push(
+      <WorkItemCard
+        key="muni-done"
+        askedBy="Pedro"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED['e-muni']}
+        onOpen={() => s.viewTicket({ ...muniView, ticketKey: 'e-muni' })}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, held, [], finished, {
+    title: 'Nothing needs you.',
+    sub: 'When something fits you, it will be one card here.',
+  });
 }
 
 function PedroWork() {
   const s = useStore();
   const p = P.iberia;
-  const needsAnswer = s.eMuni === 'done' && !s.ePayDraft;
+  const muniTo = useHolder('e-muni');
+  const muniDone: TicketView = {
+    id: 'e-muni',
+    ticketKey: 'e-muni',
+    title: T['e-muni'].title,
+    who: muniTo,
+    suggested: TICKET_SUGGESTED['e-muni'],
+    state: 'done',
+    due: T['e-muni'].due,
+    projectId: 'iberia',
+    projectTitle: p.title,
+  };
 
-  return (
-    <div className="space-y-7">
-      {needsAnswer && (
-        <Section title="Needs your answer">
-          <Card className="border-agent/30 p-5">
-            <Chip tone="agent">Work finished — money is a proposal</Chip>
-            <p className="mt-3 text-[16px] font-medium tracking-[-0.015em]">
-              Rogerio onboarded both municipalities. You agreed his pay in
-              “Pilots” — the agent has the line.
-            </p>
-            <p className="mt-1 text-[13px] leading-relaxed text-sub">
-              Tell the agent and it drafts the payment proposal with the
-              evidence attached — you never fill a form.
-            </p>
-            <Button
-              className="mt-4"
-              size="sm"
-              onClick={() => {
-                s.openThread('agent');
-                s.sendMsg('e-agent', {
-                  id: `epp${Date.now()}`,
-                  from: 'you',
-                  text: 'Rogerio finished the municipalities — draft the pay proposal, what we agreed.',
-                });
-                setTimeout(() => s.draftPayment(), 900);
-              }}
-            >
-              Ask the agent to draft it
-            </Button>
-          </Card>
-        </Section>
-      )}
+  const asks: ReactNode[] = [];
+  if (s.eMuni === 'done' && !s.ePayDraft)
+    asks.push(
+      <WorkItemCard
+        key="pay"
+        asking
+        askedBy="Rogerio"
+        title="Draft the pay proposal for the municipalities — what we agreed"
+        onOpen={() => s.viewTicket(muniDone)}
+      />,
+    );
 
-      <Section title="You hold">
-        <Card className="p-5" onClick={() => s.openProject('iberia')}>
-          <div className="flex items-baseline justify-between">
-            <Kicker>Project</Kicker>
-            <span className="text-[12px] text-faint">review {p.review}</span>
-          </div>
-          <p className="mt-2 text-[19px] font-semibold tracking-[-0.02em]">
-            {p.title}
-          </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-sub">{p.brief}</p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <Chip>
-              {s.eMuni === 'done'
-                ? 'municipalities — done'
-                : s.eMuni === 'draftDone'
-                ? 'municipalities — done draft, waiting on Rogerio'
-                : 'municipalities — Rogerio is on it'}
-            </Chip>
-            <Chip>EECF round 2 — waiting on the proposal</Chip>
-            <Chip>shortlist — you, 2 under it</Chip>
-          </div>
-        </Card>
-        <HeldCard
-          delay={1}
-          view={{
-            ...pedroShortlist,
-            projectId: 'iberia',
-            projectTitle: p.title,
-          }}
-        />
-      </Section>
+  const held: ReactNode[] = [
+    <WorkItemCard
+      key="iberia"
+      askedBy="the Shapers"
+      title={p.title}
+      due={p.review}
+      onOpen={() => s.openProject('iberia')}
+    />,
+    <HeldCard
+      key="shortlist"
+      askedBy="Alex"
+      delay={1}
+      view={{
+        ...pedroShortlist,
+        projectId: 'iberia',
+        projectTitle: p.title,
+      }}
+    />,
+  ];
 
-      <p className="text-[13px] leading-relaxed text-faint">
-        No money on the project. Pay is agreed in chat — you with the Shapers,
-        or with whoever holds a piece under you — and moves only through
-        proposals.
-      </p>
-    </div>
-  );
+  const offered: ReactNode[] = [];
+  if (s.eMuni === 'doing' || s.eMuni === 'draftDone')
+    offered.push(
+      <WorkItemCard
+        key="muni"
+        offered={{ state: 'held', to: muniTo }}
+        title={T['e-muni'].title}
+        due={T['e-muni'].due}
+        suggested={TICKET_SUGGESTED['e-muni']}
+        onOpen={() =>
+          s.viewTicket({
+            ...muniDone,
+            state: 'doing',
+          })
+        }
+      />,
+    );
+
+  const finished: ReactNode[] = [];
+  if (s.eMuni === 'done')
+    finished.push(
+      <WorkItemCard
+        key="muni-done"
+        offered={{ state: 'held', to: muniTo }}
+        title={T['e-muni'].title}
+        due={T['e-muni'].due}
+        suggested={TICKET_SUGGESTED['e-muni']}
+        onOpen={() => s.viewTicket(muniDone)}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, held, offered, finished, {
+    title: 'Nothing needs you.',
+    sub: 'When something fits you, it will be one card here.',
+  });
 }
 
 function AlexWork() {
   const s = useStore();
-  const openVotes = s.eProposals.filter(
-    (p) => p.state === 'open' && !s.eVotes[p.id],
-  );
+  const carbonTo = useHolder('carbon');
+  const openDecisions = s.eProposals.filter((p) => p.state === 'open');
 
-  const decisions: ReactNode[] = openVotes.map((p) => (
-    <Card
-      key={p.id}
-      className="border-ink/15 p-5"
-      onClick={() => s.openProposal(p.id)}
-    >
-      <Chip tone={p.kind === 'money' ? 'money' : 'agent'}>
-        {p.kind === 'money' ? 'Money' : 'Project'} — Shapers decide
-      </Chip>
-      <p className="mt-2 text-[15px] font-medium">{p.title}</p>
-      <p className="mt-1 text-[13px] text-sub">
-        Your agreement is waiting — all three Shapers must say yes. Opened by{' '}
-        {p.openedBy}.
-      </p>
-    </Card>
+  const asks: ReactNode[] = openDecisions.map((p) => (
+    <ProposalCard key={p.id} p={p} />
   ));
-  if (s.eCarbon !== 'held') decisions.push(<CarbonCard key="carbon" />);
-  if (!s.eJoin) decisions.push(<JoinCard key="join" />);
-
-  if (decisions.length === 0) {
-    return (
-      <EmptyState
-        title="Nothing needs a Shaper."
-        sub="The org runs itself between these cards. That is the point."
-      />
+  if (s.eCarbon === 'draft')
+    asks.push(
+      <ShaperAskCard
+        key="carbon"
+        ask="carbon"
+        kind="project"
+        title={`${P.carbon.title} — needs a DRI`}
+        delay={1}
+      />,
     );
-  }
+  if (!s.eJoin)
+    asks.push(
+      <ShaperAskCard
+        key="join"
+        ask="join"
+        kind="join"
+        title="Ameland Energy Coop wants in"
+        delay={2}
+      />,
+    );
 
-  return (
-    <div className="space-y-7">
-      <Section title="Needs your answer">{decisions}</Section>
-      <p className="text-[13px] leading-relaxed text-faint">
-        Everything here was drafted by the org from the rooms and the calls. You
-        amend, offer, confirm — you never type a form.
-      </p>
-    </div>
-  );
+  const carbonView: TicketView = {
+    ticketKey: 'carbon',
+    title: P.carbon.title,
+    who: carbonTo,
+    suggested: TICKET_SUGGESTED.carbon,
+    state: s.eCarbon === 'held' ? 'doing' : 'waiting',
+    due: P.carbon.review,
+    projectId: 'carbon',
+    projectTitle: P.carbon.title,
+  };
+
+  const offered: ReactNode[] = [];
+  if (s.eCarbon === 'offering')
+    placeOffer(
+      asks,
+      offered,
+      carbonTo,
+      true,
+      s.org,
+      s.persona,
+      <WorkItemCard
+        key="carbon"
+        offered={{ state: 'waiting', to: carbonTo }}
+        title={P.carbon.title}
+        due={P.carbon.review}
+        suggested={TICKET_SUGGESTED.carbon}
+        onOpen={() => s.viewTicket(carbonView)}
+      />,
+    );
+  if (s.eCarbon === 'held')
+    offered.push(
+      <WorkItemCard
+        key="carbon"
+        offered={{ state: 'held', to: carbonTo }}
+        title={P.carbon.title}
+        due={P.carbon.review}
+        suggested={TICKET_SUGGESTED.carbon}
+        onOpen={() => s.viewTicket(carbonView)}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, [], offered, [], {
+    title: 'Nothing needs a Shaper.',
+    sub: 'The org runs itself between these cards. That is the point.',
+  });
 }
 
-function CarbonCard() {
+export function CarbonDetail() {
   const s = useStore();
   const p = P.carbon;
   return (
@@ -461,7 +502,7 @@ function CarbonCard() {
   );
 }
 
-function JoinCard() {
+export function JoinDetail() {
   const s = useStore();
   return (
     <Card className="p-5" delay={2}>
@@ -479,13 +520,22 @@ function JoinCard() {
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <Button size="sm" onClick={s.acceptEnergyJoin}>
+        <Button
+          size="sm"
+          onClick={() => {
+            s.acceptEnergyJoin();
+            s.go('my');
+          }}
+        >
           Accept
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => s.toast('Declined politely. They can ask again.')}
+          onClick={() => {
+            s.toast('Declined politely. They can ask again.');
+            s.go('my');
+          }}
         >
           Decline
         </Button>
@@ -639,7 +689,7 @@ export function EnergyProjectDetail() {
         </p>
 
         <div className="rise-1 mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <Fact label="DRI" value={dri ?? 'open'} />
+          <Fact label="DRI" value={dri ? <PersonLink name={dri} /> : 'open'} />
           <Fact label="Tickets" value={ticketCount(live[id])} />
           <Fact label="Review" value={p.review} />
           <Fact
@@ -696,13 +746,33 @@ export function EnergyTicketScreen() {
         >
           ← My Work
         </button>
+        <nav className="rise mb-5 text-[13px]">
+          <button
+            type="button"
+            onClick={() => s.openProject(t.projectId)}
+            className="font-medium text-sub transition-colors hover:text-ink"
+          >
+            {project.title}
+          </button>
+          <span className="text-faint"> › </span>
+          <span className="text-faint">{t.title}</span>
+        </nav>
         <h1 className="rise mb-2 text-[26px] font-semibold leading-tight tracking-[-0.03em]">
           {t.title}
         </h1>
         <p className="rise-1 mb-6 text-[14px] text-sub">
-          Approved by {project.dri} · due {t.due} · why you:{' '}
-          {t.why.charAt(0).toLowerCase() + t.why.slice(1)}
+          Asked by{' '}
+          {project.dri ? <PersonLink name={project.dri} /> : 'the project DRI'}{' '}
+          · due {t.due}
         </p>
+
+        <div className="rise-1 mb-6 max-w-[12.5rem]">
+          <HolderFact
+            ticketKey={id}
+            current={s.ticketPerson[id] ?? t.dri}
+            accepted
+          />
+        </div>
 
         <Card className="mb-4 p-0" delay={1}>
           <div className="border-b border-hair px-5 py-3">

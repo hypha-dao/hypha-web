@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { PersonLink } from '@/components/person';
 import {
   Avatar,
   Button,
@@ -12,6 +13,8 @@ import {
 } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
 import {
+  TICKET_SUGGESTED,
+  isWaitingOnMe,
   pricesChildren,
   projectsData,
   ticketsData,
@@ -23,15 +26,18 @@ import {
 } from '@/lib/data';
 import {
   useStore,
+  OFFERS,
   PAY_LEA_ID,
   SUB_COVERS_TITLE,
   type SubCoversState,
 } from '@/lib/store';
 import {
+  CarbonDetail,
   EnergyAllWork,
   EnergyMyWorkBody,
   EnergyProjectDetail,
   EnergyTicketScreen,
+  JoinDetail,
 } from './energy';
 import {
   ProjectHealth,
@@ -42,18 +48,23 @@ import {
   ChildList,
   Fact,
   HeldCard,
+  HolderFact,
+  myWorkOrEmpty,
+  useHolder,
   OfferCard,
-  OfferWhere,
   OpenProjectCard,
+  placeOffer,
   ProjectBlock,
   Section,
+  ShaperAskCard,
   StateChip,
+  WorkItemCard,
   TicketList,
   Waiting,
   WorkBoard,
-  countUnder,
   offerRow,
 } from './work-bits';
+import { ProposalCard } from './proposals';
 
 /** the tickets Lea and Sam hold under other projects — static, read-only */
 const cashBox = projectsData.currency.tickets[1];
@@ -181,7 +192,11 @@ export function MyWork() {
 
   return (
     <Workspace>
-      <Page kicker="What needs me, what I hold" title="My Work">
+      <Page
+        kicker="What needs me, what I hold, what I offered"
+        title="My Work"
+        wide="board"
+      >
         {body}
       </Page>
     </Workspace>
@@ -194,59 +209,76 @@ function YouWork() {
   const s = useStore();
   const setup = ticketsData.setup;
   const photo = s.offers.photo;
+  const setupView: TicketView = {
+    id: 'setup',
+    ticketKey: 'setup',
+    title: setup.title,
+    who: 'You',
+    suggested: TICKET_SUGGESTED.setup,
+    state: s.setup === 'done' ? 'done' : 'doing',
+    due: setup.due,
+    projectId: 'stall',
+    projectTitle: 'Saturday stall',
+  };
+
+  const setupTo = useHolder('setup');
+  const rotaTo = useHolder('rota');
 
   const asks: ReactNode[] = [];
-  if (s.setup === 'offered')
+  if (s.setup === 'offered' && isWaitingOnMe(setupTo, s.org, s.persona))
     asks.push(
-      <Card key="setup" className="border-ink/15 p-5">
-        <Kicker className="text-ink">Sam is asking you</Kicker>
-        <p className="mt-2 text-[16px] font-medium tracking-[-0.015em]">
-          {setup.title}
-        </p>
-        <OfferWhere
-          project="Saturday stall"
-          projectId="stall"
-          due={setup.due}
-        />
-        <div className="mt-3 flex items-center gap-2">
-          <Button size="sm" onClick={s.acceptSetup}>
-            Accept
-          </Button>
-          <Button size="sm" variant="ghost" onClick={s.declineSetup}>
-            Not now
-          </Button>
-          <button
-            type="button"
-            onClick={() => s.go('offer')}
-            className="ml-auto text-[13px] font-medium text-sub transition-colors hover:text-ink"
-          >
-            Read the whole offer →
-          </button>
-        </div>
-      </Card>,
+      <WorkItemCard
+        key="setup"
+        asking
+        askedBy="Sam"
+        title={setup.title}
+        due={setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.openOffer('setup')}
+      />,
     );
   if (photo === 'offered') asks.push(<OfferCard key="photo" id="photo" />);
+  if (s.subCovers === 'offered' && isWaitingOnMe(rotaTo, s.org, s.persona))
+    asks.push(
+      <WorkItemCard
+        key="rota"
+        asking
+        askedBy="Lea"
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() =>
+          s.viewTicket({
+            title: SUB_COVERS_TITLE,
+            who: rotaTo,
+            ticketKey: 'rota',
+            suggested: TICKET_SUGGESTED.rota,
+            state: 'waiting',
+            due: '6 Jun',
+            projectId: 'stall',
+            projectTitle: 'Saturday stall',
+          })
+        }
+      />,
+    );
 
   const held: ReactNode[] = [];
   if (s.setup === 'accepted')
     held.push(
-      <Card key="setup" className="p-5" onClick={() => s.openTicket('setup')}>
-        <div className="mb-2 flex items-center gap-2">
-          <Chip>Saturday stall</Chip>
-          <Chip>due {setup.due}</Chip>
-        </div>
-        <p className="text-[17px] font-semibold leading-snug tracking-[-0.02em]">
-          {setup.title}
-        </p>
-        <p className="mt-2 text-[13px] font-medium text-ink">
-          Open the draft →
-        </p>
-      </Card>,
+      <WorkItemCard
+        key="setup"
+        askedBy="Sam"
+        title={setup.title}
+        due={setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.openTicket('setup')}
+      />,
     );
   if (photo === 'accepted')
     held.push(
       <HeldCard
         key="photo"
+        askedBy="Jun"
         view={{
           ...offerRow('photo'),
           projectId: 'growers',
@@ -255,25 +287,26 @@ function YouWork() {
       />,
     );
 
-  if (asks.length === 0 && held.length === 0) {
-    return (
-      <EmptyState
-        title="Nothing needs you."
-        sub={
-          s.setup === 'done'
-            ? 'The ticket is done. When something fits you, it will be one card here — not a feed.'
-            : 'You sent it back. Whoever offered it picks someone else or leaves it open.'
-        }
-      />
+  const finished: ReactNode[] = [];
+  if (s.setup === 'done')
+    finished.push(
+      <WorkItemCard
+        key="setup-done"
+        askedBy="Sam"
+        title={setup.title}
+        due={setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.viewTicket({ ...setupView, ticketKey: 'setup' })}
+      />,
     );
-  }
 
-  return (
-    <div className="space-y-7">
-      {asks.length > 0 && <Section title="Needs your answer">{asks}</Section>}
-      {held.length > 0 && <Section title="You hold">{held}</Section>}
-    </div>
-  );
+  return myWorkOrEmpty(asks, held, [], finished, {
+    title: 'Nothing needs you.',
+    sub:
+      s.setup === 'declined'
+        ? 'You sent it back. Whoever offered it picks someone else or leaves it open.'
+        : 'When something fits you, it will be one card here — not a feed.',
+  });
 }
 
 /* ---- Lea (ticket DRI) ---- */
@@ -281,74 +314,169 @@ function YouWork() {
 function LeaWork() {
   const s = useStore();
   const t = ticketsData.covers;
-  const teaches = <HeldCard key="teaches" view={leaTeaches} delay={1} />;
-
-  if (s.covers === 'done') {
-    return (
-      <div className="space-y-7">
-        <Section title="You hold">{teaches}</Section>
-        <p className="text-[13px] leading-relaxed text-faint">
-          The covers are done, with the receipt on the ticket. Ask your
-          assistant to draft the pay proposal — whatever you and Sam agreed in
-          “Saturday stall” — or Sam will.
-        </p>
-      </div>
-    );
-  }
-
-  if (s.covers === 'draftDone') {
-    return (
-      <div className="space-y-7">
-        <Section title="Needs your answer">
-          <Card className="border-agent/30 p-5">
-            <Chip tone="agent">Done — drafted from talk</Chip>
-            <p className="mt-3 text-[17px] font-semibold leading-snug tracking-[-0.02em]">
-              {t.title}
-            </p>
-            <blockquote className="mt-3 rounded-xl bg-wash px-3.5 py-2.5 text-[13px] leading-relaxed text-sub">
-              “{s.coversQuote}” — from “Saturday stall”, today
-            </blockquote>
-            <p className="mt-3 text-[13px] leading-relaxed text-sub">
-              Confirm, or it confirms itself in <strong>48h</strong> if nobody
-              objects. The agent never flips state on its own.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <Button size="sm" onClick={s.confirmCoversDone}>
-                Confirm — it is done
-              </Button>
-              <Button size="sm" variant="ghost" onClick={s.reopenCovers}>
-                Not done yet
-              </Button>
-            </div>
-          </Card>
-        </Section>
-        <Section title="You hold">{teaches}</Section>
-      </div>
-    );
-  }
-
-  return (
-    <Section title="You hold">
-      <Card className="p-6" onClick={() => s.openTicket('covers')}>
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Chip>Saturday stall</Chip>
-          <Chip>due {t.due}</Chip>
-          {s.subCovers === 'offered' && <Chip>rota — offered to Jun</Chip>}
-          {s.subCovers === 'accepted' && (
-            <Chip tone="agent">rota — Jun is on it</Chip>
-          )}
-          {s.subCovers === 'done' && <Chip>rota — Jun, done</Chip>}
-        </div>
-        <p className="text-[19px] font-semibold leading-snug tracking-[-0.02em]">
-          {t.title}
-        </p>
-        <p className="mt-4 text-[13px] font-medium text-ink">
-          Open the draft →
-        </p>
-      </Card>
-      {teaches}
-    </Section>
+  const coversView: TicketView = {
+    id: 'covers',
+    ticketKey: 'covers',
+    title: t.title,
+    who: 'Lea',
+    suggested: TICKET_SUGGESTED.covers,
+    state: s.covers === 'done' ? 'done' : 'doing',
+    due: t.due,
+    projectId: 'stall',
+    projectTitle: 'Saturday stall',
+  };
+  const teaches = (
+    <HeldCard key="teaches" askedBy="Tom" view={leaTeaches} delay={1} />
   );
+
+  const rotaView: TicketView = {
+    title: SUB_COVERS_TITLE,
+    who: 'Jun',
+    ticketKey: 'rota',
+    suggested: TICKET_SUGGESTED.rota,
+    state:
+      s.subCovers === 'done'
+        ? 'done'
+        : s.subCovers === 'offered'
+        ? 'waiting'
+        : 'doing',
+    stateLabel:
+      s.subCovers === 'offered' ? 'offered to Jun — his yes or no' : undefined,
+    due: '6 Jun',
+    projectId: 'stall',
+    projectTitle: 'Saturday stall',
+    parent: coversView,
+  };
+
+  const setupTo = useHolder('setup');
+  const rotaTo = useHolder('rota');
+  const rotaOpen = {
+    ...rotaView,
+    who: rotaTo,
+    ticketKey: 'rota',
+    suggested: TICKET_SUGGESTED.rota,
+  };
+
+  const asks: ReactNode[] = [];
+  if (s.covers === 'draftDone')
+    asks.push(
+      <WorkItemCard
+        key="covers"
+        asking
+        askedBy="Sam"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED.covers}
+        onOpen={() => s.openTicket('covers')}
+      />,
+    );
+  if (s.subCovers === 'drafted')
+    asks.push(
+      <WorkItemCard
+        key="rota-draft"
+        offered={{ state: 'draft' }}
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() => s.openThread('agent')}
+      />,
+    );
+  if (s.setup === 'offered' && isWaitingOnMe(setupTo, s.org, s.persona))
+    asks.push(
+      <WorkItemCard
+        key="setup"
+        asking
+        askedBy="Sam"
+        title={ticketsData.setup.title}
+        due={ticketsData.setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() =>
+          s.viewTicket({
+            id: 'setup',
+            ticketKey: 'setup',
+            title: ticketsData.setup.title,
+            who: setupTo,
+            suggested: TICKET_SUGGESTED.setup,
+            state: 'waiting',
+            due: ticketsData.setup.due,
+            projectId: 'stall',
+            projectTitle: 'Saturday stall',
+          })
+        }
+      />,
+    );
+
+  const held: ReactNode[] = [teaches];
+  if (s.covers === 'accepted')
+    held.unshift(
+      <WorkItemCard
+        key="covers"
+        askedBy="Sam"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED.covers}
+        onOpen={() => s.openTicket('covers')}
+      />,
+    );
+
+  const offered: ReactNode[] = [];
+  if (s.subCovers === 'offered')
+    placeOffer(
+      asks,
+      offered,
+      rotaTo,
+      true,
+      s.org,
+      s.persona,
+      <WorkItemCard
+        key="rota"
+        offered={{ state: 'waiting', to: rotaTo }}
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() => s.viewTicket(rotaOpen)}
+      />,
+    );
+  if (s.subCovers === 'accepted')
+    offered.push(
+      <WorkItemCard
+        key="rota"
+        offered={{ state: 'held', to: rotaTo }}
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() => s.viewTicket(rotaOpen)}
+      />,
+    );
+
+  const finished: ReactNode[] = [];
+  if (s.covers === 'done')
+    finished.push(
+      <WorkItemCard
+        key="covers-done"
+        askedBy="Sam"
+        title={t.title}
+        due={t.due}
+        suggested={TICKET_SUGGESTED.covers}
+        onOpen={() => s.viewTicket(coversView)}
+      />,
+    );
+  if (s.subCovers === 'done')
+    finished.push(
+      <WorkItemCard
+        key="rota-done"
+        offered={{ state: 'held', to: rotaTo }}
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() => s.viewTicket({ ...rotaView, state: 'done' })}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, held, offered, finished, {
+    title: 'Nothing needs you.',
+    sub: 'When something fits you, it will be one card here.',
+  });
 }
 
 /* ---- Sam (project DRI) ---- */
@@ -356,172 +484,360 @@ function LeaWork() {
 function SamWork() {
   const s = useStore();
   const p = projectsData.stall;
-  const needsAnswer = s.covers === 'done' && !s.payDraft;
+  const setupTo = useHolder('setup');
+  const coversTo = useHolder('covers');
+  const rotaTo = useHolder('rota');
+  const coversDone: TicketView = {
+    id: 'covers',
+    ticketKey: 'covers',
+    title: ticketsData.covers.title,
+    who: coversTo,
+    suggested: TICKET_SUGGESTED.covers,
+    state: 'done',
+    due: ticketsData.covers.due,
+    projectId: 'stall',
+    projectTitle: 'Saturday stall',
+  };
 
-  return (
-    <div className="space-y-7">
-      {needsAnswer && (
-        <Section title="Needs your answer">
-          <Card className="border-agent/30 p-5">
-            <Chip tone="agent">Work finished — money is a proposal</Chip>
-            <p className="mt-3 text-[16px] font-medium tracking-[-0.015em]">
-              Lea finished the covers. You agreed her pay in “Saturday stall” —
-              the agent has the line.
-            </p>
-            <p className="mt-1 text-[13px] leading-relaxed text-sub">
-              Tell the agent and it drafts the payment proposal with the
-              evidence attached — you never fill a form.
-            </p>
-            <Button
-              className="mt-4"
-              size="sm"
-              onClick={() => {
-                s.openThread('agent');
-                s.sendMsg('agent', {
-                  id: `pp${Date.now()}`,
-                  from: 'you',
-                  text: 'Lea finished the covers — draft the pay proposal, what we agreed.',
-                });
-                setTimeout(() => s.draftPayment(), 900);
-              }}
-            >
-              Ask the agent to draft it
-            </Button>
-          </Card>
-        </Section>
-      )}
+  const setupView: TicketView = {
+    id: 'setup',
+    ticketKey: 'setup',
+    title: ticketsData.setup.title,
+    who: setupTo,
+    suggested: TICKET_SUGGESTED.setup,
+    state:
+      s.setup === 'done' ? 'done' : s.setup === 'offered' ? 'waiting' : 'doing',
+    due: ticketsData.setup.due,
+    projectId: 'stall',
+    projectTitle: 'Saturday stall',
+  };
 
-      <Section title="You hold">
-        <Card className="p-5" onClick={() => s.openProject('stall')}>
-          <div className="flex items-baseline justify-between">
-            <Kicker>Project</Kicker>
-            <span className="text-[12px] text-faint">review {p.review}</span>
-          </div>
-          <p className="mt-2 text-[19px] font-semibold tracking-[-0.02em]">
-            {p.title}
-          </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-sub">{p.brief}</p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <Chip>{coversLine(s.covers)}</Chip>
-            <Chip>{setupLine(s.setup)}</Chip>
-            <Chip>licence — you, due 30 Jun</Chip>
-          </div>
-        </Card>
-        <HeldCard
-          view={{
-            ...samLicence,
+  const openDecisions = s.proposals.filter((x) => x.state === 'open');
+
+  const asks: ReactNode[] = openDecisions.map((x) => (
+    <ProposalCard key={x.id} p={x} />
+  ));
+  if (s.covers === 'done' && !s.payDraft)
+    asks.push(
+      <WorkItemCard
+        key="pay"
+        asking
+        askedBy="Lea"
+        title="Draft the pay proposal for the covers — what we agreed"
+        onOpen={() => s.viewTicket(coversDone)}
+      />,
+    );
+  if (s.setup === 'declined')
+    asks.push(
+      <WorkItemCard
+        key="setup-back"
+        offered={{ state: 'open' }}
+        title={ticketsData.setup.title}
+        due={ticketsData.setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.viewTicket(setupView)}
+      />,
+    );
+  if (s.subCovers === 'offered' && isWaitingOnMe(rotaTo, s.org, s.persona))
+    asks.push(
+      <WorkItemCard
+        key="rota"
+        asking
+        askedBy="Lea"
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() =>
+          s.viewTicket({
+            title: SUB_COVERS_TITLE,
+            who: rotaTo,
+            ticketKey: 'rota',
+            suggested: TICKET_SUGGESTED.rota,
+            state: 'waiting',
+            due: '6 Jun',
             projectId: 'stall',
             projectTitle: 'Saturday stall',
-          }}
-          delay={1}
-        />
-      </Section>
+          })
+        }
+      />,
+    );
 
-      <p className="text-[13px] leading-relaxed text-faint">
-        No money on the project. Pay is agreed in chat — you with the Shapers,
-        or with whoever holds a piece under you — and moves only through
-        proposals.
-      </p>
-    </div>
-  );
-}
+  const held: ReactNode[] = [
+    <WorkItemCard
+      key="stall"
+      askedBy="the Shapers"
+      title={p.title}
+      due={s.review === 'extended' ? '1 Sep' : p.review}
+      onOpen={() => s.openProject('stall')}
+    />,
+    <HeldCard
+      key="licence"
+      askedBy="Maya"
+      view={{
+        ...samLicence,
+        projectId: 'stall',
+        projectTitle: 'Saturday stall',
+      }}
+      delay={1}
+    />,
+  ];
 
-function coversLine(state: string) {
-  return state === 'done'
-    ? 'covers — done'
-    : state === 'draftDone'
-    ? 'covers — done draft, waiting on Lea'
-    : 'covers — Lea is on it';
-}
+  const offered: ReactNode[] = [];
+  if (s.setup === 'offered')
+    placeOffer(
+      asks,
+      offered,
+      setupTo,
+      true,
+      s.org,
+      s.persona,
+      <WorkItemCard
+        key="setup"
+        offered={{ state: 'waiting', to: setupTo }}
+        title={ticketsData.setup.title}
+        due={ticketsData.setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.viewTicket(setupView)}
+      />,
+    );
+  if (s.setup === 'accepted')
+    offered.push(
+      <WorkItemCard
+        key="setup"
+        offered={{ state: 'held', to: setupTo }}
+        title={ticketsData.setup.title}
+        due={ticketsData.setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.viewTicket(setupView)}
+      />,
+    );
+  if (s.covers === 'accepted' || s.covers === 'draftDone')
+    offered.push(
+      <WorkItemCard
+        key="covers"
+        offered={{ state: 'held', to: coversTo }}
+        title={ticketsData.covers.title}
+        due={ticketsData.covers.due}
+        suggested={TICKET_SUGGESTED.covers}
+        onOpen={() => s.viewTicket({ ...coversDone, state: 'doing' })}
+      />,
+    );
 
-function setupLine(state: string) {
-  return state === 'done'
-    ? 'setup — done'
-    : state === 'accepted'
-    ? 'setup — the new member is on it'
-    : state === 'declined'
-    ? 'setup — declined, re-offer it'
-    : 'setup — offered to the new member';
+  const finished: ReactNode[] = [];
+  if (s.setup === 'done')
+    finished.push(
+      <WorkItemCard
+        key="setup-done"
+        offered={{ state: 'held', to: setupTo }}
+        title={ticketsData.setup.title}
+        due={ticketsData.setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() => s.viewTicket({ ...setupView, state: 'done' })}
+      />,
+    );
+  if (s.covers === 'done')
+    finished.push(
+      <WorkItemCard
+        key="covers-done"
+        offered={{ state: 'held', to: coversTo }}
+        title={ticketsData.covers.title}
+        due={ticketsData.covers.due}
+        suggested={TICKET_SUGGESTED.covers}
+        onOpen={() => s.viewTicket(coversDone)}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, held, offered, finished, {
+    title: 'Nothing needs you.',
+    sub: 'When something fits you, it will be one card here.',
+  });
 }
 
 /* ---- Maya (Shaper) ---- */
 
 function MayaWork() {
   const s = useStore();
-  const openVotes = s.proposals.filter(
-    (p) => p.state === 'open' && !s.myVotes[p.id],
-  );
+  const setupTo = useHolder('setup');
+  const rotaTo = useHolder('rota');
+  const weekdayTo = useHolder('weekday');
   const currency = projectsData.currency;
+  const openDecisions = s.proposals.filter((p) => p.state === 'open');
 
-  const decisions: ReactNode[] = openVotes.map((p) => (
-    <Card
-      key={p.id}
-      className="border-ink/15 p-5"
-      onClick={() => s.openProposal(p.id)}
-    >
-      <Chip tone={p.kind === 'money' ? 'money' : 'agent'}>
-        {p.kind === 'money' ? 'Money' : 'Project'} — Shapers decide
-      </Chip>
-      <p className="mt-2 text-[15px] font-medium">{p.title}</p>
-      <p className="mt-1 text-[13px] text-sub">
-        Your agreement is waiting — both Shapers must say yes. Opened by{' '}
-        {p.openedBy}.
-      </p>
-    </Card>
+  const asks: ReactNode[] = openDecisions.map((p) => (
+    <ProposalCard key={p.id} p={p} />
   ));
-  if (s.review === 'due') decisions.push(<ReviewCard key="review" />);
-  if (s.weekday !== 'held') decisions.push(<WeekdayCard key="weekday" />);
-  if (!s.rafiJoined) decisions.push(<RafiCard key="rafi" />);
-  if (s.strategyPending) decisions.push(<StrategyCard key="strategy" />);
+  if (s.setup === 'offered' && isWaitingOnMe(setupTo, s.org, s.persona))
+    asks.push(
+      <WorkItemCard
+        key="setup"
+        asking
+        askedBy="Sam"
+        title={ticketsData.setup.title}
+        due={ticketsData.setup.due}
+        suggested={TICKET_SUGGESTED.setup}
+        onOpen={() =>
+          s.viewTicket({
+            id: 'setup',
+            ticketKey: 'setup',
+            title: ticketsData.setup.title,
+            who: setupTo,
+            suggested: TICKET_SUGGESTED.setup,
+            state: 'waiting',
+            due: ticketsData.setup.due,
+            projectId: 'stall',
+            projectTitle: 'Saturday stall',
+          })
+        }
+      />,
+    );
+  if (s.subCovers === 'offered' && isWaitingOnMe(rotaTo, s.org, s.persona))
+    asks.push(
+      <WorkItemCard
+        key="rota"
+        asking
+        askedBy="Lea"
+        title={SUB_COVERS_TITLE}
+        due="6 Jun"
+        suggested={TICKET_SUGGESTED.rota}
+        onOpen={() =>
+          s.viewTicket({
+            title: SUB_COVERS_TITLE,
+            who: rotaTo,
+            ticketKey: 'rota',
+            suggested: TICKET_SUGGESTED.rota,
+            state: 'waiting',
+            due: '6 Jun',
+            projectId: 'stall',
+            projectTitle: 'Saturday stall',
+          })
+        }
+      />,
+    );
+  if (s.review === 'due')
+    asks.push(
+      <ShaperAskCard
+        key="review"
+        ask="review"
+        kind="project"
+        title="Saturday stall closes on 1 Jun — does anything follow it?"
+      />,
+    );
+  if (s.weekday === 'draft' || s.weekday === 'declined-lea')
+    asks.push(
+      <ShaperAskCard
+        key="weekday"
+        ask="weekday"
+        kind="project"
+        title="Weekday hall — needs a DRI"
+        delay={1}
+      />,
+    );
+  if (!s.rafiJoined)
+    asks.push(
+      <ShaperAskCard
+        key="rafi"
+        ask="rafi"
+        kind="join"
+        title="Rafi wants in"
+        delay={2}
+      />,
+    );
+  if (s.strategyPending)
+    asks.push(
+      <ShaperAskCard
+        key="strategy"
+        ask="strategy"
+        kind="direction"
+        title="We do not take the brand sponsorship. Not this year."
+        delay={3}
+      />,
+    );
 
+  const held: ReactNode[] = [
+    <WorkItemCard
+      key="currency"
+      askedBy="the Shapers"
+      title={currency.title}
+      due={currency.review}
+      onOpen={() => s.openProject('currency')}
+    />,
+  ];
+
+  const weekdayView: TicketView = {
+    ticketKey: 'weekday',
+    title: 'Weekday hall',
+    who: weekdayTo,
+    suggested: TICKET_SUGGESTED.weekday,
+    state: s.weekday === 'held' ? 'doing' : 'waiting',
+    due: '1 Aug',
+    projectId: 'weekday',
+    projectTitle: 'Weekday hall',
+  };
+
+  const offered: ReactNode[] = [];
+  if (s.weekday === 'offering-lea' || s.weekday === 'offering-rafi')
+    placeOffer(
+      asks,
+      offered,
+      weekdayTo,
+      true,
+      s.org,
+      s.persona,
+      <WorkItemCard
+        key="weekday"
+        offered={{ state: 'waiting', to: weekdayTo }}
+        title="Weekday hall"
+        due="1 Aug"
+        suggested={TICKET_SUGGESTED.weekday}
+        onOpen={() => s.viewTicket(weekdayView)}
+      />,
+    );
+  if (s.weekday === 'held')
+    offered.push(
+      <WorkItemCard
+        key="weekday"
+        offered={{ state: 'held', to: weekdayTo }}
+        title="Weekday hall"
+        due="1 Aug"
+        suggested={TICKET_SUGGESTED.weekday}
+        onOpen={() => s.viewTicket(weekdayView)}
+      />,
+    );
+
+  return myWorkOrEmpty(asks, held, offered, [], {
+    title: 'Nothing needs a Shaper.',
+    sub: 'The org runs itself between these cards. That is the point.',
+  });
+}
+
+/* ---- Shaper asks — full page, opened from the list card ---- */
+
+export function ShaperAskScreen() {
+  const s = useStore();
+  const id = s.shaperAsk;
+  if (!id) return null;
   return (
-    <div className="space-y-7">
-      {decisions.length === 0 ? (
-        <EmptyState
-          title="Nothing needs a Shaper."
-          sub="The org runs itself between these cards. That is the point."
-        />
-      ) : (
-        <Section title="Needs your answer">{decisions}</Section>
-      )}
-
-      <Section title="You hold">
-        <Card className="p-5" onClick={() => s.openProject('currency')}>
-          <div className="flex items-baseline justify-between">
-            <Kicker>Project</Kicker>
-            <span className="text-[12px] text-faint">
-              review {currency.review}
-            </span>
-          </div>
-          <p className="mt-2 text-[19px] font-semibold tracking-[-0.02em]">
-            {currency.title}
-          </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-sub">
-            {currency.brief}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <Chip>vouchers — Priya, done</Chip>
-            <Chip>
-              cash box — Tom is on it, {countUnder(currency.tickets[1])} under
-              it
-            </Chip>
-            <Chip>rules — you, done</Chip>
-          </div>
-        </Card>
-      </Section>
-
-      <p className="text-[13px] leading-relaxed text-faint">
-        Everything above was drafted by the org from the threads and the calls.
-        You amend, offer, confirm — you never type a form. A Shaper can hold a
-        project too; the rules are the same.
-      </p>
-    </div>
+    <Workspace>
+      <Page kicker="Needs your answer" wide>
+        <button
+          type="button"
+          onClick={() => s.go('my')}
+          className="rise mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
+        >
+          ← My Work
+        </button>
+        {id === 'review' && <ReviewDetail />}
+        {id === 'weekday' && <WeekdayDetail />}
+        {id === 'rafi' && <RafiDetail />}
+        {id === 'strategy' && <StrategyDetail />}
+        {id === 'carbon' && <CarbonDetail />}
+        {id === 'join' && <JoinDetail />}
+      </Page>
+    </Workspace>
   );
 }
 
-/* ---- Shaper cards ---- */
-
-function ReviewCard() {
+function ReviewDetail() {
   const s = useStore();
   return (
     <Card className="border-ink/15 p-5">
@@ -573,13 +889,34 @@ function ReviewCard() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button size="sm" variant="agent" onClick={s.reviewCloseFollowUp}>
+        <Button
+          size="sm"
+          variant="agent"
+          onClick={() => {
+            s.reviewCloseFollowUp();
+            s.go('my');
+          }}
+        >
           Open the follow-up
         </Button>
-        <Button size="sm" variant="outline" onClick={s.reviewClose}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            s.reviewClose();
+            s.go('my');
+          }}
+        >
           Nothing more
         </Button>
-        <Button size="sm" variant="ghost" onClick={s.reviewExtend}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            s.reviewExtend();
+            s.go('my');
+          }}
+        >
           Keep the stall open until 1 Sep
         </Button>
       </div>
@@ -587,7 +924,7 @@ function ReviewCard() {
   );
 }
 
-function WeekdayCard() {
+function WeekdayDetail() {
   const s = useStore();
   return (
     <Card className="p-5" delay={1}>
@@ -647,7 +984,7 @@ function WeekdayCard() {
   );
 }
 
-function RafiCard() {
+function RafiDetail() {
   const s = useStore();
   return (
     <Card className="p-5" delay={2}>
@@ -663,13 +1000,22 @@ function RafiCard() {
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <Button size="sm" onClick={s.acceptRafi}>
+        <Button
+          size="sm"
+          onClick={() => {
+            s.acceptRafi();
+            s.go('my');
+          }}
+        >
           Accept
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => s.toast('Declined politely. He can ask again.')}
+          onClick={() => {
+            s.toast('Declined politely. He can ask again.');
+            s.go('my');
+          }}
         >
           Decline
         </Button>
@@ -678,7 +1024,7 @@ function RafiCard() {
   );
 }
 
-function StrategyCard() {
+function StrategyDetail() {
   const s = useStore();
   return (
     <Card className="p-5" delay={3}>
@@ -691,11 +1037,24 @@ function StrategyCard() {
         they are. Confirm it and everything the agent does reads from v5 —
         including holding you to it.
       </p>
-      <div className="mt-4 flex gap-2">
-        <Button size="sm" onClick={s.confirmStrategy}>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          onClick={() => {
+            s.confirmStrategy();
+            s.go('my');
+          }}
+        >
           Confirm v5
         </Button>
-        <Button size="sm" variant="ghost" onClick={s.rejectStrategy}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            s.rejectStrategy();
+            s.go('my');
+          }}
+        >
           That is not what we decided
         </Button>
         <Button
@@ -903,7 +1262,15 @@ function LiveRiverProjectDetail() {
         <div className="rise-1 mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           <Fact
             label="DRI"
-            value={isStall ? 'Sam' : s.weekday === 'held' ? 'Rafi' : 'open'}
+            value={
+              isStall ? (
+                <PersonLink name="Sam" />
+              ) : s.weekday === 'held' ? (
+                <PersonLink name="Rafi" />
+              ) : (
+                'open'
+              )
+            }
           />
           <Fact
             label="Tickets"
@@ -994,12 +1361,33 @@ function RiverTicketScreen() {
         >
           ← My Work
         </button>
+        <nav className="rise mb-5 text-[13px]">
+          <button
+            type="button"
+            onClick={() => s.openProject('stall')}
+            className="font-medium text-sub transition-colors hover:text-ink"
+          >
+            Saturday stall
+          </button>
+          <span className="text-faint"> › </span>
+          <span className="text-faint">{t.title}</span>
+        </nav>
         <h1 className="rise mb-2 text-[26px] font-semibold leading-tight tracking-[-0.03em]">
           {t.title}
         </h1>
         <p className="rise-1 mb-6 text-[14px] text-sub">
-          Approved by Sam · due {t.due} · why you: {t.why.toLowerCase()}
+          Asked by <PersonLink name="Sam" /> · due {t.due}
         </p>
+
+        {t.id && (
+          <div className="rise-1 mb-6 max-w-[12.5rem]">
+            <HolderFact
+              ticketKey={t.id}
+              current={s.ticketPerson[t.id] ?? t.dri ?? 'You'}
+              accepted
+            />
+          </div>
+        )}
 
         <Card className="mb-4 p-0" delay={1}>
           <div className="border-b border-hair px-5 py-3">
@@ -1070,29 +1458,69 @@ function RiverTicketScreen() {
 
 export function OfferScreen() {
   const s = useStore();
+  const key = s.offerKey;
+  const setup = key === 'setup';
+  const o = setup
+    ? {
+        from: 'Sam',
+        title: ticketsData.setup.title,
+        project: 'Saturday stall',
+        projectId: 'stall' as const,
+        due: ticketsData.setup.due,
+        why: 'One page: open, cash box, grower list. If pay should come with it, say so in the room — the agent remembers.',
+      }
+    : OFFERS[key];
+
   return (
     <Workspace>
-      <Page kicker="Offer · from Sam" wide>
-        <div className="mx-auto max-w-md pt-6 text-center">
+      <Page kicker={`Offer · from ${o.from}`} wide>
+        <button
+          type="button"
+          onClick={() => s.go('my')}
+          className="mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
+        >
+          ← My Work
+        </button>
+        <div className="mx-auto max-w-md pt-2 text-center">
           <div className="rise mx-auto mb-5 w-fit">
-            <Avatar name="Sam" size="lg" />
+            <Avatar name={o.from} size="lg" />
           </div>
           <h1 className="rise text-[24px] font-semibold leading-snug tracking-[-0.03em]">
-            Sam is asking you to take one piece of work
+            <PersonLink name={o.from} /> is asking you to take one piece of work
           </h1>
           <p className="rise-1 mt-3 text-[15px] leading-relaxed text-sub">
-            Write the Saturday setup so someone else could run it. One page, by
-            14 Jun. If pay should come with it, say so to Sam in the room — the
-            agent remembers.
+            {o.title}. {setup ? o.why : o.why}
           </p>
           <Card className="rise-2 mt-6 p-4 text-left">
-            <Row label="Under project" value="Saturday stall — Sam" />
-            <Row label="Due" value="14 Jun" />
+            <Row
+              label="Under project"
+              value={
+                <button
+                  type="button"
+                  onClick={() => s.openProject(o.projectId)}
+                  className="font-medium underline-offset-2 hover:underline"
+                >
+                  {o.project}
+                </button>
+              }
+            />
+            <Row label="Due" value={o.due} />
             <Row label="If you accept" value="You are DRI of this piece only" />
           </Card>
           <div className="rise-3 mt-6 flex justify-center gap-2.5">
-            <Button onClick={s.acceptSetup}>Accept</Button>
-            <Button variant="outline" onClick={s.declineSetup}>
+            <Button
+              onClick={() =>
+                setup ? s.acceptSetup() : s.answerOffer(key, true)
+              }
+            >
+              Accept
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setup ? s.declineSetup() : s.answerOffer(key, false)
+              }
+            >
               Not now
             </Button>
           </div>

@@ -54,14 +54,26 @@ export function Card({
       'w-full cursor-pointer text-left transition-all duration-150 hover:border-faint/50 hover:bg-wash active:scale-[0.995]',
     className,
   );
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} className={base}>
-        {children}
-      </button>
-    );
-  }
-  return <div className={base}>{children}</div>;
+  return (
+    <div
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={base}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function Kicker({
@@ -218,7 +230,7 @@ export function Row({
   strong,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   strong?: boolean;
 }) {
   return (

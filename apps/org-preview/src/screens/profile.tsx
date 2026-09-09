@@ -1,394 +1,875 @@
 'use client';
 
+import { useState } from 'react';
 import { Avatar, Card, Chip, Kicker } from '@/components/primitives';
 import { Page, Workspace } from '@/components/workspace';
-import { agreedPay, unitFor } from '@/lib/data';
+import {
+  energyOrg,
+  personaList,
+  projectsData,
+  space,
+  type Health,
+  type OrgId,
+  type PersonaId,
+  type Proposal,
+} from '@/lib/data';
 import { useStore, PAY_LEA_ID, PAY_ROGERIO_ID } from '@/lib/store';
 import { CurrencyRow } from './org';
+import { HealthCard } from './work-bits';
 
-type HistoryItem = { what: string; when: string };
-/** one payment that reached this person — always a proposal the Shapers passed */
-type Payment = {
-  what: string;
-  amount: string;
-  when: string;
-  /** where the sum was agreed before the proposal */
-  agreed: string;
-  proposalId?: string;
+type HeldWork = {
+  kind: 'project' | 'ticket';
+  title: string;
+  orgId: OrgId;
+  org: string;
+  due?: string;
+  go?: 'project' | 'ticket';
+  id?: string;
 };
+
+type PastWork = {
+  kind: 'project' | 'ticket';
+  title: string;
+  org: string;
+  when: string;
+};
+
+type RecentDecision = {
+  id: string;
+  title: string;
+  state: string;
+  when: string;
+  org: string;
+  orgId: OrgId;
+};
+
 type ProfileData = {
   name: string;
   role: string;
   since: string;
-  currencies: { symbol: string; name: string; amount: string; note?: string }[];
-  payments: Payment[];
-  history: HistoryItem[];
-  trust: { label: string; text: string };
+  orgs: string[];
+  currencies: { symbol: string; name: string; amount: string }[];
+  isShaper: boolean;
+  isDri: boolean;
+  decisions: RecentDecision[];
+  current: HeldWork[];
+  past: PastWork[];
+  health: Health;
 };
 
-/** the live payment, once its proposal passed — built from the proposal itself */
-function livePayment(
-  s: ReturnType<typeof useStore>,
-  org: 'river' | 'energy',
-): Payment[] {
-  const list = org === 'energy' ? s.eProposals : s.proposals;
-  const id = org === 'energy' ? PAY_ROGERIO_ID : PAY_LEA_ID;
-  const p = list.find((x) => x.id === id);
-  if (!p || p.state !== 'passed') return [];
-  const a = agreedPay[org];
-  return [
-    {
-      what: a.work.charAt(0).toUpperCase() + a.work.slice(1),
-      amount: `${(p.amount ?? 0).toLocaleString()} ${unitFor(org)}`,
-      when: 'today',
-      agreed: `with ${a.withWhom} in “${a.roomName}”, ${a.when}`,
-      proposalId: id,
-    },
-  ];
+const RIVER = space.name;
+const ENERGY = energyOrg.space.name;
+
+function decisionTitle(p: Proposal): string {
+  return p.title.replace(/^Approve project:\s*/, '').replace(/^Confirm\s+/, '');
 }
 
-/* ---- Hypha Energy: the same five viewpoints, this org's record ---- */
-function energyProfile(s: ReturnType<typeof useStore>): ProfileData {
-  const rogerioProposal = s.eProposals.find((p) => p.id === PAY_ROGERIO_ID);
-  const rogerioPaid = rogerioProposal?.state === 'passed';
-  const rogerioAmount = (rogerioProposal?.amount ?? 0).toLocaleString();
-  const kwh = (n: string, note: string) => ({
+function asDecisions(
+  list: Proposal[],
+  orgId: OrgId,
+  org: string,
+): RecentDecision[] {
+  return list.slice(0, 5).map((p) => ({
+    id: p.id,
+    title: decisionTitle(p),
+    state: p.state === 'open' ? 'open' : `${p.state}`,
+    when: p.state === 'open' ? 'open' : p.decided ?? '',
+    org,
+    orgId,
+  }));
+}
+
+function healthOf(label: Health['label'], pct: number, text: string): Health {
+  return { label, pct, text };
+}
+
+function energySlice(
+  s: ReturnType<typeof useStore>,
+  persona: PersonaId,
+): ProfileData {
+  const rogerioPaid =
+    s.eProposals.find((p) => p.id === PAY_ROGERIO_ID)?.state === 'passed';
+  const rogerioAmount = (
+    s.eProposals.find((p) => p.id === PAY_ROGERIO_ID)?.amount ?? 0
+  ).toLocaleString();
+  const kwh = (n: string) => ({
     symbol: 'KWH',
     name: 'Tokenised energy credits',
     amount: n,
-    note,
   });
 
-  switch (s.persona) {
+  switch (persona) {
     case 'lea':
       return {
         name: 'Rogerio',
         role: 'Member · Ticket DRI',
         since: 'since 2024',
+        orgs: [ENERGY],
         currencies: [
-          kwh('42,000 kWh', 'earned facilitating the Portuguese communities'),
+          kwh('42,000 kWh'),
           ...(rogerioPaid
             ? [
                 {
                   symbol: 'EURC',
                   name: 'Euro Coin',
                   amount: rogerioAmount,
-                  note: 'paid for the municipalities — proposal, today',
                 },
               ]
             : []),
         ],
-        payments: livePayment(s, 'energy'),
-        history: [
+        isShaper: false,
+        isDri: true,
+        decisions: [],
+        current: [
+          ...(s.eMuni !== 'done'
+            ? [
+                {
+                  kind: 'ticket' as const,
+                  title: 'Onboard two Portuguese municipalities',
+                  orgId: 'energy' as const,
+                  org: ENERGY,
+                  due: '30 Jun',
+                  go: 'ticket' as const,
+                  id: 'e-muni',
+                },
+              ]
+            : []),
           {
-            what:
-              s.eMuni === 'done'
-                ? 'Onboarded two Portuguese municipalities — done, confirmed'
-                : 'Holds the municipalities ticket — in progress',
-            when: s.eMuni === 'done' ? 'today' : 'due 30 Jun',
+            kind: 'ticket',
+            title: 'Coopérnico quarterly notes',
+            orgId: 'energy',
+            org: ENERGY,
           },
-          { what: 'Ran onboarding for 4 Portuguese communities', when: '2025' },
-          { what: 'Brought Coopérnico to the table', when: 'Jan 2026' },
         ],
-        trust: {
-          label: 'Reliable',
-          text: 'Four communities onboarded, four still producing. Every ticket he accepted ended done, with a receipt — and when a council stalls he says so in the room the same day, not at the review.',
-        },
+        past: [
+          ...(s.eMuni === 'done'
+            ? [
+                {
+                  kind: 'ticket' as const,
+                  title: 'Onboard two Portuguese municipalities',
+                  org: ENERGY,
+                  when: 'today',
+                },
+              ]
+            : []),
+          {
+            kind: 'ticket',
+            title: 'Onboarding for 4 Portuguese communities',
+            org: ENERGY,
+            when: '2025',
+          },
+        ],
+        health: healthOf(
+          'Reliable',
+          86,
+          'Four communities onboarded, four still producing. Every ticket he accepted ended done, with a receipt — and when a council stalls he says so in the room the same day, not at the review.',
+        ),
       };
     case 'sam':
       return {
         name: 'Pedro',
         role: 'Project DRI',
         since: 'since 2023',
+        orgs: [ENERGY],
         currencies: [
-          kwh('118,000 kWh', 'earned holding Iberia pilots'),
+          kwh('118,000 kWh'),
+          { symbol: 'EURC', name: 'Euro Coin', amount: '1,200' },
+        ],
+        isShaper: false,
+        isDri: true,
+        decisions: [],
+        current: [
           {
-            symbol: 'EURC',
-            name: 'Euro Coin',
-            amount: '1,200',
-            note: 'for holding Iberia through May — proposal, 3 Jun',
+            kind: 'project',
+            title: energyOrg.projects.iberia.title,
+            orgId: 'energy',
+            org: ENERGY,
+            due: energyOrg.projects.iberia.review,
+            go: 'project',
+            id: 'iberia',
           },
         ],
-        payments: [
+        past: [
           {
-            what: 'Held Iberia pilots through May',
-            amount: '1,200 EURC',
-            when: '3 Jun',
-            agreed: 'with Alex in “Pilots” when he took the project',
-            proposalId: 'e-pedro-stipend',
+            kind: 'project',
+            title: 'Signed the Coopérnico partnership',
+            org: ENERGY,
+            when: 'Jan 2026',
           },
         ],
-        history: [
-          {
-            what: 'Holds Iberia pilots — live in two countries',
-            when: 'ongoing',
-          },
-          { what: 'Signed the Coopérnico partnership', when: 'Jan 2026' },
-          { what: 'Approved as project DRI by the Shapers', when: 'Nov 2025' },
-        ],
-        trust: {
-          label: 'Steady',
-          text: 'The pilots have held under him through two grant cycles. Every payment under him was agreed in the room first and moved by a proposal — nobody under him got surprised. Offers work instead of assigning it.',
-        },
+        health: healthOf(
+          'Steady',
+          78,
+          'The pilots have held under him through two grant cycles. Offers work instead of assigning it.',
+        ),
       };
     case 'maya':
       return {
         name: 'Alex',
         role: 'Shaper · Founder',
         since: 'founded 2022',
-        currencies: [
-          kwh('260,000 kWh', 'founder allocation, decided at founding'),
-        ],
-        payments: [],
-        history: [
+        orgs: [ENERGY],
+        currencies: [kwh('260,000 kWh')],
+        isShaper: true,
+        isDri: false,
+        decisions: asDecisions(s.eProposals, 'energy', ENERGY),
+        current: [],
+        past: [
           {
-            what: 'Confirmed strategy v3 — the org reads from it',
-            when: 'Jan 2026',
-          },
-          { what: 'Confirmed mission v2', when: 'Jan 2024' },
-          { what: 'Decided 14 proposals as Shaper', when: '2024–2026' },
-          {
-            what: 'Founded Hypha Energy with Edgar and Zekeriya',
+            kind: 'project',
+            title: 'Founded Hypha Energy with Edgar and Zekeriya',
+            org: ENERGY,
             when: '2022',
           },
         ],
-        trust: {
-          label: 'Consistent',
-          text: 'Every direction version he confirmed matches what the org then did — four white papers promised, four published. Rejects drafts as often as he confirms them, which is what keeps the record honest.',
-        },
+        health: healthOf(
+          'Consistent',
+          88,
+          'Every direction version he confirmed matches what the org then did — four white papers promised, four published. Rejects drafts as often as he confirms them.',
+        ),
       };
     case 'eli':
       return {
         name: 'Nina',
         role: 'Investor · watches',
         since: 'since 2025',
+        orgs: [ENERGY],
         currencies: [],
-        payments: [],
-        history: [],
-        trust: {
-          label: 'Observer',
-          text: 'No work history — investors watch, they do not hold. She funded the sandbox and sees everything on the Overview; the receipts are her due diligence.',
-        },
+        isShaper: false,
+        isDri: false,
+        decisions: [],
+        current: [],
+        past: [],
+        health: healthOf(
+          'Observer',
+          50,
+          'No work history — investors watch, they do not hold. She funded the sandbox and sees everything on the Overview.',
+        ),
       };
     default:
       return {
         name: s.profile.name || 'You',
         role: 'Member',
         since: 'joined from the Ameland pilot',
-        currencies: [
-          kwh(
-            s.eSummary === 'done' ? '1,200 kWh' : '800 kWh',
-            s.eSummary === 'done'
-              ? 'earned producing on Ameland, plus your first ticket'
-              : 'earned producing on Ameland',
-          ),
-        ],
-        payments: [],
-        history: [
+        orgs: [ENERGY],
+        currencies: [kwh(s.eSummary === 'done' ? '1,200 kWh' : '800 kWh')],
+        isShaper: false,
+        isDri: s.eSummary !== 'done',
+        decisions: [],
+        current:
+          s.eSummary !== 'done'
+            ? [
+                {
+                  kind: 'ticket',
+                  title: 'Write the Ameland pilot summary for new communities',
+                  orgId: 'energy',
+                  org: ENERGY,
+                  due: '15 Jul',
+                  go: 'ticket',
+                  id: 'e-summary',
+                },
+              ]
+            : [],
+        past: [
+          ...(s.eSummary === 'done'
+            ? [
+                {
+                  kind: 'ticket' as const,
+                  title: 'Write the Ameland pilot summary for new communities',
+                  org: ENERGY,
+                  when: 'today',
+                },
+              ]
+            : []),
           {
-            what:
-              s.eSummary === 'done'
-                ? 'Wrote the Ameland pilot summary — done'
-                : 'Holds the Ameland summary ticket — in progress',
-            when: s.eSummary === 'done' ? 'today' : 'due 15 Jul',
+            kind: 'ticket',
+            title: 'Household in the Ameland sandbox pilot',
+            org: ENERGY,
+            when: '2026',
           },
-          { what: 'Household in the Ameland sandbox pilot', when: '2026' },
         ],
-        trust: {
-          label: 'New',
-          text:
-            s.eSummary === 'done'
-              ? 'First ticket accepted and done, same week. One receipt is not a track record — but it is exactly how one starts.'
-              : 'One ticket held, none finished yet. Trust here is built from receipts — finish it and the record starts writing itself.',
-        },
+        health: healthOf(
+          'New',
+          s.eSummary === 'done' ? 48 : 36,
+          s.eSummary === 'done'
+            ? 'First ticket accepted and done, same week. One receipt is not a track record — but it is exactly how one starts.'
+            : 'One ticket held, none finished yet. Finish it and the record starts writing itself.',
+        ),
       };
   }
 }
 
+function riverSlice(
+  s: ReturnType<typeof useStore>,
+  persona: PersonaId,
+): ProfileData {
+  const leaPaid =
+    s.proposals.find((p) => p.id === PAY_LEA_ID)?.state === 'passed';
+  const leaAmountN = s.proposals.find((p) => p.id === PAY_LEA_ID)?.amount ?? 0;
+
+  switch (persona) {
+    case 'lea':
+      return {
+        name: 'Lea',
+        role: 'Member · Ticket DRI',
+        since: 'since March',
+        orgs: [RIVER],
+        currencies: [
+          { symbol: 'RIVER', name: 'River Commons currency', amount: '380' },
+          {
+            symbol: 'USDC',
+            name: 'USD Coin',
+            amount: leaPaid ? (80 + leaAmountN).toLocaleString() : '80',
+          },
+        ],
+        isShaper: false,
+        isDri: true,
+        decisions: [],
+        current: [
+          ...(s.covers !== 'done'
+            ? [
+                {
+                  kind: 'ticket' as const,
+                  title: 'Find two neighbours who can cover a Saturday',
+                  orgId: 'river' as const,
+                  org: RIVER,
+                  due: '7 Jun',
+                  go: 'ticket' as const,
+                  id: 'covers',
+                },
+              ]
+            : []),
+          {
+            kind: 'ticket',
+            title: 'Teach the cash-box count',
+            orgId: 'river',
+            org: RIVER,
+          },
+        ],
+        past: [
+          ...(s.covers === 'done'
+            ? [
+                {
+                  kind: 'ticket' as const,
+                  title: 'Find two neighbours who can cover a Saturday',
+                  org: RIVER,
+                  when: 'today',
+                },
+              ]
+            : []),
+          {
+            kind: 'ticket',
+            title: 'Hosted the Saturday stall 9 times',
+            org: RIVER,
+            when: 'since March',
+          },
+          {
+            kind: 'ticket',
+            title: 'Helped agree grower prices',
+            org: RIVER,
+            when: 'May',
+          },
+        ],
+        health: healthOf(
+          'Reliable',
+          88,
+          'Nine of nine Saturdays she said she would host, she hosted. Every ticket she accepted ended done, with a receipt. When she declines, she says why.',
+        ),
+      };
+    case 'sam':
+      return {
+        name: 'Sam',
+        role: 'Shaper · Project DRI',
+        since: 'since March',
+        orgs: [RIVER],
+        currencies: [
+          { symbol: 'RIVER', name: 'River Commons currency', amount: '640' },
+          { symbol: 'USDC', name: 'USD Coin', amount: '60' },
+        ],
+        isShaper: true,
+        isDri: true,
+        decisions: asDecisions(s.proposals, 'river', RIVER),
+        current: [
+          {
+            kind: 'project',
+            title: projectsData.stall.title,
+            orgId: 'river',
+            org: RIVER,
+            due: s.review === 'extended' ? '1 Sep' : projectsData.stall.review,
+            go: 'project',
+            id: 'stall',
+          },
+          {
+            kind: 'ticket',
+            title: 'Renew the market pitch licence',
+            orgId: 'river',
+            org: RIVER,
+            due: '30 Jun',
+          },
+        ],
+        past: [
+          {
+            kind: 'project',
+            title: 'Approved as project DRI',
+            org: RIVER,
+            when: '12 May',
+          },
+        ],
+        health: healthOf(
+          'Steady',
+          80,
+          'The stall has held every week under him. Offers work instead of assigning it.',
+        ),
+      };
+    case 'maya':
+      return {
+        name: 'Maya',
+        role: 'Shaper · Founder',
+        since: 'founded March',
+        orgs: [RIVER],
+        currencies: [
+          { symbol: 'RIVER', name: 'River Commons currency', amount: '720' },
+        ],
+        isShaper: true,
+        isDri: true,
+        decisions: asDecisions(s.proposals, 'river', RIVER),
+        current: [
+          {
+            kind: 'project',
+            title: projectsData.currency.title,
+            orgId: 'river',
+            org: RIVER,
+            due: projectsData.currency.review,
+            go: 'project',
+            id: 'currency',
+          },
+        ],
+        past: [
+          {
+            kind: 'project',
+            title: 'Founded River Commons',
+            org: RIVER,
+            when: 'March',
+          },
+        ],
+        health: healthOf(
+          'Consistent',
+          90,
+          'Every direction version she confirmed matches what the org then actually did — said and done line up. She rejects drafts as often as she confirms them.',
+        ),
+      };
+    case 'eli':
+      return {
+        name: 'Eli',
+        role: 'Investor · watches',
+        since: 'since April',
+        orgs: [RIVER],
+        currencies: [],
+        isShaper: false,
+        isDri: false,
+        decisions: [],
+        current: [],
+        past: [],
+        health: healthOf(
+          'Observer',
+          50,
+          'No work history — investors watch, they do not hold. He sees everything on the Overview.',
+        ),
+      };
+    default:
+      return {
+        name: s.profile.name || 'You',
+        role: 'Member · new',
+        since: 'joined today',
+        orgs: [RIVER],
+        currencies: [
+          {
+            symbol: 'RIVER',
+            name: 'River Commons currency',
+            amount: s.setup === 'done' ? '25' : '0',
+          },
+        ],
+        isShaper: false,
+        isDri: s.setup === 'accepted',
+        decisions: [],
+        current:
+          s.setup === 'accepted'
+            ? [
+                {
+                  kind: 'ticket',
+                  title:
+                    'Write the Saturday setup so someone else could run it',
+                  orgId: 'river',
+                  org: RIVER,
+                  due: '14 Jun',
+                  go: 'ticket',
+                  id: 'setup',
+                },
+              ]
+            : [],
+        past: [
+          ...(s.setup === 'done'
+            ? [
+                {
+                  kind: 'ticket' as const,
+                  title:
+                    'Write the Saturday setup so someone else could run it',
+                  org: RIVER,
+                  when: 'today',
+                },
+              ]
+            : []),
+          {
+            kind: 'ticket',
+            title: 'Joined River Commons',
+            org: RIVER,
+            when: 'today',
+          },
+        ],
+        health: healthOf(
+          'New',
+          s.setup === 'done' ? 48 : 32,
+          s.setup === 'done'
+            ? 'First ticket accepted and done, same week. One receipt is not a track record — but it is exactly how one starts.'
+            : 'No history yet. Accept a ticket, finish it, and the record starts writing itself.',
+        ),
+      };
+  }
+}
+
+function mergeYou(river: ProfileData, energy: ProfileData): ProfileData {
+  return {
+    name: river.name,
+    role: 'Member',
+    since: 'in River Commons and Hypha Energy',
+    orgs: [RIVER, ENERGY],
+    currencies: [...river.currencies, ...energy.currencies],
+    isShaper: false,
+    isDri: river.isDri || energy.isDri,
+    decisions: [],
+    current: [...river.current, ...energy.current],
+    past: [...river.past, ...energy.past],
+    health: healthOf(
+      river.health.label,
+      Math.round((river.health.pct + energy.health.pct) / 2),
+      'New in both orgs. Trust is built from receipts — finish the tickets you hold and the record starts writing itself.',
+    ),
+  };
+}
+
+const GUESTS: Record<
+  string,
+  {
+    role: string;
+    since: string;
+    health: Health;
+    isShaper?: boolean;
+    isDri?: boolean;
+    current?: HeldWork[];
+    past?: PastWork[];
+  }
+> = {
+  Jun: {
+    role: 'Project DRI',
+    since: 'since April',
+    isDri: true,
+    current: [
+      {
+        kind: 'project',
+        title: projectsData.growers.title,
+        orgId: 'river',
+        org: RIVER,
+        due: projectsData.growers.review,
+        go: 'project',
+        id: 'growers',
+      },
+    ],
+    health: healthOf(
+      'Steady',
+      76,
+      'Holds grower onboarding. Offers work instead of assigning it — every grower who said yes still shows up.',
+    ),
+  },
+  Suzana: {
+    role: 'Project DRI',
+    since: 'since 2025',
+    isDri: true,
+    current: [
+      {
+        kind: 'project',
+        title: energyOrg.projects.playbook.title,
+        orgId: 'energy',
+        org: ENERGY,
+        go: 'project',
+        id: 'playbook',
+      },
+    ],
+    health: healthOf(
+      'Steady',
+      74,
+      'Holds the community onboarding playbook. Offers the pieces; the record is the receipts.',
+    ),
+  },
+  Rowan: {
+    role: 'Project DRI',
+    since: 'since 2024',
+    isDri: true,
+    health: healthOf(
+      'Reliable',
+      84,
+      'On-call for Ameland EMS. Tickets he accepts end done, with a receipt.',
+    ),
+  },
+  Marcus: {
+    role: 'Project DRI',
+    since: 'since 2024',
+    isDri: true,
+    current: [
+      {
+        kind: 'project',
+        title: energyOrg.projects.islands.title,
+        orgId: 'energy',
+        org: ENERGY,
+        go: 'project',
+        id: 'islands',
+      },
+    ],
+    health: healthOf(
+      'Steady',
+      80,
+      'Holds island grids. The Ameland sandbox closed with receipts, not slides.',
+    ),
+  },
+  Edgar: {
+    role: 'Shaper',
+    since: 'since 2022',
+    isShaper: true,
+    health: healthOf(
+      'Consistent',
+      86,
+      'Agrees or rejects in the open. Money and direction move only when the three Shapers do.',
+    ),
+  },
+  Zekeriya: {
+    role: 'Shaper',
+    since: 'since 2023',
+    isShaper: true,
+    health: healthOf(
+      'Consistent',
+      85,
+      'Agrees or rejects in the open. The record is the vote, not a sidebar.',
+    ),
+  },
+  Rafi: {
+    role: 'Member',
+    since: 'at the door',
+    health: healthOf(
+      'New',
+      30,
+      'Ran the market office six years. The weekday hall is waiting for someone who can sign a licence.',
+    ),
+  },
+  Priya: {
+    role: 'Member',
+    since: 'since April',
+    past: [
+      {
+        kind: 'ticket',
+        title: 'Voucher design',
+        org: RIVER,
+        when: '2 May',
+      },
+    ],
+    health: healthOf(
+      'Reliable',
+      72,
+      'The voucher design is done, paid by a proposal. One receipt, on time.',
+    ),
+  },
+  Tom: {
+    role: 'Member',
+    since: 'since April',
+    isDri: true,
+    current: [
+      {
+        kind: 'ticket',
+        title: 'Hold the cash box',
+        orgId: 'river',
+        org: RIVER,
+      },
+    ],
+    health: healthOf(
+      'Reliable',
+      75,
+      'Holds the cash box ticket under the currency project, and splits the pieces under it.',
+    ),
+  },
+  Surya: {
+    role: 'Project DRI',
+    since: 'since 2024',
+    isDri: true,
+    health: healthOf(
+      'Steady',
+      77,
+      'Holds the tech work under Energy. Offers the pieces; pay moves by proposal.',
+    ),
+  },
+  Inês: {
+    role: 'Member',
+    since: 'since 2025',
+    past: [
+      {
+        kind: 'ticket',
+        title: 'Letter of intent — Beja',
+        org: ENERGY,
+        when: 'done',
+      },
+    ],
+    health: healthOf(
+      'New',
+      42,
+      'The Beja letter of intent is done. First receipt in this org.',
+    ),
+  },
+};
+
+function guestProfile(
+  s: ReturnType<typeof useStore>,
+  org: OrgId,
+  name: string,
+): ProfileData {
+  const g = GUESTS[name];
+  const orgName = org === 'energy' ? ENERGY : RIVER;
+  const shaper = Boolean(g?.isShaper);
+  return {
+    name,
+    role: g?.role ?? 'Member',
+    since: g?.since ?? 'in this org',
+    orgs: [orgName],
+    currencies: [],
+    isShaper: shaper,
+    isDri: Boolean(g?.isDri),
+    decisions: shaper
+      ? asDecisions(org === 'energy' ? s.eProposals : s.proposals, org, orgName)
+      : [],
+    current: g?.current ?? [],
+    past: g?.past ?? [],
+    health:
+      g?.health ??
+      healthOf(
+        'Member',
+        50,
+        `${name} is in this org. The record fills in as they hold and finish work.`,
+      ),
+  };
+}
+
+function profileFor(
+  s: ReturnType<typeof useStore>,
+  name: string | null,
+): ProfileData {
+  const youName = s.profile.name || 'You';
+  const mine = name == null;
+  const id =
+    name == null || name === 'You' || name === youName
+      ? name == null
+        ? s.persona
+        : ('you' as PersonaId)
+      : personaList(s.org).find((p) => p.name === name)?.id;
+
+  if (id === 'you' || (mine && s.persona === 'you')) {
+    return mergeYou(riverSlice(s, 'you'), energySlice(s, 'you'));
+  }
+  if (id) return s.org === 'energy' ? energySlice(s, id) : riverSlice(s, id);
+  return guestProfile(s, s.org, name ?? youName);
+}
+
+function WorkRow({
+  kind,
+  title,
+  org,
+  meta,
+  onOpen,
+}: {
+  kind: string;
+  title: string;
+  org: string;
+  meta?: string;
+  onOpen?: () => void;
+}) {
+  const inner = (
+    <>
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          <Chip className="px-2 py-0.5 text-[10px]">{kind}</Chip>
+          <span className="text-[12px] text-faint">{org}</span>
+        </span>
+        <span className="mt-1 block text-[14px] font-medium">{title}</span>
+      </span>
+      {meta && <span className="shrink-0 text-[12px] text-faint">{meta}</span>}
+    </>
+  );
+  if (!onOpen) {
+    return (
+      <div className="flex items-baseline justify-between gap-4 border-b border-hair py-2.5 last:border-0">
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-baseline justify-between gap-4 border-b border-hair py-2.5 text-left last:border-0 hover:text-ink"
+    >
+      {inner}
+    </button>
+  );
+}
+
 export function ProfileScreen() {
   const s = useStore();
-  const leaProposal = s.proposals.find((p) => p.id === PAY_LEA_ID);
-  const leaPaid = leaProposal?.state === 'passed';
-  const leaAmountN = leaProposal?.amount ?? 0;
+  const mine = !s.viewingProfile;
+  const data = profileFor(s, s.viewingProfile);
+  const [showPast, setShowPast] = useState(false);
 
-  const data: ProfileData = (() => {
-    if (s.org === 'energy') return energyProfile(s);
-    switch (s.persona) {
-      case 'lea':
-        return {
-          name: 'Lea',
-          role: 'Member · Ticket DRI',
-          since: 'since March',
-          currencies: [
-            {
-              symbol: 'RIVER',
-              name: 'River Commons currency',
-              amount: '380',
-              note: 'earned hosting Saturdays',
-            },
-            {
-              symbol: 'USDC',
-              name: 'USD Coin',
-              amount: leaPaid ? (80 + leaAmountN).toLocaleString() : '80',
-              note: leaPaid
-                ? 'Saturdays in May, and the covers — today'
-                : 'four Saturdays hosted in May — proposal, 2 Jun',
-            },
-          ],
-          payments: [
-            {
-              what: 'Four Saturdays hosted in May',
-              amount: '80 USDC',
-              when: '2 Jun',
-              agreed: 'with Sam in “Saturday stall” — 20 a Saturday',
-              proposalId: 'lea-saturdays',
-            },
-            ...livePayment(s, 'river'),
-          ],
-          history: [
-            {
-              what:
-                s.covers === 'done'
-                  ? 'Found two Saturday covers — done, confirmed'
-                  : 'Holds the covers ticket — in progress',
-              when: s.covers === 'done' ? 'today' : 'due 7 Jun',
-            },
-            { what: 'Hosted the Saturday stall 9 times', when: 'since March' },
-            { what: 'Helped Jun agree grower prices', when: 'May' },
-          ],
-          trust: {
-            label: 'Reliable',
-            text: 'Nine of nine Saturdays she said she would host, she hosted. Every ticket she accepted ended done, with a receipt. When she declines, she says why — the weekday hall came back with a reason, not silence.',
-          },
-        };
-      case 'sam':
-        return {
-          name: 'Sam',
-          role: 'Shaper · Project DRI',
-          since: 'since March',
-          currencies: [
-            {
-              symbol: 'RIVER',
-              name: 'River Commons currency',
-              amount: '640',
-              note: 'earned holding the stall',
-            },
-            {
-              symbol: 'USDC',
-              name: 'USD Coin',
-              amount: '60',
-              note: 'for holding the stall through May — proposal, 2 Jun',
-            },
-          ],
-          payments: [
-            {
-              what: 'Held Saturday stall through May',
-              amount: '60 USDC',
-              when: '2 Jun',
-              agreed: 'with Maya in “Shapers” when he took the stall',
-              proposalId: 'sam-stipend',
-            },
-          ],
-          history: [
-            {
-              what: 'Holds Saturday stall — every week since March',
-              when: 'ongoing',
-            },
-            { what: 'Offered 3 tickets, all answered', when: 'May–Jun' },
-            { what: 'Approved as project DRI by the Shapers', when: '12 May' },
-          ],
-          trust: {
-            label: 'Steady',
-            text: 'The stall has held every week under him. Every payment under him was agreed in the room first and moved by a proposal — nobody under him got surprised. Offers work instead of assigning it.',
-          },
-        };
-      case 'maya':
-        return {
-          name: 'Maya',
-          role: 'Shaper · Founder',
-          since: 'founded March',
-          currencies: [
-            {
-              symbol: 'RIVER',
-              name: 'River Commons currency',
-              amount: '720',
-              note: 'founder allocation, decided at founding',
-            },
-          ],
-          payments: [],
-          history: [
-            {
-              what: `Confirmed strategy v${s.strategyVersion} — the org reads from it`,
-              when: s.strategyVersion === 5 ? 'today' : '14 May',
-            },
-            { what: 'Confirmed objectives v3', when: '14 May' },
-            { what: 'Confirmed mission v1 and vision v1', when: 'March' },
-            { what: 'Decided 3 proposals as Shaper', when: 'May' },
-            { what: 'Founded River Commons', when: 'March' },
-          ],
-          trust: {
-            label: 'Consistent',
-            text: 'Every direction version she confirmed matches what the org then actually did — said and done line up. She rejects drafts as often as she confirms them, which is what keeps the record honest.',
-          },
-        };
-      case 'eli':
-        return {
-          name: 'Eli',
-          role: 'Investor · watches',
-          since: 'since April',
-          currencies: [],
-          payments: [],
-          history: [],
-          trust: {
-            label: 'Observer',
-            text: 'No work history — investors watch, they do not hold. He sees everything on the Overview; the receipts are his due diligence.',
-          },
-        };
-      default:
-        return {
-          name: s.profile.name || 'You',
-          role: 'Member · new',
-          since: 'joined today',
-          currencies: [
-            {
-              symbol: 'RIVER',
-              name: 'River Commons currency',
-              amount: s.setup === 'done' ? '25' : '0',
-              note:
-                s.setup === 'done'
-                  ? 'earned on your first ticket'
-                  : 'earn it by holding work',
-            },
-          ],
-          payments: [],
-          history: [
-            {
-              what:
-                s.setup === 'done'
-                  ? 'Wrote the Saturday setup — done'
-                  : s.setup === 'accepted'
-                  ? 'Holds the setup ticket — in progress'
-                  : s.setup === 'declined'
-                  ? 'Declined the setup ticket, with a note'
-                  : 'Offered the setup ticket by Sam',
-              when: 'today',
-            },
-            { what: 'Joined River Commons', when: 'today' },
-          ],
-          trust: {
-            label: 'New',
-            text:
-              s.setup === 'done'
-                ? 'First ticket accepted and done, same week. One receipt is not a track record — but it is exactly how one starts.'
-                : 'No history yet. Trust here is built from receipts — accept a ticket, finish it, and the record starts writing itself.',
-          },
-        };
+  const openHeld = (w: HeldWork) => {
+    if (!w.go || !w.id) return;
+    if (w.orgId !== s.org) {
+      s.switchOrg(w.orgId);
+      return;
     }
-  })();
+    if (w.go === 'project') s.openProject(w.id as 'stall');
+    else s.openTicket(w.id as 'covers');
+  };
+
+  const openDecision = (d: RecentDecision) => {
+    if (d.orgId !== s.org) {
+      s.switchOrg(d.orgId);
+      return;
+    }
+    s.openProposal(d.id);
+  };
 
   return (
     <Workspace>
-      <Page kicker="Who the org knows you as" title="My Profile">
+      <Page
+        kicker={
+          mine
+            ? 'Your activity across organisations'
+            : 'Who they are across the network'
+        }
+        title={mine ? 'My Profile' : data.name}
+      >
+        {!mine && (
+          <button
+            type="button"
+            onClick={() => s.go('my')}
+            className="mb-5 text-[13px] font-medium text-sub transition-colors hover:text-ink"
+          >
+            ← Back
+          </button>
+        )}
         <div className="space-y-2.5">
           <Card className="p-5">
             <div className="flex items-center gap-4">
@@ -400,12 +881,21 @@ export function ProfileScreen() {
                 <p className="text-[13px] text-sub">
                   {data.role} · {data.since}
                 </p>
+                <p className="mt-1 text-[12px] text-faint">
+                  {data.orgs.join(' · ')}
+                </p>
               </div>
             </div>
           </Card>
 
+          <HealthCard
+            delay={1}
+            health={data.health}
+            kicker={mine ? 'Your health' : 'Their health'}
+          />
+
           <Card className="p-5" delay={1}>
-            <Kicker>What you hold</Kicker>
+            <Kicker>{mine ? 'What you hold' : 'What they hold'}</Kicker>
             {data.currencies.length === 0 ? (
               <p className="mt-2 text-[14px] text-sub">
                 No org currency — watching, not holding.
@@ -414,96 +904,102 @@ export function ProfileScreen() {
               <div className="mt-2">
                 {data.currencies.map((c) => (
                   <CurrencyRow
-                    key={c.symbol}
+                    key={`${c.symbol}-${c.amount}`}
                     symbol={c.symbol}
                     name={c.name}
                     amount={c.amount}
-                    note={c.note}
                   />
                 ))}
               </div>
             )}
-            <p className="mt-3 text-[12px] text-faint">
-              Balances only ever change through proposals or earned work — every
-              movement has a receipt.
-            </p>
           </Card>
 
-          <Card className="p-5" delay={2}>
-            <Kicker>Paid to you — every one a proposal</Kicker>
-            {data.payments.length === 0 ? (
-              <p className="mt-2 text-[14px] text-sub">
-                {data.role.startsWith('Shaper') ||
-                data.role.startsWith('Investor')
-                  ? 'Nothing — Shapers and investors are not paid for holding the org.'
-                  : 'Nothing yet. Agree a sum with whoever holds the work above you, do the work, then ask your assistant to draft the proposal.'}
-              </p>
-            ) : (
+          {data.isShaper && data.decisions.length > 0 && (
+            <Card className="p-5" delay={2}>
+              <Kicker>Recent decisions</Kicker>
               <div className="mt-2">
-                {data.payments.map((p) => (
+                {data.decisions.map((d) => (
+                  <WorkRow
+                    key={`${d.orgId}-${d.id}`}
+                    kind={d.state}
+                    title={d.title}
+                    org={d.org}
+                    meta={d.when}
+                    onOpen={() => openDecision(d)}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {data.isDri && (
+            <Card className="p-5" delay={2}>
+              <Kicker>
+                {mine ? 'What you hold now' : 'What they hold now'}
+              </Kicker>
+              {data.current.length === 0 ? (
+                <p className="mt-2 text-[14px] text-sub">
+                  Nothing open — earlier work is below.
+                </p>
+              ) : (
+                <div className="mt-2">
+                  {data.current.map((w) => (
+                    <WorkRow
+                      key={`${w.org}-${w.title}`}
+                      kind={w.kind}
+                      title={w.title}
+                      org={w.org}
+                      meta={w.due ? `Due ${w.due}` : undefined}
+                      onOpen={w.go ? () => openHeld(w) : undefined}
+                    />
+                  ))}
+                </div>
+              )}
+              {data.past.length > 0 && (
+                <div className="mt-3">
                   <button
-                    key={p.what}
                     type="button"
-                    disabled={!p.proposalId}
-                    onClick={() => p.proposalId && s.openProposal(p.proposalId)}
-                    className="flex w-full items-baseline justify-between gap-4 border-b border-hair py-2.5 text-left last:border-0 enabled:hover:text-ink"
+                    onClick={() => setShowPast((v) => !v)}
+                    className="text-[13px] font-medium text-sub transition-colors hover:text-ink"
                   >
-                    <span className="min-w-0">
-                      <span className="block text-[14px]">{p.what}</span>
-                      <span className="block text-[12px] text-faint">
-                        agreed {p.agreed} · passed {p.when}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[14px] font-semibold tabular-nums">
-                      {p.amount}
-                    </span>
+                    {showPast
+                      ? 'Hide earlier work'
+                      : `Earlier work (${data.past.length})`}
                   </button>
-                ))}
-              </div>
-            )}
-            <p className="mt-3 text-[12px] leading-relaxed text-faint">
-              No sums live on tickets or projects. Pay is agreed in chat, the
-              agent remembers the line, and it moves only when the Shapers pass
-              the proposal.
-            </p>
-          </Card>
+                  {showPast && (
+                    <div className="mt-1">
+                      {data.past.map((w) => (
+                        <WorkRow
+                          key={`${w.org}-${w.title}`}
+                          kind={w.kind}
+                          title={w.title}
+                          org={w.org}
+                          meta={w.when}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
 
-          <Card className="p-5" delay={3}>
-            <Kicker>Work history</Kicker>
-            {data.history.length === 0 ? (
-              <p className="mt-2 text-[14px] text-sub">
-                Nothing yet — no work held, no tickets taken.
-              </p>
-            ) : (
+          {!data.isDri && data.past.length > 0 && (
+            <Card className="p-5" delay={2}>
+              <Kicker>Earlier work</Kicker>
               <div className="mt-2">
-                {data.history.map((h) => (
-                  <div
-                    key={h.what}
-                    className="flex items-baseline justify-between gap-4 border-b border-hair py-2.5 last:border-0"
-                  >
-                    <span className="text-[14px]">{h.what}</span>
-                    <span className="shrink-0 text-[12px] text-faint">
-                      {h.when}
-                    </span>
-                  </div>
+                {data.past.map((w) => (
+                  <WorkRow
+                    key={`${w.org}-${w.title}`}
+                    kind={w.kind}
+                    title={w.title}
+                    org={w.org}
+                    meta={w.when}
+                  />
                 ))}
               </div>
-            )}
-          </Card>
-
-          <Card className="p-5" delay={3}>
-            <div className="flex items-center justify-between">
-              <Kicker>The agent’s read</Kicker>
-              <Chip tone="agent">{data.trust.label}</Chip>
-            </div>
-            <p className="mt-3 text-[14px] leading-relaxed">
-              {data.trust.text}
-            </p>
-            <p className="mt-3 text-[12px] leading-relaxed text-faint">
-              Drawn from the ledger — what was accepted, done, declined, and
-              when. Never from vibes, and anyone can check the receipts.
-            </p>
-          </Card>
+            </Card>
+          )}
         </div>
       </Page>
     </Workspace>

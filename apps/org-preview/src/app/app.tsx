@@ -16,6 +16,7 @@ import {
   MyWork,
   OfferScreen,
   ProjectDetail,
+  ShaperAskScreen,
   TicketScreen,
 } from '@/screens/work';
 
@@ -60,6 +61,8 @@ function Router() {
       return <ProposalDetail />;
     case 'direction':
       return <DirectionDetail />;
+    case 'shaper':
+      return <ShaperAskScreen />;
     case 'about':
       return <About />;
   }

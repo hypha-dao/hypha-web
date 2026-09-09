@@ -450,6 +450,60 @@ export function personaName(org: OrgId, id: PersonaId): string {
   return personaList(org).find((p) => p.id === id)?.name ?? 'You';
 }
 
+/** Names the agent can suggest as a ticket holder. */
+export const HOLDERS: Record<OrgId, string[]> = {
+  river: [
+    'the new member',
+    'Lea',
+    'Sam',
+    'Maya',
+    'Jun',
+    'Rafi',
+    'Priya',
+    'Tom',
+  ],
+  energy: [
+    'the new member',
+    'Rogerio',
+    'Pedro',
+    'Alex',
+    'Suzana',
+    'Rowan',
+    'Marcus',
+    'Inês',
+  ],
+};
+
+export const TICKET_SUGGESTED: Record<string, string> = {
+  setup: 'You',
+  covers: 'Lea',
+  rota: 'Jun',
+  photo: 'You',
+  'e-summary': 'You',
+  'e-muni': 'Rogerio',
+  'e-faq': 'You',
+  weekday: 'Lea',
+  carbon: 'Rowan',
+};
+
+export function displayPerson(name: string, viewer: PersonaId): string {
+  if (name === 'You' || name === 'the new member') {
+    return viewer === 'you' ? 'You' : 'the new member';
+  }
+  return name;
+}
+
+export function isWaitingOnMe(
+  to: string | undefined,
+  org: OrgId,
+  persona: PersonaId,
+): boolean {
+  if (!to) return false;
+  if (persona === 'you' && (to === 'You' || to === 'the new member'))
+    return true;
+  return to === personaName(org, persona);
+}
+
 export type RiverProjectId =
   | 'stall'
   | 'weekday'
@@ -782,11 +836,30 @@ export type Proposal = {
   no: number;
   needed: number;
   openedBy?: string;
+  /** who has already tapped yes / no — omitted, derived from counts in order */
+  agreedBy?: string[];
+  rejectedBy?: string[];
+  /** money — who the sum is for; project — the DRI if already named */
+  to?: string;
   /** project approvals — what the project is */
   description?: string;
   /** project approvals — when the piece ends / comes up for review */
   ends?: string;
 };
+
+/** Who the money or the project is for — named, not implied. */
+export function proposalRecipient(p: Proposal): string | null {
+  if (p.to) return p.to;
+  if (p.kind === 'money') {
+    const m = p.title.match(/^(?:Pay|Reimburse)\s+(.+?)\s+\d/);
+    return m?.[1] ?? null;
+  }
+  if (p.kind === 'project') {
+    const m = p.sub.match(/^(.+?) as DRI/);
+    return m?.[1] ?? null;
+  }
+  return null;
+}
 
 export const seedProposals: Proposal[] = [
   {
@@ -1012,6 +1085,10 @@ export type TicketView = WorkTicketRow & {
   projectId: ProjectId;
   projectTitle: string;
   parent?: TicketView;
+  /** key for changing who the ticket is offered to */
+  ticketKey?: string;
+  /** the agent's first suggested holder — does not change when you pick someone else */
+  suggested?: string;
 };
 
 export type EnergyProject = StaticProject & { id: EnergyProjectId };
@@ -1391,7 +1468,6 @@ export const energyOrg = {
         symbol: 'KWH',
         name: 'Tokenised energy credits',
         amount: '3.75M kWh',
-        note: 'earned by producing, spent on bills — EU sandbox pilot',
       },
     ],
   },
@@ -1813,6 +1889,7 @@ export const energyOrg = {
       title: 'Fund EECF round-2 applications — 6,000 EURC',
       sub: 'Application support for six emerging communities',
       amount: 6000,
+      to: 'Pedro',
       state: 'open',
       yes: 1,
       no: 0,

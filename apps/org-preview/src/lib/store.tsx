@@ -14,6 +14,8 @@ import {
   energyOrg,
   personaName,
   seedProposals,
+  space,
+  TICKET_SUGGESTED,
   unitFor,
   type DirectionKind,
   type Msg,
@@ -45,7 +47,16 @@ export type Route =
   | 'offer'
   | 'proposal'
   | 'direction'
+  | 'shaper'
   | 'about';
+
+export type ShaperAskId =
+  | 'review'
+  | 'weekday'
+  | 'rafi'
+  | 'strategy'
+  | 'carbon'
+  | 'join';
 
 export type YouStage = 'chat' | 'member';
 export type SetupState = 'offered' | 'accepted' | 'done' | 'declined';
@@ -166,9 +177,22 @@ type Store = {
   /** any ticket on the board, read-only */
   ticketView: TicketView | null;
   viewTicket: (t: TicketView) => void;
+  /** who a ticket is currently offered to / held by — overrides the seed */
+  ticketPerson: Record<string, string>;
+  setTicketPerson: (id: string, name: string) => void;
   openProposal: (id: string) => void;
   /** full text, versions and proofs of one direction artifact */
   openDirection: (kind: DirectionKind) => void;
+  /** whose profile is open — null is the current persona’s own */
+  viewingProfile: string | null;
+  openProfile: (name: string) => void;
+  openMyProfile: () => void;
+  /** which offer the offer screen is showing */
+  offerKey: 'setup' | OfferId;
+  openOffer: (id: 'setup' | OfferId) => void;
+  /** a Shaper ask opened from My Work — full brief lives here, not on the card */
+  shaperAsk: ShaperAskId | null;
+  openShaperAsk: (id: ShaperAskId) => void;
   switchPersona: (id: PersonaId) => void;
   // onboarding
   setProfile: (p: Partial<Profile>) => void;
@@ -278,6 +302,12 @@ export function StoreProvider({
   const [proposalId, setProposalId] = useState('');
   const [directionKind, setDirectionKind] = useState<DirectionKind>('mission');
   const [ticketView, setTicketView] = useState<TicketView | null>(null);
+  const [ticketPerson, setTicketPersonState] = useState<Record<string, string>>(
+    () => ({ ...TICKET_SUGGESTED }),
+  );
+  const [viewingProfile, setViewingProfile] = useState<string | null>(null);
+  const [offerKey, setOfferKey] = useState<'setup' | OfferId>('setup');
+  const [shaperAsk, setShaperAsk] = useState<ShaperAskId | null>(null);
 
   const [youStage, setYouStage] = useState<YouStage>('chat');
   const [profile, setProfileState] = useState<Profile>(initialProfile);
@@ -362,6 +392,10 @@ export function StoreProvider({
       extraMsgs,
       notice,
 
+      viewingProfile,
+      offerKey,
+      shaperAsk,
+
       go: setRoute,
       openThread: (id) => {
         setThreadId(id);
@@ -376,9 +410,35 @@ export function StoreProvider({
         setRoute('ticket');
       },
       ticketView,
+      ticketPerson,
       viewTicket: (t) => {
-        setTicketView(t);
+        const key = t.ticketKey ?? t.id;
+        const who = key && ticketPerson[key] ? ticketPerson[key] : t.who;
+        setTicketView(
+          key
+            ? {
+                ...t,
+                ticketKey: key,
+                suggested: t.suggested ?? TICKET_SUGGESTED[key],
+                who,
+              }
+            : t,
+        );
         setRoute('ticket-view');
+      },
+      setTicketPerson: (id, name) => {
+        const stored = name === 'the new member' ? 'You' : name;
+        setTicketPersonState((m) => ({ ...m, [id]: stored }));
+        setTicketView((t) =>
+          t && (t.ticketKey === id || t.id === id) ? { ...t, who: stored } : t,
+        );
+        const label =
+          stored === 'You'
+            ? persona === 'you'
+              ? 'you'
+              : 'the new member'
+            : stored;
+        toast(`Offered to ${label}. They will see it on My Work.`);
       },
       openProposal: (id) => {
         setProposalId(id);
@@ -388,7 +448,24 @@ export function StoreProvider({
         setDirectionKind(kind);
         setRoute('direction');
       },
+      openProfile: (name) => {
+        setViewingProfile(name);
+        setRoute('profile');
+      },
+      openMyProfile: () => {
+        setViewingProfile(null);
+        setRoute('profile');
+      },
+      openOffer: (id) => {
+        setOfferKey(id);
+        setRoute('offer');
+      },
+      openShaperAsk: (id) => {
+        setShaperAsk(id);
+        setRoute('shaper');
+      },
       switchPersona: (id) => {
+        setViewingProfile(null);
         setPersona(id);
         setRoute(homeRoute(id));
       },
@@ -435,6 +512,10 @@ export function StoreProvider({
       },
 
       offerWeekday: (to) => {
+        setTicketPersonState((m) => ({
+          ...m,
+          weekday: to === 'lea' ? 'Lea' : 'Rafi',
+        }));
         if (to === 'lea') {
           setWeekday('offering-lea');
           setTimeout(() => {
@@ -556,6 +637,7 @@ export function StoreProvider({
       offers,
       answerOffer: (id, yes) => {
         setOffers((o) => ({ ...o, [id]: yes ? 'accepted' : 'declined' }));
+        setRoute('my');
         const from = OFFERS[id].from;
         toast(
           yes
@@ -709,6 +791,7 @@ export function StoreProvider({
               ? ` — the line says ${money(draft.agreed)}`
               : ''),
           amount: draft.amount,
+          to: a.who,
           state: 'open',
           yes: 0,
           no: 0,
@@ -730,17 +813,23 @@ export function StoreProvider({
         const isEnergy = org === 'energy';
         const setVotes = isEnergy ? setEVotes : setMyVotes;
         const setList = isEnergy ? setEProposals : setProposals;
+        const voter = personaName(org, persona);
+        const bench = isEnergy ? energyOrg.space.shapers : space.shapers;
         setVotes((m) => ({ ...m, [id]: v }));
         setList((ps) =>
-          ps.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  yes: p.yes + (v === 'yes' ? 1 : 0),
-                  no: p.no + (v === 'no' ? 1 : 0),
-                }
-              : p,
-          ),
+          ps.map((p) => {
+            if (p.id !== id) return p;
+            const agreed = p.agreedBy ?? bench.slice(0, p.yes);
+            const rejected = p.rejectedBy ?? bench.slice(p.yes, p.yes + p.no);
+            return {
+              ...p,
+              yes: p.yes + (v === 'yes' ? 1 : 0),
+              no: p.no + (v === 'no' ? 1 : 0),
+              agreedBy: v === 'yes' ? [...new Set([...agreed, voter])] : agreed,
+              rejectedBy:
+                v === 'no' ? [...new Set([...rejected, voter])] : rejected,
+            };
+          }),
         );
         // the other Shaper(s) answer shortly after — the rest of the quorum
         setTimeout(() => {
@@ -767,14 +856,23 @@ export function StoreProvider({
                 return {
                   ...p,
                   yes: p.yes + rest,
+                  agreedBy: bench.slice(0, p.needed),
                   state: 'passed',
                   decided: 'today',
                 };
               }
               toast('Rejected — recorded, with the reason. Nothing moved.');
+              const already = new Set([
+                ...(p.agreedBy ?? []),
+                ...(p.rejectedBy ?? []),
+              ]);
               return {
                 ...p,
                 no: p.no + rest,
+                rejectedBy: [
+                  ...(p.rejectedBy ?? []),
+                  ...bench.filter((n) => !already.has(n)),
+                ],
                 state: 'rejected',
                 decided: 'today',
               };
@@ -909,6 +1007,10 @@ export function StoreProvider({
         setTicketId(entry.org === 'energy' ? 'e-summary' : 'covers');
         setProposalId('');
         setTicketView(null);
+        setTicketPersonState({ ...TICKET_SUGGESTED });
+        setViewingProfile(null);
+        setOfferKey('setup');
+        setShaperAsk(null);
         setYouStage('chat');
         setProfileState(initialProfile);
         setIntentState(null);
@@ -956,6 +1058,10 @@ export function StoreProvider({
     projectId,
     ticketId,
     ticketView,
+    ticketPerson,
+    viewingProfile,
+    offerKey,
+    shaperAsk,
     proposalId,
     youStage,
     profile,
