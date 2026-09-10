@@ -39,7 +39,7 @@ const getDocumentBadges = (document: Document, t: (key: string) => string) => {
     badges.push({
       label: t(labelMessageKey),
       className: 'capitalize',
-      variant: 'solid',
+      variant: 'outline',
       colorVariant: 'accent',
     });
   }

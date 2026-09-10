@@ -15,10 +15,10 @@ type DealCardProps = {
 };
 
 const priorityClass: Record<string, string> = {
-  low: 'bg-neutral-4 text-neutral-11',
-  medium: 'bg-accent-3 text-accent-11',
-  high: 'bg-amber-3 text-amber-11',
-  critical: 'bg-red-3 text-red-11',
+  low: 'border-border/60 bg-transparent text-muted-foreground',
+  medium: 'border-accent-8/70 bg-transparent text-accent-11',
+  high: 'border-warning-8/70 bg-transparent text-warning-11',
+  critical: 'border-error-8/70 bg-transparent text-error-11',
 };
 
 export function DealCard({
@@ -55,7 +55,7 @@ export function DealCard({
         </span>
         <span
           className={cn(
-            'shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase',
+            'shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase',
             priorityClass[deal.priority] ?? priorityClass.medium,
           )}
         >
