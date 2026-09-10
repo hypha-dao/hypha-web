@@ -1,6 +1,6 @@
 import { crudPolicy, authenticatedRole, authUid } from 'drizzle-orm/neon';
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
-import { pgTable, serial, text, jsonb } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, pgTable, serial, text } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 
 export const people = pgTable(
@@ -22,6 +22,8 @@ export const people = pgTable(
     address: text('web3_address'),
     /** ISO 4217 code the member wants balances shown in. Null means USD. */
     preferredCurrency: text('preferred_currency'),
+    /** Network discovery. Default visible; `false` hides from Home / connect. */
+    networkVisible: boolean('network_visible').notNull().default(true),
     links: jsonb('links').$type<string[]>().notNull().default([]),
     ...commonDateFields,
   },

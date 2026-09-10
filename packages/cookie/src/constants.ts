@@ -6,5 +6,6 @@ export const HYPHA_ENABLE_HUMAN_CHAT = 'HYPHA_ENABLE_HUMAN_CHAT';
 export const HYPHA_DISABLE_HUMAN_CHAT = 'HYPHA_DISABLE_HUMAN_CHAT';
 export const HYPHA_ENABLE_COHERENCE = 'HYPHA_ENABLE_COHERENCE';
 export const HYPHA_ENABLE_SPACE_MEMORY = 'HYPHA_ENABLE_SPACE_MEMORY';
+export const HYPHA_ENABLE_JOURNEY_UX = 'HYPHA_ENABLE_JOURNEY_UX';
 /** IANA timezone persisted from the browser for server-side date formatting. */
 export const HYPHA_TIMEZONE = 'HYPHA_TIMEZONE';

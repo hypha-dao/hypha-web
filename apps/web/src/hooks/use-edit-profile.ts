@@ -70,6 +70,8 @@ function parseApiPerson(raw: unknown): Person | null {
     location: optStringField(p.location),
     nickname: optStringField(p.nickname),
     address: optEthAddressField(p.address),
+    preferredCurrency: optStringField(p.preferredCurrency),
+    networkVisible: p.networkVisible !== false,
     links: optStringArrayField(p.links),
     createdAt: toDate(p.createdAt),
     updatedAt: toDate(p.updatedAt),

@@ -126,6 +126,15 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableJourneyUx: {
+    key: 'enable-journey-ux',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_JOURNEY_UX) ?? true,
+    description:
+      'Home-first emotional journey IA: Home, Network, guided space next steps, wellbeing add-on. Kill switch: NEXT_PUBLIC_ENABLE_JOURNEY_UX=false',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -233,8 +242,17 @@ export async function getEnableOnboardingVoiceRealtimeAsync(): Promise<boolean> 
   );
 }
 
+export async function getEnableJourneyUx(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-journey-ux',
+    process.env.NEXT_PUBLIC_ENABLE_JOURNEY_UX,
+    true,
+  );
+}
+
 export {
   getEnableNetworkMap,
   getEnableOnboardingVoiceRealtime,
   getEnableCallDocumentPip,
+  getEnableJourneyUxClient,
 } from './client';

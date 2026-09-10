@@ -6,6 +6,7 @@ import {
   Coins,
   FileCheck2,
   HandCoins,
+  HeartPulse,
   House,
   KanbanSquare,
   Navigation,
@@ -47,4 +48,5 @@ export const SPACE_SECTION_NAV_ICONS: Record<
   rewards: HandCoins,
   memory: MemorySectionNavIcon,
   'ecosystem-navigation': Navigation,
+  wellbeing: HeartPulse,
 };

@@ -1,0 +1,215 @@
+.wb-scope {
+  /* Official IDG cards (sampled from brand screenshot) */
+  --wb-being: #dab984;
+  --wb-thinking: #f27da0;
+  --wb-relating: #f14237;
+  --wb-collaborating: #fd7400;
+  --wb-acting: #6c1130;
+  /* Realifex Standard categories — exact hexes */
+  --wb-experience: #32b8ac;
+  --wb-action: #ffab76;
+  --wb-emotion: #db7c82;
+  --wb-decision: #a4cc78;
+  --wb-discovery: #4a638b;
+}
+
+.wb-dot-being {
+  background: var(--wb-being);
+  --wb-pulse: var(--wb-being);
+}
+.wb-dot-thinking {
+  background: var(--wb-thinking);
+  --wb-pulse: var(--wb-thinking);
+}
+.wb-dot-relating {
+  background: var(--wb-relating);
+  --wb-pulse: var(--wb-relating);
+}
+.wb-dot-collaborating {
+  background: var(--wb-collaborating);
+  --wb-pulse: var(--wb-collaborating);
+}
+.wb-dot-acting {
+  background: var(--wb-acting);
+  --wb-pulse: var(--wb-acting);
+}
+
+.wb-fill-being {
+  fill: var(--wb-being);
+  color: var(--wb-being);
+}
+.wb-fill-thinking {
+  fill: var(--wb-thinking);
+  color: var(--wb-thinking);
+}
+.wb-fill-relating {
+  fill: var(--wb-relating);
+  color: var(--wb-relating);
+}
+.wb-fill-collaborating {
+  fill: var(--wb-collaborating);
+  color: var(--wb-collaborating);
+}
+.wb-fill-acting {
+  fill: var(--wb-acting);
+  color: var(--wb-acting);
+}
+
+.wb-dot-experience {
+  background: var(--wb-experience);
+  --wb-pulse: var(--wb-experience);
+}
+.wb-dot-action {
+  background: var(--wb-action);
+  --wb-pulse: var(--wb-action);
+}
+.wb-dot-emotion {
+  background: var(--wb-emotion);
+  --wb-pulse: var(--wb-emotion);
+}
+.wb-dot-decision {
+  background: var(--wb-decision);
+  --wb-pulse: var(--wb-decision);
+}
+.wb-dot-discovery {
+  background: var(--wb-discovery);
+  --wb-pulse: var(--wb-discovery);
+}
+
+.wb-fill-experience {
+  fill: var(--wb-experience);
+  color: var(--wb-experience);
+}
+.wb-fill-action {
+  fill: var(--wb-action);
+  color: var(--wb-action);
+}
+.wb-fill-emotion {
+  fill: var(--wb-emotion);
+  color: var(--wb-emotion);
+}
+.wb-fill-decision {
+  fill: var(--wb-decision);
+  color: var(--wb-decision);
+}
+.wb-fill-discovery {
+  fill: var(--wb-discovery);
+  color: var(--wb-discovery);
+}
+
+.wb-pulse-experience {
+  --wb-pulse: var(--wb-experience);
+}
+.wb-pulse-action {
+  --wb-pulse: var(--wb-action);
+}
+.wb-pulse-emotion {
+  --wb-pulse: var(--wb-emotion);
+}
+.wb-pulse-decision {
+  --wb-pulse: var(--wb-decision);
+}
+.wb-pulse-discovery {
+  --wb-pulse: var(--wb-discovery);
+}
+
+.wb-chip-on {
+  background: var(--accent-9);
+  border-color: var(--accent-9);
+  color: #fff;
+}
+.wb-chip-on:hover,
+.wb-chip-on:focus-visible {
+  color: #fff;
+}
+
+.wb-scope.wb-wash-experience,
+.wb-scope.wb-wash-action,
+.wb-scope.wb-wash-emotion,
+.wb-scope.wb-wash-decision,
+.wb-scope.wb-wash-discovery,
+.wb-scope.wb-wash-being,
+.wb-scope.wb-wash-thinking,
+.wb-scope.wb-wash-relating,
+.wb-scope.wb-wash-collaborating,
+.wb-scope.wb-wash-acting {
+  background-color: color-mix(
+    in oklab,
+    var(--wb-wash) 12%,
+    var(--background)
+  ) !important;
+  background-image:
+    radial-gradient(
+      ellipse 90% 75% at 100% 0%,
+      color-mix(in oklab, var(--wb-wash) 36%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 0% 100%,
+      color-mix(in oklab, var(--wb-wash) 16%, transparent),
+      transparent 52%
+    ) !important;
+}
+
+.wb-scope.wb-wash-experience {
+  --wb-wash: var(--wb-experience);
+}
+.wb-scope.wb-wash-action {
+  --wb-wash: var(--wb-action);
+}
+.wb-scope.wb-wash-emotion {
+  --wb-wash: var(--wb-emotion);
+}
+.wb-scope.wb-wash-decision {
+  --wb-wash: var(--wb-decision);
+}
+.wb-scope.wb-wash-discovery {
+  --wb-wash: var(--wb-discovery);
+}
+.wb-scope.wb-wash-being {
+  --wb-wash: var(--wb-being);
+}
+.wb-scope.wb-wash-thinking {
+  --wb-wash: var(--wb-thinking);
+}
+.wb-scope.wb-wash-relating {
+  --wb-wash: var(--wb-relating);
+}
+.wb-scope.wb-wash-collaborating {
+  --wb-wash: var(--wb-collaborating);
+}
+.wb-scope.wb-wash-acting {
+  --wb-wash: var(--wb-acting);
+}
+
+.wb-handle-pulse {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: var(--wb-pulse, var(--accent-9));
+  opacity: 0.38;
+  pointer-events: none;
+  animation: wb-handle-pulse 2.4s ease-out infinite;
+}
+
+@keyframes wb-handle-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.4;
+  }
+  70% {
+    transform: scale(1.72);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.72);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-handle-pulse {
+    animation: none;
+    opacity: 0;
+  }
+}

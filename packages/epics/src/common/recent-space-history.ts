@@ -105,7 +105,7 @@ export function subscribeRecentSpaceSlugs(
   };
 }
 
-function readLastActiveSpaceSlug(): string | null {
+export function readLastActiveSpaceSlug(): string | null {
   if (typeof window === 'undefined') return null;
   try {
     return normalizeSlug(

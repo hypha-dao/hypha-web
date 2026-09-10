@@ -8,6 +8,7 @@ export * from './get-space-details';
 export * from './get-space-ownership-tokens';
 export * from './get-space-ownership-tokens';
 export * from './get-space-proposals';
+export * from './get-withdrawn-proposals-by-space';
 export * from './get-space-regular-tokens';
 export * from './get-tokens-voting-power';
 export * from './is-member';

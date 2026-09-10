@@ -1012,28 +1012,24 @@ export function OnboardingAiFullPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 md:px-8 lg:px-12">
-      <div className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden rounded-[2rem] border border-border/60 bg-background/85 p-4 shadow-[0_40px_120px_-70px_rgba(0,0,0,0.75)] md:p-6">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,oklch(0.7_0.12_255_/_0.2),transparent_45%),radial-gradient(circle_at_80%_85%,oklch(0.7_0.14_330_/_0.14),transparent_42%)]"
-        />
-        <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-          <div className="mb-4 flex items-center justify-between gap-3 px-2 md:px-4">
-            <div>
-              <p className="text-1 text-muted-foreground">
+      <div className="flex h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] flex-col overflow-hidden rounded-xl border border-border/70 bg-background-2">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <div className="mb-3 flex items-start justify-between gap-3 px-5 pt-5 pb-1">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-1 font-medium uppercase tracking-[0.08em] text-accent-11">
                 {t('aiHero.flow.badge')}
               </p>
-              <h2 className="text-7 font-semibold tracking-tight text-foreground">
+              <h2 className="[font-family:var(--font-family-heading)] text-5 font-semibold tracking-[-0.015em] text-foreground md:text-6">
                 {t('aiHero.title')}
               </h2>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2 pt-0.5">
               <Button
                 type="button"
                 variant="ghost"
                 colorVariant="neutral"
                 onClick={onExit}
-                className="text-neutral-10 px-0 md:px-3"
+                className="text-muted-foreground px-0 md:px-3"
               >
                 <ChevronLeftIcon className="size-4" />
                 {tCommon('back')}
@@ -1045,7 +1041,7 @@ export function OnboardingAiFullPage({
               />
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/70 bg-background/70">
+          <div className="mx-4 mb-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-background">
             <AiPanelMessages
               messages={messages as ChatMessage[]}
               suggestionItems={suggestionItems}

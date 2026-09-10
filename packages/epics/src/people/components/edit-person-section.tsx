@@ -18,6 +18,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  Switch,
   UploadLeadImage,
   UploadAvatar,
   RequirementMark,
@@ -48,6 +49,7 @@ interface EditPersonSectionInput {
   email?: string;
   links?: string[];
   preferredCurrency?: string;
+  networkVisible?: boolean;
 }
 
 const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
@@ -223,6 +225,7 @@ export const EditPersonSection = ({
       preferredCurrency: TOKEN_PRICE_REFERENCE_CURRENCIES.find(
         (code) => code === person?.preferredCurrency,
       ),
+      networkVisible: person?.networkVisible !== false,
     },
     mode: 'onChange',
   });
@@ -509,6 +512,35 @@ export const EditPersonSection = ({
                     )}
                   />
                 </span>
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <Text className={cn('text-2', 'text-neutral-11')}>
+                    {tProfile('editForm.labels.networkVisible')}
+                  </Text>
+                  <p className="mt-1 max-w-[36ch] text-1 text-muted-foreground">
+                    {tProfile('editForm.networkVisibleHint')}
+                  </p>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="networkVisible"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Switch
+                          checked={field.value !== false}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                          aria-label={tProfile(
+                            'editForm.labels.networkVisible',
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               <div>
                 <FormField

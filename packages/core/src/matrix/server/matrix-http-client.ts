@@ -273,22 +273,50 @@ export async function matrixApplyRoomPowerLevels(
   await readMatrixJson<Record<string, never>>(res);
 }
 
+export async function matrixResolveRoomAlias(
+  alias: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string | null> {
+  const trimmed = alias.trim();
+  if (!trimmed) return null;
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      trimmed,
+    )}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+  if (res.status === 404) return null;
+  const data = await readMatrixJson<{ room_id?: string }>(res);
+  return data.room_id?.trim() || null;
+}
+
 export async function matrixCreateRoom(
   name: string,
   accessToken: string,
   homeserver: string,
+  options?: { aliasLocalpart?: string },
 ): Promise<string> {
+  const body: Record<string, unknown> = {
+    name: name.trim().slice(0, 120) || 'Conversation',
+    preset: 'private_chat',
+    visibility: 'private',
+  };
+  const aliasLocalpart = options?.aliasLocalpart?.trim();
+  if (aliasLocalpart) {
+    body.room_alias_name = aliasLocalpart;
+  }
   const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      name: name.trim().slice(0, 120) || 'Conversation',
-      preset: 'private_chat',
-      visibility: 'private',
-    }),
+    body: JSON.stringify(body),
   });
   const data = await readMatrixJson<{ room_id?: string }>(res);
   const roomId = data.room_id?.trim();

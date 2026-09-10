@@ -76,6 +76,8 @@ export function NavigationTabs({
           return tCoherence('spaceMemory');
         case 'ecosystem-navigation':
           return tNav('ecosystem');
+        case 'wellbeing':
+          return t('wellbeing');
         default:
           return key;
       }
@@ -93,6 +95,7 @@ export function NavigationTabs({
         energyEnabled: Boolean(spaceEnergy?.enabled),
         coherenceEnabled,
         memoryEnabled,
+        wellbeingEnabled: true,
       }),
     [
       coherenceEnabled,

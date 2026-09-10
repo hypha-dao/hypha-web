@@ -11,7 +11,8 @@ export type SpaceSectionNavKey =
   | 'energy'
   | 'rewards'
   | 'memory'
-  | 'ecosystem-navigation';
+  | 'ecosystem-navigation'
+  | 'wellbeing';
 
 export type SpaceSectionNavGroup = 'primary' | 'more';
 
@@ -21,16 +22,17 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   SpaceSectionNavGroup
 > = {
   overview: 'primary',
-  coherence: 'primary',
+  'ecosystem-navigation': 'primary',
   agreements: 'primary',
+  members: 'primary',
   treasury: 'primary',
-  calendar: 'primary',
-  members: 'more',
+  coherence: 'more',
+  calendar: 'more',
   pipeline: 'more',
   energy: 'more',
   rewards: 'more',
   memory: 'more',
-  'ecosystem-navigation': 'more',
+  wellbeing: 'more',
 };
 
 export type SpaceSectionNavItem = {
@@ -49,6 +51,7 @@ export type BuildSpaceSectionNavItemsOptions = {
   /** When false, Signals/Coherence is omitted. Default true for AI rail parity. */
   coherenceEnabled?: boolean;
   memoryEnabled?: boolean;
+  wellbeingEnabled?: boolean;
 };
 
 function sectionHref(lang: string, spaceSlug: string, section: string): string {
@@ -73,8 +76,8 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Primary order: Dashboard · Signals · Agreements · Treasury · Calendar
- * More: Members + remaining gated/secondary sections
+ * Primary order: Home · Ecosystem · Agreements · Members · Treasury
+ * More: Signals, Calendar, and remaining gated/secondary sections
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -84,6 +87,7 @@ export function buildSpaceSectionNavItems({
   energyEnabled = false,
   coherenceEnabled = true,
   memoryEnabled = false,
+  wellbeingEnabled = false,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
   const rawActiveTab = getActiveTabFromPath(pathname);
   // Banking lives under Treasury — keep Treasury highlighted on /banking routes.
@@ -92,18 +96,22 @@ export function buildSpaceSectionNavItems({
 
   const items: SpaceSectionNavItem[] = [
     navItem('overview', lang, spaceSlug, isActive('overview')),
+    navItem(
+      'ecosystem-navigation',
+      lang,
+      spaceSlug,
+      isActive('ecosystem-navigation'),
+    ),
+    navItem('agreements', lang, spaceSlug, isActive('agreements')),
+    navItem('members', lang, spaceSlug, isActive('members')),
+    navItem('treasury', lang, spaceSlug, isActive('treasury')),
   ];
 
   if (coherenceEnabled) {
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
   }
 
-  items.push(
-    navItem('agreements', lang, spaceSlug, isActive('agreements')),
-    navItem('treasury', lang, spaceSlug, isActive('treasury')),
-    navItem('calendar', lang, spaceSlug, isActive('calendar')),
-    navItem('members', lang, spaceSlug, isActive('members')),
-  );
+  items.push(navItem('calendar', lang, spaceSlug, isActive('calendar')));
 
   if (pipelineEnabled) {
     items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
@@ -118,14 +126,9 @@ export function buildSpaceSectionNavItems({
     items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
   }
 
-  items.push(
-    navItem(
-      'ecosystem-navigation',
-      lang,
-      spaceSlug,
-      isActive('ecosystem-navigation'),
-    ),
-  );
+  if (wellbeingEnabled) {
+    items.push(navItem('wellbeing', lang, spaceSlug, isActive('wellbeing')));
+  }
 
   return items;
 }
