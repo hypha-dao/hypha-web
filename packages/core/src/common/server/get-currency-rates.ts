@@ -116,9 +116,9 @@ export async function getUsdRates(): Promise<UsdRates> {
   const lastKnown =
     lastOffchainRatesCache.get<UsdRates>(LAST_OFFCHAIN_RATES_KEY) ?? {};
   const withLastKnown = applyLastKnownOffchainRates(rates, lastKnown);
-  if (withLastKnown.TZS && withLastKnown.TZS > 0) {
+  if (offchain.TZS !== undefined && offchain.TZS > 0) {
     lastOffchainRatesCache.set(LAST_OFFCHAIN_RATES_KEY, {
-      TZS: withLastKnown.TZS,
+      TZS: offchain.TZS,
     });
   }
   Object.assign(rates, withLastKnown);
