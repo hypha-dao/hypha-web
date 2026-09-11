@@ -119,7 +119,10 @@ export const TokenSelectionSection = ({
                         } else {
                           setValue('purchasePrice', undefined, opts);
                         }
-                        if (token?.referenceCurrency != null) {
+                        if (
+                          token?.referenceCurrency != null &&
+                          token.referenceCurrency !== 'TZS'
+                        ) {
                           setValue(
                             'purchaseCurrency',
                             token.referenceCurrency,

@@ -2209,7 +2209,8 @@
             "nzd": "Newzealandsk dollar",
             "aud": "Australsk dollar",
             "hkd": "Hongkong-dollar",
-            "xpf": "CFP-franc"
+            "xpf": "CFP-franc",
+            "tzs": "Tanzaniansk shilling"
           }
         },
         "decay": {

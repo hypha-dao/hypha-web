@@ -109,10 +109,18 @@ export const TokenPurchasePriceSection = ({
     isLimitedSupply &&
     tokensAvailableLimit !== undefined &&
     Number(tokensAvailableForPurchase) > tokensAvailableLimit;
-  const isCurrencyLocked = Boolean(selectedToken?.referenceCurrency);
+  /**
+   * TZS is a labelled reference currency, not a payment token. Purchase
+   * still settles in USDC/EURC only — do not lock the dropdown to TZS.
+   */
+  const isCurrencyLocked = Boolean(
+    selectedToken?.referenceCurrency &&
+      selectedToken.referenceCurrency !== 'TZS',
+  );
 
   useEffect(() => {
     if (!selectedToken?.referenceCurrency) return;
+    if (selectedToken.referenceCurrency === 'TZS') return;
     const current = getValues('purchaseCurrency');
     if (current && current !== selectedToken.referenceCurrency) {
       return;
@@ -220,7 +228,9 @@ export const TokenPurchasePriceSection = ({
                     <SelectContent>
                       {(isCurrencyLocked && selectedCurrency
                         ? [selectedCurrency]
-                        : REFERENCE_CURRENCIES
+                        : REFERENCE_CURRENCIES.filter(
+                            (currency) => currency !== 'TZS',
+                          )
                       ).map((currency) => (
                         <SelectItem key={currency} value={currency}>
                           {currency}

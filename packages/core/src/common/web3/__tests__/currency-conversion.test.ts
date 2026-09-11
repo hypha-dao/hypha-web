@@ -4,12 +4,14 @@ import {
   convertFromUsd,
   convertToUsd,
   isConvertibleCurrency,
+  OFFCHAIN_USD_CURRENCIES,
+  usdRateFromCoingeckoBtcQuotes,
   type UsdRates,
 } from '../currency-conversion';
 import { CURRENCY_FEEDS } from '../token-backing-vault';
 import { TOKEN_PRICE_REFERENCE_CURRENCIES } from '../../../governance/types';
 
-const RATES: UsdRates = { USD: 1, AUD: 0.65, EUR: 1.08 };
+const RATES: UsdRates = { USD: 1, AUD: 0.65, EUR: 1.08, TZS: 1 / 2_650 };
 
 describe('CONVERTIBLE_CURRENCIES', () => {
   it('stays in step with the currencies a token can be priced in', () => {
@@ -18,16 +20,21 @@ describe('CONVERTIBLE_CURRENCIES', () => {
     );
   });
 
-  it('covers every wired Chainlink feed', () => {
-    expect(CONVERTIBLE_CURRENCIES).toEqual(Object.keys(CURRENCY_FEEDS));
+  it('covers every wired Chainlink feed plus off-chain convertibles', () => {
+    expect(CONVERTIBLE_CURRENCIES).toEqual([
+      ...Object.keys(CURRENCY_FEEDS),
+      ...OFFCHAIN_USD_CURRENCIES,
+    ]);
+    expect(OFFCHAIN_USD_CURRENCIES).toEqual(['TZS']);
   });
 });
 
 describe('isConvertibleCurrency', () => {
-  it('accepts currencies with a feed and rejects everything else', () => {
+  it('accepts on-chain feeds and off-chain TZS, and rejects everything else', () => {
     expect(isConvertibleCurrency('AUD')).toBe(true);
     expect(isConvertibleCurrency('USD')).toBe(true);
-    // No Chainlink feed on Base.
+    expect(isConvertibleCurrency('TZS')).toBe(true);
+    // No Chainlink feed on Base and no off-chain rate.
     expect(isConvertibleCurrency('JPY')).toBe(false);
     expect(isConvertibleCurrency('aud')).toBe(false);
     expect(isConvertibleCurrency(null)).toBe(false);
@@ -46,6 +53,10 @@ describe('convertToUsd', () => {
   it('values an AUD-priced holding in USD', () => {
     // The bug Alex hit: 4,050,000 tokens at 1.00 AUD were counted as USD.
     expect(convertToUsd(4_050_000, 'AUD', RATES)).toBeCloseTo(2_632_500, 6);
+  });
+
+  it('values a TZS-priced holding in USD instead of treating TZS as 1:1', () => {
+    expect(convertToUsd(2_650, 'TZS', RATES)).toBeCloseTo(1, 6);
   });
 
   it('leaves USD amounts untouched', () => {
@@ -100,5 +111,24 @@ describe('convertFromUsd', () => {
 
   it('preserves sign for negative balances', () => {
     expect(convertFromUsd(-65, 'AUD', RATES)).toBeCloseTo(-100, 6);
+  });
+});
+
+describe('usdRateFromCoingeckoBtcQuotes', () => {
+  it('derives USD per 1 TZS from the BTC dual quote', () => {
+    expect(
+      usdRateFromCoingeckoBtcQuotes({ usd: 100_000, tzs: 265_000_000 }),
+    ).toBeCloseTo(100_000 / 265_000_000, 12);
+  });
+
+  it('rejects missing or non-positive quotes', () => {
+    expect(usdRateFromCoingeckoBtcQuotes({})).toBeUndefined();
+    expect(usdRateFromCoingeckoBtcQuotes({ usd: 100_000 })).toBeUndefined();
+    expect(
+      usdRateFromCoingeckoBtcQuotes({ usd: 100_000, tzs: 0 }),
+    ).toBeUndefined();
+    expect(
+      usdRateFromCoingeckoBtcQuotes({ usd: Number.NaN, tzs: 1 }),
+    ).toBeUndefined();
   });
 });

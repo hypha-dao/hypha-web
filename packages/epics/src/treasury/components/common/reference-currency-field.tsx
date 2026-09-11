@@ -14,22 +14,18 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { TOKEN_PRICE_REFERENCE_CURRENCIES } from '@hypha-platform/core/client';
 
 /**
- * Match TOKEN_PRICE_REFERENCE_CURRENCIES — every entry needs an X/USD feed.
- * CNY, JPY and HKD are absent because Base has none. XPF is served by the
- * XpfUsdOracle adapter (EUR/USD at the fixed CFP franc peg).
+ * Match TOKEN_PRICE_REFERENCE_CURRENCIES.
+ * Most entries have an X/USD AggregatorV3 feed. TZS is display/portfolio
+ * only (no Base feed). CNY, JPY and HKD stay absent (no feed and no
+ * off-chain rate). XPF is served by the XpfUsdOracle adapter.
  */
-const CURRENCY_OPTIONS = [
-  { value: 'USD', key: 'usd' },
-  { value: 'GBP', key: 'gbp' },
-  { value: 'CAD', key: 'cad' },
-  { value: 'EUR', key: 'eur' },
-  { value: 'CHF', key: 'chf' },
-  { value: 'AUD', key: 'aud' },
-  { value: 'NZD', key: 'nzd' },
-  { value: 'XPF', key: 'xpf' },
-] as const;
+const CURRENCY_OPTIONS = TOKEN_PRICE_REFERENCE_CURRENCIES.map((value) => ({
+  value,
+  key: value.toLowerCase(),
+}));
 
 export const ReferenceCurrencyField = () => {
   const { control, formState } = useFormContext();

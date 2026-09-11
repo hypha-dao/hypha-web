@@ -1,15 +1,30 @@
 import { CURRENCY_FEEDS } from './token-backing-vault';
 
 /**
- * Currencies we can convert between: exactly those with an X/USD feed. Kept as
- * the keys of {@link CURRENCY_FEEDS} so a newly wired feed becomes convertible
- * without a second list to update.
+ * Fiat we convert via an off-chain FX source, not an AggregatorV3 feed.
+ * Do not add these to {@link CURRENCY_FEEDS} — there is no on-chain oracle.
  */
-export type ConvertibleCurrency = keyof typeof CURRENCY_FEEDS;
+export const OFFCHAIN_USD_CURRENCIES = ['TZS'] as const;
+export type OffchainUsdCurrency = (typeof OFFCHAIN_USD_CURRENCIES)[number];
 
-export const CONVERTIBLE_CURRENCIES = Object.keys(
-  CURRENCY_FEEDS,
-) as ConvertibleCurrency[];
+/**
+ * Currencies we can convert between: on-chain X/USD feeds plus off-chain
+ * display currencies (TZS). A newly wired feed still becomes convertible
+ * automatically; off-chain codes are listed explicitly.
+ */
+export type ConvertibleCurrency =
+  | keyof typeof CURRENCY_FEEDS
+  | OffchainUsdCurrency;
+
+const CONVERTIBLE_SET = new Set<string>([
+  ...Object.keys(CURRENCY_FEEDS),
+  ...OFFCHAIN_USD_CURRENCIES,
+]);
+
+export const CONVERTIBLE_CURRENCIES = [
+  ...Object.keys(CURRENCY_FEEDS),
+  ...OFFCHAIN_USD_CURRENCIES,
+] as ConvertibleCurrency[];
 
 /** USD value of one unit of each convertible currency, e.g. `{ AUD: 0.65 }`. */
 export type UsdRates = Partial<Record<ConvertibleCurrency, number>>;
@@ -22,10 +37,31 @@ export type UsdRates = Partial<Record<ConvertibleCurrency, number>>;
 export function isConvertibleCurrency(
   currency: string | null | undefined,
 ): currency is ConvertibleCurrency {
-  return (
-    currency != null &&
-    Object.prototype.hasOwnProperty.call(CURRENCY_FEEDS, currency)
-  );
+  return currency != null && CONVERTIBLE_SET.has(currency);
+}
+
+/**
+ * USD per 1 TZS from CoinGecko `/simple/price?ids=bitcoin&vs_currencies=usd,tzs`.
+ * Both quotes are BTC-based, so the ratio cancels the vehicle asset.
+ */
+export function usdRateFromCoingeckoBtcQuotes(quotes: {
+  usd?: number;
+  tzs?: number;
+}): number | undefined {
+  const { usd, tzs } = quotes;
+  if (
+    usd == null ||
+    tzs == null ||
+    !Number.isFinite(usd) ||
+    !Number.isFinite(tzs) ||
+    usd <= 0 ||
+    tzs <= 0
+  ) {
+    return undefined;
+  }
+  const rate = usd / tzs;
+  if (!Number.isFinite(rate) || rate <= 0) return undefined;
+  return rate;
 }
 
 /**
