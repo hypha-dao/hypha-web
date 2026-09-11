@@ -1698,7 +1698,20 @@
       "content": "Envie facilmente fundos da sua carteira para um membro ou espaço.",
       "form": {
         "amountLabel": "Quantia",
-        "submitLabel": "Transferir"
+        "submitLabel": "Transferir",
+        "errors": {
+          "generic": "Ocorreu um erro ao processar a sua transferência. Tente novamente.",
+          "smartWalletNotConnected": "A smart wallet não está ligada. Ligue a sua carteira e tente novamente.",
+          "contractExecutionFailed": "A execução do contrato falhou.",
+          "transactionRejected": "A transação foi rejeitada. Aprove a transação para continuar.",
+          "thisCurrency": "esta moeda",
+          "creditLimitExceeded": "Este pagamento excederia o crédito comunitário restante de {symbol}. Ainda pode gastar {spendable} {symbol} (crédito restante {creditLeft} de {creditLimit}; saldo da carteira {balance}). Isto é um limite de crédito, não um erro de adesão ou de whitelist de transferência.",
+          "notCreditEligible": "Não tem crédito comunitário para {symbol}. O crédito é independente da adesão ao espaço: esta carteira tem de estar na whitelist de endereços de crédito do token, ou pertencer a um espaço na whitelist de crédito. Saldo da carteira: {balance} {symbol}.",
+          "senderNotWhitelisted": "Esta carteira não está na whitelist de transferência do token, por isso não pode enviar esta moeda. Isto não é um erro de limite de crédito comunitário.",
+          "recipientNotWhitelisted": "O destinatário não está na whitelist de receção do token, por isso não pode receber esta moeda. Isto não é um erro de limite de crédito comunitário.",
+          "supplyExceeded": "Este pagamento não pode emitir mais desta moeda porque o token está no supply máximo.",
+          "chainRevert": "Revert on-chain: {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

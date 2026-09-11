@@ -1498,7 +1498,20 @@
       "content": "Send enkelt midler fra lommeboken din til et medlem eller et rom.",
       "form": {
         "amountLabel": "Beløp",
-        "submitLabel": "Overfør"
+        "submitLabel": "Overfør",
+        "errors": {
+          "generic": "Det oppstod en feil under behandlingen av overføringen. Prøv igjen.",
+          "smartWalletNotConnected": "Smart-lommeboken er ikke tilkoblet. Koble til lommeboken og prøv igjen.",
+          "contractExecutionFailed": "Kontraktkjøringen mislyktes.",
+          "transactionRejected": "Transaksjonen ble avvist. Godkjenn transaksjonen for å fortsette.",
+          "thisCurrency": "denne valutaen",
+          "creditLimitExceeded": "Denne betalingen ville overskride den gjenværende fellesskapskreditten for {symbol}. Du kan fortsatt bruke {spendable} {symbol} (gjenværende kreditt {creditLeft} av {creditLimit}; lommeboksaldo {balance}). Dette er en kredittgrense, ikke en medlemskaps- eller overførings-whitelist-feil.",
+          "notCreditEligible": "Du har ikke fellesskapskreditt for {symbol}. Kreditt er atskilt fra rommedlemskap: denne lommeboken må stå på tokenets kredittadresse-whitelist, eller tilhøre et kreditt-whitelisted rom. Lommeboksaldo: {balance} {symbol}.",
+          "senderNotWhitelisted": "Denne lommeboken står ikke på tokenets overførings-whitelist, og kan derfor ikke sende denne valutaen. Dette er ikke en feil om fellesskapskredittgrense.",
+          "recipientNotWhitelisted": "Mottakeren står ikke på tokenets mottaks-whitelist, og kan derfor ikke motta denne valutaen. Dette er ikke en feil om fellesskapskredittgrense.",
+          "supplyExceeded": "Denne betalingen kan ikke prege mer av denne valutaen fordi tokenet er på maksimalt tilbud.",
+          "chainRevert": "On-chain revert: {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

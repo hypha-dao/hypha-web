@@ -10,6 +10,7 @@ import {
   getTokenMeta,
   getSupply,
   getMutualCreditInfo,
+  isMutualCreditEligible,
   getUsdRates,
   convertToUsd,
 } from '@hypha-platform/core/server';
@@ -455,14 +456,18 @@ export async function GET(
                     whitelistedSpaceIds: mutualCredit.whitelistedSpaceIds,
                     creditLimit: mutualCredit.creditLimit,
                     creditLimitLeft: mutualCredit.creditLimitLeft,
+                    addressWhitelisted: mutualCredit.addressWhitelisted,
                     /**
-                     * The user is credit-eligible if any space they are a member of is
-                     * in the token's credit whitelist. We rely on the on-chain whitelist
-                     * because the contract authorizes credit by space membership.
+                     * Matches RegularSpaceToken._isCreditEligible: address-level
+                     * credit whitelist OR membership in a credit-whitelisted space.
+                     * Do not treat space membership / transfer whitelist as this flag.
                      */
-                    creditEligible: mutualCredit.whitelistedSpaceIds.some(
-                      (id) => memberWeb3SpaceIds.has(id),
-                    ),
+                    creditEligible: isMutualCreditEligible({
+                      addressWhitelisted: mutualCredit.addressWhitelisted,
+                      creditLimit: mutualCredit.creditLimit,
+                      whitelistedSpaceIds: mutualCredit.whitelistedSpaceIds,
+                      memberWeb3SpaceIds,
+                    }),
                   }
                 : undefined,
           };

@@ -1500,7 +1500,20 @@
       "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space.",
       "form": {
         "amountLabel": "Betrag",
-        "submitLabel": "Überweisen"
+        "submitLabel": "Überweisen",
+        "errors": {
+          "generic": "Beim Verarbeiten Ihrer Überweisung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+          "smartWalletNotConnected": "Die Smart Wallet ist nicht verbunden. Bitte verbinden Sie Ihre Wallet und versuchen Sie es erneut.",
+          "contractExecutionFailed": "Vertragsausführung fehlgeschlagen.",
+          "transactionRejected": "Die Transaktion wurde abgelehnt. Bitte genehmigen Sie die Transaktion, um fortzufahren.",
+          "thisCurrency": "dieser Währung",
+          "creditLimitExceeded": "Diese Zahlung würde Ihr verbleibendes Community-Kreditlimit für {symbol} überschreiten. Sie können noch {spendable} {symbol} ausgeben (verbleibender Kredit {creditLeft} von {creditLimit}; Wallet-Guthaben {balance}). Das ist ein Kreditlimit, kein Mitgliedschafts- oder Transfer-Whitelist-Fehler.",
+          "notCreditEligible": "Sie haben keinen Community-Kredit für {symbol}. Kredit ist unabhängig von der Space-Mitgliedschaft: Diese Wallet muss auf der Kredit-Adress-Whitelist des Tokens stehen oder einem kredit-whitelisted Space angehören. Wallet-Guthaben: {balance} {symbol}.",
+          "senderNotWhitelisted": "Diese Wallet steht nicht auf der Transfer-Whitelist des Tokens und kann diese Währung daher nicht senden. Das ist kein Community-Kreditlimit-Fehler.",
+          "recipientNotWhitelisted": "Der Empfänger steht nicht auf der Empfangs-Whitelist des Tokens und kann diese Währung daher nicht empfangen. Das ist kein Community-Kreditlimit-Fehler.",
+          "supplyExceeded": "Diese Zahlung kann keine weiteren Einheiten dieser Währung minten, weil der Token das maximale Angebot erreicht hat.",
+          "chainRevert": "On-Chain-Revert: {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

@@ -928,7 +928,20 @@
       "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace.",
       "form": {
         "amountLabel": "Montant",
-        "submitLabel": "Transférer"
+        "submitLabel": "Transférer",
+        "errors": {
+          "generic": "Une erreur s’est produite lors du traitement de votre transfert. Veuillez réessayer.",
+          "smartWalletNotConnected": "Le smart wallet n’est pas connecté. Connectez votre portefeuille et réessayez.",
+          "contractExecutionFailed": "L’exécution du contrat a échoué.",
+          "transactionRejected": "La transaction a été rejetée. Veuillez l’approuver pour continuer.",
+          "thisCurrency": "cette devise",
+          "creditLimitExceeded": "Ce paiement dépasserait votre crédit communautaire restant pour {symbol}. Vous pouvez encore dépenser {spendable} {symbol} (crédit restant {creditLeft} sur {creditLimit} ; solde du portefeuille {balance}). Il s’agit d’une limite de crédit, pas d’une erreur d’adhésion ou de liste blanche de transfert.",
+          "notCreditEligible": "Vous n’avez pas de crédit communautaire pour {symbol}. Le crédit est distinct de l’adhésion à l’espace : ce portefeuille doit figurer sur la liste blanche d’adresses de crédit du jeton, ou appartenir à un espace sur la liste blanche de crédit. Solde du portefeuille : {balance} {symbol}.",
+          "senderNotWhitelisted": "Ce portefeuille n’est pas sur la liste blanche de transfert du jeton, il ne peut donc pas envoyer cette devise. Ce n’est pas une erreur de limite de crédit communautaire.",
+          "recipientNotWhitelisted": "Le destinataire n’est pas sur la liste blanche de réception du jeton, il ne peut donc pas recevoir cette devise. Ce n’est pas une erreur de limite de crédit communautaire.",
+          "supplyExceeded": "Ce paiement ne peut pas émettre davantage de cette devise car le jeton a atteint l’offre maximale.",
+          "chainRevert": "Revert on-chain : {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

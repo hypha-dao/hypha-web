@@ -62,14 +62,12 @@ export const ProfileTransferFunds = ({
       if (!isTransferableType) return false;
       const hasBalance = (asset.value ?? 0) > 0;
       /**
-       * `creditEligible` only means the user belongs to a whitelisted space; it
-       * doesn't guarantee they can currently draw. If `creditLimitLeft` is 0 the
-       * submit-time validation immediately rejects the transfer, so we hide the
-       * token here too to avoid a confusing dropdown entry.
+       * Remaining credit already encodes eligibility (0 when the account is not
+       * credit-eligible). Do not require a space-only `creditEligible` flag —
+       * address-whitelisted wallets can draw with a zero ERC-20 balance.
        */
       const canDrawCredit = Boolean(
-        asset.mutualCredit?.creditEligible &&
-          asset.mutualCredit.creditLimitLeft > 0,
+        asset.mutualCredit && asset.mutualCredit.creditLimitLeft > 0,
       );
       return hasBalance || canDrawCredit;
     })

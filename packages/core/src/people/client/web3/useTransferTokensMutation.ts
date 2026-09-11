@@ -10,6 +10,7 @@ import {
 import { transferHelperAbi, transferHelperAddress } from '../../../generated';
 import { CreateTransferInput } from '@hypha-platform/core/client';
 import { createTransferAction } from '../../../transaction/server/actions';
+import { logChainTransferError } from '../../../common';
 
 interface TransferTokensInput {
   recipient: string;
@@ -61,24 +62,33 @@ export const useTransferTokensMutation = ({
           const amount = parseUnits(payout.amount, decimals);
           let txHash: string;
 
-          if (ERC20_TOKEN_TRANSFER_ADDRESSES.includes(payout.token)) {
-            txHash = await client.writeContract({
-              address: payout.token as `0x${string}`,
-              abi: erc20Abi,
-              functionName: 'transfer',
-              args: [arg.recipient as `0x${string}`, amount],
+          try {
+            if (ERC20_TOKEN_TRANSFER_ADDRESSES.includes(payout.token)) {
+              txHash = await client.writeContract({
+                address: payout.token as `0x${string}`,
+                abi: erc20Abi,
+                functionName: 'transfer',
+                args: [arg.recipient as `0x${string}`, amount],
+              });
+            } else {
+              txHash = await client.writeContract({
+                address: transferHelperAddress[8453],
+                abi: transferHelperAbi,
+                functionName: 'transferToken',
+                args: [
+                  payout.token as `0x${string}`,
+                  arg.recipient as `0x${string}`,
+                  amount,
+                ],
+              });
+            }
+          } catch (error) {
+            logChainTransferError('Token transfer chain revert', error, {
+              token: payout.token,
+              recipient: arg.recipient,
+              amount: payout.amount,
             });
-          } else {
-            txHash = await client.writeContract({
-              address: transferHelperAddress[8453],
-              abi: transferHelperAbi,
-              functionName: 'transferToken',
-              args: [
-                payout.token as `0x${string}`,
-                arg.recipient as `0x${string}`,
-                amount,
-              ],
-            });
+            throw error;
           }
 
           return { token: payout.token, txHash };

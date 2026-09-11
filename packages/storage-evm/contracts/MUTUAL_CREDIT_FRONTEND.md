@@ -6,7 +6,9 @@ This doc is a simple integration guide for frontend development with `RegularSpa
 
 - If an eligible user sends more tokens than they hold, the shortfall is created as credit (debt).
 - When that user later receives tokens, debt is repaid automatically first.
-- Eligibility is based on membership in credit-whitelisted spaces.
+- Eligibility is address-level credit whitelist **or** membership in a
+  credit-whitelisted space. These are not the same as transfer/receive
+  whitelists or space membership alone.
 
 ## Main read calls for UI
 
@@ -16,6 +18,8 @@ This doc is a simple integration guide for frontend development with `RegularSpa
 - `creditBalanceOf(account)` -> current debt.
 - `netBalanceOf(account)` -> balance minus debt (can be negative).
 - `getCreditWhitelistedSpaces()` -> space IDs that grant credit eligibility.
+- `isCreditWhitelistedAddress(account)` -> address-level credit eligibility
+  (used by `POST /api/v1/mutual-credit/whitelist`).
 
 ## Suggested wallet panel
 
@@ -30,7 +34,12 @@ This helps users understand why a transfer can still succeed even if balance is 
 
 ## Common UX behaviors
 
-- If transfer fails with `Insufficient credit`, show: "Amount is above your available balance + credit limit."
+- If transfer fails with `!credit` or `Insufficient credit`, show a **credit
+  limit** message (remaining `creditLimitLeftOf` / `creditLimitOf`). Log the
+  raw revert selector + reason — do not map other reverts to this string.
+- If transfer fails with `Sender not whitelisted to transfer` /
+  `Recipient not whitelisted to receive`, that is a transfer/receive
+  whitelist, not community credit.
 - If token is near max supply, credit usage can fail because credit minting is supply-capped.
 - Debt repayment is automatic on receive; no explicit repay transaction is needed.
 

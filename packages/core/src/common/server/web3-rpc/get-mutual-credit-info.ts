@@ -23,10 +23,15 @@ export type MutualCreditInfo = {
    * `max(0, creditLimit - creditBalance)` for eligible accounts; 0 otherwise.
    */
   creditLimitLeft: number;
-  /** Whether mutual credit is configured (limit > 0 or whitelisted spaces > 0). */
+  /** Whether mutual credit is configured (limit > 0, spaces, or this address). */
   isCreditEnabled: boolean;
   /** Web3 ids of credit-whitelisted spaces. */
   whitelistedSpaceIds: number[];
+  /**
+   * `isCreditWhitelistedAddress(account)` — address-level credit eligibility,
+   * independent of space membership. LocalScale login whitelist uses this path.
+   */
+  addressWhitelisted: boolean;
 };
 
 /**
@@ -58,6 +63,11 @@ export async function getMutualCreditInfo(
           functionName: 'creditLimitLeftOf',
           args: [ownerAddress],
         },
+        {
+          ...contract,
+          functionName: 'isCreditWhitelistedAddress',
+          args: [ownerAddress],
+        },
       ],
     });
 
@@ -68,6 +78,7 @@ export async function getMutualCreditInfo(
       whitelistResult,
       creditLimitResult,
       creditLimitLeftResult,
+      addressWhitelistedResult,
     ] = results;
 
     /** When all credit calls fail the contract isn't a RegularSpaceToken — skip. */
@@ -88,6 +99,7 @@ export async function getMutualCreditInfo(
       'getCreditWhitelistedSpaces',
       'creditLimitOf',
       'creditLimitLeftOf',
+      'isCreditWhitelistedAddress',
     ] as const;
     const failed = results
       .map((r, i) => ({ name: callNames[i], status: r.status }))
@@ -144,8 +156,15 @@ export async function getMutualCreditInfo(
         ? Math.max(0, creditLimit - creditBalance)
         : 0;
 
+    const addressWhitelisted =
+      addressWhitelistedResult?.status === 'success'
+        ? Boolean(addressWhitelistedResult.result)
+        : false;
+
     const isCreditEnabled =
-      defaultCreditLimit > 0 || whitelistedSpaceIds.length > 0;
+      defaultCreditLimit > 0 ||
+      whitelistedSpaceIds.length > 0 ||
+      addressWhitelisted;
 
     return {
       defaultCreditLimit,
@@ -155,6 +174,7 @@ export async function getMutualCreditInfo(
       creditLimitLeft,
       isCreditEnabled,
       whitelistedSpaceIds,
+      addressWhitelisted,
     };
   } catch (err) {
     console.warn(

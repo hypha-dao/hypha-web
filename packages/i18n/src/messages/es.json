@@ -1698,7 +1698,20 @@
       "content": "Envía fondos fácilmente desde tu billetera a un miembro o un espacio.",
       "form": {
         "amountLabel": "Cantidad",
-        "submitLabel": "Transferir"
+        "submitLabel": "Transferir",
+        "errors": {
+          "generic": "Se produjo un error al procesar tu transferencia. Inténtalo de nuevo.",
+          "smartWalletNotConnected": "La smart wallet no está conectada. Conecta tu billetera e inténtalo de nuevo.",
+          "contractExecutionFailed": "Falló la ejecución del contrato.",
+          "transactionRejected": "La transacción fue rechazada. Aprueba la transacción para continuar.",
+          "thisCurrency": "esta moneda",
+          "creditLimitExceeded": "Este pago superaría tu crédito comunitario restante de {symbol}. Aún puedes gastar {spendable} {symbol} (crédito restante {creditLeft} de {creditLimit}; saldo de la billetera {balance}). Esto es un límite de crédito, no un error de membresía ni de lista blanca de transferencias.",
+          "notCreditEligible": "No tienes crédito comunitario para {symbol}. El crédito es independiente de la membresía del espacio: esta billetera debe estar en la lista blanca de direcciones de crédito del token, o pertenecer a un espacio en la lista blanca de crédito. Saldo de la billetera: {balance} {symbol}.",
+          "senderNotWhitelisted": "Esta billetera no está en la lista blanca de transferencia del token, así que no puede enviar esta moneda. Esto no es un error de límite de crédito comunitario.",
+          "recipientNotWhitelisted": "El destinatario no está en la lista blanca de recepción del token, así que no puede recibir esta moneda. Esto no es un error de límite de crédito comunitario.",
+          "supplyExceeded": "Este pago no puede emitir más de esta moneda porque el token está en el suministro máximo.",
+          "chainRevert": "Revert on-chain: {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

@@ -5,6 +5,7 @@ import {
   createPublicClient,
   createWalletClient,
   defineChain,
+  formatUnits,
   getAddress,
   http,
   isAddress,
@@ -63,6 +64,48 @@ const creditWhitelistAbi = [
     inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
   },
+  {
+    type: 'function',
+    name: 'isCreditWhitelistedAddress',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'defaultCreditLimit',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'creditLimitOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'creditLimitLeftOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'creditBalanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'getCreditWhitelistedSpaces',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256[]', internalType: 'uint256[]' }],
+  },
 ] as const;
 
 const addressSchema = z
@@ -77,6 +120,15 @@ const tokenAddressSchema = addressSchema.refine(
   (value) => !isAddressEqual(value, zeroAddress),
   { message: 'tokenAddress must not be the zero address' },
 );
+
+const statusQuerySchema = z.object({
+  tokenAddress: tokenAddressSchema,
+  account: addressSchema,
+});
+
+function toHumanAmount(value: bigint) {
+  return Number(formatUnits(value, 18));
+}
 
 const requestSchema = z
   .object({
@@ -336,6 +388,115 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: 'Failed to update mutual credit whitelist' },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * Read on-chain credit whitelist + remaining limit for one wallet on one token.
+ * Same API key as POST. This is the source of truth — not space membership.
+ */
+export async function GET(request: Request) {
+  if (!verifyApiKey(request)) {
+    return unauthorized();
+  }
+
+  const url = new URL(request.url);
+  const parsed = statusQuerySchema.safeParse({
+    tokenAddress: url.searchParams.get('tokenAddress') ?? '',
+    account: url.searchParams.get('account') ?? '',
+  });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const { tokenAddress, account } = parsed.data;
+
+  try {
+    const publicClient = createPublicClient({
+      chain: baseChain,
+      transport: http(getRpcUrl()),
+    });
+
+    const bytecode = await publicClient.getBytecode({ address: tokenAddress });
+    if (!bytecode || bytecode === '0x') {
+      return NextResponse.json(
+        { error: 'tokenAddress is not a contract' },
+        { status: 400 },
+      );
+    }
+
+    const contract = {
+      address: tokenAddress,
+      abi: creditWhitelistAbi,
+    } as const;
+
+    const [
+      addressWhitelisted,
+      defaultCreditLimit,
+      creditLimit,
+      creditLimitLeft,
+      creditBalance,
+      creditWhitelistedSpaceIds,
+    ] = await Promise.all([
+      publicClient.readContract({
+        ...contract,
+        functionName: 'isCreditWhitelistedAddress',
+        args: [account],
+      }),
+      publicClient.readContract({
+        ...contract,
+        functionName: 'defaultCreditLimit',
+      }),
+      publicClient.readContract({
+        ...contract,
+        functionName: 'creditLimitOf',
+        args: [account],
+      }),
+      publicClient.readContract({
+        ...contract,
+        functionName: 'creditLimitLeftOf',
+        args: [account],
+      }),
+      publicClient.readContract({
+        ...contract,
+        functionName: 'creditBalanceOf',
+        args: [account],
+      }),
+      publicClient.readContract({
+        ...contract,
+        functionName: 'getCreditWhitelistedSpaces',
+      }),
+    ]);
+
+    const creditEligible = addressWhitelisted || creditLimit > 0n;
+
+    return NextResponse.json({
+      tokenAddress,
+      account,
+      addressWhitelisted,
+      creditEligible,
+      creditWhitelistedSpaceIds: creditWhitelistedSpaceIds.map((id) =>
+        Number(id),
+      ),
+      defaultCreditLimit: toHumanAmount(defaultCreditLimit),
+      creditLimit: toHumanAmount(creditLimit),
+      creditLimitLeft: toHumanAmount(creditLimitLeft),
+      creditBalance: toHumanAmount(creditBalance),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Failed to read mutual credit status:', {
+      message,
+      tokenAddress,
+      account,
+    });
+    return NextResponse.json(
+      { error: 'Failed to read mutual credit status' },
       { status: 500 },
     );
   }

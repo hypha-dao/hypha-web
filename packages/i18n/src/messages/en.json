@@ -1499,7 +1499,20 @@
       "content": "Easily send funds from your wallet to a member or a space.",
       "form": {
         "amountLabel": "Amount",
-        "submitLabel": "Transfer"
+        "submitLabel": "Transfer",
+        "errors": {
+          "generic": "An error occurred while processing your transfer. Please try again.",
+          "smartWalletNotConnected": "Smart wallet is not connected. Please connect your wallet and try again.",
+          "contractExecutionFailed": "Contract execution failed.",
+          "transactionRejected": "Transaction was rejected. Please approve the transaction to proceed.",
+          "thisCurrency": "this currency",
+          "creditLimitExceeded": "This payment would exceed your remaining community credit for {symbol}. You can still spend {spendable} {symbol} (credit remaining {creditLeft} of {creditLimit}; wallet balance {balance}). This is a credit limit, not a membership or transfer-whitelist error.",
+          "notCreditEligible": "You do not have community credit for {symbol}. Credit is separate from space membership: this wallet must be on the token's credit address whitelist, or belong to a credit-whitelisted space. Wallet balance: {balance} {symbol}.",
+          "senderNotWhitelisted": "This wallet is not on the token transfer whitelist, so it cannot send this currency. That is not a community credit-limit error.",
+          "recipientNotWhitelisted": "The recipient is not on the token receive whitelist, so they cannot receive this currency. That is not a community credit-limit error.",
+          "supplyExceeded": "This payment cannot mint more of this currency because the token is at max supply.",
+          "chainRevert": "On-chain revert: {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

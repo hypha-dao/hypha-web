@@ -9,7 +9,9 @@ import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import {
+  classifyTransferPreflight,
   extractRevertReason,
+  logChainTransferError,
   Person,
   personTransfer,
   useMe,
@@ -23,6 +25,7 @@ import { useUserAssets } from '../../treasury/hooks';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 interface Token {
   icon: string;
@@ -39,6 +42,16 @@ interface PeopleTransferFormType {
 
 type FormValues = z.infer<typeof personTransfer>;
 
+type TransferErrorDetails = {
+  symbol?: string;
+  balance?: number;
+  creditLeft?: number;
+  creditLimit?: number;
+  spendable?: number;
+  chainReason?: string;
+  chainSelector?: string;
+};
+
 export const PeopleTransferForm = ({
   peoples,
   spaces,
@@ -46,6 +59,7 @@ export const PeopleTransferForm = ({
   updateAssets,
 }: PeopleTransferFormType) => {
   const tActions = useTranslations('ProfileActions');
+  const tErrors = useTranslations('ProfileActions.transferFunds.form.errors');
   const { person } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -56,6 +70,8 @@ export const PeopleTransferForm = ({
   });
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [transferErrorDetails, setTransferErrorDetails] =
+    useState<TransferErrorDetails | null>(null);
 
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -99,35 +115,49 @@ export const PeopleTransferForm = ({
         }
       });
 
-      let hasInsufficientFunds = false;
-      let isHyphaInsufficient = false;
-      tokenTotals.forEach((totalAmount, tokenAddress) => {
+      let blocked: ReturnType<typeof classifyTransferPreflight> = {
+        status: 'ok',
+      };
+      for (const [tokenAddress, totalAmount] of tokenTotals) {
         const asset = assets.find(
           (a) => a.address?.toLowerCase() === tokenAddress,
         );
         const balance = asset ? parseFloat(String(asset.value)) : 0;
-        /**
-         * Mutual-credit eligible accounts can spend below zero up to their remaining
-         * credit line. The contract enforces it on transfer; mirror that allowance
-         * client-side so the form doesn't block a valid transaction.
-         */
-        const creditLeft =
-          asset?.mutualCredit?.creditEligible &&
-          typeof asset.mutualCredit.creditLimitLeft === 'number'
-            ? asset.mutualCredit.creditLimitLeft
-            : 0;
-        const spendable = balance + creditLeft;
-        if (totalAmount > spendable) {
-          hasInsufficientFunds = true;
-          if (asset?.symbol === 'HYPHA') {
-            isHyphaInsufficient = true;
-          }
+        const result = classifyTransferPreflight({
+          amount: totalAmount,
+          balance,
+          symbol: asset?.symbol,
+          mutualCredit: asset?.mutualCredit,
+        });
+        if (result.status !== 'ok') {
+          blocked = result;
+          break;
         }
-      });
+      }
 
-      if (hasInsufficientFunds) {
+      if (blocked.status === 'credit_limit') {
+        setTransferErrorDetails({
+          symbol: blocked.symbol,
+          balance: blocked.balance,
+          creditLeft: blocked.creditLeft,
+          creditLimit: blocked.creditLimit,
+          spendable: blocked.spendable,
+        });
+        form.setError('root', { message: 'credit_limit' });
+        return;
+      }
+      if (blocked.status === 'not_credit_eligible') {
+        setTransferErrorDetails({
+          symbol: blocked.symbol,
+          balance: blocked.balance,
+        });
+        form.setError('root', { message: 'not_credit_eligible' });
+        return;
+      }
+      if (blocked.status === 'insufficient_funds') {
+        setTransferErrorDetails(null);
         form.setError('root', {
-          message: isHyphaInsufficient
+          message: blocked.isHypha
             ? 'insufficient_hypha'
             : 'insufficient_funds',
         });
@@ -143,6 +173,7 @@ export const PeopleTransferForm = ({
           })) ?? [],
         memo: data.memo,
       };
+      setTransferErrorDetails(null);
       const result = await transferTokens(transferInput);
       console.log('Transfer hashes:', result);
       setShowSuccessMessage(true);
@@ -156,18 +187,49 @@ export const PeopleTransferForm = ({
         console.error('Failed to refresh assets:', error);
       }
     } catch (error) {
-      console.error('Transfer failed:', error);
-      let errorMessage: string =
-        'An error occurred while processing your transfer. Please try again.';
+      const inspected = logChainTransferError('Transfer failed:', error);
+      const firstToken = data.payouts?.find((payout) => payout.token)?.token;
+      const failedAsset = firstToken
+        ? assets.find(
+            (asset) =>
+              asset.address?.toLowerCase() === firstToken.toLowerCase(),
+          )
+        : undefined;
+      const failedBalance = failedAsset
+        ? parseFloat(String(failedAsset.value))
+        : undefined;
+      const failedCreditLeft = failedAsset?.mutualCredit?.creditLimitLeft;
+      setTransferErrorDetails({
+        symbol: failedAsset?.symbol,
+        balance: failedBalance,
+        creditLeft: failedCreditLeft,
+        creditLimit: failedAsset?.mutualCredit?.creditLimit,
+        spendable:
+          failedBalance !== undefined
+            ? failedBalance +
+              (typeof failedCreditLeft === 'number' ? failedCreditLeft : 0)
+            : undefined,
+        chainReason: inspected.reason ?? undefined,
+        chainSelector: inspected.selector ?? undefined,
+      });
+
+      let errorMessage: string = tErrors('generic');
 
       if (error instanceof Error) {
         if (error.message.includes('Smart wallet client not available')) {
-          errorMessage =
-            'Smart wallet is not connected. Please connect your wallet and try again.';
+          errorMessage = tErrors('smartWalletNotConnected');
         } else if (
           error.message.includes('ERC20: transfer amount exceeds balance')
         ) {
           errorMessage = 'insufficient_funds';
+        } else if (inspected.kind === 'credit_limit') {
+          errorMessage = 'credit_limit';
+        } else if (inspected.kind === 'sender_not_whitelisted') {
+          errorMessage = tErrors('senderNotWhitelisted');
+        } else if (inspected.kind === 'recipient_not_whitelisted') {
+          errorMessage = tErrors('recipientNotWhitelisted');
+        } else if (inspected.kind === 'supply_exceeded') {
+          errorMessage = tErrors('supplyExceeded');
         } else if (error.message.includes('Execution reverted with reason:')) {
           const match = error.message.match(
             /Execution reverted with reason: (.*?)\./,
@@ -175,10 +237,11 @@ export const PeopleTransferForm = ({
           errorMessage =
             match && match[1]
               ? extractRevertReason(match[1])
-              : 'Contract execution failed.';
+              : tErrors('contractExecutionFailed');
         } else if (error.message.includes('user rejected')) {
-          errorMessage =
-            'Transaction was rejected. Please approve the transaction to proceed.';
+          errorMessage = tErrors('transactionRejected');
+        } else if (inspected.reason) {
+          errorMessage = inspected.reason;
         }
       }
       form.setError('root', { message: errorMessage });
@@ -222,7 +285,7 @@ export const PeopleTransferForm = ({
             )}
           </div>
           {form.formState.errors.root && (
-            <div className="text-2 text-foreground">
+            <div className="flex flex-col gap-1 text-2 text-foreground">
               {form.formState.errors.root.message === 'insufficient_funds' ? (
                 <>
                   Your wallet balance is insufficient to complete this
@@ -248,9 +311,44 @@ export const PeopleTransferForm = ({
                   </Link>{' '}
                   to proceed.
                 </>
+              ) : form.formState.errors.root.message === 'credit_limit' ? (
+                tErrors('creditLimitExceeded', {
+                  symbol:
+                    transferErrorDetails?.symbol || tErrors('thisCurrency'),
+                  spendable: formatCurrencyValue(
+                    transferErrorDetails?.spendable ?? 0,
+                  ),
+                  creditLeft: formatCurrencyValue(
+                    transferErrorDetails?.creditLeft ?? 0,
+                  ),
+                  creditLimit: formatCurrencyValue(
+                    transferErrorDetails?.creditLimit ?? 0,
+                  ),
+                  balance: formatCurrencyValue(
+                    transferErrorDetails?.balance ?? 0,
+                  ),
+                })
+              ) : form.formState.errors.root.message ===
+                'not_credit_eligible' ? (
+                tErrors('notCreditEligible', {
+                  symbol:
+                    transferErrorDetails?.symbol || tErrors('thisCurrency'),
+                  balance: formatCurrencyValue(
+                    transferErrorDetails?.balance ?? 0,
+                  ),
+                })
               ) : (
                 form.formState.errors.root.message
               )}
+              {transferErrorDetails?.chainReason ||
+              transferErrorDetails?.chainSelector ? (
+                <span className="text-1 font-mono text-neutral-10">
+                  {tErrors('chainRevert', {
+                    reason: transferErrorDetails.chainReason || 'unknown',
+                    selector: transferErrorDetails.chainSelector || '—',
+                  })}
+                </span>
+              ) : null}
             </div>
           )}
         </form>

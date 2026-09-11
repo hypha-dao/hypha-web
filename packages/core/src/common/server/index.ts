@@ -30,6 +30,7 @@ export * from './webhooks';
 export * from './route-handlers';
 
 export * from './extract-revert-reason';
+export { isMutualCreditEligible } from '../mutual-credit-eligibility';
 export * from './unique-violation';
 
 export * from './encrypt-aes';

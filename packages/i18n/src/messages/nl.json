@@ -1499,7 +1499,20 @@
       "content": "Stuur eenvoudig geld vanuit uw portemonnee naar een lid of een ruimte.",
       "form": {
         "amountLabel": "Hoeveelheid",
-        "submitLabel": "Overmaken"
+        "submitLabel": "Overmaken",
+        "errors": {
+          "generic": "Er is een fout opgetreden bij het verwerken van uw overboeking. Probeer het opnieuw.",
+          "smartWalletNotConnected": "De smart wallet is niet verbonden. Verbind uw wallet en probeer het opnieuw.",
+          "contractExecutionFailed": "Contractuitvoering is mislukt.",
+          "transactionRejected": "De transactie is afgewezen. Keurt u de transactie goed om door te gaan.",
+          "thisCurrency": "deze valuta",
+          "creditLimitExceeded": "Deze betaling zou uw resterende communitykrediet voor {symbol} overschrijden. U kunt nog {spendable} {symbol} uitgeven (resterend krediet {creditLeft} van {creditLimit}; walletsaldo {balance}). Dit is een kredietlimiet, geen lidmaatschaps- of transfer-whitelistfout.",
+          "notCreditEligible": "U heeft geen communitykrediet voor {symbol}. Krediet is gescheiden van spacelidmaatschap: deze wallet moet op de kredietadres-whitelist van de token staan, of tot een krediet-gewhiteliste space behoren. Walletsaldo: {balance} {symbol}.",
+          "senderNotWhitelisted": "Deze wallet staat niet op de transfer-whitelist van de token en kan deze valuta dus niet verzenden. Dit is geen communitykredietlimietfout.",
+          "recipientNotWhitelisted": "De ontvanger staat niet op de ontvangst-whitelist van de token en kan deze valuta dus niet ontvangen. Dit is geen communitykredietlimietfout.",
+          "supplyExceeded": "Deze betaling kan geen extra eenheden van deze valuta minten omdat de token het maximale aanbod heeft bereikt.",
+          "chainRevert": "On-chain revert: {reason} ({selector})"
+        }
       }
     },
     "redeemTokens": {

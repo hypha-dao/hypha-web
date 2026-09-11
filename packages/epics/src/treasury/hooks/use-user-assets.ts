@@ -77,7 +77,15 @@ export type AssetItem = {
     creditLimit: number;
     /** Remaining credit available for this account (0 when not eligible). */
     creditLimitLeft: number;
-    /** True when the user is a member of any whitelisted space. */
+    /**
+     * `isCreditWhitelistedAddress` on the token. Independent of space
+     * membership and of transfer/receive whitelists.
+     */
+    addressWhitelisted?: boolean;
+    /**
+     * Address-level credit whitelist OR membership in a credit-whitelisted
+     * space (or a positive on-chain `creditLimitOf`).
+     */
     creditEligible: boolean;
   };
 };

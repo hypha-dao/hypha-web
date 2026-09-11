@@ -14,7 +14,11 @@ spend up to that token’s `defaultCreditLimit` even with a zero ERC-20 balance.
 
 ```http
 POST /api/v1/mutual-credit/whitelist
+GET  /api/v1/mutual-credit/whitelist?tokenAddress=<TOKEN>&account=<WALLET>
 ```
+
+`GET` reads on-chain credit whitelist + remaining limit (same API key). See
+[Verify eligibility](#verify-eligibility-do-not-confuse-these).
 
 ### Headers
 
@@ -116,12 +120,52 @@ You must pass **`tokenAddress` for every call**. There is no default token.
 
 ---
 
-## Verify on-chain
+## Verify eligibility (do not confuse these)
 
-After a successful response (and tx confirmation), check the **same** token:
+Three different “whitelists” exist. Checking the wrong one is the usual
+false “credit limit” report.
+
+| What people say | What it actually is | How to verify |
+| --- | --- | --- |
+| Space / membership whitelist | User is a member of a Hypha space | DAO factory `isMember(spaceId, wallet)` or the space Members tab |
+| Transfer / receive whitelist | Who may send or receive the ERC-20 | Token `canAccountTransfer` / `canAccountReceive`. Revert: `Sender not whitelisted to transfer` / `Recipient not whitelisted to receive` |
+| **Credit address whitelist** | Wallet may draw this token’s mutual credit | `isCreditWhitelistedAddress(wallet)` **or** GET below. This is what `POST /api/v1/mutual-credit/whitelist` sets |
+| Credit **space** whitelist | Every member of those spaces may draw credit | `getCreditWhitelistedSpaces()` + factory `isMember` |
+| Community **credit limit** | How far below zero they may go | `creditLimitOf` / `creditLimitLeftOf` / `defaultCreditLimit` |
+
+Address-whitelisted users do **not** need to be in a credit-whitelisted space.
+
+### GET status (same API key as POST)
+
+```http
+GET /api/v1/mutual-credit/whitelist?tokenAddress=<TOKEN>&account=<WALLET>
+Authorization: Bearer <API_KEY>
+```
+
+```json
+{
+  "tokenAddress": "0x0692C428864A3e2775C4d4Db3a84124435C7913D",
+  "account": "0xUSER…",
+  "addressWhitelisted": true,
+  "creditEligible": true,
+  "creditWhitelistedSpaceIds": [],
+  "defaultCreditLimit": 48,
+  "creditLimit": 48,
+  "creditLimitLeft": 48,
+  "creditBalance": 0
+}
+```
+
+- `addressWhitelisted: false` → the login whitelist tx did not land on **this** token (wait for confirmation, or the call used a different `tokenAddress`).
+- `addressWhitelisted: true` but `creditLimit` / `creditLimitLeft` is `0` → they are on the credit whitelist but the token’s `defaultCreditLimit` is 0 (or they already used the line). A 1.00 spend with a 0 wallet balance will fail for **credit limit**, not membership.
+- `creditLimitLeft >= amount - balance` → a client “past your community credit limit” banner is a **preflight bug**, not an on-chain revert.
+
+### Verify on-chain (`cast`)
+
+After a successful POST (and tx confirmation), check the **same** token:
 
 ```bash
-# true if address-whitelisted
+# true if address-whitelisted (the API path)
 cast call <TOKEN> \
   "isCreditWhitelistedAddress(address)(bool)" \
   <USER> \
@@ -132,7 +176,22 @@ cast call <TOKEN> \
   "creditLimitOf(address)(uint256)" \
   <USER> \
   --rpc-url https://mainnet.base.org
+
+# remaining room (limit − already-minted credit debt)
+cast call <TOKEN> \
+  "creditLimitLeftOf(address)(uint256)" \
+  <USER> \
+  --rpc-url https://mainnet.base.org
 ```
+
+Chain reverts (not client copy):
+
+| Revert | Meaning |
+| --- | --- |
+| `!credit` / `Insufficient credit` | Spend exceeds `balance + creditLimitLeft` |
+| `Sender not whitelisted to transfer` | Transfer whitelist, not credit |
+| `Recipient not whitelisted to receive` | Receive whitelist, not credit |
+| `supply exceeded` | Credit mint would pass `maxSupply` |
 
 Known tokens:
 
