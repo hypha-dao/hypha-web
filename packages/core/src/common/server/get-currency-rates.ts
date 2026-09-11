@@ -2,15 +2,20 @@ import 'server-only';
 import NodeCache from 'node-cache';
 import { CURRENCY_FEEDS } from '../web3/token-backing-vault';
 import {
+  applyLastKnownOffchainRates,
   usdRateFromCoingeckoBtcQuotes,
   type UsdRates,
 } from '../web3/currency-conversion';
 import { parseFeedRate, type ChainlinkRound } from '../web3/chainlink-feed';
 import { aggregatorV3InterfaceAbi } from '../../generated';
 import { web3Client } from './web3-rpc/client';
+import { getCoingeckoBitcoinUsdTzsQuotes } from './coingecko-client';
 
 const RATES_CACHE_KEY = 'chainlink_usd_rates';
+const LAST_OFFCHAIN_RATES_KEY = 'last_offchain_usd_rates';
 const ratesCache = new NodeCache({ stdTTL: 300 });
+/** Keep a validated TZS quote through short CoinGecko outages (24h). */
+const lastOffchainRatesCache = new NodeCache({ stdTTL: 24 * 60 * 60 });
 
 /**
  * On-chain X/USD feeds only. Off-chain codes such as TZS must not be looked
@@ -20,21 +25,9 @@ const CHAINLINK_QUOTED_CURRENCIES = (
   Object.keys(CURRENCY_FEEDS) as (keyof typeof CURRENCY_FEEDS)[]
 ).filter((currency) => currency !== 'USD');
 
-const COINGECKO_TZS_URL =
-  'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,tzs';
-
 async function fetchOffchainUsdRates(): Promise<UsdRates> {
   try {
-    const response = await fetch(COINGECKO_TZS_URL, {
-      headers: { Accept: 'application/json' },
-    });
-    if (!response.ok) {
-      console.warn(`Off-chain TZS/USD fetch failed: ${response.status}`);
-      return {};
-    }
-    const data = (await response.json()) as {
-      bitcoin?: { usd?: number; tzs?: number };
-    };
+    const data = await getCoingeckoBitcoinUsdTzsQuotes();
     const tzs = usdRateFromCoingeckoBtcQuotes(data.bitcoin ?? {});
     if (tzs === undefined) {
       console.warn('No off-chain TZS/USD rate from CoinGecko');
@@ -56,7 +49,8 @@ async function fetchOffchainUsdRates(): Promise<UsdRates> {
  *
  * TZS has no AggregatorV3 on Base. Its USD rate comes from CoinGecko
  * (same off-chain source as {@link getTokenPrice}), so portfolio totals are
- * not treated as 1:1 USD.
+ * not treated as 1:1 USD. A failed live quote reuses the last validated TZS
+ * rate when one exists.
  *
  * Feeds / quotes that fail or report a non-positive answer are omitted rather
  * than guessed at; callers decide how to handle a missing rate.
@@ -119,6 +113,15 @@ export async function getUsdRates(): Promise<UsdRates> {
   ]);
 
   Object.assign(rates, offchain);
+  const lastKnown =
+    lastOffchainRatesCache.get<UsdRates>(LAST_OFFCHAIN_RATES_KEY) ?? {};
+  const withLastKnown = applyLastKnownOffchainRates(rates, lastKnown);
+  if (withLastKnown.TZS && withLastKnown.TZS > 0) {
+    lastOffchainRatesCache.set(LAST_OFFCHAIN_RATES_KEY, {
+      TZS: withLastKnown.TZS,
+    });
+  }
+  Object.assign(rates, withLastKnown);
 
   ratesCache.set(RATES_CACHE_KEY, rates);
   return rates;

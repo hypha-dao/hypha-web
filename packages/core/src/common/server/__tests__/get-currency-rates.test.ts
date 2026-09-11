@@ -50,12 +50,17 @@ describe('getUsdRates', () => {
     expect(rates.TZS).toBeCloseTo(100_000 / 265_000_000, 12);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,tzs',
-      { headers: { Accept: 'application/json' } },
+      expect.objectContaining({
+        headers: { Accept: 'application/json' },
+        signal: expect.any(AbortSignal),
+      }),
     );
   });
 
-  it('omits TZS when the off-chain source fails rather than inventing a rate', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  it('omits TZS when the off-chain source fails and no prior rate exists', async () => {
+    const error = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 429,
@@ -64,6 +69,6 @@ describe('getUsdRates', () => {
     const rates = await getUsdRates();
 
     expect(rates.TZS).toBeUndefined();
-    expect(warn).toHaveBeenCalled();
+    expect(error).toHaveBeenCalled();
   });
 });

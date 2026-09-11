@@ -4,6 +4,7 @@ export * from './get-db';
 export * from './order';
 
 export * from './get-token-price';
+export * from './coingecko-client';
 export * from './get-currency-rates';
 // Pure helpers, re-exported here so server code can apply rates without
 // reaching into the client entry point.

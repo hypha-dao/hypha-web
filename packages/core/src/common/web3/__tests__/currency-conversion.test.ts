@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  applyLastKnownOffchainRates,
   CONVERTIBLE_CURRENCIES,
   convertFromUsd,
   convertToUsd,
@@ -59,6 +60,14 @@ describe('convertToUsd', () => {
     expect(convertToUsd(2_650, 'TZS', RATES)).toBeCloseTo(1, 6);
   });
 
+  it('omits TZS from the USD total when no rate is available', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(convertToUsd(2_650, 'TZS', {})).toBe(0);
+    expect(convertToUsd(2_650, 'TZS', { TZS: 0 })).toBe(0);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('leaves USD amounts untouched', () => {
     expect(convertToUsd(100, 'USD', RATES)).toBe(100);
     expect(convertToUsd(100, null, RATES)).toBe(100);
@@ -103,14 +112,33 @@ describe('convertFromUsd', () => {
     ).toBeCloseTo(original, 9);
   });
 
-  it('passes the amount through when no rate is available', () => {
+  it('passes the amount through when no on-chain rate is available', () => {
     expect(convertFromUsd(100, 'JPY', RATES)).toBe(100);
     expect(convertFromUsd(100, 'AUD', {})).toBe(100);
     expect(convertFromUsd(100, 'AUD', { AUD: 0 })).toBe(100);
   });
 
+  it('does not treat a missing TZS rate as 1:1 USD', () => {
+    expect(convertFromUsd(1, 'TZS', {})).toBe(0);
+    expect(convertFromUsd(1, 'TZS', { TZS: 0 })).toBe(0);
+  });
+
   it('preserves sign for negative balances', () => {
     expect(convertFromUsd(-65, 'AUD', RATES)).toBeCloseTo(-100, 6);
+  });
+});
+
+describe('applyLastKnownOffchainRates', () => {
+  it('fills a missing TZS quote from the last validated rate', () => {
+    expect(
+      applyLastKnownOffchainRates({ USD: 1 }, { TZS: 1 / 2_650 }).TZS,
+    ).toBeCloseTo(1 / 2_650, 12);
+  });
+
+  it('does not overwrite a live TZS quote', () => {
+    expect(
+      applyLastKnownOffchainRates({ TZS: 0.0004 }, { TZS: 0.0003 }).TZS,
+    ).toBe(0.0004);
   });
 });
 

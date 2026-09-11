@@ -113,6 +113,16 @@ interface TokenUpdateDataInterface {
   referenceCurrency?: string;
 }
 
+function priceCurrencyPair(
+  price: number | undefined,
+  currency: string | undefined | null,
+): { price: number; currency: string } | undefined {
+  if (price == null || !Number.isFinite(price) || price <= 0 || !currency) {
+    return undefined;
+  }
+  return { price, currency };
+}
+
 export const ProposalUpdateToken = ({
   address,
   tokenType: tokenTypeProp,
@@ -408,27 +418,17 @@ export const ProposalUpdateToken = ({
     pendingData?.referencePrice != null
       ? Number(pendingData.referencePrice)
       : undefined;
-  const pendingCurrency = pendingData?.referenceCurrency;
   const dbPrice =
     dbTokenMatch?.referencePrice != null
       ? Number(dbTokenMatch.referencePrice)
       : undefined;
-  const dbCurrency = dbTokenMatch?.referenceCurrency ?? undefined;
-  const displayTokenPrice =
-    pendingPrice != null && Number.isFinite(pendingPrice) && pendingPrice > 0
-      ? pendingPrice
-      : tokenPrice != null && tokenPrice > 0
-      ? tokenPrice
-      : dbPrice != null && Number.isFinite(dbPrice) && dbPrice > 0
-      ? dbPrice
-      : undefined;
-  const displayTokenCurrency =
-    pendingCurrency ||
-    (tokenPrice != null && tokenPrice > 0 ? priceCurrencyFeed : undefined) ||
-    dbCurrency ||
-    undefined;
-  const showTokenPrice =
-    displayTokenPrice !== undefined && Boolean(displayTokenCurrency);
+  const displayPair =
+    priceCurrencyPair(pendingPrice, pendingData?.referenceCurrency) ??
+    priceCurrencyPair(tokenPrice, priceCurrencyFeed) ??
+    priceCurrencyPair(dbPrice, dbTokenMatch?.referenceCurrency);
+  const displayTokenPrice = displayPair?.price;
+  const displayTokenCurrency = displayPair?.currency;
+  const showTokenPrice = displayPair != null;
 
   const maxSupplyTypeBracket = React.useMemo(() => {
     const fromPending = pendingData?.maxSupplyTypeValue;
