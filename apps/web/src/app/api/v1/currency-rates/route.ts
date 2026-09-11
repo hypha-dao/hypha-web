@@ -4,7 +4,7 @@ import { getUsdRates } from '@hypha-platform/core/server';
 /**
  * Public FX rates, quoted in USD, for rendering balances in a member's chosen
  * currency. No auth: these are market rates (Chainlink on Base plus off-chain
- * TZS via CoinGecko), not user data, and the space treasury total needs them
+ * TZS via open.er-api.com), not user data, and the space treasury total needs them
  * for signed-out visitors too.
  */
 export async function GET() {

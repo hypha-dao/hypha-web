@@ -3,18 +3,18 @@ import NodeCache from 'node-cache';
 import { CURRENCY_FEEDS } from '../web3/token-backing-vault';
 import {
   applyLastKnownOffchainRates,
-  usdRateFromCoingeckoBtcQuotes,
+  usdRateFromUnitsPerUsd,
   type UsdRates,
 } from '../web3/currency-conversion';
 import { parseFeedRate, type ChainlinkRound } from '../web3/chainlink-feed';
 import { aggregatorV3InterfaceAbi } from '../../generated';
 import { web3Client } from './web3-rpc/client';
-import { getCoingeckoBitcoinUsdTzsQuotes } from './coingecko-client';
+import { getOpenErApiUsdLatest } from './open-er-api-client';
 
 const RATES_CACHE_KEY = 'chainlink_usd_rates';
 const LAST_OFFCHAIN_RATES_KEY = 'last_offchain_usd_rates';
 const ratesCache = new NodeCache({ stdTTL: 300 });
-/** Keep a validated TZS quote through short CoinGecko outages (24h). */
+/** Keep a validated TZS quote through short FX outages (24h). */
 const lastOffchainRatesCache = new NodeCache({ stdTTL: 24 * 60 * 60 });
 
 /**
@@ -27,10 +27,10 @@ const CHAINLINK_QUOTED_CURRENCIES = (
 
 async function fetchOffchainUsdRates(): Promise<UsdRates> {
   try {
-    const data = await getCoingeckoBitcoinUsdTzsQuotes();
-    const tzs = usdRateFromCoingeckoBtcQuotes(data.bitcoin ?? {});
+    const data = await getOpenErApiUsdLatest();
+    const tzs = usdRateFromUnitsPerUsd(data.rates?.TZS);
     if (tzs === undefined) {
-      console.warn('No off-chain TZS/USD rate from CoinGecko');
+      console.warn('No off-chain TZS/USD rate from open.er-api.com');
       return {};
     }
     return { TZS: tzs };
@@ -47,10 +47,9 @@ async function fetchOffchainUsdRates(): Promise<UsdRates> {
  * feeds the redemption contracts price against, so displayed balances cannot
  * drift from what a redemption actually pays out.
  *
- * TZS has no AggregatorV3 on Base. Its USD rate comes from CoinGecko
- * (same off-chain source as {@link getTokenPrice}), so portfolio totals are
- * not treated as 1:1 USD. A failed live quote reuses the last validated TZS
- * rate when one exists.
+ * TZS has no AggregatorV3 on Base. Its USD rate comes from open.er-api.com
+ * (`rates.TZS` is TZS per 1 USD; we store the inverse). A failed live quote
+ * reuses the last validated TZS rate when one exists.
  *
  * Feeds / quotes that fail or report a non-positive answer are omitted rather
  * than guessed at; callers decide how to handle a missing rate.

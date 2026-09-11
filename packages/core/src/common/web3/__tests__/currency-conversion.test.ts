@@ -6,7 +6,7 @@ import {
   convertToUsd,
   isConvertibleCurrency,
   OFFCHAIN_USD_CURRENCIES,
-  usdRateFromCoingeckoBtcQuotes,
+  usdRateFromUnitsPerUsd,
   type UsdRates,
 } from '../currency-conversion';
 import { CURRENCY_FEEDS } from '../token-backing-vault';
@@ -142,21 +142,15 @@ describe('applyLastKnownOffchainRates', () => {
   });
 });
 
-describe('usdRateFromCoingeckoBtcQuotes', () => {
-  it('derives USD per 1 TZS from the BTC dual quote', () => {
-    expect(
-      usdRateFromCoingeckoBtcQuotes({ usd: 100_000, tzs: 265_000_000 }),
-    ).toBeCloseTo(100_000 / 265_000_000, 12);
+describe('usdRateFromUnitsPerUsd', () => {
+  it('inverts TZS-per-USD into USD-per-TZS', () => {
+    expect(usdRateFromUnitsPerUsd(2_643.56)).toBeCloseTo(1 / 2_643.56, 12);
   });
 
   it('rejects missing or non-positive quotes', () => {
-    expect(usdRateFromCoingeckoBtcQuotes({})).toBeUndefined();
-    expect(usdRateFromCoingeckoBtcQuotes({ usd: 100_000 })).toBeUndefined();
-    expect(
-      usdRateFromCoingeckoBtcQuotes({ usd: 100_000, tzs: 0 }),
-    ).toBeUndefined();
-    expect(
-      usdRateFromCoingeckoBtcQuotes({ usd: Number.NaN, tzs: 1 }),
-    ).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(undefined)).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(0)).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(-1)).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(Number.NaN)).toBeUndefined();
   });
 });

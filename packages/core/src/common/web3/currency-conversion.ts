@@ -70,25 +70,20 @@ export function applyLastKnownOffchainRates(
 }
 
 /**
- * USD per 1 TZS from CoinGecko `/simple/price?ids=bitcoin&vs_currencies=usd,tzs`.
- * Both quotes are BTC-based, so the ratio cancels the vehicle asset.
+ * Invert a "units per 1 USD" quote (e.g. open.er-api `rates.TZS`) into
+ * USD per 1 unit for {@link UsdRates}.
  */
-export function usdRateFromCoingeckoBtcQuotes(quotes: {
-  usd?: number;
-  tzs?: number;
-}): number | undefined {
-  const { usd, tzs } = quotes;
+export function usdRateFromUnitsPerUsd(
+  unitsPerUsd: number | undefined,
+): number | undefined {
   if (
-    usd == null ||
-    tzs == null ||
-    !Number.isFinite(usd) ||
-    !Number.isFinite(tzs) ||
-    usd <= 0 ||
-    tzs <= 0
+    unitsPerUsd == null ||
+    !Number.isFinite(unitsPerUsd) ||
+    unitsPerUsd <= 0
   ) {
     return undefined;
   }
-  const rate = usd / tzs;
+  const rate = 1 / unitsPerUsd;
   if (!Number.isFinite(rate) || rate <= 0) return undefined;
   return rate;
 }

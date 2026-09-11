@@ -39,12 +39,17 @@ vi.mock('../web3-rpc/client', () => ({
 import { getUsdRates } from '../get-currency-rates';
 
 const originalFetch = globalThis.fetch;
-const TZS_RATE = 100_000 / 265_000_000;
+const TZS_PER_USD = 2_643.56;
+const TZS_RATE = 1 / TZS_PER_USD;
 
 function mockSuccessFetch() {
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
-    json: async () => ({ bitcoin: { usd: 100_000, tzs: 265_000_000 } }),
+    json: async () => ({
+      result: 'success',
+      base_code: 'USD',
+      rates: { TZS: TZS_PER_USD },
+    }),
   }) as unknown as typeof fetch;
 }
 
@@ -85,7 +90,7 @@ describe('getUsdRates', () => {
     expect(rates.USD).toBe(1);
     expect(rates.TZS).toBeCloseTo(TZS_RATE, 12);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,tzs',
+      'https://open.er-api.com/v6/latest/USD',
       expect.objectContaining({
         headers: { Accept: 'application/json' },
         signal: expect.any(AbortSignal),
