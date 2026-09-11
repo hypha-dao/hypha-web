@@ -141,4 +141,28 @@ describe('getUsdRates', () => {
     expect(setSpy).not.toHaveBeenCalled();
     expect(error).toHaveBeenCalled();
   });
+
+  it('does not keep fallback TZS in the short-lived rates cache after last-known TTL', async () => {
+    const error = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    mockSuccessFetch();
+    await getUsdRates();
+
+    ratesCache().store.clear();
+    mockFailedFetch();
+    const fallbackRates = await getUsdRates();
+    expect(fallbackRates.TZS).toBeCloseTo(TZS_RATE, 12);
+
+    const cached = ratesCache().get('chainlink_usd_rates') as
+      | { TZS?: number }
+      | undefined;
+    expect(cached?.TZS).toBeUndefined();
+
+    // 24h last-known expired; 5-minute rates cache is still warm.
+    lastOffchainCache().store.clear();
+    const afterLastKnownTtl = await getUsdRates();
+    expect(afterLastKnownTtl.TZS).toBeUndefined();
+    expect(error).toHaveBeenCalled();
+  });
 });

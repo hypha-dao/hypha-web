@@ -49,14 +49,22 @@ async function fetchOffchainUsdRates(): Promise<UsdRates> {
  *
  * TZS has no AggregatorV3 on Base. Its USD rate comes from open.er-api.com
  * (`rates.TZS` is TZS per 1 USD; we store the inverse). A failed live quote
- * reuses the last validated TZS rate when one exists.
+ * reuses the last validated TZS rate when one exists. That fallback is applied
+ * at read time and is not written into the 5-minute rates cache, so it cannot
+ * outlive the 24-hour last-known TTL.
  *
  * Feeds / quotes that fail or report a non-positive answer are omitted rather
  * than guessed at; callers decide how to handle a missing rate.
  */
+function withLastKnownOffchainRates(rates: UsdRates): UsdRates {
+  const lastKnown =
+    lastOffchainRatesCache.get<UsdRates>(LAST_OFFCHAIN_RATES_KEY) ?? {};
+  return applyLastKnownOffchainRates(rates, lastKnown);
+}
+
 export async function getUsdRates(): Promise<UsdRates> {
   const cached = ratesCache.get<UsdRates>(RATES_CACHE_KEY);
-  if (cached) return cached;
+  if (cached) return withLastKnownOffchainRates(cached);
 
   const rates: UsdRates = { USD: 1 };
 
@@ -112,16 +120,12 @@ export async function getUsdRates(): Promise<UsdRates> {
   ]);
 
   Object.assign(rates, offchain);
-  const lastKnown =
-    lastOffchainRatesCache.get<UsdRates>(LAST_OFFCHAIN_RATES_KEY) ?? {};
-  const withLastKnown = applyLastKnownOffchainRates(rates, lastKnown);
   if (offchain.TZS !== undefined && offchain.TZS > 0) {
     lastOffchainRatesCache.set(LAST_OFFCHAIN_RATES_KEY, {
       TZS: offchain.TZS,
     });
   }
-  Object.assign(rates, withLastKnown);
-
+  // Persist live quotes only — a last-known TZS overlay is applied on read.
   ratesCache.set(RATES_CACHE_KEY, rates);
-  return rates;
+  return withLastKnownOffchainRates(rates);
 }
