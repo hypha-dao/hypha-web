@@ -114,11 +114,16 @@ export const REFERENCE_CURRENCIES = [
   'NZD',
   'HKD',
   'XPF',
+  'TZS',
 ] as const;
 
 export type ReferenceCurrency = (typeof REFERENCE_CURRENCIES)[number];
 
-/** Token price / Chainlink feed — only currencies with a dedicated feed (see CURRENCY_FEEDS) */
+/**
+ * Currencies a token can be labelled / converted in.
+ * Most entries have an on-chain AggregatorV3 feed (see CURRENCY_FEEDS).
+ * TZS is display/portfolio only — no Base feed; USD conversion is off-chain.
+ */
 export const TOKEN_PRICE_REFERENCE_CURRENCIES = [
   'USD',
   'EUR',
@@ -128,6 +133,7 @@ export const TOKEN_PRICE_REFERENCE_CURRENCIES = [
   'AUD',
   'NZD',
   'XPF',
+  'TZS',
 ] as const;
 
 export type TokenPriceReferenceCurrency =

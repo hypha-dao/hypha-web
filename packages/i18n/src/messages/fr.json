@@ -1636,7 +1636,8 @@
             "nzd": "Dollar néo-zélandais",
             "aud": "Dollar australien",
             "hkd": "Dollar de Hong Kong",
-            "xpf": "Franc pacifique"
+            "xpf": "Franc pacifique",
+            "tzs": "Shilling tanzanien"
           }
         },
         "decay": {

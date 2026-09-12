@@ -16,7 +16,7 @@ import {
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 import { ReferenceCurrency } from '../../types';
-import { getPriceCurrencyFeed, type TokenType } from '../../../common';
+import { encodeOnChainTokenPrice, type TokenType } from '../../../common';
 import {
   type UpdateIssuedTokenInput,
   padUpdateIssuedTokenInputIfNoTxs,
@@ -234,22 +234,17 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     changed.has('referenceCurrency');
   if (priceTouched) {
     if (arg.enableTokenPrice) {
-      const refPrice = arg.referencePrice ?? arg.tokenPrice;
-      const tokenPriceMicro =
-        refPrice !== undefined ? Math.round(refPrice * 1_000_000) : undefined;
-      const priceCurrencyFeed =
-        refPrice !== undefined && arg.referenceCurrency !== undefined
-          ? getPriceCurrencyFeed(arg.referenceCurrency)
-          : undefined;
-      if (tokenPriceMicro !== undefined && priceCurrencyFeed !== undefined) {
-        base.tokenPrice = tokenPriceMicro;
-        base.priceCurrencyFeed = priceCurrencyFeed;
-      }
+      const encoded = encodeOnChainTokenPrice({
+        referencePrice: arg.referencePrice ?? arg.tokenPrice,
+        referenceCurrency: arg.referenceCurrency,
+      });
+      base.tokenPrice = encoded.tokenPrice;
+      base.priceCurrencyFeed = encoded.priceCurrencyFeed;
     } else {
       // Clear on-chain price when the user turns pricing off (micro-units + zero feed)
-      base.tokenPrice = 0;
-      base.priceCurrencyFeed =
-        '0x0000000000000000000000000000000000000000' as `0x${string}`;
+      const cleared = encodeOnChainTokenPrice({});
+      base.tokenPrice = cleared.tokenPrice;
+      base.priceCurrencyFeed = cleared.priceCurrencyFeed;
     }
   }
 
