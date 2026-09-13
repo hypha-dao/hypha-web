@@ -126,6 +126,26 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableCoherentIntelligentSystem: {
+    key: 'enable-coherent-intelligent-system',
+    defaultValue:
+      parseBoolean(
+        process.env.NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM,
+      ) ?? false,
+    description:
+      'Talk-first conversational entrypoint at /[lang]/coherent-intelligent-system (#2486). When on, Coherent is the default landing experience and the classic mouse-driven app is the persisted opt-out (HYPHA_COHERENT_MODE=classic cookie). Opt in: NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableCoherentVoice: {
+    key: 'enable-coherent-voice',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_COHERENT_VOICE) ?? false,
+    description:
+      'Real voice (OpenAI Realtime, speech-to-text + text-to-speech) for the #2486 Coherent entrypoint. Sub-feature of enable-coherent-intelligent-system; degrades to text-only when off or OPENAI_API_KEY is absent. Opt in: NEXT_PUBLIC_ENABLE_COHERENT_VOICE=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -233,8 +253,26 @@ export async function getEnableOnboardingVoiceRealtimeAsync(): Promise<boolean> 
   );
 }
 
+export async function getEnableCoherentIntelligentSystemAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-coherent-intelligent-system',
+    process.env.NEXT_PUBLIC_ENABLE_COHERENT_INTELLIGENT_SYSTEM,
+    false,
+  );
+}
+
+export async function getEnableCoherentVoiceAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-coherent-voice',
+    process.env.NEXT_PUBLIC_ENABLE_COHERENT_VOICE,
+    false,
+  );
+}
+
 export {
   getEnableNetworkMap,
   getEnableOnboardingVoiceRealtime,
   getEnableCallDocumentPip,
+  getEnableCoherentIntelligentSystem,
+  getEnableCoherentVoice,
 } from './client';

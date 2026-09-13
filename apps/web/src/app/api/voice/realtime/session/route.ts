@@ -8,7 +8,10 @@ import {
   realtimeVoiceSessionRequestSchema,
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
-import { getEnableOnboardingVoiceRealtime } from '@hypha-platform/feature-flags';
+import {
+  getEnableOnboardingVoiceRealtime,
+  getEnableCoherentVoiceAsync,
+} from '@hypha-platform/feature-flags';
 
 export const maxDuration = 300;
 
@@ -16,16 +19,6 @@ export async function POST(req: Request) {
   const debugRequestId = `voice-${Date.now().toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 8)}`;
-
-  if (!getEnableOnboardingVoiceRealtime()) {
-    return NextResponse.json(
-      {
-        error: 'not_enabled',
-        message: 'Onboarding voice Realtime is disabled.',
-      },
-      { status: 404, headers: { 'x-hypha-voice-debug-id': debugRequestId } },
-    );
-  }
 
   const headersList = await headers();
   const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
@@ -71,6 +64,26 @@ export async function POST(req: Request) {
         message: 'The voice session request format is invalid.',
       },
       { status: 400, headers: { 'x-hypha-voice-debug-id': debugRequestId } },
+    );
+  }
+
+  // Each surface has its own flag: the talk-first Coherent entrypoint uses
+  // `enable-coherent-voice`; onboarding + space advisor use
+  // `enable-onboarding-voice-realtime`.
+  const isCoherentCanvas =
+    parsed.data.conversationContext.mode === 'conversational_canvas';
+  const enabled = isCoherentCanvas
+    ? await getEnableCoherentVoiceAsync()
+    : getEnableOnboardingVoiceRealtime();
+  if (!enabled) {
+    return NextResponse.json(
+      {
+        error: 'not_enabled',
+        message: isCoherentCanvas
+          ? 'Coherent voice is disabled.'
+          : 'Onboarding voice Realtime is disabled.',
+      },
+      { status: 404, headers: { 'x-hypha-voice-debug-id': debugRequestId } },
     );
   }
 

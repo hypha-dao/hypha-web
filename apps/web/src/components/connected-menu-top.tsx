@@ -19,6 +19,13 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Pencil } from 'lucide-react';
 
+import { CoherentModeToggle } from '@web/components/coherent-mode-toggle';
+
+/** `/[lang]/coherent-intelligent-system` — the #2486 talk-first route.
+ *  `AssistantShell` owns the top interaction bar there, so the app navbar
+ *  renders nothing (spec §2.2). */
+const COHERENT_ROUTE_RE = /^\/[^/]+\/coherent-intelligent-system(?:\/|$)/;
+
 type ConnectedMenuTopProps = {
   children?: ReactNode;
   leadingAction?: ReactNode;
@@ -29,6 +36,9 @@ type ConnectedMenuTopProps = {
   openMenuLabel?: string;
   closeMenuLabel?: string;
   aiChatEnabled: boolean;
+  /** `enable-coherent-intelligent-system` — gates the bidirectional
+   *  Coherent/classic mode toggle. */
+  coherentEnabled?: boolean;
 };
 
 function hasCustomRootLogo(logoUrl: string): boolean {
@@ -45,6 +55,7 @@ export function ConnectedMenuTop({
   openMenuLabel,
   closeMenuLabel,
   aiChatEnabled,
+  coherentEnabled = false,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -133,14 +144,24 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
+  const modeToggle = coherentEnabled ? (
+    <CoherentModeToggle activeMode="classic" />
+  ) : null;
+
   const resolvedLeadingAction = aiChatEnabled ? (
     <div className="flex items-center gap-1.5 sm:gap-2">
+      {modeToggle}
       {!overlayVisible ? (
         <div className="md:hidden">
           <AiSidebarTrigger />
         </div>
       ) : null}
       <AiPanelTrigger />
+    </div>
+  ) : modeToggle ? (
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      {modeToggle}
+      {leadingAction}
     </div>
   ) : (
     leadingAction
@@ -198,6 +219,13 @@ export function ConnectedMenuTop({
   ) : undefined;
   const useReplacementLogoNode =
     Boolean(logoNode) && !(overlayVisible && isSpaceRoute);
+
+  // On /[lang]/coherent-intelligent-system the navbar gives way entirely —
+  // `AssistantShell` renders its own sticky interaction bar as the top region
+  // (spec §2.2).
+  if (COHERENT_ROUTE_RE.test(pathname)) {
+    return null;
+  }
 
   return (
     <MenuTop
