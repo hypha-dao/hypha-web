@@ -366,7 +366,8 @@
     "filters": {
       "energy": "Energi",
       "activity": "Aktivitet",
-      "distribution": "Fordeling"
+      "distribution": "Fordeling",
+      "payingSpaces": "Betalende spaces"
     },
     "activity": {
       "title": "Kunne ikke laste inn aktivitetswidgeter",
@@ -415,6 +416,24 @@
     "energy": {
       "title": "Energi",
       "description": "Energiwidgeter vises når energidata er tilgjengelig."
+    },
+    "payingSpaces": {
+      "pageTitle": "Betalende spaces",
+      "pageSubtitle": "Månedlig dekning fra den første on-chain-betalingen.",
+      "title": "Betalende spaces",
+      "subtitle": "Spaces med aktivt betalt abonnement hver måned, fra starten. Filtrer etter space for nedbrytning.",
+      "currentlyPaying": "Betaler nå",
+      "everPaid": "Har betalt",
+      "paymentEvents": "Betalingshendelser",
+      "spaceLabel": "Space",
+      "spaceAll": "Alle spaces",
+      "payingCount": "betalende spaces",
+      "paymentsInView": "betalinger i visningen",
+      "fromMonth": "Fra {month}",
+      "empty": "Ingen historikk for betalende spaces ennå.",
+      "error": "Kan ikke laste inn betalende spaces akkurat nå.",
+      "chartAria": "Betalende spaces per måned",
+      "notCurrentlyPaying": "Betaler ikke nå"
     }
   },
   "SpaceSettingsAction": {

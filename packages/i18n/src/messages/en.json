@@ -367,7 +367,8 @@
     "filters": {
       "energy": "Energy",
       "activity": "Activity",
-      "distribution": "Distribution"
+      "distribution": "Distribution",
+      "payingSpaces": "Paying spaces"
     },
     "activity": {
       "title": "Unable to load activity widgets",
@@ -416,6 +417,24 @@
     "energy": {
       "title": "Energy",
       "description": "Energy widgets will appear once energy data is available."
+    },
+    "payingSpaces": {
+      "pageTitle": "Paying spaces",
+      "pageSubtitle": "Monthly coverage from the first on-chain payment.",
+      "title": "Paying spaces",
+      "subtitle": "Spaces with an active paid subscription each month, from inception. Filter by space for a per-space breakdown.",
+      "currentlyPaying": "Currently paying",
+      "everPaid": "Ever paid",
+      "paymentEvents": "Payment events",
+      "spaceLabel": "Space",
+      "spaceAll": "All spaces",
+      "payingCount": "paying spaces",
+      "paymentsInView": "payments in view",
+      "fromMonth": "From {month}",
+      "empty": "No paying-space history yet.",
+      "error": "Unable to load paying spaces right now.",
+      "chartAria": "Paying spaces by month",
+      "notCurrentlyPaying": "Not currently paying"
     }
   },
   "SpaceSettingsAction": {
