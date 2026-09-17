@@ -65,7 +65,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
   const authReady = !isAuthLoading && accessTokenReady;
   const authKey = isAuthenticated ? 'auth' : 'anon';
   const { data, error, isLoading } = useSWR(
-    authReady ? ['platform-paying-spaces', spaceSlug, authKey] : null,
+    authReady ? ['platform-paying-spaces-v3', spaceSlug, authKey] : null,
     ([, slug]) => fetchPayingSpaces(slug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 15 * 60_000 },
   );
@@ -186,7 +186,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container/paying-spaces flex flex-col gap-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className={CHART_CARD_CLASS}>
           <CardHeader className="pb-2">
@@ -226,7 +226,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
         </Card>
       </div>
 
-      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] @[64rem]/paying-spaces:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 content-start gap-4">
           <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
             <CardHeader className="pb-2">

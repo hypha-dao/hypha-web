@@ -2,6 +2,7 @@ export { isHyphaPlatformSpace } from './is-hypha-platform-space';
 export {
   isPlaceholderPayingSpace,
   isPlaceholderSpaceTitle,
+  normalizePayingSpaceTitle,
   resolvedPayingSpaceTitle,
 } from './is-placeholder-space-title';
 export {

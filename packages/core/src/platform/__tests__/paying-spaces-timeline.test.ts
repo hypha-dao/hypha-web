@@ -34,6 +34,8 @@ describe('isPlaceholderSpaceTitle', () => {
     expect(isPlaceholderSpaceTitle('Space 224')).toBe(true);
     expect(isPlaceholderSpaceTitle('space 1')).toBe(true);
     expect(isPlaceholderSpaceTitle('  SPACE  999  ')).toBe(true);
+    expect(isPlaceholderSpaceTitle('Space\u00A0224')).toBe(true);
+    expect(isPlaceholderSpaceTitle('\uFEFFSpace 224')).toBe(true);
   });
 
   it('keeps real organization titles', () => {
@@ -50,6 +52,9 @@ describe('isPlaceholderSpaceTitle', () => {
     expect(isPlaceholderPayingSpace({ title: '   ', web3SpaceId: 1 })).toBe(
       true,
     );
+    expect(
+      isPlaceholderPayingSpace({ title: 'Space 224', web3SpaceId: 99 }),
+    ).toBe(true);
     expect(isPlaceholderPayingSpace({ title: 'Hypha', web3SpaceId: 224 })).toBe(
       false,
     );

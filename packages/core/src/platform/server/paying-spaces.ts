@@ -26,6 +26,7 @@ const CHUNK_SIZE = 100_000n;
 const EVENT_CHUNK_CONCURRENCY = 8;
 const BLOCK_FETCH_CONCURRENCY = 40;
 const PAYMENT_STATE_BATCH_SIZE = 30;
+const METRICS_CACHE_VERSION = 3;
 const METRICS_CACHE_TTL_MS = 15 * 60 * 1000;
 const EVENTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
@@ -46,6 +47,7 @@ let creationBlockCache: bigint | null = null;
 let eventsCache: { expiresAt: number; data: NormalizedPaymentLog[] } | null =
   null;
 let metricsCache: {
+  version: number;
   expiresAt: number;
   data: PayingSpacesDashboardData;
 } | null = null;
@@ -400,7 +402,11 @@ async function computePayingSpacesMetrics({
 export async function getPayingSpacesMetrics({
   db,
 }: DbConfig): Promise<PayingSpacesDashboardData> {
-  if (metricsCache && metricsCache.expiresAt > Date.now()) {
+  if (
+    metricsCache &&
+    metricsCache.version === METRICS_CACHE_VERSION &&
+    metricsCache.expiresAt > Date.now()
+  ) {
     return metricsCache.data;
   }
 
@@ -408,6 +414,7 @@ export async function getPayingSpacesMetrics({
     metricsInFlight = computePayingSpacesMetrics({ db })
       .then((data) => {
         metricsCache = {
+          version: METRICS_CACHE_VERSION,
           data,
           expiresAt: Date.now() + METRICS_CACHE_TTL_MS,
         };
