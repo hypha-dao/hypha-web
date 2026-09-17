@@ -24,11 +24,36 @@ export type PayingSpacesTimeline = {
   bySpace: PayingSpacesTimelineSpaceSeries[];
 };
 
+function parseMonthKey(
+  monthKey: string,
+): { year: number; month: number } | null {
+  const [year, month] = monthKey.split('-').map((part) => Number(part));
+  if (
+    year === undefined ||
+    month === undefined ||
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12
+  ) {
+    return null;
+  }
+  return { year, month };
+}
+
+function requireMonthKey(monthKey: string): { year: number; month: number } {
+  const parsed = parseMonthKey(monthKey);
+  if (!parsed) {
+    throw new Error(`Invalid month key: ${monthKey}`);
+  }
+  return parsed;
+}
+
 /** Previous calendar month key (`YYYY-MM`), or null if the input is invalid. */
 export function previousMonthKey(monthKey: string): string | null {
-  const [year, month] = monthKey.split('-').map((part) => Number(part));
-  if (!year || !month) return null;
-  const previous = new Date(Date.UTC(year, month - 2, 1));
+  const parsed = parseMonthKey(monthKey);
+  if (!parsed) return null;
+  const previous = new Date(Date.UTC(parsed.year, parsed.month - 2, 1));
   return toMonthKey(previous);
 }
 
@@ -39,14 +64,14 @@ export function toMonthKey(date: Date): string {
 }
 
 export function nextMonthKey(monthKey: string): string {
-  const [year, month] = monthKey.split('-').map((part) => Number(part));
+  const { year, month } = requireMonthKey(monthKey);
   const next = new Date(Date.UTC(year, month, 1));
   return toMonthKey(next);
 }
 
 export function monthKeyToStartSec(monthKey: string): number {
-  const [year, month] = monthKey.split('-').map((part) => Number(part));
-  return Math.floor(Date.UTC(year, (month ?? 1) - 1, 1) / 1000);
+  const { year, month } = requireMonthKey(monthKey);
+  return Math.floor(Date.UTC(year, month - 1, 1) / 1000);
 }
 
 export function enumerateMonthKeys(

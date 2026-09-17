@@ -4,6 +4,7 @@ import { isHyphaPlatformSpace } from '../is-hypha-platform-space';
 import {
   buildPayingSpacesTimeline,
   enumerateMonthKeys,
+  nextMonthKey,
   reconstructCoverage,
   toMonthKey,
 } from '../paying-spaces-timeline';
@@ -15,14 +16,12 @@ describe('isHyphaPlatformSpace', () => {
     expect(isHyphaPlatformSpace({ slug: 'hypha-platform' })).toBe(true);
   });
 
-  it('matches the Hypha title even when the slug differs', () => {
-    expect(isHyphaPlatformSpace({ slug: 'other', title: 'Hypha' })).toBe(true);
+  it('does not match a Hypha title when the slug is not canonical', () => {
+    expect(isHyphaPlatformSpace({ slug: 'other' })).toBe(false);
   });
 
   it('rejects unrelated spaces', () => {
-    expect(
-      isHyphaPlatformSpace({ slug: 'hypha-energy', title: 'Energy' }),
-    ).toBe(false);
+    expect(isHyphaPlatformSpace({ slug: 'hypha-energy' })).toBe(false);
   });
 });
 
@@ -122,5 +121,18 @@ describe('enumerateMonthKeys', () => {
 
   it('formats UTC month keys with a leading zero', () => {
     expect(toMonthKey(new Date(Date.UTC(2026, 8, 16)))).toBe('2026-09');
+  });
+});
+
+describe('nextMonthKey', () => {
+  it('advances a valid calendar month key', () => {
+    expect(nextMonthKey('2024-12')).toBe('2025-01');
+    expect(nextMonthKey('2025-01')).toBe('2025-02');
+  });
+
+  it('throws on invalid month keys', () => {
+    expect(() => nextMonthKey('2024-13')).toThrow(/Invalid month key/);
+    expect(() => nextMonthKey('not-a-month')).toThrow(/Invalid month key/);
+    expect(() => nextMonthKey('2024')).toThrow(/Invalid month key/);
   });
 });

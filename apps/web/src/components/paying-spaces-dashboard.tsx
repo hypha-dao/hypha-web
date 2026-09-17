@@ -366,6 +366,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                   <button
                     key={space.web3SpaceId}
                     type="button"
+                    aria-pressed={selected}
                     onClick={() =>
                       setSelectedSpaceId((current) =>
                         current === String(space.web3SpaceId)

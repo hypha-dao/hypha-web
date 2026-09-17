@@ -1,5 +1,20 @@
 import 'server-only';
 
+export async function withRetries<T>(
+  fn: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
 export async function mapInBatches<T, R>(
   items: T[],
   batchSize: number,

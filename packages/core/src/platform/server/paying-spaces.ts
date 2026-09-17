@@ -16,7 +16,7 @@ import {
   type SpacePaymentEvent,
 } from '../paying-spaces-timeline';
 import type { PayingSpacesDashboardData } from '../types';
-import { mapInBatches } from './utils';
+import { mapInBatches, withRetries } from './utils';
 
 const CHUNK_SIZE = 100_000n;
 const EVENT_CHUNK_CONCURRENCY = 8;
@@ -154,8 +154,8 @@ async function fetchPaymentLogsUncached(): Promise<NormalizedPaymentLog[]> {
   const chunkResults = await mapInBatches(
     chunks,
     EVENT_CHUNK_CONCURRENCY,
-    async ({ start, end }) => {
-      try {
+    async ({ start, end }) =>
+      withRetries(async () => {
         const groups = await Promise.all(
           eventNames.map((eventName) =>
             web3Client.getContractEvents({
@@ -171,14 +171,7 @@ async function fetchPaymentLogsUncached(): Promise<NormalizedPaymentLog[]> {
           const parsed = readPaymentLog(event);
           return parsed ? [parsed] : [];
         });
-      } catch (error) {
-        console.warn(
-          `[paying-spaces] Failed payment log chunk ${start}-${end}`,
-          error,
-        );
-        return [];
-      }
-    },
+      }),
   );
 
   return chunkResults.flat();
@@ -232,8 +225,9 @@ async function fetchPaymentStates(tracked: TrackedSpace[]): Promise<
   const trackerAddress = spacePaymentTrackerAddress[8453] as `0x${string}`;
   return mapInBatches(tracked, PAYMENT_STATE_BATCH_SIZE, async (space) => {
     const web3SpaceId = BigInt(space.web3SpaceId);
-    try {
+    return withRetries(async () => {
       const [hasPaid, payment, isActive] = await web3Client.multicall({
+        allowFailure: false,
         contracts: [
           {
             address: trackerAddress,
@@ -256,29 +250,24 @@ async function fetchPaymentStates(tracked: TrackedSpace[]): Promise<
         ],
       });
 
+      if (
+        hasPaid === undefined ||
+        payment === undefined ||
+        isActive === undefined
+      ) {
+        throw new Error(
+          `[paying-spaces] Incomplete payment-state multicall for space ${space.slug}`,
+        );
+      }
+
       return {
         space,
-        hasPaid: hasPaid.status === 'success' ? Boolean(hasPaid.result) : false,
-        isActive:
-          isActive.status === 'success' ? Boolean(isActive.result) : false,
-        expiryTime:
-          payment.status === 'success' ? Number(payment.result[0]) : null,
-        freeTrialUsed:
-          payment.status === 'success' ? Boolean(payment.result[1]) : false,
+        hasPaid: Boolean(hasPaid),
+        isActive: Boolean(isActive),
+        expiryTime: Number(payment[0]),
+        freeTrialUsed: Boolean(payment[1]),
       };
-    } catch (error) {
-      console.warn(
-        `[paying-spaces] Failed payment state for space ${space.slug}`,
-        error,
-      );
-      return {
-        space,
-        hasPaid: false,
-        isActive: false,
-        expiryTime: null,
-        freeTrialUsed: false,
-      };
-    }
+    });
   });
 }
 
