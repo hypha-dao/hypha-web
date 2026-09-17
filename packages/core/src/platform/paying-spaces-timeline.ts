@@ -1,9 +1,24 @@
 export const SECONDS_PER_DAY = 86_400;
 
+/** USDC uses 6 decimals; 1 USDC = $1 for space payments. */
+export const USDC_DECIMALS = 1_000_000;
+
+/**
+ * HyphaToken converts HYPHA → USDC as
+ * `(hyphaAmount * HYPHA_PRICE_USD) / (4 * 10^12)`.
+ * With the default `HYPHA_PRICE_USD = 1` that is $0.25 per HYPHA.
+ */
+export const HYPHA_TO_USDC_SCALE = 4n * 10n ** 12n;
+
+/** Contract default when `HYPHA_PRICE_USD()` cannot be read. */
+export const DEFAULT_HYPHA_PRICE_USD = 1n;
+
 export type SpacePaymentEvent = {
   timestampSec: number;
   spaceId: number;
   durationDays: number;
+  /** USD paid in this event for this space. Missing amounts count as 0. */
+  usdAmount?: number;
 };
 
 export type CoverageInterval = {
@@ -15,14 +30,67 @@ export type PayingSpacesTimelineSpaceSeries = {
   spaceId: number;
   paying: boolean[];
   paymentCount: number[];
+  paymentUsd: number[];
 };
 
 export type PayingSpacesTimeline = {
   months: string[];
   payingCount: number[];
   paymentCount: number[];
+  paymentUsd: number[];
   bySpace: PayingSpacesTimelineSpaceSeries[];
 };
+
+export function roundUsd(value: number): number {
+  if (!Number.isFinite(value) || value === 0) return 0;
+  return Math.round(value * 100) / 100;
+}
+
+/** Convert a raw USDC amount (6 decimals) to USD dollars. */
+export function usdcAmountToUsd(usdcAmount: bigint): number {
+  if (usdcAmount <= 0n) return 0;
+  return Number(usdcAmount) / USDC_DECIMALS;
+}
+
+/**
+ * Convert a raw HYPHA amount (18 decimals) to USD using the on-chain
+ * HyphaToken price formula — not a market FX rate.
+ */
+export function hyphaAmountToUsd(
+  hyphaAmount: bigint,
+  hyphaPriceUsd: bigint = DEFAULT_HYPHA_PRICE_USD,
+): number {
+  if (hyphaAmount <= 0n || hyphaPriceUsd <= 0n) return 0;
+  const usdcAmount = (hyphaAmount * hyphaPriceUsd) / HYPHA_TO_USDC_SCALE;
+  return usdcAmountToUsd(usdcAmount);
+}
+
+/**
+ * Split a batch payment's USD across spaces in proportion to duration.
+ * `SpacesPaymentProcessedWithHypha` only emits total HYPHA, not per-space amounts.
+ */
+export function allocateUsdByDuration(
+  spaceIds: number[],
+  durationDays: number[],
+  totalUsd: number,
+): number[] {
+  if (spaceIds.length === 0) return [];
+  const roundedTotal = roundUsd(totalUsd);
+  if (roundedTotal === 0) return spaceIds.map(() => 0);
+
+  const safeDurations = spaceIds.map((_, index) =>
+    Math.max(0, durationDays[index] ?? 0),
+  );
+  const totalDays = safeDurations.reduce((sum, days) => sum + days, 0);
+  if (totalDays <= 0) {
+    const share = roundUsd(roundedTotal / spaceIds.length);
+    return spaceIds.map(() => share);
+  }
+
+  return safeDurations.map((days) =>
+    roundUsd(roundedTotal * (days / totalDays)),
+  );
+}
 
 function parseMonthKey(
   monthKey: string,
@@ -146,7 +214,13 @@ export function buildPayingSpacesTimeline(input: {
     (event) => event.timestampSec > 0 && event.durationDays > 0,
   );
   if (validEvents.length === 0) {
-    return { months: [], payingCount: [], paymentCount: [], bySpace: [] };
+    return {
+      months: [],
+      payingCount: [],
+      paymentCount: [],
+      paymentUsd: [],
+      bySpace: [],
+    };
   }
 
   const coverage = reconstructCoverage(validEvents);
@@ -157,10 +231,15 @@ export function buildPayingSpacesTimeline(input: {
   const spaceIds = [...coverage.keys()].sort((a, b) => a - b);
 
   const paymentsBySpaceMonth = new Map<string, number>();
+  const paymentUsdBySpaceMonth = new Map<string, number>();
   for (const event of validEvents) {
     const month = toMonthKey(new Date(event.timestampSec * 1000));
     const key = `${event.spaceId}|${month}`;
     paymentsBySpaceMonth.set(key, (paymentsBySpaceMonth.get(key) ?? 0) + 1);
+    paymentUsdBySpaceMonth.set(
+      key,
+      roundUsd((paymentUsdBySpaceMonth.get(key) ?? 0) + (event.usdAmount ?? 0)),
+    );
   }
 
   const bySpace: PayingSpacesTimelineSpaceSeries[] = spaceIds.map((spaceId) => {
@@ -170,6 +249,9 @@ export function buildPayingSpacesTimeline(input: {
       paying: months.map((month) => coverageOverlapsMonth(intervals, month)),
       paymentCount: months.map(
         (month) => paymentsBySpaceMonth.get(`${spaceId}|${month}`) ?? 0,
+      ),
+      paymentUsd: months.map(
+        (month) => paymentUsdBySpaceMonth.get(`${spaceId}|${month}`) ?? 0,
       ),
     };
   });
@@ -183,6 +265,14 @@ export function buildPayingSpacesTimeline(input: {
       bySpace.reduce(
         (sum, series) => sum + (series.paymentCount[index] ?? 0),
         0,
+      ),
+    ),
+    paymentUsd: months.map((_, index) =>
+      roundUsd(
+        bySpace.reduce(
+          (sum, series) => sum + (series.paymentUsd[index] ?? 0),
+          0,
+        ),
       ),
     ),
     bySpace,

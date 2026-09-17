@@ -6,15 +6,22 @@ export {
   resolvedPayingSpaceTitle,
 } from './is-placeholder-space-title';
 export {
+  DEFAULT_HYPHA_PRICE_USD,
+  HYPHA_TO_USDC_SCALE,
   SECONDS_PER_DAY,
+  USDC_DECIMALS,
+  allocateUsdByDuration,
   buildPayingSpacesTimeline,
   coverageOverlapsMonth,
   enumerateMonthKeys,
+  hyphaAmountToUsd,
   monthKeyToStartSec,
   nextMonthKey,
   previousMonthKey,
   reconstructCoverage,
+  roundUsd,
   toMonthKey,
+  usdcAmountToUsd,
 } from './paying-spaces-timeline';
 export type {
   CoverageInterval,
