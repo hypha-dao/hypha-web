@@ -16,7 +16,14 @@ import {
   resolvedPayingSpaceTitle,
 } from '../is-placeholder-space-title';
 import {
+  DEFAULT_HYPHA_PRICE_USD,
+  allocateUsdByDuration,
   buildPayingSpacesTimeline,
+  hyphaAmountToUsd,
+  hyphaPriceAtBlock,
+  roundUsd,
+  usdcAmountToUsd,
+  type HyphaPricePoint,
   type SpacePaymentEvent,
 } from '../paying-spaces-timeline';
 import type { PayingSpacesDashboardData } from '../types';
@@ -26,7 +33,9 @@ const CHUNK_SIZE = 100_000n;
 const EVENT_CHUNK_CONCURRENCY = 8;
 const BLOCK_FETCH_CONCURRENCY = 40;
 const PAYMENT_STATE_BATCH_SIZE = 30;
-const METRICS_CACHE_VERSION = 3;
+const METRICS_CACHE_VERSION = 5;
+const EVENTS_CACHE_VERSION = 2;
+const PRICE_HISTORY_CACHE_VERSION = 1;
 const METRICS_CACHE_TTL_MS = 15 * 60 * 1000;
 const EVENTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
@@ -34,6 +43,8 @@ type NormalizedPaymentLog = {
   blockNumber: bigint;
   spaceIds: readonly bigint[];
   durationInDays: readonly bigint[];
+  usdcAmounts: readonly bigint[] | null;
+  totalHyphaUsed: bigint | null;
 };
 
 type TrackedSpace = {
@@ -44,8 +55,16 @@ type TrackedSpace = {
 };
 
 let creationBlockCache: bigint | null = null;
-let eventsCache: { expiresAt: number; data: NormalizedPaymentLog[] } | null =
-  null;
+let eventsCache: {
+  version: number;
+  expiresAt: number;
+  data: NormalizedPaymentLog[];
+} | null = null;
+let priceHistoryCache: {
+  version: number;
+  expiresAt: number;
+  data: HyphaPricePoint[];
+} | null = null;
 let metricsCache: {
   version: number;
   expiresAt: number;
@@ -111,13 +130,58 @@ function readPaymentLog(event: {
   const args = event.args as {
     spaceIds?: readonly bigint[];
     durationInDays?: readonly bigint[];
+    usdcAmounts?: readonly bigint[];
+    totalHyphaUsed?: bigint;
   };
   if (!args.spaceIds || !args.durationInDays) return null;
   return {
     blockNumber: event.blockNumber,
     spaceIds: args.spaceIds,
     durationInDays: args.durationInDays,
+    usdcAmounts: Array.isArray(args.usdcAmounts) ? args.usdcAmounts : null,
+    totalHyphaUsed:
+      typeof args.totalHyphaUsed === 'bigint' ? args.totalHyphaUsed : null,
   };
+}
+
+function usdAmountsForLog(
+  log: NormalizedPaymentLog,
+  hyphaPriceUsd: bigint,
+): number[] {
+  const spaceIds = log.spaceIds.map((id) => Number(id));
+  if (log.usdcAmounts) {
+    return spaceIds.map((_, index) =>
+      usdcAmountToUsd(log.usdcAmounts?.[index] ?? 0n),
+    );
+  }
+  if (log.totalHyphaUsed != null) {
+    return allocateUsdByDuration(
+      spaceIds,
+      log.durationInDays.map((days) => Number(days)),
+      hyphaAmountToUsd(log.totalHyphaUsed, hyphaPriceUsd),
+    );
+  }
+  return spaceIds.map(() => 0);
+}
+
+async function readHyphaPriceUsd(): Promise<bigint> {
+  try {
+    const tokenAddress = hyphaTokenAddress[8453] as `0x${string}`;
+    const price = await withRetries(() =>
+      web3Client.readContract({
+        address: tokenAddress,
+        abi: hyphaTokenAbi,
+        functionName: 'HYPHA_PRICE_USD',
+      }),
+    );
+    return price > 0n ? price : DEFAULT_HYPHA_PRICE_USD;
+  } catch (error) {
+    console.warn(
+      '[paying-spaces] Failed to read HYPHA_PRICE_USD; using contract default',
+      error,
+    );
+    return DEFAULT_HYPHA_PRICE_USD;
+  }
 }
 
 async function fetchPaymentLogsUncached(): Promise<NormalizedPaymentLog[]> {
@@ -184,11 +248,104 @@ async function fetchPaymentLogsUncached(): Promise<NormalizedPaymentLog[]> {
 }
 
 async function getPaymentLogsCached(): Promise<NormalizedPaymentLog[]> {
-  if (eventsCache && eventsCache.expiresAt > Date.now()) {
+  if (
+    eventsCache &&
+    eventsCache.version === EVENTS_CACHE_VERSION &&
+    eventsCache.expiresAt > Date.now()
+  ) {
     return eventsCache.data;
   }
   const data = await fetchPaymentLogsUncached();
-  eventsCache = { data, expiresAt: Date.now() + EVENTS_CACHE_TTL_MS };
+  eventsCache = {
+    version: EVENTS_CACHE_VERSION,
+    data,
+    expiresAt: Date.now() + EVENTS_CACHE_TTL_MS,
+  };
+  return data;
+}
+
+function readPriceUpdate(event: {
+  blockNumber?: bigint | null;
+  args?: unknown;
+}): HyphaPricePoint | null {
+  if (
+    event.blockNumber == null ||
+    event.args == null ||
+    typeof event.args !== 'object'
+  ) {
+    return null;
+  }
+  const price = (event.args as { newHyphaPrice?: bigint }).newHyphaPrice;
+  if (typeof price !== 'bigint' || price <= 0n) return null;
+  return { blockNumber: event.blockNumber, hyphaPriceUsd: price };
+}
+
+async function fetchHyphaPriceHistoryUncached(): Promise<HyphaPricePoint[]> {
+  const tokenAddress = hyphaTokenAddress[8453] as `0x${string}`;
+  const currentBlock = await web3Client.getBlockNumber();
+  const fromBlock = await findContractCreationBlock(tokenAddress);
+
+  const collect = async (start: bigint, end: bigint) => {
+    const events = await web3Client.getContractEvents({
+      address: tokenAddress,
+      abi: hyphaTokenAbi,
+      eventName: 'PricingParametersUpdated',
+      fromBlock: start,
+      toBlock: end,
+    });
+    return events.flatMap((event) => {
+      const parsed = readPriceUpdate(event);
+      return parsed ? [parsed] : [];
+    });
+  };
+
+  try {
+    return (await collect(fromBlock, currentBlock)).sort((a, b) =>
+      a.blockNumber < b.blockNumber
+        ? -1
+        : a.blockNumber > b.blockNumber
+        ? 1
+        : 0,
+    );
+  } catch (error) {
+    console.warn(
+      '[paying-spaces] Full-range price-history query failed; chunking from inception',
+      error,
+    );
+  }
+
+  const chunks = buildBlockChunks(fromBlock, currentBlock);
+  const chunkResults = await mapInBatches(
+    chunks,
+    EVENT_CHUNK_CONCURRENCY,
+    async ({ start, end }) => withRetries(() => collect(start, end)),
+  );
+
+  return chunkResults
+    .flat()
+    .sort((a, b) =>
+      a.blockNumber < b.blockNumber
+        ? -1
+        : a.blockNumber > b.blockNumber
+        ? 1
+        : 0,
+    );
+}
+
+async function getHyphaPriceHistoryCached(): Promise<HyphaPricePoint[]> {
+  if (
+    priceHistoryCache &&
+    priceHistoryCache.version === PRICE_HISTORY_CACHE_VERSION &&
+    priceHistoryCache.expiresAt > Date.now()
+  ) {
+    return priceHistoryCache.data;
+  }
+  const data = await fetchHyphaPriceHistoryUncached();
+  priceHistoryCache = {
+    version: PRICE_HISTORY_CACHE_VERSION,
+    data,
+    expiresAt: Date.now() + EVENTS_CACHE_TTL_MS,
+  };
   return data;
 }
 
@@ -280,10 +437,13 @@ async function fetchPaymentStates(tracked: TrackedSpace[]): Promise<
 async function computePayingSpacesMetrics({
   db,
 }: DbConfig): Promise<PayingSpacesDashboardData> {
-  const [logs, trackedSpaces] = await Promise.all([
-    getPaymentLogsCached(),
-    listTrackedSpaces({ db }),
-  ]);
+  const [logs, trackedSpaces, currentHyphaPriceUsd, hyphaPriceHistory] =
+    await Promise.all([
+      getPaymentLogsCached(),
+      listTrackedSpaces({ db }),
+      readHyphaPriceUsd(),
+      getHyphaPriceHistoryCached(),
+    ]);
 
   const uniqueBlockNumbers = [
     ...new Set(logs.map((event) => event.blockNumber)),
@@ -298,14 +458,26 @@ async function computePayingSpacesMetrics({
     },
   );
 
+  const initialHyphaPriceUsd =
+    hyphaPriceHistory.length === 0
+      ? currentHyphaPriceUsd
+      : DEFAULT_HYPHA_PRICE_USD;
+
   const events: SpacePaymentEvent[] = [];
   for (const log of logs) {
     const timestampSec = blockTimestamps.get(log.blockNumber) ?? 0;
+    const hyphaPriceUsd = hyphaPriceAtBlock(
+      hyphaPriceHistory,
+      log.blockNumber,
+      initialHyphaPriceUsd,
+    );
+    const usdAmounts = usdAmountsForLog(log, hyphaPriceUsd);
     for (let index = 0; index < log.spaceIds.length; index += 1) {
       events.push({
         timestampSec,
         spaceId: Number(log.spaceIds[index]),
         durationDays: Number(log.durationInDays[index] ?? 0n),
+        usdAmount: usdAmounts[index] ?? 0,
       });
     }
   }
@@ -374,13 +546,17 @@ async function computePayingSpacesMetrics({
     month,
     payingSpaces: timeline.payingCount[index] ?? 0,
     paymentCount: timeline.paymentCount[index] ?? 0,
+    paymentUsd: timeline.paymentUsd[index] ?? 0,
     spaces: timeline.bySpace
       .map((series) => ({
         web3SpaceId: series.spaceId,
         paying: series.paying[index] ?? false,
         paymentCount: series.paymentCount[index] ?? 0,
+        paymentUsd: series.paymentUsd[index] ?? 0,
       }))
-      .filter((row) => row.paying || row.paymentCount > 0),
+      .filter(
+        (row) => row.paying || row.paymentCount > 0 || row.paymentUsd > 0,
+      ),
   }));
 
   return {
@@ -393,6 +569,12 @@ async function computePayingSpacesMetrics({
       everPaid: spacesForDashboard.length,
       trackedSpaces: trackedForDashboard.length,
       paymentEvents: eventsForDashboard.length,
+      paymentUsd: roundUsd(
+        eventsForDashboard.reduce(
+          (sum, event) => sum + (event.usdAmount ?? 0),
+          0,
+        ),
+      ),
     },
     monthly,
     spaces: spacesForDashboard,
