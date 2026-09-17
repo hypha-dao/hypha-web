@@ -359,6 +359,10 @@
     },
     "chartAria": "Token distribution chart for {title}",
     "tokenDetailsAria": "Token details for {tokenName}",
+    "exportHolders": "Export holders",
+    "exportingHolders": "Exporting…",
+    "exportHoldersError": "Unable to export the holder list. Please retry.",
+    "exportHoldersAria": "Export the full holder list",
     "tooltip": {
       "totalSupply": "Total supply",
       "other": "Other",

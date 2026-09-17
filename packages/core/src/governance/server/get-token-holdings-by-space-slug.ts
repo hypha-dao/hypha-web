@@ -433,6 +433,7 @@ export async function getTokenHoldingsBySpaceSlug(
         holder_kind: Exclude<HolderKind, 'treasury' | 'other'>;
         display_name: string;
         slug: string | null;
+        address: `0x${string}`;
         balance_raw: bigint;
       }
     >();
@@ -467,6 +468,7 @@ export async function getTokenHoldingsBySpaceSlug(
           holder_kind: descriptor.holder_kind,
           display_name: descriptor.display_name,
           slug: descriptor.slug,
+          address: descriptor.address,
           balance_raw: balanceRaw,
         });
       }
@@ -481,7 +483,7 @@ export async function getTokenHoldingsBySpaceSlug(
 
       rows.push({
         holder_kind: entry.holder_kind,
-        address: null,
+        address: entry.address,
         display_name: entry.display_name,
         slug: entry.slug,
         balance: formatUnits(entry.balance_raw, decimals),

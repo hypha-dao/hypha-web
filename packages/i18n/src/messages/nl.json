@@ -359,6 +359,10 @@
     },
     "chartAria": "Tokendistributiegrafiek voor {title}",
     "tokenDetailsAria": "Tokendetails voor {tokenName}",
+    "exportHolders": "Houders exporteren",
+    "exportingHolders": "Bezig met exporteren…",
+    "exportHoldersError": "De houderslijst kon niet worden geëxporteerd. Probeer het opnieuw.",
+    "exportHoldersAria": "De volledige houderslijst exporteren",
     "tooltip": {
       "totalSupply": "Totaal aanbod",
       "other": "Ander",

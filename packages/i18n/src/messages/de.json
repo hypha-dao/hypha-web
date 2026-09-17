@@ -360,6 +360,10 @@
     },
     "chartAria": "Tokenverteilungsdiagramm für {title}",
     "tokenDetailsAria": "Token-Details für {tokenName}",
+    "exportHolders": "Inhaber exportieren",
+    "exportingHolders": "Wird exportiert…",
+    "exportHoldersError": "Die Inhaberliste konnte nicht exportiert werden. Bitte erneut versuchen.",
+    "exportHoldersAria": "Vollständige Inhaberliste exportieren",
     "tooltip": {
       "totalSupply": "Gesamtangebot",
       "other": "Sonstige",

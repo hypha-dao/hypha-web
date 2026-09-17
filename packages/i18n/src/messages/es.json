@@ -1131,6 +1131,10 @@
     },
     "chartAria": "Gráfico de distribución de tokens para {title}",
     "tokenDetailsAria": "Detalles del token para {tokenName}",
+    "exportHolders": "Exportar titulares",
+    "exportingHolders": "Exportando…",
+    "exportHoldersError": "No se pudo exportar la lista de titulares. Inténtalo de nuevo.",
+    "exportHoldersAria": "Exportar la lista completa de titulares",
     "tooltip": {
       "totalSupply": "Suministro total",
       "other": "Otros",

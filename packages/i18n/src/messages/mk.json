@@ -339,6 +339,10 @@
     },
     "chartAria": "Графикон на распределбата на токените за {title}",
     "tokenDetailsAria": "Детали за токенот {tokenName}",
+    "exportHolders": "Извези иматели",
+    "exportingHolders": "Се извезува…",
+    "exportHoldersError": "Не може да се извезе списокот на иматели. Обидете се повторно.",
+    "exportHoldersAria": "Извези го целиот список на иматели",
     "tooltip": {
       "totalSupply": "Вкупна понуда",
       "other": "Останато",
