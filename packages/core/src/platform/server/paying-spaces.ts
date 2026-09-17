@@ -11,6 +11,7 @@ import {
 } from '../../generated';
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../common/server/types';
+import { isPlaceholderSpaceTitle } from '../is-placeholder-space-title';
 import {
   buildPayingSpacesTimeline,
   type SpacePaymentEvent,
@@ -305,8 +306,26 @@ async function computePayingSpacesMetrics({
   }
 
   const nowSec = Math.floor(Date.now() / 1000);
-  const timeline = buildPayingSpacesTimeline({ events, nowSec });
-  const paymentStates = await fetchPaymentStates(trackedSpaces);
+  const titleByWeb3Id = new Map(
+    trackedSpaces.map((space) => [space.web3SpaceId, space.title]),
+  );
+  const resolvedTitle = (web3SpaceId: number) =>
+    titleByWeb3Id.get(web3SpaceId) ?? `Space ${web3SpaceId}`;
+  const isIncludedWeb3Id = (web3SpaceId: number) =>
+    !isPlaceholderSpaceTitle(resolvedTitle(web3SpaceId));
+
+  const trackedForDashboard = trackedSpaces.filter((space) =>
+    isIncludedWeb3Id(space.web3SpaceId),
+  );
+  const eventsForDashboard = events.filter((event) =>
+    isIncludedWeb3Id(event.spaceId),
+  );
+
+  const timeline = buildPayingSpacesTimeline({
+    events: eventsForDashboard,
+    nowSec,
+  });
+  const paymentStates = await fetchPaymentStates(trackedForDashboard);
   const trackedByWeb3Id = new Map(
     paymentStates.map((row) => [row.space.web3SpaceId, row]),
   );
@@ -320,6 +339,7 @@ async function computePayingSpacesMetrics({
 
   const spacesForDashboard = [...paidWeb3Ids]
     .sort((a, b) => a - b)
+    .filter((web3SpaceId) => isIncludedWeb3Id(web3SpaceId))
     .map((web3SpaceId) => {
       const tracked = trackedByWeb3Id.get(web3SpaceId);
       const hasPaid = tracked?.hasPaid ?? true;
@@ -328,7 +348,7 @@ async function computePayingSpacesMetrics({
         web3SpaceId,
         spaceId: tracked?.space.id ?? null,
         slug: tracked?.space.slug ?? null,
-        title: tracked?.space.title ?? `Space ${web3SpaceId}`,
+        title: resolvedTitle(web3SpaceId),
         currentlyPaying,
         hasPaid,
         expiryTime: tracked?.expiryTime ?? null,
@@ -363,8 +383,8 @@ async function computePayingSpacesMetrics({
         (row) => row.isActive && row.hasPaid,
       ).length,
       everPaid: spacesForDashboard.length,
-      trackedSpaces: trackedSpaces.length,
-      paymentEvents: events.length,
+      trackedSpaces: trackedForDashboard.length,
+      paymentEvents: eventsForDashboard.length,
     },
     monthly,
     spaces: spacesForDashboard,

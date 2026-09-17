@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { isHyphaPlatformSpace } from '../is-hypha-platform-space';
+import { isPlaceholderSpaceTitle } from '../is-placeholder-space-title';
 import {
   buildPayingSpacesTimeline,
   enumerateMonthKeys,
@@ -22,6 +23,21 @@ describe('isHyphaPlatformSpace', () => {
 
   it('rejects unrelated spaces', () => {
     expect(isHyphaPlatformSpace({ slug: 'hypha-energy' })).toBe(false);
+  });
+});
+
+describe('isPlaceholderSpaceTitle', () => {
+  it('matches test placeholders like Space 224', () => {
+    expect(isPlaceholderSpaceTitle('Space 224')).toBe(true);
+    expect(isPlaceholderSpaceTitle('space 1')).toBe(true);
+    expect(isPlaceholderSpaceTitle('  SPACE  999  ')).toBe(true);
+  });
+
+  it('keeps real organization titles', () => {
+    expect(isPlaceholderSpaceTitle('Hypha')).toBe(false);
+    expect(isPlaceholderSpaceTitle('SpaceX')).toBe(false);
+    expect(isPlaceholderSpaceTitle('My Space 224')).toBe(false);
+    expect(isPlaceholderSpaceTitle('Space')).toBe(false);
   });
 });
 

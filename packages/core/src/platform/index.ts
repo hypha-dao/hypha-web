@@ -1,4 +1,5 @@
 export { isHyphaPlatformSpace } from './is-hypha-platform-space';
+export { isPlaceholderSpaceTitle } from './is-placeholder-space-title';
 export {
   SECONDS_PER_DAY,
   buildPayingSpacesTimeline,
