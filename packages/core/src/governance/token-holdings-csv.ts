@@ -69,16 +69,46 @@ export function buildTokenHoldingsCsv(
   return `${lines.join('\n')}\n`;
 }
 
+function isSafeFilenameChar(char: string): boolean {
+  const code = char.charCodeAt(0);
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    char === '.' ||
+    char === '_' ||
+    char === '-'
+  );
+}
+
+/** Linear slug sanitizer — avoid quantified regex on caller-controlled input. */
+function sanitizeFilenameSlug(spaceSlug: string): string {
+  const chars: string[] = [];
+  for (const char of spaceSlug) {
+    if (char === '/' || char === '\\') {
+      chars.push('-');
+      continue;
+    }
+    chars.push(isSafeFilenameChar(char) ? char : '-');
+  }
+
+  let start = 0;
+  let end = chars.length;
+  while (start < end && (chars[start] === '.' || chars[start] === '-')) {
+    start += 1;
+  }
+  while (end > start && chars[end - 1] === '-') {
+    end -= 1;
+  }
+
+  const safeSlug = chars.slice(start, end).join('');
+  return safeSlug || 'space';
+}
+
 export function tokenHoldingsCsvFilename(
   spaceSlug: string,
   date = new Date(),
 ): string {
-  const safeSlug =
-    spaceSlug
-      .replace(/[/\\]+/g, '-')
-      .replace(/[^a-zA-Z0-9._-]+/g, '-')
-      .replace(/^\.+/, '')
-      .replace(/^-+|-+$/g, '') || 'space';
   const day = date.toISOString().slice(0, 10);
-  return `${safeSlug}-token-holders-${day}.csv`;
+  return `${sanitizeFilenameSlug(spaceSlug)}-token-holders-${day}.csv`;
 }

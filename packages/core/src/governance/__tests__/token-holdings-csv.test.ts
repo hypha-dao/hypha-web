@@ -123,4 +123,13 @@ describe('tokenHoldingsCsvFilename', () => {
       ),
     ).toBe('weird-slug-token-holders-2026-09-17.csv');
   });
+
+  it('handles hyphen-heavy input without regex backtracking', () => {
+    expect(
+      tokenHoldingsCsvFilename(
+        `${'-'.repeat(200)}hypha${'-'.repeat(200)}`,
+        new Date('2026-09-17T12:00:00.000Z'),
+      ),
+    ).toBe('hypha-token-holders-2026-09-17.csv');
+  });
 });
