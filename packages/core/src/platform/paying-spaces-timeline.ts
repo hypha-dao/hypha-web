@@ -27,10 +27,11 @@ export type PayingSpacesTimeline = {
 function parseMonthKey(
   monthKey: string,
 ): { year: number; month: number } | null {
-  const [year, month] = monthKey.split('-').map((part) => Number(part));
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+  if (!match?.[1] || !match[2]) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
   if (
-    year === undefined ||
-    month === undefined ||
     !Number.isInteger(year) ||
     !Number.isInteger(month) ||
     month < 1 ||
@@ -80,6 +81,7 @@ export function enumerateMonthKeys(
   maxMonths = 240,
 ): string[] {
   if (!fromKey || !toKey || fromKey > toKey) return [];
+  if (!parseMonthKey(fromKey) || !parseMonthKey(toKey)) return [];
   const keys: string[] = [];
   let cursor = fromKey;
   while (cursor <= toKey && keys.length < maxMonths) {

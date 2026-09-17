@@ -158,6 +158,10 @@ describe('enumerateMonthKeys', () => {
   it('formats UTC month keys with a leading zero', () => {
     expect(toMonthKey(new Date(Date.UTC(2026, 8, 16)))).toBe('2026-09');
   });
+
+  it('does not emit malformed keys such as 2024-01-extra', () => {
+    expect(enumerateMonthKeys('2024-01-extra', '2024-03')).toEqual([]);
+  });
 });
 
 describe('nextMonthKey', () => {
@@ -170,5 +174,7 @@ describe('nextMonthKey', () => {
     expect(() => nextMonthKey('2024-13')).toThrow(/Invalid month key/);
     expect(() => nextMonthKey('not-a-month')).toThrow(/Invalid month key/);
     expect(() => nextMonthKey('2024')).toThrow(/Invalid month key/);
+    expect(() => nextMonthKey('2024-01-extra')).toThrow(/Invalid month key/);
+    expect(() => nextMonthKey('2024-1')).toThrow(/Invalid month key/);
   });
 });
