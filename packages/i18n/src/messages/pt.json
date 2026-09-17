@@ -1134,6 +1134,7 @@
     "exportHolders": "Exportar titulares",
     "exportingHolders": "A exportar…",
     "exportHoldersError": "Não foi possível exportar a lista de titulares. Tente novamente.",
+    "exportHoldersIncomplete": "A descoberta de titulares está incompleta. Tente exportar novamente.",
     "exportHoldersAria": "Exportar a lista completa de titulares",
     "tooltip": {
       "totalSupply": "Oferta total",

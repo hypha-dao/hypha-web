@@ -40,6 +40,10 @@ export function ExportTokenHoldersButton({
         getAccessToken,
         TOKEN_HOLDINGS_EXPORT_QUERY,
       );
+      if (data.holders_complete === false) {
+        setErrorMessage(tTokenHoldings('exportHoldersIncomplete'));
+        return;
+      }
       const csv = buildTokenHoldingsCsv(data.tokens);
       downloadCsv(tokenHoldingsCsvFilename(spaceSlug), csv);
     } catch {
@@ -69,7 +73,9 @@ export function ExportTokenHoldersButton({
           : tTokenHoldings('exportHolders')}
       </Button>
       {errorMessage ? (
-        <span className="text-1 text-error-11">{errorMessage}</span>
+        <span role="alert" className="text-1 text-error-11">
+          {errorMessage}
+        </span>
       ) : null}
     </div>
   );

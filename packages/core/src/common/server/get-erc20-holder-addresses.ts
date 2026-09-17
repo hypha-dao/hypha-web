@@ -7,7 +7,12 @@ import { getAlchemy } from './alchemy-client';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const TRANSFER_PAGE_SIZE = 1000;
-const MAX_TRANSFER_PAGES = 50;
+export const MAX_TRANSFER_PAGES = 50;
+
+export type Erc20HolderDiscovery = {
+  addresses: `0x${string}`[];
+  complete: boolean;
+};
 
 export function collectHolderAddressesFromTransfers(
   transfers: ReadonlyArray<Pick<AssetTransfersResult, 'from' | 'to'>>,
@@ -26,10 +31,13 @@ export function collectHolderAddressesFromTransfers(
 /**
  * Best-effort ERC-20 holder discovery via Alchemy transfer history.
  * Used to expand the unattributed "Other" bucket into per-wallet rows.
+ * `complete` is false when pagination was truncated at `maxPages`.
  */
 export async function getErc20HolderAddresses(
   tokenAddress: `0x${string}`,
-): Promise<`0x${string}`[]> {
+  options: { maxPages?: number } = {},
+): Promise<Erc20HolderDiscovery> {
+  const maxPages = options.maxPages ?? MAX_TRANSFER_PAGES;
   const alchemy = getAlchemy();
   const holders = new Set<`0x${string}`>();
   let pageKey: string | undefined;
@@ -51,7 +59,10 @@ export async function getErc20HolderAddresses(
     }
     pageKey = response.pageKey;
     pages += 1;
-  } while (pageKey && pages < MAX_TRANSFER_PAGES);
+  } while (pageKey && pages < maxPages);
 
-  return Array.from(holders);
+  return {
+    addresses: Array.from(holders),
+    complete: !pageKey,
+  };
 }

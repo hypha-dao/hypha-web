@@ -77,6 +77,7 @@ export type GetTokenHoldingsBySpaceSlugResult =
       source: 'db+chain';
       asOf: string;
       tokens: TokenHoldingRow[];
+      holders_complete: boolean;
     };
 
 type HolderDescriptor = {
@@ -239,26 +240,31 @@ async function withDiscoveredHolders(
   tokenAddress: `0x${string}`,
   knownHolders: HolderDescriptor[],
   db: DbConfig['db'],
-): Promise<HolderDescriptor[]> {
+): Promise<{ holders: HolderDescriptor[]; complete: boolean }> {
   const holdersByAddress = new Map(
     knownHolders.map((holder) => [holder.address, holder]),
   );
 
   let discovered: `0x${string}`[] = [];
+  let complete = true;
   try {
-    discovered = await getErc20HolderAddresses(tokenAddress);
+    const discovery = await getErc20HolderAddresses(tokenAddress);
+    discovered = discovery.addresses;
+    complete = discovery.complete;
   } catch (error) {
     console.warn(
       `[getTokenHoldingsBySpaceSlug] failed to enumerate holders for ${tokenAddress}`,
       error,
     );
-    return knownHolders;
+    return { holders: knownHolders, complete: false };
   }
 
   const unknownAddresses = discovered.filter(
     (address) => !holdersByAddress.has(address),
   );
-  if (unknownAddresses.length === 0) return knownHolders;
+  if (unknownAddresses.length === 0) {
+    return { holders: knownHolders, complete };
+  }
 
   const [people, spacesResult] = await Promise.all([
     findPeopleByWeb3Addresses({ addresses: unknownAddresses }, { db }),
@@ -307,7 +313,10 @@ async function withDiscoveredHolders(
     });
   }
 
-  return Array.from(holdersByAddress.values());
+  return {
+    holders: Array.from(holdersByAddress.values()),
+    complete,
+  };
 }
 
 export async function getTokenHoldingsBySpaceSlug(
@@ -479,7 +488,7 @@ export async function getTokenHoldingsBySpaceSlug(
 
   const buildTokenRow = async (
     tokenAddress: `0x${string}`,
-  ): Promise<TokenHoldingRow> => {
+  ): Promise<{ row: TokenHoldingRow; holdersComplete: boolean }> => {
     const contractInfo = await readTokenContractInfo(tokenAddress);
     const tokenMeta = dbTokenByAddress.get(tokenAddress);
     const isHyphaSharedToken =
@@ -489,9 +498,17 @@ export async function getTokenHoldingsBySpaceSlug(
     const decimals = contractInfo.decimals;
     const totalSupplyRaw = contractInfo.totalSupplyRaw;
 
-    const holderDescriptors = expandHolders
-      ? await withDiscoveredHolders(tokenAddress, rosterHolders, db)
-      : rosterHolders;
+    let holdersComplete = true;
+    let holderDescriptors = rosterHolders;
+    if (expandHolders) {
+      const discovered = await withDiscoveredHolders(
+        tokenAddress,
+        rosterHolders,
+        db,
+      );
+      holderDescriptors = discovered.holders;
+      holdersComplete = discovered.complete;
+    }
 
     const balancesByAddress = await readBalancesForHolders(
       tokenAddress,
@@ -616,25 +633,29 @@ export async function getTokenHoldingsBySpaceSlug(
     }
 
     return {
-      token_id: tokenMeta?.id ?? null,
-      token_address: tokenAddress,
-      name: tokenMeta?.name ?? contractInfo.name,
-      symbol: tokenMeta?.symbol ?? contractInfo.symbol,
-      icon_url: tokenMeta?.iconUrl ?? null,
-      type: isVoiceToken
-        ? 'voice'
-        : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
-      decimals,
-      max_supply: tokenMeta?.maxSupply ?? null,
-      total_supply: formatUnits(totalSupplyRaw, decimals),
-      holdings: holderRows,
-      treasury_balance: formatUnits(treasuryRaw, decimals),
-      other_balance: formatUnits(otherRaw, decimals),
-      total_holders_balance: formatUnits(totalSupplyRaw, decimals),
-    } satisfies TokenHoldingRow;
+      row: {
+        token_id: tokenMeta?.id ?? null,
+        token_address: tokenAddress,
+        name: tokenMeta?.name ?? contractInfo.name,
+        symbol: tokenMeta?.symbol ?? contractInfo.symbol,
+        icon_url: tokenMeta?.iconUrl ?? null,
+        type: isVoiceToken
+          ? 'voice'
+          : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
+        decimals,
+        max_supply: tokenMeta?.maxSupply ?? null,
+        total_supply: formatUnits(totalSupplyRaw, decimals),
+        holdings: holderRows,
+        treasury_balance: formatUnits(treasuryRaw, decimals),
+        other_balance: formatUnits(otherRaw, decimals),
+        total_holders_balance: formatUnits(totalSupplyRaw, decimals),
+      } satisfies TokenHoldingRow,
+      holdersComplete,
+    };
   };
 
   const tokenRows: TokenHoldingRow[] = [];
+  let holdersComplete = true;
   for (
     let startIndex = 0;
     startIndex < tokenAddresses.length;
@@ -644,10 +665,13 @@ export async function getTokenHoldingsBySpaceSlug(
       startIndex,
       startIndex + TOKEN_PROCESS_CONCURRENCY,
     );
-    const batchRows = await Promise.all(
+    const batchResults = await Promise.all(
       batch.map((token) => buildTokenRow(token)),
     );
-    tokenRows.push(...batchRows);
+    for (const result of batchResults) {
+      tokenRows.push(result.row);
+      holdersComplete = holdersComplete && result.holdersComplete;
+    }
   }
 
   return {
@@ -665,6 +689,7 @@ export async function getTokenHoldingsBySpaceSlug(
       source: 'db+chain',
       asOf,
       tokens: tokenRows,
+      holders_complete: holdersComplete,
     },
   };
 }

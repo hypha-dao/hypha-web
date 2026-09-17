@@ -18,6 +18,16 @@ describe('escapeCsvField', () => {
     expect(escapeCsvField('He said "hi"')).toBe('"He said ""hi"""');
     expect(escapeCsvField('line\nbreak')).toBe('"line\nbreak"');
   });
+
+  it('neutralizes spreadsheet formula prefixes', () => {
+    expect(escapeCsvField('=1+1')).toBe("'=1+1");
+    expect(escapeCsvField('+cmd')).toBe("'+cmd");
+    expect(escapeCsvField('-1')).toBe("'-1");
+    expect(escapeCsvField('@SUM(A1)')).toBe("'@SUM(A1)");
+    expect(escapeCsvField('\t=1')).toBe("'\t=1");
+    expect(escapeCsvField('=1,2')).toBe('"\'=1,2"');
+    expect(escapeCsvField('\n=1')).toBe('"\'\n=1"');
+  });
 });
 
 describe('buildTokenHoldingsCsv', () => {

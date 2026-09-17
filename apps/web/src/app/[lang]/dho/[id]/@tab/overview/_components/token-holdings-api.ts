@@ -1,9 +1,12 @@
+'use client';
+
 import { z } from 'zod';
 
 export const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
   space_slug: z.string(),
   asOf: z.string(),
+  holders_complete: z.boolean().optional(),
   tokens: z.array(
     z.object({
       token_id: z.number().nullable(),
