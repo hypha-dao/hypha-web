@@ -65,22 +65,26 @@ export type TokenHoldingsFetchOptions = {
   includeTreasury?: boolean;
   collapseBelowPct?: number;
   holderLimit?: number;
+  expandUnknownHolders?: boolean;
 };
 
 /** Chart query: named slices ≥0.5%, capped at top 10 (+ Other for the rest). */
-export const TOKEN_HOLDINGS_CHART_QUERY: Required<TokenHoldingsFetchOptions> = {
+export const TOKEN_HOLDINGS_CHART_QUERY: Required<
+  Omit<TokenHoldingsFetchOptions, 'expandUnknownHolders'>
+> = {
   includeTreasury: true,
   collapseBelowPct: 0.5,
   holderLimit: 10,
 };
 
-/** Export query: full named holder list, no chart collapse or cap. */
+/** Export query: full per-wallet list, no chart collapse, cap, or Other bucket. */
 export const TOKEN_HOLDINGS_EXPORT_QUERY: TokenHoldingsFetchOptions = {
   includeTreasury: true,
   collapseBelowPct: 0,
+  expandUnknownHolders: true,
 };
 
-function buildTokenHoldingsSearchParams(
+export function buildTokenHoldingsSearchParams(
   options: TokenHoldingsFetchOptions = {},
 ): URLSearchParams {
   const params = new URLSearchParams();
@@ -93,6 +97,12 @@ function buildTokenHoldingsSearchParams(
   }
   if (options.holderLimit != null) {
     params.set('holder_limit', String(options.holderLimit));
+  }
+  if (options.expandUnknownHolders != null) {
+    params.set(
+      'expand_unknown_holders',
+      options.expandUnknownHolders ? 'true' : 'false',
+    );
   }
   return params;
 }

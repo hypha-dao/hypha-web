@@ -106,6 +106,52 @@ describe('buildTokenHoldingsCsv', () => {
     expect(lines[2]).toContain(',alex,');
     expect(lines[2]).toContain('25.5');
   });
+
+  it('omits aggregated Other and keeps unnamed wallets as address rows', () => {
+    const csv = buildTokenHoldingsCsv([
+      {
+        name: 'Voice',
+        symbol: 'VOICE',
+        token_address: '0x222',
+        holdings: [
+          {
+            holder_kind: 'person',
+            address: '0xaaa',
+            display_name: 'Alice',
+            slug: 'alice',
+            balance: '8',
+            balance_raw: '8',
+            share_pct: 80,
+          },
+          {
+            holder_kind: 'other',
+            address: null,
+            display_name: 'Other',
+            slug: null,
+            balance: '1',
+            balance_raw: '1',
+            share_pct: 10,
+          },
+          {
+            holder_kind: 'other',
+            address: '0xbbb',
+            display_name: '',
+            slug: null,
+            balance: '1',
+            balance_raw: '1',
+            share_pct: 10,
+          },
+        ],
+      },
+    ]);
+
+    const lines = csv.trimEnd().split('\n');
+    expect(lines).toHaveLength(3);
+    expect(csv).toContain('Alice');
+    expect(csv).toContain('0xbbb');
+    expect(csv).not.toMatch(/,Other,/i);
+    expect(csv).not.toMatch(/,other,/i);
+  });
 });
 
 describe('tokenHoldingsCsvFilename', () => {

@@ -39,9 +39,32 @@ function nullableField(value: string | null | undefined): string {
   return value == null ? '' : value;
 }
 
+function isOtherLabel(value: string): boolean {
+  return value.trim().toLowerCase() === 'other';
+}
+
+/** Chart leftover bucket: kind/name Other and no wallet address. */
+export function isAggregatedOtherHolding(
+  holding: TokenHoldingsCsvHolding,
+): boolean {
+  return (
+    !holding.address &&
+    (isOtherLabel(holding.holder_kind) || isOtherLabel(holding.display_name))
+  );
+}
+
+function csvHolderKind(holding: TokenHoldingsCsvHolding): string {
+  return isOtherLabel(holding.holder_kind) ? '' : holding.holder_kind;
+}
+
+function csvDisplayName(holding: TokenHoldingsCsvHolding): string {
+  return isOtherLabel(holding.display_name) ? '' : holding.display_name;
+}
+
 /**
  * Builds a UTF-8 CSV of the full holder list across all tokens.
  * Column names stay English so the file stays machine-readable across locales.
+ * Aggregated "Other" chart buckets are omitted; unnamed wallets stay as rows.
  */
 export function buildTokenHoldingsCsv(
   tokens: readonly TokenHoldingsCsvToken[],
@@ -50,12 +73,13 @@ export function buildTokenHoldingsCsv(
 
   for (const token of tokens) {
     for (const holding of token.holdings) {
+      if (isAggregatedOtherHolding(holding)) continue;
       const row = [
         token.name,
         token.symbol,
         token.token_address,
-        holding.holder_kind,
-        holding.display_name,
+        csvHolderKind(holding),
+        csvDisplayName(holding),
         nullableField(holding.slug),
         nullableField(holding.address),
         holding.balance,
