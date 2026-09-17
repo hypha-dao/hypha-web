@@ -11,6 +11,7 @@ import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 type Params = { spaceSlug: string };
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 function extractBearerToken(request: NextRequest): string | null {
@@ -78,11 +79,14 @@ export async function GET(
     }
 
     const data = await getPayingSpacesMetrics({ db });
-    return NextResponse.json({
-      found: true,
-      space_slug: space.slug,
-      ...data,
-    });
+    return NextResponse.json(
+      {
+        found: true,
+        space_slug: space.slug,
+        ...data,
+      },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
   } catch (error) {
     console.error('[paying-spaces] Failed to load dashboard', error);
     return NextResponse.json(

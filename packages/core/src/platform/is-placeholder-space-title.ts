@@ -8,3 +8,20 @@ const PLACEHOLDER_SPACE_TITLE = /^space\s+\d+$/i;
 export function isPlaceholderSpaceTitle(title: string): boolean {
   return PLACEHOLDER_SPACE_TITLE.test(title.trim());
 }
+
+export function resolvedPayingSpaceTitle(
+  title: string | null | undefined,
+  web3SpaceId: number,
+): string {
+  const trimmed = title?.trim();
+  return trimmed ? trimmed : `Space ${web3SpaceId}`;
+}
+
+export function isPlaceholderPayingSpace(input: {
+  title?: string | null;
+  web3SpaceId: number;
+}): boolean {
+  return isPlaceholderSpaceTitle(
+    resolvedPayingSpaceTitle(input.title, input.web3SpaceId),
+  );
+}

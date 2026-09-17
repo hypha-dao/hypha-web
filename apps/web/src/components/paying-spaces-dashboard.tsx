@@ -226,7 +226,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
         </Card>
       </div>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 content-start gap-4">
           <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
             <CardHeader className="pb-2">
@@ -261,7 +261,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                 <div className="overflow-x-auto">
                   <svg
                     viewBox={`0 0 ${width} ${height}`}
-                    className="min-w-[620px] w-full"
+                    className="h-auto w-full max-h-[340px]"
                     role="img"
                     aria-label={t('chartAria')}
                   >

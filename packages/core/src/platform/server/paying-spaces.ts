@@ -11,7 +11,10 @@ import {
 } from '../../generated';
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../common/server/types';
-import { isPlaceholderSpaceTitle } from '../is-placeholder-space-title';
+import {
+  isPlaceholderPayingSpace,
+  resolvedPayingSpaceTitle,
+} from '../is-placeholder-space-title';
 import {
   buildPayingSpacesTimeline,
   type SpacePaymentEvent,
@@ -310,9 +313,12 @@ async function computePayingSpacesMetrics({
     trackedSpaces.map((space) => [space.web3SpaceId, space.title]),
   );
   const resolvedTitle = (web3SpaceId: number) =>
-    titleByWeb3Id.get(web3SpaceId) ?? `Space ${web3SpaceId}`;
+    resolvedPayingSpaceTitle(titleByWeb3Id.get(web3SpaceId), web3SpaceId);
   const isIncludedWeb3Id = (web3SpaceId: number) =>
-    !isPlaceholderSpaceTitle(resolvedTitle(web3SpaceId));
+    !isPlaceholderPayingSpace({
+      title: titleByWeb3Id.get(web3SpaceId),
+      web3SpaceId,
+    });
 
   const trackedForDashboard = trackedSpaces.filter((space) =>
     isIncludedWeb3Id(space.web3SpaceId),

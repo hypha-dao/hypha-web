@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { isHyphaPlatformSpace } from '../is-hypha-platform-space';
-import { isPlaceholderSpaceTitle } from '../is-placeholder-space-title';
+import {
+  isPlaceholderPayingSpace,
+  isPlaceholderSpaceTitle,
+} from '../is-placeholder-space-title';
 import {
   buildPayingSpacesTimeline,
   enumerateMonthKeys,
@@ -38,6 +41,18 @@ describe('isPlaceholderSpaceTitle', () => {
     expect(isPlaceholderSpaceTitle('SpaceX')).toBe(false);
     expect(isPlaceholderSpaceTitle('My Space 224')).toBe(false);
     expect(isPlaceholderSpaceTitle('Space')).toBe(false);
+  });
+
+  it('treats blank titles as the Space {id} fallback', () => {
+    expect(isPlaceholderPayingSpace({ title: '', web3SpaceId: 224 })).toBe(
+      true,
+    );
+    expect(isPlaceholderPayingSpace({ title: '   ', web3SpaceId: 1 })).toBe(
+      true,
+    );
+    expect(isPlaceholderPayingSpace({ title: 'Hypha', web3SpaceId: 224 })).toBe(
+      false,
+    );
   });
 });
 
