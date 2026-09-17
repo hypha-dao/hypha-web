@@ -1139,7 +1139,8 @@
     "filters": {
       "energy": "Energia",
       "activity": "Atividade",
-      "distribution": "Distribuição"
+      "distribution": "Distribuição",
+      "payingSpaces": "Spaces pagantes"
     },
     "activity": {
       "title": "Não foi possível carregar os widgets de atividade",
@@ -1188,6 +1189,24 @@
     "energy": {
       "title": "Energia",
       "description": "Os widgets de energia aparecerão quando houver dados disponíveis."
+    },
+    "payingSpaces": {
+      "pageTitle": "Spaces pagantes",
+      "pageSubtitle": "Cobertura mensal desde o primeiro pagamento on-chain.",
+      "title": "Spaces pagantes",
+      "subtitle": "Spaces com assinatura paga ativa em cada mês, desde o início. Filtre por space para o detalhamento.",
+      "currentlyPaying": "Pagando agora",
+      "everPaid": "Já pagaram",
+      "paymentEvents": "Eventos de pagamento",
+      "spaceLabel": "Space",
+      "spaceAll": "Todos os spaces",
+      "payingCount": "spaces pagantes",
+      "paymentsInView": "pagamentos na vista",
+      "fromMonth": "Desde {month}",
+      "empty": "Ainda não há histórico de spaces pagantes.",
+      "error": "Não foi possível carregar os spaces pagantes agora.",
+      "chartAria": "Spaces pagantes por mês",
+      "notCurrentlyPaying": "Não está pagando agora"
     }
   },
   "SpaceSettingsAction": {

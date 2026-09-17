@@ -368,7 +368,8 @@
     "filters": {
       "energy": "Energie",
       "activity": "Aktivität",
-      "distribution": "Verteilung"
+      "distribution": "Verteilung",
+      "payingSpaces": "Zahlende Spaces"
     },
     "activity": {
       "title": "Aktivitäts-Widgets konnten nicht geladen werden",
@@ -417,6 +418,24 @@
     "energy": {
       "title": "Energie",
       "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
+    },
+    "payingSpaces": {
+      "pageTitle": "Zahlende Spaces",
+      "pageSubtitle": "Monatliche Abdeckung ab der ersten On-Chain-Zahlung.",
+      "title": "Zahlende Spaces",
+      "subtitle": "Spaces mit aktivem bezahltem Abo je Monat, seit Beginn. Filtern Sie nach Space für die Aufschlüsselung.",
+      "currentlyPaying": "Aktuell zahlend",
+      "everPaid": "Jemals gezahlt",
+      "paymentEvents": "Zahlungsereignisse",
+      "spaceLabel": "Space",
+      "spaceAll": "Alle Spaces",
+      "payingCount": "zahlende Spaces",
+      "paymentsInView": "Zahlungen in der Ansicht",
+      "fromMonth": "Ab {month}",
+      "empty": "Noch keine Historie zahlender Spaces.",
+      "error": "Zahlende Spaces können derzeit nicht geladen werden.",
+      "chartAria": "Zahlende Spaces nach Monat",
+      "notCurrentlyPaying": "Derzeit nicht zahlend"
     }
   },
   "SpaceSettingsAction": {

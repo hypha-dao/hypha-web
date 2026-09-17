@@ -22,10 +22,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@hypha-platform/ui';
+import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
 import {
   withMembersChartBaseline,
   type MembersMonthlyPoint,
 } from './members-chart-baseline';
+import { PayingSpacesDashboard } from '@web/components/paying-spaces-dashboard';
 
 const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
@@ -149,7 +151,11 @@ type DistributionHistoryResponse = {
   }>;
 };
 
-type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
+type HomeSectionFilter =
+  | 'energy'
+  | 'activity'
+  | 'distribution'
+  | 'payingSpaces';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
@@ -1538,6 +1544,7 @@ export function HomeTokenHoldingsDashboard({
   const hasEnergyData = Boolean(activityData?.energy.available);
   // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
   const showEnergyWidget = false && hasEnergyData;
+  const showPayingSpaces = isHyphaPlatformSpace({ slug: spaceSlug });
   const filterItems = React.useMemo(
     () =>
       [
@@ -1549,11 +1556,20 @@ export function HomeTokenHoldingsDashboard({
           value: 'distribution',
           label: tTokenHoldings('filters.distribution'),
         },
+        ...(showPayingSpaces
+          ? [
+              {
+                value: 'payingSpaces',
+                label: tTokenHoldings('filters.payingSpaces'),
+              },
+            ]
+          : []),
       ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [showEnergyWidget, tTokenHoldings],
+    [showEnergyWidget, showPayingSpaces, tTokenHoldings],
   );
   const showActivity = activeFilter === 'activity';
   const showDistribution = activeFilter === 'distribution';
+  const showPayingSpacesTab = activeFilter === 'payingSpaces';
   // Temporarily hidden for deployment; keep components wired for quick re-enable.
   const showSignalsWidget = false;
   const showDistributionHistoryWidget = false;
@@ -1562,7 +1578,10 @@ export function HomeTokenHoldingsDashboard({
     if (activeFilter === 'energy' && !showEnergyWidget) {
       setActiveFilter('activity');
     }
-  }, [activeFilter, showEnergyWidget]);
+    if (activeFilter === 'payingSpaces' && !showPayingSpaces) {
+      setActiveFilter('activity');
+    }
+  }, [activeFilter, showEnergyWidget, showPayingSpaces]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -1768,6 +1787,10 @@ export function HomeTokenHoldingsDashboard({
             </div>
           ) : null}
         </>
+      ) : null}
+
+      {showPayingSpacesTab && showPayingSpaces ? (
+        <PayingSpacesDashboard spaceSlug={spaceSlug} />
       ) : null}
 
       {activeFilter === 'energy' && showEnergyWidget ? (
