@@ -2,12 +2,14 @@ export type PayingSpaceMonthSpacePoint = {
   web3SpaceId: number;
   paying: boolean;
   paymentCount: number;
+  paymentUsd: number;
 };
 
 export type PayingSpaceMonthBucket = {
   month: string;
   payingSpaces: number;
   paymentCount: number;
+  paymentUsd: number;
   spaces: PayingSpaceMonthSpacePoint[];
 };
 
@@ -30,6 +32,7 @@ export type PayingSpacesDashboardData = {
     everPaid: number;
     trackedSpaces: number;
     paymentEvents: number;
+    paymentUsd: number;
   };
   monthly: PayingSpaceMonthBucket[];
   spaces: PayingSpaceStatus[];
