@@ -159,8 +159,8 @@ describe('buildTokenHoldingsCsv', () => {
     expect(lines).toHaveLength(3);
     expect(csv).toContain('Alice');
     expect(csv).toContain('0xbbb');
-    expect(csv).not.toMatch(/,Other,/i);
-    expect(csv).not.toMatch(/,other,/i);
+    expect(lines[2]).toBe('Voice,VOICE,0x222,other,,,0xbbb,1,10,1');
+    expect(csv).not.toContain(',Other,');
   });
 });
 

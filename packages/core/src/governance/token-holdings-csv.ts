@@ -54,14 +54,6 @@ export function isAggregatedOtherHolding(
   );
 }
 
-function csvHolderKind(holding: TokenHoldingsCsvHolding): string {
-  return isOtherLabel(holding.holder_kind) ? '' : holding.holder_kind;
-}
-
-function csvDisplayName(holding: TokenHoldingsCsvHolding): string {
-  return isOtherLabel(holding.display_name) ? '' : holding.display_name;
-}
-
 /**
  * Builds a UTF-8 CSV of the full holder list across all tokens.
  * Column names stay English so the file stays machine-readable across locales.
@@ -79,8 +71,8 @@ export function buildTokenHoldingsCsv(
         token.name,
         token.symbol,
         token.token_address,
-        csvHolderKind(holding),
-        csvDisplayName(holding),
+        holding.holder_kind,
+        holding.display_name,
         nullableField(holding.slug),
         nullableField(holding.address),
         holding.balance,
