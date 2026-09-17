@@ -15,8 +15,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  SectionLoadMore,
   Skeleton,
 } from '@hypha-platform/ui';
+
+const SPACE_LIST_PAGE_SIZE = 12;
 
 const CHART_CARD_CLASS =
   'min-w-0 overflow-hidden rounded-lg border border-border/70 bg-background-2 shadow-none';
@@ -254,6 +257,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
     useAccessTokenReady();
   const locale = useLocale();
   const t = useTranslations('TokenHoldingsDashboard.payingSpaces');
+  const tCommon = useTranslations('Common');
   const authReady = !isAuthLoading && accessTokenReady;
   const authKey = isAuthenticated ? 'auth' : 'anon';
   const { data, error, isLoading } = useSWR(
@@ -263,16 +267,31 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
   );
   const loading = !authReady || isLoading;
   const [selectedSpaceId, setSelectedSpaceId] = React.useState<string>('all');
+  const [visibleSpaceCount, setVisibleSpaceCount] =
+    React.useState(SPACE_LIST_PAGE_SIZE);
+  const spaces = React.useMemo(() => data?.spaces ?? [], [data?.spaces]);
+  const spaceListKey = spaces.map((space) => space.web3SpaceId).join(',');
 
   React.useEffect(() => {
-    if (!data?.spaces.length) return;
+    const spaceIds = spaceListKey ? spaceListKey.split(',') : [];
+    if (spaceIds.length === 0) return;
     setSelectedSpaceId((current) =>
-      current === 'all' ||
-      data.spaces.some((space) => String(space.web3SpaceId) === current)
-        ? current
-        : 'all',
+      current === 'all' || spaceIds.includes(current) ? current : 'all',
     );
-  }, [data?.spaces]);
+    setVisibleSpaceCount(SPACE_LIST_PAGE_SIZE);
+  }, [spaceListKey]);
+
+  React.useEffect(() => {
+    if (selectedSpaceId === 'all') return;
+    const selectedIndex = spaces.findIndex(
+      (space) => String(space.web3SpaceId) === selectedSpaceId,
+    );
+    if (selectedIndex < 0) return;
+    const needed =
+      Math.ceil((selectedIndex + 1) / SPACE_LIST_PAGE_SIZE) *
+      SPACE_LIST_PAGE_SIZE;
+    setVisibleSpaceCount((current) => Math.max(current, needed));
+  }, [selectedSpaceId, spaces]);
 
   const chartMonthly = React.useMemo(() => {
     const monthly = data?.monthly ?? [];
@@ -319,9 +338,11 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
     [chartMonthly, latest],
   );
 
-  const selectedSpace = data?.spaces.find(
+  const selectedSpace = spaces.find(
     (space) => String(space.web3SpaceId) === selectedSpaceId,
   );
+  const visibleSpaces = spaces.slice(0, visibleSpaceCount);
+  const hasMoreSpaces = visibleSpaceCount < spaces.length;
 
   if (loading) {
     return <PayingSpacesDashboardSkeleton />;
@@ -496,7 +517,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                 className="mt-2 h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="all">{t('spaceAll')}</option>
-                {(data?.spaces ?? []).map((space) => (
+                {spaces.map((space) => (
                   <option
                     key={space.web3SpaceId}
                     value={String(space.web3SpaceId)}
@@ -507,41 +528,57 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
               </select>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col pb-5">
-              {(data?.spaces ?? []).length > 0 ? (
-                <div className="grid min-h-0 flex-1 gap-1 overflow-y-auto">
-                  {(data?.spaces ?? []).map((space) => {
-                    const selected =
-                      String(space.web3SpaceId) === selectedSpaceId;
-                    return (
-                      <button
-                        key={space.web3SpaceId}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() =>
-                          setSelectedSpaceId((current) =>
-                            current === String(space.web3SpaceId)
-                              ? 'all'
-                              : String(space.web3SpaceId),
-                          )
-                        }
-                        className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/40"
-                        style={{
-                          background: selected
-                            ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 10%, transparent)'
-                            : undefined,
-                        }}
-                      >
-                        <span className="truncate text-foreground">
-                          {space.title}
-                        </span>
-                        <span className="shrink-0 tabular-nums text-muted-foreground">
-                          {space.currentlyPaying
-                            ? t('currentlyPaying')
-                            : t('notCurrentlyPaying')}
-                        </span>
-                      </button>
-                    );
-                  })}
+              {spaces.length > 0 ? (
+                <div className="flex min-h-0 flex-1 flex-col gap-3">
+                  <div className="grid min-h-0 flex-1 gap-1 overflow-y-auto">
+                    {visibleSpaces.map((space) => {
+                      const selected =
+                        String(space.web3SpaceId) === selectedSpaceId;
+                      return (
+                        <button
+                          key={space.web3SpaceId}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setSelectedSpaceId((current) =>
+                              current === String(space.web3SpaceId)
+                                ? 'all'
+                                : String(space.web3SpaceId),
+                            )
+                          }
+                          className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/40"
+                          style={{
+                            background: selected
+                              ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 10%, transparent)'
+                              : undefined,
+                          }}
+                        >
+                          <span className="truncate text-foreground">
+                            {space.title}
+                          </span>
+                          <span className="shrink-0 tabular-nums text-muted-foreground">
+                            {space.currentlyPaying
+                              ? t('currentlyPaying')
+                              : t('notCurrentlyPaying')}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {hasMoreSpaces ? (
+                    <SectionLoadMore
+                      onClick={() =>
+                        setVisibleSpaceCount((current) =>
+                          Math.min(
+                            spaces.length,
+                            current + SPACE_LIST_PAGE_SIZE,
+                          ),
+                        )
+                      }
+                    >
+                      {tCommon('loadMore')}
+                    </SectionLoadMore>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">{t('empty')}</p>
