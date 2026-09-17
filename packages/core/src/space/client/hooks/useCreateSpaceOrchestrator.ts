@@ -18,6 +18,7 @@ import { useCreateEvent } from '../../../events';
 import { useMe } from '../../../people';
 import { publicClient } from '@hypha-platform/core/client';
 import { getSpaceFromLogs } from '../web3/dao-space-factory/get-space-created-event';
+import { getUploadThingClientFileUrl } from '../../../assets/uploadthing-cdn';
 import { useImageUpload } from '../../../assets/client';
 import { CreateSpaceInput } from '../../types';
 
@@ -105,20 +106,11 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
-const getUploadResultUrl = (result: unknown): string | undefined => {
-  if (!Array.isArray(result) || result.length === 0) return undefined;
-  const first = result[0] as { ufsUrl?: unknown; url?: unknown } | undefined;
-  if (!first) return undefined;
-  if (typeof first.ufsUrl === 'string' && first.ufsUrl) return first.ufsUrl;
-  if (typeof first.url === 'string' && first.url) return first.url;
-  return undefined;
-};
-
 const getRequiredUploadResultUrl = (
   result: unknown,
   fieldName: string,
 ): string => {
-  const uploadedUrl = getUploadResultUrl(result);
+  const uploadedUrl = getUploadThingClientFileUrl(result);
   if (!uploadedUrl) {
     throw new Error(`Upload failed: no URL returned for ${fieldName}`);
   }

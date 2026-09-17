@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getUploadThingClientFileUrl,
   isUploadThingCdnHostname,
   isUploadThingCdnUrl,
 } from '../uploadthing-cdn';
@@ -41,5 +42,33 @@ describe('isUploadThingCdnUrl', () => {
     expect(isUploadThingCdnUrl('https://github.githubassets.com/img.png')).toBe(
       false,
     );
+  });
+});
+
+describe('getUploadThingClientFileUrl', () => {
+  it('prefers ufsUrl', () => {
+    expect(
+      getUploadThingClientFileUrl([
+        {
+          ufsUrl: 'https://abc123.ufs.sh/f/icon',
+          url: 'https://utfs.io/f/old',
+        },
+      ]),
+    ).toBe('https://abc123.ufs.sh/f/icon');
+  });
+
+  it('falls back to url / appUrl when ufsUrl is missing', () => {
+    expect(
+      getUploadThingClientFileUrl([{ url: 'https://utfs.io/f/legacy' }]),
+    ).toBe('https://utfs.io/f/legacy');
+    expect(
+      getUploadThingClientFileUrl([{ appUrl: 'https://abc123.ufs.sh/f/app' }]),
+    ).toBe('https://abc123.ufs.sh/f/app');
+  });
+
+  it('returns undefined for empty or non-http results', () => {
+    expect(getUploadThingClientFileUrl(undefined)).toBeUndefined();
+    expect(getUploadThingClientFileUrl([])).toBeUndefined();
+    expect(getUploadThingClientFileUrl([{ ufsUrl: '' }])).toBeUndefined();
   });
 });

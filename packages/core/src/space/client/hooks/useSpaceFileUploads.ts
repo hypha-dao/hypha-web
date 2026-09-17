@@ -1,20 +1,14 @@
 'use client';
 
-import { useImageUpload } from '@hypha-platform/core/client';
-import { schemaCreateSpaceFiles } from '@hypha-platform/core/client';
+import {
+  getUploadThingClientFileUrl,
+  schemaCreateSpaceFiles,
+  useImageUpload,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 
 type Files = z.infer<typeof schemaCreateSpaceFiles>;
-
-const getUploadResultUrl = (result: unknown): string | undefined => {
-  if (!Array.isArray(result) || result.length === 0) return undefined;
-  const first = result[0] as { ufsUrl?: unknown; url?: unknown } | undefined;
-  if (!first) return undefined;
-  if (typeof first.ufsUrl === 'string' && first.ufsUrl) return first.ufsUrl;
-  if (typeof first.url === 'string' && first.url) return first.url;
-  return undefined;
-};
 
 export type UseSpaceFileUploadsReturn = {
   isLoading: boolean;
@@ -53,10 +47,11 @@ export const useSpaceFileUploads = (
           try {
             if (file instanceof File) {
               const result = await upload([file]);
-              const uploadedUrl = getUploadResultUrl(result);
-              if (uploadedUrl) {
-                uploadedFiles[key as keyof Files] = uploadedUrl;
+              const uploadedUrl = getUploadThingClientFileUrl(result);
+              if (!uploadedUrl) {
+                throw new Error(`Upload failed: no URL returned for ${key}`);
               }
+              uploadedFiles[key as keyof Files] = uploadedUrl;
             }
           } catch (uploadError) {
             console.error(`Failed to upload file for ${key}:`, uploadError);
