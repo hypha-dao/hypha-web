@@ -278,7 +278,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
             month: bucket.month,
             paying: bucket.payingSpaces,
             payments: bucket.paymentCount,
-            paymentUsd: bucket.paymentUsd,
+            paymentUsd: bucket.paymentUsd ?? 0,
           }))
         : monthly.map((bucket) => {
             const web3SpaceId = Number(selectedSpaceId);
@@ -307,7 +307,10 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
     () => ({
       paying: latest?.paying ?? 0,
       payments: chartMonthly.reduce((sum, item) => sum + item.payments, 0),
-      paymentUsd: chartMonthly.reduce((sum, item) => sum + item.paymentUsd, 0),
+      paymentUsd: chartMonthly.reduce(
+        (sum, item) => sum + (item.paymentUsd ?? 0),
+        0,
+      ),
     }),
     [chartMonthly, latest],
   );
