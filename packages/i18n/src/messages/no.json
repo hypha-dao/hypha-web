@@ -358,6 +358,11 @@
     },
     "chartAria": "Tokenfordelingsdiagram for {title}",
     "tokenDetailsAria": "Tokendetaljer for {tokenName}",
+    "exportHolders": "Eksporter innehavere",
+    "exportingHolders": "Eksporterer…",
+    "exportHoldersError": "Kunne ikke eksportere innehaverlisten. Prøv på nytt.",
+    "exportHoldersIncomplete": "Innehaveroppdagelsen er ufullstendig. Prøv eksporten på nytt.",
+    "exportHoldersAria": "Eksporter hele innehaverlisten",
     "tooltip": {
       "totalSupply": "Total forsyning",
       "other": "Annet",
