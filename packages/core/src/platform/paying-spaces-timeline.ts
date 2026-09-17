@@ -66,6 +66,33 @@ export function hyphaAmountToUsd(
 }
 
 /**
+ * Largest-remainder allocation of integer cents so shares always sum to
+ * `totalCents`. Ties break by lower index.
+ */
+function allocateCents(weights: number[], totalCents: number): number[] {
+  const count = weights.length;
+  if (count === 0) return [];
+  if (totalCents <= 0) return weights.map(() => 0);
+
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  const safeWeights = totalWeight > 0 ? weights : weights.map(() => 1);
+  const denom = safeWeights.reduce((sum, weight) => sum + weight, 0);
+  const exact = safeWeights.map((weight) => (totalCents * weight) / denom);
+  const floors = exact.map((value) => Math.floor(value));
+  const remaining = totalCents - floors.reduce((sum, value) => sum + value, 0);
+  const order = exact
+    .map((value, index) => ({ index, frac: value - floors[index]! }))
+    .sort((a, b) => b.frac - a.frac || a.index - b.index);
+  const extra = Array.from({ length: count }, () => 0);
+  for (let index = 0; index < remaining; index += 1) {
+    const recipient = order[index]?.index;
+    if (recipient == null) continue;
+    extra[recipient] = (extra[recipient] ?? 0) + 1;
+  }
+  return floors.map((cents, index) => (cents + (extra[index] ?? 0)) / 100);
+}
+
+/**
  * Split a batch payment's USD across spaces in proportion to duration.
  * `SpacesPaymentProcessedWithHypha` only emits total HYPHA, not per-space amounts.
  */
@@ -81,15 +108,29 @@ export function allocateUsdByDuration(
   const safeDurations = spaceIds.map((_, index) =>
     Math.max(0, durationDays[index] ?? 0),
   );
-  const totalDays = safeDurations.reduce((sum, days) => sum + days, 0);
-  if (totalDays <= 0) {
-    const share = roundUsd(roundedTotal / spaceIds.length);
-    return spaceIds.map(() => share);
-  }
+  return allocateCents(safeDurations, Math.round(roundedTotal * 100));
+}
 
-  return safeDurations.map((days) =>
-    roundUsd(roundedTotal * (days / totalDays)),
-  );
+export type HyphaPricePoint = {
+  blockNumber: bigint;
+  hyphaPriceUsd: bigint;
+};
+
+/** Latest `HYPHA_PRICE_USD` at or before `blockNumber`; `fallback` before any update. */
+export function hyphaPriceAtBlock(
+  history: readonly HyphaPricePoint[],
+  blockNumber: bigint,
+  fallback: bigint = DEFAULT_HYPHA_PRICE_USD,
+): bigint {
+  let price = fallback;
+  for (const point of history) {
+    if (point.blockNumber <= blockNumber) {
+      price = point.hyphaPriceUsd;
+      continue;
+    }
+    break;
+  }
+  return price > 0n ? price : fallback;
 }
 
 function parseMonthKey(

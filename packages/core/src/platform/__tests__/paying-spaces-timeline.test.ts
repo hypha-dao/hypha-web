@@ -11,6 +11,7 @@ import {
   buildPayingSpacesTimeline,
   enumerateMonthKeys,
   hyphaAmountToUsd,
+  hyphaPriceAtBlock,
   nextMonthKey,
   reconstructCoverage,
   toMonthKey,
@@ -195,6 +196,32 @@ describe('payment amount conversion', () => {
     expect(allocateUsdByDuration([7], [15], 11)).toEqual([11]);
     expect(allocateUsdByDuration([1, 2], [0, 0], 10)).toEqual([5, 5]);
     expect(allocateUsdByDuration([], [], 10)).toEqual([]);
+  });
+
+  it('preserves the batch total when shares are not even cents', () => {
+    const allocated = allocateUsdByDuration([1, 2, 3], [1, 1, 1], 10);
+    expect(allocated).toEqual([3.34, 3.33, 3.33]);
+    expect(allocated.reduce((sum, value) => sum + value, 0)).toBe(10);
+  });
+});
+
+describe('hyphaPriceAtBlock', () => {
+  it('uses the fallback before the first price update', () => {
+    expect(hyphaPriceAtBlock([], 10n, 1n)).toBe(1n);
+    expect(
+      hyphaPriceAtBlock([{ blockNumber: 50n, hyphaPriceUsd: 2n }], 49n, 1n),
+    ).toBe(1n);
+  });
+
+  it('uses the latest update at or before the payment block', () => {
+    const history = [
+      { blockNumber: 10n, hyphaPriceUsd: 2n },
+      { blockNumber: 30n, hyphaPriceUsd: 3n },
+    ];
+    expect(hyphaPriceAtBlock(history, 10n, 1n)).toBe(2n);
+    expect(hyphaPriceAtBlock(history, 29n, 1n)).toBe(2n);
+    expect(hyphaPriceAtBlock(history, 30n, 1n)).toBe(3n);
+    expect(hyphaPriceAtBlock(history, 99n, 1n)).toBe(3n);
   });
 });
 

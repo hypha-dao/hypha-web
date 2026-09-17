@@ -22,9 +22,11 @@ export {
   roundUsd,
   toMonthKey,
   usdcAmountToUsd,
+  hyphaPriceAtBlock,
 } from './paying-spaces-timeline';
 export type {
   CoverageInterval,
+  HyphaPricePoint,
   PayingSpacesTimeline,
   PayingSpacesTimelineSpaceSeries,
   SpacePaymentEvent,

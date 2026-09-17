@@ -163,6 +163,8 @@ function PayingSpacesLineChart({
     .y1((item) => y(item.value))
     .curve(d3.curveMonotoneX);
   const monthLabelStep = Math.max(1, Math.floor(points.length / 12));
+  const descId = React.useId();
+  const description = points.map((item) => item.title).join('; ');
 
   if (points.length === 0) {
     return <p className="text-sm text-muted-foreground">{emptyLabel}</p>;
@@ -175,7 +177,9 @@ function PayingSpacesLineChart({
         className="h-auto w-full max-h-[340px]"
         role="img"
         aria-label={ariaLabel}
+        aria-describedby={descId}
       >
+        <desc id={descId}>{description}</desc>
         <g transform={`translate(${margin.left},${margin.top})`}>
           {axisTicks.map((tick) => (
             <g key={tick} transform={`translate(0,${y(tick)})`}>
