@@ -19,10 +19,20 @@ export function readUploadThingApiKey(
   }
 }
 
+export function isUploadThingIngestUrl(href: string): boolean {
+  try {
+    const { hostname } = new URL(href);
+    return (
+      hostname === 'ingest.uploadthing.com' ||
+      hostname.endsWith('.ingest.uploadthing.com')
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function isDoubleEncodedUploadThingUrl(href: string): boolean {
-  return (
-    href.includes('ingest.uploadthing.com') && DOUBLE_ENCODED_PERCENT.test(href)
-  );
+  return isUploadThingIngestUrl(href) && DOUBLE_ENCODED_PERCENT.test(href);
 }
 
 export function rewriteDoubleEncodedUploadThingUrl(

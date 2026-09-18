@@ -23,6 +23,19 @@ describe('rewriteDoubleEncodedUploadThingUrl', () => {
     expect(isDoubleEncodedUploadThingUrl(href)).toBe(true);
   });
 
+  it('does not treat ingest.uploadthing.com as a substring of another host', () => {
+    const decoy =
+      'https://evil.example/?next=https://sea1.ingest.uploadthing.com/abc&x-ut-file-type=image%252Fjpeg';
+    const lookalike =
+      'https://sea1.ingest.uploadthing.com.evil.example/abc?x-ut-file-type=image%252Fjpeg';
+    expect(isDoubleEncodedUploadThingUrl(decoy)).toBe(false);
+    expect(isDoubleEncodedUploadThingUrl(lookalike)).toBe(false);
+    expect(rewriteDoubleEncodedUploadThingUrl(decoy, API_KEY)).toBe(decoy);
+    expect(rewriteDoubleEncodedUploadThingUrl(lookalike, API_KEY)).toBe(
+      lookalike,
+    );
+  });
+
   it('leaves a once-encoded MIME type alone', () => {
     const href =
       'https://sea1.ingest.uploadthing.com/abc?expires=1&x-ut-file-type=image%2Fjpeg&signature=hmac-sha256%3Ddead';
