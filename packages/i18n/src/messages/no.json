@@ -1599,7 +1599,39 @@
     "all": "Alle",
     "exploreNetwork": "Utforsk Hypha-nettverket",
     "seeAll": "Se alle",
-    "noCategory": "Ingen kategori"
+    "noCategory": "Ingen kategori",
+    "dashboard": {
+      "title": "Nettverksoversikt",
+      "spaces": "Rom",
+      "activeSpaces": "Aktive rom",
+      "activeSpacesHint": "Aktivitet de siste 3 månedene",
+      "members": "Medlemmer",
+      "proposals": "Forslag",
+      "agreements": "Avtaler",
+      "tokens": "Utstedte tokens",
+      "mappedSpaces": "På kartet",
+      "activity24h": "Hendelser · 24t",
+      "thisMonth": "+{count} denne måneden",
+      "percentOfNetwork": "{percent}% av nettverket",
+      "growthTitle": "Nettverksvekst",
+      "growthSubtitle": "Kumulative rom, medlemmer og forslag over 12 måneder",
+      "spacesSeries": "Rom",
+      "membersSeries": "Medlemmer",
+      "proposalsSeries": "Forslag",
+      "tokensByType": "Tokens etter type",
+      "proposalsByType": "Forslag etter type",
+      "spacesThisYear": "Nye rom",
+      "spacesThisYearHint": "Opprettet hver måned",
+      "noData": "Ikke nok data ennå",
+      "tokenTypes": {
+        "utility": "Utility",
+        "credits": "Kreditter",
+        "ownership": "Eierskap",
+        "voice": "Stemme",
+        "impact": "Påvirkning",
+        "community_currency": "Fellesskapsvaluta"
+      }
+    }
   },
   "Proposals": {
     "CreateNew": "Opprett et nytt forslag",

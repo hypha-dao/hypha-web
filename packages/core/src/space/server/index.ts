@@ -7,6 +7,7 @@ export * from './is-on-chain-member-or-delegate';
 export * from './resolve-space-executor-address';
 export * from './serialize-space-members-roster-for-json';
 export * from './queries';
+export * from './find-network-dashboard-stats';
 export * from './organizational-guidance';
 export * from './mutations';
 export * from './web3';

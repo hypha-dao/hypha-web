@@ -1580,7 +1580,39 @@
     "all": "Сите",
     "exploreNetwork": "Истражете ја Hypha мрежата",
     "seeAll": "Види ги сите",
-    "noCategory": "Без категорија"
+    "noCategory": "Без категорија",
+    "dashboard": {
+      "title": "Преглед на мрежата",
+      "spaces": "Простори",
+      "activeSpaces": "Активни простори",
+      "activeSpacesHint": "Активност во последните 3 месеци",
+      "members": "Членови",
+      "proposals": "Предлози",
+      "agreements": "Договори",
+      "tokens": "Издадени токени",
+      "mappedSpaces": "На мапата",
+      "activity24h": "Настани · 24ч",
+      "thisMonth": "+{count} овој месец",
+      "percentOfNetwork": "{percent}% од мрежата",
+      "growthTitle": "Раст на мрежата",
+      "growthSubtitle": "Кумулативни простори, членови и предлози во 12 месеци",
+      "spacesSeries": "Простори",
+      "membersSeries": "Членови",
+      "proposalsSeries": "Предлози",
+      "tokensByType": "Токени по тип",
+      "proposalsByType": "Предлози по тип",
+      "spacesThisYear": "Нови простори",
+      "spacesThisYearHint": "Создадени секој месец",
+      "noData": "Сè уште нема доволно податоци",
+      "tokenTypes": {
+        "utility": "Услужни",
+        "credits": "Кредити",
+        "ownership": "Сопственост",
+        "voice": "Глас",
+        "impact": "Влијание",
+        "community_currency": "Заедница валута"
+      }
+    }
   },
   "Proposals": {
     "CreateNew": "Создај нов предлог",

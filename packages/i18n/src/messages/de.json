@@ -1601,7 +1601,39 @@
     "all": "Alle",
     "exploreNetwork": "Das Hypha-Netzwerk erkunden",
     "seeAll": "Alle anzeigen",
-    "noCategory": "Keine Kategorie"
+    "noCategory": "Keine Kategorie",
+    "dashboard": {
+      "title": "Netzwerküberblick",
+      "spaces": "Spaces",
+      "activeSpaces": "Aktive Spaces",
+      "activeSpacesHint": "Aktivität in den letzten 3 Monaten",
+      "members": "Mitglieder",
+      "proposals": "Vorschläge",
+      "agreements": "Vereinbarungen",
+      "tokens": "Ausgegebene Tokens",
+      "mappedSpaces": "Auf der Karte",
+      "activity24h": "Ereignisse · 24h",
+      "thisMonth": "+{count} in diesem Monat",
+      "percentOfNetwork": "{percent}% des Netzwerks",
+      "growthTitle": "Netzwerkwachstum",
+      "growthSubtitle": "Kumulierte Spaces, Mitglieder und Vorschläge über 12 Monate",
+      "spacesSeries": "Spaces",
+      "membersSeries": "Mitglieder",
+      "proposalsSeries": "Vorschläge",
+      "tokensByType": "Tokens nach Typ",
+      "proposalsByType": "Vorschläge nach Typ",
+      "spacesThisYear": "Neue Spaces",
+      "spacesThisYearHint": "Jeden Monat erstellt",
+      "noData": "Noch nicht genug Daten",
+      "tokenTypes": {
+        "utility": "Utility",
+        "credits": "Credits",
+        "ownership": "Ownership",
+        "voice": "Voice",
+        "impact": "Impact",
+        "community_currency": "Gemeinschaftswährung"
+      }
+    }
   },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",

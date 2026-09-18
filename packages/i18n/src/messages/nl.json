@@ -1600,7 +1600,39 @@
     "all": "Alle",
     "exploreNetwork": "Verken het Hypha-netwerk",
     "seeAll": "Bekijk alles",
-    "noCategory": "Geen categorie"
+    "noCategory": "Geen categorie",
+    "dashboard": {
+      "title": "Netwerkoverzicht",
+      "spaces": "Spaces",
+      "activeSpaces": "Actieve spaces",
+      "activeSpacesHint": "Activiteit in de afgelopen 3 maanden",
+      "members": "Leden",
+      "proposals": "Voorstellen",
+      "agreements": "Overeenkomsten",
+      "tokens": "Uitgegeven tokens",
+      "mappedSpaces": "Op de kaart",
+      "activity24h": "Gebeurtenissen · 24u",
+      "thisMonth": "+{count} deze maand",
+      "percentOfNetwork": "{percent}% van het netwerk",
+      "growthTitle": "Netwerkgroei",
+      "growthSubtitle": "Cumulatieve spaces, leden en voorstellen over 12 maanden",
+      "spacesSeries": "Spaces",
+      "membersSeries": "Leden",
+      "proposalsSeries": "Voorstellen",
+      "tokensByType": "Tokens per type",
+      "proposalsByType": "Voorstellen per type",
+      "spacesThisYear": "Nieuwe spaces",
+      "spacesThisYearHint": "Elke maand aangemaakt",
+      "noData": "Nog niet genoeg gegevens",
+      "tokenTypes": {
+        "utility": "Utility",
+        "credits": "Credits",
+        "ownership": "Eigendom",
+        "voice": "Stem",
+        "impact": "Impact",
+        "community_currency": "Communityvaluta"
+      }
+    }
   },
   "Proposals": {
     "CreateNew": "Maak een nieuw voorstel",
