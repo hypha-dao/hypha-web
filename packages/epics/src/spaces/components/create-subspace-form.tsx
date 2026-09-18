@@ -208,6 +208,7 @@ export const CreateSubspaceForm = ({
                 {formatCreateSpaceError(
                   lastError || errors[0],
                   t('smartWalletNotConnected'),
+                  t('uploadFailedIngest'),
                 )}
               </div>
             ) : null}

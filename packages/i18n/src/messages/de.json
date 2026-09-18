@@ -1740,6 +1740,7 @@
     "errorOhSnap": "Oh nein. Es ist ein Fehler aufgetreten",
     "reset": "Zurücksetzen",
     "smartWalletNotConnected": "Smart Wallet ist nicht verbunden. Bitte verbinden Sie Ihre Coinbase Smart Wallet und versuchen Sie es erneut.",
+    "uploadFailedIngest": "Der Bild-Upload wurde vom Datei-Host abgelehnt. Versuchen Sie ein JPEG oder PNG unter 16 MB.",
     "backToSettings": "Zurück zu den Einstellungen",
     "sandbox": "Sandbox",
     "pilot": "Pilot",

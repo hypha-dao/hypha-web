@@ -1738,6 +1738,7 @@
     "errorOhSnap": "Oi! Det oppstod en feil",
     "reset": "Nullstill",
     "smartWalletNotConnected": "Smartlommeboken er ikke tilkoblet. Koble til Coinbase-smartlommeboken din og prøv igjen.",
+    "uploadFailedIngest": "Filverten avviste bildeopplastingen. Prøv en JPEG eller PNG under 16 MB.",
     "backToSettings": "Tilbake til innstillinger",
     "sandbox": "Sandkasse",
     "pilot": "Pilot",

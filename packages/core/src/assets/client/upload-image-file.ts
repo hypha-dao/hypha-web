@@ -4,24 +4,16 @@ import { genUploader } from 'uploadthing/client';
 
 import { getUploadThingClientFileUrl } from '../uploadthing-cdn';
 import type { CoreFileRouter } from '../server';
+import {
+  formatImageUploadFailure,
+  normalizeImageUploadFile,
+} from './normalize-image-upload-file';
 
 const { uploadFiles } = genUploader<CoreFileRouter>();
 
-const normalizeSvgMime = (file: File): File => {
-  const isSvgByName = /\.svg$/i.test(file.name);
-  const isFallbackMime =
-    file.type === '' ||
-    file.type === 'application/octet-stream' ||
-    file.type === 'binary/octet-stream';
-
-  if (isSvgByName && isFallbackMime) {
-    return new File([file], file.name, {
-      type: 'image/svg+xml',
-      lastModified: file.lastModified,
-    });
-  }
-
-  return file;
+const isTransientIngestFailure = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error);
+  return /XHR failed 400/i.test(message);
 };
 
 /**
@@ -37,22 +29,34 @@ export async function uploadImageFile(
   if (!token) {
     throw new Error('Authentication is required to upload images.');
   }
-  if (file.size === 0) {
-    throw new Error(
-      `"${file.name}" is empty and cannot be uploaded. Crop or choose the image again.`,
-    );
-  }
 
-  const result = await uploadFiles('imageUploader', {
-    files: [normalizeSvgMime(file)],
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const normalized = await normalizeImageUploadFile(file);
 
-  const uploadedUrl = getUploadThingClientFileUrl(result);
-  if (!uploadedUrl) {
-    throw new Error(
-      `Upload for "${file.name}" succeeded at ingest but returned no public URL.`,
-    );
+  const uploadOnce = async () => {
+    const result = await uploadFiles('imageUploader', {
+      files: [normalized],
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const uploadedUrl = getUploadThingClientFileUrl(result);
+    if (!uploadedUrl) {
+      throw new Error(
+        `Upload for "${normalized.name}" succeeded at ingest but returned no public URL.`,
+      );
+    }
+    return uploadedUrl;
+  };
+
+  try {
+    return await uploadOnce();
+  } catch (error) {
+    if (isTransientIngestFailure(error)) {
+      try {
+        return await uploadOnce();
+      } catch (retryError) {
+        throw formatImageUploadFailure(normalized, retryError);
+      }
+    }
+    throw formatImageUploadFailure(normalized, error);
   }
-  return uploadedUrl;
 }

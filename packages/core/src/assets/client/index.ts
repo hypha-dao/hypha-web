@@ -4,6 +4,7 @@ export * from './use-call-recording-upload';
 export * from './upload-call-recording';
 export * from './upload-chat-attachment';
 export * from './upload-image-file';
+export * from './normalize-image-upload-file';
 export * from './call-recording-local-backup';
 
 export * from '../constant';
