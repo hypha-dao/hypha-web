@@ -5,7 +5,7 @@ import { NetworkDashboard } from './_components/network-dashboard';
 
 const getCachedNetworkDashboardStats = unstable_cache(
   async () => findNetworkDashboardStats({ db }),
-  ['network-dashboard-stats-v1'],
+  ['network-dashboard-stats-v2'],
   { revalidate: 300 },
 );
 

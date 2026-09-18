@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import {
   Card,
   CardContent,
@@ -7,223 +8,20 @@ import {
   CardTitle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import type {
-  NamedCount,
-  NetworkDashboardStats,
-} from '@hypha-platform/core/client';
-
-const TOKEN_TYPE_KEYS = [
-  'utility',
-  'credits',
-  'ownership',
-  'voice',
-  'impact',
-  'community_currency',
-] as const;
-
-type TokenTypeKey = (typeof TOKEN_TYPE_KEYS)[number];
-
-function isTokenTypeKey(value: string): value is TokenTypeKey {
-  return (TOKEN_TYPE_KEYS as readonly string[]).includes(value);
-}
-
-function formatCompact(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    notation: 'compact',
-    compactDisplay: 'short',
-    maximumFractionDigits: value >= 1000 ? 1 : 0,
-  }).format(value);
-}
-
-function formatExact(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
-    value,
-  );
-}
-
-function formatMonthLabel(monthKey: string, locale: string): string {
-  const [year, month] = monthKey.split('-').map(Number);
-  if (!year || !month) return monthKey;
-  return new Intl.DateTimeFormat(locale, { month: 'short' }).format(
-    new Date(Date.UTC(year, month - 1, 1)),
-  );
-}
+import type { NetworkDashboardStats } from '@hypha-platform/core/client';
+import { AnimatedNumber } from './animated-number';
+import { formatCompact, formatExact, formatUsd } from './format-network-stats';
+import {
+  NetworkAreaChart,
+  NetworkMixBars,
+  NetworkSparkline,
+} from './network-charts';
+import { NetworkDashboardSkeletonKpi } from './network-dashboard-skeleton';
+import { loadNetworkPayingSnapshot } from '../network-paying-loader';
 
 function percentOf(part: number, whole: number): number | null {
   if (whole <= 0) return null;
   return Math.round((part / whole) * 100);
-}
-
-function seriesPath(
-  values: readonly number[],
-  width: number,
-  height: number,
-  close: boolean,
-): string {
-  if (values.length === 0) return '';
-  const max = Math.max(...values, 1);
-  const lastIndex = Math.max(values.length - 1, 1);
-  const points = values.map((value, index) => {
-    const x = (index / lastIndex) * width;
-    const y = height - (value / max) * height;
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  });
-  const line = points
-    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point}`)
-    .join(' ');
-  if (!close) return line;
-  return `${line} L${width.toFixed(2)},${height.toFixed(2)} L0,${height.toFixed(
-    2,
-  )} Z`;
-}
-
-function GrowthChart({
-  months,
-  spaces,
-  members,
-  proposals,
-  locale,
-  labels,
-}: {
-  months: readonly string[];
-  spaces: readonly number[];
-  members: readonly number[];
-  proposals: readonly number[];
-  locale: string;
-  labels: {
-    spaces: string;
-    members: string;
-    proposals: string;
-  };
-}) {
-  const width = 720;
-  const height = 196;
-  const pad = { top: 10, right: 8, bottom: 28, left: 8 };
-  const innerWidth = width - pad.left - pad.right;
-  const innerHeight = height - pad.top - pad.bottom;
-  const tickEvery = months.length > 8 ? 2 : 1;
-
-  return (
-    <svg
-      role="img"
-      aria-label={`${labels.spaces}, ${labels.members}, ${labels.proposals}`}
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-44 w-full overflow-visible md:h-48"
-    >
-      <g transform={`translate(${pad.left} ${pad.top})`}>
-        {[0.25, 0.5, 0.75, 1].map((tick) => (
-          <line
-            key={tick}
-            x1="0"
-            x2={innerWidth}
-            y1={innerHeight * tick}
-            y2={innerHeight * tick}
-            className="stroke-border/70"
-            strokeWidth="1"
-          />
-        ))}
-        <path
-          d={seriesPath(spaces, innerWidth, innerHeight, true)}
-          fill="color-mix(in oklab, var(--accent-9) 18%, transparent)"
-        />
-        <path
-          d={seriesPath(spaces, innerWidth, innerHeight, false)}
-          fill="none"
-          stroke="var(--craft-chart-accent-5)"
-          strokeWidth="2.25"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-        <path
-          d={seriesPath(members, innerWidth, innerHeight, false)}
-          fill="none"
-          stroke="var(--craft-chart-accent-8)"
-          strokeWidth="1.75"
-          strokeDasharray="5 4"
-          strokeLinejoin="round"
-        />
-        <path
-          d={seriesPath(proposals, innerWidth, innerHeight, false)}
-          fill="none"
-          stroke="var(--craft-chart-accent-3)"
-          strokeWidth="1.75"
-          strokeLinejoin="round"
-        />
-        {months.map((month, index) =>
-          index % tickEvery === 0 || index === months.length - 1 ? (
-            <text
-              key={month}
-              x={(index / Math.max(months.length - 1, 1)) * innerWidth}
-              y={innerHeight + 18}
-              textAnchor="middle"
-              className="fill-muted-foreground text-[11px]"
-            >
-              {formatMonthLabel(month, locale)}
-            </text>
-          ) : null,
-        )}
-      </g>
-    </svg>
-  );
-}
-
-function MonthlyBars({
-  values,
-  label,
-}: {
-  values: readonly number[];
-  label: string;
-}) {
-  const max = Math.max(...values, 1);
-  return (
-    <div className="flex h-20 items-end gap-1" aria-label={label}>
-      {values.map((value, index) => (
-        <div
-          key={`${index}-${value}`}
-          className="flex-1 rounded-sm bg-accent-9/80"
-          style={{
-            height: `${Math.max((value / max) * 100, value > 0 ? 8 : 2)}%`,
-          }}
-          title={String(value)}
-        />
-      ))}
-    </div>
-  );
-}
-
-function MixBars({
-  items,
-  getLabel,
-}: {
-  items: readonly NamedCount[];
-  getLabel: (name: string) => string;
-}) {
-  const max = Math.max(...items.map((item) => item.count), 1);
-  return (
-    <ul className="flex flex-col gap-3">
-      {items.map((item, index) => (
-        <li key={item.name} className="flex flex-col gap-1.5">
-          <div className="flex items-baseline justify-between gap-3 text-1">
-            <span className="min-w-0 truncate text-foreground">
-              {getLabel(item.name)}
-            </span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">
-              {item.count}
-            </span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-muted/40">
-            <div
-              className="h-full rounded-full bg-accent-9"
-              style={{
-                width: `${(item.count / max) * 100}%`,
-                opacity: 1 - index * 0.08,
-              }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 function KpiCard({
@@ -232,22 +30,33 @@ function KpiCard({
   hint,
   hintTone = 'muted',
   locale,
+  format = 'compact',
 }: {
   label: string;
   value: number;
   hint?: string;
   hintTone?: 'muted' | 'positive';
   locale: string;
+  format?: 'compact' | 'usd';
 }) {
+  const formatValue =
+    format === 'usd'
+      ? (current: number) => formatUsd(current, locale)
+      : (current: number) => formatCompact(current, locale);
+
   return (
     <Card className="craft-card min-w-0">
       <CardContent className="flex h-full flex-col justify-between gap-3 p-3.5">
         <p className="craft-meta">{label}</p>
         <p
           className="text-7 font-medium tabular-nums tracking-tight text-foreground md:text-8"
-          title={formatExact(value, locale)}
+          title={
+            format === 'usd'
+              ? formatUsd(value, locale)
+              : formatExact(value, locale)
+          }
         >
-          {formatCompact(value, locale)}
+          <AnimatedNumber value={value} format={formatValue} />
         </p>
         <p
           className={cn(
@@ -264,6 +73,32 @@ function KpiCard({
   );
 }
 
+function SparkStat({
+  label,
+  value,
+  values,
+  locale,
+  color,
+}: {
+  label: string;
+  value: number;
+  values: readonly number[];
+  locale: string;
+  color: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="craft-meta">{label}</p>
+        <p className="text-4 font-medium tabular-nums tracking-tight">
+          {formatCompact(value, locale)}
+        </p>
+      </div>
+      <NetworkSparkline values={values} color={color} label={label} />
+    </div>
+  );
+}
+
 export async function NetworkPageHeading() {
   const t = await getTranslations('Network');
   return (
@@ -271,6 +106,102 @@ export async function NetworkPageHeading() {
       <span>{t('manySpaces')}</span>
       <span>{t('oneVibrantNetwork')}</span>
     </h1>
+  );
+}
+
+async function PayingKpis({ locale }: { locale: string }) {
+  const t = await getTranslations('Network');
+  const paying = await loadNetworkPayingSnapshot();
+  if (!paying) {
+    return (
+      <>
+        <KpiCard
+          locale={locale}
+          label={t('dashboard.currentlyPaying')}
+          value={0}
+          hint={t('dashboard.payingUnavailable')}
+        />
+        <KpiCard
+          locale={locale}
+          label={t('dashboard.totalPaid')}
+          value={0}
+          format="usd"
+          hint={t('dashboard.payingUnavailable')}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <KpiCard
+        locale={locale}
+        label={t('dashboard.currentlyPaying')}
+        value={paying.currentlyPaying}
+        hint={t('dashboard.everPaid', { count: paying.everPaid })}
+      />
+      <KpiCard
+        locale={locale}
+        label={t('dashboard.totalPaid')}
+        value={paying.paymentUsd}
+        format="usd"
+        hint={t('dashboard.paymentEvents', { count: paying.paymentEvents })}
+      />
+    </>
+  );
+}
+
+async function PayingChart({ locale }: { locale: string }) {
+  const t = await getTranslations('Network');
+  const paying = await loadNetworkPayingSnapshot();
+  const months = paying?.months.map((item) => item.month) ?? [];
+  const values = paying?.months.map((item) => item.payingSpaces) ?? [];
+  const hasData = values.some((value) => value > 0);
+
+  return (
+    <Card className="craft-card">
+      <CardHeader className="pb-2">
+        <CardTitle>{t('dashboard.payingTitle')}</CardTitle>
+        <CardDescription>{t('dashboard.payingSubtitle')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {hasData ? (
+          <NetworkAreaChart
+            months={months}
+            values={values}
+            locale={locale}
+            color="var(--craft-chart-accent-5)"
+            ariaLabel={t('dashboard.payingChartAria')}
+            emptyLabel={t('dashboard.payingEmpty')}
+            formatTick={(value) => formatCompact(value, locale)}
+          />
+        ) : (
+          <p className="craft-meta py-10 text-center">
+            {t('dashboard.payingEmpty')}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PayingKpisFallback() {
+  return (
+    <>
+      <NetworkDashboardSkeletonKpi />
+      <NetworkDashboardSkeletonKpi />
+    </>
+  );
+}
+
+function PayingChartFallback() {
+  return (
+    <Card className="craft-card">
+      <CardContent className="p-3.5">
+        <div className="mb-4 h-4 w-40 rounded-md bg-muted/50" />
+        <div className="h-48 rounded-md bg-muted/40 md:h-56" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -283,9 +214,6 @@ export async function NetworkDashboard({
   const locale = await getLocale();
   const activePercent = percentOf(stats.activeSpaceCount, stats.spaceCount);
   const hasGrowth = stats.spacesCumulative.some((value) => value > 0);
-
-  const tokenLabel = (name: string) =>
-    isTokenTypeKey(name) ? t(`dashboard.tokenTypes.${name}`) : name;
 
   return (
     <section
@@ -337,51 +265,43 @@ export async function NetworkDashboard({
           }
           hintTone="positive"
         />
-        <KpiCard
-          locale={locale}
-          label={t('dashboard.agreements')}
-          value={stats.agreementCount}
-        />
-        <KpiCard
-          locale={locale}
-          label={t('dashboard.activity24h')}
-          value={stats.activityLast24h}
-        />
+        <Suspense fallback={<PayingKpisFallback />}>
+          <PayingKpis locale={locale} />
+        </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Card className="craft-card lg:col-span-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card className="craft-card">
           <CardHeader className="pb-2">
             <CardTitle>{t('dashboard.growthTitle')}</CardTitle>
             <CardDescription>{t('dashboard.growthSubtitle')}</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="flex flex-col gap-5">
             {hasGrowth ? (
               <>
-                <GrowthChart
+                <NetworkAreaChart
                   months={stats.months}
-                  spaces={stats.spacesCumulative}
-                  members={stats.membersCumulative}
-                  proposals={stats.proposalsCumulative}
+                  values={stats.spacesCumulative}
                   locale={locale}
-                  labels={{
-                    spaces: t('dashboard.spacesSeries'),
-                    members: t('dashboard.membersSeries'),
-                    proposals: t('dashboard.proposalsSeries'),
-                  }}
+                  color="var(--craft-chart-accent-5)"
+                  ariaLabel={t('dashboard.growthChartAria')}
+                  emptyLabel={t('dashboard.noData')}
+                  formatTick={(value) => formatCompact(value, locale)}
                 />
-                <div className="flex flex-wrap gap-4 text-1 text-muted-foreground">
-                  <LegendSwatch
-                    className="bg-accent-9"
-                    label={t('dashboard.spacesSeries')}
-                  />
-                  <LegendSwatch
-                    className="bg-[var(--craft-chart-accent-8)]"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <SparkStat
+                    locale={locale}
                     label={t('dashboard.membersSeries')}
+                    value={stats.memberCount}
+                    values={stats.membersCumulative}
+                    color="var(--craft-chart-accent-8)"
                   />
-                  <LegendSwatch
-                    className="bg-[var(--craft-chart-accent-3)]"
+                  <SparkStat
+                    locale={locale}
                     label={t('dashboard.proposalsSeries')}
+                    value={stats.proposalCount}
+                    values={stats.proposalsCumulative}
+                    color="var(--craft-chart-accent-3)"
                   />
                 </div>
               </>
@@ -393,78 +313,23 @@ export async function NetworkDashboard({
           </CardContent>
         </Card>
 
-        <Card className="craft-card">
-          <CardHeader className="pb-2">
-            <CardTitle>{t('dashboard.spacesThisYear')}</CardTitle>
-            <CardDescription>
-              {t('dashboard.spacesThisYearHint')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <MonthlyBars
-              values={stats.spacesByMonth}
-              label={t('dashboard.spacesThisYear')}
-            />
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="craft-meta">{t('dashboard.mappedSpaces')}</p>
-              <p className="text-5 font-medium tabular-nums">
-                {formatCompact(stats.mappedSpaceCount, locale)}
-              </p>
-            </div>
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="craft-meta">{t('dashboard.tokens')}</p>
-              <p className="text-5 font-medium tabular-nums">
-                {formatCompact(stats.tokenCount, locale)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <Suspense fallback={<PayingChartFallback />}>
+          <PayingChart locale={locale} />
+        </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Card className="craft-card">
-          <CardHeader className="pb-2">
-            <CardTitle>{t('dashboard.tokensByType')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stats.tokensByType.length > 0 ? (
-              <MixBars items={stats.tokensByType} getLabel={tokenLabel} />
-            ) : (
-              <p className="craft-meta">{t('dashboard.noData')}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="craft-card">
-          <CardHeader className="pb-2">
-            <CardTitle>{t('dashboard.proposalsByType')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stats.proposalsByType.length > 0 ? (
-              <MixBars
-                items={stats.proposalsByType}
-                getLabel={(name) => name}
-              />
-            ) : (
-              <p className="craft-meta">{t('dashboard.noData')}</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="craft-card">
+        <CardHeader className="pb-2">
+          <CardTitle>{t('dashboard.proposalsByType')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.proposalsByType.length > 0 ? (
+            <NetworkMixBars items={stats.proposalsByType} />
+          ) : (
+            <p className="craft-meta">{t('dashboard.noData')}</p>
+          )}
+        </CardContent>
+      </Card>
     </section>
-  );
-}
-
-function LegendSwatch({
-  className,
-  label,
-}: {
-  className: string;
-  label: string;
-}) {
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className={cn('h-0.5 w-3.5 rounded-full', className)} />
-      {label}
-    </span>
   );
 }

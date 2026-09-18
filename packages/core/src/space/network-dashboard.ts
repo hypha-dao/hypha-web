@@ -13,20 +13,26 @@ export type NetworkDashboardStats = {
   activeSpaceCount: number;
   memberCount: number;
   proposalCount: number;
-  agreementCount: number;
-  tokenCount: number;
-  mappedSpaceCount: number;
-  activityLast24h: number;
   spacesThisMonth: number;
   membersThisMonth: number;
   proposalsThisMonth: number;
   months: string[];
-  spacesByMonth: number[];
   spacesCumulative: number[];
   membersCumulative: number[];
   proposalsCumulative: number[];
-  tokensByType: NamedCount[];
   proposalsByType: NamedCount[];
+};
+
+export type NetworkPayingSnapshot = {
+  currentlyPaying: number;
+  everPaid: number;
+  paymentEvents: number;
+  paymentUsd: number;
+  months: Array<{
+    month: string;
+    payingSpaces: number;
+    paymentUsd: number;
+  }>;
 };
 
 export const NETWORK_DASHBOARD_MONTHS = 12;
@@ -40,6 +46,19 @@ export function asInt(value: unknown): number {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
       return Math.trunc(parsed);
+    }
+  }
+  return 0;
+}
+
+export function asFiniteNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
     }
   }
   return 0;
@@ -179,15 +198,10 @@ export function parseNetworkDashboardPayload(
     activeSpaceCount: asInt(record.activeSpaceCount),
     memberCount: asInt(record.memberCount),
     proposalCount: asInt(record.proposalCount),
-    agreementCount: asInt(record.agreementCount),
-    tokenCount: asInt(record.tokenCount),
-    mappedSpaceCount: asInt(record.mappedSpaceCount),
-    activityLast24h: asInt(record.activityLast24h),
     spacesThisMonth: spacesByMonth.at(-1) ?? 0,
     membersThisMonth: membersByMonth.at(-1) ?? 0,
     proposalsThisMonth: proposalsByMonth.at(-1) ?? 0,
     months,
-    spacesByMonth,
     spacesCumulative: toCumulativeSeries(
       spacesByMonth,
       asInt(record.spacesBeforeWindow),
@@ -200,10 +214,41 @@ export function parseNetworkDashboardPayload(
       proposalsByMonth,
       asInt(record.proposalsBeforeWindow),
     ),
-    tokensByType: mergeNamedCounts(parseNamedCounts(record.tokensByType)),
     proposalsByType: mergeNamedCounts(
       parseNamedCounts(record.proposalsByLabel),
       options.canonicalizeProposalLabel,
     ),
+  };
+}
+
+export function toNetworkPayingSnapshot(data: {
+  summary: {
+    currentlyPaying: number;
+    everPaid: number;
+    paymentEvents: number;
+    paymentUsd: number;
+  };
+  monthly: ReadonlyArray<{
+    month: string;
+    payingSpaces: number;
+    paymentUsd: number;
+  }>;
+}): NetworkPayingSnapshot {
+  return {
+    currentlyPaying: asInt(data.summary.currentlyPaying),
+    everPaid: asInt(data.summary.everPaid),
+    paymentEvents: asInt(data.summary.paymentEvents),
+    paymentUsd: asFiniteNumber(data.summary.paymentUsd),
+    months: data.monthly.flatMap((item) => {
+      const month = String(item.month ?? '');
+      if (!/^\d{4}-\d{2}$/.test(month)) return [];
+      return [
+        {
+          month,
+          payingSpaces: asInt(item.payingSpaces),
+          paymentUsd: asFiniteNumber(item.paymentUsd),
+        },
+      ];
+    }),
   };
 }

@@ -4,6 +4,7 @@ import {
   mergeNamedCounts,
   parseNetworkDashboardPayload,
   toCumulativeSeries,
+  toNetworkPayingSnapshot,
   utcMonthKeys,
 } from '../network-dashboard';
 
@@ -65,20 +66,12 @@ describe('parseNetworkDashboardPayload', () => {
         activeSpaceCount: 8,
         memberCount: 40,
         proposalCount: 20,
-        agreementCount: 7,
-        tokenCount: 5,
-        mappedSpaceCount: 3,
-        activityLast24h: 9,
         spacesBeforeWindow: 4,
         membersBeforeWindow: 10,
         proposalsBeforeWindow: 1,
         spacesByMonth: [{ month: '2026-09', count: 2 }],
         membersByMonth: [{ month: '2026-08', count: 5 }],
         proposalsByMonth: [{ month: '2026-09', count: 3 }],
-        tokensByType: [
-          { name: 'utility', count: 3 },
-          { name: 'voice', count: 2 },
-        ],
         proposalsByLabel: [
           { name: 'Invite', count: 4 },
           { name: 'Invitación', count: 1 },
@@ -100,10 +93,6 @@ describe('parseNetworkDashboardPayload', () => {
     expect(stats.membersCumulative.at(-2)).toBe(15);
     expect(stats.membersCumulative.at(-1)).toBe(15);
     expect(stats.proposalsByType[0]).toEqual({ name: 'Invite', count: 5 });
-    expect(stats.tokensByType.map((item) => item.name)).toEqual([
-      'utility',
-      'voice',
-    ]);
   });
 
   it('parses a json string payload', () => {
@@ -113,5 +102,30 @@ describe('parseNetworkDashboardPayload', () => {
     );
     expect(stats.spaceCount).toBe(3);
     expect(stats.spacesCumulative).toHaveLength(12);
+  });
+});
+
+describe('toNetworkPayingSnapshot', () => {
+  it('keeps summary totals and monthly paying series', () => {
+    expect(
+      toNetworkPayingSnapshot({
+        summary: {
+          currentlyPaying: 7,
+          everPaid: 11,
+          paymentEvents: 40,
+          paymentUsd: 1234.56,
+        },
+        monthly: [
+          { month: '2026-08', payingSpaces: 5, paymentUsd: 200 },
+          { month: 'bad', payingSpaces: 9, paymentUsd: 1 },
+        ],
+      }),
+    ).toEqual({
+      currentlyPaying: 7,
+      everPaid: 11,
+      paymentEvents: 40,
+      paymentUsd: 1234.56,
+      months: [{ month: '2026-08', payingSpaces: 5, paymentUsd: 200 }],
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { Card, CardContent, Skeleton } from '@hypha-platform/ui';
 
-function KpiSkeleton() {
+export function NetworkDashboardSkeletonKpi() {
   return (
     <Card className="craft-card">
       <CardContent className="flex flex-col gap-3 p-3.5">
@@ -21,20 +21,20 @@ export function NetworkDashboardSkeleton() {
     >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {Array.from({ length: 6 }).map((_, index) => (
-          <KpiSkeleton key={index} />
+          <NetworkDashboardSkeletonKpi key={index} />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Card className="craft-card lg:col-span-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card className="craft-card">
           <CardContent className="p-3.5">
             <Skeleton loading width={160} height={16} className="mb-4" />
-            <Skeleton loading width="100%" height={176} />
+            <Skeleton loading width="100%" height={196} />
           </CardContent>
         </Card>
         <Card className="craft-card">
           <CardContent className="p-3.5">
-            <Skeleton loading width={120} height={16} className="mb-4" />
-            <Skeleton loading width="100%" height={80} />
+            <Skeleton loading width={140} height={16} className="mb-4" />
+            <Skeleton loading width="100%" height={196} />
           </CardContent>
         </Card>
       </div>
