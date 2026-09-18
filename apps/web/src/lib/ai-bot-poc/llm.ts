@@ -16,6 +16,10 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 const DEFAULT_MODEL_ID = 'openai/gpt-4o-mini';
 const MAX_STEPS = 4;
+// Chat answers are a paragraph or two; capping this avoids the SDK defaulting to the model's
+// max output (16384 for gpt-4o-mini), which OpenRouter will reject outright on a low-balance
+// account ("requested up to 16384 tokens, but can only afford …").
+const MAX_OUTPUT_TOKENS = 1024;
 
 export class LlmConfigError extends Error {
   constructor(message: string) {
@@ -64,6 +68,7 @@ function resolveProvider(modelOverride: string | null): ResolvedProvider {
           prompt,
           tools,
           stopWhen: stepCountIs(MAX_STEPS),
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
         });
         return text;
       },

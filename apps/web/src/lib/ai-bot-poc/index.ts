@@ -9,7 +9,12 @@ import {
 import { getAiBotPocConfig } from './config';
 import { buildPinnedContextBlock, createReadFileTool } from './context-source';
 import { answer, LlmCallError, LlmConfigError } from './llm';
-import { ensurePersonaInRoom, postAs } from './matrix-out';
+import {
+  ensurePersonaInRoom,
+  fetchRecentRoomHistory,
+  postAs,
+  type HistoryTurn,
+} from './matrix-out';
 import { isPocBotSender, resolvePersona, type Persona } from './personas';
 import { createSignalStubTool } from './signal-tool';
 
@@ -118,7 +123,29 @@ async function handlePocEvent(event: ChatNotificationEvent): Promise<void> {
     ].join('\n');
 
     const tools = buildTools(persona, cfg.contextRepoPath, spaceSlug);
-    const question = stripMentions(event.payload.body);
+
+    let history: HistoryTurn[] = [];
+    try {
+      history = await fetchRecentRoomHistory(
+        persona,
+        roomId,
+        cfg,
+        event.source.matrixEventId,
+      );
+      console.info(`${LOG} recent history fetched`, { turns: history.length });
+    } catch (error) {
+      console.warn(
+        `${LOG} recent history fetch failed (continuing without it)`,
+        {
+          errorMessage: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
+
+    const question = buildQuestionWithHistory(
+      stripMentions(event.payload.body),
+      history,
+    );
     console.info(`${LOG} calling LLM`, {
       persona: persona.localpart,
       model: cfg.modelOverride ?? '(default)',
@@ -184,6 +211,25 @@ function buildTools(
     tools.create_signal = createSignalStubTool(spaceSlug);
   }
   return tools;
+}
+
+/**
+ * Prepends the last few room turns (demo-quality: raw last-N, no summarization/token-budgeting
+ * — see #2478 for the real thing) so the model can resolve references like "that user"
+ * back to earlier messages. No-op (returns `question` unchanged) when there's no history.
+ */
+function buildQuestionWithHistory(
+  question: string,
+  history: HistoryTurn[],
+): string {
+  if (history.length === 0) return question;
+  const lines = history.map((turn) => `${turn.sender}: ${turn.body}`);
+  return [
+    'Recent room conversation (oldest first, for context only — do not repeat it back):',
+    ...lines,
+    '',
+    `Current question: ${question}`,
+  ].join('\n');
 }
 
 /** Drop leading `@hyphabot_… :` pill text and matrix.to markdown so the model sees a clean question. */

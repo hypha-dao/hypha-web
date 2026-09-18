@@ -12,9 +12,73 @@ import type { Persona } from './personas';
  */
 
 const SEND_TIMEOUT_MS = 15_000;
+const HISTORY_TIMEOUT_MS = 10_000;
 
 function personaMxid(persona: Persona, cfg: AiBotPocConfig): string {
   return `@${persona.localpart}:${cfg.serverName}`;
+}
+
+interface RawTimelineEvent {
+  type?: string;
+  sender?: string;
+  event_id?: string;
+  content?: { msgtype?: string; body?: string };
+}
+
+export interface HistoryTurn {
+  sender: string;
+  body: string;
+}
+
+/**
+ * Last `limit` prior `m.room.message`/`m.text` turns in `roomId`, oldest first, excluding
+ * `excludeEventId` (the message that triggered this call — its body is already the question).
+ * Best-effort: quick demo-quality context, not a real conversation-memory layer (see #2478).
+ * Bodies are truncated hard; this is NOT a token-budgeting strategy, just a sanity cap.
+ */
+export async function fetchRecentRoomHistory(
+  persona: Persona,
+  roomId: string,
+  cfg: AiBotPocConfig,
+  excludeEventId: string,
+  limit = 5,
+): Promise<HistoryTurn[]> {
+  const mxid = personaMxid(persona, cfg);
+  const url =
+    `${cfg.homeserverUrl}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/messages` +
+    `?dir=b&limit=${limit + 1}&user_id=${encodeURIComponent(mxid)}`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${cfg.asToken}` },
+    signal: AbortSignal.timeout(HISTORY_TIMEOUT_MS),
+    redirect: 'error',
+  });
+  if (!res.ok) {
+    throw new Error(`matrix history fetch failed (${res.status})`);
+  }
+  const data = (await res.json()) as { chunk?: RawTimelineEvent[] };
+  const chunk = Array.isArray(data.chunk) ? data.chunk : [];
+
+  return chunk
+    .filter(
+      (
+        e,
+      ): e is Required<Pick<RawTimelineEvent, 'sender' | 'event_id'>> &
+        RawTimelineEvent =>
+        e.type === 'm.room.message' &&
+        e.content?.msgtype === 'm.text' &&
+        Boolean(e.content.body?.trim()) &&
+        e.event_id !== excludeEventId &&
+        Boolean(e.sender),
+    )
+    .slice(0, limit) // dir=b is newest-first; take the N most recent (excl. the trigger event)
+    .reverse() // oldest -> newest, matching reading order
+    .map((e) => ({
+      sender: e.sender!,
+      body: e.content!.body!.trim().slice(0, 400),
+    }));
 }
 
 function makeTxnId(): string {
