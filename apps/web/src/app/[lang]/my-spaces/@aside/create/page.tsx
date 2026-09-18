@@ -68,6 +68,7 @@ export default function AsideCreateSpacePage() {
                     lastError || errors[0],
                     tSpaces('smartWalletNotConnected'),
                     tSpaces('uploadFailedIngest'),
+                    tSpaces('uploadFailedStorageQuota'),
                   )}
                 </div>
               ) : null}

@@ -209,6 +209,7 @@ export const CreateSubspaceForm = ({
                   lastError || errors[0],
                   t('smartWalletNotConnected'),
                   t('uploadFailedIngest'),
+                  t('uploadFailedStorageQuota'),
                 )}
               </div>
             ) : null}

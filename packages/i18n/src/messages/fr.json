@@ -1169,6 +1169,7 @@
     "reset": "Réinitialiser",
     "smartWalletNotConnected": "Le portefeuille intelligent n'est pas connecté. Connectez votre portefeuille intelligent Coinbase et réessayez.",
     "uploadFailedIngest": "L'hébergeur de fichiers a rejeté l'image. Essayez un JPEG ou un PNG de moins de 16 Mo.",
+    "uploadFailedStorageQuota": "Le stockage de fichiers est plein. Libérez de l'espace ou passez à un forfait UploadThing supérieur, puis réessayez.",
     "backToSettings": "Retour aux paramètres",
     "sandbox": "Bac à sable",
     "pilot": "Pilote",

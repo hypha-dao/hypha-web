@@ -1740,6 +1740,7 @@
     "reset": "Reset",
     "smartWalletNotConnected": "Smart wallet is not connected. Please connect your Coinbase smart wallet and try again.",
     "uploadFailedIngest": "The image upload was rejected by the file host. Try a JPEG or PNG under 16 MB.",
+    "uploadFailedStorageQuota": "File storage is full. Free space or upgrade the UploadThing plan, then try again.",
     "backToSettings": "Back to Settings",
     "sandbox": "Sandbox",
     "pilot": "Pilot",
