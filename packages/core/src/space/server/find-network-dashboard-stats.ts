@@ -57,12 +57,7 @@ export async function findNetworkDashboardStats({
       FROM ${documents}
       INNER JOIN real_spaces ON real_spaces.id = ${documents.spaceId}
       WHERE coalesce(${documents.title}, '') NOT ILIKE ${'%test%'}
-        AND nullif(btrim(coalesce(${documents.label}, '')), '') IS NOT NULL
         AND ${documents.state} IN ('proposal', 'agreement')
-    ),
-    month_grid AS (
-      SELECT date_trunc('month', now()) - (interval '1 month' * gs.month_offset) AS month_start
-      FROM generate_series(0, 11) AS gs(month_offset)
     )
     SELECT json_build_object(
       'spaceCount', (SELECT count(*)::int FROM real_spaces),
@@ -78,7 +73,9 @@ export async function findNetworkDashboardStats({
         FROM ${memberships}
         INNER JOIN real_spaces ON real_spaces.id = ${memberships.spaceId}
       ),
-      'proposalCount', (SELECT count(*)::int FROM real_documents),
+      'proposalCount', (
+        SELECT count(*)::int FROM real_documents WHERE state = 'proposal'
+      ),
       'agreementCount', (
         SELECT count(*)::int FROM real_documents WHERE state = 'agreement'
       ),
@@ -96,7 +93,9 @@ export async function findNetworkDashboardStats({
       'activityLast24h', (
         SELECT count(*)::int
         FROM ${events}
-        WHERE ${events.createdAt} >= now() - interval '24 hours'
+        INNER JOIN real_spaces ON real_spaces.id = ${events.referenceId}
+        WHERE ${events.referenceEntity} = 'space'
+          AND ${events.createdAt} >= now() - interval '24 hours'
       ),
       'spacesBeforeWindow', (
         SELECT count(*)::int
@@ -114,41 +113,47 @@ export async function findNetworkDashboardStats({
       'proposalsBeforeWindow', (
         SELECT count(*)::int
         FROM real_documents
-        WHERE created_at < date_trunc('month', now()) - interval '11 months'
+        WHERE state = 'proposal'
+          AND created_at < date_trunc('month', now()) - interval '11 months'
       ),
       'spacesByMonth', (
-        SELECT coalesce(json_agg(json_build_object(
-          'month', to_char(month_grid.month_start, 'YYYY-MM'),
-          'count', count(real_spaces.id)
-        ) ORDER BY month_grid.month_start), '[]'::json)
-        FROM month_grid
-        LEFT JOIN real_spaces
-          ON date_trunc('month', real_spaces.created_at) = month_grid.month_start
-        GROUP BY month_grid.month_start
+        SELECT coalesce(json_agg(json_build_object('month', month, 'count', count)), '[]'::json)
+        FROM (
+          SELECT
+            to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
+            count(*)::int AS count
+          FROM real_spaces
+          WHERE created_at >= date_trunc('month', now()) - interval '11 months'
+          GROUP BY 1
+        ) spaces_by_month
       ),
       'membersByMonth', (
-        SELECT coalesce(json_agg(json_build_object(
-          'month', to_char(month_grid.month_start, 'YYYY-MM'),
-          'count', count(real_memberships.id)
-        ) ORDER BY month_grid.month_start), '[]'::json)
-        FROM month_grid
-        LEFT JOIN (
-          SELECT ${memberships.id} AS id, ${memberships.createdAt} AS created_at
+        SELECT coalesce(json_agg(json_build_object('month', month, 'count', count)), '[]'::json)
+        FROM (
+          SELECT
+            to_char(date_trunc('month', ${
+              memberships.createdAt
+            }), 'YYYY-MM') AS month,
+            count(*)::int AS count
           FROM ${memberships}
           INNER JOIN real_spaces ON real_spaces.id = ${memberships.spaceId}
-        ) real_memberships
-          ON date_trunc('month', real_memberships.created_at) = month_grid.month_start
-        GROUP BY month_grid.month_start
+          WHERE ${
+            memberships.createdAt
+          } >= date_trunc('month', now()) - interval '11 months'
+          GROUP BY 1
+        ) members_by_month
       ),
       'proposalsByMonth', (
-        SELECT coalesce(json_agg(json_build_object(
-          'month', to_char(month_grid.month_start, 'YYYY-MM'),
-          'count', count(real_documents.id)
-        ) ORDER BY month_grid.month_start), '[]'::json)
-        FROM month_grid
-        LEFT JOIN real_documents
-          ON date_trunc('month', real_documents.created_at) = month_grid.month_start
-        GROUP BY month_grid.month_start
+        SELECT coalesce(json_agg(json_build_object('month', month, 'count', count)), '[]'::json)
+        FROM (
+          SELECT
+            to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
+            count(*)::int AS count
+          FROM real_documents
+          WHERE state = 'proposal'
+            AND created_at >= date_trunc('month', now()) - interval '11 months'
+          GROUP BY 1
+        ) proposals_by_month
       ),
       'tokensByType', (
         SELECT coalesce(json_agg(json_build_object(
@@ -171,7 +176,9 @@ export async function findNetworkDashboardStats({
         FROM (
           SELECT btrim(label) AS proposal_label, count(*)::int AS proposal_count
           FROM real_documents
-          GROUP BY btrim(label)
+          WHERE state = 'proposal'
+            AND nullif(btrim(coalesce(label, '')), '') IS NOT NULL
+          GROUP BY 1
           ORDER BY count(*) DESC
           LIMIT 30
         ) proposal_labels
