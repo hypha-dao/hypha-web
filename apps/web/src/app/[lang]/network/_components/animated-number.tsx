@@ -1,7 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { prefersReducedMotion } from './format-network-stats';
+import {
+  formatCompact,
+  formatUsd,
+  prefersReducedMotion,
+} from './format-network-stats';
 
 function easeOutCubic(t: number): number {
   return 1 - (1 - t) ** 3;
@@ -9,11 +13,13 @@ function easeOutCubic(t: number): number {
 
 export function AnimatedNumber({
   value,
-  format,
+  locale,
+  format = 'compact',
   durationMs = 900,
 }: {
   value: number;
-  format: (value: number) => string;
+  locale: string;
+  format?: 'compact' | 'usd';
   durationMs?: number;
 }) {
   const [display, setDisplay] = React.useState(0);
@@ -41,5 +47,10 @@ export function AnimatedNumber({
     return () => window.cancelAnimationFrame(frame);
   }, [durationMs, value]);
 
-  return <>{format(display)}</>;
+  const formatted =
+    format === 'usd'
+      ? formatUsd(display, locale)
+      : formatCompact(display, locale);
+
+  return <>{formatted}</>;
 }

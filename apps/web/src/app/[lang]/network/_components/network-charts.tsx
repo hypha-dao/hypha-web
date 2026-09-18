@@ -2,7 +2,11 @@
 
 import * as React from 'react';
 import * as d3 from 'd3';
-import { formatMonthLabel, prefersReducedMotion } from './format-network-stats';
+import {
+  formatCompact,
+  formatMonthLabel,
+  prefersReducedMotion,
+} from './format-network-stats';
 
 function integerTicks(maxValue: number): number[] {
   if (maxValue <= 4) {
@@ -63,7 +67,6 @@ export function NetworkAreaChart({
   color,
   ariaLabel,
   emptyLabel,
-  formatTick,
 }: {
   months: readonly string[];
   values: readonly number[];
@@ -71,7 +74,6 @@ export function NetworkAreaChart({
   color: string;
   ariaLabel: string;
   emptyLabel: string;
-  formatTick: (value: number) => string;
 }) {
   const pathRef = React.useRef<SVGPathElement>(null);
   const areaRef = React.useRef<SVGPathElement>(null);
@@ -144,7 +146,7 @@ export function NetworkAreaChart({
               dominantBaseline="middle"
               className="fill-muted-foreground text-[10px] tabular-nums"
             >
-              {formatTick(tick)}
+              {formatCompact(tick, locale)}
             </text>
           </g>
         ))}

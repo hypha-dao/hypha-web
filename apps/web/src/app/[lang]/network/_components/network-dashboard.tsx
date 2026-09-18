@@ -39,11 +39,6 @@ function KpiCard({
   locale: string;
   format?: 'compact' | 'usd';
 }) {
-  const formatValue =
-    format === 'usd'
-      ? (current: number) => formatUsd(current, locale)
-      : (current: number) => formatCompact(current, locale);
-
   return (
     <Card className="craft-card min-w-0">
       <CardContent className="flex h-full flex-col justify-between gap-3 p-3.5">
@@ -56,7 +51,7 @@ function KpiCard({
               : formatExact(value, locale)
           }
         >
-          <AnimatedNumber value={value} format={formatValue} />
+          <AnimatedNumber value={value} locale={locale} format={format} />
         </p>
         <p
           className={cn(
@@ -173,7 +168,6 @@ async function PayingChart({ locale }: { locale: string }) {
             color="var(--craft-chart-accent-5)"
             ariaLabel={t('dashboard.payingChartAria')}
             emptyLabel={t('dashboard.payingEmpty')}
-            formatTick={(value) => formatCompact(value, locale)}
           />
         ) : (
           <p className="craft-meta py-10 text-center">
@@ -286,7 +280,6 @@ export async function NetworkDashboard({
                   color="var(--craft-chart-accent-5)"
                   ariaLabel={t('dashboard.growthChartAria')}
                   emptyLabel={t('dashboard.noData')}
-                  formatTick={(value) => formatCompact(value, locale)}
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <SparkStat
