@@ -65,7 +65,7 @@ export const useSpaceMutationsWeb3Rpc = () => {
     error: errorWaitSpaceFromTransaction,
   } = useSWR(
     createSpaceHash ? [createSpaceHash, 'waitFor'] : null,
-    async ([hash]) => {
+    async ([hash]: [`0x${string}`, string]) => {
       const { logs } = await publicClient.waitForTransactionReceipt({ hash });
       return getSpaceFromLogs(logs);
     },

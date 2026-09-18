@@ -7,7 +7,7 @@ export const SMART_WALLET_CLIENT_UNAVAILABLE_MESSAGE =
 export type SmartWalletWriteClient = {
   // Privy smart-wallet clients are viem-shaped; keep this loose so the helper
   // can wrap both `client` and `getClientForChain` without importing Privy types.
-  writeContract: (...args: any[]) => Promise<`0x${string}` | string>;
+  writeContract: (...args: any[]) => Promise<`0x${string}`>;
 };
 
 export type ResolveSmartWalletClientInput = {
