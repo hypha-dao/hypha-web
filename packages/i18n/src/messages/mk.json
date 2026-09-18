@@ -339,6 +339,11 @@
     },
     "chartAria": "Графикон на распределбата на токените за {title}",
     "tokenDetailsAria": "Детали за токенот {tokenName}",
+    "exportHolders": "Извези иматели",
+    "exportingHolders": "Се извезува…",
+    "exportHoldersError": "Не може да се извезе списокот на иматели. Обидете се повторно.",
+    "exportHoldersIncomplete": "Откривањето на иматели е нецелосно. Обидете се повторно да извезете.",
+    "exportHoldersAria": "Извези го целиот список на иматели",
     "tooltip": {
       "totalSupply": "Вкупна понуда",
       "other": "Останато",
@@ -347,7 +352,8 @@
     "filters": {
       "energy": "Енергија",
       "activity": "Активност",
-      "distribution": "Распределба"
+      "distribution": "Распределба",
+      "payingSpaces": "Плаќачки spaces"
     },
     "activity": {
       "title": "Не може да се вчитаат виџетите за активност",
@@ -396,6 +402,29 @@
     "energy": {
       "title": "Енергија",
       "description": "Виџетите за енергија ќе се појават штом бидат достапни податоци за енергија."
+    },
+    "payingSpaces": {
+      "pageTitle": "Плаќачки spaces",
+      "pageSubtitle": "Месечна покриеност од првата on-chain уплата.",
+      "title": "Плаќачки spaces",
+      "subtitle": "Spaces со активна платена претплата секој месец, од почеток. Филтрирајте по space за преглед.",
+      "currentlyPaying": "Моментално плаќаат",
+      "everPaid": "Некогаш платиле",
+      "paymentEvents": "Настани на плаќање",
+      "totalPaid": "Вкупно платено",
+      "spaceLabel": "Space",
+      "spaceAll": "Сите spaces",
+      "payingCount": "плаќачки spaces",
+      "paymentsInView": "плаќања во приказ",
+      "paymentUsdTitle": "Износ на плаќања",
+      "paymentUsdSubtitle": "USD од on-chain плаќања за spaces секој месец, од почеток. Филтрирајте по space за преглед.",
+      "paymentUsdInView": "платено во приказ",
+      "paymentUsdChartAria": "Износи на плаќања во долари по месец",
+      "fromMonth": "Од {month}",
+      "empty": "Сѐ уште нема историја на плаќачки spaces.",
+      "error": "Плаќачките spaces не можат да се вчитаат сега.",
+      "chartAria": "Плаќачки spaces по месец",
+      "notCurrentlyPaying": "Моментално не плаќа"
     }
   },
   "SpaceSettingsAction": {
@@ -2190,7 +2219,8 @@
             "nzd": "Новозеландски долар",
             "aud": "Австралиски долар",
             "hkd": "Хонгконшки долар",
-            "xpf": "Тихоокеански франк"
+            "xpf": "Тихоокеански франк",
+            "tzs": "Танзаниски шилинг"
           }
         },
         "decay": {

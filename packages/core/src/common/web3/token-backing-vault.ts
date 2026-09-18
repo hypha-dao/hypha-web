@@ -77,11 +77,55 @@ export const MAX_REDEMPTION_PERIOD_OPTIONS = [
   { value: 90, label: '90 days' },
 ] as const;
 
-/** Map reference currency code to its X/USD feed (address(0) = USD). CNY, JPY, HKD fallback to USD. */
-export function getPriceCurrencyFeed(currency?: string | null): `0x${string}` {
-  if (!currency || currency === 'USD') return CURRENCY_FEEDS.USD;
-  const feed = CURRENCY_FEEDS[currency as keyof typeof CURRENCY_FEEDS];
-  return (feed ?? CURRENCY_FEEDS.USD) as `0x${string}`;
+/** True when `currency` has a dedicated AggregatorV3 X/USD feed on Base. */
+export function hasOnChainCurrencyFeed(
+  currency?: string | null,
+): currency is keyof typeof CURRENCY_FEEDS {
+  return (
+    currency != null &&
+    Object.prototype.hasOwnProperty.call(CURRENCY_FEEDS, currency)
+  );
+}
+
+/**
+ * Map a reference currency code to its X/USD feed (address(0) = USD).
+ *
+ * Returns `undefined` for display-only currencies (TZS) and unknown codes.
+ * Do **not** fall back to address(0) for those — the chain treats a non-zero
+ * `tokenPrice` + address(0) as a USD peg.
+ */
+export function getPriceCurrencyFeed(
+  currency?: string | null,
+): `0x${string}` | undefined {
+  if (!hasOnChainCurrencyFeed(currency)) return undefined;
+  return CURRENCY_FEEDS[currency];
+}
+
+/**
+ * Encode a display peg for on-chain storage.
+ *
+ * Currencies without an AggregatorV3 feed keep `tokenPrice = 0` and
+ * `priceCurrencyFeed = address(0)` so the contract does not claim a USD peg.
+ * The labelled price still lives in DB `reference_price` / `reference_currency`.
+ */
+export function encodeOnChainTokenPrice(input: {
+  referencePrice?: number | null;
+  referenceCurrency?: string | null;
+}): { tokenPrice: number; priceCurrencyFeed: `0x${string}` } {
+  const feed = getPriceCurrencyFeed(input.referenceCurrency);
+  const price = input.referencePrice;
+  if (
+    feed === undefined ||
+    price == null ||
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+    return { tokenPrice: 0, priceCurrencyFeed: CURRENCY_FEEDS.USD };
+  }
+  return {
+    tokenPrice: Math.round(price * 1_000_000),
+    priceCurrencyFeed: feed,
+  };
 }
 
 export function getPriceCurrencyCode(

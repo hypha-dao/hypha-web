@@ -360,6 +360,11 @@
     },
     "chartAria": "Graphique de répartition des tokens pour {title}",
     "tokenDetailsAria": "Détails du token pour {tokenName}",
+    "exportHolders": "Exporter les détenteurs",
+    "exportingHolders": "Export en cours…",
+    "exportHoldersError": "Impossible d'exporter la liste des détenteurs. Veuillez réessayer.",
+    "exportHoldersIncomplete": "La découverte des détenteurs est incomplète. Veuillez réessayer l'export.",
+    "exportHoldersAria": "Exporter la liste complète des détenteurs",
     "tooltip": {
       "totalSupply": "Offre totale",
       "other": "Autres",
@@ -368,7 +373,8 @@
     "filters": {
       "energy": "Énergie",
       "activity": "Activité",
-      "distribution": "Distribution"
+      "distribution": "Distribution",
+      "payingSpaces": "Spaces payants"
     },
     "activity": {
       "title": "Impossible de charger les widgets d'activité",
@@ -417,6 +423,29 @@
     "energy": {
       "title": "Énergie",
       "description": "Les widgets énergie apparaîtront lorsque les données seront disponibles."
+    },
+    "payingSpaces": {
+      "pageTitle": "Spaces payants",
+      "pageSubtitle": "Couverture mensuelle depuis le premier paiement on-chain.",
+      "title": "Spaces payants",
+      "subtitle": "Spaces avec un abonnement payant actif chaque mois, depuis le début. Filtrez par space pour le détail.",
+      "currentlyPaying": "Payants actuellement",
+      "everPaid": "Ont déjà payé",
+      "paymentEvents": "Événements de paiement",
+      "totalPaid": "Total payé",
+      "spaceLabel": "Space",
+      "spaceAll": "Tous les spaces",
+      "payingCount": "spaces payants",
+      "paymentsInView": "paiements affichés",
+      "paymentUsdTitle": "Montant des paiements",
+      "paymentUsdSubtitle": "USD des paiements on-chain des spaces chaque mois, depuis le début. Filtrez par space pour le détail.",
+      "paymentUsdInView": "payé affiché",
+      "paymentUsdChartAria": "Montants des paiements en dollars par mois",
+      "fromMonth": "Depuis {month}",
+      "empty": "Pas encore d’historique de spaces payants.",
+      "error": "Impossible de charger les spaces payants pour le moment.",
+      "chartAria": "Spaces payants par mois",
+      "notCurrentlyPaying": "Pas payant actuellement"
     }
   },
   "SpaceSettingsAction": {
@@ -1636,7 +1665,8 @@
             "nzd": "Dollar néo-zélandais",
             "aud": "Dollar australien",
             "hkd": "Dollar de Hong Kong",
-            "xpf": "Franc pacifique"
+            "xpf": "Franc pacifique",
+            "tzs": "Shilling tanzanien"
           }
         },
         "decay": {

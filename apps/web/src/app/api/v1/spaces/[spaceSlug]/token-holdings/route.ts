@@ -113,6 +113,11 @@ export async function GET(
       'collapseBelowPct',
       'collapse_below_pct',
     ]);
+    const expandUnknownHolders = parseBooleanParam(
+      url,
+      ['expandUnknownHolders', 'expand_unknown_holders'],
+      false,
+    );
 
     const gated = await getTokenHoldingsBySpaceSlug(
       {
@@ -121,6 +126,7 @@ export async function GET(
         includeTreasury,
         holderLimit,
         collapseBelowPct,
+        expandUnknownHolders,
       },
       { db, authToken: bearer },
     );

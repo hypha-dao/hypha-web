@@ -351,7 +351,8 @@
             "nzd": "Dólar Neozelandês",
             "aud": "Dólar Australiano",
             "hkd": "Dólar de Hong Kong",
-            "xpf": "Franco CFP"
+            "xpf": "Franco CFP",
+            "tzs": "Xelim tanzaniano"
           }
         },
         "decay": {
@@ -1130,6 +1131,11 @@
     },
     "chartAria": "Gráfico de distribuição de tokens para {title}",
     "tokenDetailsAria": "Detalhes do token para {tokenName}",
+    "exportHolders": "Exportar titulares",
+    "exportingHolders": "A exportar…",
+    "exportHoldersError": "Não foi possível exportar a lista de titulares. Tente novamente.",
+    "exportHoldersIncomplete": "A descoberta de titulares está incompleta. Tente exportar novamente.",
+    "exportHoldersAria": "Exportar a lista completa de titulares",
     "tooltip": {
       "totalSupply": "Oferta total",
       "other": "Outros",
@@ -1138,7 +1144,8 @@
     "filters": {
       "energy": "Energia",
       "activity": "Atividade",
-      "distribution": "Distribuição"
+      "distribution": "Distribuição",
+      "payingSpaces": "Spaces pagantes"
     },
     "activity": {
       "title": "Não foi possível carregar os widgets de atividade",
@@ -1187,6 +1194,29 @@
     "energy": {
       "title": "Energia",
       "description": "Os widgets de energia aparecerão quando houver dados disponíveis."
+    },
+    "payingSpaces": {
+      "pageTitle": "Spaces pagantes",
+      "pageSubtitle": "Cobertura mensal desde o primeiro pagamento on-chain.",
+      "title": "Spaces pagantes",
+      "subtitle": "Spaces com assinatura paga ativa em cada mês, desde o início. Filtre por space para o detalhamento.",
+      "currentlyPaying": "Pagando agora",
+      "everPaid": "Já pagaram",
+      "paymentEvents": "Eventos de pagamento",
+      "totalPaid": "Total pago",
+      "spaceLabel": "Space",
+      "spaceAll": "Todos os spaces",
+      "payingCount": "spaces pagantes",
+      "paymentsInView": "pagamentos na vista",
+      "paymentUsdTitle": "Valor dos pagamentos",
+      "paymentUsdSubtitle": "USD dos pagamentos on-chain de spaces a cada mês, desde o início. Filtre por space para o detalhamento.",
+      "paymentUsdInView": "pago na vista",
+      "paymentUsdChartAria": "Valores de pagamento em dólares por mês",
+      "fromMonth": "Desde {month}",
+      "empty": "Ainda não há histórico de spaces pagantes.",
+      "error": "Não foi possível carregar os spaces pagantes agora.",
+      "chartAria": "Spaces pagantes por mês",
+      "notCurrentlyPaying": "Não está pagando agora"
     }
   },
   "SpaceSettingsAction": {

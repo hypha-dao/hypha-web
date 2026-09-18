@@ -51,6 +51,8 @@ export * from './matrix/types';
 export * from './energy/server';
 export * from './banking/server';
 export * from './geo/server';
+export * from './platform';
+export * from './platform/server';
 export {
   geocodeRequestSchema,
   geocodeResponseSchema,

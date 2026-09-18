@@ -359,6 +359,11 @@
     },
     "chartAria": "Token distribution chart for {title}",
     "tokenDetailsAria": "Token details for {tokenName}",
+    "exportHolders": "Export holders",
+    "exportingHolders": "Exporting…",
+    "exportHoldersError": "Unable to export the holder list. Please retry.",
+    "exportHoldersIncomplete": "Holder discovery is incomplete. Please retry the export.",
+    "exportHoldersAria": "Export the full holder list",
     "tooltip": {
       "totalSupply": "Total supply",
       "other": "Other",
@@ -367,7 +372,8 @@
     "filters": {
       "energy": "Energy",
       "activity": "Activity",
-      "distribution": "Distribution"
+      "distribution": "Distribution",
+      "payingSpaces": "Paying spaces"
     },
     "activity": {
       "title": "Unable to load activity widgets",
@@ -416,6 +422,29 @@
     "energy": {
       "title": "Energy",
       "description": "Energy widgets will appear once energy data is available."
+    },
+    "payingSpaces": {
+      "pageTitle": "Paying spaces",
+      "pageSubtitle": "Monthly coverage from the first on-chain payment.",
+      "title": "Paying spaces",
+      "subtitle": "Spaces with an active paid subscription each month, from inception. Filter by space for a per-space breakdown.",
+      "currentlyPaying": "Currently paying",
+      "everPaid": "Ever paid",
+      "paymentEvents": "Payment events",
+      "totalPaid": "Total paid",
+      "spaceLabel": "Space",
+      "spaceAll": "All spaces",
+      "payingCount": "paying spaces",
+      "paymentsInView": "payments in view",
+      "paymentUsdTitle": "Payment amount",
+      "paymentUsdSubtitle": "USD from on-chain space payments each month, from inception. Filter by space for a per-space breakdown.",
+      "paymentUsdInView": "paid in view",
+      "paymentUsdChartAria": "Payment dollar amounts by month",
+      "fromMonth": "From {month}",
+      "empty": "No paying-space history yet.",
+      "error": "Unable to load paying spaces right now.",
+      "chartAria": "Paying spaces by month",
+      "notCurrentlyPaying": "Not currently paying"
     }
   },
   "SpaceSettingsAction": {
@@ -2210,7 +2239,8 @@
             "nzd": "New Zealand Dollar",
             "aud": "Australian Dollar",
             "hkd": "Hong Kong Dollar",
-            "xpf": "CFP Franc"
+            "xpf": "CFP Franc",
+            "tzs": "Tanzanian Shilling"
           }
         },
         "decay": {

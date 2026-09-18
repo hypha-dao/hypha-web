@@ -5,7 +5,12 @@ import { erc20Abi, formatUnits, isAddress } from 'viem';
 
 import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
+import { findPeopleByWeb3Addresses } from '../../people/server/queries';
+import { getErc20HolderAddresses } from '../../common/server/get-erc20-holder-addresses';
+import {
+  findSpaceHostFieldsBySlug,
+  findSpaceByAddresses,
+} from '../../space/server/queries';
 import { computeSpaceMemberEntries } from '../../space/server/get-space-members-roster';
 import { fetchSpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
 import { web3Client } from '../../common/server/web3-rpc/client';
@@ -46,6 +51,8 @@ export type GetTokenHoldingsBySpaceSlugInput = {
   holderLimit?: number;
   includeTreasury?: boolean;
   collapseBelowPct?: number;
+  /** Enumerate unnamed wallets instead of collapsing them into Other. */
+  expandUnknownHolders?: boolean;
 };
 
 export type GetTokenHoldingsBySpaceSlugResult =
@@ -70,11 +77,12 @@ export type GetTokenHoldingsBySpaceSlugResult =
       source: 'db+chain';
       asOf: string;
       tokens: TokenHoldingRow[];
+      holders_complete: boolean;
     };
 
 type HolderDescriptor = {
   address: `0x${string}`;
-  holder_kind: Exclude<HolderKind, 'other'>;
+  holder_kind: HolderKind;
   display_name: string;
   slug: string | null;
 };
@@ -228,6 +236,89 @@ async function readBalancesForHolders(
   return balances;
 }
 
+async function withDiscoveredHolders(
+  tokenAddress: `0x${string}`,
+  knownHolders: HolderDescriptor[],
+  db: DbConfig['db'],
+): Promise<{ holders: HolderDescriptor[]; complete: boolean }> {
+  const holdersByAddress = new Map(
+    knownHolders.map((holder) => [holder.address, holder]),
+  );
+
+  let discovered: `0x${string}`[] = [];
+  let complete = true;
+  try {
+    const discovery = await getErc20HolderAddresses(tokenAddress);
+    discovered = discovery.addresses;
+    complete = discovery.complete;
+  } catch (error) {
+    console.warn(
+      `[getTokenHoldingsBySpaceSlug] failed to enumerate holders for ${tokenAddress}`,
+      error,
+    );
+    return { holders: knownHolders, complete: false };
+  }
+
+  const unknownAddresses = discovered.filter(
+    (address) => !holdersByAddress.has(address),
+  );
+  if (unknownAddresses.length === 0) {
+    return { holders: knownHolders, complete };
+  }
+
+  const [people, spacesResult] = await Promise.all([
+    findPeopleByWeb3Addresses({ addresses: unknownAddresses }, { db }),
+    findSpaceByAddresses(unknownAddresses, {}, { db }),
+  ]);
+
+  const peopleByAddress = new Map(
+    people
+      .filter((person) => person.address && isAddress(person.address))
+      .map((person) => [normalizeAddress(person.address!), person]),
+  );
+  const spacesByAddress = new Map(
+    spacesResult.data
+      .filter((space) => space.address && isAddress(space.address))
+      .map((space) => [normalizeAddress(space.address!), space]),
+  );
+
+  for (const address of unknownAddresses) {
+    const person = peopleByAddress.get(address);
+    if (person) {
+      holdersByAddress.set(address, {
+        address,
+        holder_kind: 'person',
+        display_name: resolvePersonDisplayName({ person }),
+        slug: person.slug ?? null,
+      });
+      continue;
+    }
+
+    const space = spacesByAddress.get(address);
+    if (space) {
+      holdersByAddress.set(address, {
+        address,
+        holder_kind: 'space',
+        display_name: space.title || space.slug || shortAddress(address),
+        slug: space.slug ?? null,
+      });
+      continue;
+    }
+
+    holdersByAddress.set(address, {
+      address,
+      holder_kind: 'other',
+      display_name: '',
+      slug: null,
+    });
+  }
+
+  return {
+    holders: Array.from(holdersByAddress.values()),
+    complete,
+  };
+}
+
 export async function getTokenHoldingsBySpaceSlug(
   {
     spaceSlug,
@@ -235,6 +326,7 @@ export async function getTokenHoldingsBySpaceSlug(
     holderLimit,
     includeTreasury = true,
     collapseBelowPct,
+    expandUnknownHolders = false,
   }: GetTokenHoldingsBySpaceSlugInput,
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
@@ -389,11 +481,14 @@ export async function getTokenHoldingsBySpaceSlug(
     });
   }
 
-  const holderDescriptors = Array.from(holderMap.values());
+  const rosterHolders = Array.from(holderMap.values());
+  const expandHolders = expandUnknownHolders === true;
+  const effectiveCollapseBelowPct = expandHolders ? 0 : safeCollapseBelowPct;
+  const effectiveHolderLimit = expandHolders ? undefined : safeHolderLimit;
 
   const buildTokenRow = async (
     tokenAddress: `0x${string}`,
-  ): Promise<TokenHoldingRow> => {
+  ): Promise<{ row: TokenHoldingRow; holdersComplete: boolean }> => {
     const contractInfo = await readTokenContractInfo(tokenAddress);
     const tokenMeta = dbTokenByAddress.get(tokenAddress);
     const isHyphaSharedToken =
@@ -402,6 +497,18 @@ export async function getTokenHoldingsBySpaceSlug(
       tokenMeta?.type === 'voice' || isVoiceTokenSymbol(contractInfo.symbol);
     const decimals = contractInfo.decimals;
     const totalSupplyRaw = contractInfo.totalSupplyRaw;
+
+    let holdersComplete = true;
+    let holderDescriptors = rosterHolders;
+    if (expandHolders) {
+      const discovered = await withDiscoveredHolders(
+        tokenAddress,
+        rosterHolders,
+        db,
+      );
+      holderDescriptors = discovered.holders;
+      holdersComplete = discovered.complete;
+    }
 
     const balancesByAddress = await readBalancesForHolders(
       tokenAddress,
@@ -430,9 +537,10 @@ export async function getTokenHoldingsBySpaceSlug(
     const aggregatedMembers = new Map<
       string,
       {
-        holder_kind: Exclude<HolderKind, 'treasury' | 'other'>;
+        holder_kind: Exclude<HolderKind, 'treasury'>;
         display_name: string;
         slug: string | null;
+        address: `0x${string}`;
         balance_raw: bigint;
       }
     >();
@@ -441,12 +549,12 @@ export async function getTokenHoldingsBySpaceSlug(
       const balanceRaw = balancesByAddress.get(descriptor.address) ?? 0n;
       if (!includeZeroBalances && balanceRaw <= 0n) continue;
 
-      if (descriptor.holder_kind === 'treasury') {
+      if (expandHolders || descriptor.holder_kind === 'treasury') {
         rows.push({
-          holder_kind: 'treasury',
+          holder_kind: descriptor.holder_kind,
           address: descriptor.address,
-          display_name: 'Treasury',
-          slug: null,
+          display_name: descriptor.display_name,
+          slug: descriptor.slug,
           balance: formatUnits(balanceRaw, decimals),
           balance_raw: balanceRaw.toString(),
           share_pct: toSharePct(balanceRaw, totalSupplyRaw),
@@ -467,6 +575,7 @@ export async function getTokenHoldingsBySpaceSlug(
           holder_kind: descriptor.holder_kind,
           display_name: descriptor.display_name,
           slug: descriptor.slug,
+          address: descriptor.address,
           balance_raw: balanceRaw,
         });
       }
@@ -474,14 +583,14 @@ export async function getTokenHoldingsBySpaceSlug(
 
     for (const entry of aggregatedMembers.values()) {
       const sharePct = toSharePct(entry.balance_raw, totalSupplyRaw);
-      if (sharePct < safeCollapseBelowPct) {
+      if (sharePct < effectiveCollapseBelowPct) {
         collapsedSmallHolderRaw += entry.balance_raw;
         continue;
       }
 
       rows.push({
         holder_kind: entry.holder_kind,
-        address: null,
+        address: entry.address,
         display_name: entry.display_name,
         slug: entry.slug,
         balance: formatUnits(entry.balance_raw, decimals),
@@ -499,9 +608,9 @@ export async function getTokenHoldingsBySpaceSlug(
 
     let holderRows = rows;
     let overflowToOtherRaw = 0n;
-    if (safeHolderLimit && holderRows.length > safeHolderLimit) {
-      const keep = holderRows.slice(0, safeHolderLimit);
-      const overflow = holderRows.slice(safeHolderLimit);
+    if (effectiveHolderLimit && holderRows.length > effectiveHolderLimit) {
+      const keep = holderRows.slice(0, effectiveHolderLimit);
+      const overflow = holderRows.slice(effectiveHolderLimit);
       overflowToOtherRaw = overflow.reduce(
         (sum, row) => sum + BigInt(row.balance_raw),
         0n,
@@ -511,7 +620,7 @@ export async function getTokenHoldingsBySpaceSlug(
 
     const otherRaw =
       externalOtherRaw + collapsedSmallHolderRaw + overflowToOtherRaw;
-    if (otherRaw > 0n || includeZeroBalances) {
+    if (!expandHolders && (otherRaw > 0n || includeZeroBalances)) {
       holderRows.push({
         holder_kind: 'other',
         address: null,
@@ -524,25 +633,29 @@ export async function getTokenHoldingsBySpaceSlug(
     }
 
     return {
-      token_id: tokenMeta?.id ?? null,
-      token_address: tokenAddress,
-      name: tokenMeta?.name ?? contractInfo.name,
-      symbol: tokenMeta?.symbol ?? contractInfo.symbol,
-      icon_url: tokenMeta?.iconUrl ?? null,
-      type: isVoiceToken
-        ? 'voice'
-        : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
-      decimals,
-      max_supply: tokenMeta?.maxSupply ?? null,
-      total_supply: formatUnits(totalSupplyRaw, decimals),
-      holdings: holderRows,
-      treasury_balance: formatUnits(treasuryRaw, decimals),
-      other_balance: formatUnits(otherRaw, decimals),
-      total_holders_balance: formatUnits(totalSupplyRaw, decimals),
-    } satisfies TokenHoldingRow;
+      row: {
+        token_id: tokenMeta?.id ?? null,
+        token_address: tokenAddress,
+        name: tokenMeta?.name ?? contractInfo.name,
+        symbol: tokenMeta?.symbol ?? contractInfo.symbol,
+        icon_url: tokenMeta?.iconUrl ?? null,
+        type: isVoiceToken
+          ? 'voice'
+          : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
+        decimals,
+        max_supply: tokenMeta?.maxSupply ?? null,
+        total_supply: formatUnits(totalSupplyRaw, decimals),
+        holdings: holderRows,
+        treasury_balance: formatUnits(treasuryRaw, decimals),
+        other_balance: formatUnits(otherRaw, decimals),
+        total_holders_balance: formatUnits(totalSupplyRaw, decimals),
+      } satisfies TokenHoldingRow,
+      holdersComplete,
+    };
   };
 
   const tokenRows: TokenHoldingRow[] = [];
+  let holdersComplete = true;
   for (
     let startIndex = 0;
     startIndex < tokenAddresses.length;
@@ -552,10 +665,13 @@ export async function getTokenHoldingsBySpaceSlug(
       startIndex,
       startIndex + TOKEN_PROCESS_CONCURRENCY,
     );
-    const batchRows = await Promise.all(
+    const batchResults = await Promise.all(
       batch.map((token) => buildTokenRow(token)),
     );
-    tokenRows.push(...batchRows);
+    for (const result of batchResults) {
+      tokenRows.push(result.row);
+      holdersComplete = holdersComplete && result.holdersComplete;
+    }
   }
 
   return {
@@ -573,6 +689,7 @@ export async function getTokenHoldingsBySpaceSlug(
       source: 'db+chain',
       asOf,
       tokens: tokenRows,
+      holders_complete: holdersComplete,
     },
   };
 }

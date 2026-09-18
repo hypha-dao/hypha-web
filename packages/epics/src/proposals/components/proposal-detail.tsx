@@ -18,6 +18,7 @@ import {
   getTokenDecimals,
   CURRENCY_FEEDS,
   REFERENCE_CURRENCIES,
+  sanitizeTokenPriceReferenceCurrency,
   TOKENS,
   type Person,
   type Space,
@@ -360,23 +361,32 @@ function buildIssueNewTokenResubmitPayload(
 
   const priceMicro =
     token.priceInUSD !== undefined ? Number(token.priceInUSD) : 0;
-  const enableTokenPrice = priceMicro > 0;
-  const tokenPrice = enableTokenPrice ? priceMicro / 1_000_000 : undefined;
+  const dbPriceRef = sanitizeTokenPriceReferenceCurrency(
+    matchedDb?.referenceCurrency,
+  );
+  const dbPrice =
+    matchedDb?.referencePrice != null ? Number(matchedDb.referencePrice) : NaN;
+  const dbHasDisplayPrice =
+    dbPriceRef !== undefined && Number.isFinite(dbPrice) && dbPrice > 0;
+  /**
+   * TZS pegs are stored in DB only (on-chain tokenPrice stays 0 so the
+   * contract does not claim a USD peg). Still treat that as "price enabled"
+   * for resubmit / display.
+   */
+  const enableTokenPrice = priceMicro > 0 || dbHasDisplayPrice;
+  const tokenPrice = priceMicro > 0 ? priceMicro / 1_000_000 : undefined;
 
   const feedAddr = token.priceCurrencyFeed as string | undefined;
   const referenceCurrencyFromChain = referenceCurrencyFromPriceFeed(feedAddr);
 
   let referenceCurrencyResolved = referenceCurrencyFromChain;
-  if (enableTokenPrice && matchedDb?.referenceCurrency) {
-    referenceCurrencyResolved = matchedDb.referenceCurrency;
+  if (dbPriceRef) {
+    referenceCurrencyResolved = dbPriceRef;
   } else if (enableTokenPrice && !referenceCurrencyResolved) {
     referenceCurrencyResolved = 'USD';
   }
 
-  const tokenPriceResolved =
-    enableTokenPrice && matchedDb?.referencePrice != null
-      ? matchedDb.referencePrice
-      : tokenPrice;
+  const tokenPriceResolved = dbHasDisplayPrice ? dbPrice : tokenPrice;
 
   const formType =
     matchedDb?.type ??
