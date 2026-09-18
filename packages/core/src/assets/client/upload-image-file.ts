@@ -37,6 +37,11 @@ export async function uploadImageFile(
   if (!token) {
     throw new Error('Authentication is required to upload images.');
   }
+  if (file.size === 0) {
+    throw new Error(
+      `"${file.name}" is empty and cannot be uploaded. Crop or choose the image again.`,
+    );
+  }
 
   const result = await uploadFiles('imageUploader', {
     files: [normalizeSvgMime(file)],

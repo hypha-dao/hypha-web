@@ -1738,6 +1738,7 @@
     "noSpaces": "No spaces",
     "errorOhSnap": "Oh snap! There was an error",
     "reset": "Reset",
+    "smartWalletNotConnected": "Smart wallet is not connected. Please connect your Coinbase smart wallet and try again.",
     "backToSettings": "Back to Settings",
     "sandbox": "Sandbox",
     "pilot": "Pilot",

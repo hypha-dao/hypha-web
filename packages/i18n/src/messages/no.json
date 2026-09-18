@@ -1737,6 +1737,7 @@
     "noSpaces": "Ingen rom",
     "errorOhSnap": "Oi! Det oppstod en feil",
     "reset": "Nullstill",
+    "smartWalletNotConnected": "Smartlommeboken er ikke tilkoblet. Koble til Coinbase-smartlommeboken din og prøv igjen.",
     "backToSettings": "Tilbake til innstillinger",
     "sandbox": "Sandkasse",
     "pilot": "Pilot",

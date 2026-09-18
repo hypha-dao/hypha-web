@@ -4,6 +4,7 @@ import {
   SpaceForm,
   ProposalOverlayShell,
   getDhoPathDefaultLanding,
+  formatCreateSpaceError,
 } from '@hypha-platform/epics';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
@@ -63,10 +64,10 @@ export default function AsideCreateSpacePage() {
               <div>{tSpaces('errorOhSnap')}</div>
               {lastError || errors[0] ? (
                 <div className="text-sm text-neutral-11">
-                  {lastError ||
-                    (errors[0] instanceof Error
-                      ? errors[0].message
-                      : String(errors[0]))}
+                  {formatCreateSpaceError(
+                    lastError || errors[0],
+                    tSpaces('smartWalletNotConnected'),
+                  )}
                 </div>
               ) : null}
               <Button onClick={reset}>{tSpaces('reset')}</Button>

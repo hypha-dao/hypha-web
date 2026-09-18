@@ -1738,6 +1738,7 @@
     "noSpaces": "Geen ruimtes",
     "errorOhSnap": "O knap! Er is een fout opgetreden",
     "reset": "Opnieuw instellen",
+    "smartWalletNotConnected": "Slimme portemonnee is niet verbonden. Sluit uw Coinbase slimme portemonnee aan en probeer het opnieuw.",
     "backToSettings": "Terug naar Instellingen",
     "sandbox": "Zandbak",
     "pilot": "Piloot",

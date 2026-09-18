@@ -2,6 +2,7 @@
 
 import { useConfig } from 'wagmi';
 import { SpaceForm } from './create-space-form';
+import { formatCreateSpaceError } from '../lib/format-create-space-error';
 import { useRouter } from 'next/navigation';
 import {
   type Space,
@@ -204,10 +205,10 @@ export const CreateSubspaceForm = ({
             <div>{t('errorOhSnap')}</div>
             {lastError || errors[0] ? (
               <div className="text-sm text-neutral-11">
-                {lastError ||
-                  (errors[0] instanceof Error
-                    ? errors[0].message
-                    : String(errors[0]))}
+                {formatCreateSpaceError(
+                  lastError || errors[0],
+                  t('smartWalletNotConnected'),
+                )}
               </div>
             ) : null}
             <Button

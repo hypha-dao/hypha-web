@@ -1,4 +1,8 @@
 export { useCreateSpaceOrchestrator } from './useCreateSpaceOrchestrator';
+export {
+  SMART_WALLET_CLIENT_UNAVAILABLE_MESSAGE,
+  isSmartWalletClientUnavailableError,
+} from './resolve-smart-wallet-client';
 export { useJoinSpaceWeb3Rpc } from './useJoinSpace.web3.rpc';
 export { useSpaceBySlug } from './useSpaceBySlug';
 export { useSpaceMutationsWeb2Rsc } from './useSpaceMutations.web2.rsc';

@@ -1938,6 +1938,7 @@
     "noSpaces": "Sin espacios",
     "errorOhSnap": "¡Oh, chasquido! hubo un error",
     "reset": "Reiniciar",
+    "smartWalletNotConnected": "La billetera inteligente no está conectada. Conecta tu billetera inteligente de Coinbase e inténtalo de nuevo.",
     "backToSettings": "Volver a configuración",
     "sandbox": "Salvadera",
     "pilot": "Piloto",

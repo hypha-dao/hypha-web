@@ -220,6 +220,11 @@ export const useCreateSpaceOrchestrator = ({
           flags = [],
         } = arg;
 
+        // JWT is enough for UploadThing; on-chain createSpace needs the Privy
+        // Coinbase smart-wallet client. Fail before uploading if it never appears.
+        startTask('CREATE_WEB3_SPACE');
+        await web3.ensureSmartWalletClient();
+
         startTask('UPLOAD_FILES');
         // One file at a time: imageUploader allows 1 file, and hook-based
         // startUpload swallows errors / shares state across concurrent calls.

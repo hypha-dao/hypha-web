@@ -1167,6 +1167,7 @@
     "noSpaces": "Aucun espace",
     "errorOhSnap": "Oups ! Une erreur s'est produite",
     "reset": "Réinitialiser",
+    "smartWalletNotConnected": "Le portefeuille intelligent n'est pas connecté. Connectez votre portefeuille intelligent Coinbase et réessayez.",
     "backToSettings": "Retour aux paramètres",
     "sandbox": "Bac à sable",
     "pilot": "Pilote",
