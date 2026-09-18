@@ -40,6 +40,8 @@ export const CreateSubspaceForm = ({
     reset,
     currentAction,
     isError,
+    lastError,
+    errors,
     isPending,
     progress,
     space: { slug: spaceSlug },
@@ -198,8 +200,16 @@ export const CreateSubspaceForm = ({
       isLoading={isPending}
       message={
         isError ? (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             <div>{t('errorOhSnap')}</div>
+            {lastError || errors[0] ? (
+              <div className="text-sm text-neutral-11">
+                {lastError ||
+                  (errors[0] instanceof Error
+                    ? errors[0].message
+                    : String(errors[0]))}
+              </div>
+            ) : null}
             <Button
               onClick={() => {
                 setIsSubmitting(false);

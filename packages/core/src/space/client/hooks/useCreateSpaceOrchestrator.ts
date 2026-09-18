@@ -11,16 +11,18 @@ import useSWRMutation from 'swr/mutation';
 import {
   schemaCreateSpace,
   schemaCreateSpaceFiles,
-  schemaCreateSpaceWeb2,
   schemaCreateSpaceWeb3,
 } from '../../validation';
 import { useCreateEvent } from '../../../events';
 import { useMe } from '../../../people';
 import { publicClient } from '@hypha-platform/core/client';
 import { getSpaceFromLogs } from '../web3/dao-space-factory/get-space-created-event';
-import { getUploadThingClientFileUrl } from '../../../assets/uploadthing-cdn';
-import { useImageUpload } from '../../../assets/client';
+import { uploadImageFile } from '../../../assets/client';
 import { CreateSpaceInput } from '../../types';
+import {
+  buildCreateSpaceWeb2Input,
+  type CreateSpaceUploadedFileUrls,
+} from './build-create-space-web2-input';
 
 type UseCreateSpaceOrchestratorInput = {
   authToken?: string | null;
@@ -106,17 +108,31 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
-const getRequiredUploadResultUrl = (
-  result: unknown,
-  fieldName: string,
-): string => {
-  const uploadedUrl = getUploadThingClientFileUrl(result);
-  if (!uploadedUrl) {
-    throw new Error(
-      `Upload failed: no URL returned for ${fieldName}. Ingest PUT likely 400'd (double-encoded x-ut-file-type or empty startUpload result).`,
-    );
+const readErrorMessage = (error: unknown): string => {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
   }
-  return uploadedUrl;
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+  return 'Unexpected error while creating the space.';
+};
+
+const uploadOptionalImage = async (
+  file: File | string | undefined | null,
+  fieldName: keyof CreateSpaceUploadedFileUrls,
+  authToken?: string | null,
+): Promise<string | undefined> => {
+  if (file instanceof File) {
+    return uploadImageFile(file, authToken ?? undefined);
+  }
+  if (typeof file === 'string' && file) {
+    return file;
+  }
+  if (file) {
+    throw new Error(`${fieldName} must be an image file or URL.`);
+  }
+  return undefined;
 };
 
 export const useCreateSpaceOrchestrator = ({
@@ -136,9 +152,8 @@ export const useCreateSpaceOrchestrator = ({
   const { person } = useMe();
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const web3 = useSpaceMutationsWeb3Rpc();
-  const { upload: uploadImage } = useImageUpload({
-    authorizationToken: authToken ?? undefined,
-  });
+  const [lastError, setLastError] = React.useState<string | null>(null);
+  const currentTaskRef = React.useRef<TaskName>('UPLOAD_FILES');
 
   const [taskState, dispatch] = React.useReducer(
     progressStateReducer,
@@ -150,6 +165,7 @@ export const useCreateSpaceOrchestrator = ({
 
   const startTask = useCallback((taskName: TaskName) => {
     const action = taskActionDescriptions[taskName];
+    currentTaskRef.current = taskName;
     setCurrentAction(action);
     dispatch({ type: 'START_TASK', taskName, message: action });
   }, []);
@@ -175,6 +191,7 @@ export const useCreateSpaceOrchestrator = ({
   );
 
   const resetTasks = useCallback(() => {
+    setLastError(null);
     dispatch({ type: 'RESET' });
   }, []);
 
@@ -191,14 +208,10 @@ export const useCreateSpaceOrchestrator = ({
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
       let web2SpaceId: number | undefined = undefined;
-      const uploadedFileUrls: {
-        logoUrl?: string;
-        leadImage?: string;
-        ecosystemLogoUrlLight?: string;
-        ecosystemLogoUrlDark?: string;
-      } = {};
+      const uploadedFileUrls: CreateSpaceUploadedFileUrls = {};
 
       try {
+        setLastError(null);
         const {
           logoUrl,
           leadImage,
@@ -207,76 +220,30 @@ export const useCreateSpaceOrchestrator = ({
           flags = [],
         } = arg;
 
-        if (
-          logoUrl ||
-          leadImage ||
-          ecosystemLogoUrlLight ||
-          ecosystemLogoUrlDark
-        ) {
-          startTask('UPLOAD_FILES');
-
-          const uploadPromises: Promise<void>[] = [];
-
-          if (logoUrl instanceof File) {
-            uploadPromises.push(
-              uploadImage([logoUrl]).then((result) => {
-                uploadedFileUrls.logoUrl = getRequiredUploadResultUrl(
-                  result,
-                  'logoUrl',
-                );
-              }),
-            );
-          } else if (typeof logoUrl === 'string' && logoUrl) {
-            uploadedFileUrls.logoUrl = logoUrl;
-          }
-
-          if (leadImage instanceof File) {
-            uploadPromises.push(
-              uploadImage([leadImage]).then((result) => {
-                uploadedFileUrls.leadImage = getRequiredUploadResultUrl(
-                  result,
-                  'leadImage',
-                );
-              }),
-            );
-          } else if (typeof leadImage === 'string' && leadImage) {
-            uploadedFileUrls.leadImage = leadImage;
-          }
-
-          if (ecosystemLogoUrlLight instanceof File) {
-            uploadPromises.push(
-              uploadImage([ecosystemLogoUrlLight]).then((result) => {
-                uploadedFileUrls.ecosystemLogoUrlLight =
-                  getRequiredUploadResultUrl(result, 'ecosystemLogoUrlLight');
-              }),
-            );
-          } else if (
-            typeof ecosystemLogoUrlLight === 'string' &&
-            ecosystemLogoUrlLight
-          ) {
-            uploadedFileUrls.ecosystemLogoUrlLight = ecosystemLogoUrlLight;
-          }
-
-          if (ecosystemLogoUrlDark instanceof File) {
-            uploadPromises.push(
-              uploadImage([ecosystemLogoUrlDark]).then((result) => {
-                uploadedFileUrls.ecosystemLogoUrlDark =
-                  getRequiredUploadResultUrl(result, 'ecosystemLogoUrlDark');
-              }),
-            );
-          } else if (
-            typeof ecosystemLogoUrlDark === 'string' &&
-            ecosystemLogoUrlDark
-          ) {
-            uploadedFileUrls.ecosystemLogoUrlDark = ecosystemLogoUrlDark;
-          }
-
-          await Promise.all(uploadPromises);
-          completeTask('UPLOAD_FILES');
-        } else {
-          startTask('UPLOAD_FILES');
-          completeTask('UPLOAD_FILES');
-        }
+        startTask('UPLOAD_FILES');
+        // One file at a time: imageUploader allows 1 file, and hook-based
+        // startUpload swallows errors / shares state across concurrent calls.
+        uploadedFileUrls.logoUrl = await uploadOptionalImage(
+          logoUrl,
+          'logoUrl',
+          authToken,
+        );
+        uploadedFileUrls.leadImage = await uploadOptionalImage(
+          leadImage,
+          'leadImage',
+          authToken,
+        );
+        uploadedFileUrls.ecosystemLogoUrlLight = await uploadOptionalImage(
+          ecosystemLogoUrlLight,
+          'ecosystemLogoUrlLight',
+          authToken,
+        );
+        uploadedFileUrls.ecosystemLogoUrlDark = await uploadOptionalImage(
+          ecosystemLogoUrlDark,
+          'ecosystemLogoUrlDark',
+          authToken,
+        );
+        completeTask('UPLOAD_FILES');
 
         if (!uploadedFileUrls.logoUrl || !uploadedFileUrls.leadImage) {
           throw new Error(
@@ -345,11 +312,14 @@ export const useCreateSpaceOrchestrator = ({
         completeTask('CREATE_WEB3_SPACE');
 
         startTask('CREATE_WEB2_SPACE');
-        const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse({
-          ...arg,
-          web3SpaceId: web3SpaceIdResult,
-          address: web3Executor,
-        });
+        const inputCreateSpaceWeb2 = buildCreateSpaceWeb2Input(
+          arg,
+          uploadedFileUrls,
+          {
+            spaceId: web3SpaceIdResult,
+            executor: web3Executor,
+          },
+        );
         const createSpaceInput: CreateSpaceInput = {
           ...inputCreateSpaceWeb2,
           logoUrl: uploadedFileUrls.logoUrl,
@@ -382,6 +352,9 @@ export const useCreateSpaceOrchestrator = ({
         }
         completeTask('CREATE_WEB2_SPACE');
       } catch (err) {
+        const message = readErrorMessage(err);
+        setLastError(message);
+        errorTask(currentTaskRef.current, message);
         if (web2SpaceId && !web3SpaceIdResult) {
           try {
             const spaceToDelete = web2.createdSpace;
@@ -399,11 +372,13 @@ export const useCreateSpaceOrchestrator = ({
 
   const errors = React.useMemo(() => {
     return [
+      lastError,
       web2.errorCreateSpaceMutation,
       web3.errorCreateSpace,
       web3.errorWaitSpaceFromTransaction,
     ].filter(Boolean);
   }, [
+    lastError,
     web2.errorCreateSpaceMutation,
     web3.errorCreateSpace,
     web3.errorWaitSpaceFromTransaction,
@@ -428,5 +403,6 @@ export const useCreateSpaceOrchestrator = ({
     isPending: progress > 0 && progress < 100,
     isError: errors.length > 0,
     errors,
+    lastError,
   };
 };
