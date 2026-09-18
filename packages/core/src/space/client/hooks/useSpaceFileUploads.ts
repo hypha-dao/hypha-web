@@ -49,7 +49,9 @@ export const useSpaceFileUploads = (
               const result = await upload([file]);
               const uploadedUrl = getUploadThingClientFileUrl(result);
               if (!uploadedUrl) {
-                throw new Error(`Upload failed: no URL returned for ${key}`);
+                throw new Error(
+                  `Upload failed: no URL returned for ${key}. Ingest PUT likely 400'd (double-encoded x-ut-file-type or empty startUpload result).`,
+                );
               }
               uploadedFiles[key as keyof Files] = uploadedUrl;
             }

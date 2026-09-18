@@ -112,7 +112,9 @@ const getRequiredUploadResultUrl = (
 ): string => {
   const uploadedUrl = getUploadThingClientFileUrl(result);
   if (!uploadedUrl) {
-    throw new Error(`Upload failed: no URL returned for ${fieldName}`);
+    throw new Error(
+      `Upload failed: no URL returned for ${fieldName}. Ingest PUT likely 400'd (double-encoded x-ut-file-type or empty startUpload result).`,
+    );
   }
   return uploadedUrl;
 };
