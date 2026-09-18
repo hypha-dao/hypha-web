@@ -10,6 +10,11 @@ overrides:
   dompurify: '>=3.4.0 <4'
   hono: '>=4.12.12 <5'
 
+patchedDependencies:
+  '@uploadthing/shared@7.1.7':
+    hash: txm6pttnpb7r6vh5uqpcxjkajm
+    path: patches/@uploadthing__shared@7.1.7.patch
+
 importers:
 
   .:
@@ -30649,14 +30654,14 @@ snapshots:
 
   '@uploadthing/react@7.3.0(next@15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(react@19.1.2)(uploadthing@7.6.0(express@5.2.1)(h3@1.15.3)(next@15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(tailwindcss@4.1.11))':
     dependencies:
-      '@uploadthing/shared': 7.1.7
+      '@uploadthing/shared': 7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)
       file-selector: 0.6.0
       react: 19.1.2
       uploadthing: 7.6.0(express@5.2.1)(fastify@5.6.1)(h3@1.15.3)(next@15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(tailwindcss@4.1.11)
     optionalDependencies:
       next: 15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3)
 
-  '@uploadthing/shared@7.1.7':
+  '@uploadthing/shared@7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)':
     dependencies:
       '@uploadthing/mime-types': 0.3.4
       effect: 3.12.0
@@ -44288,7 +44293,7 @@ snapshots:
       '@effect/platform': 0.72.0(effect@3.12.0)
       '@standard-schema/spec': 1.0.0-beta.4
       '@uploadthing/mime-types': 0.3.4
-      '@uploadthing/shared': 7.1.7
+      '@uploadthing/shared': 7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)
       effect: 3.12.0
     optionalDependencies:
       express: 5.2.1
