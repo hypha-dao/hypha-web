@@ -37,14 +37,12 @@ import {
   type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
 import { OnboardingAiFullPage } from './onboarding-ai-full-page';
-import '../../_shared/landing-marketing.css';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
-const onboardingCardClass =
-  'group h-full rounded-xl border border-border/70 bg-background-2 transition-[border-color,background-color] duration-200 hover:border-accent-8/50 hover:bg-background-3/40';
+const onboardingCardClass = 'craft-card group h-full';
 const primaryCtaClass =
   'h-10 w-full rounded-xl border border-accent-9 bg-accent-9 text-accent-contrast transition-colors hover:bg-accent-10';
 const exchangeButtonBaseClass =
@@ -225,7 +223,6 @@ export function OnboardingAdventurePage({
   onboardingHeroEnabled?: boolean;
 }) {
   const t = useTranslations('OnboardingAdventure');
-  const tCommon = useTranslations('Common');
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -439,94 +436,67 @@ export function OnboardingAdventurePage({
   }
   return (
     <div className="flex flex-col">
-      <section
-        data-landing-marketing
-        className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 text-white md:pb-20 md:pt-10"
-      >
-        {/* Always-on midnight plane — matches marketing website, independent of app theme */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,var(--landing-navy-mid),var(--landing-navy-deep)_72%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,var(--landing-navy-glow),transparent_68%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px]"
-        />
-        <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
-          <header className="flex flex-col items-center gap-6 text-center md:gap-8">
-            <p className="inline-block rounded-full border border-[color-mix(in_oklab,var(--landing-accent)_40%,transparent)] bg-black/35 px-5 py-1.5 text-2 font-medium text-white shadow-[0_0_32px_-10px_var(--landing-accent)] backdrop-blur-sm">
-              {t('heroPill.build')}{' '}
-              <span
-                key={rotatingHeroTitleWords[heroTitleWordIndex]}
-                className="font-semibold text-[var(--landing-accent)] transition-opacity duration-300"
-              >
-                {rotatingHeroTitleWords[heroTitleWordIndex]}
-              </span>
-              {t('heroPill.together')}
-            </p>
-            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-[var(--landing-accent-muted)] md:text-3">
-              {t('heroEyebrow')}
-            </p>
-            <h1 className="mx-auto max-w-4xl [font-family:var(--font-family-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
-              <span className="block text-white">{t('titleLine1')}</span>
-              <span className="landing-marketing-title-accent mt-1 block">
-                {t('titleLine2')}
-              </span>
-            </h1>
-            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-white/90 md:text-5">
-              {t('subtitle')}
-            </p>
-          </header>
+      <Container className="flex flex-col gap-10 py-8 md:py-10">
+        <header className="flex flex-col gap-3">
+          <p className="inline-flex w-fit items-center rounded-xl border border-border/70 bg-background-2 px-3 py-1.5 text-2 text-muted-foreground">
+            {t('heroPill.build')}{' '}
+            <span
+              key={rotatingHeroTitleWords[heroTitleWordIndex]}
+              className="font-medium text-foreground"
+            >
+              {rotatingHeroTitleWords[heroTitleWordIndex]}
+            </span>
+            {t('heroPill.together')}
+          </p>
+          <p className="text-1 font-medium uppercase tracking-[0.08em] text-accent-11">
+            {t('heroEyebrow')}
+          </p>
+          <h1 className="craft-page-title max-w-[18ch] text-balance [font-family:var(--font-family-heading)] text-7 font-semibold tracking-[-0.02em] md:text-8">
+            {t('titleLine1')} {t('titleLine2')}
+          </h1>
+          <p className="max-w-[42ch] text-3 leading-relaxed text-muted-foreground">
+            {t('subtitle')}
+          </p>
+        </header>
 
-          {onboardingHeroEnabled ? (
-            <section className="relative mx-auto w-full max-w-5xl">
-              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] backdrop-blur-md">
-                <AiPanelChatBar
-                  variant="hero"
-                  value={aiPrompt}
-                  onChange={setAiPrompt}
-                  onSend={handleStartAiOnboarding}
-                  draftAttachments={draftAttachments}
-                  onDraftAttachmentsChange={setDraftAttachments}
-                  placeholder={
-                    rotatingHeroPrompts[heroPlaceholderIndex] ??
-                    t('aiHero.placeholder')
-                  }
-                  sendAriaLabel={
-                    isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
-                  }
-                  composerDisabled={!aiChatEnabled || isStartingAi}
-                  isStreaming={isStartingAi}
+        {onboardingHeroEnabled ? (
+          <section className="w-full max-w-3xl">
+            <div className="craft-card overflow-hidden">
+              <AiPanelChatBar
+                variant="hero"
+                value={aiPrompt}
+                onChange={setAiPrompt}
+                onSend={handleStartAiOnboarding}
+                draftAttachments={draftAttachments}
+                onDraftAttachmentsChange={setDraftAttachments}
+                placeholder={
+                  rotatingHeroPrompts[heroPlaceholderIndex] ??
+                  t('aiHero.placeholder')
+                }
+                sendAriaLabel={
+                  isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
+                }
+                composerDisabled={!aiChatEnabled || isStartingAi}
+                isStreaming={isStartingAi}
+              />
+            </div>
+            {aiStartError ? (
+              <div className="mt-2 flex items-center gap-2 text-1" role="alert">
+                <AlertTriangle
+                  className="size-3.5 text-warning-10"
+                  aria-hidden
                 />
+                <span className="text-warning-11">{aiStartError}</span>
               </div>
-              {aiStartError ? (
-                <div
-                  className="mt-2 flex items-center justify-center gap-2 text-1"
-                  role="alert"
-                >
-                  <AlertTriangle
-                    className="size-3.5 text-warning-10"
-                    aria-hidden
-                  />
-                  <span className="text-warning-11">{aiStartError}</span>
-                </div>
-              ) : null}
-              {!aiChatEnabled ? (
-                <p className="mt-2 text-center text-1 text-muted-foreground">
-                  {t('aiHero.unavailable')}
-                </p>
-              ) : null}
-            </section>
-          ) : null}
-        </Container>
-      </section>
-
-      <Container className="flex flex-col gap-10 py-10 md:py-12">
-        <ol className="mx-auto flex w-full max-w-3xl list-none flex-wrap items-center justify-center gap-2 px-2">
+            ) : null}
+            {!aiChatEnabled ? (
+              <p className="mt-2 text-1 text-muted-foreground">
+                {t('aiHero.unavailable')}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+        <ol className="flex w-full max-w-3xl list-none flex-wrap items-center gap-2">
           {[t('explore.title'), t('create.title'), t('join.title')].map(
             (label, index) => (
               <li

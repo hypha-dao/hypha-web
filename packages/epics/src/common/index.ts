@@ -26,6 +26,14 @@ export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
 export {
+  AI_CHAT_MIRROR_EVENT,
+  AI_PROMPT_SEED_EVENT,
+  AI_VOICE_START_EVENT,
+  dispatchAiChatMirror,
+  dispatchAiPromptSeed,
+  dispatchAiVoiceStart,
+} from './ai-prompt-seed';
+export {
   AI_ONBOARDING_SEED_ACK_EVENT,
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,

@@ -1,15 +1,27 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { TabScreenTitle } from '../../_components/tab-screen-title';
+import { Locale } from '@hypha-platform/i18n';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { SpaceJourneyHome } from '@hypha-platform/epics';
 import { HomeTokenHoldingsDashboardLazy } from './home-token-holdings-dashboard-lazy';
 
-export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
-  const tCommon = useTranslations('Common');
+export function SpaceOpsHome({
+  lang,
+  spaceSlug,
+}: {
+  lang: Locale;
+  spaceSlug: string;
+}) {
+  const { space } = useSpaceBySlug(spaceSlug);
 
   return (
-    <div className="flex flex-col gap-5 py-4 md:gap-6">
-      <TabScreenTitle title={tCommon('home')} />
+    <div className="flex flex-col gap-8 py-4 md:gap-10">
+      <SpaceJourneyHome
+        lang={lang}
+        spaceSlug={spaceSlug}
+        memberCount={space?.memberCount ?? null}
+        agreementCount={space?.documentCount ?? null}
+      />
       <HomeTokenHoldingsDashboardLazy spaceSlug={spaceSlug} />
     </div>
   );
