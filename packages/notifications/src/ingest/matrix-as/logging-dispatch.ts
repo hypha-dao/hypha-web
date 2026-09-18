@@ -16,6 +16,7 @@ export const loggingDispatch: NotificationDispatch = async (
   console.info('[matrix-as] chat notification event (dispatch stub — #2470)', {
     type: event.type,
     matrixEventId: event.source.matrixEventId,
+    roomId: event.roomId,
     context: event.context,
     actor: event.actor.matrixUserId,
     mentioned: event.payload.mentionedMatrixUserIds,

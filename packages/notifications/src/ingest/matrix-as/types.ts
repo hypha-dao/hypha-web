@@ -77,6 +77,12 @@ export interface ChatNotificationEvent {
   type: ChatNotificationEventType;
   /** Idempotency key for the whole notification pipeline (#2470 §3.A.1). */
   source: { kind: 'matrix'; matrixEventId: string };
+  /**
+   * Matrix room the event was sent in. Additive field carried for consumers that reply back
+   * into the room (#2485 AI-bot POC). #2470 keeps naming-adjustment rights like the rest of
+   * this contract; the substance (which room) is stable.
+   */
+  roomId: string;
   /** The Matrix sender. #2470's resolver excludes this identity from recipients. */
   actor: { matrixUserId: string };
   context: RoomSpaceContext;
