@@ -5,6 +5,8 @@ import * as d3 from 'd3';
 import {
   formatCompact,
   formatMonthLabel,
+  formatMonthYear,
+  formatUsd,
   prefersReducedMotion,
 } from './format-network-stats';
 
@@ -67,6 +69,8 @@ export function NetworkAreaChart({
   color,
   ariaLabel,
   emptyLabel,
+  valueLabel,
+  valueFormat = 'compact',
 }: {
   months: readonly string[];
   values: readonly number[];
@@ -74,10 +78,14 @@ export function NetworkAreaChart({
   color: string;
   ariaLabel: string;
   emptyLabel: string;
+  valueLabel: string;
+  valueFormat?: 'compact' | 'usd';
 }) {
   const pathRef = React.useRef<SVGPathElement>(null);
   const areaRef = React.useRef<SVGPathElement>(null);
+  const svgRef = React.useRef<SVGSVGElement>(null);
   const gradientId = React.useId();
+  const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
   const points = months.map((month, index) => ({
     month,
     value: values[index] ?? 0,
@@ -117,78 +125,151 @@ export function NetworkAreaChart({
   const ticks = integerTicks(Math.ceil(y.domain()[1] ?? yMax));
   const tickEvery = points.length > 8 ? 2 : 1;
   const last = points.at(-1);
+  const hover = hoverIndex == null ? null : points[hoverIndex];
+  const hoverX = hover ? x(hover.month) ?? 0 : 0;
+  const hoverY = hover ? y(hover.value) : 0;
+  const formatValue =
+    valueFormat === 'usd'
+      ? (value: number) => formatUsd(value, locale)
+      : (value: number) => formatCompact(value, locale);
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const svgX = ((event.clientX - rect.left) / rect.width) * width;
+    const innerX = svgX - margin.left;
+    let nearest = 0;
+    let best = Number.POSITIVE_INFINITY;
+    points.forEach((point, index) => {
+      const distance = Math.abs((x(point.month) ?? 0) - innerX);
+      if (distance < best) {
+        best = distance;
+        nearest = index;
+      }
+    });
+    setHoverIndex(nearest);
+  };
 
   return (
-    <svg
-      role="img"
-      aria-label={ariaLabel}
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-48 w-full overflow-visible md:h-56"
+    <div
+      className="relative cursor-crosshair"
+      onPointerMove={onPointerMove}
+      onPointerLeave={() => setHoverIndex(null)}
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <g transform={`translate(${margin.left} ${margin.top})`}>
-        {ticks.map((tick) => (
-          <g key={tick} transform={`translate(0, ${y(tick)})`}>
-            <line
-              x1={0}
-              x2={innerWidth}
-              className="stroke-border/60"
-              strokeDasharray="2 5"
-            />
-            <text
-              x={-8}
-              textAnchor="end"
-              dominantBaseline="middle"
-              className="fill-muted-foreground text-[10px] tabular-nums"
-            >
-              {formatCompact(tick, locale)}
-            </text>
-          </g>
-        ))}
-        <path
-          ref={areaRef}
-          d={area(points) ?? ''}
-          fill={`url(#${gradientId})`}
-        />
-        <path
-          ref={pathRef}
-          d={line(points) ?? ''}
-          fill="none"
-          stroke={color}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {last ? (
-          <circle
-            cx={x(last.month) ?? 0}
-            cy={y(last.value)}
-            r="4"
-            fill="var(--background)"
-            stroke={color}
-            strokeWidth="2"
+      <svg
+        ref={svgRef}
+        role="img"
+        aria-label={ariaLabel}
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-48 w-full overflow-visible md:h-56"
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <g transform={`translate(${margin.left} ${margin.top})`}>
+          {ticks.map((tick) => (
+            <g key={tick} transform={`translate(0, ${y(tick)})`}>
+              <line
+                x1={0}
+                x2={innerWidth}
+                className="stroke-border/60"
+                strokeDasharray="2 5"
+              />
+              <text
+                x={-8}
+                textAnchor="end"
+                dominantBaseline="middle"
+                className="fill-muted-foreground text-[10px] tabular-nums"
+              >
+                {formatCompact(tick, locale)}
+              </text>
+            </g>
+          ))}
+          <path
+            ref={areaRef}
+            d={area(points) ?? ''}
+            fill={`url(#${gradientId})`}
           />
-        ) : null}
-        {points.map((point, index) =>
-          index % tickEvery === 0 || index === points.length - 1 ? (
-            <text
-              key={point.month}
-              x={x(point.month) ?? 0}
-              y={innerHeight + 20}
-              textAnchor="middle"
-              className="fill-muted-foreground text-[11px]"
-            >
-              {formatMonthLabel(point.month, locale)}
-            </text>
-          ) : null,
-        )}
-      </g>
-    </svg>
+          <path
+            ref={pathRef}
+            d={line(points) ?? ''}
+            fill="none"
+            stroke={color}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {hover ? (
+            <>
+              <line
+                x1={hoverX}
+                x2={hoverX}
+                y1={0}
+                y2={innerHeight}
+                className="stroke-foreground/25"
+                strokeWidth="1"
+              />
+              <circle
+                cx={hoverX}
+                cy={hoverY}
+                r="5"
+                fill="var(--background)"
+                stroke={color}
+                strokeWidth="2"
+              />
+            </>
+          ) : last ? (
+            <circle
+              cx={x(last.month) ?? 0}
+              cy={y(last.value)}
+              r="4"
+              fill="var(--background)"
+              stroke={color}
+              strokeWidth="2"
+            />
+          ) : null}
+          {points.map((point, index) =>
+            index % tickEvery === 0 || index === points.length - 1 ? (
+              <text
+                key={point.month}
+                x={x(point.month) ?? 0}
+                y={innerHeight + 20}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[11px]"
+              >
+                {formatMonthLabel(point.month, locale)}
+              </text>
+            ) : null,
+          )}
+        </g>
+      </svg>
+      {hover ? (
+        <div
+          className="pointer-events-none absolute z-10 min-w-28 rounded-lg border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
+          style={{
+            left: `${((margin.left + hoverX) / width) * 100}%`,
+            top: 8,
+            transform:
+              hoverX > innerWidth * 0.65
+                ? 'translateX(-108%)'
+                : 'translateX(8%)',
+          }}
+        >
+          <p className="craft-meta">{formatMonthYear(hover.month, locale)}</p>
+          <p className="flex items-baseline justify-between gap-3 text-1">
+            <span className="text-muted-foreground">{valueLabel}</span>
+            <span className="tabular-nums text-foreground">
+              {formatValue(hover.value)}
+            </span>
+          </p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

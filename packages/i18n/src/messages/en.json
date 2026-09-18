@@ -1616,6 +1616,8 @@
       "spacesSeries": "Spaces",
       "membersSeries": "Members",
       "proposalsSeries": "Proposals",
+      "paymentsSeries": "Payments",
+      "paidSeries": "Amount paid",
       "proposalsByType": "Proposals by type",
       "currentlyPaying": "Paying spaces",
       "everPaid": "{count} ever paid",

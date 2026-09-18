@@ -30,6 +30,15 @@ export function formatMonthLabel(monthKey: string, locale: string): string {
   );
 }
 
+export function formatMonthYear(monthKey: string, locale: string): string {
+  const [year, month] = monthKey.split('-').map(Number);
+  if (!year || !month) return monthKey;
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return true;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;

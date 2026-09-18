@@ -1596,6 +1596,8 @@
       "spacesSeries": "Простори",
       "membersSeries": "Членови",
       "proposalsSeries": "Предлози",
+      "paymentsSeries": "Плаќања",
+      "paidSeries": "Платена сума",
       "proposalsByType": "Предлози по тип",
       "currentlyPaying": "Плаќачки простори",
       "everPaid": "{count} некогаш платиле",

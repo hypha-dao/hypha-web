@@ -1045,6 +1045,8 @@
       "spacesSeries": "Espaces",
       "membersSeries": "Membres",
       "proposalsSeries": "Propositions",
+      "paymentsSeries": "Paiements",
+      "paidSeries": "Montant payé",
       "proposalsByType": "Propositions par type",
       "currentlyPaying": "Espaces payants",
       "everPaid": "{count} ont déjà payé",

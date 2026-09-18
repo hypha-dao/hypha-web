@@ -8,7 +8,10 @@ import {
   CardTitle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import type { NetworkDashboardStats } from '@hypha-platform/core/client';
+import {
+  toCumulativeSeries,
+  type NetworkDashboardStats,
+} from '@hypha-platform/core/client';
 import { AnimatedNumber } from './animated-number';
 import { formatCompact, formatExact, formatUsd } from './format-network-stats';
 import {
@@ -74,19 +77,23 @@ function SparkStat({
   values,
   locale,
   color,
+  format = 'compact',
 }: {
   label: string;
   value: number;
   values: readonly number[];
   locale: string;
   color: string;
+  format?: 'compact' | 'usd';
 }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="craft-meta">{label}</p>
         <p className="text-4 font-medium tabular-nums tracking-tight">
-          {formatCompact(value, locale)}
+          {format === 'usd'
+            ? formatUsd(value, locale)
+            : formatCompact(value, locale)}
         </p>
       </div>
       <NetworkSparkline values={values} color={color} label={label} />
@@ -159,16 +166,40 @@ async function PayingChart({ locale }: { locale: string }) {
         <CardTitle>{t('dashboard.payingTitle')}</CardTitle>
         <CardDescription>{t('dashboard.payingSubtitle')}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-5">
         {hasData ? (
-          <NetworkAreaChart
-            months={months}
-            values={values}
-            locale={locale}
-            color="var(--craft-chart-accent-5)"
-            ariaLabel={t('dashboard.payingChartAria')}
-            emptyLabel={t('dashboard.payingEmpty')}
-          />
+          <>
+            <NetworkAreaChart
+              months={months}
+              values={values}
+              locale={locale}
+              color="var(--craft-chart-accent-5)"
+              ariaLabel={t('dashboard.payingChartAria')}
+              emptyLabel={t('dashboard.payingEmpty')}
+              valueLabel={t('dashboard.currentlyPaying')}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SparkStat
+                locale={locale}
+                label={t('dashboard.paymentsSeries')}
+                value={paying?.paymentEvents ?? 0}
+                values={toCumulativeSeries(
+                  paying?.months.map((item) => item.paymentCount) ?? [],
+                )}
+                color="var(--craft-chart-accent-8)"
+              />
+              <SparkStat
+                locale={locale}
+                label={t('dashboard.paidSeries')}
+                value={paying?.paymentUsd ?? 0}
+                values={toCumulativeSeries(
+                  paying?.months.map((item) => item.paymentUsd) ?? [],
+                )}
+                format="usd"
+                color="var(--craft-chart-accent-3)"
+              />
+            </div>
+          </>
         ) : (
           <p className="craft-meta py-10 text-center">
             {t('dashboard.payingEmpty')}
@@ -280,6 +311,7 @@ export async function NetworkDashboard({
                   color="var(--craft-chart-accent-5)"
                   ariaLabel={t('dashboard.growthChartAria')}
                   emptyLabel={t('dashboard.noData')}
+                  valueLabel={t('dashboard.spacesSeries')}
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <SparkStat

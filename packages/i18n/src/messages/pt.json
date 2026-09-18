@@ -1816,6 +1816,8 @@
       "spacesSeries": "Espaços",
       "membersSeries": "Membros",
       "proposalsSeries": "Propostas",
+      "paymentsSeries": "Pagamentos",
+      "paidSeries": "Valor pago",
       "proposalsByType": "Propostas por tipo",
       "currentlyPaying": "Espaços pagantes",
       "everPaid": "{count} já pagaram",

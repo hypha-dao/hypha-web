@@ -9,7 +9,7 @@ import {
 
 const getCachedPayingSnapshot = unstable_cache(
   async () => toNetworkPayingSnapshot(await getPayingSpacesMetrics({ db })),
-  ['network-dashboard-paying-v1'],
+  ['network-dashboard-paying-v2'],
   { revalidate: 300 },
 );
 

@@ -1615,6 +1615,8 @@
       "spacesSeries": "Rom",
       "membersSeries": "Medlemmer",
       "proposalsSeries": "Forslag",
+      "paymentsSeries": "Betalinger",
+      "paidSeries": "Betalt beløp",
       "proposalsByType": "Forslag etter type",
       "currentlyPaying": "Betalende rom",
       "everPaid": "{count} har betalt",

@@ -1616,6 +1616,8 @@
       "spacesSeries": "Spaces",
       "membersSeries": "Leden",
       "proposalsSeries": "Voorstellen",
+      "paymentsSeries": "Betalingen",
+      "paidSeries": "Betaald bedrag",
       "proposalsByType": "Voorstellen per type",
       "currentlyPaying": "Betalende spaces",
       "everPaid": "{count} ooit betaald",

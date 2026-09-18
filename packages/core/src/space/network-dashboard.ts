@@ -31,6 +31,7 @@ export type NetworkPayingSnapshot = {
   months: Array<{
     month: string;
     payingSpaces: number;
+    paymentCount: number;
     paymentUsd: number;
   }>;
 };
@@ -231,6 +232,7 @@ export function toNetworkPayingSnapshot(data: {
   monthly: ReadonlyArray<{
     month: string;
     payingSpaces: number;
+    paymentCount?: number;
     paymentUsd: number;
   }>;
 }): NetworkPayingSnapshot {
@@ -246,6 +248,7 @@ export function toNetworkPayingSnapshot(data: {
         {
           month,
           payingSpaces: asInt(item.payingSpaces),
+          paymentCount: asInt(item.paymentCount),
           paymentUsd: asFiniteNumber(item.paymentUsd),
         },
       ];

@@ -116,7 +116,12 @@ describe('toNetworkPayingSnapshot', () => {
           paymentUsd: 1234.56,
         },
         monthly: [
-          { month: '2026-08', payingSpaces: 5, paymentUsd: 200 },
+          {
+            month: '2026-08',
+            payingSpaces: 5,
+            paymentCount: 3,
+            paymentUsd: 200,
+          },
           { month: 'bad', payingSpaces: 9, paymentUsd: 1 },
         ],
       }),
@@ -125,7 +130,14 @@ describe('toNetworkPayingSnapshot', () => {
       everPaid: 11,
       paymentEvents: 40,
       paymentUsd: 1234.56,
-      months: [{ month: '2026-08', payingSpaces: 5, paymentUsd: 200 }],
+      months: [
+        {
+          month: '2026-08',
+          payingSpaces: 5,
+          paymentCount: 3,
+          paymentUsd: 200,
+        },
+      ],
     });
   });
 });
