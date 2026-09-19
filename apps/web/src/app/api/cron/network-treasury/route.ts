@@ -20,6 +20,8 @@ export async function GET(request: Request) {
       aumUsd: snapshot.aumUsd,
       treasuryCount: snapshot.treasuryCount,
       issuedTokenCount: snapshot.issuedTokenCount,
+      transferCount: snapshot.transferCount,
+      voteCount: snapshot.voteCount,
       transactionCount: snapshot.transactionCount,
       generatedAt: snapshot.generatedAt,
     });

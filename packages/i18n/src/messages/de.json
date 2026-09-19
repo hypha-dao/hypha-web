@@ -1627,7 +1627,7 @@
       "aumHint": "Inkl. von Spaces ausgegebener Tokens in {count} Treasuries",
       "aumUnavailable": "Wird noch geladen",
       "transactions": "Transaktionen",
-      "transactionsHint": "On-Chain-Transfers von Space-Tokens",
+      "transactionsHint": "Vorschläge, Abstimmungen, Transfers und weitere Plattformaktivität",
       "transactionsUnavailable": "Wird noch geladen",
       "scopeNote": "Zählt keine Sandbox-, archivierten oder Platzhalter-Testspaces.",
       "noData": "Noch nicht genug Daten"

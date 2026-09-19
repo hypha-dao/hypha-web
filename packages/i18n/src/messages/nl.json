@@ -1626,7 +1626,7 @@
       "aumHint": "Inclusief door spaces uitgegeven tokens in {count} treasuries",
       "aumUnavailable": "Nog aan het laden",
       "transactions": "Transacties",
-      "transactionsHint": "On-chain transfers van door spaces uitgegeven tokens",
+      "transactionsHint": "Voorstellen, stemmen, transfers en overige platformactiviteit",
       "transactionsUnavailable": "Nog aan het laden",
       "scopeNote": "Sandbox-, gearchiveerde en placeholder-testspaces tellen niet mee.",
       "noData": "Nog niet genoeg gegevens"

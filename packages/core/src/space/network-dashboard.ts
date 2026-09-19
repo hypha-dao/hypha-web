@@ -35,6 +35,8 @@ export type NetworkTreasurySnapshot = {
   aumUsd: number;
   treasuryCount: number;
   issuedTokenCount: number;
+  transferCount: number;
+  voteCount: number;
   transactionCount: number;
   transactionsThisMonth: number;
   months: string[];
@@ -42,6 +44,66 @@ export type NetworkTreasurySnapshot = {
   tokens: NetworkTreasuryTokenUsd[];
   generatedAt: string;
 };
+
+export type CombinedNetworkTransactions = {
+  transactionCount: number;
+  transactionsThisMonth: number;
+  months: string[];
+  transactionsCumulative: number[];
+};
+
+/**
+ * Platform activity (documents, joins, executions, signal votes) plus
+ * on-chain token transfers and proposal votes.
+ */
+export function combineNetworkTransactions(
+  activity: Pick<
+    NetworkDashboardStats,
+    | 'transactionCount'
+    | 'transactionsThisMonth'
+    | 'transactionsCumulative'
+    | 'months'
+  >,
+  chain?: Pick<
+    NetworkTreasurySnapshot,
+    | 'transferCount'
+    | 'voteCount'
+    | 'transactionCount'
+    | 'transactionsThisMonth'
+    | 'transactionsCumulative'
+    | 'months'
+  > | null,
+): CombinedNetworkTransactions {
+  const transferCount = asInt(chain?.transferCount);
+  const voteCount = asInt(chain?.voteCount);
+  const onChain =
+    transferCount + voteCount > 0
+      ? transferCount + voteCount
+      : asInt(chain?.transactionCount);
+  const months = activity.months;
+  const chainMonths = chain?.months ?? [];
+  const chainCumulative = chain?.transactionsCumulative ?? [];
+  const mergedCumulative = activity.transactionsCumulative.map(
+    (value, index) => {
+      const chainMonth = chainMonths[index];
+      const activityMonth = months[index];
+      const chainValue =
+        chainMonth && activityMonth && chainMonth === activityMonth
+          ? asInt(chainCumulative[index])
+          : 0;
+      return value + chainValue;
+    },
+  );
+
+  return {
+    transactionCount: asInt(activity.transactionCount) + onChain,
+    transactionsThisMonth:
+      asInt(activity.transactionsThisMonth) +
+      asInt(chain?.transactionsThisMonth),
+    months,
+    transactionsCumulative: mergedCumulative,
+  };
+}
 
 export type NetworkPayingSnapshot = {
   currentlyPaying: number;
@@ -248,6 +310,8 @@ export function parseNetworkTreasurySnapshot(
     aumUsd: asFiniteNumber(record.aumUsd),
     treasuryCount: asInt(record.treasuryCount),
     issuedTokenCount: asInt(record.issuedTokenCount),
+    transferCount: asInt(record.transferCount),
+    voteCount: asInt(record.voteCount),
     transactionCount: asInt(record.transactionCount),
     transactionsThisMonth: transactionsByMonth.at(-1) ?? 0,
     months,

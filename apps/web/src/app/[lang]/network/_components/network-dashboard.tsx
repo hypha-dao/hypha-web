@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '@hypha-platform/ui';
 import {
+  combineNetworkTransactions,
   toCumulativeSeries,
   type NetworkDashboardStats,
 } from '@hypha-platform/core/client';
@@ -152,10 +153,17 @@ async function AumKpi({ locale }: { locale: string }) {
   );
 }
 
-async function TransactionsKpi({ locale }: { locale: string }) {
+async function TransactionsKpi({
+  locale,
+  stats,
+}: {
+  locale: string;
+  stats: NetworkDashboardStats;
+}) {
   const t = await getTranslations('Network');
   const treasury = await loadNetworkTreasurySnapshot();
-  if (!treasury) {
+  const combined = combineNetworkTransactions(stats, treasury);
+  if (!treasury && stats.transactionCount === 0) {
     return (
       <KpiCard
         locale={locale}
@@ -170,13 +178,13 @@ async function TransactionsKpi({ locale }: { locale: string }) {
     <KpiCard
       locale={locale}
       label={t('dashboard.transactions')}
-      value={treasury.transactionCount}
+      value={combined.transactionCount}
       hint={
-        treasury.transactionsThisMonth > 0
-          ? t('dashboard.thisMonth', { count: treasury.transactionsThisMonth })
+        combined.transactionsThisMonth > 0
+          ? t('dashboard.thisMonth', { count: combined.transactionsThisMonth })
           : t('dashboard.transactionsHint')
       }
-      hintTone={treasury.transactionsThisMonth > 0 ? 'positive' : 'muted'}
+      hintTone={combined.transactionsThisMonth > 0 ? 'positive' : 'muted'}
     />
   );
 }
@@ -369,7 +377,7 @@ export async function NetworkDashboard({
           <AumKpi locale={locale} />
         </Suspense>
         <Suspense fallback={<KpiFallback />}>
-          <TransactionsKpi locale={locale} />
+          <TransactionsKpi locale={locale} stats={stats} />
         </Suspense>
       </div>
 

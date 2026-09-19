@@ -10,6 +10,7 @@ import {
   countErc20TransfersForContracts,
   transferCountBeforeWindow,
 } from '../../common/server/count-erc20-transfers';
+import { countProposalVoteCasts } from '../../common/server/count-proposal-votes';
 import type { DbConfig } from '../../common/server/types';
 import { parseFeedRate } from '../../common/web3/chainlink-feed';
 import { ASSET_PRICE_FEED_BY_TOKEN } from '../../common/web3/token-backing-vault';
@@ -290,7 +291,7 @@ async function computeNetworkTreasuryStats({
       getUsdRates(),
     ]);
 
-  const [issuedMeta, transferCount] = await Promise.all([
+  const [issuedMeta, transferCount, voteCount] = await Promise.all([
     readIssuedTokenMeta(issuedTokens),
     countErc20TransfersForContracts(
       issuedTokens.map((token) => token.address),
@@ -302,6 +303,10 @@ async function computeNetworkTreasuryStats({
         byMonth: months.map((month) => ({ month, count: 0 })),
         complete: false,
       };
+    }),
+    countProposalVoteCasts().catch((error: unknown) => {
+      console.error('Failed to count proposal votes', error);
+      return 0;
     }),
   ]);
 
@@ -346,7 +351,9 @@ async function computeNetworkTreasuryStats({
     aumUsd: valuedTokens.reduce((sum, token) => sum + token.usd, 0),
     treasuryCount: addresses.length,
     issuedTokenCount: issuedTokens.length,
-    transactionCount: transferCount.total,
+    transferCount: transferCount.total,
+    voteCount,
+    transactionCount: transferCount.total + voteCount,
     transactionsThisMonth: monthlyCounts.at(-1) ?? 0,
     months,
     transactionsCumulative: toCumulativeSeries(

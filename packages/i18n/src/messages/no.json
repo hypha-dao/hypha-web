@@ -1625,7 +1625,7 @@
       "aumHint": "Inkluderer space-utstedte tokens i {count} treasuries",
       "aumUnavailable": "Synkroniserer",
       "transactions": "Transaksjoner",
-      "transactionsHint": "On-chain-overføringer av space-utstedte tokens",
+      "transactionsHint": "Forslag, stemmer, overføringer og annen plattformaktivitet",
       "transactionsUnavailable": "Synkroniserer",
       "scopeNote": "Sandbox-, arkiverte og plassholder-testrom telles ikke med.",
       "noData": "Ikke nok data ennå"

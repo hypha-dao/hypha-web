@@ -17,6 +17,7 @@ export {
 } from '../web3/energy-community-tokens';
 export * from './get-transfers-by-address';
 export * from './count-erc20-transfers';
+export * from './count-proposal-votes';
 export * from './get-erc20-holder-addresses';
 export * from './get-token-balances-by-address';
 

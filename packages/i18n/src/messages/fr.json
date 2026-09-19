@@ -1055,7 +1055,7 @@
       "aumHint": "Inclut les jetons émis par les espaces dans {count} trésoreries",
       "aumUnavailable": "Synchronisation",
       "transactions": "Transactions",
-      "transactionsHint": "Transferts on-chain des jetons émis par les espaces",
+      "transactionsHint": "Propositions, votes, transferts et autre activité de la plateforme",
       "transactionsUnavailable": "Synchronisation",
       "scopeNote": "Hors espaces sandbox, archivés et espaces de test avec un titre placeholder.",
       "noData": "Pas encore assez de données"

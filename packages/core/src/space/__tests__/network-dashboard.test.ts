@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  combineNetworkTransactions,
   fillMonthlySeries,
   parseNetworkDashboardPayload,
   parseNetworkTreasurySnapshot,
@@ -85,6 +86,42 @@ describe('parseNetworkDashboardPayload', () => {
   });
 });
 
+describe('combineNetworkTransactions', () => {
+  it('adds platform activity to on-chain transfers and votes', () => {
+    const combined = combineNetworkTransactions(
+      {
+        transactionCount: 100,
+        transactionsThisMonth: 8,
+        months: ['2026-08', '2026-09'],
+        transactionsCumulative: [40, 50],
+      },
+      {
+        transferCount: 20,
+        voteCount: 7,
+        transactionCount: 27,
+        transactionsThisMonth: 3,
+        months: ['2026-08', '2026-09'],
+        transactionsCumulative: [10, 15],
+      },
+    );
+
+    expect(combined.transactionCount).toBe(127);
+    expect(combined.transactionsThisMonth).toBe(11);
+    expect(combined.transactionsCumulative).toEqual([50, 65]);
+  });
+
+  it('keeps activity totals when chain data is missing', () => {
+    const combined = combineNetworkTransactions({
+      transactionCount: 12,
+      transactionsThisMonth: 2,
+      months: ['2026-09'],
+      transactionsCumulative: [12],
+    });
+    expect(combined.transactionCount).toBe(12);
+    expect(combined.transactionsThisMonth).toBe(2);
+  });
+});
+
 describe('parseNetworkTreasurySnapshot', () => {
   it('reads issued-token AUM and transfer totals', () => {
     const snapshot = parseNetworkTreasurySnapshot(
@@ -92,6 +129,8 @@ describe('parseNetworkTreasurySnapshot', () => {
         aumUsd: '1250.5',
         treasuryCount: 12,
         issuedTokenCount: 3,
+        transferCount: 30,
+        voteCount: 10,
         transactionCount: 40,
         transactionsBeforeWindow: 10,
         transactionsByMonth: [{ month: '2026-09', count: 4 }],
@@ -103,6 +142,8 @@ describe('parseNetworkTreasurySnapshot', () => {
 
     expect(snapshot.aumUsd).toBe(1250.5);
     expect(snapshot.issuedTokenCount).toBe(3);
+    expect(snapshot.transferCount).toBe(30);
+    expect(snapshot.voteCount).toBe(10);
     expect(snapshot.transactionCount).toBe(40);
     expect(snapshot.transactionsThisMonth).toBe(4);
     expect(snapshot.transactionsCumulative.at(-1)).toBe(14);

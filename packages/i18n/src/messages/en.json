@@ -1626,7 +1626,7 @@
       "aumHint": "Includes space-issued tokens across {count} treasuries",
       "aumUnavailable": "Still syncing",
       "transactions": "Transactions",
-      "transactionsHint": "On-chain transfers of space-issued tokens",
+      "transactionsHint": "Proposals, votes, transfers, and other platform activity",
       "transactionsUnavailable": "Still syncing",
       "scopeNote": "Counts exclude sandbox, archived, and placeholder test spaces.",
       "noData": "Not enough data yet"

@@ -1826,7 +1826,7 @@
       "aumHint": "Incluye tokens emitidos por espacios en {count} tesorerías",
       "aumUnavailable": "Sincronizando",
       "transactions": "Transacciones",
-      "transactionsHint": "Transferencias on-chain de tokens emitidos por espacios",
+      "transactionsHint": "Propuestas, votos, transferencias y otra actividad de la plataforma",
       "transactionsUnavailable": "Sincronizando",
       "scopeNote": "No incluye espacios sandbox, archivados ni de prueba con título de marcador.",
       "noData": "Aún no hay datos suficientes"
