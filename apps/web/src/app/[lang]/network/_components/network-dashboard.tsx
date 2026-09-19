@@ -152,6 +152,35 @@ async function AumKpi({ locale }: { locale: string }) {
   );
 }
 
+async function TransactionsKpi({ locale }: { locale: string }) {
+  const t = await getTranslations('Network');
+  const treasury = await loadNetworkTreasurySnapshot();
+  if (!treasury) {
+    return (
+      <KpiCard
+        locale={locale}
+        label={t('dashboard.transactions')}
+        value={0}
+        hint={t('dashboard.transactionsUnavailable')}
+      />
+    );
+  }
+
+  return (
+    <KpiCard
+      locale={locale}
+      label={t('dashboard.transactions')}
+      value={treasury.transactionCount}
+      hint={
+        treasury.transactionsThisMonth > 0
+          ? t('dashboard.thisMonth', { count: treasury.transactionsThisMonth })
+          : t('dashboard.transactionsHint')
+      }
+      hintTone={treasury.transactionsThisMonth > 0 ? 'positive' : 'muted'}
+    />
+  );
+}
+
 async function DashboardCharts({
   stats,
   locale,
@@ -339,17 +368,9 @@ export async function NetworkDashboard({
         <Suspense fallback={<KpiFallback />}>
           <AumKpi locale={locale} />
         </Suspense>
-        <KpiCard
-          locale={locale}
-          label={t('dashboard.transactions')}
-          value={stats.transactionCount}
-          hint={
-            stats.transactionsThisMonth > 0
-              ? t('dashboard.thisMonth', { count: stats.transactionsThisMonth })
-              : t('dashboard.transactionsHint')
-          }
-          hintTone={stats.transactionsThisMonth > 0 ? 'positive' : 'muted'}
-        />
+        <Suspense fallback={<KpiFallback />}>
+          <TransactionsKpi locale={locale} />
+        </Suspense>
       </div>
 
       <Suspense fallback={<ChartFallback />}>

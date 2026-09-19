@@ -1,17 +1,13 @@
 import 'server-only';
 
 import { sql } from 'drizzle-orm';
-import {
-  documents,
-  events,
-  people,
-  spaces,
-} from '@hypha-platform/storage-postgres';
+import { documents, people, spaces } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
 import {
   parseNetworkDashboardPayload,
   type NetworkDashboardStats,
 } from '../network-dashboard';
+import { publicNetworkSpacePredicateSql } from './public-network-space-filter';
 
 /** Keep in sync with `SPACE_ACTOR_SUB_PREFIX` in people/server/space-actor-person. */
 const SPACE_ACTOR_SUB_PATTERN = 'space:%';
@@ -38,40 +34,19 @@ function readPayload(result: unknown): unknown {
  * matching /^space [0-9]+$/i after the same normalize as
  * `isPlaceholderSpaceTitle` are excluded here; those names do not appear in
  * Joachim's live Spaces list (0 of 519 on 2026-09-19).
+ * Transaction counts live on the treasury snapshot (space-issued token
+ * transfers), not governance events.
  */
 export async function findNetworkDashboardStats({
   db,
 }: DbConfig): Promise<NetworkDashboardStats> {
   const result = await db.execute(sql`
-    WITH space_candidates AS (
+    WITH real_spaces AS (
       SELECT
         ${spaces.id} AS id,
-        ${spaces.createdAt} AS created_at,
-        btrim(
-          regexp_replace(
-            regexp_replace(
-              ${spaces.title},
-              E'[\\u200B-\\u200D\\uFEFF]',
-              '',
-              'g'
-            ),
-            E'[\\s\\u00A0\\u202F\\u2007\\u2060]+',
-            ' ',
-            'g'
-          )
-        ) AS title_norm
+        ${spaces.createdAt} AS created_at
       FROM ${spaces}
-      WHERE ${spaces.isArchived} = false
-        AND NOT (${spaces.flags} @> '["sandbox"]'::jsonb)
-        AND NOT (${spaces.flags} @> '["archived"]'::jsonb)
-        AND ${spaces.title} NOT ILIKE ${'%test%'}
-        AND ${spaces.slug} NOT ILIKE ${'%test%'}
-    ),
-    real_spaces AS (
-      SELECT id, created_at
-      FROM space_candidates
-      WHERE title_norm <> ''
-        AND title_norm !~* '^space [0-9]+$'
+      WHERE ${publicNetworkSpacePredicateSql}
     ),
     real_people AS (
       SELECT
@@ -89,25 +64,12 @@ export async function findNetworkDashboardStats({
       INNER JOIN real_spaces ON real_spaces.id = ${documents.spaceId}
       WHERE coalesce(${documents.title}, '') NOT ILIKE ${'%test%'}
         AND ${documents.state} IN ('proposal', 'agreement')
-    ),
-    real_events AS (
-      SELECT
-        ${events.id} AS id,
-        ${events.createdAt} AS created_at
-      FROM ${events}
-      WHERE (
-        ${events.referenceEntity} = 'space'
-        AND ${events.referenceId} IN (SELECT id FROM real_spaces)
-      ) OR (
-        ${events.referenceEntity} = 'document'
-        AND ${events.referenceId} IN (SELECT id FROM real_documents)
-      )
     )
     SELECT json_build_object(
       'spaceCount', (SELECT count(*)::int FROM real_spaces),
       'memberCount', (SELECT count(*)::int FROM real_people),
       'proposalCount', (SELECT count(*)::int FROM real_documents),
-      'transactionCount', (SELECT count(*)::int FROM real_events),
+      'transactionCount', 0,
       'spacesBeforeWindow', (
         SELECT count(*)::int
         FROM real_spaces
@@ -123,11 +85,7 @@ export async function findNetworkDashboardStats({
         FROM real_documents
         WHERE created_at < date_trunc('month', now()) - interval '11 months'
       ),
-      'transactionsBeforeWindow', (
-        SELECT count(*)::int
-        FROM real_events
-        WHERE created_at < date_trunc('month', now()) - interval '11 months'
-      ),
+      'transactionsBeforeWindow', 0,
       'spacesByMonth', (
         SELECT coalesce(json_agg(json_build_object('month', month, 'count', count)), '[]'::json)
         FROM (
@@ -161,17 +119,7 @@ export async function findNetworkDashboardStats({
           GROUP BY 1
         ) proposals_by_month
       ),
-      'transactionsByMonth', (
-        SELECT coalesce(json_agg(json_build_object('month', month, 'count', count)), '[]'::json)
-        FROM (
-          SELECT
-            to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
-            count(*)::int AS count
-          FROM real_events
-          WHERE created_at >= date_trunc('month', now()) - interval '11 months'
-          GROUP BY 1
-        ) transactions_by_month
-      )
+      'transactionsByMonth', '[]'::json
     ) AS payload
   `);
 

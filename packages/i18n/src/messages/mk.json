@@ -1603,10 +1603,11 @@
       "paymentsSeries": "Придонеси",
       "paidSeries": "Придонесена сума",
       "aum": "AUM",
-      "aumHint": "Вреднувани средства во {count} трезори",
+      "aumHint": "Вклучува токени издадени од просторите во {count} трезори",
       "aumUnavailable": "Се синхронизира",
       "transactions": "Трансакции",
-      "transactionsHint": "Забележана мрежна активност",
+      "transactionsHint": "On-chain трансфери на токени издадени од просторите",
+      "transactionsUnavailable": "Се синхронизира",
       "scopeNote": "Не се бројат sandbox, архивирани и тест простори со заменски наслов.",
       "noData": "Сè уште нема доволно податоци"
     }

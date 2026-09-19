@@ -19,6 +19,8 @@ export async function GET(request: Request) {
       ok: true,
       aumUsd: snapshot.aumUsd,
       treasuryCount: snapshot.treasuryCount,
+      issuedTokenCount: snapshot.issuedTokenCount,
+      transactionCount: snapshot.transactionCount,
       generatedAt: snapshot.generatedAt,
     });
   } catch (error) {

@@ -20,7 +20,7 @@ export function isPlaceholderSpaceTitle(title: string): boolean {
 /**
  * Public network-dashboard space filter. Same placeholder rule as paying
  * spaces, plus empty titles (which paying-spaces resolve to `Space {id}`).
- * SQL in `find-network-dashboard-stats` must stay in sync.
+ * SQL in `public-network-space-filter` must stay in sync.
  */
 export function isExcludedNetworkSpaceTitle(title: string): boolean {
   const normalized = normalizePayingSpaceTitle(title);

@@ -1823,10 +1823,11 @@
       "paymentsSeries": "Contribuições",
       "paidSeries": "Valor contribuído",
       "aum": "AUM",
-      "aumHint": "Ativos precificados em {count} tesourarias",
+      "aumHint": "Inclui tokens emitidos pelos espaços em {count} tesourarias",
       "aumUnavailable": "Sincronizando",
       "transactions": "Transações",
-      "transactionsHint": "Atividade registada da rede",
+      "transactionsHint": "Transferências on-chain de tokens emitidos pelos espaços",
+      "transactionsUnavailable": "Sincronizando",
       "scopeNote": "Não inclui espaços sandbox, arquivados ou de teste com título placeholder.",
       "noData": "Ainda não há dados suficientes"
     }

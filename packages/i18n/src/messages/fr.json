@@ -1052,10 +1052,11 @@
       "paymentsSeries": "Contributions",
       "paidSeries": "Montant contribué",
       "aum": "AUM",
-      "aumHint": "Actifs valorisés dans {count} trésoreries",
+      "aumHint": "Inclut les jetons émis par les espaces dans {count} trésoreries",
       "aumUnavailable": "Synchronisation",
       "transactions": "Transactions",
-      "transactionsHint": "Activité enregistrée du réseau",
+      "transactionsHint": "Transferts on-chain des jetons émis par les espaces",
+      "transactionsUnavailable": "Synchronisation",
       "scopeNote": "Hors espaces sandbox, archivés et espaces de test avec un titre placeholder.",
       "noData": "Pas encore assez de données"
     }

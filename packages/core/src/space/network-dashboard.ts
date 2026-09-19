@@ -1,3 +1,9 @@
+import {
+  convertToUsd,
+  resolveReferenceCurrencyCode,
+  type UsdRates,
+} from '../common/web3/currency-conversion';
+
 export type MonthlyCount = {
   month: string;
   count: number;
@@ -28,6 +34,11 @@ export type NetworkTreasuryTokenUsd = {
 export type NetworkTreasurySnapshot = {
   aumUsd: number;
   treasuryCount: number;
+  issuedTokenCount: number;
+  transactionCount: number;
+  transactionsThisMonth: number;
+  months: string[];
+  transactionsCumulative: number[];
   tokens: NetworkTreasuryTokenUsd[];
   generatedAt: string;
 };
@@ -205,6 +216,61 @@ export function parseNetworkDashboardPayload(
       asInt(record.transactionsBeforeWindow),
     ),
   };
+}
+
+export function parseNetworkTreasurySnapshot(
+  payload: unknown,
+  options: {
+    now?: Date;
+  } = {},
+): NetworkTreasurySnapshot {
+  const record = asRecord(payload);
+  const months = utcMonthKeys(NETWORK_DASHBOARD_MONTHS, options.now);
+  const transactionsByMonth = fillMonthlySeries(
+    parseMonthlyCounts(record.transactionsByMonth),
+    months,
+  );
+  const tokens = asArray(record.tokens).flatMap((entry) => {
+    const token = asRecord(entry);
+    const address = String(token.address ?? '');
+    const symbol = String(token.symbol ?? '');
+    if (!symbol && !address) return [];
+    return [
+      {
+        symbol,
+        address,
+        usd: asFiniteNumber(token.usd),
+      },
+    ];
+  });
+
+  return {
+    aumUsd: asFiniteNumber(record.aumUsd),
+    treasuryCount: asInt(record.treasuryCount),
+    issuedTokenCount: asInt(record.issuedTokenCount),
+    transactionCount: asInt(record.transactionCount),
+    transactionsThisMonth: transactionsByMonth.at(-1) ?? 0,
+    months,
+    transactionsCumulative: toCumulativeSeries(
+      transactionsByMonth,
+      asInt(record.transactionsBeforeWindow),
+    ),
+    tokens,
+    generatedAt: String(record.generatedAt ?? ''),
+  };
+}
+
+export function spaceIssuedTokenUsd(
+  totalSupply: bigint,
+  decimals: number,
+  referencePrice: number,
+  referenceCurrency: string | null | undefined,
+  usdRates: UsdRates,
+): number {
+  if (!(referencePrice > 0)) return 0;
+  const currency = resolveReferenceCurrencyCode(referenceCurrency) ?? 'USD';
+  const usdPerUnit = convertToUsd(referencePrice, currency, usdRates);
+  return tokenRawToUsd(totalSupply, decimals, usdPerUnit);
 }
 
 export function tokenRawToUsd(

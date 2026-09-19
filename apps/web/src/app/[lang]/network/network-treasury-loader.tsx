@@ -6,7 +6,7 @@ import type { NetworkTreasurySnapshot } from '@hypha-platform/core/client';
 
 const getCachedTreasurySnapshot = unstable_cache(
   async () => findNetworkTreasuryStats({ db }),
-  ['network-dashboard-treasury-v1'],
+  ['network-dashboard-treasury-v2'],
   { revalidate: 300 },
 );
 

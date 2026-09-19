@@ -1622,10 +1622,11 @@
       "paymentsSeries": "Bidrag",
       "paidSeries": "Bidratt beløp",
       "aum": "AUM",
-      "aumHint": "Prissatte eiendeler i {count} treasuries",
+      "aumHint": "Inkluderer space-utstedte tokens i {count} treasuries",
       "aumUnavailable": "Synkroniserer",
       "transactions": "Transaksjoner",
-      "transactionsHint": "Registrert nettverksaktivitet",
+      "transactionsHint": "On-chain-overføringer av space-utstedte tokens",
+      "transactionsUnavailable": "Synkroniserer",
       "scopeNote": "Sandbox-, arkiverte og plassholder-testrom telles ikke med.",
       "noData": "Ikke nok data ennå"
     }

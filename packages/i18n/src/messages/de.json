@@ -1624,10 +1624,11 @@
       "paymentsSeries": "Beiträge",
       "paidSeries": "Beitragssumme",
       "aum": "AUM",
-      "aumHint": "Bewertete Assets in {count} Treasuries",
+      "aumHint": "Inkl. von Spaces ausgegebener Tokens in {count} Treasuries",
       "aumUnavailable": "Wird noch geladen",
       "transactions": "Transaktionen",
-      "transactionsHint": "Erfasste Netzwerkaktivität",
+      "transactionsHint": "On-Chain-Transfers von Space-Tokens",
+      "transactionsUnavailable": "Wird noch geladen",
       "scopeNote": "Zählt keine Sandbox-, archivierten oder Platzhalter-Testspaces.",
       "noData": "Noch nicht genug Daten"
     }

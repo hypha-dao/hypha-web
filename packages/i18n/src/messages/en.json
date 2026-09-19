@@ -1623,10 +1623,11 @@
       "paymentsSeries": "Contributions",
       "paidSeries": "Amount contributed",
       "aum": "AUM",
-      "aumHint": "Priced assets across {count} treasuries",
+      "aumHint": "Includes space-issued tokens across {count} treasuries",
       "aumUnavailable": "Still syncing",
       "transactions": "Transactions",
-      "transactionsHint": "Recorded network activity",
+      "transactionsHint": "On-chain transfers of space-issued tokens",
+      "transactionsUnavailable": "Still syncing",
       "scopeNote": "Counts exclude sandbox, archived, and placeholder test spaces.",
       "noData": "Not enough data yet"
     }

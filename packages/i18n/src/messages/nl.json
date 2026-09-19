@@ -1623,10 +1623,11 @@
       "paymentsSeries": "Bijdragen",
       "paidSeries": "Bijgedragen bedrag",
       "aum": "AUM",
-      "aumHint": "Gewaardeerde assets in {count} treasuries",
+      "aumHint": "Inclusief door spaces uitgegeven tokens in {count} treasuries",
       "aumUnavailable": "Nog aan het laden",
       "transactions": "Transacties",
-      "transactionsHint": "Geregistreerde netwerkactiviteit",
+      "transactionsHint": "On-chain transfers van door spaces uitgegeven tokens",
+      "transactionsUnavailable": "Nog aan het laden",
       "scopeNote": "Sandbox-, gearchiveerde en placeholder-testspaces tellen niet mee.",
       "noData": "Nog niet genoeg gegevens"
     }

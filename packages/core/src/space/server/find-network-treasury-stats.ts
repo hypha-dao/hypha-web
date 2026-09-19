@@ -2,21 +2,34 @@ import 'server-only';
 
 import { sql } from 'drizzle-orm';
 import { erc20Abi } from 'viem';
-import { spaces } from '@hypha-platform/storage-postgres';
+import { spaces, tokens } from '@hypha-platform/storage-postgres';
 import { aggregatorV3InterfaceAbi } from '../../generated';
 import { web3Client } from '../../common/server/web3-rpc/client';
+import { getUsdRates } from '../../common/server/get-currency-rates';
+import {
+  countErc20TransfersForContracts,
+  transferCountBeforeWindow,
+} from '../../common/server/count-erc20-transfers';
 import type { DbConfig } from '../../common/server/types';
 import { parseFeedRate } from '../../common/web3/chainlink-feed';
 import { ASSET_PRICE_FEED_BY_TOKEN } from '../../common/web3/token-backing-vault';
 import {
   HYPHA_PRICE_USD,
   TOKENS,
+  isCatalogueToken,
+  isHiddenToken,
   isHyphaToken,
 } from '../../common/web3/tokens';
 import {
+  spaceIssuedTokenUsd,
+  toCumulativeSeries,
   tokenRawToUsd,
+  utcMonthKeys,
+  NETWORK_DASHBOARD_MONTHS,
   type NetworkTreasurySnapshot,
+  type NetworkTreasuryTokenUsd,
 } from '../network-dashboard';
+import { publicNetworkSpacePredicateSql } from './public-network-space-filter';
 
 const TREASURY_CACHE_TTL_MS = 15 * 60 * 1000;
 const BALANCE_BATCH_SIZE = 80;
@@ -29,6 +42,13 @@ const FALLBACK_DECIMALS: Record<string, number> = {
   '0x8b93862835c36e9689e9bb1ab21de3982e266cd3': 18, // HYPHA
 };
 
+type IssuedSpaceToken = {
+  address: `0x${string}`;
+  symbol: string;
+  referencePrice: number;
+  referenceCurrency: string | null;
+};
+
 let treasuryCache: {
   expiresAt: number;
   data: NetworkTreasurySnapshot;
@@ -39,55 +59,27 @@ function isEvmAddress(value: string): value is `0x${string}` {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+function readExecuteRows(result: unknown): unknown[] {
+  const rows = Array.isArray(result)
+    ? result
+    : result && typeof result === 'object' && 'rows' in result
+    ? (result as { rows: unknown }).rows
+    : [];
+  return Array.isArray(rows) ? rows : [];
+}
+
 async function listPublicTreasuryAddresses({
   db,
 }: DbConfig): Promise<`0x${string}`[]> {
   const result = await db.execute(sql`
     SELECT DISTINCT lower(${spaces.address}) AS address
     FROM ${spaces}
-    WHERE ${spaces.isArchived} = false
+    WHERE ${publicNetworkSpacePredicateSql}
       AND ${spaces.address} IS NOT NULL
-      AND NOT (${spaces.flags} @> '["sandbox"]'::jsonb)
-      AND NOT (${spaces.flags} @> '["archived"]'::jsonb)
-      AND ${spaces.title} NOT ILIKE ${'%test%'}
-      AND ${spaces.slug} NOT ILIKE ${'%test%'}
-      AND btrim(
-        regexp_replace(
-          regexp_replace(
-            ${spaces.title},
-            E'[\\u200B-\\u200D\\uFEFF]',
-            '',
-            'g'
-          ),
-          E'[\\s\\u00A0\\u202F\\u2007\\u2060]+',
-          ' ',
-          'g'
-        )
-      ) <> ''
-      AND btrim(
-        regexp_replace(
-          regexp_replace(
-            ${spaces.title},
-            E'[\\u200B-\\u200D\\uFEFF]',
-            '',
-            'g'
-          ),
-          E'[\\s\\u00A0\\u202F\\u2007\\u2060]+',
-          ' ',
-          'g'
-        )
-      ) !~* '^space [0-9]+$'
   `);
 
-  const rows = Array.isArray(result)
-    ? result
-    : result && typeof result === 'object' && 'rows' in result
-    ? (result as { rows: unknown }).rows
-    : [];
-  if (!Array.isArray(rows)) return [];
-
   const unique = new Set<`0x${string}`>();
-  for (const row of rows) {
+  for (const row of readExecuteRows(result)) {
     const address =
       row && typeof row === 'object' && 'address' in row
         ? String((row as { address: unknown }).address ?? '')
@@ -95,6 +87,53 @@ async function listPublicTreasuryAddresses({
     if (isEvmAddress(address)) unique.add(address);
   }
   return [...unique];
+}
+
+async function listPublicIssuedTokens({
+  db,
+}: DbConfig): Promise<IssuedSpaceToken[]> {
+  const result = await db.execute(sql`
+    SELECT DISTINCT ON (lower(${tokens.address}))
+      lower(${tokens.address}) AS address,
+      ${tokens.symbol} AS symbol,
+      ${tokens.referencePrice} AS reference_price,
+      ${tokens.referenceCurrency} AS reference_currency
+    FROM ${tokens}
+    INNER JOIN ${spaces} ON ${spaces.id} = ${tokens.spaceId}
+    WHERE ${publicNetworkSpacePredicateSql}
+      AND ${tokens.archived} = false
+      AND ${tokens.address} IS NOT NULL
+    ORDER BY lower(${tokens.address}), ${tokens.id} DESC
+  `);
+
+  const issued: IssuedSpaceToken[] = [];
+  const seen = new Set<string>();
+  for (const row of readExecuteRows(result)) {
+    if (!row || typeof row !== 'object') continue;
+    const record = row as {
+      address?: unknown;
+      symbol?: unknown;
+      reference_price?: unknown;
+      reference_currency?: unknown;
+    };
+    const address = String(record.address ?? '');
+    if (!isEvmAddress(address)) continue;
+    const key = address.toLowerCase();
+    if (seen.has(key) || isHiddenToken(key) || isCatalogueToken(key)) continue;
+    seen.add(key);
+    const parsedPrice = Number(record.reference_price);
+    issued.push({
+      address,
+      symbol: String(record.symbol ?? '') || address.slice(0, 8),
+      referencePrice:
+        Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : 0,
+      referenceCurrency:
+        record.reference_currency == null
+          ? null
+          : String(record.reference_currency),
+    });
+  }
+  return issued;
 }
 
 async function readCatalogueDecimals(): Promise<Map<string, number>> {
@@ -196,16 +235,78 @@ async function sumTokenBalancesUsd(
   return total;
 }
 
+async function readIssuedTokenMeta(
+  issued: readonly IssuedSpaceToken[],
+): Promise<Map<string, { decimals: number; totalSupply: bigint }>> {
+  const meta = new Map<string, { decimals: number; totalSupply: bigint }>();
+  if (issued.length === 0) return meta;
+
+  for (let index = 0; index < issued.length; index += BALANCE_BATCH_SIZE) {
+    const batch = issued.slice(index, index + BALANCE_BATCH_SIZE);
+    const results = await web3Client.multicall({
+      allowFailure: true,
+      contracts: batch.flatMap((token) => {
+        const contract = {
+          address: token.address,
+          abi: erc20Abi,
+        } as const;
+        return [
+          { ...contract, functionName: 'decimals' as const },
+          { ...contract, functionName: 'totalSupply' as const },
+        ];
+      }),
+    });
+
+    batch.forEach((token, tokenIndex) => {
+      const decimalsResult = results[tokenIndex * 2];
+      const supplyResult = results[tokenIndex * 2 + 1];
+      const decimals =
+        decimalsResult?.status === 'success' &&
+        typeof decimalsResult.result === 'number'
+          ? decimalsResult.result
+          : 18;
+      const totalSupply =
+        supplyResult?.status === 'success' &&
+        typeof supplyResult.result === 'bigint'
+          ? supplyResult.result
+          : 0n;
+      meta.set(token.address.toLowerCase(), { decimals, totalSupply });
+    });
+  }
+  return meta;
+}
+
 async function computeNetworkTreasuryStats({
   db,
 }: DbConfig): Promise<NetworkTreasurySnapshot> {
-  const [addresses, decimalsByToken, pricesByToken] = await Promise.all([
-    listPublicTreasuryAddresses({ db }),
-    readCatalogueDecimals(),
-    readCatalogueUsdPrices(),
+  const now = new Date();
+  const months = utcMonthKeys(NETWORK_DASHBOARD_MONTHS, now);
+  const [addresses, issuedTokens, decimalsByToken, pricesByToken, usdRates] =
+    await Promise.all([
+      listPublicTreasuryAddresses({ db }),
+      listPublicIssuedTokens({ db }),
+      readCatalogueDecimals(),
+      readCatalogueUsdPrices(),
+      getUsdRates(),
+    ]);
+
+  const [issuedMeta, transferCount] = await Promise.all([
+    readIssuedTokenMeta(issuedTokens),
+    countErc20TransfersForContracts(
+      issuedTokens.map((token) => token.address),
+      { now },
+    ).catch((error: unknown) => {
+      console.error('Failed to count space-issued token transfers', error);
+      return {
+        total: 0,
+        byMonth: months.map((month) => ({ month, count: 0 })),
+        complete: false,
+      };
+    }),
   ]);
 
-  const tokens = [];
+  const valuedTokens: NetworkTreasuryTokenUsd[] = [];
+
   for (const token of TOKENS) {
     const key = token.address.toLowerCase();
     const usdPerUnit = pricesByToken.get(key) ?? 0;
@@ -216,18 +317,44 @@ async function computeNetworkTreasuryStats({
       decimals,
       usdPerUnit,
     );
-    tokens.push({
+    valuedTokens.push({
       symbol: token.symbol,
       address: token.address,
       usd,
     });
   }
 
+  for (const token of issuedTokens) {
+    const meta = issuedMeta.get(token.address.toLowerCase());
+    const usd = spaceIssuedTokenUsd(
+      meta?.totalSupply ?? 0n,
+      meta?.decimals ?? 18,
+      token.referencePrice,
+      token.referenceCurrency,
+      usdRates,
+    );
+    valuedTokens.push({
+      symbol: token.symbol,
+      address: token.address,
+      usd,
+    });
+  }
+
+  const monthlyCounts = transferCount.byMonth.map((point) => point.count);
+
   return {
-    aumUsd: tokens.reduce((sum, token) => sum + token.usd, 0),
+    aumUsd: valuedTokens.reduce((sum, token) => sum + token.usd, 0),
     treasuryCount: addresses.length,
-    tokens,
-    generatedAt: new Date().toISOString(),
+    issuedTokenCount: issuedTokens.length,
+    transactionCount: transferCount.total,
+    transactionsThisMonth: monthlyCounts.at(-1) ?? 0,
+    months,
+    transactionsCumulative: toCumulativeSeries(
+      monthlyCounts,
+      transferCountBeforeWindow(transferCount.total, transferCount.byMonth),
+    ),
+    tokens: valuedTokens,
+    generatedAt: now.toISOString(),
   };
 }
 

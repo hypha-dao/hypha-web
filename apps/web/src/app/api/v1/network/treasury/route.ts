@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 const getCachedTreasury = unstable_cache(
   async () => findNetworkTreasuryStats({ db }),
-  ['network-api-treasury-v1'],
+  ['network-api-treasury-v2'],
   { revalidate: 300 },
 );
 

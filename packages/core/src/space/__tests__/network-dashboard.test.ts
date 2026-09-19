@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   fillMonthlySeries,
   parseNetworkDashboardPayload,
+  parseNetworkTreasurySnapshot,
+  spaceIssuedTokenUsd,
   toCumulativeSeries,
   tokenRawToUsd,
   toNetworkPayingSnapshot,
@@ -80,6 +82,49 @@ describe('parseNetworkDashboardPayload', () => {
     );
     expect(stats.spaceCount).toBe(3);
     expect(stats.spacesCumulative).toHaveLength(12);
+  });
+});
+
+describe('parseNetworkTreasurySnapshot', () => {
+  it('reads issued-token AUM and transfer totals', () => {
+    const snapshot = parseNetworkTreasurySnapshot(
+      {
+        aumUsd: '1250.5',
+        treasuryCount: 12,
+        issuedTokenCount: 3,
+        transactionCount: 40,
+        transactionsBeforeWindow: 10,
+        transactionsByMonth: [{ month: '2026-09', count: 4 }],
+        tokens: [{ symbol: 'SEED', address: '0xabc', usd: 200 }],
+        generatedAt: '2026-09-19T00:00:00.000Z',
+      },
+      { now: new Date('2026-09-18T10:00:00Z') },
+    );
+
+    expect(snapshot.aumUsd).toBe(1250.5);
+    expect(snapshot.issuedTokenCount).toBe(3);
+    expect(snapshot.transactionCount).toBe(40);
+    expect(snapshot.transactionsThisMonth).toBe(4);
+    expect(snapshot.transactionsCumulative.at(-1)).toBe(14);
+    expect(snapshot.tokens).toEqual([
+      { symbol: 'SEED', address: '0xabc', usd: 200 },
+    ]);
+  });
+});
+
+describe('spaceIssuedTokenUsd', () => {
+  const rates = { USD: 1, EUR: 1.1, TZS: 1 / 2650 };
+
+  it('values issued supply at the space-set reference price', () => {
+    expect(spaceIssuedTokenUsd(2_000_000n, 6, 2, 'USD', rates)).toBe(4);
+    expect(spaceIssuedTokenUsd(1_000_000n, 6, 2, 'EUR', rates)).toBeCloseTo(
+      2.2,
+      6,
+    );
+  });
+
+  it('returns 0 without a positive reference price', () => {
+    expect(spaceIssuedTokenUsd(1_000_000n, 6, 0, 'USD', rates)).toBe(0);
   });
 });
 
