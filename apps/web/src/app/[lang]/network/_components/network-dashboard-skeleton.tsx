@@ -24,12 +24,24 @@ export function NetworkDashboardSkeleton() {
           <NetworkDashboardSkeletonKpi key={index} />
         ))}
       </div>
-      <Card className="craft-card">
-        <CardContent className="p-3.5">
-          <Skeleton loading width={160} height={16} className="mb-4" />
-          <Skeleton loading width="100%" height={196} />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-3">
+        <NetworkDashboardSkeletonKpi />
+        <NetworkDashboardSkeletonKpi />
+      </div>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card className="craft-card">
+          <CardContent className="p-3.5">
+            <Skeleton loading width={160} height={16} className="mb-4" />
+            <Skeleton loading width="100%" height={196} />
+          </CardContent>
+        </Card>
+        <Card className="craft-card">
+          <CardContent className="p-3.5">
+            <Skeleton loading width={140} height={16} className="mb-4" />
+            <Skeleton loading width="100%" height={196} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

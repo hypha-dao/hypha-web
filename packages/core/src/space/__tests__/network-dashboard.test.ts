@@ -3,6 +3,7 @@ import {
   fillMonthlySeries,
   parseNetworkDashboardPayload,
   toCumulativeSeries,
+  tokenRawToUsd,
   toNetworkPayingSnapshot,
   utcMonthKeys,
 } from '../network-dashboard';
@@ -42,15 +43,17 @@ describe('parseNetworkDashboardPayload', () => {
     const stats = parseNetworkDashboardPayload(
       {
         spaceCount: '12',
-        activeSpaceCount: 8,
         memberCount: 40,
         proposalCount: 20,
+        transactionCount: 90,
+        transactionsBeforeWindow: 8,
         spacesBeforeWindow: 4,
         membersBeforeWindow: 10,
         proposalsBeforeWindow: 1,
         spacesByMonth: [{ month: '2026-09', count: 2 }],
         membersByMonth: [{ month: '2026-08', count: 5 }],
         proposalsByMonth: [{ month: '2026-09', count: 3 }],
+        transactionsByMonth: [{ month: '2026-09', count: 4 }],
       },
       {
         now: new Date('2026-09-18T10:00:00Z'),
@@ -61,6 +64,9 @@ describe('parseNetworkDashboardPayload', () => {
     expect(stats.spacesThisMonth).toBe(2);
     expect(stats.membersThisMonth).toBe(0);
     expect(stats.proposalsThisMonth).toBe(3);
+    expect(stats.transactionCount).toBe(90);
+    expect(stats.transactionsThisMonth).toBe(4);
+    expect(stats.transactionsCumulative.at(-1)).toBe(12);
     expect(stats.months.at(-1)).toBe('2026-09');
     expect(stats.spacesCumulative.at(-1)).toBe(6);
     expect(stats.membersCumulative.at(-2)).toBe(15);
@@ -74,6 +80,19 @@ describe('parseNetworkDashboardPayload', () => {
     );
     expect(stats.spaceCount).toBe(3);
     expect(stats.spacesCumulative).toHaveLength(12);
+  });
+});
+
+describe('tokenRawToUsd', () => {
+  it('converts raw token units with decimals and a USD price', () => {
+    expect(tokenRawToUsd(1_500_000n, 6, 1)).toBe(1.5);
+    expect(tokenRawToUsd(2n * 10n ** 18n, 18, 0.25)).toBe(0.5);
+  });
+
+  it('returns 0 for invalid inputs', () => {
+    expect(tokenRawToUsd(0n, 6, 1)).toBe(0);
+    expect(tokenRawToUsd(100n, 6, 0)).toBe(0);
+    expect(tokenRawToUsd(100n, -1, 1)).toBe(0);
   });
 });
 

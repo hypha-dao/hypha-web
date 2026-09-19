@@ -62,6 +62,23 @@ function useDrawPath(
   }, [areaRef, pathRef, signature]);
 }
 
+function nearestIndex(
+  points: readonly { month: string }[],
+  x: d3.ScalePoint<string>,
+  innerX: number,
+): number {
+  let nearest = 0;
+  let best = Number.POSITIVE_INFINITY;
+  points.forEach((point, index) => {
+    const distance = Math.abs((x(point.month) ?? 0) - innerX);
+    if (distance < best) {
+      best = distance;
+      nearest = index;
+    }
+  });
+  return nearest;
+}
+
 export function NetworkAreaChart({
   months,
   values,
@@ -83,7 +100,7 @@ export function NetworkAreaChart({
 }) {
   const pathRef = React.useRef<SVGPathElement>(null);
   const areaRef = React.useRef<SVGPathElement>(null);
-  const svgRef = React.useRef<SVGSVGElement>(null);
+  const overlayRef = React.useRef<HTMLDivElement>(null);
   const gradientId = React.useId();
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
   const points = months.map((month, index) => ({
@@ -134,36 +151,23 @@ export function NetworkAreaChart({
       : (value: number) => formatCompact(value, locale);
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const rect = overlay.getBoundingClientRect();
     if (rect.width <= 0) return;
     const svgX = ((event.clientX - rect.left) / rect.width) * width;
     const innerX = svgX - margin.left;
-    let nearest = 0;
-    let best = Number.POSITIVE_INFINITY;
-    points.forEach((point, index) => {
-      const distance = Math.abs((x(point.month) ?? 0) - innerX);
-      if (distance < best) {
-        best = distance;
-        nearest = index;
-      }
-    });
-    setHoverIndex(nearest);
+    setHoverIndex(nearestIndex(points, x, innerX));
   };
 
   return (
-    <div
-      className="relative cursor-crosshair"
-      onPointerMove={onPointerMove}
-      onPointerLeave={() => setHoverIndex(null)}
-    >
+    <div className="relative">
       <svg
-        ref={svgRef}
         role="img"
         aria-label={ariaLabel}
         viewBox={`0 0 ${width} ${height}`}
-        className="h-48 w-full overflow-visible md:h-56"
+        preserveAspectRatio="none"
+        className="pointer-events-none h-48 w-full md:h-56"
       >
         <defs>
           <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
@@ -248,9 +252,16 @@ export function NetworkAreaChart({
           )}
         </g>
       </svg>
+      <div
+        ref={overlayRef}
+        className="absolute inset-0 z-10 cursor-crosshair"
+        onPointerMove={onPointerMove}
+        onPointerDown={onPointerMove}
+        onPointerLeave={() => setHoverIndex(null)}
+      />
       {hover ? (
         <div
-          className="pointer-events-none absolute z-10 min-w-28 rounded-lg border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
+          className="pointer-events-none absolute z-20 min-w-28 rounded-lg border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
           style={{
             left: `${((margin.left + hoverX) / width) * 100}%`,
             top: 8,
@@ -275,14 +286,22 @@ export function NetworkAreaChart({
 
 export function NetworkSparkline({
   values,
+  months,
+  locale,
   color,
   label,
+  valueFormat = 'compact',
 }: {
   values: readonly number[];
+  months?: readonly string[];
+  locale?: string;
   color: string;
   label: string;
+  valueFormat?: 'compact' | 'usd';
 }) {
   const pathRef = React.useRef<SVGPathElement>(null);
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+  const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
   const signature = values.join(',');
   useDrawPath(pathRef, signature);
 
@@ -290,7 +309,7 @@ export function NetworkSparkline({
   const height = 28;
   const max = Math.max(...values, 1);
   const points = values.map((value, index) => ({
-    month: String(index),
+    month: months?.[index] ?? String(index),
     value,
   }));
   const x = d3
@@ -306,23 +325,68 @@ export function NetworkSparkline({
     .x((point) => x(point.month) ?? 0)
     .y((point) => y(point.value))
     .curve(d3.curveMonotoneX);
+  const hover = hoverIndex == null ? null : points[hoverIndex];
+  const formatValue =
+    valueFormat === 'usd' && locale
+      ? (value: number) => formatUsd(value, locale)
+      : locale
+      ? (value: number) => formatCompact(value, locale)
+      : (value: number) => String(value);
 
   return (
-    <svg
-      role="img"
-      aria-label={label}
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-7 w-20"
-    >
-      <path
-        ref={pathRef}
-        d={line(points) ?? ''}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <div className="relative">
+      <svg
+        role="img"
+        aria-label={label}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        className="pointer-events-none h-7 w-20"
+      >
+        <path
+          ref={pathRef}
+          d={line(points) ?? ''}
+          fill="none"
+          stroke={color}
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {hover ? (
+          <circle
+            cx={x(hover.month) ?? 0}
+            cy={y(hover.value)}
+            r="2.5"
+            fill="var(--background)"
+            stroke={color}
+            strokeWidth="1.5"
+          />
+        ) : null}
+      </svg>
+      <div
+        ref={overlayRef}
+        className="absolute inset-0 z-10 cursor-crosshair"
+        onPointerMove={(event) => {
+          const overlay = overlayRef.current;
+          if (!overlay) return;
+          const rect = overlay.getBoundingClientRect();
+          if (rect.width <= 0) return;
+          const innerX = ((event.clientX - rect.left) / rect.width) * width;
+          setHoverIndex(nearestIndex(points, x, innerX));
+        }}
+        onPointerLeave={() => setHoverIndex(null)}
       />
-    </svg>
+      {hover && locale ? (
+        <div className="pointer-events-none absolute bottom-full right-0 z-20 mb-1 whitespace-nowrap rounded-md border border-border/70 bg-background-2 px-2 py-1 text-[11px] shadow-sm">
+          <span className="text-muted-foreground">
+            {/^\d{4}-\d{2}$/.test(hover.month)
+              ? formatMonthYear(hover.month, locale)
+              : label}
+          </span>{' '}
+          <span className="tabular-nums text-foreground">
+            {formatValue(hover.value)}
+          </span>
+        </div>
+      ) : null}
+    </div>
   );
 }

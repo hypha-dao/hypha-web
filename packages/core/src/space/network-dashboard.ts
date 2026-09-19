@@ -5,16 +5,31 @@ export type MonthlyCount = {
 
 export type NetworkDashboardStats = {
   spaceCount: number;
-  activeSpaceCount: number;
   memberCount: number;
   proposalCount: number;
+  transactionCount: number;
   spacesThisMonth: number;
   membersThisMonth: number;
   proposalsThisMonth: number;
+  transactionsThisMonth: number;
   months: string[];
   spacesCumulative: number[];
   membersCumulative: number[];
   proposalsCumulative: number[];
+  transactionsCumulative: number[];
+};
+
+export type NetworkTreasuryTokenUsd = {
+  symbol: string;
+  address: string;
+  usd: number;
+};
+
+export type NetworkTreasurySnapshot = {
+  aumUsd: number;
+  treasuryCount: number;
+  tokens: NetworkTreasuryTokenUsd[];
+  generatedAt: string;
 };
 
 export type NetworkPayingSnapshot = {
@@ -158,15 +173,20 @@ export function parseNetworkDashboardPayload(
     parseMonthlyCounts(record.proposalsByMonth),
     months,
   );
+  const transactionsByMonth = fillMonthlySeries(
+    parseMonthlyCounts(record.transactionsByMonth),
+    months,
+  );
 
   return {
     spaceCount: asInt(record.spaceCount),
-    activeSpaceCount: asInt(record.activeSpaceCount),
     memberCount: asInt(record.memberCount),
     proposalCount: asInt(record.proposalCount),
+    transactionCount: asInt(record.transactionCount),
     spacesThisMonth: spacesByMonth.at(-1) ?? 0,
     membersThisMonth: membersByMonth.at(-1) ?? 0,
     proposalsThisMonth: proposalsByMonth.at(-1) ?? 0,
+    transactionsThisMonth: transactionsByMonth.at(-1) ?? 0,
     months,
     spacesCumulative: toCumulativeSeries(
       spacesByMonth,
@@ -180,7 +200,28 @@ export function parseNetworkDashboardPayload(
       proposalsByMonth,
       asInt(record.proposalsBeforeWindow),
     ),
+    transactionsCumulative: toCumulativeSeries(
+      transactionsByMonth,
+      asInt(record.transactionsBeforeWindow),
+    ),
   };
+}
+
+export function tokenRawToUsd(
+  raw: bigint,
+  decimals: number,
+  usdPerUnit: number,
+): number {
+  if (raw <= 0n || decimals < 0 || decimals > 30 || !(usdPerUnit > 0)) {
+    return 0;
+  }
+  const divisor = 10n ** BigInt(decimals);
+  const whole = Number(raw / divisor);
+  const fraction = Number(raw % divisor) / Number(divisor);
+  const units = whole + fraction;
+  if (!Number.isFinite(units) || units <= 0) return 0;
+  const usd = units * usdPerUnit;
+  return Number.isFinite(usd) ? usd : 0;
 }
 
 export function toNetworkPayingSnapshot(data: {

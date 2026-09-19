@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import {
   Card,
   CardContent,
@@ -6,15 +7,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@hypha-platform/ui';
-import { type NetworkDashboardStats } from '@hypha-platform/core/client';
+import {
+  toCumulativeSeries,
+  type NetworkDashboardStats,
+} from '@hypha-platform/core/client';
 import { AnimatedNumber } from './animated-number';
-import { formatCompact, formatExact } from './format-network-stats';
+import { formatCompact, formatExact, formatUsd } from './format-network-stats';
 import { NetworkAreaChart, NetworkSparkline } from './network-charts';
-
-function percentOf(part: number, whole: number): number | null {
-  if (whole <= 0) return null;
-  return Math.round((part / whole) * 100);
-}
+import { NetworkDashboardSkeletonKpi } from './network-dashboard-skeleton';
+import { loadNetworkPayingSnapshot } from '../network-paying-loader';
+import { loadNetworkTreasurySnapshot } from '../network-treasury-loader';
 
 function KpiCard({
   label,
@@ -22,12 +24,14 @@ function KpiCard({
   hint,
   hintTone = 'muted',
   locale,
+  format = 'compact',
 }: {
   label: string;
   value: number;
   hint?: string;
   hintTone?: 'muted' | 'positive';
   locale: string;
+  format?: 'compact' | 'usd';
 }) {
   return (
     <Card className="craft-card min-w-0">
@@ -35,9 +39,13 @@ function KpiCard({
         <p className="craft-meta">{label}</p>
         <p
           className="text-7 font-medium tabular-nums tracking-tight text-foreground md:text-8"
-          title={formatExact(value, locale)}
+          title={
+            format === 'usd'
+              ? formatUsd(value, locale)
+              : formatExact(value, locale)
+          }
         >
-          <AnimatedNumber value={value} locale={locale} />
+          <AnimatedNumber value={value} locale={locale} format={format} />
         </p>
         <p
           className={
@@ -57,24 +65,37 @@ function SparkStat({
   label,
   value,
   values,
+  months,
   locale,
   color,
+  format = 'compact',
 }: {
   label: string;
   value: number;
   values: readonly number[];
+  months: readonly string[];
   locale: string;
   color: string;
+  format?: 'compact' | 'usd';
 }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="craft-meta">{label}</p>
         <p className="text-4 font-medium tabular-nums tracking-tight">
-          {formatCompact(value, locale)}
+          {format === 'usd'
+            ? formatUsd(value, locale)
+            : formatCompact(value, locale)}
         </p>
       </div>
-      <NetworkSparkline values={values} color={color} label={label} />
+      <NetworkSparkline
+        values={values}
+        months={months}
+        locale={locale}
+        color={color}
+        label={label}
+        valueFormat={format}
+      />
     </div>
   );
 }
@@ -89,6 +110,178 @@ export async function NetworkPageHeading() {
   );
 }
 
+async function ContributingKpi({ locale }: { locale: string }) {
+  const t = await getTranslations('Network');
+  const paying = await loadNetworkPayingSnapshot();
+  if (!paying) {
+    return (
+      <KpiCard
+        locale={locale}
+        label={t('dashboard.contributingSpaces')}
+        value={0}
+        hint={t('dashboard.contributingUnavailable')}
+      />
+    );
+  }
+
+  return (
+    <KpiCard
+      locale={locale}
+      label={t('dashboard.contributingSpaces')}
+      value={paying.currentlyPaying}
+      hint={t('dashboard.everContributed', { count: paying.everPaid })}
+    />
+  );
+}
+
+async function AumKpi({ locale }: { locale: string }) {
+  const t = await getTranslations('Network');
+  const treasury = await loadNetworkTreasurySnapshot();
+  return (
+    <KpiCard
+      locale={locale}
+      label={t('dashboard.aum')}
+      value={treasury?.aumUsd ?? 0}
+      format="usd"
+      hint={
+        treasury
+          ? t('dashboard.aumHint', { count: treasury.treasuryCount })
+          : t('dashboard.aumUnavailable')
+      }
+    />
+  );
+}
+
+async function DashboardCharts({
+  stats,
+  locale,
+}: {
+  stats: NetworkDashboardStats;
+  locale: string;
+}) {
+  const t = await getTranslations('Network');
+  const paying = await loadNetworkPayingSnapshot();
+  const contributingMonths = paying?.months.map((item) => item.month) ?? [];
+  const contributingValues =
+    paying?.months.map((item) => item.payingSpaces) ?? [];
+  const hasContributing = contributingValues.some((value) => value > 0);
+  const hasGrowth = stats.spacesCumulative.some((value) => value > 0);
+
+  return (
+    <div
+      className={
+        hasContributing
+          ? 'grid grid-cols-1 gap-3 lg:grid-cols-2'
+          : 'grid grid-cols-1 gap-3'
+      }
+    >
+      <Card className="craft-card">
+        <CardHeader className="pb-2">
+          <CardTitle>{t('dashboard.growthTitle')}</CardTitle>
+          <CardDescription>{t('dashboard.growthSubtitle')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          {hasGrowth ? (
+            <>
+              <NetworkAreaChart
+                months={stats.months}
+                values={stats.spacesCumulative}
+                locale={locale}
+                color="var(--craft-chart-accent-5)"
+                ariaLabel={t('dashboard.growthChartAria')}
+                emptyLabel={t('dashboard.noData')}
+                valueLabel={t('dashboard.spacesSeries')}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SparkStat
+                  locale={locale}
+                  months={stats.months}
+                  label={t('dashboard.membersSeries')}
+                  value={stats.memberCount}
+                  values={stats.membersCumulative}
+                  color="var(--craft-chart-accent-8)"
+                />
+                <SparkStat
+                  locale={locale}
+                  months={stats.months}
+                  label={t('dashboard.proposalsSeries')}
+                  value={stats.proposalCount}
+                  values={stats.proposalsCumulative}
+                  color="var(--craft-chart-accent-3)"
+                />
+              </div>
+            </>
+          ) : (
+            <p className="craft-meta py-10 text-center">
+              {t('dashboard.noData')}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {hasContributing ? (
+        <Card className="craft-card">
+          <CardHeader className="pb-2">
+            <CardTitle>{t('dashboard.contributingTitle')}</CardTitle>
+            <CardDescription>
+              {t('dashboard.contributingSubtitle')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <NetworkAreaChart
+              months={contributingMonths}
+              values={contributingValues}
+              locale={locale}
+              color="var(--craft-chart-accent-5)"
+              ariaLabel={t('dashboard.contributingChartAria')}
+              emptyLabel={t('dashboard.contributingEmpty')}
+              valueLabel={t('dashboard.contributingSpaces')}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SparkStat
+                locale={locale}
+                months={contributingMonths}
+                label={t('dashboard.paymentsSeries')}
+                value={paying?.paymentEvents ?? 0}
+                values={toCumulativeSeries(
+                  paying?.months.map((item) => item.paymentCount) ?? [],
+                )}
+                color="var(--craft-chart-accent-8)"
+              />
+              <SparkStat
+                locale={locale}
+                months={contributingMonths}
+                label={t('dashboard.paidSeries')}
+                value={paying?.paymentUsd ?? 0}
+                values={toCumulativeSeries(
+                  paying?.months.map((item) => item.paymentUsd) ?? [],
+                )}
+                format="usd"
+                color="var(--craft-chart-accent-3)"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+function KpiFallback() {
+  return <NetworkDashboardSkeletonKpi />;
+}
+
+function ChartFallback() {
+  return (
+    <Card className="craft-card">
+      <CardContent className="p-3.5">
+        <div className="mb-4 h-4 w-40 rounded-md bg-muted/50" />
+        <div className="h-48 rounded-md bg-muted/40 md:h-56" />
+      </CardContent>
+    </Card>
+  );
+}
+
 export async function NetworkDashboard({
   stats,
 }: {
@@ -96,8 +289,6 @@ export async function NetworkDashboard({
 }) {
   const t = await getTranslations('Network');
   const locale = await getLocale();
-  const activePercent = percentOf(stats.activeSpaceCount, stats.spaceCount);
-  const hasGrowth = stats.spacesCumulative.some((value) => value > 0);
 
   return (
     <section
@@ -117,16 +308,9 @@ export async function NetworkDashboard({
           }
           hintTone="positive"
         />
-        <KpiCard
-          locale={locale}
-          label={t('dashboard.activeSpaces')}
-          value={stats.activeSpaceCount}
-          hint={
-            activePercent == null
-              ? t('dashboard.activeSpacesHint')
-              : t('dashboard.activeSpacesShare', { percent: activePercent })
-          }
-        />
+        <Suspense fallback={<KpiFallback />}>
+          <ContributingKpi locale={locale} />
+        </Suspense>
         <KpiCard
           locale={locale}
           label={t('dashboard.members')}
@@ -151,47 +335,26 @@ export async function NetworkDashboard({
         />
       </div>
 
-      <Card className="craft-card">
-        <CardHeader className="pb-2">
-          <CardTitle>{t('dashboard.growthTitle')}</CardTitle>
-          <CardDescription>{t('dashboard.growthSubtitle')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          {hasGrowth ? (
-            <>
-              <NetworkAreaChart
-                months={stats.months}
-                values={stats.spacesCumulative}
-                locale={locale}
-                color="var(--craft-chart-accent-5)"
-                ariaLabel={t('dashboard.growthChartAria')}
-                emptyLabel={t('dashboard.noData')}
-                valueLabel={t('dashboard.spacesSeries')}
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <SparkStat
-                  locale={locale}
-                  label={t('dashboard.membersSeries')}
-                  value={stats.memberCount}
-                  values={stats.membersCumulative}
-                  color="var(--craft-chart-accent-8)"
-                />
-                <SparkStat
-                  locale={locale}
-                  label={t('dashboard.proposalsSeries')}
-                  value={stats.proposalCount}
-                  values={stats.proposalsCumulative}
-                  color="var(--craft-chart-accent-3)"
-                />
-              </div>
-            </>
-          ) : (
-            <p className="craft-meta py-10 text-center">
-              {t('dashboard.noData')}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-3">
+        <Suspense fallback={<KpiFallback />}>
+          <AumKpi locale={locale} />
+        </Suspense>
+        <KpiCard
+          locale={locale}
+          label={t('dashboard.transactions')}
+          value={stats.transactionCount}
+          hint={
+            stats.transactionsThisMonth > 0
+              ? t('dashboard.thisMonth', { count: stats.transactionsThisMonth })
+              : t('dashboard.transactionsHint')
+          }
+          hintTone={stats.transactionsThisMonth > 0 ? 'positive' : 'muted'}
+        />
+      </div>
+
+      <Suspense fallback={<ChartFallback />}>
+        <DashboardCharts stats={stats} locale={locale} />
+      </Suspense>
 
       <p className="text-center text-1 text-muted-foreground">
         {t('dashboard.scopeNote')}

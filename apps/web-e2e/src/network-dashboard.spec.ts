@@ -8,8 +8,11 @@ test.describe('Network dashboard', () => {
 
     const dashboard = page.getByTestId('network-dashboard');
     await expect(dashboard).toBeVisible({ timeout: 30_000 });
-    await expect(dashboard.getByText('Spaces', { exact: true })).toBeVisible();
-    await expect(dashboard.getByText('Active spaces')).toBeVisible();
+    await expect(
+      dashboard.getByText('Spaces (total)', { exact: true }),
+    ).toBeVisible();
+    await expect(dashboard.getByText('Contributing spaces')).toBeVisible();
+    await expect(dashboard.getByText('Active spaces')).toHaveCount(0);
     await expect(dashboard.getByText('Network growth')).toBeVisible();
     await expect(dashboard.getByText('Proposals by type')).toHaveCount(0);
     await expect(dashboard.getByText('Paying spaces')).toHaveCount(0);

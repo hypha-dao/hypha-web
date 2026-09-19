@@ -89,18 +89,25 @@ export async function findNetworkDashboardStats({
       INNER JOIN real_spaces ON real_spaces.id = ${documents.spaceId}
       WHERE coalesce(${documents.title}, '') NOT ILIKE ${'%test%'}
         AND ${documents.state} IN ('proposal', 'agreement')
+    ),
+    real_events AS (
+      SELECT
+        ${events.id} AS id,
+        ${events.createdAt} AS created_at
+      FROM ${events}
+      WHERE (
+        ${events.referenceEntity} = 'space'
+        AND ${events.referenceId} IN (SELECT id FROM real_spaces)
+      ) OR (
+        ${events.referenceEntity} = 'document'
+        AND ${events.referenceId} IN (SELECT id FROM real_documents)
+      )
     )
     SELECT json_build_object(
       'spaceCount', (SELECT count(*)::int FROM real_spaces),
-      'activeSpaceCount', (
-        SELECT count(DISTINCT ${events.referenceId})::int
-        FROM ${events}
-        INNER JOIN real_spaces ON real_spaces.id = ${events.referenceId}
-        WHERE ${events.referenceEntity} = 'space'
-          AND ${events.createdAt} >= now() - interval '3 months'
-      ),
       'memberCount', (SELECT count(*)::int FROM real_people),
       'proposalCount', (SELECT count(*)::int FROM real_documents),
+      'transactionCount', (SELECT count(*)::int FROM real_events),
       'spacesBeforeWindow', (
         SELECT count(*)::int
         FROM real_spaces
@@ -114,6 +121,11 @@ export async function findNetworkDashboardStats({
       'proposalsBeforeWindow', (
         SELECT count(*)::int
         FROM real_documents
+        WHERE created_at < date_trunc('month', now()) - interval '11 months'
+      ),
+      'transactionsBeforeWindow', (
+        SELECT count(*)::int
+        FROM real_events
         WHERE created_at < date_trunc('month', now()) - interval '11 months'
       ),
       'spacesByMonth', (
@@ -148,6 +160,17 @@ export async function findNetworkDashboardStats({
           WHERE created_at >= date_trunc('month', now()) - interval '11 months'
           GROUP BY 1
         ) proposals_by_month
+      ),
+      'transactionsByMonth', (
+        SELECT coalesce(json_agg(json_build_object('month', month, 'count', count)), '[]'::json)
+        FROM (
+          SELECT
+            to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
+            count(*)::int AS count
+          FROM real_events
+          WHERE created_at >= date_trunc('month', now()) - interval '11 months'
+          GROUP BY 1
+        ) transactions_by_month
       )
     ) AS payload
   `);
