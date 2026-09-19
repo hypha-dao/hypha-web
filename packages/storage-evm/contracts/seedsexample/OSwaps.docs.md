@@ -7,11 +7,17 @@ build a working interface is here: the full external surface, the role model, th
 sequence, the pricing math and its measured accuracy, the revert catalogue, and the behavioural
 traps that will otherwise cost you a day of debugging.
 
-> **Status: not deployed.** OSwaps is a reference port of the Antelope/EOSIO `oswaps` contract. It
-> has no entry in `contracts/addresses.txt` and is excluded from `wagmi.config.ts`, so it does not
-> appear in `packages/core/src/generated.ts`. It does now have a deploy script
-> (`scripts/oswaps.deploy.ts`) and a test suite (`test/OSwaps.test.ts`, 85 cases). Any UI work must
-> begin by deploying it to a local or test network.
+> **Status: deployed on Base mainnet.**
+>
+> | Field           | Value                                                                   |
+> | --------------- | ----------------------------------------------------------------------- |
+> | OSwaps          | `0xA8b0Da630351E038E9D8E4d5135D029fB9757298`                            |
+> | Owner / manager | `0x2687fe290b54d824c136Ceff2d5bD362Bc62019a`                            |
+> | Basescan        | https://basescan.org/address/0xA8b0Da630351E038E9D8E4d5135D029fB9757298 |
+>
+> The address is recorded in `contracts/addresses.txt`. OSwaps is still excluded from
+> `wagmi.config.ts`, so it does not appear in `packages/core/src/generated.ts`. Deploy script:
+> `scripts/oswaps.deploy.ts`. Test suite: `test/OSwaps.test.ts` (85 cases).
 >
 > For how faithfully this reproduces the original protocol, see
 > [`OSwaps.EOSIO-PARITY.md`](./OSwaps.EOSIO-PARITY.md).

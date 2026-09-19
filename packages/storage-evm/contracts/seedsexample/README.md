@@ -2,11 +2,30 @@
 
 This folder contains Solidity (EVM) implementations of the Seeds/Rainbows token ecosystem, originally written in C++ for EOSIO/Antelope blockchains.
 
-> **Reference code — not deployed.** None of these contracts have deployment addresses in
-> `contracts/addresses.txt`, and they are excluded from `wagmi.config.ts`, so they generate no
-> bindings in `packages/core/src/generated.ts`. `OSwaps.sol` has a deploy script
-> (`scripts/oswaps.deploy.ts`) and a test suite (`test/OSwaps.test.ts`); the Rainbow contracts have
-> neither. Nothing here has been audited.
+> **OSwaps is deployed on Base mainnet.** RainbowToken instances are still created through
+> `RainbowFactory` and are not pre-deployed. These contracts remain excluded from
+> `wagmi.config.ts`, so they generate no bindings in `packages/core/src/generated.ts`.
+> `OSwaps.sol` has a deploy script (`scripts/oswaps.deploy.ts`) and a test suite
+> (`test/OSwaps.test.ts`). Nothing here has been audited.
+
+## Deployed Addresses (Base mainnet)
+
+| Contract        | Address                                      | Basescan                                                                |
+| --------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
+| OSwaps          | `0xA8b0Da630351E038E9D8E4d5135D029fB9757298` | https://basescan.org/address/0xA8b0Da630351E038E9D8E4d5135D029fB9757298 |
+| RainbowFactory  | `0x172fe07761C566661fAe90069b3fa140644fF16a` | https://basescan.org/address/0x172fe07761C566661fAe90069b3fa140644fF16a |
+| Owner / manager | `0x2687fe290b54d824c136Ceff2d5bD362Bc62019a` | https://basescan.org/address/0x2687fe290b54d824c136Ceff2d5bD362Bc62019a |
+
+Liquidity receipt tokens (`LIQ{tokenId}`) are created by `OSwaps.createAsset()` and are not pre-deployed.
+
+### Deploy
+
+```bash
+cd packages/storage-evm
+npx hardhat run scripts/oswaps.deploy.ts --network base-mainnet
+```
+
+Optional: set `OSWAPS_MANAGER` to initialize OSwaps with a manager other than the deployer. The script calls `init(manager)` immediately after deploy.
 
 ## Further documentation on OSwaps
 
