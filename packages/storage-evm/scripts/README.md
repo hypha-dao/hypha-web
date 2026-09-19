@@ -131,8 +131,6 @@ regular-token-factory-proxy.upgrade.ts
 regular-space-token-proxy.deploy.ts
 ```
 
-
-
 ### regular-token-factory-proxy.deploy
 
 ```bash
@@ -289,6 +287,16 @@ npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --netw
 ```bash
 npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
 ```
+
+### Deploy OSwaps
+
+Deploys OSwaps on Base mainnet and initializes the manager (override with `OSWAPS_MANAGER`).
+
+```bash
+npx nx run storage-evm:script ./scripts/oswaps.deploy.ts --network base-mainnet
+```
+
+See [seedsexample/README.md](../contracts/seedsexample/README.md) for the live address and usage.
 
 ## Utility Scripts
 
