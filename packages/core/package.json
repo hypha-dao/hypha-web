@@ -26,7 +26,8 @@
     "pdf-parse": "^1.1.1",
     "pg": "^8.13.1",
     "rrule": "^2.8.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "@uploadthing/shared": "7.1.7"
   },
   "exports": {
     "./client": "./src/client.ts",

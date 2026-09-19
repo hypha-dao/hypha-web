@@ -10,6 +10,11 @@ overrides:
   dompurify: '>=3.4.0 <4'
   hono: '>=4.12.12 <5'
 
+patchedDependencies:
+  '@uploadthing/shared@7.1.7':
+    hash: txm6pttnpb7r6vh5uqpcxjkajm
+    path: patches/@uploadthing__shared@7.1.7.patch
+
 importers:
 
   .:
@@ -995,7 +1000,10 @@ importers:
         version: link:../ui-utils
       '@privy-io/node':
         specifier: ^0.12.0
-        version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+        version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3))
+      '@uploadthing/shared':
+        specifier: 7.1.7
+        version: 7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)
       '@wagmi/cli':
         specifier: ^2.2.0
         version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -2383,11 +2391,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.19.12':
     resolution: {integrity: sha512-bmoCYyWdEL3wDQIVbcyzRyeKLgk2WtWLTWz1ZIAZF/EGbNOwSA6ew3PftJ1PqMiOOGu0OyFMzG53L0zqIpPeNA==}
@@ -5628,7 +5636,7 @@ packages:
 
   '@paulmillr/qr@0.2.1':
     resolution: {integrity: sha512-IHnV6A+zxU7XwmKFinmYjUcwlyK9+xkG3/s9KcQhI9BjQKycrJ1JRO+FbNYPwZiPKW3je/DR0k7w8/gLa5eaxQ==}
-    deprecated: 'The package is now available as "qr": npm install qr'
+    deprecated: 'Switch to "qr" (new package name) for security updates: npm install qr'
 
   '@petamoriken/float16@3.9.2':
     resolution: {integrity: sha512-VgffxawQde93xKxT3qap3OH+meZf7VaSB5Sqd4Rqc+FP5alWbpOyan/7tRbOAvynjpG3GpdtAuGU/NdhQpmrog==}
@@ -9575,6 +9583,7 @@ packages:
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xstate/store@3.4.3':
     resolution: {integrity: sha512-zppaz/lPMWWSW5UOxdwv/Ts2xfpoJm0zHGEKbHzE06fdmSvkdfbbuhG/qNtDH7xidMLA0y2UzCblGdeCRSaxaA==}
@@ -12218,6 +12227,7 @@ packages:
   eslint@9.24.0:
     resolution: {integrity: sha512-eh/jxIEJyZrvbWRe4XuVclLPDYSYYYgLy5zXGGxD6j8zjSAxFEzI2fL/8xNq6O2yKqVt+eF2YhV+hxjV6UKXwQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -17904,6 +17914,7 @@ packages:
 
   shadcn-ui@0.9.5:
     resolution: {integrity: sha512-dsBQWpdLLYCdSdmvOmu53nJhhWnQD1OiblhuhkI4rPYxPKTyfbmZ2NTJHWMu1fXN9PTfN6IVK5vvh+BrjHJx2g==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     hasBin: true
 
   shallow-clone@3.0.1:
@@ -26090,6 +26101,20 @@ snapshots:
       - typescript
       - utf-8-validate
 
+  '@privy-io/node@0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3))':
+    dependencies:
+      '@hpke/chacha20poly1305': 1.8.0
+      '@hpke/core': 1.9.0
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+      '@scure/base': 1.2.6
+      canonicalize: 2.1.0
+      jose: 6.2.2
+      lru-cache: 11.2.2
+      svix: 1.89.0
+    optionalDependencies:
+      viem: 2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3)
+
   '@privy-io/node@0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@hpke/chacha20poly1305': 1.8.0
@@ -30662,14 +30687,14 @@ snapshots:
 
   '@uploadthing/react@7.3.0(next@15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(react@19.1.2)(uploadthing@7.6.0(express@5.2.1)(h3@1.15.3)(next@15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(tailwindcss@4.1.11))':
     dependencies:
-      '@uploadthing/shared': 7.1.7
+      '@uploadthing/shared': 7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)
       file-selector: 0.6.0
       react: 19.1.2
       uploadthing: 7.6.0(express@5.2.1)(fastify@5.6.1)(h3@1.15.3)(next@15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(tailwindcss@4.1.11)
     optionalDependencies:
       next: 15.4.8(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3)
 
-  '@uploadthing/shared@7.1.7':
+  '@uploadthing/shared@7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)':
     dependencies:
       '@uploadthing/mime-types': 0.3.4
       effect: 3.12.0
@@ -44301,7 +44326,7 @@ snapshots:
       '@effect/platform': 0.72.0(effect@3.12.0)
       '@standard-schema/spec': 1.0.0-beta.4
       '@uploadthing/mime-types': 0.3.4
-      '@uploadthing/shared': 7.1.7
+      '@uploadthing/shared': 7.1.7(patch_hash=txm6pttnpb7r6vh5uqpcxjkajm)
       effect: 3.12.0
     optionalDependencies:
       express: 5.2.1

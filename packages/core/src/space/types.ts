@@ -57,6 +57,8 @@ export interface CreateSpaceInput {
   longitude?: number | null;
   locationLabel?: string | null;
   locationSource?: SpaceLocationSource | null;
+  web3SpaceId?: number;
+  address?: string;
 }
 
 export interface UpdateSpaceInput {
