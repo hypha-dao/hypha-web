@@ -10,8 +10,8 @@
 
 | Phase | When | What happens | Active Spaces |
 |---|---|---|---|
-| **Phase 0** | **Today** | Pre-launch. Tokenomics not started. | Reference FDV ~**$111M** at **$0.20** |
-| **Phase I** | **Year 1 (months 0–12)** | Bootstrap the network, fixed **$0.20** price, token sale + locking. | **~0 → ~4,373** |
+| **Phase 0** | **Today** | Pre-launch. Tokenomics not started. | Reference FDV ~**$139M** at **$0.25** |
+| **Phase I** | **Year 1 (months 0–12)** | Bootstrap the network, fixed **$0.25** price, token sale + locking. | **~0 → ~4,373** |
 | **Phase II** | **Years 2–5 (48 months)** | **$44/Space/mo** gross revenue, dynamic IEX pricing. Starts at ~4,373. | Year 5 paying: Low **~250k** · Mid **~1M** · High **~10M** |
 
 **Pitch order:** Phase 0 (where we are) → Phase I sim (bootstrap to 4,373) → Phase II sim (scale scenarios).
@@ -96,8 +96,8 @@ FDV is **fully diluted** (555M HYPHA). Low lands near ~30× run-rate ARR — in 
 
 ### Option A — Full story (~8 min)
 
-1. **Phase 0:** pre-launch, ~$111M reference FDV at $0.20.
-2. Open [tokenomics1](https://app.hypha.earth/tokenomics1/) — Phase I: **~0 → ~4,373** Spaces over 12 months, fixed $0.20.
+1. **Phase 0:** pre-launch, ~$139M reference FDV at $0.25.
+2. Open [tokenomics1](https://app.hypha.earth/tokenomics1/) — Phase I: **~0 → ~4,373** Spaces over 12 months, fixed $0.25.
 3. Open [tokenomics2](https://app.hypha.earth/tokenomics2/) — starts **~4,373**, **$44/Space**, dynamic IEX.
 4. Click **Low** → **~250k paying** at year 5, ARR ~$132M, FDV/ARR, FDV ~$3.9B.
 5. Click **Mid** (~1M paying, ~$12.8B), then **High** (~10M, ~$66B).
@@ -120,7 +120,7 @@ Working assumption for protocol value capture (AI + governance + treasury). Stre
 **19–25%** to IEX is deliberate value accrual; **75–81%** funds AI (~$4/Space on open models), gas, ops, and treasury.
 
 **“How does Phase I connect to Phase II?”**  
-Phase I bootstraps from ~0 to **~4,373 paying Spaces** in year 1 at fixed **$0.20** (~$111M FDV). Phase II continues from that ~4,373 base at **$44/Space**; price emerges from the IEX.
+Phase I bootstraps from ~0 to **~4,373 paying Spaces** in year 1 at fixed **$0.25** (~$139M FDV). Phase II continues from that ~4,373 base at **$44/Space**; price emerges from the IEX.
 
 **“Is every Space really paying?”**  
 Yes — the model assumes **no free tier**. The cumulative Space count and the paying Space count are the same number: ~250k / ~1M / ~10M at year 5, each paying $44/mo.
@@ -135,7 +135,7 @@ No. Internal planning tool. Past comps don’t guarantee future pricing.
 
 ## Suggested 60-second script
 
-> “We’re at **Phase 0** — pre-launch, **~$111M** reference valuation. **Phase I** bootstraps the network from zero to **~4,373 paying Spaces** in year one at fixed **$0.20**. **Phase II** adds **$44/month per Space** with dynamic exchange pricing.  
+> “We’re at **Phase 0** — pre-launch, **~$139M** reference valuation. **Phase I** bootstraps the network from zero to **~4,373 paying Spaces** in year one at fixed **$0.25**. **Phase II** adds **$44/month per Space** with dynamic exchange pricing.  
 >  
 > Over **four Phase II years**, paying Spaces grow to **~250k, ~1M, or ~10M** by year five — every Space paying $44/mo, **~$132M to ~$5.28B run-rate ARR**. **~18–22%** of gross supports HYPHA on the IEX; the rest runs the platform. Models imply **~$3.9B to ~$66B fully diluted**, roughly **30×** revenue at Low compressing toward **~13×** at High.  
 >  

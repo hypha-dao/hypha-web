@@ -244,8 +244,8 @@ Interactive simulators: [`tokenomics-simulator.html`](tokenomics-simulator.html)
 
 | Phase | When | Simulator | Key state |
 |---|---|---|---|
-| **Phase 0** | Today | — | Pre-launch. Reference FDV ~$111M at $0.20 (111M locked supply). |
-| **Phase I** | Year 1 (months 0–12) | Phase I (`/tokenomics1`) | Fixed $0.20. **Bootstrap ~0 → ~4,373** paying Spaces (50-Space seed at 50%/mo). |
+| **Phase 0** | Today | — | Pre-launch. Reference FDV ~$139M at $0.25 (555M max supply). |
+| **Phase I** | Year 1 (months 0–12) | Phase I (`/tokenomics1`) | Fixed $0.25. **Bootstrap ~0 → ~4,373** paying Spaces (50-Space seed at 50%/mo). |
 | **Phase II** | Years 2–5 (48 months) | Phase II (`/tokenomics2`) | Starts **~4,373** paying Spaces. $44/Space/mo. Year-5 paying Spaces: Low ~250k · Mid ~1M · High ~10M. |
 
 Phase II month 1 = first month after Phase I (~4,373 active Spaces). Year 5 = Phase II month 48.
@@ -257,7 +257,7 @@ Phase II month 1 = first month after Phase I (~4,373 active Spaces). Year 5 = Ph
 | Gross revenue per Space (Phase II) | **$44 USDC / month** |
 | Simulation horizon (Phase II) | 48 months |
 | Total HYPHA supply | 555,555,555 |
-| Phase I reference price | **$0.20** (fixed; ~$111M FDV) |
+| Phase I reference price | **$0.25** (fixed; ~$139M FDV) |
 
 ### Revenue allocation (Phase II)
 
