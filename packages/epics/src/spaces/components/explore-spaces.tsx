@@ -16,7 +16,6 @@ import {
   NetworkControlStrip,
   NetworkGlobeMap,
   NetworkMapViewToggle,
-  useNetworkGlobeReady,
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
@@ -29,7 +28,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
+import { Badge, Heading, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -45,10 +44,7 @@ interface ExploreSpacesProps {
   order?: SpaceOrder;
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
-}
-
-function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
-  return a.toLowerCase() as Lowercase<A>;
+  showHeading?: boolean;
 }
 
 const CountValue = ({
@@ -124,14 +120,13 @@ export function ExploreSpaces({
   order,
   uniqueCategoryGroups,
   enableNetworkMap = false,
+  showHeading = true,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
-  const tCommon = useTranslations('Common');
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
-  const globeReady = useNetworkGlobeReady();
 
   React.useEffect(() => {
     if (enableNetworkMap) {
@@ -174,25 +169,6 @@ export function ExploreSpaces({
     }
   }, [isFilterLoading]);
   const showSpacesSkeleton = !hasSettledFilter;
-
-  const agreementCount = React.useMemo(() => {
-    return selectedSpaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
-    );
-  }, [selectedSpaces]);
-
-  const uniqueMemberAddresses = React.useMemo(() => {
-    const acc = new Set<Lowercase<`0x${string}`>>();
-    for (const space of selectedSpaces) {
-      if (!space.memberAddresses) continue;
-      for (const address of space.memberAddresses) {
-        acc.add(toLowerHex(address));
-      }
-    }
-    return acc;
-  }, [selectedSpaces]);
 
   const tags = React.useMemo(
     () =>
@@ -334,8 +310,6 @@ export function ExploreSpaces({
   );
 
   const showSortControl = !enableNetworkMap || view === 'list';
-  const deferBelowMapContent =
-    enableNetworkMap && view === 'map' && !globeReady;
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-row items-center gap-3">
@@ -368,67 +342,20 @@ export function ExploreSpaces({
     </div>
   );
 
-  const metricsSection = (
-    <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={selectedSpaces.length}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Spaces')}
-        </div>
-      </div>
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={uniqueMemberAddresses.size}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Members')}
-        </div>
-      </div>
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={agreementCount}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Agreements')}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex min-w-0 flex-col gap-9">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex flex-col"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
+      {showHeading ? (
+        <Heading
+          size="9"
+          color="secondary"
+          weight="medium"
+          align="center"
+          className="flex flex-col"
+        >
+          <span>{t('manySpaces')}</span>
+          <span>{t('oneVibrantNetwork')}</span>
+        </Heading>
+      ) : null}
 
       <div className="flex min-w-0 flex-col">
         {sharedHeader}
@@ -446,9 +373,6 @@ export function ExploreSpaces({
             <div className={cn(view !== 'list' && 'hidden')}>
               {listMetaRow}
               {spacesListContent}
-            </div>
-            <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
-              {metricsSection}
             </div>
           </>
         ) : (

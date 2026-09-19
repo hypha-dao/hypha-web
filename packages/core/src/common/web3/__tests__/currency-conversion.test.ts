@@ -5,6 +5,7 @@ import {
   convertFromUsd,
   convertToUsd,
   isConvertibleCurrency,
+  resolveReferenceCurrencyCode,
   OFFCHAIN_USD_CURRENCIES,
   usdRateFromUnitsPerUsd,
   type UsdRates,
@@ -47,6 +48,16 @@ describe('isConvertibleCurrency', () => {
     expect(isConvertibleCurrency('toString')).toBe(false);
     expect(isConvertibleCurrency('hasOwnProperty')).toBe(false);
     expect(isConvertibleCurrency('__proto__')).toBe(false);
+  });
+});
+
+describe('resolveReferenceCurrencyCode', () => {
+  it('keeps currency codes and maps feed addresses', () => {
+    expect(resolveReferenceCurrencyCode('EUR')).toBe('EUR');
+    expect(resolveReferenceCurrencyCode(CURRENCY_FEEDS.EUR)).toBe('EUR');
+    expect(resolveReferenceCurrencyCode(CURRENCY_FEEDS.USD)).toBe('USD');
+    expect(resolveReferenceCurrencyCode('0xnotanaddress')).toBeUndefined();
+    expect(resolveReferenceCurrencyCode('')).toBeUndefined();
   });
 });
 
