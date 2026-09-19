@@ -1,5 +1,6 @@
 export { isHyphaPlatformSpace } from './is-hypha-platform-space';
 export {
+  isExcludedNetworkSpaceTitle,
   isPlaceholderPayingSpace,
   isPlaceholderSpaceTitle,
   normalizePayingSpaceTitle,

@@ -1,8 +1,3 @@
-export type NamedCount = {
-  name: string;
-  count: number;
-};
-
 export type MonthlyCount = {
   month: string;
   count: number;
@@ -20,7 +15,6 @@ export type NetworkDashboardStats = {
   spacesCumulative: number[];
   membersCumulative: number[];
   proposalsCumulative: number[];
-  proposalsByType: NamedCount[];
 };
 
 export type NetworkPayingSnapshot = {
@@ -37,7 +31,6 @@ export type NetworkPayingSnapshot = {
 };
 
 export const NETWORK_DASHBOARD_MONTHS = 12;
-export const NETWORK_DASHBOARD_TOP_TYPES = 6;
 
 export function asInt(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -106,24 +99,6 @@ export function toCumulativeSeries(
   });
 }
 
-export function mergeNamedCounts(
-  items: readonly NamedCount[],
-  canonicalize: (name: string) => string = (name) => name,
-  limit = NETWORK_DASHBOARD_TOP_TYPES,
-): NamedCount[] {
-  const merged = new Map<string, number>();
-  for (const item of items) {
-    const name = canonicalize(item.name).trim();
-    if (!name) continue;
-    merged.set(name, (merged.get(name) ?? 0) + asInt(item.count));
-  }
-
-  return [...merged.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, limit);
-}
-
 function asRecord(value: unknown): Record<string, unknown> {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     return value as Record<string, unknown>;
@@ -163,20 +138,10 @@ function parseMonthlyCounts(value: unknown): MonthlyCount[] {
   });
 }
 
-function parseNamedCounts(value: unknown): NamedCount[] {
-  return asArray(value).flatMap((entry) => {
-    const record = asRecord(entry);
-    const name = String(record.name ?? '').trim();
-    if (!name) return [];
-    return [{ name, count: asInt(record.count) }];
-  });
-}
-
 export function parseNetworkDashboardPayload(
   payload: unknown,
   options: {
     now?: Date;
-    canonicalizeProposalLabel?: (label: string) => string;
   } = {},
 ): NetworkDashboardStats {
   const record = asRecord(payload);
@@ -214,10 +179,6 @@ export function parseNetworkDashboardPayload(
     proposalsCumulative: toCumulativeSeries(
       proposalsByMonth,
       asInt(record.proposalsBeforeWindow),
-    ),
-    proposalsByType: mergeNamedCounts(
-      parseNamedCounts(record.proposalsByLabel),
-      options.canonicalizeProposalLabel,
     ),
   };
 }

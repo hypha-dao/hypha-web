@@ -17,6 +17,16 @@ export function isPlaceholderSpaceTitle(title: string): boolean {
   return PLACEHOLDER_SPACE_TITLE.test(normalizePayingSpaceTitle(title));
 }
 
+/**
+ * Public network-dashboard space filter. Same placeholder rule as paying
+ * spaces, plus empty titles (which paying-spaces resolve to `Space {id}`).
+ * SQL in `find-network-dashboard-stats` must stay in sync.
+ */
+export function isExcludedNetworkSpaceTitle(title: string): boolean {
+  const normalized = normalizePayingSpaceTitle(title);
+  return normalized === '' || PLACEHOLDER_SPACE_TITLE.test(normalized);
+}
+
 export function resolvedPayingSpaceTitle(
   title: string | null | undefined,
   web3SpaceId: number,

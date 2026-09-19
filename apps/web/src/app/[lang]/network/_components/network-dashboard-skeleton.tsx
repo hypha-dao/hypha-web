@@ -19,25 +19,17 @@ export function NetworkDashboardSkeleton() {
       className="flex min-w-0 flex-col gap-4"
       aria-hidden="true"
     >
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, index) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
           <NetworkDashboardSkeletonKpi key={index} />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Card className="craft-card">
-          <CardContent className="p-3.5">
-            <Skeleton loading width={160} height={16} className="mb-4" />
-            <Skeleton loading width="100%" height={196} />
-          </CardContent>
-        </Card>
-        <Card className="craft-card">
-          <CardContent className="p-3.5">
-            <Skeleton loading width={140} height={16} className="mb-4" />
-            <Skeleton loading width="100%" height={196} />
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="craft-card">
+        <CardContent className="p-3.5">
+          <Skeleton loading width={160} height={16} className="mb-4" />
+          <Skeleton loading width="100%" height={196} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

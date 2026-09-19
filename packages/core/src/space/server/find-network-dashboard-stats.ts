@@ -8,7 +8,6 @@ import {
   spaces,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
-import { normalizeProposalDocumentLabel } from '../../governance/proposal-document-label';
 import {
   parseNetworkDashboardPayload,
   type NetworkDashboardStats,
@@ -33,20 +32,46 @@ function readPayload(result: unknown): unknown {
   return undefined;
 }
 
+/**
+ * Public network snapshot. Intentionally stricter than Joachim's Metabase
+ * Spaces tab: we also drop sandbox / archived-flag spaces. Placeholder titles
+ * matching /^space [0-9]+$/i after the same normalize as
+ * `isPlaceholderSpaceTitle` are excluded here; those names do not appear in
+ * Joachim's live Spaces list (0 of 519 on 2026-09-19).
+ */
 export async function findNetworkDashboardStats({
   db,
 }: DbConfig): Promise<NetworkDashboardStats> {
   const result = await db.execute(sql`
-    WITH real_spaces AS (
+    WITH space_candidates AS (
       SELECT
         ${spaces.id} AS id,
-        ${spaces.createdAt} AS created_at
+        ${spaces.createdAt} AS created_at,
+        btrim(
+          regexp_replace(
+            regexp_replace(
+              ${spaces.title},
+              E'[\\u200B-\\u200D\\uFEFF]',
+              '',
+              'g'
+            ),
+            E'[\\s\\u00A0\\u202F\\u2007\\u2060]+',
+            ' ',
+            'g'
+          )
+        ) AS title_norm
       FROM ${spaces}
       WHERE ${spaces.isArchived} = false
         AND NOT (${spaces.flags} @> '["sandbox"]'::jsonb)
         AND NOT (${spaces.flags} @> '["archived"]'::jsonb)
         AND ${spaces.title} NOT ILIKE ${'%test%'}
         AND ${spaces.slug} NOT ILIKE ${'%test%'}
+    ),
+    real_spaces AS (
+      SELECT id, created_at
+      FROM space_candidates
+      WHERE title_norm <> ''
+        AND title_norm !~* '^space [0-9]+$'
     ),
     real_people AS (
       SELECT
@@ -59,8 +84,7 @@ export async function findNetworkDashboardStats({
     real_documents AS (
       SELECT
         ${documents.id} AS id,
-        ${documents.createdAt} AS created_at,
-        ${documents.label} AS label
+        ${documents.createdAt} AS created_at
       FROM ${documents}
       INNER JOIN real_spaces ON real_spaces.id = ${documents.spaceId}
       WHERE coalesce(${documents.title}, '') NOT ILIKE ${'%test%'}
@@ -124,26 +148,10 @@ export async function findNetworkDashboardStats({
           WHERE created_at >= date_trunc('month', now()) - interval '11 months'
           GROUP BY 1
         ) proposals_by_month
-      ),
-      'proposalsByLabel', (
-        SELECT coalesce(json_agg(json_build_object(
-          'name', proposal_label,
-          'count', proposal_count
-        ) ORDER BY proposal_count DESC, proposal_label), '[]'::json)
-        FROM (
-          SELECT btrim(label) AS proposal_label, count(*)::int AS proposal_count
-          FROM real_documents
-          WHERE nullif(btrim(coalesce(label, '')), '') IS NOT NULL
-          GROUP BY 1
-          ORDER BY count(*) DESC
-          LIMIT 30
-        ) proposal_labels
       )
     ) AS payload
   `);
 
   const payload = readPayload(result);
-  return parseNetworkDashboardPayload(payload, {
-    canonicalizeProposalLabel: normalizeProposalDocumentLabel,
-  });
+  return parseNetworkDashboardPayload(payload);
 }

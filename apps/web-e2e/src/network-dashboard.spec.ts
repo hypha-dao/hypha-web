@@ -11,5 +11,8 @@ test.describe('Network dashboard', () => {
     await expect(dashboard.getByText('Spaces', { exact: true })).toBeVisible();
     await expect(dashboard.getByText('Active spaces')).toBeVisible();
     await expect(dashboard.getByText('Network growth')).toBeVisible();
+    await expect(dashboard.getByText('Proposals by type')).toHaveCount(0);
+    await expect(dashboard.getByText('Paying spaces')).toHaveCount(0);
+    await expect(dashboard.getByText(/placeholder test spaces/i)).toBeVisible();
   });
 });

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   fillMonthlySeries,
-  mergeNamedCounts,
   parseNetworkDashboardPayload,
   toCumulativeSeries,
   toNetworkPayingSnapshot,
@@ -38,26 +37,6 @@ describe('toCumulativeSeries', () => {
   });
 });
 
-describe('mergeNamedCounts', () => {
-  it('canonicalizes, merges, and keeps the top names', () => {
-    expect(
-      mergeNamedCounts(
-        [
-          { name: 'Contribution', count: 4 },
-          { name: 'Contribución', count: 2 },
-          { name: 'Invite', count: 9 },
-          { name: 'Other', count: 1 },
-        ],
-        (name) => (name.startsWith('Contrib') ? 'Contribution' : name),
-        2,
-      ),
-    ).toEqual([
-      { name: 'Invite', count: 9 },
-      { name: 'Contribution', count: 6 },
-    ]);
-  });
-});
-
 describe('parseNetworkDashboardPayload', () => {
   it('coerces postgres json and builds cumulative investor stats', () => {
     const stats = parseNetworkDashboardPayload(
@@ -72,15 +51,9 @@ describe('parseNetworkDashboardPayload', () => {
         spacesByMonth: [{ month: '2026-09', count: 2 }],
         membersByMonth: [{ month: '2026-08', count: 5 }],
         proposalsByMonth: [{ month: '2026-09', count: 3 }],
-        proposalsByLabel: [
-          { name: 'Invite', count: 4 },
-          { name: 'Invitación', count: 1 },
-        ],
       },
       {
         now: new Date('2026-09-18T10:00:00Z'),
-        canonicalizeProposalLabel: (label) =>
-          label === 'Invitación' ? 'Invite' : label,
       },
     );
 
@@ -92,7 +65,6 @@ describe('parseNetworkDashboardPayload', () => {
     expect(stats.spacesCumulative.at(-1)).toBe(6);
     expect(stats.membersCumulative.at(-2)).toBe(15);
     expect(stats.membersCumulative.at(-1)).toBe(15);
-    expect(stats.proposalsByType[0]).toEqual({ name: 'Invite', count: 5 });
   });
 
   it('parses a json string payload', () => {
