@@ -66,25 +66,25 @@ export type RoomSpaceContext =
 
 // ── Hand-off contract to #2470's dispatch() ───────────────────────────────
 //
-// Proposed default shape. #2470 holds adjustment rights on field names when it
-// wires dispatch() — settle in a short joint pass (spec §14). The substance
-// (event id / room-derived context / actor / raw body + mentions / timestamp)
-// is what #2470 implementation-plan §2 already implies.
+// Field names generalized for transport portability (#2470 D7, 2026-09-18): a chat
+// transport swap (Matrix → Nostr/Buzz) shouldn't require renaming every downstream
+// consumer of this contract. The substance (event id / room-derived context / actor /
+// raw body + mentions / timestamp) is what #2470 implementation-plan §2 already implies.
 
 export type ChatNotificationEventType = 'chat.message' | 'chat.mention';
 
 export interface ChatNotificationEvent {
   type: ChatNotificationEventType;
   /** Idempotency key for the whole notification pipeline (#2470 §3.A.1). */
-  source: { kind: 'matrix'; matrixEventId: string };
+  source: { kind: 'matrix' | 'nostr' | 'buzz'; externalEventId: string };
   /**
    * Matrix room the event was sent in. Additive field carried for consumers that reply back
    * into the room (#2485 AI-bot POC). #2470 keeps naming-adjustment rights like the rest of
    * this contract; the substance (which room) is stable.
    */
   roomId: string;
-  /** The Matrix sender. #2470's resolver excludes this identity from recipients. */
-  actor: { matrixUserId: string };
+  /** The sending user's transport-native id. #2470's resolver excludes this identity from recipients. */
+  actor: { externalUserId: string };
   context: RoomSpaceContext;
   payload: {
     /** Raw message body. #2470's delivery layer sanitises/truncates for push/email. */

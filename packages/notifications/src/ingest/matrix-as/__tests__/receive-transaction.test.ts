@@ -57,8 +57,8 @@ describe('receiveTransaction', () => {
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'chat.message',
-        source: { kind: 'matrix', matrixEventId: '$e1' },
-        actor: { matrixUserId: '@alice:hs' },
+        source: { kind: 'matrix', externalEventId: '$e1' },
+        actor: { externalUserId: '@alice:hs' },
         context: SPACE_CTX,
         payload: expect.objectContaining({
           body: 'hi',
