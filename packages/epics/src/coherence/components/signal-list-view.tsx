@@ -24,7 +24,6 @@ import { SignalCreatorMeta } from './signal-creator-meta';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
-import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
 import {
   isSignalDueOverdue,
   dueDateFromInputValue,
@@ -96,7 +95,7 @@ const SIGNAL_LIST_GRID_CLASS =
 const SIGNAL_LIST_META_HEADER_CLASS = 'min-w-0 px-3';
 
 const SIGNAL_LIST_SELECT_TRIGGER_CLASS =
-  'h-8 w-full min-w-0 truncate border-border/60 bg-background/80';
+  'h-8 w-full min-w-0 truncate rounded-none border-border/60 bg-transparent shadow-none';
 
 const SIGNAL_LIST_SELECT_TRIGGER_PRIORITY_CLASS = cn(
   SIGNAL_LIST_SELECT_TRIGGER_CLASS,
@@ -104,7 +103,7 @@ const SIGNAL_LIST_SELECT_TRIGGER_PRIORITY_CLASS = cn(
 );
 
 const SIGNAL_LIST_DATE_FIELD_CLASS =
-  'flex h-8 w-full min-w-0 items-center gap-1.5 rounded border border-border/60 bg-background/80 px-3';
+  'flex h-8 w-full min-w-0 items-center gap-1.5 rounded-none border border-border/60 bg-transparent px-3';
 
 const SIGNAL_LIST_DATE_INPUT_CLASS = cn(
   'relative min-h-0 min-w-0 flex-1 border-0 bg-transparent p-0 text-sm [color-scheme:light] dark:[color-scheme:dark] focus-visible:outline-none focus-visible:ring-0',
@@ -125,10 +124,10 @@ export function SignalListView({
   const intlFormat = useFormatter();
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/50 bg-card">
+    <div className="w-full">
       <div
         className={cn(
-          'hidden gap-2 border-b border-l-[3px] border-border/40 border-l-transparent bg-muted/20 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:px-4',
+          'hidden gap-2 border-b border-border/50 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:px-4',
           SIGNAL_LIST_GRID_CLASS,
         )}
       >
@@ -181,9 +180,8 @@ export function SignalListView({
               key={signal.id}
               {...getSignalSlugDomProps(signal.slug)}
               className={cn(
-                'group border-l-[3px] px-3 py-3 transition-[background-color,border-color,box-shadow] lg:px-4',
+                'group px-3 py-3 lg:px-4',
                 SIGNAL_LIST_ITEM_SHELL_CLASS,
-                priorityLeftBorderEdgeClass(signal.priority),
                 signalCardActiveClass(isActive, 'rounded-none'),
                 !isActive && 'craft-row-interactive',
               )}
@@ -200,7 +198,7 @@ export function SignalListView({
                     className="min-w-0 flex-1 text-left"
                     onClick={() => onSignalClick?.(signal)}
                   >
-                    <span className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent-11">
+                    <span className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-foreground">
                       {signal.title}
                     </span>
                     <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

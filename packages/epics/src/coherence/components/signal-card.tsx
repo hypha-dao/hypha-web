@@ -33,10 +33,6 @@ import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
-import {
-  PRIORITY_LEFT_ACCENT_BAR_CLASS,
-  priorityLeftBorderClass,
-} from '../utils/signal-priority-styles';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -161,6 +157,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
+  if (priorityLabel) {
+    metaParts.push({
+      key: 'priority',
+      node: <span className="shrink-0">{priorityLabel}</span>,
+    });
+  }
   if (hasPersonSlot) {
     metaParts.push({
       key: 'assignee',
@@ -219,14 +221,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <div
-        className={cn(
-          PRIORITY_LEFT_ACCENT_BAR_CLASS,
-          priorityLeftBorderClass(priority),
-        )}
-        title={priorityLabel}
-        aria-label={priorityLabel}
-      />
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
         <div className="relative flex flex-1 flex-col gap-2.5 px-3.5 pb-3 pt-3">
           <div className="flex min-w-0 flex-col gap-1">
@@ -311,9 +305,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 {title}
               </CardTitle>
             </Skeleton>
-            {/* Priority stays on the left accent bar only — avoid duplicate
-                status channel. Signal type is omitted: it repeated on every
-                card without changing what anyone does next. */}
+            {/* Priority is quiet ink in the meta line. Signal type is omitted:
+                it repeated on every card without changing what anyone does next. */}
             {metaParts.length > 0 ? (
               <p className="flex min-w-0 items-center text-1 text-muted-foreground">
                 {metaParts.map((part, index) => (
