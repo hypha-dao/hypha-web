@@ -183,7 +183,7 @@ export function SignalTaskCard({
           <SignalDescriptionButton
             title={signal.title}
             description={signal.description}
-            className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+            className="rounded-none border border-border/70 bg-background-2 shadow-none"
           />
           {refresh ? (
             <div
@@ -194,7 +194,7 @@ export function SignalTaskCard({
               <SignalCardActions
                 signal={signal}
                 refresh={refresh}
-                className="shrink-0 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+                className="shrink-0 rounded-none border border-border/70 bg-background-2 shadow-none"
               />
             </div>
           ) : null}

@@ -19,7 +19,7 @@ export function SignalDropPlaceholder({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border-2 border-dashed border-accent-9/55 bg-accent-2/35 shadow-inner',
+        'overflow-hidden rounded-none border border-dashed border-accent-9/55 bg-transparent shadow-none',
         'animate-pulse',
         className,
       )}

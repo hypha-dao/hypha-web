@@ -238,10 +238,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 title={title}
                 description={description}
                 size="md"
-                className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+                className="rounded-none border border-border/70 bg-background-2 shadow-none"
               />
               {canManageSignal && slug ? (
-                <div className="flex items-center gap-0.5 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center gap-0.5 rounded-none border border-border/70 bg-background-2 shadow-none">
                   <Button
                     type="button"
                     variant="ghost"

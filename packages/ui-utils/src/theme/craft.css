@@ -122,26 +122,26 @@
 
   /*
    * Shared card chrome for grids / panels.
-   * Prefer these over one-off rounded-xl + shadow stacks.
+   * Square, flat, hairline — no rounded-xl leftovers or shadow stacks.
    */
   .craft-card {
-    @apply rounded-xl border border-border/70 bg-background-2 shadow-none;
+    @apply rounded-none border border-border/70 bg-background-2 shadow-none;
   }
 
   /*
-   * Interactive grids: quiet at rest; gain space/theme accent on hover.
-   * Avoid muted hover that washes out any accent tint (feels inverted).
+   * Interactive grids: quiet at rest; a stronger hairline on hover.
+   * The surface stays bg-background-2 (white in light, #121212 in dark).
    * Hover rules live outside this layer (below) so they can override Card
-   * utility bg/border classes from the utilities layer.
+   * utility border classes from the utilities layer.
    */
   .craft-card-interactive {
-    @apply rounded-xl border border-border/70 bg-background-2 shadow-none;
-    @apply transition-[border-color,background-color] duration-200 ease-out;
+    @apply rounded-none border border-border/70 bg-background-2 shadow-none;
+    @apply transition-[border-color] duration-200 ease-out;
   }
 
-  /* List / table rows: same quiet→accent hover fill, no card chrome. */
+  /* List / table rows: hairline hover, no grey slab fill. */
   .craft-row-interactive {
-    @apply transition-[background-color] duration-200 ease-out;
+    @apply transition-[box-shadow] duration-200 ease-out;
   }
 
   /*
@@ -181,12 +181,12 @@
    * Used for category filters, compact space switchers, tag chrome.
    */
   .craft-chip {
-    @apply rounded-md border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
+    @apply rounded-none border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
   }
 
   .craft-chip-interactive {
-    @apply transition-[border-color,background-color,color] duration-150 ease-out;
-    @apply hover:border-border hover:bg-muted/30 hover:text-foreground;
+    @apply transition-[border-color,color] duration-150 ease-out;
+    @apply hover:border-foreground/40 hover:bg-transparent hover:text-foreground;
   }
 
   /*
@@ -209,32 +209,20 @@
 }
 
 /*
- * Unlayered on purpose: Card (and similar) apply bg-background-2 /
- * border-border/* as utilities. Those beat @layer components, so the
- * accent hover must sit outside layers to win on upvote / Card grids.
- * Kanban/swimlane SignalTaskCard (bare div) already worked without this.
+ * Unlayered on purpose: Card applies border-border/* as a utility, which
+ * beats @layer components. Hairline only — do not mix a fill into the card.
+ * --hypha-panel (#eae8e1) is a light token and is not redefined in dark, so
+ * blending it into #121212 painted a grey slab while the same mix on white
+ * was nearly invisible and only the border read.
  */
 .craft-card-interactive:hover {
-  border-color: color-mix(
-    in oklab,
-    var(--space-accent, var(--hypha-wash, var(--border))) 28%,
-    var(--border)
-  );
-  /*
-   * Warm paper lift — never fall back to accent-9 (ink). Mixing 10% ink into
-   * white reads as cool slate (#e0e1e3), not website panel.
-   */
-  background: color-mix(
-    in oklab,
-    var(--background-2, var(--card)) 82%,
-    var(--space-accent, var(--hypha-panel, var(--muted))) 18%
-  );
+  border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+  background-color: var(--background-2);
 }
 
 .craft-row-interactive:hover {
-  background: color-mix(
-    in oklab,
-    var(--background-2, var(--card)) 82%,
-    var(--space-accent, var(--hypha-panel, var(--muted))) 18%
-  );
+  /* Hairline inset — same in light and dark; no panel-tint fill. */
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--foreground) 28%, var(--border));
+  background-color: transparent;
 }

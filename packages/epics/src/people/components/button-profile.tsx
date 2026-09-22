@@ -645,8 +645,8 @@ export const ButtonProfile = ({
           <div className="flex flex-col justify-center gap-6 md:hidden">
             <div
               className={cn(
-                'flex flex-col items-center gap-3 rounded-xl border border-border/80',
-                'bg-popover px-4 py-5 text-popover-foreground shadow-sm',
+                'flex flex-col items-center gap-3 rounded-none border border-border/80',
+                'bg-popover px-4 py-5 text-popover-foreground shadow-none',
               )}
             >
               <PersonAvatar

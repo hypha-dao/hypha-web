@@ -43,14 +43,14 @@ export function SignalViewControls({
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
         <div className="inline-flex w-max flex-nowrap items-center gap-2">
           {workflowSettingsHref ? (
-            <div className="inline-flex h-10 shrink-0 items-center rounded-lg bg-neutral-3 px-1">
+            <div className="inline-flex h-10 shrink-0 items-center rounded-none border border-border/70 px-1">
               <Button
                 asChild
                 type="button"
                 variant="ghost"
                 colorVariant="neutral"
                 size="sm"
-                className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-foreground"
+                className="h-8 min-h-0 w-8 shrink-0 rounded-none p-0 text-muted-foreground hover:text-foreground"
               >
                 <Link
                   href={workflowSettingsHref}
@@ -58,7 +58,7 @@ export function SignalViewControls({
                   aria-label={t('signalWorkflowSettings')}
                   title={t('signalWorkflowSettings')}
                 >
-                  <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+                  <Cog className="craft-icon" strokeWidth={1.25} aria-hidden />
                 </Link>
               </Button>
             </div>
