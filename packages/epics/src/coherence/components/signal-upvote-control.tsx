@@ -381,7 +381,7 @@ export function SignalUpvoteControl({
                   {t('supportersCount', { count: summary.upvoteCount })}
                 </span>
                 {summary.voters.length > 0 ? (
-                  <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-xl border border-border/80 bg-muted/20 p-1.5 narrow-scrollbar">
+                  <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-none border border-border/80 bg-background-2 p-1.5 narrow-scrollbar">
                     {summary.voters.map((voter) => (
                       <li
                         key={voter.personId}

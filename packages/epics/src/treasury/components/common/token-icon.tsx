@@ -88,7 +88,7 @@ export const TokenIconUpload = ({
       className={clsx(
         'group cursor-pointer relative',
         'flex justify-center items-center overflow-hidden',
-        'min-w-9 w-9 h-9 rounded-xl bg-accent-5',
+        'min-w-9 w-9 h-9 rounded-none bg-transparent border border-border/70',
       )}
     >
       <input {...getInputProps()} />

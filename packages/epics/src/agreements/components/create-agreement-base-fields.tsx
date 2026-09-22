@@ -542,7 +542,7 @@ export function CreateAgreementBaseFields({
       </div>
       <div className="flex flex-col gap-6">
         {mode !== 'memory' ? (
-          <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+          <section className="rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
             <FormField
               control={form.control}
               name="leadImage"
@@ -589,7 +589,7 @@ export function CreateAgreementBaseFields({
             />
           </section>
         ) : null}
-        <section className="min-w-0 max-w-full overflow-hidden rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+        <section className="min-w-0 max-w-full overflow-hidden rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
           {mode === 'memory' ? (
             <FormField
               control={form.control}
@@ -660,7 +660,7 @@ export function CreateAgreementBaseFields({
                     {contentLabel} <RequirementMark />
                   </FormLabel>
                   <FormControl>
-                    <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                    <div className="overflow-hidden rounded-none border border-border/80 bg-background-2 shadow-none focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
                       <RichTextEditor
                         editorRef={null}
                         bordered={false}

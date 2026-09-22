@@ -184,7 +184,7 @@ export const PersonHead = ({
         <Skeleton
           loading={isLoading}
           height={320}
-          className="w-full rounded-xl"
+          className="w-full rounded-none"
         >
           <CompactSpaceBanner
             title={displayName}

@@ -40,8 +40,8 @@ export const ButtonNavItem = ({
       variant="ghost"
       colorVariant="neutral"
       className={clsx(
-        isActive && 'bg-neutral-3',
-        'hover:bg-neutral-3',
+        'rounded-none border-b border-transparent shadow-none hover:bg-transparent hover:border-foreground/25',
+        isActive && 'border-accent-9 text-foreground hover:border-accent-9',
         classNames,
       )}
       asChild={!disabled && !!href}

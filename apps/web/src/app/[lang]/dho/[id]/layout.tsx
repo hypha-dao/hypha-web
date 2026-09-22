@@ -145,7 +145,7 @@ export default async function DhoLayout({
                 {web3SpaceId !== undefined && (
                   <SubscriptionBadge
                     web3SpaceId={web3SpaceId}
-                    className="rounded-xl"
+                    className="rounded-none"
                   />
                 )}
                 <SpaceModeLabel
@@ -159,8 +159,8 @@ export default async function DhoLayout({
                   )}/space-configuration`}
                   className={
                     compactBannerSpaceArchived
-                      ? '[&_.border-error-8]:rounded-xl [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-foreground [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
-                      : '[&_.border-accent-8]:rounded-xl [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-foreground [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
+                      ? '[&_.border-error-8]:rounded-none [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-foreground [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
+                      : '[&_.border-accent-8]:rounded-none [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-foreground [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
                   }
                 />
               </>
@@ -201,7 +201,7 @@ export default async function DhoLayout({
                       <SubscriptionBadge
                         web3SpaceId={web3SpaceId}
                         onHeroBackground
-                        className="rounded-xl"
+                        className="rounded-none"
                       />
                     )}
                     <SpaceModeLabel
@@ -215,8 +215,8 @@ export default async function DhoLayout({
                       )}/space-configuration`}
                       className={
                         compactBannerSpaceArchived
-                          ? '[&_.border-error-8]:rounded-xl [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-white/10'
-                          : '[&_.border-accent-8]:rounded-xl [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-white/10'
+                          ? '[&_.border-error-8]:rounded-none [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
+                          : '[&_.border-accent-8]:rounded-none [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
                       }
                     />
                   </>

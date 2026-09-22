@@ -148,7 +148,7 @@ export function NavigationTabs({
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
-                  className="h-10 shrink-0 gap-1 px-3 text-2 font-medium"
+                  className="h-10 shrink-0 gap-1 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.12em]"
                   aria-label={t('moreNav')}
                 >
                   {t('moreNav')}

@@ -16,8 +16,7 @@ const ALERT_DIALOG_VIEWPORT_INSET =
   'top-0 bottom-0 left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]';
 
 /** Default: lighter scrim (~45–50%) + blur; pass `className` for destructive / emphasis. */
-const ALERT_DIALOG_OVERLAY_DEFAULT =
-  'bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35';
+const ALERT_DIALOG_OVERLAY_DEFAULT = 'bg-black/45';
 
 /** Above floating call dock (`z-[130]` in GlobalCallDockOverlay) and language menu (`z-[120]`). */
 const ALERT_DIALOG_Z = 'z-[140]';
@@ -67,7 +66,7 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        `fixed ${ALERT_DIALOG_Z} grid max-w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg`,
+        `fixed ${ALERT_DIALOG_Z} grid max-w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-none`,
         'max-h-[min(90dvh,calc(100dvh-var(--menu-top-height,70px)-1rem))] overflow-y-auto',
         /* Center in the viewport remaining below the fixed menu */
         viewport === 'full'

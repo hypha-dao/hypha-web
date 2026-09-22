@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default: '',
         outline: 'border bg-transparent',
         link: 'normal-case tracking-normal text-sm font-medium underline-offset-4 hover:underline bg-transparent',
-        ghost: 'bg-transparent',
+        ghost: 'border border-transparent bg-transparent',
       },
       size: {
         /** Standard actions — 48px, matching the website control. */
@@ -103,22 +103,26 @@ const buttonVariants = cva(
       {
         variant: 'ghost',
         colorVariant: 'accent',
-        className: 'text-accent-11 hover:bg-accent-3 hover:text-foreground',
+        className:
+          'text-accent-11 hover:border-foreground/25 hover:bg-transparent hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'neutral',
-        className: 'text-neutral-11 hover:bg-neutral-3 hover:text-foreground',
+        className:
+          'text-neutral-11 hover:border-foreground/25 hover:bg-transparent hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'error',
-        className: 'text-error-11 hover:bg-error-3 hover:text-foreground',
+        className:
+          'text-error-11 hover:border-error-9/40 hover:bg-transparent hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'success',
-        className: 'text-success-11 hover:bg-success-3 hover:text-foreground',
+        className:
+          'text-success-11 hover:border-success-9/40 hover:bg-transparent hover:text-foreground',
       },
     ],
   },
