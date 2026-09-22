@@ -73,6 +73,27 @@ describe('resolvePersonFromAuthToken', () => {
     expect(findSelf).toHaveBeenCalledOnce();
   });
 
+  it('falls back to findSelf when findPersonBySub throws', async () => {
+    verifyPrivyAuthToken.mockResolvedValue({
+      ok: true,
+      userId: 'did:privy:abc',
+    });
+    findPersonBySub.mockRejectedValue(
+      new Error('column "network_visible" does not exist'),
+    );
+    getDb.mockReturnValue({ auth: true });
+    findSelf.mockResolvedValue({
+      id: 3,
+      slug: 'recovered',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const person = await resolvePersonFromAuthToken('token');
+    expect(person?.slug).toBe('recovered');
+    expect(findSelf).toHaveBeenCalledOnce();
+  });
+
   it('returns null when both lookups fail', async () => {
     verifyPrivyAuthToken.mockResolvedValue({ ok: false, reason: 'expired' });
     getDb.mockReturnValue({ auth: true });

@@ -90,6 +90,7 @@ const editPersonWeb2Props = {
     .trim()
     .optional(),
   preferredCurrency,
+  networkVisible: z.boolean().optional(),
   links: z
     .array(
       z.string().url('Please enter a valid URL (e.g., https://example.com)'),
