@@ -3,7 +3,7 @@
  * mid-tone pixels (skips near-gray / near-black / near-white).
  */
 
-export const SPACE_ACCENT_FALLBACK = '#4a65d8';
+export const SPACE_ACCENT_FALLBACK = '#3d6b66';
 
 /** Validates `#RRGGBB` for palette and mixHexColors callers. */
 export function parseRgbFromHex(hex: string): [number, number, number] | null {
@@ -105,11 +105,11 @@ const ACCENT_LIGHTNESS_CURVE = [
 ] as const;
 
 /**
- * Intrinsic chroma weights per step (0–1). Peaks around interactive steps so
- * primary CTAs feel vivid; tints steps 1–6 without going neon.
+ * Intrinsic chroma weights per step (0–1). Peaks gently around interactive
+ * steps — colour stays a quiet signal, not a neon CTA.
  */
 const ACCENT_CHROMA_WEIGHT_CURVE = [
-  0.06, 0.11, 0.18, 0.28, 0.42, 0.58, 0.72, 0.84, 0.92, 0.88, 0.76, 0.22,
+  0.04, 0.08, 0.14, 0.22, 0.32, 0.44, 0.54, 0.62, 0.7, 0.66, 0.55, 0.18,
 ] as const;
 
 /** Tiny hue drift so steps feel nuanced without shifting away from sampled hue. */
@@ -130,6 +130,20 @@ function softenTowardAccent(
   return mixHexColors(sample, baseHex, clamp(ratio, 0, 1));
 }
 
+/**
+ * Cap chroma and mid the lightness so a sampled banner hue stays crafted.
+ * Call before building the Radix-style ramp.
+ */
+export function craftAccentHex(hex: string): string {
+  const fb = parseRgbFromHex(SPACE_ACCENT_FALLBACK)!;
+  const [r0, g0, b0] = parseRgbFromHex(hex) ?? fb;
+  const { h, s, l } = rgbToHsl(r0, g0, b0);
+  const sCraft = Math.min(s, 0.4) * 0.82;
+  const lCraft = clamp(l * 0.5 + 0.42 * 0.5, 0.34, 0.52);
+  const [r, g, b] = hslToRgb(h, sCraft, lCraft);
+  return rgbToHex(r, g, b);
+}
+
 /** 12-step Radix-style accent ramp (sufficient for Tailwind accent-1…12 bindings). */
 export function buildAccentPaletteFromHex(
   baseHex: string,
@@ -138,9 +152,9 @@ export function buildAccentPaletteFromHex(
   const [r0, g0, b0] = parseRgbFromHex(baseHex) ?? fb;
   const { h, s: s0, l: l0 } = rgbToHsl(r0, g0, b0);
 
-  /** Greys need injected chroma or buttons read as neutral; cap so vivid sources stay controlled. */
-  const chromaAnchor = clamp(0.14 + s0 * 0.92, 0.16, 0.62);
-  const chromaCeil = clamp(chromaAnchor * 1.08 + 0.06, 0.22, 0.78);
+  /** Soften saturated samples so space colour stays crafted, not plastic. */
+  const chromaAnchor = clamp(0.1 + s0 * 0.55, 0.12, 0.38);
+  const chromaCeil = clamp(chromaAnchor * 1.05 + 0.04, 0.16, 0.46);
 
   const out: Record<string, string> = {};
   for (let i = 0; i < 12; i++) {
@@ -152,18 +166,18 @@ export function buildAccentPaletteFromHex(
     const w = ACCENT_CHROMA_WEIGHT_CURVE[i]!;
     let s = chromaAnchor + (chromaCeil - chromaAnchor) * w;
 
-    /** Extra chroma on primary/hover slots — capped so solids stay nuanced vs neon. */
-    if (step === 9) s = clamp(s * 1.045 + 0.015, 0, 0.74);
-    if (step === 10) s = clamp(s * 1.025, 0, 0.72);
+    /** Barely lift primary/hover — enough to read as accent, not neon. */
+    if (step === 9) s = clamp(s * 1.02, 0, 0.48);
+    if (step === 10) s = clamp(s * 1.01, 0, 0.46);
 
     const hh = accentHueForStep(h, i);
     const [r, g, b] = hslToRgb(hh, clamp(s, 0, 1), clamp(l, 0, 1));
     const candidate = rgbToHex(r, g, b);
 
     /** Stronger tether on mid-ramp/interactive steps where HSL blows past brand hue */
-    let tether = 0.07 + w * 0.16;
-    if (step >= 8 && step <= 11) tether += 0.12;
-    if (step === 9 || step === 10) tether += 0.06;
+    let tether = 0.1 + w * 0.2;
+    if (step >= 8 && step <= 11) tether += 0.14;
+    if (step === 9 || step === 10) tether += 0.08;
 
     out[`--color-accent-${step}`] = softenTowardAccent(
       candidate,

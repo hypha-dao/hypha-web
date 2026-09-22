@@ -21,7 +21,7 @@ const buttonVariants = cva(
         sm: 'min-h-8 px-3',
         /** Primary emphasis (hero / dialog primary). Same letterforms, wider. */
         lg: 'min-h-12 px-8',
-        icon: 'h-10 min-h-10 min-w-10 shrink-0 rounded-none p-0 normal-case tracking-normal [&_svg]:size-4 [&_svg]:shrink-0',
+        icon: 'h-10 min-h-10 min-w-10 shrink-0 rounded-none p-0 normal-case tracking-normal [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]',
       },
       colorVariant: {
         accent: '',

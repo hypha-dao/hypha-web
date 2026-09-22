@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import {
   buildAccentPaletteFromHex,
+  craftAccentHex,
   mixHexColors,
   parseRgbFromHex,
   SPACE_ACCENT_FALLBACK,
@@ -41,7 +42,9 @@ export function buildSpaceScopeStyle(input: {
   overlayVars: BannerOverlayCssVars;
 }): React.CSSProperties {
   const { foreground, muted, overlayVars } = input;
-  const accent = normalizeAccentHex(input.accent) ?? SPACE_ACCENT_FALLBACK;
+  const accent = craftAccentHex(
+    normalizeAccentHex(input.accent) ?? SPACE_ACCENT_FALLBACK,
+  );
   const palette = buildAccentPaletteFromHex(accent);
 
   const accentAliases: Record<string, string> = {};
@@ -113,6 +116,8 @@ export function buildSpaceScopeStyleFromSampledAccents(options: {
   } else if (logoAccent) {
     accent = logoAccent;
   }
+
+  accent = craftAccentHex(accent);
 
   const fg = contrastingForeground(accent);
   const subtle = mixHexColors(

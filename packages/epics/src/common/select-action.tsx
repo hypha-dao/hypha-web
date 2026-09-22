@@ -158,9 +158,9 @@ export const SelectAction = ({
                     >
                       <div
                         className={clsx(
-                          'flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:size-5 [&_svg]:shrink-0',
+                          'craft-icon-box size-10 text-muted-foreground transition-[border-color,color] duration-200',
                           !action.disabled &&
-                            'group-hover:border-accent-9 group-hover:text-foreground group-focus-within:text-foreground',
+                            'group-hover:border-border group-hover:text-foreground group-focus-within:text-foreground',
                         )}
                         aria-hidden
                       >
