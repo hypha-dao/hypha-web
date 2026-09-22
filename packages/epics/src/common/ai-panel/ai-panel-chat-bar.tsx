@@ -118,7 +118,7 @@ type AiPanelChatBarProps = {
   isStreaming?: boolean;
   placeholder?: string;
   composerDisabled?: boolean;
-  /** `hero` is the landing composer. `quiet` is the square onboarding frame. */
+  /** `hero` is the landing composer. `quiet` sits on the onboarding ground, with no frame of its own. */
   variant?: AiPanelChatBarVariant;
   sendAriaLabel?: string;
 };
@@ -638,9 +638,8 @@ export function AiPanelChatBar({
           'relative flex min-w-0 flex-col',
           isQuiet
             ? cn(
-                'rounded-none border border-foreground/15 bg-transparent shadow-none',
-                'transition-colors duration-200 focus-within:border-foreground/40',
-                isComposerDropActive && 'border-foreground/40',
+                'bg-transparent shadow-none',
+                isComposerDropActive && 'bg-foreground/5',
               )
             : !isHero &&
                 cn(
