@@ -1064,7 +1064,7 @@ export function SpaceVisualization({
           ref={tooltipRef}
           onMouseEnter={clearTooltipHideTimeout}
           onMouseLeave={scheduleTooltipHide}
-          className="absolute z-50 rounded-xl border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
+          className="absolute z-50 rounded-none border border-border/70 bg-background px-2.5 py-1.5 shadow-none"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,
