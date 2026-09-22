@@ -92,9 +92,6 @@ export function EcosystemNavigationMainPanel({
   const format = useFormatter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState('nested-spaces');
-  const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
-    SELECTED_SPACE_ACCENT_FALLBACK,
-  );
   const [rootSpaceAccent, setRootSpaceAccent] = useState(
     SELECTED_SPACE_ACCENT_FALLBACK,
   );
@@ -224,23 +221,6 @@ export function EcosystemNavigationMainPanel({
   }, [currentSpace, nonArchivedSpaces]);
   useEffect(() => {
     let cancelled = false;
-    setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
-    void (async () => {
-      const [logoAccent, leadAccent] = await Promise.all([
-        sampleAccentHex(selectedSpaceRecord?.logoUrl),
-        sampleAccentHex(selectedSpaceRecord?.leadImage),
-      ]);
-      if (cancelled) return;
-      setSelectedSpaceAccent(
-        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSpaceRecord?.logoUrl, selectedSpaceRecord?.leadImage]);
-  useEffect(() => {
-    let cancelled = false;
     setRootSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
     void (async () => {
       const [logoAccent, leadAccent] = await Promise.all([
@@ -263,23 +243,16 @@ export function EcosystemNavigationMainPanel({
         value: 'nested-spaces',
         label: t('tabs.nestedSpaces'),
         content: (
-          <div className="craft-card overflow-hidden">
-            <div className="flex items-center justify-between gap-3 border-b border-border/70 px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-3.5 w-0.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedSpaceAccent }}
-                />
-                <div className="min-w-0">
-                  <p
-                    className="truncate text-2 font-medium tracking-tight text-foreground"
-                    title={selectedSpaceTitle}
-                  >
-                    {selectedSpaceTitle}
-                  </p>
-                  <p className="craft-meta truncate">{t('diagram.hint')}</p>
-                </div>
+          <div>
+            <div className="flex items-center justify-between gap-3 border-b border-border/50 py-2.5">
+              <div className="min-w-0">
+                <p
+                  className="truncate text-2 font-medium tracking-tight text-foreground"
+                  title={selectedSpaceTitle}
+                >
+                  {selectedSpaceTitle}
+                </p>
+                <p className="craft-meta truncate">{t('diagram.hint')}</p>
               </div>
               <div className="flex shrink-0 items-center gap-0.5">
                 {canVisitSpace && visitSpaceHref ? (
@@ -352,7 +325,7 @@ export function EcosystemNavigationMainPanel({
         value: 'space-to-space',
         label: t('tabs.spaceToSpace'),
         content: (
-          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
+          <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
             <div className="craft-empty-mark" aria-hidden />
             <p className="craft-meta text-center">
               {t('comingSoon.spaceToSpaceVisualization')}
@@ -364,7 +337,7 @@ export function EcosystemNavigationMainPanel({
         value: 'values-flows',
         label: t('tabs.valuesFlows'),
         content: (
-          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
+          <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
             <div className="craft-empty-mark" aria-hidden />
             <p className="craft-meta text-center">
               {t('comingSoon.valuesFlowsVisualization')}
@@ -381,7 +354,6 @@ export function EcosystemNavigationMainPanel({
       handleVisibleSpacesChange,
       hierarchyData,
       rootSpaceAccent,
-      selectedSpaceAccent,
       selectedSpaceSlug,
       selectedSpaceTitle,
       t,
@@ -399,7 +371,7 @@ export function EcosystemNavigationMainPanel({
             </h1>
           </header>
           <div
-            className="craft-card flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
+            className="flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
             role="status"
             aria-live="polite"
           >
