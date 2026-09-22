@@ -10,7 +10,7 @@
   --fc-event-border-color: transparent;
   /* Tokens are full oklch colors — never wrap in hsl(). FC defaults this to #fff. */
   --fc-event-text-color: var(--foreground);
-  --fc-now-indicator-color: var(--accent-9);
+  --fc-now-indicator-color: var(--foreground);
   --fc-list-event-hover-bg-color: transparent;
 
   font-family: inherit;
