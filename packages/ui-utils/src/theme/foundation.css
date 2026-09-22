@@ -47,8 +47,17 @@
 
 .dark,
 .dark-theme {
-  --hypha-text-dim: #9ca5b5;
-  --hypha-text-faint: #677284;
+  /*
+   * Computed from the live dark page, not the unused navy variables.
+   * Ground #040404 and panel #121212 have no blue. #030615 / #091025 / #1c2746
+   * are the old stylesheet values and read as navy when used as chrome.
+   */
+  --hypha-ink: #040404;
+  --hypha-deep: #121212;
+  --hypha-mid: #1c1c1c;
+  --hypha-text: #f7f7f7;
+  --hypha-text-dim: #a1a1a1;
+  --hypha-text-faint: #737373;
   --hypha-border: rgb(255 255 255 / 0.12);
   --hypha-chart: oklch(62% 0.072 178);
   --hypha-mycelium-filter: grayscale(1) contrast(1.18) brightness(0.38);

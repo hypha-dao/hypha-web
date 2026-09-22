@@ -391,10 +391,7 @@
   }
 
   html {
-    /*
-     * Overscroll / unloaded fallback only. Visible canvas is body::before
-     * (mycelium). Keep this behind the photo via body { isolation }.
-     */
+    /* Overscroll fallback. The photograph is body::before, above this fill. */
     background-color: var(--page-background);
     font-family: var(--font-family-text);
   }
@@ -406,19 +403,12 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
     /* Transparent so the fixed mycelium layers show through the open canvas. */
     background-color: transparent;
-    /*
-     * Without isolation, body::before { z-index: -N } paints into the root
-     * stacking context *behind* html's opaque page-background — the photo
-     * never appears and users only see flat paper/ink (or leftover blue fills).
-     */
-    isolation: isolate;
   }
 
   /*
-   * Website mycelium: filtered photograph + exact light veil.
-   * ::before carries the photo (filter applies to the image layer only).
-   * ::after carries the paper radial wash (light) or is empty (dark).
-   * Fixed attachment so roots read as the page ground while chrome scrolls.
+   * Website mycelium. ::before is the filtered photograph.
+   * ::after is the light paper veil, and empty in dark mode.
+   * z-index 0 keeps the photo in front of html. body > * sits at 1.
    */
   body::before,
   body::after {
@@ -426,23 +416,38 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
+    z-index: 0;
   }
 
   body::before {
-    z-index: -2;
     background-color: var(--page-background);
     background-image: var(--hypha-mycelium-image);
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    background-attachment: fixed;
     filter: var(--hypha-mycelium-filter);
   }
 
   body::after {
-    z-index: -1;
     background: var(--hypha-mycelium-veil);
   }
+
+  /*
+   * The photograph sits at z-index 0. Every real child must sit above it.
+   * A negative z-index painted the photo behind html's fill, and opaque
+   * navy chrome then covered whatever remained.
+   */
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* Website header: rgba(4, 4, 4, 0.94) over the roots, blur 14px. */
+.dark .hypha-topbar,
+.dark [data-sidebar='sidebar'] {
+  background-color: rgb(4 4 4 / 0.94);
+  backdrop-filter: blur(14px);
 }
 
 :root {
