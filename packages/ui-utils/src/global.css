@@ -346,11 +346,11 @@
     --popover-foreground: var(--hypha-ink);
     --primary: var(--hypha-ink);
     --primary-foreground: var(--hypha-text);
-    --secondary: color-mix(in srgb, var(--hypha-ink) 5%, var(--hypha-paper));
+    --secondary: color-mix(in srgb, var(--hypha-panel) 55%, var(--hypha-paper));
     --secondary-foreground: var(--hypha-ink);
-    --muted: color-mix(in srgb, var(--hypha-ink) 4%, var(--hypha-paper));
+    --muted: color-mix(in srgb, var(--hypha-panel) 40%, var(--hypha-paper));
     --muted-foreground: var(--hypha-text-dim);
-    --accent: color-mix(in srgb, var(--hypha-ink) 5%, var(--hypha-paper));
+    --accent: color-mix(in srgb, var(--hypha-panel) 55%, var(--hypha-paper));
     --accent-foreground: var(--hypha-ink);
     --destructive: oklch(0.5153 0.211061 28.636 / 83%);
     --destructive-foreground: var(--hypha-text);
@@ -451,7 +451,7 @@
   --sidebar-foreground: var(--hypha-ink);
   --sidebar-primary: var(--hypha-ink);
   --sidebar-primary-foreground: var(--hypha-text);
-  --sidebar-accent: color-mix(in srgb, var(--hypha-ink) 5%, var(--hypha-paper));
+  --sidebar-accent: color-mix(in srgb, var(--hypha-panel) 55%, var(--hypha-paper));
   --sidebar-accent-foreground: var(--hypha-ink);
   --sidebar-border: var(--hypha-border);
   --sidebar-ring: var(--hypha-ink);
