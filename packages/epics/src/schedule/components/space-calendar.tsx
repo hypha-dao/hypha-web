@@ -63,7 +63,7 @@ const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
   loading: () => (
     <div
       aria-hidden
-      className="h-full min-h-[20rem] animate-pulse rounded-lg border border-border/60 bg-muted/15"
+      className="h-full min-h-[20rem] animate-pulse bg-foreground/5"
     />
   ),
 });
@@ -549,14 +549,14 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       <div
         className={cn(
-          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2 md:p-2.5',
+          'hypha-space-calendar relative',
           viewToModifierClass(view),
         )}
       >
         <div className="relative">
           <div className="mb-1.5 flex flex-col gap-1.5 border-b border-border/50 px-1.5 pb-1.5 md:flex-row md:items-center md:flex-nowrap md:gap-3 md:px-2">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5 md:flex-nowrap">
-              <div className="flex h-8 shrink-0 items-stretch overflow-hidden rounded-md border border-border/70 bg-background">
+              <div className="flex h-8 shrink-0 items-stretch overflow-hidden rounded-none border border-border/70">
                 <Button
                   type="button"
                   variant="ghost"
@@ -627,7 +627,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
           <div
             className={cn(
-              'relative overflow-hidden rounded-lg border border-border/50 bg-background',
+              'relative',
               resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
             )}
           >
