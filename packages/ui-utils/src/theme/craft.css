@@ -205,7 +205,7 @@
  * utility and keeps listing grids on one continuous page surface.
  */
 .craft-page-canvas {
-  background-color: transparent;
+  background-color: var(--page-background);
 }
 
 /*

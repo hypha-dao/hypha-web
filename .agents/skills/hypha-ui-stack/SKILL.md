@@ -98,7 +98,7 @@ Buttons are square, 11px, weight 600, uppercase, tracking `0.12em`, min-height 4
 
 ### Precision-tool craft (anti-decorative)
 
-- Flat chrome: solid `bg-background-2`, hairline borders — no frosted blur bars or empty-state glow. The only atmosphere is the mycelium canvas behind the shell.
+- Flat chrome: solid `bg-background-2`, hairline borders — no frosted blur bars or empty-state glow. The page ground is solid paper in light and solid ink in dark.
 - Page headers: `.craft-page-header` / `.craft-page-title` — left-aligned, tool-sized (not centered marketing heroes)
 - Empty states: quiet `.craft-empty-mark` (border only)
 - Avoid stagger enter animations and accent-tinted title lines
@@ -120,7 +120,7 @@ Buttons are square, 11px, weight 600, uppercase, tracking `0.12em`, min-height 4
 1. **No hue outside a space** — `accent-*` is ink on paper / paper on ink (`theme/colors/accent.css`). Screens without a space stay monochrome, as on io.hypha.earth/website.
 2. **Space** — `--space-accent*` from imagery; inside `[data-space-accent-scope]` CTAs/tabs/focus own the space hue (`space-accent.css`)
 
-Canvas is the mycelium photograph (`/brand/mycelium.jpg`) under a paper or ink veil. Working chrome (header, sidebars, cards, dialogs) stays solid.
+The page ground is solid warm paper (`#fbfaf8`) in light and solid neutral ink (`#040404`) in dark. Working chrome (header, sidebars, cards, dialogs) stays on that same solid ground.
 
 ## References
 
