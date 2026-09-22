@@ -82,10 +82,10 @@ export function DocumentsSections({
       }}
       className="flex flex-col gap-4 py-0"
     >
-      <div className="flex w-full min-w-0 items-center justify-between gap-3">
+      <div className="flex w-full min-w-0 items-center">
         <ScrollableTabsList
           triggerVariant="switch"
-          viewportClassName="min-w-0 flex-1 basis-[12rem]"
+          viewportClassName="min-w-0"
         >
           <TabsTrigger value="on-voting" variant="switch">
             <span className="inline-flex items-center gap-1">
@@ -112,9 +112,6 @@ export function DocumentsSections({
             </span>
           </TabsTrigger>
         </ScrollableTabsList>
-        <div className="hidden shrink-0 md:block">
-          {renderCreateProposalButton()}
-        </div>
       </div>
 
       <TabsContent value="on-voting" className="mt-0">
@@ -124,7 +121,7 @@ export function DocumentsSections({
           spaceLeadImage={spaceLeadImage}
           documents={documents.onVoting}
           headSectionButton={
-            <div className="shrink-0 md:hidden">
+            <div className="shrink-0">
               {renderCreateProposalButton()}
             </div>
           }
@@ -142,7 +139,7 @@ export function DocumentsSections({
           spaceLeadImage={spaceLeadImage}
           documents={documents.accepted}
           headSectionButton={
-            <div className="shrink-0 md:hidden">
+            <div className="shrink-0">
               {renderCreateProposalButton()}
             </div>
           }
@@ -160,7 +157,7 @@ export function DocumentsSections({
           spaceLeadImage={spaceLeadImage}
           documents={documents.rejected}
           headSectionButton={
-            <div className="shrink-0 md:hidden">
+            <div className="shrink-0">
               {renderCreateProposalButton()}
             </div>
           }
