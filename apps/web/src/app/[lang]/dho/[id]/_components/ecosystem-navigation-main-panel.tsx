@@ -13,6 +13,7 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
+  SPACE_ACCENT_FALLBACK as SELECTED_SPACE_ACCENT_FALLBACK,
 } from '@hypha-platform/epics';
 import {
   Button,
@@ -43,8 +44,6 @@ type HierarchyNode = {
   value?: number;
   children?: HierarchyNode[];
 };
-
-const SELECTED_SPACE_ACCENT_FALLBACK = '#3d6b66';
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;

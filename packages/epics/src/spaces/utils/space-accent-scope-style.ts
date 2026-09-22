@@ -117,12 +117,14 @@ export function buildSpaceScopeStyleFromSampledAccents(options: {
     accent = logoAccent;
   }
 
-  accent = craftAccentHex(accent);
+  const craftedAccent = craftAccentHex(accent);
 
-  const fg = contrastingForeground(accent);
+  const fg = contrastingForeground(craftedAccent);
   const subtle = mixHexColors(
-    accent,
-    brightness(accent) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#ffffff',
+    craftedAccent,
+    brightness(craftedAccent) > BRIGHTNESS_DARK_FG_THRESHOLD
+      ? '#0f172a'
+      : '#ffffff',
     0.45,
   );
 

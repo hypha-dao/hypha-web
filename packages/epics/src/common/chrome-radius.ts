@@ -17,4 +17,4 @@ export const APP_CHROME_ICON_TRIGGER =
  * once accent/border resolve to ink).
  */
 export const APP_CHROME_AVATAR_TRIGGER =
-  'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center isolate overflow-hidden rounded-none border-0 bg-transparent p-0 text-foreground shadow-none outline-none ring-0 transition-colors duration-150 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-0 data-[state=open]:bg-foreground/5';
+  'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center isolate overflow-hidden rounded-none border-0 bg-transparent p-0 text-foreground shadow-none outline-none ring-0 transition-colors duration-150 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:bg-foreground/5';
