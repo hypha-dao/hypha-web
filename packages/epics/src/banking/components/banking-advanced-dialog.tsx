@@ -29,7 +29,7 @@ type BankingAdvancedDialogProps = {
   basePath?: string;
   /** Whether this dialog is for a space or an individual member's profile. Defaults to 'space'. */
   ownerContext?: BankingOwnerContext;
-  status: BankCustomerPublicStatus | null | undefined;
+  providers: BankCustomerPublicStatus[];
   isLoading: boolean;
   isRefreshing: boolean;
   canManage: boolean;
@@ -43,7 +43,7 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
   spaceSlug,
   basePath,
   ownerContext = 'space',
-  status,
+  providers,
   isLoading,
   isRefreshing,
   canManage,
@@ -80,7 +80,7 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
             spaceSlug={spaceSlug}
             basePath={basePath}
             ownerContext={ownerContext}
-            status={status}
+            providers={providers}
             isLoading={isLoading}
             isRefreshing={isRefreshing}
             canManage={canManage}

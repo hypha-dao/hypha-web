@@ -44,7 +44,7 @@ import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
 import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
-import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
+import { openBankVerificationFlowLinks } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
   spaceSlug: string;
@@ -63,14 +63,19 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const { person } = useMe();
   const {
     status,
+    providers,
     isError: isStatusError,
     isLoading: isStatusLoading,
     isRefreshing: isStatusRefreshing,
     refresh,
+    refreshProviders,
   } = useBankCustomerStatus({ spaceSlug });
 
-  const hasCustomer = status != null;
-  const showBankingListings = hasCustomer && hasApprovedBankCurrencies(status);
+  const hasCustomer = providers.length > 0;
+  const showBankingListings = status != null && hasApprovedBankCurrencies(status);
+  const pendingConfirmationEntry = providers.find(
+    (entry) => entry.pendingEmailConfirmation,
+  );
 
   const {
     accounts: virtualAccounts,
@@ -136,7 +141,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
     useState(false);
 
   const needsProviderStatusRefresh =
-    hasCustomer && status != null && !status.approvalRegistered;
+    hasCustomer && providers.some((entry) => !entry.approvalRegistered);
 
   const refreshBankingState = useCallback(async () => {
     const updated = await refresh();
@@ -234,10 +239,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
         onboardingFields: input.onboardingFields,
       });
       setShowEmailConfirmationResend(false);
-      const updated = await refresh();
-      openBankVerificationFlowLink(updated ?? undefined);
+      const updated = await refreshProviders();
+      openBankVerificationFlowLinks(updated);
     },
-    [clearOnboardingError, refresh, requestOnboarding],
+    [clearOnboardingError, refreshProviders, requestOnboarding],
   );
 
   if (isStatusLoading) {
@@ -258,7 +263,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   if (
     !hasCustomer ||
-    (status?.pendingEmailConfirmation && showEmailConfirmationResend)
+    (pendingConfirmationEntry && showEmailConfirmationResend)
   ) {
     if (!canManage) {
       return (
@@ -279,7 +284,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
     );
   }
 
-  if (status?.pendingEmailConfirmation) {
+  if (pendingConfirmationEntry) {
     return (
       <PendingEmailConfirmationCard
         onResend={
@@ -297,7 +302,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
     return (
       <BankingProviderStatusPanel
         spaceSlug={spaceSlug}
-        status={status}
+        providers={providers}
         isLoading={false}
         isRefreshing={false}
         canManage={canManage}
@@ -318,7 +323,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
         gearSlot={
           <BankingAdvancedDialog
             spaceSlug={spaceSlug}
-            status={status}
+            providers={providers}
             isLoading={false}
             isRefreshing={false}
             canManage={canManage}

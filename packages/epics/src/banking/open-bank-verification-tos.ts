@@ -17,10 +17,10 @@ function openFromStatus(status: BankCustomerPublicStatus): boolean {
   }
 
   const { tos, kyc } = status.procedures;
-  const tosUrl = procedureLink(tos);
+  const tosUrl = tos ? procedureLink(tos) : null;
   const kycUrl = procedureLink(kyc);
 
-  if (tosUrl && !tos.linkDisabled) {
+  if (tosUrl && !tos?.linkDisabled) {
     return openLink(tosUrl);
   }
 
@@ -55,6 +55,23 @@ export function openBankVerificationFlowLink(
   }
 
   return openFromLinks(source);
+}
+
+/**
+ * Same as `openBankVerificationFlowLink`, but resolves the just-submitted provider from a
+ * multi-provider status list (D11) instead of assuming a single Bridge-shaped status — opens the
+ * first not-yet-approved entry's link. Onboarding is one-provider-per-call (D3), so in practice
+ * this opens exactly the provider that was just onboarded, Bridge or AUDD alike.
+ */
+export function openBankVerificationFlowLinks(
+  statuses: readonly BankCustomerPublicStatus[] | null | undefined,
+): boolean {
+  for (const status of statuses ?? []) {
+    if (openFromStatus(status)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function openBankVerificationTosLink(

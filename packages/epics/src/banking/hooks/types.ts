@@ -22,6 +22,7 @@ export const BANK_KYC_STATUSES = [
 
 export type BankKycStatus = (typeof BANK_KYC_STATUSES)[number];
 
+import type { BankProvider } from '@hypha-platform/core/client';
 export type { BankProvider } from '@hypha-platform/core/client';
 
 export type BankValidationAction = {
@@ -75,12 +76,21 @@ export type BankEndorsementPublicStatus = {
   validation: BankVerificationProcedurePublic;
 };
 
+/**
+ * One provider's banking status for an owner (D11 — multi-provider status). Identity-only
+ * providers (AUDD today) populate the shared identity fields and leave the money-movement
+ * fields (`railStatuses`/`endorsementStatuses`/`currencyStatuses`/`pendingRequirements`) as empty
+ * arrays / absent — a Bridge-specific capability (D5), not a separate shape.
+ */
 export type BankCustomerPublicStatus = {
+  /** Absent on very old cached responses; every current response tags its provider. */
+  provider?: BankProvider;
   hasCustomer?: boolean;
   isApproved: boolean;
   approvalRegistered: boolean;
   procedures: {
-    tos: BankVerificationProcedurePublic;
+    /** `null` for providers with no separate terms-of-service step (AUDD). */
+    tos: BankVerificationProcedurePublic | null;
     kyc: BankVerificationProcedurePublic;
   };
   currencyStatuses: BankCurrencyPublicStatus[];
@@ -88,7 +98,7 @@ export type BankCustomerPublicStatus = {
   railStatuses: BankRailPublicStatus[];
   requestedRails: string[];
   pendingRequirements?: BankPendingRequirements;
-  /** Set when a #2288 email-ownership confirmation is pending — no Bridge KYC link exists yet. */
+  /** Set when a #2288 email-ownership confirmation is pending — no provider KYC resource yet. */
   pendingEmailConfirmation?: { requestedRails: string[] };
 };
 

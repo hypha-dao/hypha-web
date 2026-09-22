@@ -1,6 +1,6 @@
 import {
   BankOnboardingError,
-  getSpaceBankCustomerPublicStatus,
+  getSpaceBankCustomerPublicStatuses,
   requestSpaceBankOnboarding,
   schemaSpaceBankCustomerOnboarding,
 } from '@hypha-platform/core/server';
@@ -33,16 +33,17 @@ export async function GET(
       return authResult.response;
     }
 
-    const status = await getSpaceBankCustomerPublicStatus(authResult.space, {
-      db,
-    });
-    if (status === null) {
+    const statuses = await getSpaceBankCustomerPublicStatuses(
+      authResult.space,
+      { db },
+    );
+    if (statuses.length === 0) {
       return NextResponse.json(null, {
         status: 404,
         headers: { 'Cache-Control': 'private, no-store' },
       });
     }
-    return NextResponse.json(status, {
+    return NextResponse.json(statuses, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

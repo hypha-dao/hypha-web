@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { DEFAULT_BANK_PROVIDER } from '@hypha-platform/core/client';
 
 import {
   bankRailNeedsEndorsementRequest,
@@ -22,7 +23,6 @@ import {
   type BankPendingUbo,
   type BankVerificationProcedurePublic,
 } from '../hooks/types';
-import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 import { BankingSandboxDemoBar } from './banking-sandbox-demo-bar';
 
 export type BankingProviderStatusPanelProps = {
@@ -31,7 +31,8 @@ export type BankingProviderStatusPanelProps = {
   basePath?: string;
   /** Whether this panel is for a space or an individual member's profile. Defaults to 'space'. */
   ownerContext?: BankingOwnerContext;
-  status: BankCustomerPublicStatus | null | undefined;
+  /** Every provider's status for this owner (D11) — one entry per `bank_customers` row (D3). */
+  providers: BankCustomerPublicStatus[];
   isLoading: boolean;
   isRefreshing: boolean;
   canManage: boolean;
@@ -383,6 +384,7 @@ function ProviderValidationsSection({
   spaceSlug,
   basePath,
   status,
+  currencyLabel,
   t,
   tTos,
   tAdvanced,
@@ -396,6 +398,12 @@ function ProviderValidationsSection({
   spaceSlug?: string;
   basePath?: string;
   status: NonNullable<BankCustomerPublicStatus>;
+  /**
+   * Currency codes this entry covers (e.g. "AUD" or "EUR, USD") — shown only when the owner has
+   * more than one provider row, so a multi-currency owner can tell the sections apart. Currency
+   * only, never a provider name (spec AC).
+   */
+  currencyLabel?: string;
   t: ReturnType<typeof useTranslations<'BankingTab'>>;
   tTos: ReturnType<typeof useTranslations<'BankingTab.tosStatus'>>;
   tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
@@ -426,9 +434,20 @@ function ProviderValidationsSection({
 
   return (
     <section className="rounded-lg border border-border bg-card p-4">
-      <h3 className="text-2 font-semibold text-foreground">
-        {tAdvanced('providerValidationsTitle')}
-      </h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-2 font-semibold text-foreground">
+          {tAdvanced('providerValidationsTitle')}
+        </h3>
+        {currencyLabel ? (
+          <Badge
+            variant="outline"
+            colorVariant="neutral"
+            className="pointer-events-none cursor-default text-1 shadow-none"
+          >
+            {currencyLabel}
+          </Badge>
+        ) : null}
+      </div>
 
       <p className="mt-2 text-1 text-muted-foreground">
         {tAdvanced('dataMinimizationNotice')}
@@ -437,16 +456,18 @@ function ProviderValidationsSection({
       <div className="mt-3 flex flex-col gap-3">
         {showProcedures && status.procedures ? (
           <>
-            <ProcedureRow
-              kind="tos"
-              title={tAdvanced('tosProcedure')}
-              procedure={status.procedures.tos}
-              openLinkLabel={t('actions.viewTerms')}
-              t={t}
-              tTos={tTos}
-              tAdvanced={tAdvanced}
-              ownerContext={ownerContext}
-            />
+            {status.procedures.tos ? (
+              <ProcedureRow
+                kind="tos"
+                title={tAdvanced('tosProcedure')}
+                procedure={status.procedures.tos}
+                openLinkLabel={t('actions.viewTerms')}
+                t={t}
+                tTos={tTos}
+                tAdvanced={tAdvanced}
+                ownerContext={ownerContext}
+              />
+            ) : null}
             <ProcedureRow
               kind="kyc"
               title={ownerText(tAdvanced, ownerContext, 'kybProcedure')}
@@ -498,7 +519,7 @@ export const BankingProviderStatusPanel: FC<
 > = ({
   spaceSlug,
   basePath,
-  status,
+  providers,
   isLoading,
   isRefreshing,
   canManage,
@@ -514,6 +535,10 @@ export const BankingProviderStatusPanel: FC<
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tEndorsements = useTranslations('BankingTab.endorsements');
 
+  const bridgeStatus =
+    providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ??
+    null;
+
   const renderBody = () => {
     if (isLoading) {
       return (
@@ -524,7 +549,7 @@ export const BankingProviderStatusPanel: FC<
       );
     }
 
-    if (status == null) {
+    if (providers.length === 0) {
       return (
         <p className="text-2 text-muted-foreground">
           {ownerText(tAdvanced, ownerContext, 'noCustomer')}
@@ -532,27 +557,39 @@ export const BankingProviderStatusPanel: FC<
       );
     }
 
+    // Currency labels only needed to tell entries apart once there's more than one (spec AC: no
+    // provider name in user-facing copy).
+    const showCurrencyLabels = providers.length > 1;
+
     return (
       <div className="flex flex-col gap-3">
-        {status.approvalRegistered ? (
+        {providers.every((entry) => entry.approvalRegistered) ? (
           <p className="text-2 text-muted-foreground">
             {tAdvanced('approvedSummary')}
           </p>
         ) : null}
-        <ProviderValidationsSection
-          spaceSlug={spaceSlug}
-          basePath={basePath}
-          status={status}
-          t={t}
-          tTos={tTos}
-          tAdvanced={tAdvanced}
-          tOpenAccount={tOpenAccount}
-          tEndorsements={tEndorsements}
-          showProcedures={!status.approvalRegistered}
-          onOpenGear={onOpenGear}
-          onRefreshStatus={onRefreshStatus}
-          ownerContext={ownerContext}
-        />
+        {providers.map((entry) => (
+          <ProviderValidationsSection
+            key={entry.provider}
+            spaceSlug={spaceSlug}
+            basePath={basePath}
+            status={entry}
+            currencyLabel={
+              showCurrencyLabels
+                ? entry.requestedRails.map((c) => c.toUpperCase()).join(', ')
+                : undefined
+            }
+            t={t}
+            tTos={tTos}
+            tAdvanced={tAdvanced}
+            tOpenAccount={tOpenAccount}
+            tEndorsements={tEndorsements}
+            showProcedures={!entry.approvalRegistered}
+            onOpenGear={onOpenGear}
+            onRefreshStatus={onRefreshStatus}
+            ownerContext={ownerContext}
+          />
+        ))}
       </div>
     );
   };
@@ -582,9 +619,9 @@ export const BankingProviderStatusPanel: FC<
       {renderBody()}
 
       {!isLoading &&
-      status != null &&
-      !status.approvalRegistered &&
-      !status.isApproved ? (
+      bridgeStatus != null &&
+      !bridgeStatus.approvalRegistered &&
+      !bridgeStatus.isApproved ? (
         <BankingSandboxDemoBar
           spaceSlug={spaceSlug}
           basePath={basePath}
