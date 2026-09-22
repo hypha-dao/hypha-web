@@ -15,10 +15,6 @@ import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
 import { SignalDropPlaceholder } from './signal-drop-placeholder';
 import {
-  statusColorDotClass,
-  statusColumnTopBorderClass,
-} from '../utils/signal-priority-styles';
-import {
   getSignalDragSlug,
   handleColumnDragOver,
   isDragLeaveColumn,
@@ -163,7 +159,7 @@ export function SignalBoardView({
         >
           <SelectTrigger
             id="signal-board-mobile-status"
-            className="h-9 w-full border-border/60 bg-background/80"
+            className="h-9 w-full rounded-none border-border/60 bg-transparent shadow-none"
           >
             <SelectValue />
           </SelectTrigger>
@@ -171,13 +167,6 @@ export function SignalBoardView({
             {statuses.map((status) => (
               <SelectItem key={status.slug} value={status.slug}>
                 <span className="inline-flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'h-2 w-2 shrink-0 rounded-full',
-                      statusColorDotClass(status.color),
-                    )}
-                    aria-hidden
-                  />
                   <span>{status.name}</span>
                   <span className="text-muted-foreground">
                     ({byStatus.get(status.slug)?.length ?? 0})
@@ -191,7 +180,7 @@ export function SignalBoardView({
 
       <div
         className={cn(
-          'flex w-full gap-4',
+          'flex w-full',
           isMobile
             ? 'flex-col pb-1'
             : 'items-start overflow-x-auto pb-3 pt-0.5',
@@ -210,30 +199,20 @@ export function SignalBoardView({
             <div
               key={status.slug}
               className={cn(
-                'flex flex-col rounded-lg border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
-                statusColumnTopBorderClass(status.color),
-                isMobile ? 'w-full min-w-0' : 'min-w-[17.5rem] flex-1',
+                'flex flex-col border-border/50',
+                isMobile
+                  ? 'w-full min-w-0 border-b last:border-b-0'
+                  : 'min-w-[17.5rem] flex-1 border-r last:border-r-0',
                 SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
-                isDropTarget
-                  ? 'border-accent-8/70 ring-2 ring-accent-9/30 shadow-md'
-                  : 'border-border/50',
+                isDropTarget && 'bg-foreground/[0.03]',
               )}
               onWheel={handleSignalColumnShellWheel}
             >
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={cn(
-                      'h-2 w-2 shrink-0 rounded-full',
-                      statusColorDotClass(status.color),
-                    )}
-                    aria-hidden
-                  />
-                  <span className="truncate text-xs font-semibold uppercase tracking-wide text-foreground">
-                    {status.name}
-                  </span>
-                </div>
-                <span className="rounded-md bg-background/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                <span className="truncate text-xs font-semibold uppercase tracking-wide text-foreground">
+                  {status.name}
+                </span>
+                <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
                   {columnSignals.length}
                 </span>
               </div>
@@ -347,14 +326,7 @@ export function SignalBoardView({
                 ) : null}
 
                 {columnSignals.length === 0 && !showPlaceholder ? (
-                  <div
-                    className={cn(
-                      'flex flex-1 items-center justify-center rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground',
-                      isDropTarget
-                        ? 'border-accent-8/50 bg-accent-2/20'
-                        : 'border-border/50',
-                    )}
-                  >
+                  <div className="flex flex-1 items-center justify-center px-3 py-6 text-center text-xs text-muted-foreground">
                     {t('signalColumnEmpty')}
                   </div>
                 ) : null}

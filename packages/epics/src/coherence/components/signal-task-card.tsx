@@ -15,11 +15,6 @@ import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
-import {
-  PRIORITY_LEFT_ACCENT_BAR_CLASS,
-  priorityLeftBorderClass,
-  statusColorDotClass,
-} from '../utils/signal-priority-styles';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
@@ -101,18 +96,17 @@ export function SignalTaskCard({
   // Signal type (Opportunity/Risk/…) is deliberately absent: it repeated on
   // every card without changing what anyone does next.
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
+  if (signal.priority) {
+    metaParts.push({
+      key: 'priority',
+      node: <span className="shrink-0">{priorityLabel}</span>,
+    });
+  }
   if (showStatus && status) {
     metaParts.push({
       key: 'status',
       node: (
-        <span className="inline-flex min-w-0 items-center gap-1">
-          <span
-            className={cn(
-              'h-1.5 w-1.5 shrink-0 rounded-full',
-              statusColorDotClass(status.color),
-            )}
-            aria-hidden
-          />
+        <span className="inline-flex min-w-0 items-center">
           <span className="truncate">{status.name}</span>
         </span>
       ),
@@ -166,16 +160,7 @@ export function SignalTaskCard({
         className,
       )}
     >
-      <div
-        className={cn(
-          PRIORITY_LEFT_ACCENT_BAR_CLASS,
-          priorityLeftBorderClass(signal.priority),
-        )}
-        title={priorityLabel}
-        aria-label={priorityLabel}
-      />
-
-      <div className="relative flex flex-1 flex-col gap-2 pl-3.5 pr-3 py-3">
+      <div className="relative flex flex-1 flex-col gap-2 px-3 py-3">
         {/* Floats above the card so the title can use its full width. Each
             control carries its own backdrop, keeping an empty cluster
             invisible. */}
@@ -235,10 +220,8 @@ export function SignalTaskCard({
             {hasValidDue ? (
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-normal',
-                  isOverdue
-                    ? 'border-error-7/50 bg-transparent text-error-11'
-                    : 'border-border/60 bg-transparent text-muted-foreground',
+                  'inline-flex items-center gap-1 text-[11px] font-normal',
+                  isOverdue ? 'text-error-11' : 'text-muted-foreground',
                 )}
               >
                 <CalendarDays className="h-3 w-3 shrink-0" aria-hidden />
@@ -252,7 +235,7 @@ export function SignalTaskCard({
               <Badge
                 colorVariant="neutral"
                 variant="outline"
-                className="max-w-[6.5rem] truncate border-border/60 bg-transparent text-[10px] font-normal text-muted-foreground shadow-none"
+                className="max-w-[6.5rem] truncate rounded-none border-border/60 bg-transparent text-[10px] font-normal text-muted-foreground shadow-none"
               >
                 {board.name}
               </Badge>
