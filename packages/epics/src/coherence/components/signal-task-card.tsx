@@ -160,34 +160,49 @@ export function SignalTaskCard({
         className,
       )}
     >
-      <div className="relative flex flex-1 flex-col gap-2 px-3 py-3">
-        {/* Floats above the card so the title can use its full width. Each
-            control carries its own backdrop, keeping an empty cluster
-            invisible. */}
-        <div className="absolute right-1.5 top-1.5 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-          <SignalDescriptionButton
-            title={signal.title}
-            description={signal.description}
-            className="rounded-none border border-border/70 bg-background-2 shadow-none"
-          />
-          {refresh ? (
+      <div className="flex flex-1 flex-col px-3 py-3">
+        {/* Own row above the title. Collapsed until hover, focus, or selection
+            so the buttons never paint over the type. */}
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-150 ease-out',
+            'group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr] [@media(hover:none)]:grid-rows-[1fr]',
+            isActive ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
             <div
-              className="flex shrink-0 items-center"
-              onClick={stopCardActivation}
-              onKeyDown={stopCardActivation}
+              className={cn(
+                'flex items-center justify-end gap-1 pb-2 transition-opacity duration-150',
+                'group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
+                isActive ? 'opacity-100' : 'opacity-0',
+              )}
             >
-              <SignalCardActions
-                signal={signal}
-                refresh={refresh}
-                className="shrink-0 rounded-none border border-border/70 bg-background-2 shadow-none"
+              <SignalDescriptionButton
+                title={signal.title}
+                description={signal.description}
+                className="rounded-none border border-border/70 bg-background-2 shadow-none"
               />
+              {refresh ? (
+                <div
+                  className="flex shrink-0 items-center"
+                  onClick={stopCardActivation}
+                  onKeyDown={stopCardActivation}
+                >
+                  <SignalCardActions
+                    signal={signal}
+                    refresh={refresh}
+                    className="shrink-0 rounded-none border border-border/70 bg-background-2 shadow-none"
+                  />
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col gap-1">
           <p
-            className="line-clamp-3 text-2 font-medium leading-snug tracking-tight text-foreground [@media(hover:none)]:pr-14"
+            className="line-clamp-3 text-2 font-medium leading-snug tracking-tight text-foreground"
             title={signal.title}
           >
             {signal.title}
