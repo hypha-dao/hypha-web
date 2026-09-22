@@ -75,6 +75,8 @@ export type RequestSpaceBankOnboardingInput = {
   contactEmail: string;
   requestedRails?: string[];
   redirectUri?: string;
+  /** Provider-specific onboarding fields the dynamic form collected (D10) — e.g. AUDD's 11-field set. */
+  onboardingFields?: Record<string, string>;
 };
 
 /** Personal (individual) off-ramp onboarding — owner is a person, not a space. */
@@ -85,6 +87,8 @@ export type RequestPersonalBankOnboardingInput = {
   contactEmail: string;
   requestedRails?: string[];
   redirectUri?: string;
+  /** Provider-specific onboarding fields the dynamic form collected (D10) — e.g. AUDD's 11-field set. */
+  onboardingFields?: Record<string, string>;
 };
 
 export type PersonalBankOnboardingResult = {

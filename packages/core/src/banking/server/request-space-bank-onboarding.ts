@@ -1,8 +1,5 @@
 import type { DatabaseInstance } from '../../common/server/types';
-import {
-  DEFAULT_BANK_PROVIDER,
-  PENDING_EMAIL_CONFIRMATION_VALIDATION,
-} from '../constants';
+import { PENDING_EMAIL_CONFIRMATION_VALIDATION } from '../constants';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { findPersonById } from '../../people/server/queries';
 import type {
@@ -11,15 +8,15 @@ import type {
 } from '../types';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
-import { getBankKycProvider } from './providers';
-import type { BankKycProvider } from './providers/types';
+import { getBankIdentityProvider, resolveProviderForOnboarding } from './providers';
+import type { BankIdentityProvider } from './providers/types';
 import {
   requestBankOnboardingWithConfirmation,
   type BankOnboardingOwnerRef,
 } from './bank-onboarding-confirmation';
 
 export type RequestSpaceBankOnboardingOptions = {
-  kycProvider?: BankKycProvider;
+  kycProvider?: BankIdentityProvider;
   /**
    * Sends the #2288 ownership-confirmation email. Never receives anything but the token to embed
    * in the link — the token itself must never appear in this function's return value (D6).
@@ -43,7 +40,12 @@ export async function requestSpaceBankOnboarding(
     contactEmail,
     requestedRails,
     redirectUri,
+    onboardingFields,
   } = input;
+
+  const kycProvider =
+    options.kycProvider ??
+    getBankIdentityProvider(resolveProviderForOnboarding(requestedRails));
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) {
@@ -76,20 +78,18 @@ export async function requestSpaceBankOnboarding(
       contactEmail,
       requestedRails,
       redirectUri,
+      onboardingFields,
       submitterPersonId: auth.person.id,
       submitterEmail: submitter?.email ?? null,
       sendConfirmationEmail: options.sendConfirmationEmail,
     },
     { db },
-    {
-      kycProvider:
-        options.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER),
-    },
+    { kycProvider },
   );
 
   if (result.kind === 'pendingConfirmation') {
     return {
-      provider: DEFAULT_BANK_PROVIDER,
+      provider: kycProvider.provider,
       created: false,
       pendingEmailConfirmation: true,
       spaceTitle: space.title,
@@ -104,7 +104,7 @@ export async function requestSpaceBankOnboarding(
   }
 
   return {
-    provider: DEFAULT_BANK_PROVIDER,
+    provider: kycProvider.provider,
     created: result.kind === 'created',
     spaceTitle: space.title,
     requesterSlug: auth.person.slug ?? null,

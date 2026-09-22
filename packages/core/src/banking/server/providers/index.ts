@@ -19,5 +19,6 @@ export {
 export { getEnabledCurrenciesForProvider } from './enabled-currencies';
 export {
   resolveProviderForCurrency,
+  resolveProviderForOnboarding,
   resolveProviderForRails,
 } from './routing';

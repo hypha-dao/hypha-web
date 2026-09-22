@@ -12,8 +12,8 @@ import {
   type BankConfirmationJwtClaims,
 } from '../../common/server/sign-bank-confirmation-jwt';
 import { isBypassEligible } from '../normalize-email-for-bypass';
-import { DEFAULT_BANK_PROVIDER, currenciesToEndorsements } from '../constants';
-import type { BankEntityType, BankValidationRequirement } from '../types';
+import { currenciesToEndorsements } from '../constants';
+import type { BankEntityType, BankProvider, BankValidationRequirement } from '../types';
 import {
   findBankCustomerByNonce,
   findBankCustomerBySpaceAndProvider,
@@ -26,9 +26,9 @@ import {
   releaseBankCustomerClaim,
   updateBankCustomer,
 } from './mutations';
-import { getBankKycProvider } from './providers';
+import { getBankIdentityProvider, resolveProviderForOnboarding } from './providers';
 import { BankOnboardingError } from './errors';
-import type { BankKycProvider } from './providers/types';
+import type { BankIdentityProvider } from './providers/types';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
 
 /**
@@ -44,7 +44,13 @@ export type BankOnboardingOwnerRef = {
 };
 
 export type BankOnboardingConfirmationOptions = {
-  kycProvider?: BankKycProvider;
+  /**
+   * Identity/KYC provider to use. Callers resolve this from `requestedRails`
+   * (`resolveProviderForOnboarding`, WS4) and pass it in explicitly; a direct call that omits it
+   * (mainly tests) falls back to `DEFAULT_BANK_PROVIDER` (Bridge) via the same resolver applied to
+   * an empty rail list.
+   */
+  kycProvider?: BankIdentityProvider;
 };
 
 type KycLinkAndValidations = {
@@ -59,6 +65,63 @@ type KycLinkAndValidations = {
   };
 };
 
+/**
+ * Provider-neutral procedures/link shape for a freshly-created (or freshly-read) KYC result —
+ * resolves plan callout 2 (D12). Bridge's richer `buildCustomerValidations` (submitted-status
+ * heuristics for disabling an in-progress link) stays reserved for the Bridge-only "resume an
+ * existing link" path below, where the status may be stale/mid-review; immediately after creation
+ * every provider's status is fresh, so the simpler `isApproved`-driven shape here is equivalent.
+ */
+function buildProceduresFromKycResult(result: {
+  kycStatus: string;
+  isApproved: boolean;
+  tosStatus: string | null;
+  kycLink: string | null;
+  tosLink: string | null;
+}): {
+  tos: BankValidationRequirement;
+  kyc: BankValidationRequirement;
+  kycLink: string | null;
+  tosLink: string | null;
+} {
+  const tosApproved = result.tosStatus === 'approved';
+  return {
+    kycLink: result.kycLink,
+    tosLink: result.tosLink,
+    tos: {
+      key: 'tos',
+      status: result.tosStatus,
+      isComplete: tosApproved,
+      action:
+        result.tosLink && !tosApproved
+          ? { type: 'link', url: result.tosLink }
+          : undefined,
+      linkDisabled: tosApproved,
+    },
+    kyc: {
+      key: 'kyc',
+      status: result.kycStatus,
+      isComplete: result.isApproved,
+      action:
+        result.kycLink && !result.isApproved
+          ? { type: 'link', url: result.kycLink }
+          : undefined,
+      linkDisabled: result.isApproved,
+    },
+  };
+}
+
+/** Resolves the identity provider to use, honouring an explicit override (mainly tests, D13). */
+function resolveKycProvider(
+  requestedRails: readonly string[] | undefined,
+  options?: BankOnboardingConfirmationOptions,
+): BankIdentityProvider {
+  return (
+    options?.kycProvider ??
+    getBankIdentityProvider(resolveProviderForOnboarding(requestedRails))
+  );
+}
+
 async function buildKycLinkAndValidations(
   input: {
     entityType: BankEntityType;
@@ -66,6 +129,8 @@ async function buildKycLinkAndValidations(
     contactEmail: string;
     requestedRails?: string[];
     redirectUri?: string;
+    /** Provider-specific onboarding fields the dynamic form collected (D10). */
+    onboardingFields?: Record<string, string>;
     /**
      * Stable across retries of the *same* confirmation (e.g. the confirm path passes the token's
      * `jti`) so a retry after a persistence failure replays against Bridge instead of minting a
@@ -80,8 +145,7 @@ async function buildKycLinkAndValidations(
     input.requestedRails?.map((r) => r.toLowerCase()) ?? [];
   const endorsements = currenciesToEndorsements(normalizedRails);
   const idempotencyKey = input.idempotencyKey ?? randomUUID();
-  const kycProvider =
-    options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
+  const kycProvider = resolveKycProvider(input.requestedRails, options);
 
   const kycLinkResult = await kycProvider.createKycLink({
     entityType: input.entityType,
@@ -90,16 +154,10 @@ async function buildKycLinkAndValidations(
     idempotencyKey,
     endorsements,
     redirectUri: input.redirectUri,
+    onboardingFields: input.onboardingFields,
   });
 
-  const validations = buildCustomerValidations({
-    id: kycLinkResult.providerKycLinkId,
-    kyc_link: kycLinkResult.kycLink,
-    kyc_status: kycLinkResult.kycStatus,
-    tos_status: kycLinkResult.tosStatus,
-    tos_link: kycLinkResult.tosLink,
-    customer_id: kycLinkResult.providerCustomerId,
-  });
+  const validations = buildProceduresFromKycResult(kycLinkResult);
 
   return {
     normalizedRails,
@@ -121,15 +179,13 @@ function ownerIdColumns(
 
 async function findExistingBankCustomerForOwner(
   ownerRef: BankOnboardingOwnerRef,
+  provider: BankProvider,
   { db }: { db: DatabaseInstance },
 ) {
   return ownerRef.type === 'space'
-    ? findBankCustomerBySpaceAndProvider(
-        { spaceId: ownerRef.id, provider: DEFAULT_BANK_PROVIDER },
-        { db },
-      )
+    ? findBankCustomerBySpaceAndProvider({ spaceId: ownerRef.id, provider }, { db })
     : findBankCustomerByPersonAndProvider(
-        { personId: ownerRef.id, provider: DEFAULT_BANK_PROVIDER },
+        { personId: ownerRef.id, provider },
         { db },
       );
 }
@@ -143,17 +199,19 @@ export async function createBankCustomerWithKycLink(
     contactEmail: string;
     requestedRails?: string[];
     redirectUri?: string;
+    onboardingFields?: Record<string, string>;
   },
   { db }: { db: DatabaseInstance },
   options?: BankOnboardingConfirmationOptions,
 ): Promise<KycLinkAndValidations> {
-  const result = await buildKycLinkAndValidations(input, options);
+  const kycProvider = resolveKycProvider(input.requestedRails, options);
+  const result = await buildKycLinkAndValidations(input, { kycProvider });
 
   await insertBankCustomer(
     {
       ...ownerIdColumns(ownerRef),
       entityType: input.entityType,
-      provider: DEFAULT_BANK_PROVIDER,
+      provider: kycProvider.provider,
       providerCustomerId: result.providerCustomerId,
       providerKycLinkId: result.providerKycLinkId,
       requestedRails: result.normalizedRails,
@@ -179,6 +237,7 @@ async function finalizeClaimedBankCustomerWithKycLink(
     contactEmail: string;
     requestedRails?: string[];
     redirectUri?: string;
+    onboardingFields?: Record<string, string>;
     idempotencyKey?: string;
   },
   { db }: { db: DatabaseInstance },
@@ -206,6 +265,8 @@ export type RequestBankOnboardingWithConfirmationInput = {
   contactEmail: string;
   requestedRails?: string[];
   redirectUri?: string;
+  /** Provider-specific onboarding fields the dynamic form collected (D10). */
+  onboardingFields?: Record<string, string>;
   /** Already auth-gated (D4) — the person who submitted the form. */
   submitterPersonId: number;
   /** The submitter's own verified `people.email`, or null if unset. */
@@ -244,15 +305,49 @@ export async function requestBankOnboardingWithConfirmation(
     contactEmail,
     requestedRails,
     redirectUri,
+    onboardingFields,
     submitterEmail,
     sendConfirmationEmail,
   } = input;
 
-  const existing = await findExistingBankCustomerForOwner(ownerRef, { db });
+  const kycProvider = resolveKycProvider(requestedRails, options);
+  const resolvedOptions: BankOnboardingConfirmationOptions = { kycProvider };
+
+  const existing = await findExistingBankCustomerForOwner(
+    ownerRef,
+    kycProvider.provider,
+    { db },
+  );
 
   if (existing?.providerKycLinkId) {
-    const kycLink = await bridgeGetKycLink(existing.providerKycLinkId);
-    const validations = buildCustomerValidations(kycLink);
+    if (kycProvider.provider === 'bridge') {
+      const kycLink = await bridgeGetKycLink(existing.providerKycLinkId);
+      const validations = buildCustomerValidations(kycLink);
+      return {
+        kind: 'existing',
+        normalizedRails: existing.requestedRails ?? [],
+        providerCustomerId: existing.providerCustomerId,
+        providerKycLinkId: existing.providerKycLinkId,
+        kycLink: validations.kycLink,
+        tosLink: validations.tosLink,
+        procedures: { tos: validations.tos, kyc: validations.kyc },
+      };
+    }
+
+    // Non-Bridge providers (AUDD): there is no endpoint to re-fetch the hosted KYC link after
+    // creation (audd-gateway-api-reference.md — `verificationUrl` is only ever returned once,
+    // from the original `POST .../kyc` response). Best effort: report live status via
+    // `getKycStatus`; a returning visitor won't see the original link again here.
+    const status = await kycProvider.getKycStatus({ customer: existing });
+    const validations = buildProceduresFromKycResult({
+      kycStatus: status?.kycStatus ?? 'PENDING',
+      isApproved: status?.isApproved ?? false,
+      tosStatus: status?.tosStatus ?? null,
+      kycLink: status?.kycLink ?? null,
+      // KycStatusResult carries no tosLink (only CreateKycLinkResult does) — AUDD has no separate
+      // TOS step anyway (tosStatus is always null), so this is never actionable for this provider.
+      tosLink: null,
+    });
     return {
       kind: 'existing',
       normalizedRails: existing.requestedRails ?? [],
@@ -293,9 +388,16 @@ export async function requestBankOnboardingWithConfirmation(
       }
       const finalized = await finalizeClaimedBankCustomerWithKycLink(
         claimed.id,
-        { entityType, legalName, contactEmail, requestedRails, redirectUri },
+        {
+          entityType,
+          legalName,
+          contactEmail,
+          requestedRails,
+          redirectUri,
+          onboardingFields,
+        },
         { db },
-        options,
+        resolvedOptions,
       );
       if (!finalized) {
         throw new BankOnboardingError(
@@ -307,9 +409,16 @@ export async function requestBankOnboardingWithConfirmation(
     } else {
       result = await createBankCustomerWithKycLink(
         ownerRef,
-        { entityType, legalName, contactEmail, requestedRails, redirectUri },
+        {
+          entityType,
+          legalName,
+          contactEmail,
+          requestedRails,
+          redirectUri,
+          onboardingFields,
+        },
         { db },
-        options,
+        resolvedOptions,
       );
     }
     return { kind: 'created', ...result };
@@ -327,6 +436,7 @@ export async function requestBankOnboardingWithConfirmation(
     requestedRails: normalizedRails,
     redirectUri,
     submitterPersonId: input.submitterPersonId,
+    onboardingFields,
   });
 
   if (existing) {
@@ -351,7 +461,7 @@ export async function requestBankOnboardingWithConfirmation(
       {
         ...ownerIdColumns(ownerRef),
         entityType,
-        provider: DEFAULT_BANK_PROVIDER,
+        provider: kycProvider.provider,
         providerCustomerId: null,
         providerKycLinkId: null,
         jwtNonce: nonce,
@@ -416,9 +526,18 @@ export async function confirmBankEmail(
     return { ok: false, reason: 'invalid' };
   }
 
-  const existingBridgeCustomer = await bridgeFindCustomerByEmail(
-    claims.contactEmail,
-  ).catch(() => null);
+  // Provider is re-resolved from the claims' `requestedRails` (D2 — no provider claim carried in
+  // the token itself), honouring an explicit test override the same way every other entrypoint
+  // does.
+  const kycProvider = resolveKycProvider(claims.requestedRails, options);
+  const resolvedOptions: BankOnboardingConfirmationOptions = { kycProvider };
+
+  // Bridge-only email dedup pre-check (#2288 D7) — informational, not a gate. AUDD relies on its
+  // own idempotency (create-customer 409s on a duplicate email within the same company).
+  const existingBridgeCustomer =
+    kycProvider.provider === 'bridge'
+      ? await bridgeFindCustomerByEmail(claims.contactEmail).catch(() => null)
+      : null;
 
   let result: KycLinkAndValidations | null;
   try {
@@ -426,9 +545,9 @@ export async function confirmBankEmail(
       claimed.id,
       {
         // Stable per-token idempotency key (not a fresh randomUUID() per attempt): if
-        // finalization fails after Bridge already created the KYC link (e.g. the DB update
-        // throws, or a resend/retry replays this same claim), Bridge treats a retry with the
-        // same key as the original request and returns the existing resource instead of
+        // finalization fails after the provider already created the KYC link (e.g. the DB update
+        // throws, or a resend/retry replays this same claim), the provider treats a retry with
+        // the same key as the original request and returns the existing resource instead of
         // minting a second one.
         idempotencyKey: `bank-confirm:${claims.jti}`,
         entityType: claims.entityType,
@@ -436,9 +555,10 @@ export async function confirmBankEmail(
         contactEmail: claims.contactEmail,
         requestedRails: claims.requestedRails,
         redirectUri: claims.redirectUri,
+        onboardingFields: claims.onboardingFields,
       },
       { db },
-      options,
+      resolvedOptions,
     );
   } catch (error) {
     // Restore the nonce so this same confirmation link (or a resend) can still complete the row

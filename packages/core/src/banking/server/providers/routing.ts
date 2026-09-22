@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { BankProvider } from '../../types';
+import { DEFAULT_BANK_PROVIDER } from '../../constants';
 import { BankOnboardingError } from '../errors';
 import { getEnabledCurrenciesForProvider } from './enabled-currencies';
 import { BANK_PROVIDERS, bankProviderManifest } from './manifest';
@@ -75,4 +76,20 @@ export function resolveProviderForRails(
   }
 
   return first.provider;
+}
+
+/**
+ * Onboarding-specific wrapper around `resolveProviderForRails` (WS4): a #2288 onboarding request
+ * may legitimately carry no `requestedRails` at all (money-movement / not-yet-routed callers,
+ * D4/D5) — that's not an unresolved currency, it's "no explicit ask", so it keeps defaulting to
+ * `DEFAULT_BANK_PROVIDER` (Bridge) rather than throwing. Only an explicit, non-empty rail list
+ * (e.g. `['aud']` for Flow 1) goes through real resolution.
+ */
+export function resolveProviderForOnboarding(
+  requestedRails: readonly string[] | undefined,
+): BankProvider {
+  if (!requestedRails || requestedRails.length === 0) {
+    return DEFAULT_BANK_PROVIDER;
+  }
+  return resolveProviderForRails(requestedRails);
 }

@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}));
 import { BankOnboardingError } from '../../errors';
 import {
   resolveProviderForCurrency,
+  resolveProviderForOnboarding,
   resolveProviderForRails,
 } from '../routing';
 
@@ -73,6 +74,24 @@ describe('resolveProviderForRails', () => {
 
   it('propagates the unresolved-currency throw', () => {
     expect(() => resolveProviderForRails(['usd', 'kes'])).toThrow(
+      BankOnboardingError,
+    );
+  });
+});
+
+describe('resolveProviderForOnboarding (WS4)', () => {
+  it('defaults to bridge when no rails were requested (not-yet-routed callers, D4/D5)', () => {
+    expect(resolveProviderForOnboarding(undefined)).toBe('bridge');
+    expect(resolveProviderForOnboarding([])).toBe('bridge');
+  });
+
+  it('resolves via resolveProviderForRails when rails are explicit', () => {
+    expect(resolveProviderForOnboarding(['aud'])).toBe('audd');
+    expect(resolveProviderForOnboarding(['usd', 'eur'])).toBe('bridge');
+  });
+
+  it('still throws on an explicit mixed-provider rail set (D3)', () => {
+    expect(() => resolveProviderForOnboarding(['usd', 'aud'])).toThrow(
       BankOnboardingError,
     );
   });

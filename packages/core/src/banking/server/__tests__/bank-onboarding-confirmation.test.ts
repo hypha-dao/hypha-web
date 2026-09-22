@@ -9,7 +9,7 @@ import {
   requestBankOnboardingWithConfirmation,
   type BankOnboardingOwnerRef,
 } from '../bank-onboarding-confirmation';
-import type { BankKycProvider } from '../providers/types';
+import type { BankIdentityProvider, BankKycProvider } from '../providers/types';
 import { signBankConfirmationJwt } from '../../../common/server/sign-bank-confirmation-jwt';
 
 const findBankCustomerBySpaceAndProvider = vi.fn();
@@ -74,6 +74,22 @@ const mockProvider: BankKycProvider = {
     tosStatus: 'pending',
     kycLink: 'https://bridge.example/kyc',
     tosLink: 'https://bridge.example/tos',
+  }),
+};
+
+const mockAuddProvider: BankIdentityProvider = {
+  provider: 'audd',
+  requiredOnboardingFields: [],
+  getKycStatus: vi.fn(),
+  getOnboardingStepDescriptor: vi.fn(),
+  createKycLink: vi.fn().mockResolvedValue({
+    providerCustomerId: 'audd_cust_1',
+    providerKycLinkId: 'audd_cust_1',
+    kycStatus: 'PENDING',
+    isApproved: false,
+    tosStatus: null,
+    kycLink: 'https://verify.audd.example/abc',
+    tosLink: null,
   }),
 };
 
@@ -368,6 +384,88 @@ describe('requestBankOnboardingWithConfirmation', () => {
       expect.objectContaining({ id: 1, jwtNonce: expect.any(String) }),
       expect.any(Object),
     );
+  });
+
+  describe('AUDD (non-Bridge) provider routing — WS4', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      findBankCustomerBySpaceAndProvider.mockResolvedValue(null);
+      insertBankCustomer.mockResolvedValue({ id: 1 });
+    });
+
+    it('creates via the injected AUDD identity provider and persists provider: "audd"', async () => {
+      const result = await requestBankOnboardingWithConfirmation(
+        {
+          ownerRef: spaceOwner,
+          entityType: 'individual',
+          legalName: 'Jane Doe',
+          contactEmail: 'me+sandbox@example.com',
+          requestedRails: ['aud'],
+          onboardingFields: { firstName: 'Jane', lastName: 'Doe' },
+          submitterPersonId: 10,
+          submitterEmail: 'me@example.com',
+          sendConfirmationEmail,
+        },
+        { db: mockDb },
+        { kycProvider: mockAuddProvider },
+      );
+
+      expect(result.kind).toBe('created');
+      expect(mockAuddProvider.createKycLink).toHaveBeenCalledWith(
+        expect.objectContaining({
+          onboardingFields: { firstName: 'Jane', lastName: 'Doe' },
+        }),
+      );
+      expect(insertBankCustomer).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'audd' }),
+        expect.any(Object),
+      );
+    });
+
+    it('reads existing status via getKycStatus instead of bridgeGetKycLink (no re-fetchable link)', async () => {
+      findBankCustomerBySpaceAndProvider.mockResolvedValue({
+        id: 1,
+        provider: 'audd',
+        providerKycLinkId: 'audd_cust_1',
+        providerCustomerId: 'audd_cust_1',
+        requestedRails: ['aud'],
+        jwtNonce: null,
+      });
+      (
+        mockAuddProvider.getKycStatus as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        kycStatus: 'APPROVED',
+        isApproved: true,
+        tosStatus: null,
+        kycLink: null,
+      });
+
+      const result = await requestBankOnboardingWithConfirmation(
+        {
+          ownerRef: spaceOwner,
+          entityType: 'individual',
+          legalName: 'Jane Doe',
+          contactEmail: 'me+sandbox@example.com',
+          requestedRails: ['aud'],
+          submitterPersonId: 10,
+          submitterEmail: 'me@example.com',
+          sendConfirmationEmail,
+        },
+        { db: mockDb },
+        { kycProvider: mockAuddProvider },
+      );
+
+      expect(result.kind).toBe('existing');
+      expect(bridgeGetKycLink).not.toHaveBeenCalled();
+      expect(mockAuddProvider.getKycStatus).toHaveBeenCalledWith({
+        customer: expect.objectContaining({ providerCustomerId: 'audd_cust_1' }),
+      });
+      if (result.kind === 'existing') {
+        expect(result.procedures.kyc.isComplete).toBe(true);
+        // AUDD exposes no way to re-fetch the original hosted link (see comment in source).
+        expect(result.kycLink).toBeNull();
+      }
+    });
   });
 });
 
