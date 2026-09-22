@@ -27,14 +27,14 @@ export const PersonAvatar = ({
   className = '',
   isLoading = false,
   size = 'md',
-  shape = 'rounded',
+  shape = 'circle',
 }: {
   avatarSrc?: string;
   userName?: string;
   className?: string;
   isLoading?: boolean;
   size?: AvatarSize;
-  /** `circle` = full round; `squircle` ≈ superellipse; `rounded` = soft corners; `square` = website chrome */
+  /** `circle` = full round (default; survives `--radius-md: 0`); `squircle` ≈ superellipse; `rounded` = soft corners; `square` = website chrome */
   shape?: 'rounded' | 'squircle' | 'circle' | 'square';
 }) => {
   const getFallbackContent = () => (
