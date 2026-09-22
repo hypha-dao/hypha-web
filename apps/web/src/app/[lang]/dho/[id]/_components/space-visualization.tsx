@@ -28,7 +28,7 @@ type Props = {
   ariaLabel?: string;
 };
 
-const SPACE_ACCENT_FALLBACK = '#14b8a6';
+const SPACE_ACCENT_FALLBACK = '#3d6b66';
 
 /** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
 const COOL_ACCENT_HUES = [162, 172, 182, 192, 152, 202, 142] as const;

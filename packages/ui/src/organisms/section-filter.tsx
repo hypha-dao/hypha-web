@@ -47,7 +47,9 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               rootClassName="w-full min-w-0 flex-1 basis-[12rem]"
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
-              leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+              leftIcon={
+                <SearchIcon className="craft-icon text-muted-foreground" />
+              }
               onChange={(e) => onChangeSearch?.(e.target.value)}
               // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
               onKeyDown={(e) => e.stopPropagation()}
@@ -82,7 +84,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
                   leftIcon={
-                    <SearchIcon className="text-accent-9" size="16px" />
+                    <SearchIcon className="craft-icon text-muted-foreground" />
                   }
                   onChange={(e) => onChangeSearch?.(e.target.value)}
                   // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.

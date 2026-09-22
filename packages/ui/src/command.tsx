@@ -119,7 +119,7 @@ const CommandItem = React.forwardRef<
       'data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
       // Neutral selection (Combobox/cmdk): avoid `:root` space accent overriding highlight text.
       "data-[selected='true']:bg-muted/80 data-[selected=true]:text-foreground",
-      '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+      '[&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground',
       className,
     )}
     {...props}

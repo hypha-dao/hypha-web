@@ -5,27 +5,17 @@
 
 [data-landing-marketing] {
   color: var(--hypha-ink);
-  background-color: var(--hypha-paper);
+  background-color: transparent;
 }
 
 .dark [data-landing-marketing] {
   color: var(--hypha-text);
-  background-color: var(--hypha-ink);
+}
+
+[data-landing-marketing] img[src='/brand/mycelium.jpg'] {
+  filter: var(--hypha-mycelium-filter);
 }
 
 [data-landing-marketing] .hypha-hero-veil {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--hypha-paper) 42%, transparent) 0%,
-    color-mix(in srgb, var(--hypha-paper) 78%, transparent) 100%
-  );
-}
-
-.dark [data-landing-marketing] .hypha-hero-veil {
-  background: linear-gradient(
-    90deg,
-    rgb(3 6 21 / 0.94) 0%,
-    rgb(3 6 21 / 0.72) 48%,
-    rgb(3 6 21 / 0.48) 100%
-  );
+  background: var(--hypha-mycelium-veil);
 }

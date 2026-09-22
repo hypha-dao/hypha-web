@@ -6,7 +6,7 @@
  * on top of the work.
  *
  *   Ink    #030615   Deep   #091025   Mid    #1c2746
- *   Paper  #f4f7fb   Text   #f8fafd
+ *   Paper  #fbfaf8   Text   #f8fafd
  *   Type   Sora (titles) · Manrope (UI) · IBM Plex Mono (code)
  *   Controls are square. Letterforms on controls are small, tracked, uppercase.
  */
@@ -17,17 +17,25 @@
   --hypha-ink: #030615;
   --hypha-deep: #091025;
   --hypha-mid: #1c2746;
-  --hypha-paper: #f4f7fb;
+  /* Website hero paper — lab(~97.14) / rgb(251, 250, 248) */
+  --hypha-paper: #fbfaf8;
   --hypha-text: #f8fafd;
   --hypha-text-dim: #677284;
   --hypha-text-faint: #8b95a8;
   --hypha-border: color-mix(in srgb, var(--hypha-ink) 12%, transparent);
   --hypha-mycelium-image: url('/brand/mycelium.jpg');
-  --hypha-mycelium-veil: color-mix(
-    in srgb,
-    var(--hypha-paper) 88%,
-    transparent
-  );
+  /*
+   * Quiet chart hue outside a space — soft mycelium teal, not ink and not neon.
+   * Buttons stay monochrome via accent-*; charts use --craft-chart-* instead.
+   */
+  --hypha-chart: oklch(52% 0.068 176);
+  --hypha-mycelium-filter: grayscale(1) contrast(1.18) brightness(0.96);
+  --hypha-mycelium-veil: radial-gradient(
+      rgba(251, 250, 248, 0.86),
+      rgba(251, 250, 248, 0.62) 42%,
+      rgba(251, 250, 248, 0.28) 78%
+    ),
+    linear-gradient(rgba(251, 250, 248, 0.18), rgba(251, 250, 248, 0.18));
 }
 
 .dark,
@@ -35,5 +43,8 @@
   --hypha-text-dim: #9ca5b5;
   --hypha-text-faint: #677284;
   --hypha-border: rgb(255 255 255 / 0.12);
-  --hypha-mycelium-veil: color-mix(in srgb, var(--hypha-ink) 84%, transparent);
+  --hypha-chart: oklch(62% 0.072 178);
+  --hypha-mycelium-filter: grayscale(1) contrast(1.18) brightness(0.38);
+  /* Dark hero leaves the roots visible — no paper wash. */
+  --hypha-mycelium-veil: none;
 }

@@ -207,13 +207,7 @@ export function HyphaNetworkFeedbackMenuItem({
 }: HyphaNetworkFeedbackMenuItemProps) {
   const t = useTranslations('NetworkFeedback');
 
-  const triggerIcon = (
-    <HeartHandshake
-      className="size-4 shrink-0"
-      aria-hidden
-      strokeWidth={1.75}
-    />
-  );
+  const triggerIcon = <HeartHandshake className="craft-icon" aria-hidden />;
 
   if (variant === 'menu') {
     return (
@@ -258,13 +252,7 @@ export function HyphaNetworkFeedbackTrigger({
   const [open, setOpen] = useState(false);
   const t = useTranslations('NetworkFeedback');
 
-  const triggerIcon = (
-    <HeartHandshake
-      className="size-4 shrink-0"
-      aria-hidden
-      strokeWidth={1.75}
-    />
-  );
+  const triggerIcon = <HeartHandshake className="craft-icon" aria-hidden />;
 
   return (
     <>

@@ -14,8 +14,11 @@ const sizeMap: Record<AvatarSize, { avatar: string; skeleton: string }> = {
   chat: { avatar: 'h-10 w-10', skeleton: '40px' },
   /** Rich-reply quoted author */
   reply: { avatar: 'h-4 w-4', skeleton: '16px' },
-  /** MenuTop / ghost `Button` row: matches default `min-h-10` (40px) */
-  toolbar: { avatar: 'h-10 w-10 shrink-0', skeleton: '40px' },
+  /** MenuTop chrome: 36px square (important beats Avatar’s default h-10/w-10) */
+  toolbar: {
+    avatar: '!h-[36px] !w-[36px] shrink-0',
+    skeleton: '36px',
+  },
 };
 
 export const PersonAvatar = ({
@@ -31,8 +34,8 @@ export const PersonAvatar = ({
   className?: string;
   isLoading?: boolean;
   size?: AvatarSize;
-  /** `circle` = full round; `squircle` ≈ superellipse; `rounded` = square + subtle corners */
-  shape?: 'rounded' | 'squircle' | 'circle';
+  /** `circle` = full round; `squircle` ≈ superellipse; `rounded` = soft corners; `square` = website chrome */
+  shape?: 'rounded' | 'squircle' | 'circle' | 'square';
 }) => {
   const getFallbackContent = () => (
     // Quiet icon fallback — letter initials read as broken/missing photos in chat.
@@ -45,6 +48,8 @@ export const PersonAvatar = ({
       ? 'rounded-full'
       : shape === 'squircle'
       ? 'rounded-[35%]'
+      : shape === 'square'
+      ? 'rounded-none'
       : 'rounded-md';
 
   return (

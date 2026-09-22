@@ -7,64 +7,87 @@
 :root {
   /*
    * Theme fallback only (pages without a space accent scope).
-   * Do NOT reference --space-accent here: custom properties resolve on the
-   * defining element, so :root would bake in default mycelium teal and
-   * descendants would inherit that stale colour even inside
-   * [data-space-accent-scope].
-   * Wide white→solid→black mixes so adjacent donut slices stay distinct.
-   * Default accent outside a space is ink/paper (see theme/colors/accent.css).
+   * Charts use a quiet crafted hue (--hypha-chart), not the achromatic accent-9
+   * used by buttons outside a space. Do NOT reference --space-accent here.
    */
-  --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 28%, white 72%);
-  --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 44%, white 56%);
-  --craft-chart-accent-3: color-mix(in oklab, var(--accent-9) 62%, white 38%);
-  --craft-chart-accent-4: color-mix(in oklab, var(--accent-9) 82%, white 18%);
-  --craft-chart-accent-5: var(--accent-9);
-  --craft-chart-accent-6: color-mix(in oklab, var(--accent-9) 78%, black 22%);
-  --craft-chart-accent-7: color-mix(in oklab, var(--accent-9) 60%, black 40%);
-  --craft-chart-accent-8: color-mix(in oklab, var(--accent-9) 42%, black 58%);
-}
-
-/*
- * Live space palette — mix from --space-accent set on this scope (not the
- * consecutive Radix accent-4…10 hexes, which read as one lavender on dark).
- * Same hue family as the banner sample; wider luminance/chroma steps.
- */
-[data-space-accent-scope] {
   --craft-chart-accent-1: color-mix(
     in oklab,
-    var(--space-accent) 28%,
-    white 72%
+    var(--hypha-chart) 22%,
+    white 78%
   );
   --craft-chart-accent-2: color-mix(
     in oklab,
-    var(--space-accent) 44%,
-    white 56%
+    var(--hypha-chart) 36%,
+    white 64%
   );
   --craft-chart-accent-3: color-mix(
     in oklab,
-    var(--space-accent) 62%,
-    white 38%
+    var(--hypha-chart) 52%,
+    white 48%
   );
   --craft-chart-accent-4: color-mix(
     in oklab,
-    var(--space-accent) 82%,
-    white 18%
+    var(--hypha-chart) 70%,
+    white 30%
   );
-  --craft-chart-accent-5: var(--space-accent);
+  --craft-chart-accent-5: var(--hypha-chart);
   --craft-chart-accent-6: color-mix(
     in oklab,
-    var(--space-accent) 78%,
+    var(--hypha-chart) 78%,
     black 22%
   );
   --craft-chart-accent-7: color-mix(
     in oklab,
-    var(--space-accent) 60%,
+    var(--hypha-chart) 60%,
     black 40%
   );
   --craft-chart-accent-8: color-mix(
     in oklab,
-    var(--space-accent) 42%,
+    var(--hypha-chart) 42%,
     black 58%
+  );
+}
+
+/*
+ * Live space palette — softened mixes from --space-accent (already crafted).
+ * Wider luminance steps so series stay distinct without neon chroma.
+ */
+[data-space-accent-scope] {
+  --craft-chart-accent-1: color-mix(
+    in oklab,
+    var(--space-accent) 20%,
+    white 80%
+  );
+  --craft-chart-accent-2: color-mix(
+    in oklab,
+    var(--space-accent) 34%,
+    white 66%
+  );
+  --craft-chart-accent-3: color-mix(
+    in oklab,
+    var(--space-accent) 50%,
+    white 50%
+  );
+  --craft-chart-accent-4: color-mix(
+    in oklab,
+    var(--space-accent) 68%,
+    white 32%
+  );
+  --craft-chart-accent-5: var(--space-accent);
+  --craft-chart-accent-6: color-mix(
+    in oklab,
+    var(--space-accent) 76%,
+    black 24%
+  );
+  --craft-chart-accent-7: color-mix(
+    in oklab,
+    var(--space-accent) 58%,
+    black 42%
+  );
+  --craft-chart-accent-8: color-mix(
+    in oklab,
+    var(--space-accent) 40%,
+    black 60%
   );
 }
 
@@ -89,7 +112,7 @@
   }
 
   .craft-empty-mark {
-    @apply flex size-8 items-center justify-center rounded-xl border border-border/70 bg-background-2 text-muted-foreground;
+    @apply flex size-8 items-center justify-center rounded-none border border-border/70 bg-transparent text-muted-foreground;
   }
 
   /* Secondary copy — one visual weight below titles */
@@ -122,17 +145,17 @@
   }
 
   /*
-   * Icon optical system — Lucide stroke feel + chrome boxes.
-   * Prefer these over ad-hoc size/stroke/rounded-full on tool chrome.
+   * Icon optical system — thin Lucide strokes, quiet ink.
+   * Matches website chrome: ~14px, stroke 1.25, monochrome outside a space.
    */
   .craft-icon {
-    @apply block size-4 shrink-0;
-    stroke-width: 1.5;
+    @apply block size-3.5 shrink-0 text-current;
+    stroke-width: 1.25;
   }
 
   .craft-icon-sm {
-    @apply block size-3.5 shrink-0;
-    stroke-width: 1.5;
+    @apply block size-3 shrink-0 text-current;
+    stroke-width: 1.25;
   }
 
   /*
@@ -140,17 +163,17 @@
    * Grid + block SVG kills inline-baseline drift (icons looking bottom-heavy).
    */
   .craft-icon-box {
-    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-chrome border border-border/70 bg-muted/25 text-muted-foreground;
+    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-none border border-border/70 bg-transparent text-muted-foreground;
   }
 
   .craft-icon-box > svg {
     display: block !important;
-    width: 1rem !important;
-    height: 1rem !important;
-    max-width: 1rem;
-    max-height: 1rem;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+    max-width: 0.875rem;
+    max-height: 0.875rem;
     flex-shrink: 0;
-    stroke-width: 1.5;
+    stroke-width: 1.25;
   }
 
   /*

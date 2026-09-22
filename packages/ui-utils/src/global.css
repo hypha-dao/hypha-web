@@ -391,6 +391,7 @@
 
   html {
     background-color: var(--page-background);
+    font-family: var(--font-family-text);
   }
 
   body {
@@ -398,16 +399,36 @@
 
     font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    /* Transparent so the fixed mycelium layers show through the open canvas. */
+    background-color: transparent;
+  }
+
+  /*
+   * Website mycelium: filtered photograph + exact light veil.
+   * ::before carries the photo (filter applies to the image layer).
+   * ::after carries the paper radial wash (light) or is empty (dark).
+   */
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  body::before {
+    z-index: -2;
     background-color: var(--page-background);
-    background-image: linear-gradient(
-        var(--hypha-mycelium-veil),
-        var(--hypha-mycelium-veil)
-      ),
-      var(--hypha-mycelium-image);
+    background-image: var(--hypha-mycelium-image);
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    filter: var(--hypha-mycelium-filter);
+  }
+
+  body::after {
+    z-index: -1;
+    background: var(--hypha-mycelium-veil);
   }
 }
 
