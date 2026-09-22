@@ -83,10 +83,7 @@ export function DocumentsSections({
       className="flex flex-col gap-4 py-0"
     >
       <div className="flex w-full min-w-0 items-center">
-        <ScrollableTabsList
-          triggerVariant="switch"
-          viewportClassName="min-w-0"
-        >
+        <ScrollableTabsList triggerVariant="switch" viewportClassName="min-w-0">
           <TabsTrigger value="on-voting" variant="switch">
             <span className="inline-flex items-center gap-1">
               <span>{t('onVoting')}</span>
@@ -121,9 +118,7 @@ export function DocumentsSections({
           spaceLeadImage={spaceLeadImage}
           documents={documents.onVoting}
           headSectionButton={
-            <div className="shrink-0">
-              {renderCreateProposalButton()}
-            </div>
+            <div className="shrink-0">{renderCreateProposalButton()}</div>
           }
           hasSearch={true}
           isLoading={isLoading}
@@ -139,9 +134,7 @@ export function DocumentsSections({
           spaceLeadImage={spaceLeadImage}
           documents={documents.accepted}
           headSectionButton={
-            <div className="shrink-0">
-              {renderCreateProposalButton()}
-            </div>
+            <div className="shrink-0">{renderCreateProposalButton()}</div>
           }
           hasSearch={true}
           isLoading={isLoading}
@@ -157,9 +150,7 @@ export function DocumentsSections({
           spaceLeadImage={spaceLeadImage}
           documents={documents.rejected}
           headSectionButton={
-            <div className="shrink-0">
-              {renderCreateProposalButton()}
-            </div>
+            <div className="shrink-0">{renderCreateProposalButton()}</div>
           }
           hasSearch={true}
           isLoading={isLoading}
