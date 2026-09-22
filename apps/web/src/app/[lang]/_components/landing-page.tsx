@@ -23,19 +23,9 @@ export function LandingPage({ lang }: { lang: Locale }) {
   return (
     <div
       data-landing-marketing
-      className="relative min-h-[calc(100dvh-var(--menu-top-height,76px))] w-full overflow-hidden"
+      className="min-h-[calc(100dvh-var(--menu-top-height,76px))] w-full"
     >
-      <img
-        src="/brand/mycelium.jpg"
-        alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-      />
-      <div
-        aria-hidden
-        className="hypha-hero-veil pointer-events-none absolute inset-0"
-      />
-
-      <div className="relative mx-auto flex min-h-[calc(100dvh-var(--menu-top-height,76px))] w-full max-w-container-xl flex-col items-center justify-center px-5 py-16 text-center md:px-8 md:py-24">
+      <div className="mx-auto flex min-h-[calc(100dvh-var(--menu-top-height,76px))] w-full max-w-container-xl flex-col items-center justify-center px-5 py-16 text-center md:px-8 md:py-24">
         <p
           className="mb-4 text-5 font-medium tracking-[-0.03em] sm:text-6"
           style={{ fontFamily: 'var(--font-family-heading)' }}

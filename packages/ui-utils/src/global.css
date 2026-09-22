@@ -391,61 +391,16 @@
   }
 
   html {
-    /* Overscroll fallback. The photograph is .hypha-mycelium-photo above this. */
     background-color: var(--page-background);
     font-family: var(--font-family-text);
   }
 
   body {
-    @apply text-foreground text-base;
+    @apply bg-page-background text-foreground text-base;
 
     font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
-    /* Transparent so the fixed mycelium layers show through the open canvas. */
-    background-color: transparent;
   }
-}
-
-/*
- * Website mycelium — unlayered so stacking cannot lose to utilities.
- * Real <img> + veil (not body::before): a negative z-index painted behind
- * html's fill, and i18n middleware was redirecting /brand/* to 404.
- * Root sits at z-index 0; every other body child sits at 1.
- */
-.hypha-mycelium-root {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.hypha-mycelium-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  background-color: var(--page-background);
-  filter: var(--hypha-mycelium-filter);
-}
-
-.hypha-mycelium-veil {
-  position: absolute;
-  inset: 0;
-  background: var(--hypha-mycelium-veil);
-}
-
-body > *:not([data-hypha-mycelium]) {
-  position: relative;
-  z-index: 1;
-}
-
-/* Website header: rgba(4, 4, 4, 0.94) over the roots, blur 14px. */
-.dark .hypha-topbar,
-.dark [data-sidebar='sidebar'] {
-  background-color: rgb(4 4 4 / 0.94);
-  backdrop-filter: blur(14px);
 }
 
 :root {
@@ -454,7 +409,11 @@ body > *:not([data-hypha-mycelium]) {
   --sidebar-foreground: var(--hypha-ink);
   --sidebar-primary: var(--hypha-ink);
   --sidebar-primary-foreground: var(--hypha-text);
-  --sidebar-accent: color-mix(in srgb, var(--hypha-panel) 55%, var(--hypha-paper));
+  --sidebar-accent: color-mix(
+    in srgb,
+    var(--hypha-panel) 55%,
+    var(--hypha-paper)
+  );
   --sidebar-accent-foreground: var(--hypha-ink);
   --sidebar-border: var(--hypha-border);
   --sidebar-ring: var(--hypha-ink);

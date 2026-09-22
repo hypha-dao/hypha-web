@@ -1,21 +1,14 @@
 /**
- * Entry surface. Same ink, paper, and mycelium as the rest of the app.
+ * Entry surface. Same ink and paper as the rest of the app.
  * No accent hue — colour begins only inside a space.
  */
 
 [data-landing-marketing] {
   color: var(--hypha-ink);
-  background-color: transparent;
+  background-color: var(--hypha-paper);
 }
 
 .dark [data-landing-marketing] {
   color: var(--hypha-text);
-}
-
-[data-landing-marketing] img[src='/brand/mycelium.jpg'] {
-  filter: var(--hypha-mycelium-filter);
-}
-
-[data-landing-marketing] .hypha-hero-veil {
-  background: var(--hypha-mycelium-veil);
+  background-color: var(--hypha-ink);
 }
