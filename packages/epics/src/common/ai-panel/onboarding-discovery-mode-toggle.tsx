@@ -3,7 +3,7 @@
 import { MessageSquareText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@hypha-platform/ui-utils';
+import { Button } from '@hypha-platform/ui';
 
 import type { OnboardingDiscoveryMode } from '../onboarding-discovery-mode';
 import { LiveVoiceMicIcon } from './live-voice-mic-icon';
@@ -25,41 +25,42 @@ export function OnboardingDiscoveryModeToggle({
 
   return (
     <div
-      className={cn(
-        'inline-flex rounded-full border border-border/70 bg-background/80 p-0.5 shadow-sm',
-        className,
-      )}
+      className={className}
       role="group"
       aria-label={t('onboardingDiscoveryModeLabel')}
     >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange('chat')}
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-          mode === 'chat'
-            ? 'bg-foreground text-background'
-            : 'text-muted-foreground hover:text-foreground',
-        )}
-      >
-        <MessageSquareText className="size-3.5" aria-hidden />
-        {t('onboardingDiscoveryModeChat')}
-      </button>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange('voice_interview')}
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-          mode === 'voice_interview'
-            ? 'bg-foreground text-background'
-            : 'text-muted-foreground hover:text-foreground',
-        )}
-      >
-        <LiveVoiceMicIcon size="sm" />
-        {t('onboardingDiscoveryModeVoice')}
-      </button>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === 'chat' ? 'default' : 'outline'}
+          colorVariant="accent"
+          disabled={disabled}
+          aria-pressed={mode === 'chat'}
+          onClick={() => onChange('chat')}
+          className="shadow-none"
+        >
+          <MessageSquareText
+            className="size-3.5"
+            strokeWidth={1.25}
+            aria-hidden
+          />
+          {t('onboardingDiscoveryModeChat')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === 'voice_interview' ? 'default' : 'outline'}
+          colorVariant="accent"
+          disabled={disabled}
+          aria-pressed={mode === 'voice_interview'}
+          onClick={() => onChange('voice_interview')}
+          className="shadow-none"
+        >
+          <LiveVoiceMicIcon size="sm" />
+          {t('onboardingDiscoveryModeVoice')}
+        </Button>
+      </div>
     </div>
   );
 }
