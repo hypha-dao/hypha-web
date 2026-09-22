@@ -1020,10 +1020,13 @@ export function OnboardingAiFullPage({
         <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
           <div className="mb-4 flex items-center justify-between gap-3 px-2 md:px-4">
             <div>
-              <p className="text-1 text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 {t('aiHero.flow.badge')}
               </p>
-              <h2 className="text-7 font-semibold tracking-tight text-foreground">
+              <h2
+                className="text-7 font-medium tracking-[-0.03em] text-foreground"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
                 {t('aiHero.title')}
               </h2>
             </div>
