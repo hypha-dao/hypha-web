@@ -3,9 +3,9 @@
 .hypha-space-calendar .fc {
   --fc-border-color: color-mix(in srgb, var(--border) 32%, transparent);
   --fc-page-bg-color: transparent;
-  --fc-neutral-bg-color: color-mix(in srgb, var(--muted) 22%, transparent);
+  --fc-neutral-bg-color: transparent;
   --fc-neutral-text-color: var(--muted-foreground);
-  --fc-today-bg-color: color-mix(in srgb, var(--accent-3) 22%, transparent);
+  --fc-today-bg-color: transparent;
   --fc-event-bg-color: transparent;
   --fc-event-border-color: transparent;
   /* Tokens are full oklch colors — never wrap in hsl(). FC defaults this to #fff. */
@@ -17,8 +17,8 @@
 }
 
 .hypha-space-calendar .fc-theme-dark {
-  --fc-neutral-bg-color: color-mix(in srgb, var(--muted) 14%, transparent);
-  --fc-today-bg-color: color-mix(in srgb, var(--accent-3) 16%, transparent);
+  --fc-neutral-bg-color: transparent;
+  --fc-today-bg-color: transparent;
 }
 
 /* Legend dots — space accent inside a space, neutral panel step outside. */
@@ -32,7 +32,7 @@
 
 .hypha-space-calendar .fc .fc-scrollgrid {
   border: none;
-  border-radius: 0.75rem;
+  border-radius: 0;
   overflow: hidden;
   background: transparent;
 }
@@ -44,7 +44,7 @@
 /* ── Column / month headers ── */
 
 .hypha-space-calendar .fc .fc-col-header-cell {
-  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  background: transparent;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   vertical-align: middle;
 }
@@ -87,20 +87,18 @@
   justify-content: center;
   min-width: 2rem;
   height: 2rem;
-  border-radius: 9999px;
+  border-radius: 0;
   font-size: 1.0625rem;
   font-weight: 600;
   line-height: 1;
   color: var(--foreground);
-  transition: background-color 140ms ease, color 140ms ease,
-    box-shadow 140ms ease;
 }
 
 .hypha-cal-col-head--today .hypha-cal-col-head__num {
-  background: var(--accent-9);
-  color: var(--accent-contrast);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-8) 22%, transparent),
-    0 6px 16px -8px color-mix(in srgb, var(--accent-9) 65%, transparent);
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+  box-shadow: none;
 }
 
 .hypha-cal-col-head__today {
@@ -108,17 +106,13 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent-11);
+  color: var(--muted-foreground);
 }
 
 .hypha-space-calendar--week .fc .fc-col-header-cell.fc-day-today,
 .hypha-space-calendar--day .fc .fc-col-header-cell.fc-day-today {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-3) 55%, transparent) 0%,
-    color-mix(in srgb, var(--accent-2) 20%, transparent) 100%
-  );
-  box-shadow: inset 0 -2px 0 var(--accent-9);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ── Month grid ── */
@@ -157,8 +151,8 @@
   .fc
   .fc-daygrid-day.fc-day-today
   .fc-daygrid-day-frame {
-  background: color-mix(in srgb, var(--accent-3) 32%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-8) 40%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .hypha-cal-day-num {
@@ -175,7 +169,7 @@
   justify-content: center;
   min-width: 1.625rem;
   height: 1.625rem;
-  border-radius: 9999px;
+  border-radius: 0;
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1;
@@ -183,10 +177,10 @@
 }
 
 .hypha-cal-day-num--today .hypha-cal-day-num__value {
-  background: var(--accent-9);
-  color: var(--accent-contrast);
+  background: transparent;
+  color: var(--foreground);
   font-weight: 700;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-8) 28%, transparent);
+  box-shadow: none;
 }
 
 .hypha-cal-day-num__badge {
@@ -194,7 +188,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent-11);
+  color: var(--muted-foreground);
 }
 
 .hypha-space-calendar--month .fc .fc-daygrid-day-number {
@@ -204,13 +198,8 @@
   text-decoration: none;
 }
 
-.hypha-space-calendar--month .fc .fc-day-sat .fc-daygrid-day-frame,
-.hypha-space-calendar--month .fc .fc-day-sun .fc-daygrid-day-frame {
-  background: color-mix(in srgb, var(--muted) 6%, transparent);
-}
-
 .hypha-space-calendar--month .fc .fc-daygrid-day-frame:hover {
-  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
 .hypha-space-calendar--month .fc .fc-day-other .fc-daygrid-day-top {
@@ -313,7 +302,8 @@
 
 .hypha-space-calendar .fc .fc-event-selected.hypha-cal-event,
 .hypha-space-calendar .fc .fc-event:focus.hypha-cal-event {
-  box-shadow: 0 0 0 2px var(--ring);
+  box-shadow: none;
+  outline: 1px solid var(--foreground);
 }
 
 .hypha-cal-time-event {
@@ -397,7 +387,7 @@
 
 .hypha-space-calendar--week .fc .fc-timegrid-axis,
 .hypha-space-calendar--day .fc .fc-timegrid-axis {
-  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  background: transparent;
   border-right: 1px solid color-mix(in srgb, var(--border) 34%, transparent);
 }
 
@@ -415,23 +405,7 @@
 
 .hypha-space-calendar--week .fc .fc-timegrid-col.fc-day-today,
 .hypha-space-calendar--day .fc .fc-timegrid-col.fc-day-today {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-3) 34%, transparent) 0%,
-    color-mix(in srgb, var(--accent-2) 10%, transparent) 55%,
-    transparent 100%
-  );
-}
-
-.hypha-space-calendar--week .fc .fc-timegrid-col.fc-day-today::before,
-.hypha-space-calendar--day .fc .fc-timegrid-col.fc-day-today::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--accent-9);
-  pointer-events: none;
-  z-index: 1;
+  background: transparent;
 }
 
 .hypha-space-calendar--week .fc .fc-timegrid-event.hypha-cal-event,
@@ -453,7 +427,7 @@
 
 .hypha-space-calendar--week .fc .fc-timegrid-divider,
 .hypha-space-calendar--day .fc .fc-timegrid-divider {
-  background: color-mix(in srgb, var(--muted) 25%, transparent);
+  background: transparent;
   border-color: color-mix(in srgb, var(--border) 40%, transparent);
   padding: 0;
 }
@@ -492,33 +466,15 @@
   display: inline-flex;
   align-items: center;
   margin: 0.75rem 0 0.25rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--accent-8) 28%, transparent);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent-3) 55%, transparent) 0%,
-    color-mix(in srgb, var(--muted) 35%, transparent) 100%
-  );
-  backdrop-filter: blur(8px);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--foreground);
-}
-
-.hypha-space-calendar--agenda
-  .fc
-  .fc-list-day.fc-day-today
-  .fc-list-day-cushion {
-  border-color: var(--accent-9);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent-3) 75%, transparent) 0%,
-    color-mix(in srgb, var(--accent-2) 45%, transparent) 100%
-  );
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-8) 35%, transparent);
 }
 
 .hypha-space-calendar--agenda .fc .fc-list-event {
@@ -550,23 +506,11 @@
   align-items: stretch;
   gap: 0.875rem;
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 0;
   border-radius: 0;
-  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--card) 95%, transparent) 0%,
-    color-mix(in srgb, var(--muted) 18%, transparent) 100%
-  );
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 3%, transparent);
-  transition: transform 140ms ease, border-color 140ms ease,
-    box-shadow 140ms ease;
-}
-
-.hypha-space-calendar--agenda .fc .fc-list-event:hover .hypha-cal-agenda-card {
-  transform: translateY(-1px);
-  border-color: var(--space-accent, var(--border));
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  background: transparent;
   box-shadow: none;
 }
 
@@ -593,15 +537,15 @@
   align-items: center;
   gap: 0.3125rem;
   width: fit-content;
-  padding: 0.125rem 0.5rem;
+  padding: 0;
   border-radius: 0;
-  background: var(--space-accent, #121212);
-  border: 1px solid transparent;
+  background: transparent;
+  border: none;
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--space-accent-contrast, #f7f7f7);
+  color: var(--muted-foreground);
 }
 
 .hypha-cal-agenda-card__title {
@@ -614,44 +558,44 @@
 /* ── Misc ── */
 
 .hypha-space-calendar .fc .fc-highlight {
-  background: color-mix(in srgb, var(--accent-9) 10%, transparent);
-  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  border-radius: 0;
 }
 
 .hypha-space-calendar .fc .fc-more-link,
 .hypha-space-calendar .fc .fc-list-event-marker {
-  color: var(--accent-11);
+  color: var(--foreground);
   font-weight: 700;
 }
 
 .hypha-space-calendar .fc .fc-now-indicator-line {
-  border-width: 2px;
-  border-color: var(--accent-9);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent-9) 45%, transparent);
+  border-width: 1px;
+  border-color: var(--foreground);
+  box-shadow: none;
 }
 
 .hypha-space-calendar .fc .fc-now-indicator-arrow {
-  border-top-color: var(--accent-9);
-  border-bottom-color: var(--accent-9);
+  border-top-color: var(--foreground);
+  border-bottom-color: var(--foreground);
 }
 
 .hypha-space-calendar .fc .fc-daygrid-more-link {
   margin-top: 0.125rem;
-  background: color-mix(in srgb, var(--accent-3) 70%, transparent);
-  color: var(--accent-11);
-  border-radius: 9999px;
-  padding: 0.125rem 0.5rem;
-  font-weight: 700;
+  background: transparent;
+  color: var(--foreground);
+  border-radius: 0;
+  padding: 0.125rem 0.25rem;
+  font-weight: 600;
   font-size: 0.6875rem;
 }
 
 .hypha-space-calendar .fc .fc-list-empty {
   background: transparent;
   color: var(--muted-foreground);
-  padding: 3rem 1.5rem;
-  border: 1px dashed color-mix(in srgb, var(--border) 55%, transparent);
-  border-radius: 1rem;
-  margin: 1rem 0.5rem;
+  padding: 3rem 0;
+  border: none;
+  border-radius: 0;
+  margin: 0;
   text-align: center;
   font-size: 0.875rem;
 }
@@ -665,15 +609,16 @@
 }
 
 .hypha-space-calendar .fc .fc-popover {
-  background: var(--popover);
+  background: var(--background);
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  box-shadow: 0 16px 40px color-mix(in srgb, var(--foreground) 16%, transparent);
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
 }
 
 .hypha-space-calendar .fc .fc-popover-header {
-  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  background: transparent;
+  border-bottom: 1px solid var(--border);
   padding: 0.625rem 0.875rem;
   font-weight: 700;
 }
