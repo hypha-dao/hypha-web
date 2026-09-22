@@ -88,7 +88,7 @@ Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVaria
 
 **Stay on Manrope (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
 
-Buttons are square, 11px, weight 600, uppercase, tracking `0.12em`, min-height 48px. Outside a space they are ink on paper (or paper on ink). Inside a space the solid fill takes the space accent.
+Buttons are square, 11px, weight 600, uppercase, tracking `0.12em`, height 40px (`h-10`). Outside a space they are ink on paper (or paper on ink). Inside a space the solid fill takes the space accent.
 
 **Mono only:** wallet addresses, hashes, code (`font-mono` / `--font-family-code`).
 

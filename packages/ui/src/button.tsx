@@ -15,12 +15,12 @@ const buttonVariants = cva(
         ghost: 'border border-transparent bg-transparent',
       },
       size: {
-        /** Standard actions — 48px, matching the website control. */
-        default: 'min-h-12 px-5',
+        /** Standard labeled actions — 40px, matching Create Space. */
+        default: 'h-10 min-h-10 px-5',
         /** Compact toolbar / auxiliary actions. */
         sm: 'min-h-8 px-3',
-        /** Primary emphasis (hero / dialog primary). Same letterforms, wider. */
-        lg: 'min-h-12 px-8',
+        /** Primary emphasis (hero / dialog primary). Same height, wider. */
+        lg: 'h-10 min-h-10 px-8',
         icon: 'h-10 min-h-10 min-w-10 shrink-0 rounded-none p-0 normal-case tracking-normal [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]',
       },
       colorVariant: {

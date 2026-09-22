@@ -15,8 +15,7 @@ type WalletActionsToolbarProps = {
  * The wallet's primary actions, so they keep the solid accent fill rather than
  * the quiet outline treatment used for banners and surrounding chrome.
  */
-const ACTION_BUTTON_CLASS =
-  'h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4';
+const ACTION_BUTTON_CLASS = 'shrink-0 whitespace-nowrap px-3 text-sm sm:px-4';
 
 export function WalletActionsToolbar({
   basePath,
