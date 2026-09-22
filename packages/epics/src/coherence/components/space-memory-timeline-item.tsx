@@ -55,9 +55,9 @@ function CallRecordingStaticPreview({
   );
 }
 
-/** Fixed media frame — equal card rows, cover-cropped previews. */
+/** Preview crop on the paper. The list edge is the only rule. */
 const MEDIA_SHELL =
-  'relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/20';
+  'relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-transparent';
 
 function isSafeAssetUrl(url: string): boolean {
   try {
@@ -373,7 +373,7 @@ export function SpaceMemoryTimelineItem({
         item.context.documentTitle?.trim() ||
         displayName;
       return (
-        <div className="absolute inset-0 flex flex-col justify-start overflow-hidden bg-background-3/40 px-3 py-2.5 text-left">
+        <div className="absolute inset-0 flex flex-col justify-start overflow-hidden px-3 py-2.5 text-left">
           {isCallTranscriptBody ? (
             <ResolvedCallTranscriptExcerpt
               excerpt={excerpt}
@@ -547,9 +547,9 @@ export function SpaceMemoryTimelineItem({
   })();
 
   const linkClass =
-    'group/open flex min-h-0 flex-1 flex-col gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+    'group/open flex min-w-0 flex-col gap-2 rounded-none outline-none focus-visible:ring-1 focus-visible:ring-ring';
   const openRowClass =
-    'mt-auto inline-flex items-center gap-1 text-1 text-muted-foreground transition-colors group-hover/open:text-foreground';
+    'inline-flex items-center gap-1 text-1 text-muted-foreground transition-colors group-hover/open:text-foreground';
 
   const sourceLabel = (() => {
     if (item.source === 'memory') return t('spaceMemory');
@@ -564,9 +564,17 @@ export function SpaceMemoryTimelineItem({
   })();
 
   const showTitle = !isCallRecording || showCallRecordingTitle;
+  const isEmptyMark = thumbPreview === emptyMediaIcon;
+  const preview = isEmptyMark ? (
+    <div className="craft-empty-mark" aria-hidden>
+      <FileIcon className="size-3.5" strokeWidth={1.25} />
+    </div>
+  ) : (
+    <div className={MEDIA_SHELL}>{thumbPreview}</div>
+  );
 
   return (
-    <li className="craft-card-interactive group flex h-full w-full flex-col gap-2.5 p-3.5">
+    <li className="group flex min-w-0 flex-col gap-2.5 border-b border-border/50 p-3.5 transition-colors hover:bg-foreground/[0.03]">
       <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
         <span className="craft-meta truncate text-[11px] font-medium">
           {sourceLabel}
@@ -588,7 +596,7 @@ export function SpaceMemoryTimelineItem({
         <p className="craft-meta line-clamp-1 leading-snug">{contextLine}</p>
       </div>
 
-      <div className="mt-auto flex min-h-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-2">
         {isCallRecording && canOpen && openHref ? (
           <SpaceMemoryCallRecordingPlayer
             src={openHref}
@@ -607,7 +615,7 @@ export function SpaceMemoryTimelineItem({
             className={linkClass}
             aria-label={isCallRecording ? openLinkLabel : openLabel}
           >
-            <div className={MEDIA_SHELL}>{thumbPreview}</div>
+            {preview}
             <span className={openRowClass}>
               <span>{openLinkLabel}</span>
               <ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
@@ -615,10 +623,10 @@ export function SpaceMemoryTimelineItem({
           </a>
         ) : (
           <div
-            className="flex flex-1 flex-col gap-2"
+            className="flex flex-col gap-2"
             title={mxc && !canOpen ? t('spaceMemoryMatrixOpenHint') : undefined}
           >
-            <div className={MEDIA_SHELL}>{thumbPreview}</div>
+            {preview}
           </div>
         )}
       </div>
