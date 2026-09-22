@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
+import { SPACE_ACCENT_FALLBACK } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 
 type SpaceNode = {
@@ -27,8 +28,6 @@ type Props = {
   showNodeLabels?: boolean;
   ariaLabel?: string;
 };
-
-const SPACE_ACCENT_FALLBACK = '#3d6b66';
 
 /** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
 const COOL_ACCENT_HUES = [162, 172, 182, 192, 152, 202, 142] as const;
