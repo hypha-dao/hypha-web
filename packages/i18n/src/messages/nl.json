@@ -3824,7 +3824,11 @@
     "addLocationNoSpaces": "Je bent nog geen lid van een ruimte.",
     "clusterExpandTitle": "{count} plaatsen op deze locatie",
     "clusterZoomOut": "Uitzoomen",
-    "controlStripLabel": "Netwerkbediening"
+    "controlStripLabel": "Netwerkbediening",
+    "legendLabel": "Kaartlegenda",
+    "legendSpace": "Ruimte",
+    "legendCluster": "Cluster",
+    "legendSpacesCount": "Ruimtes · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Er is nog geen gespreksruimte",

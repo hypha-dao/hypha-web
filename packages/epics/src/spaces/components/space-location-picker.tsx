@@ -374,7 +374,7 @@ export const SpaceLocationPicker = React.forwardRef<
           }}
           className={cn(
             'relative overflow-hidden rounded-md border border-border',
-            'bg-[var(--blue-4,#1e3a5f)]',
+            'bg-[var(--hypha-paper)] dark:bg-[var(--hypha-ink)]',
             disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-crosshair',
           )}
           style={{ width: '100%', maxWidth: MAP_WIDTH, aspectRatio: '2 / 1' }}
@@ -392,12 +392,11 @@ export const SpaceLocationPicker = React.forwardRef<
             {landPath ? (
               <path
                 d={landPath}
-                fill="var(--neutral-6, #444)"
-                stroke="var(--neutral-9, #ccc)"
-                strokeWidth={0.5}
+                className="fill-[var(--hypha-paper)] stroke-[color-mix(in_srgb,var(--hypha-ink)_48%,transparent)] dark:fill-[var(--hypha-ink)] dark:stroke-[color-mix(in_srgb,var(--hypha-text)_52%,transparent)]"
+                strokeWidth={0.55}
               />
             ) : null}
-            <g className="opacity-25">
+            <g className="opacity-25 text-[var(--hypha-ink)] dark:text-[var(--hypha-text)]">
               {Array.from({ length: 7 }).map((_, index) => {
                 const y = (index / 6) * MAP_HEIGHT;
                 return (
@@ -430,7 +429,7 @@ export const SpaceLocationPicker = React.forwardRef<
           </svg>
           {pinPosition ? (
             <span
-              className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-9 ring-2 ring-background"
+              className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-background"
               style={{
                 left: `${(pinPosition.x / MAP_WIDTH) * 100}%`,
                 top: `${(pinPosition.y / MAP_HEIGHT) * 100}%`,

@@ -3242,7 +3242,11 @@
     "addLocationNoSpaces": "Vous n'êtes membre d'aucun espace pour l'instant.",
     "clusterExpandTitle": "{count} espaces à cet emplacement",
     "clusterZoomOut": "Dézoomer",
-    "controlStripLabel": "Contrôles du réseau"
+    "controlStripLabel": "Contrôles du réseau",
+    "legendLabel": "Légende de la carte",
+    "legendSpace": "Espace",
+    "legendCluster": "Groupe",
+    "legendSpacesCount": "Espaces · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",

@@ -3826,7 +3826,11 @@
     "addLocationNoSpaces": "You are not a member of any spaces yet.",
     "clusterExpandTitle": "{count} spaces at this location",
     "clusterZoomOut": "Zoom out",
-    "controlStripLabel": "Network controls"
+    "controlStripLabel": "Network controls",
+    "legendLabel": "Map legend",
+    "legendSpace": "Space",
+    "legendCluster": "Cluster",
+    "legendSpacesCount": "Spaces · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",
