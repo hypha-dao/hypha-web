@@ -391,7 +391,7 @@
   }
 
   html {
-    /* Overscroll fallback. The photograph is body::before, above this fill. */
+    /* Overscroll fallback. The photograph is .hypha-mycelium-photo above this. */
     background-color: var(--page-background);
     font-family: var(--font-family-text);
   }
@@ -404,43 +404,41 @@
     /* Transparent so the fixed mycelium layers show through the open canvas. */
     background-color: transparent;
   }
+}
 
-  /*
-   * Website mycelium. ::before is the filtered photograph.
-   * ::after is the light paper veil, and empty in dark mode.
-   * z-index 0 keeps the photo in front of html. body > * sits at 1.
-   */
-  body::before,
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
+/*
+ * Website mycelium — unlayered so stacking cannot lose to utilities.
+ * Real <img> + veil (not body::before): a negative z-index painted behind
+ * html's fill, and i18n middleware was redirecting /brand/* to 404.
+ * Root sits at z-index 0; every other body child sits at 1.
+ */
+.hypha-mycelium-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
 
-  body::before {
-    background-color: var(--page-background);
-    background-image: var(--hypha-mycelium-image);
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-    filter: var(--hypha-mycelium-filter);
-  }
+.hypha-mycelium-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background-color: var(--page-background);
+  filter: var(--hypha-mycelium-filter);
+}
 
-  body::after {
-    background: var(--hypha-mycelium-veil);
-  }
+.hypha-mycelium-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--hypha-mycelium-veil);
+}
 
-  /*
-   * The photograph sits at z-index 0. Every real child must sit above it.
-   * A negative z-index painted the photo behind html's fill, and opaque
-   * navy chrome then covered whatever remained.
-   */
-  body > * {
-    position: relative;
-    z-index: 1;
-  }
+body > *:not([data-hypha-mycelium]) {
+  position: relative;
+  z-index: 1;
 }
 
 /* Website header: rgba(4, 4, 4, 0.94) over the roots, blur 14px. */

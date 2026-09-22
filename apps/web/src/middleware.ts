@@ -137,6 +137,8 @@ export const config = {
   matcher: [
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
-    '/((?!api|_matrix|signin|placeholder|icon|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    // `brand` — keep public static folders out of next-intl locale rewriting so
+    // `/brand/mycelium.jpg` is not locale-prefixed to a 404.
+    '/((?!api|_matrix|signin|placeholder|icon|onesignal|brand|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };
