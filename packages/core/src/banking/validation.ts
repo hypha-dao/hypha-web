@@ -27,12 +27,29 @@ import {
   resolveBankTransferCorridor,
 } from './constants';
 
+/**
+ * Currencies the onboarding endpoint accepts in `requestedRails` — Bridge's rail-shaped set plus
+ * identity-only currencies (`aud`, #2474 WS6/WS7). Deliberately **not** the same list as
+ * `BANK_VIRTUAL_ACCOUNT_CURRENCIES` (Bridge-rail-shaped end to end, drags in endorsement/rail
+ * maps) — `aud` stays out of that one; this is only what the onboarding request itself accepts.
+ */
+export const BANK_ONBOARDING_CURRENCIES = [
+  ...BANK_VIRTUAL_ACCOUNT_CURRENCIES,
+  'aud',
+] as const;
+
 export const schemaSpaceBankCustomerOnboarding = z
   .object({
     legalName: z.string().trim().min(1, 'legalName is required').max(1024),
     contactEmail: z.string().trim().email('contactEmail must be a valid email'),
-    requestedRails: z.array(z.enum(BANK_VIRTUAL_ACCOUNT_CURRENCIES)).optional(),
+    requestedRails: z.array(z.enum(BANK_ONBOARDING_CURRENCIES)).optional(),
     endorsements: z.array(z.string()).optional(),
+    /**
+     * Provider-specific onboarding fields the dynamic form collected (D10) — e.g. AUDD's 11-field
+     * customer-creation set. Open-but-validated: keys/shape are provider-defined (see each
+     * provider's `requiredOnboardingFields`), the adapter itself enforces which are required.
+     */
+    onboardingFields: z.record(z.string(), z.string().max(1024)).optional(),
   })
   .strict();
 

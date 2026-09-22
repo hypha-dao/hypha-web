@@ -84,7 +84,8 @@ export async function POST(
     );
   }
 
-  const { legalName, contactEmail, requestedRails, endorsements } = parsed.data;
+  const { legalName, contactEmail, requestedRails, endorsements, onboardingFields } =
+    parsed.data;
 
   try {
     const result = await requestPersonalBankOnboarding(
@@ -94,6 +95,7 @@ export async function POST(
         legalName,
         contactEmail,
         requestedRails: requestedRails ?? endorsements,
+        onboardingFields,
       },
       { db },
       {
