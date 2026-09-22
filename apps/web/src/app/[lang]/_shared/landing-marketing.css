@@ -12,3 +12,12 @@
   color: var(--hypha-text);
   background-color: var(--hypha-ink);
 }
+
+/* Headline and subtitle. Beats leftover light utilities on the same node. */
+[data-landing-marketing] .landing-marketing-copy {
+  color: var(--hypha-ink);
+}
+
+.dark [data-landing-marketing] .landing-marketing-copy {
+  color: var(--hypha-text);
+}
