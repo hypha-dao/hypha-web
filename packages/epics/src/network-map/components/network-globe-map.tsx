@@ -72,61 +72,62 @@ const DEFAULT_LAYER_VISIBILITY: NetworkMapLayerVisibility = {
 
 type MapPalette = {
   ocean: string;
+  /** Matches ocean so continents read as hairline outlines only. */
   landFill: string;
   landStroke: string;
-  /** Soft water-side band under coast lines — reads as shoreline, not outline chrome. */
+  /** Soft water-side band under coast lines — quiet shoreline, same family. */
   coastHalo: string;
   /** Globe disk / flat map limb against the page (no stage frame). */
   sphereEdge: string;
   grid: string;
   clusterFill: string;
   clusterRing: string;
+  clusterCount: string;
+  pinFill: string;
   pinStroke: string;
   spiderfyStroke: string;
   sphereShadow: string | null;
 };
 
 /**
- * Cartographic contrast without neon: deep water, elevated land, thin coast.
- * Disk edge carries silhouette so the map can sit frameless on the page.
+ * Foundation ink/paper only — no accent hues, no pin rainbow.
+ * Land is outlined on the ocean ground (image-3 spirit) in both globe and flat.
  */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(23% 0.034 236)',
-  landFill: 'oklch(36% 0.018 98)',
-  landStroke: 'oklch(54% 0.022 232)',
-  coastHalo: 'oklch(28% 0.03 236)',
-  sphereEdge: 'oklch(48% 0.022 236)',
-  grid: 'oklch(42% 0.02 236)',
-  clusterFill: 'var(--accent-9)',
-  clusterRing: 'var(--accent-8)',
-  pinStroke: 'oklch(97% 0.005 250)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 45%, transparent)',
+  ocean: 'var(--hypha-ink)',
+  landFill: 'var(--hypha-ink)',
+  landStroke: 'color-mix(in srgb, var(--hypha-text) 52%, transparent)',
+  coastHalo: 'color-mix(in srgb, var(--hypha-mid) 55%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-text) 28%, transparent)',
+  grid: 'color-mix(in srgb, var(--hypha-mid) 70%, transparent)',
+  clusterFill: 'var(--hypha-text)',
+  clusterRing: 'color-mix(in srgb, var(--hypha-text) 42%, transparent)',
+  clusterCount: 'var(--hypha-ink)',
+  pinFill: 'var(--hypha-text)',
+  pinStroke: 'var(--hypha-ink)',
+  spiderfyStroke: 'color-mix(in srgb, var(--hypha-text) 35%, transparent)',
   sphereShadow: null,
 };
 
 const LIGHT_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(93% 0.022 232)',
-  landFill: 'oklch(87% 0.014 95)',
-  landStroke: 'oklch(58% 0.02 250)',
-  coastHalo: 'oklch(88% 0.028 230)',
-  sphereEdge: 'oklch(74% 0.018 250)',
-  grid: 'var(--neutral-7)',
-  clusterFill: 'var(--accent-9)',
-  clusterRing: 'var(--accent-8)',
-  pinStroke: 'oklch(99% 0.002 250)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 30%, transparent)',
+  ocean: 'var(--hypha-paper)',
+  landFill: 'var(--hypha-paper)',
+  landStroke: 'color-mix(in srgb, var(--hypha-ink) 48%, transparent)',
+  coastHalo: 'color-mix(in srgb, var(--hypha-ink) 8%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-ink) 22%, transparent)',
+  grid: 'color-mix(in srgb, var(--hypha-ink) 12%, transparent)',
+  clusterFill: 'var(--hypha-ink)',
+  clusterRing: 'color-mix(in srgb, var(--hypha-ink) 38%, transparent)',
+  clusterCount: 'var(--hypha-paper)',
+  pinFill: 'var(--hypha-ink)',
+  pinStroke: 'var(--hypha-paper)',
+  spiderfyStroke: 'color-mix(in srgb, var(--hypha-ink) 28%, transparent)',
   sphereShadow:
-    'drop-shadow(0 1px 3px color-mix(in oklab, var(--neutral-12) 10%, transparent))',
+    'drop-shadow(0 1px 3px color-mix(in srgb, var(--hypha-ink) 10%, transparent))',
 };
 
 function mapPaletteForTheme(theme: string | undefined): MapPalette {
   return theme === 'light' ? LIGHT_GLOBE_PALETTE : DARK_GLOBE_PALETTE;
-}
-
-/** Stable per-space accent hues for pin dots (not chrome). */
-function pinColor(id: number): string {
-  const hue = Math.abs((id * 47) % 360);
-  return `oklch(62% 0.14 ${hue})`;
 }
 
 const MINI_GLOBE_SIZE = 88;
@@ -506,8 +507,8 @@ export function NetworkGlobeMap({
       .attr('d', spherePath)
       .attr('fill', 'none')
       .attr('stroke', palette.sphereEdge)
-      .attr('stroke-width', isGlobeView ? 1.1 : 0.7)
-      .attr('opacity', isGlobeView ? 0.85 : 0.45)
+      .attr('stroke-width', isGlobeView ? 1.25 : 0.65)
+      .attr('opacity', isGlobeView ? 1 : 0.55)
       .attr('pointer-events', 'none')
       .style('display', null);
 
@@ -517,8 +518,8 @@ export function NetworkGlobeMap({
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', palette.grid)
-        .attr('stroke-width', 0.3)
-        .attr('opacity', isGlobeView ? 0.4 : 0.5)
+        .attr('stroke-width', isGlobeView ? 0.35 : 0.28)
+        .attr('opacity', isGlobeView ? 0.55 : 0.45)
         .style('display', null);
     } else {
       gridPath.attr('d', null).style('display', 'none');
@@ -532,17 +533,18 @@ export function NetworkGlobeMap({
         .attr('d', landD)
         .attr('fill', 'none')
         .attr('stroke', palette.coastHalo)
-        .attr('stroke-width', 2.25)
+        .attr('stroke-width', isGlobeView ? 1.6 : 1.2)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
-        .attr('opacity', 0.9)
+        .attr('opacity', 0.7)
         .attr('pointer-events', 'none')
         .style('display', null);
+      // Outlined continents: fill matches ocean; hairline stroke carries the land.
       landPath
         .attr('d', landD)
         .attr('fill', palette.landFill)
         .attr('stroke', palette.landStroke)
-        .attr('stroke-width', 0.55)
+        .attr('stroke-width', isGlobeView ? 0.7 : 0.5)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
         .style('display', null);
@@ -669,7 +671,7 @@ export function NetworkGlobeMap({
           .attr('fill', 'none')
           .attr('stroke', palette.clusterRing)
           .attr('stroke-width', 1.5)
-          .attr('opacity', 0.55)
+          .attr('opacity', 0.7)
           .attr('pointer-events', 'none');
         group
           .append('circle')
@@ -687,7 +689,7 @@ export function NetworkGlobeMap({
           .attr('font-size', datum.count > 9 ? 9 : 10)
           .attr('font-weight', 600)
           .attr('font-family', 'var(--font-family-text, sans-serif)')
-          .attr('fill', 'var(--accent-contrast, white)')
+          .attr('fill', palette.clusterCount)
           .attr('pointer-events', 'none')
           .text(String(datum.count));
         group
@@ -711,14 +713,14 @@ export function NetworkGlobeMap({
         .append('circle')
         .attr('class', 'map-pin-halo')
         .attr('r', 7)
-        .attr('fill', pinColor(space.id))
+        .attr('fill', palette.pinFill)
         .attr('opacity', 0)
         .attr('pointer-events', 'none');
       group
         .append('circle')
         .attr('class', 'map-pin-dot')
         .attr('r', 5)
-        .attr('fill', pinColor(space.id))
+        .attr('fill', palette.pinFill)
         .attr('stroke', palette.pinStroke)
         .attr('stroke-width', 1.75)
         .attr('pointer-events', 'none');
@@ -727,6 +729,7 @@ export function NetworkGlobeMap({
 
     pins.merge(pinsEnter).each(function (datum) {
       const group = d3.select(this);
+      const palette = mapPaletteRef.current;
       if (
         datum.kind === 'cluster' &&
         group.select('circle.map-pin-hit').empty()
@@ -737,6 +740,25 @@ export function NetworkGlobeMap({
           .attr('r', 14)
           .attr('fill', 'transparent')
           .attr('pointer-events', 'all');
+      }
+
+      if (datum.kind === 'cluster') {
+        group
+          .select('circle.map-pin-cluster-ring')
+          .attr('stroke', palette.clusterRing);
+        group
+          .select('circle.map-pin-cluster-core')
+          .attr('fill', palette.clusterFill)
+          .attr('stroke', palette.pinStroke);
+        group
+          .select('text.map-pin-cluster-count')
+          .attr('fill', palette.clusterCount);
+      } else {
+        group.select('circle.map-pin-halo').attr('fill', palette.pinFill);
+        group
+          .select('circle.map-pin-dot')
+          .attr('fill', palette.pinFill)
+          .attr('stroke', palette.pinStroke);
       }
 
       const latitude =
@@ -1538,6 +1560,39 @@ export function NetworkGlobeMap({
   const showMiniGlobe =
     selectedProjection === 'flat' && !isLoadingGeo && !loadError;
 
+  const mapLegend =
+    !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
+      <div
+        className={cn(
+          'pointer-events-none absolute bottom-3 left-3 z-20',
+          'inline-flex max-w-[min(100%-1.5rem,20rem)] items-center gap-3',
+          'rounded-md border border-border bg-background/90 px-2.5 py-1.5',
+          'text-1 text-muted-foreground shadow-sm backdrop-blur-sm',
+        )}
+        aria-label={t('legendLabel')}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="size-2 shrink-0 rounded-full bg-foreground ring-1 ring-background"
+            aria-hidden
+          />
+          <span>{t('legendSpace')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="relative inline-flex size-3.5 shrink-0 items-center justify-center rounded-full bg-foreground text-[8px] font-semibold leading-none text-background ring-1 ring-foreground/35"
+            aria-hidden
+          >
+            n
+          </span>
+          <span>{t('legendCluster')}</span>
+        </span>
+        <span className="text-foreground/80">
+          {t('legendSpacesCount', { count: locatedSpaces.length })}
+        </span>
+      </div>
+    ) : null;
+
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
@@ -1620,6 +1675,7 @@ export function NetworkGlobeMap({
         role="img"
         aria-label={t('mapAriaLabel')}
       />
+      {mapLegend}
       {miniGlobeInset}
       {hoverCard}
     </div>

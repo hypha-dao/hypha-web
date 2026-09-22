@@ -3818,7 +3818,11 @@
     "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied.",
     "clusterExpandTitle": "{count} Spaces an diesem Ort",
     "clusterZoomOut": "Herauszoomen",
-    "controlStripLabel": "Netzwerk-Steuerung"
+    "controlStripLabel": "Netzwerk-Steuerung",
+    "legendLabel": "Kartenlegende",
+    "legendSpace": "Space",
+    "legendCluster": "Cluster",
+    "legendSpacesCount": "Spaces · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

@@ -3823,7 +3823,11 @@
     "addLocationNoSpaces": "Du er ikke medlem av noen rom ennå.",
     "clusterExpandTitle": "{count} rom på denne plasseringen",
     "clusterZoomOut": "Zoom ut",
-    "controlStripLabel": "Nettverkskontroller"
+    "controlStripLabel": "Nettverkskontroller",
+    "legendLabel": "Kartforklaring",
+    "legendSpace": "Rom",
+    "legendCluster": "Klynge",
+    "legendSpacesCount": "Rom · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Ingen samtalerom ennå",

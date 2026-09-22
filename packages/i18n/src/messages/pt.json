@@ -3244,7 +3244,11 @@
     "addLocationNoSpaces": "Ainda não é membro de nenhum espaço.",
     "clusterExpandTitle": "{count} espaços neste local",
     "clusterZoomOut": "Afastar",
-    "controlStripLabel": "Controlos da rede"
+    "controlStripLabel": "Controlos da rede",
+    "legendLabel": "Legenda do mapa",
+    "legendSpace": "Espaço",
+    "legendCluster": "Agrupamento",
+    "legendSpacesCount": "Espaços · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",
