@@ -19,7 +19,7 @@ const TextWithLinks = ({ text }: { text: string }) => {
               key={`url-${index}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-accent-11 hover:underline"
               onClick={(e) => {
                 // this allows to activate link in disabled component
                 e.preventDefault();

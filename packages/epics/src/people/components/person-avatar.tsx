@@ -57,9 +57,17 @@ export const PersonAvatar = ({
       width={skeletonSize}
       height={skeletonSize}
       loading={isLoading}
-      className={cn(radiusClass, className)}
+      className={cn(radiusClass, className, 'border-0 shadow-none ring-0')}
     >
-      <Avatar className={cn(avatarSize, radiusClass, className)}>
+      <Avatar
+        className={cn(
+          avatarSize,
+          radiusClass,
+          className,
+          /* Profile photos never carry a frame — overrides caller ring/border. */
+          'border-0 shadow-none ring-0',
+        )}
+      >
         <AvatarImage src={avatarSrc} alt={`${userName}'s avatar`} />
         <AvatarFallback>{getFallbackContent()}</AvatarFallback>
       </Avatar>

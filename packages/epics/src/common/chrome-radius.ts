@@ -13,6 +13,8 @@ export const APP_CHROME_ICON_TRIGGER =
 
 /**
  * MenuTop profile avatar button — same 36px square rhythm as icon / language chrome.
+ * No ring/border/shadow: the photo is the control (a frame reads as a black outline
+ * once accent/border resolve to ink).
  */
 export const APP_CHROME_AVATAR_TRIGGER =
-  'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center isolate overflow-hidden rounded-none bg-transparent p-0 text-foreground outline-none ring-1 ring-border/70 transition-colors duration-150 hover:bg-foreground/5 focus-visible:ring-1 focus-visible:ring-ring data-[state=open]:bg-foreground/5';
+  'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center isolate overflow-hidden rounded-none border-0 bg-transparent p-0 text-foreground shadow-none outline-none ring-0 transition-colors duration-150 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-0 data-[state=open]:bg-foreground/5';

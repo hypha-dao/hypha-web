@@ -1,7 +1,8 @@
 @import '../../colors/slate.css';
 
 /**
- * Cool stone / mist canvases — slate scale (not warm cream, not pure gray).
+ * App surface scale from ink/paper (slate.css). Step 1 is the open canvas
+ * token; open layouts use transparent craft-page-canvas so mycelium shows.
  */
 :root,
 .light,
