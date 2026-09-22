@@ -88,7 +88,7 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
           ) : (
             <Avatar
               key={member.id}
-              className="h-8 w-8 shrink-0 rounded-full border-2 border-background-2 shadow-sm"
+              className="h-8 w-8 shrink-0 rounded-full border border-border/70"
               title={member.label}
             >
               <AvatarImage
