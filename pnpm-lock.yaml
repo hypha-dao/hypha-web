@@ -984,6 +984,9 @@ importers:
       '@hypha-platform/authentication':
         specifier: workspace:*
         version: link:../authentication
+      '@hypha-platform/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       '@hypha-platform/storage-postgres':
         specifier: workspace:*
         version: link:../storage-postgres

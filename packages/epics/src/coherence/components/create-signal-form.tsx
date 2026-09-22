@@ -44,7 +44,6 @@ import {
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useCoherenceUpvoteMutations,
-  useHookRegistry,
   useJwt,
   useMatrix,
   useMe,
@@ -171,8 +170,6 @@ export const CreateSignalForm = ({
     isUpdatingCoherenceSignal,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
-  const { useSendNotifications } = useHookRegistry();
-  const { notifySignalAssigned } = useSendNotifications({ authToken });
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
   const [isTogglingArchiveState, setIsTogglingArchiveState] =
@@ -574,44 +571,9 @@ export const CreateSignalForm = ({
     [],
   );
 
-  /** Emails people who were just put on a signal. Self-assignment is dropped server-side. */
-  const notifyAssignees = React.useCallback(
-    ({
-      slug,
-      title,
-      assigneeIds,
-    }: {
-      slug?: string | null;
-      title: string;
-      assigneeIds: number[];
-    }) => {
-      const trimmedSlug = slug?.trim();
-      if (!trimmedSlug || !spaceSlug || assigneeIds.length === 0) return;
-      const origin =
-        typeof window === 'undefined' ? '' : window.location.origin;
-      void notifySignalAssigned({
-        assigneePersonIds: assigneeIds,
-        signalTitle: title,
-        spaceTitle: space?.title ?? undefined,
-        actorDisplayName:
-          [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
-          undefined,
-        url: `${origin}/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
-          trimmedSlug,
-        )}`,
-      }).catch((error) => {
-        console.warn('Could not notify signal assignees:', error);
-      });
-    },
-    [
-      lang,
-      notifySignalAssigned,
-      person?.name,
-      person?.surname,
-      space?.title,
-      spaceSlug,
-    ],
-  );
+  // Assignee notifications are server-fired (#2470) from `createCoherenceAction` /
+  // `updateCoherenceSignalBySlugAction` themselves, right after the assignee list is persisted —
+  // no client trigger needed here.
 
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
@@ -659,18 +621,10 @@ export const CreateSignalForm = ({
               data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
           });
-          // The signal is saved — close now and let the chat sync, the
-          // assignment email and the list refresh finish in the background.
+          // The signal is saved — close now and let the chat sync and the
+          // list refresh finish in the background.
           setIsClosingAfterPublish(true);
           router.push(successfulUrl);
-          const previousAssigneeIds = initialValues?.assigneeIds ?? [];
-          notifyAssignees({
-            slug: signalSlug,
-            title: data.title,
-            assigneeIds: (data.assigneeIds ?? []).filter(
-              (id) => !previousAssigneeIds.includes(id),
-            ),
-          });
           if (updatedSignal?.roomId) {
             void upsertSignalDescriptionMessage({
               roomId: updatedSignal.roomId,
@@ -732,11 +686,6 @@ export const CreateSignalForm = ({
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
         router.push(successfulUrl);
-        notifyAssignees({
-          slug: coherenceSlug,
-          title: coherence.title,
-          assigneeIds: data.assigneeIds ?? [],
-        });
         if (coherenceSlug) {
           // Best-effort creator upvote; ranking still works without it.
           void (async () => {
@@ -839,9 +788,7 @@ export const CreateSignalForm = ({
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
       upsertSignalDescriptionMessage,
-      initialValues?.assigneeIds,
       mode,
-      notifyAssignees,
       setSignalProvisioningNotice,
       signalSlug,
       spaceSlug,

@@ -30,7 +30,6 @@ import {
   useSpaceDetailsWeb3Rpc,
   useIsDelegate,
   useJwt,
-  NotifyProposalCreatedInput,
   useMe,
   PostNotifyProposalCreatedInput,
 } from '@hypha-platform/core/client';
@@ -340,13 +339,7 @@ export function CreateAgreementBaseFields({
   }, [mode, progress, router, spaceSlug, successfulUrl]);
 
   const postProposalCreated = React.useCallback(
-    async ({
-      spaceId,
-      creator,
-      proposalId,
-      url,
-      sendNotifications,
-    }: PostNotifyProposalCreatedInput) => {
+    async ({ spaceId, creator }: PostNotifyProposalCreatedInput) => {
       if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
         return;
       }
@@ -357,46 +350,15 @@ export function CreateAgreementBaseFields({
         return;
       }
       if (successfulUrl) {
-        const sendNotificationsSafe = async (
-          args: NotifyProposalCreatedInput,
-        ) => {
-          try {
-            if (sendNotifications) {
-              await sendNotifications(args);
-            }
-          } catch (error) {
-            console.warn(
-              'Some issues appeared on send notifications on proposal created:',
-              error,
-            );
-          }
-        };
         if (progressRef.current < 100) {
           setDelayedCallbacks((prev) => {
             if (prev.length > 0) {
               // Normally should be called at most once
               return prev;
             }
-            return [
-              ...prev,
-              async () => {
-                await sendNotificationsSafe({
-                  proposalId,
-                  spaceId,
-                  creator,
-                  url,
-                });
-                router.push(successfulUrl);
-              },
-            ];
+            return [...prev, async () => router.push(successfulUrl)];
           });
         } else {
-          await sendNotificationsSafe({
-            proposalId,
-            spaceId,
-            creator,
-            url,
-          });
           router.push(successfulUrl);
         }
       }

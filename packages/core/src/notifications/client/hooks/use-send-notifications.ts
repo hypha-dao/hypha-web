@@ -1,14 +1,17 @@
+/**
+ * `proposal.created`/`accepted`/`rejected` and `signal.assigned` notifications are server-fired
+ * (#2470) — the former from `apps/web/.../webhooks/proposal/*`, the latter from
+ * `createCoherenceAction`/`updateCoherenceSignalBySlugAction` — both via `dispatch()`, not
+ * client-triggered. No `notifyProposal*`/`notifySignalAssigned` methods on
+ * `UseSendNotificationsReturn` below. `NotifyProposalCreatedInput` survives only because
+ * `PostNotifyProposalCreatedInput` (the on-chain-event → routing callback used after publishing a
+ * proposal) still needs its shape.
+ */
 export interface NotifyProposalCreatedInput {
   proposalId: bigint;
   spaceId: bigint;
   creator: `0x${string}`;
   url?: string;
-}
-export interface NotifyProposalAcceptedInput {
-  proposalId: bigint;
-}
-export interface NotifyProposalRejectedInput {
-  proposalId: bigint;
 }
 
 export interface NotifyChatMentionInput {
@@ -18,15 +21,6 @@ export interface NotifyChatMentionInput {
   messagePreview?: string;
   /** Human-readable context, e.g. signal title or space name — used in email copy. */
   contextLabel?: string;
-  url: string;
-}
-
-export interface NotifySignalAssignedInput {
-  /** Hypha person ids of the assignees. The caller is never notified. */
-  assigneePersonIds: number[];
-  signalTitle: string;
-  spaceTitle?: string;
-  actorDisplayName?: string;
   url: string;
 }
 
@@ -42,18 +36,11 @@ export interface NotifyCallStartedInput {
   url: string;
 }
 
-export interface PostNotifyProposalCreatedInput
-  extends NotifyProposalCreatedInput {
-  sendNotifications?: (arg: NotifyProposalCreatedInput) => Promise<void>;
-}
+export type PostNotifyProposalCreatedInput = NotifyProposalCreatedInput;
 
 export interface UseSendNotificationsReturn {
-  notifyProposalCreated: (arg: NotifyProposalCreatedInput) => Promise<void>;
-  notifyProposalAccepted: (arg: NotifyProposalAcceptedInput) => Promise<void>;
-  notifyProposalRejected: (arg: NotifyProposalRejectedInput) => Promise<void>;
   notifyChatMention: (arg: NotifyChatMentionInput) => Promise<void>;
   notifyCallStarted: (arg: NotifyCallStartedInput) => Promise<void>;
-  notifySignalAssigned: (arg: NotifySignalAssignedInput) => Promise<void>;
 }
 
 export interface UseSendNotificationsInput {

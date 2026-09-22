@@ -4,22 +4,11 @@ import useSWRMutation from 'swr/mutation';
 import {
   NotifyCallStartedInput,
   NotifyChatMentionInput,
-  NotifyProposalAcceptedInput,
-  NotifyProposalCreatedInput,
-  NotifyProposalRejectedInput,
-  NotifySignalAssignedInput,
   UseSendNotificationsHook,
   UseSendNotificationsInput,
   UseSendNotificationsReturn,
 } from '@hypha-platform/core/client';
-import {
-  notifyCallStartedAction,
-  notifyChatMentionAction,
-  notifyProposalAcceptedAction,
-  notifyProposalCreatedAction,
-  notifyProposalRejectedAction,
-  notifySignalAssignedAction,
-} from '../actions';
+import { notifyCallStartedAction, notifyChatMentionAction } from '../actions';
 
 const noOp = async () => {
   console.warn('Cannot send notification empty authToken');
@@ -28,30 +17,6 @@ const noOp = async () => {
 export const useSendNotifications: UseSendNotificationsHook = ({
   authToken,
 }: UseSendNotificationsInput): UseSendNotificationsReturn => {
-  const { trigger: notifyProposalCreated } = useSWRMutation(
-    authToken ? [authToken, 'notifyProposalCreated'] : null,
-    async (
-      [authToken],
-      {
-        arg,
-      }: {
-        arg: NotifyProposalCreatedInput;
-      },
-    ) => notifyProposalCreatedAction(arg, { authToken }),
-  );
-
-  const { trigger: notifyProposalAccepted } = useSWRMutation(
-    authToken ? [authToken, 'notifyProposalAccepted'] : null,
-    async ([authToken], { arg }: { arg: NotifyProposalAcceptedInput }) =>
-      notifyProposalAcceptedAction(arg, { authToken }),
-  );
-
-  const { trigger: notifyProposalRejected } = useSWRMutation(
-    authToken ? [authToken, 'notifyProposalRejected'] : null,
-    async ([authToken], { arg }: { arg: NotifyProposalRejectedInput }) =>
-      notifyProposalRejectedAction(arg, { authToken }),
-  );
-
   const { trigger: notifyChatMention } = useSWRMutation(
     authToken ? [authToken, 'notifyChatMention'] : null,
     async ([authToken], { arg }: { arg: NotifyChatMentionInput }) =>
@@ -64,18 +29,8 @@ export const useSendNotifications: UseSendNotificationsHook = ({
       notifyCallStartedAction(arg, { authToken }),
   );
 
-  const { trigger: notifySignalAssigned } = useSWRMutation(
-    authToken ? [authToken, 'notifySignalAssigned'] : null,
-    async ([authToken], { arg }: { arg: NotifySignalAssignedInput }) =>
-      notifySignalAssignedAction(arg, { authToken }),
-  );
-
   return {
-    notifyProposalCreated: authToken ? notifyProposalCreated : noOp,
-    notifyProposalAccepted: authToken ? notifyProposalAccepted : noOp,
-    notifyProposalRejected: authToken ? notifyProposalRejected : noOp,
     notifyChatMention: authToken ? notifyChatMention : noOp,
     notifyCallStarted: authToken ? notifyCallStarted : noOp,
-    notifySignalAssigned: authToken ? notifySignalAssigned : noOp,
   };
 };
