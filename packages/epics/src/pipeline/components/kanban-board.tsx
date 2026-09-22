@@ -25,7 +25,7 @@ export function KanbanBoard({
   probabilities,
 }: KanbanBoardProps) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="flex overflow-x-auto pb-2">
       {PIPELINE_STATUSES.map((status) => (
         <KanbanColumn
           key={status}

@@ -67,9 +67,9 @@ export function KanbanColumn({
     <div
       ref={columnRef}
       className={cn(
-        'flex min-h-[220px] shrink-0 flex-col rounded-lg border border-neutral-5 bg-neutral-2/40',
+        'flex min-h-[220px] shrink-0 flex-col border-r border-border/50 bg-transparent last:border-r-0',
         wide ? 'w-[280px]' : 'w-[220px]',
-        isOver && 'border-accent-8 bg-accent-2/30',
+        isOver && 'bg-foreground/[0.03]',
       )}
       onDragOver={(event) => {
         handleColumnDragOver(event);
@@ -89,7 +89,7 @@ export function KanbanColumn({
         }
       }}
     >
-      <div className="border-b border-neutral-5 px-3 py-2">
+      <div className="border-b border-border/40 px-3 py-2">
         <div className="text-2 font-medium text-neutral-12">{status}</div>
         <div className="mt-0.5 text-1 text-neutral-11">
           {deals.length} · {formatTotals((totals) => totals.total)} ·{' '}
