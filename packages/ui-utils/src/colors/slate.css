@@ -1,6 +1,7 @@
 /**
  * Neutral and background scale — warm paper in light, ink family in dark.
- * Paper #fbfaf8 · ink #030615 · deep #091025 · mid #1c2746 (never oklch blue fills).
+ * Paper #fbfaf8 · Panel #eae8e1 · Wash #0d1013 · ink #030615 (dark only for fills).
+ * Light filled steps never mix cool ink; that reads as Tailwind slate.
  */
 
 :root,
@@ -8,18 +9,18 @@
 .light-theme {
   --slate-1: var(--hypha-paper);
   --slate-2: #ffffff;
-  --slate-3: color-mix(in srgb, var(--hypha-ink) 4%, var(--hypha-paper));
-  --slate-4: color-mix(in srgb, var(--hypha-ink) 7%, var(--hypha-paper));
-  --slate-5: color-mix(in srgb, var(--hypha-ink) 11%, var(--hypha-paper));
-  --slate-6: color-mix(in srgb, var(--hypha-ink) 16%, var(--hypha-paper));
-  --slate-7: color-mix(in srgb, var(--hypha-ink) 28%, var(--hypha-paper));
-  --slate-8: color-mix(in srgb, var(--hypha-ink) 42%, var(--hypha-paper));
+  --slate-3: color-mix(in srgb, var(--hypha-panel) 42%, var(--hypha-paper));
+  --slate-4: color-mix(in srgb, var(--hypha-panel) 72%, var(--hypha-paper));
+  --slate-5: var(--hypha-panel);
+  --slate-6: color-mix(in srgb, var(--hypha-wash) 12%, var(--hypha-panel));
+  --slate-7: color-mix(in srgb, var(--hypha-wash) 24%, var(--hypha-panel));
+  --slate-8: color-mix(in srgb, var(--hypha-wash) 40%, var(--hypha-panel));
   --slate-9: var(--hypha-text-dim);
-  --slate-10: color-mix(in srgb, var(--hypha-ink) 62%, var(--hypha-paper));
-  --slate-11: color-mix(in srgb, var(--hypha-ink) 78%, var(--hypha-paper));
+  --slate-10: color-mix(in srgb, var(--hypha-wash) 58%, var(--hypha-panel));
+  --slate-11: color-mix(in srgb, var(--hypha-wash) 72%, var(--hypha-panel));
   --slate-12: var(--hypha-ink);
 
-  --slate-alpha-8: color-mix(in srgb, var(--hypha-ink) 28%, transparent);
+  --slate-alpha-8: color-mix(in srgb, var(--hypha-wash) 28%, transparent);
 }
 
 .dark,

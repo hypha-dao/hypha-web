@@ -1,8 +1,9 @@
 @import '../../colors/slate.css';
 
 /**
- * App surface scale from ink/paper (slate.css). Step 1 is the open canvas
- * token; open layouts use transparent craft-page-canvas so mycelium shows.
+ * App surface scale from warm paper / panel (slate.css). Step 1 is the open
+ * canvas token; open layouts use transparent craft-page-canvas so mycelium shows.
+ * Step 2 stays white for elevated cards; steps 3–5 are website panel family.
  */
 :root,
 .light,

@@ -217,20 +217,24 @@
 .craft-card-interactive:hover {
   border-color: color-mix(
     in oklab,
-    var(--space-accent, var(--color-accent-9, var(--border))) 28%,
+    var(--space-accent, var(--hypha-wash, var(--border))) 28%,
     var(--border)
   );
+  /*
+   * Warm paper lift — never fall back to accent-9 (ink). Mixing 10% ink into
+   * white reads as cool slate (#e0e1e3), not website panel.
+   */
   background: color-mix(
     in oklab,
-    var(--background-2, var(--card)) 90%,
-    var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+    var(--background-2, var(--card)) 82%,
+    var(--space-accent, var(--hypha-panel, var(--muted))) 18%
   );
 }
 
 .craft-row-interactive:hover {
   background: color-mix(
     in oklab,
-    var(--background-2, var(--card)) 90%,
-    var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+    var(--background-2, var(--card)) 82%,
+    var(--space-accent, var(--hypha-panel, var(--muted))) 18%
   );
 }

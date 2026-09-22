@@ -7,13 +7,13 @@
 .light,
 .light-theme {
   --accent-1: var(--hypha-paper);
-  --accent-2: color-mix(in srgb, var(--hypha-ink) 4%, var(--hypha-paper));
-  --accent-3: color-mix(in srgb, var(--hypha-ink) 7%, var(--hypha-paper));
-  --accent-4: color-mix(in srgb, var(--hypha-ink) 11%, var(--hypha-paper));
-  --accent-5: color-mix(in srgb, var(--hypha-ink) 16%, var(--hypha-paper));
-  --accent-6: color-mix(in srgb, var(--hypha-ink) 24%, var(--hypha-paper));
-  --accent-7: color-mix(in srgb, var(--hypha-ink) 38%, var(--hypha-paper));
-  --accent-8: color-mix(in srgb, var(--hypha-ink) 55%, var(--hypha-paper));
+  --accent-2: color-mix(in srgb, var(--hypha-panel) 42%, var(--hypha-paper));
+  --accent-3: color-mix(in srgb, var(--hypha-panel) 72%, var(--hypha-paper));
+  --accent-4: var(--hypha-panel);
+  --accent-5: color-mix(in srgb, var(--hypha-wash) 12%, var(--hypha-panel));
+  --accent-6: color-mix(in srgb, var(--hypha-wash) 24%, var(--hypha-panel));
+  --accent-7: color-mix(in srgb, var(--hypha-wash) 40%, var(--hypha-panel));
+  --accent-8: color-mix(in srgb, var(--hypha-wash) 58%, var(--hypha-panel));
   --accent-9: var(--hypha-ink);
   --accent-10: var(--hypha-deep);
   --accent-11: var(--hypha-ink);
