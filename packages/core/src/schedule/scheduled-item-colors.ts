@@ -1,11 +1,14 @@
 import type { ScheduledItemType } from './scheduled-item-types';
 
-/** Default accent colors per scheduled item type (FullCalendar event background). */
+/**
+ * Neutral panel step. Calendar chips do not use a per-type hue:
+ * a space paints them with `--space-accent`, otherwise `#121212`.
+ */
 export const SCHEDULED_ITEM_TYPE_COLORS: Record<ScheduledItemType, string> = {
-  call: '#6366f1',
-  event: '#0ea5e9',
-  meeting: '#8b5cf6',
-  booking: '#14b8a6',
+  call: '#121212',
+  event: '#121212',
+  meeting: '#121212',
+  booking: '#121212',
 };
 
 export function getScheduledItemTypeColor(

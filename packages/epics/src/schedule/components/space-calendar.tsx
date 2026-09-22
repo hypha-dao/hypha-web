@@ -13,7 +13,6 @@ import type {
   EventClickArg,
   EventContentArg,
   EventDropArg,
-  EventMountArg,
   SlotLabelContentArg,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
@@ -431,16 +430,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     setEventSheetOpen(true);
   };
 
-  const handleEventDidMount = React.useCallback((info: EventMountArg) => {
-    const accent =
-      typeof info.event.extendedProps.accentColor === 'string'
-        ? info.event.extendedProps.accentColor
-        : null;
-    if (accent) {
-      info.el.style.setProperty('--hypha-cal-accent', accent);
-    }
-  }, []);
-
   const persistAfterMutation = async () => {
     await refresh();
     await revalidateScheduledItems(spaceSlug);
@@ -668,7 +657,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               datesSet={handleDatesSet}
               select={handleDateSelect}
               eventClick={handleEventClick}
-              eventDidMount={handleEventDidMount}
               eventContent={renderEventContent}
               dayHeaderContent={renderDayHeader}
               dayCellContent={renderDayCellContent}
