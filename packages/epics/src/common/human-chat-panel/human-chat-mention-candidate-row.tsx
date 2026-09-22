@@ -1,7 +1,6 @@
 'use client';
 
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
@@ -76,7 +75,7 @@ export function HumanChatMentionCandidateRow({
         avatarSrc={avatarSrc}
         userName={resolvedName}
         size="sm"
-        className={cn('shrink-0', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
+        className="shrink-0 rounded-full"
         isLoading={busy}
       />
       <span className="min-w-0 flex-1 truncate font-medium leading-snug">

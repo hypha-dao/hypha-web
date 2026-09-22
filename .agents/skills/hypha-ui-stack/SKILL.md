@@ -38,8 +38,9 @@ The hypha-web design system is built on Tailwind CSS 4, shadcn/ui, and Radix UI 
 ## Radix UI Colors
 
 - **Format:** 12-step scales (1–12) for each semantic palette
-- **Color space:** OKLCH
-- **Palettes:** accent (indigo), neutral (slate), background (gray), error (red), success (green), warning (amber), info (sky)
+- **Color space:** Hypha accent + slate use `color-mix(in srgb, …)` over ink/paper tokens (`theme/colors/accent.css`, `colors/slate.css`). Other semantic scales may still use OKLCH where unchanged.
+- **Palettes:** accent (achromatic globally — ink/paper; hue only inside `[data-space-accent-scope]`), neutral (slate), background (gray), error (red), success (green), warning (amber), info (sky)
+- **Do not** reintroduce indigo as the global accent or assume an OKLCH-only scale for accent/slate
 
 ### Scale Mapping (Radix convention)
 

@@ -894,17 +894,12 @@ export function AiPanelMessageBubble({
       )}
     >
       {isUser ? (
-        <div
-          className={cn(
-            'mt-px h-7 w-7 shrink-0 self-start overflow-hidden',
-            APP_CHROME_SUBTLE_SQUARE_RADIUS,
-          )}
-        >
+        <div className="mt-px h-7 w-7 shrink-0 self-start overflow-hidden rounded-full">
           <PersonAvatar
             size="sm"
             avatarSrc={userAvatarUrl?.trim() || undefined}
             userName={userDisplayName?.trim() || undefined}
-            className={cn('h-full w-full', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
+            className="h-full w-full rounded-full"
           />
         </div>
       ) : (
