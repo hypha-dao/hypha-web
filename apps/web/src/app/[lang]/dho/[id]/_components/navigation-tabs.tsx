@@ -133,9 +133,9 @@ export function NavigationTabs({
               <TabsTrigger asChild key={key} value={key} variant="ghost">
                 <Link
                   href={href}
-                  className="flex w-full items-center justify-center gap-1.5"
+                  className="flex w-full items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
                 >
-                  <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                  <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
                   {labelFor(key)}
                 </Link>
               </TabsTrigger>
@@ -152,7 +152,11 @@ export function NavigationTabs({
                   aria-label={t('moreNav')}
                 >
                   {t('moreNav')}
-                  <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+                  <ChevronDown
+                    className="craft-icon"
+                    strokeWidth={1.25}
+                    aria-hidden
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
@@ -168,10 +172,14 @@ export function NavigationTabs({
                           // Space accent mirrors a light-mode ramp to `:root`; accent-3/12
                           // pairs wash out in dark mode. Tint + foreground matches AI nav.
                           active &&
-                            'bg-accent-9/18 text-foreground data-[highlighted]:bg-accent-9/25 data-[highlighted]:text-foreground',
+                            'text-foreground data-[highlighted]:text-foreground',
                         )}
                       >
-                        <Icon className="size-4 shrink-0" aria-hidden />
+                        <Icon
+                          className="craft-icon"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
                         {labelFor(key)}
                       </Link>
                     </DropdownMenuItem>

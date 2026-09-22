@@ -252,7 +252,9 @@ export function HyphaNetworkFeedbackTrigger({
   const [open, setOpen] = useState(false);
   const t = useTranslations('NetworkFeedback');
 
-  const triggerIcon = <HeartHandshake className="craft-icon" aria-hidden />;
+  const triggerIcon = (
+    <HeartHandshake className="craft-icon" strokeWidth={1.25} aria-hidden />
+  );
 
   return (
     <>
@@ -260,7 +262,10 @@ export function HyphaNetworkFeedbackTrigger({
         type="button"
         variant="ghost"
         colorVariant="neutral"
-        className={cn('gap-1.5 hover:bg-neutral-3', className)}
+        className={cn(
+          'gap-1.5 text-current hover:bg-neutral-3 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-current',
+          className,
+        )}
         aria-label={t('triggerAriaLabel')}
         onClick={() => setOpen(true)}
       >

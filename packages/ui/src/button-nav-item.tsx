@@ -27,7 +27,9 @@ export const ButtonNavItem = ({
   const content = (
     <>
       {icon ? (
-        <span className="mr-1.5 inline-flex shrink-0">{icon}</span>
+        <span className="mr-1.5 inline-flex shrink-0 items-center text-current [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]">
+          {icon}
+        </span>
       ) : null}
       {label}
     </>

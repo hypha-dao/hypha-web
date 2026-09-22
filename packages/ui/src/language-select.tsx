@@ -26,16 +26,17 @@ type LanguageSelectProps = {
 
 /**
  * MenuTop language trigger — same 36px chrome rhythm as icon buttons / avatar.
- * Square corners, hairline ring, no shadow; quiet ink + thin Lucide globe.
+ * Square, quiet ink, no ring slab; thin Lucide globe matching label colour.
  */
 const languageTriggerClassName = cn(
   'box-border flex h-[36px] min-h-[36px] shrink-0 cursor-pointer items-center gap-1.5 px-2.5',
-  'isolate overflow-hidden rounded-none bg-transparent text-muted-foreground outline-none',
-  'text-[11px] font-semibold uppercase tracking-[0.12em] ring-1 ring-border/70',
+  'isolate overflow-hidden rounded-none bg-transparent text-neutral-11 outline-none',
+  'text-[11px] font-semibold uppercase tracking-[0.12em]',
   'transition-colors duration-150',
   'hover:bg-foreground/5 hover:text-foreground',
   'focus-visible:ring-1 focus-visible:ring-ring',
   'data-[state=open]:bg-foreground/5 data-[state=open]:text-foreground',
+  '[&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-current',
 );
 
 export function LanguageSelect({
@@ -56,7 +57,7 @@ export function LanguageSelect({
           data-language-select-trigger
           className={languageTriggerClassName}
         >
-          <Globe className="craft-icon" aria-hidden />
+          <Globe className="craft-icon" strokeWidth={1.25} aria-hidden />
           <span className="sr-only">{currentMeta?.label ?? currentLocale}</span>
           <span className="leading-none tabular-nums" aria-hidden>
             {currentMeta?.shortLabel ?? currentLocale.toUpperCase()}

@@ -84,15 +84,13 @@ function resolveNavItemIcon(href?: string) {
     return null;
   }
   if (href.includes('/my-spaces')) {
-    return (
-      <LayoutGrid className="craft-icon text-muted-foreground" aria-hidden />
-    );
+    return <LayoutGrid className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/my-wallet')) {
-    return <Wallet className="craft-icon text-muted-foreground" aria-hidden />;
+    return <Wallet className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/network')) {
-    return <Globe2 className="craft-icon text-muted-foreground" aria-hidden />;
+    return <Globe2 className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   return null;
 }
