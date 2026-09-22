@@ -519,31 +519,31 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="craft-page-header">
-          <h1 className="craft-page-title text-6 font-medium">
-            {t('title')}
-            {typeof itemCount === 'number' ? (
-              <span className="ml-2 text-4 font-normal text-muted-foreground">
-                | {intlFormat.number(itemCount)}
-              </span>
-            ) : isLoading ? (
-              <span className="ml-2 text-4 font-normal text-muted-foreground">
-                | …
-              </span>
-            ) : null}
-          </h1>
-        </div>
+      <header className="flex w-full flex-nowrap items-center justify-between gap-3">
+        <h1 className="craft-page-title min-w-0 text-6 font-medium">
+          {t('title')}
+          {typeof itemCount === 'number' ? (
+            <span className="ml-2 text-4 font-normal text-muted-foreground">
+              | {intlFormat.number(itemCount)}
+            </span>
+          ) : isLoading ? (
+            <span className="ml-2 text-4 font-normal text-muted-foreground">
+              | …
+            </span>
+          ) : null}
+        </h1>
         {isAuthenticated ? (
-          <Button
-            type="button"
-            onClick={() =>
-              openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
-            }
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t('newItem')}
-          </Button>
+          <div className="shrink-0">
+            <Button
+              type="button"
+              onClick={() =>
+                openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t('newItem')}
+            </Button>
+          </div>
         ) : null}
       </header>
 
