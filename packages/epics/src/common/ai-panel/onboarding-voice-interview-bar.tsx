@@ -25,40 +25,14 @@ type OnboardingVoiceInterviewBarProps = {
 function VoiceOrb({ phase }: { phase: VoiceInterviewPhase }) {
   const active = phase === 'listening' || phase === 'speaking';
   return (
-    <div className="relative flex h-16 w-16 items-center justify-center">
-      {active ? (
-        <>
-          <span
-            className={cn(
-              'absolute inset-0 rounded-full opacity-40 blur-md',
-              phase === 'listening' ? 'bg-info-9' : 'bg-accent-9',
-            )}
-            aria-hidden
-          />
-          <span
-            className={cn(
-              'absolute inset-1 animate-pulse rounded-full border',
-              phase === 'listening'
-                ? 'border-info-8/60 bg-info-3/30'
-                : 'border-accent-8/60 bg-accent-3/30',
-            )}
-            aria-hidden
-          />
-        </>
-      ) : null}
-      <span
-        className={cn(
-          'relative flex h-12 w-12 items-center justify-center rounded-full border shadow-sm',
-          phase === 'listening'
-            ? 'border-info-8 bg-info-9 text-info-contrast'
-            : phase === 'speaking'
-            ? 'border-accent-8 bg-accent-9 text-accent-contrast'
-            : 'border-border bg-muted text-foreground',
-        )}
-      >
-        <LiveVoiceMicIcon size="md" />
-      </span>
-    </div>
+    <span
+      className={cn(
+        'flex size-12 items-center justify-center rounded-none border border-foreground/15 bg-transparent text-foreground shadow-none',
+        active && 'border-foreground/40 bg-foreground/5',
+      )}
+    >
+      <LiveVoiceMicIcon size="md" />
+    </span>
   );
 }
 
@@ -128,22 +102,13 @@ export function OnboardingVoiceInterviewBar({
     transport === 'realtime' && (isRealtimeConnected || isConnecting);
 
   return (
-    <div className="border-t border-border/70 bg-background/90 px-4 py-4 md:px-5">
+    <div className="border-t border-foreground/15 bg-transparent px-4 py-4 md:px-5">
       <div className="mb-1 flex items-center justify-center gap-2">
         <p className="text-center text-sm font-medium text-foreground">
           {t('onboardingVoiceInterviewTitle')}
         </p>
         {transportBadgeLabel ? (
-          <span
-            className={cn(
-              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-              transport === 'realtime' && isRealtimeConnected
-                ? 'bg-accent-9/15 text-accent-11'
-                : transport === 'realtime'
-                ? 'bg-info-9/15 text-info-11'
-                : 'bg-muted text-muted-foreground',
-            )}
-          >
+          <span className="rounded-none border border-foreground/15 bg-transparent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {transportBadgeLabel}
           </span>
         ) : null}
@@ -185,7 +150,7 @@ export function OnboardingVoiceInterviewBar({
           >
             {phase === 'listening' ? (
               <>
-                <MicOff className="size-4" aria-hidden />
+                <MicOff className="size-3.5" strokeWidth={1.25} aria-hidden />
                 {t('onboardingVoiceFinishTurn')}
               </>
             ) : (

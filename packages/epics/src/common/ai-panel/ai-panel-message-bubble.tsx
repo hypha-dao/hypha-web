@@ -8,7 +8,6 @@ import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
@@ -905,8 +904,7 @@ export function AiPanelMessageBubble({
       ) : (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden border border-border/60 bg-muted/25',
-            APP_CHROME_SUBTLE_SQUARE_RADIUS,
+            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-none border border-foreground/15 bg-transparent',
             alignSingleLine ? 'mt-0' : 'mt-px',
           )}
         >
@@ -919,7 +917,10 @@ export function AiPanelMessageBubble({
               onError={() => setAssistantImageFailed(true)}
             />
           ) : (
-            <Sparkles className="craft-icon-sm text-muted-foreground" />
+            <Sparkles
+              className="size-3.5 text-muted-foreground"
+              strokeWidth={1.25}
+            />
           )}
         </div>
       )}
@@ -938,13 +939,11 @@ export function AiPanelMessageBubble({
         ) : null}
         <div
           className={cn(
-            // Asymmetric chat silhouette: three rounded + one sharp toward the
-            // speaker. inline-flex + w-fit keeps the fill hugging copy.
-            // Production type scale (text-sm / 14px); keep compact pad/gap.
-            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-xl px-2.5 py-1.5 text-sm leading-snug',
+            // Square chat chrome — website foundation (radius 0).
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none px-2.5 py-1.5 text-sm leading-snug shadow-none',
             isUser
-              ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_10%,transparent)] text-foreground'
-              : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
+              ? 'border border-foreground/15 bg-foreground/5 text-foreground'
+              : 'border border-foreground/15 bg-transparent text-foreground',
           )}
         >
           {hasVisibleText && (
