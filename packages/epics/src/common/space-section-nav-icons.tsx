@@ -15,13 +15,19 @@ import {
 } from 'lucide-react';
 import type { SpaceSectionNavKey } from './space-section-nav';
 
-function MemorySectionNavIcon({ className }: { className?: string }) {
+function MemorySectionNavIcon({
+  className,
+  strokeWidth = 1.25,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.75"
+      strokeWidth={strokeWidth}
       className={className}
       aria-hidden
     >
@@ -34,7 +40,7 @@ function MemorySectionNavIcon({ className }: { className?: string }) {
 /** Shared icon map for space section nav (main tabs + AI left rail). */
 export const SPACE_SECTION_NAV_ICONS: Record<
   SpaceSectionNavKey,
-  ComponentType<{ className?: string }>
+  ComponentType<{ className?: string; strokeWidth?: number }>
 > = {
   overview: House,
   agreements: FileCheck2,

@@ -264,7 +264,7 @@ type ChatUIMessage = {
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const MENU_BUTTON_CLASS =
-  'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
+  'h-10 w-full rounded-none border-0 border-b border-transparent bg-transparent p-0 text-sm font-medium text-foreground shadow-none transition-colors hover:border-transparent hover:bg-transparent hover:text-foreground active:bg-transparent data-[active=true]:border-accent-9 data-[active=true]:!bg-transparent data-[active=true]:text-foreground data-[active=true]:shadow-none group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-none group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!p-0 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-current';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
 const MENU_ROW_LINK_BASE_CLASS = 'flex h-full w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
@@ -755,12 +755,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     (item: NavItem, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
       const showLabel = mode === 'expanded';
       const isDisabled = item.disabled === true;
-      const iconClassName = `craft-icon${
-        item.active ? ' text-foreground' : ''
-      }`;
-      const labelClassName = `min-w-0 truncate${
-        showLabel && item.active ? ' text-foreground' : ''
-      }`;
+      const iconClassName = 'craft-icon';
+      const labelClassName = 'min-w-0 truncate';
       const rowClassName = `${MENU_ROW_LINK_BASE_CLASS} ${
         showLabel ? MENU_ROW_LINK_EXPANDED_CLASS : MENU_ROW_LINK_COLLAPSED_CLASS
       } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`;
@@ -780,7 +776,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
                 className={rowClassName}
               >
                 <span className={ICON_COLUMN_CLASS}>
-                  <item.icon className={iconClassName} />
+                  <item.icon className={iconClassName} strokeWidth={1.25} />
                 </span>
                 {showLabel ? (
                   <span className={labelClassName}>{item.label}</span>
@@ -795,7 +791,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
                 className={rowClassName}
               >
                 <span className={ICON_COLUMN_CLASS}>
-                  <item.icon className={iconClassName} />
+                  <item.icon className={iconClassName} strokeWidth={1.25} />
                 </span>
                 {showLabel ? (
                   <span className={labelClassName}>{item.label}</span>
