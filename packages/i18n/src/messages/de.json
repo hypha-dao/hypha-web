@@ -4272,6 +4272,8 @@
     "exportXlsx": "XLSX exportieren",
     "weightedAbbr": "gew.",
     "openTrack": "Track öffnen",
+    "laneCollapse": "Kategorie einklappen",
+    "laneExpand": "Kategorie ausklappen",
     "backToBoard": "Zurück zum Board",
     "trackTitle": "{swimlane}-Track",
     "summary": {

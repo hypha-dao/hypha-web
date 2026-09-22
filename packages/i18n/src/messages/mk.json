@@ -4259,6 +4259,8 @@
     "exportXlsx": "Извези XLSX",
     "weightedAbbr": "понд.",
     "openTrack": "Отвори трака",
+    "laneCollapse": "Собери категорија",
+    "laneExpand": "Отвори категорија",
     "backToBoard": "Назад кон табла",
     "trackTitle": "{swimlane} трака",
     "summary": {
