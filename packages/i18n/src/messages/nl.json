@@ -1020,13 +1020,18 @@
         "code": "COP",
         "name": "Colombiaanse peso",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Australische dollar",
+        "payoutMethod": "Alleen identiteitsverificatie"
       }
     },
     "initialSetup": {
       "organizationLegend": "Organisatiegegevens",
       "organizationHint": "Organisatiegegevens worden ter verificatie naar onze bankpartner gestuurd en worden niet op Hypha opgeslagen.",
       "legalName": "Naam van juridische entiteit",
-      "contactEmail": "E-mailadres van de Bridge-klant",
+      "contactEmail": "Contact-e-mail",
       "currenciesTitle": "Valuta's die u wilt gebruiken",
       "currenciesDescription": "Selecteer de valuta's die deze ruimte zal gebruiken voor bankstortingen en uitbetalingen. Uw organisatie wordt eenmalig geverifieerd bij onze bankpartner.",
       "currenciesHint": "U kunt later meer valuta's toevoegen via Bankinstellingen.",
@@ -1038,7 +1043,9 @@
         "currenciesDescription": "Selecteer de valuta die u wilt gebruiken voor bankuitbetalingen. U wordt eenmalig geverifieerd bij onze bankpartner."
       },
       "bypassEligibleHint": "Dit is uw eigen geverifieerde e-mailadres — geen extra bevestigingsstap nodig.",
-      "confirmationRequiredHint": "We sturen een bevestigingslink naar dit adres voordat we het inschakelen, omdat dit niet uw eigen geverifieerde e-mailadres is."
+      "confirmationRequiredHint": "We sturen een bevestigingslink naar dit adres voordat we het inschakelen, omdat dit niet uw eigen geverifieerde e-mailadres is.",
+      "providerFieldsTitle": "Aanvullende verificatiegegevens",
+      "providerFieldsHint": "Er zijn een paar extra gegevens nodig om de geselecteerde valuta's te verifiëren."
     },
     "notStarted": {
       "description": "Bankieren is nog niet ingesteld voor deze ruimte.",
@@ -1261,6 +1268,31 @@
       "description": "We hebben een bevestigingslink gestuurd naar het e-mailadres dat u hebt ingevoerd. Klik erop om door te gaan met het instellen van banking — we nemen pas contact op met Bridge zodra u heeft bevestigd.",
       "resendCta": "Bevestigingsmail opnieuw versturen",
       "resending": "Opnieuw verzenden…"
+    },
+    "onboardingFields": {
+      "contactEmail": "Contact-e-mail",
+      "legalName": "Wettelijke naam van de entiteit",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "middleName": "Tweede naam",
+      "phoneNumber": "Telefoonnummer",
+      "dateOfBirth": "Geboortedatum",
+      "addressLine1": "Adresregel 1",
+      "addressLine2": "Adresregel 2",
+      "suburb": "Wijk",
+      "postcode": "Postcode",
+      "state": "Provincie/Staat",
+      "country": "Land",
+      "companyType": {
+        "label": "Type entiteit",
+        "individual": "Particulier",
+        "soleTrader": "Eenmanszaak",
+        "privateCompany": "Besloten vennootschap",
+        "publicCompany": "Naamloze vennootschap",
+        "trust": "Trust"
+      },
+      "registrationNumber": "Registratienummer",
+      "companyBusinessName": "Geregistreerde bedrijfsnaam"
     }
   },
   "TreasuryTab": {

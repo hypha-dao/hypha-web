@@ -21,7 +21,7 @@ import {
   hasApprovedBankCurrencies,
   isBankVerificationInProgress,
 } from '../banking-ui';
-import type { BankCurrencyCode } from '../bank-currency-display';
+import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import type { BankPayoutAccountPublic } from '../hooks/types';
 import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
 import { AddPayoutAccountDialog } from './add-payout-account-dialog';
@@ -217,13 +217,15 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     async (input: {
       legalName: string;
       contactEmail: string;
-      currencies: BankCurrencyCode[];
+      currencies: BankOnboardingCurrencyCode[];
+      onboardingFields: Record<string, string>;
     }) => {
       clearOnboardingError();
       await requestOnboarding({
         legalName: input.legalName,
         contactEmail: input.contactEmail,
         requestedRails: input.currencies,
+        onboardingFields: input.onboardingFields,
       });
       setShowEmailConfirmationResend(false);
       const updated = await refresh();

@@ -1020,18 +1020,25 @@
         "code": "COP",
         "name": "Colombian Peso",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Australian Dollar",
+        "payoutMethod": "Identity verification only"
       }
     },
     "initialSetup": {
       "organizationLegend": "Organization details",
       "organizationHint": "Organization details are sent to our banking partner for verification and are not stored on Hypha.",
       "legalName": "Legal entity name",
-      "contactEmail": "Bridge customer email",
+      "contactEmail": "Contact email",
       "bypassEligibleHint": "This is your own verified email — no extra confirmation step needed.",
       "confirmationRequiredHint": "We'll send a confirmation link to this address before enabling it, since it's not your own verified email on file.",
       "currenciesTitle": "Currencies you want to use",
       "currenciesDescription": "Select the currencies this space will use for bank deposits and payouts. Your organization will be verified once with our banking partner.",
       "currenciesHint": "You can add more currencies later from Banking settings.",
+      "providerFieldsTitle": "Additional verification details",
+      "providerFieldsHint": "A few extra details are needed to verify against the currencies you selected.",
       "submit": "Continue",
       "person": {
         "organizationLegend": "Your details",
@@ -1039,6 +1046,31 @@
         "legalName": "Full name",
         "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
       }
+    },
+    "onboardingFields": {
+      "contactEmail": "Contact email",
+      "legalName": "Legal entity name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "middleName": "Middle name",
+      "phoneNumber": "Phone number",
+      "dateOfBirth": "Date of birth",
+      "addressLine1": "Address line 1",
+      "addressLine2": "Address line 2",
+      "suburb": "Suburb",
+      "postcode": "Postcode",
+      "state": "State",
+      "country": "Country",
+      "companyType": {
+        "label": "Entity type",
+        "individual": "Individual",
+        "soleTrader": "Sole trader",
+        "privateCompany": "Private company",
+        "publicCompany": "Public company",
+        "trust": "Trust"
+      },
+      "registrationNumber": "Registration number",
+      "companyBusinessName": "Registered business name"
     },
     "pendingEmailConfirmation": {
       "title": "Confirm your Bridge customer email",

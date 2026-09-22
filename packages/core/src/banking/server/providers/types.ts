@@ -105,6 +105,18 @@ export type BankOnboardingFieldDescriptor = {
   i18nLabelKey: string;
   /** Present when `kind` is `'select'`. */
   options?: ReadonlyArray<{ value: string; i18nLabelKey: string }>;
+  /**
+   * Declarative conditional-requirement rule, evaluated against another field's collected value
+   * (e.g. AUDD's `registrationNumber` is only required for non-`INDIVIDUAL` `companyType`s). Kept
+   * generic so the shared form renderer never needs provider-specific knowledge — each adapter
+   * encodes its own conditional logic here. `required` still gates whether the field renders as
+   * optional-looking when `requiredIf` is absent or doesn't match.
+   */
+  requiredIf?: {
+    key: string;
+    equals?: readonly string[];
+    notEquals?: readonly string[];
+  };
 };
 
 export type GetKycStatusInput = {

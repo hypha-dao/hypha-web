@@ -5,7 +5,39 @@ import { describe, expect, it, vi } from 'vitest';
 // so this stays a pure unit test of the per-pair filtering.
 vi.mock('@hypha-platform/core/client', () => ({
   BANK_VIRTUAL_ACCOUNT_CURRENCIES: ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'],
+  BANK_ONBOARDING_CURRENCIES: [
+    'eur',
+    'usd',
+    'gbp',
+    'mxn',
+    'brl',
+    'cop',
+    'aud',
+  ],
   BANK_PAYOUT_RAILS: {},
+  bankProviderManifest: {
+    bridge: {
+      supportedCurrencies: ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'],
+      requiredOnboardingFields: [
+        { key: 'contactEmail', kind: 'email', required: true, i18nLabelKey: 'x' },
+        { key: 'legalName', kind: 'text', required: true, i18nLabelKey: 'x' },
+      ],
+    },
+    audd: {
+      supportedCurrencies: ['aud'],
+      requiredOnboardingFields: [
+        { key: 'contactEmail', kind: 'email', required: true, i18nLabelKey: 'x' },
+        { key: 'firstName', kind: 'text', required: true, i18nLabelKey: 'x' },
+        {
+          key: 'registrationNumber',
+          kind: 'text',
+          required: false,
+          i18nLabelKey: 'x',
+          requiredIf: { key: 'companyType', notEquals: ['INDIVIDUAL'] },
+        },
+      ],
+    },
+  },
   getDestinationCurrenciesForSourceRail: (rail: string) =>
     rail === 'sepa' || rail === 'spei' ? ['usdc', 'eurc'] : ['usdc'],
   getDefaultDestinationCurrency: ({
@@ -26,7 +58,13 @@ vi.mock('@hypha-platform/core/client', () => ({
   },
 }));
 
-import { getAvailableAddAccountRailOptions } from './banking-ui';
+import {
+  areOnboardingFieldsComplete,
+  getAvailableAddAccountRailOptions,
+  getDedupedOnboardingFields,
+  isOnboardingFieldRequired,
+  resolveOnboardingCurrencyProviders,
+} from './banking-ui';
 import type {
   BankCustomerPublicStatus,
   BankRailPublicStatus,
@@ -143,5 +181,101 @@ describe('getAvailableAddAccountRailOptions (per-(currency,destination) dedup)',
     const options = getAvailableAddAccountRailOptions(status, []);
 
     expect(options[0]?.destinationCurrencies).toEqual(['usdc', 'eurc']);
+  });
+});
+
+describe('resolveOnboardingCurrencyProviders / getDedupedOnboardingFields (D1/D10)', () => {
+  it('resolves Bridge-only currencies to the bridge provider only', () => {
+    expect(resolveOnboardingCurrencyProviders(['eur', 'usd'])).toEqual([
+      'bridge',
+    ]);
+  });
+
+  it('resolves aud to the audd provider only', () => {
+    expect(resolveOnboardingCurrencyProviders(['aud'])).toEqual(['audd']);
+  });
+
+  it('resolves a mixed selection to both providers', () => {
+    expect(resolveOnboardingCurrencyProviders(['eur', 'aud'])).toEqual([
+      'bridge',
+      'audd',
+    ]);
+  });
+
+  it('dedupes the field union by key across providers', () => {
+    const fields = getDedupedOnboardingFields(['eur', 'aud']);
+    const keys = fields.map((f) => f.key);
+    expect(keys).toEqual([
+      'contactEmail',
+      'legalName',
+      'firstName',
+      'registrationNumber',
+    ]);
+  });
+
+  it('AUD-only fields exclude Bridge-only descriptors', () => {
+    const fields = getDedupedOnboardingFields(['aud']);
+    expect(fields.map((f) => f.key)).toEqual([
+      'contactEmail',
+      'firstName',
+      'registrationNumber',
+    ]);
+  });
+});
+
+describe('isOnboardingFieldRequired / areOnboardingFieldsComplete (requiredIf)', () => {
+  const registrationNumberField = getDedupedOnboardingFields(['aud']).find(
+    (f) => f.key === 'registrationNumber',
+  )!;
+
+  it('is not required when the dependency value is absent', () => {
+    expect(isOnboardingFieldRequired(registrationNumberField, {})).toBe(
+      false,
+    );
+  });
+
+  it('is not required when companyType is INDIVIDUAL', () => {
+    expect(
+      isOnboardingFieldRequired(registrationNumberField, {
+        companyType: 'INDIVIDUAL',
+      }),
+    ).toBe(false);
+  });
+
+  it('is required when companyType is a non-individual value', () => {
+    expect(
+      isOnboardingFieldRequired(registrationNumberField, {
+        companyType: 'TRUST',
+      }),
+    ).toBe(true);
+  });
+
+  it('areOnboardingFieldsComplete only enforces conditionally-required fields once triggered', () => {
+    const fields = getDedupedOnboardingFields(['aud']);
+
+    expect(
+      areOnboardingFieldsComplete(fields, {
+        contactEmail: 'a@b.com',
+        firstName: 'Ada',
+        companyType: 'INDIVIDUAL',
+      }),
+    ).toBe(true);
+
+    expect(
+      areOnboardingFieldsComplete(fields, {
+        contactEmail: 'a@b.com',
+        firstName: 'Ada',
+        companyType: 'TRUST',
+      }),
+    ).toBe(false);
+
+    expect(
+      areOnboardingFieldsComplete(fields, {
+        contactEmail: 'a@b.com',
+        firstName: 'Ada',
+        companyType: 'TRUST',
+        registrationNumber: '12345',
+      }),
+    ).toBe(true);
   });
 });

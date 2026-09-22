@@ -96,6 +96,8 @@ export type ProviderFormData = {
   legalName: string;
   contactEmail: string;
   requestedRails?: string[];
+  /** Provider-specific onboarding fields the dynamic form collected (D10). */
+  onboardingFields?: Record<string, string>;
 };
 
 export type BankOnboardingRequestInput = ProviderFormData;

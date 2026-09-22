@@ -111,7 +111,9 @@ export const AUDD_REQUIRED_ONBOARDING_FIELDS: readonly BankOnboardingFieldDescri
       key: 'companyType',
       kind: 'select',
       required: true,
-      i18nLabelKey: 'BankingTab.onboardingFields.companyType',
+      // `.label` avoids clashing with the nested `companyType.<option>` option-label keys below —
+      // next-intl can't resolve a key that is both a string leaf and an object with children.
+      i18nLabelKey: 'BankingTab.onboardingFields.companyType.label',
       options: [
         {
           value: 'INDIVIDUAL',
@@ -140,11 +142,16 @@ export const AUDD_REQUIRED_ONBOARDING_FIELDS: readonly BankOnboardingFieldDescri
       kind: 'text',
       required: false,
       i18nLabelKey: 'BankingTab.onboardingFields.registrationNumber',
+      requiredIf: { key: 'companyType', notEquals: ['INDIVIDUAL'] },
     },
     {
       key: 'companyBusinessName',
       kind: 'text',
       required: false,
       i18nLabelKey: 'BankingTab.onboardingFields.companyBusinessName',
+      requiredIf: {
+        key: 'companyType',
+        equals: [...AUDD_COMPANY_TYPES_NEEDING_BUSINESS_NAME],
+      },
     },
   ];

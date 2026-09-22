@@ -16,12 +16,17 @@ import {
 } from '@hypha-platform/ui';
 
 import {
-  BANK_CURRENCY_METAS,
+  BANK_ONBOARDING_CURRENCY_METAS,
   getDefaultBankCurrencyCodes,
-  type BankCurrencyCode,
+  type BankOnboardingCurrencyCode,
 } from '../bank-currency-display';
 import { CurrencyOptionRow } from './currency-option-row';
-import { BANKING_READONLY_INPUT_CLASS } from '../banking-ui';
+import { OnboardingFieldsForm } from './onboarding-fields-form';
+import {
+  areOnboardingFieldsComplete,
+  BANKING_READONLY_INPUT_CLASS,
+  getDedupedOnboardingFields,
+} from '../banking-ui';
 import {
   BANKING_DIALOG_CONTENT_CLASS,
   BANKING_DIALOG_FOOTER_CLASS,
@@ -38,7 +43,7 @@ type OpenSpaceAccountDialogProps = {
   onOpenChange: (open: boolean) => void;
   mode?: OpenSpaceAccountDialogMode;
   customerFieldsLocked?: boolean;
-  availableCurrencies?: BankCurrencyCode[];
+  availableCurrencies?: BankOnboardingCurrencyCode[];
   initialLegalName?: string;
   initialContactEmail?: string;
   isSubmitting: boolean;
@@ -46,7 +51,8 @@ type OpenSpaceAccountDialogProps = {
   onSubmit: (input: {
     legalName: string;
     contactEmail: string;
-    currencies: BankCurrencyCode[];
+    currencies: BankOnboardingCurrencyCode[];
+    onboardingFields: Record<string, string>;
   }) => Promise<void>;
 };
 
@@ -73,14 +79,17 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
     if (isAddMode) {
       return [];
     }
-    return BANK_CURRENCY_METAS.map((m) => m.currency);
+    return BANK_ONBOARDING_CURRENCY_METAS.map((m) => m.currency);
   }, [availableCurrencies, isAddMode]);
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [selected, setSelected] = useState<BankCurrencyCode[]>(() =>
+  const [selected, setSelected] = useState<BankOnboardingCurrencyCode[]>(() =>
     getDefaultBankCurrencyCodes().filter((c) => currencyOptions.includes(c)),
   );
+  const [onboardingFieldValues, setOnboardingFieldValues] = useState<
+    Record<string, string>
+  >({});
 
   const wasOpenRef = useRef(false);
 
@@ -98,12 +107,26 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
       currencyOptions.includes(c),
     );
     setSelected(defaults.length > 0 ? defaults : [...currencyOptions]);
+    setOnboardingFieldValues({});
   }, [open, initialLegalName, initialContactEmail, currencyOptions]);
 
-  const toggleCurrency = (currency: BankCurrencyCode, checked: boolean) => {
+  const toggleCurrency = (
+    currency: BankOnboardingCurrencyCode,
+    checked: boolean,
+  ) => {
     setSelected((current) =>
       checked ? [...current, currency] : current.filter((c) => c !== currency),
     );
+  };
+
+  // `contactEmail`/`legalName` already ride the fixed customer-fields inputs below — the dynamic
+  // section only needs to add whatever else a resolved provider declares (D10).
+  const dynamicFields = getDedupedOnboardingFields(selected).filter(
+    (field) => field.key !== 'contactEmail' && field.key !== 'legalName',
+  );
+
+  const handleOnboardingFieldChange = (key: string, value: string) => {
+    setOnboardingFieldValues((current) => ({ ...current, [key]: value }));
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -118,11 +141,15 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
     ) {
       return;
     }
+    if (!areOnboardingFieldsComplete(dynamicFields, onboardingFieldValues)) {
+      return;
+    }
 
     await onSubmit({
       legalName: legalName.trim(),
       contactEmail: contactEmail.trim(),
       currencies: selected,
+      onboardingFields: onboardingFieldValues,
     });
   };
 
@@ -231,6 +258,16 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
               )}
             </fieldset>
 
+            {dynamicFields.length > 0 ? (
+              <OnboardingFieldsForm
+                fields={dynamicFields}
+                values={onboardingFieldValues}
+                onChange={handleOnboardingFieldChange}
+                disabled={isSubmitting}
+                idPrefix="open-account"
+              />
+            ) : null}
+
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </form>
         </BankingDialogBody>
@@ -243,7 +280,8 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
             disabled={
               isSubmitting ||
               selected.length === 0 ||
-              currencyOptions.length === 0
+              currencyOptions.length === 0 ||
+              !areOnboardingFieldsComplete(dynamicFields, onboardingFieldValues)
             }
           >
             {isSubmitting ? (

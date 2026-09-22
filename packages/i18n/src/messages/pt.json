@@ -3568,13 +3568,18 @@
         "code": "COP",
         "name": "Peso colombiano",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Dólar australiano",
+        "payoutMethod": "Somente verificação de identidade"
       }
     },
     "initialSetup": {
       "organizationLegend": "Dados da organização",
       "organizationHint": "Os dados da organização são enviados ao nosso parceiro bancário para verificação e não são armazenados na Hypha.",
       "legalName": "Nome legal da entidade",
-      "contactEmail": "E-mail do cliente Bridge",
+      "contactEmail": "E-mail de contato",
       "currenciesTitle": "Moedas que deseja utilizar",
       "currenciesDescription": "Selecione as moedas que este space utilizará para depósitos e pagamentos bancários. Sua organização será verificada uma vez com nosso parceiro bancário.",
       "currenciesHint": "Você pode adicionar mais moedas depois nas configurações bancárias.",
@@ -3586,7 +3591,9 @@
         "currenciesDescription": "Selecione as moedas que deseja utilizar para pagamentos bancários. Você será verificado uma vez com nosso parceiro bancário."
       },
       "bypassEligibleHint": "Este é o seu próprio e-mail verificado — nenhuma etapa de confirmação extra é necessária.",
-      "confirmationRequiredHint": "Enviaremos um link de confirmação para este endereço antes de habilitá-lo, já que não é o seu próprio e-mail verificado registrado."
+      "confirmationRequiredHint": "Enviaremos um link de confirmação para este endereço antes de habilitá-lo, já que não é o seu próprio e-mail verificado registrado.",
+      "providerFieldsTitle": "Detalhes de verificação adicionais",
+      "providerFieldsHint": "Alguns detalhes extras são necessários para verificar as moedas selecionadas."
     },
     "notStarted": {
       "description": "Os serviços bancários ainda não estão configurados para este space.",
@@ -3809,6 +3816,31 @@
       "description": "Enviamos um link de confirmação para o endereço de e-mail que você informou. Clique nele para continuar configurando o banking — não entraremos em contato com a Bridge até que você confirme.",
       "resendCta": "Reenviar e-mail de confirmação",
       "resending": "Reenviando…"
+    },
+    "onboardingFields": {
+      "contactEmail": "E-mail de contato",
+      "legalName": "Nome legal da entidade",
+      "firstName": "Primeiro nome",
+      "lastName": "Sobrenome",
+      "middleName": "Nome do meio",
+      "phoneNumber": "Número de telefone",
+      "dateOfBirth": "Data de nascimento",
+      "addressLine1": "Endereço linha 1",
+      "addressLine2": "Endereço linha 2",
+      "suburb": "Bairro",
+      "postcode": "Código postal",
+      "state": "Estado",
+      "country": "País",
+      "companyType": {
+        "label": "Tipo de entidade",
+        "individual": "Pessoa física",
+        "soleTrader": "Empresário individual",
+        "privateCompany": "Empresa privada",
+        "publicCompany": "Empresa pública",
+        "trust": "Trust"
+      },
+      "registrationNumber": "Número de registro",
+      "companyBusinessName": "Nome empresarial registrado"
     }
   },
   "Calendar": {

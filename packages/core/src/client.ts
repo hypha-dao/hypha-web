@@ -31,3 +31,6 @@ export {
   isBypassEligible,
   normalizeEmailForBypass,
 } from './banking/normalize-email-for-bypass';
+export { BANK_ONBOARDING_CURRENCIES } from './banking/validation';
+export { bankProviderManifest } from './banking/server/providers/manifest';
+export type { BankOnboardingFieldDescriptor } from './banking/server/providers/types';
