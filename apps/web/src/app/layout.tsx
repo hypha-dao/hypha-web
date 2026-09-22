@@ -41,6 +41,7 @@ import { ConnectedLanguageSelect } from '@web/components/connected-language-sele
 import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
+import { MyceliumCanvas } from '@web/components/mycelium-canvas';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import { AppNavigationSessionCounter } from '@web/components/app-navigation-session-counter';
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
@@ -224,6 +225,7 @@ export default async function RootLayout({
 
   return (
     <Html lang={locale} className={hyphaFontVariables}>
+      <MyceliumCanvas />
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider
