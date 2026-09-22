@@ -2,18 +2,24 @@ import 'server-only';
 
 import { request as httpsRequest, Agent as HttpsAgent } from 'node:https';
 import { createHash } from 'node:crypto';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 /**
  * Thin HTTP client for AUDD's Gateway `/customer/*` API (Flow 1 — identity/KYC).
  *
  * Distilled from `audd-gateway-api-reference.md`. Every `/customer/*` call needs mutual TLS
  * (client cert registered against the Hypha company) **and** the source IP on AUDD's allow-list —
- * both enforced at their gateway; a `403` means one of the two failed. In Preview/Prod that path
- * is the D1 VPS relay (WS8, built in parallel); for local dev the cert/key are supplied here and
- * egress goes through the personal SSH tunnel (#2362 runbook).
+ * both enforced at their gateway; a `403` means one of the two failed. In Preview/Prod that IP
+ * comes from the WS8 VPS relay — a blind TCP/CONNECT forward (#2362 D1) that never terminates
+ * TLS, so the mTLS handshake to AUDD completes end-to-end, unmodified, riding inside the tunnel.
+ * `AUDD_GATEWAY_HTTPS_PROXY` (full proxy URL, credentials embedded —
+ * `http://<user>:<pass>@<relay-host>:<port>`) routes through it via `HttpsProxyAgent`; unset ⇒
+ * connect to AUDD directly (only reachable from an already-allowlisted egress, e.g. the VPS itself
+ * during the SSH-tunnel-based local-dev workaround, #2362 D3).
  *
  * Uses `node:https` rather than global `fetch` so an `https.Agent` can carry the client cert/key
- * (undici's `fetch` ignores `https.Agent`).
+ * (undici's `fetch` ignores `https.Agent`) — `HttpsProxyAgent` is built on the same `http.Agent`
+ * contract, so it slots in as a drop-in replacement for the direct-connect agent below.
  */
 
 const DEFAULT_AUDD_API_BASE_URL = 'https://api.sandbox.audd.digital';
@@ -25,6 +31,8 @@ export type AuddClientConfig = {
   cert?: string;
   key?: string;
   keyPassphrase?: string;
+  /** Full proxy URL with credentials embedded, e.g. `http://user:pass@host:port` (WS8). */
+  httpsProxy?: string;
 };
 
 function readPem(value: string | undefined): string | undefined {
@@ -57,6 +65,7 @@ export function getAuddClientConfig(): AuddClientConfig {
     cert: readPem(process.env.AUDD_GATEWAY_CLIENT_CERT),
     key: readPem(process.env.AUDD_GATEWAY_CLIENT_KEY),
     keyPassphrase: process.env.AUDD_GATEWAY_CLIENT_KEY_PASSPHRASE || undefined,
+    httpsProxy: process.env.AUDD_GATEWAY_HTTPS_PROXY || undefined,
   };
 }
 
@@ -120,15 +129,21 @@ async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
     headers['Content-Length'] = String(Buffer.byteLength(payload));
   }
 
-  const agent =
-    config.cert && config.key
-      ? new HttpsAgent({
-          cert: config.cert,
-          key: config.key,
-          passphrase: config.keyPassphrase,
-          keepAlive: false,
-        })
-      : undefined;
+  // The mTLS cert/key apply to the *destination* handshake (AUDD) either way — direct or
+  // tunnelled through the relay. `HttpsProxyAgent` forwards its cert/key options to the
+  // `tls.connect()` it runs after the CONNECT completes, so the same options object works for
+  // both agent types below.
+  const tlsOptions = {
+    cert: config.cert,
+    key: config.key,
+    passphrase: config.keyPassphrase,
+  };
+
+  const agent = config.httpsProxy
+    ? new HttpsProxyAgent(config.httpsProxy, tlsOptions)
+    : config.cert && config.key
+    ? new HttpsAgent({ ...tlsOptions, keepAlive: false })
+    : undefined;
 
   const raw = await new Promise<{ status: number; text: string }>(
     (resolve, reject) => {
