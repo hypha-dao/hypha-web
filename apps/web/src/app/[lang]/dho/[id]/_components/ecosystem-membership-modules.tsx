@@ -120,7 +120,7 @@ function MembershipModuleCard({
   members: MembershipPreview[];
 }) {
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden py-2.5 sm:px-4 first:sm:pl-0 last:sm:pr-0">
+    <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden py-2.5 sm:px-4 sm:first:pl-0 sm:last:pr-0">
       <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
@@ -213,15 +213,15 @@ export function EcosystemMembershipModules({
   if (isLoading && individuals.length === 0 && memberSpaces.length === 0) {
     return (
       <div
-        className="border-b border-border/70 px-3 py-3"
+        className="border-b border-border/50 py-3"
         role="status"
         aria-live="polite"
       >
-        <div className="grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
+        <div className={MEMBERSHIP_ROW_CLASS}>
           {(['individuals', 'memberSpaces', 'agents'] as const).map((key) => (
             <div
               key={key}
-              className="flex h-full min-w-0 flex-col overflow-hidden py-2.5 sm:px-4"
+              className="flex h-full min-w-0 flex-1 flex-col overflow-hidden py-2.5 sm:px-4 sm:first:pl-0 sm:last:pr-0"
             >
               <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
                 {t(`navigation.${key}`)}
@@ -240,7 +240,7 @@ export function EcosystemMembershipModules({
 
   return (
     <div className="border-b border-border/50 py-3">
-      <div className={membershipGridClassName(modules.length)}>
+      <div className={MEMBERSHIP_ROW_CLASS}>
         {modules.map((module) => (
           <MembershipModuleCard
             key={module.key}
