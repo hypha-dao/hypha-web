@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
-import { Copy, Sparkles } from 'lucide-react';
+import { Copy, Sparkles, User } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
@@ -40,6 +40,8 @@ type UIMessagePart =
   | { type: string; [k: string]: unknown };
 
 type AiPanelMessageBubbleProps = {
+  /** `quiet` is the onboarding screen: marks and text sit on the paper, without a frame. */
+  chrome?: 'default' | 'quiet';
   message: {
     id: string;
     role: 'user' | 'assistant' | 'system';
@@ -546,6 +548,7 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
 }
 
 export function AiPanelMessageBubble({
+  chrome = 'default',
   message,
   mobilizedAgents = [],
   isStreaming,
@@ -893,18 +896,27 @@ export function AiPanelMessageBubble({
       )}
     >
       {isUser ? (
-        <div className="mt-px h-7 w-7 shrink-0 self-start overflow-hidden rounded-full">
-          <PersonAvatar
-            size="sm"
-            avatarSrc={userAvatarUrl?.trim() || undefined}
-            userName={userDisplayName?.trim() || undefined}
-            className="h-full w-full rounded-full"
-          />
-        </div>
+        chrome === 'quiet' && !userAvatarUrl?.trim() ? (
+          <div className="mt-px flex h-7 w-7 shrink-0 items-center justify-center self-start text-muted-foreground">
+            <User className="size-3.5" strokeWidth={1.25} aria-hidden />
+          </div>
+        ) : (
+          <div className="mt-px h-7 w-7 shrink-0 self-start overflow-hidden rounded-full">
+            <PersonAvatar
+              size="sm"
+              avatarSrc={userAvatarUrl?.trim() || undefined}
+              userName={userDisplayName?.trim() || undefined}
+              className="h-full w-full rounded-full"
+            />
+          </div>
+        )
       ) : (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-none border border-foreground/15 bg-transparent',
+            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden bg-transparent',
+            chrome === 'quiet'
+              ? 'border-0'
+              : 'rounded-none border border-foreground/15',
             alignSingleLine ? 'mt-0' : 'mt-px',
           )}
         >
@@ -941,7 +953,9 @@ export function AiPanelMessageBubble({
           className={cn(
             // Square chat chrome — website foundation (radius 0).
             'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none px-2.5 py-1.5 text-sm leading-snug shadow-none',
-            isUser
+            chrome === 'quiet'
+              ? 'border-0 bg-transparent text-foreground'
+              : isUser
               ? 'border border-foreground/15 bg-foreground/5 text-foreground'
               : 'border border-foreground/15 bg-transparent text-foreground',
           )}

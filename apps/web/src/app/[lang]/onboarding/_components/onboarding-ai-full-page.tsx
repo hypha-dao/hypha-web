@@ -1039,8 +1039,9 @@ export function OnboardingAiFullPage({
             />
           </div>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-foreground/15 bg-transparent">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
           <AiPanelMessages
+            chrome="quiet"
             messages={messages as ChatMessage[]}
             suggestionItems={suggestionItems}
             showInlineSuggestions={!isStreaming && !hasUserMessage}
