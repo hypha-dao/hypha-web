@@ -97,8 +97,10 @@ export interface ChatNotificationEvent {
 }
 
 /**
- * The seam to #2470. Until #2470's real `dispatch()` lands, the route wires
- * `loggingDispatch` (see `logging-dispatch.ts`).
+ * The seam to #2470. The routes wire `chatNotificationDispatch`
+ * (`packages/notifications/src/events/chat/index.ts`), which adapts the real decision-layer
+ * `dispatch()` to this shape. `loggingDispatch` (`logging-dispatch.ts`) remains as the fallback
+ * default when no `dispatch` is supplied (e.g. tests / partial configs).
  */
 export type NotificationDispatch = (
   event: ChatNotificationEvent,

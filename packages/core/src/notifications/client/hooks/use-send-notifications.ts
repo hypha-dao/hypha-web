@@ -1,8 +1,9 @@
 /**
- * `proposal.created`/`accepted`/`rejected` and `signal.assigned` notifications are server-fired
- * (#2470) — the former from `apps/web/.../webhooks/proposal/*`, the latter from
- * `createCoherenceAction`/`updateCoherenceSignalBySlugAction` — both via `dispatch()`, not
- * client-triggered. No `notifyProposal*`/`notifySignalAssigned` methods on
+ * `proposal.created`/`accepted`/`rejected`, `signal.assigned`, and `chat.mention`/`chat.message`
+ * notifications are server-fired (#2470) — proposals from `apps/web/.../webhooks/proposal/*`,
+ * signal-assignment from `createCoherenceAction`/`updateCoherenceSignalBySlugAction`, chat from
+ * the `#2483` AS receiver — all via `dispatch()`, not client-triggered. No
+ * `notifyProposal*`/`notifySignalAssigned`/`notifyChatMention` methods on
  * `UseSendNotificationsReturn` below. `NotifyProposalCreatedInput` survives only because
  * `PostNotifyProposalCreatedInput` (the on-chain-event → routing callback used after publishing a
  * proposal) still needs its shape.
@@ -12,16 +13,6 @@ export interface NotifyProposalCreatedInput {
   spaceId: bigint;
   creator: `0x${string}`;
   url?: string;
-}
-
-export interface NotifyChatMentionInput {
-  actorSlug?: string;
-  actorDisplayName?: string;
-  mentionMatrixUserIds: string[];
-  messagePreview?: string;
-  /** Human-readable context, e.g. signal title or space name — used in email copy. */
-  contextLabel?: string;
-  url: string;
 }
 
 export type NotifyCallStartedScope = 'space_members' | 'signal_team';
@@ -39,7 +30,6 @@ export interface NotifyCallStartedInput {
 export type PostNotifyProposalCreatedInput = NotifyProposalCreatedInput;
 
 export interface UseSendNotificationsReturn {
-  notifyChatMention: (arg: NotifyChatMentionInput) => Promise<void>;
   notifyCallStarted: (arg: NotifyCallStartedInput) => Promise<void>;
 }
 

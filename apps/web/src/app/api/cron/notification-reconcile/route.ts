@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  loggingDispatch,
-  reconcileMatrixNotifications,
-} from '@hypha-platform/notifications/ingest';
+import { reconcileMatrixNotifications } from '@hypha-platform/notifications/ingest';
+import { chatNotificationDispatch } from '@hypha-platform/notifications/server';
 import { assertCronAuth } from '../_lib/assert-cron-auth';
 
 export const dynamic = 'force-dynamic';
@@ -43,8 +41,7 @@ export async function GET(request: Request) {
       },
       {
         db,
-        // TODO(#2470): swap for the real notification decision/delivery dispatch().
-        dispatch: loggingDispatch,
+        dispatch: chatNotificationDispatch,
       },
     );
     return NextResponse.json(result, { status: result.ok ? 200 : 503 });

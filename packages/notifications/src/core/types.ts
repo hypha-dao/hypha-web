@@ -14,6 +14,9 @@
  */
 import type { ScheduledItem } from '@hypha-platform/core/client';
 import type { LangMap } from '../sdk/types';
+import type { ChatNotificationEvent } from '../ingest/matrix-as/types';
+
+export type { ChatNotificationEvent } from '../ingest/matrix-as/types';
 
 export interface Recipient {
   personSlug: string;
@@ -93,7 +96,8 @@ export type NotificationEvent =
   | ProposalAcceptedEvent
   | ProposalRejectedEvent
   | SignalAssignedEvent
-  | ScheduledItemInvitedEvent;
+  | ScheduledItemInvitedEvent
+  | ChatNotificationEvent;
 
 export type NotificationChannel = 'push' | 'email' | 'in_app';
 

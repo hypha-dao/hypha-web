@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
   getSuppressedBotUserIds,
-  loggingDispatch,
   receiveTransaction,
   type MatrixTransactionBody,
 } from '@hypha-platform/notifications/ingest';
+import { chatNotificationDispatch } from '@hypha-platform/notifications/server';
 import { assertHsToken } from '../../_lib';
 
 export const dynamic = 'force-dynamic';
@@ -52,8 +52,7 @@ export async function PUT(
       { txnId: txnId.trim(), body },
       {
         db,
-        // TODO(#2470): swap for the real notification decision/delivery dispatch().
-        dispatch: loggingDispatch,
+        dispatch: chatNotificationDispatch,
         botUserIds: getSuppressedBotUserIds(),
       },
     );

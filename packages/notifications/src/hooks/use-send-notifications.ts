@@ -3,12 +3,11 @@
 import useSWRMutation from 'swr/mutation';
 import {
   NotifyCallStartedInput,
-  NotifyChatMentionInput,
   UseSendNotificationsHook,
   UseSendNotificationsInput,
   UseSendNotificationsReturn,
 } from '@hypha-platform/core/client';
-import { notifyCallStartedAction, notifyChatMentionAction } from '../actions';
+import { notifyCallStartedAction } from '../actions';
 
 const noOp = async () => {
   console.warn('Cannot send notification empty authToken');
@@ -17,12 +16,6 @@ const noOp = async () => {
 export const useSendNotifications: UseSendNotificationsHook = ({
   authToken,
 }: UseSendNotificationsInput): UseSendNotificationsReturn => {
-  const { trigger: notifyChatMention } = useSWRMutation(
-    authToken ? [authToken, 'notifyChatMention'] : null,
-    async ([authToken], { arg }: { arg: NotifyChatMentionInput }) =>
-      notifyChatMentionAction(arg, { authToken }),
-  );
-
   const { trigger: notifyCallStarted } = useSWRMutation(
     authToken ? [authToken, 'notifyCallStarted'] : null,
     async ([authToken], { arg }: { arg: NotifyCallStartedInput }) =>
@@ -30,7 +23,6 @@ export const useSendNotifications: UseSendNotificationsHook = ({
   );
 
   return {
-    notifyChatMention: authToken ? notifyChatMention : noOp,
     notifyCallStarted: authToken ? notifyCallStarted : noOp,
   };
 };
