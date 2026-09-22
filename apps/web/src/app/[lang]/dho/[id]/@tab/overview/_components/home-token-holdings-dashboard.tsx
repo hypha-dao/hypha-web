@@ -103,10 +103,23 @@ type HomeSectionFilter =
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Graph palette — live space-accent hue via craft tokens (wide white→solid→
- * black mixes on [data-space-accent-scope]). Eight spaced steps so many
- * holders stay distinct without packing consecutive Radix mid-tints.
+ * Token donuts (and the other overview series) render in the space tab, outside
+ * the hero `[data-space-accent-scope]`. `--space-accent` is mirrored onto the
+ * document while a space is open, so these lightness steps follow that one hue.
+ * With no space accent they fall back to the quiet `--hypha-chart`. Same ratios
+ * as the in-scope craft palette — no extra hues.
  */
+const CHART_HUE = 'var(--space-accent, var(--hypha-chart))';
+const SPACE_CHART_PALETTE_STYLE = {
+  '--craft-chart-accent-1': `color-mix(in oklab, ${CHART_HUE} 20%, white 80%)`,
+  '--craft-chart-accent-2': `color-mix(in oklab, ${CHART_HUE} 34%, white 66%)`,
+  '--craft-chart-accent-3': `color-mix(in oklab, ${CHART_HUE} 50%, white 50%)`,
+  '--craft-chart-accent-4': `color-mix(in oklab, ${CHART_HUE} 68%, white 32%)`,
+  '--craft-chart-accent-5': CHART_HUE,
+  '--craft-chart-accent-6': `color-mix(in oklab, ${CHART_HUE} 76%, black 24%)`,
+  '--craft-chart-accent-7': `color-mix(in oklab, ${CHART_HUE} 58%, black 42%)`,
+  '--craft-chart-accent-8': `color-mix(in oklab, ${CHART_HUE} 40%, black 60%)`,
+} as React.CSSProperties;
 const COLOR_RANGE = [
   'var(--craft-chart-accent-1)',
   'var(--craft-chart-accent-2)',
@@ -1473,7 +1486,7 @@ export function HomeTokenHoldingsDashboard({
   }, [activeFilter, showEnergyWidget, showPayingSpaces]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" style={SPACE_CHART_PALETTE_STYLE}>
       <Tabs
         value={activeFilter}
         onValueChange={(value) => setActiveFilter(value as HomeSectionFilter)}
