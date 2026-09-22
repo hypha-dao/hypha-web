@@ -65,27 +65,29 @@ Award-oriented product UI: airy, calm, intentional — light-first canvas, soft 
 
 | Surface                                                     | Prefer                                                                                                                   |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Cards / panels / menus / dialogs                            | `rounded-xl` → `--radius-xl` / `--radius-lg`                                                                             |
+| Cards / panels / menus / dialogs / buttons                  | Square — `--radius-*` is `0`. `rounded-full` only for avatars and status dots.                                           |
 | Chrome controls (header icon buttons, small square avatars) | `APP_CHROME_SUBTLE_SQUARE_RADIUS` (`rounded-chrome` → `--radius-chrome`) in `packages/epics/src/common/chrome-radius.ts` |
-| Avoid on product chrome                                     | Soft pill overuse (`rounded-full` on dense tool chrome); keep chrome at `--radius-chrome`                                |
+| Avoid on product chrome                                     | Rounded corners and pills on controls. The website control is a square.                                                  |
 
 ### Fonts
 
 Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVariables` on root + signin `<Html>`).
 
-| Role             | Face                   | next/font var      | Token                                |
-| ---------------- | ---------------------- | ------------------ | ------------------------------------ |
-| Body / UI chrome | **Plus Jakarta Sans**  | `--font-body`      | `--font-sans` / `--font-family-text` |
-| Titles           | **Outfit**             | `--font-heading`   | `--font-family-heading`              |
-| Code / addresses | **IBM Plex Mono**      | `--font-code-face` | `--font-mono` / `--font-family-code` |
+| Role             | Face              | next/font var      | Token                                |
+| ---------------- | ----------------- | ------------------ | ------------------------------------ |
+| Body / UI chrome | **Manrope**       | `--font-body`      | `--font-sans` / `--font-family-text` |
+| Titles           | **Sora**          | `--font-heading`   | `--font-family-heading`              |
+| Code / addresses | **IBM Plex Mono** | `--font-code-face` | `--font-mono` / `--font-family-code` |
 
-**Where Outfit applies (heading face only):**
+**Where Sora applies (heading face only):**
 
 - `.craft-page-title` / page-level `h1` tool titles
 - `CardTitle` / `Heading` atom (`--font-family-heading`)
 - Rare marketing-scale titles that already use `[font-family:var(--font-family-heading)]`
 
-**Stay on Plus Jakarta Sans (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
+**Stay on Manrope (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
+
+Buttons are square, 11px, weight 600, uppercase, tracking `0.12em`, min-height 48px. Outside a space they are ink on paper (or paper on ink). Inside a space the solid fill takes the space accent.
 
 **Mono only:** wallet addresses, hashes, code (`font-mono` / `--font-family-code`).
 
@@ -95,7 +97,7 @@ Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVaria
 
 ### Precision-tool craft (anti-decorative)
 
-- Flat chrome: solid `bg-background-2`, hairline borders — **no** page washes, frosted blur bars, or empty-state glow
+- Flat chrome: solid `bg-background-2`, hairline borders — no frosted blur bars or empty-state glow. The only atmosphere is the mycelium canvas behind the shell.
 - Page headers: `.craft-page-header` / `.craft-page-title` — left-aligned, tool-sized (not centered marketing heroes)
 - Empty states: quiet `.craft-empty-mark` (border only)
 - Avoid stagger enter animations and accent-tinted title lines
@@ -114,8 +116,10 @@ Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVaria
 
 ### Accent dialects (two)
 
-1. **Global mycelium teal** — Radix-style `accent-*` from `colors/teal.css` (buttons, focus, mention chips, links)
+1. **No hue outside a space** — `accent-*` is ink on paper / paper on ink (`theme/colors/accent.css`). Screens without a space stay monochrome, as on io.hypha.earth/website.
 2. **Space** — `--space-accent*` from imagery; inside `[data-space-accent-scope]` CTAs/tabs/focus own the space hue (`space-accent.css`)
+
+Canvas is the mycelium photograph (`/brand/mycelium.jpg`) under a paper or ink veil. Working chrome (header, sidebars, cards, dialogs) stays solid.
 
 ## References
 

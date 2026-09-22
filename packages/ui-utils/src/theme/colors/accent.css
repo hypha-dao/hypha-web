@@ -1,24 +1,39 @@
-@import '../../colors/teal.css';
-
 /**
- * Global accent — mycelium teal (organic Hypha signal).
- * Same solid step (~9) for light and dark; steps 1–12 follow Radix convention.
+ * Accent outside a space is achromatic: ink on paper, paper on ink.
+ * Inside `[data-space-accent-scope]`, imagery replaces these steps.
  */
+
 :root,
 .light,
-.light-theme,
+.light-theme {
+  --accent-1: var(--hypha-paper);
+  --accent-2: color-mix(in srgb, var(--hypha-ink) 4%, var(--hypha-paper));
+  --accent-3: color-mix(in srgb, var(--hypha-ink) 7%, var(--hypha-paper));
+  --accent-4: color-mix(in srgb, var(--hypha-ink) 11%, var(--hypha-paper));
+  --accent-5: color-mix(in srgb, var(--hypha-ink) 16%, var(--hypha-paper));
+  --accent-6: color-mix(in srgb, var(--hypha-ink) 24%, var(--hypha-paper));
+  --accent-7: color-mix(in srgb, var(--hypha-ink) 38%, var(--hypha-paper));
+  --accent-8: color-mix(in srgb, var(--hypha-ink) 55%, var(--hypha-paper));
+  --accent-9: var(--hypha-ink);
+  --accent-10: var(--hypha-deep);
+  --accent-11: var(--hypha-ink);
+  --accent-12: var(--hypha-ink);
+  --accent-contrast: var(--hypha-text);
+}
+
 .dark,
 .dark-theme {
-  --accent-1: var(--teal-1);
-  --accent-2: var(--teal-2);
-  --accent-3: var(--teal-3);
-  --accent-4: var(--teal-4);
-  --accent-5: var(--teal-5);
-  --accent-6: var(--teal-6);
-  --accent-7: var(--teal-7);
-  --accent-8: var(--teal-8);
-  --accent-9: var(--teal-9);
-  --accent-10: var(--teal-10);
-  --accent-11: var(--teal-11);
-  --accent-12: var(--teal-12);
+  --accent-1: var(--hypha-ink);
+  --accent-2: var(--hypha-deep);
+  --accent-3: color-mix(in srgb, var(--hypha-mid) 45%, var(--hypha-ink));
+  --accent-4: color-mix(in srgb, var(--hypha-mid) 72%, var(--hypha-ink));
+  --accent-5: var(--hypha-mid);
+  --accent-6: color-mix(in srgb, var(--hypha-text) 16%, var(--hypha-mid));
+  --accent-7: color-mix(in srgb, var(--hypha-text) 32%, var(--hypha-mid));
+  --accent-8: color-mix(in srgb, var(--hypha-text) 52%, var(--hypha-ink));
+  --accent-9: var(--hypha-text);
+  --accent-10: color-mix(in srgb, var(--hypha-text) 86%, var(--hypha-paper));
+  --accent-11: var(--hypha-text);
+  --accent-12: #ffffff;
+  --accent-contrast: var(--hypha-ink);
 }
