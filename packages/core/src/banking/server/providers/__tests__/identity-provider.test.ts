@@ -30,10 +30,12 @@ describe('registry — identity vs. KYC providers (D6)', () => {
     expect(() => getBankKycProvider('audd')).toThrow(/Unsupported bank KYC/);
   });
 
-  it('getBankIdentityProvider("audd") throws until the WS3 adapter lands', () => {
-    expect(() => getBankIdentityProvider('audd')).toThrow(
-      /Unsupported bank identity/,
-    );
+  it('getBankIdentityProvider("audd") returns the AUDD identity adapter (WS3)', () => {
+    const provider = getBankIdentityProvider('audd');
+    expect(provider.provider).toBe('audd');
+    expect(typeof provider.createKycLink).toBe('function');
+    expect(typeof provider.getKycStatus).toBe('function');
+    expect(typeof provider.getOnboardingStepDescriptor).toBe('function');
   });
 });
 
@@ -45,17 +47,23 @@ describe('manifest', () => {
     );
   });
 
-  it('both providers require email + legal name (D10 — deduped by the form)', () => {
+  it('both providers require a contact email (D10 — deduped by the form)', () => {
     for (const provider of ['bridge', 'audd'] as const) {
       const keys = bankProviderManifest[provider].requiredOnboardingFields.map(
         (field) => field.key,
       );
       expect(keys).toContain('contactEmail');
-      expect(keys).toContain('legalName');
     }
+    // Bridge takes a single legalName; AUDD splits the applicant name and needs companyType.
     expect(
-      bankProviderManifest.audd.requiredOnboardingFields.map((f) => f.key),
-    ).toContain('companyType');
+      bankProviderManifest.bridge.requiredOnboardingFields.map((f) => f.key),
+    ).toContain('legalName');
+    const auddKeys = bankProviderManifest.audd.requiredOnboardingFields.map(
+      (f) => f.key,
+    );
+    expect(auddKeys).toEqual(
+      expect.arrayContaining(['firstName', 'lastName', 'companyType']),
+    );
   });
 });
 

@@ -1,6 +1,9 @@
 import type { BankProvider } from '../../types';
 import { BANK_VIRTUAL_ACCOUNT_CURRENCIES } from '../../constants';
 import type { BankOnboardingFieldDescriptor } from './types';
+import { AUDD_REQUIRED_ONBOARDING_FIELDS } from './audd/onboarding-fields';
+
+export { AUDD_REQUIRED_ONBOARDING_FIELDS };
 
 /**
  * Every known bank provider, as a typed tuple to iterate over (the routing resolver walks this).
@@ -28,58 +31,6 @@ export const BRIDGE_REQUIRED_ONBOARDING_FIELDS: readonly BankOnboardingFieldDesc
       kind: 'text',
       required: true,
       i18nLabelKey: 'BankingTab.onboardingFields.legalName',
-    },
-  ];
-
-/**
- * Fields AUDD's Gateway needs to create a customer (D10). Email + legal name are shared with
- * Bridge (the onboarding form dedupes by key); `companyType` is AUDD-specific.
- *
- * TODO(#2474 WS3): relocate to `providers/audd/onboarding-fields.ts` once the adapter dir exists,
- * and confirm the full list (company sub-types likely also need country + registration details)
- * against AUDD's live Sandbox docs.
- */
-export const AUDD_REQUIRED_ONBOARDING_FIELDS: readonly BankOnboardingFieldDescriptor[] =
-  [
-    {
-      key: 'contactEmail',
-      kind: 'email',
-      required: true,
-      i18nLabelKey: 'BankingTab.onboardingFields.contactEmail',
-    },
-    {
-      key: 'legalName',
-      kind: 'text',
-      required: true,
-      i18nLabelKey: 'BankingTab.onboardingFields.legalName',
-    },
-    {
-      key: 'companyType',
-      kind: 'select',
-      required: true,
-      i18nLabelKey: 'BankingTab.onboardingFields.companyType',
-      options: [
-        {
-          value: 'INDIVIDUAL',
-          i18nLabelKey: 'BankingTab.onboardingFields.companyType.individual',
-        },
-        {
-          value: 'SOLE_TRADER',
-          i18nLabelKey: 'BankingTab.onboardingFields.companyType.soleTrader',
-        },
-        {
-          value: 'PRIVATE_COMPANY',
-          i18nLabelKey: 'BankingTab.onboardingFields.companyType.privateCompany',
-        },
-        {
-          value: 'PUBLIC_COMPANY',
-          i18nLabelKey: 'BankingTab.onboardingFields.companyType.publicCompany',
-        },
-        {
-          value: 'TRUST',
-          i18nLabelKey: 'BankingTab.onboardingFields.companyType.trust',
-        },
-      ],
     },
   ];
 

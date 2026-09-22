@@ -1,5 +1,6 @@
 import type { BankProvider } from '../../types';
 import type { BankIdentityProvider, BankKycProvider } from './types';
+import { createAuddIdentityProvider } from './audd/adapter';
 import { createBridgeKycProvider } from './bridge/adapter';
 
 const kycProviderFactories: Partial<
@@ -17,6 +18,7 @@ const identityProviderFactories: Partial<
   Record<BankProvider, () => BankIdentityProvider>
 > = {
   bridge: createBridgeKycProvider,
+  audd: () => createAuddIdentityProvider(),
 };
 
 export function getBankKycProvider(provider: BankProvider): BankKycProvider {

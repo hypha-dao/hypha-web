@@ -9,6 +9,13 @@ export type CreateKycLinkInput = {
   idempotencyKey: string;
   endorsements?: string[];
   redirectUri?: string;
+  /**
+   * Provider-specific onboarding fields the dynamic form collected (D10), keyed by the
+   * `BankOnboardingFieldDescriptor.key` the adapter's manifest entry declares. Rides the #2288
+   * confirmation token the same way `legalName` / `contactEmail` do. Bridge ignores it; the AUDD
+   * adapter reads the customer-creation fields it needs from here and validates their presence.
+   */
+  onboardingFields?: Record<string, string>;
 };
 
 export type CreateKycLinkResult = {
