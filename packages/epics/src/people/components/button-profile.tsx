@@ -205,7 +205,7 @@ export const ButtonProfile = ({
                   avatarSrc={person?.avatarUrl}
                   userName={person?.nickname}
                   shape="square"
-                  className="h-full w-full rounded-none ring-0"
+                  className="h-full w-full rounded-none border-0 shadow-none ring-0"
                 />
               </button>
             </DropdownMenuTrigger>
@@ -226,7 +226,7 @@ export const ButtonProfile = ({
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
                     shape="rounded"
-                    className="ring-1 ring-border/60"
+                    className="border-0 shadow-none ring-0"
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="truncate text-2 font-semibold leading-snug text-foreground">
@@ -423,7 +423,7 @@ export const ButtonProfile = ({
               avatarSrc={person?.avatarUrl}
               userName={person?.nickname}
               shape="square"
-              className="h-full w-full rounded-none ring-0"
+              className="h-full w-full rounded-none border-0 shadow-none ring-0"
             />
           </button>
           <SheetContent
@@ -442,7 +442,7 @@ export const ButtonProfile = ({
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
                     shape="rounded"
-                    className="ring-1 ring-border/60"
+                    className="border-0 shadow-none ring-0"
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-1 pr-8">
                     <span className="truncate text-2 font-semibold leading-snug text-foreground">
@@ -773,7 +773,7 @@ export const ButtonProfile = ({
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
                     shape="square"
-                    className="h-full w-full rounded-none ring-0"
+                    className="h-full w-full rounded-none border-0 shadow-none ring-0"
                   />
                 </button>
               </DropdownMenuTrigger>
@@ -794,7 +794,7 @@ export const ButtonProfile = ({
                       avatarSrc={person?.avatarUrl}
                       userName={person?.nickname}
                       shape="rounded"
-                      className="ring-1 ring-border/60"
+                      className="border-0 shadow-none ring-0"
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <span className="truncate text-2 font-semibold leading-snug text-foreground">
