@@ -1,0 +1,39 @@
+/**
+ * Hypha foundation — taken from https://io.hypha.earth/website.
+ *
+ * Ink and paper are the only colours outside a space. Space screens remap
+ * `--accent-*` from their own imagery. Mycelium is the canvas, not a decoration
+ * on top of the work.
+ *
+ *   Ink    #030615   Deep   #091025   Mid    #1c2746
+ *   Paper  #f4f7fb   Text   #f8fafd
+ *   Type   Sora (titles) · Manrope (UI) · IBM Plex Mono (code)
+ *   Controls are square. Letterforms on controls are small, tracked, uppercase.
+ */
+
+:root,
+.light,
+.light-theme {
+  --hypha-ink: #030615;
+  --hypha-deep: #091025;
+  --hypha-mid: #1c2746;
+  --hypha-paper: #f4f7fb;
+  --hypha-text: #f8fafd;
+  --hypha-text-dim: #677284;
+  --hypha-text-faint: #8b95a8;
+  --hypha-border: color-mix(in srgb, var(--hypha-ink) 12%, transparent);
+  --hypha-mycelium-image: url('/brand/mycelium.jpg');
+  --hypha-mycelium-veil: color-mix(
+    in srgb,
+    var(--hypha-paper) 88%,
+    transparent
+  );
+}
+
+.dark,
+.dark-theme {
+  --hypha-text-dim: #9ca5b5;
+  --hypha-text-faint: #677284;
+  --hypha-border: rgb(255 255 255 / 0.12);
+  --hypha-mycelium-veil: color-mix(in srgb, var(--hypha-ink) 84%, transparent);
+}

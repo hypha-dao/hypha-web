@@ -29,7 +29,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <div
             className={cn(
               'absolute left-2 flex items-center pointer-events-none text-muted-foreground',
-              isSearchInput && 'text-accent-9',
+              isSearchInput && 'text-foreground',
             )}
           >
             {leftIcon}
@@ -46,7 +46,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 ],
             !isCheckable &&
               isSearchInput &&
-              'text-accent-9 caret-accent-9 placeholder:text-accent-9',
+              'text-foreground caret-foreground placeholder:text-muted-foreground',
             !isCheckable && leftIcon && 'pl-12',
             !isCheckable && rightIcon && 'pr-12',
             className,
@@ -58,7 +58,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <div
             className={cn(
               'absolute right-2 flex items-center pointer-events-none text-muted-foreground',
-              isSearchInput && 'text-accent-9',
+              isSearchInput && 'text-foreground',
             )}
           >
             {rightIcon}

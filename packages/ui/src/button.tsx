@@ -5,25 +5,23 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,border-color,box-shadow,transform,background-color,--tw-ring-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'cursor-pointer rounded-none inline-flex items-center justify-center gap-2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] ring-offset-background transition-[color,border-color,background-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default: '',
-        outline:
-          /* ring-2 reserved so hover highlight does not shift layout */
-          'border bg-transparent shadow-sm ring-2 ring-transparent hover:border-border active:shadow-sm',
-        link: 'underline-offset-4 hover:underline bg-transparent font-medium',
-        ghost: 'bg-transparent font-medium',
+        outline: 'border bg-transparent',
+        link: 'normal-case tracking-normal text-sm font-medium underline-offset-4 hover:underline bg-transparent',
+        ghost: 'bg-transparent',
       },
       size: {
-        /** Standard actions — matches modal/footer CTAs (touch-friendly min height). */
-        default: 'min-h-10 px-5 py-2',
+        /** Standard actions — 48px, matching the website control. */
+        default: 'min-h-12 px-5',
         /** Compact toolbar / auxiliary actions. */
-        sm: 'min-h-8 px-3 py-1.5 text-xs',
-        /** Primary emphasis (hero / dialog primary). */
-        lg: 'min-h-11 px-8 py-2.5 text-base',
-        icon: 'h-10 min-h-10 min-w-10 shrink-0 rounded-chrome p-0 [&_svg]:size-4 [&_svg]:shrink-0',
+        sm: 'min-h-8 px-3',
+        /** Primary emphasis (hero / dialog primary). Same letterforms, wider. */
+        lg: 'min-h-12 px-8',
+        icon: 'h-10 min-h-10 min-w-10 shrink-0 rounded-none p-0 normal-case tracking-normal [&_svg]:size-4 [&_svg]:shrink-0',
       },
       colorVariant: {
         accent: '',
@@ -41,8 +39,7 @@ const buttonVariants = cva(
       {
         variant: 'default',
         colorVariant: 'accent',
-        className:
-          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 active:scale-[0.99] active:shadow-sm dark:shadow-black/20',
+        className: 'bg-accent-9 text-accent-contrast hover:bg-accent-10',
       },
       {
         variant: 'default',
@@ -63,26 +60,25 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          /* Outline hover: emphasize border + ring — no solid fill (matches status chips) */
-          'border-accent-8 text-accent-11 hover:border-accent-10 hover:text-foreground hover:ring-accent-10/75 active:scale-[0.99]',
+          'hypha-control-outline border-foreground/15 text-foreground hover:border-foreground/40 hover:bg-foreground/5',
       },
       {
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-9 bg-neutral-1 text-neutral-12 hover:border-neutral-11 hover:text-foreground hover:ring-neutral-10/70',
+          'border-foreground/15 bg-transparent text-foreground hover:border-foreground/40 hover:bg-foreground/5',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-9 text-error-9 hover:border-error-10 hover:text-foreground hover:ring-error-10/75',
+          'border-error-9 text-error-9 hover:border-error-10 hover:bg-error-3',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-10 text-success-11 hover:border-success-11 hover:text-foreground hover:ring-success-10/75',
+          'border-success-10 text-success-11 hover:border-success-11 hover:bg-success-3',
       },
       {
         variant: 'link',

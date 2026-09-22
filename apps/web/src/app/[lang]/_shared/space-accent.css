@@ -78,6 +78,25 @@
   ) !important;
 }
 
+/* Outline controls stay hairline outside a space; inside, they take the space hue. */
+[data-space-accent-scope] .hypha-control-outline {
+  border-color: color-mix(
+    in oklab,
+    var(--space-accent, var(--color-accent-9)) 55%,
+    transparent
+  );
+  color: var(--space-accent-fg, var(--color-accent-11));
+}
+
+[data-space-accent-scope] .hypha-control-outline:hover {
+  border-color: var(--space-accent, var(--color-accent-9));
+  background-color: color-mix(
+    in oklab,
+    var(--space-accent, var(--color-accent-9)) 8%,
+    transparent
+  );
+}
+
 /* Solid CTAs: pair forced fill with contrast computed for the raw space accent */
 [data-space-accent-scope] .text-accent-contrast {
   color: var(--space-accent-contrast, var(--color-accent-contrast)) !important;

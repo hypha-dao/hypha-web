@@ -12,7 +12,7 @@
    * descendants would inherit that stale colour even inside
    * [data-space-accent-scope].
    * Wide white→solid→black mixes so adjacent donut slices stay distinct.
-   * Default accent is mycelium teal (see theme/colors/accent.css).
+   * Default accent outside a space is ink/paper (see theme/colors/accent.css).
    */
   --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 28%, white 72%);
   --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 44%, white 56%);
@@ -84,7 +84,7 @@
   }
 
   .craft-page-title {
-    @apply m-0 text-balance font-semibold tracking-[-0.02em] text-foreground;
+    @apply m-0 text-balance font-medium tracking-[-0.03em] text-foreground;
     font-family: var(--font-family-heading);
   }
 
@@ -182,7 +182,7 @@
  * utility and keeps listing grids on one continuous page surface.
  */
 .craft-page-canvas {
-  background-color: var(--page-background);
+  background-color: transparent;
 }
 
 /*

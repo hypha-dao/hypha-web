@@ -5,6 +5,7 @@
 @import 'tailwindcss';
 @source '../../../**/*.{ts,tsx}';
 
+@import './theme/foundation.css';
 @import './theme/colors/accent.css';
 @import './theme/colors/background.css';
 @import './theme/colors/default.css';
@@ -69,7 +70,7 @@
   /* Accent Colors */
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent-contrast: var(--white);
+  --color-accent-contrast: var(--accent-contrast);
   --color-accent-surface: var(--accent-surface);
   --color-accent-1: var(--accent-1);
   --color-accent-2: var(--accent-2);
@@ -195,20 +196,20 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-action: oklch(0.55 0.12 176);
-  --color-action-foreground: oklch(0.35 0.09 178);
-  --color-action-light: var(--action-light);
-  --color-action-light-foreground: var(--color-action-foreground);
+  --color-action: var(--accent-9);
+  --color-action-foreground: var(--accent-contrast);
+  --color-action-light: var(--accent-11);
+  --color-action-light-foreground: var(--accent-contrast);
 
-  /* Border Radius — airy content surfaces; tight chrome via --radius-chrome */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-chrome: 6px;
+  /* Square, like the website. Pills stay on `rounded-full` (avatars, status dots). */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-chrome: 0px;
 
   /*
-   * Font Families — 2 sans + mono (see apps/web/src/lib/hypha-fonts.ts)
+   * Font Families — Manrope (UI) + Sora (titles) + mono
    * next/font sets --font-body / --font-heading / --font-code-face on <html>.
    * Tailwind font-sans → body; font-mono → code. Headings use --font-family-heading.
    */
@@ -337,49 +338,49 @@
 
 @layer base {
   :root {
-    --foreground: var(--black);
-    --card: var(--white);
-    --card-foreground: oklch(0.25 0.02 264);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.25 0.02 264);
-    --primary: oklch(0.15 0.01 264);
-    --primary-foreground: oklch(0.98 0 0);
-    --secondary: oklch(0.96 0.005 264);
-    --secondary-foreground: oklch(0.15 0.01 264);
-    --muted: oklch(0.96 0.005 264);
-    --muted-foreground: oklch(0.46 0.005 264);
-    --accent: oklch(0.96 0.005 264);
-    --accent-foreground: oklch(0.15 0.01 264);
+    --foreground: var(--hypha-ink);
+    --card: #ffffff;
+    --card-foreground: var(--hypha-ink);
+    --popover: #ffffff;
+    --popover-foreground: var(--hypha-ink);
+    --primary: var(--hypha-ink);
+    --primary-foreground: var(--hypha-text);
+    --secondary: color-mix(in srgb, var(--hypha-ink) 5%, var(--hypha-paper));
+    --secondary-foreground: var(--hypha-ink);
+    --muted: color-mix(in srgb, var(--hypha-ink) 4%, var(--hypha-paper));
+    --muted-foreground: var(--hypha-text-dim);
+    --accent: color-mix(in srgb, var(--hypha-ink) 5%, var(--hypha-paper));
+    --accent-foreground: var(--hypha-ink);
     --destructive: oklch(0.5153 0.211061 28.636 / 83%);
-    --destructive-foreground: oklch(0.98 0 0);
-    --border: var(--neutral-6);
-    --input: var(--neutral-6);
+    --destructive-foreground: var(--hypha-text);
+    --border: var(--hypha-border);
+    --input: var(--hypha-border);
     --ring: var(--accent-9);
-    --radius: 12px;
-    --action-light: oklch(0.62 0.12 176);
+    --radius: 0px;
+    --action-light: var(--hypha-ink);
   }
 
   .dark {
-    --foreground: var(--neutral-12);
-    --card: var(--neutral-2);
-    --card-foreground: oklch(0.98 0 0);
-    --popover: oklch(0.25 0.02 264);
-    --popover-foreground: oklch(0.98 0 0);
-    --primary: oklch(0.98 0 0);
-    --primary-foreground: oklch(0.15 0.01 264);
-    --secondary: oklch(0.16 0.005 264);
-    --secondary-foreground: oklch(0.98 0 0);
-    --muted: oklch(0.16 0.005 264);
-    --muted-foreground: oklch(0.65 0.01 264);
-    --accent: oklch(0.16 0.005 264);
-    --accent-foreground: oklch(0.98 0 0);
+    --foreground: var(--hypha-text);
+    --card: var(--hypha-deep);
+    --card-foreground: var(--hypha-text);
+    --popover: var(--hypha-deep);
+    --popover-foreground: var(--hypha-text);
+    --primary: var(--hypha-text);
+    --primary-foreground: var(--hypha-ink);
+    --secondary: var(--hypha-deep);
+    --secondary-foreground: var(--hypha-text);
+    --muted: var(--hypha-mid);
+    --muted-foreground: var(--hypha-text-dim);
+    --accent: var(--hypha-mid);
+    --accent-foreground: var(--hypha-text);
     --destructive: var(--error-11);
-    --destructive-foreground: oklch(0.98 0 0);
-    --border: var(--neutral-6);
-    --input: var(--neutral-6);
+    --destructive-foreground: var(--hypha-text);
+    --border: var(--hypha-border);
+    --input: var(--hypha-border);
     --ring: var(--accent-9);
-    --action-light: oklch(0.78 0.1 180);
-    --radius: 12px;
+    --action-light: var(--hypha-text);
+    --radius: 0px;
   }
 }
 
@@ -388,52 +389,48 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    background-color: var(--page-background);
+  }
+
   body {
-    @apply bg-page-background text-foreground text-base;
+    @apply text-foreground text-base;
 
     font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
-
-    /*
-     * Quiet canvas depth — one long soft lift, no mid-page cliff.
-     * Fade to the same hue at 0 alpha (not bare `transparent` / black-alpha),
-     * or oklab interpolation muddies into a hard gray→white band that
-     * bisects card grids when the main column is transparent.
-     */
-    background-image: radial-gradient(
-        140% 90% at 50% -30%,
-        color-mix(in oklab, var(--card) 42%, var(--page-background)),
-        var(--page-background) 72%
+    background-color: var(--page-background);
+    background-image: linear-gradient(
+        var(--hypha-mycelium-veil),
+        var(--hypha-mycelium-veil)
       ),
-      linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--page-background) 92%, var(--card) 8%) 0%,
-        var(--page-background) 55%,
-        color-mix(in oklab, var(--page-background) 97%, black 3%) 100%
-      );
+      var(--hypha-mycelium-image);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
   }
 }
 
 :root {
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.35 0.01 264);
-  --sidebar-primary: oklch(0.15 0.01 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0.005 264);
-  --sidebar-accent-foreground: oklch(0.15 0.01 264);
-  --sidebar-border: oklch(0.93 0.005 250);
-  --sidebar-ring: oklch(0.59 0.19 252);
+  --sidebar: var(--hypha-paper);
+  --sidebar-foreground: var(--hypha-ink);
+  --sidebar-primary: var(--hypha-ink);
+  --sidebar-primary-foreground: var(--hypha-text);
+  --sidebar-accent: color-mix(in srgb, var(--hypha-ink) 5%, var(--hypha-paper));
+  --sidebar-accent-foreground: var(--hypha-ink);
+  --sidebar-border: var(--hypha-border);
+  --sidebar-ring: var(--hypha-ink);
 }
 
 .dark {
-  --sidebar: oklch(0.15 0.01 264);
-  --sidebar-foreground: oklch(0.97 0.005 264);
-  --sidebar-primary: oklch(0.49 0.18 255);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.21 0.006 264);
-  --sidebar-accent-foreground: oklch(0.97 0.005 264);
-  --sidebar-border: oklch(0.21 0.006 264);
-  --sidebar-ring: oklch(0.59 0.19 252);
+  --sidebar: var(--hypha-ink);
+  --sidebar-foreground: var(--hypha-text);
+  --sidebar-primary: var(--hypha-text);
+  --sidebar-primary-foreground: var(--hypha-ink);
+  --sidebar-accent: var(--hypha-mid);
+  --sidebar-accent-foreground: var(--hypha-text);
+  --sidebar-border: var(--hypha-border);
+  --sidebar-ring: var(--hypha-text);
 }
 
 @theme inline {
