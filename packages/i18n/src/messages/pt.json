@@ -4270,6 +4270,8 @@
     "exportXlsx": "Exportar XLSX",
     "weightedAbbr": "pond.",
     "openTrack": "Abrir faixa",
+    "laneCollapse": "Recolher categoria",
+    "laneExpand": "Expandir categoria",
     "backToBoard": "Voltar ao quadro",
     "trackTitle": "Faixa {swimlane}",
     "summary": {

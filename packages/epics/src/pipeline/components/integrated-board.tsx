@@ -20,6 +20,10 @@ import { FilterBar } from './filter-bar';
 import { SavedViewsMenu } from './saved-views-menu';
 import { PipelineSummary } from './pipeline-summary';
 import { KanbanBoard } from './kanban-board';
+import {
+  PipelineLaneSection,
+  useCollapsedPipelineLanes,
+} from './pipeline-lane-section';
 import { NewDealDialog } from './new-deal-dialog';
 import { exportDealsToXlsx } from '../utils/export-deals';
 import type { UseMembers } from '../../spaces';
@@ -49,6 +53,7 @@ export function IntegratedBoard({
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
   const { probabilities } = usePipelineConfig(spaceSlug);
+  const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
 
   const filtered = React.useMemo(
     () => filterDeals(deals, filters),
@@ -73,7 +78,7 @@ export function IntegratedBoard({
   );
 
   return (
-    <div className="flex flex-col gap-4 pb-8">
+    <div className="flex min-w-0 flex-col gap-4 pb-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-4 font-medium text-neutral-12">{t('title')}</h2>
         <Button
@@ -111,21 +116,21 @@ export function IntegratedBoard({
       {isLoading && deals.length === 0 ? (
         <div className="text-2 text-neutral-11">{t('loading')}</div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col">
           {visibleSwimlanes.map((swimlane) => {
             const laneDeals = filtered.filter(
               (d) => d.pipelineSwimlane === swimlane,
             );
             return (
-              <section key={swimlane} className="flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-3 font-medium text-neutral-12">
-                    {swimlane}
-                    <span className="ml-2 text-1 font-normal text-neutral-11">
-                      ({laneDeals.length})
-                    </span>
-                  </h3>
-                  <div className="flex items-center gap-2">
+              <PipelineLaneSection
+                key={swimlane}
+                laneSlug={swimlane}
+                title={swimlane}
+                count={laneDeals.length}
+                collapsed={collapsedLanes.includes(swimlane)}
+                onToggle={() => toggleLane(swimlane)}
+                actions={
+                  <>
                     <Button
                       type="button"
                       size="sm"
@@ -139,12 +144,13 @@ export function IntegratedBoard({
                     </Button>
                     <Link
                       href={getTrackHref(swimlane)}
-                      className="text-1 text-accent-11 hover:underline"
+                      className="text-1 whitespace-nowrap text-accent-11 hover:underline"
                     >
                       {t('openTrack')}
                     </Link>
-                  </div>
-                </div>
+                  </>
+                }
+              >
                 <KanbanBoard
                   deals={laneDeals}
                   onDealClick={(deal) => onDealOpen(deal.id)}
@@ -152,7 +158,7 @@ export function IntegratedBoard({
                   activeDealId={activeDealId}
                   probabilities={probabilities}
                 />
-              </section>
+              </PipelineLaneSection>
             );
           })}
         </div>

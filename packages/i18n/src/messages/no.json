@@ -4277,6 +4277,8 @@
     "exportXlsx": "Eksporter XLSX",
     "weightedAbbr": "gew.",
     "openTrack": "Åpne spor",
+    "laneCollapse": "Skjul kategori",
+    "laneExpand": "Vis kategori",
     "backToBoard": "Tilbake til tavle",
     "trackTitle": "{swimlane}-track",
     "summary": {

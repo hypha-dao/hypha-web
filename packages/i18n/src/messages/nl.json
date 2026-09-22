@@ -4278,6 +4278,8 @@
     "exportXlsx": "Exporteer XLSX",
     "weightedAbbr": "gew.",
     "openTrack": "Open track",
+    "laneCollapse": "Categorie inklappen",
+    "laneExpand": "Categorie uitklappen",
     "backToBoard": "Terug naar bord",
     "trackTitle": "{swimlane}-track",
     "summary": {

@@ -4268,6 +4268,8 @@
     "exportXlsx": "Exporter XLSX",
     "weightedAbbr": "pond.",
     "openTrack": "Ouvrir la piste",
+    "laneCollapse": "Réduire la catégorie",
+    "laneExpand": "Développer la catégorie",
     "backToBoard": "Retour au tableau",
     "trackTitle": "Piste {swimlane}",
     "summary": {

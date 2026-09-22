@@ -5,7 +5,9 @@ import {
   PIPELINE_STATUSES,
   type PipelineStatus,
 } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 import { KanbanColumn } from './kanban-column';
+import { PIPELINE_SWIMLANE_STATUS_ROW_CLASS } from '../utils/pipeline-board-layout';
 
 type KanbanBoardProps = {
   deals: Deal[];
@@ -25,7 +27,14 @@ export function KanbanBoard({
   probabilities,
 }: KanbanBoardProps) {
   return (
-    <div className="flex overflow-x-auto pb-2">
+    <div
+      className={cn(
+        'flex w-full min-w-0',
+        wide
+          ? 'items-start overflow-x-auto pb-3 pt-0.5'
+          : cn('min-h-0 overflow-x-auto', PIPELINE_SWIMLANE_STATUS_ROW_CLASS),
+      )}
+    >
       {PIPELINE_STATUSES.map((status) => (
         <KanbanColumn
           key={status}
