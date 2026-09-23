@@ -4,7 +4,7 @@ import { ProposalCreationProps } from './template';
 import { sendPushByAlias } from './sdk/send-push';
 import { sendEmailByAlias } from './sdk/send-email';
 import { LangMap } from './sdk/types';
-import { sdkClient } from './sdk';
+import { resolveConsentedSlugs, type ConsentTags } from './core/consent-gate';
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
 
@@ -16,36 +16,9 @@ export interface Tags {
   [key: string]: string;
 }
 
-const filterUsers = async (usernames: Array<string>, requiredTags: Tags) => {
-  const results = await Promise.allSettled(
-    usernames.map(async (username) => ({
-      username,
-      user: await sdkClient.getUser(ONESIGNAL_APP_ID, 'external_id', username),
-    })),
-  );
-  const users = results
-    .filter(
-      (r): r is PromiseFulfilledResult<{ username: string; user: any }> =>
-        r.status === 'fulfilled',
-    )
-    .map((r) => r.value);
-  const filteredUsernames = users
-    .filter(({ user }) => {
-      const tags = user.properties?.tags;
-      if (!tags) {
-        return false;
-      }
-      const hasMismatch = Object.entries(requiredTags).some(([tag, value]) => {
-        return !Object.hasOwn(tags, tag) || tags[tag] !== value;
-      });
-      if (hasMismatch) {
-        return false;
-      }
-      return true;
-    })
-    .map(({ username }) => username);
-  return filteredUsernames;
-};
+/** @deprecated moved to `core/consent-gate.ts::resolveConsentedSlugs` (#2470) — kept as a thin alias here so this file's call sites don't change until they migrate onto the new decision layer. */
+const filterUsers = (usernames: Array<string>, requiredTags: Tags) =>
+  resolveConsentedSlugs(usernames, requiredTags as ConsentTags);
 
 export const sendPushNotifications = async ({
   contents,

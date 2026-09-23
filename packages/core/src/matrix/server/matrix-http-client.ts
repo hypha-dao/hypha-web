@@ -298,6 +298,63 @@ export async function matrixCreateRoom(
   return roomId;
 }
 
+/**
+ * Read a room's recent timeline backwards (`dir=b`). Used by the notification reconciler
+ * (#2483) as a bounded backstop for events that bypassed the AS endpoint — walk the last
+ * `limit` messages of a room and dispatch any not already in `notification_processed_events`.
+ * Not a full backfill: the caller bounds it by time.
+ */
+export async function matrixListRoomMessages(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+  options: { limit?: number; from?: string } = {},
+): Promise<{ chunk: unknown[]; start?: string; end?: string }> {
+  const params = new URLSearchParams({
+    dir: 'b',
+    limit: String(Math.max(1, Math.min(1000, options.limit ?? 100))),
+  });
+  if (options.from) params.set('from', options.from);
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/messages?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{
+    chunk?: unknown[];
+    start?: string;
+    end?: string;
+  }>(res);
+  return {
+    chunk: Array.isArray(data.chunk) ? data.chunk : [],
+    start: data.start,
+    end: data.end,
+  };
+}
+
+/**
+ * Joined member MXIDs for a room, per Matrix's own membership state — the authoritative "who's
+ * actually in this room" (#2470 D21: the Hypha `memberships` DB table this used to be resolved
+ * against is effectively dead — 2 rows total in prod, none since 2025-03-03 — nothing in this
+ * repo writes to it. Matrix room membership is live, always in sync with what actually happened
+ * in the room, and directly what "who should be notified about this room's messages" means).
+ */
+export async function matrixGetJoinedRoomMembers(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string[]> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/joined_members`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{ joined?: Record<string, unknown> }>(res);
+  return Object.keys(data.joined ?? {});
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,
