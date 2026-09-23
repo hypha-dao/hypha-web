@@ -1,29 +1,125 @@
 /**
  * Space-scoped accent from imagery (--space-* set by SpaceAccentFromImages).
- * Colour is a quiet signal on ink/paper — flat fills, no candy gradients.
- * Shared by DHO and profile layouts.
+ * Buttons stay a flat mid. The identity row is a short uneven wash in the
+ * same hue family (deep, luminous, mid), mixed into paper or ink so type holds.
+ * Shared by DHO and profile layouts. Outside `[data-space-accent-scope]` these
+ * variables are unset and the wash class paints nothing.
  *
  * Contrast roles (do not conflate):
  * - `--space-accent-fg` / `--color-accent-11` — readable accent text on light surfaces
  * - `--space-accent-contrast` / `--color-accent-contrast` — text on solid accent fills
- * - `--space-accent-solid` — single softened solid for CTAs (replaces the old ramp)
+ * - `--space-accent-solid` — balanced mid tone for solid CTAs
+ * - `--space-accent-deep` / `--space-accent-luminous` — wash stops, not button fills
  */
 [data-space-accent-scope] {
   --space-tab-active-border: var(--space-accent, var(--color-accent-9));
   /* Never use solid-on-accent contrast here — that is near-white and breaks light mode */
   --space-accent-fg: var(--color-accent-11, var(--space-accent));
-  --space-accent-solid: var(--color-accent-9, var(--space-accent));
-  --space-accent-solid-hover: var(
-    --color-accent-10,
-    color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 88%, black)
+  --space-accent-solid: var(--space-accent, var(--color-accent-9));
+  --space-accent-solid-hover: color-mix(
+    in oklab,
+    var(--space-accent, var(--color-accent-9)) 68%,
+    var(--space-accent-deep, black)
   );
-  /* Kept for callers that still reference the old name — resolves to a flat solid. */
-  --space-accent-gradient: var(--space-accent-solid);
+  /*
+   * Light wash: paper carries the field so dark type stays readable.
+   * Luminous stop sits left of center; the right end settles darker.
+   */
+  --space-accent-gradient: radial-gradient(
+      ellipse 68% 170% at 36% 0%,
+      color-mix(
+          in oklab,
+          var(--space-accent-luminous, var(--space-accent)) 36%,
+          var(--hypha-paper)
+        )
+        0%,
+      transparent 70%
+    ),
+    linear-gradient(
+      108deg,
+      color-mix(
+          in oklab,
+          var(--space-accent-deep, var(--space-accent)) 22%,
+          var(--hypha-paper)
+        )
+        0%,
+      color-mix(
+          in oklab,
+          var(--space-accent-luminous, var(--space-accent)) 30%,
+          var(--hypha-paper)
+        )
+        34%,
+      color-mix(
+          in oklab,
+          var(--space-accent, var(--space-accent)) 16%,
+          var(--hypha-paper)
+        )
+        66%,
+      color-mix(
+          in oklab,
+          var(--space-accent-deep, var(--space-accent)) 14%,
+          var(--hypha-paper)
+        )
+        100%
+    );
   --ring: color-mix(
     in oklab,
     var(--space-accent, var(--color-accent-9)) 55%,
     white
   );
+}
+
+/*
+ * Dark wash: ink carries the field so light type stays readable.
+ * Same uneven path — luminous left of center, darker toward the right —
+ * held inside a dark range rather than a bright stripe.
+ */
+.dark [data-space-accent-scope],
+.dark-theme [data-space-accent-scope],
+[data-theme='dark'] [data-space-accent-scope] {
+  --space-accent-gradient: radial-gradient(
+      ellipse 68% 170% at 36% 0%,
+      color-mix(
+          in oklab,
+          var(--space-accent-luminous, var(--space-accent)) 40%,
+          var(--hypha-ink)
+        )
+        0%,
+      transparent 72%
+    ),
+    linear-gradient(
+      108deg,
+      color-mix(
+          in oklab,
+          var(--space-accent-deep, var(--space-accent)) 76%,
+          var(--hypha-ink)
+        )
+        0%,
+      color-mix(
+          in oklab,
+          var(--space-accent-luminous, var(--space-accent)) 56%,
+          var(--hypha-ink)
+        )
+        34%,
+      color-mix(
+          in oklab,
+          var(--space-accent, var(--space-accent)) 40%,
+          var(--hypha-ink)
+        )
+        66%,
+      color-mix(
+          in oklab,
+          var(--space-accent-deep, var(--space-accent)) 68%,
+          var(--hypha-ink)
+        )
+        100%
+    );
+}
+
+/* Identity row only. Unscoped screens never match, so the wash stays off. */
+[data-space-accent-scope] .space-accent-banner-wash {
+  background-image: var(--space-accent-gradient);
+  background-repeat: no-repeat;
 }
 
 /* Ghost/underline tabs tint the active label; switch pills keep their own foreground */
