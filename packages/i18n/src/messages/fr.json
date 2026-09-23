@@ -3600,7 +3600,7 @@
       "aud": {
         "code": "AUD",
         "name": "Dollar australien",
-        "payoutMethod": "Vérification d'identité uniquement"
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {

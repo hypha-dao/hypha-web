@@ -3602,7 +3602,7 @@
       "aud": {
         "code": "AUD",
         "name": "Dólar australiano",
-        "payoutMethod": "Somente verificação de identidade"
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {

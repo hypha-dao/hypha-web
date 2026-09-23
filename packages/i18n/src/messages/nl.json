@@ -1053,7 +1053,7 @@
       "aud": {
         "code": "AUD",
         "name": "Australische dollar",
-        "payoutMethod": "Alleen identiteitsverificatie"
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {

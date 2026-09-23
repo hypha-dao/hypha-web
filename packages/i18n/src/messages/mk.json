@@ -1033,7 +1033,7 @@
       "aud": {
         "code": "AUD",
         "name": "Австралиски долар",
-        "payoutMethod": "Само верификација на идентитет"
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {
