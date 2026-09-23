@@ -181,3 +181,10 @@ Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying Signals...
 Signals deployed to: 0x967A4bD9a10Bba875d0098fbd3206ca4259A509f
 Implementation deployed to: 0x6a1aE10452484c04EBD1a8005E20c945a5d3a71a
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying OSwaps...
+OSwaps deployed to: 0xA8b0Da630351E038E9D8E4d5135D029fB9757298
+OSwaps initialized. Manager: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RainbowFactory...
+RainbowFactory deployed to: 0x172fe07761C566661fAe90069b3fa140644fF16a
