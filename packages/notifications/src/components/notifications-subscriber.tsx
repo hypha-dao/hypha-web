@@ -114,6 +114,15 @@ export function NotificationSubscriber({
           safari_web_id: safariWebId,
           serviceWorkerPath,
           serviceWorkerParam: { scope },
+          /**
+           * Without this, the SDK assumes a "typical" setup (worker served from site root) and
+           * registers against a root-relative script URL regardless of `serviceWorkerPath` —
+           * the worker here lives at `/onesignal/OneSignalSDKWorker.js`, not `/`, so that
+           * mismatched registration fails with a SecurityError (redirect/404 on the wrong URL).
+           * Pre-existing gap, unrelated to #2470 — just never exercised until push was first
+           * tested locally.
+           */
+          serviceWorkerOverrideForTypical: true,
           allowLocalhostAsSecureOrigin: DEV_ENV,
           promptOptions: {
             slidedown: {

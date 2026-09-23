@@ -333,6 +333,28 @@ export async function matrixListRoomMessages(
   };
 }
 
+/**
+ * Joined member MXIDs for a room, per Matrix's own membership state — the authoritative "who's
+ * actually in this room" (#2470 D21: the Hypha `memberships` DB table this used to be resolved
+ * against is effectively dead — 2 rows total in prod, none since 2025-03-03 — nothing in this
+ * repo writes to it. Matrix room membership is live, always in sync with what actually happened
+ * in the room, and directly what "who should be notified about this room's messages" means).
+ */
+export async function matrixGetJoinedRoomMembers(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string[]> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/joined_members`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{ joined?: Record<string, unknown> }>(res);
+  return Object.keys(data.joined ?? {});
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,
