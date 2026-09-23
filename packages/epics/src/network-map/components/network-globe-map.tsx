@@ -1565,7 +1565,7 @@ export function NetworkGlobeMap({
       <div
         className={cn(
           'pointer-events-none absolute bottom-3 left-3 z-20',
-          'inline-flex max-w-[min(100%-1.5rem,20rem)] items-center gap-3',
+          'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
           'rounded-md border border-border bg-background/90 px-2.5 py-1.5',
           'text-1 text-muted-foreground shadow-sm backdrop-blur-sm',
         )}
