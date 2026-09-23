@@ -26,6 +26,7 @@ import {
   areOnboardingFieldsComplete,
   BANKING_READONLY_INPUT_CLASS,
   getDedupedOnboardingFields,
+  resolveOnboardingCurrencyProviders,
 } from '../banking-ui';
 import {
   BANKING_DIALOG_CONTENT_CLASS,
@@ -114,9 +115,21 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
     currency: BankOnboardingCurrencyCode,
     checked: boolean,
   ) => {
-    setSelected((current) =>
-      checked ? [...current, currency] : current.filter((c) => c !== currency),
-    );
+    setSelected((current) => {
+      if (!checked) {
+        return current.filter((c) => c !== currency);
+      }
+      // Onboarding is one-provider-per-call (D2/D3) — the server rejects a mixed-provider
+      // `requestedRails` set. Selecting a currency from a different provider than what's already
+      // picked starts a fresh selection instead of mixing.
+      const [currentProvider] =
+        current.length > 0 ? resolveOnboardingCurrencyProviders(current) : [];
+      const [newProvider] = resolveOnboardingCurrencyProviders([currency]);
+      if (currentProvider && newProvider && currentProvider !== newProvider) {
+        return [currency];
+      }
+      return [...current, currency];
+    });
   };
 
   // `contactEmail`/`legalName` already ride the fixed customer-fields inputs below — the dynamic

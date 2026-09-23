@@ -17,6 +17,7 @@ import {
   getDedupedOnboardingFields,
   getEnabledOnboardingCurrencies,
   ownerText,
+  resolveOnboardingCurrencyProviders,
   type BankingOwnerContext,
 } from '../banking-ui';
 import { CurrencyOptionRow } from './currency-option-row';
@@ -80,9 +81,23 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
     currency: BankOnboardingCurrencyCode,
     checked: boolean,
   ) => {
-    setSelected((current) =>
-      checked ? [...current, currency] : current.filter((c) => c !== currency),
-    );
+    setSelected((current) => {
+      if (!checked) {
+        return current.filter((c) => c !== currency);
+      }
+      // Onboarding is one-provider-per-call (D2/D3) — the server rejects a mixed-provider
+      // `requestedRails` set. Selecting a currency from a different provider than what's already
+      // picked starts a fresh selection instead of mixing (e.g. checking `aud` while Bridge
+      // currencies are still selected drops them, rather than producing a submission that would
+      // fail server-side).
+      const [currentProvider] =
+        current.length > 0 ? resolveOnboardingCurrencyProviders(current) : [];
+      const [newProvider] = resolveOnboardingCurrencyProviders([currency]);
+      if (currentProvider && newProvider && currentProvider !== newProvider) {
+        return [currency];
+      }
+      return [...current, currency];
+    });
   };
 
   // `contactEmail`/`legalName` already ride the fixed organization-details inputs above — the
