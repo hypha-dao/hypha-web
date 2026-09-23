@@ -244,6 +244,42 @@ describe('createAuddIdentityProvider — getKycStatus', () => {
       kycLink: null,
     });
   });
+
+  it('paginates past a full first page to find a customer on a later page', async () => {
+    const fullPage = Array.from({ length: 100 }, (_, i) => ({ id: `c${i}` }));
+    auddListCustomers.mockImplementation(
+      async ({ kycStatus, index }: { kycStatus: string; index?: number }) => {
+        if (kycStatus !== 'APPROVED') {
+          return { items: [], total: 0 };
+        }
+        if ((index ?? 0) === 0) {
+          return { items: fullPage, total: 101 };
+        }
+        return { items: [{ id: 'cust_123' }], total: 101 };
+      },
+    );
+
+    const provider = createAuddIdentityProvider();
+    const result = await provider.getKycStatus({
+      customer: {
+        provider: 'audd',
+        providerKycLinkId: 'cust_123',
+        providerCustomerId: 'cust_123',
+      },
+    });
+
+    expect(result?.kycStatus).toBe('APPROVED');
+    expect(result?.isApproved).toBe(true);
+    // Two pages for APPROVED (100 then the 101st) before it can move to the next status.
+    expect(auddListCustomers).toHaveBeenCalledWith(
+      expect.objectContaining({ kycStatus: 'APPROVED', index: 0 }),
+      undefined,
+    );
+    expect(auddListCustomers).toHaveBeenCalledWith(
+      expect.objectContaining({ kycStatus: 'APPROVED', index: 100 }),
+      undefined,
+    );
+  });
 });
 
 describe('createAuddIdentityProvider — getOnboardingStepDescriptor', () => {

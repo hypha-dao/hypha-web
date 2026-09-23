@@ -51,9 +51,9 @@ export function getAuddClientConfig(): AuddClientConfig {
     );
   }
 
-  const baseUrl =
-    process.env.AUDD_GATEWAY_API_BASE_URL ?? DEFAULT_AUDD_API_BASE_URL;
-  if (!process.env.AUDD_GATEWAY_API_BASE_URL) {
+  const rawBaseUrl = process.env.AUDD_GATEWAY_API_BASE_URL?.trim();
+  const baseUrl = rawBaseUrl || DEFAULT_AUDD_API_BASE_URL;
+  if (!rawBaseUrl) {
     console.warn(
       'AUDD_GATEWAY_API_BASE_URL is not set; defaulting to AUDD sandbox API',
     );

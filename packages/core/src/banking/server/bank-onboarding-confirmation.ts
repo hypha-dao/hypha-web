@@ -536,21 +536,24 @@ export async function confirmBankEmail(
     return { ok: false, reason: 'invalid' };
   }
 
-  // Provider is re-resolved from the claims' `requestedRails` (D2 — no provider claim carried in
-  // the token itself), honouring an explicit test override the same way every other entrypoint
-  // does.
-  const kycProvider = resolveKycProvider(claims.requestedRails, options);
-  const resolvedOptions: BankOnboardingConfirmationOptions = { kycProvider };
-
-  // Bridge-only email dedup pre-check (#2288 D7) — informational, not a gate. AUDD relies on its
-  // own idempotency (create-customer 409s on a duplicate email within the same company).
-  const existingBridgeCustomer =
-    kycProvider.provider === 'bridge'
-      ? await bridgeFindCustomerByEmail(claims.contactEmail).catch(() => null)
-      : null;
-
   let result: KycLinkAndValidations | null;
+  let existingBridgeCustomer: BridgeGetCustomerResponse | null;
   try {
+    // Provider is re-resolved from the claims' `requestedRails` (D2 — no provider claim carried
+    // in the token itself), honouring an explicit test override the same way every other
+    // entrypoint does. Resolution can throw (e.g. enablement config narrowed after the token was
+    // issued) — inside the try/catch so a throw here still releases the claim instead of leaving
+    // the row permanently stuck (only nonce cleared, never confirmed).
+    const kycProvider = resolveKycProvider(claims.requestedRails, options);
+    const resolvedOptions: BankOnboardingConfirmationOptions = { kycProvider };
+
+    // Bridge-only email dedup pre-check (#2288 D7) — informational, not a gate. AUDD relies on
+    // its own idempotency (create-customer 409s on a duplicate email within the same company).
+    existingBridgeCustomer =
+      kycProvider.provider === 'bridge'
+        ? await bridgeFindCustomerByEmail(claims.contactEmail).catch(() => null)
+        : null;
+
     result = await finalizeClaimedBankCustomerWithKycLink(
       claimed.id,
       {

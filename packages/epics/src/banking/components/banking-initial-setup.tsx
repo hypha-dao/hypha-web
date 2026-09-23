@@ -42,6 +42,12 @@ const ONBOARDING_CURRENCY_METAS = BANK_ONBOARDING_CURRENCY_METAS.filter((m) =>
   enabledOnboardingCurrencies.has(m.currency),
 );
 
+function getDefaultEnabledCurrencyCodes(): BankOnboardingCurrencyCode[] {
+  return getDefaultBankCurrencyCodes().filter((c) =>
+    enabledOnboardingCurrencies.has(c),
+  );
+}
+
 export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   initialLegalName,
   initialContactEmail,
@@ -56,9 +62,9 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [selected, setSelected] = useState<BankOnboardingCurrencyCode[]>(() => [
-    ...getDefaultBankCurrencyCodes(),
-  ]);
+  const [selected, setSelected] = useState<BankOnboardingCurrencyCode[]>(() =>
+    getDefaultEnabledCurrencyCodes(),
+  );
   const [onboardingFieldValues, setOnboardingFieldValues] = useState<
     Record<string, string>
   >({});
@@ -66,7 +72,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   useEffect(() => {
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
-    setSelected([...getDefaultBankCurrencyCodes()]);
+    setSelected(getDefaultEnabledCurrencyCodes());
     setOnboardingFieldValues({});
   }, [initialContactEmail, initialLegalName]);
 
@@ -100,11 +106,20 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
       return;
     }
 
+    // Drop values left over from a currency that's since been deselected — they'd otherwise ride
+    // along in the encrypted confirmation token for no reason (adapters ignore unknown keys, but
+    // there's no reason to carry stale form data that far).
+    const activeOnboardingFields = Object.fromEntries(
+      Object.entries(onboardingFieldValues).filter(([key]) =>
+        dynamicFields.some((field) => field.key === key),
+      ),
+    );
+
     await onSubmit({
       legalName: legalName.trim(),
       contactEmail: contactEmail.trim(),
       currencies: selected,
-      onboardingFields: onboardingFieldValues,
+      onboardingFields: activeOnboardingFields,
     });
   };
 

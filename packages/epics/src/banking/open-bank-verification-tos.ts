@@ -1,4 +1,4 @@
-import type { BankCustomerPublicStatus } from './hooks/types';
+import type { BankCustomerPublicStatus, BankProvider } from './hooks/types';
 import { procedureLink } from './banking-ui';
 
 export type BankVerificationLinks = {
@@ -58,20 +58,18 @@ export function openBankVerificationFlowLink(
 }
 
 /**
- * Same as `openBankVerificationFlowLink`, but resolves the just-submitted provider from a
- * multi-provider status list (D11) instead of assuming a single Bridge-shaped status — opens the
- * first not-yet-approved entry's link. Onboarding is one-provider-per-call (D3), so in practice
- * this opens exactly the provider that was just onboarded, Bridge or AUDD alike.
+ * Same as `openBankVerificationFlowLink`, but selects the entry for the provider that was just
+ * submitted from a multi-provider status list (D11) instead of assuming a single Bridge-shaped
+ * status. The DB query behind `statuses` defines no provider ordering, so opening "the first
+ * actionable entry" could open an unrelated, older pending provider's link instead of the one the
+ * caller just onboarded — `provider` pins it to the right entry.
  */
 export function openBankVerificationFlowLinks(
   statuses: readonly BankCustomerPublicStatus[] | null | undefined,
+  provider: BankProvider,
 ): boolean {
-  for (const status of statuses ?? []) {
-    if (openFromStatus(status)) {
-      return true;
-    }
-  }
-  return false;
+  const status = statuses?.find((entry) => entry.provider === provider);
+  return status ? openFromStatus(status) : false;
 }
 
 export function openBankVerificationTosLink(

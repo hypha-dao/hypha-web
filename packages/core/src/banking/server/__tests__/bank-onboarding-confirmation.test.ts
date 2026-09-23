@@ -644,6 +644,37 @@ describe('confirmBankEmail', () => {
     );
   });
 
+  it('releases the claim if provider resolution itself throws, not just the provider call', async () => {
+    // No `kycProvider` override — exercises the real resolveKycProvider path. Mixed-provider
+    // rails (D3) is a documented throw in resolveProviderForOnboarding, reached only after the
+    // row is claimed; the claim must still be released rather than left permanently stuck.
+    const signed = await signBankConfirmationJwt({
+      ownerType: 'space',
+      ownerId: 1,
+      ownerSlug: 'acme',
+      ownerLabel: 'Acme',
+      entityType: 'business',
+      legalName: 'Acme Foundation Ltd.',
+      contactEmail: 'compliance@acme.org',
+      requestedRails: ['eur', 'aud'],
+      submitterPersonId: 10,
+    });
+    findBankCustomerByNonce.mockResolvedValue({
+      id: 1,
+      jwtNonce: signed.nonce,
+      providerKycLinkId: null,
+    });
+
+    await expect(
+      confirmBankEmail(signed.token, { db: mockDb }),
+    ).rejects.toThrow();
+
+    expect(releaseBankCustomerClaim).toHaveBeenCalledWith(
+      { id: 1, restoreNonce: expect.any(String) },
+      expect.any(Object),
+    );
+  });
+
   it('rejects an already-confirmed row', async () => {
     const { token, nonce } = await signBankConfirmationJwt({
       ownerType: 'space',

@@ -196,19 +196,34 @@ export function createAuddIdentityProvider(
 
       try {
         const token = await auddExchangeToken(config);
+        const pageLimit = 100;
 
         for (const kycStatus of AUDD_KYC_STATUS_PROBE_ORDER) {
-          const page = await auddListCustomers(
-            { accessToken: token.accessToken, kycStatus, limit: 100 },
-            config,
-          );
-          if (page.items.some((item) => item.id === customerId)) {
-            return {
-              kycStatus,
-              isApproved: kycStatus === 'APPROVED',
-              tosStatus: null,
-              kycLink: null,
-            };
+          let index = 0;
+          for (;;) {
+            const page = await auddListCustomers(
+              {
+                accessToken: token.accessToken,
+                kycStatus,
+                limit: pageLimit,
+                index,
+              },
+              config,
+            );
+            if (page.items.some((item) => item.id === customerId)) {
+              return {
+                kycStatus,
+                isApproved: kycStatus === 'APPROVED',
+                tosStatus: null,
+                kycLink: null,
+              };
+            }
+            index += page.items.length;
+            // Stop once every page for this status has been read: a short page (fewer than the
+            // limit) or reaching the reported total both signal there is nothing left to probe.
+            if (page.items.length < pageLimit || index >= page.total) {
+              break;
+            }
           }
         }
 

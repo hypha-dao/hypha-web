@@ -20,6 +20,7 @@ import {
   hasAddAccountRailAvailable,
   hasApprovedBankCurrencies,
   isBankVerificationInProgress,
+  resolveOnboardingCurrencyProviders,
 } from '../banking-ui';
 import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import type { BankPayoutAccountPublic } from '../hooks/types';
@@ -235,7 +236,14 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
       });
       setShowEmailConfirmationResend(false);
       const updated = await refreshProviders();
-      openBankVerificationFlowLinks(updated);
+      // Onboarding is one-provider-per-call (D2/D3 — mixed rails are rejected server-side), so
+      // this always resolves to exactly the provider just submitted.
+      const [submittedProvider] = resolveOnboardingCurrencyProviders(
+        input.currencies,
+      );
+      if (submittedProvider) {
+        openBankVerificationFlowLinks(updated, submittedProvider);
+      }
     },
     [clearOnboardingError, refreshProviders, requestOnboarding],
   );
@@ -278,7 +286,9 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     );
   }
 
-  if (pendingConfirmationEntry) {
+  // Only take over the full view for a pending confirmation when there's no other usable
+  // provider yet — see banking-section.tsx for the matching space-side comment.
+  if (pendingConfirmationEntry && !showBankingListings) {
     return (
       <PendingEmailConfirmationCard
         onResend={

@@ -145,11 +145,17 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
       return;
     }
 
+    const activeOnboardingFields = Object.fromEntries(
+      Object.entries(onboardingFieldValues).filter(([key]) =>
+        dynamicFields.some((field) => field.key === key),
+      ),
+    );
+
     await onSubmit({
       legalName: legalName.trim(),
       contactEmail: contactEmail.trim(),
       currencies: selected,
-      onboardingFields: onboardingFieldValues,
+      onboardingFields: activeOnboardingFields,
     });
   };
 

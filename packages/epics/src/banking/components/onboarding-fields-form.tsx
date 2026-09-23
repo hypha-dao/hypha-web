@@ -61,7 +61,7 @@ export const OnboardingFieldsForm: FC<OnboardingFieldsFormProps> = ({
                 onValueChange={(next) => onChange(field.key, next)}
                 disabled={disabled}
               >
-                <SelectTrigger id={inputId}>
+                <SelectTrigger id={inputId} aria-required={required}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

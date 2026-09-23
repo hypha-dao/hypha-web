@@ -66,12 +66,12 @@ import {
   getDedupedOnboardingFields,
   isOnboardingFieldRequired,
   resolveOnboardingCurrencyProviders,
-} from './banking-ui';
+} from '../banking-ui';
 import type {
   BankCustomerPublicStatus,
   BankRailPublicStatus,
   BankVirtualAccountPublic,
-} from './hooks/types';
+} from '../hooks/types';
 
 function rail(
   overrides: Partial<BankRailPublicStatus> & {

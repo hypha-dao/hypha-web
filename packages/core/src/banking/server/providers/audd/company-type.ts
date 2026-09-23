@@ -38,6 +38,12 @@ export function resolveAuddCompanyType(
         400,
       );
     }
+    if (entityType === 'business' && normalized === 'INDIVIDUAL') {
+      throw new BankOnboardingError(
+        'AUDD companyType "INDIVIDUAL" conflicts with entity type "business".',
+        400,
+      );
+    }
     return normalized;
   }
 

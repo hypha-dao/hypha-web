@@ -31,6 +31,7 @@ import {
   hasAddAccountRailAvailable,
   hasApprovedBankCurrencies,
   isBankVerificationInProgress,
+  resolveOnboardingCurrencyProviders,
 } from '../banking-ui';
 import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import type { BankPayoutAccountPublic } from '../hooks/types';
@@ -241,7 +242,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
       });
       setShowEmailConfirmationResend(false);
       const updated = await refreshProviders();
-      openBankVerificationFlowLinks(updated);
+      // Onboarding is one-provider-per-call (D2/D3 — mixed rails are rejected server-side), so
+      // this always resolves to exactly the provider just submitted.
+      const [submittedProvider] = resolveOnboardingCurrencyProviders(
+        input.currencies,
+      );
+      if (submittedProvider) {
+        openBankVerificationFlowLinks(updated, submittedProvider);
+      }
     },
     [clearOnboardingError, refreshProviders, requestOnboarding],
   );
@@ -285,7 +293,11 @@ export const BankingSection: FC<BankingSectionProps> = ({
     );
   }
 
-  if (pendingConfirmationEntry) {
+  // Only take over the full view for a pending confirmation when there's no other usable
+  // provider yet — an owner with Bridge already approved keeps their full accounts/transfers
+  // view even while a separately-submitted AUDD confirmation is still pending; that provider's
+  // pending state surfaces in the multi-provider status panel (gear dialog) instead.
+  if (pendingConfirmationEntry && !showBankingListings) {
     return (
       <PendingEmailConfirmationCard
         onResend={
