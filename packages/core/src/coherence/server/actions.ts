@@ -37,6 +37,10 @@ import {
   applyCoherenceUpvoteRemoval,
 } from './apply-coherence-upvote';
 import type { CoherenceUpvoteSummary } from '../types';
+import {
+  getSignalAssignedNotifier,
+  type SignalAssignedNotifierInput,
+} from './signal-assigned-notifier';
 
 async function assertSignalWorkflowAccess({
   spaceId,
@@ -61,37 +65,17 @@ async function assertSignalWorkflowAccess({
 }
 
 /**
- * Dynamic import to avoid a static circular package dependency — `@hypha-platform/notifications`
- * depends on `@hypha-platform/core`, so `packages/core` cannot statically import it back.
  * Server-fired signal-assignment notification (#2470); best-effort, never fails the mutation.
+ * Delegates to whatever `apps/web`'s `instrumentation.ts` registered via
+ * `setSignalAssignedNotifier` (see `./signal-assigned-notifier.ts` for why this is a registration
+ * slot rather than a direct import of `@hypha-platform/notifications`).
  */
-async function notifySignalAssigned({
-  spaceId,
-  assigneePersonIds,
-  actorPersonId,
-  signalSlug,
-  signalTitle,
-}: {
-  spaceId: number;
-  assigneePersonIds: number[];
-  actorPersonId: number | null;
-  signalSlug: string;
-  signalTitle: string;
-}) {
-  if (assigneePersonIds.length === 0) return;
+async function notifySignalAssigned(input: SignalAssignedNotifierInput) {
+  if (input.assigneePersonIds.length === 0) return;
+  const notifier = getSignalAssignedNotifier();
+  if (!notifier) return;
   try {
-    const { buildSignalAssignedEvent, dispatch } = await import(
-      '@hypha-platform/notifications/server'
-    );
-    await dispatch(
-      buildSignalAssignedEvent({
-        spaceId,
-        assigneePersonIds,
-        actorPersonId,
-        signalSlug,
-        signalTitle,
-      }),
-    );
+    await notifier(input);
   } catch (error) {
     console.error('Failed to notify signal assignees:', error);
   }

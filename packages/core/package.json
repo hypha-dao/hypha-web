@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@hypha-platform/authentication": "workspace:*",
-    "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
