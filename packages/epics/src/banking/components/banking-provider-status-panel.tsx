@@ -448,6 +448,50 @@ function UboPendingNotice({
   );
 }
 
+/**
+ * A provider row that is still waiting on the #2288 email-ownership confirmation: no verification
+ * link exists yet, so there are no procedures to show — just what to do next, and a resend.
+ */
+function PendingConfirmationSection({
+  currencyLabel,
+  onResend,
+}: {
+  currencyLabel?: string;
+  onResend?: () => void;
+}) {
+  const t = useTranslations('BankingTab.pendingEmailConfirmation');
+
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-2 font-semibold text-foreground">{t('title')}</h3>
+        {currencyLabel ? (
+          <Badge
+            variant="outline"
+            colorVariant="neutral"
+            className="pointer-events-none cursor-default text-1 shadow-none"
+          >
+            {currencyLabel}
+          </Badge>
+        ) : null}
+      </div>
+      <p className="mt-2 text-1 text-muted-foreground">{t('description')}</p>
+      {onResend ? (
+        <Button
+          type="button"
+          variant="outline"
+          colorVariant="neutral"
+          size="sm"
+          className="mt-3"
+          onClick={onResend}
+        >
+          {t('resendCta')}
+        </Button>
+      ) : null}
+    </section>
+  );
+}
+
 function ProviderValidationsSection({
   spaceSlug,
   basePath,
@@ -644,28 +688,54 @@ export const BankingProviderStatusPanel: FC<
             {tAdvanced('approvedSummary')}
           </p>
         ) : null}
-        {providers.map((entry) => (
-          <ProviderValidationsSection
-            key={entry.provider}
-            spaceSlug={spaceSlug}
-            basePath={basePath}
-            status={entry}
-            currencyLabel={
-              showCurrencyLabels
-                ? entry.requestedRails.map((c) => c.toUpperCase()).join(', ')
-                : undefined
-            }
-            t={t}
-            tTos={tTos}
-            tAdvanced={tAdvanced}
-            tOpenAccount={tOpenAccount}
-            tEndorsements={tEndorsements}
-            showProcedures={!entry.approvalRegistered}
-            onOpenGear={onOpenGear}
-            onRefreshStatus={onRefreshStatus}
-            ownerContext={ownerContext}
-          />
-        ))}
+        {providers.map((entry) =>
+          entry.pendingEmailConfirmation ? (
+            <PendingConfirmationSection
+              key={entry.provider}
+              currencyLabel={
+                showCurrencyLabels
+                  ? entry.pendingEmailConfirmation.requestedRails
+                      .map((c) => c.toUpperCase())
+                      .join(', ')
+                  : undefined
+              }
+              onResend={
+                canManage && onRequestCurrencyOnboarding
+                  ? () => {
+                      const currency =
+                        entry.pendingEmailConfirmation?.requestedRails[0];
+                      if (currency) {
+                        onRequestCurrencyOnboarding(
+                          currency as BankOnboardingCurrencyCode,
+                        );
+                      }
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <ProviderValidationsSection
+              key={entry.provider}
+              spaceSlug={spaceSlug}
+              basePath={basePath}
+              status={entry}
+              currencyLabel={
+                showCurrencyLabels
+                  ? entry.requestedRails.map((c) => c.toUpperCase()).join(', ')
+                  : undefined
+              }
+              t={t}
+              tTos={tTos}
+              tAdvanced={tAdvanced}
+              tOpenAccount={tOpenAccount}
+              tEndorsements={tEndorsements}
+              showProcedures={!entry.approvalRegistered}
+              onOpenGear={onOpenGear}
+              onRefreshStatus={onRefreshStatus}
+              ownerContext={ownerContext}
+            />
+          ),
+        )}
         {requestableCurrencies.length > 0 && onRequestCurrencyOnboarding ? (
           <AdditionalCurrenciesList
             currencies={requestableCurrencies}
