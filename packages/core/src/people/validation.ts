@@ -12,8 +12,9 @@ import { TOKEN_PRICE_REFERENCE_CURRENCIES } from '../governance/types';
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 /**
- * Currency members can have balances shown in. Restricted to the currencies
- * with a Chainlink X/USD feed, since anything else could not be converted.
+ * Currency members can have balances shown in. Restricted to currencies
+ * {@link TOKEN_PRICE_REFERENCE_CURRENCIES} can convert to USD — on-chain
+ * AggregatorV3 feeds plus off-chain TZS.
  */
 const preferredCurrency = z
   .enum(TOKEN_PRICE_REFERENCE_CURRENCIES)

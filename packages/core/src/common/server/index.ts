@@ -4,6 +4,7 @@ export * from './get-db';
 export * from './order';
 
 export * from './get-token-price';
+export * from './open-er-api-client';
 export * from './get-currency-rates';
 // Pure helpers, re-exported here so server code can apply rates without
 // reaching into the client entry point.
@@ -15,6 +16,7 @@ export {
   getEnergyCommunityTokenAddresses,
 } from '../web3/energy-community-tokens';
 export * from './get-transfers-by-address';
+export * from './get-erc20-holder-addresses';
 export * from './get-token-balances-by-address';
 
 export * from './alchemy-client';

@@ -108,6 +108,19 @@ interface TokenUpdateDataInterface {
     transferAddresses: `0x${string}`[];
     receiveAddresses: `0x${string}`[];
   };
+  /** Display/portfolio peg — TZS is stored here, not on-chain */
+  referencePrice?: number;
+  referenceCurrency?: string;
+}
+
+function priceCurrencyPair(
+  price: number | undefined,
+  currency: string | undefined | null,
+): { price: number; currency: string } | undefined {
+  if (price == null || !Number.isFinite(price) || price <= 0 || !currency) {
+    return undefined;
+  }
+  return { price, currency };
 }
 
 export const ProposalUpdateToken = ({
@@ -401,11 +414,21 @@ export const ProposalUpdateToken = ({
     return undefined;
   }, [maxSupplyHuman, pendingData?.maxSupply, dbTokenMatch?.maxSupply]);
 
-  const showTokenPrice =
-    priceWithCurrency !== undefined &&
-    priceWithCurrency.tokenPrice !== undefined &&
-    priceCurrencyFeed !== undefined &&
-    tokenPrice !== undefined;
+  const pendingPrice =
+    pendingData?.referencePrice != null
+      ? Number(pendingData.referencePrice)
+      : undefined;
+  const dbPrice =
+    dbTokenMatch?.referencePrice != null
+      ? Number(dbTokenMatch.referencePrice)
+      : undefined;
+  const displayPair =
+    priceCurrencyPair(pendingPrice, pendingData?.referenceCurrency) ??
+    priceCurrencyPair(tokenPrice, priceCurrencyFeed) ??
+    priceCurrencyPair(dbPrice, dbTokenMatch?.referenceCurrency);
+  const displayTokenPrice = displayPair?.price;
+  const displayTokenCurrency = displayPair?.currency;
+  const showTokenPrice = displayPair != null;
 
   const maxSupplyTypeBracket = React.useMemo(() => {
     const fromPending = pendingData?.maxSupplyTypeValue;
@@ -522,16 +545,18 @@ export const ProposalUpdateToken = ({
           </div>
           <div className="text-1 shrink-0">{maxSupplyDisplay}</div>
         </div>
-        {showTokenPrice && tokenPrice !== undefined && priceCurrencyFeed && (
-          <div className="flex justify-between items-center text-nowrap">
-            <div className="text-1 text-neutral-11 w-full">
-              {tProposalDetails('labels.tokenPrice')}
+        {showTokenPrice &&
+          displayTokenPrice !== undefined &&
+          displayTokenCurrency && (
+            <div className="flex justify-between items-center text-nowrap">
+              <div className="text-1 text-neutral-11 w-full">
+                {tProposalDetails('labels.tokenPrice')}
+              </div>
+              <div className="text-1">
+                {formatCurrencyValue(displayTokenPrice)} {displayTokenCurrency}
+              </div>
             </div>
-            <div className="text-1">
-              {formatCurrencyValue(tokenPrice)} {priceCurrencyFeed}
-            </div>
-          </div>
-        )}
+          )}
       </div>
 
       <Separator />

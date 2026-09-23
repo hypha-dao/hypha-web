@@ -64,7 +64,7 @@ export const useSpaceDocuments: UseDocuments = ({
           {
             label: 'Proposal',
             className: 'capitalize',
-            variant: 'solid',
+            variant: 'outline',
             colorVariant: 'accent',
           },
           {

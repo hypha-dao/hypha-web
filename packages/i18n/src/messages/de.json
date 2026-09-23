@@ -360,6 +360,11 @@
     },
     "chartAria": "Tokenverteilungsdiagramm für {title}",
     "tokenDetailsAria": "Token-Details für {tokenName}",
+    "exportHolders": "Inhaber exportieren",
+    "exportingHolders": "Wird exportiert…",
+    "exportHoldersError": "Die Inhaberliste konnte nicht exportiert werden. Bitte erneut versuchen.",
+    "exportHoldersIncomplete": "Die Inhaberermittlung ist unvollständig. Bitte den Export erneut versuchen.",
+    "exportHoldersAria": "Vollständige Inhaberliste exportieren",
     "tooltip": {
       "totalSupply": "Gesamtangebot",
       "other": "Sonstige",
@@ -368,7 +373,8 @@
     "filters": {
       "energy": "Energie",
       "activity": "Aktivität",
-      "distribution": "Verteilung"
+      "distribution": "Verteilung",
+      "payingSpaces": "Zahlende Spaces"
     },
     "activity": {
       "title": "Aktivitäts-Widgets konnten nicht geladen werden",
@@ -417,6 +423,29 @@
     "energy": {
       "title": "Energie",
       "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
+    },
+    "payingSpaces": {
+      "pageTitle": "Zahlende Spaces",
+      "pageSubtitle": "Monatliche Abdeckung ab der ersten On-Chain-Zahlung.",
+      "title": "Zahlende Spaces",
+      "subtitle": "Spaces mit aktivem bezahltem Abo je Monat, seit Beginn. Filtern Sie nach Space für die Aufschlüsselung.",
+      "currentlyPaying": "Aktuell zahlend",
+      "everPaid": "Jemals gezahlt",
+      "paymentEvents": "Zahlungsereignisse",
+      "totalPaid": "Insgesamt gezahlt",
+      "spaceLabel": "Space",
+      "spaceAll": "Alle Spaces",
+      "payingCount": "zahlende Spaces",
+      "paymentsInView": "Zahlungen in der Ansicht",
+      "paymentUsdTitle": "Zahlungsbetrag",
+      "paymentUsdSubtitle": "USD aus On-Chain-Space-Zahlungen je Monat, seit Beginn. Filtern Sie nach Space für die Aufschlüsselung.",
+      "paymentUsdInView": "gezahlt in der Ansicht",
+      "paymentUsdChartAria": "Zahlungsbeträge in Dollar nach Monat",
+      "fromMonth": "Ab {month}",
+      "empty": "Noch keine Historie zahlender Spaces.",
+      "error": "Zahlende Spaces können derzeit nicht geladen werden.",
+      "chartAria": "Zahlende Spaces nach Monat",
+      "notCurrentlyPaying": "Derzeit nicht zahlend"
     }
   },
   "SpaceSettingsAction": {
@@ -2240,7 +2269,8 @@
             "nzd": "Neuseeländischer Dollar",
             "aud": "Australischer Dollar",
             "hkd": "Hongkong-Dollar",
-            "xpf": "CFP-Franc"
+            "xpf": "CFP-Franc",
+            "tzs": "Tansanischer Schilling"
           }
         },
         "decay": {

@@ -77,14 +77,18 @@ worker must run after `dueAt`.
 
 ### Preferred: Vercel Cron
 
-Configured in `apps/web/vercel.json`:
+Configured in `vercel.json` at the **repo root** (not `apps/web/`):
 
 - Path: `/api/cron/space-memory-refresh-discussions`
 - Default schedule: every 2 hours (`0 */2 * * *`)
 - Auth: `CRON_SECRET` (set in the Vercel project)
 
-Requires a Vercel plan that allows sub-daily crons (Pro+ for `*/10` and
-`0 */2`). After deploy, confirm the crons appear under Project → Settings →
+Vercel only reads `crons` from the `vercel.json` at the project's configured
+Root Directory. For this project, Root Directory is `./` (repo root), so the
+file must live there — a `vercel.json` under `apps/web/` is silently ignored
+and the crons will never be registered (confirmed in prod: 0 Cron Job
+invocations, Settings → Crons showing the onboarding screen instead of a
+job list). After deploy, confirm the crons appear under Project → Settings →
 Crons (or the deployment’s Cron Jobs tab).
 
 ### Manual / external scheduler
@@ -123,7 +127,7 @@ enqueue). Nothing emits signals unless this worker runs.
 
 ### Preferred: Vercel Cron
 
-Configured in `apps/web/vercel.json`:
+Configured in `vercel.json` at the **repo root** (not `apps/web/`):
 
 - Path: `/api/cron/signals-orchestrate`
 - Default schedule: every 10 minutes (`*/10 * * * *`)

@@ -16,6 +16,7 @@ export * from './pipeline';
 export * from './geo';
 export * from './geo/client';
 export * from './org-memory';
+export * from './platform';
 export * from './energy';
 export {
   getDefaultDestinationCurrency,

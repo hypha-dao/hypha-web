@@ -1,15 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  applyLastKnownOffchainRates,
   CONVERTIBLE_CURRENCIES,
   convertFromUsd,
   convertToUsd,
   isConvertibleCurrency,
+  OFFCHAIN_USD_CURRENCIES,
+  usdRateFromUnitsPerUsd,
   type UsdRates,
 } from '../currency-conversion';
 import { CURRENCY_FEEDS } from '../token-backing-vault';
 import { TOKEN_PRICE_REFERENCE_CURRENCIES } from '../../../governance/types';
 
-const RATES: UsdRates = { USD: 1, AUD: 0.65, EUR: 1.08 };
+const RATES: UsdRates = { USD: 1, AUD: 0.65, EUR: 1.08, TZS: 1 / 2_650 };
 
 describe('CONVERTIBLE_CURRENCIES', () => {
   it('stays in step with the currencies a token can be priced in', () => {
@@ -18,16 +21,21 @@ describe('CONVERTIBLE_CURRENCIES', () => {
     );
   });
 
-  it('covers every wired Chainlink feed', () => {
-    expect(CONVERTIBLE_CURRENCIES).toEqual(Object.keys(CURRENCY_FEEDS));
+  it('covers every wired Chainlink feed plus off-chain convertibles', () => {
+    expect(CONVERTIBLE_CURRENCIES).toEqual([
+      ...Object.keys(CURRENCY_FEEDS),
+      ...OFFCHAIN_USD_CURRENCIES,
+    ]);
+    expect(OFFCHAIN_USD_CURRENCIES).toEqual(['TZS']);
   });
 });
 
 describe('isConvertibleCurrency', () => {
-  it('accepts currencies with a feed and rejects everything else', () => {
+  it('accepts on-chain feeds and off-chain TZS, and rejects everything else', () => {
     expect(isConvertibleCurrency('AUD')).toBe(true);
     expect(isConvertibleCurrency('USD')).toBe(true);
-    // No Chainlink feed on Base.
+    expect(isConvertibleCurrency('TZS')).toBe(true);
+    // No Chainlink feed on Base and no off-chain rate.
     expect(isConvertibleCurrency('JPY')).toBe(false);
     expect(isConvertibleCurrency('aud')).toBe(false);
     expect(isConvertibleCurrency(null)).toBe(false);
@@ -46,6 +54,18 @@ describe('convertToUsd', () => {
   it('values an AUD-priced holding in USD', () => {
     // The bug Alex hit: 4,050,000 tokens at 1.00 AUD were counted as USD.
     expect(convertToUsd(4_050_000, 'AUD', RATES)).toBeCloseTo(2_632_500, 6);
+  });
+
+  it('values a TZS-priced holding in USD instead of treating TZS as 1:1', () => {
+    expect(convertToUsd(2_650, 'TZS', RATES)).toBeCloseTo(1, 6);
+  });
+
+  it('omits TZS from the USD total when no rate is available', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(convertToUsd(2_650, 'TZS', {})).toBe(0);
+    expect(convertToUsd(2_650, 'TZS', { TZS: 0 })).toBe(0);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('leaves USD amounts untouched', () => {
@@ -92,13 +112,45 @@ describe('convertFromUsd', () => {
     ).toBeCloseTo(original, 9);
   });
 
-  it('passes the amount through when no rate is available', () => {
+  it('passes the amount through when no on-chain rate is available', () => {
     expect(convertFromUsd(100, 'JPY', RATES)).toBe(100);
     expect(convertFromUsd(100, 'AUD', {})).toBe(100);
     expect(convertFromUsd(100, 'AUD', { AUD: 0 })).toBe(100);
   });
 
+  it('does not treat a missing TZS rate as 1:1 USD', () => {
+    expect(convertFromUsd(1, 'TZS', {})).toBe(0);
+    expect(convertFromUsd(1, 'TZS', { TZS: 0 })).toBe(0);
+  });
+
   it('preserves sign for negative balances', () => {
     expect(convertFromUsd(-65, 'AUD', RATES)).toBeCloseTo(-100, 6);
+  });
+});
+
+describe('applyLastKnownOffchainRates', () => {
+  it('fills a missing TZS quote from the last validated rate', () => {
+    expect(
+      applyLastKnownOffchainRates({ USD: 1 }, { TZS: 1 / 2_650 }).TZS,
+    ).toBeCloseTo(1 / 2_650, 12);
+  });
+
+  it('does not overwrite a live TZS quote', () => {
+    expect(
+      applyLastKnownOffchainRates({ TZS: 0.0004 }, { TZS: 0.0003 }).TZS,
+    ).toBe(0.0004);
+  });
+});
+
+describe('usdRateFromUnitsPerUsd', () => {
+  it('inverts TZS-per-USD into USD-per-TZS', () => {
+    expect(usdRateFromUnitsPerUsd(2_643.56)).toBeCloseTo(1 / 2_643.56, 12);
+  });
+
+  it('rejects missing or non-positive quotes', () => {
+    expect(usdRateFromUnitsPerUsd(undefined)).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(0)).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(-1)).toBeUndefined();
+    expect(usdRateFromUnitsPerUsd(Number.NaN)).toBeUndefined();
   });
 });

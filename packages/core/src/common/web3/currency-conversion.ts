@@ -1,15 +1,30 @@
 import { CURRENCY_FEEDS } from './token-backing-vault';
 
 /**
- * Currencies we can convert between: exactly those with an X/USD feed. Kept as
- * the keys of {@link CURRENCY_FEEDS} so a newly wired feed becomes convertible
- * without a second list to update.
+ * Fiat we convert via an off-chain FX source, not an AggregatorV3 feed.
+ * Do not add these to {@link CURRENCY_FEEDS} — there is no on-chain oracle.
  */
-export type ConvertibleCurrency = keyof typeof CURRENCY_FEEDS;
+export const OFFCHAIN_USD_CURRENCIES = ['TZS'] as const;
+export type OffchainUsdCurrency = (typeof OFFCHAIN_USD_CURRENCIES)[number];
 
-export const CONVERTIBLE_CURRENCIES = Object.keys(
-  CURRENCY_FEEDS,
-) as ConvertibleCurrency[];
+/**
+ * Currencies we can convert between: on-chain X/USD feeds plus off-chain
+ * display currencies (TZS). A newly wired feed still becomes convertible
+ * automatically; off-chain codes are listed explicitly.
+ */
+export type ConvertibleCurrency =
+  | keyof typeof CURRENCY_FEEDS
+  | OffchainUsdCurrency;
+
+const CONVERTIBLE_SET = new Set<string>([
+  ...Object.keys(CURRENCY_FEEDS),
+  ...OFFCHAIN_USD_CURRENCIES,
+]);
+
+export const CONVERTIBLE_CURRENCIES = [
+  ...Object.keys(CURRENCY_FEEDS),
+  ...OFFCHAIN_USD_CURRENCIES,
+] as ConvertibleCurrency[];
 
 /** USD value of one unit of each convertible currency, e.g. `{ AUD: 0.65 }`. */
 export type UsdRates = Partial<Record<ConvertibleCurrency, number>>;
@@ -22,19 +37,64 @@ export type UsdRates = Partial<Record<ConvertibleCurrency, number>>;
 export function isConvertibleCurrency(
   currency: string | null | undefined,
 ): currency is ConvertibleCurrency {
+  return currency != null && CONVERTIBLE_SET.has(currency);
+}
+
+export function isOffchainUsdCurrency(
+  currency: string | null | undefined,
+): currency is OffchainUsdCurrency {
   return (
     currency != null &&
-    Object.prototype.hasOwnProperty.call(CURRENCY_FEEDS, currency)
+    (OFFCHAIN_USD_CURRENCIES as readonly string[]).includes(currency)
   );
+}
+
+/**
+ * Reuse a validated prior off-chain rate when the live quote is missing.
+ * On-chain feed rates are not filled in here — those come from Chainlink.
+ */
+export function applyLastKnownOffchainRates(
+  rates: UsdRates,
+  lastKnown: UsdRates,
+): UsdRates {
+  const next: UsdRates = { ...rates };
+  for (const currency of OFFCHAIN_USD_CURRENCIES) {
+    const live = next[currency];
+    if (live !== undefined && live > 0) continue;
+    const prior = lastKnown[currency];
+    if (prior !== undefined && prior > 0) {
+      next[currency] = prior;
+    }
+  }
+  return next;
+}
+
+/**
+ * Invert a "units per 1 USD" quote (e.g. open.er-api `rates.TZS`) into
+ * USD per 1 unit for {@link UsdRates}.
+ */
+export function usdRateFromUnitsPerUsd(
+  unitsPerUsd: number | undefined,
+): number | undefined {
+  if (
+    unitsPerUsd == null ||
+    !Number.isFinite(unitsPerUsd) ||
+    unitsPerUsd <= 0
+  ) {
+    return undefined;
+  }
+  const rate = 1 / unitsPerUsd;
+  if (!Number.isFinite(rate) || rate <= 0) return undefined;
+  return rate;
 }
 
 /**
  * Convert `amount`, denominated in `currency`, into USD.
  *
- * An unknown or unavailable rate falls back to 1:1. That keeps a balance
- * visible rather than collapsing it to zero, at the cost of being off by the
- * FX spread — the per-token card still shows the true source currency, so the
- * fallback never mislabels what the number is denominated in.
+ * An unknown or unavailable *on-chain* rate falls back to 1:1 so a balance
+ * stays visible. Off-chain currencies (TZS) must not use that fallback —
+ * 1:1 would treat shillings as dollars and inflate portfolio totals. Those
+ * holdings are omitted from the USD total (0) until a real rate is available.
  */
 export function convertToUsd(
   amount: number,
@@ -45,6 +105,10 @@ export function convertToUsd(
   if (!currency || currency === 'USD') return amount;
   const rate = isConvertibleCurrency(currency) ? rates[currency] : undefined;
   if (rate === undefined || rate <= 0) {
+    if (isOffchainUsdCurrency(currency)) {
+      console.warn(`No USD rate for ${currency}; omitting from USD total`);
+      return 0;
+    }
     console.warn(`No USD rate for ${currency}; treating it as 1:1`);
     return amount;
   }
@@ -60,6 +124,9 @@ export function convertFromUsd(
   if (!usdAmount || !Number.isFinite(usdAmount)) return 0;
   if (!currency || currency === 'USD') return usdAmount;
   const rate = isConvertibleCurrency(currency) ? rates[currency] : undefined;
-  if (rate === undefined || rate <= 0) return usdAmount;
+  if (rate === undefined || rate <= 0) {
+    if (isOffchainUsdCurrency(currency)) return 0;
+    return usdAmount;
+  }
   return usdAmount / rate;
 }

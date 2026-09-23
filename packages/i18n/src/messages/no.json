@@ -358,6 +358,11 @@
     },
     "chartAria": "Tokenfordelingsdiagram for {title}",
     "tokenDetailsAria": "Tokendetaljer for {tokenName}",
+    "exportHolders": "Eksporter innehavere",
+    "exportingHolders": "Eksporterer…",
+    "exportHoldersError": "Kunne ikke eksportere innehaverlisten. Prøv på nytt.",
+    "exportHoldersIncomplete": "Innehaveroppdagelsen er ufullstendig. Prøv eksporten på nytt.",
+    "exportHoldersAria": "Eksporter hele innehaverlisten",
     "tooltip": {
       "totalSupply": "Total forsyning",
       "other": "Annet",
@@ -366,7 +371,8 @@
     "filters": {
       "energy": "Energi",
       "activity": "Aktivitet",
-      "distribution": "Fordeling"
+      "distribution": "Fordeling",
+      "payingSpaces": "Betalende spaces"
     },
     "activity": {
       "title": "Kunne ikke laste inn aktivitetswidgeter",
@@ -415,6 +421,29 @@
     "energy": {
       "title": "Energi",
       "description": "Energiwidgeter vises når energidata er tilgjengelig."
+    },
+    "payingSpaces": {
+      "pageTitle": "Betalende spaces",
+      "pageSubtitle": "Månedlig dekning fra den første on-chain-betalingen.",
+      "title": "Betalende spaces",
+      "subtitle": "Spaces med aktivt betalt abonnement hver måned, fra starten. Filtrer etter space for nedbrytning.",
+      "currentlyPaying": "Betaler nå",
+      "everPaid": "Har betalt",
+      "paymentEvents": "Betalingshendelser",
+      "totalPaid": "Totalt betalt",
+      "spaceLabel": "Space",
+      "spaceAll": "Alle spaces",
+      "payingCount": "betalende spaces",
+      "paymentsInView": "betalinger i visningen",
+      "paymentUsdTitle": "Betalingsbeløp",
+      "paymentUsdSubtitle": "USD fra on-chain space-betalinger hver måned, fra starten. Filtrer etter space for nedbrytning.",
+      "paymentUsdInView": "betalt i visningen",
+      "paymentUsdChartAria": "Betalingsbeløp i dollar per måned",
+      "fromMonth": "Fra {month}",
+      "empty": "Ingen historikk for betalende spaces ennå.",
+      "error": "Kan ikke laste inn betalende spaces akkurat nå.",
+      "chartAria": "Betalende spaces per måned",
+      "notCurrentlyPaying": "Betaler ikke nå"
     }
   },
   "SpaceSettingsAction": {
@@ -2241,7 +2270,8 @@
             "nzd": "Newzealandsk dollar",
             "aud": "Australsk dollar",
             "hkd": "Hongkong-dollar",
-            "xpf": "CFP-franc"
+            "xpf": "CFP-franc",
+            "tzs": "Tanzaniansk shilling"
           }
         },
         "decay": {

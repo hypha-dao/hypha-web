@@ -359,6 +359,11 @@
     },
     "chartAria": "Tokendistributiegrafiek voor {title}",
     "tokenDetailsAria": "Tokendetails voor {tokenName}",
+    "exportHolders": "Houders exporteren",
+    "exportingHolders": "Bezig met exporteren…",
+    "exportHoldersError": "De houderslijst kon niet worden geëxporteerd. Probeer het opnieuw.",
+    "exportHoldersIncomplete": "Het ophalen van houders is onvolledig. Probeer de export opnieuw.",
+    "exportHoldersAria": "De volledige houderslijst exporteren",
     "tooltip": {
       "totalSupply": "Totaal aanbod",
       "other": "Ander",
@@ -367,7 +372,8 @@
     "filters": {
       "energy": "Energie",
       "activity": "Activiteit",
-      "distribution": "Verdeling"
+      "distribution": "Verdeling",
+      "payingSpaces": "Betalende spaces"
     },
     "activity": {
       "title": "Kan activiteitswidgets niet laden",
@@ -416,6 +422,29 @@
     "energy": {
       "title": "Energie",
       "description": "Energiewidgets verschijnen zodra energiegegevens beschikbaar zijn."
+    },
+    "payingSpaces": {
+      "pageTitle": "Betalende spaces",
+      "pageSubtitle": "Maandelijkse dekking vanaf de eerste on-chain betaling.",
+      "title": "Betalende spaces",
+      "subtitle": "Spaces met een actief betaald abonnement per maand, vanaf het begin. Filter op space voor de uitsplitsing.",
+      "currentlyPaying": "Nu betalend",
+      "everPaid": "Ooit betaald",
+      "paymentEvents": "Betalingsgebeurtenissen",
+      "totalPaid": "Totaal betaald",
+      "spaceLabel": "Space",
+      "spaceAll": "Alle spaces",
+      "payingCount": "betalende spaces",
+      "paymentsInView": "betalingen in beeld",
+      "paymentUsdTitle": "Betalingsbedrag",
+      "paymentUsdSubtitle": "USD van on-chain space-betalingen per maand, vanaf het begin. Filter op space voor de uitsplitsing.",
+      "paymentUsdInView": "betaald in beeld",
+      "paymentUsdChartAria": "Betalingsbedragen in dollars per maand",
+      "fromMonth": "Vanaf {month}",
+      "empty": "Nog geen geschiedenis van betalende spaces.",
+      "error": "Betalende spaces kunnen nu niet worden geladen.",
+      "chartAria": "Betalende spaces per maand",
+      "notCurrentlyPaying": "Momenteel niet betalend"
     }
   },
   "SpaceSettingsAction": {
@@ -2242,7 +2271,8 @@
             "nzd": "Nieuw-Zeelandse dollar",
             "aud": "Australische dollar",
             "hkd": "Hongkongse dollar",
-            "xpf": "CFP-frank"
+            "xpf": "CFP-frank",
+            "tzs": "Tanzaniaanse shilling"
           }
         },
         "decay": {
