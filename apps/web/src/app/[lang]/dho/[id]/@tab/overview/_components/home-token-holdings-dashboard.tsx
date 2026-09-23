@@ -8,10 +8,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
 import {
   Badge,
-  Card,
-  CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
   Skeleton,
   Tabs,
@@ -22,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
+import { useSpaceAccentPortalStyles } from '@hypha-platform/epics';
 import {
   withMembersChartBaseline,
   type MembersMonthlyPoint,
@@ -103,13 +101,12 @@ type HomeSectionFilter =
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Token donuts (and the other overview series) render in the space tab, outside
- * the hero `[data-space-accent-scope]`. `--space-accent` is mirrored onto the
- * document while a space is open, so these lightness steps follow that one hue.
- * With no space accent they fall back to the quiet `--hypha-chart`. Same ratios
- * as the in-scope craft palette — no extra hues.
+ * Overview charts render in the space tab, outside the hero accent scope.
+ * The portal bridge supplies this space's accent; series are lightness steps
+ * of that one hue. With no accent they stay a quiet neutral — never the
+ * generic chart blue.
  */
-const CHART_HUE = 'var(--space-accent, var(--hypha-chart))';
+const CHART_HUE = 'var(--space-accent, var(--muted-foreground))';
 const SPACE_CHART_PALETTE_STYLE = {
   '--craft-chart-accent-1': `color-mix(in oklab, ${CHART_HUE} 20%, white 80%)`,
   '--craft-chart-accent-2': `color-mix(in oklab, ${CHART_HUE} 34%, white 66%)`,
@@ -141,15 +138,15 @@ const MEMBERS_COLOR_RANGE = {
   spaces: 'var(--craft-chart-accent-2)',
 };
 /**
- * Precision donut separators: contiguous arcs + hairline card-bg stroke.
+ * Precision donut separators: contiguous arcs + hairline page-ground stroke.
  * No padAngle wedges — those punch jagged gaps through thin holder slices.
  */
-const DONUT_SEGMENT_STROKE = 'var(--color-background-2)';
+const DONUT_SEGMENT_STROKE = 'var(--background)';
 const DONUT_SEGMENT_STROKE_WIDTH = 0.5;
 const DONUT_PAD_ANGLE = 0;
 const DONUT_CORNER_RADIUS = 0;
-const CHART_CARD_CLASS =
-  'min-w-0 overflow-hidden rounded-lg border border-border/70 bg-background-2 shadow-none';
+/** Charts sit on the page ground: no frame, no panel, no shadow. */
+const CHART_SECTION_CLASS = 'flex min-w-0 flex-col bg-transparent';
 
 function toNumericValue(raw: string): number {
   const parsed = Number.parseFloat(raw);
@@ -384,11 +381,11 @@ function TokenDonutChart({
           <button
             type="button"
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
-            className="flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-md border-0 bg-transparent px-1 py-1 text-left transition-colors duration-150 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
+            className="flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-none border-0 bg-transparent px-1 py-1 text-left transition-colors duration-150 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
             style={{
               background:
                 hoveredSliceKey === slice.hover_key
-                  ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 10%, transparent)'
+                  ? 'color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 10%, transparent)'
                   : undefined,
               opacity:
                 !hasHoveredSlice || hoveredSliceKey === slice.hover_key
@@ -568,8 +565,8 @@ function DistributionOverTimeChart({
   }, [orderedPoints]);
 
   return (
-    <Card className={`h-fit self-start ${CHART_CARD_CLASS}`}>
-      <CardHeader className="pb-2">
+    <section className={`${CHART_SECTION_CLASS} h-fit self-start`}>
+      <div className="flex flex-col gap-1 pb-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <CardTitle className="text-4 font-medium tracking-tight">
@@ -585,7 +582,7 @@ function DistributionOverTimeChart({
               <select
                 value={selectedToken}
                 onChange={(event) => setSelectedToken(event.target.value)}
-                className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-8 rounded-none border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {tokenOptions.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -599,7 +596,7 @@ function DistributionOverTimeChart({
               <select
                 value={selectedMember}
                 onChange={(event) => setSelectedMember(event.target.value)}
-                className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-8 rounded-none border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {memberOptions.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -611,23 +608,23 @@ function DistributionOverTimeChart({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+          <span className="rounded-none border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
             {tTokenHoldings('distribution.start')}{' '}
             {firstPoint
               ? `${PERCENTAGE_FORMATTER(firstPoint.share_pct)}%`
               : '0%'}
           </span>
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+          <span className="rounded-none border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
             {tTokenHoldings('distribution.end')}{' '}
             {lastPoint ? `${PERCENTAGE_FORMATTER(lastPoint.share_pct)}%` : '0%'}
           </span>
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
+          <span className="rounded-none border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
             {tTokenHoldings('distribution.delta')} {netChangeSign}
             {PERCENTAGE_FORMATTER(netChange)}%
           </span>
         </div>
-      </CardHeader>
-      <CardContent className="pt-1">
+      </div>
+      <div>
         {historyLoading ? (
           <Skeleton className="h-[280px] w-full" />
         ) : historyError ? (
@@ -654,11 +651,11 @@ function DistributionOverTimeChart({
                 >
                   <stop
                     offset="0%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, transparent)"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 24%, transparent)"
                   />
                   <stop
                     offset="100%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 8%, transparent)"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 8%, transparent)"
                   />
                 </linearGradient>
               </defs>
@@ -691,7 +688,7 @@ function DistributionOverTimeChart({
                 <path
                   d={line(orderedPoints) ?? ''}
                   fill="none"
-                  stroke="var(--space-accent, var(--accent-9))"
+                  stroke="var(--space-accent, var(--muted-foreground))"
                   strokeWidth={1.75}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -710,8 +707,8 @@ function DistributionOverTimeChart({
                       cx={x(point.dateObj)}
                       cy={y(point.share_pct)}
                       r={2.4}
-                      fill="var(--color-background-2, var(--background))"
-                      stroke="var(--space-accent, var(--accent-9))"
+                      fill="var(--background)"
+                      stroke="var(--space-accent, var(--muted-foreground))"
                       strokeWidth={1.25}
                     />
                   ))}
@@ -759,8 +756,8 @@ function DistributionOverTimeChart({
             </svg>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -811,16 +808,16 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .padAngle(DONUT_PAD_ANGLE);
 
   return (
-    <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
-      <CardHeader className="pb-2">
+    <section className={`${CHART_SECTION_CLASS} h-full`}>
+      <div className="flex flex-col gap-1 pb-3">
         <CardTitle className="text-4 font-medium tracking-tight">
           {tTokenHoldings('proposals.title')}
         </CardTitle>
         <CardDescription className="text-1 text-muted-foreground">
           {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col items-center justify-center gap-5 pb-5 pt-1">
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-5">
         <svg
           viewBox="-120 -120 240 240"
           className="h-[200px] w-full max-w-[220px] sm:h-[220px]"
@@ -862,7 +859,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
               className="flex min-w-0 flex-col items-center gap-1 text-center"
             >
               <span
-                className="h-1.5 w-5 rounded-full"
+                className="h-1.5 w-5 rounded-none"
                 style={{ backgroundColor: item.color }}
                 aria-hidden
               />
@@ -875,8 +872,8 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -950,8 +947,8 @@ function MembersEvolutionWidget({
     .curve(d3.curveMonotoneX);
 
   return (
-    <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
-      <CardHeader className="pb-2">
+    <section className={`${CHART_SECTION_CLASS} h-full`}>
+      <div className="flex flex-col gap-1 pb-3">
         <CardTitle className="text-4 font-medium tracking-tight">
           {tTokenHoldings('members.title')}
         </CardTitle>
@@ -976,8 +973,8 @@ function MembersEvolutionWidget({
             </span>
           </span>
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col space-y-3 pb-5">
+      </div>
+      <div className="flex flex-1 flex-col space-y-3">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
@@ -1033,7 +1030,7 @@ function MembersEvolutionWidget({
                       cx={monthX}
                       cy={peopleY}
                       r={item.people > 0 ? 3 : 1.5}
-                      fill="var(--color-background-2, var(--background))"
+                      fill="var(--background)"
                       stroke={MEMBERS_COLOR_RANGE.people}
                       strokeWidth={1.5}
                     />
@@ -1041,7 +1038,7 @@ function MembersEvolutionWidget({
                       cx={monthX}
                       cy={spacesY}
                       r={item.spaces > 0 ? 2.5 : 1.25}
-                      fill="var(--color-background-2, var(--background))"
+                      fill="var(--background)"
                       stroke={MEMBERS_COLOR_RANGE.spaces}
                       strokeWidth={1.25}
                     />
@@ -1063,14 +1060,14 @@ function MembersEvolutionWidget({
         <div className="flex items-center gap-4 text-1 text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <span
-              className="h-0.5 w-3 rounded-full"
+              className="h-0.5 w-3 rounded-none"
               style={{ background: MEMBERS_COLOR_RANGE.people }}
             />
             {tTokenHoldings('members.people')}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span
-              className="h-0.5 w-3 rounded-full opacity-80"
+              className="h-0.5 w-3 rounded-none opacity-80"
               style={{
                 background: `repeating-linear-gradient(90deg, ${MEMBERS_COLOR_RANGE.spaces} 0 2px, transparent 2px 4px)`,
               }}
@@ -1078,8 +1075,8 @@ function MembersEvolutionWidget({
             {tTokenHoldings('members.spaces')}
           </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -1206,8 +1203,8 @@ function SignalsPulseMapWidget({
     .paddingOuter(0.08);
 
   return (
-    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
-      <CardHeader className="pb-2">
+    <section className={CHART_SECTION_CLASS}>
+      <div className="flex flex-col gap-1 pb-3">
         <CardTitle className="text-lg">
           {tTokenHoldings('signals.title')}
         </CardTitle>
@@ -1215,10 +1212,10 @@ function SignalsPulseMapWidget({
           {tTokenHoldings('signals.subtitle')}
         </CardDescription>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
+          <span className="rounded-none border border-border/60 bg-muted/40 px-2 py-1">
             {tTokenHoldings('signals.count')} {validSignals.length}
           </span>
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
+          <span className="rounded-none border border-border/60 bg-muted/40 px-2 py-1">
             {tTokenHoldings('signals.peakCell')} {maxCellCount}
           </span>
         </div>
@@ -1237,10 +1234,10 @@ function SignalsPulseMapWidget({
                         : [...current, tag],
                     )
                   }
-                  className="rounded-full border border-border px-2.5 py-1 text-xs text-foreground/85 transition hover:border-foreground/30"
+                  className="rounded-none border border-border px-2.5 py-1 text-xs text-foreground/85 transition hover:border-foreground/30"
                   style={{
                     background: selected
-                      ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 20%, transparent)'
+                      ? 'color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 20%, transparent)'
                       : 'transparent',
                   }}
                 >
@@ -1250,8 +1247,8 @@ function SignalsPulseMapWidget({
             })}
           </div>
         ) : null}
-      </CardHeader>
-      <CardContent className="min-h-[360px]">
+      </div>
+      <div className="min-h-[360px]">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
@@ -1309,8 +1306,8 @@ function SignalsPulseMapWidget({
                         y={cellY}
                         width={bandwidth}
                         height={bandheight}
-                        rx={10}
-                        fill="var(--space-accent, var(--accent-9))"
+                        rx={0}
+                        fill="var(--space-accent, var(--muted-foreground))"
                         opacity={cellOpacity(count)}
                         stroke="var(--border)"
                         strokeOpacity={0.32}
@@ -1383,12 +1380,12 @@ function SignalsPulseMapWidget({
         </div>
         <div className="flex items-center justify-end gap-2 pt-2 text-[11px] text-muted-foreground">
           <span>{tTokenHoldings('signals.lowActivity')}</span>
-          <span className="h-2 w-14 rounded-full bg-[color-mix(in_oklab,var(--space-accent,var(--accent-9))_20%,transparent)]" />
-          <span className="h-2 w-14 rounded-full bg-[var(--space-accent,var(--accent-9))]" />
+          <span className="h-2 w-14 rounded-none bg-[color-mix(in_oklab,var(--space-accent,var(--muted-foreground))_20%,transparent)]" />
+          <span className="h-2 w-14 rounded-none bg-[var(--space-accent,var(--muted-foreground))]" />
           <span>{tTokenHoldings('signals.highActivity')}</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -1403,6 +1400,16 @@ export function HomeTokenHoldingsDashboard({
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const portalStyles = useSpaceAccentPortalStyles();
+  const spaceAccent = (
+    portalStyles as Record<string, string | number | undefined>
+  )['--space-accent'];
+  const chartStyle = {
+    ...SPACE_CHART_PALETTE_STYLE,
+    ...(typeof spaceAccent === 'string' && spaceAccent
+      ? { '--space-accent': spaceAccent }
+      : null),
+  } as React.CSSProperties;
   // Network-gated overview APIs need a Bearer token. Wait for Privy + token
   // and key SWR by auth so we don't cache a premature 401 as a sticky error.
   const authReady = !isAuthLoading && accessTokenReady;
@@ -1486,7 +1493,7 @@ export function HomeTokenHoldingsDashboard({
   }, [activeFilter, showEnergyWidget, showPayingSpaces]);
 
   return (
-    <div className="flex flex-col gap-4" style={SPACE_CHART_PALETTE_STYLE}>
+    <div className="flex flex-col gap-4" style={chartStyle}>
       <Tabs
         value={activeFilter}
         onValueChange={(value) => setActiveFilter(value as HomeSectionFilter)}
@@ -1503,22 +1510,20 @@ export function HomeTokenHoldingsDashboard({
       {showActivity ? (
         <>
           {!activityLoading && activityError ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
-                <CardDescription>
-                  {tTokenHoldings('activity.error')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <section className="flex flex-col gap-1">
+              <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
+              <CardDescription>
+                {tTokenHoldings('activity.error')}
+              </CardDescription>
+            </section>
           ) : null}
 
           {!activityLoading && !activityError && activityData ? (
             <div
               className={
                 showSignalsWidget
-                  ? 'grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
+                  ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
+                  : 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
               }
             >
               <div className="grid min-w-0 content-start gap-4">
@@ -1541,33 +1546,29 @@ export function HomeTokenHoldingsDashboard({
       {showDistribution ? (
         <>
           {!holdingsLoading && error ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {error instanceof TokenHoldingsFetchError &&
-                  (error.code === 'access_denied' || error.status === 401)
-                    ? tTokenHoldings('error.accessDeniedTitle')
-                    : tTokenHoldings('error.title')}
-                </CardTitle>
-                <CardDescription>
-                  {error instanceof TokenHoldingsFetchError &&
-                  (error.code === 'access_denied' || error.status === 401)
-                    ? tTokenHoldings('error.accessDeniedDescription')
-                    : tTokenHoldings('error.description')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <section className="flex flex-col gap-1">
+              <CardTitle>
+                {error instanceof TokenHoldingsFetchError &&
+                (error.code === 'access_denied' || error.status === 401)
+                  ? tTokenHoldings('error.accessDeniedTitle')
+                  : tTokenHoldings('error.title')}
+              </CardTitle>
+              <CardDescription>
+                {error instanceof TokenHoldingsFetchError &&
+                (error.code === 'access_denied' || error.status === 401)
+                  ? tTokenHoldings('error.accessDeniedDescription')
+                  : tTokenHoldings('error.description')}
+              </CardDescription>
+            </section>
           ) : null}
 
           {!holdingsLoading && !error && data && data.tokens.length === 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
-                <CardDescription>
-                  {tTokenHoldings('empty.description')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <section className="flex flex-col gap-1">
+              <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
+              <CardDescription>
+                {tTokenHoldings('empty.description')}
+              </CardDescription>
+            </section>
           ) : null}
 
           {!holdingsLoading && !error && data && data.tokens.length > 0 ? (
@@ -1604,11 +1605,11 @@ export function HomeTokenHoldingsDashboard({
                       token.symbol.trim().toLowerCase() !==
                       token.name.trim().toLowerCase();
                     return (
-                      <Card
+                      <section
                         key={token.token_address}
-                        className={`${CHART_CARD_CLASS} flex h-full flex-col`}
+                        className={`${CHART_SECTION_CLASS} h-full`}
                       >
-                        <CardHeader className="gap-2 pb-2">
+                        <div className="flex flex-col gap-2 pb-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
@@ -1680,19 +1681,19 @@ export function HomeTokenHoldingsDashboard({
                             </div>
                             <Badge
                               variant="outline"
-                              className="shrink-0 rounded-md border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"
+                              className="shrink-0 rounded-none border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"
                             >
                               {getTokenTypeLabel(token.type)}
                             </Badge>
                           </div>
-                        </CardHeader>
-                        <CardContent className="flex flex-1 flex-col pt-0">
+                        </div>
+                        <div className="flex flex-1 flex-col">
                           <TokenDonutChart
                             title={token.symbol}
                             slices={token.holdings}
                           />
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </section>
                     );
                   })}
                 </div>
@@ -1707,16 +1708,12 @@ export function HomeTokenHoldingsDashboard({
       ) : null}
 
       {activeFilter === 'energy' && showEnergyWidget ? (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
-              <CardDescription>
-                {tTokenHoldings('energy.description')}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </>
+        <section className="flex flex-col gap-1">
+          <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
+          <CardDescription>
+            {tTokenHoldings('energy.description')}
+          </CardDescription>
+        </section>
       ) : null}
     </div>
   );
