@@ -22,6 +22,8 @@ export type OnboardingFieldsFormProps = {
   onChange: (key: string, value: string) => void;
   disabled?: boolean;
   idPrefix: string;
+  /** Owner entity type; select options declared for a different type are hidden. */
+  entityType?: 'individual' | 'business';
 };
 
 /**
@@ -36,6 +38,7 @@ export const OnboardingFieldsForm: FC<OnboardingFieldsFormProps> = ({
   onChange,
   disabled = false,
   idPrefix,
+  entityType,
 }) => {
   const t = useTranslations();
 
@@ -65,11 +68,18 @@ export const OnboardingFieldsForm: FC<OnboardingFieldsFormProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {field.options?.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {t(option.i18nLabelKey as Parameters<typeof t>[0])}
-                    </SelectItem>
-                  ))}
+                  {field.options
+                    ?.filter(
+                      (option) =>
+                        !entityType ||
+                        !option.entityTypes ||
+                        option.entityTypes.includes(entityType),
+                    )
+                    .map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {t(option.i18nLabelKey as Parameters<typeof t>[0])}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             ) : (

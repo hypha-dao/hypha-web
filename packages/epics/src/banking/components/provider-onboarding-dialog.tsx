@@ -201,6 +201,9 @@ export const ProviderOnboardingDialog: FC<ProviderOnboardingDialogProps> = ({
                   }
                   disabled={isSubmitting}
                   idPrefix="provider-onboarding"
+                  entityType={
+                    ownerContext === 'person' ? 'individual' : 'business'
+                  }
                 />
               </section>
             ) : null}

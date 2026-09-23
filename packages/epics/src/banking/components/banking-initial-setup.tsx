@@ -258,6 +258,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             onChange={handleOnboardingFieldChange}
             disabled={isSubmitting}
             idPrefix="banking-setup"
+            entityType={ownerContext === 'person' ? 'individual' : 'business'}
           />
         </section>
       ) : null}

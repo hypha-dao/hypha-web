@@ -104,7 +104,16 @@ export type BankOnboardingFieldDescriptor = {
   /** i18n key for the field label. */
   i18nLabelKey: string;
   /** Present when `kind` is `'select'`. */
-  options?: ReadonlyArray<{ value: string; i18nLabelKey: string }>;
+  options?: ReadonlyArray<{
+    value: string;
+    i18nLabelKey: string;
+    /**
+     * Owner entity types this option is valid for. Omitted means valid for both. Lets an adapter
+     * keep options its own validation would reject (e.g. AUDD `INDIVIDUAL` for a business) out of
+     * the form, without the shared renderer knowing anything provider-specific.
+     */
+    entityTypes?: ReadonlyArray<'individual' | 'business'>;
+  }>;
   /**
    * Declarative conditional-requirement rule, evaluated against another field's collected value
    * (e.g. AUDD's `registrationNumber` is only required for non-`INDIVIDUAL` `companyType`s). Kept

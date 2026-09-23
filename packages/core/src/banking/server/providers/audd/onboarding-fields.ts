@@ -118,23 +118,28 @@ export const AUDD_REQUIRED_ONBOARDING_FIELDS: readonly BankOnboardingFieldDescri
         {
           value: 'INDIVIDUAL',
           i18nLabelKey: 'BankingTab.onboardingFields.companyType.individual',
+          entityTypes: ['individual'],
         },
         {
           value: 'SOLE_TRADER',
           i18nLabelKey: 'BankingTab.onboardingFields.companyType.soleTrader',
+          entityTypes: ['business'],
         },
         {
           value: 'PRIVATE_COMPANY',
           i18nLabelKey:
             'BankingTab.onboardingFields.companyType.privateCompany',
+          entityTypes: ['business'],
         },
         {
           value: 'PUBLIC_COMPANY',
           i18nLabelKey: 'BankingTab.onboardingFields.companyType.publicCompany',
+          entityTypes: ['business'],
         },
         {
           value: 'TRUST',
           i18nLabelKey: 'BankingTab.onboardingFields.companyType.trust',
+          entityTypes: ['business'],
         },
       ],
     },
