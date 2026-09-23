@@ -1,19 +1,13 @@
-import 'server-only';
-
-import type { ScheduledItem } from '@hypha-platform/core/client';
-import { resolveScheduledItemJoinUrl } from '@hypha-platform/core/client';
-import { TAG_MEETING_CONSENT } from '../constants/tags';
-import { toAbsoluteAppUrl } from '@hypha-platform/core/server';
-import { sendEmailNotifications, sendPushNotifications } from '../mutations';
-
-export type NotifyScheduledItemInvitationInput = {
-  item: ScheduledItem;
-  spaceSlug: string;
-  spaceTitle: string;
-  memberSlugs: string[];
-  channels: Array<'email' | 'push'>;
-  lang?: string;
-};
+/**
+ * Pure content-selection for `scheduled_item.invited` — no DB/web3 imports; `resolver.ts`
+ * precomputes `joinUrl` (it needs `server-only` URL helpers this file avoids, to stay cheaply
+ * unit-testable). Content is identical for every recipient (no personalization), matching
+ * `notify-scheduled-item-invitation.ts`'s prior single-batched-call behavior — `dispatch()`'s
+ * identical-content grouping reproduces that automatically.
+ */
+import type { ContentBuilder } from '../../core/content-builder';
+import type { ScheduledItemInvitedEvent } from '../../core/types';
+import { TAG_MEETING_CONSENT } from '../../constants/tags';
 
 function escapeHtml(value: string): string {
   return value
@@ -59,13 +53,14 @@ function buildInvitationEmailBody(input: {
   title: string;
   spaceTitle: string;
   whenLabel: string;
+  /** Already sanitized by the caller — sanitizing again here would re-resolve a `'#'` fallback against a placeholder base and produce a broken-looking absolute URL (a bug in the code this was re-derived from). */
   joinUrl: string;
   description?: string | null;
 }): string {
   const safeTitle = escapeHtml(input.title);
   const safeSpace = escapeHtml(input.spaceTitle);
   const safeWhen = escapeHtml(input.whenLabel);
-  const safeUrl = sanitizeUrl(input.joinUrl);
+  const safeUrl = escapeHtml(input.joinUrl);
   const safeDescription = input.description?.trim()
     ? `<p style="margin:16px 0 0;color:#555;">${escapeHtml(
         input.description.trim(),
@@ -84,65 +79,50 @@ function buildInvitationEmailBody(input: {
 </div>`;
 }
 
-export async function notifyScheduledItemInvitation(
-  input: NotifyScheduledItemInvitationInput,
-) {
-  if (input.memberSlugs.length === 0) return { sent: 0 };
-
-  const lang = input.lang?.trim() || 'en';
-  const title = input.item.title.trim();
-  const spaceTitle = input.spaceTitle.trim();
-  const whenLabel = formatWhen(
-    input.item.startsAt,
-    input.item.endsAt,
+export const buildScheduledItemInvitedContent: ContentBuilder<
+  ScheduledItemInvitedEvent
+> = (event) => {
+  const {
+    title,
+    description,
+    spaceTitle,
+    startsAt,
+    endsAt,
+    timezone,
+    joinUrl,
+    channels,
     lang,
-    input.item.timezone,
-  );
-  const joinPathOrUrl = resolveScheduledItemJoinUrl(
-    input.item,
-    lang,
-    input.spaceSlug,
-  );
-  const joinUrl = joinPathOrUrl
-    ? joinPathOrUrl.startsWith('http')
-      ? joinPathOrUrl
-      : toAbsoluteAppUrl(joinPathOrUrl)
-    : toAbsoluteAppUrl(`/${lang}/dho/${input.spaceSlug}/calendar`);
+  } = event.payload;
   const safeJoinUrl = sanitizeUrl(joinUrl);
   const pushUrl = safeJoinUrl === '#' ? undefined : safeJoinUrl;
-  const heading = `Invitation: ${title}`;
-  const pushBody = `${title} · ${whenLabel}`;
-  const body = buildInvitationEmailBody({
-    title,
-    spaceTitle,
-    whenLabel,
-    joinUrl: safeJoinUrl,
-    description: input.item.description,
-  });
-  const textBody = `${heading}\n${spaceTitle}\n${whenLabel}\nJoin: ${safeJoinUrl}`;
+  const whenLabel = formatWhen(startsAt, endsAt, lang, timezone);
+  const heading = `Invitation: ${title.trim()}`;
 
-  let sent = 0;
-
-  if (input.channels.includes('push')) {
-    await sendPushNotifications({
-      usernames: input.memberSlugs,
-      headings: { en: heading },
-      contents: { en: pushBody },
-      url: pushUrl,
-      requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
-    });
-    sent += 1;
-  }
-
-  if (input.channels.includes('email')) {
-    await sendEmailNotifications({
-      usernames: input.memberSlugs,
-      subject: heading,
-      body,
-      requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
-    });
-    sent += 1;
-  }
-
-  return { sent, url: safeJoinUrl, textBody };
-}
+  return {
+    channels,
+    requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
+    content: {
+      push: channels.includes('push')
+        ? {
+            kind: 'plain',
+            headings: { en: heading },
+            contents: { en: `${title.trim()} · ${whenLabel}` },
+            url: pushUrl,
+          }
+        : undefined,
+      email: channels.includes('email')
+        ? {
+            kind: 'plain',
+            subject: heading,
+            body: buildInvitationEmailBody({
+              title: title.trim(),
+              spaceTitle: spaceTitle.trim(),
+              whenLabel,
+              joinUrl: safeJoinUrl,
+              description,
+            }),
+          }
+        : undefined,
+    },
+  };
+};

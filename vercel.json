@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/signals-orchestrate",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/notification-reconcile",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

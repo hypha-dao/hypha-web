@@ -135,6 +135,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|signin|placeholder|icon|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
+    // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
+    '/((?!api|_matrix|signin|placeholder|icon|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };

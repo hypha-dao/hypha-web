@@ -547,6 +547,20 @@
       "when": 1784000000008,
       "tag": "0077_bank_customers_email_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1784000000009,
+      "tag": "0078_notification_processed_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1784000000010,
+      "tag": "0079_notification_processed_events_common_date_fields",
+      "breakpoints": true
     }
   ]
 }

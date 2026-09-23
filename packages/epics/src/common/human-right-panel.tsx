@@ -56,7 +56,6 @@ import {
   type Person,
   looksLikeTechnicalSpaceMemoryName,
   type SignalTeamNotice,
-  replacePlainTextMatrixMxidsWithLabels,
   requestRemoteGroupCallLeave,
 } from '@hypha-platform/core/client';
 import {
@@ -138,10 +137,7 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
-import {
-  buildHyphaChatMentionDeepLinkUrl,
-  setSignalSearchParam,
-} from './human-chat-panel/human-chat-message-link';
+import { setSignalSearchParam } from './human-chat-panel/human-chat-message-link';
 import { readLiveSignalSlugFromUrl } from '../coherence/lib/signal-deep-link-dom';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
@@ -1016,7 +1012,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { useSendNotifications } = useHookRegistry();
-  const { notifyChatMention, notifyCallStarted } = useSendNotifications({
+  const { notifyCallStarted } = useSendNotifications({
     authToken,
   });
   const { person: me } = useMe();
@@ -4212,7 +4208,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           });
         }
       } else {
-        const sendResult = await matrixRef.current.sendMessage({
+        await matrixRef.current.sendMessage({
           roomId,
           message: wirePlain,
           mentionUserIds,
@@ -4243,62 +4239,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : {}),
         });
-        const mentionTargets = mentionUserIds.filter((matrixId) => {
-          if (matrixId === currentUserIdRef.current) return false;
-          if (!hasSignalTeamPolicy) return true;
-          return signalTeamMemberIdSet.has(matrixId);
-        });
-        if (mentionTargets.length > 0 && sendResult.eventId) {
-          const lang = getLocaleFromPath(pathname);
-          const mappedSpaceSlug = roomId
-            ? window.sessionStorage
-                .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${roomId}`)
-                ?.trim() || readRoomIdToSpaceSlugFromStorage().get(roomId)
-            : null;
-          const canonicalSpaceSlug = spaceSlug?.trim() || mappedSpaceSlug;
-          const signalSlugForLink =
-            mode === 'coherence' ? coherenceSlug?.trim() || null : null;
-          const deepLink = canonicalSpaceSlug
-            ? buildHyphaChatMentionDeepLinkUrl({
-                lang,
-                spaceSlug: canonicalSpaceSlug,
-                messageId: sendResult.eventId,
-                signalSlug: signalSlugForLink,
-                roomId: signalSlugForLink ? null : roomId,
-                origin:
-                  typeof window !== 'undefined'
-                    ? window.location.origin
-                    : undefined,
-              })
-            : pathname;
-          const messagePreview = replacePlainTextMatrixMxidsWithLabels(
-            wirePlain,
-            resolveMentionMemberLabel,
-          )
-            .trim()
-            .slice(0, 220);
-          const actorDisplayName =
-            [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
-            me?.nickname?.trim() ||
-            t('you');
-          const mentionContextLabel =
-            mode === 'coherence'
-              ? coherenceTitle?.trim() || coherenceSlug?.trim() || space?.title
-              : space?.title;
-          void notifyChatMention({
-            actorSlug: me?.slug,
-            actorDisplayName,
-            mentionMatrixUserIds: mentionTargets,
-            messagePreview,
-            contextLabel: mentionContextLabel?.trim() || undefined,
-            url: deepLink,
-          }).catch((notifyErr) => {
-            console.warn(
-              '[HumanRightPanel] Mention notification dispatch failed:',
-              notifyErr,
-            );
-          });
-        }
+        // Mention notifications are server-fired (#2470) from the #2483 AS receiver watching
+        // this same Matrix message — no client trigger needed here anymore.
       }
       setSendingPending(null);
       disposeDraftAttachmentUrls(savedAttachments);
@@ -4393,21 +4335,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     editDraft,
     draftAttachments,
     mentionSanitizedLabelToUserId,
-    mode,
-    searchParams,
-    pathname,
-    me?.name,
-    me?.surname,
-    me?.nickname,
-    me?.slug,
-    spaceSlug,
-    space?.title,
-    coherenceSlug,
-    coherenceTitle,
-    notifyChatMention,
-    resolveMentionMemberLabel,
-    hasSignalTeamPolicy,
-    signalTeamMemberIdSet,
     blockSpaceChatForMembership,
     tCommon,
     t,

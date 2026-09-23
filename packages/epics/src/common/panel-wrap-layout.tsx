@@ -229,9 +229,13 @@ export function HumanSidebarTrigger() {
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  // Outside a space, still show it when there's a call elsewhere to notify about (#2424).
-  // Unread mentions only surface in-space: outside spaces the panel has no mentions destination.
-  if (open || (!isSpace && !hasCallElsewhere)) return null;
+  // Always shown otherwise, in or out of a space (#2470 D18) — outside a space it opens to the
+  // existing "not in a space" empty state (human-right-panel.tsx's `notInSpaceEmptyState`),
+  // which already renders independent of whether a call is active (gated purely on
+  // `!spaceSlug`) — the elsewhere-call case (#2424) was never actually coupled to that content,
+  // only to this trigger's visibility. Unread mentions only surface in-space: outside spaces the
+  // panel has no mentions destination.
+  if (open) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
