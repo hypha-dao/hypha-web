@@ -56,9 +56,9 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [selected, setSelected] = useState<BankOnboardingCurrencyCode[]>(
-    () => [...getDefaultBankCurrencyCodes()],
-  );
+  const [selected, setSelected] = useState<BankOnboardingCurrencyCode[]>(() => [
+    ...getDefaultBankCurrencyCodes(),
+  ]);
   const [onboardingFieldValues, setOnboardingFieldValues] = useState<
     Record<string, string>
   >({});

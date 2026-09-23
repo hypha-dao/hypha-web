@@ -196,13 +196,11 @@ describe('getBankCustomerPublicStatuses (D11 — multi-provider status)', () => 
         tosStatus: null,
         kycLink: 'https://audd.example/kyc/123',
       }),
-      getOnboardingStepDescriptor: vi
-        .fn()
-        .mockReturnValue({
-          kind: 'external_kyc_link',
-          url: 'https://audd.example/kyc/123',
-          i18nKeys: { title: 'x' },
-        }),
+      getOnboardingStepDescriptor: vi.fn().mockReturnValue({
+        kind: 'external_kyc_link',
+        url: 'https://audd.example/kyc/123',
+        i18nKeys: { title: 'x' },
+      }),
     });
 
     const results = await getBankCustomerPublicStatuses([auddCustomer()], {

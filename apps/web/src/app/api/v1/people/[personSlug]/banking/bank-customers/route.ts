@@ -84,8 +84,13 @@ export async function POST(
     );
   }
 
-  const { legalName, contactEmail, requestedRails, endorsements, onboardingFields } =
-    parsed.data;
+  const {
+    legalName,
+    contactEmail,
+    requestedRails,
+    endorsements,
+    onboardingFields,
+  } = parsed.data;
 
   try {
     const result = await requestPersonalBankOnboarding(

@@ -72,7 +72,8 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   } = useBankCustomerStatus({ basePath });
 
   const hasCustomer = providers.length > 0;
-  const showBankingListings = status != null && hasApprovedBankCurrencies(status);
+  const showBankingListings =
+    status != null && hasApprovedBankCurrencies(status);
   const pendingConfirmationEntry = providers.find(
     (entry) => entry.pendingEmailConfirmation,
   );

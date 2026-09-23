@@ -42,8 +42,7 @@ function findBridgeStatus(
   providers: BankCustomerPublicStatus[],
 ): BankCustomerPublicStatus | null {
   return (
-    providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ??
-    null
+    providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ?? null
   );
 }
 
@@ -99,8 +98,7 @@ export const useBankCustomerStatus = ({
     BankCustomerPublicStatus[]
   >(
     swrKey,
-    ([url]: [string, string]) =>
-      fetchBankCustomerStatuses(url, getAccessToken),
+    ([url]: [string, string]) => fetchBankCustomerStatuses(url, getAccessToken),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,

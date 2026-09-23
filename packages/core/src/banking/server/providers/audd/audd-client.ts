@@ -149,7 +149,12 @@ async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
     (resolve, reject) => {
       const req = httpsRequest(
         url,
-        { method: options.method, headers, agent, timeout: AUDD_REQUEST_TIMEOUT_MS },
+        {
+          method: options.method,
+          headers,
+          agent,
+          timeout: AUDD_REQUEST_TIMEOUT_MS,
+        },
         (res) => {
           const chunks: Buffer[] = [];
           res.on('data', (chunk) => chunks.push(chunk as Buffer));

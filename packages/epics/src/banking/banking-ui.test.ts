@@ -5,28 +5,30 @@ import { describe, expect, it, vi } from 'vitest';
 // so this stays a pure unit test of the per-pair filtering.
 vi.mock('@hypha-platform/core/client', () => ({
   BANK_VIRTUAL_ACCOUNT_CURRENCIES: ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'],
-  BANK_ONBOARDING_CURRENCIES: [
-    'eur',
-    'usd',
-    'gbp',
-    'mxn',
-    'brl',
-    'cop',
-    'aud',
-  ],
+  BANK_ONBOARDING_CURRENCIES: ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop', 'aud'],
   BANK_PAYOUT_RAILS: {},
   bankProviderManifest: {
     bridge: {
       supportedCurrencies: ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'],
       requiredOnboardingFields: [
-        { key: 'contactEmail', kind: 'email', required: true, i18nLabelKey: 'x' },
+        {
+          key: 'contactEmail',
+          kind: 'email',
+          required: true,
+          i18nLabelKey: 'x',
+        },
         { key: 'legalName', kind: 'text', required: true, i18nLabelKey: 'x' },
       ],
     },
     audd: {
       supportedCurrencies: ['aud'],
       requiredOnboardingFields: [
-        { key: 'contactEmail', kind: 'email', required: true, i18nLabelKey: 'x' },
+        {
+          key: 'contactEmail',
+          kind: 'email',
+          required: true,
+          i18nLabelKey: 'x',
+        },
         { key: 'firstName', kind: 'text', required: true, i18nLabelKey: 'x' },
         {
           key: 'registrationNumber',
@@ -229,9 +231,7 @@ describe('isOnboardingFieldRequired / areOnboardingFieldsComplete (requiredIf)',
   )!;
 
   it('is not required when the dependency value is absent', () => {
-    expect(isOnboardingFieldRequired(registrationNumberField, {})).toBe(
-      false,
-    );
+    expect(isOnboardingFieldRequired(registrationNumberField, {})).toBe(false);
   });
 
   it('is not required when companyType is INDIVIDUAL', () => {

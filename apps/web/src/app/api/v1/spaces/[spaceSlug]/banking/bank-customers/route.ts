@@ -83,8 +83,13 @@ export async function POST(
   }
 
   const { spaceSlug } = await params;
-  const { legalName, contactEmail, requestedRails, endorsements, onboardingFields } =
-    parsed.data;
+  const {
+    legalName,
+    contactEmail,
+    requestedRails,
+    endorsements,
+    onboardingFields,
+  } = parsed.data;
 
   try {
     const result = await requestSpaceBankOnboarding(

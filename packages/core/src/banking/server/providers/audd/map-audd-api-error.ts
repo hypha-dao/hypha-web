@@ -6,8 +6,7 @@ function auddErrorDetail(body: unknown): string | null {
     return null;
   }
   const record = body as Record<string, unknown>;
-  const message =
-    typeof record.message === 'string' ? record.message : null;
+  const message = typeof record.message === 'string' ? record.message : null;
   const key = typeof record.messageKey === 'string' ? record.messageKey : null;
   if (message && key) {
     return `${message} (${key})`;

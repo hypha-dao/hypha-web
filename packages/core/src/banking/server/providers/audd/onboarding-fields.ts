@@ -125,7 +125,8 @@ export const AUDD_REQUIRED_ONBOARDING_FIELDS: readonly BankOnboardingFieldDescri
         },
         {
           value: 'PRIVATE_COMPANY',
-          i18nLabelKey: 'BankingTab.onboardingFields.companyType.privateCompany',
+          i18nLabelKey:
+            'BankingTab.onboardingFields.companyType.privateCompany',
         },
         {
           value: 'PUBLIC_COMPANY',

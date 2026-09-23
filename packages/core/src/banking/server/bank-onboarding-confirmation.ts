@@ -13,7 +13,11 @@ import {
 } from '../../common/server/sign-bank-confirmation-jwt';
 import { isBypassEligible } from '../normalize-email-for-bypass';
 import { currenciesToEndorsements } from '../constants';
-import type { BankEntityType, BankProvider, BankValidationRequirement } from '../types';
+import type {
+  BankEntityType,
+  BankProvider,
+  BankValidationRequirement,
+} from '../types';
 import {
   findBankCustomerByNonce,
   findBankCustomerBySpaceAndProvider,
@@ -26,7 +30,10 @@ import {
   releaseBankCustomerClaim,
   updateBankCustomer,
 } from './mutations';
-import { getBankIdentityProvider, resolveProviderForOnboarding } from './providers';
+import {
+  getBankIdentityProvider,
+  resolveProviderForOnboarding,
+} from './providers';
 import { BankOnboardingError } from './errors';
 import type { BankIdentityProvider } from './providers/types';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
@@ -183,7 +190,10 @@ async function findExistingBankCustomerForOwner(
   { db }: { db: DatabaseInstance },
 ) {
   return ownerRef.type === 'space'
-    ? findBankCustomerBySpaceAndProvider({ spaceId: ownerRef.id, provider }, { db })
+    ? findBankCustomerBySpaceAndProvider(
+        { spaceId: ownerRef.id, provider },
+        { db },
+      )
     : findBankCustomerByPersonAndProvider(
         { personId: ownerRef.id, provider },
         { db },

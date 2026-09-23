@@ -39,14 +39,18 @@ describe('resolveProviderForCurrency', () => {
 
   it('throws when the Enablement env narrows the currency out', () => {
     process.env[AUDD_VAR] = ''; // AUDD disabled
-    expect(() => resolveProviderForCurrency('aud')).toThrow(BankOnboardingError);
+    expect(() => resolveProviderForCurrency('aud')).toThrow(
+      BankOnboardingError,
+    );
   });
 
   it('still routes Bridge currencies when only AUDD is narrowed', () => {
     process.env[AUDD_VAR] = 'aud';
     process.env[BRIDGE_VAR] = 'usd,eur';
     expect(resolveProviderForCurrency('usd')).toBe('bridge');
-    expect(() => resolveProviderForCurrency('gbp')).toThrow(BankOnboardingError);
+    expect(() => resolveProviderForCurrency('gbp')).toThrow(
+      BankOnboardingError,
+    );
   });
 });
 

@@ -458,7 +458,9 @@ describe('requestBankOnboardingWithConfirmation', () => {
       expect(result.kind).toBe('existing');
       expect(bridgeGetKycLink).not.toHaveBeenCalled();
       expect(mockAuddProvider.getKycStatus).toHaveBeenCalledWith({
-        customer: expect.objectContaining({ providerCustomerId: 'audd_cust_1' }),
+        customer: expect.objectContaining({
+          providerCustomerId: 'audd_cust_1',
+        }),
       });
       if (result.kind === 'existing') {
         expect(result.procedures.kyc.isComplete).toBe(true);

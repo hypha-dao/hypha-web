@@ -8,7 +8,10 @@ import type {
 } from '../types';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
-import { getBankIdentityProvider, resolveProviderForOnboarding } from './providers';
+import {
+  getBankIdentityProvider,
+  resolveProviderForOnboarding,
+} from './providers';
 import type { BankIdentityProvider } from './providers/types';
 import {
   requestBankOnboardingWithConfirmation,

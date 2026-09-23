@@ -536,8 +536,7 @@ export const BankingProviderStatusPanel: FC<
   const tEndorsements = useTranslations('BankingTab.endorsements');
 
   const bridgeStatus =
-    providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ??
-    null;
+    providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ?? null;
 
   const renderBody = () => {
     if (isLoading) {
