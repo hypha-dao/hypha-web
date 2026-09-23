@@ -3558,7 +3558,9 @@
       "uboPendingTitle": "Verificación UBO pendiente",
       "uboPendingDescription": "{count, plural, one {# persona asociada aún necesita} other {# personas asociadas aún necesitan}} proporcionar información adicional.",
       "uboPendingTooltip": "Bridge envía correos de verificación directamente a las personas asociadas. Pídales que revisen su bandeja de entrada (y spam) para encontrar un correo de Bridge o Persona.",
-      "uboPendingEmailsLabel": "Pendiente:"
+      "uboPendingEmailsLabel": "Pendiente:",
+      "additionalCurrenciesTitle": "Añadir otra moneda",
+      "additionalCurrenciesHint": "Estas monedas se verifican por separado de las anteriores."
     },
     "tosStatus": {
       "pending": {
@@ -3873,6 +3875,10 @@
       },
       "registrationNumber": "Número de registro",
       "companyBusinessName": "Razón social registrada"
+    },
+    "providerOnboarding": {
+      "title": "Añadir {currency}",
+      "description": "Confirme sus datos para iniciar la verificación de esta moneda."
     }
   },
   "Calendar": {

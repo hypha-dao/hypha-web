@@ -11,9 +11,11 @@ import {
 
 import {
   BANK_CURRENCY_METAS,
+  BANK_ONBOARDING_CURRENCY_METAS,
   BANK_TRANSFER_CORRIDOR_KEYS,
   getTransferCorridorMeta,
   type BankCurrencyCode,
+  type BankOnboardingCurrencyCode,
   type BankTransferCorridorKey,
 } from './bank-currency-display';
 import type {
@@ -433,6 +435,41 @@ export function getDedupedOnboardingFields(
     }
   }
   return [...byKey.values()];
+}
+
+/**
+ * The onboarding fields the dynamic section asks for *in addition to* the two fixed inputs every
+ * onboarding form already renders (`contactEmail`, `legalName`) — so those aren't asked twice.
+ */
+export function getDynamicOnboardingFields(
+  currencies: readonly string[],
+): BankOnboardingFieldDescriptor[] {
+  return getDedupedOnboardingFields(currencies).filter(
+    (field) => field.key !== 'contactEmail' && field.key !== 'legalName',
+  );
+}
+
+/**
+ * Enabled onboarding currencies whose provider the owner has no `bank_customers` row for yet —
+ * what "add another currency" can offer. Currencies of a provider the owner already has (extra
+ * Bridge endorsements) are requested through that provider's own flow, not listed here; a row
+ * that's still pending email confirmation counts as onboarded, so it isn't offered twice.
+ */
+export function getRequestableOnboardingCurrencies(
+  onboardedProviders: readonly (BankProvider | undefined)[],
+): BankOnboardingCurrencyCode[] {
+  const onboarded = new Set(onboardedProviders);
+  const enabled = new Set(getEnabledOnboardingCurrencies());
+  const providers = Object.keys(bankProviderManifest) as BankProvider[];
+  return BANK_ONBOARDING_CURRENCY_METAS.map((meta) => meta.currency).filter(
+    (currency) =>
+      enabled.has(currency) &&
+      providers.some(
+        (provider) =>
+          !onboarded.has(provider) &&
+          bankProviderManifest[provider].supportedCurrencies.includes(currency),
+      ),
+  );
 }
 
 /** Whether a conditionally-required field (`requiredIf`) is required given the values collected so far. */

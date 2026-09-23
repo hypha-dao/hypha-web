@@ -1076,7 +1076,9 @@
       "uboPendingTitle": "UBO-Verifizierung ausstehend",
       "uboPendingDescription": "{count, plural, one {# assoziierte Person muss noch} other {# assoziierte Personen müssen noch}} zusätzliche Informationen bereitstellen.",
       "uboPendingTooltip": "Bridge sendet Verifizierungs-E-Mails direkt an die assoziierten Personen. Bitten Sie sie, ihren Posteingang (und Spam-Ordner) auf eine E-Mail von Bridge oder Persona zu überprüfen.",
-      "uboPendingEmailsLabel": "Ausstehend:"
+      "uboPendingEmailsLabel": "Ausstehend:",
+      "additionalCurrenciesTitle": "Weitere Währung hinzufügen",
+      "additionalCurrenciesHint": "Diese Währungen werden getrennt von den oben genannten verifiziert."
     },
     "tosStatus": {
       "pending": {
@@ -1323,6 +1325,10 @@
       },
       "registrationNumber": "Registrierungsnummer",
       "companyBusinessName": "Eingetragener Firmenname"
+    },
+    "providerOnboarding": {
+      "title": "{currency} hinzufügen",
+      "description": "Bestätigen Sie Ihre Angaben, um die Verifizierung für diese Währung zu starten."
     }
   },
   "TreasuryTab": {

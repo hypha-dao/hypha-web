@@ -45,6 +45,7 @@ import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
 import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
+import { ProviderOnboardingDialog } from './provider-onboarding-dialog';
 import { openBankVerificationFlowLinks } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
@@ -254,6 +255,45 @@ export const BankingSection: FC<BankingSectionProps> = ({
     [clearOnboardingError, refreshProviders, requestOnboarding],
   );
 
+  /** Currency the owner asked to add from the status panel (a provider they aren't onboarded with yet). */
+  const [providerOnboardingCurrency, setProviderOnboardingCurrency] =
+    useState<BankOnboardingCurrencyCode | null>(null);
+
+  const handleRequestCurrencyOnboarding = useCallback(
+    (currency: BankOnboardingCurrencyCode) => {
+      clearOnboardingError();
+      setGearOpen(false);
+      setProviderOnboardingCurrency(currency);
+    },
+    [clearOnboardingError],
+  );
+
+  // Same submit path as the first-time form; only closes the dialog once it succeeds.
+  const handleProviderOnboardingSubmit = useCallback(
+    async (input: Parameters<typeof handleInitialSetupSubmit>[0]) => {
+      await handleInitialSetupSubmit(input);
+      setProviderOnboardingCurrency(null);
+    },
+    [handleInitialSetupSubmit],
+  );
+
+  const providerOnboardingDialog = (
+    <ProviderOnboardingDialog
+      open={providerOnboardingCurrency != null}
+      onOpenChange={(open) => {
+        if (!open) {
+          setProviderOnboardingCurrency(null);
+        }
+      }}
+      currency={providerOnboardingCurrency}
+      initialLegalName={fallbackLegalName}
+      initialContactEmail={fallbackContactEmail}
+      isSubmitting={isOnboarding}
+      error={onboardingError}
+      onSubmit={handleProviderOnboardingSubmit}
+    />
+  );
+
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
   }
@@ -313,16 +353,20 @@ export const BankingSection: FC<BankingSectionProps> = ({
     }
 
     return (
-      <BankingProviderStatusPanel
-        spaceSlug={spaceSlug}
-        providers={providers}
-        isLoading={false}
-        isRefreshing={false}
-        canManage={canManage}
-        blockerMessage={blockerMessage}
-        onRefreshStatus={refreshBankingState}
-        showPageHeader
-      />
+      <>
+        <BankingProviderStatusPanel
+          spaceSlug={spaceSlug}
+          providers={providers}
+          isLoading={false}
+          isRefreshing={false}
+          canManage={canManage}
+          blockerMessage={blockerMessage}
+          onRefreshStatus={refreshBankingState}
+          onRequestCurrencyOnboarding={handleRequestCurrencyOnboarding}
+          showPageHeader
+        />
+        {providerOnboardingDialog}
+      </>
     );
   }
 
@@ -344,6 +388,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
             open={gearOpen}
             onOpenChange={handleGearOpenChange}
             onRefreshStatus={refreshBankingState}
+            onRequestCurrencyOnboarding={handleRequestCurrencyOnboarding}
           />
         }
         onOpenSpaceAccount={() => {
@@ -452,6 +497,8 @@ export const BankingSection: FC<BankingSectionProps> = ({
           if (!open) setDetailAccount(null);
         }}
       />
+
+      {providerOnboardingDialog}
     </div>
   );
 };

@@ -1006,7 +1006,9 @@
             "approved": "Identitetsverifiseringen er fullført. Ingen ytterligere handling kreves her."
           }
         }
-      }
+      },
+      "additionalCurrenciesTitle": "Legg til en annen valuta",
+      "additionalCurrenciesHint": "Disse valutaene verifiseres separat fra de ovenfor."
     },
     "tosStatus": {
       "pending": {
@@ -1321,6 +1323,10 @@
       },
       "registrationNumber": "Registreringsnummer",
       "companyBusinessName": "Registrert firmanavn"
+    },
+    "providerOnboarding": {
+      "title": "Legg til {currency}",
+      "description": "Bekreft opplysningene dine for å starte verifiseringen for denne valutaen."
     }
   },
   "TreasuryTab": {

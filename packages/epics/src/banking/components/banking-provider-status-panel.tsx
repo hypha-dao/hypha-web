@@ -8,9 +8,11 @@ import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { DEFAULT_BANK_PROVIDER } from '@hypha-platform/core/client';
 
+import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import {
   bankRailNeedsEndorsementRequest,
   getBankEndorsementStatusesForPanel,
+  getRequestableOnboardingCurrencies,
   ownerText,
   type BankingOwnerContext,
 } from '../banking-ui';
@@ -41,6 +43,12 @@ export type BankingProviderStatusPanelProps = {
   /** Full-page verification view (banking tab before any rail is approved). */
   showPageHeader?: boolean;
   onOpenGear?: () => void;
+  /**
+   * Starts onboarding for a currency of a provider this owner has no row for yet (e.g. AUD for a
+   * space that only has Bridge). When omitted, or when `canManage` is false, the "add another
+   * currency" card isn't shown.
+   */
+  onRequestCurrencyOnboarding?: (currency: BankOnboardingCurrencyCode) => void;
 };
 
 function getInProgressStatusLabel(
@@ -343,6 +351,66 @@ function EndorsementValidationsList({
   );
 }
 
+/**
+ * Currencies of providers the owner isn't onboarded with yet, each with a Request button that
+ * starts that provider's onboarding — same row shape as the endorsement list above it, but these
+ * aren't endorsements on an existing customer: each needs its own onboarding (D3).
+ */
+function AdditionalCurrenciesList({
+  currencies,
+  tAdvanced,
+  tOpenAccount,
+  tCurrencies,
+  onRequest,
+}: {
+  currencies: BankOnboardingCurrencyCode[];
+  tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
+  tOpenAccount: ReturnType<typeof useTranslations<'BankingTab.openAccount'>>;
+  tCurrencies: ReturnType<typeof useTranslations<'BankingTab.currencies'>>;
+  onRequest: (currency: BankOnboardingCurrencyCode) => void;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <h3 className="text-2 font-semibold text-foreground">
+        {tAdvanced('additionalCurrenciesTitle')}
+      </h3>
+      <p className="mt-2 text-1 text-muted-foreground">
+        {tAdvanced('additionalCurrenciesHint')}
+      </p>
+      <dl className="mt-3 flex flex-col gap-2">
+        {currencies.map((currency) => (
+          <div
+            key={currency}
+            className="flex items-center justify-between gap-3 py-0.5"
+          >
+            <dt className="min-w-0 text-2 font-medium text-foreground">
+              {tCurrencies(`${currency}.code`)} (
+              {tCurrencies(`${currency}.payoutMethod`)})
+            </dt>
+            <dd className="flex shrink-0 items-center gap-2">
+              <Badge
+                variant="outline"
+                colorVariant="neutral"
+                className="pointer-events-none cursor-default text-1 shadow-none"
+              >
+                {tAdvanced('currencyStatus.not_requested')}
+              </Badge>
+              <Button
+                type="button"
+                colorVariant="accent"
+                className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
+                onClick={() => onRequest(currency)}
+              >
+                {tOpenAccount('requestRail')}
+              </Button>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
 function UboPendingNotice({
   ubos,
   tAdvanced,
@@ -527,6 +595,7 @@ export const BankingProviderStatusPanel: FC<
   onRefreshStatus,
   showPageHeader = false,
   onOpenGear,
+  onRequestCurrencyOnboarding,
   ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab');
@@ -534,6 +603,14 @@ export const BankingProviderStatusPanel: FC<
   const tAdvanced = useTranslations('BankingTab.advanced');
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tEndorsements = useTranslations('BankingTab.endorsements');
+  const tCurrencies = useTranslations('BankingTab.currencies');
+
+  const requestableCurrencies =
+    canManage && onRequestCurrencyOnboarding
+      ? getRequestableOnboardingCurrencies(
+          providers.map((entry) => entry.provider),
+        )
+      : [];
 
   const bridgeStatus =
     providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ?? null;
@@ -589,6 +666,15 @@ export const BankingProviderStatusPanel: FC<
             ownerContext={ownerContext}
           />
         ))}
+        {requestableCurrencies.length > 0 && onRequestCurrencyOnboarding ? (
+          <AdditionalCurrenciesList
+            currencies={requestableCurrencies}
+            tAdvanced={tAdvanced}
+            tOpenAccount={tOpenAccount}
+            tCurrencies={tCurrencies}
+            onRequest={onRequestCurrencyOnboarding}
+          />
+        ) : null}
       </div>
     );
   };

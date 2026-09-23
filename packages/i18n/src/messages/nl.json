@@ -1007,7 +1007,9 @@
             "approved": "Identiteitsverificatie is voltooid. Hier is geen verdere actie nodig."
           }
         }
-      }
+      },
+      "additionalCurrenciesTitle": "Nog een valuta toevoegen",
+      "additionalCurrenciesHint": "Deze valuta's worden apart geverifieerd van de bovenstaande."
     },
     "tosStatus": {
       "pending": {
@@ -1322,6 +1324,10 @@
       },
       "registrationNumber": "Registratienummer",
       "companyBusinessName": "Geregistreerde bedrijfsnaam"
+    },
+    "providerOnboarding": {
+      "title": "{currency} toevoegen",
+      "description": "Bevestig uw gegevens om de verificatie voor deze valuta te starten."
     }
   },
   "TreasuryTab": {

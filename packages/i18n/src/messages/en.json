@@ -1007,7 +1007,9 @@
             "approved": "Identity verification is complete. No further action is required here."
           }
         }
-      }
+      },
+      "additionalCurrenciesTitle": "Add another currency",
+      "additionalCurrenciesHint": "These currencies are verified separately from the ones above."
     },
     "tosStatus": {
       "pending": {
@@ -1322,6 +1324,10 @@
         "title": "Status unavailable",
         "description": "We could not determine the current verification status. Try refreshing."
       }
+    },
+    "providerOnboarding": {
+      "title": "Add {currency}",
+      "description": "Confirm your details to start verification for this currency."
     }
   },
   "TreasuryTab": {

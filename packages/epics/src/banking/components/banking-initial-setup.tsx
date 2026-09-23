@@ -14,7 +14,7 @@ import {
 } from '../bank-currency-display';
 import {
   areOnboardingFieldsComplete,
-  getDedupedOnboardingFields,
+  getDynamicOnboardingFields,
   getEnabledOnboardingCurrencies,
   ownerText,
   resolveOnboardingCurrencyProviders,
@@ -102,9 +102,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 
   // `contactEmail`/`legalName` already ride the fixed organization-details inputs above — the
   // dynamic section only needs to add whatever else a resolved provider declares (D10).
-  const dynamicFields = getDedupedOnboardingFields(selected).filter(
-    (field) => field.key !== 'contactEmail' && field.key !== 'legalName',
-  );
+  const dynamicFields = getDynamicOnboardingFields(selected);
 
   const handleOnboardingFieldChange = (key: string, value: string) => {
     setOnboardingFieldValues((current) => ({ ...current, [key]: value }));

@@ -64,6 +64,8 @@ import {
   areOnboardingFieldsComplete,
   getAvailableAddAccountRailOptions,
   getDedupedOnboardingFields,
+  getDynamicOnboardingFields,
+  getRequestableOnboardingCurrencies,
   isOnboardingFieldRequired,
   resolveOnboardingCurrencyProviders,
 } from '../banking-ui';
@@ -277,5 +279,57 @@ describe('isOnboardingFieldRequired / areOnboardingFieldsComplete (requiredIf)',
         registrationNumber: '12345',
       }),
     ).toBe(true);
+  });
+});
+
+describe('getDynamicOnboardingFields', () => {
+  it('leaves out the two fixed inputs every onboarding form already renders', () => {
+    expect(getDynamicOnboardingFields(['aud']).map((f) => f.key)).toEqual([
+      'firstName',
+      'registrationNumber',
+    ]);
+  });
+
+  it('is empty for a Bridge-only selection (email + legal name are the fixed inputs)', () => {
+    expect(getDynamicOnboardingFields(['eur', 'usd'])).toEqual([]);
+  });
+});
+
+describe('getRequestableOnboardingCurrencies ("add another currency")', () => {
+  it('offers AUD to an owner that only has Bridge', () => {
+    expect(getRequestableOnboardingCurrencies(['bridge'])).toEqual(['aud']);
+  });
+
+  it('offers the Bridge currencies to an owner that only has AUDD', () => {
+    expect(getRequestableOnboardingCurrencies(['audd'])).toEqual([
+      'eur',
+      'usd',
+      'gbp',
+      'mxn',
+      'brl',
+      'cop',
+    ]);
+  });
+
+  it('offers nothing once the owner has both providers', () => {
+    expect(getRequestableOnboardingCurrencies(['bridge', 'audd'])).toEqual([]);
+  });
+
+  it('ignores entries without a provider tag rather than treating them as a provider', () => {
+    expect(getRequestableOnboardingCurrencies([undefined, 'bridge'])).toEqual([
+      'aud',
+    ]);
+  });
+
+  it('respects the enabled-onboarding-currencies gate (the Production lockdown hides AUD here too)', () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_BANKING_SUPPORTED_ONBOARDING_CURRENCIES',
+      'eur,usd,gbp,mxn,brl,cop',
+    );
+    try {
+      expect(getRequestableOnboardingCurrencies(['bridge'])).toEqual([]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

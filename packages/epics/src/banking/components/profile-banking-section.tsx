@@ -32,6 +32,7 @@ import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
 import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
+import { ProviderOnboardingDialog } from './provider-onboarding-dialog';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import { PayoutAccountDetailDialog } from './payout-account-detail-dialog';
 import { openBankVerificationFlowLinks } from '../open-bank-verification-tos';
@@ -248,6 +249,46 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     [clearOnboardingError, refreshProviders, requestOnboarding],
   );
 
+  /** Currency the owner asked to add from the status panel (a provider they aren't onboarded with yet). */
+  const [providerOnboardingCurrency, setProviderOnboardingCurrency] =
+    useState<BankOnboardingCurrencyCode | null>(null);
+
+  const handleRequestCurrencyOnboarding = useCallback(
+    (currency: BankOnboardingCurrencyCode) => {
+      clearOnboardingError();
+      setGearOpen(false);
+      setProviderOnboardingCurrency(currency);
+    },
+    [clearOnboardingError],
+  );
+
+  // Same submit path as the first-time form; only closes the dialog once it succeeds.
+  const handleProviderOnboardingSubmit = useCallback(
+    async (input: Parameters<typeof handleInitialSetupSubmit>[0]) => {
+      await handleInitialSetupSubmit(input);
+      setProviderOnboardingCurrency(null);
+    },
+    [handleInitialSetupSubmit],
+  );
+
+  const providerOnboardingDialog = (
+    <ProviderOnboardingDialog
+      open={providerOnboardingCurrency != null}
+      onOpenChange={(open) => {
+        if (!open) {
+          setProviderOnboardingCurrency(null);
+        }
+      }}
+      currency={providerOnboardingCurrency}
+      initialLegalName={fallbackLegalName}
+      initialContactEmail={fallbackContactEmail}
+      ownerContext="person"
+      isSubmitting={isOnboarding}
+      error={onboardingError}
+      onSubmit={handleProviderOnboardingSubmit}
+    />
+  );
+
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
   }
@@ -304,17 +345,21 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     }
 
     return (
-      <BankingProviderStatusPanel
-        basePath={basePath}
-        providers={providers}
-        isLoading={false}
-        isRefreshing={isStatusRefreshing}
-        canManage={canManage}
-        blockerMessage={blockerMessage}
-        onRefreshStatus={refreshBankingState}
-        showPageHeader
-        ownerContext="person"
-      />
+      <>
+        <BankingProviderStatusPanel
+          basePath={basePath}
+          providers={providers}
+          isLoading={false}
+          isRefreshing={isStatusRefreshing}
+          canManage={canManage}
+          blockerMessage={blockerMessage}
+          onRefreshStatus={refreshBankingState}
+          onRequestCurrencyOnboarding={handleRequestCurrencyOnboarding}
+          showPageHeader
+          ownerContext="person"
+        />
+        {providerOnboardingDialog}
+      </>
     );
   }
 
@@ -339,6 +384,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
               open={gearOpen}
               onOpenChange={handleGearOpenChange}
               onRefreshStatus={refreshBankingState}
+              onRequestCurrencyOnboarding={handleRequestCurrencyOnboarding}
             />
           ) : undefined
         }
@@ -449,6 +495,8 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
           if (!open) setDetailAccount(null);
         }}
       />
+
+      {providerOnboardingDialog}
     </div>
   );
 };
