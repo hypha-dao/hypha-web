@@ -35,6 +35,10 @@ import {
   signalCardActiveClass,
 } from '../utils/signal-active-styles';
 import { SIGNAL_LIST_ITEM_SHELL_CLASS } from '../utils/signal-board-layout';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 
 type SignalListViewProps = {
   signals: Coherence[];
@@ -131,7 +135,10 @@ export function SignalListView({
           SIGNAL_LIST_GRID_CLASS,
         )}
       >
-        <span className="min-w-0">{t('signalListTitle')}</span>
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span className="size-1.5 shrink-0" aria-hidden />
+          {t('signalListTitle')}
+        </span>
         <span className={SIGNAL_LIST_META_HEADER_CLASS}>
           {t('signalListStatus')}
         </span>
@@ -174,6 +181,13 @@ export function SignalListView({
                 board.slug === resolveEffectiveBoard(signal.board, workflow),
             )?.name ?? resolveEffectiveBoard(signal.board, workflow);
           const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
+          const priorityLabel = t(
+            `priorities.${signal.priority}` as
+              | 'priorities.critical'
+              | 'priorities.high'
+              | 'priorities.medium'
+              | 'priorities.low',
+          );
 
           return (
             <li
@@ -193,6 +207,15 @@ export function SignalListView({
                 )}
               >
                 <div className="flex min-w-0 items-start gap-2.5">
+                  <span
+                    className={cn(
+                      PRIORITY_DOT_MARK_CLASS,
+                      'mt-1.5',
+                      priorityDotClass(signal.priority),
+                    )}
+                    title={priorityLabel}
+                    aria-label={priorityLabel}
+                  />
                   <button
                     type="button"
                     className="min-w-0 flex-1 text-left"
