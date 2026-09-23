@@ -13,7 +13,8 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
  * of the two failed. In Preview/Prod that IP comes from the WS8 VPS relay — a blind TCP/CONNECT
  * forward (#2362 D1) that never terminates TLS, so the mTLS handshake to AUDD completes
  * end-to-end, unmodified, riding inside the tunnel. `AUDD_GATEWAY_HTTPS_PROXY` (full proxy URL,
- * credentials embedded — `http://<user>:<pass>@<relay-host>:<port>`) routes through it via
+ * credentials embedded — `https://<user>:<pass>@<relay-host>:<port>`, TLS-wrapped since #2474 D20
+ * to protect that credential in transit) routes through it via
  * `HttpsProxyAgent`; unset ⇒ connect to AUDD directly (only reachable from an already-allowlisted
  * egress, e.g. the VPS itself during the SSH-tunnel-based local-dev workaround, #2362 D3).
  *
