@@ -1,10 +1,13 @@
 import type * as React from 'react';
 import {
   buildAccentPaletteFromHex,
-  craftAccentHex,
+  craftAccentGradient,
+  craftAccentGradientFromProfile,
   mixHexColors,
   parseRgbFromHex,
+  rgbToHsl,
   SPACE_ACCENT_FALLBACK,
+  type BannerAccentProfile,
 } from './extract-space-accent';
 import {
   DEFAULT_BANNER_OVERLAY_CSS_VARS,
@@ -31,21 +34,42 @@ function contrastingForeground(hex: string): string {
   return brightness(hex) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#f8fafc';
 }
 
+function saturationOf(hex: string): number {
+  const rgb = parseRgbFromHex(hex);
+  if (!rgb) return 0;
+  return rgbToHsl(rgb[0], rgb[1], rgb[2]).s;
+}
+
 /**
  * Inline style bag for `[data-space-accent-scope]` and portaled DHO shells
  * (`ProposalOverlayShell`) so accent matches outside the DOM subtree.
+ *
+ * Crafts the cover once. Pass `profile` from the banner sample when it exists;
+ * otherwise `accent` is crafted. Do not pre-craft `accent` — a second pass dulls it.
  */
 export function buildSpaceScopeStyle(input: {
   accent: string;
-  foreground: string;
-  muted: string;
   overlayVars: BannerOverlayCssVars;
+  profile?: BannerAccentProfile | null;
 }): React.CSSProperties {
-  const { foreground, muted, overlayVars } = input;
-  const accent = craftAccentHex(
-    normalizeAccentHex(input.accent) ?? SPACE_ACCENT_FALLBACK,
+  const { overlayVars } = input;
+  const stops = input.profile
+    ? craftAccentGradientFromProfile(input.profile)
+    : craftAccentGradient(
+        normalizeAccentHex(input.accent) ?? SPACE_ACCENT_FALLBACK,
+      );
+  const accent = stops.mid;
+  const foreground = contrastingForeground(accent);
+  const muted = mixHexColors(
+    accent,
+    brightness(accent) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#ffffff',
+    0.45,
   );
   const palette = buildAccentPaletteFromHex(accent);
+  palette['--color-accent'] = accent;
+  palette['--color-accent-9'] = accent;
+  palette['--color-accent-10'] = mixHexColors(stops.deep, accent, 0.42);
+  palette['--color-accent-contrast'] = foreground;
 
   const accentAliases: Record<string, string> = {};
   for (let step = 1; step <= 12; step++) {
@@ -68,6 +92,8 @@ export function buildSpaceScopeStyle(input: {
     ...palette,
     ...accentAliases,
     '--space-accent': accent,
+    '--space-accent-deep': stops.deep,
+    '--space-accent-luminous': stops.luminous,
     /**
      * Readable accent-colored text on light surfaces (tabs, outline labels, links).
      * Solid-on-accent ink lives in `--space-accent-contrast` — do not reuse that here.
@@ -81,18 +107,8 @@ export function buildSpaceScopeStyle(input: {
 }
 
 export function getDefaultSpaceScopeStyle(): React.CSSProperties {
-  const accent = SPACE_ACCENT_FALLBACK;
-  const fg = contrastingForeground(accent);
-  const subtle = mixHexColors(
-    accent,
-    brightness(accent) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#ffffff',
-    0.45,
-  );
-
   return buildSpaceScopeStyle({
-    accent,
-    foreground: fg,
-    muted: subtle,
+    accent: SPACE_ACCENT_FALLBACK,
     overlayVars: DEFAULT_BANNER_OVERLAY_CSS_VARS,
   });
 }
@@ -100,38 +116,46 @@ export function getDefaultSpaceScopeStyle(): React.CSSProperties {
 /** Module singleton for initial paint and resetting accent scope between samples */
 export const DEFAULT_SPACE_SCOPE_STYLE = getDefaultSpaceScopeStyle();
 
-/** Canvas sampling results → same inline style bag as `buildSpaceScopeStyle` */
+/**
+ * Canvas sampling results → same inline style bag as `buildSpaceScopeStyle`.
+ * A chromatic cover profile is crafted once inside `buildSpaceScopeStyle`.
+ * This function does not call `craftAccentHex`.
+ */
 export function buildSpaceScopeStyleFromSampledAccents(options: {
   bannerAccent: string | null;
   logoAccent: string | null;
+  bannerProfile?: BannerAccentProfile | null;
   overlayVars: BannerOverlayCssVars | null;
 }): React.CSSProperties {
+  const profile =
+    options.bannerProfile && options.bannerProfile.saturation >= 0.12
+      ? options.bannerProfile
+      : null;
+
   let accent = SPACE_ACCENT_FALLBACK;
-  const bannerAccent = normalizeAccentHex(options.bannerAccent);
-  const logoAccent = normalizeAccentHex(options.logoAccent);
-  if (bannerAccent && logoAccent) {
-    accent = mixHexColors(bannerAccent, logoAccent, 0.55);
-  } else if (bannerAccent) {
-    accent = bannerAccent;
-  } else if (logoAccent) {
-    accent = logoAccent;
+  if (!profile) {
+    const bannerAccent = normalizeAccentHex(options.bannerAccent);
+    const logoAccent = normalizeAccentHex(options.logoAccent);
+    if (bannerAccent && logoAccent) {
+      const bannerSaturation = saturationOf(bannerAccent);
+      const logoSaturation = saturationOf(logoAccent);
+      if (bannerSaturation >= 0.12) {
+        accent = mixHexColors(bannerAccent, logoAccent, 0.82);
+      } else if (logoSaturation >= 0.12) {
+        accent = logoAccent;
+      } else {
+        accent = bannerAccent;
+      }
+    } else if (bannerAccent) {
+      accent = bannerAccent;
+    } else if (logoAccent) {
+      accent = logoAccent;
+    }
   }
-
-  const craftedAccent = craftAccentHex(accent);
-
-  const fg = contrastingForeground(craftedAccent);
-  const subtle = mixHexColors(
-    craftedAccent,
-    brightness(craftedAccent) > BRIGHTNESS_DARK_FG_THRESHOLD
-      ? '#0f172a'
-      : '#ffffff',
-    0.45,
-  );
 
   return buildSpaceScopeStyle({
     accent,
-    foreground: fg,
-    muted: subtle,
+    profile,
     overlayVars: options.overlayVars ?? DEFAULT_BANNER_OVERLAY_CSS_VARS,
   });
 }

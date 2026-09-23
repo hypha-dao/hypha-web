@@ -2,7 +2,10 @@
 
 import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
-import { extractAccentHexFromImageData } from '../utils/extract-space-accent';
+import {
+  readBannerAccent,
+  type BannerAccentProfile,
+} from '../utils/extract-space-accent';
 import {
   analyzeBannerToneFromImageData,
   DEFAULT_BANNER_OVERLAY_CSS_VARS,
@@ -91,7 +94,10 @@ function canvasFriendlyImageSrc(src: string): string | null {
   return null;
 }
 
-async function sampleImageToAccent(src: string): Promise<string | null> {
+function loadImageData(
+  src: string,
+  maxSide: number,
+): Promise<ImageData | null> {
   return new Promise((resolve) => {
     const friendlySrc = canvasFriendlyImageSrc(src);
     if (!friendlySrc) {
@@ -102,21 +108,19 @@ async function sampleImageToAccent(src: string): Promise<string | null> {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
-        const maxSide = 96;
         const scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
         const w = Math.max(8, Math.round(img.width * scale));
         const h = Math.max(8, Math.round(img.height * scale));
         const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) {
           resolve(null);
           return;
         }
         ctx.drawImage(img, 0, 0, w, h);
-        const data = ctx.getImageData(0, 0, w, h);
-        resolve(extractAccentHexFromImageData(data));
+        resolve(ctx.getImageData(0, 0, w, h));
       } catch {
         resolve(null);
       }
@@ -124,6 +128,21 @@ async function sampleImageToAccent(src: string): Promise<string | null> {
     img.onerror = () => resolve(null);
     img.src = friendlySrc;
   });
+}
+
+async function sampleImageToAccent(src: string): Promise<string | null> {
+  const data = await loadImageData(src, 96);
+  if (!data) return null;
+  return readBannerAccent(data).hex;
+}
+
+async function sampleBannerReading(src: string): Promise<{
+  hex: string | null;
+  profile: BannerAccentProfile | null;
+}> {
+  const data = await loadImageData(src, 96);
+  if (!data) return { hex: null, profile: null };
+  return readBannerAccent(data);
 }
 
 /** Larger sample grid for luminance / contrast / edge analysis (banner only). */
@@ -166,8 +185,9 @@ async function sampleBannerToneOverlayVars(
 }
 
 /**
- * Computes a dominant saturated accent from banner + logo imagery and exposes
- * `--space-accent`, `--space-accent-foreground`, `--space-accent-muted` on the wrapper.
+ * Samples the cover into one hue family and exposes the crafted mid
+ * (`--space-accent`) plus deep and luminous stops for the identity-row wash.
+ * The logo is used only when the cover has no chromatic family.
  */
 export function SpaceAccentFromImages({
   bannerSrc,
@@ -203,8 +223,8 @@ export function SpaceAccentFromImages({
     );
 
     (async () => {
-      const [bannerAccent, logoAccent, overlayRecord] = await Promise.all([
-        sampleImageToAccent(bannerSrc),
+      const [bannerReading, logoAccent, overlayRecord] = await Promise.all([
+        sampleBannerReading(bannerSrc),
         sampleImageToAccent(logoSrc),
         sampleBannerToneOverlayVars(bannerSrc),
       ]);
@@ -214,8 +234,9 @@ export function SpaceAccentFromImages({
       const overlayVars = overlayRecord ?? DEFAULT_BANNER_OVERLAY_CSS_VARS;
 
       const scopeStyle = buildSpaceScopeStyleFromSampledAccents({
-        bannerAccent,
+        bannerAccent: bannerReading.hex,
         logoAccent,
+        bannerProfile: bannerReading.profile,
         overlayVars,
       });
 

@@ -227,11 +227,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     >
       <div className="relative flex h-16 items-center gap-3 px-4 md:h-[4.75rem] md:gap-4 md:px-6">
         <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              'linear-gradient(100deg, color-mix(in srgb, var(--space-accent, transparent) 16%, transparent), transparent 42%)',
-          }}
+          className="space-accent-banner-wash pointer-events-none absolute inset-0"
           aria-hidden
         />
         <div
@@ -264,7 +260,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           </h1>
           {description ? (
             <p
-              className="truncate text-2 font-normal leading-5 text-muted-foreground [font-family:var(--font-family-text)]"
+              className="truncate text-2 font-normal leading-5 text-foreground/75 [font-family:var(--font-family-text)]"
               title={description}
             >
               {description}
