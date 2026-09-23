@@ -110,6 +110,35 @@ function buildQuery(
   return serialized ? `?${serialized}` : '';
 }
 
+/**
+ * Adds the route context a bare socket error lacks ("socket hang up" alone doesn't say whether
+ * the relay hop or AUDD dropped the connection). Never includes credentials: the proxy is
+ * described by scheme + host only.
+ */
+function describeTransportError(
+  error: Error,
+  options: AuddRequestOptions,
+  url: URL,
+  config: AuddClientConfig,
+): Error {
+  let via = 'direct';
+  if (config.httpsProxy) {
+    try {
+      const proxy = new URL(config.httpsProxy);
+      via = `via ${proxy.protocol}//${proxy.host}`;
+    } catch {
+      via = 'via proxy (unparseable AUDD_GATEWAY_HTTPS_PROXY)';
+    }
+  }
+  const code = (error as NodeJS.ErrnoException).code;
+  const described = new Error(
+    `AUDD Gateway request ${options.method} ${url.host}${options.path} failed ${via}` +
+      `${code ? ` [${code}]` : ''}: ${error.message}`,
+  ) as Error & { cause?: unknown };
+  described.cause = error;
+  return described;
+}
+
 export async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
   const config = options.config ?? getAuddClientConfig();
   const url = new URL(
@@ -167,7 +196,9 @@ export async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
           );
         },
       );
-      req.on('error', reject);
+      req.on('error', (error) =>
+        reject(describeTransportError(error, options, url, config)),
+      );
       req.on('timeout', () => {
         req.destroy(
           Object.assign(
