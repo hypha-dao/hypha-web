@@ -34,6 +34,10 @@ import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 
@@ -157,12 +161,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
-  if (priorityLabel) {
-    metaParts.push({
-      key: 'priority',
-      node: <span className="shrink-0">{priorityLabel}</span>,
-    });
-  }
   if (hasPersonSlot) {
     metaParts.push({
       key: 'assignee',
@@ -308,38 +306,51 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
           <div className="flex flex-col gap-2.5">
             <div className="flex min-w-0 flex-col gap-1">
-              <Skeleton
-                className="min-w-0"
-                width="100%"
-                height="20px"
-                loading={isLoading}
-              >
-                <CardTitle
-                  className="line-clamp-3 text-2 font-medium leading-snug tracking-tight"
-                  title={title}
-                >
-                  {title}
-                </CardTitle>
-              </Skeleton>
-              {/* Priority is quiet ink in the meta line. Signal type is omitted:
-                  it repeated on every card without changing what anyone does next. */}
-              {metaParts.length > 0 ? (
-                <p className="flex min-w-0 items-center text-1 text-muted-foreground">
-                  {metaParts.map((part, index) => (
-                    <React.Fragment key={part.key}>
-                      {index > 0 ? (
-                        <span
-                          className="mx-1.5 shrink-0 text-border"
-                          aria-hidden
-                        >
-                          ·
-                        </span>
-                      ) : null}
-                      {part.node}
-                    </React.Fragment>
-                  ))}
-                </p>
-              ) : null}
+              <div className="flex min-w-0 items-start gap-2">
+                <span
+                  className={cn(
+                    PRIORITY_DOT_MARK_CLASS,
+                    'mt-1.5',
+                    priorityDotClass(priority),
+                  )}
+                  title={priorityLabel}
+                  aria-label={priorityLabel}
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <Skeleton
+                    className="min-w-0"
+                    width="100%"
+                    height="20px"
+                    loading={isLoading}
+                  >
+                    <CardTitle
+                      className="line-clamp-3 text-2 font-medium leading-snug tracking-tight"
+                      title={title}
+                    >
+                      {title}
+                    </CardTitle>
+                  </Skeleton>
+                  {/* Priority is the dot beside the title. Signal type is omitted:
+                    it repeated on every card without changing what anyone does next. */}
+                  {metaParts.length > 0 ? (
+                    <p className="flex min-w-0 items-center text-1 text-muted-foreground">
+                      {metaParts.map((part, index) => (
+                        <React.Fragment key={part.key}>
+                          {index > 0 ? (
+                            <span
+                              className="mx-1.5 shrink-0 text-border"
+                              aria-hidden
+                            >
+                              ·
+                            </span>
+                          ) : null}
+                          {part.node}
+                        </React.Fragment>
+                      ))}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
             {tags?.length > 0 ? (
@@ -347,7 +358,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 tags={tags}
                 maxVisible={2}
                 showHashPrefix={false}
-                className="content-start gap-1"
+                className="content-start gap-1 pl-3.5"
               />
             ) : null}
           </div>
