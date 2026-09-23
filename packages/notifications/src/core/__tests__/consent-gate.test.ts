@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { getUser } = vi.hoisted(() => ({ getUser: vi.fn() }));
-vi.mock('../sdk', () => ({ sdkClient: { getUser } }));
+vi.mock('../../sdk', () => ({ sdkClient: { getUser } }));
 
-import { gateRecipientChannels, resolveConsentedSlugs } from './consent-gate';
+import { gateRecipientChannels, resolveConsentedSlugs } from '../consent-gate';
 
 function userWithTags(tags: Record<string, string>) {
   return { properties: { tags } };

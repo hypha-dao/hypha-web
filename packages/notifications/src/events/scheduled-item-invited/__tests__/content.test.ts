@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildScheduledItemInvitedContent } from './content';
-import type { ScheduledItemInvitedEvent } from '../../core/types';
-import { TAG_MEETING_CONSENT } from '../../constants/tags';
+import { buildScheduledItemInvitedContent } from '../content';
+import type { ScheduledItemInvitedEvent } from '../../../core/types';
+import { TAG_MEETING_CONSENT } from '../../../constants/tags';
 
 function makeEvent(
   overrides: Partial<ScheduledItemInvitedEvent['payload']> = {},

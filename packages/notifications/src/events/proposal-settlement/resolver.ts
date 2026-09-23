@@ -72,9 +72,21 @@ export const resolveProposalSettlementRecipients: RecipientResolver<
   const spaceWeb3Id = space.web3SpaceId;
   if (!spaceWeb3Id) return recipients;
 
-  const spaceDetails = await web3Client.readContract(
-    getSpaceDetails({ spaceId: BigInt(spaceWeb3Id) }),
-  );
+  const spaceDetails = await (async () => {
+    try {
+      return await web3Client.readContract(
+        getSpaceDetails({ spaceId: BigInt(spaceWeb3Id) }),
+      );
+    } catch (error) {
+      console.error(
+        `[notifications] ${event.type}: failed to read space members on-chain`,
+        error,
+      );
+      return undefined;
+    }
+  })();
+  if (!spaceDetails) return recipients;
+
   // TODO: fix type (carried over from the webhook route this replaced)
   const memberAddresses = spaceDetails.at(4) as `0x${string}`[];
   const members = await findPeopleByWeb3Addresses(
@@ -90,7 +102,7 @@ export const resolveProposalSettlementRecipients: RecipientResolver<
   };
 
   for (const member of members) {
-    if (!member.slug) continue;
+    if (!member.slug || member.slug === creatorRow?.slug) continue;
     recipients.push({
       personSlug: member.slug,
       role: 'member',

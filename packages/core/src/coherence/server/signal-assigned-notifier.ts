@@ -17,12 +17,20 @@ export type SignalAssignedNotifier = (
   input: SignalAssignedNotifierInput,
 ) => Promise<void>;
 
-let notifier: SignalAssignedNotifier | null = null;
+// Stored on `globalThis` rather than a module-scoped variable: `instrumentation-node.ts` sets
+// this via the `@hypha-platform/core/server` barrel, while `actions.ts` reads it via a relative
+// import — if the bundler ever emits these as separate module instances, a plain module-scoped
+// variable would split into two independent slots, silently dropping every notification.
+const NOTIFIER_KEY = Symbol.for('hypha.core.signalAssignedNotifier');
+
+type GlobalWithNotifier = typeof globalThis & {
+  [NOTIFIER_KEY]?: SignalAssignedNotifier;
+};
 
 export function setSignalAssignedNotifier(fn: SignalAssignedNotifier) {
-  notifier = fn;
+  (globalThis as GlobalWithNotifier)[NOTIFIER_KEY] = fn;
 }
 
 export function getSignalAssignedNotifier(): SignalAssignedNotifier | null {
-  return notifier;
+  return (globalThis as GlobalWithNotifier)[NOTIFIER_KEY] ?? null;
 }

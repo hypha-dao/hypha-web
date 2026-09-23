@@ -35,6 +35,13 @@ function extractMentions(event: MatrixEvent): string[] {
  *  - not `m.room.message`  (state events, membership, reactions, redactions, …)
  *  - missing `event_id` / `room_id` / `sender`
  *  - `m.notice`            (bot/automation echoes)
+ *  - an edit (`m.relates_to.rel_type === 'm.replace'`) — a new `event_id` per edit means
+ *    `claimProcessedEvent`'s dedupe-by-`event_id` doesn't catch these; every edit would otherwise
+ *    re-notify the whole room.
+ *  - redacted — covers a message redacted before the reconciler's scan sees it (`/messages`
+ *    still returns it as `m.room.message`, but redaction strips `content` down to nothing, so
+ *    `msgtype` itself is gone; a legitimate media message with no text `body` still has its
+ *    `msgtype`, so this doesn't drop those).
  *
  * Bot-sender suppression is applied later (`receiveTransaction`), where the bot MXID list lives.
  */
@@ -49,7 +56,13 @@ export function parseMessageEvent(
   if (!matrixEventId || !roomId || !senderMxid) return null;
 
   const msgtype = event.content?.msgtype;
+  if (!msgtype) return null;
   if (msgtype === 'm.notice') return null;
+
+  const relatesTo = event.content?.['m.relates_to'] as
+    | { rel_type?: string }
+    | undefined;
+  if (relatesTo?.rel_type === 'm.replace') return null;
 
   const body =
     typeof event.content?.body === 'string' ? event.content.body : '';

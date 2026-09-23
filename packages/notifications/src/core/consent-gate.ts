@@ -6,6 +6,46 @@ export interface ConsentTags {
   [tag: string]: string;
 }
 
+function tagsMatch(
+  tags: Record<string, string> | undefined,
+  requiredTags: ConsentTags,
+): boolean {
+  if (!tags) return false;
+  return Object.entries(requiredTags).every(
+    ([tag, value]) => Object.hasOwn(tags, tag) && tags[tag] === value,
+  );
+}
+
+/**
+ * Fetches each slug's OneSignal tags once (by `external_id`), regardless of how many channels
+ * end up checking them — `gateRecipientChannels` used to call this per channel, turning a
+ * multi-channel event (e.g. push + email) into 2x the `getUser` calls for the same recipients.
+ */
+async function fetchTagsBySlug(
+  personSlugs: string[],
+): Promise<Map<string, Record<string, string> | undefined>> {
+  const tagsBySlug = new Map<string, Record<string, string> | undefined>();
+  if (personSlugs.length === 0) return tagsBySlug;
+
+  const onesignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
+  if (!onesignalAppId) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
+  const results = await Promise.allSettled(
+    personSlugs.map(async (personSlug) => ({
+      personSlug,
+      user: await sdkClient.getUser(onesignalAppId, 'external_id', personSlug),
+    })),
+  );
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue;
+    const { personSlug, user } = result.value;
+    tagsBySlug.set(personSlug, user.properties?.tags);
+  }
+  return tagsBySlug;
+}
+
 /**
  * Given candidate person slugs and a set of required OneSignal tags, returns the subset whose
  * OneSignal user (looked up by `external_id`) has every tag matching. One place for what
@@ -17,33 +57,10 @@ export async function resolveConsentedSlugs(
   personSlugs: string[],
   requiredTags: ConsentTags,
 ): Promise<string[]> {
-  const onesignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
-  if (!onesignalAppId) {
-    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
-  }
-  if (personSlugs.length === 0) return [];
-
-  const results = await Promise.allSettled(
-    personSlugs.map(async (personSlug) => ({
-      personSlug,
-      user: await sdkClient.getUser(onesignalAppId, 'external_id', personSlug),
-    })),
+  const tagsBySlug = await fetchTagsBySlug(personSlugs);
+  return personSlugs.filter((slug) =>
+    tagsMatch(tagsBySlug.get(slug), requiredTags),
   );
-
-  return results
-    .filter(
-      (r): r is PromiseFulfilledResult<{ personSlug: string; user: any }> =>
-        r.status === 'fulfilled',
-    )
-    .map((r) => r.value)
-    .filter(({ user }) => {
-      const tags = user.properties?.tags;
-      if (!tags) return false;
-      return Object.entries(requiredTags).every(
-        ([tag, value]) => Object.hasOwn(tags, tag) && tags[tag] === value,
-      );
-    })
-    .map(({ personSlug }) => personSlug);
 }
 
 const CHANNEL_BASE_TAGS: Record<'push' | 'email', ConsentTags> = {
@@ -56,7 +73,9 @@ const CHANNEL_BASE_TAGS: Record<'push' | 'email', ConsentTags> = {
  * one event's recipients almost always share the same consent requirement). `in_app` has no
  * OneSignal tag gate today (reserved channel, see implementation-plan.md §9) and always passes.
  *
- * Returns the set of person slugs allowed on each channel.
+ * Returns the set of person slugs allowed on each channel. Fetches each recipient's OneSignal
+ * tags once (via `fetchTagsBySlug`), then evaluates every requested channel's required tags
+ * against that same cached set — one lookup per slug regardless of channel count.
  */
 export async function gateRecipientChannels(
   recipients: Recipient[],
@@ -66,19 +85,25 @@ export async function gateRecipientChannels(
   const slugs = recipients.map((r) => r.personSlug);
   const allowed = new Map<NotificationChannel, Set<string>>();
 
-  await Promise.all(
-    channels.map(async (channel) => {
-      if (channel === 'in_app') {
-        allowed.set(channel, new Set(slugs));
-        return;
-      }
-      const consented = await resolveConsentedSlugs(slugs, {
-        ...CHANNEL_BASE_TAGS[channel],
-        ...requiredTags,
-      });
-      allowed.set(channel, new Set(consented));
-    }),
+  const tagGatedChannels = channels.filter(
+    (channel): channel is 'push' | 'email' => channel !== 'in_app',
   );
+  const tagsBySlug =
+    tagGatedChannels.length > 0
+      ? await fetchTagsBySlug(slugs)
+      : new Map<string, Record<string, string> | undefined>();
+
+  for (const channel of channels) {
+    if (channel === 'in_app') {
+      allowed.set(channel, new Set(slugs));
+      continue;
+    }
+    const required = { ...CHANNEL_BASE_TAGS[channel], ...requiredTags };
+    const consented = slugs.filter((slug) =>
+      tagsMatch(tagsBySlug.get(slug), required),
+    );
+    allowed.set(channel, new Set(consented));
+  }
 
   return allowed;
 }

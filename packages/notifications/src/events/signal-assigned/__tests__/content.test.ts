@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSignalAssignedContent } from './content';
-import type { Recipient, SignalAssignedEvent } from '../../core/types';
+import { buildSignalAssignedContent } from '../content';
+import type { Recipient, SignalAssignedEvent } from '../../../core/types';
 
 const event: SignalAssignedEvent = {
   type: 'signal.assigned',

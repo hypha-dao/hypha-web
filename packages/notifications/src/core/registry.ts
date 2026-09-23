@@ -10,19 +10,23 @@ interface EventHandlers<E extends NotificationEvent = NotificationEvent> {
   strategy?: NotificationStrategy<E>;
 }
 
-const registry = new Map<NotificationEvent['type'], EventHandlers<any>>();
+const registry = new Map<NotificationEvent['type'], EventHandlers>();
 
 /**
  * Registers the (resolver, strategy, content builder) triple for one event type. Called once,
  * as a module-load side effect, by the module owning that event type (e.g. `events/proposal-
  * created.ts`) — import that module once (from the action / route that can fire the event) to
  * make sure registration has happened before `dispatch()` is called.
+ *
+ * The cast to `EventHandlers<NotificationEvent>` lives here and in `getEventHandlers` only —
+ * both call sites are keyed by `type`, which is what actually guarantees a given `E`'s resolver/
+ * contentBuilder only ever runs against events of that same `E`.
  */
 export function registerEventHandlers<E extends NotificationEvent>(
   type: E['type'],
   handlers: EventHandlers<E>,
 ): void {
-  registry.set(type, handlers);
+  registry.set(type, handlers as unknown as EventHandlers<NotificationEvent>);
 }
 
 export function getEventHandlers<E extends NotificationEvent>(
@@ -34,7 +38,7 @@ export function getEventHandlers<E extends NotificationEvent>(
       `No notification handlers registered for event type "${type}"`,
     );
   }
-  return handlers;
+  return handlers as unknown as EventHandlers<E>;
 }
 
 export function getStrategy<E extends NotificationEvent>(

@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('./consent-gate', () => ({ gateRecipientChannels: vi.fn() }));
+vi.mock('../consent-gate', () => ({ gateRecipientChannels: vi.fn() }));
 
 // Avoid pulling in the real delivery layer (`onesignal-adapter.ts` imports the OneSignal SDK
 // client, which imports the `server-only` package — not resolvable in this package's test env,
 // same reason `notify-chat-mention.test.ts`/`notify-call-started.test.ts` avoid the action files).
-vi.mock('../delivery', () => {
+vi.mock('../../delivery', () => {
   let active: { sendMany: (...args: unknown[]) => unknown } | undefined;
   return {
     setNotificationDispatcher: (dispatcher: typeof active) => {
@@ -15,21 +15,18 @@ vi.mock('../delivery', () => {
   };
 });
 
-import { gateRecipientChannels } from './consent-gate';
-import { setNotificationDispatcher } from '../delivery';
-import { dispatch } from './dispatch';
-import { registerEventHandlers } from './registry';
-import type { NotificationDispatcher } from '../delivery/types';
-import type { ProposalCreatedEvent, Recipient } from './types';
+import { gateRecipientChannels } from '../consent-gate';
+import { setNotificationDispatcher } from '../../delivery';
+import { dispatch } from '../dispatch';
+import { registerEventHandlers } from '../registry';
+import type { NotificationDispatcher } from '../../delivery/types';
+import type { ProposalCreatedEvent, Recipient } from '../types';
 
 const event: ProposalCreatedEvent = {
   type: 'proposal.created',
   source: { kind: 'domain', entityType: 'proposal', entityId: '1' },
   context: { proposalWeb3Id: 1n, spaceWeb3Id: 2n, creatorWeb3Address: '0xabc' },
-  payload: {
-    url: 'https://app.hypha.earth/en',
-    unsubscribeLink: 'https://app.hypha.earth/en/unsub',
-  },
+  payload: {},
 };
 
 describe('dispatch', () => {
@@ -58,7 +55,11 @@ describe('dispatch', () => {
         channels: ['push'],
         requiredTags: { sub: 'true' },
         content: {
-          push: { templateId: 't', customData: { who: recipient.personSlug } },
+          push: {
+            kind: 'template',
+            templateId: 't',
+            customData: { who: recipient.personSlug },
+          },
         },
       }),
       strategy: (_e, recipient) => recipient.personSlug !== 'bob',
@@ -78,7 +79,13 @@ describe('dispatch', () => {
       {
         recipient: { personSlug: 'alice', role: 'creator' },
         channels: ['push'],
-        content: { push: { templateId: 't', customData: { who: 'alice' } } },
+        content: {
+          push: {
+            kind: 'template',
+            templateId: 't',
+            customData: { who: 'alice' },
+          },
+        },
       },
     ]);
   });
@@ -106,7 +113,7 @@ describe('dispatch', () => {
       contentBuilder: () => ({
         channels: ['push'],
         requiredTags: {},
-        content: { push: { templateId: 't' } },
+        content: { push: { kind: 'template', templateId: 't' } },
       }),
     });
     vi.mocked(gateRecipientChannels).mockResolvedValue(
@@ -124,7 +131,7 @@ describe('dispatch', () => {
       contentBuilder: () => ({
         channels: ['push'],
         requiredTags: { sub: 'true' },
-        content: { push: { templateId: 't' } },
+        content: { push: { kind: 'template', templateId: 't' } },
       }),
     });
     vi.mocked(gateRecipientChannels).mockResolvedValue(

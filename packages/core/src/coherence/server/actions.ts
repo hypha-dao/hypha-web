@@ -86,12 +86,19 @@ export async function createCoherenceAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to create coherence');
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for create coherence',
+    );
+  }
   const newSignal = await createCoherence({ ...data }, { db });
   if (newSignal.spaceId != null) {
     await notifySignalAssigned({
       spaceId: newSignal.spaceId,
       assigneePersonIds: newSignal.assigneeIds ?? [],
-      actorPersonId: newSignal.creatorId ?? null,
+      actorPersonId: self.id,
       signalSlug: newSignal.slug ?? '',
       signalTitle: newSignal.title ?? '',
     });

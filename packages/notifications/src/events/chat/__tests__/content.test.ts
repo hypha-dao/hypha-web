@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildChatContent } from './content';
-import type { ChatNotificationEvent, Recipient } from '../../core/types';
-import { TAG_MENTION_CONSENT } from '../../constants';
+import { buildChatContent } from '../content';
+import type { ChatNotificationEvent, Recipient } from '../../../core/types';
+import { TAG_MENTION_CONSENT } from '../../../constants';
 
 function makeEvent(
   type: ChatNotificationEvent['type'],

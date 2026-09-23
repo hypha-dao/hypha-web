@@ -1,3 +1,4 @@
+import { lt } from 'drizzle-orm';
 import {
   notificationProcessedEvents,
   type NewNotificationProcessedEvent,
@@ -28,4 +29,23 @@ export async function claimProcessedEvent(
     .returning();
 
   return Boolean(row);
+}
+
+/**
+ * Deletes ledger rows older than `olderThanMs`. The schema docstring promises this table is
+ * "pruned on a schedule by the reconcile cron" — `reconcileMatrixNotifications` calls this once
+ * per run. `olderThanMs` must stay comfortably larger than the reconciler's own scan window, or a
+ * row could be pruned while still inside that window and get re-claimed (and re-notified) on the
+ * next run.
+ */
+export async function pruneProcessedEvents(
+  olderThanMs: number,
+  db: DatabaseInstance,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanMs);
+  const deleted = await db
+    .delete(notificationProcessedEvents)
+    .where(lt(notificationProcessedEvents.dispatchedAt, cutoff))
+    .returning();
+  return deleted.length;
 }

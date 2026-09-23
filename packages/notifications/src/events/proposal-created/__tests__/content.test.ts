@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildProposalCreatedContent } from './content';
-import type { ProposalCreatedEvent, Recipient } from '../../core/types';
-import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../../constants';
+import { buildProposalCreatedContent } from '../content';
+import type { ProposalCreatedEvent, Recipient } from '../../../core/types';
+import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../../../constants';
 
 const event: ProposalCreatedEvent = {
   type: 'proposal.created',

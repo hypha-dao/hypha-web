@@ -55,6 +55,11 @@ export async function dispatchScheduledItemInvitation(
     return { sent: false, recipientCount: memberSlugs.length };
   }
 
+  // Tracks every channel this call has already resolved (sent, or released after a failed
+  // send) — if a later channel's `dispatch()` throws, the `catch` below must only release
+  // channels that are still outstanding, not ones already sent (that would let a retry
+  // re-send an invitation that already went out).
+  const resolvedChannels = new Set<'email' | 'push'>();
   try {
     // One `dispatch()` call per channel: `dispatch()`'s `DispatchResult` is a flat count across
     // however many notifications it grouped, not broken down per channel — calling once per
@@ -77,10 +82,12 @@ export async function dispatchScheduledItemInvitation(
           { db },
         );
       }
+      resolvedChannels.add(channel);
     }
     return { sent: true, recipientCount: memberSlugs.length };
   } catch (error) {
     for (const channel of claimedChannels) {
+      if (resolvedChannels.has(channel)) continue;
       await releaseScheduledItemInvitationDispatch(
         { scheduledItemId: item.id, inviteRevision, channel },
         { db },

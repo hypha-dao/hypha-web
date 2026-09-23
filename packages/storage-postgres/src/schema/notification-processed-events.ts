@@ -1,5 +1,6 @@
 import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { commonDateFields } from './shared';
 
 /**
  * Idempotency ledger for the inbound Matrix Application Service transaction receiver (#2483).
@@ -26,6 +27,7 @@ export const notificationProcessedEvents = pgTable(
     dispatchedAt: timestamp('dispatched_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    ...commonDateFields,
   },
   (table) => [
     index('notification_processed_events_room_id_idx').on(table.roomId),

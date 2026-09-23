@@ -104,4 +104,22 @@ describe('parseMessageEvent', () => {
     expect(parsed?.body).toBe('');
     expect(parsed?.occurredAt).toBeGreaterThan(0);
   });
+
+  it('drops edits (m.relates_to.rel_type === m.replace)', () => {
+    expect(
+      parseMessageEvent({
+        ...base,
+        content: {
+          msgtype: 'm.text',
+          body: '* corrected text',
+          ['m.new_content']: { msgtype: 'm.text', body: 'corrected text' },
+          ['m.relates_to']: { rel_type: 'm.replace', event_id: '$evt1' },
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it('drops redacted messages (content emptied, no msgtype)', () => {
+    expect(parseMessageEvent({ ...base, content: {} })).toBeNull();
+  });
 });

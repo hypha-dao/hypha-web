@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildProposalSettlementContent } from './content';
-import type { ProposalSettlementEvent } from './resolver';
-import type { Recipient } from '../../core/types';
-import { TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED } from '../../constants';
+import { buildProposalSettlementContent } from '../content';
+import type { ProposalSettlementEvent } from '../resolver';
+import type { Recipient } from '../../../core/types';
+import { TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED } from '../../../constants';
 
 const accepted: ProposalSettlementEvent = {
   type: 'proposal.accepted',
