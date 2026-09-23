@@ -262,7 +262,7 @@ describe('requestBankOnboardingWithConfirmation', () => {
     );
   });
 
-  it('rejects a bypass request when the row is already claimed by an in-flight confirmation', async () => {
+  it('takes over a claimed-but-unfinalized row on bypass by rotating to a fresh nonce first', async () => {
     findBankCustomerBySpaceAndProvider.mockResolvedValue({
       id: 7,
       providerKycLinkId: null,
@@ -270,6 +270,46 @@ describe('requestBankOnboardingWithConfirmation', () => {
       jwtNonce: null,
       requestedRails: ['eur'],
     });
+    claimBankCustomerForConfirmation.mockResolvedValue({ id: 7 });
+    finalizeClaimedBankCustomer.mockResolvedValue({ id: 7 });
+
+    const result = await requestBankOnboardingWithConfirmation(
+      {
+        ownerRef: spaceOwner,
+        entityType: 'business',
+        legalName: 'Acme Foundation Ltd.',
+        contactEmail: 'me+sandbox@example.com',
+        requestedRails: ['eur'],
+        submitterPersonId: 10,
+        submitterEmail: 'me@example.com',
+        sendConfirmationEmail,
+      },
+      { db: mockDb },
+      { kycProvider: mockProvider },
+    );
+
+    expect(result.kind).toBe('created');
+    const freshNonce = updateBankCustomer.mock.calls[0][0].jwtNonce;
+    expect(freshNonce).toEqual(expect.any(String));
+    expect(claimBankCustomerForConfirmation).toHaveBeenCalledWith(
+      { id: 7, expectedNonce: freshNonce },
+      expect.any(Object),
+    );
+  });
+
+  it('releases the claim when the provider call fails during a bypass takeover', async () => {
+    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+      id: 7,
+      providerKycLinkId: null,
+      providerCustomerId: null,
+      jwtNonce: 'old-nonce',
+      requestedRails: ['eur'],
+    });
+    claimBankCustomerForConfirmation.mockResolvedValue({ id: 7 });
+    const failingProvider = {
+      ...mockProvider,
+      createKycLink: vi.fn().mockRejectedValue(new Error('provider down')),
+    };
 
     await expect(
       requestBankOnboardingWithConfirmation(
@@ -284,11 +324,13 @@ describe('requestBankOnboardingWithConfirmation', () => {
           sendConfirmationEmail,
         },
         { db: mockDb },
-        { kycProvider: mockProvider },
+        { kycProvider: failingProvider },
       ),
-    ).rejects.toThrow(/already being processed/i);
-    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
-    expect(claimBankCustomerForConfirmation).not.toHaveBeenCalled();
+    ).rejects.toThrow('provider down');
+    expect(releaseBankCustomerClaim).toHaveBeenCalledWith(
+      { id: 7, restoreNonce: 'old-nonce' },
+      expect.any(Object),
+    );
   });
 
   it('rejects a bypass request that loses the claim to a concurrent resend or confirm', async () => {

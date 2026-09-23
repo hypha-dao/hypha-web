@@ -378,16 +378,20 @@ export async function requestBankOnboardingWithConfirmation(
     // other's result.
     let result: KycLinkAndValidations;
     if (existing) {
+      // A null nonce means an earlier attempt claimed this row and never finalized: either still
+      // in flight or (if the provider call threw) abandoned. Rotating to a fresh nonce first
+      // revokes any in-flight attempt (its final write is conditioned on the nonce staying NULL)
+      // and gives this request something valid to claim, so an abandoned claim can't wedge the
+      // owner permanently — same idea as the resend path below.
+      const takeoverNonce = existing.jwtNonce ?? randomUUID();
       if (!existing.jwtNonce) {
-        // Already claimed by an in-flight confirmation (nonce cleared, not yet finalized) —
-        // nothing valid to atomically take over from here.
-        throw new BankOnboardingError(
-          'A confirmation for this owner is already being processed. Please try again in a moment.',
-          409,
+        await updateBankCustomer(
+          { id: existing.id, jwtNonce: takeoverNonce },
+          { db },
         );
       }
       const claimed = await claimBankCustomerForConfirmation(
-        { id: existing.id, expectedNonce: existing.jwtNonce },
+        { id: existing.id, expectedNonce: takeoverNonce },
         { db },
       );
       if (!claimed) {
@@ -396,19 +400,30 @@ export async function requestBankOnboardingWithConfirmation(
           409,
         );
       }
-      const finalized = await finalizeClaimedBankCustomerWithKycLink(
-        claimed.id,
-        {
-          entityType,
-          legalName,
-          contactEmail,
-          requestedRails,
-          redirectUri,
-          onboardingFields,
-        },
-        { db },
-        resolvedOptions,
-      );
+      let finalized: KycLinkAndValidations | null;
+      try {
+        finalized = await finalizeClaimedBankCustomerWithKycLink(
+          claimed.id,
+          {
+            entityType,
+            legalName,
+            contactEmail,
+            requestedRails,
+            redirectUri,
+            onboardingFields,
+          },
+          { db },
+          resolvedOptions,
+        );
+      } catch (error) {
+        // Same as the confirm path: don't leave the row claimed (nonce NULL, no link) when the
+        // provider call fails.
+        await releaseBankCustomerClaim(
+          { id: claimed.id, restoreNonce: takeoverNonce },
+          { db },
+        );
+        throw error;
+      }
       if (!finalized) {
         throw new BankOnboardingError(
           'This request just changed — please try again.',
