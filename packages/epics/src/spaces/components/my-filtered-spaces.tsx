@@ -13,7 +13,7 @@ import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
-import { SectionFilter, Input } from '@hypha-platform/ui';
+import { Checkbox, SectionFilter } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { SpaceOrderCombobox } from './space-order-combobox';
 
@@ -111,12 +111,12 @@ export function MyFilteredSpaces({
           htmlFor="hide-archived-spaces"
           className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
         >
-          <Input
+          <Checkbox
             id="hide-archived-spaces"
-            type="checkbox"
             checked={hideArchivedSpaces}
-            onChange={(e) => setHideArchivedSpaces(e.target.checked)}
-            className="h-4 w-4 shrink-0"
+            onCheckedChange={(checked) =>
+              setHideArchivedSpaces(checked === true)
+            }
           />
           <span className="whitespace-nowrap text-2 font-normal text-neutral-11">
             {tSpaces('hideArchivedSpaces')}
