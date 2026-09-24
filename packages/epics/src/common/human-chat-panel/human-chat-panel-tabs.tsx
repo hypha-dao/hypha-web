@@ -98,7 +98,7 @@ export function HumanChatPanelTabs({
   return (
     <div
       className={cn(
-        'relative w-full min-w-0 border-b border-border/70 bg-transparent px-4 py-1.5',
+        'relative w-full min-w-0 border-b border-border/70 bg-transparent px-3 py-1',
         'min-h-[var(--secondary-chrome-actions-row-height,52px)]',
         /* §3.1.1: tab column scrolls; call + settings column is `auto` and does not shrink. */
         'grid w-full min-w-0 items-center',
@@ -162,12 +162,12 @@ export function HumanChatPanelTabs({
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={cn(
                 'shrink-0 select-none',
-                'inline-flex min-w-0 items-center',
-                'whitespace-nowrap rounded-md px-2 py-1 text-left text-xs font-medium',
-                'transition-colors duration-150 sm:px-2.5',
+                'inline-flex h-9 min-w-0 items-center',
+                'whitespace-nowrap rounded-none border-0 bg-transparent px-2.5 text-left text-xs font-medium',
+                'transition-colors duration-150',
                 activeTab === tab.key
-                  ? 'border border-accent-9/40 bg-accent-9/10 text-foreground dark:border-accent-10/40 dark:bg-accent-9/14'
-                  : 'border border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                  ? 'text-accent-11'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <span className="inline-flex min-w-0 items-center gap-2">
@@ -194,7 +194,7 @@ export function HumanChatPanelTabs({
         </div>
       </div>
       {hasEndCluster ? (
-        <div className="relative z-10 flex shrink-0 items-center justify-end gap-1 self-stretch border-s border-border/40 bg-background ps-1.5 min-w-max">
+        <div className="relative z-10 flex min-w-max shrink-0 items-center justify-end gap-0.5 self-stretch border-s border-border/40 bg-transparent ps-1.5">
           {tabRowEnd}
         </div>
       ) : null}

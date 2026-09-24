@@ -4349,9 +4349,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   return (
     <>
       {screenshareTabAudioPromptDialog}
-      <SidebarHeader className="bg-background-2 gap-0 p-0">
+      <SidebarHeader className="gap-0 bg-background-5 p-0 dark:bg-background-2">
         <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
+          title={
+            mode === 'coherence'
+              ? coherenceTitle ?? undefined
+              : t('chatRoomTitle')
+          }
           onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
@@ -4625,7 +4629,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent
         ref={sidebarContentRef}
-        className="flex min-h-0 flex-col overflow-hidden bg-background-2"
+        className="flex min-h-0 flex-col gap-0 overflow-hidden bg-background-5 dark:bg-background-2"
       >
         {isAuthLoading ? (
           <HumanChatPanelLoader />
@@ -5054,8 +5058,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         Boolean(spaceSlug?.trim()) &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
-          <SidebarFooter className="relative z-20 bg-background-2 p-0">
-            <div className="rounded-t-lg border border-border/60 border-b-0 bg-card/35 shadow-sm backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:supports-[backdrop-filter]:bg-card/35">
+          <SidebarFooter className="relative z-20 border-t border-border/70 bg-background-5 p-0 dark:bg-background-2">
+            <div>
               <HumanChatPanelChatBar
                 value={input}
                 onChange={setInput}

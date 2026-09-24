@@ -46,8 +46,7 @@ export function HumanChatPanelCallToolbar({
   const audioIsActive = sessionActive && callKind === 'audio';
   const videoIsActive = sessionActive && callKind === 'video';
 
-  const activeCallChip =
-    'border border-accent-9/45 bg-accent-9/20 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/50 dark:bg-accent-9/28 dark:ring-accent-10/30';
+  const activeCallChip = 'text-accent-11';
 
   /** Dim the non-primary control while the call is still connecting, but keep the mode you chose legible. */
   const phoneDim = (disabled || busy) && !audioIsActive;
@@ -56,8 +55,8 @@ export function HumanChatPanelCallToolbar({
   // Identical hit targets; Phone’s diagonal glyph reads larger than Video at
   // the same SVG size, so scale it slightly for optical parity.
   const iconBtn =
-    'box-border inline-grid size-7 shrink-0 place-items-center rounded-lg p-0 leading-none transition-colors [&>svg]:block';
-  const iconSize = 'size-4 shrink-0';
+    'box-border inline-grid size-9 shrink-0 place-items-center rounded-none bg-transparent p-0 leading-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground [&>svg]:block';
+  const iconSize = 'craft-icon';
 
   return (
     <div
@@ -72,7 +71,6 @@ export function HumanChatPanelCallToolbar({
         className={cn(
           iconBtn,
           phoneDim && 'cursor-not-allowed opacity-50',
-          !disabled && !busy && 'hover:bg-muted hover:text-foreground',
           !audioIsActive && 'text-muted-foreground',
           audioIsActive && activeCallChip,
         )}
@@ -87,7 +85,7 @@ export function HumanChatPanelCallToolbar({
       >
         <Phone
           className={cn(iconSize, 'scale-[0.88]')}
-          strokeWidth={2}
+          strokeWidth={1.25}
           aria-hidden
         />
       </button>
@@ -98,7 +96,6 @@ export function HumanChatPanelCallToolbar({
         className={cn(
           iconBtn,
           videoDim && 'cursor-not-allowed opacity-50',
-          !disabled && !busy && 'hover:bg-muted hover:text-foreground',
           !videoIsActive && 'text-muted-foreground',
           videoIsActive && activeCallChip,
         )}
@@ -111,7 +108,7 @@ export function HumanChatPanelCallToolbar({
         aria-pressed={videoIsActive}
         aria-busy={busy}
       >
-        <Video className={iconSize} strokeWidth={2} aria-hidden />
+        <Video className={iconSize} strokeWidth={1.25} aria-hidden />
       </button>
     </div>
   );

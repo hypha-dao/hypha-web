@@ -284,7 +284,8 @@ export function AiPanelChatBar({
   sendAriaLabel,
 }: AiPanelChatBarProps) {
   const isHero = variant === 'hero';
-  const isQuiet = variant === 'quiet';
+  /** Side panel and quiet onboarding share one frameless composer. */
+  const frameless = !isHero;
   const t = useTranslations('AiPanel');
   const tHuman = useTranslations('HumanChatPanel');
   const fileInputId = useId();
@@ -543,15 +544,7 @@ export function AiPanelChatBar({
   const canSendWithAttachments =
     (value.trim().length > 0 || draftAttachments.length > 0) && !isStreaming;
   const recordingStopButtonClass =
-    'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-600 transition-all duration-200 ease-out ' +
-    'border border-red-500/25 bg-gradient-to-b from-red-500/[0.14] via-red-500/[0.08] to-red-950/[0.06] ' +
-    'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_3px_rgba(220,38,38,0.14)] ' +
-    'hover:border-red-500/40 hover:from-red-500/[0.2] hover:via-red-500/[0.12] hover:to-red-950/[0.1] hover:text-red-700 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_2px_8px_rgba(220,38,38,0.18)] ' +
-    'active:scale-[0.96] active:from-red-500/[0.24] active:via-red-600/[0.14] ' +
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
-    'dark:border-red-400/22 dark:from-red-500/[0.16] dark:via-red-600/[0.1] dark:to-red-950/40 dark:text-red-400 ' +
-    'dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_1px_4px_rgba(0,0,0,0.35)] ' +
-    'dark:hover:border-red-400/38 dark:hover:text-red-300';
+    'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
   const sendMessage = useCallback(() => {
     if (isDictating) {
       dictationInterruptForSendRef.current = true;
@@ -583,18 +576,15 @@ export function AiPanelChatBar({
     videoInputRef.current?.click();
   };
 
-  const iconButtonClass = isQuiet
-    ? 'inline-flex size-8 shrink-0 items-center justify-center rounded-none text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-    : isHero
-    ? 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35'
-    : 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
-  const composerIconClass = isQuiet ? 'size-3.5' : 'h-4 w-4';
-  const composerIconStroke = isQuiet ? 1.25 : 2;
+  const iconButtonClass =
+    'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  const composerIconClass = 'size-3.5';
+  const composerIconStroke = 1.25;
   /* Prefer accent-9 (ink outside a space; space accent inside a space). */
   const heroSendButtonClass =
     'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-accent-9 p-0 text-accent-contrast shadow-none transition-all hover:bg-accent-10 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50';
   const quietSendButtonClass =
-    'flex size-8 shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+    'flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
   useEffect(() => {
     if (!canAttachDrafts && attachMenuOpen) {
@@ -630,23 +620,18 @@ export function AiPanelChatBar({
     <div
       className={cn(
         'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent',
-        !isHero && 'px-3 pb-3 pt-3',
+        !isHero && 'px-3 pb-2 pt-2',
       )}
     >
       <div
         className={cn(
           'relative flex min-w-0 flex-col',
-          isQuiet
+          frameless
             ? cn(
                 'bg-transparent shadow-none',
                 isComposerDropActive && 'bg-foreground/5',
               )
-            : !isHero &&
-                cn(
-                  'rounded-lg border border-border bg-muted/50 shadow-none',
-                  'transition-colors duration-200 focus-within:border-foreground/30',
-                  isComposerDropActive && 'border-foreground/30',
-                ),
+            : undefined,
         )}
         onDragEnter={(e) => {
           if (!e.dataTransfer?.types.includes('Files')) return;
@@ -678,14 +663,14 @@ export function AiPanelChatBar({
           <div
             className={cn(
               'pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-background/75',
-              isQuiet ? 'rounded-none' : 'rounded-lg backdrop-blur-[2px]',
+              frameless ? 'rounded-none' : 'rounded-lg backdrop-blur-[2px]',
             )}
             aria-hidden
           >
             <p
               className={cn(
                 'border border-foreground/15 bg-background-2 px-3 py-2 text-sm font-medium text-foreground shadow-none',
-                isQuiet ? 'rounded-none' : 'rounded-md',
+                frameless ? 'rounded-none' : 'rounded-md',
               )}
             >
               {tHuman('composerDropPrompt')}
@@ -698,9 +683,7 @@ export function AiPanelChatBar({
               'narrow-scrollbar shrink-0 overflow-x-auto overflow-y-hidden border-b px-3 py-2',
               isHero
                 ? 'max-h-[168px] border-border/65'
-                : isQuiet
-                ? 'max-h-[168px] border-foreground/15'
-                : 'max-h-[168px] border-border',
+                : 'max-h-[168px] border-foreground/15',
             )}
           >
             <div className="flex w-max flex-nowrap items-stretch gap-2 pb-1">
@@ -992,14 +975,6 @@ export function AiPanelChatBar({
                 disabled={isStreaming || composerDisabled}
                 className={cn(
                   isDictating ? recordingStopButtonClass : iconButtonClass,
-                  !isDictating &&
-                    !isQuiet &&
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
-                  isDictating
-                    ? ''
-                    : isQuiet
-                    ? ''
-                    : 'text-muted-foreground hover:bg-primary/12 hover:text-primary',
                   isStreaming && 'cursor-not-allowed opacity-50',
                 )}
                 aria-label={
@@ -1033,18 +1008,10 @@ export function AiPanelChatBar({
               className={cn(
                 isHero
                   ? heroSendButtonClass
-                  : isQuiet
-                  ? cn(
+                  : cn(
                       quietSendButtonClass,
                       !(canSendWithAttachments || canStop) &&
                         'cursor-not-allowed text-muted-foreground/50 hover:bg-transparent hover:text-muted-foreground/50',
-                    )
-                  : cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
-                      canSendWithAttachments || canStop
-                        ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
-                        : 'cursor-not-allowed text-muted-foreground/50',
                     ),
               )}
               aria-label={
@@ -1060,17 +1027,12 @@ export function AiPanelChatBar({
                 isHero ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : (
-                  <Square
-                    className={isQuiet ? 'size-3.5' : 'h-3.5 w-3.5'}
-                    strokeWidth={isQuiet ? 1.25 : undefined}
-                  />
+                  <Square className="size-3.5" strokeWidth={1.25} />
                 )
               ) : (
                 <Send
-                  className={
-                    isHero ? 'size-4' : isQuiet ? 'size-3.5' : 'h-4 w-4'
-                  }
-                  strokeWidth={isQuiet ? 1.25 : undefined}
+                  className={isHero ? 'size-4' : 'size-3.5'}
+                  strokeWidth={isHero ? undefined : 1.25}
                   aria-hidden
                 />
               )}
