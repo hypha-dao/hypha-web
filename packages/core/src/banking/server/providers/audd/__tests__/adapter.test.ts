@@ -174,7 +174,8 @@ describe('createAuddIdentityProvider — createKycLink', () => {
     expect(auddCreateCustomer).not.toHaveBeenCalled();
   });
 
-  it('maps an AUDD 403 to a BankOnboardingError(403)', async () => {
+  it('maps an AUDD 403 to a generic user message and logs the operator detail', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     auddCreateCustomer.mockRejectedValueOnce(
       Object.assign(new Error('AUDD Gateway API error (403): ...'), {
         status: 403,
@@ -182,9 +183,18 @@ describe('createAuddIdentityProvider — createKycLink', () => {
       }),
     );
     const provider = createAuddIdentityProvider();
-    await expect(
-      provider.createKycLink(individualInput()),
-    ).rejects.toMatchObject({ name: 'BankOnboardingError', status: 403 });
+    const error = await provider
+      .createKycLink(individualInput())
+      .catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ name: 'BankOnboardingError', status: 502 });
+    // Nothing operator-facing (provider name, allow-list, mTLS) reaches the end user...
+    expect((error as Error).message).not.toMatch(/audd|allow|mtls|cert/i);
+    // ...it goes to the server log instead, with AUDD's own reason key.
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringMatching(/allow-listed.*ip\.not_allowed/),
+    );
+    logged.mockRestore();
   });
 });
 

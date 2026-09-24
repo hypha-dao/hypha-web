@@ -1,4 +1,7 @@
-import { BankOnboardingError } from '../../errors';
+import {
+  BANK_SETUP_FAILED_USER_MESSAGE,
+  BankOnboardingError,
+} from '../../errors';
 
 /** AUDD error bodies are `{ message, messageKey, status, timestamp, path }`. */
 function auddErrorDetail(body: unknown): string | null {
@@ -34,57 +37,55 @@ export function mapAuddApiError(
     return null;
   }
 
+  // Provider name and operator hints (allow-list, mTLS, API key) belong in the server log only:
+  // BankOnboardingError messages are returned to the end user verbatim.
+  const logOperatorDetail = (hint: string) =>
+    console.error(
+      `[audd] ${operation} failed (${status}): ${hint}${
+        detail ? ` — ${detail}` : ''
+      }`,
+    );
+
   if (status === 400) {
     return new BankOnboardingError(
       detail
-        ? `AUDD rejected ${operation}: ${detail}`
-        : `AUDD rejected ${operation} (invalid request).`,
+        ? `We could not verify these details: ${detail}`
+        : 'We could not verify these details. Please check them and try again.',
       400,
-    );
-  }
-
-  if (status === 401) {
-    return new BankOnboardingError(
-      `AUDD API key was rejected for ${operation}. Confirm AUDD_GATEWAY_API_KEY is an active sandbox key.`,
-      500,
-    );
-  }
-
-  if (status === 403) {
-    return new BankOnboardingError(
-      `AUDD refused ${operation} (403): the source IP is not allow-listed, or the mTLS client cert is missing / not registered.`,
-      403,
     );
   }
 
   if (status === 409) {
     return new BankOnboardingError(
       detail
-        ? `AUDD reports a conflict for ${operation}: ${detail}`
-        : `AUDD reports this customer already exists (${operation}).`,
+        ? `A verification for these details already exists: ${detail}`
+        : 'A verification for these details already exists.',
       409,
     );
   }
 
-  if (status === 429) {
-    return new BankOnboardingError(
-      `AUDD rate-limited ${operation}. Retry shortly.`,
-      500,
+  if (status === 401) {
+    logOperatorDetail(
+      'API key rejected — confirm AUDD_GATEWAY_API_KEY is an active key for this environment',
     );
+    return new BankOnboardingError(BANK_SETUP_FAILED_USER_MESSAGE, 500);
   }
 
-  if (status === 503 || status === 504) {
-    return new BankOnboardingError(
-      `AUDD's service was unavailable during ${operation}. This is retryable.`,
-      502,
+  if (status === 403) {
+    logOperatorDetail(
+      'source IP not allow-listed, or the mTLS client cert is missing / not registered',
     );
+    return new BankOnboardingError(BANK_SETUP_FAILED_USER_MESSAGE, 502);
+  }
+
+  if (status === 429) {
+    logOperatorDetail('rate-limited (20 failed auths / 5 min per source IP)');
+    return new BankOnboardingError(BANK_SETUP_FAILED_USER_MESSAGE, 502);
   }
 
   if (status >= 500) {
-    return new BankOnboardingError(
-      `AUDD returned an error during ${operation}.`,
-      502,
-    );
+    logOperatorDetail('upstream error');
+    return new BankOnboardingError(BANK_SETUP_FAILED_USER_MESSAGE, 502);
   }
 
   return null;
