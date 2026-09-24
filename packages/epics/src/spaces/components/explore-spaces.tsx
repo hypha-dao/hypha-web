@@ -217,10 +217,10 @@ export function ExploreSpaces({
 
   const viewFromUrl = (params: URLSearchParams): NetworkMapView => {
     const view = params.get('view');
-    if (view === 'map' || view === 'overview' || view === 'list') {
+    if (view === 'list' || view === 'map') {
       return view;
     }
-    return 'list';
+    return 'overview';
   };
 
   const [view, setViewState] = React.useState<NetworkMapView>(() =>
@@ -245,7 +245,11 @@ export function ExploreSpaces({
       setViewState(nextView);
 
       const params = new URLSearchParams(window.location.search);
-      params.set('view', nextView);
+      if (nextView === 'overview') {
+        params.delete('view');
+      } else {
+        params.set('view', nextView);
+      }
       const queryString = params.toString();
       window.history.replaceState(
         window.history.state,
@@ -445,11 +449,6 @@ export function ExploreSpaces({
               isActive={showMapStage}
               showStage={showMapStage}
               alignProjection={view === 'overview' ? 'flat' : undefined}
-              onProjectionModeChange={(mode) => {
-                if (mode === 'globe' && view === 'overview') {
-                  setView('map');
-                }
-              }}
             />
             <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
