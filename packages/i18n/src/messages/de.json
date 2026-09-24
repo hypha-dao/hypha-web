@@ -646,8 +646,9 @@
       "ariaLabel": "Karte der verschachtelten Spaces",
       "loading": "Ökosystemkarte wird geladen…",
       "empty": "Noch keine verschachtelten Spaces vorhanden",
-      "hint": "Space anklicken zum Fokussieren · außerhalb klicken zum Herauszoomen",
-      "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind"
+      "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern"
     },
     "visibleSpaces": {
       "nestedRoot": "Wurzel",
@@ -664,7 +665,7 @@
     "navigation": {
       "individuals": "Personen",
       "memberSpaces": "Mitglieds-Spaces",
-      "agents": "Agenten",
+      "agents": "KI-Agenten",
       "noIndividuals": "Noch keine Personen",
       "noMemberSpaces": "Noch keine Mitglieds-Spaces",
       "noAgents": "Noch keine Agenten mobilisiert",

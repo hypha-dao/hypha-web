@@ -1417,8 +1417,9 @@
       "ariaLabel": "Mapa de jerarquía de espacios anidados",
       "loading": "Cargando mapa del ecosistema…",
       "empty": "Aún no hay espacios anidados para mostrar",
-      "hint": "Haz clic en un espacio para enfocarlo · haz clic fuera para alejar",
-      "subtitle": "Explora cómo se anidan los espacios en esta organización"
+      "subtitle": "Explora cómo se anidan los espacios en esta organización",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar"
     },
     "visibleSpaces": {
       "nestedRoot": "Raíz",
@@ -1435,7 +1436,7 @@
     "navigation": {
       "individuals": "Personas",
       "memberSpaces": "Espacios miembros",
-      "agents": "Agentes",
+      "agents": "Agentes de IA",
       "noIndividuals": "Aún no hay personas",
       "noMemberSpaces": "Aún no hay espacios miembros",
       "noAgents": "Aún no hay agentes movilizados",

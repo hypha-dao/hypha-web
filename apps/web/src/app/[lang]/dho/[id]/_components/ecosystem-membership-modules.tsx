@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
@@ -25,6 +25,8 @@ type MembershipPreview = {
 
 type EcosystemMembershipModulesProps = {
   spaceSlug: string;
+  /** Visit / add (and similar) controls — sits on the same header row. */
+  trailing?: ReactNode;
 };
 
 function fitVisibleAvatarCount(containerWidth: number, total: number): number {
@@ -46,7 +48,13 @@ function fitVisibleAvatarCount(containerWidth: number, total: number): number {
   return 1;
 }
 
-function MembershipStack({ members }: { members: MembershipPreview[] }) {
+function MembershipStack({
+  members,
+  emptyLabel,
+}: {
+  members: MembershipPreview[];
+  emptyLabel: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(
     Math.min(members.length, MAX_VISIBLE_PREVIEW_COUNT),
@@ -65,6 +73,10 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [members.length]);
+
+  if (members.length === 0) {
+    return <p className="craft-meta truncate">{emptyLabel}</p>;
+  }
 
   const visible = members.slice(0, visibleCount);
   const overflow = members.length - visible.length;
@@ -115,27 +127,31 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
 function MembershipModuleCard({
   label,
   members,
+  emptyLabel,
 }: {
   label: string;
   members: MembershipPreview[];
+  emptyLabel: string;
 }) {
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden py-2.5 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-      <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden py-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+      <p className="mb-1.5 text-1 font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <div className="min-w-0 flex-1">
-        <MembershipStack members={members} />
+        <MembershipStack members={members} emptyLabel={emptyLabel} />
       </div>
     </div>
   );
 }
 
+/** One horizontal row: Individuals · Member spaces · AI agents (+ optional trailing). */
 const MEMBERSHIP_ROW_CLASS =
-  'flex min-w-0 flex-col divide-y divide-border/50 sm:flex-row sm:divide-x sm:divide-y-0';
+  'flex min-w-0 flex-1 flex-row items-stretch divide-x divide-border/50';
 
 export function EcosystemMembershipModules({
   spaceSlug,
+  trailing,
 }: EcosystemMembershipModulesProps) {
   const t = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
@@ -188,67 +204,65 @@ export function EcosystemMembershipModules({
     [mobilizedAgents, tCoherence],
   );
 
+  // Always render all three modules — including empty Agents — so the control
+  // stays visible on the header row (hiding was causing AI agent to vanish).
   const modules = useMemo(
-    () =>
-      [
-        {
-          key: 'individuals' as const,
-          label: t('navigation.individuals'),
-          members: individuals,
-        },
-        {
-          key: 'memberSpaces' as const,
-          label: t('navigation.memberSpaces'),
-          members: memberSpaces,
-        },
-        {
-          key: 'agents' as const,
-          label: t('navigation.agents'),
-          members: agents,
-        },
-      ].filter((module) => module.members.length > 0),
+    () => [
+      {
+        key: 'individuals' as const,
+        label: t('navigation.individuals'),
+        members: individuals,
+        emptyLabel: t('navigation.noIndividuals'),
+      },
+      {
+        key: 'memberSpaces' as const,
+        label: t('navigation.memberSpaces'),
+        members: memberSpaces,
+        emptyLabel: t('navigation.noMemberSpaces'),
+      },
+      {
+        key: 'agents' as const,
+        label: t('navigation.agents'),
+        members: agents,
+        emptyLabel: t('navigation.noAgents'),
+      },
+    ],
     [agents, individuals, memberSpaces, t],
   );
 
-  if (isLoading && individuals.length === 0 && memberSpaces.length === 0) {
-    return (
+  return (
+    <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto border-b border-border/50 py-2.5">
       <div
-        className="border-b border-border/50 py-3"
-        role="status"
-        aria-live="polite"
+        className={MEMBERSHIP_ROW_CLASS}
+        role={isLoading ? 'status' : undefined}
+        aria-live={isLoading ? 'polite' : undefined}
       >
-        <div className={MEMBERSHIP_ROW_CLASS}>
-          {(['individuals', 'memberSpaces', 'agents'] as const).map((key) => (
+        {modules.map((module) =>
+          isLoading &&
+          module.key !== 'agents' &&
+          module.members.length === 0 ? (
             <div
-              key={key}
-              className="flex h-full min-w-0 flex-1 flex-col overflow-hidden py-2.5 sm:px-4 sm:first:pl-0 sm:last:pr-0"
+              key={module.key}
+              className="flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden py-1 sm:px-4 sm:first:pl-0 sm:last:pr-0"
             >
-              <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
-                {t(`navigation.${key}`)}
+              <p className="mb-1.5 text-1 font-medium uppercase tracking-wide text-muted-foreground">
+                {module.label}
               </p>
               <p className="craft-meta">{t('navigation.loading')}</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <MembershipModuleCard
+              key={module.key}
+              label={module.label}
+              members={module.members}
+              emptyLabel={module.emptyLabel}
+            />
+          ),
+        )}
       </div>
-    );
-  }
-
-  if (modules.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="border-b border-border/50 py-3">
-      <div className={MEMBERSHIP_ROW_CLASS}>
-        {modules.map((module) => (
-          <MembershipModuleCard
-            key={module.key}
-            label={module.label}
-            members={module.members}
-          />
-        ))}
-      </div>
+      {trailing ? (
+        <div className="flex shrink-0 items-center gap-1">{trailing}</div>
+      ) : null}
     </div>
   );
 }

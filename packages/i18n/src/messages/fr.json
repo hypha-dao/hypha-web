@@ -646,8 +646,9 @@
       "ariaLabel": "Carte de la hiérarchie des espaces imbriqués",
       "loading": "Chargement de la carte de l’écosystème…",
       "empty": "Aucun espace imbriqué à afficher pour le moment",
-      "hint": "Cliquez sur un espace pour le recentrer · cliquez à l’extérieur pour zoomer en arrière",
-      "subtitle": "Explorez l’imbrication des espaces dans cette organisation"
+      "subtitle": "Explorez l’imbrication des espaces dans cette organisation",
+      "zoomIn": "Zoom avant",
+      "zoomOut": "Zoom arrière"
     },
     "visibleSpaces": {
       "nestedRoot": "Racine",
@@ -664,7 +665,7 @@
     "navigation": {
       "individuals": "Personnes",
       "memberSpaces": "Espaces membres",
-      "agents": "Agents",
+      "agents": "Agents IA",
       "noIndividuals": "Aucune personne pour le moment",
       "noMemberSpaces": "Aucun espace membre pour le moment",
       "noAgents": "Aucun agent mobilisé pour le moment",

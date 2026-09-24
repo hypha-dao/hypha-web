@@ -18,13 +18,15 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
+import type { SpaceVisualizationZoomApi } from './space-visualization';
 import { sampleAccentHex } from './space-accent-utils';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
+import { Minus, Plus } from 'lucide-react';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
@@ -86,6 +88,10 @@ export function EcosystemNavigationMainPanel({
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
   const pathname = usePathname();
+  const zoomApiRef = useRef<SpaceVisualizationZoomApi>({
+    zoomIn: () => {},
+    zoomOut: () => {},
+  });
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [rootSpaceAccent, setRootSpaceAccent] = useState(
     SELECTED_SPACE_ACCENT_FALLBACK,
@@ -238,53 +244,68 @@ export function EcosystemNavigationMainPanel({
         value: 'nested-spaces',
         label: t('tabs.nestedSpaces'),
         content: (
-          <div>
-            <div className="flex items-center justify-between gap-3 border-b border-border/50 py-2.5">
-              <div className="min-w-0">
-                <p
-                  className="craft-page-title truncate text-4 font-medium"
-                  title={selectedSpaceTitle}
-                >
-                  {selectedSpaceTitle}
-                </p>
-                <p className="craft-meta truncate">{t('diagram.hint')}</p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {canVisitSpace && visitSpaceHref ? (
-                  <Tooltip delayDuration={80}>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href={visitSpaceHref}
-                        className={APP_CHROME_ICON_TRIGGER}
-                        aria-label={t('visibleSpaces.visitSpace')}
-                      >
-                        <ArrowTopRightIcon />
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('visibleSpaces.visitSpace')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null}
-                {canAddSpace && addSpaceHref ? (
-                  <Tooltip delayDuration={80}>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href={addSpaceHref}
-                        className={APP_CHROME_ICON_TRIGGER}
-                        aria-label={t('visibleSpaces.addSpace')}
-                      >
-                        <PlusIcon />
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('visibleSpaces.addSpace')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null}
-              </div>
-            </div>
-            <EcosystemMembershipModules spaceSlug={selectedSpaceSlug} />
+          <div className="min-w-0">
+            <p
+              className="craft-page-title truncate border-b border-border/50 py-2.5 text-4 font-medium"
+              title={selectedSpaceTitle}
+            >
+              {selectedSpaceTitle}
+            </p>
+            <EcosystemMembershipModules
+              spaceSlug={selectedSpaceSlug}
+              trailing={
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    className={APP_CHROME_ICON_TRIGGER}
+                    aria-label={t('diagram.zoomOut')}
+                    onClick={() => zoomApiRef.current.zoomOut()}
+                  >
+                    <Minus />
+                  </button>
+                  <button
+                    type="button"
+                    className={APP_CHROME_ICON_TRIGGER}
+                    aria-label={t('diagram.zoomIn')}
+                    onClick={() => zoomApiRef.current.zoomIn()}
+                  >
+                    <Plus />
+                  </button>
+                  {canVisitSpace && visitSpaceHref ? (
+                    <Tooltip delayDuration={80}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={visitSpaceHref}
+                          className={APP_CHROME_ICON_TRIGGER}
+                          aria-label={t('visibleSpaces.visitSpace')}
+                        >
+                          <ArrowTopRightIcon />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('visibleSpaces.visitSpace')}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {canAddSpace && addSpaceHref ? (
+                    <Tooltip delayDuration={80}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={addSpaceHref}
+                          className={APP_CHROME_ICON_TRIGGER}
+                          aria-label={t('visibleSpaces.addSpace')}
+                        >
+                          <PlusIcon />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('visibleSpaces.addSpace')}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              }
+            />
             {hierarchyData ? (
               <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-4 sm:px-3 sm:pb-3 sm:pt-5">
                 <SpaceVisualization
@@ -295,6 +316,7 @@ export function EcosystemNavigationMainPanel({
                   showNodeLabels
                   ariaLabel={t('diagram.ariaLabel')}
                   onVisibleSpacesChange={handleVisibleSpacesChange}
+                  zoomApiRef={zoomApiRef}
                 />
               </div>
             ) : (

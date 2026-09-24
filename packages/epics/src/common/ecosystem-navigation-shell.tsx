@@ -61,7 +61,7 @@ export function EcosystemNavigationShell({
           <div className="w-full">{beforeTabsContent}</div>
         ) : null}
 
-        <div className="flex min-w-0 flex-col-reverse gap-4 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-row items-start gap-4">
           <div className="min-w-0 flex-1">
             {afterTabsContent ? (
               <div className="mb-4 min-w-0">{afterTabsContent}</div>
@@ -84,7 +84,7 @@ export function EcosystemNavigationShell({
           <TabsList
             triggerVariant="switch"
             aria-label={t('title')}
-            className="flex h-auto w-full shrink-0 flex-row flex-wrap items-center justify-start gap-1.5 bg-transparent p-0 lg:grid lg:w-max lg:max-w-full lg:grid-cols-[max-content] lg:justify-items-stretch"
+            className="flex h-auto w-max max-w-[46%] shrink-0 flex-col items-stretch justify-start gap-1.5 bg-transparent p-0"
           >
             {tabs.map((tab) => {
               const Icon = VIEW_ICONS[tab.value];
@@ -93,7 +93,7 @@ export function EcosystemNavigationShell({
                   key={tab.value}
                   variant="outlined"
                   value={tab.value}
-                  className={cn(ecosystemViewTriggerClass, 'w-auto lg:w-full')}
+                  className={cn(ecosystemViewTriggerClass, 'w-full')}
                 >
                   {Icon ? (
                     <Icon

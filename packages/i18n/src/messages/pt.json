@@ -1417,8 +1417,9 @@
       "ariaLabel": "Mapa da hierarquia de espaços aninhados",
       "loading": "A carregar mapa do ecossistema…",
       "empty": "Ainda não há espaços aninhados para mostrar",
-      "hint": "Clique num espaço para focar · clique fora para afastar",
-      "subtitle": "Explore como os espaços se aninham nesta organização"
+      "subtitle": "Explore como os espaços se aninham nesta organização",
+      "zoomIn": "Ampliar",
+      "zoomOut": "Reduzir"
     },
     "visibleSpaces": {
       "nestedRoot": "Raiz",
@@ -1435,7 +1436,7 @@
     "navigation": {
       "individuals": "Pessoas",
       "memberSpaces": "Espaços membros",
-      "agents": "Agentes",
+      "agents": "Agentes de IA",
       "noIndividuals": "Ainda sem pessoas",
       "noMemberSpaces": "Ainda sem espaços membros",
       "noAgents": "Ainda sem agentes mobilizados",
