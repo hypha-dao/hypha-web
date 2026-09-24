@@ -373,7 +373,7 @@
       "energy": "Energy",
       "activity": "Activity",
       "distribution": "Distribution",
-      "payingSpaces": "Paying spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Unable to load activity widgets",
@@ -424,9 +424,9 @@
       "description": "Energy widgets will appear once energy data is available."
     },
     "payingSpaces": {
-      "pageTitle": "Paying spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Monthly coverage from the first on-chain payment.",
-      "title": "Paying spaces",
+      "title": "Traction",
       "subtitle": "Spaces with an active paid subscription each month, from inception. Filter by space for a per-space breakdown.",
       "currentlyPaying": "Currently paying",
       "everPaid": "Ever paid",

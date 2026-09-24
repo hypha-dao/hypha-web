@@ -353,7 +353,7 @@
       "energy": "Енергија",
       "activity": "Активност",
       "distribution": "Распределба",
-      "payingSpaces": "Плаќачки spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Не може да се вчитаат виџетите за активност",
@@ -404,9 +404,9 @@
       "description": "Виџетите за енергија ќе се појават штом бидат достапни податоци за енергија."
     },
     "payingSpaces": {
-      "pageTitle": "Плаќачки spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Месечна покриеност од првата on-chain уплата.",
-      "title": "Плаќачки spaces",
+      "title": "Traction",
       "subtitle": "Spaces со активна платена претплата секој месец, од почеток. Филтрирајте по space за преглед.",
       "currentlyPaying": "Моментално плаќаат",
       "everPaid": "Некогаш платиле",

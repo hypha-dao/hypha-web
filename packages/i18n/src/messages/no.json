@@ -372,7 +372,7 @@
       "energy": "Energi",
       "activity": "Aktivitet",
       "distribution": "Fordeling",
-      "payingSpaces": "Betalende spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Kunne ikke laste inn aktivitetswidgeter",
@@ -423,9 +423,9 @@
       "description": "Energiwidgeter vises når energidata er tilgjengelig."
     },
     "payingSpaces": {
-      "pageTitle": "Betalende spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Månedlig dekning fra den første on-chain-betalingen.",
-      "title": "Betalende spaces",
+      "title": "Traction",
       "subtitle": "Spaces med aktivt betalt abonnement hver måned, fra starten. Filtrer etter space for nedbrytning.",
       "currentlyPaying": "Betaler nå",
       "everPaid": "Har betalt",

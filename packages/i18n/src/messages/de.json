@@ -374,7 +374,7 @@
       "energy": "Energie",
       "activity": "Aktivität",
       "distribution": "Verteilung",
-      "payingSpaces": "Zahlende Spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Aktivitäts-Widgets konnten nicht geladen werden",
@@ -425,9 +425,9 @@
       "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
     },
     "payingSpaces": {
-      "pageTitle": "Zahlende Spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Monatliche Abdeckung ab der ersten On-Chain-Zahlung.",
-      "title": "Zahlende Spaces",
+      "title": "Traction",
       "subtitle": "Spaces mit aktivem bezahltem Abo je Monat, seit Beginn. Filtern Sie nach Space für die Aufschlüsselung.",
       "currentlyPaying": "Aktuell zahlend",
       "everPaid": "Jemals gezahlt",

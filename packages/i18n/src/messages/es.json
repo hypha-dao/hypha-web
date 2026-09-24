@@ -1145,7 +1145,7 @@
       "energy": "Energía",
       "activity": "Actividad",
       "distribution": "Distribución",
-      "payingSpaces": "Spaces de pago"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "No se pudieron cargar los widgets de actividad",
@@ -1196,9 +1196,9 @@
       "description": "Los widgets de energía aparecerán cuando haya datos disponibles."
     },
     "payingSpaces": {
-      "pageTitle": "Spaces de pago",
+      "pageTitle": "Traction",
       "pageSubtitle": "Cobertura mensual desde el primer pago on-chain.",
-      "title": "Spaces de pago",
+      "title": "Traction",
       "subtitle": "Spaces con suscripción de pago activa cada mes, desde el inicio. Filtra por space para ver el desglose.",
       "currentlyPaying": "Pagando ahora",
       "everPaid": "Han pagado",
