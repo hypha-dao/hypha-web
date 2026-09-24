@@ -2892,14 +2892,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (overlayVisible) {
       return (
         <>
-          <SidebarHeader className="bg-background-5 dark:bg-background-2 p-0">
+          <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
             <AiPanelHeader
               showCloseButton={false}
               leftSlot={triggerButton}
               rightSlot={closeButton}
             />
           </SidebarHeader>
-          <SidebarContent className="bg-background-5 dark:bg-background-2">
+          <SidebarContent className="bg-page-background dark:bg-background-2">
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
@@ -2933,12 +2933,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     return (
       <>
-        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-background-5 dark:bg-background-2 px-4 py-2">
+        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-page-background dark:bg-background-2 px-4 py-2">
           <div className="flex size-9 shrink-0 items-center justify-end">
             {triggerButton}
           </div>
         </SidebarHeader>
-        <SidebarContent className="relative overflow-visible bg-background-5 dark:bg-background-2">
+        <SidebarContent className="relative overflow-visible bg-page-background dark:bg-background-2">
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
               <SidebarMenu className="gap-2">
@@ -2973,14 +2973,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   if (isLoading) {
     return (
       <>
-        <SidebarHeader className="bg-background-5 dark:bg-background-2 p-0">
+        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
             leftSlot={triggerButton}
             rightSlot={closeButton}
           />
         </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center bg-background-5 dark:bg-background-2">
+        <SidebarContent className="flex flex-1 items-center justify-center bg-page-background dark:bg-background-2">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
         </SidebarContent>
       </>
@@ -2990,14 +2990,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   if (blockSpaceAiForActivityAccess) {
     return (
       <>
-        <SidebarHeader className="bg-background-5 dark:bg-background-2 p-0">
+        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
             leftSlot={triggerButton}
             rightSlot={closeButton}
           />
         </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center bg-background-5 px-6 dark:bg-background-2">
+        <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
           <SpaceAccessDenied
             userState={userSpaceState}
             spaceId={effectiveSpaceWeb3Id}
@@ -3011,14 +3011,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   if (!isAuthenticated) {
     return (
       <>
-        <SidebarHeader className="bg-background-5 dark:bg-background-2 p-0">
+        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
             leftSlot={triggerButton}
             rightSlot={closeButton}
           />
         </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center bg-background-5 px-6 dark:bg-background-2">
+        <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
           <SpaceAccessDenied
             userState={userSpaceState}
             spaceId={effectiveSpaceWeb3Id}
@@ -3031,14 +3031,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   return (
     <>
-      <SidebarHeader className="bg-background-5 dark:bg-background-2 p-0">
+      <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
         <AiPanelHeader
           showCloseButton={false}
           leftSlot={triggerButton}
           rightSlot={closeButton}
         />
       </SidebarHeader>
-      <SidebarContent className="bg-background-5 dark:bg-background-2 min-h-0">
+      <SidebarContent className="bg-page-background dark:bg-background-2 min-h-0">
         {spaceSlug && blockSpaceAiForSubscription ? (
           <div className="mx-3 mt-3 shrink-0">
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
@@ -3159,7 +3159,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
         />
       </SidebarContent>
-      <SidebarFooter className="overflow-visible border-t border-border/70 bg-background-5 p-0 dark:bg-background-2">
+      <SidebarFooter className="overflow-visible border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
         {showDiscoveryModeToggle ? (
           <div className="flex justify-center px-3 pb-1 pt-3">
             <OnboardingDiscoveryModeToggle
