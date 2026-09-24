@@ -234,7 +234,7 @@ export function AiPanelHeader({
                   className="craft-chip craft-chip-interactive inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 px-2.5 text-sm tracking-tight"
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md border border-border/50">
+                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full">
                     {currentIcon ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -245,7 +245,7 @@ export function AiPanelHeader({
                         />
                       </>
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center bg-muted/40">
+                      <span className="flex h-full w-full items-center justify-center">
                         <Sparkles className="craft-icon-sm text-muted-foreground" />
                       </span>
                     )}
@@ -319,7 +319,7 @@ export function AiPanelHeader({
             </DropdownMenu>
           ) : (
             <div className="craft-chip inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 px-3 text-sm text-foreground/90">
-              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/50">
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full">
                 {currentIcon ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -330,7 +330,7 @@ export function AiPanelHeader({
                     />
                   </>
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-muted/40">
+                  <span className="flex h-full w-full items-center justify-center">
                     <Sparkles className="craft-icon-sm text-muted-foreground" />
                   </span>
                 )}

@@ -32,7 +32,6 @@ export function OnboardingDiscoveryModeToggle({
       <div className="flex items-center gap-2">
         <Button
           type="button"
-          size="sm"
           variant={mode === 'chat' ? 'default' : 'outline'}
           colorVariant="accent"
           disabled={disabled}
@@ -49,7 +48,6 @@ export function OnboardingDiscoveryModeToggle({
         </Button>
         <Button
           type="button"
-          size="sm"
           variant={mode === 'voice_interview' ? 'default' : 'outline'}
           colorVariant="accent"
           disabled={disabled}
