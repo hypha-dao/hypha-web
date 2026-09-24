@@ -191,6 +191,9 @@ export { useAiPanel } from './human-chat-panel-context';
 export {
   useMainColumnScrollY,
   getMainColumnScrollY,
+  getMainColumnScrollElement,
+  scrollMainColumnBy,
+  scrollMainColumnTo,
   subscribeMainColumnScroll,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
