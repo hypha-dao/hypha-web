@@ -155,7 +155,7 @@ export function DhoStickySpaceChrome({
            */
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
           'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
-          'border-x border-b border-border bg-background-2',
+          'border-x border-b border-border bg-page-background',
           'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100'
