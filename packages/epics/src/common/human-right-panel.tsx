@@ -4351,11 +4351,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-background-5 p-0 dark:bg-background-2">
         <HumanChatPanelHeader
-          title={
-            mode === 'coherence'
-              ? coherenceTitle ?? undefined
-              : t('chatRoomTitle')
-          }
+          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
           onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
