@@ -228,14 +228,9 @@ export function HumanSidebarTrigger() {
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
-  // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  // Always shown otherwise, in or out of a space (#2470 D18) — outside a space it opens to the
-  // existing "not in a space" empty state (human-right-panel.tsx's `notInSpaceEmptyState`),
-  // which already renders independent of whether a call is active (gated purely on
-  // `!spaceSlug`) — the elsewhere-call case (#2424) was never actually coupled to that content,
-  // only to this trigger's visibility. Unread mentions only surface in-space: outside spaces the
-  // panel has no mentions destination.
-  if (open) return null;
+  // Chat is space-only. Hide the header trigger outside a space, and while the
+  // panel is open (the panel has its own chrome). Unread mentions only exist in-space.
+  if (!isSpace || open) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
@@ -376,10 +371,19 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isOnboarding = pathname.includes('/onboarding');
   const effectiveLeft = isSpace ? left : undefined;
-  // Right human panel is openable outside a space too (#2424) — the trigger only
-  // surfaces there when there's a call elsewhere to jump to, and `HumanRightPanel`
-  // itself renders a dedicated "not in a space" state instead of its space-only UI.
-  const effectiveRight = right;
+  // Human chat is space-only (`/[lang]/dho/[id]/…`). Outside a space the panel
+  // is not mounted, so it cannot stay open on network, my spaces, or wallet.
+  const effectiveRight = isSpace ? right : undefined;
+
+  // Close when the route leaves a space. Does not run again if something opens
+  // the panel while already outside a space and then navigates into one (the
+  // call dock opens chat and pushes the space route together).
+  useEffect(() => {
+    if (!isSpace) {
+      closeHumanChatPanel();
+    }
+  }, [isSpace, closeHumanChatPanel]);
+
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return MOBILE_PANEL_BREAKPOINT_PX;
