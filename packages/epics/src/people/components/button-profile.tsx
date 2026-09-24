@@ -254,6 +254,12 @@ export const ButtonProfile = ({
                 <>
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
+                    {showNetworkFeedback ? (
+                      <HyphaNetworkFeedbackMenuItem
+                        variant="menu"
+                        onOpen={openNetworkFeedbackFromProfileMenu}
+                      />
+                    ) : null}
                     {navItems.map((item) => (
                       <Fragment key={item.href ?? item.label}>
                         {item.href ? (
@@ -282,12 +288,6 @@ export const ButtonProfile = ({
                         )}
                       </Fragment>
                     ))}
-                    {showNetworkFeedback ? (
-                      <HyphaNetworkFeedbackMenuItem
-                        variant="menu"
-                        onOpen={openNetworkFeedbackFromProfileMenu}
-                      />
-                    ) : null}
                   </DropdownMenuGroup>
                 </>
               ) : null}
@@ -469,6 +469,12 @@ export const ButtonProfile = ({
                 ) : null}
 
                 <div className="space-y-1">
+                  {showNetworkFeedback ? (
+                    <HyphaNetworkFeedbackMenuItem
+                      variant="sheet"
+                      onOpen={openNetworkFeedbackFromProfileMenu}
+                    />
+                  ) : null}
                   {navItems.map((item) => (
                     <Fragment key={item.href ?? item.label}>
                       {item.href ? (
@@ -498,12 +504,6 @@ export const ButtonProfile = ({
                       )}
                     </Fragment>
                   ))}
-                  {showNetworkFeedback ? (
-                    <HyphaNetworkFeedbackMenuItem
-                      variant="sheet"
-                      onOpen={openNetworkFeedbackFromProfileMenu}
-                    />
-                  ) : null}
                   {profileUrl ? (
                     <Link
                       href={profileUrl}
@@ -672,6 +672,7 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
+            {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
             {navItems.map((item) => (
               <ButtonNavItem
                 key={item.href ?? item.label}
@@ -680,7 +681,6 @@ export const ButtonProfile = ({
                 icon={resolveNavItemIcon(item.href)}
               />
             ))}
-            {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
 
             {trailingBeforeProfile ? (
               <div className="flex w-full justify-center">
@@ -743,6 +743,7 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden items-center gap-2 md:flex">
             <div className="flex items-center gap-2">
+              {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
               {navItems.map((item) => (
                 <ButtonNavItem
                   key={item.href ?? item.label}
@@ -751,7 +752,6 @@ export const ButtonProfile = ({
                   icon={resolveNavItemIcon(item.href)}
                 />
               ))}
-              {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
             </div>
             {trailingBeforeProfile}
             <DropdownMenu
