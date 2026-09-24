@@ -94,12 +94,15 @@ export const onesignalDispatcher: NotificationDispatcher = {
 
     const results = await Promise.allSettled([...pushSends, ...emailSends]);
     const failed = results.filter((r) => r.status === 'rejected');
-    failed.forEach((r) =>
+    // Message only: the full error carries the OneSignal response (recipient aliases included);
+    // `notify()` already logged its redacted detail.
+    failed.forEach((r) => {
+      const reason = (r as PromiseRejectedResult).reason;
       console.error(
         '[notifications] delivery failed',
-        (r as PromiseRejectedResult).reason,
-      ),
-    );
+        reason instanceof Error ? reason.message : String(reason),
+      );
+    });
 
     return { sent: results.length - failed.length, failed: failed.length };
   },

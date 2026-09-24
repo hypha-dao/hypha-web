@@ -8,6 +8,8 @@ import { resolveRoomToSpace } from '../resolve-room-to-space';
 import { receiveTransaction } from '../receive-transaction';
 import type { MatrixEvent, RoomSpaceContext } from '../types';
 
+// Fresh timestamp: the ingest pipeline skips events older than `NOTIFICATION_MAX_EVENT_AGE` as stale.
+const EVENT_TS = Date.now();
 const claimMock = vi.mocked(claimProcessedEvent);
 const resolveMock = vi.mocked(resolveRoomToSpace);
 
@@ -25,7 +27,7 @@ function msg(overrides: Partial<MatrixEvent> = {}): MatrixEvent {
     event_id: '$e1',
     room_id: '!room:hs',
     sender: '@alice:hs',
-    origin_server_ts: 1_700_000_000_000,
+    origin_server_ts: EVENT_TS,
     content: { msgtype: 'm.text', body: 'hi' },
     ...overrides,
   };
@@ -63,7 +65,7 @@ describe('receiveTransaction', () => {
         payload: expect.objectContaining({
           body: 'hi',
           mentionedMatrixUserIds: [],
-          occurredAt: 1_700_000_000_000,
+          occurredAt: EVENT_TS,
         }),
       }),
     );

@@ -1,4 +1,5 @@
 import { claimProcessedEvent } from './dedupe';
+import { resolveMaxEventAgeMs } from './duration';
 import { resolveRoomToSpace } from './resolve-room-to-space';
 import type {
   ChatNotificationEvent,
@@ -10,16 +11,23 @@ import type {
 export const UNMAPPED_EVENT_TYPE = 'm.room.message#unmapped';
 export const MESSAGE_EVENT_TYPE = 'm.room.message';
 
+/** Clock skew tolerated between the homeserver's `origin_server_ts` and ours. */
+const FUTURE_SKEW_TOLERANCE_MS = 10 * 60 * 1000;
+
 export type IngestOutcome =
   | 'dispatched'
   | 'dispatch_failed'
   | 'duplicate'
   | 'ignored_bot'
+  | 'ignored_stale'
   | 'ignored_unmapped';
 
 type IngestDeps = Pick<ReceiverDeps, 'db' | 'dispatch'> & {
   botUserIds: Set<string>;
   logger: Pick<typeof console, 'info' | 'warn' | 'error'>;
+  /** Test seams; default `Date.now` and `resolveMaxEventAgeMs()`. */
+  now?: () => number;
+  maxEventAgeMs?: number;
 };
 
 /**
@@ -39,6 +47,25 @@ export async function ingestParsedMessage(
   const { db, dispatch, botUserIds, logger } = deps;
 
   if (botUserIds.has(parsed.senderMxid)) return 'ignored_bot';
+
+  // Age guard, before any DB work and without recording the event: a stale event is never notified
+  // (an outage replay would otherwise push hours-old messages all at once), and because the ledger
+  // is pruned only well past this age, an already-recorded event whose row was pruned can never
+  // slip through as a duplicate either.
+  // A timestamp meaningfully in the future has a negative age and would pass a plain "too old"
+  // check, then stay claimable until it aged into the window after its ledger row was pruned; only a
+  // small clock skew is tolerated.
+  const ageMs = (deps.now ?? Date.now)() - parsed.occurredAt;
+  if (
+    ageMs > (deps.maxEventAgeMs ?? resolveMaxEventAgeMs()) ||
+    ageMs < -FUTURE_SKEW_TOLERANCE_MS
+  ) {
+    logger.info('[matrix-as] skipped stale or future-dated event', {
+      matrixEventId: parsed.matrixEventId,
+      ageHours: Math.round(ageMs / 3_600_000),
+    });
+    return 'ignored_stale';
+  }
 
   const context = await resolveRoomToSpace(parsed.roomId, db);
 

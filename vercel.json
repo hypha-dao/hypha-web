@@ -10,8 +10,8 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/cron/notification-reconcile",
-      "schedule": "*/15 * * * *"
+      "path": "/api/cron/notification-ledger-prune",
+      "schedule": "0 4 * * *"
     }
   ]
 }

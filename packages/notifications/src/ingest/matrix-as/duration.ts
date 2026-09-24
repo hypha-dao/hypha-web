@@ -29,3 +29,25 @@ export function resolveReconcileWindowMs(): number {
   if (!raw) return fallback;
   return parseIso8601DurationToMs(raw) ?? fallback;
 }
+
+/**
+ * Hard ceiling for `NOTIFICATION_MAX_EVENT_AGE`. The ledger is pruned after a fixed 7 days (see
+ * `notification-ledger-prune`), which is only safe while the age guard stays well under it: were the
+ * setting raised past the retention, an event whose row had already been pruned would become
+ * claimable again on replay. Capping it makes that impossible whatever the env says.
+ */
+export const MAX_EVENT_AGE_CAP_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * How old a Matrix event may be and still notify (default `PT24H`, env `NOTIFICATION_MAX_EVENT_AGE`).
+ * Bounds an outage replay (Dendrite re-sends everything queued while we were down, all at once) and
+ * is what makes ledger pruning safe: rows are kept longer than this, so a replay of an event whose
+ * row is gone is always skipped as stale instead of notifying twice.
+ */
+export function resolveMaxEventAgeMs(): number {
+  const fallback = 24 * 60 * 60 * 1000;
+  const raw = process.env.NOTIFICATION_MAX_EVENT_AGE?.trim();
+  if (!raw) return fallback;
+  const configured = parseIso8601DurationToMs(raw) ?? fallback;
+  return Math.min(configured, MAX_EVENT_AGE_CAP_MS);
+}

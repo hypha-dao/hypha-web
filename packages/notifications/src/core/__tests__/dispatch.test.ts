@@ -34,6 +34,7 @@ describe('dispatch', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'info').mockImplementation(() => {});
     sendMany = vi.fn().mockResolvedValue({ sent: 0, failed: 0 });
     setNotificationDispatcher({
       sendMany,

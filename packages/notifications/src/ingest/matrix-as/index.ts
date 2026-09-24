@@ -9,7 +9,12 @@ export type {
 export { extractHsToken, verifyHsToken, HsTokenError } from './verify-hs-token';
 export { parseMessageEvent } from './parse-message-event';
 export { resolveRoomToSpace } from './resolve-room-to-space';
-export { claimProcessedEvent } from './dedupe';
+export { claimProcessedEvent, pruneProcessedEvents } from './dedupe';
 export { getSuppressedBotUserIds } from './bot-identities';
 export { loggingDispatch } from './logging-dispatch';
-export { parseIso8601DurationToMs, resolveReconcileWindowMs } from './duration';
+export {
+  parseIso8601DurationToMs,
+  resolveReconcileWindowMs,
+  resolveMaxEventAgeMs,
+  MAX_EVENT_AGE_CAP_MS,
+} from './duration';

@@ -15,6 +15,8 @@ import {
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type { ChatNotificationEvent, Recipient } from '../../core/types';
 import { buildChatDeepLink } from './deep-link';
+import { humanizeMessageBody } from './humanize-message-body';
+import { isChatMessageNotificationsDisabled } from './kill-switch';
 
 async function findPersonByMatrixUserId(matrixUserId: string): Promise<{
   slug: string | null;
@@ -125,6 +127,11 @@ export const resolveChatRecipients: RecipientResolver<
 > = async (event) => {
   const { context, actor } = event;
 
+  // Checked before any Matrix/DB lookups so a disabled flag costs nothing per message.
+  if (event.type === 'chat.message' && isChatMessageNotificationsDisabled()) {
+    return [];
+  }
+
   const [spaceRow, actorPerson, signalSlug] = await Promise.all([
     db
       .select({ title: spaces.title })
@@ -155,7 +162,9 @@ export const resolveChatRecipients: RecipientResolver<
       .filter(Boolean)
       .join(' ')
       .trim() || 'Someone';
-  const messagePreview = event.payload.body.trim().slice(0, 220);
+  const messagePreview = (await humanizeMessageBody(event.payload.body, { db }))
+    .trim()
+    .slice(0, 220);
   const url = buildChatDeepLink({
     spaceSlug: context.spaceSlug,
     messageId: event.source.externalEventId,

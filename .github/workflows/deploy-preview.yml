@@ -155,6 +155,10 @@ jobs:
           # Build-time feature flags; enable on preview deploys for PR testing.
           echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> apps/web/.env.local
           echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> apps/web/.env.local
+          # App origin for links built server-side (notification push/email links, KYC return URL).
+          # Must match the alias created in the "Alias" step below (pr-<suffix>.preview-app.hypha.earth),
+          # otherwise those links fall back to the per-deployment *.vercel.app host (no session there).
+          echo "NEXT_PUBLIC_APP_URL=https://pr-${PREVIEW_ALIAS_SUFFIX}.preview-app.hypha.earth" >> apps/web/.env.local
           vercel build --token=${{ env.VERCEL_TOKEN }}
 
       # Run after `vercel build`: Neon’s schema-diff API often returns HTTP 408 when

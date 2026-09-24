@@ -3,6 +3,7 @@
 import type { Notification } from '@onesignal/node-onesignal';
 import { sdkClient } from './client';
 import { randomUUID } from 'crypto';
+import { redactedLogString } from './log-redaction';
 
 export async function notify(notification: Notification): Promise<string> {
   if (!notification.app_id)
@@ -22,12 +23,22 @@ export async function notify(notification: Notification): Promise<string> {
     return response.id;
   } catch (error) {
     // OneSignal's SDK throws an ApiException carrying the actual rejection reason in `body`
-    // (e.g. an invalid template_id) — log it here, since callers further up only see the
-    // generic message below and would otherwise have no way to tell what OneSignal objected to.
-    const apiError = error as { code?: number; body?: unknown };
+    // (e.g. an invalid template_id); for a 200 that carries no notification id (e.g. every recipient
+    // is an `invalid_aliases`) the reason travels in `cause` instead. Log both — redacted to their
+    // shape and message strings (see `log-redaction.ts`: rejections can list recipient aliases) — plus
+    // which channel and how many recipients. Callers further up only see the generic message below,
+    // and this line is often all that is left to diagnose a prod delivery failure from.
+    const apiError = error as {
+      code?: number;
+      body?: unknown;
+      cause?: unknown;
+    };
     console.error('[notifications] OneSignal createNotification failed', {
+      channel: notification.target_channel,
+      recipients: notification.include_aliases?.external_id?.length,
       code: apiError?.code,
-      body: apiError?.body,
+      body: redactedLogString(apiError?.body),
+      reason: redactedLogString(apiError?.cause, 'errors'),
     });
     throw new Error('Failed to create a notification', { cause: error });
   }
