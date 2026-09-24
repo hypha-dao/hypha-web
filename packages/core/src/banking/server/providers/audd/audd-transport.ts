@@ -70,9 +70,18 @@ export function getAuddClientConfig(): AuddClientConfig {
   };
 }
 
-export type AuddApiError = Error & { status: number; body: unknown };
+export type AuddApiError = Error & {
+  status: number;
+  body: unknown;
+  /** Which call failed, e.g. `POST /customer/customers` — for operator logs only. */
+  request?: string;
+};
 
-function auddApiError(status: number, body: unknown): AuddApiError {
+function auddApiError(
+  status: number,
+  body: unknown,
+  request: string,
+): AuddApiError {
   const detail =
     typeof body === 'object' && body !== null
       ? JSON.stringify(body)
@@ -82,6 +91,7 @@ function auddApiError(status: number, body: unknown): AuddApiError {
   ) as AuddApiError;
   error.status = status;
   error.body = body;
+  error.request = request;
   return error;
 }
 
@@ -224,7 +234,7 @@ export async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
   }
 
   if (raw.status < 200 || raw.status >= 300) {
-    throw auddApiError(raw.status, parsed);
+    throw auddApiError(raw.status, parsed, `${options.method} ${options.path}`);
   }
 
   return parsed as T;

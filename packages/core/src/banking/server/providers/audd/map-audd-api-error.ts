@@ -17,6 +17,16 @@ function auddErrorDetail(body: unknown): string | null {
   return message ?? key;
 }
 
+/** AUDD error bodies may carry `{ error: { requestId } }` — quote it when asking AUDD support. */
+function auddRequestId(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null) {
+    return null;
+  }
+  const nested = (body as { error?: { requestId?: unknown } }).error;
+  const id = nested?.requestId ?? (body as { requestId?: unknown }).requestId;
+  return typeof id === 'string' ? id : null;
+}
+
 /**
  * Map an AUDD Gateway HTTP client error to a user-facing `BankOnboardingError`. Returns `null` when
  * the error is not a recognised AUDD API error, so the caller can rethrow.
@@ -31,7 +41,9 @@ export function mapAuddApiError(
 
   const status = (error as Error & { status?: number }).status;
   const body = (error as Error & { body?: unknown }).body;
+  const request = (error as Error & { request?: string }).request;
   const detail = auddErrorDetail(body);
+  const requestId = auddRequestId(body);
 
   if (status === undefined) {
     return null;
@@ -41,8 +53,10 @@ export function mapAuddApiError(
   // BankOnboardingError messages are returned to the end user verbatim.
   const logOperatorDetail = (hint: string) =>
     console.error(
-      `[audd] ${operation} failed (${status}): ${hint}${
-        detail ? ` — ${detail}` : ''
+      `[audd] ${operation} failed (${status}${
+        request ? ` on ${request}` : ''
+      }): ${hint}${detail ? ` — ${detail}` : ''}${
+        requestId ? ` [requestId ${requestId}]` : ''
       }`,
     );
 
