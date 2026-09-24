@@ -3782,6 +3782,7 @@
   },
   "NetworkMap": {
     "mapView": "Мапа",
+    "overviewView": "Преглед",
     "listView": "Листа",
     "globeView": "Глобус",
     "flatView": "Рамна",

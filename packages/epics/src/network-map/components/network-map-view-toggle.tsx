@@ -2,14 +2,14 @@
 
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { LayoutList, Map } from 'lucide-react';
+import { LayoutList, Map, PanelsTopLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   segmentedListClass,
   segmentedTriggerClass,
 } from '../lib/segmented-control-styles';
 
-export type NetworkMapView = 'list' | 'map';
+export type NetworkMapView = 'overview' | 'list' | 'map';
 
 type NetworkMapViewToggleProps = {
   value: NetworkMapView;
@@ -35,6 +35,14 @@ export function NetworkMapViewToggle({
         triggerVariant="switch"
         aria-label={t('viewToggleLabel')}
       >
+        <TabsTrigger
+          value="overview"
+          variant="switch"
+          className={segmentedTriggerClass}
+        >
+          <PanelsTopLeft className="size-3.5 shrink-0" aria-hidden />
+          {t('overviewView')}
+        </TabsTrigger>
         <TabsTrigger
           value="list"
           variant="switch"

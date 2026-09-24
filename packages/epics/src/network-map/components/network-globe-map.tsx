@@ -8,7 +8,6 @@ import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2, Minus } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
-import { NetworkMapLayerControls } from './network-map-layer-controls';
 import type {
   NetworkGlobeMapProps,
   NetworkMapLayerVisibility,
@@ -131,6 +130,8 @@ function mapPaletteForTheme(theme: string | undefined): MapPalette {
 }
 
 const MINI_GLOBE_SIZE = 88;
+const MINI_MAP_WIDTH = 120;
+const MINI_MAP_HEIGHT = 72;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') {
@@ -240,6 +241,8 @@ export function NetworkGlobeMap({
   renderToolbar,
   isActive = true,
   showStage = true,
+  alignProjection,
+  onProjectionModeChange,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -248,6 +251,7 @@ export function NetworkGlobeMap({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const miniGlobeRef = React.useRef<SVGSVGElement>(null);
+  const miniMapRef = React.useRef<SVGSVGElement>(null);
 
   const mapPalette = React.useMemo(
     () => mapPaletteForTheme(resolvedTheme),
@@ -882,6 +886,56 @@ export function NetworkGlobeMap({
 
   renderMiniGlobeRef.current = renderMiniGlobe;
 
+  const renderMiniMap = React.useCallback(() => {
+    const svg = d3.select(miniMapRef.current);
+    const land = landRef.current;
+    if (!miniMapRef.current || !land) {
+      return;
+    }
+
+    const width = MINI_MAP_WIDTH;
+    const height = MINI_MAP_HEIGHT;
+    const palette = mapPaletteRef.current;
+    const projection = d3.geoEquirectangular().fitExtent(
+      [
+        [3, 3],
+        [width - 3, height - 3],
+      ],
+      { type: 'Sphere' },
+    );
+    const path = d3.geoPath(projection);
+
+    svg
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`);
+
+    let root = svg.select<SVGGElement>('g.mini-map-root');
+    if (root.empty()) {
+      root = svg.append('g').attr('class', 'mini-map-root');
+      root.append('path').attr('class', 'mini-map-ocean');
+      root.append('path').attr('class', 'mini-map-land');
+    }
+
+    root
+      .select<SVGPathElement>('path.mini-map-ocean')
+      .attr('d', path({ type: 'Sphere' }) ?? '')
+      .attr('fill', palette.ocean)
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', 0.6);
+
+    root
+      .select<SVGPathElement>('path.mini-map-land')
+      .attr('d', path(land) ?? '')
+      .attr('fill', palette.landFill)
+      .attr('stroke', palette.landStroke)
+      .attr('stroke-width', 0.35)
+      .attr('stroke-linejoin', 'round');
+  }, []);
+
+  const renderMiniMapRef = React.useRef(renderMiniMap);
+  renderMiniMapRef.current = renderMiniMap;
+
   const isActiveRef = React.useRef(isActive);
   isActiveRef.current = isActive;
 
@@ -896,6 +950,7 @@ export function NetworkGlobeMap({
       renderFrameRef.current = null;
       renderMapRef.current();
       renderMiniGlobeRef.current();
+      renderMiniMapRef.current();
     });
   }, []);
 
@@ -1129,6 +1184,7 @@ export function NetworkGlobeMap({
   React.useEffect(() => {
     renderMap();
     renderMiniGlobe();
+    renderMiniMap();
   }, [
     layers,
     morphProgress,
@@ -1140,15 +1196,20 @@ export function NetworkGlobeMap({
     mapPalette,
     renderMap,
     renderMiniGlobe,
+    renderMiniMap,
   ]);
 
   React.useEffect(() => {
-    if (selectedProjection !== 'flat' || isLoadingGeo || loadError) {
+    if (isLoadingGeo || loadError) {
       return;
     }
-    // Mini-globe SVG mounts with flat mode — paint after commit.
+    // Inset SVG mounts with the other projection — paint after commit.
     const id = requestAnimationFrame(() => {
-      renderMiniGlobeRef.current();
+      if (selectedProjection === 'flat') {
+        renderMiniGlobeRef.current();
+      } else {
+        renderMiniMapRef.current();
+      }
     });
     return () => cancelAnimationFrame(id);
   }, [selectedProjection, isLoadingGeo, loadError, mapPalette]);
@@ -1378,6 +1439,9 @@ export function NetworkGlobeMap({
     };
   }, [isActive, showStage, isLoadingGeo, loadError, requestRender]);
 
+  const onProjectionModeChangeRef = React.useRef(onProjectionModeChange);
+  onProjectionModeChangeRef.current = onProjectionModeChange;
+
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
       if (animationFrameRef.current != null) {
@@ -1402,6 +1466,7 @@ export function NetworkGlobeMap({
         return;
       }
 
+      onProjectionModeChangeRef.current?.(target);
       setSelectedProjection(target);
 
       const fromRotate = [...rotateRef.current] as Rotation;
@@ -1447,6 +1512,16 @@ export function NetworkGlobeMap({
     },
     [requestRender, syncClusterAnimating],
   );
+
+  const animateProjectionRef = React.useRef(animateProjection);
+  animateProjectionRef.current = animateProjection;
+
+  React.useEffect(() => {
+    if (!alignProjection) {
+      return;
+    }
+    animateProjectionRef.current(alignProjection);
+  }, [alignProjection]);
 
   React.useEffect(() => {
     return () => {
@@ -1526,18 +1601,7 @@ export function NetworkGlobeMap({
       />
     ) : null;
 
-  const layerControls = (
-    <NetworkMapLayerControls
-      projectionMode={selectedProjection}
-      onProjectionModeChange={animateProjection}
-    />
-  );
-
-  const toolbar = renderToolbar ? (
-    renderToolbar(layerControls)
-  ) : (
-    <div className="flex justify-center">{layerControls}</div>
-  );
+  const toolbar = renderToolbar ? renderToolbar(null) : null;
 
   const clusterControls = focusedClusterId ? (
     <div
@@ -1559,6 +1623,8 @@ export function NetworkGlobeMap({
 
   const showMiniGlobe =
     selectedProjection === 'flat' && !isLoadingGeo && !loadError;
+  const showMiniMap =
+    selectedProjection === 'globe' && !isLoadingGeo && !loadError;
 
   const mapLegend =
     !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
@@ -1609,6 +1675,29 @@ export function NetworkGlobeMap({
     >
       <svg
         ref={miniGlobeRef}
+        className="block size-full"
+        role="img"
+        aria-hidden
+      />
+    </button>
+  ) : null;
+
+  const miniMapInset = showMiniMap ? (
+    <button
+      type="button"
+      className={cn(
+        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'transition-[border-color,background-color] duration-150',
+        'hover:border-border hover:bg-muted/15',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+      )}
+      style={{ width: MINI_MAP_WIDTH, height: MINI_MAP_HEIGHT }}
+      aria-label={t('flatView')}
+      title={t('flatView')}
+      onClick={() => animateProjection('flat')}
+    >
+      <svg
+        ref={miniMapRef}
         className="block size-full"
         role="img"
         aria-hidden
@@ -1677,6 +1766,7 @@ export function NetworkGlobeMap({
       />
       {mapLegend}
       {miniGlobeInset}
+      {miniMapInset}
       {hoverCard}
     </div>
   );

@@ -3223,6 +3223,7 @@
   },
   "NetworkMap": {
     "mapView": "Mapa",
+    "overviewView": "Resumen",
     "listView": "Lista",
     "globeView": "Globo",
     "flatView": "Plano",

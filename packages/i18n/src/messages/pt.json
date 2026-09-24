@@ -3221,6 +3221,7 @@
   },
   "NetworkMap": {
     "mapView": "Mapa",
+    "overviewView": "Visão geral",
     "listView": "Lista",
     "globeView": "Globo",
     "flatView": "Plano",
