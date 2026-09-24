@@ -37,11 +37,16 @@
 }
 
 /*
- * DHO space actions row (Join / Settings / Create) + Human Chat tab strip share this height so
- * their bottom borders line up across the main column ↔ chat panel gap.
+ * Sticky space row (logo, title, active-until date) and the Human Chat tab
+ * strip share this height so their bottom hairlines sit on one pixel row.
+ *
+ * Tab controls are `h-9` and `--spacing-9` is 64px, so the strip is
+ * 64px + py-1 (8px) + tablist py-0.5 (4px) + 1px border = 77px.
+ * The sticky row's avatar (44px) plus md:py-3 (24px) would otherwise stop
+ * at 68px and leave the rules 9px apart.
  */
 :root {
-  --secondary-chrome-actions-row-height: 52px;
+  --secondary-chrome-actions-row-height: 77px;
 }
 
 /* next-themes uses class="dark"; website uses data-theme. Match both. */

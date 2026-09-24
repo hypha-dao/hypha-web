@@ -98,8 +98,7 @@ export function HumanChatPanelTabs({
   return (
     <div
       className={cn(
-        'relative w-full min-w-0 border-b border-border/70 bg-transparent px-3 py-1',
-        'min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+        'relative box-border h-[var(--secondary-chrome-actions-row-height,77px)] w-full min-w-0 border-b border-border/70 bg-transparent px-3 py-1',
         /* §3.1.1: tab column scrolls; call + settings column is `auto` and does not shrink. */
         'grid w-full min-w-0 items-center',
         hasEndCluster
