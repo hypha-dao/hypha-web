@@ -51,9 +51,11 @@ describe('redactedLogString', () => {
     expect(out).not.toContain('gerroza');
   });
 
-  it('truncates a plain (non-JSON) message string', () => {
-    expect(redactedLogString('Bad Request')).toBe('Bad Request');
-    expect(redactedLogString('y'.repeat(300))).toHaveLength(201);
+  it('never logs a plain (non-JSON) body, only that it existed', () => {
+    const out =
+      redactedLogString('external_id gerroza is not subscribed') ?? '';
+    expect(out).toBe('<non-JSON body, 37 chars>');
+    expect(out).not.toContain('gerroza');
   });
 
   it('returns undefined for missing values', () => {

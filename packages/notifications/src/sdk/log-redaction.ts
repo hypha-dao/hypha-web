@@ -64,8 +64,9 @@ export function redactedLogString(
     try {
       candidate = JSON.parse(value);
     } catch {
-      // Not JSON: a plain message string from OneSignal or the HTTP layer.
-      return truncate(value);
+      // Not JSON, so there is no structure to allowlist against and the text may echo request data
+      // (recipient aliases, ids). Report only that it was there and how long it was.
+      return `<non-JSON body, ${value.length} chars>`;
     }
   }
 

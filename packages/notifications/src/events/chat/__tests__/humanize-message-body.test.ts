@@ -42,12 +42,16 @@ describe('humanizeMessageBody', () => {
 
   it('returns the raw body instead of throwing when the lookup fails', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const db = fakeDb(() => Promise.reject(new Error('connection reset')));
+    // A Drizzle query failure's message embeds the bound params — here the mentioned MXID.
+    const db = fakeDb(() =>
+      Promise.reject(new Error(`Failed query: select … params: ${MXID}`)),
+    );
 
     await expect(humanizeMessageBody(`hola ${MXID}`, { db })).resolves.toBe(
       `hola ${MXID}`,
     );
     expect(warn).toHaveBeenCalled();
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(MXID);
   });
 
   it('does not query at all when the body has no mentions', async () => {

@@ -41,8 +41,22 @@ export async function humanizeMessageBody(
   } catch (error) {
     console.warn(
       '[notifications] chat: could not resolve mention names — using the raw message text',
-      error,
+      summarizeDbError(error),
     );
     return body;
   }
+}
+
+/**
+ * Only the error class and the Postgres code. A Drizzle query failure's message embeds the bound
+ * parameters — here the mentioned Matrix IDs — so neither the error object nor its message may be
+ * logged.
+ */
+function summarizeDbError(error: unknown): { name: string; code?: string } {
+  const e = error as {
+    name?: string;
+    code?: string;
+    cause?: { code?: string };
+  } | null;
+  return { name: e?.name ?? typeof error, code: e?.code ?? e?.cause?.code };
 }
