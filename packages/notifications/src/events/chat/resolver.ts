@@ -15,35 +15,8 @@ import {
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type { ChatNotificationEvent, Recipient } from '../../core/types';
 import { buildChatDeepLink } from './deep-link';
+import { humanizeMessageBody } from './humanize-message-body';
 import { isChatMessageNotificationsDisabled } from './kill-switch';
-import {
-  applyMentionLabels,
-  extractMentionUserIdsFromPlainBody,
-  formatMentionLabel,
-} from './mention-labels';
-
-/** Replaces `@user:homeserver` tokens in a message body with the mentioned people's names. */
-async function humanizeMessageBody(body: string): Promise<string> {
-  const matrixUserIds = extractMentionUserIdsFromPlainBody(body);
-  if (matrixUserIds.length === 0) return body;
-
-  const rows = await db
-    .select({
-      matrixUserId: matrixUserLinks.matrixUserId,
-      name: people.name,
-      surname: people.surname,
-    })
-    .from(matrixUserLinks)
-    .innerJoin(people, eq(matrixUserLinks.privyUserId, people.sub))
-    .where(inArray(matrixUserLinks.matrixUserId, matrixUserIds));
-
-  const labels = new Map<string, string>();
-  for (const row of rows) {
-    const label = formatMentionLabel(row.name, row.surname);
-    if (label) labels.set(row.matrixUserId, label);
-  }
-  return applyMentionLabels(body, labels);
-}
 
 async function findPersonByMatrixUserId(matrixUserId: string): Promise<{
   slug: string | null;
@@ -189,7 +162,7 @@ export const resolveChatRecipients: RecipientResolver<
       .filter(Boolean)
       .join(' ')
       .trim() || 'Someone';
-  const messagePreview = (await humanizeMessageBody(event.payload.body))
+  const messagePreview = (await humanizeMessageBody(event.payload.body, { db }))
     .trim()
     .slice(0, 220);
   const url = buildChatDeepLink({
