@@ -24,6 +24,7 @@ import {
   partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
   useAiPanel,
+  useHumanChatPanel,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -44,7 +45,8 @@ export function NavigationTabs({
   const tNav = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tCoherence = useTranslations('CoherenceTab');
-  const { open: aiPanelOpen } = useAiPanel();
+  const { open: aiPanelOpen, overlayVisible } = useAiPanel();
+  const { open: chatPanelOpen } = useHumanChatPanel();
   const pathname = usePathname();
   const activeTab = React.useMemo(
     () => getActiveTabFromPath(pathname),
@@ -118,24 +120,25 @@ export function NavigationTabs({
     ? stripActiveTab
     : '';
 
-  // Left rail already carries section nav while the AI panel is closed.
-  // Render this strip only once that panel replaces the rail.
-  if (!aiPanelOpen) {
+  // Icon rail lists these sections only while both side panels are closed.
+  // Opening the AI panel, its overlay, or chat covers that rail — keep the
+  // text strip in the main column. Do not hide it in those states.
+  const sidePanelOpen = aiPanelOpen || overlayVisible || chatPanelOpen;
+  if (!sidePanelOpen) {
     return null;
   }
 
   return (
-    <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
+    <Tabs value={tabsValue} className="mt-4 w-full min-w-0 md:mt-5">
       <div
         className={cn(
-          'mb-3 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
+          'mb-3 w-full min-w-0 overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
-        {/* Keep content-sized strip so overflow-x on the parent can scroll at iPad
-            widths when side panels shrink the main column (viewport md ≠ usable width).
+        {/* Content-sized strip scrolls inside the column when side panels shrink it.
             No scroll parallax — that caused mobile shortcut tabs to jump. */}
-        <TabsList className="flex h-10 min-w-max gap-0.5">
+        <TabsList className="flex h-10 w-max gap-0.5">
           {primary.map(({ key, href }) => {
             const Icon = SPACE_SECTION_NAV_ICONS[key];
             return (
@@ -143,7 +146,7 @@ export function NavigationTabs({
                 <Link
                   href={href}
                   scroll={false}
-                  className="flex w-full items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
+                  className="flex items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
                 >
                   <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
                   {labelFor(key)}
