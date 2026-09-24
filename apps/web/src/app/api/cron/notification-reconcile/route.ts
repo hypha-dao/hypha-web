@@ -13,11 +13,14 @@ export const maxDuration = 300;
  *
  * Walks the recent timeline of every known room and runs any `m.room.message` not yet in
  * `notification_processed_events` through the same pipeline the live endpoint uses. The event-id
- * claim dedupes against the live path and against overlapping cron runs, so this is safe to run
- * on a short interval (every 15 minutes, see vercel.json). Time-bounded by
+ * claim dedupes against the live path and against overlapping runs. Time-bounded by
  * `NOTIFICATION_RECONCILE_WINDOW` (default 6h) — never a full historical backfill.
  *
- * Vercel Cron: GET with `Authorization: Bearer $CRON_SECRET`.
+ * NOT SCHEDULED (removed from vercel.json 2026-09-24): it issues one Matrix `/messages` request per
+ * known room (~1000) on every run, which at a 15-minute cadence made the VPS outgoing traffic jump
+ * once live delivery worked. Dendrite's own queue-and-retry against the AS endpoint is the primary
+ * catch-up; run this by hand (GET with `Authorization: Bearer $CRON_SECRET`) if events are ever
+ * suspected missed, or re-add a slow schedule to vercel.json.
  * Query overrides (ops/debug): `?window_ms=`, `?per_room_limit=`, `?max_rooms=`.
  */
 export async function GET(request: Request) {
