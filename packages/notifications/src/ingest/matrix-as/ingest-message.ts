@@ -1,4 +1,5 @@
 import { claimProcessedEvent } from './dedupe';
+import { resolveMaxEventAgeMs } from './duration';
 import { resolveRoomToSpace } from './resolve-room-to-space';
 import type {
   ChatNotificationEvent,
@@ -15,11 +16,15 @@ export type IngestOutcome =
   | 'dispatch_failed'
   | 'duplicate'
   | 'ignored_bot'
+  | 'ignored_stale'
   | 'ignored_unmapped';
 
 type IngestDeps = Pick<ReceiverDeps, 'db' | 'dispatch'> & {
   botUserIds: Set<string>;
   logger: Pick<typeof console, 'info' | 'warn' | 'error'>;
+  /** Test seams; default `Date.now` and `resolveMaxEventAgeMs()`. */
+  now?: () => number;
+  maxEventAgeMs?: number;
 };
 
 /**
@@ -39,6 +44,19 @@ export async function ingestParsedMessage(
   const { db, dispatch, botUserIds, logger } = deps;
 
   if (botUserIds.has(parsed.senderMxid)) return 'ignored_bot';
+
+  // Age guard, before any DB work and without recording the event: a stale event is never notified
+  // (an outage replay would otherwise push hours-old messages all at once), and because the ledger
+  // is pruned only well past this age, an already-recorded event whose row was pruned can never
+  // slip through as a duplicate either.
+  const ageMs = (deps.now ?? Date.now)() - parsed.occurredAt;
+  if (ageMs > (deps.maxEventAgeMs ?? resolveMaxEventAgeMs())) {
+    logger.info('[matrix-as] skipped stale event', {
+      matrixEventId: parsed.matrixEventId,
+      ageHours: Math.round(ageMs / 3_600_000),
+    });
+    return 'ignored_stale';
+  }
 
   const context = await resolveRoomToSpace(parsed.roomId, db);
 

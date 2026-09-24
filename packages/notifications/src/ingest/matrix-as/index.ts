@@ -12,4 +12,8 @@ export { resolveRoomToSpace } from './resolve-room-to-space';
 export { claimProcessedEvent, pruneProcessedEvents } from './dedupe';
 export { getSuppressedBotUserIds } from './bot-identities';
 export { loggingDispatch } from './logging-dispatch';
-export { parseIso8601DurationToMs, resolveReconcileWindowMs } from './duration';
+export {
+  parseIso8601DurationToMs,
+  resolveReconcileWindowMs,
+  resolveMaxEventAgeMs,
+} from './duration';

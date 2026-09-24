@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   parseIso8601DurationToMs,
+  resolveMaxEventAgeMs,
   resolveReconcileWindowMs,
 } from '../duration';
 
@@ -45,5 +46,28 @@ describe('resolveReconcileWindowMs', () => {
   it('falls back to 6h on an invalid env value', () => {
     process.env.NOTIFICATION_RECONCILE_WINDOW = 'garbage';
     expect(resolveReconcileWindowMs()).toBe(6 * 3600_000);
+  });
+});
+
+describe('resolveMaxEventAgeMs', () => {
+  const original = process.env.NOTIFICATION_MAX_EVENT_AGE;
+  afterEach(() => {
+    if (original === undefined) delete process.env.NOTIFICATION_MAX_EVENT_AGE;
+    else process.env.NOTIFICATION_MAX_EVENT_AGE = original;
+  });
+
+  it('defaults to 24h', () => {
+    delete process.env.NOTIFICATION_MAX_EVENT_AGE;
+    expect(resolveMaxEventAgeMs()).toBe(24 * 60 * 60 * 1000);
+  });
+
+  it('reads an ISO-8601 duration from the env', () => {
+    process.env.NOTIFICATION_MAX_EVENT_AGE = 'PT2H';
+    expect(resolveMaxEventAgeMs()).toBe(2 * 60 * 60 * 1000);
+  });
+
+  it('falls back to the default on an invalid value', () => {
+    process.env.NOTIFICATION_MAX_EVENT_AGE = 'soon';
+    expect(resolveMaxEventAgeMs()).toBe(24 * 60 * 60 * 1000);
   });
 });

@@ -29,3 +29,16 @@ export function resolveReconcileWindowMs(): number {
   if (!raw) return fallback;
   return parseIso8601DurationToMs(raw) ?? fallback;
 }
+
+/**
+ * How old a Matrix event may be and still notify (default `PT24H`, env `NOTIFICATION_MAX_EVENT_AGE`).
+ * Bounds an outage replay (Dendrite re-sends everything queued while we were down, all at once) and
+ * is what makes ledger pruning safe: rows are kept longer than this, so a replay of an event whose
+ * row is gone is always skipped as stale instead of notifying twice.
+ */
+export function resolveMaxEventAgeMs(): number {
+  const fallback = 24 * 60 * 60 * 1000;
+  const raw = process.env.NOTIFICATION_MAX_EVENT_AGE?.trim();
+  if (!raw) return fallback;
+  return parseIso8601DurationToMs(raw) ?? fallback;
+}
