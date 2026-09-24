@@ -263,7 +263,8 @@ export function HyphaNetworkFeedbackTrigger({
         variant="ghost"
         colorVariant="neutral"
         className={cn(
-          'gap-1.5 text-current hover:bg-neutral-3 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-current',
+          'gap-1.5 rounded-none border-b border-transparent font-semibold shadow-none hover:border-foreground/25 hover:bg-transparent',
+          '[&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]',
           className,
         )}
         aria-label={t('triggerAriaLabel')}
