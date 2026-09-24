@@ -149,12 +149,12 @@ export const PersonHead = ({
   const footerMeta = (
     <>
       {signupDate ? (
-        <span className="text-foreground">
+        <span className="text-white/88">
           {tProfile('hyphaMemberSince', { date: signupDate })}
         </span>
       ) : null}
       {signupDate && self.email && isOwnProfile ? (
-        <span className="text-muted-foreground/60" aria-hidden>
+        <span className="text-white/45" aria-hidden>
           ·
         </span>
       ) : null}
@@ -165,7 +165,7 @@ export const PersonHead = ({
         </span>
       ) : null}
       {(signupDate || (self.email && isOwnProfile)) && self.location ? (
-        <span className="text-muted-foreground/60" aria-hidden>
+        <span className="text-white/45" aria-hidden>
           ·
         </span>
       ) : null}
@@ -183,7 +183,7 @@ export const PersonHead = ({
       <div className="flex flex-col gap-4">
         <Skeleton
           loading={isLoading}
-          height={76}
+          height={320}
           className="w-full rounded-none"
         >
           <CompactSpaceBanner
