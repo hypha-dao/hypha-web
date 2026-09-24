@@ -105,15 +105,16 @@ export function NavigationTabs({
     ],
   );
 
-  // Promote an active More item into the last primary slot so context stays visible.
+  // Primary tabs stay fixed. An active More screen is selected in the menu.
   const { primary, more } = React.useMemo(
     () => partitionSpaceSectionNavForTabs(items),
     [items],
   );
   // Banking is under Treasury — highlight Treasury on /banking routes.
   const stripActiveTab = activeTab === 'banking' ? 'treasury' : activeTab;
-  // After promotion the active key is always in primary, so Tabs can select it directly.
-  const tabsValue = stripActiveTab;
+  const tabsValue = primary.some((item) => item.key === stripActiveTab)
+    ? stripActiveTab
+    : '';
 
   return (
     <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
