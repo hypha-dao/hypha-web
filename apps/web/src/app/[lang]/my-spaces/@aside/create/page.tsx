@@ -4,6 +4,7 @@ import {
   SpaceForm,
   ProposalOverlayShell,
   getDhoPathDefaultLanding,
+  formatCreateSpaceError,
 } from '@hypha-platform/epics';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
@@ -32,6 +33,8 @@ export default function AsideCreateSpacePage() {
     isError,
     isPending,
     progress,
+    lastError,
+    errors,
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
 
@@ -57,8 +60,18 @@ export default function AsideCreateSpacePage() {
         isLoading={isPending}
         message={
           isError ? (
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-2">
               <div>{tSpaces('errorOhSnap')}</div>
+              {lastError || errors[0] ? (
+                <div className="text-sm text-neutral-11">
+                  {formatCreateSpaceError(
+                    lastError || errors[0],
+                    tSpaces('smartWalletNotConnected'),
+                    tSpaces('uploadFailedIngest'),
+                    tSpaces('uploadFailedStorageQuota'),
+                  )}
+                </div>
+              ) : null}
               <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (

@@ -5,6 +5,8 @@ import React from 'react';
 import type { FileUploadProps } from './types';
 import type { CoreFileRouter } from '../server';
 
+const { useUploadThing } = generateReactHelpers<CoreFileRouter>();
+
 const normalizeSvgMime = (file: File): File => {
   const isSvgByName = /\.svg$/i.test(file.name);
   const isFallbackMime =
@@ -23,11 +25,13 @@ const normalizeSvgMime = (file: File): File => {
 };
 
 export const useImageUpload = ({ authorizationToken }: FileUploadProps) => {
-  const headers = authorizationToken
-    ? new Headers({ Authorization: `Bearer ${authorizationToken}` })
-    : new Headers();
-
-  const { useUploadThing } = generateReactHelpers<CoreFileRouter>();
+  const headers = React.useMemo(
+    () =>
+      authorizationToken
+        ? new Headers({ Authorization: `Bearer ${authorizationToken}` })
+        : new Headers(),
+    [authorizationToken],
+  );
 
   const { startUpload, isUploading } = useUploadThing('imageUploader', {
     headers,

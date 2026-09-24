@@ -268,6 +268,9 @@
       "@xmldom/xmldom": ">=0.9.9 <1",
       "dompurify": ">=3.4.0 <4",
       "hono": ">=4.12.12 <5"
+    },
+    "patchedDependencies": {
+      "@uploadthing/shared@7.1.7": "patches/@uploadthing__shared@7.1.7.patch"
     }
   }
 }
