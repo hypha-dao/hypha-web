@@ -256,14 +256,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
   );
 
   /** Currency the owner asked to add from the status panel (a provider they aren't onboarded with yet). */
-  const [providerOnboardingCurrency, setProviderOnboardingCurrency] =
-    useState<BankOnboardingCurrencyCode | null>(null);
+  const [providerOnboardingCurrencies, setProviderOnboardingCurrencies] =
+    useState<BankOnboardingCurrencyCode[]>([]);
 
   const handleRequestCurrencyOnboarding = useCallback(
-    (currency: BankOnboardingCurrencyCode) => {
+    (currencies: BankOnboardingCurrencyCode[]) => {
       clearOnboardingError();
       setGearOpen(false);
-      setProviderOnboardingCurrency(currency);
+      setProviderOnboardingCurrencies(currencies);
     },
     [clearOnboardingError],
   );
@@ -272,20 +272,20 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const handleProviderOnboardingSubmit = useCallback(
     async (input: Parameters<typeof handleInitialSetupSubmit>[0]) => {
       await handleInitialSetupSubmit(input);
-      setProviderOnboardingCurrency(null);
+      setProviderOnboardingCurrencies([]);
     },
     [handleInitialSetupSubmit],
   );
 
   const providerOnboardingDialog = (
     <ProviderOnboardingDialog
-      open={providerOnboardingCurrency != null}
+      open={providerOnboardingCurrencies.length > 0}
       onOpenChange={(open) => {
         if (!open) {
-          setProviderOnboardingCurrency(null);
+          setProviderOnboardingCurrencies([]);
         }
       }}
-      currency={providerOnboardingCurrency}
+      currencies={providerOnboardingCurrencies}
       initialLegalName={fallbackLegalName}
       initialContactEmail={fallbackContactEmail}
       isSubmitting={isOnboarding}
@@ -328,6 +328,11 @@ export const BankingSection: FC<BankingSectionProps> = ({
         initialContactEmail={fallbackContactEmail}
         isSubmitting={isOnboarding}
         error={onboardingError}
+        initialCurrencies={
+          pendingConfirmationEntry?.pendingEmailConfirmation?.requestedRails as
+            | BankOnboardingCurrencyCode[]
+            | undefined
+        }
         onSubmit={handleInitialSetupSubmit}
       />
     );

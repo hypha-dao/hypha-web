@@ -39,7 +39,9 @@ type BankingAdvancedDialogProps = {
   onOpenChange?: (open: boolean) => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
   /** See `BankingProviderStatusPanelProps.onRequestCurrencyOnboarding`. */
-  onRequestCurrencyOnboarding?: (currency: BankOnboardingCurrencyCode) => void;
+  onRequestCurrencyOnboarding?: (
+    currencies: BankOnboardingCurrencyCode[],
+  ) => void;
 };
 
 export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({

@@ -48,7 +48,9 @@ export type BankingProviderStatusPanelProps = {
    * space that only has Bridge). When omitted, or when `canManage` is false, the "add another
    * currency" card isn't shown.
    */
-  onRequestCurrencyOnboarding?: (currency: BankOnboardingCurrencyCode) => void;
+  onRequestCurrencyOnboarding?: (
+    currencies: BankOnboardingCurrencyCode[],
+  ) => void;
 };
 
 function getInProgressStatusLabel(
@@ -657,7 +659,10 @@ export const BankingProviderStatusPanel: FC<
       : [];
 
   const bridgeStatus =
-    providers.find((entry) => entry.provider === DEFAULT_BANK_PROVIDER) ?? null;
+    providers.find(
+      (entry) =>
+        (entry.provider ?? DEFAULT_BANK_PROVIDER) === DEFAULT_BANK_PROVIDER,
+    ) ?? null;
 
   const renderBody = () => {
     if (isLoading) {
@@ -688,10 +693,10 @@ export const BankingProviderStatusPanel: FC<
             {tAdvanced('approvedSummary')}
           </p>
         ) : null}
-        {providers.map((entry) =>
+        {providers.map((entry, index) =>
           entry.pendingEmailConfirmation ? (
             <PendingConfirmationSection
-              key={entry.provider}
+              key={entry.provider ?? `entry-${index}`}
               currencyLabel={
                 showCurrencyLabels
                   ? entry.pendingEmailConfirmation.requestedRails
@@ -702,11 +707,13 @@ export const BankingProviderStatusPanel: FC<
               onResend={
                 canManage && onRequestCurrencyOnboarding
                   ? () => {
-                      const currency =
-                        entry.pendingEmailConfirmation?.requestedRails[0];
-                      if (currency) {
+                      // The pending row's whole currency set, so the resend keeps every rail
+                      // (and resolves to the same provider) instead of narrowing to one.
+                      const rails =
+                        entry.pendingEmailConfirmation?.requestedRails ?? [];
+                      if (rails.length > 0) {
                         onRequestCurrencyOnboarding(
-                          currency as BankOnboardingCurrencyCode,
+                          rails as BankOnboardingCurrencyCode[],
                         );
                       }
                     }
@@ -715,7 +722,7 @@ export const BankingProviderStatusPanel: FC<
             />
           ) : (
             <ProviderValidationsSection
-              key={entry.provider}
+              key={entry.provider ?? `entry-${index}`}
               spaceSlug={spaceSlug}
               basePath={basePath}
               status={entry}
@@ -742,7 +749,7 @@ export const BankingProviderStatusPanel: FC<
             tAdvanced={tAdvanced}
             tOpenAccount={tOpenAccount}
             tCurrencies={tCurrencies}
-            onRequest={onRequestCurrencyOnboarding}
+            onRequest={(currency) => onRequestCurrencyOnboarding([currency])}
           />
         ) : null}
       </div>

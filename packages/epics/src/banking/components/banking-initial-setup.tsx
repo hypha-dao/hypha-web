@@ -30,6 +30,12 @@ export type BankingInitialSetupProps = {
   error: string | null;
   /** Whether this setup is for a space or an individual member's profile. Defaults to 'space'. */
   ownerContext?: BankingOwnerContext;
+  /**
+   * Currencies to preselect (defaults to the enabled default set). Used when resending a pending
+   * email confirmation, so the form reflects the pending row's provider instead of Bridge's
+   * defaults — submitting unchanged would otherwise start a different provider's onboarding.
+   */
+  initialCurrencies?: readonly BankOnboardingCurrencyCode[];
   onSubmit: (input: {
     legalName: string;
     contactEmail: string;
@@ -55,6 +61,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   isSubmitting,
   error,
   ownerContext = 'space',
+  initialCurrencies,
   onSubmit,
 }) => {
   const t = useTranslations('BankingTab.initialSetup');
@@ -63,9 +70,14 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [selected, setSelected] = useState<BankOnboardingCurrencyCode[]>(() =>
-    getDefaultEnabledCurrencyCodes(),
-  );
+  // Keyed by value so a refetch handing back an equal array doesn't wipe what's been typed.
+  const initialCurrenciesKey = initialCurrencies?.join(',') ?? '';
+  const startingCurrencies = () =>
+    initialCurrencies && initialCurrencies.length > 0
+      ? [...initialCurrencies]
+      : getDefaultEnabledCurrencyCodes();
+  const [selected, setSelected] =
+    useState<BankOnboardingCurrencyCode[]>(startingCurrencies);
   const [onboardingFieldValues, setOnboardingFieldValues] = useState<
     Record<string, string>
   >({});
@@ -73,9 +85,10 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   useEffect(() => {
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
-    setSelected(getDefaultEnabledCurrencyCodes());
+    setSelected(startingCurrencies());
     setOnboardingFieldValues({});
-  }, [initialContactEmail, initialLegalName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- startingCurrencies only reads the prop
+  }, [initialContactEmail, initialLegalName, initialCurrenciesKey]);
 
   const toggleCurrency = (
     currency: BankOnboardingCurrencyCode,

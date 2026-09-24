@@ -86,7 +86,7 @@ ssh root@srv1294735.hstgr.cloud
   `^api\.sandbox\.audd\.digital$`. Add a second line for the production host once AUDD provisions
   one; don't widen this to a wildcard.
 - **Auth:** `BasicAuth hypha_audd <relay-secret>` — the secret is a random value from
-  `openssl rand -base64 24`, **not** derived from or stored alongside the AUDD mTLS cert/key or the
+  `openssl rand -hex 24`, **not** derived from or stored alongside the AUDD mTLS cert/key or the
   stunnel TLS cert. Recorded in Vaultwarden / Ger's secure storage, not in this repo, not in chat.
 - **Firewall:** `ufw` is **inactive** on this box (traffic control is whatever's listening +
   Hostinger's panel-level firewall). `28443/tcp` (the public port — now stunnel's, not tinyproxy's
@@ -206,7 +206,7 @@ keeps working even if the volume is ever recreated with a different name/mountpo
 ```bash
 apt-get update && apt-get install -y tinyproxy
 
-RELAY_PASSWORD=$(openssl rand -base64 24)
+RELAY_PASSWORD=$(openssl rand -hex 24)
 echo "SAVE THIS — goes into the Vercel AUDD_GATEWAY_HTTPS_PROXY env var:"
 echo "  AUDD_GATEWAY_HTTPS_PROXY=https://hypha_audd:${RELAY_PASSWORD}@srv1294735.hstgr.cloud:28443"
 
@@ -415,7 +415,7 @@ restarts anything in that stack).
 
 ## 11. Rotating the relay secret
 
-1. Generate a new one: `openssl rand -base64 24`.
+1. Generate a new one: `openssl rand -hex 24`.
 2. `sed -i "s|^BasicAuth .*|BasicAuth hypha_audd <new-secret>|" /etc/tinyproxy/tinyproxy.conf`
 3. `systemctl restart tinyproxy`
 4. Update `AUDD_GATEWAY_HTTPS_PROXY` in Vercel (all environments using it) with the new secret —

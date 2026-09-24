@@ -250,14 +250,14 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   );
 
   /** Currency the owner asked to add from the status panel (a provider they aren't onboarded with yet). */
-  const [providerOnboardingCurrency, setProviderOnboardingCurrency] =
-    useState<BankOnboardingCurrencyCode | null>(null);
+  const [providerOnboardingCurrencies, setProviderOnboardingCurrencies] =
+    useState<BankOnboardingCurrencyCode[]>([]);
 
   const handleRequestCurrencyOnboarding = useCallback(
-    (currency: BankOnboardingCurrencyCode) => {
+    (currencies: BankOnboardingCurrencyCode[]) => {
       clearOnboardingError();
       setGearOpen(false);
-      setProviderOnboardingCurrency(currency);
+      setProviderOnboardingCurrencies(currencies);
     },
     [clearOnboardingError],
   );
@@ -266,20 +266,20 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   const handleProviderOnboardingSubmit = useCallback(
     async (input: Parameters<typeof handleInitialSetupSubmit>[0]) => {
       await handleInitialSetupSubmit(input);
-      setProviderOnboardingCurrency(null);
+      setProviderOnboardingCurrencies([]);
     },
     [handleInitialSetupSubmit],
   );
 
   const providerOnboardingDialog = (
     <ProviderOnboardingDialog
-      open={providerOnboardingCurrency != null}
+      open={providerOnboardingCurrencies.length > 0}
       onOpenChange={(open) => {
         if (!open) {
-          setProviderOnboardingCurrency(null);
+          setProviderOnboardingCurrencies([]);
         }
       }}
-      currency={providerOnboardingCurrency}
+      currencies={providerOnboardingCurrencies}
       initialLegalName={fallbackLegalName}
       initialContactEmail={fallbackContactEmail}
       ownerContext="person"
@@ -322,6 +322,11 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
         isSubmitting={isOnboarding}
         error={onboardingError}
         ownerContext="person"
+        initialCurrencies={
+          pendingConfirmationEntry?.pendingEmailConfirmation?.requestedRails as
+            | BankOnboardingCurrencyCode[]
+            | undefined
+        }
         onSubmit={handleInitialSetupSubmit}
       />
     );

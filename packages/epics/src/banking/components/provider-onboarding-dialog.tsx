@@ -37,11 +37,12 @@ type ProviderOnboardingDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /**
-   * The currency being requested. The provider it resolves to decides which extra fields are
-   * asked, so the dialog stays provider-agnostic — no currency picker, one currency per request
-   * (onboarding is one provider per call, D2/D3).
+   * The currencies being requested (empty = closed). The provider they resolve to decides which
+   * extra fields are asked, so the dialog stays provider-agnostic — no currency picker; all of
+   * them belong to one provider (onboarding is one provider per call, D2/D3). Usually a single
+   * new currency, or a pending row's full set when resending its email confirmation.
    */
-  currency: BankOnboardingCurrencyCode | null;
+  currencies: readonly BankOnboardingCurrencyCode[];
   initialLegalName: string;
   initialContactEmail: string;
   /** Whether this is for a space or an individual member's profile. Defaults to 'space'. */
@@ -60,7 +61,7 @@ type ProviderOnboardingDialogProps = {
 export const ProviderOnboardingDialog: FC<ProviderOnboardingDialogProps> = ({
   open,
   onOpenChange,
-  currency,
+  currencies,
   initialLegalName,
   initialContactEmail,
   ownerContext = 'space',
@@ -90,24 +91,24 @@ export const ProviderOnboardingDialog: FC<ProviderOnboardingDialogProps> = ({
     setFieldValues({});
   }, [open, initialLegalName, initialContactEmail]);
 
-  const dynamicFields = currency ? getDynamicOnboardingFields([currency]) : [];
+  const dynamicFields = getDynamicOnboardingFields(currencies);
 
   const canSubmit =
-    currency != null &&
+    currencies.length > 0 &&
     Boolean(legalName.trim()) &&
     Boolean(contactEmail.trim()) &&
     areOnboardingFieldsComplete(dynamicFields, fieldValues);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!currency || !canSubmit) {
+    if (currencies.length === 0 || !canSubmit) {
       return;
     }
     try {
       await onSubmit({
         legalName: legalName.trim(),
         contactEmail: contactEmail.trim(),
-        currencies: [currency],
+        currencies: [...currencies],
         onboardingFields: fieldValues,
       });
     } catch {
@@ -118,14 +119,18 @@ export const ProviderOnboardingDialog: FC<ProviderOnboardingDialogProps> = ({
   const formId = 'provider-onboarding-form';
 
   return (
-    <Dialog open={open && currency != null} onOpenChange={onOpenChange}>
+    <Dialog open={open && currencies.length > 0} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(BANKING_DIALOG_FORM_CONTENT_CLASS, 'max-w-lg')}
       >
         <DialogHeader className={cn(BANKING_DIALOG_HEADER_CLASS, 'pr-10')}>
           <DialogTitle>
-            {currency
-              ? t('title', { currency: tCurrencies(`${currency}.code`) })
+            {currencies.length > 0
+              ? t('title', {
+                  currency: currencies
+                    .map((code) => tCurrencies(`${code}.code`))
+                    .join(', '),
+                })
               : null}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>

@@ -988,7 +988,7 @@
         "noCustomer": "No bank customer record for your profile yet.",
         "kybProcedure": "Identity verification (KYC)"
       },
-      "additionalCurrenciesTitle": "Додади уште една валута",
+      "additionalCurrenciesTitle": "Додај уште една валута",
       "additionalCurrenciesHint": "Овие валути се верифицираат одделно од горенаведените."
     },
     "tosStatus": {
@@ -1306,7 +1306,7 @@
       "companyBusinessName": "Регистрирано деловно име"
     },
     "providerOnboarding": {
-      "title": "Додади {currency}",
+      "title": "Додај {currency}",
       "description": "Потврдете ги вашите податоци за да започне верификацијата за оваа валута."
     }
   },
