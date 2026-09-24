@@ -1,12 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import {
-  ArrowLeft,
-  MessageCircle,
-  PanelRightClose,
-  Settings,
-} from 'lucide-react';
+import { ArrowLeft, PanelRightClose, Settings } from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -39,13 +34,13 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/70 bg-background-2 px-4 py-2.5">
-      <div className="flex shrink-0 items-center gap-1">
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/70 bg-background-5 px-3 dark:bg-background-2">
+      <div className="flex shrink-0 items-center gap-0.5">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label={t('backToSpaceChat')}
           >
             <ArrowLeft className="craft-icon" />
@@ -58,7 +53,7 @@ export function HumanChatPanelHeader({
               setOpen(false);
               setOpenMobile(false);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
@@ -75,7 +70,7 @@ export function HumanChatPanelHeader({
               setOpenMobile(false);
               router.push(notificationSettingsHref);
             }}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
@@ -87,12 +82,11 @@ export function HumanChatPanelHeader({
         {displayDescription && (
           <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
-        <span className="min-w-0 truncate text-sm font-medium text-foreground">
-          {displayTitle}
-        </span>
-        <div className="craft-icon-box">
-          <MessageCircle className="craft-icon text-muted-foreground" />
-        </div>
+        {displayTitle ? (
+          <span className="min-w-0 truncate text-sm font-medium text-foreground">
+            {displayTitle}
+          </span>
+        ) : null}
       </div>
     </div>
   );

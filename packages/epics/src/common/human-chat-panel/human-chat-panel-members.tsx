@@ -136,7 +136,7 @@ export function HumanChatPanelMembers({
         return (
           <div
             key={member.slug ?? member.id}
-            className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 rounded-none px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
             data-testid="chat-panel-member-item"
           >
             <PersonAvatar

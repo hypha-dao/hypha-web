@@ -948,13 +948,8 @@ export function AiPanelMessageBubble({
         ) : null}
         <div
           className={cn(
-            // Square chat chrome — website foundation (radius 0).
-            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none px-2.5 py-1.5 text-sm leading-snug shadow-none',
-            chrome === 'quiet'
-              ? 'border-0 bg-transparent text-foreground'
-              : isUser
-              ? 'border border-foreground/15 bg-foreground/5 text-foreground'
-              : 'border border-foreground/15 bg-transparent text-foreground',
+            // Transcript on the panel ground — no dialogue box or grey well.
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none border-0 bg-transparent px-0 py-0.5 text-sm leading-snug text-foreground shadow-none',
           )}
         >
           {hasVisibleText && (

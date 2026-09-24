@@ -187,7 +187,7 @@ export function AiPanelHeader({
         }
         className="flex min-w-0 items-center gap-2"
       >
-        <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
+        <span className="h-5 w-5 overflow-hidden rounded-full">
           {getDisplayIcon(space, logoVariant) ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -198,7 +198,7 @@ export function AiPanelHeader({
               />
             </>
           ) : (
-            <span className="flex h-full w-full items-center justify-center bg-muted">
+            <span className="flex h-full w-full items-center justify-center">
               <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
             </span>
           )}
@@ -211,13 +211,13 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3 border-b border-border bg-background-2 ps-4 pe-5 py-2">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-3 border-b border-border/70 bg-background-5 ps-4 pe-5 py-2 dark:bg-background-2">
       {leftSlot ? (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+        <div className="flex size-9 shrink-0 items-center justify-center">
           {leftSlot}
         </div>
       ) : (
-        <div className="h-8 w-8 shrink-0" aria-hidden />
+        <div className="size-9 shrink-0" aria-hidden />
       )}
 
       <div className="min-w-0 px-3">
@@ -231,7 +231,7 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="craft-chip craft-chip-interactive inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 px-2.5 text-sm tracking-tight"
+                  className="inline-flex h-9 w-full min-w-0 items-center justify-center gap-1.5 rounded-none border-0 bg-transparent px-2 text-sm tracking-tight text-foreground shadow-none transition-colors hover:bg-foreground/5"
                   aria-label={tNavigation('mySpaces')}
                 >
                   <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full">
@@ -318,7 +318,7 @@ export function AiPanelHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="craft-chip inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 px-3 text-sm text-foreground/90">
+            <div className="inline-flex h-9 w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-sm text-foreground">
               <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full">
                 {currentIcon ? (
                   <>
@@ -343,14 +343,14 @@ export function AiPanelHeader({
         </div>
       </div>
 
-      <div className="flex h-8 w-8 shrink-0 items-center justify-end">
+      <div className="flex size-9 shrink-0 items-center justify-end">
         {rightSlot ? (
           rightSlot
         ) : showCloseButton ? (
           <button
             type="button"
             onClick={onCloseButtonClick ?? closeAiPanel}
-            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
