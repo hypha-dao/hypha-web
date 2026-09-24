@@ -2,10 +2,11 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useParams } from 'next/navigation';
 import {
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
-  getMainColumnScrollElement,
+  animateMainColumnScrollBy,
   getMainColumnScrollY,
   scrollMainColumnBy,
   scrollMainColumnTo,
@@ -17,6 +18,8 @@ import { cn } from '@hypha-platform/ui-utils';
 const STICKY_HYSTERESIS_PX = 16;
 /** Full cover stays visible, then the row settles. Inside the 1–2s entry window. */
 const SPACE_ENTRY_BANNER_HOLD_MS = 1500;
+/** Controlled settle ease — browser `smooth` was ~300–500ms and felt like a snap. */
+const SPACE_ENTRY_SETTLE_MS = 900;
 const SCROLL_KEYS = new Set([
   'ArrowUp',
   'ArrowDown',
@@ -26,6 +29,12 @@ const SCROLL_KEYS = new Set([
   'End',
   ' ',
 ]);
+
+/**
+ * Intro settle must run once per space visit in this SPA session — not again when
+ * the chrome remounts on in-space tab / route changes (that caused the banner flicker).
+ */
+const spacesWithEntrySettle = new Set<string>();
 
 function readMenuTopPx(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(
@@ -143,6 +152,14 @@ export function DhoStickySpaceChrome({
   logoAlt,
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
+  const params = useParams();
+  const spaceSlug =
+    typeof params?.id === 'string'
+      ? params.id
+      : Array.isArray(params?.id)
+      ? params.id[0]
+      : '';
+
   const menuTopPx = useMenuTopOffsetPx();
   /** Bottom edge of the space cover. Sticky engages when this meets the row's bottom edge. */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
@@ -203,18 +220,25 @@ export function DhoStickySpaceChrome({
   }, [menuTopPx]);
 
   React.useEffect(() => {
+    if (!spaceSlug) return;
     const desktop = window.matchMedia('(min-width: 768px)');
     if (!desktop.matches) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Tab / in-space remounts must keep the current scroll (settled or full cover).
+    if (spacesWithEntrySettle.has(spaceSlug)) return;
+    // Claim before the hold so a remount mid-intro cannot replay from the top.
+    spacesWithEntrySettle.add(spaceSlug);
+
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
 
     let cancelled = false;
     let userTookOver = false;
     let animating = false;
     let programmatic = false;
-    let settled = false;
-    let settleTimer = 0;
-    let scrollEndTarget: HTMLElement | Document | null = null;
-    let finish: (() => void) | null = null;
+    let cancelAnim: (() => void) | null = null;
+    let holdTimer = 0;
 
     const releaseProgrammatic = () => {
       window.requestAnimationFrame(() => {
@@ -224,7 +248,29 @@ export function DhoStickySpaceChrome({
       });
     };
 
-    // The scrollport is shared across routes. Land on the full cover first.
+    const jumpToSettled = () => {
+      const delta = bannerAlignDelta(
+        bannerBottomSentinelRef.current,
+        stickyBarRef.current,
+      );
+      if (delta == null || delta <= 1) return;
+      programmatic = true;
+      scrollMainColumnBy(delta, 'auto');
+      releaseProgrammatic();
+    };
+
+    if (reduceMotion) {
+      // Prefer reduced motion: land on the sticky row with no hold/animation.
+      const raf = window.requestAnimationFrame(() => {
+        if (!cancelled) jumpToSettled();
+      });
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(raf);
+      };
+    }
+
+    // First entry only: show the full cover, then ease into the sticky row.
     if (getMainColumnScrollY() > 2) {
       programmatic = true;
       scrollMainColumnTo(0, 'auto');
@@ -235,6 +281,8 @@ export function DhoStickySpaceChrome({
       userTookOver = true;
       if (!animating) return;
       animating = false;
+      cancelAnim?.();
+      cancelAnim = null;
       programmatic = true;
       scrollMainColumnTo(getMainColumnScrollY(), 'auto');
       releaseProgrammatic();
@@ -257,7 +305,7 @@ export function DhoStickySpaceChrome({
       if (getMainColumnScrollY() > 2) userTookOver = true;
     });
 
-    const holdTimer = window.setTimeout(() => {
+    holdTimer = window.setTimeout(() => {
       if (cancelled || userTookOver || !desktop.matches) return;
       if (getMainColumnScrollY() > 2) return;
 
@@ -268,32 +316,26 @@ export function DhoStickySpaceChrome({
       if (delta == null || delta <= 1) return;
 
       animating = true;
-      scrollMainColumnBy(delta, 'smooth');
-
-      const scroller = getMainColumnScrollElement();
-      const endTarget: HTMLElement | Document = scroller ?? document;
-      scrollEndTarget = endTarget;
-
-      const onScrollEnd = () => {
-        if (settled) return;
-        settled = true;
-        endTarget.removeEventListener('scrollend', onScrollEnd);
-        window.clearTimeout(settleTimer);
-        animating = false;
-        if (cancelled || userTookOver) return;
-        const rest = bannerAlignDelta(
-          bannerBottomSentinelRef.current,
-          stickyBarRef.current,
-        );
-        if (rest == null || Math.abs(rest) <= 1) return;
-        programmatic = true;
-        scrollMainColumnBy(rest, 'auto');
-        releaseProgrammatic();
-      };
-      finish = onScrollEnd;
-
-      endTarget.addEventListener('scrollend', onScrollEnd);
-      settleTimer = window.setTimeout(onScrollEnd, 1200);
+      programmatic = true;
+      cancelAnim = animateMainColumnScrollBy(
+        delta,
+        SPACE_ENTRY_SETTLE_MS,
+        () => {
+          animating = false;
+          cancelAnim = null;
+          releaseProgrammatic();
+          if (cancelled || userTookOver) return;
+          const rest = bannerAlignDelta(
+            bannerBottomSentinelRef.current,
+            stickyBarRef.current,
+          );
+          if (rest != null && Math.abs(rest) > 1) {
+            programmatic = true;
+            scrollMainColumnBy(rest, 'auto');
+            releaseProgrammatic();
+          }
+        },
+      );
     }, SPACE_ENTRY_BANNER_HOLD_MS);
 
     window.addEventListener('wheel', onWheel, { passive: true, capture: true });
@@ -306,16 +348,13 @@ export function DhoStickySpaceChrome({
     return () => {
       cancelled = true;
       window.clearTimeout(holdTimer);
-      window.clearTimeout(settleTimer);
-      if (scrollEndTarget && finish) {
-        scrollEndTarget.removeEventListener('scrollend', finish);
-      }
+      cancelAnim?.();
       unsubscribeScroll();
       window.removeEventListener('wheel', onWheel, { capture: true });
       window.removeEventListener('touchmove', onTouchMove, { capture: true });
       window.removeEventListener('keydown', onKeyDown, { capture: true });
     };
-  }, []);
+  }, [spaceSlug]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
