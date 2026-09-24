@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
@@ -19,6 +19,11 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
   r?: number;
 };
 
+export type SpaceVisualizationZoomApi = {
+  zoomIn: () => void;
+  zoomOut: () => void;
+};
+
 type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
@@ -27,6 +32,8 @@ type Props = {
   enableHoverActions?: boolean;
   showNodeLabels?: boolean;
   ariaLabel?: string;
+  /** Parent row calls these so zoom stays on the membership line. */
+  zoomApiRef?: MutableRefObject<SpaceVisualizationZoomApi>;
 };
 
 /** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
@@ -51,6 +58,15 @@ function accentFromSpaceId(id: number): string {
     COOL_ACCENT_HUES[Math.abs(id * 47) % COOL_ACCENT_HUES.length] ??
     COOL_ACCENT_HUES[0];
   return `hsl(${hue} 40% 42%)`;
+}
+
+function labelFitsNode(
+  name: string,
+  fontSize: number,
+  radius: number,
+): boolean {
+  const text = truncateLabel(name);
+  return text.length * fontSize * 0.56 <= Math.max(radius * 2.6, 1);
 }
 
 function truncateLabel(
@@ -189,6 +205,7 @@ export function SpaceVisualization({
   enableHoverActions = true,
   showNodeLabels = true,
   ariaLabel = 'Space hierarchy visualization',
+  zoomApiRef,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -707,7 +724,7 @@ export function SpaceVisualization({
           .attr('dominant-baseline', 'hanging')
           .attr('fill', getLabelFillColor())
           .attr('stroke', getLabelStrokeColor())
-          .attr('stroke-width', 3.5)
+          .attr('stroke-width', 1.25)
           .attr('paint-order', 'stroke fill')
           .style('font-family', 'var(--font-family-text), sans-serif')
           .style('font-weight', '500')
@@ -914,6 +931,28 @@ export function SpaceVisualization({
       });
     }
 
+    const zoomByDirection = (direction: 1 | -1) => {
+      const current = focusRef.current as SpaceHierarchyNode | null;
+      if (!current) return;
+      if (direction < 0) {
+        if (current.parent) zoom(current.parent as SpaceHierarchyNode);
+        return;
+      }
+      const children = (current.children ?? []) as SpaceHierarchyNode[];
+      if (children.length === 0) return;
+      const next = children.reduce((largest, child) =>
+        (child.r ?? 0) > (largest.r ?? 0) ? child : largest,
+      );
+      zoom(next);
+    };
+
+    if (zoomApiRef) {
+      zoomApiRef.current = {
+        zoomIn: () => zoomByDirection(1),
+        zoomOut: () => zoomByDirection(-1),
+      };
+    }
+
     function zoomTo(v: [number, number, number]) {
       const safeView = sanitizeZoomView(v, view[2]);
       const k = width / safeView[2];
@@ -953,7 +992,9 @@ export function SpaceVisualization({
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
           const showLabel =
-            showNodeLabels && r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS;
+            showNodeLabels &&
+            r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS &&
+            labelFitsNode(d.data.name, labelFontSize, r);
           const labelFontSize = clampSvgLength(
             Math.min(15, Math.max(10, r * 0.42)),
           );
@@ -1035,6 +1076,9 @@ export function SpaceVisualization({
     return () => {
       isCancelled = true;
       svg.interrupt();
+      if (zoomApiRef) {
+        zoomApiRef.current = { zoomIn: () => {}, zoomOut: () => {} };
+      }
     };
   }, [
     data,

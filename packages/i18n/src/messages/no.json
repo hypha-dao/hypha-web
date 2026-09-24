@@ -644,8 +644,9 @@
       "ariaLabel": "Kart over hierarki for nestede rom",
       "loading": "Laster økosystemkart…",
       "empty": "Ingen nestede rom å vise ennå",
-      "hint": "Klikk på et rom for å fokususere · klikk utenfor for å zoome ut",
-      "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen"
+      "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen",
+      "zoomIn": "Zoom inn",
+      "zoomOut": "Zoom ut"
     },
     "visibleSpaces": {
       "nestedRoot": "Rot",
@@ -662,7 +663,7 @@
     "navigation": {
       "individuals": "Individer",
       "memberSpaces": "Medlemsrom",
-      "agents": "Agenter",
+      "agents": "KI-agenter",
       "noIndividuals": "Ingen individuelle medlemmer ennå",
       "noMemberSpaces": "Ingen medlemsrom ennå",
       "noAgents": "Ingen agenter mobilisert ennå",
