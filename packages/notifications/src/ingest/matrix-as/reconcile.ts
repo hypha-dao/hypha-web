@@ -7,7 +7,6 @@ import {
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import { getSuppressedBotUserIds } from './bot-identities';
-import { pruneProcessedEvents } from './dedupe';
 import { ingestParsedMessage } from './ingest-message';
 import { loggingDispatch } from './logging-dispatch';
 import { parseMessageEvent } from './parse-message-event';
@@ -44,7 +43,6 @@ export interface ReconcileResult {
   ignored: number;
   outOfWindow: number;
   roomErrors: number;
-  pruned: number;
 }
 
 const EMPTY: ReconcileResult = {
@@ -57,12 +55,7 @@ const EMPTY: ReconcileResult = {
   ignored: 0,
   outOfWindow: 0,
   roomErrors: 0,
-  pruned: 0,
 };
-
-// The ledger is pruned well past the reconcile window (not just past it) so a row can never be
-// deleted while a still-in-progress or slightly-delayed run could still legitimately re-claim it.
-const PRUNE_RETENTION_MULTIPLIER = 4;
 
 /** Distinct Matrix room ids Hypha knows about (space chat rooms + signal thread rooms). */
 async function listKnownRoomIds(
@@ -176,15 +169,6 @@ export async function reconcileMatrixNotifications(
       result.roomErrors += 1;
       logger.warn('[matrix-as] reconcile: room scan failed', { roomId, error });
     }
-  }
-
-  try {
-    result.pruned = await pruneProcessedEvents(
-      windowMs * PRUNE_RETENTION_MULTIPLIER,
-      deps.db,
-    );
-  } catch (error) {
-    logger.warn('[matrix-as] reconcile: ledger prune failed', { error });
   }
 
   return result;

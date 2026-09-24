@@ -32,11 +32,10 @@ export async function claimProcessedEvent(
 }
 
 /**
- * Deletes ledger rows older than `olderThanMs`. The schema docstring promises this table is
- * "pruned on a schedule by the reconcile cron" — `reconcileMatrixNotifications` calls this once
- * per run. `olderThanMs` must stay comfortably larger than the reconciler's own scan window, or a
- * row could be pruned while still inside that window and get re-claimed (and re-notified) on the
- * next run.
+ * Deletes ledger rows older than `olderThanMs`; called daily by `/api/cron/notification-ledger-prune`.
+ * `olderThanMs` must stay comfortably longer than anything that could make an already-recorded event
+ * arrive again (Dendrite replaying a transaction after an outage or a crash before the ACK, or a
+ * manual reconcile run) — prune a row too early and that event is claimed again and notifies twice.
  */
 export async function pruneProcessedEvents(
   olderThanMs: number,
