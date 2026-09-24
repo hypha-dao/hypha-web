@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   parseIso8601DurationToMs,
+  MAX_EVENT_AGE_CAP_MS,
   resolveMaxEventAgeMs,
   resolveReconcileWindowMs,
 } from '../duration';
@@ -64,6 +65,12 @@ describe('resolveMaxEventAgeMs', () => {
   it('reads an ISO-8601 duration from the env', () => {
     process.env.NOTIFICATION_MAX_EVENT_AGE = 'PT2H';
     expect(resolveMaxEventAgeMs()).toBe(2 * 60 * 60 * 1000);
+  });
+
+  it('is capped so ledger pruning stays safe whatever the env says', () => {
+    process.env.NOTIFICATION_MAX_EVENT_AGE = 'P8D';
+    expect(resolveMaxEventAgeMs()).toBe(MAX_EVENT_AGE_CAP_MS);
+    expect(MAX_EVENT_AGE_CAP_MS).toBe(3 * 24 * 60 * 60 * 1000);
   });
 
   it('falls back to the default on an invalid value', () => {

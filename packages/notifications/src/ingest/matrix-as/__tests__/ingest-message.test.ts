@@ -70,6 +70,27 @@ describe('ingestParsedMessage age guard', () => {
     expect(dispatch).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects a future-dated event but tolerates small clock skew', async () => {
+    vi.clearAllMocks();
+    vi.mocked(resolveRoomToSpace).mockResolvedValue({
+      kind: 'space',
+      spaceId: 1,
+      spaceSlug: 'acme',
+    } as never);
+    vi.mocked(claimProcessedEvent).mockResolvedValue(true);
+
+    const far = deps();
+    await expect(
+      ingestParsedMessage(parsed(-6 * 24 * HOUR), {}, far.deps),
+    ).resolves.toBe('ignored_stale');
+    expect(claimProcessedEvent).not.toHaveBeenCalled();
+
+    const skew = deps();
+    await expect(
+      ingestParsedMessage(parsed(-2 * 60 * 1000), {}, skew.deps),
+    ).resolves.toBe('dispatched');
+  });
+
   it('honours a custom maximum age', async () => {
     vi.clearAllMocks();
     const { deps: d } = deps({ maxEventAgeMs: 30 * 60 * 1000 });

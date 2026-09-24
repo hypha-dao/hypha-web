@@ -16,4 +16,5 @@ export {
   parseIso8601DurationToMs,
   resolveReconcileWindowMs,
   resolveMaxEventAgeMs,
+  MAX_EVENT_AGE_CAP_MS,
 } from './duration';

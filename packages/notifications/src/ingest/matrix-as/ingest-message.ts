@@ -11,6 +11,9 @@ import type {
 export const UNMAPPED_EVENT_TYPE = 'm.room.message#unmapped';
 export const MESSAGE_EVENT_TYPE = 'm.room.message';
 
+/** Clock skew tolerated between the homeserver's `origin_server_ts` and ours. */
+const FUTURE_SKEW_TOLERANCE_MS = 10 * 60 * 1000;
+
 export type IngestOutcome =
   | 'dispatched'
   | 'dispatch_failed'
@@ -49,9 +52,15 @@ export async function ingestParsedMessage(
   // (an outage replay would otherwise push hours-old messages all at once), and because the ledger
   // is pruned only well past this age, an already-recorded event whose row was pruned can never
   // slip through as a duplicate either.
+  // A timestamp meaningfully in the future has a negative age and would pass a plain "too old"
+  // check, then stay claimable until it aged into the window after its ledger row was pruned; only a
+  // small clock skew is tolerated.
   const ageMs = (deps.now ?? Date.now)() - parsed.occurredAt;
-  if (ageMs > (deps.maxEventAgeMs ?? resolveMaxEventAgeMs())) {
-    logger.info('[matrix-as] skipped stale event', {
+  if (
+    ageMs > (deps.maxEventAgeMs ?? resolveMaxEventAgeMs()) ||
+    ageMs < -FUTURE_SKEW_TOLERANCE_MS
+  ) {
+    logger.info('[matrix-as] skipped stale or future-dated event', {
       matrixEventId: parsed.matrixEventId,
       ageHours: Math.round(ageMs / 3_600_000),
     });
