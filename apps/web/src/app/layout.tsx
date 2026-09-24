@@ -297,16 +297,16 @@ export default async function RootLayout({
                                   baseRedirectPath="/my-spaces"
                                   navItems={[
                                     {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                    {
                                       label: navMySpacesLabel,
                                       href: `/${locale}/my-spaces`,
                                     },
                                     {
                                       label: navMyWalletLabel,
                                       href: `/${locale}/my-wallet`,
+                                    },
+                                    {
+                                      label: navNetworkLabel,
+                                      href: `/${locale}/network`,
                                     },
                                   ]}
                                   showNetworkFeedback
@@ -329,16 +329,16 @@ export default async function RootLayout({
                                   baseRedirectPath="/my-spaces"
                                   navItems={[
                                     {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                    {
                                       label: navMySpacesLabel,
                                       href: `/${locale}/my-spaces`,
                                     },
                                     {
                                       label: navMyWalletLabel,
                                       href: `/${locale}/my-wallet`,
+                                    },
+                                    {
+                                      label: navNetworkLabel,
+                                      href: `/${locale}/network`,
                                     },
                                   ]}
                                   showNetworkFeedback
