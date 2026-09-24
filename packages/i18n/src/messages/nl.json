@@ -373,7 +373,7 @@
       "energy": "Energie",
       "activity": "Activiteit",
       "distribution": "Verdeling",
-      "payingSpaces": "Betalende spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Kan activiteitswidgets niet laden",
@@ -424,9 +424,9 @@
       "description": "Energiewidgets verschijnen zodra energiegegevens beschikbaar zijn."
     },
     "payingSpaces": {
-      "pageTitle": "Betalende spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Maandelijkse dekking vanaf de eerste on-chain betaling.",
-      "title": "Betalende spaces",
+      "title": "Traction",
       "subtitle": "Spaces met een actief betaald abonnement per maand, vanaf het begin. Filter op space voor de uitsplitsing.",
       "currentlyPaying": "Nu betalend",
       "everPaid": "Ooit betaald",
