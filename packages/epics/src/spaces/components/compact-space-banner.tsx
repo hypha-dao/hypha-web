@@ -197,8 +197,12 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'group/hero relative overflow-hidden rounded-none border border-border/70',
-        'shadow-none',
+        /*
+         * Light paper: no card frame — a border only reads as “pasted on”
+         * against #fbfaf8. Dark ground already hides the same hairline, so keep it.
+         */
+        'group/hero relative overflow-hidden rounded-none border-0 shadow-none',
+        'dark:border dark:border-border/70',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-4 pt-4 pb-0 md:px-6 md:pt-5',
         className,
@@ -218,6 +222,14 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           />
         </>
       )}
+      {/*
+        Light only: short fade of the cover into page paper so the bottom edge
+        does not cut as a hard slab. Dark cover already melts into #040404.
+      */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-14 bg-gradient-to-b from-transparent to-page-background dark:hidden"
+        aria-hidden
+      />
 
       <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
         {/*
