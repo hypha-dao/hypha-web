@@ -8,6 +8,18 @@ import type {
 import { getNotificationDispatcher, type DispatchResult } from '../delivery';
 
 /**
+ * One line per dispatched event. `dispatch()` deliberately returns `null` (not an error) when nothing
+ * survives strategy or consent, which made "why did nobody get this?" impossible to answer from prod
+ * logs — the counts here show where recipients dropped out.
+ */
+function logDispatch(
+  event: NotificationEvent,
+  counts: Record<string, number | Record<string, number>>,
+): void {
+  console.info('[notifications] dispatch', { type: event.type, ...counts });
+}
+
+/**
  * The one function every ingest path calls (implementation-plan.md §3.A.5): resolve candidate
  * recipients → strategy filter ("does this recipient want this?") → consent gate (which channels
  * are they subscribed to?) → build content → hand each recipient's `DecidedNotification` to the
@@ -33,7 +45,10 @@ export async function dispatch(
   const recipients = candidates.filter((recipient) =>
     strategy(event, recipient),
   );
-  if (recipients.length === 0) return null;
+  if (recipients.length === 0) {
+    logDispatch(event, { candidates: candidates.length, recipients: 0 });
+    return null;
+  }
 
   const built = recipients.map((recipient) => ({
     recipient,
@@ -88,7 +103,30 @@ export async function dispatch(
     ),
   );
 
-  if (decided.length === 0) return null;
+  const channelCounts: Record<string, number> = {};
+  for (const { channels } of decided) {
+    for (const channel of channels) {
+      channelCounts[channel] = (channelCounts[channel] ?? 0) + 1;
+    }
+  }
 
-  return getNotificationDispatcher().sendMany(decided);
+  if (decided.length === 0) {
+    logDispatch(event, {
+      candidates: candidates.length,
+      recipients: recipients.length,
+      decided: 0,
+    });
+    return null;
+  }
+
+  const result = await getNotificationDispatcher().sendMany(decided);
+  logDispatch(event, {
+    candidates: candidates.length,
+    recipients: recipients.length,
+    decided: decided.length,
+    channels: channelCounts,
+    sent: result.sent,
+    failed: result.failed,
+  });
+  return result;
 }

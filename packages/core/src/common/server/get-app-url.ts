@@ -8,6 +8,11 @@ const DEFAULT_LOCALE = 'en';
 /**
  * Absolute origin for the Hypha web app (no trailing slash).
  * Prefer `NEXT_PUBLIC_APP_URL`; on Vercel previews use `VERCEL_URL`.
+ *
+ * `VERCEL_URL` is the per-deployment hostname (`hypha-<hash>-….vercel.app`) — fine for a preview,
+ * but on production it is the wrong origin for user-facing links: a different origin from
+ * `app.hypha.earth` means no session cookie (users land signed out) and the link dies once the
+ * deployment is superseded. So on production it is skipped and the canonical default wins.
  */
 export function getAppBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -16,7 +21,7 @@ export function getAppBaseUrl(): string {
   }
 
   const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) {
+  if (vercel && process.env.VERCEL_ENV !== 'production') {
     const host = vercel.replace(/^https?:\/\//, '');
     return `https://${host}`;
   }
