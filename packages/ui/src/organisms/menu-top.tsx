@@ -28,8 +28,6 @@ type MenuTopProps = {
   compactReleaseThresholdPx?: number;
   compactDataAttribute?: string;
   showLeadingActionOnlyWhenCompact?: boolean;
-  /** When true, collapse desktop nav while the left AI panel is expanded (overlay or rail). */
-  forceCompactWhenLeftPanelExpanded?: boolean;
 };
 
 /** Gap reserved between leading cluster and desktop actions in the free-space math. */
@@ -53,7 +51,6 @@ export const MenuTop = ({
   compactReleaseThresholdPx = 320,
   compactDataAttribute = 'data-compact-header',
   showLeadingActionOnlyWhenCompact = false,
-  forceCompactWhenLeftPanelExpanded = true,
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -114,7 +111,6 @@ export const MenuTop = ({
 
     const evaluate = () => {
       raf = 0;
-      const root = document.documentElement;
       const rowWidth = rowEl.getBoundingClientRect().width;
       const leadWidth = leadEl.getBoundingClientRect().width;
       const liveDesktopWidth = Math.max(
@@ -133,18 +129,22 @@ export const MenuTop = ({
 
       const freeSpace =
         rowWidth - leadWidth - desktopNeeded - ROW_CLUSTER_GAP_PX;
-      const leftPanelExpanded =
-        forceCompactWhenLeftPanelExpanded &&
-        root.getAttribute('data-left-panel-expanded') === 'true';
+      // Opening a side panel used to force compact mode and park the desktop
+      // links in an h-0 overflow-hidden slot, so the bar showed a clipped logo
+      // and no Network / My Spaces / My Wallet / Shape Hypha. Keep that row
+      // mounted on desktop; it scrolls if the column is tight. Compact stays
+      // for real mobile.
+      const keepDesktopNav = !mobileMq.matches;
 
-      const nextCompact = shouldUseCompactHeader({
-        freeSpacePx: freeSpace,
-        isCurrentlyCompact: isCompactRef.current,
-        leftPanelExpanded,
-        enterBelowPx: compactSafeThresholdPx,
-        exitBelowPx: compactReleaseThresholdPx,
-        forceCompactViewport: mobileMq.matches,
-      });
+      const nextCompact = keepDesktopNav
+        ? false
+        : shouldUseCompactHeader({
+            freeSpacePx: freeSpace,
+            isCurrentlyCompact: isCompactRef.current,
+            enterBelowPx: compactSafeThresholdPx,
+            exitBelowPx: compactReleaseThresholdPx,
+            forceCompactViewport: mobileMq.matches,
+          });
 
       if (nextCompact !== isCompactRef.current) {
         isCompactRef.current = nextCompact;
@@ -161,11 +161,6 @@ export const MenuTop = ({
     ro.observe(rowEl);
     ro.observe(leadEl);
     ro.observe(desktopEl);
-    const panelObserver = new MutationObserver(schedule);
-    panelObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-left-panel-expanded'],
-    });
     const onMobileMq = () => schedule();
     if (typeof mobileMq.addEventListener === 'function') {
       mobileMq.addEventListener('change', onMobileMq);
@@ -174,14 +169,15 @@ export const MenuTop = ({
       mobileMq.addListener(onMobileMq);
     }
     window.addEventListener('resize', schedule);
-    schedule();
+    // Run before paint. `schedule()` waits a frame, so the first paint stayed
+    // on the compact (overflow-hidden) nav and clipped the wordmark.
+    evaluate();
 
     return () => {
       if (raf !== 0) {
         window.cancelAnimationFrame(raf);
       }
       ro.disconnect();
-      panelObserver.disconnect();
       if (typeof mobileMq.removeEventListener === 'function') {
         mobileMq.removeEventListener('change', onMobileMq);
       } else {
@@ -191,11 +187,7 @@ export const MenuTop = ({
     };
     // Intentionally omit `isCompact`: hysteresis lives in isCompactRef so toggling
     // compact does not tear down ResizeObserver (which itself caused re-entry jitter).
-  }, [
-    compactReleaseThresholdPx,
-    compactSafeThresholdPx,
-    forceCompactWhenLeftPanelExpanded,
-  ]);
+  }, [compactReleaseThresholdPx, compactSafeThresholdPx]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -228,12 +220,18 @@ export const MenuTop = ({
         ref={rowRef}
         className={clsx(
           'mx-auto flex w-full min-w-0 items-center gap-x-2',
-          children ? 'justify-between' : 'justify-center',
+          // `justify-between` with overflow pushes the logo off the left edge
+          // (the "ypha" clip) and the end control off the right. Start-align
+          // and let the action cluster take the free space on the right.
+          children || trailingAction ? 'justify-start' : 'justify-center',
+          // Scroll the bar instead of clipping the logo or links when panels narrow the column.
+          !isCompact &&
+            'overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
         <div
           ref={leadingClusterRef}
-          className="flex min-w-0 items-center gap-1.5 sm:gap-2"
+          className="flex shrink-0 items-center gap-1.5 sm:gap-2"
         >
           {leadingAction ? (
             <div
@@ -253,12 +251,12 @@ export const MenuTop = ({
                 rel={
                   hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
                 }
-                className="inline-flex min-w-0 shrink items-center"
+                className="inline-flex shrink-0 items-center"
               >
                 {logoNode}
               </Link>
             ) : (
-              <div className="inline-flex min-w-0 shrink items-center">
+              <div className="inline-flex shrink-0 items-center">
                 {logoNode}
               </div>
             )
@@ -302,7 +300,7 @@ export const MenuTop = ({
               ? // Keep flex + intrinsic width while out of flow. Zero-height clip
                 // avoids document scroll growth; cache still guards WebKit quirks.
                 'pointer-events-none absolute left-0 top-0 h-0 overflow-hidden opacity-0'
-              : 'relative',
+              : 'relative ml-auto',
           )}
           aria-hidden={isCompact || undefined}
         >

@@ -7,7 +7,6 @@
 export type CompactHeaderDecisionInput = {
   freeSpacePx: number;
   isCurrentlyCompact: boolean;
-  leftPanelExpanded: boolean;
   /** Enter compact when free space falls below this (while expanded). */
   enterBelowPx: number;
   /** Stay compact until free space reaches this (while compact). Must be > enterBelowPx. */
@@ -19,16 +18,19 @@ export type CompactHeaderDecisionInput = {
 /**
  * Decide compact header mode with hysteresis so sub-pixel / ResizeObserver noise
  * near the threshold cannot flip the chrome every frame.
+ *
+ * Side panels must not force this mode. Opening the AI or chat panel used to
+ * hide Network / My Spaces / My Wallet even when the center column still had
+ * room. Compact only when the measured row is actually too narrow, or on mobile.
  */
 export function shouldUseCompactHeader({
   freeSpacePx,
   isCurrentlyCompact,
-  leftPanelExpanded,
   enterBelowPx,
   exitBelowPx,
   forceCompactViewport = false,
 }: CompactHeaderDecisionInput): boolean {
-  if (leftPanelExpanded || forceCompactViewport) {
+  if (forceCompactViewport) {
     return true;
   }
 
