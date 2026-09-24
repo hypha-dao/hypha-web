@@ -130,6 +130,25 @@ function mapPaletteForTheme(theme: string | undefined): MapPalette {
 }
 
 const MINI_GLOBE_SIZE = 88;
+
+/** Fallback stage height before the SVG has been measured. */
+const MIN_MAP_STAGE_HEIGHT = 420;
+/** About 2× the previous 560px cap, so the stage is a viewing area. */
+const MAX_MAP_STAGE_HEIGHT = 1120;
+
+function mapStageHeight(width: number): number {
+  // Was clamp(360, width * 0.62, 560). Double that ratio and cap near 1120.
+  const tall = Math.max(720, Math.min(MAX_MAP_STAGE_HEIGHT, width * 1.24));
+  if (typeof window === 'undefined') {
+    return Math.round(tall);
+  }
+  // Short or narrow windows stay near 420px so the list underneath is reachable.
+  if (window.innerHeight < 760 || width < 640) {
+    const cap = window.innerHeight * 0.55;
+    return Math.round(Math.min(MIN_MAP_STAGE_HEIGHT, Math.max(320, cap)));
+  }
+  return Math.round(tall);
+}
 const MINI_MAP_WIDTH = 120;
 const MINI_MAP_HEIGHT = 72;
 
@@ -400,7 +419,7 @@ export function NetworkGlobeMap({
     }
 
     const width = container.clientWidth;
-    const height = Math.max(360, Math.min(560, width * 0.62));
+    const height = mapStageHeight(width);
     if (width <= 0) {
       return;
     }
@@ -1231,7 +1250,7 @@ export function NetworkGlobeMap({
 
     function mapDimensions() {
       const width = container!.clientWidth;
-      const height = Math.max(360, Math.min(560, width * 0.62));
+      const height = mapStageHeight(width);
       return { width, height };
     }
 
@@ -1595,7 +1614,7 @@ export function NetworkGlobeMap({
               activePin.x,
               activePin.y,
               containerRef.current?.clientWidth ?? 640,
-              containerRef.current?.clientHeight ?? 360,
+              containerRef.current?.clientHeight ?? MIN_MAP_STAGE_HEIGHT,
             )
           : {})}
       />
@@ -1737,7 +1756,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
+      className="relative min-h-[420px] w-full overflow-hidden bg-transparent [@media(min-width:640px)_and_(min-height:760px)]:min-h-[720px]"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
