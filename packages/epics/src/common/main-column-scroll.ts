@@ -107,6 +107,52 @@ export function scrollMainColumnTo(
   window.scrollTo({ top, behavior });
 }
 
+/**
+ * Ease the main column by `deltaY` over `durationMs` (cubic in-out).
+ * Returns a cancel function. Prefer this over `behavior: 'smooth'` when
+ * duration must be controlled (browser smooth scroll timing is opaque).
+ */
+export function animateMainColumnScrollBy(
+  deltaY: number,
+  durationMs: number,
+  onDone?: () => void,
+): () => void {
+  if (
+    typeof window === 'undefined' ||
+    durationMs <= 0 ||
+    Math.abs(deltaY) < 0.5
+  ) {
+    if (Math.abs(deltaY) >= 0.5) scrollMainColumnBy(deltaY, 'auto');
+    onDone?.();
+    return () => {};
+  }
+
+  const startY = readScrollY();
+  const t0 = performance.now();
+  let raf = 0;
+  let cancelled = false;
+
+  const easeInOutCubic = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const frame = (now: number) => {
+    if (cancelled) return;
+    const p = Math.min(1, (now - t0) / durationMs);
+    scrollMainColumnTo(startY + deltaY * easeInOutCubic(p), 'auto');
+    if (p < 1) {
+      raf = requestAnimationFrame(frame);
+      return;
+    }
+    onDone?.();
+  };
+
+  raf = requestAnimationFrame(frame);
+  return () => {
+    cancelled = true;
+    cancelAnimationFrame(raf);
+  };
+}
+
 export function useMainColumnScrollY(): number {
   return useSyncExternalStore(
     subscribeMainColumnScroll,

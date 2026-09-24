@@ -194,6 +194,7 @@ export {
   getMainColumnScrollElement,
   scrollMainColumnBy,
   scrollMainColumnTo,
+  animateMainColumnScrollBy,
   subscribeMainColumnScroll,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
