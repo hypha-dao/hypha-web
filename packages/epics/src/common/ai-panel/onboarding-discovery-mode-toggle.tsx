@@ -29,7 +29,7 @@ export function OnboardingDiscoveryModeToggle({
       role="group"
       aria-label={t('onboardingDiscoveryModeLabel')}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <Button
           type="button"
           variant={mode === 'chat' ? 'default' : 'outline'}
