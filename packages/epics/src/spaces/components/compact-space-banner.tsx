@@ -4,23 +4,25 @@ import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
 import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../common/chrome-radius';
 
 export { APP_CHROME_SUBTLE_SQUARE_RADIUS };
 
-/** Square space mark on the identity row — shared footprint, not a circular hero avatar */
+/** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
-  'h-9 w-9 shrink-0 rounded-none border border-border/70 md:h-11 md:w-11',
+  'h-12 w-12 shrink-0 rounded-full sm:h-14 sm:w-14',
+  'ring-1 ring-white/12',
 );
 
-/** Title size on the identity row — Sora, tool-sized, one line */
+/** Title size on the banner — reuse on sticky; tool-sized, not marketing hero */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
-  'truncate text-4 font-medium tracking-[-0.02em] md:text-5',
+  'text-balance text-5 font-medium tracking-[-0.03em] sm:text-6',
   '[font-family:var(--font-family-heading)]',
 );
 
-/** Smaller footprint for the DHO sticky space chrome row */
+/** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
 export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
   'h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11',
   'ring-1 ring-border/60',
@@ -29,6 +31,13 @@ export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
 export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
   'text-balance text-4 font-medium tracking-[-0.03em] sm:text-5',
   '[font-family:var(--font-family-heading)]',
+);
+
+/** Purpose column — compact identity strip (two lines max). */
+const DESCRIPTION_SCROLL_BOX = cn(
+  'w-full max-w-full min-h-0 lg:max-w-[50%]',
+  'max-h-[2lh] overflow-hidden',
+  'text-2 leading-relaxed',
 );
 
 type CompactSpaceBannerCommon = {
@@ -44,10 +53,7 @@ type CompactSpaceBannerCommon = {
   descriptionLabel: string;
   /** Localized label for revealing secondary meta (links / stats). */
   revealMetaLabel?: string;
-  /** Header actions that stay on the identity row (settings). */
   footerTrailing?: React.ReactNode;
-  /** Secondary actions revealed with Details (subscription / “Active until”). */
-  detailsTrailing?: React.ReactNode;
   className?: string;
 };
 
@@ -62,7 +68,7 @@ export type CompactSpaceBannerWithStatsProps = CompactSpaceBannerCommon & {
 
 export type CompactSpaceBannerProfileProps = CompactSpaceBannerCommon & {
   showSpaceStats: false;
-  /** Renders inside Details (e.g. member since, email) */
+  /** Renders before the hairline (e.g. member since, email) */
   footerLeading?: React.ReactNode;
 };
 
@@ -74,25 +80,6 @@ function isSpaceWithStats(
   p: CompactSpaceBannerProps,
 ): p is CompactSpaceBannerWithStatsProps {
   return p.showSpaceStats !== false;
-}
-
-function WholeCoverImage({ src }: { src: string }) {
-  const [failed, setFailed] = React.useState(false);
-
-  React.useEffect(() => {
-    setFailed(false);
-  }, [src]);
-
-  if (failed) return null;
-
-  return (
-    <img
-      src={src}
-      alt=""
-      className="mx-auto block h-auto max-w-full"
-      onError={() => setFailed(true)}
-    />
-  );
 }
 
 export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
@@ -108,7 +95,6 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     descriptionLabel,
     revealMetaLabel = 'Details',
     footerTrailing,
-    detailsTrailing,
     className,
   } = props;
   const showSpaceStats = isSpaceWithStats(props);
@@ -139,11 +125,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   })();
 
   const hasSecondaryMeta =
-    safeLinks.length > 0 ||
-    Boolean(footerLeading) ||
-    Boolean(detailsTrailing) ||
-    showSpaceStats;
-  const hasDisclosure = hasSecondaryMeta || Boolean(textureSrc);
+    safeLinks.length > 0 || Boolean(footerLeading) || showSpaceStats;
+  const hasFooterStrip = hasSecondaryMeta || Boolean(footerTrailing);
 
   const secondaryMeta = (
     <>
@@ -155,9 +138,9 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-1 text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 text-1 text-white/65 hover:text-white/90"
             >
-              <span className="text-muted-foreground [&_svg]:h-3.5 [&_svg]:w-3.5">
+              <span className="text-white/65 [&_svg]:h-3.5 [&_svg]:w-3.5">
                 <LinkIcon url={link} />
               </span>
               <LinkLabel
@@ -169,48 +152,42 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         </div>
       ) : null}
 
-      {footerLeading || showSpaceStats || detailsTrailing ? (
-        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-1 text-muted-foreground">
+      {footerLeading || showSpaceStats ? (
+        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
           {footerLeading ? (
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               {footerLeading}
             </div>
           ) : null}
           {footerLeading && showSpaceStats ? (
-            <span
-              className="hidden text-muted-foreground/60 sm:inline"
-              aria-hidden
-            >
+            <span className="hidden text-white/30 sm:inline" aria-hidden>
               ·
             </span>
           ) : null}
           {showSpaceStats ? (
             <>
               <span className="inline-flex items-baseline gap-1">
-                <span className="tabular-nums text-foreground">
+                <span className="tabular-nums text-white/75">
                   {memberCount ?? '—'}
                 </span>{' '}
-                <span>{membersLabel}</span>
+                <span className="text-white/50">{membersLabel}</span>
               </span>
-              <span className="text-muted-foreground/50" aria-hidden>
+              <span className="text-white/25" aria-hidden>
                 ·
               </span>
               <span className="inline-flex items-baseline gap-1">
-                <span className="tabular-nums text-foreground">
+                <span className="tabular-nums text-white/75">
                   {agreementCount ?? '—'}
                 </span>{' '}
-                <span>{agreementsLabel}</span>
+                <span className="text-white/50">{agreementsLabel}</span>
               </span>
-              <span className="text-muted-foreground/50" aria-hidden>
+              <span className="hidden text-white/30 md:inline" aria-hidden>
                 ·
               </span>
-              <span>{createdOnText}</span>
+              <span className="text-white/50 max-md:hidden">
+                {createdOnText}
+              </span>
             </>
-          ) : null}
-          {detailsTrailing ? (
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {detailsTrailing}
-            </div>
           ) : null}
         </div>
       ) : null}
@@ -220,94 +197,141 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'relative rounded-none border border-border/70 bg-background shadow-none',
+        'group/hero relative overflow-hidden rounded-none border border-border/70',
+        'shadow-none',
+        /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
+        'px-4 pt-4 pb-0 md:px-6 md:pt-5',
         className,
       )}
       aria-label={title}
     >
-      <div className="relative flex h-16 items-center gap-3 px-4 md:h-[4.75rem] md:gap-4 md:px-6">
-        <div
-          className="space-accent-banner-wash pointer-events-none absolute inset-0"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-          style={{
-            backgroundColor:
-              'color-mix(in srgb, var(--space-accent, transparent) 70%, transparent)',
-          }}
-          aria-hidden
-        />
+      {/* Lead image — Image + preload avoids grey decode flash; overlays unchanged */}
+      {textureSrc ? (
+        <>
+          <CompactSpaceBannerLead src={textureSrc} />
+        </>
+      ) : (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 bg-neutral-3 dark:bg-neutral-2"
+            aria-hidden
+          />
+        </>
+      )}
 
-        <Avatar
-          className={cn('relative z-10', COMPACT_SPACE_BANNER_AVATAR_CLASSNAME)}
-        >
-          <AvatarImage src={safeLogoSrc} alt={logoAlt} />
-        </Avatar>
+      <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
+        {/*
+          Identity row: left-aligned; vertically centered in the lead plate
+          (not horizontally centered). Links live in progressive disclosure.
+        */}
+        <div className="flex min-h-[5.5rem] flex-col justify-center md:min-h-[6.5rem]">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
+              <AvatarImage
+                src={safeLogoSrc}
+                alt={logoAlt}
+                className="object-cover"
+              />
+            </Avatar>
 
-        <div
-          className="relative z-10 min-w-0 flex-1"
-          role={description ? 'group' : undefined}
-          aria-label={description ? descriptionLabel : undefined}
-        >
-          <h1
+            <div className="min-w-0 flex-1 basis-[16rem] space-y-1.5 md:space-y-2">
+              <h1
+                className={cn(
+                  COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+                  'text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]',
+                )}
+              >
+                {title}
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        {/* Same horizontal origin as avatar — not nested in title column */}
+        {description ? (
+          <div
+            role="region"
+            aria-label={descriptionLabel}
+            tabIndex={0}
             className={cn(
-              COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
-              'text-foreground',
+              DESCRIPTION_SCROLL_BOX,
+              'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            {title}
-          </h1>
-          {description ? (
-            <p
-              className="truncate text-2 font-normal leading-5 text-foreground/75 [font-family:var(--font-family-text)]"
-              title={description}
-            >
+            <p className="line-clamp-2 text-pretty text-2 font-normal leading-relaxed text-white/72 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
-        <div className="relative z-10 flex shrink-0 items-center gap-3">
-          {hasDisclosure ? (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 text-1 font-medium text-muted-foreground hover:text-foreground"
-              aria-expanded={metaExpanded}
-              onClick={() => setMetaExpanded((v) => !v)}
-            >
-              {revealMetaLabel}
-              <ChevronDown
-                className={cn(
-                  'size-3.5 transition-transform duration-150',
-                  metaExpanded && 'rotate-180',
-                )}
-                aria-hidden
-              />
-            </button>
-          ) : null}
-          {footerTrailing ? (
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
-              {footerTrailing}
+        {/* Secondary meta: progressive disclosure — hover (fine pointer) or expand */}
+        {hasFooterStrip ? (
+          <div className="flex flex-col">
+            <div
+              className="h-px w-full shrink-0 bg-white/10"
+              role="presentation"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 md:gap-3 md:py-3.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                {hasSecondaryMeta ? (
+                  <>
+                    <button
+                      type="button"
+                      className={cn(
+                        'inline-flex w-fit items-center gap-1 text-1 font-medium text-white/70 hover:text-white/90',
+                        /*
+                         * Hide until hover only on fine-pointer devices. iPad is md+ but
+                         * hover:none — keep the control visible so Details stays tappable.
+                         */
+                        '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:transition-opacity [@media(hover:hover)_and_(pointer:fine)]:duration-150',
+                        '[@media(hover:hover)_and_(pointer:fine)]:group-hover/hero:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/hero:opacity-100',
+                        metaExpanded &&
+                          '[@media(hover:hover)_and_(pointer:fine)]:opacity-100',
+                      )}
+                      aria-expanded={metaExpanded}
+                      onClick={() => setMetaExpanded((v) => !v)}
+                    >
+                      {revealMetaLabel}
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 transition-transform duration-150',
+                          metaExpanded && 'rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                    <div
+                      className={cn(
+                        'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
+                        metaExpanded
+                          ? 'grid-rows-[1fr] opacity-100'
+                          : 'grid-rows-[0fr] opacity-0',
+                        /* Fine-pointer hover reveals without a click when collapsed */
+                        !metaExpanded &&
+                          '[@media(hover:hover)_and_(pointer:fine)]:group-hover/hero:grid-rows-[1fr] [@media(hover:hover)_and_(pointer:fine)]:group-hover/hero:opacity-100',
+                        !metaExpanded &&
+                          '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/hero:grid-rows-[1fr] [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/hero:opacity-100',
+                      )}
+                    >
+                      <div className="min-h-0 overflow-hidden">
+                        <div className="flex flex-col gap-2 pt-1">
+                          {secondaryMeta}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+
+              {footerTrailing ? (
+                <div className="flex shrink-0 flex-wrap items-center justify-start gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+                  {footerTrailing}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
-
-      {hasDisclosure && metaExpanded ? (
-        <div className="bg-background">
-          {textureSrc ? (
-            <div className="bg-background px-4 pt-4 md:px-6">
-              <WholeCoverImage src={textureSrc} />
-            </div>
-          ) : null}
-          {hasSecondaryMeta ? (
-            <div className="flex flex-col gap-2 px-4 py-3 md:px-6 md:py-4">
-              {secondaryMeta}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
     </section>
   );
 }
