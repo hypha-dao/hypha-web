@@ -13,7 +13,7 @@ import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
-import { Checkbox, SectionFilter } from '@hypha-platform/ui';
+import { Checkbox } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { SpaceOrderCombobox } from './space-order-combobox';
 
@@ -101,29 +101,30 @@ export function MyFilteredSpaces({
 
   return (
     <div className="space-y-6">
-      <SectionFilter
-        count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
-        label={tSpaces('mySpacesLabel')}
-        inlineLabel={false}
-        className="w-auto max-w-full flex-wrap items-center justify-start gap-x-3 gap-y-2 sm:ml-auto"
-      >
-        <label
-          htmlFor="hide-archived-spaces"
-          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-        >
-          <Checkbox
-            id="hide-archived-spaces"
-            checked={hideArchivedSpaces}
-            onCheckedChange={(checked) =>
-              setHideArchivedSpaces(checked === true)
-            }
-          />
-          <span className="whitespace-nowrap text-2 font-normal text-neutral-11">
-            {tSpaces('hideArchivedSpaces')}
-          </span>
-        </label>
-        <SpaceOrderCombobox order={order} className="shrink-0" />
-      </SectionFilter>
+      <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-3 overflow-x-auto">
+        <Text className="min-w-0 shrink text-4 capitalize text-nowrap">
+          {tSpaces('mySpacesLabel')} |{' '}
+          {isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
+        </Text>
+        <div className="ml-auto flex shrink-0 flex-nowrap items-center gap-x-3">
+          <label
+            htmlFor="hide-archived-spaces"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+          >
+            <Checkbox
+              id="hide-archived-spaces"
+              checked={hideArchivedSpaces}
+              onCheckedChange={(checked) =>
+                setHideArchivedSpaces(checked === true)
+              }
+            />
+            <span className="whitespace-nowrap text-2 font-normal text-neutral-11">
+              {tSpaces('hideArchivedSpaces')}
+            </span>
+          </label>
+          <SpaceOrderCombobox order={order} className="shrink-0" />
+        </div>
+      </div>
       {isLoadingSpaces ? (
         <Text className="text-3 text-muted-foreground">
           {tMyWallet('loading')}
