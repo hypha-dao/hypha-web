@@ -154,8 +154,14 @@ export function DhoStickySpaceChrome({
            * to panel edges while users drag-resize left/right sidebars.
            */
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
-          'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
-          'border-x border-b border-border bg-page-background',
+          /*
+           * Stop 0.25rem short of the column edge — the same width as
+           * `.narrow-scrollbar` — so this bar does not paint over the thumb.
+           * The header hairline is a 1px rule, not a framed border.
+           */
+          'right-[calc(var(--panel-right-inset,var(--sidebar-right-width,0px))+0.25rem)]',
+          'bg-page-background',
+          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
           'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100'
