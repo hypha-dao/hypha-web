@@ -991,13 +991,13 @@ export function SpaceVisualization({
           const isFocused = d === focus;
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
+          const labelFontSize = clampSvgLength(
+            Math.min(15, Math.max(10, r * 0.42)),
+          );
           const showLabel =
             showNodeLabels &&
             r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS &&
             labelFitsNode(d.data.name, labelFontSize, r);
-          const labelFontSize = clampSvgLength(
-            Math.min(15, Math.max(10, r * 0.42)),
-          );
           const labelY = r + Math.max(10, labelFontSize * 0.35);
           const selection = d3.select(this);
 
