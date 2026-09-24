@@ -3219,6 +3219,7 @@
   },
   "NetworkMap": {
     "mapView": "Carte",
+    "overviewView": "Aperçu",
     "listView": "Liste",
     "globeView": "Globe",
     "flatView": "Plan",

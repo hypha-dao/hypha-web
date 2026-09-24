@@ -3801,6 +3801,7 @@
   },
   "NetworkMap": {
     "mapView": "Kaart",
+    "overviewView": "Overzicht",
     "listView": "Lijst",
     "globeView": "Bol",
     "flatView": "Plat",

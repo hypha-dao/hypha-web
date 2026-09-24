@@ -3800,6 +3800,7 @@
   },
   "NetworkMap": {
     "mapView": "Kart",
+    "overviewView": "Oversikt",
     "listView": "Liste",
     "globeView": "Globus",
     "flatView": "Flat",

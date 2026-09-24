@@ -3803,6 +3803,7 @@
   },
   "NetworkMap": {
     "mapView": "Map",
+    "overviewView": "Overview",
     "listView": "List",
     "globeView": "Globe",
     "flatView": "Flat",

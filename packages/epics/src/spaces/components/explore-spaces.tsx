@@ -215,8 +215,13 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const viewFromUrl = (params: URLSearchParams): NetworkMapView =>
-    params.get('view') === 'map' ? 'map' : 'list';
+  const viewFromUrl = (params: URLSearchParams): NetworkMapView => {
+    const view = params.get('view');
+    if (view === 'map' || view === 'overview' || view === 'list') {
+      return view;
+    }
+    return 'list';
+  };
 
   const [view, setViewState] = React.useState<NetworkMapView>(() =>
     enableNetworkMap ? viewFromUrl(searchParams) : 'list',
@@ -240,11 +245,7 @@ export function ExploreSpaces({
       setViewState(nextView);
 
       const params = new URLSearchParams(window.location.search);
-      if (nextView === 'list') {
-        params.set('view', 'list');
-      } else {
-        params.set('view', 'map');
-      }
+      params.set('view', nextView);
       const queryString = params.toString();
       window.history.replaceState(
         window.history.state,
@@ -280,7 +281,7 @@ export function ExploreSpaces({
   const { isAuthenticated } = useAuthentication();
 
   const renderMapToolbar = React.useCallback(
-    (layerControls: React.ReactNode) => (
+    () => (
       <NetworkControlStrip
         className="mb-1"
         viewToggle={
@@ -290,9 +291,8 @@ export function ExploreSpaces({
             className="w-fit max-w-full shrink-0"
           />
         }
-        mapChrome={view === 'map' ? layerControls : undefined}
         trailing={
-          view === 'map' ? (
+          view === 'map' || view === 'overview' ? (
             <NetworkAddLocationButton
               lang={lang}
               spaces={spaces}
@@ -333,9 +333,11 @@ export function ExploreSpaces({
     </div>
   );
 
-  const showSortControl = !enableNetworkMap || view === 'list';
-  const deferBelowMapContent =
-    enableNetworkMap && view === 'map' && !globeReady;
+  const showSortControl =
+    !enableNetworkMap || view === 'list' || view === 'overview';
+  const showMapStage = view === 'map' || view === 'overview';
+  const showSpacesList = view === 'list' || view === 'overview';
+  const deferBelowMapContent = enableNetworkMap && showMapStage && !globeReady;
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-row items-center gap-3">
@@ -440,10 +442,16 @@ export function ExploreSpaces({
               spaces={mapSpaces}
               className="mb-4 w-full"
               renderToolbar={renderMapToolbar}
-              isActive={view === 'map'}
-              showStage={view === 'map'}
+              isActive={showMapStage}
+              showStage={showMapStage}
+              alignProjection={view === 'overview' ? 'flat' : undefined}
+              onProjectionModeChange={(mode) => {
+                if (mode === 'globe' && view === 'overview') {
+                  setView('map');
+                }
+              }}
             />
-            <div className={cn(view !== 'list' && 'hidden')}>
+            <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
               {spacesListContent}
             </div>
