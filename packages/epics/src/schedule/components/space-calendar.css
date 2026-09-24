@@ -206,29 +206,31 @@
   opacity: 0.38;
 }
 
-/* ── Event cards (shared) ── */
+/* ── Event chips (shared) ── */
 
 .hypha-space-calendar .fc .fc-event.hypha-cal-event {
   position: relative;
   overflow: hidden;
-  border: none !important;
   border-radius: 0 !important;
   /*
-   * Space pages mirror --space-accent onto the document. Outside a space,
-   * the chip is the #121212 panel step on #040404 with light text.
+   * Outline only. The hairline is the space accent (the colour that used
+   * to fill the chip). Outside a space it falls back to the #121212 panel
+   * step — never the default blue accent. Time and title stay ink.
    */
-  background: var(--space-accent, #121212) !important;
-  color: var(--space-accent-contrast, #f7f7f7) !important;
-  box-shadow: none;
+  border: 1px solid var(--space-accent, #121212) !important;
+  background: transparent !important;
+  color: var(--foreground) !important;
+  box-shadow: none !important;
   cursor: pointer;
   margin: 0 0.2rem 0.2rem;
   padding: 0 !important;
-  transition: filter 140ms ease;
 }
 
 .hypha-space-calendar--agenda .fc .fc-list-event.hypha-cal-event {
   background: transparent !important;
   color: var(--foreground) !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .hypha-cal-event-icon {
@@ -264,7 +266,7 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
   line-height: 1.2;
-  color: inherit;
+  color: var(--foreground);
 }
 
 .hypha-cal-month-event__title {
@@ -275,7 +277,7 @@
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.25;
-  color: inherit;
+  color: var(--foreground);
 }
 
 .hypha-space-calendar--month .fc .fc-daygrid-event.hypha-cal-event {
@@ -283,7 +285,8 @@
 }
 
 .hypha-space-calendar .fc .fc-event.hypha-cal-event:hover {
-  filter: brightness(1.08);
+  background: transparent !important;
+  filter: none;
 }
 
 .hypha-space-calendar--agenda .fc .fc-list-event.hypha-cal-event:hover {
@@ -293,6 +296,9 @@
 .hypha-space-calendar .fc .fc-event.hypha-cal-event .fc-event-main,
 .hypha-space-calendar .fc .fc-event.hypha-cal-event .fc-event-main-frame {
   padding: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--foreground);
 }
 
 .hypha-space-calendar .fc .fc-event.hypha-cal-event .fc-event-time,
@@ -326,7 +332,7 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: inherit;
+  color: var(--foreground);
 }
 
 .hypha-cal-time-event__title {
@@ -336,7 +342,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: inherit;
+  color: var(--foreground);
 }
 
 /* ── Week & day time grid ── */
