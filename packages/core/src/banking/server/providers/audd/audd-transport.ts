@@ -160,9 +160,10 @@ export async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
   }
 
   // The mTLS cert/key apply to the *destination* handshake (AUDD) either way — direct or
-  // tunnelled through the relay. `HttpsProxyAgent` forwards its cert/key options to the
-  // `tls.connect()` it runs after the CONNECT completes, so the same options object works for
-  // both agent types below.
+  // tunnelled through the relay — so they travel as *request* options, not agent options:
+  // `HttpsProxyAgent` (v7) resets its own `options` in the constructor (dropping anything passed
+  // to it) and builds the post-CONNECT `tls.connect()` from the request options only. Passing the
+  // cert/key to the agent silently sends no client certificate and AUDD resets the connection.
   const tlsOptions = {
     cert: config.cert,
     key: config.key,
@@ -170,10 +171,8 @@ export async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
   };
 
   const agent = config.httpsProxy
-    ? new HttpsProxyAgent(config.httpsProxy, tlsOptions)
-    : config.cert && config.key
-    ? new HttpsAgent({ ...tlsOptions, keepAlive: false })
-    : undefined;
+    ? new HttpsProxyAgent(config.httpsProxy)
+    : new HttpsAgent({ keepAlive: false });
 
   const raw = await new Promise<{ status: number; text: string }>(
     (resolve, reject) => {
@@ -183,6 +182,7 @@ export async function auddRequest<T>(options: AuddRequestOptions): Promise<T> {
           method: options.method,
           headers,
           agent,
+          ...tlsOptions,
           timeout: AUDD_REQUEST_TIMEOUT_MS,
         },
         (res) => {
