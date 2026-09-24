@@ -23,6 +23,7 @@ import {
   getActiveTabFromPath,
   partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
+  useAiPanel,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -43,6 +44,7 @@ export function NavigationTabs({
   const tNav = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tCoherence = useTranslations('CoherenceTab');
+  const { open: aiPanelOpen } = useAiPanel();
   const pathname = usePathname();
   const activeTab = React.useMemo(
     () => getActiveTabFromPath(pathname),
@@ -116,6 +118,12 @@ export function NavigationTabs({
     ? stripActiveTab
     : '';
 
+  // Left rail already carries section nav while the AI panel is closed.
+  // Render this strip only once that panel replaces the rail.
+  if (!aiPanelOpen) {
+    return null;
+  }
+
   return (
     <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
       <div
@@ -134,6 +142,7 @@ export function NavigationTabs({
               <TabsTrigger asChild key={key} value={key} variant="ghost">
                 <Link
                   href={href}
+                  scroll={false}
                   className="flex w-full items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
                 >
                   <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
@@ -167,6 +176,7 @@ export function NavigationTabs({
                     <DropdownMenuItem key={key} asChild>
                       <Link
                         href={href}
+                        scroll={false}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
                           'flex cursor-pointer items-center gap-2',
