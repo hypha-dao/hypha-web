@@ -3554,7 +3554,9 @@
       "uboPendingTitle": "Vérification UBO en attente",
       "uboPendingDescription": "{count, plural, one {# personne associée doit encore} other {# personnes associées doivent encore}} fournir des informations supplémentaires.",
       "uboPendingTooltip": "Bridge envoie directement les e-mails de vérification aux personnes associées. Demandez-leur de vérifier leur boîte de réception (et les spams) pour un e-mail de Bridge ou Persona.",
-      "uboPendingEmailsLabel": "En attente :"
+      "uboPendingEmailsLabel": "En attente :",
+      "additionalCurrenciesTitle": "Ajouter une autre devise",
+      "additionalCurrenciesHint": "Ces devises sont vérifiées séparément de celles ci-dessus."
     },
     "tosStatus": {
       "pending": {
@@ -3596,13 +3598,18 @@
         "code": "COP",
         "name": "Peso colombien",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Dollar australien",
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {
       "organizationLegend": "Informations sur l'organisation",
       "organizationHint": "Les informations sur l'organisation sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
       "legalName": "Nom légal de l'entité",
-      "contactEmail": "E-mail du client Bridge",
+      "contactEmail": "E-mail de contact",
       "currenciesTitle": "Devises que vous souhaitez utiliser",
       "currenciesDescription": "Sélectionnez les devises que cet espace utilisera pour les dépôts et paiements bancaires. Votre organisation sera vérifiée une fois avec notre partenaire bancaire.",
       "currenciesHint": "Vous pourrez ajouter d'autres devises plus tard depuis les paramètres bancaires.",
@@ -3614,7 +3621,9 @@
         "currenciesDescription": "Sélectionnez les devises que vous souhaitez utiliser pour les paiements bancaires. Vous serez vérifié une fois avec notre partenaire bancaire."
       },
       "bypassEligibleHint": "Il s'agit de votre propre e-mail vérifié — aucune étape de confirmation supplémentaire n'est nécessaire.",
-      "confirmationRequiredHint": "Nous enverrons un lien de confirmation à cette adresse avant de l'activer, car ce n'est pas votre e-mail vérifié enregistré."
+      "confirmationRequiredHint": "Nous enverrons un lien de confirmation à cette adresse avant de l'activer, car ce n'est pas votre e-mail vérifié enregistré.",
+      "providerFieldsTitle": "Détails de vérification supplémentaires",
+      "providerFieldsHint": "Quelques informations supplémentaires sont nécessaires pour vérifier les devises sélectionnées."
     },
     "notStarted": {
       "description": "Les services bancaires ne sont pas encore configurés pour ce space.",
@@ -3837,6 +3846,35 @@
       "description": "Nous avons envoyé un lien de confirmation à l'adresse e-mail que vous avez indiquée. Cliquez dessus pour continuer la configuration bancaire — nous ne contacterons pas Bridge tant que vous n'aurez pas confirmé.",
       "resendCta": "Renvoyer l'e-mail de confirmation",
       "resending": "Envoi en cours…"
+    },
+    "onboardingFields": {
+      "contactEmail": "E-mail de contact",
+      "legalName": "Nom légal de l'entité",
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+      "middleName": "Deuxième prénom",
+      "phoneNumber": "Numéro de téléphone",
+      "dateOfBirth": "Date de naissance",
+      "addressLine1": "Adresse ligne 1",
+      "addressLine2": "Adresse ligne 2",
+      "suburb": "Quartier",
+      "postcode": "Code postal",
+      "state": "État/Région",
+      "country": "Pays",
+      "companyType": {
+        "label": "Type d'entité",
+        "individual": "Particulier",
+        "soleTrader": "Entrepreneur individuel",
+        "privateCompany": "Société privée",
+        "publicCompany": "Société publique",
+        "trust": "Trust"
+      },
+      "registrationNumber": "Numéro d'immatriculation",
+      "companyBusinessName": "Raison sociale enregistrée"
+    },
+    "providerOnboarding": {
+      "title": "Ajouter {currency}",
+      "description": "Confirmez vos informations pour lancer la vérification de cette devise."
     }
   },
   "Calendar": {

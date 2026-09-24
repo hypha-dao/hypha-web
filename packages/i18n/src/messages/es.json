@@ -3558,7 +3558,9 @@
       "uboPendingTitle": "Verificación UBO pendiente",
       "uboPendingDescription": "{count, plural, one {# persona asociada aún necesita} other {# personas asociadas aún necesitan}} proporcionar información adicional.",
       "uboPendingTooltip": "Bridge envía correos de verificación directamente a las personas asociadas. Pídales que revisen su bandeja de entrada (y spam) para encontrar un correo de Bridge o Persona.",
-      "uboPendingEmailsLabel": "Pendiente:"
+      "uboPendingEmailsLabel": "Pendiente:",
+      "additionalCurrenciesTitle": "Añadir otra moneda",
+      "additionalCurrenciesHint": "Estas monedas se verifican por separado de las anteriores."
     },
     "tosStatus": {
       "pending": {
@@ -3600,13 +3602,18 @@
         "code": "COP",
         "name": "Peso colombiano",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Dólar australiano",
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {
       "organizationLegend": "Datos de la organización",
       "organizationHint": "Los datos de la organización se envían a nuestro socio bancario para verificación y no se almacenan en Hypha.",
       "legalName": "Nombre legal de la entidad",
-      "contactEmail": "Correo del cliente de Bridge",
+      "contactEmail": "Correo electrónico de contacto",
       "currenciesTitle": "Monedas que desea utilizar",
       "currenciesDescription": "Seleccione las monedas que este space utilizará para depósitos y pagos bancarios. Su organización será verificada una vez con nuestro socio bancario.",
       "currenciesHint": "Puede añadir más monedas más tarde desde la configuración bancaria.",
@@ -3618,7 +3625,9 @@
         "currenciesDescription": "Seleccione las monedas que desea utilizar para pagos bancarios. Será verificado una vez con nuestro socio bancario."
       },
       "bypassEligibleHint": "Este es su propio correo verificado — no se necesita un paso de confirmación adicional.",
-      "confirmationRequiredHint": "Enviaremos un enlace de confirmación a esta dirección antes de habilitarla, ya que no es su propio correo verificado registrado."
+      "confirmationRequiredHint": "Enviaremos un enlace de confirmación a esta dirección antes de habilitarla, ya que no es su propio correo verificado registrado.",
+      "providerFieldsTitle": "Detalles de verificación adicionales",
+      "providerFieldsHint": "Se necesitan algunos datos adicionales para verificar las monedas que seleccionaste."
     },
     "notStarted": {
       "description": "La banca aún no está configurada para este space.",
@@ -3841,6 +3850,35 @@
       "description": "Enviamos un enlace de confirmación a la dirección de correo que ingresó. Haga clic en él para continuar con la configuración bancaria — no contactaremos a Bridge hasta que confirme.",
       "resendCta": "Reenviar correo de confirmación",
       "resending": "Reenviando…"
+    },
+    "onboardingFields": {
+      "contactEmail": "Correo electrónico de contacto",
+      "legalName": "Nombre legal de la entidad",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "middleName": "Segundo nombre",
+      "phoneNumber": "Número de teléfono",
+      "dateOfBirth": "Fecha de nacimiento",
+      "addressLine1": "Dirección línea 1",
+      "addressLine2": "Dirección línea 2",
+      "suburb": "Barrio",
+      "postcode": "Código postal",
+      "state": "Provincia/Estado",
+      "country": "País",
+      "companyType": {
+        "label": "Tipo de entidad",
+        "individual": "Persona física",
+        "soleTrader": "Autónomo",
+        "privateCompany": "Empresa privada",
+        "publicCompany": "Empresa pública",
+        "trust": "Fideicomiso"
+      },
+      "registrationNumber": "Número de registro",
+      "companyBusinessName": "Razón social registrada"
+    },
+    "providerOnboarding": {
+      "title": "Añadir {currency}",
+      "description": "Confirme sus datos para iniciar la verificación de esta moneda."
     }
   },
   "Calendar": {

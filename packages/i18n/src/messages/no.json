@@ -1006,7 +1006,9 @@
             "approved": "Identitetsverifiseringen er fullført. Ingen ytterligere handling kreves her."
           }
         }
-      }
+      },
+      "additionalCurrenciesTitle": "Legg til en annen valuta",
+      "additionalCurrenciesHint": "Disse valutaene verifiseres separat fra de ovenfor."
     },
     "tosStatus": {
       "pending": {
@@ -1048,13 +1050,18 @@
         "code": "COP",
         "name": "Colombiansk peso",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Australske dollar",
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {
       "organizationLegend": "Organisasjonsdetaljer",
       "organizationHint": "Organisasjonsdetaljer sendes til bankpartneren vår for verifisering og lagres ikke på Hypha.",
       "legalName": "Juridisk enhetsnavn",
-      "contactEmail": "E-postadresse til Bridge-kunden",
+      "contactEmail": "Kontakt-e-post",
       "currenciesTitle": "Valutaer du vil bruke",
       "currenciesDescription": "Velg valutaene dette rommet skal bruke til bankinnskudd og utbetalinger. Organisasjonen din verifiseres én gang hos bankpartneren vår.",
       "currenciesHint": "Du kan legge til flere valutaer senere fra Bankinnstillinger.",
@@ -1066,7 +1073,9 @@
         "currenciesDescription": "Velg valutaene du vil bruke til bankutbetalinger. Du verifiseres én gang hos bankpartneren vår."
       },
       "bypassEligibleHint": "Dette er din egen verifiserte e-post — ingen ekstra bekreftelse nødvendig.",
-      "confirmationRequiredHint": "Vi sender en bekreftelseslenke til denne adressen før den aktiveres, siden det ikke er din egen registrerte, verifiserte e-post."
+      "confirmationRequiredHint": "Vi sender en bekreftelseslenke til denne adressen før den aktiveres, siden det ikke er din egen registrerte, verifiserte e-post.",
+      "providerFieldsTitle": "Ytterligere verifiseringsdetaljer",
+      "providerFieldsHint": "Noen ekstra detaljer trengs for å verifisere valutaene du valgte."
     },
     "notStarted": {
       "description": "Bank er ikke satt opp for dette rommet ennå.",
@@ -1289,6 +1298,35 @@
       "description": "Vi har sendt en bekreftelseslenke til e-postadressen du oppga. Klikk på den for å fortsette å sette opp banktjenester — vi kontakter ikke Bridge før du har bekreftet.",
       "resendCta": "Send bekreftelses-e-post på nytt",
       "resending": "Sender på nytt…"
+    },
+    "onboardingFields": {
+      "contactEmail": "Kontakt-e-post",
+      "legalName": "Juridisk navn på enheten",
+      "firstName": "Fornavn",
+      "lastName": "Etternavn",
+      "middleName": "Mellomnavn",
+      "phoneNumber": "Telefonnummer",
+      "dateOfBirth": "Fødselsdato",
+      "addressLine1": "Adresselinje 1",
+      "addressLine2": "Adresselinje 2",
+      "suburb": "Bydel",
+      "postcode": "Postnummer",
+      "state": "Delstat/Region",
+      "country": "Land",
+      "companyType": {
+        "label": "Enhetstype",
+        "individual": "Privatperson",
+        "soleTrader": "Enkeltpersonforetak",
+        "privateCompany": "Privat selskap",
+        "publicCompany": "Offentlig selskap",
+        "trust": "Trust"
+      },
+      "registrationNumber": "Registreringsnummer",
+      "companyBusinessName": "Registrert firmanavn"
+    },
+    "providerOnboarding": {
+      "title": "Legg til {currency}",
+      "description": "Bekreft opplysningene dine for å starte verifiseringen for denne valutaen."
     }
   },
   "TreasuryTab": {

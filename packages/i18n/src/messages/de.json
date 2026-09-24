@@ -1076,7 +1076,9 @@
       "uboPendingTitle": "UBO-Verifizierung ausstehend",
       "uboPendingDescription": "{count, plural, one {# assoziierte Person muss noch} other {# assoziierte Personen müssen noch}} zusätzliche Informationen bereitstellen.",
       "uboPendingTooltip": "Bridge sendet Verifizierungs-E-Mails direkt an die assoziierten Personen. Bitten Sie sie, ihren Posteingang (und Spam-Ordner) auf eine E-Mail von Bridge oder Persona zu überprüfen.",
-      "uboPendingEmailsLabel": "Ausstehend:"
+      "uboPendingEmailsLabel": "Ausstehend:",
+      "additionalCurrenciesTitle": "Weitere Währung hinzufügen",
+      "additionalCurrenciesHint": "Diese Währungen werden getrennt von den oben genannten verifiziert."
     },
     "tosStatus": {
       "pending": {
@@ -1118,13 +1120,18 @@
         "code": "COP",
         "name": "Kolumbianischer Peso",
         "payoutMethod": "Bre-B"
+      },
+      "aud": {
+        "code": "AUD",
+        "name": "Australischer Dollar",
+        "payoutMethod": "NPP / BECS"
       }
     },
     "initialSetup": {
       "organizationLegend": "Organisationsdetails",
       "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
       "legalName": "Rechtlicher Name der Organisation",
-      "contactEmail": "Bridge-Kunden-E-Mail",
+      "contactEmail": "Kontakt-E-Mail",
       "currenciesTitle": "Gewünschte Währungen",
       "currenciesDescription": "Wählen Sie die Währungen, die dieser Space für Bankeinzahlungen und Auszahlungen verwenden soll. Ihre Organisation wird einmalig von unserem Banking-Partner verifiziert.",
       "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
@@ -1136,7 +1143,9 @@
         "currenciesDescription": "Wählen Sie die Währungen aus, die Sie für Bankauszahlungen verwenden möchten. Sie werden einmalig von unserem Banking-Partner verifiziert."
       },
       "bypassEligibleHint": "Dies ist Ihre eigene verifizierte E-Mail-Adresse — kein zusätzlicher Bestätigungsschritt erforderlich.",
-      "confirmationRequiredHint": "Wir senden einen Bestätigungslink an diese Adresse, bevor sie aktiviert wird, da dies nicht Ihre eigene hinterlegte, verifizierte E-Mail-Adresse ist."
+      "confirmationRequiredHint": "Wir senden einen Bestätigungslink an diese Adresse, bevor sie aktiviert wird, da dies nicht Ihre eigene hinterlegte, verifizierte E-Mail-Adresse ist.",
+      "providerFieldsTitle": "Zusätzliche Verifizierungsdetails",
+      "providerFieldsHint": "Für die ausgewählten Währungen werden einige zusätzliche Angaben benötigt."
     },
     "corridors": {
       "provisioning": "Wird eingerichtet…",
@@ -1291,6 +1300,35 @@
       "description": "Wir haben einen Bestätigungslink an die von Ihnen eingegebene E-Mail-Adresse gesendet. Klicken Sie darauf, um mit der Einrichtung des Bankings fortzufahren — wir kontaktieren Bridge erst, wenn Sie bestätigt haben.",
       "resendCta": "Bestätigungs-E-Mail erneut senden",
       "resending": "Wird erneut gesendet…"
+    },
+    "onboardingFields": {
+      "contactEmail": "Kontakt-E-Mail",
+      "legalName": "Rechtlicher Name der Organisation",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "middleName": "Zweiter Vorname",
+      "phoneNumber": "Telefonnummer",
+      "dateOfBirth": "Geburtsdatum",
+      "addressLine1": "Adresszeile 1",
+      "addressLine2": "Adresszeile 2",
+      "suburb": "Vorort",
+      "postcode": "Postleitzahl",
+      "state": "Bundesland",
+      "country": "Land",
+      "companyType": {
+        "label": "Rechtsform",
+        "individual": "Privatperson",
+        "soleTrader": "Einzelunternehmer",
+        "privateCompany": "Private Kapitalgesellschaft",
+        "publicCompany": "Öffentliche Kapitalgesellschaft",
+        "trust": "Trust"
+      },
+      "registrationNumber": "Registrierungsnummer",
+      "companyBusinessName": "Eingetragener Firmenname"
+    },
+    "providerOnboarding": {
+      "title": "{currency} hinzufügen",
+      "description": "Bestätigen Sie Ihre Angaben, um die Verifizierung für diese Währung zu starten."
     }
   },
   "TreasuryTab": {
