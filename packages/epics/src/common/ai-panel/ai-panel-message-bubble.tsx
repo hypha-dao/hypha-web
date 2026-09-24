@@ -913,10 +913,7 @@ export function AiPanelMessageBubble({
       ) : (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden bg-transparent',
-            chrome === 'quiet'
-              ? 'border-0'
-              : 'rounded-none border border-foreground/15',
+            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-full border-0 bg-transparent',
             alignSingleLine ? 'mt-0' : 'mt-px',
           )}
         >
