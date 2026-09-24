@@ -8,19 +8,14 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
-  APP_CHROME_SUBTLE_SQUARE_RADIUS,
+  APP_CHROME_ICON_TRIGGER,
   useCanMutateInSpace,
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
   SPACE_ACCENT_FALLBACK as SELECTED_SPACE_ACCENT_FALLBACK,
 } from '@hypha-platform/epics';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@hypha-platform/ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -247,29 +242,24 @@ export function EcosystemNavigationMainPanel({
             <div className="flex items-center justify-between gap-3 border-b border-border/50 py-2.5">
               <div className="min-w-0">
                 <p
-                  className="truncate text-2 font-medium tracking-tight text-foreground"
+                  className="craft-page-title truncate text-4 font-medium"
                   title={selectedSpaceTitle}
                 >
                   {selectedSpaceTitle}
                 </p>
                 <p className="craft-meta truncate">{t('diagram.hint')}</p>
               </div>
-              <div className="flex shrink-0 items-center gap-0.5">
+              <div className="flex shrink-0 items-center gap-1">
                 {canVisitSpace && visitSpaceHref ? (
                   <Tooltip delayDuration={80}>
                     <TooltipTrigger asChild>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="icon"
-                        className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
+                      <Link
+                        href={visitSpaceHref}
+                        className={APP_CHROME_ICON_TRIGGER}
                         aria-label={t('visibleSpaces.visitSpace')}
                       >
-                        <Link href={visitSpaceHref}>
-                          <ArrowTopRightIcon />
-                        </Link>
-                      </Button>
+                        <ArrowTopRightIcon />
+                      </Link>
                     </TooltipTrigger>
                     <TooltipContent>
                       {t('visibleSpaces.visitSpace')}
@@ -279,18 +269,13 @@ export function EcosystemNavigationMainPanel({
                 {canAddSpace && addSpaceHref ? (
                   <Tooltip delayDuration={80}>
                     <TooltipTrigger asChild>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="icon"
-                        className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
+                      <Link
+                        href={addSpaceHref}
+                        className={APP_CHROME_ICON_TRIGGER}
                         aria-label={t('visibleSpaces.addSpace')}
                       >
-                        <Link href={addSpaceHref}>
-                          <PlusIcon />
-                        </Link>
-                      </Button>
+                        <PlusIcon />
+                      </Link>
                     </TooltipTrigger>
                     <TooltipContent>
                       {t('visibleSpaces.addSpace')}
