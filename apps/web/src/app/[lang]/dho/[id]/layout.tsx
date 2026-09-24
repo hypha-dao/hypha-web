@@ -139,7 +139,7 @@ export default async function DhoLayout({
                     lang,
                     daoSlug,
                   )}/select-settings-action`}
-                  variant="hero"
+                  variant="chrome"
                   className="me-3"
                 />
                 {web3SpaceId !== undefined && (

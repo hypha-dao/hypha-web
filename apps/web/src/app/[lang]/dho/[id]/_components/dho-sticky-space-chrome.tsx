@@ -5,13 +5,73 @@ import { createPortal } from 'react-dom';
 import {
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
+  getMainColumnScrollElement,
+  getMainColumnScrollY,
+  scrollMainColumnBy,
+  scrollMainColumnTo,
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-const STICKY_APPEAR_OFFSET_PX = 0;
 const STICKY_HYSTERESIS_PX = 16;
+/** Full cover stays visible, then the row settles. Inside the 1–2s entry window. */
+const SPACE_ENTRY_BANNER_HOLD_MS = 1500;
+const SCROLL_KEYS = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'PageUp',
+  'PageDown',
+  'Home',
+  'End',
+  ' ',
+]);
+
+function readMenuTopPx(): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(
+    '--menu-top-height',
+  );
+  const n = parseFloat(raw);
+  return Number.isFinite(n) && n > 0 ? n : 70;
+}
+
+function stickyRowHeightPx(el: HTMLElement | null): number {
+  if (!el) return 0;
+  const height = el.getBoundingClientRect().height;
+  return Number.isFinite(height) && height > 0 ? height : 0;
+}
+
+/**
+ * Viewport Y of the sticky row's bottom edge. The row is fixed under MenuTop, so
+ * engaging when the banner bottom reaches this line puts the row above the tab
+ * menu instead of on top of the tabs and section title.
+ */
+function stickyAppearLineY(menuTopPx: number, bar: HTMLElement | null): number {
+  return menuTopPx + stickyRowHeightPx(bar);
+}
+
+/** Pixels to scroll so the banner bottom meets the sticky row's bottom edge. */
+function bannerAlignDelta(
+  sentinel: HTMLElement | null,
+  bar: HTMLElement | null,
+): number | null {
+  if (!sentinel || !bar) return null;
+  const menuTop = readMenuTopPx();
+  const appearAt = stickyAppearLineY(menuTop, bar);
+  if (!(appearAt > menuTop)) return null;
+  return sentinel.getBoundingClientRect().bottom - appearAt;
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    target.isContentEditable
+  );
+}
 
 export type DhoStickySpaceChromeProps = {
   banner: React.ReactNode;
@@ -33,11 +93,7 @@ function useMenuTopOffsetPx(): number {
 
   React.useLayoutEffect(() => {
     const read = () => {
-      const raw = getComputedStyle(document.documentElement).getPropertyValue(
-        '--menu-top-height',
-      );
-      const n = parseFloat(raw);
-      const next = Number.isFinite(n) && n > 0 ? n : 70;
+      const next = readMenuTopPx();
       if (next !== pxRef.current) {
         pxRef.current = next;
         setPx(next);
@@ -88,8 +144,9 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
+  /** Bottom edge of the space cover. Sticky engages when this meets the row's bottom edge. */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
+  const stickyBarRef = React.useRef<HTMLDivElement>(null);
 
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
@@ -99,6 +156,7 @@ export function DhoStickySpaceChrome({
 
   React.useEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
+    const bar = stickyBarRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
@@ -115,8 +173,8 @@ export function DhoStickySpaceChrome({
       }
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
-      const appearAt = menuTopPx + STICKY_APPEAR_OFFSET_PX;
-      if (!next && bannerBottom <= appearAt - 1) next = true;
+      const appearAt = stickyAppearLineY(readMenuTopPx(), stickyBarRef.current);
+      if (!next && bannerBottom <= appearAt + 0.5) next = true;
       if (next && bannerBottom >= appearAt + STICKY_HYSTERESIS_PX) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
@@ -133,13 +191,131 @@ export function DhoStickySpaceChrome({
     mq.addEventListener('change', onScroll);
     const unsubscribeScroll = subscribeMainColumnScroll(onScroll);
     window.addEventListener('resize', onScroll);
+    const ro = bar ? new ResizeObserver(onScroll) : null;
+    if (bar) ro?.observe(bar);
     return () => {
       mq.removeEventListener('change', onScroll);
       unsubscribeScroll();
       window.removeEventListener('resize', onScroll);
+      ro?.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, [menuTopPx]);
+
+  React.useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)');
+    if (!desktop.matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let cancelled = false;
+    let userTookOver = false;
+    let animating = false;
+    let programmatic = false;
+    let settled = false;
+    let settleTimer = 0;
+    let scrollEndTarget: HTMLElement | Document | null = null;
+    let finish: (() => void) | null = null;
+
+    const releaseProgrammatic = () => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          programmatic = false;
+        });
+      });
+    };
+
+    // The scrollport is shared across routes. Land on the full cover first.
+    if (getMainColumnScrollY() > 2) {
+      programmatic = true;
+      scrollMainColumnTo(0, 'auto');
+      releaseProgrammatic();
+    }
+
+    const takeOver = () => {
+      userTookOver = true;
+      if (!animating) return;
+      animating = false;
+      programmatic = true;
+      scrollMainColumnTo(getMainColumnScrollY(), 'auto');
+      releaseProgrammatic();
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 1) return;
+      takeOver();
+    };
+    const onTouchMove = () => {
+      takeOver();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target) || !SCROLL_KEYS.has(event.key)) return;
+      takeOver();
+    };
+
+    const unsubscribeScroll = subscribeMainColumnScroll(() => {
+      if (cancelled || programmatic || animating || userTookOver) return;
+      if (getMainColumnScrollY() > 2) userTookOver = true;
+    });
+
+    const holdTimer = window.setTimeout(() => {
+      if (cancelled || userTookOver || !desktop.matches) return;
+      if (getMainColumnScrollY() > 2) return;
+
+      const delta = bannerAlignDelta(
+        bannerBottomSentinelRef.current,
+        stickyBarRef.current,
+      );
+      if (delta == null || delta <= 1) return;
+
+      animating = true;
+      scrollMainColumnBy(delta, 'smooth');
+
+      const scroller = getMainColumnScrollElement();
+      const endTarget: HTMLElement | Document = scroller ?? document;
+      scrollEndTarget = endTarget;
+
+      const onScrollEnd = () => {
+        if (settled) return;
+        settled = true;
+        endTarget.removeEventListener('scrollend', onScrollEnd);
+        window.clearTimeout(settleTimer);
+        animating = false;
+        if (cancelled || userTookOver) return;
+        const rest = bannerAlignDelta(
+          bannerBottomSentinelRef.current,
+          stickyBarRef.current,
+        );
+        if (rest == null || Math.abs(rest) <= 1) return;
+        programmatic = true;
+        scrollMainColumnBy(rest, 'auto');
+        releaseProgrammatic();
+      };
+      finish = onScrollEnd;
+
+      endTarget.addEventListener('scrollend', onScrollEnd);
+      settleTimer = window.setTimeout(onScrollEnd, 1200);
+    }, SPACE_ENTRY_BANNER_HOLD_MS);
+
+    window.addEventListener('wheel', onWheel, { passive: true, capture: true });
+    window.addEventListener('touchmove', onTouchMove, {
+      passive: true,
+      capture: true,
+    });
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(holdTimer);
+      window.clearTimeout(settleTimer);
+      if (scrollEndTarget && finish) {
+        scrollEndTarget.removeEventListener('scrollend', finish);
+      }
+      unsubscribeScroll();
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      window.removeEventListener('touchmove', onTouchMove, { capture: true });
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+    };
+  }, []);
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
@@ -148,6 +324,7 @@ export function DhoStickySpaceChrome({
   return (
     <>
       <div
+        ref={stickyBarRef}
         className={cn(
           /*
            * Use live panel inset vars (non-animated) so sticky chrome stays physically attached

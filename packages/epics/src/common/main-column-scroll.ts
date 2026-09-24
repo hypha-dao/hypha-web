@@ -78,6 +78,35 @@ export function getMainColumnScrollY(): number {
   return readScrollY();
 }
 
+/** Scrollport for the main column, or null when the window scrolls. */
+export function getMainColumnScrollElement(): HTMLElement | null {
+  return scrollRoot;
+}
+
+export function scrollMainColumnBy(
+  deltaY: number,
+  behavior: ScrollBehavior = 'auto',
+): void {
+  if (typeof window === 'undefined') return;
+  if (scrollRoot) {
+    scrollRoot.scrollBy({ top: deltaY, behavior });
+    return;
+  }
+  window.scrollBy({ top: deltaY, behavior });
+}
+
+export function scrollMainColumnTo(
+  top: number,
+  behavior: ScrollBehavior = 'auto',
+): void {
+  if (typeof window === 'undefined') return;
+  if (scrollRoot) {
+    scrollRoot.scrollTo({ top, behavior });
+    return;
+  }
+  window.scrollTo({ top, behavior });
+}
+
 export function useMainColumnScrollY(): number {
   return useSyncExternalStore(
     subscribeMainColumnScroll,
