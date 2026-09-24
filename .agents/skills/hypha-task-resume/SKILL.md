@@ -11,22 +11,30 @@ Resume work on an existing Hypha ticket in a new Cursor session. This is the ses
 
 | Repo | Role |
 |------|------|
-| `../hypha-context` | Ticket artifacts — spec, decisions, activity-log, implementation-plan |
+| `hypha-context` (path from satellite) | Ticket artifacts — spec, decisions, activity-log, implementation-plan |
 | `hypha-web` (this repo) | Code changes |
-| `.hypha-context.local/` (this repo) | Satellite — active spec copy, workflow pointers |
+| `.hypha-context.local/` (this repo) | Satellite — who this developer is, active spec copy, workflow pointers |
+
+**Resolve the developer first (never hardcode a member path):**
+1. Read `.hypha-context.local/pointers.md` → `hypha_context_root`, `member_progress`, `activity_log_path`.
+2. Read `.hypha-context.local/personal.md` → developer id, review mode, decision posture.
+3. Then read `{hypha_context_root}/AGENTS.local.md` and `{member_progress}/AGENTS.local.md`.
+4. If the satellite is missing: ask which member folder to use. Do **not** fall back to another developer's path.
+
+Write only under `member_progress`. Never write to another member's folder.
 
 ## Steps
 
 ### 1. Sync context
-Check that `../hypha-context` is on `main` and up to date. If behind origin, offer to pull (don't force if there are local changes).
+Check that `{hypha_context_root}` is on `main` and up to date. If behind origin, offer to pull (don't force if there are local changes).
 
 ### 2. Load developer config
-Read `../hypha-context/progress/members/gerroza/AGENTS.local.md` for review mode, decision posture, engagement profile, verbosity.
+Read `{member_progress}/AGENTS.local.md` for review mode, decision posture, engagement profile, verbosity.
 
 ### 3. Load the ticket
 Ask for the ticket number/slug if not provided. Then read:
-- `../hypha-context/progress/members/gerroza/tickets/<id>-<slug>/spec.md` — goal, acceptance criteria, Status header, SDD phase, Last touched
-- Last entry in `../hypha-context/progress/members/gerroza/activity-log.md` — the watermark
+- `{member_progress}/tickets/<id>-<slug>/spec.md` — goal, acceptance criteria, Status header, SDD phase, Last touched
+- Last entry in `{activity_log_path}` — the watermark
 - `decisions.md` (if present) — what's already been decided
 - `implementation-plan.md` (if present and Phase B is active or upcoming)
 - `analysis.md` (if present) — open questions still in play
@@ -61,4 +69,4 @@ If the next step is clear and the developer said "let's continue", start on it. 
 
 ---
 
-**Canonical procedure:** `../hypha-context/workflow/task-resume.md`
+**Canonical procedure:** `{hypha_context_root}/workflow/task-resume.md`
