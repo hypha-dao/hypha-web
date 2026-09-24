@@ -88,7 +88,6 @@ export function SignalViewControls({
       <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[14px]">
         <Checkbox
           id="hideArchivedSignalsCheckbox"
-          className="border-accent-8/80 data-[state=checked]:border-accent-9 data-[state=checked]:bg-accent-9 data-[state=checked]:text-accent-contrast focus-visible:ring-accent-8"
           checked={hideArchived}
           onCheckedChange={(checked) => onHideArchivedChange(checked === true)}
         />
