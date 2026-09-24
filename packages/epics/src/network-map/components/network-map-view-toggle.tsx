@@ -2,7 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { LayoutList, Map, PanelsTopLeft } from 'lucide-react';
+import { LayoutList, Map } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   segmentedListClass,
@@ -10,6 +10,23 @@ import {
 } from '../lib/segmented-control-styles';
 
 export type NetworkMapView = 'overview' | 'list' | 'map';
+
+/** Map rectangle sitting above list rules — not a panels glyph. */
+function MapOverListIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 14 14" className={className} fill="none" aria-hidden>
+      <rect
+        x="1"
+        y="1"
+        width="12"
+        height="6.5"
+        stroke="currentColor"
+        strokeWidth="1.25"
+      />
+      <path d="M1 10.25h12M1 12.5h8" stroke="currentColor" strokeWidth="1.25" />
+    </svg>
+  );
+}
 
 type NetworkMapViewToggleProps = {
   value: NetworkMapView;
@@ -40,7 +57,7 @@ export function NetworkMapViewToggle({
           variant="switch"
           className={segmentedTriggerClass}
         >
-          <PanelsTopLeft className="size-3.5 shrink-0" aria-hidden />
+          <MapOverListIcon className="size-3.5 shrink-0" />
           {t('overviewView')}
         </TabsTrigger>
         <TabsTrigger
