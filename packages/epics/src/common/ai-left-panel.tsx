@@ -2933,12 +2933,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     return (
       <>
-        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border bg-page-background dark:bg-background-2 px-4 py-2">
+        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border bg-background-2 dark:bg-background-2 px-4 py-2">
           <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center">
             {triggerButton}
           </div>
         </SidebarHeader>
-        <SidebarContent className="relative overflow-visible bg-page-background dark:bg-background-2">
+        <SidebarContent className="relative overflow-visible bg-background-2 dark:bg-background-2">
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
               <SidebarMenu className="gap-2">
