@@ -153,7 +153,11 @@ function membershipColumnClass(index: number, count: number): string {
  * and AI agents. Avatars sit under those labels. Trailing controls span the strip.
  */
 const MEMBERSHIP_ROW_CLASS =
-  'grid min-w-0 grid-cols-[fit-content(14rem)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] overflow-x-auto border-b border-border/50 py-2.5';
+  'grid min-w-0 overflow-x-auto border-b border-border/50 py-2.5';
+
+const MEMBERSHIP_ROW_COLUMNS = {
+  gridTemplateColumns: 'fit-content(14rem) repeat(3, minmax(0, 1fr)) auto',
+} as const;
 
 export function EcosystemMembershipModules({
   spaceSlug,
@@ -240,6 +244,7 @@ export function EcosystemMembershipModules({
   return (
     <div
       className={MEMBERSHIP_ROW_CLASS}
+      style={MEMBERSHIP_ROW_COLUMNS}
       role={isLoading ? 'status' : undefined}
       aria-live={isLoading ? 'polite' : undefined}
     >
