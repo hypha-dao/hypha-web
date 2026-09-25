@@ -13,7 +13,6 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
-  SPACE_ACCENT_FALLBACK as SELECTED_SPACE_ACCENT_FALLBACK,
 } from '@hypha-platform/epics';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
@@ -28,7 +27,6 @@ import {
 } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
-import { sampleAccentHex } from './space-accent-utils';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
@@ -94,10 +92,6 @@ export function EcosystemNavigationMainPanel({
   const format = useFormatter();
   const pathname = usePathname();
   const diagramStageRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState('nested-spaces');
-  const [rootSpaceAccent, setRootSpaceAccent] = useState(
-    SELECTED_SPACE_ACCENT_FALLBACK,
-  );
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -213,39 +207,89 @@ export function EcosystemNavigationMainPanel({
   const canVisitSpace = Boolean(currentSpace && visitSpaceHref);
   const addSpaceHref =
     canAddSpace && visitSpaceHref ? `${visitSpaceHref}/space/create` : null;
-  const rootSpaceRecord = useMemo(() => {
-    if (!currentSpace) return null;
-    const spacesWithCurrent = nonArchivedSpaces.some(
-      (s) => s.id === currentSpace.id,
-    )
-      ? nonArchivedSpaces
-      : [...nonArchivedSpaces, currentSpace];
-    return findRootSpace(currentSpace, spacesWithCurrent);
-  }, [currentSpace, nonArchivedSpaces]);
-  useEffect(() => {
-    let cancelled = false;
-    setRootSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
-    void (async () => {
-      const [logoAccent, leadAccent] = await Promise.all([
-        sampleAccentHex(rootSpaceRecord?.logoUrl),
-        sampleAccentHex(rootSpaceRecord?.leadImage),
-      ]);
-      if (cancelled) return;
-      setRootSpaceAccent(
-        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [rootSpaceRecord?.logoUrl, rootSpaceRecord?.leadImage]);
+  const ecosystemHeader = (
+    <header className="craft-page-header">
+      <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
+        <span>{t('ecosystem')}</span>
+        {isLoading ? null : (
+          <span className="text-3 font-normal text-muted-foreground">
+            {format.number(ecosystemSpaceCount)}
+          </span>
+        )}
+      </h1>
+    </header>
+  );
 
-  const tabs = useMemo(
-    () => [
-      {
-        value: 'nested-spaces',
-        label: t('tabs.nestedSpaces'),
-        content: (
+  // Size the stage to the visible scrollport. Stretching it to a footer below
+  // the fold centres the orbit in that tall box, so the screen is empty paper.
+  useLayoutEffect(() => {
+    const stage = diagramStageRef.current;
+    if (!stage || isLoading) return;
+
+    let scrollParent: HTMLElement | null = stage.parentElement;
+    while (scrollParent) {
+      const overflow = getComputedStyle(scrollParent).overflowY;
+      if (overflow === 'auto' || overflow === 'scroll') break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (!scrollParent) return;
+
+    const apply = () => {
+      const current = diagramStageRef.current;
+      if (!current || scrollParent == null) return;
+
+      const stageRect = current.getBoundingClientRect();
+      const scrollRect = scrollParent.getBoundingClientRect();
+      if (stageRect.width <= 0) return;
+
+      const footer = scrollParent.lastElementChild;
+      let limit = scrollRect.bottom;
+      if (
+        footer instanceof HTMLElement &&
+        !footer.contains(current) &&
+        footer.getBoundingClientRect().height > 0
+      ) {
+        const footerTop = footer.getBoundingClientRect().top;
+        if (footerTop > stageRect.top) {
+          limit = Math.min(limit, footerTop);
+        }
+      }
+
+      const restGap = 48;
+      const visibleHeight = Math.round(limit - stageRect.top - restGap);
+      const cap = Math.max(320, Math.round(scrollRect.height - restGap));
+      const next = Math.max(320, Math.min(visibleHeight, cap));
+      if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
+      current.style.height = `${next}px`;
+    };
+
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(scrollParent);
+    if (stage.parentElement) observer.observe(stage.parentElement);
+    window.addEventListener('resize', apply);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', apply);
+    };
+  }, [hierarchyData, isLoading]);
+
+  return (
+    <section className="flex w-full flex-col gap-4 py-4">
+      {isLoading ? (
+        <>
+          {ecosystemHeader}
+          <div
+            className="flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="craft-empty-mark" aria-hidden />
+            <p className="craft-meta">{t('diagram.loading')}</p>
+          </div>
+        </>
+      ) : (
+        <EcosystemNavigationShell header={ecosystemHeader}>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <EcosystemMembershipModules
               spaceSlug={selectedSpaceSlug}
@@ -289,13 +333,12 @@ export function EcosystemNavigationMainPanel({
             />
             <div
               ref={diagramStageRef}
-              className="relative min-h-[20rem] w-full shrink-0 bg-transparent"
+              className="relative min-h-[20rem] w-full shrink-0"
             >
               {hierarchyData ? (
                 <SpaceVisualization
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}
-                  rootAccentHex={rootSpaceAccent}
                   enableHoverActions={false}
                   showNodeLabels
                   ariaLabel={t('diagram.ariaLabel')}
@@ -310,131 +353,7 @@ export function EcosystemNavigationMainPanel({
               )}
             </div>
           </div>
-        ),
-      },
-      {
-        value: 'space-to-space',
-        label: t('tabs.spaceToSpace'),
-        content: (
-          <div className="flex min-h-[20rem] flex-1 flex-col items-center justify-center gap-3 px-4 py-8">
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta text-center">
-              {t('comingSoon.spaceToSpaceVisualization')}
-            </p>
-          </div>
-        ),
-      },
-      {
-        value: 'values-flows',
-        label: t('tabs.valuesFlows'),
-        content: (
-          <div className="flex min-h-[20rem] flex-1 flex-col items-center justify-center gap-3 px-4 py-8">
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta text-center">
-              {t('comingSoon.valuesFlowsVisualization')}
-            </p>
-          </div>
-        ),
-      },
-    ],
-    [
-      addSpaceHref,
-      canAddSpace,
-      canVisitSpace,
-      currentSpace?.id,
-      handleVisibleSpacesChange,
-      hierarchyData,
-      rootSpaceAccent,
-      selectedSpaceSlug,
-      selectedSpaceTitle,
-      t,
-      visitSpaceHref,
-    ],
-  );
-
-  // The page footer is pinned under a short column (`mb-auto`), so the orbit
-  // drawing sat at the top of a tall empty canvas. Grow the stage until only
-  // the designed padding remains above the footer; the square viewBox then
-  // meets and centres inside that stage.
-  useLayoutEffect(() => {
-    const stage = diagramStageRef.current;
-    if (!stage || isLoading || activeTab !== 'nested-spaces') return;
-
-    let scrollParent: HTMLElement | null = stage.parentElement;
-    while (scrollParent) {
-      const overflow = getComputedStyle(scrollParent).overflowY;
-      if (overflow === 'auto' || overflow === 'scroll') break;
-      scrollParent = scrollParent.parentElement;
-    }
-    if (!scrollParent) return;
-
-    const apply = () => {
-      const current = diagramStageRef.current;
-      if (!current || scrollParent == null) return;
-      const footer = scrollParent.lastElementChild;
-      if (!(footer instanceof HTMLElement) || footer.contains(current)) return;
-
-      const stageRect = current.getBoundingClientRect();
-      const footerRect = footer.getBoundingClientRect();
-      if (stageRect.height <= 0) return;
-
-      const footerLimit =
-        footerRect.height > 0
-          ? footerRect.top
-          : scrollParent.getBoundingClientRect().bottom;
-      const restGap = 48;
-      const gap = footerLimit - stageRect.bottom;
-      const next = Math.max(320, Math.round(stageRect.height + gap - restGap));
-      if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
-      current.style.height = `${next}px`;
-    };
-
-    apply();
-    const observer = new ResizeObserver(apply);
-    observer.observe(scrollParent);
-    if (stage.parentElement) observer.observe(stage.parentElement);
-    window.addEventListener('resize', apply);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', apply);
-    };
-  }, [activeTab, hierarchyData, isLoading]);
-
-  return (
-    <section className="flex w-full flex-col gap-4 py-4">
-      {isLoading ? (
-        <>
-          <header className="craft-page-header">
-            <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-              <span>{t('ecosystem')}</span>
-            </h1>
-          </header>
-          <div
-            className="flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
-            role="status"
-            aria-live="polite"
-          >
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta">{t('diagram.loading')}</p>
-          </div>
-        </>
-      ) : (
-        <EcosystemNavigationShell
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          tabs={tabs}
-          beforeTabsContent={
-            <header className="craft-page-header">
-              <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-                <span>{t('ecosystem')}</span>
-                <span className="text-3 font-normal text-muted-foreground">
-                  {format.number(ecosystemSpaceCount)}
-                </span>
-              </h1>
-            </header>
-          }
-          visualizationClassName="min-h-0"
-        />
+        </EcosystemNavigationShell>
       )}
     </section>
   );
