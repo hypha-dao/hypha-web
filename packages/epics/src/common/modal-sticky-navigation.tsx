@@ -114,7 +114,7 @@ export function ModalStickyNavigation({
   return (
     <div
       className={cn(
-        'sticky top-0 z-[5] -mx-4 mb-4 border-b border-border bg-background-2 lg:-mx-7',
+        'sticky top-0 z-[5] -mx-4 mb-4 border-b border-border bg-page-background lg:-mx-7 dark:bg-background-2',
         className,
       )}
     >
@@ -126,7 +126,7 @@ export function ModalStickyNavigation({
       >
         {contextTitle ? (
           <h2
-            className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground"
+            className="min-w-0 flex-1 truncate [font-family:var(--font-family-heading)] text-base font-semibold leading-tight tracking-tight text-foreground"
             id="modal-aside-context-title"
           >
             {contextTitle}

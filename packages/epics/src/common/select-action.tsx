@@ -77,11 +77,11 @@ export const SelectAction = ({
   );
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="flex w-full flex-col gap-6 font-sans">
       {showTitle ? (
         <header className="flex flex-col gap-2">
           <Skeleton width="100px" height="24px" loading={isLoading}>
-            <span className="text-4 font-semibold tracking-tight text-foreground">
+            <span className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-tight text-foreground">
               {title}
             </span>
           </Skeleton>
@@ -91,9 +91,9 @@ export const SelectAction = ({
         width="100%"
         height="72px"
         loading={isLoading}
-        className="rounded-xl"
+        className="rounded-none"
       >
-        <p className="w-full min-w-0 text-2 leading-relaxed text-muted-foreground">
+        <p className="w-full min-w-0 font-sans text-2 leading-relaxed text-muted-foreground">
           {content}
         </p>
       </Skeleton>
@@ -105,7 +105,8 @@ export const SelectAction = ({
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          leftIcon={<Search className="text-accent-9" size="16px" />}
+          className="h-10 rounded-none border-border bg-background-2 shadow-none focus-visible:border-foreground focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-background-5"
+          leftIcon={<Search className="text-muted-foreground" size="16px" />}
         />
       ) : null}
       <Separator />
@@ -117,7 +118,9 @@ export const SelectAction = ({
               className="@container/select-action flex w-full flex-col gap-3"
             >
               {group && (
-                <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
+                <h3 className="[font-family:var(--font-family-heading)] text-3 font-medium text-foreground">
+                  {group}
+                </h3>
               )}
               {/* Container query: viewport md on iPad ≠ overlay width when panels are open */}
               <div className="grid w-full grid-cols-1 gap-3 @[36rem]/select-action:grid-cols-2">
@@ -140,12 +143,12 @@ export const SelectAction = ({
                   const card = (
                     <Card
                       className={clsx(
-                        /* Full card tiles — not dense left-flush list rows */
-                        'craft-card-interactive group flex h-full w-full items-center gap-4 p-5 md:p-6',
+                        /* Full card tiles — not dense left-flush list rows.
+                           Light rest is white (bg-background-2). Dark rest is
+                           background-5 so cards lift off the #121212 sheet.
+                           Never set bg-background-5 without the dark: variant. */
+                        'craft-card-interactive group flex h-full w-full items-center gap-4 border border-border bg-background-2 p-5 shadow-none dark:bg-background-5 md:p-6',
                         !action.disabled && 'cursor-pointer',
-                        /* Inset ring — no offset so focus/selection does not optically shift content */
-                        !action.disabled &&
-                          'focus-within:border-accent-9 focus-within:ring-1 focus-within:ring-inset focus-within:ring-accent-9/45',
                         {
                           'pointer-events-none cursor-not-allowed opacity-90':
                             action.disabled,
@@ -164,11 +167,11 @@ export const SelectAction = ({
                       >
                         {action.icon}
                       </div>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
+                      <div className="flex min-w-0 flex-1 flex-col gap-1 font-sans">
+                        <span className="flex flex-wrap items-center gap-2 [font-family:var(--font-family-heading)] text-2 font-semibold leading-snug text-foreground">
                           {action.title}
                           {comingSoon ? (
-                            <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <span className="rounded-none border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               {tCommon('comingSoonBadge')}
                             </span>
                           ) : null}
@@ -188,7 +191,7 @@ export const SelectAction = ({
                       onClick={handleClick}
                       key={action.title}
                       aria-disabled={action.disabled}
-                      className="block h-full w-full min-w-0"
+                      className="block h-full w-full min-w-0 rounded-none outline-none focus-visible:outline-none"
                     >
                       {card}
                     </Link>
@@ -202,7 +205,7 @@ export const SelectAction = ({
             </div>
           ))
         ) : (
-          <div className="rounded-lg border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
+          <div className="rounded-none border border-border bg-background-2 p-5 font-sans text-sm text-muted-foreground shadow-none dark:bg-background-5">
             {noResultsLabel || tCommon('noMenusFound')}
           </div>
         )}
