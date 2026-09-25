@@ -1603,13 +1603,15 @@ export function HumanChatPanelChatBar({
     };
   }, []);
 
+  // Theme `--spacing-9` is 64px, so `size-9` overflows the 320px panel and
+  // paints the send icon on top of the waveform. Square controls are 36px.
   const iconButtonClass =
-    'flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+    'flex size-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
   const disabledIconButtonClass = `${iconButtonClass} cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground active:bg-transparent`;
 
   /** Recording / dictation “stop” — calm broadcast UI (no harsh outline-on-grey). */
   const recordingStopButtonClass =
-    'flex size-9 shrink-0 items-center justify-center rounded-none text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+    'flex size-[36px] shrink-0 items-center justify-center rounded-none text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   const fmtBtn =
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
@@ -2106,8 +2108,8 @@ export function HumanChatPanelChatBar({
               {voiceError ?? attachError}
             </p>
           )}
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-0.5">
+          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2">
+            <div className="flex shrink-0 items-center gap-0.5">
               {canAttachDrafts ? (
                 <DropdownMenu
                   modal={isMobile}
@@ -2304,7 +2306,7 @@ export function HumanChatPanelChatBar({
               onClick={sendMessage}
               disabled={!canSend}
               className={cn(
-                'flex size-9 shrink-0 items-center justify-center rounded-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'flex size-[36px] shrink-0 items-center justify-center rounded-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 canSend
                   ? 'text-foreground hover:bg-foreground/5'
                   : 'cursor-not-allowed text-muted-foreground/50',
