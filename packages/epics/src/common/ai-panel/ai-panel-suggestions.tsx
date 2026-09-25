@@ -60,9 +60,8 @@ export function AiPanelSuggestions({
           type="button"
           onClick={() => onSelect(item.prompt)}
           className={cn(
-            'rounded-none border border-border/70 bg-background-2 px-3 py-2.5 text-left text-xs text-muted-foreground',
-            'dark:bg-background-5 dark:hover:bg-background-5',
-            'transition-colors duration-200 hover:border-foreground/30 hover:text-foreground',
+            'craft-card-interactive px-3 py-2.5 text-left text-xs text-muted-foreground',
+            'dark:bg-background-5 hover:text-foreground',
           )}
         >
           {item.prompt}
