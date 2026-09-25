@@ -26,8 +26,20 @@ import { cn } from '@hypha-platform/ui-utils';
 const STICKY_HYSTERESIS_PX = 16;
 /** Full cover stays visible, then the row settles. Inside the 1–2s entry window. */
 const SPACE_ENTRY_BANNER_HOLD_MS = 1500;
-/** Controlled settle ease — browser `smooth` was ~300–500ms and felt like a snap. */
-const SPACE_ENTRY_SETTLE_MS = 900;
+/**
+ * Entry settle. Slightly slower than the 900ms cubic, which rushed through
+ * the middle and then snapped. Screen changes do not use this duration.
+ */
+const SPACE_ENTRY_SETTLE_MS = 1100;
+/** In-space return from the cover. Shorter than the entry intro. */
+const SPACE_SCREEN_SETTLE_MIN_MS = 280;
+const SPACE_SCREEN_SETTLE_MAX_MS = 520;
+/**
+ * Last pixels of the cover. Short on purpose: the row should finish fading as
+ * it locks under the menu, not while the cover is still mostly on screen.
+ */
+const COVER_FADE_PX = 24;
+const RESET_TO_TOP_SLACK_PX = 8;
 const SCROLL_KEYS = new Set([
   'ArrowUp',
   'ArrowDown',
@@ -116,6 +128,59 @@ function bannerAlignDelta(
   const appearAt = stickyAppearLineY(menuTop, bar);
   if (!(appearAt > menuTop)) return null;
   return sentinel.getBoundingClientRect().bottom - appearAt;
+}
+
+function screenSettleDurationMs(distancePx: number): number {
+  return Math.round(
+    Math.min(
+      SPACE_SCREEN_SETTLE_MAX_MS,
+      Math.max(SPACE_SCREEN_SETTLE_MIN_MS, Math.abs(distancePx) * 1.45),
+    ),
+  );
+}
+
+/** 0 = cover fully open, 1 = banner flush under the menu. */
+function coverFadeAmount(
+  deltaPx: number,
+  reduceMotion: boolean,
+  stuck: boolean,
+): number {
+  if (reduceMotion) return stuck ? 1 : 0;
+  if (deltaPx <= 0) return 1;
+  if (deltaPx >= COVER_FADE_PX) return 0;
+  const t = 1 - deltaPx / COVER_FADE_PX;
+  return t * t * (3 - 2 * t);
+}
+
+type BannerScrollPlan =
+  | { kind: 'keep-freeze' }
+  | { kind: 'pin'; top: number }
+  | { kind: 'ease'; top: number };
+
+/**
+ * In-space screen change. A clamp to 0 while the banner was already settled
+ * is pinned back in place — it must not play the cover. A cover the member
+ * actually has open eases straight to the banner and does not pass through 0.
+ */
+function planInSpaceBannerScroll(input: {
+  frozen: boolean;
+  current: number;
+  rememberedTop: number;
+  headerWasInView: boolean;
+  liveTarget: number;
+  reduceMotion: boolean;
+}): BannerScrollPlan {
+  if (input.frozen) return { kind: 'keep-freeze' };
+  const resetToTop =
+    !input.headerWasInView &&
+    input.rememberedTop > STICKY_HYSTERESIS_PX &&
+    input.current + RESET_TO_TOP_SLACK_PX < input.rememberedTop;
+  if (resetToTop) return { kind: 'pin', top: Math.max(0, input.rememberedTop) };
+  const target = Math.max(0, input.liveTarget);
+  if (input.reduceMotion || Math.abs(target - input.current) <= 1) {
+    return { kind: 'pin', top: target };
+  }
+  return { kind: 'ease', top: target };
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -219,13 +284,23 @@ export function DhoStickySpaceChrome({
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
     const bar = stickyBarRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
+    const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
     let raf = 0;
+
+    const applyFade = (deltaPx: number, stuckNow: boolean) => {
+      const barEl = stickyBarRef.current;
+      if (!barEl) return;
+      const fade = mq.matches
+        ? coverFadeAmount(deltaPx, reduceMq.matches, stuckNow)
+        : 0;
+      barEl.style.opacity = fade.toFixed(3);
+    };
 
     const tick = () => {
       raf = 0;
@@ -234,6 +309,7 @@ export function DhoStickySpaceChrome({
           stuckRef.current = false;
           setStuck(false);
         }
+        applyFade(COVER_FADE_PX, false);
         return;
       }
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
@@ -241,6 +317,7 @@ export function DhoStickySpaceChrome({
       const appearAt = stickyAppearLineY(readMenuTopPx(), stickyBarRef.current);
       if (!next && bannerBottom <= appearAt + 0.5) next = true;
       if (next && bannerBottom >= appearAt + STICKY_HYSTERESIS_PX) next = false;
+      applyFade(bannerBottom - appearAt, next);
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -326,6 +403,89 @@ export function DhoStickySpaceChrome({
     [releaseFreezeWhenStable],
   );
 
+  const settleCancelRef = React.useRef<(() => void) | null>(null);
+  const cancelSettleMotion = React.useCallback(() => {
+    settleCancelRef.current?.();
+    settleCancelRef.current = null;
+  }, []);
+
+  const readBannerDelta = React.useCallback(() => {
+    return bannerAlignDelta(
+      bannerBottomSentinelRef.current,
+      stickyBarRef.current,
+    );
+  }, []);
+
+  const rememberBanner = React.useCallback(
+    (top: number) => {
+      if (!spaceSlug) return;
+      const mem = spaceEntryMemory(spaceSlug);
+      mem.introduced = true;
+      mem.headerInView = false;
+      mem.scrollTop = Math.max(0, top);
+    },
+    [spaceSlug],
+  );
+
+  /** Instant pin. Used when already on the banner, on a clamp back to 0, and for reduced motion. */
+  const pinBanner = React.useCallback(
+    (top: number) => {
+      cancelSettleMotion();
+      cancelActiveIntro?.();
+      const safe = Math.max(0, top);
+      rememberBanner(safe);
+      pinMainColumnAt(safe);
+    },
+    [cancelSettleMotion, pinMainColumnAt, rememberBanner],
+  );
+
+  /**
+   * Cover is actually on screen. Ease straight to the banner. The freeze
+   * follows the frames so a loading swap cannot pull the column through 0.
+   */
+  const easeBanner = React.useCallback(
+    (top: number) => {
+      cancelSettleMotion();
+      cancelActiveIntro?.();
+      const safe = Math.max(0, top);
+      rememberBanner(safe);
+      const from = getMainColumnScrollY();
+      const delta = safe - from;
+      if (Math.abs(delta) <= 1) {
+        pinMainColumnAt(safe);
+        return;
+      }
+      holdMainColumnScrollHeight(safe);
+      freezeGenRef.current += 1;
+      const gen = freezeGenRef.current;
+      freezeMainColumnScrollAt(Math.max(0, from));
+      settleCancelRef.current = animateMainColumnScrollBy(
+        delta,
+        screenSettleDurationMs(delta),
+        () => {
+          settleCancelRef.current = null;
+          if (gen !== freezeGenRef.current) return;
+          const rest = readBannerDelta();
+          const y = getMainColumnScrollY();
+          const finalTop = Math.max(0, rest == null ? y : y + rest);
+          rememberBanner(finalTop);
+          pinMainColumnAt(finalTop);
+        },
+        { followFreeze: true, readRemainingDelta: readBannerDelta },
+      );
+    },
+    [cancelSettleMotion, pinMainColumnAt, readBannerDelta, rememberBanner],
+  );
+
+  const applyBannerPlan = React.useCallback(
+    (plan: BannerScrollPlan) => {
+      if (plan.kind === 'keep-freeze') return;
+      if (plan.kind === 'ease') easeBanner(plan.top);
+      else pinBanner(plan.top);
+    },
+    [easeBanner, pinBanner],
+  );
+
   /** Banner offset to pin. If the cover is on screen, this is the banner — never 0. */
   const bannerPinTop = React.useCallback((): number => {
     const delta = bannerAlignDelta(
@@ -342,10 +502,11 @@ export function DhoStickySpaceChrome({
   React.useEffect(() => {
     return () => {
       freezeGenRef.current += 1;
+      cancelSettleMotion();
       clearMainColumnScrollFreeze();
       releaseMainColumnScrollHeightHold();
     };
-  }, []);
+  }, [cancelSettleMotion]);
 
   React.useEffect(() => {
     if (!spaceSlug || !pathname) return;
@@ -424,8 +585,13 @@ export function DhoStickySpaceChrome({
     }
 
     // First entry only: show the full cover, then ease into the sticky row.
-    // Re-runs (strict mode, remount) must not jump back to the top.
-    if (firstStart && getMainColumnScrollY() > 2) {
+    // Re-runs (strict mode, remount) must not jump back to the top. A pin from
+    // an in-space screen change must not be cleared either.
+    if (
+      firstStart &&
+      !isMainColumnScrollFrozen() &&
+      getMainColumnScrollY() > 2
+    ) {
       programmatic = true;
       scrollMainColumnTo(0, 'auto');
       releaseProgrammatic();
@@ -493,19 +659,11 @@ export function DhoStickySpaceChrome({
           cancelAnim = null;
           releaseProgrammatic();
           if (cancelled || userTookOver) return;
-          const rest = bannerAlignDelta(
-            bannerBottomSentinelRef.current,
-            stickyBarRef.current,
-          );
-          if (rest != null && Math.abs(rest) > 1) {
-            programmatic = true;
-            scrollMainColumnBy(rest, 'auto');
-            releaseProgrammatic();
-          }
           mem.introduced = true;
           mem.headerInView = false;
           mem.scrollTop = getMainColumnScrollY();
         },
+        { readRemainingDelta: readBannerDelta },
       );
     }, Math.max(0, SPACE_ENTRY_BANNER_HOLD_MS - elapsed));
 
@@ -532,9 +690,22 @@ export function DhoStickySpaceChrome({
       window.removeEventListener('touchmove', onTouchMove, { capture: true });
       window.removeEventListener('keydown', onKeyDown, { capture: true });
     };
-  }, [pathname, readHeaderInView, spaceSlug]);
+  }, [pathname, readBannerDelta, readHeaderInView, spaceSlug]);
 
   const prevPathRef = React.useRef<string | null>(null);
+
+  // Before the first paint of a visit, sit on the cover. Otherwise the shared
+  // scrollport can paint the previous page's offset and the settle looks like
+  // two motions.
+  React.useLayoutEffect(() => {
+    if (!spaceSlug) return;
+    const mem = spaceEntryMemory(spaceSlug);
+    if (mem.startPath || mem.introduced) return;
+    if (isMainColumnScrollFrozen()) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia('(max-width: 767px)').matches) return;
+    if (getMainColumnScrollY() > 2) scrollMainColumnTo(0, 'auto');
+  }, [spaceSlug]);
 
   React.useLayoutEffect(() => {
     const prev = prevPathRef.current;
@@ -544,8 +715,18 @@ export function DhoStickySpaceChrome({
     const prevSpace = spaceSlugFromPath(prev);
     if (!prevSpace || prevSpace !== spaceSlug) {
       freezeGenRef.current += 1;
+      cancelSettleMotion();
       clearMainColumnScrollFreeze();
       releaseMainColumnScrollHeightHold();
+      // New space: first paint is the cover. Reduced motion jumps to the
+      // banner from the entry effect instead of flashing the cover.
+      if (
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        !window.matchMedia('(max-width: 767px)').matches &&
+        getMainColumnScrollY() > 2
+      ) {
+        scrollMainColumnTo(0, 'auto');
+      }
       return;
     }
 
@@ -555,23 +736,31 @@ export function DhoStickySpaceChrome({
     const mem = spaceEntryMemory(spaceSlug);
     mem.introduced = true;
 
-    // A click already reserved height and pinned the banner. Keep that pin
-    // through this commit — do not start a second watcher.
-    if (isMainColumnScrollFrozen()) {
-      holdMainColumnScrollHeight(mem.scrollTop);
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    // Trust memory for "was the cover open?". `current` may already be 0 if
+    // Next scrolled or the loading skeleton clamped before this layout effect.
+    const plan = planInSpaceBannerScroll({
+      frozen: isMainColumnScrollFrozen(),
+      current: getMainColumnScrollY(),
+      rememberedTop: mem.scrollTop,
+      headerWasInView: mem.headerInView,
+      liveTarget: bannerPinTop(),
+      reduceMotion,
+    });
+    if (plan.kind === 'keep-freeze') {
+      // A click already reserved height and started the pin or the short ease.
+      holdMainColumnScrollHeight(
+        Math.max(mem.scrollTop, getMainColumnScrollY()),
+      );
       queueMicrotask(() => {
         reapplyMainColumnScrollFreeze();
       });
       return;
     }
-
-    // History navigations have no click. If the cover is on screen, go to the
-    // banner offset in this layout effect (before paint), not via 0.
-    const top = bannerPinTop();
-    mem.headerInView = false;
-    mem.scrollTop = top;
-    pinMainColumnAt(top);
-  }, [bannerPinTop, pathname, pinMainColumnAt, spaceSlug]);
+    applyBannerPlan(plan);
+  }, [applyBannerPlan, bannerPinTop, cancelSettleMotion, pathname, spaceSlug]);
 
   React.useEffect(() => {
     if (!spaceSlug) return;
@@ -593,6 +782,7 @@ export function DhoStickySpaceChrome({
       mem.headerInView = readHeaderInView();
     };
     const releasePinForUserScroll = () => {
+      cancelSettleMotion();
       if (!isMainColumnScrollFrozen()) return;
       freezeGenRef.current += 1;
       clearMainColumnScrollFreeze();
@@ -653,7 +843,7 @@ export function DhoStickySpaceChrome({
         capture: true,
       });
     };
-  }, [readHeaderInView, spaceSlug]);
+  }, [cancelSettleMotion, readHeaderInView, spaceSlug]);
 
   React.useEffect(() => {
     if (!spaceSlug) return;
@@ -684,17 +874,27 @@ export function DhoStickySpaceChrome({
 
       const mem = spaceEntryMemory(spaceSlug);
       if (!mem.startPath) return;
-      // Pin before Next.js scrollIntoView and before loading.tsx shrinks the
-      // tab slot. Settled scroll stays put. A visible cover jumps to the
-      // banner offset here — not to 0, and not after the swap.
-      const top = bannerPinTop();
-      mem.scrollTop = top;
-      mem.headerInView = false;
-      pinMainColumnAt(top);
+      // Decide before Next.js scrollIntoView and before loading.tsx shrinks
+      // the tab slot. Settled scroll stays put. A visible cover eases straight
+      // to the banner — the freeze follows, so the column cannot pass through 0.
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+      const current = getMainColumnScrollY();
+      applyBannerPlan(
+        planInSpaceBannerScroll({
+          frozen: false,
+          current,
+          rememberedTop: mem.scrollTop,
+          headerWasInView: readHeaderInView(),
+          liveTarget: bannerPinTop(),
+          reduceMotion,
+        }),
+      );
     };
     document.addEventListener('click', onClickCapture, true);
     return () => document.removeEventListener('click', onClickCapture, true);
-  }, [bannerPinTop, pinMainColumnAt, spaceSlug]);
+  }, [applyBannerPlan, bannerPinTop, readHeaderInView, spaceSlug]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
@@ -719,10 +919,13 @@ export function DhoStickySpaceChrome({
           'h-[var(--secondary-chrome-actions-row-height,66px)]',
           'bg-page-background',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
-          'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
-          stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
+          /*
+           * Opacity is written from scroll progress so the row fades with the
+           * cover. A translate would slide it out from under the menu and
+           * read as a gap. `opacity-0` covers the first paint only.
+           */
+          'opacity-0',
+          stuck && 'pointer-events-auto',
         )}
         style={{ top: 'var(--menu-top-height, 70px)' }}
         aria-hidden={!stuck}
