@@ -170,7 +170,11 @@ function isPinVisibleOnProjection(
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
 }
 
-/** Walk from a bounding-box corner toward the center until it lies on the drawing. */
+/**
+ * Walk from a bounding-box corner toward the center until the pixel is on the
+ * drawing. Orthographic invert clamps off-disk points onto the limb, so a
+ * round-trip is required — otherwise the navigator sits in the empty corner.
+ */
 function pointOnMap(
   projection: d3.GeoProjection,
   x: number,
@@ -180,15 +184,17 @@ function pointOnMap(
 ): { x: number; y: number } {
   let px = x;
   let py = y;
-  for (let step = 0; step < 16; step += 1) {
+  for (let step = 0; step < 24; step += 1) {
     const geo = projection.invert?.([px, py]);
-    if (
-      geo &&
-      Number.isFinite(geo[0]) &&
-      Number.isFinite(geo[1]) &&
-      isPinVisibleOnProjection(projection, geo[0], geo[1])
-    ) {
-      return { x: px, y: py };
+    if (geo && Number.isFinite(geo[0]) && Number.isFinite(geo[1])) {
+      const projected = projection([geo[0], geo[1]]);
+      if (
+        projected &&
+        Math.hypot(projected[0] - px, projected[1] - py) < 1.5 &&
+        isPinVisibleOnProjection(projection, geo[0], geo[1])
+      ) {
+        return { x: px, y: py };
+      }
     }
     px += (centerX - px) * 0.12;
     py += (centerY - py) * 0.12;
@@ -866,28 +872,23 @@ export function NetworkGlobeMap({
       const pad = 12;
       const bottomRight = pointOnMap(projection, x1, y1, width / 2, height / 2);
       const bottomLeft = pointOnMap(projection, x0, y1, width / 2, height / 2);
-      container
-        .querySelectorAll<HTMLElement>('[data-network-map-inset]')
-        .forEach((element) => {
-          const anchor =
-            element.dataset.networkMapInset === 'legend'
-              ? bottomLeft
-              : bottomRight;
-          element.style.bottom = `${Math.round(
-            Math.max(pad, height - anchor.y + pad),
-          )}px`;
-          if (element.dataset.networkMapInset === 'legend') {
-            element.style.left = `${Math.round(
-              Math.max(pad, anchor.x + pad),
-            )}px`;
-            element.style.right = 'auto';
-            return;
-          }
-          element.style.right = `${Math.round(
-            Math.max(pad, width - anchor.x + pad),
-          )}px`;
-          element.style.left = 'auto';
-        });
+      // Variables survive React re-renders that reset the buttons' style prop.
+      container.style.setProperty(
+        '--map-nav-right',
+        `${Math.round(Math.max(pad, width - bottomRight.x + pad))}px`,
+      );
+      container.style.setProperty(
+        '--map-nav-bottom',
+        `${Math.round(Math.max(pad, height - bottomRight.y + pad))}px`,
+      );
+      container.style.setProperty(
+        '--map-legend-left',
+        `${Math.round(Math.max(pad, bottomLeft.x + pad))}px`,
+      );
+      container.style.setProperty(
+        '--map-legend-bottom',
+        `${Math.round(Math.max(pad, height - bottomLeft.y + pad))}px`,
+      );
     }
   }, [lang, router, t]);
 
@@ -1697,9 +1698,8 @@ export function NetworkGlobeMap({
   const mapLegend =
     !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
       <div
-        data-network-map-inset="legend"
         className={cn(
-          'pointer-events-none absolute bottom-3 left-3 z-20',
+          'pointer-events-none absolute bottom-[var(--map-legend-bottom)] left-[var(--map-legend-left)] z-20',
           'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
           'rounded-md border border-border bg-background/90 px-2.5 py-1.5',
           'text-1 text-muted-foreground shadow-sm backdrop-blur-sm',
@@ -1731,9 +1731,8 @@ export function NetworkGlobeMap({
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
-      data-network-map-inset="navigator"
       className={cn(
-        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
         'hover:border-border hover:bg-muted/15',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
@@ -1755,9 +1754,8 @@ export function NetworkGlobeMap({
   const miniMapInset = showMiniMap ? (
     <button
       type="button"
-      data-network-map-inset="navigator"
       className={cn(
-        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
         'hover:border-border hover:bg-muted/15',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
@@ -1808,7 +1806,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent"
+      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem]"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
