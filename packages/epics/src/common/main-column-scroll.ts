@@ -230,6 +230,18 @@ export function scrollMainColumnTo(
 ): void {
   if (typeof window === 'undefined') return;
   const next = clampScrollTop(top);
+  // `behavior: 'auto'` must be an instant write. `scrollTo({ behavior })` can
+  // stay on a CSS smooth-scroll and glide through 0, which opens a gap under
+  // the menu and flashes the space cover.
+  if (behavior === 'auto') {
+    if (scrollRoot) {
+      if (Math.abs(scrollRoot.scrollTop - next) > 0.5)
+        scrollRoot.scrollTop = next;
+      return;
+    }
+    if (Math.abs(window.scrollY - next) > 0.5) window.scrollTo(0, next);
+    return;
+  }
   if (scrollRoot) {
     scrollRoot.scrollTo({ top: next, behavior });
     return;
@@ -238,7 +250,31 @@ export function scrollMainColumnTo(
 }
 
 /**
- * Ease the main column by `deltaY` over `durationMs` (cubic in-out).
+ * Ease-in-out sine. The previous cubic rushed through the middle (about
+ * two-thirds of the distance in the middle third of the time) and read as a snap.
+ */
+function easeSettle(t: number): number {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  return (1 - Math.cos(Math.PI * t)) / 2;
+}
+
+export type AnimateMainColumnScrollOptions = {
+  /**
+   * Write each frame through the scroll freeze. A loading skeleton or Next
+   * `scrollIntoView` that tries to jump to 0 is pulled back to this frame,
+   * never below the menu.
+   */
+  followFreeze?: boolean;
+  /**
+   * Remaining distance to the banner, read near the end. A layout shift is
+   * eased closed instead of snapped on the last frame.
+   */
+  readRemainingDelta?: () => number | null;
+};
+
+/**
+ * Ease the main column by `deltaY` over `durationMs`.
  * Returns a cancel function. Prefer this over `behavior: 'smooth'` when
  * duration must be controlled (browser smooth scroll timing is opaque).
  */
@@ -246,32 +282,67 @@ export function animateMainColumnScrollBy(
   deltaY: number,
   durationMs: number,
   onDone?: () => void,
+  options?: AnimateMainColumnScrollOptions,
 ): () => void {
-  if (
-    typeof window === 'undefined' ||
-    durationMs <= 0 ||
-    Math.abs(deltaY) < 0.5
-  ) {
-    if (Math.abs(deltaY) >= 0.5) scrollMainColumnBy(deltaY, 'auto');
+  if (typeof window === 'undefined') return () => {};
+
+  const startY = readScrollY();
+  const dest = clampScrollTop(startY + deltaY);
+  if (durationMs <= 0 || Math.abs(dest - startY) < 0.5) {
+    if (Math.abs(dest - startY) >= 0.5) {
+      if (options?.followFreeze) freezeMainColumnScrollAt(dest);
+      else scrollMainColumnTo(dest, 'auto');
+    }
     onDone?.();
     return () => {};
   }
 
-  const startY = readScrollY();
-  const t0 = performance.now();
+  let fromY = startY;
+  let toY = dest;
+  let segmentStart = performance.now();
+  let segmentMs = durationMs;
   let raf = 0;
   let cancelled = false;
+  let corrected = false;
+  let heldFor = dest;
 
-  const easeInOutCubic = (t: number) =>
-    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  if (options?.followFreeze) holdMainColumnScrollHeight(dest);
+
+  const write = (y: number) => {
+    const next = clampScrollTop(y);
+    if (options?.followFreeze) {
+      if (next > heldFor + 1) {
+        heldFor = next;
+        holdMainColumnScrollHeight(next);
+      }
+      freezeMainColumnScrollAt(next);
+      return;
+    }
+    scrollMainColumnTo(next, 'auto');
+  };
 
   const frame = (now: number) => {
     if (cancelled) return;
-    const p = Math.min(1, (now - t0) / durationMs);
-    scrollMainColumnTo(startY + deltaY * easeInOutCubic(p), 'auto');
+    const p = Math.min(1, (now - segmentStart) / segmentMs);
+    write(fromY + (toY - fromY) * easeSettle(p));
     if (p < 1) {
       raf = requestAnimationFrame(frame);
       return;
+    }
+    if (!corrected && options?.readRemainingDelta) {
+      const rest = options.readRemainingDelta();
+      if (rest != null && Math.abs(rest) > 4) {
+        corrected = true;
+        fromY = readScrollY();
+        toY = clampScrollTop(fromY + rest);
+        segmentStart = now;
+        segmentMs = Math.min(240, Math.max(120, Math.abs(rest) * 4));
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      if (rest != null && Math.abs(rest) > 0.5) {
+        write(readScrollY() + rest);
+      }
     }
     onDone?.();
   };
