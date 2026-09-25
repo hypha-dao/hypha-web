@@ -196,6 +196,10 @@ export {
   scrollMainColumnTo,
   animateMainColumnScrollBy,
   subscribeMainColumnScroll,
+  freezeMainColumnScrollAt,
+  reapplyMainColumnScrollFreeze,
+  clearMainColumnScrollFreeze,
+  isMainColumnScrollFrozen,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
 } from './main-column-scroll';
