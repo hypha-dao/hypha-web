@@ -752,10 +752,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     closeAiPanel();
   }, [closeAiPanel, hideAiOverlay]);
 
-  const handleMenuItemNavigation = useCallback(() => {
+  // Expanded hamburger menu only. The collapsed icon rail must not call this:
+  // a screen change from the rail keeps useAiPanel().open unchanged. Closing
+  // the conversation stays on its own close control (handleOverlayClose).
+  const handleExpandedMenuNavigation = useCallback(() => {
     if (!isCompactHeader) return;
-    handleOverlayClose();
-  }, [isCompactHeader, handleOverlayClose]);
+    hideAiOverlay();
+  }, [hideAiOverlay, isCompactHeader]);
 
   const renderSectionNavItem = useCallback(
     (item: NavItem, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
@@ -793,7 +796,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
               <Link
                 href={item.href}
                 scroll={false}
-                onClick={handleMenuItemNavigation}
+                onClick={
+                  mode === 'collapsed'
+                    ? undefined
+                    : handleExpandedMenuNavigation
+                }
                 aria-label={item.label}
                 aria-current={item.active ? 'page' : undefined}
                 className={rowClassName}
@@ -810,7 +817,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [handleMenuItemNavigation],
+    [handleExpandedMenuNavigation],
   );
 
   const renderRecentSpaceItem = useCallback(
@@ -844,7 +851,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           >
             <Link
               href={safeHref}
-              onClick={handleMenuItemNavigation}
+              onClick={
+                mode === 'collapsed' ? undefined : handleExpandedMenuNavigation
+              }
               aria-label={space.title}
               aria-current={isRecentActive ? 'page' : undefined}
               className={`${MENU_ROW_LINK_BASE_CLASS} ${
@@ -885,7 +894,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [lang, pathname, resolvedTheme, spaceSlug, handleMenuItemNavigation],
+    [lang, pathname, resolvedTheme, spaceSlug, handleExpandedMenuNavigation],
   );
 
   const renderRecentSpacesSection = useCallback(
