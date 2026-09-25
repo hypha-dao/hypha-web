@@ -12,9 +12,9 @@ feedback", "respond to coderabbit", "coderabbit left comments".
 **Who it's for:** Technical developers with `github.enabled: true` in their general
 `AGENTS.local.md`. **Skip silently** for others. Confirm `gh` is authenticated (`gh auth status`).
 
-**Canonical procedure** in `hypha-context`:
-[`workflow/coderabbit-review.md`](../../../../hypha-context/workflow/coderabbit-review.md) — read it
-and follow it exactly. Don't duplicate it here.
+**Canonical procedure:** `workflow/coderabbit-review.md` in `hypha-context` — read it and follow it
+exactly. Find it at `hypha_context_root` from `.hypha-context.local/pointers.md` (fallback:
+`../hypha-context`). Don't duplicate it here.
 
 **In this repo:**
 - PR repo: `hypha-dao/hypha-web`. CodeRabbit config lives in [`.coderabbit.yaml`](../../../.coderabbit.yaml).
