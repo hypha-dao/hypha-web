@@ -366,6 +366,13 @@ export function NetworkGlobeMap({
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
   const renderMiniGlobeRef = React.useRef<() => void>(() => {});
+  const isMountedRef = React.useRef(true);
+  const animatingTargetRef = React.useRef<NetworkMapProjectionMode | null>(
+    null,
+  );
+  const alignedProjectionRef = React.useRef<
+    NetworkMapProjectionMode | undefined
+  >(undefined);
 
   morphRef.current = morphProgress;
   layersRef.current = layers;
@@ -1168,7 +1175,17 @@ export function NetworkGlobeMap({
   }, [requestRender]);
 
   React.useEffect(() => {
-    if (hasUserRotatedRef.current || morphRef.current >= 1) {
+    if (
+      hasUserRotatedRef.current ||
+      morphRef.current >= 1 ||
+      animatingTargetRef.current != null
+    ) {
+      if (!hasUserRotatedRef.current) {
+        savedGlobeRotateRef.current = globeRotationForCenter(
+          initialCenter.longitude,
+          initialCenter.latitude,
+        );
+      }
       return;
     }
 
@@ -1512,6 +1529,12 @@ export function NetworkGlobeMap({
 
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
+      if (
+        animationFrameRef.current != null &&
+        animatingTargetRef.current === target
+      ) {
+        return;
+      }
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -1531,9 +1554,11 @@ export function NetworkGlobeMap({
       const fromMorph = morphRef.current;
       const toMorph = target === 'flat' ? 1 : 0;
       if (Math.abs(fromMorph - toMorph) < 1e-6) {
+        animatingTargetRef.current = null;
         return;
       }
 
+      animatingTargetRef.current = target;
       onProjectionModeChangeRef.current?.(target);
       setSelectedProjection(target);
 
@@ -1548,6 +1573,7 @@ export function NetworkGlobeMap({
       const interpolateRotation = interpolateAngles(fromRotate, toRotate);
 
       if (prefersReducedMotion()) {
+        animatingTargetRef.current = null;
         morphRef.current = toMorph;
         rotateRef.current = toRotate;
         setMorphProgress(toMorph);
@@ -1568,6 +1594,7 @@ export function NetworkGlobeMap({
           animationFrameRef.current = requestAnimationFrame(step);
         } else {
           animationFrameRef.current = null;
+          animatingTargetRef.current = null;
           morphRef.current = toMorph;
           rotateRef.current = toRotate;
           setMorphProgress(toMorph);
@@ -1586,25 +1613,42 @@ export function NetworkGlobeMap({
 
   React.useEffect(() => {
     if (!alignProjection) {
+      alignedProjectionRef.current = undefined;
       return;
     }
+    if (alignedProjectionRef.current === alignProjection) {
+      return;
+    }
+    alignedProjectionRef.current = alignProjection;
     animateProjectionRef.current(alignProjection);
   }, [alignProjection]);
 
   React.useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      if (animationFrameRef.current != null) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (autoRotateFrameRef.current != null) {
-        cancelAnimationFrame(autoRotateFrameRef.current);
-      }
-      if (clusterAnimFrameRef.current != null) {
-        cancelAnimationFrame(clusterAnimFrameRef.current);
-      }
-      if (renderFrameRef.current != null) {
-        cancelAnimationFrame(renderFrameRef.current);
-      }
+      isMountedRef.current = false;
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          return;
+        }
+        if (animationFrameRef.current != null) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+        if (autoRotateFrameRef.current != null) {
+          cancelAnimationFrame(autoRotateFrameRef.current);
+          autoRotateFrameRef.current = null;
+        }
+        if (clusterAnimFrameRef.current != null) {
+          cancelAnimationFrame(clusterAnimFrameRef.current);
+          clusterAnimFrameRef.current = null;
+        }
+        if (renderFrameRef.current != null) {
+          cancelAnimationFrame(renderFrameRef.current);
+          renderFrameRef.current = null;
+        }
+        animatingTargetRef.current = null;
+      }, 0);
     };
   }, []);
 
