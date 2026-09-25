@@ -55,6 +55,7 @@ export function setMainColumnScrollRoot(el: HTMLElement | null) {
   detachFrom(prev);
   scrollRoot = el;
   attachScrollTarget();
+  bindFreezeListener();
   listeners.forEach((l) => l());
 }
 
@@ -83,16 +84,77 @@ export function getMainColumnScrollElement(): HTMLElement | null {
   return scrollRoot;
 }
 
+/** Never request a negative offset — that elastic-overscrolls the banner below the menu. */
+function clampScrollTop(top: number): number {
+  if (!Number.isFinite(top)) return 0;
+  return Math.max(0, top);
+}
+
+/**
+ * While set, any scroll of the main column is pulled back to this offset.
+ * Used across in-space route changes so Next.js scroll / content-height
+ * clamping cannot flash the space header before paint.
+ */
+let frozenScrollTop: number | null = null;
+let freezeTarget: HTMLElement | Window | null = null;
+let applyingFreeze = false;
+
+function freezeScrollTarget(): HTMLElement | Window | null {
+  if (typeof window === 'undefined') return null;
+  return scrollRoot ?? window;
+}
+
+function onFrozenScroll() {
+  if (frozenScrollTop == null || applyingFreeze) return;
+  const y = readScrollY();
+  if (Math.abs(y - frozenScrollTop) <= 1) return;
+  applyingFreeze = true;
+  try {
+    if (scrollRoot) {
+      scrollRoot.scrollTop = frozenScrollTop;
+    } else {
+      window.scrollTo({ top: frozenScrollTop, left: 0, behavior: 'auto' });
+    }
+  } finally {
+    applyingFreeze = false;
+  }
+}
+
+function bindFreezeListener() {
+  const next = frozenScrollTop == null ? null : freezeScrollTarget();
+  if (freezeTarget === next) return;
+  freezeTarget?.removeEventListener('scroll', onFrozenScroll);
+  freezeTarget = next;
+  freezeTarget?.addEventListener('scroll', onFrozenScroll, { passive: true });
+}
+
+export function isMainColumnScrollFrozen(): boolean {
+  return frozenScrollTop != null;
+}
+
+export function freezeMainColumnScrollAt(top: number): void {
+  frozenScrollTop = clampScrollTop(top);
+  bindFreezeListener();
+  onFrozenScroll();
+}
+
+export function reapplyMainColumnScrollFreeze(): void {
+  onFrozenScroll();
+}
+
+export function clearMainColumnScrollFreeze(): void {
+  if (frozenScrollTop == null && freezeTarget == null) return;
+  frozenScrollTop = null;
+  bindFreezeListener();
+}
+
 export function scrollMainColumnBy(
   deltaY: number,
   behavior: ScrollBehavior = 'auto',
 ): void {
   if (typeof window === 'undefined') return;
-  if (scrollRoot) {
-    scrollRoot.scrollBy({ top: deltaY, behavior });
-    return;
-  }
-  window.scrollBy({ top: deltaY, behavior });
+  const current = scrollRoot ? scrollRoot.scrollTop : window.scrollY;
+  scrollMainColumnTo(current + deltaY, behavior);
 }
 
 export function scrollMainColumnTo(
@@ -100,11 +162,12 @@ export function scrollMainColumnTo(
   behavior: ScrollBehavior = 'auto',
 ): void {
   if (typeof window === 'undefined') return;
+  const next = clampScrollTop(top);
   if (scrollRoot) {
-    scrollRoot.scrollTo({ top, behavior });
+    scrollRoot.scrollTo({ top: next, behavior });
     return;
   }
-  window.scrollTo({ top, behavior });
+  window.scrollTo({ top: next, behavior });
 }
 
 /**

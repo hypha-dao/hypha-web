@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  isMainColumnScrollFrozen,
+  scrollMainColumnTo,
+} from '@hypha-platform/epics';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
@@ -31,8 +35,9 @@ export default function ScrollUp() {
     if (prevSpace && nextSpace && prevSpace === nextSpace) {
       return;
     }
+    if (isMainColumnScrollFrozen()) return;
 
-    window?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    scrollMainColumnTo(0, 'auto');
   }, [pathname]);
   return <></>;
 }

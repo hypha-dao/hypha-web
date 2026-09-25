@@ -2,12 +2,17 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import {
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
   animateMainColumnScrollBy,
+  clearMainColumnScrollFreeze,
+  freezeMainColumnScrollAt,
+  getMainColumnScrollElement,
   getMainColumnScrollY,
+  isMainColumnScrollFrozen,
+  reapplyMainColumnScrollFreeze,
   scrollMainColumnBy,
   scrollMainColumnTo,
   subscribeMainColumnScroll,
@@ -30,11 +35,50 @@ const SCROLL_KEYS = new Set([
   ' ',
 ]);
 
-/**
- * Intro settle must run once per space visit in this SPA session — not again when
- * the chrome remounts on in-space tab / route changes (that caused the banner flicker).
- */
-const spacesWithEntrySettle = new Set<string>();
+type SpaceEntryMemory = {
+  /** Path that started this visit. A later in-space path must not replay the intro. */
+  startPath: string | null;
+  /** Intro finished, or an in-space navigation superseded it. */
+  introduced: boolean;
+  holdStartedAt: number | null;
+  scrollTop: number;
+  /** Full cover is on screen. The next in-space route change scrolls to the banner. */
+  headerInView: boolean;
+};
+
+function spaceEntryMemoryMap(): Map<string, SpaceEntryMemory> {
+  const g = globalThis as typeof globalThis & {
+    __hyphaSpaceEntryMemory?: Map<string, SpaceEntryMemory>;
+  };
+  if (!g.__hyphaSpaceEntryMemory) {
+    g.__hyphaSpaceEntryMemory = new Map();
+  }
+  return g.__hyphaSpaceEntryMemory;
+}
+
+function spaceEntryMemory(spaceSlug: string): SpaceEntryMemory {
+  const map = spaceEntryMemoryMap();
+  let mem = map.get(spaceSlug);
+  if (!mem) {
+    mem = {
+      startPath: null,
+      introduced: false,
+      holdStartedAt: null,
+      scrollTop: 0,
+      headerInView: true,
+    };
+    map.set(spaceSlug, mem);
+  }
+  return mem;
+}
+
+function spaceSlugFromPath(pathname: string): string | null {
+  const match = pathname.match(/\/dho\/([^/]+)/);
+  return match?.[1] ?? null;
+}
+
+/** In-flight first-entry hold. Tab changes cancel it so it cannot scroll again. */
+let cancelActiveIntro: (() => void) | null = null;
 
 function readMenuTopPx(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(
@@ -153,6 +197,7 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const params = useParams();
+  const pathname = usePathname() ?? '';
   const spaceSlug =
     typeof params?.id === 'string'
       ? params.id
@@ -219,15 +264,157 @@ export function DhoStickySpaceChrome({
     };
   }, [menuTopPx]);
 
+  const readHeaderInView = React.useCallback(() => {
+    const delta = bannerAlignDelta(
+      bannerBottomSentinelRef.current,
+      stickyBarRef.current,
+    );
+    if (delta == null) return getMainColumnScrollY() <= 2;
+    return delta > STICKY_HYSTERESIS_PX;
+  }, []);
+
+  const settleCancelRef = React.useRef<(() => void) | null>(null);
+  const freezeGenRef = React.useRef(0);
+
+  const releaseFreezeWhenStable = React.useCallback(
+    (expectedTop: number, allowUnchangedRelease: boolean) => {
+      const gen = freezeGenRef.current;
+      const initialHeight = getMainColumnScrollElement()?.scrollHeight ?? 0;
+      const started = performance.now();
+      let changed = false;
+      let ready = 0;
+      const tick = () => {
+        if (gen !== freezeGenRef.current || !isMainColumnScrollFrozen()) return;
+        reapplyMainColumnScrollFreeze();
+        const el = getMainColumnScrollElement();
+        const height = el?.scrollHeight ?? 0;
+        if (Math.abs(height - initialHeight) > 1) changed = true;
+        const max = el
+          ? Math.max(0, el.scrollHeight - el.clientHeight)
+          : Math.max(
+              0,
+              document.documentElement.scrollHeight - window.innerHeight,
+            );
+        const tallEnough = max + 2 >= expectedTop;
+        const elapsed = performance.now() - started;
+        // A click-time watcher must see the tab slot change height before it
+        // lets go — the outgoing page is already tall enough to hold scroll.
+        const stable =
+          tallEnough && (changed || (allowUnchangedRelease && elapsed > 700));
+        if (stable) ready += 1;
+        else ready = 0;
+        if (ready >= 2 || elapsed > 4000) {
+          if (gen === freezeGenRef.current) clearMainColumnScrollFreeze();
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    },
+    [],
+  );
+
+  const scrollToStickyBanner = React.useCallback(() => {
+    settleCancelRef.current?.();
+    settleCancelRef.current = null;
+    clearMainColumnScrollFreeze();
+    const desktop = window.matchMedia('(min-width: 768px)');
+    if (!desktop.matches || !spaceSlug) return;
+    const mem = spaceEntryMemory(spaceSlug);
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    const delta = bannerAlignDelta(
+      bannerBottomSentinelRef.current,
+      stickyBarRef.current,
+    );
+    const finish = () => {
+      settleCancelRef.current = null;
+      mem.introduced = true;
+      mem.headerInView = false;
+      mem.scrollTop = getMainColumnScrollY();
+      const rest = bannerAlignDelta(
+        bannerBottomSentinelRef.current,
+        stickyBarRef.current,
+      );
+      if (rest != null && Math.abs(rest) > 1) {
+        scrollMainColumnBy(rest, 'auto');
+        mem.scrollTop = getMainColumnScrollY();
+      }
+    };
+    if (delta == null || delta <= 1) {
+      finish();
+      return;
+    }
+    let userTookOver = false;
+    let cancelAnim: () => void = () => {};
+    const detachInput = () => {
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      window.removeEventListener('touchmove', takeOver, { capture: true });
+    };
+    const takeOver = () => {
+      if (userTookOver) return;
+      userTookOver = true;
+      cancelAnim();
+      detachInput();
+      settleCancelRef.current = null;
+      scrollMainColumnTo(getMainColumnScrollY(), 'auto');
+      mem.introduced = true;
+      mem.scrollTop = getMainColumnScrollY();
+      mem.headerInView = readHeaderInView();
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 1) return;
+      takeOver();
+    };
+    window.addEventListener('wheel', onWheel, { passive: true, capture: true });
+    window.addEventListener('touchmove', takeOver, {
+      passive: true,
+      capture: true,
+    });
+    cancelAnim = animateMainColumnScrollBy(
+      delta,
+      reduceMotion ? 0 : SPACE_ENTRY_SETTLE_MS,
+      () => {
+        detachInput();
+        settleCancelRef.current = null;
+        if (userTookOver) return;
+        finish();
+      },
+    );
+    settleCancelRef.current = () => {
+      userTookOver = true;
+      cancelAnim();
+      detachInput();
+    };
+  }, [readHeaderInView, spaceSlug]);
+
   React.useEffect(() => {
-    if (!spaceSlug) return;
+    return () => {
+      settleCancelRef.current?.();
+      clearMainColumnScrollFreeze();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!spaceSlug || !pathname) return;
     const desktop = window.matchMedia('(min-width: 768px)');
     if (!desktop.matches) return;
 
-    // Tab / in-space remounts must keep the current scroll (settled or full cover).
-    if (spacesWithEntrySettle.has(spaceSlug)) return;
-    // Claim before the hold so a remount mid-intro cannot replay from the top.
-    spacesWithEntrySettle.add(spaceSlug);
+    const mem = spaceEntryMemory(spaceSlug);
+    // In-space remounts (tab RSC refresh) used to run this effect again: scroll
+    // to 0, hold, then settle — the header flash. Never restart after the visit
+    // has a start path on a different route.
+    if (mem.startPath && mem.startPath !== pathname) {
+      mem.introduced = true;
+      return;
+    }
+    if (mem.introduced) return;
+
+    const firstStart = mem.startPath == null;
+    mem.startPath = pathname;
+    mem.headerInView = true;
+    if (mem.holdStartedAt == null) mem.holdStartedAt = performance.now();
 
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -259,19 +446,35 @@ export function DhoStickySpaceChrome({
       releaseProgrammatic();
     };
 
+    const rememberUserPosition = () => {
+      mem.introduced = true;
+      mem.scrollTop = getMainColumnScrollY();
+      mem.headerInView = readHeaderInView();
+    };
+
     if (reduceMotion) {
       // Prefer reduced motion: land on the sticky row with no hold/animation.
       const raf = window.requestAnimationFrame(() => {
-        if (!cancelled) jumpToSettled();
+        if (cancelled) return;
+        jumpToSettled();
+        mem.introduced = true;
+        mem.headerInView = false;
+        mem.scrollTop = getMainColumnScrollY();
       });
-      return () => {
+      const cancelThis = () => {
         cancelled = true;
         window.cancelAnimationFrame(raf);
+      };
+      cancelActiveIntro = cancelThis;
+      return () => {
+        cancelThis();
+        if (cancelActiveIntro === cancelThis) cancelActiveIntro = null;
       };
     }
 
     // First entry only: show the full cover, then ease into the sticky row.
-    if (getMainColumnScrollY() > 2) {
+    // Re-runs (strict mode, remount) must not jump back to the top.
+    if (firstStart && getMainColumnScrollY() > 2) {
       programmatic = true;
       scrollMainColumnTo(0, 'auto');
       releaseProgrammatic();
@@ -279,6 +482,7 @@ export function DhoStickySpaceChrome({
 
     const takeOver = () => {
       userTookOver = true;
+      rememberUserPosition();
       if (!animating) return;
       animating = false;
       cancelAnim?.();
@@ -302,18 +506,31 @@ export function DhoStickySpaceChrome({
 
     const unsubscribeScroll = subscribeMainColumnScroll(() => {
       if (cancelled || programmatic || animating || userTookOver) return;
-      if (getMainColumnScrollY() > 2) userTookOver = true;
+      if (getMainColumnScrollY() > 2) {
+        userTookOver = true;
+        rememberUserPosition();
+      }
     });
 
+    const elapsed =
+      performance.now() - (mem.holdStartedAt ?? performance.now());
     holdTimer = window.setTimeout(() => {
       if (cancelled || userTookOver || !desktop.matches) return;
-      if (getMainColumnScrollY() > 2) return;
+      if (getMainColumnScrollY() > 2) {
+        rememberUserPosition();
+        return;
+      }
 
       const delta = bannerAlignDelta(
         bannerBottomSentinelRef.current,
         stickyBarRef.current,
       );
-      if (delta == null || delta <= 1) return;
+      if (delta == null || delta <= 1) {
+        mem.introduced = true;
+        mem.headerInView = false;
+        mem.scrollTop = getMainColumnScrollY();
+        return;
+      }
 
       animating = true;
       programmatic = true;
@@ -334,9 +551,12 @@ export function DhoStickySpaceChrome({
             scrollMainColumnBy(rest, 'auto');
             releaseProgrammatic();
           }
+          mem.introduced = true;
+          mem.headerInView = false;
+          mem.scrollTop = getMainColumnScrollY();
         },
       );
-    }, SPACE_ENTRY_BANNER_HOLD_MS);
+    }, Math.max(0, SPACE_ENTRY_BANNER_HOLD_MS - elapsed));
 
     window.addEventListener('wheel', onWheel, { passive: true, capture: true });
     window.addEventListener('touchmove', onTouchMove, {
@@ -345,16 +565,181 @@ export function DhoStickySpaceChrome({
     });
     window.addEventListener('keydown', onKeyDown, { capture: true });
 
-    return () => {
+    const cancelThis = () => {
       cancelled = true;
       window.clearTimeout(holdTimer);
       cancelAnim?.();
+      cancelAnim = null;
+    };
+    cancelActiveIntro = cancelThis;
+
+    return () => {
+      cancelThis();
+      if (cancelActiveIntro === cancelThis) cancelActiveIntro = null;
       unsubscribeScroll();
       window.removeEventListener('wheel', onWheel, { capture: true });
       window.removeEventListener('touchmove', onTouchMove, { capture: true });
       window.removeEventListener('keydown', onKeyDown, { capture: true });
     };
-  }, [spaceSlug]);
+  }, [pathname, readHeaderInView, spaceSlug]);
+
+  const pathnameRef = React.useRef(pathname);
+  pathnameRef.current = pathname;
+  const prevPathRef = React.useRef<string | null>(null);
+
+  React.useLayoutEffect(() => {
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    if (!spaceSlug || !prev || prev === pathname) return;
+
+    const prevSpace = spaceSlugFromPath(prev);
+    if (!prevSpace || prevSpace !== spaceSlug) {
+      freezeGenRef.current += 1;
+      clearMainColumnScrollFreeze();
+      return;
+    }
+
+    // Same space, new screen. Drop any in-flight intro so it cannot scroll to
+    // the top and play the entry settle again.
+    cancelActiveIntro?.();
+    const mem = spaceEntryMemory(spaceSlug);
+    mem.introduced = true;
+
+    if (mem.headerInView) {
+      // Stop the click watcher so it cannot pin the header during the settle.
+      freezeGenRef.current += 1;
+      queueMicrotask(() => {
+        if (pathnameRef.current !== pathname) {
+          clearMainColumnScrollFreeze();
+          return;
+        }
+        scrollToStickyBanner();
+      });
+      return;
+    }
+
+    if (isMainColumnScrollFrozen()) {
+      queueMicrotask(() => {
+        reapplyMainColumnScrollFreeze();
+      });
+      return;
+    }
+
+    freezeGenRef.current += 1;
+    freezeMainColumnScrollAt(mem.scrollTop);
+    queueMicrotask(() => {
+      reapplyMainColumnScrollFreeze();
+    });
+    releaseFreezeWhenStable(mem.scrollTop, true);
+  }, [pathname, releaseFreezeWhenStable, scrollToStickyBanner, spaceSlug]);
+
+  React.useEffect(() => {
+    if (!spaceSlug) return;
+
+    let userIntent = false;
+    let intentTimer = 0;
+    const markIntent = () => {
+      userIntent = true;
+      window.clearTimeout(intentTimer);
+      intentTimer = window.setTimeout(() => {
+        userIntent = false;
+      }, 160);
+    };
+    const remember = () => {
+      if (!userIntent || isMainColumnScrollFrozen()) return;
+      const mem = spaceEntryMemory(spaceSlug);
+      if (!mem.startPath) return;
+      mem.scrollTop = getMainColumnScrollY();
+      mem.headerInView = readHeaderInView();
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 1) return;
+      if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+      markIntent();
+    };
+    const onTouch = () => {
+      if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+      markIntent();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target) || !SCROLL_KEYS.has(event.key)) return;
+      if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+      markIntent();
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (
+        target.closest('a, button, input, textarea, select, [role="button"]')
+      ) {
+        return;
+      }
+      const root = getMainColumnScrollElement();
+      if (root ? target === root : true) {
+        if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+        markIntent();
+      }
+    };
+
+    const unsubscribe = subscribeMainColumnScroll(remember);
+    window.addEventListener('wheel', onWheel, { passive: true, capture: true });
+    window.addEventListener('touchmove', onTouch, {
+      passive: true,
+      capture: true,
+    });
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    window.addEventListener('pointerdown', onPointerDown, { capture: true });
+    return () => {
+      window.clearTimeout(intentTimer);
+      unsubscribe();
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      window.removeEventListener('touchmove', onTouch, { capture: true });
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+      window.removeEventListener('pointerdown', onPointerDown, {
+        capture: true,
+      });
+    };
+  }, [readHeaderInView, spaceSlug]);
+
+  React.useEffect(() => {
+    if (!spaceSlug) return;
+    const onClickCapture = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a');
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.target && anchor.target !== '_self') return;
+      const nextSpace = spaceSlugFromPath(anchor.pathname);
+      if (!nextSpace || nextSpace !== spaceSlug) return;
+      if (
+        anchor.pathname === window.location.pathname &&
+        anchor.search === window.location.search
+      ) {
+        return;
+      }
+
+      const mem = spaceEntryMemory(spaceSlug);
+      if (!mem.startPath) return;
+      mem.scrollTop = getMainColumnScrollY();
+      mem.headerInView = readHeaderInView();
+      // Pin before Next.js scroll and before the tab slot's height collapses.
+      freezeGenRef.current += 1;
+      freezeMainColumnScrollAt(mem.scrollTop);
+      releaseFreezeWhenStable(mem.scrollTop, false);
+    };
+    document.addEventListener('click', onClickCapture, true);
+    return () => document.removeEventListener('click', onClickCapture, true);
+  }, [readHeaderInView, releaseFreezeWhenStable, spaceSlug]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
