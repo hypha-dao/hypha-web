@@ -141,10 +141,8 @@ export const SelectAction = ({
                     <Card
                       className={clsx(
                         /* Full card tiles — not dense left-flush list rows */
-                        'craft-card group flex h-full w-full items-center gap-4 p-5 transition-[border-color,background-color] duration-200 ease-out md:p-6',
+                        'craft-card-interactive group flex h-full w-full items-center gap-4 p-5 md:p-6',
                         !action.disabled && 'cursor-pointer',
-                        !action.disabled &&
-                          'hover:border-accent-9 hover:bg-background-3/70',
                         /* Inset ring — no offset so focus/selection does not optically shift content */
                         !action.disabled &&
                           'focus-within:border-accent-9 focus-within:ring-1 focus-within:ring-inset focus-within:ring-accent-9/45',
