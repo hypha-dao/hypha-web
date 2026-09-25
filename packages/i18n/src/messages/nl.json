@@ -1602,8 +1602,7 @@
     "exploreNetwork": "Verken het Hypha-netwerk",
     "seeAll": "Bekijk alles",
     "noCategory": "Geen categorie",
-    "transparent": "Transparant",
-    "privateCount": "{count} privé"
+    "privateCount": "+ {count} privé"
   },
   "Proposals": {
     "CreateNew": "Maak een nieuw voorstel",

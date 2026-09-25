@@ -1603,8 +1603,7 @@
     "exploreNetwork": "Das Hypha-Netzwerk erkunden",
     "seeAll": "Alle anzeigen",
     "noCategory": "Keine Kategorie",
-    "transparent": "Transparent",
-    "privateCount": "{count} privat"
+    "privateCount": "+ {count} privat"
   },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",

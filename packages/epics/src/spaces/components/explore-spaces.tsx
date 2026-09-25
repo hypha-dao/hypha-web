@@ -430,36 +430,33 @@ export function ExploreSpaces({
   );
 
   const metricsSection = (
-    <div className="flex flex-col items-center gap-3">
-      <p className="text-1 text-neutral-500">{t('transparent')}</p>
-      <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
-        <NetworkMetric
-          value={selectedSpaces.length}
-          label={tCommon('Spaces')}
-          privateLabel={t('privateCount', { count: privateSpaces.length })}
-          isLoading={showSpacesSkeleton}
-        />
-        <Separator
-          orientation="vertical"
-          className="h-auto self-stretch bg-neutral-6"
-        />
-        <NetworkMetric
-          value={memberCount}
-          label={tCommon('Members')}
-          privateLabel={t('privateCount', { count: privateMemberCount })}
-          isLoading={showSpacesSkeleton}
-        />
-        <Separator
-          orientation="vertical"
-          className="h-auto self-stretch bg-neutral-6"
-        />
-        <NetworkMetric
-          value={agreementCount}
-          label={tCommon('Agreements')}
-          privateLabel={t('privateCount', { count: privateAgreementCount })}
-          isLoading={showSpacesSkeleton}
-        />
-      </div>
+    <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
+      <NetworkMetric
+        value={selectedSpaces.length}
+        label={tCommon('Spaces')}
+        privateLabel={t('privateCount', { count: privateSpaces.length })}
+        isLoading={showSpacesSkeleton}
+      />
+      <Separator
+        orientation="vertical"
+        className="h-auto self-stretch bg-neutral-6"
+      />
+      <NetworkMetric
+        value={memberCount}
+        label={tCommon('Members')}
+        privateLabel={t('privateCount', { count: privateMemberCount })}
+        isLoading={showSpacesSkeleton}
+      />
+      <Separator
+        orientation="vertical"
+        className="h-auto self-stretch bg-neutral-6"
+      />
+      <NetworkMetric
+        value={agreementCount}
+        label={tCommon('Agreements')}
+        privateLabel={t('privateCount', { count: privateAgreementCount })}
+        isLoading={showSpacesSkeleton}
+      />
     </div>
   );
 
