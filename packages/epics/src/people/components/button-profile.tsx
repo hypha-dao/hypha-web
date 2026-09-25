@@ -89,9 +89,9 @@ const profileMenuNameClass =
 const profileMenuSlugClass =
   'truncate font-sans text-1 font-normal leading-tight text-muted-foreground';
 const profileMenuWalletClass = cn(
-  'flex h-10 items-center border-t border-border px-3 text-1 text-muted-foreground',
-  '[&_button]:h-full [&_button]:rounded-none [&_button]:px-0 [&_button]:py-0 [&_button]:hover:bg-muted/80',
-  '[&_button]:focus-visible:ring-1 [&_button]:focus-visible:ring-offset-0',
+  'flex h-10 items-center border-t border-border text-1 text-muted-foreground',
+  '[&_button]:h-full [&_button]:w-full [&_button]:rounded-none [&_button]:px-3 [&_button]:py-0',
+  '[&_button]:hover:bg-muted/80 [&_button]:focus-visible:ring-1 [&_button]:focus-visible:ring-offset-0',
 );
 const profileMenuSeparatorClass = 'my-0 h-px bg-border';
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
