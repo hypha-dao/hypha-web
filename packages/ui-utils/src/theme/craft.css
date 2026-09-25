@@ -129,14 +129,12 @@
   }
 
   /*
-   * Interactive grids: quiet at rest; a stronger hairline on hover.
-   * The surface stays bg-background-2 (white in light, #121212 in dark).
-   * Hover rules live outside this layer (below) so they can override Card
-   * utility border classes from the utilities layer.
+   * Interactive grids: white at rest (bg-background-2), square, no shadow.
+   * Hover fill lives outside this layer so it can beat Card utilities.
    */
   .craft-card-interactive {
     @apply rounded-none border border-border/70 bg-background-2 shadow-none;
-    @apply transition-[border-color] duration-200 ease-out;
+    @apply transition-[border-color,background-color] duration-200 ease-out;
   }
 
   /* List / table rows: hairline hover, no grey slab fill. */
@@ -209,26 +207,35 @@
 }
 
 /*
- * Unlayered on purpose: Card applies border-border/* as a utility, which
- * beats @layer components. Hairline only — do not mix a fill into the card.
- * --hypha-panel (#eae8e1) is a light token and is not redefined in dark, so
- * blending it into #121212 painted a grey slab while the same mix on white
- * was nearly invisible and only the border read.
+ * One card hover, taken from Space memory (hover:bg-foreground/[0.03]).
+ * Light grey is 3% --foreground mixed into the resting fill so the card
+ * stays opaque. Default rest is --background-2 (white in light, #121212
+ * in dark). Unlayered so it beats Card border utilities.
+ *
+ * --craft-card-rest only aliases those existing steps. It is not a new colour.
  */
+:root {
+  --craft-card-rest: var(--background-2);
+}
+
 .craft-card-interactive:hover {
   border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
-  background-color: var(--background-2);
+  background-color: color-mix(
+    in srgb,
+    var(--foreground) 3%,
+    var(--craft-card-rest)
+  );
 }
 
 /*
- * Signal cards add dark:bg-background-5 so the resting fill is #1c1c1c
- * on the #040404 page. The rule above would paint that lift back to
- * --background-2 (#121212) on hover. Hairline stays; only the fill holds.
+ * Signal cards (and any other dark:bg-background-5 card) rest on
+ * --background-5 (#1c1c1c), above the #040404 page. Mixing the hover into
+ * --background-2 would snap them back to #121212. Lift from #1c1c1c instead.
  * Selected cards use bg-transparent and do not carry this class.
  */
 :is(.dark, .dark-theme, [data-theme='dark'])
-  .craft-card-interactive.dark\:bg-background-5:hover {
-  background-color: var(--background-5);
+  .craft-card-interactive.dark\:bg-background-5 {
+  --craft-card-rest: var(--background-5);
 }
 
 .craft-row-interactive:hover {
