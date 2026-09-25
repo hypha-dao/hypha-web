@@ -55,12 +55,12 @@ export function HumanChatPanelCallToolbar({
   // Identical hit targets; Phone’s diagonal glyph reads larger than Video at
   // the same SVG size, so scale it slightly for optical parity.
   const iconBtn =
-    'box-border inline-grid size-9 shrink-0 place-items-center rounded-none bg-transparent p-0 leading-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground [&>svg]:block';
+    'box-border inline-grid h-[36px] w-[36px] flex-none shrink-0 place-items-center rounded-none bg-transparent p-0 leading-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground [&>svg]:block';
   const iconSize = 'craft-icon';
 
   return (
     <div
-      className="relative z-10 flex shrink-0 items-center gap-0.5"
+      className="relative z-10 flex flex-none shrink-0 items-center gap-0.5"
       role="toolbar"
       aria-label={t('callToolbarLabel')}
     >

@@ -98,30 +98,28 @@ export function HumanChatPanelTabs({
   return (
     <div
       className={cn(
-        'relative box-border h-[var(--secondary-chrome-actions-row-height,77px)] w-full min-w-0 border-b border-border/70 bg-transparent px-3 py-1',
-        /* §3.1.1: tab column scrolls; call + settings column is `auto` and does not shrink. */
-        'grid w-full min-w-0 items-center',
-        hasEndCluster
-          ? 'grid-cols-[minmax(0,1fr)_auto] gap-x-1.5'
-          : 'grid-cols-1',
+        'relative box-border flex h-[var(--secondary-chrome-actions-row-height,66px)] w-full min-w-0 items-center border-b border-border/70 bg-transparent px-3',
+        /* Pack labels and call buttons together. The rail may shrink and
+           scroll; it does not grow, so leftover width stays after the icons. */
+        hasEndCluster ? 'gap-1' : undefined,
       )}
     >
       {/*
         Scroll the rail, not the tab buttons: outer min-w-0 + overflow; inner
-        inline-flex w-max so each tab keeps natural width (no one-letter clip).
+        inline-flex w-max shrink-0 so each label keeps its full width.
         role=tablist is on the inner so it still only contains role=tab children.
       */}
       <div
         ref={tabRailScrollRef}
         className={cn(
-          'min-w-0 max-w-full self-stretch',
+          'flex min-w-0 max-w-full shrink items-center self-stretch',
           'overflow-x-auto overflow-y-hidden overscroll-x-contain',
-          'touch-pan-x [scrollbar-gutter:stable] [scrollbar-width:thin]',
+          'touch-pan-x [scrollbar-width:thin]',
         )}
       >
         <div
           role="tablist"
-          className="inline-flex w-max min-w-0 max-w-none flex-nowrap items-stretch gap-0.5 py-0.5 pr-0.5"
+          className="inline-flex w-max min-w-max shrink-0 flex-nowrap items-center gap-0.5"
         >
           {tabs.map((tab, index) => (
             <button
@@ -161,7 +159,7 @@ export function HumanChatPanelTabs({
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={cn(
                 'shrink-0 select-none',
-                'inline-flex h-9 min-w-0 items-center',
+                'inline-flex h-[36px] items-center',
                 'whitespace-nowrap rounded-none border-0 bg-transparent px-2.5 text-left text-xs font-medium',
                 'transition-colors duration-150',
                 activeTab === tab.key
@@ -169,8 +167,8 @@ export function HumanChatPanelTabs({
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="min-w-0 truncate" title={tab.label}>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="whitespace-nowrap" title={tab.label}>
                   {tab.label}
                 </span>
                 {tab.key === 'chat' && chatBadgeLabel != null ? (
@@ -193,7 +191,7 @@ export function HumanChatPanelTabs({
         </div>
       </div>
       {hasEndCluster ? (
-        <div className="relative z-10 flex min-w-max shrink-0 items-center justify-end gap-0.5 self-stretch border-s border-border/40 bg-transparent ps-1.5">
+        <div className="relative z-10 flex min-w-max shrink-0 items-center gap-0.5 self-stretch">
           {tabRowEnd}
         </div>
       ) : null}
