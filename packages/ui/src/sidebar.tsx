@@ -868,6 +868,12 @@ export interface SidebarMenuButtonProps
     VariantProps<typeof sidebarMenuButtonVariants> {
   asChild?: boolean;
   isActive?: boolean;
+  /**
+   * Keep the tooltip when the parent sidebar is expanded. The docked icon
+   * rail stays collapsed beside the AI conversation, but it shares that
+   * sidebar's expanded state.
+   */
+  forceTooltip?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 }
 
@@ -882,6 +888,7 @@ const SidebarMenuButton = React.forwardRef<
       variant = 'default',
       size = 'default',
       tooltip,
+      forceTooltip = false,
       className,
       ...props
     },
@@ -918,7 +925,7 @@ const SidebarMenuButton = React.forwardRef<
         <TooltipContent
           side="right"
           align="center"
-          hidden={state !== 'collapsed' || isMobile}
+          hidden={isMobile || (!forceTooltip && state !== 'collapsed')}
           {...tooltip}
         />
       </Tooltip>

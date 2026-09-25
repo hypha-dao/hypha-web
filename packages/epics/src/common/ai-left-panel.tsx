@@ -7,6 +7,7 @@ import {
   useEffect,
   useRef,
   type ElementType,
+  type ReactNode,
 } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -275,6 +276,11 @@ const MENU_CLOSE_BUTTON_CLASS =
   'flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex size-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full';
+/**
+ * Collapsed icon rail and the top-left hamburger menu share one surface.
+ * Light: white. Dark: card (#1c1c1c), not the page ground.
+ */
+const NAV_CHROME_SURFACE_CLASS = 'bg-background-2 dark:bg-background-5';
 
 type AiLeftPanelProps = {
   enableSpaceMemory?: boolean;
@@ -766,6 +772,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <SidebarMenuButton
             asChild
             tooltip={!showLabel ? item.label : undefined}
+            forceTooltip={!showLabel}
             isActive={item.active}
             className={MENU_BUTTON_CLASS}
           >
@@ -831,6 +838,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <SidebarMenuButton
             asChild
             tooltip={!showLabel ? space.title : undefined}
+            forceTooltip={!showLabel}
             isActive={isRecentActive}
             className={MENU_BUTTON_CLASS}
           >
@@ -2889,18 +2897,104 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     </button>
   ) : undefined;
 
+  const collapsedRailHeaderClass = `flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border px-4 py-2 ${NAV_CHROME_SURFACE_CLASS}`;
+  const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
+  const collapsedRailBody = (
+    <>
+      <SidebarGroup className="p-2 pt-4">
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-2">
+            {sectionNavItems.map((item) =>
+              renderSectionNavItem(item, 'collapsed', 'collapsed'),
+            )}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+      {spaceSettingsItem ? (
+        <SidebarGroup className="mt-auto p-2 pb-0">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {renderSectionNavItem(
+                spaceSettingsItem,
+                'collapsed',
+                'settings-collapsed',
+              )}
+            </SidebarMenu>
+            <div className="mt-2 h-px bg-border/60" aria-hidden />
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ) : null}
+      {recentSpaces.length > 0
+        ? renderRecentSpacesSection('collapsed', 'recent-collapsed')
+        : null}
+    </>
+  );
+  const renderCollapsedRail = (landmarks: boolean) => {
+    const trigger = (
+      <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center">
+        {triggerButton}
+      </div>
+    );
+    if (landmarks) {
+      return (
+        <>
+          <SidebarHeader className={collapsedRailHeaderClass}>
+            {trigger}
+          </SidebarHeader>
+          <SidebarContent className={collapsedRailContentClass}>
+            {collapsedRailBody}
+          </SidebarContent>
+        </>
+      );
+    }
+    // Docked beside the conversation: plain divs so the AI panel keeps the
+    // only `data-sidebar="header"` landmark.
+    return (
+      <>
+        <div
+          className={`${collapsedRailHeaderClass} flex shrink-0 flex-col gap-2`}
+        >
+          {trigger}
+        </div>
+        <div
+          className={`${collapsedRailContentClass} flex min-h-0 flex-1 flex-col gap-2`}
+        >
+          {collapsedRailBody}
+        </div>
+      </>
+    );
+  };
+  const withDesktopIconRail = (conversation: ReactNode) => {
+    if (isOnboardingPath) return conversation;
+    return (
+      <div className="flex h-full min-h-0 w-full flex-1">
+        <div
+          className={`group hidden h-full w-(--sidebar-width-icon) shrink-0 flex-col overflow-hidden border-r border-border md:flex ${NAV_CHROME_SURFACE_CLASS}`}
+          data-collapsible="icon"
+          data-state="collapsed"
+        >
+          {renderCollapsedRail(false)}
+        </div>
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-page-background dark:bg-background-2">
+          {conversation}
+        </div>
+      </div>
+    );
+  };
+
   if (!isAiOpen) {
     if (overlayVisible) {
       return (
         <>
-          <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
+          <SidebarHeader className={`p-0 ${NAV_CHROME_SURFACE_CLASS}`}>
             <AiPanelHeader
+              className={NAV_CHROME_SURFACE_CLASS}
               showCloseButton={false}
               leftSlot={triggerButton}
               rightSlot={closeButton}
             />
           </SidebarHeader>
-          <SidebarContent className="bg-page-background dark:bg-background-2">
+          <SidebarContent className={NAV_CHROME_SURFACE_CLASS}>
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
@@ -2932,47 +3026,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
     }
 
-    return (
-      <>
-        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border bg-background-2 dark:bg-background-2 px-4 py-2">
-          <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center">
-            {triggerButton}
-          </div>
-        </SidebarHeader>
-        <SidebarContent className="relative overflow-visible bg-background-2 dark:bg-background-2">
-          <SidebarGroup className="p-2 pt-4">
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-2">
-                {sectionNavItems.map((item) =>
-                  renderSectionNavItem(item, 'collapsed', 'collapsed'),
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          {spaceSettingsItem ? (
-            <SidebarGroup className="mt-auto p-2 pb-0">
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-2">
-                  {renderSectionNavItem(
-                    spaceSettingsItem,
-                    'collapsed',
-                    'settings-collapsed',
-                  )}
-                </SidebarMenu>
-                <div className="mt-2 h-px bg-border/60" aria-hidden />
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : null}
-          {recentSpaces.length > 0
-            ? renderRecentSpacesSection('collapsed', 'recent-collapsed')
-            : null}
-        </SidebarContent>
-      </>
-    );
+    return renderCollapsedRail(true);
   }
 
   if (isLoading) {
-    return (
+    return withDesktopIconRail(
       <>
         <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
@@ -2984,12 +3042,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background dark:bg-background-2">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
         </SidebarContent>
-      </>
+      </>,
     );
   }
 
   if (blockSpaceAiForActivityAccess) {
-    return (
+    return withDesktopIconRail(
       <>
         <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
@@ -3005,12 +3063,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             spaceSlug={spaceSlug ?? undefined}
           />
         </SidebarContent>
-      </>
+      </>,
     );
   }
 
   if (!isAuthenticated) {
-    return (
+    return withDesktopIconRail(
       <>
         <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
@@ -3026,11 +3084,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             spaceSlug={spaceSlug ?? undefined}
           />
         </SidebarContent>
-      </>
+      </>,
     );
   }
 
-  return (
+  return withDesktopIconRail(
     <>
       <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
         <AiPanelHeader
@@ -3203,6 +3261,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           />
         )}
       </SidebarFooter>
-    </>
+    </>,
   );
 }

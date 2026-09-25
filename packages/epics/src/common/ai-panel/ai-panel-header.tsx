@@ -27,6 +27,7 @@ import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import { cn } from '@hypha-platform/ui-utils';
 
 function getDisplayIcon(
   space: Space | undefined,
@@ -40,11 +41,13 @@ export function AiPanelHeader({
   onCloseButtonClick,
   leftSlot,
   rightSlot,
+  className,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
   rightSlot?: ReactNode;
+  className?: string;
 }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
@@ -211,7 +214,12 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-3 border-b border-border/70 bg-page-background ps-4 pe-5 py-2 dark:bg-background-2">
+    <div
+      className={cn(
+        'grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-3 border-b border-border/70 bg-page-background ps-4 pe-5 py-2 dark:bg-background-2',
+        className,
+      )}
+    >
       {leftSlot ? (
         <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center">
           {leftSlot}

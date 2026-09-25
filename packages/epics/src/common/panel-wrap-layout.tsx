@@ -282,6 +282,8 @@ const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const PANEL_OPEN_ATTR = 'data-side-panels-open';
 const LEFT_PANEL_EXPANDED_ATTR = 'data-left-panel-expanded';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
+const LEFT_AI_PANEL_WIDTH_PX = 320;
+const LEFT_SIDEBAR_ICON_WIDTH_PX = 72;
 const RIGHT_SIDEBAR_WIDTH = '320px';
 // Mobile: keep only a slim gutter so chat/menu content uses almost full width.
 const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
@@ -372,12 +374,20 @@ export function PanelWrapLayout({
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
+  const isMobileViewport = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
+  // Desktop conversation sits beside the icon rail, so the left track is
+  // rail + panel. The hamburger menu still replaces the rail and stays 320px.
+  // Below md the sheet stays full width and does not reserve a rail column.
+  const dockIconRailBesideAi =
+    !isOnboarding && !isMobileViewport && leftOpen && !leftOverlayVisible;
+  const leftIconRailPx = dockIconRailBesideAi ? LEFT_SIDEBAR_ICON_WIDTH_PX : 0;
+  const leftExpandedWidthPx = LEFT_AI_PANEL_WIDTH_PX + leftIconRailPx;
   const leftFootprintPx = isOnboarding
     ? 0
     : leftExpanded
-    ? 320
+    ? leftExpandedWidthPx
     : isSpace
-    ? 72
+    ? LEFT_SIDEBAR_ICON_WIDTH_PX
     : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
   const forceCompactPanels =
@@ -385,7 +395,6 @@ export function PanelWrapLayout({
     (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
       viewportWidth - leftFootprintPx - rightFootprintPx <
         MIN_MAIN_COLUMN_WIDTH_PX);
-  const isMobileViewport = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
   const isMutuallyExclusivePanels =
     Boolean(effectiveLeft && effectiveRight) &&
     (forceCompactPanels || isMobileViewport);
@@ -400,6 +409,8 @@ export function PanelWrapLayout({
     : RIGHT_SIDEBAR_WIDTH;
   const leftExpandedSidebarWidth = isOnboarding
     ? '100vw'
+    : dockIconRailBesideAi
+    ? `${leftExpandedWidthPx}px`
     : LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft
     ? isOnboarding
@@ -546,6 +557,7 @@ export function PanelWrapLayout({
         leftOpen={leftExpanded}
         leftPanelOpen={leftOpen}
         leftSidebarWidth={leftExpandedSidebarWidth}
+        leftIconRailPx={leftIconRailPx}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
@@ -636,7 +648,13 @@ export function PanelWrapLayout({
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}
-          {!isOnboarding ? <SidebarResizeHandle /> : null}
+          {!isOnboarding ? (
+            <SidebarResizeHandle
+              minWidth={280 + leftIconRailPx}
+              maxWidth={600 + leftIconRailPx}
+              defaultWidth={320 + leftIconRailPx}
+            />
+          ) : null}
         </Sidebar>
         <PanelScrollInset className="overflow-y-auto">
           {content}

@@ -118,16 +118,15 @@ export function NavigationTabs({
     ? stripActiveTab
     : '';
 
-  // The collapsed icon rail already lists these sections. `overlayVisible`
-  // is only the expanded nav menu; opening the conversation used to latch
-  // that flag, so this strip stayed after the AI screen closed. Show it
-  // only while the conversation panel itself is open.
+  // The persistent icon rail is the desktop section switcher, including
+  // while the AI conversation is open. Below md that rail is not on screen,
+  // so this strip stays the switcher while the conversation sheet is open.
   if (!aiPanelOpen) {
     return null;
   }
 
   return (
-    <Tabs value={tabsValue} className="mt-4 w-full min-w-0 md:mt-5">
+    <Tabs value={tabsValue} className="mt-4 w-full min-w-0 md:hidden">
       <div
         className={cn(
           'mb-3 w-full min-w-0 overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
