@@ -48,6 +48,8 @@ type UIMessage = {
 
 type AiPanelMessagesProps = {
   messages: UIMessage[];
+  /** `quiet` drops avatar and bubble frames — onboarding screen only. */
+  chrome?: 'default' | 'quiet';
   suggestionItems: readonly AiPanelSuggestionItem[];
   /** Large suggestion cards below welcome — only before the user sends a message. */
   showInlineSuggestions?: boolean;
@@ -80,6 +82,7 @@ type AiPanelMessagesProps = {
 
 export function AiPanelMessages({
   messages,
+  chrome = 'default',
   suggestionItems,
   showInlineSuggestions = false,
   onSuggestionSelect,
@@ -178,6 +181,7 @@ export function AiPanelMessages({
         {displayMessages.map((msg, index) => (
           <AiPanelMessageBubble
             key={msg.id}
+            chrome={chrome}
             message={msg}
             userAvatarUrl={userAvatarUrl}
             userDisplayName={userDisplayName}

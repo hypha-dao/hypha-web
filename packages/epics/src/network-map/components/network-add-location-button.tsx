@@ -114,10 +114,14 @@ export function NetworkAddLocationButton({
           {t('addLocation')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md [font-family:var(--font-family-text)]">
         <DialogHeader>
-          <DialogTitle>{t('addLocationTitle')}</DialogTitle>
-          <DialogDescription>{t('addLocationDescription')}</DialogDescription>
+          <DialogTitle className="font-medium tracking-[-0.03em] [font-family:var(--font-family-heading)]">
+            {t('addLocationTitle')}
+          </DialogTitle>
+          <DialogDescription className="[font-family:var(--font-family-text)]">
+            {t('addLocationDescription')}
+          </DialogDescription>
         </DialogHeader>
         {isLoadingMemberSpaces ? (
           <p className="text-2 text-neutral-11">{t('addLocationLoading')}</p>
@@ -128,10 +132,10 @@ export function NetworkAddLocationButton({
             value={selectedSlug || undefined}
             onValueChange={setSelectedSlug}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full font-normal [font-family:var(--font-family-text)]">
               <SelectValue placeholder={t('addLocationSelectPlaceholder')} />
             </SelectTrigger>
-            <SelectContent className="z-[100] max-h-60">
+            <SelectContent className="z-[100] max-h-60 [font-family:var(--font-family-text)] [&_[role=option]]:font-normal">
               {spaceOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -145,6 +149,7 @@ export function NetworkAddLocationButton({
             type="button"
             onClick={handleContinue}
             disabled={!selectedSlug}
+            className="font-medium normal-case tracking-normal [font-family:var(--font-family-text)]"
           >
             {t('addLocationContinue')}
           </Button>

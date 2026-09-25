@@ -202,10 +202,10 @@ function gatherMentionEvents(
 }
 
 const MENTION_INBOX_ROW_CLASS =
-  'group flex w-full cursor-pointer flex-col gap-1 rounded-lg border border-border/60 bg-background-2 px-3 py-2 text-left text-foreground shadow-none transition-[border-color,background-color] duration-150 hover:border-border hover:bg-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'group flex w-full cursor-pointer flex-col gap-1 rounded-none border-0 border-b border-border/50 bg-transparent px-3 py-2 text-left text-foreground shadow-none transition-colors duration-150 hover:bg-foreground/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 const MENTION_INBOX_NAV_ICON_CLASS =
-  'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/50 bg-transparent text-muted-foreground shadow-none transition-colors group-hover:border-border/70 group-hover:bg-muted/30 group-hover:text-foreground';
+  'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent text-muted-foreground shadow-none transition-colors group-hover:bg-foreground/5 group-hover:text-foreground';
 
 function MentionInboxNavigateIcon({
   label,
@@ -523,10 +523,10 @@ export function HumanChatPanelMentionBell({
     <button
       type="button"
       className={cn(
-        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'relative flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
         mentionsTabActive
-          ? 'border border-accent-9/40 bg-accent-9/10 text-foreground dark:border-accent-10/40 dark:bg-accent-9/14'
-          : 'border border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          ? 'text-accent-11'
+          : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
       )}
       aria-pressed={mentionsTabActive}
       aria-label={

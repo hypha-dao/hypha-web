@@ -373,7 +373,7 @@
       "energy": "Energy",
       "activity": "Activity",
       "distribution": "Distribution",
-      "payingSpaces": "Paying spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Unable to load activity widgets",
@@ -424,9 +424,9 @@
       "description": "Energy widgets will appear once energy data is available."
     },
     "payingSpaces": {
-      "pageTitle": "Paying spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Monthly coverage from the first on-chain payment.",
-      "title": "Paying spaces",
+      "title": "Traction",
       "subtitle": "Spaces with an active paid subscription each month, from inception. Filter by space for a per-space breakdown.",
       "currentlyPaying": "Currently paying",
       "everPaid": "Ever paid",
@@ -645,8 +645,9 @@
       "ariaLabel": "Nested spaces hierarchy map",
       "loading": "Loading ecosystem map…",
       "empty": "No nested spaces to show yet",
-      "hint": "Click a space to focus · click outside to zoom out",
-      "subtitle": "Explore how spaces nest in this organization"
+      "subtitle": "Explore how spaces nest in this organization",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
     },
     "visibleSpaces": {
       "nestedRoot": "Root",
@@ -663,7 +664,7 @@
     "navigation": {
       "individuals": "Individuals",
       "memberSpaces": "Member Spaces",
-      "agents": "Agents",
+      "agents": "AI Agents",
       "noIndividuals": "No individual members yet",
       "noMemberSpaces": "No member spaces yet",
       "noAgents": "No agents mobilized yet",
@@ -1600,7 +1601,8 @@
     "all": "All",
     "exploreNetwork": "Explore the Hypha Network",
     "seeAll": "See all",
-    "noCategory": "No Category"
+    "noCategory": "No Category",
+    "privateCount": "+ {count} private"
   },
   "Proposals": {
     "CreateNew": "Create a new Proposal",
@@ -2958,7 +2960,7 @@
     "activeCallElsewhere": "Active call in {title}",
     "activeCallsElsewhereCount": "{count} active calls elsewhere",
     "notInSpaceEmptyState": "You're not in a space right now.",
-    "welcome": "Welcome to the chat! Start a conversation with other members of this space.",
+    "welcome": "Start a conversation with other members of this space.",
     "placeholder": "Type a message...",
     "placeholderChannel": "Message #{channel}",
     "sendButton": "Send",
@@ -3083,6 +3085,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Yesterday at {time}",
     "timestampDate": "{date} at {time}",
+    "chatRoomTitle": "Chat room",
     "systemSender": "System",
     "noMembers": "No members found",
     "unknownMember": "Unknown",
@@ -3803,6 +3806,7 @@
   },
   "NetworkMap": {
     "mapView": "Map",
+    "overviewView": "Overview",
     "listView": "List",
     "globeView": "Globe",
     "flatView": "Flat",
@@ -3826,7 +3830,11 @@
     "addLocationNoSpaces": "You are not a member of any spaces yet.",
     "clusterExpandTitle": "{count} spaces at this location",
     "clusterZoomOut": "Zoom out",
-    "controlStripLabel": "Network controls"
+    "controlStripLabel": "Network controls",
+    "legendLabel": "Map legend",
+    "legendSpace": "Space",
+    "legendCluster": "Cluster",
+    "legendSpacesCount": "Spaces · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",
@@ -4276,6 +4284,8 @@
     "exportXlsx": "Export XLSX",
     "weightedAbbr": "w",
     "openTrack": "Open track",
+    "laneCollapse": "Collapse category",
+    "laneExpand": "Expand category",
     "backToBoard": "Back to board",
     "trackTitle": "{swimlane} track",
     "summary": {

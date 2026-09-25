@@ -13,24 +13,30 @@ export { APP_CHROME_SUBTLE_SQUARE_RADIUS };
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
   'h-12 w-12 shrink-0 rounded-full sm:h-14 sm:w-14',
-  'shadow-sm ring-1 ring-white/12',
+  'ring-1 ring-white/12',
 );
 
 /** Title size on the banner — reuse on sticky; tool-sized, not marketing hero */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
-  'text-balance text-5 font-medium tracking-tight sm:text-6',
-  '[font-family:var(--font-family-text)]',
+  'text-balance text-5 font-medium tracking-[-0.03em] sm:text-6',
+  '[font-family:var(--font-family-heading)]',
 );
+
+/**
+ * Marks the in-flow gear / status / mode cluster. Sticky chrome measures this
+ * box and must not paint a second copy while it is still showing.
+ */
+export const SPACE_HEADER_ACTIONS_ATTR = 'data-space-header-actions';
 
 /** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
 export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
   'h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11',
-  'ring-1 ring-border/60 shadow-sm',
+  'ring-1 ring-border/60',
 );
 
 export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
-  'text-balance text-4 font-medium tracking-tight sm:text-5',
-  '[font-family:var(--font-family-text)]',
+  'text-balance text-4 font-medium tracking-[-0.03em] sm:text-5',
+  '[font-family:var(--font-family-heading)]',
 );
 
 /** Purpose column — compact identity strip (two lines max). */
@@ -197,8 +203,13 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'group/hero relative overflow-hidden rounded-lg border border-border/70',
-        'shadow-sm',
+        /*
+         * Light paper: the cover ends at its own edge, then #fbfaf8. A border
+         * reads as a pasted card; a bottom fade washes the action row. Dark
+         * ground already hides the hairline, so keep that frame only.
+         */
+        'group/hero relative overflow-hidden rounded-none border-0 shadow-none',
+        'dark:border dark:border-border/70',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-4 pt-4 pb-0 md:px-6 md:pt-5',
         className,
@@ -218,7 +229,6 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           />
         </>
       )}
-
       <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
         {/*
           Identity row: left-aligned; vertically centered in the lead plate
@@ -324,7 +334,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               </div>
 
               {footerTrailing ? (
-                <div className="flex shrink-0 flex-wrap items-center justify-start gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+                <div
+                  {...{ [SPACE_HEADER_ACTIONS_ATTR]: '' }}
+                  className="flex shrink-0 flex-wrap items-center justify-start gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center"
+                >
                   {footerTrailing}
                 </div>
               ) : null}

@@ -353,7 +353,7 @@
       "energy": "Енергија",
       "activity": "Активност",
       "distribution": "Распределба",
-      "payingSpaces": "Плаќачки spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Не може да се вчитаат виџетите за активност",
@@ -404,9 +404,9 @@
       "description": "Виџетите за енергија ќе се појават штом бидат достапни податоци за енергија."
     },
     "payingSpaces": {
-      "pageTitle": "Плаќачки spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Месечна покриеност од првата on-chain уплата.",
-      "title": "Плаќачки spaces",
+      "title": "Traction",
       "subtitle": "Spaces со активна платена претплата секој месец, од почеток. Филтрирајте по space за преглед.",
       "currentlyPaying": "Моментално плаќаат",
       "everPaid": "Некогаш платиле",
@@ -625,8 +625,9 @@
       "ariaLabel": "Карта на хиерархија на вгнездени простори",
       "loading": "Се вчитува картата на екосистемот…",
       "empty": "Сè уште нема вгнездени простори за приказ",
-      "hint": "Кликнете на простор за фокус · кликнете надвор за зумирање назад",
-      "subtitle": "Истражете како се вгнездуваат просторите во оваа организација"
+      "subtitle": "Истражете како се вгнездуваат просторите во оваа организација",
+      "zoomIn": "Зголеми",
+      "zoomOut": "Намали"
     },
     "visibleSpaces": {
       "nestedRoot": "Корен",
@@ -643,7 +644,7 @@
     "navigation": {
       "individuals": "Поединци",
       "memberSpaces": "Членски простори",
-      "agents": "Агенти",
+      "agents": "АИ агенти",
       "noIndividuals": "Сè уште нема поединци",
       "noMemberSpaces": "Сè уште нема членски простори",
       "noAgents": "Сè уште нема мобилизирани агенти",
@@ -1580,7 +1581,8 @@
     "all": "Сите",
     "exploreNetwork": "Истражете ја Hypha мрежата",
     "seeAll": "Види ги сите",
-    "noCategory": "Без категорија"
+    "noCategory": "Без категорија",
+    "privateCount": "+ {count, plural, one {# приватен} other {# приватни}}"
   },
   "Proposals": {
     "CreateNew": "Создај нов предлог",
@@ -2938,7 +2940,7 @@
     "activeCallElsewhere": "Активен повик во {title}",
     "activeCallsElsewhereCount": "{count} активни повици на друго место",
     "notInSpaceEmptyState": "Во моментов не сте во простор.",
-    "welcome": "Добредојде во разговорот! Започни разговор со другите членови на овој простор.",
+    "welcome": "Започни разговор со другите членови на овој простор.",
     "placeholder": "Напиши порака...",
     "placeholderChannel": "Порака во #{channel}",
     "sendButton": "Испрати",
@@ -3063,6 +3065,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Вчера во {time}",
     "timestampDate": "{date} во {time}",
+    "chatRoomTitle": "Соба за разговор",
     "systemSender": "Систем",
     "noMembers": "Не се пронајдени членови",
     "unknownMember": "Непознат",
@@ -3782,6 +3785,7 @@
   },
   "NetworkMap": {
     "mapView": "Мапа",
+    "overviewView": "Преглед",
     "listView": "Листа",
     "globeView": "Глобус",
     "flatView": "Рамна",
@@ -3805,7 +3809,11 @@
     "addLocationNoSpaces": "Сè уште не сте член на ниту еден простор.",
     "clusterExpandTitle": "{count} простори на оваа локација",
     "clusterZoomOut": "Оддалечи",
-    "controlStripLabel": "Контроли на мрежата"
+    "controlStripLabel": "Контроли на мрежата",
+    "legendLabel": "Легенда на мапата",
+    "legendSpace": "Простор",
+    "legendCluster": "Кластер",
+    "legendSpacesCount": "Простори · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Сè уште нема соба за разговор",
@@ -4255,6 +4263,8 @@
     "exportXlsx": "Извези XLSX",
     "weightedAbbr": "понд.",
     "openTrack": "Отвори трака",
+    "laneCollapse": "Собери категорија",
+    "laneExpand": "Отвори категорија",
     "backToBoard": "Назад кон табла",
     "trackTitle": "{swimlane} трака",
     "summary": {

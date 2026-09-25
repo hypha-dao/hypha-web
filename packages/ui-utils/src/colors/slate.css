@@ -1,35 +1,42 @@
+/**
+ * Neutral and background scale — warm paper in light, ink family in dark.
+ * Paper #fbfaf8 · Panel #eae8e1 · Wash #0d1013 · ink #030615 (dark only for fills).
+ * Light filled steps never mix cool ink; that reads as Tailwind slate.
+ */
+
 :root,
 .light,
 .light-theme {
-  --slate-1: oklch(99.135% 0.00143 285.193);
-  --slate-2: oklch(98.268% 0.00275 285.746);
-  --slate-3: oklch(95.599% 0.0041 285.932);
-  --slate-4: oklch(93.214% 0.00546 286.01);
-  --slate-5: oklch(91.042% 0.00695 277.073);
-  --slate-6: oklch(88.735% 0.00961 286.054);
-  --slate-7: oklch(85.301% 0.01115 280.372);
-  --slate-8: oklch(79.385% 0.01569 277.757);
-  --slate-9: oklch(64.532% 0.01653 277.677);
-  --slate-10: oklch(61.075% 0.01553 272.566);
-  --slate-11: oklch(50.249% 0.01368 264.48);
-  --slate-12: oklch(24.113% 0.00972 248.299);
+  --slate-1: var(--hypha-paper);
+  --slate-2: #ffffff;
+  --slate-3: color-mix(in srgb, var(--hypha-panel) 42%, var(--hypha-paper));
+  --slate-4: color-mix(in srgb, var(--hypha-panel) 72%, var(--hypha-paper));
+  --slate-5: var(--hypha-panel);
+  --slate-6: color-mix(in srgb, var(--hypha-wash) 12%, var(--hypha-panel));
+  --slate-7: color-mix(in srgb, var(--hypha-wash) 24%, var(--hypha-panel));
+  --slate-8: color-mix(in srgb, var(--hypha-wash) 40%, var(--hypha-panel));
+  --slate-9: var(--hypha-text-dim);
+  --slate-10: color-mix(in srgb, var(--hypha-wash) 58%, var(--hypha-panel));
+  --slate-11: color-mix(in srgb, var(--hypha-wash) 72%, var(--hypha-panel));
+  --slate-12: var(--hypha-ink);
 
-  --slate-alpha-8: oklch(16.014% 0.07851 262.725 / 0.274);
+  --slate-alpha-8: color-mix(in srgb, var(--hypha-wash) 28%, transparent);
 }
+
 .dark,
 .dark-theme {
-  --slate-1: oklch(17.853% 0.00409 285.914);
-  --slate-2: oklch(21.318% 0.00424 264.524);
-  --slate-3: oklch(25.214% 0.00585 271.189);
-  --slate-4: oklch(28.319% 0.00702 248.185);
-  --slate-5: oklch(31.178% 0.00834 255.633);
-  --slate-6: oklch(34.655% 0.01033 254.043);
-  --slate-7: oklch(39.928% 0.0121 253.013);
-  --slate-8: oklch(48.932% 0.01557 251.766);
-  --slate-9: oklch(53.701% 0.01538 262.385);
-  --slate-10: oklch(58.252% 0.01461 266.654);
-  --slate-11: oklch(76.856% 0.00973 258.463);
-  --slate-12: oklch(94.892% 0.003 264.786);
+  --slate-1: var(--hypha-ink);
+  --slate-2: var(--hypha-deep);
+  --slate-3: color-mix(in srgb, var(--hypha-mid) 42%, var(--hypha-ink));
+  --slate-4: color-mix(in srgb, var(--hypha-mid) 68%, var(--hypha-ink));
+  --slate-5: var(--hypha-mid);
+  --slate-6: color-mix(in srgb, var(--hypha-text) 14%, var(--hypha-mid));
+  --slate-7: color-mix(in srgb, var(--hypha-text) 26%, var(--hypha-mid));
+  --slate-8: color-mix(in srgb, var(--hypha-text) 40%, var(--hypha-ink));
+  --slate-9: var(--hypha-text-faint);
+  --slate-10: var(--hypha-text-dim);
+  --slate-11: var(--hypha-text-dim);
+  --slate-12: var(--hypha-text);
 
-  --slate-alpha-8: oklch(16.014% 0.07851 262.725 / 0.274);
+  --slate-alpha-8: rgb(255 255 255 / 0.16);
 }

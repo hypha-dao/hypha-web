@@ -33,13 +33,20 @@ import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
-import {
-  PRIORITY_LEFT_ACCENT_BAR_CLASS,
-  priorityLeftBorderClass,
-} from '../utils/signal-priority-styles';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+
+/**
+ * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
+ * so the hit area is locked at 36px instead of a spacing token.
+ */
+const SIGNAL_CARD_ICON_BUTTON_CLASS =
+  'box-border inline-flex h-[36px] w-[36px] min-h-[36px] min-w-[36px] max-h-[36px] max-w-[36px] shrink-0 items-center justify-center gap-0 rounded-none border border-border bg-background-2 p-0 leading-none shadow-none text-muted-foreground hover:border-border hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -215,129 +222,164 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     <Card
       className={cn(
         'craft-card-interactive group relative flex h-full w-full min-h-0 flex-col',
+        !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         className,
       )}
     >
-      <div
-        className={cn(
-          PRIORITY_LEFT_ACCENT_BAR_CLASS,
-          priorityLeftBorderClass(priority),
-        )}
-        title={priorityLabel}
-        aria-label={priorityLabel}
-      />
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
-        <div className="relative flex flex-1 flex-col gap-2.5 px-3.5 pb-3 pt-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            {/* Floats above the card so the title can use its full width. Each
-                control carries its own backdrop, keeping an empty cluster
-                invisible. */}
-            <div className="absolute right-2 top-2 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-              <SignalDescriptionButton
-                title={title}
-                description={description}
-                size="md"
-                className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
-              />
-              {canManageSignal && slug ? (
-                <div className="flex items-center gap-0.5 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    size="sm"
-                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    disabled={isLoading}
-                    aria-label={tSignalCard('editMenu')}
-                    title={tSignalCard('editMenu')}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!params.lang || !params.id || !slug) return;
-                      const tab = params.tab ?? 'coherence';
-                      router.push(
-                        `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                      );
-                    }}
-                    onKeyDown={stopCardActivationKey}
-                  >
-                    <Pencil className="h-3.5 w-3.5" aria-hidden />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    size="sm"
-                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    disabled={isLoading || isArchiveMutating}
-                    aria-label={
-                      archived
-                        ? t('unarchiveConversation')
-                        : t('archiveConversation')
-                    }
-                    title={
-                      archived
-                        ? t('unarchiveConversation')
-                        : t('archiveConversation')
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setArchiveDialogOpen(true);
-                    }}
-                    onKeyDown={stopCardActivationKey}
-                  >
-                    {archived ? (
-                      <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
-                    ) : (
-                      <Archive className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-
-            <Skeleton
-              className="min-w-0"
-              width="100%"
-              height="20px"
-              loading={isLoading}
-            >
-              <CardTitle
-                className="line-clamp-3 text-2 font-medium leading-snug tracking-tight [@media(hover:none)]:pr-16"
-                title={title}
+        <div className="flex flex-1 flex-col px-3.5 pb-3 pt-3">
+          {/* Own row above the title. Collapsed until hover, focus, or selection
+              so the buttons never paint over the type. */}
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-150 ease-out',
+              'group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr] [@media(hover:none)]:grid-rows-[1fr]',
+              isActive ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div
+                className={cn(
+                  'flex items-center justify-end gap-2 pb-2 transition-opacity duration-150',
+                  'group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
+                  isActive ? 'opacity-100' : 'opacity-0',
+                )}
               >
-                {title}
-              </CardTitle>
-            </Skeleton>
-            {/* Priority stays on the left accent bar only — avoid duplicate
-                status channel. Signal type is omitted: it repeated on every
-                card without changing what anyone does next. */}
-            {metaParts.length > 0 ? (
-              <p className="flex min-w-0 items-center text-1 text-muted-foreground">
-                {metaParts.map((part, index) => (
-                  <React.Fragment key={part.key}>
-                    {index > 0 ? (
-                      <span className="mx-1.5 shrink-0 text-border" aria-hidden>
-                        ·
-                      </span>
-                    ) : null}
-                    {part.node}
-                  </React.Fragment>
-                ))}
-              </p>
-            ) : null}
+                <SignalDescriptionButton
+                  title={title}
+                  description={description}
+                  size="md"
+                  className={SIGNAL_CARD_ICON_BUTTON_CLASS}
+                />
+                {canManageSignal && slug ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      colorVariant="neutral"
+                      className={SIGNAL_CARD_ICON_BUTTON_CLASS}
+                      disabled={isLoading}
+                      aria-label={tSignalCard('editMenu')}
+                      title={tSignalCard('editMenu')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!params.lang || !params.id || !slug) return;
+                        const tab = params.tab ?? 'coherence';
+                        router.push(
+                          `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                        );
+                      }}
+                      onKeyDown={stopCardActivationKey}
+                    >
+                      <Pencil
+                        className="h-4 w-4"
+                        strokeWidth={1.25}
+                        aria-hidden
+                      />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      colorVariant="neutral"
+                      className={SIGNAL_CARD_ICON_BUTTON_CLASS}
+                      disabled={isLoading || isArchiveMutating}
+                      aria-label={
+                        archived
+                          ? t('unarchiveConversation')
+                          : t('archiveConversation')
+                      }
+                      title={
+                        archived
+                          ? t('unarchiveConversation')
+                          : t('archiveConversation')
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setArchiveDialogOpen(true);
+                      }}
+                      onKeyDown={stopCardActivationKey}
+                    >
+                      {archived ? (
+                        <ArchiveRestore
+                          className="h-4 w-4"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
+                      ) : (
+                        <Archive
+                          className="h-4 w-4"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
+                      )}
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+            </div>
           </div>
 
-          {tags?.length > 0 ? (
-            <SignalTagBadges
-              tags={tags}
-              maxVisible={2}
-              showHashPrefix={false}
-              className="content-start gap-1"
-            />
-          ) : null}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex min-w-0 flex-col gap-1">
+              <div className="flex min-w-0 items-start gap-2">
+                <span
+                  className={cn(
+                    PRIORITY_DOT_MARK_CLASS,
+                    'mt-1.5',
+                    priorityDotClass(priority),
+                  )}
+                  title={priorityLabel}
+                  aria-label={priorityLabel}
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <Skeleton
+                    className="min-w-0"
+                    width="100%"
+                    height="20px"
+                    loading={isLoading}
+                  >
+                    <CardTitle
+                      className="line-clamp-3 text-2 font-medium leading-snug tracking-tight"
+                      title={title}
+                    >
+                      {title}
+                    </CardTitle>
+                  </Skeleton>
+                  {/* Priority is the dot beside the title. Signal type is omitted:
+                    it repeated on every card without changing what anyone does next. */}
+                  {metaParts.length > 0 ? (
+                    <p className="flex min-w-0 items-center text-1 text-muted-foreground">
+                      {metaParts.map((part, index) => (
+                        <React.Fragment key={part.key}>
+                          {index > 0 ? (
+                            <span
+                              className="mx-1.5 shrink-0 text-border"
+                              aria-hidden
+                            >
+                              ·
+                            </span>
+                          ) : null}
+                          {part.node}
+                        </React.Fragment>
+                      ))}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {tags?.length > 0 ? (
+              <SignalTagBadges
+                tags={tags}
+                maxVisible={2}
+                showHashPrefix={false}
+                className="content-start gap-1 pl-3.5"
+              />
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-border/50 px-3.5 py-2">

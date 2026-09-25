@@ -1,9 +1,10 @@
 /**
- * Derive a single accent hex from RGBA image data by averaging saturated,
- * mid-tone pixels (skips near-gray / near-black / near-white).
+ * Sample a cover image into one hue family, then craft a short gradient:
+ * a deeper shade, a balanced mid (solid buttons), and a lighter luminous tone.
+ * Chroma is compressed so a saturated banner cannot become neon.
  */
 
-export const SPACE_ACCENT_FALLBACK = '#4a65d8';
+export const SPACE_ACCENT_FALLBACK = '#3d6b66';
 
 /** Validates `#RRGGBB` for palette and mixHexColors callers. */
 export function parseRgbFromHex(hex: string): [number, number, number] | null {
@@ -105,11 +106,11 @@ const ACCENT_LIGHTNESS_CURVE = [
 ] as const;
 
 /**
- * Intrinsic chroma weights per step (0–1). Peaks around interactive steps so
- * primary CTAs feel vivid; tints steps 1–6 without going neon.
+ * Intrinsic chroma weights per step (0–1). Peaks gently around interactive
+ * steps — colour stays a quiet signal, not a neon CTA.
  */
 const ACCENT_CHROMA_WEIGHT_CURVE = [
-  0.06, 0.11, 0.18, 0.28, 0.42, 0.58, 0.72, 0.84, 0.92, 0.88, 0.76, 0.22,
+  0.04, 0.08, 0.14, 0.22, 0.32, 0.44, 0.54, 0.62, 0.7, 0.66, 0.55, 0.18,
 ] as const;
 
 /** Tiny hue drift so steps feel nuanced without shifting away from sampled hue. */
@@ -130,6 +131,110 @@ function softenTowardAccent(
   return mixHexColors(sample, baseHex, clamp(ratio, 0, 1));
 }
 
+/** Hue-family reading from a cover. Lightness percentiles keep the wash with the image. */
+export type BannerAccentProfile = {
+  /** Dominant hue in [0, 1). */
+  hue: number;
+  /** Mean saturation of that hue family, [0, 1]. */
+  saturation: number;
+  /** Darker chromatic mass (~20th percentile lightness). */
+  lightnessLow: number;
+  /** Typical chromatic lightness. */
+  lightnessMid: number;
+  /** Brighter chromatic mass (~80th percentile lightness). */
+  lightnessHigh: number;
+};
+
+/** Three crafted stops from one hue family. `mid` is the solid button fill. */
+export type CraftedAccentGradient = {
+  deep: string;
+  mid: string;
+  luminous: string;
+};
+
+const HUE_BIN_COUNT = 24;
+
+function wrapHue(h: number): number {
+  const wrapped = h % 1;
+  return wrapped < 0 ? wrapped + 1 : wrapped;
+}
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const index = clamp((sorted.length - 1) * p, 0, sorted.length - 1);
+  const low = Math.floor(index);
+  const high = Math.ceil(index);
+  if (low === high) return sorted[low]!;
+  const highWeight = index - low;
+  return sorted[low]! * (1 - highWeight) + sorted[high]! * highWeight;
+}
+
+/**
+ * Fold sampled saturation into a crafted band.
+ * Near-gray stays quiet. Neon sources compress instead of clipping to a flat highlighter.
+ */
+function craftChroma(rawSaturation: number): number {
+  const saturation = clamp(rawSaturation, 0, 1);
+  if (saturation < 0.1) return saturation * 0.85;
+  const compressed = 0.24 + (1 - Math.exp(-saturation * 1.65)) * 0.26;
+  return clamp(compressed, 0.24, 0.5);
+}
+
+function hexFromHsl(h: number, s: number, l: number): string {
+  const [r, g, b] = hslToRgb(wrapHue(h), clamp(s, 0, 1), clamp(l, 0, 1));
+  return rgbToHex(r, g, b);
+}
+
+/**
+ * Build the wash from a cover reading. Call once per sample — a second pass
+ * shifts lightness again and dulls the hue.
+ */
+export function craftAccentGradientFromProfile(
+  profile: BannerAccentProfile,
+): CraftedAccentGradient {
+  const chroma = craftChroma(profile.saturation);
+  const sDeep = clamp(chroma * 1.02, 0.22, 0.5);
+  const sMid = clamp(chroma * 0.86, 0.2, 0.44);
+  const sLum = clamp(chroma * 0.94, 0.22, 0.48);
+
+  const lDeep = clamp(0.1 + profile.lightnessLow * 0.28, 0.14, 0.26);
+  const lMid = clamp(0.3 + profile.lightnessMid * 0.22, 0.36, 0.46);
+  const lLum = clamp(0.42 + profile.lightnessHigh * 0.22, 0.48, 0.58);
+
+  return {
+    deep: hexFromHsl(profile.hue - 0.022, sDeep, Math.min(lDeep, lMid - 0.1)),
+    mid: hexFromHsl(profile.hue, sMid, lMid),
+    luminous: hexFromHsl(
+      profile.hue + 0.032,
+      sLum,
+      Math.max(lLum, lMid + 0.08),
+    ),
+  };
+}
+
+/** Same stops from a single hex when the cover did not yield a profile. */
+export function craftAccentGradient(hex: string): CraftedAccentGradient {
+  const fb = parseRgbFromHex(SPACE_ACCENT_FALLBACK)!;
+  const [r0, g0, b0] = parseRgbFromHex(hex) ?? fb;
+  const { h, s, l } = rgbToHsl(r0, g0, b0);
+  return craftAccentGradientFromProfile({
+    hue: h,
+    saturation: s,
+    lightnessLow: clamp(l * 0.62, 0.08, 0.4),
+    lightnessMid: l,
+    lightnessHigh: clamp(l + 0.18, 0.35, 0.82),
+  });
+}
+
+/**
+ * Balanced mid tone of the crafted gradient. Solid fills (NEW MEMORY and
+ * other accent buttons) use this. The banner wash uses the full gradient.
+ * Run once — `buildSpaceScopeStyle` is the only caller on the sampled path.
+ */
+export function craftAccentHex(hex: string): string {
+  return craftAccentGradient(hex).mid;
+}
+
 /** 12-step Radix-style accent ramp (sufficient for Tailwind accent-1…12 bindings). */
 export function buildAccentPaletteFromHex(
   baseHex: string,
@@ -138,9 +243,9 @@ export function buildAccentPaletteFromHex(
   const [r0, g0, b0] = parseRgbFromHex(baseHex) ?? fb;
   const { h, s: s0, l: l0 } = rgbToHsl(r0, g0, b0);
 
-  /** Greys need injected chroma or buttons read as neutral; cap so vivid sources stay controlled. */
-  const chromaAnchor = clamp(0.14 + s0 * 0.92, 0.16, 0.62);
-  const chromaCeil = clamp(chromaAnchor * 1.08 + 0.06, 0.22, 0.78);
+  /** Soften saturated samples so space colour stays crafted, not plastic. */
+  const chromaAnchor = clamp(0.1 + s0 * 0.55, 0.12, 0.38);
+  const chromaCeil = clamp(chromaAnchor * 1.05 + 0.04, 0.16, 0.46);
 
   const out: Record<string, string> = {};
   for (let i = 0; i < 12; i++) {
@@ -152,18 +257,18 @@ export function buildAccentPaletteFromHex(
     const w = ACCENT_CHROMA_WEIGHT_CURVE[i]!;
     let s = chromaAnchor + (chromaCeil - chromaAnchor) * w;
 
-    /** Extra chroma on primary/hover slots — capped so solids stay nuanced vs neon. */
-    if (step === 9) s = clamp(s * 1.045 + 0.015, 0, 0.74);
-    if (step === 10) s = clamp(s * 1.025, 0, 0.72);
+    /** Barely lift primary/hover — enough to read as accent, not neon. */
+    if (step === 9) s = clamp(s * 1.02, 0, 0.48);
+    if (step === 10) s = clamp(s * 1.01, 0, 0.46);
 
     const hh = accentHueForStep(h, i);
     const [r, g, b] = hslToRgb(hh, clamp(s, 0, 1), clamp(l, 0, 1));
     const candidate = rgbToHex(r, g, b);
 
     /** Stronger tether on mid-ramp/interactive steps where HSL blows past brand hue */
-    let tether = 0.07 + w * 0.16;
-    if (step >= 8 && step <= 11) tether += 0.12;
-    if (step === 9 || step === 10) tether += 0.06;
+    let tether = 0.1 + w * 0.2;
+    if (step >= 8 && step <= 11) tether += 0.14;
+    if (step === 9 || step === 10) tether += 0.08;
 
     out[`--color-accent-${step}`] = softenTowardAccent(
       candidate,
@@ -186,15 +291,96 @@ export function buildAccentPaletteFromHex(
   return out;
 }
 
-export function extractAccentHexFromImageData(data: ImageData): string {
+type HueBin = {
+  weight: number;
+  satWeighted: number;
+  sin: number;
+  cos: number;
+  lights: number[];
+};
+
+function emptyHueBin(): HueBin {
+  return { weight: 0, satWeighted: 0, sin: 0, cos: 0, lights: [] };
+}
+
+/**
+ * Dominant hue of a cover, plus the dark / mid / bright lightness of that family.
+ * A hue histogram avoids averaging purple and magenta into a muddy RGB mean.
+ * Returns null when the image is too gray to personalize.
+ */
+export function extractBannerAccentProfile(
+  data: ImageData,
+): BannerAccentProfile | null {
   const px = data.data;
   const { width, height } = data;
-  let rSum = 0;
-  let gSum = 0;
-  let bSum = 0;
-  let n = 0;
+  const bins = Array.from({ length: HUE_BIN_COUNT }, emptyHueBin);
 
-  /** Weighted fallback when strict filter yields few samples (dark overlays, grading). */
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const a = px[i + 3] ?? 0;
+      if (a < 40) continue;
+
+      const r = px[i] ?? 0;
+      const g = px[i + 1] ?? 0;
+      const b = px[i + 2] ?? 0;
+      const { h, s, l } = rgbToHsl(r, g, b);
+      if (s < 0.1 || l < 0.05 || l > 0.96) continue;
+
+      /** Dark and bright chromatic pixels both count — they are the wash's ends. */
+      const midBias = 1 - Math.min(1, Math.abs(l - 0.45) * 0.7);
+      const weight = s * (0.4 + 0.6 * midBias) * (a / 255);
+      const binIndex = Math.min(
+        HUE_BIN_COUNT - 1,
+        Math.floor(h * HUE_BIN_COUNT),
+      );
+      const bin = bins[binIndex]!;
+      bin.weight += weight;
+      bin.satWeighted += s * weight;
+      const angle = h * Math.PI * 2;
+      bin.sin += Math.sin(angle) * weight;
+      bin.cos += Math.cos(angle) * weight;
+      bin.lights.push(l);
+    }
+  }
+
+  let best = 0;
+  for (let i = 1; i < HUE_BIN_COUNT; i++) {
+    if (bins[i]!.weight > bins[best]!.weight) best = i;
+  }
+
+  const neighbor = (index: number) =>
+    bins[(index + HUE_BIN_COUNT) % HUE_BIN_COUNT]!;
+  const group = [neighbor(best - 1), bins[best]!, neighbor(best + 1)];
+
+  let weight = 0;
+  let satWeighted = 0;
+  let sin = 0;
+  let cos = 0;
+  const lights: number[] = [];
+  for (const bin of group) {
+    weight += bin.weight;
+    satWeighted += bin.satWeighted;
+    sin += bin.sin;
+    cos += bin.cos;
+    lights.push(...bin.lights);
+  }
+  if (weight < 1.5 || lights.length < 8) return null;
+
+  lights.sort((a, b) => a - b);
+  return {
+    hue: wrapHue(Math.atan2(sin, cos) / (Math.PI * 2)),
+    saturation: clamp(satWeighted / weight, 0, 1),
+    lightnessLow: percentile(lights, 0.2),
+    lightnessMid: percentile(lights, 0.5),
+    lightnessHigh: percentile(lights, 0.8),
+  };
+}
+
+/** Mean of chromatic pixels when a hue family cannot be resolved. */
+function weightedAccentHex(data: ImageData): string | null {
+  const px = data.data;
+  const { width, height } = data;
   let wrSum = 0;
   let wgSum = 0;
   let wbSum = 0;
@@ -210,33 +396,39 @@ export function extractAccentHexFromImageData(data: ImageData): string {
       const g = px[i + 1] ?? 0;
       const b = px[i + 2] ?? 0;
       const { s, l } = rgbToHsl(r, g, b);
-
-      /** Prefer chromatic mid-tones; weight all opaque pixels by saturation for fallback */
       const chromaWeight = clamp(s * (1 - Math.abs(l - 0.48) * 1.35), 0.02, 1);
       wrSum += r * chromaWeight;
       wgSum += g * chromaWeight;
       wbSum += b * chromaWeight;
       wSum += chromaWeight;
-
-      if (s < 0.12) continue;
-      if (l < 0.06 || l > 0.94) continue;
-
-      rSum += r;
-      gSum += g;
-      bSum += b;
-      n++;
     }
-  }
-
-  if (n >= 8) {
-    return rgbToHex(rSum / n, gSum / n, bSum / n);
   }
 
   if (wSum >= 8) {
     return rgbToHex(wrSum / wSum, wgSum / wSum, wbSum / wSum);
   }
+  return null;
+}
 
-  return SPACE_ACCENT_FALLBACK;
+export type BannerAccentReading = {
+  hex: string | null;
+  profile: BannerAccentProfile | null;
+};
+
+/** One pass over the cover: hue family when it exists, otherwise a weighted hex. */
+export function readBannerAccent(data: ImageData): BannerAccentReading {
+  const profile = extractBannerAccentProfile(data);
+  if (!profile) {
+    return { hex: weightedAccentHex(data), profile: null };
+  }
+  return {
+    hex: hexFromHsl(profile.hue, profile.saturation, profile.lightnessMid),
+    profile,
+  };
+}
+
+export function extractAccentHexFromImageData(data: ImageData): string {
+  return readBannerAccent(data).hex ?? SPACE_ACCENT_FALLBACK;
 }
 
 export function mixHexColors(a: string, b: string, weightA: number): string {

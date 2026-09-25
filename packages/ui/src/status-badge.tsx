@@ -12,21 +12,21 @@ const BADGE_VARIANTS: Record<
   string,
   { variant: BadgeVariant; colorVariant: BadgeColorVariant; children: string }
 > = {
-  active: { variant: 'surface', colorVariant: 'success', children: 'Active' },
-  voting: { variant: 'surface', colorVariant: 'warn', children: 'On voting' },
+  active: { variant: 'outline', colorVariant: 'success', children: 'Active' },
+  voting: { variant: 'outline', colorVariant: 'warn', children: 'On voting' },
   completed: {
-    variant: 'surface',
+    variant: 'outline',
     colorVariant: 'accent',
     children: 'Completed',
   },
-  rejected: { variant: 'surface', colorVariant: 'error', children: 'Rejected' },
+  rejected: { variant: 'outline', colorVariant: 'error', children: 'Rejected' },
   inactive: {
-    variant: 'surface',
+    variant: 'outline',
     colorVariant: 'neutral',
     children: 'Inactive',
   },
   applicant: {
-    variant: 'surface',
+    variant: 'outline',
     colorVariant: 'warn',
     children: 'Applicant',
   },

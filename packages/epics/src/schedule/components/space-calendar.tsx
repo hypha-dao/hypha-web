@@ -13,7 +13,6 @@ import type {
   EventClickArg,
   EventContentArg,
   EventDropArg,
-  EventMountArg,
   SlotLabelContentArg,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
@@ -64,7 +63,7 @@ const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
   loading: () => (
     <div
       aria-hidden
-      className="h-full min-h-[20rem] animate-pulse rounded-lg border border-border/60 bg-muted/15"
+      className="h-full min-h-[20rem] animate-pulse bg-foreground/5"
     />
   ),
 });
@@ -431,16 +430,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     setEventSheetOpen(true);
   };
 
-  const handleEventDidMount = React.useCallback((info: EventMountArg) => {
-    const accent =
-      typeof info.event.extendedProps.accentColor === 'string'
-        ? info.event.extendedProps.accentColor
-        : null;
-    if (accent) {
-      info.el.style.setProperty('--hypha-cal-accent', accent);
-    }
-  }, []);
-
   const persistAfterMutation = async () => {
     await refresh();
     await revalidateScheduledItems(spaceSlug);
@@ -530,44 +519,44 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="craft-page-header">
-          <h1 className="craft-page-title text-6 font-medium">
-            {t('title')}
-            {typeof itemCount === 'number' ? (
-              <span className="ml-2 text-4 font-normal text-muted-foreground">
-                | {intlFormat.number(itemCount)}
-              </span>
-            ) : isLoading ? (
-              <span className="ml-2 text-4 font-normal text-muted-foreground">
-                | …
-              </span>
-            ) : null}
-          </h1>
-        </div>
+      <header className="flex w-full flex-nowrap items-center justify-between gap-3">
+        <h1 className="craft-page-title min-w-0 text-6 font-medium">
+          {t('title')}
+          {typeof itemCount === 'number' ? (
+            <span className="ml-2 text-4 font-normal text-muted-foreground">
+              | {intlFormat.number(itemCount)}
+            </span>
+          ) : isLoading ? (
+            <span className="ml-2 text-4 font-normal text-muted-foreground">
+              | …
+            </span>
+          ) : null}
+        </h1>
         {isAuthenticated ? (
-          <Button
-            type="button"
-            onClick={() =>
-              openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
-            }
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t('newItem')}
-          </Button>
+          <div className="shrink-0">
+            <Button
+              type="button"
+              onClick={() =>
+                openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t('newItem')}
+            </Button>
+          </div>
         ) : null}
       </header>
 
       <div
         className={cn(
-          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2 md:p-2.5',
+          'hypha-space-calendar relative',
           viewToModifierClass(view),
         )}
       >
         <div className="relative">
           <div className="mb-1.5 flex flex-col gap-1.5 border-b border-border/50 px-1.5 pb-1.5 md:flex-row md:items-center md:flex-nowrap md:gap-3 md:px-2">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5 md:flex-nowrap">
-              <div className="flex h-8 shrink-0 items-stretch overflow-hidden rounded-md border border-border/70 bg-background">
+              <div className="flex h-8 shrink-0 items-stretch overflow-hidden rounded-none border border-border/70">
                 <Button
                   type="button"
                   variant="ghost"
@@ -638,7 +627,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
           <div
             className={cn(
-              'relative overflow-hidden rounded-lg border border-border/50 bg-background',
+              'relative',
               resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
             )}
           >
@@ -668,7 +657,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               datesSet={handleDatesSet}
               select={handleDateSelect}
               eventClick={handleEventClick}
-              eventDidMount={handleEventDidMount}
               eventContent={renderEventContent}
               dayHeaderContent={renderDayHeader}
               dayCellContent={renderDayCellContent}

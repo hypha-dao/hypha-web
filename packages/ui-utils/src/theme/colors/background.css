@@ -1,7 +1,9 @@
 @import '../../colors/slate.css';
 
 /**
- * Cool stone / mist canvases — slate scale (not warm cream, not pure gray).
+ * App surface scale from warm paper / panel (slate.css). Step 1 is the open
+ * canvas token. Step 2 stays white for elevated cards; steps 3–5 are website
+ * panel family.
  */
 :root,
 .light,

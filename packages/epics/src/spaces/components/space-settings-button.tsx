@@ -7,14 +7,17 @@ import { cn } from '@hypha-platform/ui-utils';
 
 type SpaceSettingsButtonProps = {
   href: string;
-  /** Hero banner (dark image) vs modal chrome (neutral surface). */
+  /**
+   * `hero` stays light for a dark cover image.
+   * `chrome` follows the surface: ink on paper, light on a dark ground.
+   */
   variant?: 'hero' | 'chrome';
   className?: string;
 };
 
 /**
  * Gear icon linking to Space Settings (`select-settings-action`).
- * Icon-only control; hero variant is tuned for dark banner contrast.
+ * Icon only — square, no fill, no shadow.
  */
 export function SpaceSettingsButton({
   href,

@@ -75,7 +75,7 @@ export function QuorumAndUnityChangerField({
                   colorVariant="neutral"
                   onClick={() => handlePresetClick(preset)}
                   className={cn(
-                    'flex h-full flex-col items-start rounded-xl p-4 text-left shadow-sm transition-colors',
+                    'flex h-full flex-col items-start rounded-none border border-border/70 p-4 text-left shadow-none transition-[border-color] duration-200',
                     'border bg-card hover:bg-muted/45 dark:hover:bg-muted/25',
                     /* Button adds focus-visible:ring-ring — override so focus matches space accent (not gray until blur). */
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--space-accent,var(--color-accent-9))] focus-visible:ring-offset-0',

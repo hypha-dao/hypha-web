@@ -17,7 +17,7 @@ const WORKFLOW_STATUS_TOP_BORDER: Record<string, string> = {
   error: 'border-t-error-9',
 };
 
-/** Priority colors — left card stripe + list dots (urgency, not workflow stage). */
+/** Priority colors — filled dot on the card (urgency, not workflow stage). */
 export const PRIORITY_LEFT_BORDER: Record<string, string> = {
   critical: 'bg-error-9',
   high: 'bg-warning-9',
@@ -25,18 +25,14 @@ export const PRIORITY_LEFT_BORDER: Record<string, string> = {
   low: 'bg-neutral-7',
 };
 
-/**
- * Shared left accent bar geometry for craft-card / rounded-xl signal cards.
- * Vertically inset by the card radius so the bar sits on the straight edge only.
- */
-export const PRIORITY_LEFT_ACCENT_BAR_CLASS =
-  'absolute bottom-3 left-0 top-3 w-0.5 rounded-full opacity-80';
+/** Small filled circle. No ring, box, or shadow. */
+export const PRIORITY_DOT_MARK_CLASS = 'size-1.5 shrink-0 rounded-full';
 
 export const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-error-9',
   high: 'bg-warning-9',
   medium: 'bg-accent-9',
-  low: 'bg-neutral-8',
+  low: 'bg-neutral-7',
 };
 
 /** @deprecated Prefer statusColorDotClass — index-based dots clash with priority colors. */

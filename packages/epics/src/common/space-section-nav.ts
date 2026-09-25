@@ -24,13 +24,13 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   coherence: 'primary',
   agreements: 'primary',
   treasury: 'primary',
-  calendar: 'primary',
+  'ecosystem-navigation': 'primary',
+  calendar: 'more',
   members: 'more',
   pipeline: 'more',
   energy: 'more',
   rewards: 'more',
   memory: 'more',
-  'ecosystem-navigation': 'more',
 };
 
 export type SpaceSectionNavItem = {
@@ -73,8 +73,8 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Primary order: Dashboard · Signals · Agreements · Treasury · Calendar
- * More: Members + remaining gated/secondary sections
+ * Primary order: Dashboard · Signals · Agreements · Treasury · Ecosystem
+ * More: Calendar, Members + remaining gated/secondary sections
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -101,6 +101,12 @@ export function buildSpaceSectionNavItems({
   items.push(
     navItem('agreements', lang, spaceSlug, isActive('agreements')),
     navItem('treasury', lang, spaceSlug, isActive('treasury')),
+    navItem(
+      'ecosystem-navigation',
+      lang,
+      spaceSlug,
+      isActive('ecosystem-navigation'),
+    ),
     navItem('calendar', lang, spaceSlug, isActive('calendar')),
     navItem('members', lang, spaceSlug, isActive('members')),
   );
@@ -118,26 +124,15 @@ export function buildSpaceSectionNavItems({
     items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
   }
 
-  items.push(
-    navItem(
-      'ecosystem-navigation',
-      lang,
-      spaceSlug,
-      isActive('ecosystem-navigation'),
-    ),
-  );
-
   return items;
 }
 
 /**
  * Partition space section nav for the main tab strip.
  *
- * Default primary/more grouping comes from {@link SPACE_SECTION_NAV_GROUP}.
- * When the active section defaults to More, promote it into the last primary
- * slot so the active section stays visible; the displaced primary item moves
- * into More. When the active key is already a default-primary item, restore
- * the default partition (no sticky promotion).
+ * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
+ * Dashboard, Signals, Agreements, Treasury, Ecosystem.
+ * An active More screen stays in the overflow menu and does not replace Ecosystem.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];
@@ -148,29 +143,8 @@ export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
     group: SPACE_SECTION_NAV_GROUP[item.key],
   }));
 
-  const primaryDefaults = withDefaultGroups.filter(
-    (i) => i.group === 'primary',
-  );
-  const moreDefaults = withDefaultGroups.filter((i) => i.group === 'more');
-  const active = withDefaultGroups.find((i) => i.active);
-
-  if (!active || active.group === 'primary') {
-    return { primary: primaryDefaults, more: moreDefaults };
-  }
-
-  if (primaryDefaults.length === 0) {
-    return {
-      primary: [{ ...active, group: 'primary' }],
-      more: moreDefaults.filter((i) => i.key !== active.key),
-    };
-  }
-
-  const lastPrimary = primaryDefaults[primaryDefaults.length - 1]!;
   return {
-    primary: [...primaryDefaults.slice(0, -1), { ...active, group: 'primary' }],
-    more: [
-      { ...lastPrimary, group: 'more' },
-      ...moreDefaults.filter((i) => i.key !== active.key),
-    ],
+    primary: withDefaultGroups.filter((item) => item.group === 'primary'),
+    more: withDefaultGroups.filter((item) => item.group === 'more'),
   };
 }

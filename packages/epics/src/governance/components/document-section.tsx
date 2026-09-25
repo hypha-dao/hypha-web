@@ -62,7 +62,8 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
             placeholder={tAgreements('searchDocuments')}
             onChange={(event) => onUpdateSearch(event.target.value)}
             leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-            className="min-w-0 flex-1"
+            rootClassName="min-w-0 flex-1"
+            className="min-w-0"
           />
         ) : (
           <div className="min-w-0 flex-1" />

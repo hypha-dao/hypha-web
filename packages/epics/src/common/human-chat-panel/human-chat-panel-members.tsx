@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { useMatrix, useSpaceBySlug } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 import { UseMembers } from '../../spaces';
 import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import { shortenMatrixIdForDisplay } from './matrix-room-member-display';
@@ -107,11 +106,7 @@ export function HumanChatPanelMembers({
               key={i}
               className="flex items-center gap-3 rounded-md px-2 py-1.5"
             >
-              <PersonAvatar
-                isLoading
-                size="md"
-                className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
-              />
+              <PersonAvatar isLoading size="md" className="rounded-full" />
               <Skeleton width="120px" height="16px" loading>
                 <div />
               </Skeleton>
@@ -141,14 +136,14 @@ export function HumanChatPanelMembers({
         return (
           <div
             key={member.slug ?? member.id}
-            className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 rounded-none px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
             data-testid="chat-panel-member-item"
           >
             <PersonAvatar
               avatarSrc={member.avatarUrl}
               userName={displayName}
               size="md"
-              className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
+              className="rounded-full"
             />
             <span className="text-sm text-foreground truncate">
               {displayName}

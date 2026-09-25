@@ -97,10 +97,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
         >
           <Button
             disabled={isDisabled}
-            variant="outline"
-            colorVariant="accent"
-            size="sm"
-            className="space-accent-outline relative min-h-8 shrink-0 px-3 text-xs"
+            className="relative shrink-0 bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-foreground))]"
           >
             {actionText}
           </Button>

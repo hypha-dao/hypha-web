@@ -374,7 +374,7 @@
       "energy": "Energie",
       "activity": "Aktivität",
       "distribution": "Verteilung",
-      "payingSpaces": "Zahlende Spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Aktivitäts-Widgets konnten nicht geladen werden",
@@ -425,9 +425,9 @@
       "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
     },
     "payingSpaces": {
-      "pageTitle": "Zahlende Spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Monatliche Abdeckung ab der ersten On-Chain-Zahlung.",
-      "title": "Zahlende Spaces",
+      "title": "Traction",
       "subtitle": "Spaces mit aktivem bezahltem Abo je Monat, seit Beginn. Filtern Sie nach Space für die Aufschlüsselung.",
       "currentlyPaying": "Aktuell zahlend",
       "everPaid": "Jemals gezahlt",
@@ -646,8 +646,9 @@
       "ariaLabel": "Karte der verschachtelten Spaces",
       "loading": "Ökosystemkarte wird geladen…",
       "empty": "Noch keine verschachtelten Spaces vorhanden",
-      "hint": "Space anklicken zum Fokussieren · außerhalb klicken zum Herauszoomen",
-      "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind"
+      "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern"
     },
     "visibleSpaces": {
       "nestedRoot": "Wurzel",
@@ -664,7 +665,7 @@
     "navigation": {
       "individuals": "Personen",
       "memberSpaces": "Mitglieds-Spaces",
-      "agents": "Agenten",
+      "agents": "KI-Agenten",
       "noIndividuals": "Noch keine Personen",
       "noMemberSpaces": "Noch keine Mitglieds-Spaces",
       "noAgents": "Noch keine Agenten mobilisiert",
@@ -1601,7 +1602,8 @@
     "all": "Alle",
     "exploreNetwork": "Das Hypha-Netzwerk erkunden",
     "seeAll": "Alle anzeigen",
-    "noCategory": "Keine Kategorie"
+    "noCategory": "Keine Kategorie",
+    "privateCount": "+ {count} privat"
   },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",
@@ -2956,7 +2958,7 @@
     "activeCallElsewhere": "Aktiver Anruf in {title}",
     "activeCallsElsewhereCount": "{count} aktive Anrufe an anderer Stelle",
     "notInSpaceEmptyState": "Du befindest dich gerade in keinem Space.",
-    "welcome": "Willkommen im Chat! Starten Sie eine Unterhaltung mit anderen Mitgliedern dieses Spaces.",
+    "welcome": "Starten Sie eine Unterhaltung mit anderen Mitgliedern dieses Spaces.",
     "placeholder": "Nachricht eingeben...",
     "placeholderChannel": "Nachricht #{channel}",
     "sendButton": "Senden",
@@ -3078,6 +3080,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Gestern um {time}",
     "timestampDate": "{date} um {time}",
+    "chatRoomTitle": "Chatraum",
     "systemSender": "System",
     "noMembers": "Keine Mitglieder gefunden",
     "unknownMember": "Unbekannt",
@@ -3795,6 +3798,7 @@
   },
   "NetworkMap": {
     "mapView": "Karte",
+    "overviewView": "Überblick",
     "listView": "Liste",
     "globeView": "Globus",
     "flatView": "Flach",
@@ -3818,7 +3822,11 @@
     "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied.",
     "clusterExpandTitle": "{count} Spaces an diesem Ort",
     "clusterZoomOut": "Herauszoomen",
-    "controlStripLabel": "Netzwerk-Steuerung"
+    "controlStripLabel": "Netzwerk-Steuerung",
+    "legendLabel": "Kartenlegende",
+    "legendSpace": "Space",
+    "legendCluster": "Cluster",
+    "legendSpacesCount": "Spaces · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",
@@ -4268,6 +4276,8 @@
     "exportXlsx": "XLSX exportieren",
     "weightedAbbr": "gew.",
     "openTrack": "Track öffnen",
+    "laneCollapse": "Kategorie einklappen",
+    "laneExpand": "Kategorie ausklappen",
     "backToBoard": "Zurück zum Board",
     "trackTitle": "{swimlane}-Track",
     "summary": {

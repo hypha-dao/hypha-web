@@ -454,7 +454,7 @@ export function CreateAgreementBaseFields({
                               <Input
                                 rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
                                 placeholder={titlePlaceholder}
-                                className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
+                                className="!h-auto min-h-10 w-full rounded-none border border-border bg-inherit py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 focus-visible:border-foreground sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
                                 disabled={isLoading}
                                 rightIcon={
                                   <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
@@ -542,7 +542,7 @@ export function CreateAgreementBaseFields({
       </div>
       <div className="flex flex-col gap-6">
         {mode !== 'memory' ? (
-          <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+          <section className="rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
             <FormField
               control={form.control}
               name="leadImage"
@@ -589,7 +589,7 @@ export function CreateAgreementBaseFields({
             />
           </section>
         ) : null}
-        <section className="min-w-0 max-w-full overflow-hidden rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+        <section className="min-w-0 max-w-full overflow-hidden rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
           {mode === 'memory' ? (
             <FormField
               control={form.control}
@@ -660,7 +660,7 @@ export function CreateAgreementBaseFields({
                     {contentLabel} <RequirementMark />
                   </FormLabel>
                   <FormControl>
-                    <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                    <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
                       <RichTextEditor
                         editorRef={null}
                         bordered={false}

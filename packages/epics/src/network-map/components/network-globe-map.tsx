@@ -8,7 +8,6 @@ import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2, Minus } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
-import { NetworkMapLayerControls } from './network-map-layer-controls';
 import type {
   NetworkGlobeMapProps,
   NetworkMapLayerVisibility,
@@ -72,64 +71,76 @@ const DEFAULT_LAYER_VISIBILITY: NetworkMapLayerVisibility = {
 
 type MapPalette = {
   ocean: string;
+  /** Matches ocean so continents read as hairline outlines only. */
   landFill: string;
   landStroke: string;
-  /** Soft water-side band under coast lines — reads as shoreline, not outline chrome. */
+  /** Soft water-side band under coast lines — quiet shoreline, same family. */
   coastHalo: string;
   /** Globe disk / flat map limb against the page (no stage frame). */
   sphereEdge: string;
   grid: string;
   clusterFill: string;
   clusterRing: string;
+  clusterCount: string;
+  pinFill: string;
   pinStroke: string;
   spiderfyStroke: string;
   sphereShadow: string | null;
 };
 
 /**
- * Cartographic contrast without neon: deep water, elevated land, thin coast.
- * Disk edge carries silhouette so the map can sit frameless on the page.
+ * Foundation ink/paper only — no accent hues, no pin rainbow.
+ * Land is outlined on the ocean ground (image-3 spirit) in both globe and flat.
  */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(23% 0.034 236)',
-  landFill: 'oklch(36% 0.018 98)',
-  landStroke: 'oklch(54% 0.022 232)',
-  coastHalo: 'oklch(28% 0.03 236)',
-  sphereEdge: 'oklch(48% 0.022 236)',
-  grid: 'oklch(42% 0.02 236)',
-  clusterFill: 'var(--accent-9)',
-  clusterRing: 'var(--accent-8)',
-  pinStroke: 'oklch(97% 0.005 250)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 45%, transparent)',
+  ocean: 'var(--hypha-ink)',
+  landFill: 'var(--hypha-ink)',
+  landStroke: 'color-mix(in srgb, var(--hypha-text) 52%, transparent)',
+  coastHalo: 'color-mix(in srgb, var(--hypha-mid) 55%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-text) 28%, transparent)',
+  grid: 'color-mix(in srgb, var(--hypha-mid) 70%, transparent)',
+  clusterFill: 'var(--hypha-text)',
+  clusterRing: 'color-mix(in srgb, var(--hypha-text) 42%, transparent)',
+  clusterCount: 'var(--hypha-ink)',
+  pinFill: 'var(--hypha-text)',
+  pinStroke: 'var(--hypha-ink)',
+  spiderfyStroke: 'color-mix(in srgb, var(--hypha-text) 35%, transparent)',
   sphereShadow: null,
 };
 
 const LIGHT_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(93% 0.022 232)',
-  landFill: 'oklch(87% 0.014 95)',
-  landStroke: 'oklch(58% 0.02 250)',
-  coastHalo: 'oklch(88% 0.028 230)',
-  sphereEdge: 'oklch(74% 0.018 250)',
-  grid: 'var(--neutral-7)',
-  clusterFill: 'var(--accent-9)',
-  clusterRing: 'var(--accent-8)',
-  pinStroke: 'oklch(99% 0.002 250)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 30%, transparent)',
+  ocean: 'var(--hypha-paper)',
+  landFill: 'var(--hypha-paper)',
+  landStroke: 'color-mix(in srgb, var(--hypha-ink) 48%, transparent)',
+  coastHalo: 'color-mix(in srgb, var(--hypha-ink) 8%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-ink) 22%, transparent)',
+  grid: 'color-mix(in srgb, var(--hypha-ink) 12%, transparent)',
+  clusterFill: 'var(--hypha-ink)',
+  clusterRing: 'color-mix(in srgb, var(--hypha-ink) 38%, transparent)',
+  clusterCount: 'var(--hypha-paper)',
+  pinFill: 'var(--hypha-ink)',
+  pinStroke: 'var(--hypha-paper)',
+  spiderfyStroke: 'color-mix(in srgb, var(--hypha-ink) 28%, transparent)',
   sphereShadow:
-    'drop-shadow(0 1px 3px color-mix(in oklab, var(--neutral-12) 10%, transparent))',
+    'drop-shadow(0 1px 3px color-mix(in srgb, var(--hypha-ink) 10%, transparent))',
 };
 
 function mapPaletteForTheme(theme: string | undefined): MapPalette {
   return theme === 'light' ? LIGHT_GLOBE_PALETTE : DARK_GLOBE_PALETTE;
 }
 
-/** Stable per-space accent hues for pin dots (not chrome). */
-function pinColor(id: number): string {
-  const hue = Math.abs((id * 47) % 360);
-  return `oklch(62% 0.14 ${hue})`;
-}
-
 const MINI_GLOBE_SIZE = 88;
+
+/**
+ * Equirectangular world is 2:1. The stage must match that drawing: a taller
+ * box leaves empty paper above and below the coastlines and drops the
+ * corner navigator off the map.
+ */
+function mapStageHeight(width: number): number {
+  return Math.max(1, Math.round(width / 2));
+}
+const MINI_MAP_WIDTH = 120;
+const MINI_MAP_HEIGHT = 72;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') {
@@ -157,6 +168,312 @@ function isPinVisibleOnProjection(
   const rotate = projection.rotate();
   const center: [number, number] = [-rotate[0], -rotate[1]];
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
+}
+
+/** Legend and miniature sit this far inside the visible drawing. */
+const OVERLAY_INSET = 12;
+const OVERLAY_GAP = 12;
+
+type OverlaySize = { w: number; h: number };
+type OverlayBox = OverlaySize & { x: number; y: number };
+type OverlayDisk = { cx: number; cy: number; r: number };
+type OverlaySeat = {
+  legendLeft: number;
+  legendBottom: number;
+  navRight: number;
+  navBottom: number;
+};
+
+function overlayBoxesOverlap(a: OverlayBox, b: OverlayBox): boolean {
+  return (
+    a.x < b.x + b.w + OVERLAY_GAP &&
+    a.x + a.w + OVERLAY_GAP > b.x &&
+    a.y < b.y + b.h + OVERLAY_GAP &&
+    a.y + a.h + OVERLAY_GAP > b.y
+  );
+}
+
+function overlayWithinStage(
+  box: OverlayBox,
+  width: number,
+  height: number,
+): boolean {
+  return (
+    box.x >= OVERLAY_INSET - 0.5 &&
+    box.y >= OVERLAY_INSET - 0.5 &&
+    box.x + box.w <= width - OVERLAY_INSET + 0.5 &&
+    box.y + box.h <= height - OVERLAY_INSET + 0.5
+  );
+}
+
+function cornersInsideRadius(
+  box: OverlayBox,
+  cx: number,
+  cy: number,
+  radius: number,
+): boolean {
+  const points: Array<[number, number]> = [
+    [box.x, box.y],
+    [box.x + box.w, box.y],
+    [box.x, box.y + box.h],
+    [box.x + box.w, box.y + box.h],
+  ];
+  return points.every(([x, y]) => {
+    const dx = x - cx;
+    const dy = y - cy;
+    return dx * dx + dy * dy <= radius * radius + 1;
+  });
+}
+
+/**
+ * Orthographic draws a disk. A clip under 180° is that disk; equirectangular
+ * reports clipAngle 0 and fills its bounds rectangle instead.
+ */
+function visibleDisk(projection: d3.GeoProjection): OverlayDisk | null {
+  const clip = projection.clipAngle?.();
+  if (clip == null || clip <= 0 || clip >= 180) {
+    return null;
+  }
+  const [cx, cy] = projection.translate();
+  const radius = projection.scale() * Math.sin((clip * Math.PI) / 180);
+  if (
+    !Number.isFinite(cx) ||
+    !Number.isFinite(cy) ||
+    !(radius > OVERLAY_INSET)
+  ) {
+    return null;
+  }
+  return { cx, cy, r: radius };
+}
+
+/**
+ * Put the box's outer corner 12px inside the limb, as close to the bottom
+ * corner of the disk as the box still fits. θ = 0 is straight down.
+ */
+function diskCornerBox(
+  disk: OverlayDisk,
+  size: OverlaySize,
+  side: 'left' | 'right',
+): OverlayBox | null {
+  const reach = disk.r - OVERLAY_INSET;
+  if (!(reach > 1) || size.w > reach * 2 || size.h > reach * 2) {
+    return null;
+  }
+  const thetaMin = Math.asin(Math.min(1, size.w / 2 / reach));
+  const thetaMax = Math.acos(Math.min(1, size.h / 2 / reach));
+  if (thetaMin > thetaMax + 1e-4) {
+    return null;
+  }
+  const theta = Math.min(thetaMax, Math.max(thetaMin, Math.PI / 4));
+  const along = reach * Math.sin(theta);
+  const down = reach * Math.cos(theta);
+  const y = disk.cy + down - size.h;
+  const x = side === 'right' ? disk.cx + along - size.w : disk.cx - along;
+  return { x, y, w: size.w, h: size.h };
+}
+
+function stageCornerBox(
+  width: number,
+  height: number,
+  size: OverlaySize,
+  side: 'left' | 'right',
+): OverlayBox {
+  return {
+    x: side === 'right' ? width - OVERLAY_INSET - size.w : OVERLAY_INSET,
+    y: height - OVERLAY_INSET - size.h,
+    w: size.w,
+    h: size.h,
+  };
+}
+
+function seatDiskCorner(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  size: OverlaySize,
+  side: 'left' | 'right',
+): OverlayBox | null {
+  const fitted = diskCornerBox(disk, size, side);
+  if (fitted && overlayWithinStage(fitted, width, height)) {
+    return fitted;
+  }
+  // Zoomed disk covers the stage, so the visible edge is the stage itself.
+  const staged = stageCornerBox(width, height, size, side);
+  if (cornersInsideRadius(staged, disk.cx, disk.cy, disk.r)) {
+    return staged;
+  }
+  if (!fitted) {
+    return null;
+  }
+  const clamped = {
+    x: Math.min(
+      Math.max(OVERLAY_INSET, fitted.x),
+      width - OVERLAY_INSET - size.w,
+    ),
+    y: Math.min(
+      Math.max(OVERLAY_INSET, fitted.y),
+      height - OVERLAY_INSET - size.h,
+    ),
+    w: size.w,
+    h: size.h,
+  };
+  return cornersInsideRadius(clamped, disk.cx, disk.cy, disk.r)
+    ? clamped
+    : null;
+}
+
+/** Leftmost position at this bottom edge that keeps the whole legend 12px inside the limb. */
+function legendLeftAtBottom(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  size: OverlaySize,
+  bottom: number,
+): OverlayBox | null {
+  const reach = disk.r - OVERLAY_INSET;
+  const top = bottom - size.h;
+  const span = (edge: number) => {
+    const dy = edge - disk.cy;
+    const remainder = reach * reach - dy * dy;
+    if (remainder < 0) {
+      return null;
+    }
+    const half = Math.sqrt(remainder);
+    return { left: disk.cx - half, right: disk.cx + half };
+  };
+  const atBottom = span(bottom);
+  const atTop = span(top);
+  if (!atBottom || !atTop) {
+    return null;
+  }
+  let x = Math.max(atBottom.left, atTop.left, OVERLAY_INSET);
+  const rightLimit = Math.min(
+    atBottom.right,
+    atTop.right,
+    width - OVERLAY_INSET,
+  );
+  if (rightLimit - x < size.w - 0.5) {
+    return null;
+  }
+  if (x + size.w > rightLimit) {
+    x = rightLimit - size.w;
+  }
+  const y = top;
+  if (y < OVERLAY_INSET || bottom > height - OVERLAY_INSET + 0.5) {
+    return null;
+  }
+  return { x, y, w: size.w, h: size.h };
+}
+
+function shiftLegendClearOfNavigator(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  legend: OverlaySize,
+  nav: OverlayBox,
+  leftHalfOnly: boolean,
+): OverlayBox | null {
+  const reach = disk.r - OVERLAY_INSET;
+  const lowest = Math.min(height - OVERLAY_INSET, disk.cy + reach);
+  const highest = Math.max(
+    legend.h + OVERLAY_INSET,
+    disk.cy - reach + legend.h,
+  );
+  for (let bottom = lowest; bottom >= highest; bottom -= 4) {
+    const box = legendLeftAtBottom(disk, width, height, legend, bottom);
+    if (!box) {
+      continue;
+    }
+    if (leftHalfOnly && box.x + box.w > disk.cx + 0.5) {
+      continue;
+    }
+    if (overlayBoxesOverlap(box, nav)) {
+      continue;
+    }
+    return box;
+  }
+  return null;
+}
+
+function seatOnRectangle(
+  width: number,
+  height: number,
+  bounds: [[number, number], [number, number]],
+  legend: OverlaySize | null,
+  nav: OverlaySize,
+): OverlaySeat {
+  const [[x0, y0], [x1, y1]] = bounds;
+  const left = Math.max(OVERLAY_INSET, x0 + OVERLAY_INSET);
+  const right = Math.min(width - OVERLAY_INSET, x1 - OVERLAY_INSET);
+  const bottom = Math.min(height - OVERLAY_INSET, y1 - OVERLAY_INSET);
+  const top = Math.max(OVERLAY_INSET, y0 + OVERLAY_INSET);
+  const navBox: OverlayBox = {
+    x: Math.max(left, right - nav.w),
+    y: Math.max(top, bottom - nav.h),
+    w: nav.w,
+    h: nav.h,
+  };
+  let legendBox: OverlayBox | null = null;
+  if (legend) {
+    legendBox = {
+      x: left,
+      y: Math.max(top, bottom - legend.h),
+      w: legend.w,
+      h: legend.h,
+    };
+    if (overlayBoxesOverlap(legendBox, navBox)) {
+      legendBox = {
+        ...legendBox,
+        y: Math.max(top, navBox.y - OVERLAY_GAP - legend.h),
+      };
+    }
+  }
+  return overlaySeatCss(width, height, legendBox, navBox);
+}
+
+function seatOnDisk(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  legend: OverlaySize | null,
+  nav: OverlaySize,
+): OverlaySeat | null {
+  const navBox = seatDiskCorner(disk, width, height, nav, 'right');
+  if (!navBox) {
+    return null;
+  }
+  let legendBox = legend
+    ? seatDiskCorner(disk, width, height, legend, 'left')
+    : null;
+  if (
+    legend &&
+    legendBox &&
+    (legendBox.x + legendBox.w > disk.cx + 0.5 ||
+      overlayBoxesOverlap(legendBox, navBox))
+  ) {
+    legendBox =
+      shiftLegendClearOfNavigator(disk, width, height, legend, navBox, true) ??
+      shiftLegendClearOfNavigator(disk, width, height, legend, navBox, false) ??
+      legendBox;
+  }
+  return overlaySeatCss(width, height, legendBox, navBox);
+}
+
+function overlaySeatCss(
+  width: number,
+  height: number,
+  legend: OverlayBox | null,
+  nav: OverlayBox,
+): OverlaySeat {
+  return {
+    legendLeft: Math.max(OVERLAY_INSET, Math.round(legend?.x ?? OVERLAY_INSET)),
+    legendBottom: Math.max(
+      OVERLAY_INSET,
+      Math.round(legend ? height - (legend.y + legend.h) : OVERLAY_INSET),
+    ),
+    navRight: Math.max(OVERLAY_INSET, Math.round(width - (nav.x + nav.w))),
+    navBottom: Math.max(OVERLAY_INSET, Math.round(height - (nav.y + nav.h))),
+  };
 }
 
 function parsePinTransform(element: Element): { x: number; y: number } | null {
@@ -195,7 +512,9 @@ function buildProjection(
   const zoom = Math.max(0.75, Math.min(zoomScale, MAX_MAP_ZOOM));
   // Frameless stage — keep a small inset so the disk limb isn’t clipped.
   const globeScale = (minDim / 2 - 10) * zoom;
-  const flatScale = (width / (2 * Math.PI)) * zoom;
+  // Cover the stage. Height is width/2, so this matches the world exactly;
+  // the max guards a 1px rounding gap from showing as empty paper.
+  const flatScale = (Math.max(width, height * 2) / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
 
   if (morph <= 0) {
@@ -239,6 +558,8 @@ export function NetworkGlobeMap({
   renderToolbar,
   isActive = true,
   showStage = true,
+  alignProjection,
+  onProjectionModeChange,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -247,6 +568,7 @@ export function NetworkGlobeMap({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const miniGlobeRef = React.useRef<SVGSVGElement>(null);
+  const miniMapRef = React.useRef<SVGSVGElement>(null);
 
   const mapPalette = React.useMemo(
     () => mapPaletteForTheme(resolvedTheme),
@@ -317,7 +639,18 @@ export function NetworkGlobeMap({
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
+  const overlaySeatRef = React.useRef<{
+    key: string;
+    seat: OverlaySeat;
+  } | null>(null);
   const renderMiniGlobeRef = React.useRef<() => void>(() => {});
+  const isMountedRef = React.useRef(true);
+  const animatingTargetRef = React.useRef<NetworkMapProjectionMode | null>(
+    null,
+  );
+  const alignedProjectionRef = React.useRef<
+    NetworkMapProjectionMode | undefined
+  >(undefined);
 
   morphRef.current = morphProgress;
   layersRef.current = layers;
@@ -395,10 +728,12 @@ export function NetworkGlobeMap({
     }
 
     const width = container.clientWidth;
-    const height = Math.max(360, Math.min(560, width * 0.62));
-    if (width <= 0) {
+    const height = mapStageHeight(width);
+    if (width <= 0 || height <= 0) {
       return;
     }
+
+    container.style.height = `${height}px`;
 
     svg
       .attr('width', width)
@@ -506,8 +841,8 @@ export function NetworkGlobeMap({
       .attr('d', spherePath)
       .attr('fill', 'none')
       .attr('stroke', palette.sphereEdge)
-      .attr('stroke-width', isGlobeView ? 1.1 : 0.7)
-      .attr('opacity', isGlobeView ? 0.85 : 0.45)
+      .attr('stroke-width', isGlobeView ? 1.25 : 0.65)
+      .attr('opacity', isGlobeView ? 1 : 0.55)
       .attr('pointer-events', 'none')
       .style('display', null);
 
@@ -517,8 +852,8 @@ export function NetworkGlobeMap({
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', palette.grid)
-        .attr('stroke-width', 0.3)
-        .attr('opacity', isGlobeView ? 0.4 : 0.5)
+        .attr('stroke-width', isGlobeView ? 0.35 : 0.28)
+        .attr('opacity', isGlobeView ? 0.55 : 0.45)
         .style('display', null);
     } else {
       gridPath.attr('d', null).style('display', 'none');
@@ -532,17 +867,18 @@ export function NetworkGlobeMap({
         .attr('d', landD)
         .attr('fill', 'none')
         .attr('stroke', palette.coastHalo)
-        .attr('stroke-width', 2.25)
+        .attr('stroke-width', isGlobeView ? 1.6 : 1.2)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
-        .attr('opacity', 0.9)
+        .attr('opacity', 0.7)
         .attr('pointer-events', 'none')
         .style('display', null);
+      // Outlined continents: fill matches ocean; hairline stroke carries the land.
       landPath
         .attr('d', landD)
         .attr('fill', palette.landFill)
         .attr('stroke', palette.landStroke)
-        .attr('stroke-width', 0.55)
+        .attr('stroke-width', isGlobeView ? 0.7 : 0.5)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
         .style('display', null);
@@ -669,7 +1005,7 @@ export function NetworkGlobeMap({
           .attr('fill', 'none')
           .attr('stroke', palette.clusterRing)
           .attr('stroke-width', 1.5)
-          .attr('opacity', 0.55)
+          .attr('opacity', 0.7)
           .attr('pointer-events', 'none');
         group
           .append('circle')
@@ -687,7 +1023,7 @@ export function NetworkGlobeMap({
           .attr('font-size', datum.count > 9 ? 9 : 10)
           .attr('font-weight', 600)
           .attr('font-family', 'var(--font-family-text, sans-serif)')
-          .attr('fill', 'var(--accent-contrast, white)')
+          .attr('fill', palette.clusterCount)
           .attr('pointer-events', 'none')
           .text(String(datum.count));
         group
@@ -711,14 +1047,14 @@ export function NetworkGlobeMap({
         .append('circle')
         .attr('class', 'map-pin-halo')
         .attr('r', 7)
-        .attr('fill', pinColor(space.id))
+        .attr('fill', palette.pinFill)
         .attr('opacity', 0)
         .attr('pointer-events', 'none');
       group
         .append('circle')
         .attr('class', 'map-pin-dot')
         .attr('r', 5)
-        .attr('fill', pinColor(space.id))
+        .attr('fill', palette.pinFill)
         .attr('stroke', palette.pinStroke)
         .attr('stroke-width', 1.75)
         .attr('pointer-events', 'none');
@@ -727,6 +1063,7 @@ export function NetworkGlobeMap({
 
     pins.merge(pinsEnter).each(function (datum) {
       const group = d3.select(this);
+      const palette = mapPaletteRef.current;
       if (
         datum.kind === 'cluster' &&
         group.select('circle.map-pin-hit').empty()
@@ -737,6 +1074,25 @@ export function NetworkGlobeMap({
           .attr('r', 14)
           .attr('fill', 'transparent')
           .attr('pointer-events', 'all');
+      }
+
+      if (datum.kind === 'cluster') {
+        group
+          .select('circle.map-pin-cluster-ring')
+          .attr('stroke', palette.clusterRing);
+        group
+          .select('circle.map-pin-cluster-core')
+          .attr('fill', palette.clusterFill)
+          .attr('stroke', palette.pinStroke);
+        group
+          .select('text.map-pin-cluster-count')
+          .attr('fill', palette.clusterCount);
+      } else {
+        group.select('circle.map-pin-halo').attr('fill', palette.pinFill);
+        group
+          .select('circle.map-pin-dot')
+          .attr('fill', palette.pinFill)
+          .attr('stroke', palette.pinStroke);
       }
 
       const latitude =
@@ -795,6 +1151,59 @@ export function NetworkGlobeMap({
         .attr('opacity', pinOpacity)
         .style('display', null);
     });
+
+    const bounds = path.bounds({ type: 'Sphere' });
+    const [[x0, y0], [x1, y1]] = bounds;
+    if ([x0, y0, x1, y1].every((value) => Number.isFinite(value))) {
+      const disk = visibleDisk(projection);
+      const navSize = miniGlobeRef.current
+        ? { w: MINI_GLOBE_SIZE, h: MINI_GLOBE_SIZE }
+        : { w: MINI_MAP_WIDTH, h: MINI_MAP_HEIGHT };
+      const legendEl = container.querySelector<HTMLElement>(
+        '[data-network-map-inset="legend"]',
+      );
+      const seatKey = [
+        width,
+        height,
+        disk
+          ? `d${disk.r.toFixed(1)}`
+          : `r${x0.toFixed(0)},${y0.toFixed(0)},${x1.toFixed(0)},${y1.toFixed(
+              0,
+            )}`,
+        navSize.w,
+        navSize.h,
+        legendEl?.textContent ?? '',
+      ].join('|');
+      let seat =
+        overlaySeatRef.current?.key === seatKey
+          ? overlaySeatRef.current.seat
+          : null;
+      if (!seat) {
+        const legendSize =
+          legendEl && legendEl.offsetWidth > 0
+            ? { w: legendEl.offsetWidth, h: legendEl.offsetHeight }
+            : null;
+        seat = disk
+          ? seatOnDisk(disk, width, height, legendSize, navSize)
+          : seatOnRectangle(width, height, bounds, legendSize, navSize);
+        if (seat && (!legendEl || legendSize)) {
+          overlaySeatRef.current = { key: seatKey, seat };
+        }
+      }
+      if (seat) {
+        // Variables survive React re-renders that reset the buttons' style prop.
+        container.style.setProperty('--map-nav-right', `${seat.navRight}px`);
+        container.style.setProperty('--map-nav-bottom', `${seat.navBottom}px`);
+        container.style.setProperty(
+          '--map-legend-left',
+          `${seat.legendLeft}px`,
+        );
+        container.style.setProperty(
+          '--map-legend-bottom',
+          `${seat.legendBottom}px`,
+        );
+      }
+    }
   }, [lang, router, t]);
 
   renderMapRef.current = renderMap;
@@ -860,6 +1269,56 @@ export function NetworkGlobeMap({
 
   renderMiniGlobeRef.current = renderMiniGlobe;
 
+  const renderMiniMap = React.useCallback(() => {
+    const svg = d3.select(miniMapRef.current);
+    const land = landRef.current;
+    if (!miniMapRef.current || !land) {
+      return;
+    }
+
+    const width = MINI_MAP_WIDTH;
+    const height = MINI_MAP_HEIGHT;
+    const palette = mapPaletteRef.current;
+    const projection = d3.geoEquirectangular().fitExtent(
+      [
+        [3, 3],
+        [width - 3, height - 3],
+      ],
+      { type: 'Sphere' },
+    );
+    const path = d3.geoPath(projection);
+
+    svg
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`);
+
+    let root = svg.select<SVGGElement>('g.mini-map-root');
+    if (root.empty()) {
+      root = svg.append('g').attr('class', 'mini-map-root');
+      root.append('path').attr('class', 'mini-map-ocean');
+      root.append('path').attr('class', 'mini-map-land');
+    }
+
+    root
+      .select<SVGPathElement>('path.mini-map-ocean')
+      .attr('d', path({ type: 'Sphere' }) ?? '')
+      .attr('fill', palette.ocean)
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', 0.6);
+
+    root
+      .select<SVGPathElement>('path.mini-map-land')
+      .attr('d', path(land) ?? '')
+      .attr('fill', palette.landFill)
+      .attr('stroke', palette.landStroke)
+      .attr('stroke-width', 0.35)
+      .attr('stroke-linejoin', 'round');
+  }, []);
+
+  const renderMiniMapRef = React.useRef(renderMiniMap);
+  renderMiniMapRef.current = renderMiniMap;
+
   const isActiveRef = React.useRef(isActive);
   isActiveRef.current = isActive;
 
@@ -874,6 +1333,7 @@ export function NetworkGlobeMap({
       renderFrameRef.current = null;
       renderMapRef.current();
       renderMiniGlobeRef.current();
+      renderMiniMapRef.current();
     });
   }, []);
 
@@ -1022,7 +1482,17 @@ export function NetworkGlobeMap({
   }, [requestRender]);
 
   React.useEffect(() => {
-    if (hasUserRotatedRef.current || morphRef.current >= 1) {
+    if (
+      hasUserRotatedRef.current ||
+      morphRef.current >= 1 ||
+      animatingTargetRef.current != null
+    ) {
+      if (!hasUserRotatedRef.current) {
+        savedGlobeRotateRef.current = globeRotationForCenter(
+          initialCenter.longitude,
+          initialCenter.latitude,
+        );
+      }
       return;
     }
 
@@ -1107,6 +1577,7 @@ export function NetworkGlobeMap({
   React.useEffect(() => {
     renderMap();
     renderMiniGlobe();
+    renderMiniMap();
   }, [
     layers,
     morphProgress,
@@ -1118,15 +1589,20 @@ export function NetworkGlobeMap({
     mapPalette,
     renderMap,
     renderMiniGlobe,
+    renderMiniMap,
   ]);
 
   React.useEffect(() => {
-    if (selectedProjection !== 'flat' || isLoadingGeo || loadError) {
+    if (isLoadingGeo || loadError) {
       return;
     }
-    // Mini-globe SVG mounts with flat mode — paint after commit.
+    // Inset SVG mounts with the other projection — paint after commit.
     const id = requestAnimationFrame(() => {
-      renderMiniGlobeRef.current();
+      if (selectedProjection === 'flat') {
+        renderMiniGlobeRef.current();
+      } else {
+        renderMiniMapRef.current();
+      }
     });
     return () => cancelAnimationFrame(id);
   }, [selectedProjection, isLoadingGeo, loadError, mapPalette]);
@@ -1148,8 +1624,7 @@ export function NetworkGlobeMap({
 
     function mapDimensions() {
       const width = container!.clientWidth;
-      const height = Math.max(360, Math.min(560, width * 0.62));
-      return { width, height };
+      return { width, height: mapStageHeight(width) };
     }
 
     function globeProjectionAtRotation(rotate: Rotation) {
@@ -1356,8 +1831,17 @@ export function NetworkGlobeMap({
     };
   }, [isActive, showStage, isLoadingGeo, loadError, requestRender]);
 
+  const onProjectionModeChangeRef = React.useRef(onProjectionModeChange);
+  onProjectionModeChangeRef.current = onProjectionModeChange;
+
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
+      if (
+        animationFrameRef.current != null &&
+        animatingTargetRef.current === target
+      ) {
+        return;
+      }
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -1377,9 +1861,12 @@ export function NetworkGlobeMap({
       const fromMorph = morphRef.current;
       const toMorph = target === 'flat' ? 1 : 0;
       if (Math.abs(fromMorph - toMorph) < 1e-6) {
+        animatingTargetRef.current = null;
         return;
       }
 
+      animatingTargetRef.current = target;
+      onProjectionModeChangeRef.current?.(target);
       setSelectedProjection(target);
 
       const fromRotate = [...rotateRef.current] as Rotation;
@@ -1393,6 +1880,7 @@ export function NetworkGlobeMap({
       const interpolateRotation = interpolateAngles(fromRotate, toRotate);
 
       if (prefersReducedMotion()) {
+        animatingTargetRef.current = null;
         morphRef.current = toMorph;
         rotateRef.current = toRotate;
         setMorphProgress(toMorph);
@@ -1413,6 +1901,7 @@ export function NetworkGlobeMap({
           animationFrameRef.current = requestAnimationFrame(step);
         } else {
           animationFrameRef.current = null;
+          animatingTargetRef.current = null;
           morphRef.current = toMorph;
           rotateRef.current = toRotate;
           setMorphProgress(toMorph);
@@ -1426,20 +1915,47 @@ export function NetworkGlobeMap({
     [requestRender, syncClusterAnimating],
   );
 
+  const animateProjectionRef = React.useRef(animateProjection);
+  animateProjectionRef.current = animateProjection;
+
   React.useEffect(() => {
+    if (!alignProjection) {
+      alignedProjectionRef.current = undefined;
+      return;
+    }
+    if (alignedProjectionRef.current === alignProjection) {
+      return;
+    }
+    alignedProjectionRef.current = alignProjection;
+    animateProjectionRef.current(alignProjection);
+  }, [alignProjection]);
+
+  React.useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      if (animationFrameRef.current != null) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (autoRotateFrameRef.current != null) {
-        cancelAnimationFrame(autoRotateFrameRef.current);
-      }
-      if (clusterAnimFrameRef.current != null) {
-        cancelAnimationFrame(clusterAnimFrameRef.current);
-      }
-      if (renderFrameRef.current != null) {
-        cancelAnimationFrame(renderFrameRef.current);
-      }
+      isMountedRef.current = false;
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          return;
+        }
+        if (animationFrameRef.current != null) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+        if (autoRotateFrameRef.current != null) {
+          cancelAnimationFrame(autoRotateFrameRef.current);
+          autoRotateFrameRef.current = null;
+        }
+        if (clusterAnimFrameRef.current != null) {
+          cancelAnimationFrame(clusterAnimFrameRef.current);
+          clusterAnimFrameRef.current = null;
+        }
+        if (renderFrameRef.current != null) {
+          cancelAnimationFrame(renderFrameRef.current);
+          renderFrameRef.current = null;
+        }
+        animatingTargetRef.current = null;
+      }, 0);
     };
   }, []);
 
@@ -1498,24 +2014,14 @@ export function NetworkGlobeMap({
               activePin.x,
               activePin.y,
               containerRef.current?.clientWidth ?? 640,
-              containerRef.current?.clientHeight ?? 360,
+              containerRef.current?.clientHeight ??
+                mapStageHeight(containerRef.current?.clientWidth ?? 640),
             )
           : {})}
       />
     ) : null;
 
-  const layerControls = (
-    <NetworkMapLayerControls
-      projectionMode={selectedProjection}
-      onProjectionModeChange={animateProjection}
-    />
-  );
-
-  const toolbar = renderToolbar ? (
-    renderToolbar(layerControls)
-  ) : (
-    <div className="flex justify-center">{layerControls}</div>
-  );
+  const toolbar = renderToolbar ? renderToolbar(null) : null;
 
   const clusterControls = focusedClusterId ? (
     <div
@@ -1537,12 +2043,49 @@ export function NetworkGlobeMap({
 
   const showMiniGlobe =
     selectedProjection === 'flat' && !isLoadingGeo && !loadError;
+  const showMiniMap =
+    selectedProjection === 'globe' && !isLoadingGeo && !loadError;
+
+  const mapLegend =
+    !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
+      <div
+        data-network-map-inset="legend"
+        className={cn(
+          'pointer-events-none absolute bottom-[var(--map-legend-bottom)] left-[var(--map-legend-left)] z-20',
+          'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
+          'rounded-md border border-border bg-background/90 px-2.5 py-1.5',
+          'text-1 text-muted-foreground shadow-sm backdrop-blur-sm',
+        )}
+        aria-label={t('legendLabel')}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="size-2 shrink-0 rounded-full bg-foreground ring-1 ring-background"
+            aria-hidden
+          />
+          <span>{t('legendSpace')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="relative inline-flex size-3.5 shrink-0 items-center justify-center rounded-full bg-foreground text-[8px] font-semibold leading-none text-background ring-1 ring-foreground/35"
+            aria-hidden
+          >
+            n
+          </span>
+          <span>{t('legendCluster')}</span>
+        </span>
+        <span className="text-foreground/80">
+          {t('legendSpacesCount', { count: locatedSpaces.length })}
+        </span>
+      </div>
+    ) : null;
 
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
+      data-network-map-inset="navigator"
       className={cn(
-        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
         'hover:border-border hover:bg-muted/15',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
@@ -1554,6 +2097,30 @@ export function NetworkGlobeMap({
     >
       <svg
         ref={miniGlobeRef}
+        className="block size-full"
+        role="img"
+        aria-hidden
+      />
+    </button>
+  ) : null;
+
+  const miniMapInset = showMiniMap ? (
+    <button
+      type="button"
+      data-network-map-inset="navigator"
+      className={cn(
+        'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'transition-[border-color,background-color] duration-150',
+        'hover:border-border hover:bg-muted/15',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+      )}
+      style={{ width: MINI_MAP_WIDTH, height: MINI_MAP_HEIGHT }}
+      aria-label={t('flatView')}
+      title={t('flatView')}
+      onClick={() => animateProjection('flat')}
+    >
+      <svg
+        ref={miniMapRef}
         className="block size-full"
         role="img"
         aria-hidden
@@ -1593,7 +2160,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
+      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem]"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
@@ -1611,7 +2178,7 @@ export function NetworkGlobeMap({
       <svg
         ref={svgRef}
         className={cn(
-          'block w-full select-none',
+          'absolute inset-0 block h-full w-full select-none',
           projectionMode === 'globe'
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-default',
@@ -1620,7 +2187,9 @@ export function NetworkGlobeMap({
         role="img"
         aria-label={t('mapAriaLabel')}
       />
+      {mapLegend}
       {miniGlobeInset}
+      {miniMapInset}
       {hoverCard}
     </div>
   );

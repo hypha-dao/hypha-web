@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
@@ -25,6 +32,10 @@ type MembershipPreview = {
 
 type EcosystemMembershipModulesProps = {
   spaceSlug: string;
+  /** Current space name — same line as the section labels. */
+  spaceTitle?: string;
+  /** Visit / add (and similar) controls — sits on the same header row. */
+  trailing?: ReactNode;
 };
 
 function fitVisibleAvatarCount(containerWidth: number, total: number): number {
@@ -46,7 +57,13 @@ function fitVisibleAvatarCount(containerWidth: number, total: number): number {
   return 1;
 }
 
-function MembershipStack({ members }: { members: MembershipPreview[] }) {
+function MembershipStack({
+  members,
+  emptyLabel,
+}: {
+  members: MembershipPreview[];
+  emptyLabel: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(
     Math.min(members.length, MAX_VISIBLE_PREVIEW_COUNT),
@@ -65,6 +82,10 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [members.length]);
+
+  if (members.length === 0) {
+    return <p className="craft-meta truncate">{emptyLabel}</p>;
+  }
 
   const visible = members.slice(0, visibleCount);
   const overflow = members.length - visible.length;
@@ -88,7 +109,7 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
           ) : (
             <Avatar
               key={member.id}
-              className="h-8 w-8 shrink-0 rounded-full border-2 border-background-2 shadow-sm"
+              className="h-8 w-8 shrink-0 rounded-full border border-border/70"
               title={member.label}
             >
               <AvatarImage
@@ -112,34 +133,36 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
   );
 }
 
-function MembershipModuleCard({
-  label,
-  members,
-}: {
-  label: string;
-  members: MembershipPreview[];
-}) {
-  return (
-    <div className="craft-card flex h-full min-w-0 flex-col overflow-hidden px-3 py-2.5">
-      <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
-      <div className="min-w-0 flex-1">
-        <MembershipStack members={members} />
-      </div>
-    </div>
-  );
+const MODULE_COLUMN_START = [
+  'col-start-2',
+  'col-start-3',
+  'col-start-4',
+] as const;
+
+/** Shared by the label and avatar cells so the column divider stays continuous. */
+function membershipColumnClass(index: number, count: number): string {
+  if (index <= 0) return 'min-w-0 sm:pe-4';
+  if (index >= count - 1) {
+    return 'min-w-0 border-s border-border/50 sm:ps-4 sm:pe-2';
+  }
+  return 'min-w-0 border-s border-border/50 sm:px-4';
 }
 
-function membershipGridClassName(count: number): string {
-  if (count <= 1) return 'grid grid-cols-1 gap-3 auto-rows-fr';
-  if (count === 2) return 'grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2';
-  // 1 col mobile → 2 tablet → 3 desktop when all modules are filled
-  return 'grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3';
-}
+/**
+ * One strip: space name shares the label line with Individuals, Member spaces,
+ * and AI agents. Avatars sit under those labels. Trailing controls span the strip.
+ */
+const MEMBERSHIP_ROW_CLASS =
+  'grid min-w-0 overflow-x-auto border-b border-border/50 py-2.5';
+
+const MEMBERSHIP_ROW_COLUMNS = {
+  gridTemplateColumns: 'fit-content(14rem) repeat(3, minmax(0, 1fr)) auto',
+} as const;
 
 export function EcosystemMembershipModules({
   spaceSlug,
+  spaceTitle,
+  trailing,
 }: EcosystemMembershipModulesProps) {
   const t = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
@@ -192,67 +215,79 @@ export function EcosystemMembershipModules({
     [mobilizedAgents, tCoherence],
   );
 
+  // Always render all three modules — including empty Agents — so the control
+  // stays visible on the header row (hiding was causing AI agent to vanish).
   const modules = useMemo(
-    () =>
-      [
-        {
-          key: 'individuals' as const,
-          label: t('navigation.individuals'),
-          members: individuals,
-        },
-        {
-          key: 'memberSpaces' as const,
-          label: t('navigation.memberSpaces'),
-          members: memberSpaces,
-        },
-        {
-          key: 'agents' as const,
-          label: t('navigation.agents'),
-          members: agents,
-        },
-      ].filter((module) => module.members.length > 0),
+    () => [
+      {
+        key: 'individuals' as const,
+        label: t('navigation.individuals'),
+        members: individuals,
+        emptyLabel: t('navigation.noIndividuals'),
+      },
+      {
+        key: 'memberSpaces' as const,
+        label: t('navigation.memberSpaces'),
+        members: memberSpaces,
+        emptyLabel: t('navigation.noMemberSpaces'),
+      },
+      {
+        key: 'agents' as const,
+        label: t('navigation.agents'),
+        members: agents,
+        emptyLabel: t('navigation.noAgents'),
+      },
+    ],
     [agents, individuals, memberSpaces, t],
   );
 
-  if (isLoading && individuals.length === 0 && memberSpaces.length === 0) {
-    return (
-      <div
-        className="border-b border-border/70 px-3 py-3"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
-          {(['individuals', 'memberSpaces', 'agents'] as const).map((key) => (
-            <div
-              key={key}
-              className="craft-card flex h-full min-w-0 flex-col overflow-hidden px-3 py-2.5"
-            >
-              <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
-                {t(`navigation.${key}`)}
-              </p>
-              <p className="craft-meta">{t('navigation.loading')}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (modules.length === 0) {
-    return null;
-  }
-
   return (
-    <div className="border-b border-border/70 px-3 py-3">
-      <div className={membershipGridClassName(modules.length)}>
-        {modules.map((module) => (
-          <MembershipModuleCard
-            key={module.key}
-            label={module.label}
-            members={module.members}
-          />
-        ))}
-      </div>
+    <div
+      className={MEMBERSHIP_ROW_CLASS}
+      style={MEMBERSHIP_ROW_COLUMNS}
+      role={isLoading ? 'status' : undefined}
+      aria-live={isLoading ? 'polite' : undefined}
+    >
+      {spaceTitle ? (
+        <p
+          className="craft-page-title col-start-1 row-start-1 max-w-56 self-baseline truncate pe-4 text-4 font-medium"
+          title={spaceTitle}
+        >
+          {spaceTitle}
+        </p>
+      ) : null}
+      {modules.map((module, index) => {
+        const columnClass = `${membershipColumnClass(index, modules.length)} ${
+          MODULE_COLUMN_START[index]
+        }`;
+        const showLoading =
+          isLoading && module.key !== 'agents' && module.members.length === 0;
+
+        return (
+          <Fragment key={module.key}>
+            <p
+              className={`${columnClass} row-start-1 self-baseline text-1 font-medium uppercase tracking-wide text-muted-foreground`}
+            >
+              {module.label}
+            </p>
+            <div className={`${columnClass} row-start-2 pt-1.5`}>
+              {showLoading ? (
+                <p className="craft-meta">{t('navigation.loading')}</p>
+              ) : (
+                <MembershipStack
+                  members={module.members}
+                  emptyLabel={module.emptyLabel}
+                />
+              )}
+            </div>
+          </Fragment>
+        );
+      })}
+      {trailing ? (
+        <div className="col-start-5 row-span-2 row-start-1 flex items-center self-center">
+          {trailing}
+        </div>
+      ) : null}
     </div>
   );
 }

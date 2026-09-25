@@ -28,8 +28,6 @@ type MenuTopProps = {
   compactReleaseThresholdPx?: number;
   compactDataAttribute?: string;
   showLeadingActionOnlyWhenCompact?: boolean;
-  /** When true, collapse desktop nav while the left AI panel is expanded (overlay or rail). */
-  forceCompactWhenLeftPanelExpanded?: boolean;
 };
 
 /** Gap reserved between leading cluster and desktop actions in the free-space math. */
@@ -47,13 +45,14 @@ export const MenuTop = ({
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
   showMobileHamburger = true,
-  // Wider band than the original 232/256: My Wallet widened the desktop cluster,
-  // so iPad-landscape widths sit near the threshold and need more hysteresis.
-  compactSafeThresholdPx = 232,
-  compactReleaseThresholdPx = 320,
+  // Leftover pixels after the logo and the desktop links. Enter compact only
+  // when that leftover goes negative (the links would overflow). Require a
+  // few extra pixels to expand again so ResizeObserver noise cannot flicker.
+  // A side panel is not an input — it compacts the bar only by narrowing the row.
+  compactSafeThresholdPx = 0,
+  compactReleaseThresholdPx = 16,
   compactDataAttribute = 'data-compact-header',
   showLeadingActionOnlyWhenCompact = false,
-  forceCompactWhenLeftPanelExpanded = true,
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -114,7 +113,6 @@ export const MenuTop = ({
 
     const evaluate = () => {
       raf = 0;
-      const root = document.documentElement;
       const rowWidth = rowEl.getBoundingClientRect().width;
       const leadWidth = leadEl.getBoundingClientRect().width;
       const liveDesktopWidth = Math.max(
@@ -122,6 +120,7 @@ export const MenuTop = ({
         desktopEl.offsetWidth,
         desktopEl.getBoundingClientRect().width,
       );
+      const hadDesktopMeasure = desktopNeededRef.current > 0;
       const desktopNeeded = resolveDesktopClusterWidth({
         measuredPx: liveDesktopWidth,
         isCompact: isCompactRef.current,
@@ -133,14 +132,14 @@ export const MenuTop = ({
 
       const freeSpace =
         rowWidth - leadWidth - desktopNeeded - ROW_CLUSTER_GAP_PX;
-      const leftPanelExpanded =
-        forceCompactWhenLeftPanelExpanded &&
-        root.getAttribute('data-left-panel-expanded') === 'true';
+      // First real measure uses the fit test, not the "stay compact" band.
+      // The bar starts compact, so a wide row (including one narrowed by a
+      // side panel that still fits the links) must expand before paint
+      // instead of remaining overflow-hidden.
 
       const nextCompact = shouldUseCompactHeader({
         freeSpacePx: freeSpace,
-        isCurrentlyCompact: isCompactRef.current,
-        leftPanelExpanded,
+        isCurrentlyCompact: hadDesktopMeasure && isCompactRef.current,
         enterBelowPx: compactSafeThresholdPx,
         exitBelowPx: compactReleaseThresholdPx,
         forceCompactViewport: mobileMq.matches,
@@ -161,11 +160,6 @@ export const MenuTop = ({
     ro.observe(rowEl);
     ro.observe(leadEl);
     ro.observe(desktopEl);
-    const panelObserver = new MutationObserver(schedule);
-    panelObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-left-panel-expanded'],
-    });
     const onMobileMq = () => schedule();
     if (typeof mobileMq.addEventListener === 'function') {
       mobileMq.addEventListener('change', onMobileMq);
@@ -174,14 +168,15 @@ export const MenuTop = ({
       mobileMq.addListener(onMobileMq);
     }
     window.addEventListener('resize', schedule);
-    schedule();
+    // Run before paint. `schedule()` waits a frame, so the first paint stayed
+    // on the compact (overflow-hidden) nav and clipped the wordmark.
+    evaluate();
 
     return () => {
       if (raf !== 0) {
         window.cancelAnimationFrame(raf);
       }
       ro.disconnect();
-      panelObserver.disconnect();
       if (typeof mobileMq.removeEventListener === 'function') {
         mobileMq.removeEventListener('change', onMobileMq);
       } else {
@@ -191,11 +186,7 @@ export const MenuTop = ({
     };
     // Intentionally omit `isCompact`: hysteresis lives in isCompactRef so toggling
     // compact does not tear down ResizeObserver (which itself caused re-entry jitter).
-  }, [
-    compactReleaseThresholdPx,
-    compactSafeThresholdPx,
-    forceCompactWhenLeftPanelExpanded,
-  ]);
+  }, [compactReleaseThresholdPx, compactSafeThresholdPx]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -213,8 +204,7 @@ export const MenuTop = ({
       ref={headerRef}
       className={clsx(
         'relative z-30 flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
-        /* Match main-column canvas so the header doesn't stripe gray over the page. */
-        'bg-page-background px-4 py-3',
+        'hypha-topbar bg-page-background px-4',
         /*
          * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
          * the sidebar seam cleanly. The right panel draws its own matching border, which avoids
@@ -229,12 +219,15 @@ export const MenuTop = ({
         ref={rowRef}
         className={clsx(
           'mx-auto flex w-full min-w-0 items-center gap-x-2',
-          children ? 'justify-between' : 'justify-center',
+          // Start-align so a tight row cannot shove the logo off the left
+          // ("ypha"). The desktop cluster pins itself to the right; when it
+          // does not fit, compact mode hides it instead of scrolling.
+          children || trailingAction ? 'justify-start' : 'justify-center',
         )}
       >
         <div
           ref={leadingClusterRef}
-          className="flex min-w-0 items-center gap-1.5 sm:gap-2"
+          className="flex shrink-0 items-center gap-1.5 sm:gap-2"
         >
           {leadingAction ? (
             <div
@@ -254,12 +247,12 @@ export const MenuTop = ({
                 rel={
                   hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
                 }
-                className="inline-flex min-w-0 shrink items-center"
+                className="inline-flex shrink-0 items-center"
               >
                 {logoNode}
               </Link>
             ) : (
-              <div className="inline-flex min-w-0 shrink items-center">
+              <div className="inline-flex shrink-0 items-center">
                 {logoNode}
               </div>
             )
@@ -303,7 +296,7 @@ export const MenuTop = ({
               ? // Keep flex + intrinsic width while out of flow. Zero-height clip
                 // avoids document scroll growth; cache still guards WebKit quirks.
                 'pointer-events-none absolute left-0 top-0 h-0 overflow-hidden opacity-0'
-              : 'relative',
+              : 'relative ml-auto',
           )}
           aria-hidden={isCompact || undefined}
         >

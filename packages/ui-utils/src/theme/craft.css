@@ -7,64 +7,87 @@
 :root {
   /*
    * Theme fallback only (pages without a space accent scope).
-   * Do NOT reference --space-accent here: custom properties resolve on the
-   * defining element, so :root would bake in default mycelium teal and
-   * descendants would inherit that stale colour even inside
-   * [data-space-accent-scope].
-   * Wide white→solid→black mixes so adjacent donut slices stay distinct.
-   * Default accent is mycelium teal (see theme/colors/accent.css).
+   * Charts use a quiet crafted hue (--hypha-chart), not the achromatic accent-9
+   * used by buttons outside a space. Do NOT reference --space-accent here.
    */
-  --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 28%, white 72%);
-  --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 44%, white 56%);
-  --craft-chart-accent-3: color-mix(in oklab, var(--accent-9) 62%, white 38%);
-  --craft-chart-accent-4: color-mix(in oklab, var(--accent-9) 82%, white 18%);
-  --craft-chart-accent-5: var(--accent-9);
-  --craft-chart-accent-6: color-mix(in oklab, var(--accent-9) 78%, black 22%);
-  --craft-chart-accent-7: color-mix(in oklab, var(--accent-9) 60%, black 40%);
-  --craft-chart-accent-8: color-mix(in oklab, var(--accent-9) 42%, black 58%);
-}
-
-/*
- * Live space palette — mix from --space-accent set on this scope (not the
- * consecutive Radix accent-4…10 hexes, which read as one lavender on dark).
- * Same hue family as the banner sample; wider luminance/chroma steps.
- */
-[data-space-accent-scope] {
   --craft-chart-accent-1: color-mix(
     in oklab,
-    var(--space-accent) 28%,
-    white 72%
+    var(--hypha-chart) 22%,
+    white 78%
   );
   --craft-chart-accent-2: color-mix(
     in oklab,
-    var(--space-accent) 44%,
-    white 56%
+    var(--hypha-chart) 36%,
+    white 64%
   );
   --craft-chart-accent-3: color-mix(
     in oklab,
-    var(--space-accent) 62%,
-    white 38%
+    var(--hypha-chart) 52%,
+    white 48%
   );
   --craft-chart-accent-4: color-mix(
     in oklab,
-    var(--space-accent) 82%,
-    white 18%
+    var(--hypha-chart) 70%,
+    white 30%
   );
-  --craft-chart-accent-5: var(--space-accent);
+  --craft-chart-accent-5: var(--hypha-chart);
   --craft-chart-accent-6: color-mix(
     in oklab,
-    var(--space-accent) 78%,
+    var(--hypha-chart) 78%,
     black 22%
   );
   --craft-chart-accent-7: color-mix(
     in oklab,
-    var(--space-accent) 60%,
+    var(--hypha-chart) 60%,
     black 40%
   );
   --craft-chart-accent-8: color-mix(
     in oklab,
-    var(--space-accent) 42%,
+    var(--hypha-chart) 42%,
     black 58%
+  );
+}
+
+/*
+ * Live space palette — softened mixes from --space-accent (already crafted).
+ * Wider luminance steps so series stay distinct without neon chroma.
+ */
+[data-space-accent-scope] {
+  --craft-chart-accent-1: color-mix(
+    in oklab,
+    var(--space-accent) 20%,
+    white 80%
+  );
+  --craft-chart-accent-2: color-mix(
+    in oklab,
+    var(--space-accent) 34%,
+    white 66%
+  );
+  --craft-chart-accent-3: color-mix(
+    in oklab,
+    var(--space-accent) 50%,
+    white 50%
+  );
+  --craft-chart-accent-4: color-mix(
+    in oklab,
+    var(--space-accent) 68%,
+    white 32%
+  );
+  --craft-chart-accent-5: var(--space-accent);
+  --craft-chart-accent-6: color-mix(
+    in oklab,
+    var(--space-accent) 76%,
+    black 24%
+  );
+  --craft-chart-accent-7: color-mix(
+    in oklab,
+    var(--space-accent) 58%,
+    black 42%
+  );
+  --craft-chart-accent-8: color-mix(
+    in oklab,
+    var(--space-accent) 40%,
+    black 60%
   );
 }
 
@@ -84,12 +107,12 @@
   }
 
   .craft-page-title {
-    @apply m-0 text-balance font-semibold tracking-[-0.02em] text-foreground;
+    @apply m-0 text-balance font-medium tracking-[-0.03em] text-foreground;
     font-family: var(--font-family-heading);
   }
 
   .craft-empty-mark {
-    @apply flex size-8 items-center justify-center rounded-xl border border-border/70 bg-background-2 text-muted-foreground;
+    @apply flex size-8 items-center justify-center rounded-none border border-border/70 bg-transparent text-muted-foreground;
   }
 
   /* Secondary copy — one visual weight below titles */
@@ -99,40 +122,38 @@
 
   /*
    * Shared card chrome for grids / panels.
-   * Prefer these over one-off rounded-xl + shadow stacks.
+   * Square, flat, hairline — no rounded-xl leftovers or shadow stacks.
    */
   .craft-card {
-    @apply rounded-xl border border-border/70 bg-background-2 shadow-none;
+    @apply rounded-none border border-border/70 bg-background-2 shadow-none;
   }
 
   /*
-   * Interactive grids: quiet at rest; gain space/theme accent on hover.
-   * Avoid muted hover that washes out any accent tint (feels inverted).
-   * Hover rules live outside this layer (below) so they can override Card
-   * utility bg/border classes from the utilities layer.
+   * Interactive grids: white at rest (bg-background-2), square, no shadow.
+   * Hover fill lives outside this layer so it can beat Card utilities.
    */
   .craft-card-interactive {
-    @apply rounded-xl border border-border/70 bg-background-2 shadow-none;
+    @apply rounded-none border border-border/70 bg-background-2 shadow-none;
     @apply transition-[border-color,background-color] duration-200 ease-out;
   }
 
-  /* List / table rows: same quiet→accent hover fill, no card chrome. */
+  /* List / table rows: hairline hover, no grey slab fill. */
   .craft-row-interactive {
-    @apply transition-[background-color] duration-200 ease-out;
+    @apply transition-[box-shadow] duration-200 ease-out;
   }
 
   /*
-   * Icon optical system — Lucide stroke feel + chrome boxes.
-   * Prefer these over ad-hoc size/stroke/rounded-full on tool chrome.
+   * Icon optical system — thin Lucide strokes, quiet ink.
+   * Matches website chrome: ~14px, stroke 1.25, monochrome outside a space.
    */
   .craft-icon {
-    @apply block size-4 shrink-0;
-    stroke-width: 1.5;
+    @apply block size-3.5 shrink-0 text-current;
+    stroke-width: 1.25;
   }
 
   .craft-icon-sm {
-    @apply block size-3.5 shrink-0;
-    stroke-width: 1.5;
+    @apply block size-3 shrink-0 text-current;
+    stroke-width: 1.25;
   }
 
   /*
@@ -140,17 +161,17 @@
    * Grid + block SVG kills inline-baseline drift (icons looking bottom-heavy).
    */
   .craft-icon-box {
-    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-chrome border border-border/70 bg-muted/25 text-muted-foreground;
+    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-none border border-border/70 bg-transparent text-muted-foreground;
   }
 
   .craft-icon-box > svg {
     display: block !important;
-    width: 1rem !important;
-    height: 1rem !important;
-    max-width: 1rem;
-    max-height: 1rem;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+    max-width: 0.875rem;
+    max-height: 0.875rem;
     flex-shrink: 0;
-    stroke-width: 1.5;
+    stroke-width: 1.25;
   }
 
   /*
@@ -158,12 +179,12 @@
    * Used for category filters, compact space switchers, tag chrome.
    */
   .craft-chip {
-    @apply rounded-md border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
+    @apply rounded-none border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
   }
 
   .craft-chip-interactive {
-    @apply transition-[border-color,background-color,color] duration-150 ease-out;
-    @apply hover:border-border hover:bg-muted/30 hover:text-foreground;
+    @apply transition-[border-color,color] duration-150 ease-out;
+    @apply hover:border-foreground/40 hover:bg-transparent hover:text-foreground;
   }
 
   /*
@@ -186,28 +207,55 @@
 }
 
 /*
- * Unlayered on purpose: Card (and similar) apply bg-background-2 /
- * border-border/* as utilities. Those beat @layer components, so the
- * accent hover must sit outside layers to win on upvote / Card grids.
- * Kanban/swimlane SignalTaskCard (bare div) already worked without this.
+ * One card hover, taken from Space memory (hover:bg-foreground/[0.03]).
+ * Light grey is 3% --foreground mixed into the resting fill so the card
+ * stays opaque. Default rest is --background-2 (white in light, #121212
+ * in dark). Unlayered so it beats Card border utilities.
+ *
+ * --craft-card-rest only aliases those existing steps. It is not a new colour.
  */
+:root {
+  --craft-card-rest: var(--background-2);
+}
+
 .craft-card-interactive:hover {
-  border-color: color-mix(
-    in oklab,
-    var(--space-accent, var(--color-accent-9, var(--border))) 28%,
-    var(--border)
-  );
-  background: color-mix(
-    in oklab,
-    var(--background-2, var(--card)) 90%,
-    var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+  border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+  background-color: color-mix(
+    in srgb,
+    var(--foreground) 3%,
+    var(--craft-card-rest)
   );
 }
 
-.craft-row-interactive:hover {
-  background: color-mix(
-    in oklab,
-    var(--background-2, var(--card)) 90%,
-    var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+/*
+ * Selected / keyboard focus. Slightly stronger than the 3% hover, still
+ * mixed into the card rest (white, or #1c1c1c when the card sets
+ * --craft-card-rest). Not an accent fill and not a flat grey slab.
+ */
+:is(a, button):focus-visible > .craft-card-interactive,
+.craft-card-interactive:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 40%, var(--border));
+  background-color: color-mix(
+    in srgb,
+    var(--foreground) 6%,
+    var(--craft-card-rest)
   );
+}
+
+/*
+ * Signal cards (and any other dark:bg-background-5 card) rest on
+ * --background-5 (#1c1c1c), above the #040404 page. Mixing the hover into
+ * --background-2 would snap them back to #121212. Lift from #1c1c1c instead.
+ * Selected cards use bg-transparent and do not carry this class.
+ */
+:is(.dark, .dark-theme, [data-theme='dark'])
+  .craft-card-interactive.dark\:bg-background-5 {
+  --craft-card-rest: var(--background-5);
+}
+
+.craft-row-interactive:hover {
+  /* Hairline inset — same in light and dark; no panel-tint fill. */
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--foreground) 28%, var(--border));
+  background-color: transparent;
 }

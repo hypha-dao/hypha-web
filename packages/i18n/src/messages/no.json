@@ -372,7 +372,7 @@
       "energy": "Energi",
       "activity": "Aktivitet",
       "distribution": "Fordeling",
-      "payingSpaces": "Betalende spaces"
+      "payingSpaces": "Traction"
     },
     "activity": {
       "title": "Kunne ikke laste inn aktivitetswidgeter",
@@ -423,9 +423,9 @@
       "description": "Energiwidgeter vises når energidata er tilgjengelig."
     },
     "payingSpaces": {
-      "pageTitle": "Betalende spaces",
+      "pageTitle": "Traction",
       "pageSubtitle": "Månedlig dekning fra den første on-chain-betalingen.",
-      "title": "Betalende spaces",
+      "title": "Traction",
       "subtitle": "Spaces med aktivt betalt abonnement hver måned, fra starten. Filtrer etter space for nedbrytning.",
       "currentlyPaying": "Betaler nå",
       "everPaid": "Har betalt",
@@ -644,8 +644,9 @@
       "ariaLabel": "Kart over hierarki for nestede rom",
       "loading": "Laster økosystemkart…",
       "empty": "Ingen nestede rom å vise ennå",
-      "hint": "Klikk på et rom for å fokususere · klikk utenfor for å zoome ut",
-      "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen"
+      "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen",
+      "zoomIn": "Zoom inn",
+      "zoomOut": "Zoom ut"
     },
     "visibleSpaces": {
       "nestedRoot": "Rot",
@@ -662,7 +663,7 @@
     "navigation": {
       "individuals": "Individer",
       "memberSpaces": "Medlemsrom",
-      "agents": "Agenter",
+      "agents": "KI-agenter",
       "noIndividuals": "Ingen individuelle medlemmer ennå",
       "noMemberSpaces": "Ingen medlemsrom ennå",
       "noAgents": "Ingen agenter mobilisert ennå",
@@ -1599,7 +1600,8 @@
     "all": "Alle",
     "exploreNetwork": "Utforsk Hypha-nettverket",
     "seeAll": "Se alle",
-    "noCategory": "Ingen kategori"
+    "noCategory": "Ingen kategori",
+    "privateCount": "+ {count, plural, one {# privat} other {# private}}"
   },
   "Proposals": {
     "CreateNew": "Opprett et nytt forslag",
@@ -2957,7 +2959,7 @@
     "activeCallElsewhere": "Aktiv samtale i {title}",
     "activeCallsElsewhereCount": "{count} aktive samtaler andre steder",
     "notInSpaceEmptyState": "Du er ikke i et rom akkurat nå.",
-    "welcome": "Velkommen til chatten! Start en samtale med andre medlemmer av dette rommet.",
+    "welcome": "Start en samtale med andre medlemmer av dette rommet.",
     "placeholder": "Skriv en melding...",
     "placeholderChannel": "Melding til #{channel}",
     "sendButton": "Send",
@@ -3082,6 +3084,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "I går kl. {time}",
     "timestampDate": "{date} kl. {time}",
+    "chatRoomTitle": "Chatterom",
     "systemSender": "System",
     "noMembers": "Ingen medlemmer funnet",
     "unknownMember": "Ukjent",
@@ -3800,6 +3803,7 @@
   },
   "NetworkMap": {
     "mapView": "Kart",
+    "overviewView": "Oversikt",
     "listView": "Liste",
     "globeView": "Globus",
     "flatView": "Flat",
@@ -3823,7 +3827,11 @@
     "addLocationNoSpaces": "Du er ikke medlem av noen rom ennå.",
     "clusterExpandTitle": "{count} rom på denne plasseringen",
     "clusterZoomOut": "Zoom ut",
-    "controlStripLabel": "Nettverkskontroller"
+    "controlStripLabel": "Nettverkskontroller",
+    "legendLabel": "Kartforklaring",
+    "legendSpace": "Rom",
+    "legendCluster": "Klynge",
+    "legendSpacesCount": "Rom · {count}"
   },
   "SignalCard": {
     "noConversationRoom": "Ingen samtalerom ennå",
@@ -4273,6 +4281,8 @@
     "exportXlsx": "Eksporter XLSX",
     "weightedAbbr": "gew.",
     "openTrack": "Åpne spor",
+    "laneCollapse": "Skjul kategori",
+    "laneExpand": "Vis kategori",
     "backToBoard": "Tilbake til tavle",
     "trackTitle": "{swimlane}-track",
     "summary": {

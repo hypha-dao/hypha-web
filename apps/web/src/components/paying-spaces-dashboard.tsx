@@ -10,10 +10,7 @@ import {
   type PayingSpacesDashboardData,
 } from '@hypha-platform/core/client';
 import {
-  Card,
-  CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
   SectionLoadMore,
   Skeleton,
@@ -21,11 +18,13 @@ import {
 
 const SPACE_LIST_PAGE_SIZE = 12;
 
-const CHART_CARD_CLASS =
-  'min-w-0 overflow-hidden rounded-lg border border-border/70 bg-background-2 shadow-none';
+/** Charts sit on the page ground: no frame, no panel, no shadow. */
+const CHART_SECTION_CLASS = 'flex min-w-0 flex-col bg-transparent';
 
-const PAYING_COLOR = 'var(--craft-chart-accent-5)';
-const PAYMENT_USD_COLOR = 'var(--craft-chart-accent-3)';
+/** Space accent lightness steps. Outside a space, a quiet neutral. */
+const PAYING_COLOR = 'var(--space-accent, var(--muted-foreground))';
+const PAYMENT_USD_COLOR =
+  'color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 52%, white 48%)';
 const CHART_WIDTH = 760;
 const CHART_HEIGHT = 340;
 
@@ -206,7 +205,7 @@ function PayingSpacesLineChart({
 
           <path
             d={area(points) ?? ''}
-            fill="color-mix(in oklab, var(--space-accent, var(--accent-9)) 16%, transparent)"
+            fill="color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 16%, transparent)"
           />
           <path
             d={line(points) ?? ''}
@@ -227,7 +226,7 @@ function PayingSpacesLineChart({
                   cx={monthX}
                   cy={y(item.value)}
                   r={item.value > 0 ? 3 : 1.5}
-                  fill="var(--color-background-2, var(--background))"
+                  fill="var(--background)"
                   stroke={color}
                   strokeWidth={1.5}
                 >
@@ -350,74 +349,48 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
 
   if (error) {
     return (
-      <Card className={CHART_CARD_CLASS}>
-        <CardHeader>
-          <CardTitle className="text-4 font-medium tracking-tight">
-            {t('title')}
-          </CardTitle>
-          <CardDescription>{t('error')}</CardDescription>
-        </CardHeader>
-      </Card>
+      <section className="flex flex-col gap-1">
+        <CardTitle className="text-4 font-medium tracking-tight">
+          {t('title')}
+        </CardTitle>
+        <CardDescription>{t('error')}</CardDescription>
+      </section>
     );
   }
 
   return (
-    <div className="@container/paying-spaces flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className={CHART_CARD_CLASS}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-3 font-normal text-muted-foreground">
-              {t('currentlyPaying')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-6 font-semibold tabular-nums">
-              {data?.summary.currentlyPaying ?? 0}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className={CHART_CARD_CLASS}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-3 font-normal text-muted-foreground">
-              {t('everPaid')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-6 font-semibold tabular-nums">
-              {data?.summary.everPaid ?? 0}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className={CHART_CARD_CLASS}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-3 font-normal text-muted-foreground">
-              {t('paymentEvents')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-6 font-semibold tabular-nums">
-              {data?.summary.paymentEvents ?? 0}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className={CHART_CARD_CLASS}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-3 font-normal text-muted-foreground">
-              {t('totalPaid')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-6 font-semibold tabular-nums">
-              {formatUsd(data?.summary.paymentUsd ?? 0, locale)}
-            </p>
-          </CardContent>
-        </Card>
+    <div className="@container/paying-spaces flex flex-col gap-8">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-col gap-1">
+          <p className="text-1 text-muted-foreground">{t('currentlyPaying')}</p>
+          <p className="text-6 font-semibold tabular-nums">
+            {data?.summary.currentlyPaying ?? 0}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-1 text-muted-foreground">{t('everPaid')}</p>
+          <p className="text-6 font-semibold tabular-nums">
+            {data?.summary.everPaid ?? 0}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-1 text-muted-foreground">{t('paymentEvents')}</p>
+          <p className="text-6 font-semibold tabular-nums">
+            {data?.summary.paymentEvents ?? 0}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-1 text-muted-foreground">{t('totalPaid')}</p>
+          <p className="text-6 font-semibold tabular-nums">
+            {formatUsd(data?.summary.paymentUsd ?? 0, locale)}
+          </p>
+        </div>
       </div>
 
-      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] @[64rem]/paying-spaces:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <div className="grid min-w-0 content-start gap-4">
-          <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
-            <CardHeader className="pb-2">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] @[64rem]/paying-spaces:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 content-start gap-8">
+          <section className={CHART_SECTION_CLASS}>
+            <div className="flex flex-col gap-1 pb-3">
               <CardTitle className="text-4 font-medium tracking-tight">
                 {t('title')}
               </CardTitle>
@@ -441,8 +414,8 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                   </span>
                 ) : null}
               </div>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col space-y-3 pb-5">
+            </div>
+            <div className="flex flex-1 flex-col space-y-3">
               <PayingSpacesLineChart
                 points={chartMonthly.map((item) => ({
                   month: item.month,
@@ -458,11 +431,11 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                 formatTick={(value) => String(Math.round(value))}
                 integerTicks
               />
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
-          <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
-            <CardHeader className="pb-2">
+          <section className={CHART_SECTION_CLASS}>
+            <div className="flex flex-col gap-1 pb-3">
               <CardTitle className="text-4 font-medium tracking-tight">
                 {t('paymentUsdTitle')}
               </CardTitle>
@@ -484,8 +457,8 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                   </span>
                 ) : null}
               </div>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col space-y-3 pb-5">
+            </div>
+            <div className="flex flex-1 flex-col space-y-3">
               <PayingSpacesLineChart
                 points={chartMonthly.map((item) => ({
                   month: item.month,
@@ -501,12 +474,12 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                 emptyLabel={t('empty')}
                 formatTick={(value) => formatUsd(value, locale, true)}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         </div>
         <div className="flex min-h-0 min-w-0 flex-col">
-          <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
-            <CardHeader className="pb-2">
+          <section className={CHART_SECTION_CLASS}>
+            <div className="flex flex-col gap-1 pb-3">
               <CardTitle className="text-4 font-medium tracking-tight">
                 {t('spaceLabel')}
               </CardTitle>
@@ -514,7 +487,7 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                 value={selectedSpaceId}
                 aria-label={t('spaceLabel')}
                 onChange={(event) => setSelectedSpaceId(event.target.value)}
-                className="mt-2 h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="mt-2 h-8 rounded-none border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="all">{t('spaceAll')}</option>
                 {spaces.map((space) => (
@@ -526,8 +499,8 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                   </option>
                 ))}
               </select>
-            </CardHeader>
-            <CardContent className="flex min-h-0 flex-1 flex-col pb-5">
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col">
               {spaces.length > 0 ? (
                 <div className="flex min-h-0 flex-1 flex-col gap-3">
                   <div className="grid min-h-0 flex-1 gap-1 overflow-y-auto">
@@ -546,10 +519,10 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
                                 : String(space.web3SpaceId),
                             )
                           }
-                          className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/40"
+                          className="flex w-full items-center justify-between gap-3 rounded-none px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/40"
                           style={{
                             background: selected
-                              ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 10%, transparent)'
+                              ? 'color-mix(in oklab, var(--space-accent, var(--muted-foreground)) 10%, transparent)'
                               : undefined,
                           }}
                         >
@@ -583,8 +556,8 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
               ) : (
                 <p className="text-sm text-muted-foreground">{t('empty')}</p>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         </div>
       </div>
     </div>

@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/core/server';
 import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
-import { redirect } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -22,25 +21,6 @@ type PageProps = {
     view?: string;
   }>;
 };
-
-function buildNetworkPageSearchParams({
-  query,
-  category,
-  order,
-  view,
-}: {
-  query?: string;
-  category?: string;
-  order?: string;
-  view?: string;
-}): URLSearchParams {
-  const params = new URLSearchParams();
-  if (query?.trim()) params.set('query', query.trim());
-  if (category) params.set('category', category);
-  if (order) params.set('order', order);
-  if (view) params.set('view', view);
-  return params;
-}
 
 export default async function Index(props: PageProps) {
   const params = await props.params;
@@ -55,18 +35,6 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
   const enableNetworkMap = await getEnableNetworkMapAsync();
-  const viewParam = searchParams?.view;
-
-  if (enableNetworkMap && viewParam !== 'list' && viewParam !== 'map') {
-    const nextParams = buildNetworkPageSearchParams({
-      query,
-      category: searchParams?.category,
-      order: orderRaw,
-      view: 'list',
-    });
-    const queryString = nextParams.toString();
-    redirect(`/${lang}/network${queryString ? `?${queryString}` : ''}`);
-  }
 
   let spaces: Space[] = [];
   try {

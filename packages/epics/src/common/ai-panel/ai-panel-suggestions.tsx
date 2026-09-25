@@ -26,7 +26,7 @@ export function AiPanelSuggestions({
   if (variant === 'tags') {
     return (
       <div
-        className="border-t border-border bg-background-2 px-3 py-2"
+        className="bg-transparent px-3 py-2"
         data-testid="ai-panel-suggestion-tags"
       >
         <div className="narrow-scrollbar flex gap-1.5 overflow-x-auto pb-0.5">
@@ -37,8 +37,8 @@ export function AiPanelSuggestions({
               title={item.prompt}
               onClick={() => onSelect(item.prompt)}
               className={cn(
-                'shrink-0 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] font-medium leading-tight text-muted-foreground',
-                'transition-colors duration-200 hover:border-primary/40 hover:bg-muted hover:text-foreground',
+                'shrink-0 rounded-none border border-border/70 bg-transparent px-2.5 py-1 text-[11px] font-medium leading-tight text-muted-foreground',
+                'transition-colors duration-200 hover:border-foreground/30 hover:text-foreground',
               )}
             >
               {item.tagLabel}
@@ -60,8 +60,8 @@ export function AiPanelSuggestions({
           type="button"
           onClick={() => onSelect(item.prompt)}
           className={cn(
-            'rounded-lg border border-border bg-secondary px-3 py-2.5 text-left text-xs text-muted-foreground',
-            'transition-colors duration-200 hover:border-primary/40 hover:bg-muted hover:text-foreground',
+            'craft-card-interactive px-3 py-2.5 text-left text-xs text-muted-foreground',
+            'dark:bg-background-5 hover:text-foreground',
           )}
         >
           {item.prompt}

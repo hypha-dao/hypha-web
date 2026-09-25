@@ -15,6 +15,8 @@ type Props = {
   leftOpen: boolean;
   leftPanelOpen: boolean;
   leftSidebarWidth: string;
+  /** Pixels of persistent icon rail included in the left sidebar width. */
+  leftIconRailPx?: number;
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
@@ -34,6 +36,7 @@ export function PanelDualSidebarScrollBridge({
   leftOpen,
   leftPanelOpen,
   leftSidebarWidth,
+  leftIconRailPx = 0,
   onLeftOpenChange,
   rightOpen,
   onRightOpenChange,
@@ -66,7 +69,11 @@ export function PanelDualSidebarScrollBridge({
         className="z-[50] overflow-visible"
       >
         {leftContent}
-        <SidebarResizeHandle />
+        <SidebarResizeHandle
+          minWidth={280 + leftIconRailPx}
+          maxWidth={600 + leftIconRailPx}
+          defaultWidth={320 + leftIconRailPx}
+        />
       </Sidebar>
       {/*
         The inner `SidebarProvider` is `h-svh` and lays out the center column + right panel in
@@ -102,11 +109,14 @@ export function PanelDualSidebarScrollBridge({
             | footer | panel in one horizontal row.
             `overflow-x-hidden`: Human/AI panels are `position:fixed`; clip horizontal pan so the
             scrollport cannot reveal a dead gap beside the fixed rails.
+            `overscroll-none`: at scrollTop 0 the macOS rubber-band pulls in-flow content
+            (the space banner) away from the sticky top menu and shows a strip of the page
+            between them. The menu stays pinned; the banner must not.
           */}
           <div
             id={HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID}
             ref={setMainColumnRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto narrow-scrollbar"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-none narrow-scrollbar"
           >
             {children}
           </div>

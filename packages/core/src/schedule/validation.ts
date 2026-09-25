@@ -53,7 +53,7 @@ const scheduledItemUrlSchema = z
 const scheduledItemColorSchema = z
   .string()
   .trim()
-  .regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a hex value like #6366f1')
+  .regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a hex value like #121212')
   .optional()
   .nullable()
   .or(z.literal(''))

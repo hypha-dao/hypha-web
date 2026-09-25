@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 import type { VisibleSpace } from './types';
 
 type SpaceNode = {
@@ -18,20 +19,23 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
   r?: number;
 };
 
+export type SpaceVisualizationZoomApi = {
+  zoomIn: () => void;
+  zoomOut: () => void;
+};
+
 type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
-  rootAccentHex?: string;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
   showNodeLabels?: boolean;
   ariaLabel?: string;
+  /** Parent row calls these so zoom stays on the membership line. */
+  zoomApiRef?: MutableRefObject<SpaceVisualizationZoomApi>;
+  /** Stage fill. Default is a square that sizes from width. */
+  className?: string;
 };
-
-const SPACE_ACCENT_FALLBACK = '#14b8a6';
-
-/** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
-const COOL_ACCENT_HUES = [162, 172, 182, 192, 152, 202, 142] as const;
 
 const VISUALIZATION_CONFIG = {
   BASE_RADIUS: 420,
@@ -47,11 +51,13 @@ const VISUALIZATION_CONFIG = {
   MAX_LABEL_CHARS: 18,
 } as const;
 
-function accentFromSpaceId(id: number): string {
-  const hue =
-    COOL_ACCENT_HUES[Math.abs(id * 47) % COOL_ACCENT_HUES.length] ??
-    COOL_ACCENT_HUES[0];
-  return `hsl(${hue} 40% 42%)`;
+function labelFitsNode(
+  name: string,
+  fontSize: number,
+  radius: number,
+): boolean {
+  const text = truncateLabel(name);
+  return text.length * fontSize * 0.56 <= Math.max(radius * 2.6, 1);
 }
 
 function truncateLabel(
@@ -61,99 +67,6 @@ function truncateLabel(
   const trimmed = name.trim();
   if (trimmed.length <= maxChars) return trimmed;
   return `${trimmed.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
-}
-
-function toSampleableImageSrc(src?: string | null): string | null {
-  if (!src) return null;
-  const candidate = src.trim();
-  if (!candidate) return null;
-  if (candidate.startsWith('/')) {
-    return candidate.startsWith('//') ? null : candidate;
-  }
-  try {
-    const url = new URL(candidate);
-    if (url.protocol === 'http:' || url.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-async function sampleAccentHex(src?: string | null): Promise<string | null> {
-  const imageSrc = toSampleableImageSrc(src);
-  if (!imageSrc) return null;
-  return await new Promise((resolve) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => {
-      try {
-        const maxSide = 96;
-        const scale = Math.min(
-          maxSide / image.width,
-          maxSide / image.height,
-          1,
-        );
-        const width = Math.max(8, Math.round(image.width * scale));
-        const height = Math.max(8, Math.round(image.height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          resolve(null);
-          return;
-        }
-        context.drawImage(image, 0, 0, width, height);
-        const pixels = context.getImageData(0, 0, width, height).data;
-        let rSum = 0;
-        let gSum = 0;
-        let bSum = 0;
-        let count = 0;
-        for (let i = 0; i < pixels.length; i += 4) {
-          const alpha = pixels[i + 3] ?? 0;
-          if (alpha < 40) continue;
-          const r = pixels[i] ?? 0;
-          const g = pixels[i + 1] ?? 0;
-          const b = pixels[i + 2] ?? 0;
-          const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
-          const saturation = max === 0 ? 0 : (max - min) / max;
-          if (saturation < 0.12) continue;
-          rSum += r;
-          gSum += g;
-          bSum += b;
-          count++;
-        }
-        if (count < 6) {
-          resolve(null);
-          return;
-        }
-        const r = Math.round(rSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        const g = Math.round(gSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        const b = Math.round(bSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        resolve(`#${r}${g}${b}`);
-      } catch {
-        resolve(null);
-      }
-    };
-    image.onerror = () => resolve(null);
-    image.src = imageSrc;
-  });
-}
-
-function withAlpha(color: string, alpha: number): string {
-  const parsed = d3.color(color);
-  if (!parsed) return color;
-  parsed.opacity = alpha;
-  return parsed.formatRgb();
 }
 
 /** SVG rejects negative `r` / `width` / `height`; clamp during zoom transitions. */
@@ -185,11 +98,12 @@ function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
 export function SpaceVisualization({
   data,
   currentSpaceId,
-  rootAccentHex,
   onVisibleSpacesChange,
   enableHoverActions = true,
   showNodeLabels = true,
   ariaLabel = 'Space hierarchy visualization',
+  zoomApiRef,
+  className,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -209,9 +123,6 @@ export function SpaceVisualization({
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const tooltipHideTimeoutRef = useRef<number | null>(null);
-  const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
-    new Map(),
-  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -283,80 +194,18 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
-    const getRootFillColor = (accentColor: string) => {
-      const parsed = d3.hsl(accentColor);
-      if (!parsed) {
-        return themeRef.current === 'dark'
-          ? 'rgba(255,255,255,0.06)'
-          : 'rgba(15,23,42,0.08)';
-      }
-      // Keep root tint barely present — space hue without a neon wash.
-      const softAccent = d3.hsl(
-        parsed.h,
-        Math.max(0.12, Math.min(parsed.s * 0.4, 0.28)),
-        themeRef.current === 'dark' ? 0.62 : 0.42,
-      );
-      softAccent.opacity = themeRef.current === 'dark' ? 0.12 : 0.08;
-      return softAccent.formatRgb();
-    };
-    const getDiagramFillColor = () => 'var(--color-background)';
-    const getLabelFillColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(226, 232, 240, 0.92)'
-        : 'rgba(30, 41, 59, 0.88)';
-    const getLabelStrokeColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(11, 15, 24, 0.88)'
-        : 'rgba(255, 255, 255, 0.92)';
-    const getLogoRingColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(148, 163, 184, 0.42)'
-        : 'rgba(71, 85, 105, 0.28)';
-    const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.64 : 0.7;
-    const ROOT_ORBIT_STROKE_WIDTH = 1.35;
-    // Hairline dashed orbits — calm, readable structure.
-    const ORBIT_DASH_PATTERN = '1.5 5';
-    const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
-    const pageBackdropLab = d3.lab(
-      themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
-    );
-    const MIN_LIGHTNESS_DELTA = 18;
-    const getOrbitStrokeStyle = (
-      accentColor: string,
-    ): { color: string; width: number } => {
-      const parsed = d3.hsl(accentColor);
-      if (!parsed) {
-        return {
-          color: withAlpha(accentColor, getOrbitStrokeAlpha()),
-          width: 1.25,
-        };
-      }
-
-      // Soften purple/magenta samples into mycelium teal; keep other brand hues.
-      const sampleHue = parsed.h;
-      const isPurpleMagenta =
-        Number.isFinite(sampleHue) && sampleHue >= 260 && sampleHue <= 330;
-      const tuned = d3.hsl(
-        isPurpleMagenta ? 172 : sampleHue,
-        Math.min(Math.max(parsed.s, 0.36), 0.52),
-        themeRef.current === 'dark'
-          ? Math.min(Math.max(parsed.l, 0.55), 0.7)
-          : Math.min(Math.max(parsed.l, 0.34), 0.48),
-      );
-
-      const tunedLab = d3.lab(tuned.formatRgb());
-      const rootDelta = Math.abs(tunedLab.l - rootFillLab.l);
-      const backdropDelta = Math.abs(tunedLab.l - pageBackdropLab.l);
-      const minDelta = Math.min(rootDelta, backdropDelta);
-      const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.45 : 1.25;
-
-      return {
-        color: withAlpha(tuned.formatRgb(), getOrbitStrokeAlpha()),
-        width,
-      };
-    };
+    const dark = themeRef.current === 'dark';
+    const ink = dark ? 'var(--hypha-text)' : 'var(--hypha-ink)';
+    const paper = dark ? 'var(--hypha-ink)' : 'var(--hypha-paper)';
+    const hairline = dark
+      ? 'color-mix(in srgb, var(--hypha-text) 38%, transparent)'
+      : 'color-mix(in srgb, var(--hypha-ink) 34%, transparent)';
+    const spaceAccent = 'var(--space-accent, var(--color-accent-9))';
+    const getDiagramFillColor = () => paper;
+    const getLabelFillColor = () => ink;
+    const getLabelStrokeColor = () => paper;
+    const getLogoRingColor = () => hairline;
+    const ORBIT_STROKE_WIDTH = 1.15;
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -567,9 +416,6 @@ export function SpaceVisualization({
     svg.selectAll('*').remove();
 
     const g = svg.append('g');
-    const nodeAccents = new Map<number, string>();
-    const getNodeAccent = (d: SpaceHierarchyNode): string =>
-      nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
 
     const defs = svg.append('defs');
     const orbits = g
@@ -578,16 +424,10 @@ export function SpaceVisualization({
       .join('circle')
       .attr('class', 'orbit')
       .style('fill', 'none')
-      .attr('stroke', (d: SpaceHierarchyNode) => {
-        const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-        return getOrbitStrokeStyle(accent).color;
-      })
-      .attr('stroke-width', (d: SpaceHierarchyNode) => {
-        if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-        return getOrbitStrokeStyle(getNodeAccent(d)).width;
-      })
+      .attr('stroke', hairline)
+      .attr('stroke-width', ORBIT_STROKE_WIDTH)
       .attr('stroke-linecap', 'round')
-      .attr('stroke-dasharray', ORBIT_DASH_PATTERN)
+      .attr('stroke-dasharray', 'none')
       .attr('vector-effect', 'non-scaling-stroke')
       .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
@@ -681,8 +521,8 @@ export function SpaceVisualization({
         .append('circle')
         .attr('class', 'focus-ring')
         .attr('fill', 'none')
-        .attr('stroke', resolvedRootAccent)
-        .attr('stroke-width', 1.75)
+        .attr('stroke', ink)
+        .attr('stroke-width', 1.15)
         .attr('vector-effect', 'non-scaling-stroke')
         .attr('shape-rendering', 'geometricPrecision')
         .attr('opacity', 0)
@@ -692,9 +532,8 @@ export function SpaceVisualization({
         .append('circle')
         .attr('class', 'current-ring')
         .attr('fill', 'none')
-        .attr('stroke', resolvedRootAccent)
+        .attr('stroke', spaceAccent)
         .attr('stroke-width', 1.25)
-        .attr('stroke-dasharray', '2.5 3.5')
         .attr('vector-effect', 'non-scaling-stroke')
         .attr('shape-rendering', 'geometricPrecision')
         .attr('opacity', 0)
@@ -708,7 +547,7 @@ export function SpaceVisualization({
           .attr('dominant-baseline', 'hanging')
           .attr('fill', getLabelFillColor())
           .attr('stroke', getLabelStrokeColor())
-          .attr('stroke-width', 3.5)
+          .attr('stroke-width', 1.25)
           .attr('paint-order', 'stroke fill')
           .style('font-family', 'var(--font-family-text), sans-serif')
           .style('font-weight', '500')
@@ -915,6 +754,28 @@ export function SpaceVisualization({
       });
     }
 
+    const zoomByDirection = (direction: 1 | -1) => {
+      const current = focusRef.current as SpaceHierarchyNode | null;
+      if (!current) return;
+      if (direction < 0) {
+        if (current.parent) zoom(current.parent as SpaceHierarchyNode);
+        return;
+      }
+      const children = (current.children ?? []) as SpaceHierarchyNode[];
+      if (children.length === 0) return;
+      const next = children.reduce((largest, child) =>
+        (child.r ?? 0) > (largest.r ?? 0) ? child : largest,
+      );
+      zoom(next);
+    };
+
+    if (zoomApiRef) {
+      zoomApiRef.current = {
+        zoomIn: () => zoomByDirection(1),
+        zoomOut: () => zoomByDirection(-1),
+      };
+    }
+
     function zoomTo(v: [number, number, number]) {
       const safeView = sanitizeZoomView(v, view[2]);
       const k = width / safeView[2];
@@ -932,15 +793,9 @@ export function SpaceVisualization({
           clampSvgLength(finiteOr(d.r, 0) * k),
         )
         .style('fill', 'none')
-        .attr('stroke', (d: SpaceHierarchyNode) => {
-          const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-          return getOrbitStrokeStyle(accent).color;
-        })
-        .attr('stroke-width', (d: SpaceHierarchyNode) => {
-          if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-          return getOrbitStrokeStyle(getNodeAccent(d)).width;
-        })
-        .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
+        .attr('stroke', hairline)
+        .attr('stroke-width', ORBIT_STROKE_WIDTH)
+        .attr('stroke-dasharray', 'none');
 
       logos
         .attr('transform', nodeTransform)
@@ -953,11 +808,13 @@ export function SpaceVisualization({
           const isFocused = d === focus;
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          const showLabel =
-            showNodeLabels && r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS;
           const labelFontSize = clampSvgLength(
             Math.min(15, Math.max(10, r * 0.42)),
           );
+          const showLabel =
+            showNodeLabels &&
+            r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS &&
+            labelFitsNode(d.data.name, labelFontSize, r);
           const labelY = r + Math.max(10, labelFontSize * 0.35);
           const selection = d3.select(this);
 
@@ -985,14 +842,14 @@ export function SpaceVisualization({
           selection
             .select('circle.focus-ring')
             .attr('r', clampSvgLength(r + Math.max(3.5, r * 0.12)))
-            .attr('stroke', resolvedRootAccent)
-            .attr('opacity', isFocused ? 0.9 : 0);
+            .attr('stroke', ink)
+            .attr('opacity', isFocused && !isCurrent ? 0.9 : 0);
 
           selection
             .select('circle.current-ring')
-            .attr('r', clampSvgLength(r + Math.max(6, r * 0.18)))
-            .attr('stroke', resolvedRootAccent)
-            .attr('opacity', isCurrent && !isFocused ? 0.55 : 0);
+            .attr('r', clampSvgLength(r + Math.max(4, r * 0.14)))
+            .attr('stroke', spaceAccent)
+            .attr('opacity', isCurrent ? 1 : 0);
 
           if (showNodeLabels) {
             selection
@@ -1006,45 +863,13 @@ export function SpaceVisualization({
           }
         });
     }
-    let isCancelled = false;
-    root.each((node) => {
-      void (async () => {
-        const cacheKey = (node.data.logoUrl ?? '').trim();
-        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
-        if (!accentPromise) {
-          accentPromise = sampleAccentHex(node.data.logoUrl);
-          accentSampleCacheRef.current.set(cacheKey, accentPromise);
-        }
-        const sampledAccent = await accentPromise;
-        if (isCancelled) return;
-        const resolvedAccent = sampledAccent ?? accentFromSpaceId(node.data.id);
-        nodeAccents.set(node.data.id, resolvedAccent);
-        orbits
-          .filter((d) => d.data.id === node.data.id)
-          .style('fill', 'none')
-          .attr('stroke', (d: SpaceHierarchyNode) => {
-            const accent = d.depth === 0 ? resolvedRootAccent : resolvedAccent;
-            return getOrbitStrokeStyle(accent).color;
-          })
-          .attr('stroke-width', (d: SpaceHierarchyNode) => {
-            if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-            return getOrbitStrokeStyle(resolvedAccent).width;
-          })
-          .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
-      })();
-    });
     return () => {
-      isCancelled = true;
       svg.interrupt();
+      if (zoomApiRef) {
+        zoomApiRef.current = { zoomIn: () => {}, zoomOut: () => {} };
+      }
     };
-  }, [
-    data,
-    currentSpaceId,
-    resolvedTheme,
-    enableHoverActions,
-    rootAccentHex,
-    showNodeLabels,
-  ]);
+  }, [data, currentSpaceId, resolvedTheme, enableHoverActions, showNodeLabels]);
 
   useEffect(() => {
     return () => {
@@ -1053,10 +878,14 @@ export function SpaceVisualization({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className={cn('relative aspect-square w-full', className)}
+    >
       <svg
         ref={svgRef}
-        className="h-auto w-full"
+        className="absolute inset-0 block h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={ariaLabel}
       />
@@ -1065,7 +894,7 @@ export function SpaceVisualization({
           ref={tooltipRef}
           onMouseEnter={clearTooltipHideTimeout}
           onMouseLeave={scheduleTooltipHide}
-          className="absolute z-50 rounded-xl border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
+          className="absolute z-50 rounded-none border border-border/70 bg-background px-2.5 py-1.5 shadow-none"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,

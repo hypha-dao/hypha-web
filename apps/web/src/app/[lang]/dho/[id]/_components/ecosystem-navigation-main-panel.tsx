@@ -8,24 +8,25 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
-  APP_CHROME_SUBTLE_SQUARE_RADIUS,
+  APP_CHROME_ICON_TRIGGER,
   useCanMutateInSpace,
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
 } from '@hypha-platform/epics';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@hypha-platform/ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
-import { sampleAccentHex } from './space-accent-utils';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
@@ -43,8 +44,6 @@ type HierarchyNode = {
   value?: number;
   children?: HierarchyNode[];
 };
-
-const SELECTED_SPACE_ACCENT_FALLBACK = '#14b8a6';
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
@@ -92,13 +91,7 @@ export function EcosystemNavigationMainPanel({
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState('nested-spaces');
-  const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
-    SELECTED_SPACE_ACCENT_FALLBACK,
-  );
-  const [rootSpaceAccent, setRootSpaceAccent] = useState(
-    SELECTED_SPACE_ACCENT_FALLBACK,
-  );
+  const diagramStageRef = useRef<HTMLDivElement>(null);
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -214,193 +207,80 @@ export function EcosystemNavigationMainPanel({
   const canVisitSpace = Boolean(currentSpace && visitSpaceHref);
   const addSpaceHref =
     canAddSpace && visitSpaceHref ? `${visitSpaceHref}/space/create` : null;
-  const rootSpaceRecord = useMemo(() => {
-    if (!currentSpace) return null;
-    const spacesWithCurrent = nonArchivedSpaces.some(
-      (s) => s.id === currentSpace.id,
-    )
-      ? nonArchivedSpaces
-      : [...nonArchivedSpaces, currentSpace];
-    return findRootSpace(currentSpace, spacesWithCurrent);
-  }, [currentSpace, nonArchivedSpaces]);
-  useEffect(() => {
-    let cancelled = false;
-    setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
-    void (async () => {
-      const [logoAccent, leadAccent] = await Promise.all([
-        sampleAccentHex(selectedSpaceRecord?.logoUrl),
-        sampleAccentHex(selectedSpaceRecord?.leadImage),
-      ]);
-      if (cancelled) return;
-      setSelectedSpaceAccent(
-        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSpaceRecord?.logoUrl, selectedSpaceRecord?.leadImage]);
-  useEffect(() => {
-    let cancelled = false;
-    setRootSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
-    void (async () => {
-      const [logoAccent, leadAccent] = await Promise.all([
-        sampleAccentHex(rootSpaceRecord?.logoUrl),
-        sampleAccentHex(rootSpaceRecord?.leadImage),
-      ]);
-      if (cancelled) return;
-      setRootSpaceAccent(
-        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [rootSpaceRecord?.logoUrl, rootSpaceRecord?.leadImage]);
-
-  const tabs = useMemo(
-    () => [
-      {
-        value: 'nested-spaces',
-        label: t('tabs.nestedSpaces'),
-        content: (
-          <div className="craft-card overflow-hidden">
-            <div className="flex items-center justify-between gap-3 border-b border-border/70 px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-3.5 w-0.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedSpaceAccent }}
-                />
-                <div className="min-w-0">
-                  <p
-                    className="truncate text-2 font-medium tracking-tight text-foreground"
-                    title={selectedSpaceTitle}
-                  >
-                    {selectedSpaceTitle}
-                  </p>
-                  <p className="craft-meta truncate">{t('diagram.hint')}</p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-0.5">
-                {canVisitSpace && visitSpaceHref ? (
-                  <Tooltip delayDuration={80}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="icon"
-                        className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
-                        aria-label={t('visibleSpaces.visitSpace')}
-                      >
-                        <Link href={visitSpaceHref}>
-                          <ArrowTopRightIcon />
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('visibleSpaces.visitSpace')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null}
-                {canAddSpace && addSpaceHref ? (
-                  <Tooltip delayDuration={80}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="icon"
-                        className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
-                        aria-label={t('visibleSpaces.addSpace')}
-                      >
-                        <Link href={addSpaceHref}>
-                          <PlusIcon />
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('visibleSpaces.addSpace')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null}
-              </div>
-            </div>
-            <EcosystemMembershipModules spaceSlug={selectedSpaceSlug} />
-            {hierarchyData ? (
-              <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-4 sm:px-3 sm:pb-3 sm:pt-5">
-                <SpaceVisualization
-                  data={hierarchyData}
-                  currentSpaceId={currentSpace?.id}
-                  rootAccentHex={rootSpaceAccent}
-                  enableHoverActions={false}
-                  showNodeLabels
-                  ariaLabel={t('diagram.ariaLabel')}
-                  onVisibleSpacesChange={handleVisibleSpacesChange}
-                />
-              </div>
-            ) : (
-              <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-                <div className="craft-empty-mark" aria-hidden />
-                <p className="craft-meta text-center">{t('diagram.empty')}</p>
-              </div>
-            )}
-          </div>
-        ),
-      },
-      {
-        value: 'space-to-space',
-        label: t('tabs.spaceToSpace'),
-        content: (
-          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta text-center">
-              {t('comingSoon.spaceToSpaceVisualization')}
-            </p>
-          </div>
-        ),
-      },
-      {
-        value: 'values-flows',
-        label: t('tabs.valuesFlows'),
-        content: (
-          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta text-center">
-              {t('comingSoon.valuesFlowsVisualization')}
-            </p>
-          </div>
-        ),
-      },
-    ],
-    [
-      addSpaceHref,
-      canAddSpace,
-      canVisitSpace,
-      currentSpace?.id,
-      handleVisibleSpacesChange,
-      hierarchyData,
-      rootSpaceAccent,
-      selectedSpaceAccent,
-      selectedSpaceSlug,
-      selectedSpaceTitle,
-      t,
-      visitSpaceHref,
-    ],
+  const ecosystemHeader = (
+    <header className="craft-page-header">
+      <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
+        <span>{t('ecosystem')}</span>
+        {isLoading ? null : (
+          <span className="text-3 font-normal text-muted-foreground">
+            {format.number(ecosystemSpaceCount)}
+          </span>
+        )}
+      </h1>
+    </header>
   );
+
+  // Size the stage to the visible scrollport. Stretching it to a footer below
+  // the fold centres the orbit in that tall box, so the screen is empty paper.
+  useLayoutEffect(() => {
+    const stage = diagramStageRef.current;
+    if (!stage || isLoading) return;
+
+    let scrollParent: HTMLElement | null = stage.parentElement;
+    while (scrollParent) {
+      const overflow = getComputedStyle(scrollParent).overflowY;
+      if (overflow === 'auto' || overflow === 'scroll') break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (!scrollParent) return;
+
+    const apply = () => {
+      const current = diagramStageRef.current;
+      if (!current || scrollParent == null) return;
+
+      const stageRect = current.getBoundingClientRect();
+      const scrollRect = scrollParent.getBoundingClientRect();
+      if (stageRect.width <= 0) return;
+
+      const footer = scrollParent.lastElementChild;
+      let limit = scrollRect.bottom;
+      if (
+        footer instanceof HTMLElement &&
+        !footer.contains(current) &&
+        footer.getBoundingClientRect().height > 0
+      ) {
+        const footerTop = footer.getBoundingClientRect().top;
+        if (footerTop > stageRect.top) {
+          limit = Math.min(limit, footerTop);
+        }
+      }
+
+      const restGap = 48;
+      const visibleHeight = Math.round(limit - stageRect.top - restGap);
+      const cap = Math.max(320, Math.round(scrollRect.height - restGap));
+      const next = Math.max(320, Math.min(visibleHeight, cap));
+      if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
+      current.style.height = `${next}px`;
+    };
+
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(scrollParent);
+    if (stage.parentElement) observer.observe(stage.parentElement);
+    window.addEventListener('resize', apply);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', apply);
+    };
+  }, [hierarchyData, isLoading]);
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
       {isLoading ? (
         <>
-          <header className="craft-page-header">
-            <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-              <span>{t('ecosystem')}</span>
-            </h1>
-          </header>
+          {ecosystemHeader}
           <div
-            className="craft-card flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
+            className="flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
             role="status"
             aria-live="polite"
           >
@@ -409,23 +289,71 @@ export function EcosystemNavigationMainPanel({
           </div>
         </>
       ) : (
-        <EcosystemNavigationShell
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          tabs={tabs}
-          beforeTabsContent={
-            <header className="craft-page-header">
-              <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-                <span>{t('ecosystem')}</span>
-                <span className="text-3 font-normal text-muted-foreground">
-                  {format.number(ecosystemSpaceCount)}
-                </span>
-              </h1>
-              <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
-            </header>
-          }
-          visualizationClassName="min-h-0"
-        />
+        <EcosystemNavigationShell header={ecosystemHeader}>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <EcosystemMembershipModules
+              spaceSlug={selectedSpaceSlug}
+              spaceTitle={selectedSpaceTitle}
+              trailing={
+                <div className="flex shrink-0 items-center gap-1">
+                  {canVisitSpace && visitSpaceHref ? (
+                    <Tooltip delayDuration={80}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={visitSpaceHref}
+                          className={APP_CHROME_ICON_TRIGGER}
+                          aria-label={t('visibleSpaces.visitSpace')}
+                        >
+                          <ArrowTopRightIcon />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('visibleSpaces.visitSpace')}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {canAddSpace && addSpaceHref ? (
+                    <Tooltip delayDuration={80}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={addSpaceHref}
+                          className={APP_CHROME_ICON_TRIGGER}
+                          aria-label={t('visibleSpaces.addSpace')}
+                        >
+                          <PlusIcon />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('visibleSpaces.addSpace')}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              }
+            />
+            <div
+              ref={diagramStageRef}
+              className="relative min-h-[20rem] w-full shrink-0"
+            >
+              {hierarchyData ? (
+                <SpaceVisualization
+                  data={hierarchyData}
+                  currentSpaceId={currentSpace?.id}
+                  enableHoverActions={false}
+                  showNodeLabels
+                  ariaLabel={t('diagram.ariaLabel')}
+                  onVisibleSpacesChange={handleVisibleSpacesChange}
+                  className="absolute inset-0 h-full w-full aspect-auto"
+                />
+              ) : (
+                <div className="flex h-full min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8">
+                  <div className="craft-empty-mark" aria-hidden />
+                  <p className="craft-meta text-center">{t('diagram.empty')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </EcosystemNavigationShell>
       )}
     </section>
   );

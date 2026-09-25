@@ -139,7 +139,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
   return (
     <Card
       className={cn(
-        'flex h-full cursor-pointer flex-col gap-3 p-5 transition-colors hover:bg-background-2/50',
+        'craft-card-interactive flex h-full cursor-pointer flex-col gap-3 p-5',
         instructionsReadOnly && 'opacity-70',
       )}
       role="button"

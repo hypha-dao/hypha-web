@@ -21,15 +21,17 @@ describe('buildSpaceSectionNavItems', () => {
       'coherence',
       'agreements',
       'treasury',
+      'ecosystem-navigation',
       'calendar',
       'members',
       'rewards',
-      'ecosystem-navigation',
     ]);
     expect(items.every((i) => i.group === SPACE_SECTION_NAV_GROUP[i.key])).toBe(
       true,
     );
     expect(SPACE_SECTION_NAV_GROUP.coherence).toBe('primary');
+    expect(SPACE_SECTION_NAV_GROUP['ecosystem-navigation']).toBe('primary');
+    expect(SPACE_SECTION_NAV_GROUP.calendar).toBe('more');
     expect(SPACE_SECTION_NAV_GROUP.members).toBe('more');
     expect(items.find((i) => i.key === 'overview')?.active).toBe(true);
     expect(items.filter((i) => i.active)).toHaveLength(1);
@@ -108,19 +110,15 @@ describe('partitionSpaceSectionNavForTabs', () => {
       'coherence',
       'agreements',
       'treasury',
-      'calendar',
-    ]);
-    expect(more.map((i) => i.key)).toEqual([
-      'members',
-      'rewards',
       'ecosystem-navigation',
     ]);
+    expect(more.map((i) => i.key)).toEqual(['calendar', 'members', 'rewards']);
   });
 
-  it('promotes an active More item into the last primary slot', () => {
+  it('keeps primary tabs fixed when a More screen is active', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
-      pathname: '/en/dho/hypha/ecosystem-navigation',
+      pathname: '/en/dho/hypha/calendar',
       memoryEnabled: true,
     });
     const { primary, more } = partitionSpaceSectionNavForTabs(items);
@@ -132,43 +130,40 @@ describe('partitionSpaceSectionNavForTabs', () => {
       'treasury',
       'ecosystem-navigation',
     ]);
-    expect(primary.at(-1)?.active).toBe(true);
+    expect(primary.every((i) => !i.active)).toBe(true);
     expect(more.map((i) => i.key)).toEqual([
       'calendar',
       'members',
       'rewards',
       'memory',
     ]);
-    expect(more.every((i) => !i.active)).toBe(true);
+    expect(more.find((i) => i.key === 'calendar')?.active).toBe(true);
+    expect(more.filter((i) => i.active)).toHaveLength(1);
   });
 
-  it('restores default grouping when navigating back to a primary key', () => {
-    const onEcosystem = partitionSpaceSectionNavForTabs(
+  it('keeps the same primary tabs when returning from a More screen', () => {
+    const onCalendar = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems({
         ...base,
-        pathname: '/en/dho/hypha/ecosystem-navigation',
+        pathname: '/en/dho/hypha/calendar',
       }),
     );
-    expect(onEcosystem.primary.map((i) => i.key)).toContain(
-      'ecosystem-navigation',
-    );
-    expect(onEcosystem.more.map((i) => i.key)).toContain('calendar');
-
     const onOverview = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems(base),
     );
-    expect(onOverview.primary.map((i) => i.key)).toEqual([
-      'overview',
-      'coherence',
-      'agreements',
-      'treasury',
-      'calendar',
-    ]);
-    expect(onOverview.more.map((i) => i.key)).toContain('ecosystem-navigation');
-    expect(onOverview.more.map((i) => i.key)).not.toContain('calendar');
+
+    expect(onCalendar.primary.map((i) => i.key)).toEqual(
+      onOverview.primary.map((i) => i.key),
+    );
+    expect(onCalendar.more.map((i) => i.key)).toEqual(
+      onOverview.more.map((i) => i.key),
+    );
+    expect(onCalendar.more.find((i) => i.active)?.key).toBe('calendar');
+    expect(onOverview.primary.find((i) => i.active)?.key).toBe('overview');
+    expect(onOverview.more.every((i) => !i.active)).toBe(true);
   });
 
-  it('promotes gated More items when they are active and enabled', () => {
+  it('keeps gated More items in More when they are active', () => {
     const { primary, more } = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems({
         ...base,
@@ -176,10 +171,17 @@ describe('partitionSpaceSectionNavForTabs', () => {
         pipelineEnabled: true,
       }),
     );
-    expect(primary.at(-1)?.key).toBe('pipeline');
-    expect(primary.at(-1)?.active).toBe(true);
-    expect(more.map((i) => i.key)).toContain('calendar');
-    expect(more.map((i) => i.key)).not.toContain('pipeline');
+    expect(primary.map((i) => i.key)).toEqual([
+      'overview',
+      'coherence',
+      'agreements',
+      'treasury',
+      'ecosystem-navigation',
+    ]);
+    expect(primary.every((i) => !i.active)).toBe(true);
+    expect(more.find((i) => i.key === 'pipeline')?.active).toBe(true);
+    expect(more.map((i) => i.key)).toContain('pipeline');
+    expect(more.map((i) => i.key)).not.toContain('ecosystem-navigation');
   });
 
   it('does not promote gated items that are omitted when disabled', () => {

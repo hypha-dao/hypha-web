@@ -14,7 +14,7 @@ function SkeletonBlock({
 }) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-muted', className)}
+      className={cn('animate-pulse rounded-none bg-foreground/10', className)}
       style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
       aria-hidden
     />
@@ -24,16 +24,15 @@ function SkeletonBlock({
 function SkeletonCard({ delayMs = 0 }: { delayMs?: number }) {
   return (
     <div
-      className="animate-pulse rounded-lg border border-border/60 bg-muted/30 p-3"
+      className="animate-pulse rounded-none border border-border/50 bg-transparent p-3"
       style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
       aria-hidden
     >
-      <div className="h-3 w-3/4 rounded bg-muted" />
-      <div className="mt-2 h-3 w-1/2 rounded bg-muted/80" />
+      <div className="h-3 w-3/4 bg-foreground/10" />
+      <div className="mt-2 h-3 w-1/2 bg-foreground/10" />
       <div className="mt-4 flex items-center gap-2">
-        <div className="h-5 w-14 rounded-md bg-muted/80" />
-        <div className="h-5 w-9 rounded-md bg-muted/60" />
-        <div className="ml-auto h-5 w-5 rounded-md bg-muted/80" />
+        <div className="h-3 w-14 bg-foreground/10" />
+        <div className="h-3 w-9 bg-foreground/10" />
       </div>
     </div>
   );
@@ -54,11 +53,11 @@ export function SignalSectionSkeleton({
     <div role="status" aria-busy="true" className="w-full">
       <span className="sr-only">{t('loadingSignals')}</span>
       {viewMode === 'board' ? (
-        <div className="flex w-full gap-3 overflow-hidden">
+        <div className="flex w-full overflow-hidden">
           {[0, 1, 2, 3].map((column) => (
             <div
               key={column}
-              className="flex min-w-0 flex-1 flex-col gap-2 rounded-lg border border-border/50 bg-muted/10 p-2"
+              className="flex min-w-0 flex-1 flex-col gap-2 border-r border-border/50 p-2 last:border-r-0"
             >
               <SkeletonBlock className="h-6 w-24" delayMs={column * 120} />
               {Array.from({ length: 3 - (column % 2) }, (_, card) => (
@@ -68,11 +67,11 @@ export function SignalSectionSkeleton({
           ))}
         </div>
       ) : viewMode === 'swimlane' ? (
-        <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full flex-col">
           {[0, 1, 2].map((lane) => (
             <div
               key={lane}
-              className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/10 p-2"
+              className="flex flex-col gap-2 border-b border-border/50 py-2"
             >
               <SkeletonBlock className="h-6 w-32" delayMs={lane * 140} />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -88,7 +87,7 @@ export function SignalSectionSkeleton({
           {Array.from({ length: 6 }, (_, row) => (
             <SkeletonBlock
               key={row}
-              className="h-12 w-full rounded-lg"
+              className="h-12 w-full rounded-none border-b border-border/40 bg-transparent"
               delayMs={row * 100}
             />
           ))}

@@ -40,7 +40,6 @@ import {
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import {
@@ -1792,14 +1791,12 @@ export function HumanChatPanelMessageBubble({
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex flex-col overflow-visible rounded-sm px-3 py-px transition-colors',
-        /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
-        'hover:bg-muted/60 focus-within:bg-muted/60',
-        highlightMentionForViewer &&
-          'border-l-[3px] border-l-accent-9 bg-muted/75 dark:border-l-accent-10 dark:bg-muted/55',
+        'group relative -mx-3 flex flex-col overflow-visible rounded-none px-3 py-1 transition-colors',
+        'hover:bg-foreground/[0.04] focus-within:bg-foreground/[0.04]',
+        highlightMentionForViewer && 'border-l-2 border-l-accent-9',
         unreadBoundary &&
           !highlightMentionForViewer &&
-          'border-l-[3px] border-l-border bg-muted/75 dark:border-l-border dark:bg-muted/55',
+          'border-l-2 border-l-border',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
@@ -1819,7 +1816,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={replyAvatarMeasureRef} className="shrink-0">
             <PersonAvatar
               size="sm"
-              className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
+              className="rounded-full"
               avatarSrc={replyHeaderAvatarResolved}
               userName={replyAuthorLabelForUi}
               isLoading={replyProfileLoading}
@@ -1851,7 +1848,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             <PersonAvatar
               size="chat"
-              className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
+              className="rounded-full"
               avatarSrc={mainAvatarSrc}
               userName={senderName}
               isLoading={senderProfileLoading}

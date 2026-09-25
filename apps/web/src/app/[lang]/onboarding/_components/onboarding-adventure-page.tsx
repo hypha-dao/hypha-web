@@ -441,22 +441,9 @@ export function OnboardingAdventurePage({
     <div className="flex flex-col">
       <section
         data-landing-marketing
-        className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 text-white md:pb-20 md:pt-10"
+        className="relative -mx-5 overflow-hidden bg-[var(--hypha-paper)] px-5 pb-14 pt-8 text-foreground md:pb-20 md:pt-10 dark:bg-[var(--hypha-ink)]"
       >
-        {/* Always-on midnight plane — matches marketing website, independent of app theme */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,var(--landing-navy-mid),var(--landing-navy-deep)_72%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,var(--landing-navy-glow),transparent_68%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px]"
-        />
-        <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
+        <Container className="relative flex flex-col gap-12 md:gap-14">
           <header className="flex flex-col items-center gap-6 text-center md:gap-8">
             <p className="inline-block rounded-full border border-[color-mix(in_oklab,var(--landing-accent)_40%,transparent)] bg-black/35 px-5 py-1.5 text-2 font-medium text-white shadow-[0_0_32px_-10px_var(--landing-accent)] backdrop-blur-sm">
               {t('heroPill.build')}{' '}
@@ -468,23 +455,28 @@ export function OnboardingAdventurePage({
               </span>
               {t('heroPill.together')}
             </p>
-            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-[var(--landing-accent-muted)] md:text-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-accent-muted)]">
               {t('heroEyebrow')}
             </p>
-            <h1 className="mx-auto max-w-4xl [font-family:var(--font-family-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
-              <span className="block text-white">{t('titleLine1')}</span>
-              <span className="landing-marketing-title-accent mt-1 block">
+            <h1
+              className="landing-marketing-copy mx-auto max-w-4xl text-balance text-[clamp(2.5rem,5.5vw,4.5rem)] font-medium leading-[1.06] tracking-[-0.03em]"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              <span className="landing-marketing-copy block">
+                {t('titleLine1')}
+              </span>
+              <span className="landing-marketing-copy mt-1 block">
                 {t('titleLine2')}
               </span>
             </h1>
-            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-white/90 md:text-5">
+            <p className="landing-marketing-copy mx-auto max-w-2xl text-4 font-normal leading-relaxed md:text-5">
               {t('subtitle')}
             </p>
           </header>
 
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
-              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] backdrop-blur-md">
+              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md">
                 <AiPanelChatBar
                   variant="hero"
                   value={aiPrompt}

@@ -6,7 +6,7 @@ import { Empty } from '../../../common';
 import { useUserAssetsSection } from '../../hooks/use-user-assets-section';
 import Link from 'next/link';
 import { AssetsList } from './assets-list';
-import { Button, Input } from '@hypha-platform/ui';
+import { Button, Checkbox } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
 type UserAssetsSectionProps = {
@@ -55,13 +55,13 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
           onChangeSearch={setSearchTerm}
         >
           <label className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap">
-            <Input
-              type="checkbox"
+            <Checkbox
               checked={hideSmallBalances}
-              onChange={(e) => setHideSmallBalances(e.target.checked)}
-              className="h-4 w-4 shrink-0 accent-accent-9"
+              onCheckedChange={(checked) =>
+                setHideSmallBalances(checked === true)
+              }
             />
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap font-sans text-2 font-normal text-neutral-11">
               {tTreasury('hideSmallBalances')}
             </span>
           </label>

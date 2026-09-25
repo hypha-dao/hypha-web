@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
-import { Copy, Sparkles } from 'lucide-react';
+import { Copy, Sparkles, User } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
@@ -41,6 +40,8 @@ type UIMessagePart =
   | { type: string; [k: string]: unknown };
 
 type AiPanelMessageBubbleProps = {
+  /** `quiet` is the onboarding screen: marks and text sit on the paper, without a frame. */
+  chrome?: 'default' | 'quiet';
   message: {
     id: string;
     role: 'user' | 'assistant' | 'system';
@@ -547,6 +548,7 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
 }
 
 export function AiPanelMessageBubble({
+  chrome = 'default',
   message,
   mobilizedAgents = [],
   isStreaming,
@@ -894,24 +896,24 @@ export function AiPanelMessageBubble({
       )}
     >
       {isUser ? (
-        <div
-          className={cn(
-            'mt-px h-7 w-7 shrink-0 self-start overflow-hidden',
-            APP_CHROME_SUBTLE_SQUARE_RADIUS,
-          )}
-        >
-          <PersonAvatar
-            size="sm"
-            avatarSrc={userAvatarUrl?.trim() || undefined}
-            userName={userDisplayName?.trim() || undefined}
-            className={cn('h-full w-full', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
-          />
-        </div>
+        chrome === 'quiet' && !userAvatarUrl?.trim() ? (
+          <div className="mt-px flex h-7 w-7 shrink-0 items-center justify-center self-start text-muted-foreground">
+            <User className="size-3.5" strokeWidth={1.25} aria-hidden />
+          </div>
+        ) : (
+          <div className="mt-px h-7 w-7 shrink-0 self-start overflow-hidden rounded-full">
+            <PersonAvatar
+              size="sm"
+              avatarSrc={userAvatarUrl?.trim() || undefined}
+              userName={userDisplayName?.trim() || undefined}
+              className="h-full w-full rounded-full"
+            />
+          </div>
+        )
       ) : (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden border border-border/60 bg-muted/25',
-            APP_CHROME_SUBTLE_SQUARE_RADIUS,
+            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-full border-0 bg-transparent',
             alignSingleLine ? 'mt-0' : 'mt-px',
           )}
         >
@@ -924,7 +926,10 @@ export function AiPanelMessageBubble({
               onError={() => setAssistantImageFailed(true)}
             />
           ) : (
-            <Sparkles className="craft-icon-sm text-muted-foreground" />
+            <Sparkles
+              className="size-3.5 text-muted-foreground"
+              strokeWidth={1.25}
+            />
           )}
         </div>
       )}
@@ -943,13 +948,8 @@ export function AiPanelMessageBubble({
         ) : null}
         <div
           className={cn(
-            // Asymmetric chat silhouette: three rounded + one sharp toward the
-            // speaker. inline-flex + w-fit keeps the fill hugging copy.
-            // Production type scale (text-sm / 14px); keep compact pad/gap.
-            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-xl px-2.5 py-1.5 text-sm leading-snug',
-            isUser
-              ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_10%,transparent)] text-foreground'
-              : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
+            // Transcript on the panel ground — no dialogue box or grey well.
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none border-0 bg-transparent px-0 py-0.5 text-sm leading-snug text-foreground shadow-none',
           )}
         >
           {hasVisibleText && (

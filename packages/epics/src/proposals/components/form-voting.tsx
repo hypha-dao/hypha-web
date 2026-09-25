@@ -479,7 +479,7 @@ export const FormVoting = ({
       </div>
       {votingInProgress ? (
         <div
-          className="rounded-lg border border-accent-6/40 bg-accent-surface/80 px-4 py-3 text-sm text-foreground backdrop-blur-sm"
+          className="rounded-none border border-border/70 bg-background-2 px-4 py-3 text-sm text-foreground"
           role="status"
           aria-live="polite"
         >
