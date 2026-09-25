@@ -62,7 +62,7 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
 
   return (
     <Card
-      className="flex h-full cursor-pointer flex-col gap-3 p-5 transition-colors hover:bg-background-2/50"
+      className="craft-card-interactive flex h-full cursor-pointer flex-col gap-3 p-5"
       role="button"
       tabIndex={0}
       onClick={onViewDetails}

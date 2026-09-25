@@ -574,7 +574,7 @@ export function SpaceMemoryTimelineItem({
   );
 
   return (
-    <li className="group flex min-w-0 flex-col gap-2.5 border-b border-border/50 p-3.5 transition-colors hover:bg-foreground/[0.03]">
+    <li className="craft-card-interactive group flex min-w-0 flex-col gap-2.5 p-3.5 dark:bg-background-5">
       <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
         <span className="craft-meta truncate text-[11px] font-medium">
           {sourceLabel}

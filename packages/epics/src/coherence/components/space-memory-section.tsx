@@ -230,7 +230,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       ) : (
         <>
           <ul
-            className="m-0 grid w-full list-none grid-cols-1 items-stretch p-0 md:grid-cols-2 md:[&>li]:border-r md:[&>li]:border-border/50 md:max-xl:[&>li:nth-child(2n)]:border-r-0 xl:grid-cols-3 xl:[&>li:nth-child(3n)]:border-r-0"
+            className="m-0 grid w-full list-none grid-cols-1 items-stretch gap-2 p-0 md:grid-cols-2 xl:grid-cols-3"
             aria-label={t('spaceMemory')}
           >
             {filteredItems.map((row) => (

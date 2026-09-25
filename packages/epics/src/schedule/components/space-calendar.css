@@ -123,6 +123,15 @@
   height: auto;
   transition: background-color 140ms ease;
   border-right: 1px solid color-mix(in srgb, var(--border) 28%, transparent);
+  /* Same rest as craft cards: white in light. Dark overrides --craft-card-rest. */
+  background: var(--craft-card-rest);
+}
+
+:is(.dark, .dark-theme, [data-theme='dark'])
+  .hypha-space-calendar--month
+  .fc
+  .fc-daygrid-day-frame {
+  --craft-card-rest: var(--background-5);
 }
 
 .hypha-space-calendar--month .fc .fc-daygrid-day-events {
@@ -151,7 +160,6 @@
   .fc
   .fc-daygrid-day.fc-day-today
   .fc-daygrid-day-frame {
-  background: transparent;
   box-shadow: none;
 }
 
@@ -199,7 +207,8 @@
 }
 
 .hypha-space-calendar--month .fc .fc-daygrid-day-frame:hover {
-  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  /* Same hover as .craft-card-interactive: 3% --foreground on the card rest. */
+  background: color-mix(in srgb, var(--foreground) 3%, var(--craft-card-rest));
 }
 
 .hypha-space-calendar--month .fc .fc-day-other .fc-daygrid-day-top {
@@ -213,12 +222,12 @@
   overflow: hidden;
   border-radius: 0 !important;
   /*
-   * Outline only. The hairline is the space accent (the colour that used
-   * to fill the chip). Outside a space it falls back to the #121212 panel
-   * step — never the default blue accent. Time and title stay ink.
+   * Accent hairline, shared card fill. Outside a space the border falls
+   * back to the #121212 panel step — never the default blue accent.
+   * Time and title stay ink.
    */
   border: 1px solid var(--space-accent, #121212) !important;
-  background: transparent !important;
+  background: var(--craft-card-rest) !important;
   color: var(--foreground) !important;
   box-shadow: none !important;
   cursor: pointer;
@@ -231,6 +240,13 @@
   color: var(--foreground) !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+:is(.dark, .dark-theme, [data-theme='dark'])
+  .hypha-space-calendar:not(.hypha-space-calendar--agenda)
+  .fc
+  .fc-event.hypha-cal-event {
+  --craft-card-rest: var(--background-5);
 }
 
 .hypha-cal-event-icon {
@@ -284,8 +300,14 @@
   min-height: 2.25rem;
 }
 
-.hypha-space-calendar .fc .fc-event.hypha-cal-event:hover {
-  background: transparent !important;
+.hypha-space-calendar:not(.hypha-space-calendar--agenda)
+  .fc
+  .fc-event.hypha-cal-event:hover {
+  background: color-mix(
+    in srgb,
+    var(--foreground) 3%,
+    var(--craft-card-rest)
+  ) !important;
   filter: none;
 }
 
@@ -512,12 +534,23 @@
   align-items: stretch;
   gap: 0.875rem;
   width: 100%;
-  padding: 0.75rem 0;
+  padding: 0.75rem;
   border-radius: 0;
-  border: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: var(--craft-card-rest);
   box-shadow: none;
+}
+
+:is(.dark, .dark-theme, [data-theme='dark']) .hypha-cal-agenda-card {
+  --craft-card-rest: var(--background-5);
+}
+
+.hypha-space-calendar--agenda
+  .fc
+  .fc-list-event.hypha-cal-event:hover
+  .hypha-cal-agenda-card {
+  border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+  background: color-mix(in srgb, var(--foreground) 3%, var(--craft-card-rest));
 }
 
 .hypha-cal-agenda-card__time {
