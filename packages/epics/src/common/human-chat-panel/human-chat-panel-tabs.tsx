@@ -97,104 +97,91 @@ export function HumanChatPanelTabs({
 
   return (
     <div
+      ref={tabRailScrollRef}
       className={cn(
         'relative box-border flex h-[var(--secondary-chrome-actions-row-height,66px)] w-full min-w-0 items-center border-b border-border/70 bg-transparent px-3',
-        /* Pack labels and call buttons together. The rail may shrink and
-           scroll; it does not grow, so leftover width stays after the icons. */
-        hasEndCluster ? 'gap-1' : undefined,
+        'overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x [scrollbar-width:thin]',
+        /*
+         * One row across the panel content box. `display: contents` on the
+         * tablist and the end cluster lets each control (labels, phone, video)
+         * be its own flex item, so justify-between gives equal gaps and the
+         * same px-3 inset on both edges. Labels stay full width (no shrink).
+         */
+        hasEndCluster ? 'justify-between' : 'justify-start gap-0.5',
       )}
     >
       {/*
-        Scroll the rail, not the tab buttons: outer min-w-0 + overflow; inner
-        inline-flex w-max shrink-0 so each label keeps its full width.
-        role=tablist is on the inner so it still only contains role=tab children.
+        role=tablist stays on this element so it only contains role=tab
+        children. `contents` promotes those tabs into the row above.
       */}
-      <div
-        ref={tabRailScrollRef}
-        className={cn(
-          'flex min-w-0 max-w-full shrink items-center self-stretch',
-          'overflow-x-auto overflow-y-hidden overscroll-x-contain',
-          'touch-pan-x [scrollbar-width:thin]',
-        )}
-      >
-        <div
-          role="tablist"
-          className="inline-flex w-max min-w-max shrink-0 flex-nowrap items-center gap-0.5"
-        >
-          {tabs.map((tab, index) => (
-            <button
-              key={tab.key}
-              id={`chat-tab-${tab.key}`}
-              type="button"
-              role="tab"
-              title={tab.label}
-              aria-label={
-                tab.key === 'chat' && chatBadgeLabel != null
-                  ? chatBadgeLabel === '99+'
-                    ? t('tabWithUnreadMentionsCapped', { tabLabel: tab.label })
-                    : t('tabChatWithMentionCount', {
-                        tabLabel: tab.label,
-                        count: chatMentionCount,
-                      })
-                  : tab.key === 'mentions' && mentionBadgeLabel != null
-                  ? mentionBadgeLabel === '99+'
-                    ? t('tabWithUnreadMentionsCapped', {
-                        tabLabel: tab.label,
-                      })
-                    : t('tabMentionsWithMentionCount', {
-                        tabLabel: tab.label,
-                        count: mentionTabBadgeCount,
-                      })
-                  : undefined
-              }
-              aria-selected={activeTab === tab.key}
-              aria-controls={`chat-tabpanel-${tab.key}`}
-              tabIndex={activeTab === tab.key ? 0 : -1}
-              onClick={() => {
-                onTabChange(tab.key);
-                requestAnimationFrame(() =>
-                  scrollTabIntoRailIfClipped(tab.key),
-                );
-              }}
-              onKeyDown={(e) => handleKeyDown(e, index)}
-              className={cn(
-                'shrink-0 select-none',
-                'inline-flex h-[36px] items-center',
-                'whitespace-nowrap rounded-none border-0 bg-transparent px-2.5 text-left text-xs font-medium',
-                'transition-colors duration-150',
-                activeTab === tab.key
-                  ? 'text-accent-11'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <span className="whitespace-nowrap" title={tab.label}>
-                  {tab.label}
-                </span>
-                {tab.key === 'chat' && chatBadgeLabel != null ? (
-                  <CountBadge
-                    label={chatBadgeLabel}
-                    count={chatMentionCount}
-                    capped={chatMentionCountCapped}
-                  />
-                ) : null}
-                {tab.key === 'mentions' && mentionBadgeLabel != null ? (
-                  <CountBadge
-                    label={mentionBadgeLabel}
-                    count={mentionTabBadgeCount}
-                    capped={mentionTabBadgeCapped}
-                  />
-                ) : null}
+      <div role="tablist" className="contents">
+        {tabs.map((tab, index) => (
+          <button
+            key={tab.key}
+            id={`chat-tab-${tab.key}`}
+            type="button"
+            role="tab"
+            title={tab.label}
+            aria-label={
+              tab.key === 'chat' && chatBadgeLabel != null
+                ? chatBadgeLabel === '99+'
+                  ? t('tabWithUnreadMentionsCapped', { tabLabel: tab.label })
+                  : t('tabChatWithMentionCount', {
+                      tabLabel: tab.label,
+                      count: chatMentionCount,
+                    })
+                : tab.key === 'mentions' && mentionBadgeLabel != null
+                ? mentionBadgeLabel === '99+'
+                  ? t('tabWithUnreadMentionsCapped', {
+                      tabLabel: tab.label,
+                    })
+                  : t('tabMentionsWithMentionCount', {
+                      tabLabel: tab.label,
+                      count: mentionTabBadgeCount,
+                    })
+                : undefined
+            }
+            aria-selected={activeTab === tab.key}
+            aria-controls={`chat-tabpanel-${tab.key}`}
+            tabIndex={activeTab === tab.key ? 0 : -1}
+            onClick={() => {
+              onTabChange(tab.key);
+              requestAnimationFrame(() => scrollTabIntoRailIfClipped(tab.key));
+            }}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            className={cn(
+              'shrink-0 select-none',
+              'inline-flex h-[36px] items-center',
+              'whitespace-nowrap rounded-none border-0 bg-transparent px-2.5 text-left font-sans text-xs font-medium',
+              'transition-colors duration-150',
+              activeTab === tab.key
+                ? 'text-accent-11'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <span className="whitespace-nowrap" title={tab.label}>
+                {tab.label}
               </span>
-            </button>
-          ))}
-        </div>
+              {tab.key === 'chat' && chatBadgeLabel != null ? (
+                <CountBadge
+                  label={chatBadgeLabel}
+                  count={chatMentionCount}
+                  capped={chatMentionCountCapped}
+                />
+              ) : null}
+              {tab.key === 'mentions' && mentionBadgeLabel != null ? (
+                <CountBadge
+                  label={mentionBadgeLabel}
+                  count={mentionTabBadgeCount}
+                  capped={mentionTabBadgeCapped}
+                />
+              ) : null}
+            </span>
+          </button>
+        ))}
       </div>
-      {hasEndCluster ? (
-        <div className="relative z-10 flex min-w-max shrink-0 items-center gap-0.5 self-stretch">
-          {tabRowEnd}
-        </div>
-      ) : null}
+      {hasEndCluster ? <div className="contents">{tabRowEnd}</div> : null}
     </div>
   );
 }
