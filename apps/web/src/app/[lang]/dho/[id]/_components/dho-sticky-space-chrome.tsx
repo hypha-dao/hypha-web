@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, usePathname } from 'next/navigation';
 import {
+  SPACE_HEADER_ACTIONS_ATTR,
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
   animateMainColumnScrollBy,
@@ -40,6 +41,38 @@ const SPACE_SCREEN_SETTLE_MAX_MS = 520;
  */
 const COVER_FADE_PX = 24;
 const RESET_TO_TOP_SLACK_PX = 8;
+const HEADER_ACTIONS_SELECTOR = `[${SPACE_HEADER_ACTIONS_ATTR}]`;
+const ACTIONS_ALIGN_EPSILON_PX = 0.5;
+
+/** Right edge of the last control, so gear/pill/mode share one measured edge. */
+function clusterRightPx(el: HTMLElement): number {
+  const last = el.lastElementChild;
+  const target = last instanceof HTMLElement ? last : el;
+  return target.getBoundingClientRect().right;
+}
+
+/**
+ * Shift the sticky cluster so its right edge matches the header cluster.
+ * The header box is the reference; this does not move it.
+ */
+function alignStickyActionsToHeader(
+  sticky: HTMLElement,
+  header: HTMLElement,
+): void {
+  sticky.style.transform = 'none';
+  const shift = clusterRightPx(header) - clusterRightPx(sticky);
+  sticky.style.transform =
+    Math.abs(shift) < ACTIONS_ALIGN_EPSILON_PX
+      ? ''
+      : `translateX(${shift.toFixed(2)}px)`;
+}
+
+function setHeaderActionsShowing(header: HTMLElement, showing: boolean): void {
+  header.style.visibility = showing ? '' : 'hidden';
+  if (showing) header.removeAttribute('aria-hidden');
+  else header.setAttribute('aria-hidden', 'true');
+}
+
 const SCROLL_KEYS = new Set([
   'ArrowUp',
   'ArrowDown',
@@ -249,12 +282,12 @@ function useMenuTopOffsetPx(): number {
 
 /**
  * Desktop (md+): pin a secondary chrome row under `MenuTop`. Lighter typography + avatar than
- * `CompactSpaceBanner` so it reads as tier-2 chrome. Actions / nested-space move via portal so the
- * same React trees (hooks) transition between positions — pixel-identical Button UI.
+ * `CompactSpaceBanner` so it reads as tier-2 chrome. The gear and status pills also live on the
+ * space header. Those header controls stay the painted set until this row sticks; the portaled
+ * copies then take the same right edge and the header cluster stops painting.
  *
- * Note: `createPortal` remounts its subtree when the container DOM node changes (e.g. when
- * `actionsPortalTarget` swaps between in-flow and sticky targets). Stateful descendants reset;
- * lift state above the portaled subtree if that becomes a problem.
+ * Note: `createPortal` remounts its subtree when the container DOM node changes. The actions
+ * slot is stable after mount so the subscription badge does not refetch on each stick.
  */
 export function DhoStickySpaceChrome({
   banner,
@@ -280,6 +313,7 @@ export function DhoStickySpaceChrome({
 
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
+  const bannerColumnRef = React.useRef<HTMLDivElement>(null);
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
@@ -898,7 +932,63 @@ export function DhoStickySpaceChrome({
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : null;
+  /*
+   * Header row owns the gear, date pill, and mode pill while that row is on
+   * screen. Sticky copies stay mounted so the handoff width matches, but they
+   * do not paint until the row has stuck — then the header cluster stops
+   * painting so the two cannot ghost or stack. The sticky cluster is shifted
+   * onto the header's right edge; the header box stays put.
+   */
+  React.useLayoutEffect(() => {
+    const column = bannerColumnRef.current;
+    const sticky = stickyActionsEl;
+    if (!column) return;
+
+    let apply = () => {};
+    const ro = new ResizeObserver(() => apply());
+    apply = () => {
+      const header = column.querySelector(HEADER_ACTIONS_SELECTOR);
+      if (!(header instanceof HTMLElement)) return;
+      ro.observe(header);
+      const md = window.matchMedia('(min-width: 768px)').matches;
+      // Header keeps the only painted cluster until the sticky row has taken
+      // its place. Sticky nodes stay mounted (so widths match) but do not paint.
+      const stickyOwns =
+        stuck && md && sticky != null && sticky.childElementCount > 0;
+      setHeaderActionsShowing(header, !stickyOwns);
+      if (!sticky) return;
+      sticky.style.visibility = stickyOwns ? 'visible' : 'hidden';
+      if (!stickyOwns) {
+        sticky.style.transform = '';
+        return;
+      }
+      alignStickyActionsToHeader(sticky, header);
+    };
+
+    apply();
+    ro.observe(column);
+    if (sticky) ro.observe(sticky);
+    const bar = stickyBarRef.current;
+    if (bar) ro.observe(bar);
+    const mo = new MutationObserver(apply);
+    mo.observe(column, { childList: true, subtree: true });
+    window.addEventListener('resize', apply);
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+      window.removeEventListener('resize', apply);
+      const header = column.querySelector(HEADER_ACTIONS_SELECTOR);
+      if (header instanceof HTMLElement) setHeaderActionsShowing(header, true);
+      if (sticky) {
+        sticky.style.transform = '';
+        sticky.style.visibility = '';
+      }
+    };
+  }, [stuck, stickyActionsEl]);
+
+  // Always mounted once the slot exists so the handoff does not wait on a
+  // second subscription fetch. Paint is gated in the layout effect above.
+  const actionsPortalTarget = stickyActionsEl;
 
   return (
     <>
@@ -958,7 +1048,7 @@ export function DhoStickySpaceChrome({
         </div>
       </div>
 
-      <div className="flex flex-col">
+      <div ref={bannerColumnRef} className="flex flex-col">
         <div className="relative">
           {banner}
           <div

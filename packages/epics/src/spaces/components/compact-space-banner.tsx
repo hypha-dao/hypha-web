@@ -22,6 +22,12 @@ export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   '[font-family:var(--font-family-heading)]',
 );
 
+/**
+ * Marks the in-flow gear / status / mode cluster. Sticky chrome measures this
+ * box and must not paint a second copy while it is still showing.
+ */
+export const SPACE_HEADER_ACTIONS_ATTR = 'data-space-header-actions';
+
 /** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
 export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
   'h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11',
@@ -328,7 +334,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               </div>
 
               {footerTrailing ? (
-                <div className="flex shrink-0 flex-wrap items-center justify-start gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+                <div
+                  {...{ [SPACE_HEADER_ACTIONS_ATTR]: '' }}
+                  className="flex shrink-0 flex-wrap items-center justify-start gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center"
+                >
                   {footerTrailing}
                 </div>
               ) : null}
