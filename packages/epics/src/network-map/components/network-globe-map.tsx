@@ -170,36 +170,310 @@ function isPinVisibleOnProjection(
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
 }
 
+/** Legend and miniature sit this far inside the visible drawing. */
+const OVERLAY_INSET = 12;
+const OVERLAY_GAP = 12;
+
+type OverlaySize = { w: number; h: number };
+type OverlayBox = OverlaySize & { x: number; y: number };
+type OverlayDisk = { cx: number; cy: number; r: number };
+type OverlaySeat = {
+  legendLeft: number;
+  legendBottom: number;
+  navRight: number;
+  navBottom: number;
+};
+
+function overlayBoxesOverlap(a: OverlayBox, b: OverlayBox): boolean {
+  return (
+    a.x < b.x + b.w + OVERLAY_GAP &&
+    a.x + a.w + OVERLAY_GAP > b.x &&
+    a.y < b.y + b.h + OVERLAY_GAP &&
+    a.y + a.h + OVERLAY_GAP > b.y
+  );
+}
+
+function overlayWithinStage(
+  box: OverlayBox,
+  width: number,
+  height: number,
+): boolean {
+  return (
+    box.x >= OVERLAY_INSET - 0.5 &&
+    box.y >= OVERLAY_INSET - 0.5 &&
+    box.x + box.w <= width - OVERLAY_INSET + 0.5 &&
+    box.y + box.h <= height - OVERLAY_INSET + 0.5
+  );
+}
+
+function cornersInsideRadius(
+  box: OverlayBox,
+  cx: number,
+  cy: number,
+  radius: number,
+): boolean {
+  const points: Array<[number, number]> = [
+    [box.x, box.y],
+    [box.x + box.w, box.y],
+    [box.x, box.y + box.h],
+    [box.x + box.w, box.y + box.h],
+  ];
+  return points.every(([x, y]) => {
+    const dx = x - cx;
+    const dy = y - cy;
+    return dx * dx + dy * dy <= radius * radius + 1;
+  });
+}
+
 /**
- * Walk from a bounding-box corner toward the center until the pixel is on the
- * drawing. Orthographic invert clamps off-disk points onto the limb, so a
- * round-trip is required — otherwise the navigator sits in the empty corner.
+ * Orthographic draws a disk. A clip under 180° is that disk; equirectangular
+ * reports clipAngle 0 and fills its bounds rectangle instead.
  */
-function pointOnMap(
-  projection: d3.GeoProjection,
-  x: number,
-  y: number,
-  centerX: number,
-  centerY: number,
-): { x: number; y: number } {
-  let px = x;
-  let py = y;
-  for (let step = 0; step < 24; step += 1) {
-    const geo = projection.invert?.([px, py]);
-    if (geo && Number.isFinite(geo[0]) && Number.isFinite(geo[1])) {
-      const projected = projection([geo[0], geo[1]]);
-      if (
-        projected &&
-        Math.hypot(projected[0] - px, projected[1] - py) < 1.5 &&
-        isPinVisibleOnProjection(projection, geo[0], geo[1])
-      ) {
-        return { x: px, y: py };
-      }
-    }
-    px += (centerX - px) * 0.12;
-    py += (centerY - py) * 0.12;
+function visibleDisk(projection: d3.GeoProjection): OverlayDisk | null {
+  const clip = projection.clipAngle?.();
+  if (clip == null || clip <= 0 || clip >= 180) {
+    return null;
   }
-  return { x: centerX, y: centerY };
+  const [cx, cy] = projection.translate();
+  const radius = projection.scale() * Math.sin((clip * Math.PI) / 180);
+  if (
+    !Number.isFinite(cx) ||
+    !Number.isFinite(cy) ||
+    !(radius > OVERLAY_INSET)
+  ) {
+    return null;
+  }
+  return { cx, cy, r: radius };
+}
+
+/**
+ * Put the box's outer corner 12px inside the limb, as close to the bottom
+ * corner of the disk as the box still fits. θ = 0 is straight down.
+ */
+function diskCornerBox(
+  disk: OverlayDisk,
+  size: OverlaySize,
+  side: 'left' | 'right',
+): OverlayBox | null {
+  const reach = disk.r - OVERLAY_INSET;
+  if (!(reach > 1) || size.w > reach * 2 || size.h > reach * 2) {
+    return null;
+  }
+  const thetaMin = Math.asin(Math.min(1, size.w / 2 / reach));
+  const thetaMax = Math.acos(Math.min(1, size.h / 2 / reach));
+  if (thetaMin > thetaMax + 1e-4) {
+    return null;
+  }
+  const theta = Math.min(thetaMax, Math.max(thetaMin, Math.PI / 4));
+  const along = reach * Math.sin(theta);
+  const down = reach * Math.cos(theta);
+  const y = disk.cy + down - size.h;
+  const x = side === 'right' ? disk.cx + along - size.w : disk.cx - along;
+  return { x, y, w: size.w, h: size.h };
+}
+
+function stageCornerBox(
+  width: number,
+  height: number,
+  size: OverlaySize,
+  side: 'left' | 'right',
+): OverlayBox {
+  return {
+    x: side === 'right' ? width - OVERLAY_INSET - size.w : OVERLAY_INSET,
+    y: height - OVERLAY_INSET - size.h,
+    w: size.w,
+    h: size.h,
+  };
+}
+
+function seatDiskCorner(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  size: OverlaySize,
+  side: 'left' | 'right',
+): OverlayBox | null {
+  const fitted = diskCornerBox(disk, size, side);
+  if (fitted && overlayWithinStage(fitted, width, height)) {
+    return fitted;
+  }
+  // Zoomed disk covers the stage, so the visible edge is the stage itself.
+  const staged = stageCornerBox(width, height, size, side);
+  if (cornersInsideRadius(staged, disk.cx, disk.cy, disk.r)) {
+    return staged;
+  }
+  if (!fitted) {
+    return null;
+  }
+  const clamped = {
+    x: Math.min(
+      Math.max(OVERLAY_INSET, fitted.x),
+      width - OVERLAY_INSET - size.w,
+    ),
+    y: Math.min(
+      Math.max(OVERLAY_INSET, fitted.y),
+      height - OVERLAY_INSET - size.h,
+    ),
+    w: size.w,
+    h: size.h,
+  };
+  return cornersInsideRadius(clamped, disk.cx, disk.cy, disk.r)
+    ? clamped
+    : null;
+}
+
+/** Leftmost position at this bottom edge that keeps the whole legend 12px inside the limb. */
+function legendLeftAtBottom(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  size: OverlaySize,
+  bottom: number,
+): OverlayBox | null {
+  const reach = disk.r - OVERLAY_INSET;
+  const top = bottom - size.h;
+  const span = (edge: number) => {
+    const dy = edge - disk.cy;
+    const remainder = reach * reach - dy * dy;
+    if (remainder < 0) {
+      return null;
+    }
+    const half = Math.sqrt(remainder);
+    return { left: disk.cx - half, right: disk.cx + half };
+  };
+  const atBottom = span(bottom);
+  const atTop = span(top);
+  if (!atBottom || !atTop) {
+    return null;
+  }
+  let x = Math.max(atBottom.left, atTop.left, OVERLAY_INSET);
+  const rightLimit = Math.min(
+    atBottom.right,
+    atTop.right,
+    width - OVERLAY_INSET,
+  );
+  if (rightLimit - x < size.w - 0.5) {
+    return null;
+  }
+  if (x + size.w > rightLimit) {
+    x = rightLimit - size.w;
+  }
+  const y = top;
+  if (y < OVERLAY_INSET || bottom > height - OVERLAY_INSET + 0.5) {
+    return null;
+  }
+  return { x, y, w: size.w, h: size.h };
+}
+
+function shiftLegendClearOfNavigator(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  legend: OverlaySize,
+  nav: OverlayBox,
+  leftHalfOnly: boolean,
+): OverlayBox | null {
+  const reach = disk.r - OVERLAY_INSET;
+  const lowest = Math.min(height - OVERLAY_INSET, disk.cy + reach);
+  const highest = Math.max(
+    legend.h + OVERLAY_INSET,
+    disk.cy - reach + legend.h,
+  );
+  for (let bottom = lowest; bottom >= highest; bottom -= 4) {
+    const box = legendLeftAtBottom(disk, width, height, legend, bottom);
+    if (!box) {
+      continue;
+    }
+    if (leftHalfOnly && box.x + box.w > disk.cx + 0.5) {
+      continue;
+    }
+    if (overlayBoxesOverlap(box, nav)) {
+      continue;
+    }
+    return box;
+  }
+  return null;
+}
+
+function seatOnRectangle(
+  width: number,
+  height: number,
+  bounds: [[number, number], [number, number]],
+  legend: OverlaySize | null,
+  nav: OverlaySize,
+): OverlaySeat {
+  const [[x0, y0], [x1, y1]] = bounds;
+  const left = Math.max(OVERLAY_INSET, x0 + OVERLAY_INSET);
+  const right = Math.min(width - OVERLAY_INSET, x1 - OVERLAY_INSET);
+  const bottom = Math.min(height - OVERLAY_INSET, y1 - OVERLAY_INSET);
+  const top = Math.max(OVERLAY_INSET, y0 + OVERLAY_INSET);
+  const navBox: OverlayBox = {
+    x: Math.max(left, right - nav.w),
+    y: Math.max(top, bottom - nav.h),
+    w: nav.w,
+    h: nav.h,
+  };
+  let legendBox: OverlayBox | null = null;
+  if (legend) {
+    legendBox = {
+      x: left,
+      y: Math.max(top, bottom - legend.h),
+      w: legend.w,
+      h: legend.h,
+    };
+    if (overlayBoxesOverlap(legendBox, navBox)) {
+      legendBox = {
+        ...legendBox,
+        y: Math.max(top, navBox.y - OVERLAY_GAP - legend.h),
+      };
+    }
+  }
+  return overlaySeatCss(width, height, legendBox, navBox);
+}
+
+function seatOnDisk(
+  disk: OverlayDisk,
+  width: number,
+  height: number,
+  legend: OverlaySize | null,
+  nav: OverlaySize,
+): OverlaySeat | null {
+  const navBox = seatDiskCorner(disk, width, height, nav, 'right');
+  if (!navBox) {
+    return null;
+  }
+  let legendBox = legend
+    ? seatDiskCorner(disk, width, height, legend, 'left')
+    : null;
+  if (
+    legend &&
+    legendBox &&
+    (legendBox.x + legendBox.w > disk.cx + 0.5 ||
+      overlayBoxesOverlap(legendBox, navBox))
+  ) {
+    legendBox =
+      shiftLegendClearOfNavigator(disk, width, height, legend, navBox, true) ??
+      shiftLegendClearOfNavigator(disk, width, height, legend, navBox, false) ??
+      legendBox;
+  }
+  return overlaySeatCss(width, height, legendBox, navBox);
+}
+
+function overlaySeatCss(
+  width: number,
+  height: number,
+  legend: OverlayBox | null,
+  nav: OverlayBox,
+): OverlaySeat {
+  return {
+    legendLeft: Math.max(OVERLAY_INSET, Math.round(legend?.x ?? OVERLAY_INSET)),
+    legendBottom: Math.max(
+      OVERLAY_INSET,
+      Math.round(legend ? height - (legend.y + legend.h) : OVERLAY_INSET),
+    ),
+    navRight: Math.max(OVERLAY_INSET, Math.round(width - (nav.x + nav.w))),
+    navBottom: Math.max(OVERLAY_INSET, Math.round(height - (nav.y + nav.h))),
+  };
 }
 
 function parsePinTransform(element: Element): { x: number; y: number } | null {
@@ -365,6 +639,10 @@ export function NetworkGlobeMap({
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
+  const overlaySeatRef = React.useRef<{
+    key: string;
+    seat: OverlaySeat;
+  } | null>(null);
   const renderMiniGlobeRef = React.useRef<() => void>(() => {});
   const isMountedRef = React.useRef(true);
   const animatingTargetRef = React.useRef<NetworkMapProjectionMode | null>(
@@ -874,28 +1152,57 @@ export function NetworkGlobeMap({
         .style('display', null);
     });
 
-    const [[x0, y0], [x1, y1]] = path.bounds({ type: 'Sphere' });
+    const bounds = path.bounds({ type: 'Sphere' });
+    const [[x0, y0], [x1, y1]] = bounds;
     if ([x0, y0, x1, y1].every((value) => Number.isFinite(value))) {
-      const pad = 12;
-      const bottomRight = pointOnMap(projection, x1, y1, width / 2, height / 2);
-      const bottomLeft = pointOnMap(projection, x0, y1, width / 2, height / 2);
-      // Variables survive React re-renders that reset the buttons' style prop.
-      container.style.setProperty(
-        '--map-nav-right',
-        `${Math.round(Math.max(pad, width - bottomRight.x + pad))}px`,
+      const disk = visibleDisk(projection);
+      const navSize = miniGlobeRef.current
+        ? { w: MINI_GLOBE_SIZE, h: MINI_GLOBE_SIZE }
+        : { w: MINI_MAP_WIDTH, h: MINI_MAP_HEIGHT };
+      const legendEl = container.querySelector<HTMLElement>(
+        '[data-network-map-inset="legend"]',
       );
-      container.style.setProperty(
-        '--map-nav-bottom',
-        `${Math.round(Math.max(pad, height - bottomRight.y + pad))}px`,
-      );
-      container.style.setProperty(
-        '--map-legend-left',
-        `${Math.round(Math.max(pad, bottomLeft.x + pad))}px`,
-      );
-      container.style.setProperty(
-        '--map-legend-bottom',
-        `${Math.round(Math.max(pad, height - bottomLeft.y + pad))}px`,
-      );
+      const seatKey = [
+        width,
+        height,
+        disk
+          ? `d${disk.r.toFixed(1)}`
+          : `r${x0.toFixed(0)},${y0.toFixed(0)},${x1.toFixed(0)},${y1.toFixed(
+              0,
+            )}`,
+        navSize.w,
+        navSize.h,
+        legendEl?.textContent ?? '',
+      ].join('|');
+      let seat =
+        overlaySeatRef.current?.key === seatKey
+          ? overlaySeatRef.current.seat
+          : null;
+      if (!seat) {
+        const legendSize =
+          legendEl && legendEl.offsetWidth > 0
+            ? { w: legendEl.offsetWidth, h: legendEl.offsetHeight }
+            : null;
+        seat = disk
+          ? seatOnDisk(disk, width, height, legendSize, navSize)
+          : seatOnRectangle(width, height, bounds, legendSize, navSize);
+        if (seat && (!legendEl || legendSize)) {
+          overlaySeatRef.current = { key: seatKey, seat };
+        }
+      }
+      if (seat) {
+        // Variables survive React re-renders that reset the buttons' style prop.
+        container.style.setProperty('--map-nav-right', `${seat.navRight}px`);
+        container.style.setProperty('--map-nav-bottom', `${seat.navBottom}px`);
+        container.style.setProperty(
+          '--map-legend-left',
+          `${seat.legendLeft}px`,
+        );
+        container.style.setProperty(
+          '--map-legend-bottom',
+          `${seat.legendBottom}px`,
+        );
+      }
     }
   }, [lang, router, t]);
 
@@ -1742,6 +2049,7 @@ export function NetworkGlobeMap({
   const mapLegend =
     !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
       <div
+        data-network-map-inset="legend"
         className={cn(
           'pointer-events-none absolute bottom-[var(--map-legend-bottom)] left-[var(--map-legend-left)] z-20',
           'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
@@ -1775,6 +2083,7 @@ export function NetworkGlobeMap({
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
+      data-network-map-inset="navigator"
       className={cn(
         'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
@@ -1798,6 +2107,7 @@ export function NetworkGlobeMap({
   const miniMapInset = showMiniMap ? (
     <button
       type="button"
+      data-network-map-inset="navigator"
       className={cn(
         'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
