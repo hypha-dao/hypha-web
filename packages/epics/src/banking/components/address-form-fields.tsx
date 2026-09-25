@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 const STREET_MAX_LENGTH = 35;
 
 const SELECT_CLASS =
-  'min-h-6 w-full appearance-none rounded border border-input bg-neutral-1 px-3 py-2 text-2 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'h-10 min-h-10 w-full appearance-none rounded-none border border-border bg-neutral-1 px-3 py-2 text-2 transition-colors focus:outline-none focus-visible:border-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
 const US_STATES = [
   { code: 'AL', name: 'Alabama' },
@@ -200,7 +200,7 @@ export function AddressFormFields({
       {/* Country — full width, always first after street */}
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-country`}>{t('country')}</Label>
-        <div className="relative flex min-h-6 w-full items-center">
+        <div className="relative flex min-h-10 w-full items-center">
           <select
             id={`${idPrefix}-country`}
             className={cn(
@@ -239,7 +239,7 @@ export function AddressFormFields({
             {subdivisionLabel ?? t('subdivision')}
           </Label>
           {isUsCountry ? (
-            <div className="relative flex min-h-6 w-full items-center">
+            <div className="relative flex min-h-10 w-full items-center">
               <select
                 id={`${idPrefix}-subdivision`}
                 className={cn(

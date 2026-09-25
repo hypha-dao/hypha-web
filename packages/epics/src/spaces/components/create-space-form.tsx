@@ -585,7 +585,7 @@ export const SpaceForm = ({
                               rootClassName="h-auto min-h-10 w-full sm:min-h-11"
                               rightIcon={!field.value && <RequirementMark />}
                               placeholder={tSpaces('nameYourSpace')}
-                              className="h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:text-lg"
+                              className="h-auto min-h-10 w-full rounded-none border border-border bg-inherit py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 focus-visible:border-foreground sm:min-h-11 sm:text-xl sm:placeholder:text-lg"
                               disabled={isLoading}
                               {...field}
                               onChange={(
