@@ -15,6 +15,8 @@ type Props = {
   leftOpen: boolean;
   leftPanelOpen: boolean;
   leftSidebarWidth: string;
+  /** Pixels of persistent icon rail included in the left sidebar width. */
+  leftIconRailPx?: number;
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
@@ -34,6 +36,7 @@ export function PanelDualSidebarScrollBridge({
   leftOpen,
   leftPanelOpen,
   leftSidebarWidth,
+  leftIconRailPx = 0,
   onLeftOpenChange,
   rightOpen,
   onRightOpenChange,
@@ -66,7 +69,11 @@ export function PanelDualSidebarScrollBridge({
         className="z-[50] overflow-visible"
       >
         {leftContent}
-        <SidebarResizeHandle />
+        <SidebarResizeHandle
+          minWidth={280 + leftIconRailPx}
+          maxWidth={600 + leftIconRailPx}
+          defaultWidth={320 + leftIconRailPx}
+        />
       </Sidebar>
       {/*
         The inner `SidebarProvider` is `h-svh` and lays out the center column + right panel in
