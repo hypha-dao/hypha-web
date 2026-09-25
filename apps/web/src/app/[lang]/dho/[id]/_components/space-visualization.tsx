@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import { SPACE_ACCENT_FALLBACK } from '@hypha-platform/epics';
+import { cn } from '@hypha-platform/ui-utils';
 import type { VisibleSpace } from './types';
 
 type SpaceNode = {
@@ -34,6 +35,8 @@ type Props = {
   ariaLabel?: string;
   /** Parent row calls these so zoom stays on the membership line. */
   zoomApiRef?: MutableRefObject<SpaceVisualizationZoomApi>;
+  /** Stage fill. Default is a square that sizes from width. */
+  className?: string;
 };
 
 /** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
@@ -206,6 +209,7 @@ export function SpaceVisualization({
   showNodeLabels = true,
   ariaLabel = 'Space hierarchy visualization',
   zoomApiRef,
+  className,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -1096,10 +1100,14 @@ export function SpaceVisualization({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className={cn('relative aspect-square w-full', className)}
+    >
       <svg
         ref={svgRef}
-        className="h-auto w-full"
+        className="absolute inset-0 block h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={ariaLabel}
       />

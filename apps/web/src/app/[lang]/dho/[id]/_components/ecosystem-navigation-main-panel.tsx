@@ -18,15 +18,20 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
-import type { SpaceVisualizationZoomApi } from './space-visualization';
 import { sampleAccentHex } from './space-accent-utils';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
-import { Minus, Plus } from 'lucide-react';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
@@ -88,10 +93,7 @@ export function EcosystemNavigationMainPanel({
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
   const pathname = usePathname();
-  const zoomApiRef = useRef<SpaceVisualizationZoomApi>({
-    zoomIn: () => {},
-    zoomOut: () => {},
-  });
+  const diagramStageRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [rootSpaceAccent, setRootSpaceAccent] = useState(
     SELECTED_SPACE_ACCENT_FALLBACK,
@@ -244,33 +246,12 @@ export function EcosystemNavigationMainPanel({
         value: 'nested-spaces',
         label: t('tabs.nestedSpaces'),
         content: (
-          <div className="min-w-0">
-            <p
-              className="craft-page-title truncate border-b border-border/50 py-2.5 text-4 font-medium"
-              title={selectedSpaceTitle}
-            >
-              {selectedSpaceTitle}
-            </p>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <EcosystemMembershipModules
               spaceSlug={selectedSpaceSlug}
+              spaceTitle={selectedSpaceTitle}
               trailing={
                 <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    className={APP_CHROME_ICON_TRIGGER}
-                    aria-label={t('diagram.zoomOut')}
-                    onClick={() => zoomApiRef.current.zoomOut()}
-                  >
-                    <Minus />
-                  </button>
-                  <button
-                    type="button"
-                    className={APP_CHROME_ICON_TRIGGER}
-                    aria-label={t('diagram.zoomIn')}
-                    onClick={() => zoomApiRef.current.zoomIn()}
-                  >
-                    <Plus />
-                  </button>
                   {canVisitSpace && visitSpaceHref ? (
                     <Tooltip delayDuration={80}>
                       <TooltipTrigger asChild>
@@ -306,8 +287,11 @@ export function EcosystemNavigationMainPanel({
                 </div>
               }
             />
-            {hierarchyData ? (
-              <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-4 sm:px-3 sm:pb-3 sm:pt-5">
+            <div
+              ref={diagramStageRef}
+              className="relative min-h-[20rem] w-full shrink-0 bg-transparent"
+            >
+              {hierarchyData ? (
                 <SpaceVisualization
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}
@@ -316,15 +300,15 @@ export function EcosystemNavigationMainPanel({
                   showNodeLabels
                   ariaLabel={t('diagram.ariaLabel')}
                   onVisibleSpacesChange={handleVisibleSpacesChange}
-                  zoomApiRef={zoomApiRef}
+                  className="absolute inset-0 h-full w-full aspect-auto"
                 />
-              </div>
-            ) : (
-              <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-                <div className="craft-empty-mark" aria-hidden />
-                <p className="craft-meta text-center">{t('diagram.empty')}</p>
-              </div>
-            )}
+              ) : (
+                <div className="flex h-full min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8">
+                  <div className="craft-empty-mark" aria-hidden />
+                  <p className="craft-meta text-center">{t('diagram.empty')}</p>
+                </div>
+              )}
+            </div>
           </div>
         ),
       },
@@ -332,7 +316,7 @@ export function EcosystemNavigationMainPanel({
         value: 'space-to-space',
         label: t('tabs.spaceToSpace'),
         content: (
-          <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
+          <div className="flex min-h-[20rem] flex-1 flex-col items-center justify-center gap-3 px-4 py-8">
             <div className="craft-empty-mark" aria-hidden />
             <p className="craft-meta text-center">
               {t('comingSoon.spaceToSpaceVisualization')}
@@ -344,7 +328,7 @@ export function EcosystemNavigationMainPanel({
         value: 'values-flows',
         label: t('tabs.valuesFlows'),
         content: (
-          <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
+          <div className="flex min-h-[20rem] flex-1 flex-col items-center justify-center gap-3 px-4 py-8">
             <div className="craft-empty-mark" aria-hidden />
             <p className="craft-meta text-center">
               {t('comingSoon.valuesFlowsVisualization')}
@@ -367,6 +351,54 @@ export function EcosystemNavigationMainPanel({
       visitSpaceHref,
     ],
   );
+
+  // The page footer is pinned under a short column (`mb-auto`), so the orbit
+  // drawing sat at the top of a tall empty canvas. Grow the stage until only
+  // the designed padding remains above the footer; the square viewBox then
+  // meets and centres inside that stage.
+  useLayoutEffect(() => {
+    const stage = diagramStageRef.current;
+    if (!stage || isLoading || activeTab !== 'nested-spaces') return;
+
+    let scrollParent: HTMLElement | null = stage.parentElement;
+    while (scrollParent) {
+      const overflow = getComputedStyle(scrollParent).overflowY;
+      if (overflow === 'auto' || overflow === 'scroll') break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (!scrollParent) return;
+
+    const apply = () => {
+      const current = diagramStageRef.current;
+      if (!current || scrollParent == null) return;
+      const footer = scrollParent.lastElementChild;
+      if (!(footer instanceof HTMLElement) || footer.contains(current)) return;
+
+      const stageRect = current.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      if (stageRect.height <= 0) return;
+
+      const footerLimit =
+        footerRect.height > 0
+          ? footerRect.top
+          : scrollParent.getBoundingClientRect().bottom;
+      const restGap = 48;
+      const gap = footerLimit - stageRect.bottom;
+      const next = Math.max(320, Math.round(stageRect.height + gap - restGap));
+      if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
+      current.style.height = `${next}px`;
+    };
+
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(scrollParent);
+    if (stage.parentElement) observer.observe(stage.parentElement);
+    window.addEventListener('resize', apply);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', apply);
+    };
+  }, [activeTab, hierarchyData, isLoading]);
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
@@ -399,7 +431,6 @@ export function EcosystemNavigationMainPanel({
                   {format.number(ecosystemSpaceCount)}
                 </span>
               </h1>
-              <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
             </header>
           }
           visualizationClassName="min-h-0"

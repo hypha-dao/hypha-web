@@ -1,6 +1,13 @@
 'use client';
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
@@ -25,6 +32,8 @@ type MembershipPreview = {
 
 type EcosystemMembershipModulesProps = {
   spaceSlug: string;
+  /** Current space name — same line as the section labels. */
+  spaceTitle?: string;
   /** Visit / add (and similar) controls — sits on the same header row. */
   trailing?: ReactNode;
 };
@@ -124,33 +133,31 @@ function MembershipStack({
   );
 }
 
-function MembershipModuleCard({
-  label,
-  members,
-  emptyLabel,
-}: {
-  label: string;
-  members: MembershipPreview[];
-  emptyLabel: string;
-}) {
-  return (
-    <div className="flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden py-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-      <p className="mb-1.5 text-1 font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
-      <div className="min-w-0 flex-1">
-        <MembershipStack members={members} emptyLabel={emptyLabel} />
-      </div>
-    </div>
-  );
+const MODULE_COLUMN_START = [
+  'col-start-2',
+  'col-start-3',
+  'col-start-4',
+] as const;
+
+/** Shared by the label and avatar cells so the column divider stays continuous. */
+function membershipColumnClass(index: number, count: number): string {
+  if (index <= 0) return 'min-w-0 sm:pe-4';
+  if (index >= count - 1) {
+    return 'min-w-0 border-s border-border/50 sm:ps-4 sm:pe-2';
+  }
+  return 'min-w-0 border-s border-border/50 sm:px-4';
 }
 
-/** One horizontal row: Individuals · Member spaces · AI agents (+ optional trailing). */
+/**
+ * One strip: space name shares the label line with Individuals, Member spaces,
+ * and AI agents. Avatars sit under those labels. Trailing controls span the strip.
+ */
 const MEMBERSHIP_ROW_CLASS =
-  'flex min-w-0 flex-1 flex-row items-stretch divide-x divide-border/50';
+  'grid min-w-0 grid-cols-[fit-content(14rem)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] overflow-x-auto border-b border-border/50 py-2.5';
 
 export function EcosystemMembershipModules({
   spaceSlug,
+  spaceTitle,
   trailing,
 }: EcosystemMembershipModulesProps) {
   const t = useTranslations('SelectNavigationAction');
@@ -231,37 +238,50 @@ export function EcosystemMembershipModules({
   );
 
   return (
-    <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto border-b border-border/50 py-2.5">
-      <div
-        className={MEMBERSHIP_ROW_CLASS}
-        role={isLoading ? 'status' : undefined}
-        aria-live={isLoading ? 'polite' : undefined}
-      >
-        {modules.map((module) =>
-          isLoading &&
-          module.key !== 'agents' &&
-          module.members.length === 0 ? (
-            <div
-              key={module.key}
-              className="flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden py-1 sm:px-4 sm:first:pl-0 sm:last:pr-0"
+    <div
+      className={MEMBERSHIP_ROW_CLASS}
+      role={isLoading ? 'status' : undefined}
+      aria-live={isLoading ? 'polite' : undefined}
+    >
+      {spaceTitle ? (
+        <p
+          className="craft-page-title col-start-1 row-start-1 max-w-56 self-baseline truncate pe-4 text-4 font-medium"
+          title={spaceTitle}
+        >
+          {spaceTitle}
+        </p>
+      ) : null}
+      {modules.map((module, index) => {
+        const columnClass = `${membershipColumnClass(index, modules.length)} ${
+          MODULE_COLUMN_START[index]
+        }`;
+        const showLoading =
+          isLoading && module.key !== 'agents' && module.members.length === 0;
+
+        return (
+          <Fragment key={module.key}>
+            <p
+              className={`${columnClass} row-start-1 self-baseline text-1 font-medium uppercase tracking-wide text-muted-foreground`}
             >
-              <p className="mb-1.5 text-1 font-medium uppercase tracking-wide text-muted-foreground">
-                {module.label}
-              </p>
-              <p className="craft-meta">{t('navigation.loading')}</p>
+              {module.label}
+            </p>
+            <div className={`${columnClass} row-start-2 pt-1.5`}>
+              {showLoading ? (
+                <p className="craft-meta">{t('navigation.loading')}</p>
+              ) : (
+                <MembershipStack
+                  members={module.members}
+                  emptyLabel={module.emptyLabel}
+                />
+              )}
             </div>
-          ) : (
-            <MembershipModuleCard
-              key={module.key}
-              label={module.label}
-              members={module.members}
-              emptyLabel={module.emptyLabel}
-            />
-          ),
-        )}
-      </div>
+          </Fragment>
+        );
+      })}
       {trailing ? (
-        <div className="flex shrink-0 items-center gap-1">{trailing}</div>
+        <div className="col-start-5 row-span-2 row-start-1 flex items-center self-center">
+          {trailing}
+        </div>
       ) : null}
     </div>
   );
