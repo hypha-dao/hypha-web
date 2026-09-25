@@ -9,10 +9,13 @@ import {
   animateMainColumnScrollBy,
   clearMainColumnScrollFreeze,
   freezeMainColumnScrollAt,
+  getMainColumnNaturalMaxScroll,
   getMainColumnScrollElement,
   getMainColumnScrollY,
+  holdMainColumnScrollHeight,
   isMainColumnScrollFrozen,
   reapplyMainColumnScrollFreeze,
+  releaseMainColumnScrollHeightHold,
   scrollMainColumnBy,
   scrollMainColumnTo,
   subscribeMainColumnScroll,
@@ -273,126 +276,74 @@ export function DhoStickySpaceChrome({
     return delta > STICKY_HYSTERESIS_PX;
   }, []);
 
-  const settleCancelRef = React.useRef<(() => void) | null>(null);
   const freezeGenRef = React.useRef(0);
+  const pathnameRef = React.useRef(pathname);
+  pathnameRef.current = pathname;
 
-  const releaseFreezeWhenStable = React.useCallback(
-    (expectedTop: number, allowUnchangedRelease: boolean) => {
-      const gen = freezeGenRef.current;
-      const initialHeight = getMainColumnScrollElement()?.scrollHeight ?? 0;
-      const started = performance.now();
-      let changed = false;
-      let ready = 0;
-      const tick = () => {
-        if (gen !== freezeGenRef.current || !isMainColumnScrollFrozen()) return;
+  const releaseFreezeWhenStable = React.useCallback((expectedTop: number) => {
+    const gen = freezeGenRef.current;
+    const pinPath = pathnameRef.current;
+    const started = performance.now();
+    let lastNatural = -1;
+    let lastChange = started;
+    const tick = () => {
+      if (gen !== freezeGenRef.current || !isMainColumnScrollFrozen()) return;
+      // Keep the column tall enough that a loading swap cannot clamp to 0.
+      holdMainColumnScrollHeight(expectedTop);
+      const naturalMax = getMainColumnNaturalMaxScroll();
+      // The natural-height read drops min-height for one layout. Put the
+      // pin back before paint.
+      reapplyMainColumnScrollFreeze();
+      const now = performance.now();
+      if (lastNatural >= 0 && Math.abs(naturalMax - lastNatural) > 1) {
+        lastChange = now;
+      }
+      lastNatural = naturalMax;
+      const navigated = pathnameRef.current !== pinPath;
+      const tallEnough = naturalMax + 2 >= expectedTop;
+      const quiet = now - lastChange > 350;
+      const elapsed = now - started;
+      // Release only after the new screen can hold this offset on its own.
+      // The loading skeleton is often too short; letting go then shows the cover.
+      if ((navigated && tallEnough && quiet) || elapsed > 5000) {
+        releaseMainColumnScrollHeightHold();
         reapplyMainColumnScrollFreeze();
-        const el = getMainColumnScrollElement();
-        const height = el?.scrollHeight ?? 0;
-        if (Math.abs(height - initialHeight) > 1) changed = true;
-        const max = el
-          ? Math.max(0, el.scrollHeight - el.clientHeight)
-          : Math.max(
-              0,
-              document.documentElement.scrollHeight - window.innerHeight,
-            );
-        const tallEnough = max + 2 >= expectedTop;
-        const elapsed = performance.now() - started;
-        // A click-time watcher must see the tab slot change height before it
-        // lets go — the outgoing page is already tall enough to hold scroll.
-        const stable =
-          tallEnough && (changed || (allowUnchangedRelease && elapsed > 700));
-        if (stable) ready += 1;
-        else ready = 0;
-        if (ready >= 2 || elapsed > 4000) {
-          if (gen === freezeGenRef.current) clearMainColumnScrollFreeze();
-          return;
-        }
-        requestAnimationFrame(tick);
-      };
+        if (gen === freezeGenRef.current) clearMainColumnScrollFreeze();
+        return;
+      }
       requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, []);
+
+  const pinMainColumnAt = React.useCallback(
+    (top: number) => {
+      holdMainColumnScrollHeight(top);
+      freezeGenRef.current += 1;
+      freezeMainColumnScrollAt(top);
+      releaseFreezeWhenStable(top);
     },
-    [],
+    [releaseFreezeWhenStable],
   );
 
-  const scrollToStickyBanner = React.useCallback(() => {
-    settleCancelRef.current?.();
-    settleCancelRef.current = null;
-    clearMainColumnScrollFreeze();
-    const desktop = window.matchMedia('(min-width: 768px)');
-    if (!desktop.matches || !spaceSlug) return;
-    const mem = spaceEntryMemory(spaceSlug);
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
+  /** Banner offset to pin. If the cover is on screen, this is the banner — never 0. */
+  const bannerPinTop = React.useCallback((): number => {
     const delta = bannerAlignDelta(
       bannerBottomSentinelRef.current,
       stickyBarRef.current,
     );
-    const finish = () => {
-      settleCancelRef.current = null;
-      mem.introduced = true;
-      mem.headerInView = false;
-      mem.scrollTop = getMainColumnScrollY();
-      const rest = bannerAlignDelta(
-        bannerBottomSentinelRef.current,
-        stickyBarRef.current,
-      );
-      if (rest != null && Math.abs(rest) > 1) {
-        scrollMainColumnBy(rest, 'auto');
-        mem.scrollTop = getMainColumnScrollY();
-      }
-    };
-    if (delta == null || delta <= 1) {
-      finish();
-      return;
-    }
-    let userTookOver = false;
-    let cancelAnim: () => void = () => {};
-    const detachInput = () => {
-      window.removeEventListener('wheel', onWheel, { capture: true });
-      window.removeEventListener('touchmove', takeOver, { capture: true });
-    };
-    const takeOver = () => {
-      if (userTookOver) return;
-      userTookOver = true;
-      cancelAnim();
-      detachInput();
-      settleCancelRef.current = null;
-      scrollMainColumnTo(getMainColumnScrollY(), 'auto');
-      mem.introduced = true;
-      mem.scrollTop = getMainColumnScrollY();
-      mem.headerInView = readHeaderInView();
-    };
-    const onWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) < 1) return;
-      takeOver();
-    };
-    window.addEventListener('wheel', onWheel, { passive: true, capture: true });
-    window.addEventListener('touchmove', takeOver, {
-      passive: true,
-      capture: true,
-    });
-    cancelAnim = animateMainColumnScrollBy(
-      delta,
-      reduceMotion ? 0 : SPACE_ENTRY_SETTLE_MS,
-      () => {
-        detachInput();
-        settleCancelRef.current = null;
-        if (userTookOver) return;
-        finish();
-      },
-    );
-    settleCancelRef.current = () => {
-      userTookOver = true;
-      cancelAnim();
-      detachInput();
-    };
-  }, [readHeaderInView, spaceSlug]);
+    const current = getMainColumnScrollY();
+    const headerInView =
+      delta == null ? current <= 2 : delta > STICKY_HYSTERESIS_PX;
+    if (headerInView && delta != null && delta > 1) return current + delta;
+    return current;
+  }, []);
 
   React.useEffect(() => {
     return () => {
-      settleCancelRef.current?.();
+      freezeGenRef.current += 1;
       clearMainColumnScrollFreeze();
+      releaseMainColumnScrollHeightHold();
     };
   }, []);
 
@@ -583,8 +534,6 @@ export function DhoStickySpaceChrome({
     };
   }, [pathname, readHeaderInView, spaceSlug]);
 
-  const pathnameRef = React.useRef(pathname);
-  pathnameRef.current = pathname;
   const prevPathRef = React.useRef<string | null>(null);
 
   React.useLayoutEffect(() => {
@@ -596,6 +545,7 @@ export function DhoStickySpaceChrome({
     if (!prevSpace || prevSpace !== spaceSlug) {
       freezeGenRef.current += 1;
       clearMainColumnScrollFreeze();
+      releaseMainColumnScrollHeightHold();
       return;
     }
 
@@ -605,33 +555,23 @@ export function DhoStickySpaceChrome({
     const mem = spaceEntryMemory(spaceSlug);
     mem.introduced = true;
 
-    if (mem.headerInView) {
-      // Stop the click watcher so it cannot pin the header during the settle.
-      freezeGenRef.current += 1;
-      queueMicrotask(() => {
-        if (pathnameRef.current !== pathname) {
-          clearMainColumnScrollFreeze();
-          return;
-        }
-        scrollToStickyBanner();
-      });
-      return;
-    }
-
+    // A click already reserved height and pinned the banner. Keep that pin
+    // through this commit — do not start a second watcher.
     if (isMainColumnScrollFrozen()) {
+      holdMainColumnScrollHeight(mem.scrollTop);
       queueMicrotask(() => {
         reapplyMainColumnScrollFreeze();
       });
       return;
     }
 
-    freezeGenRef.current += 1;
-    freezeMainColumnScrollAt(mem.scrollTop);
-    queueMicrotask(() => {
-      reapplyMainColumnScrollFreeze();
-    });
-    releaseFreezeWhenStable(mem.scrollTop, true);
-  }, [pathname, releaseFreezeWhenStable, scrollToStickyBanner, spaceSlug]);
+    // History navigations have no click. If the cover is on screen, go to the
+    // banner offset in this layout effect (before paint), not via 0.
+    const top = bannerPinTop();
+    mem.headerInView = false;
+    mem.scrollTop = top;
+    pinMainColumnAt(top);
+  }, [bannerPinTop, pathname, pinMainColumnAt, spaceSlug]);
 
   React.useEffect(() => {
     if (!spaceSlug) return;
@@ -652,18 +592,32 @@ export function DhoStickySpaceChrome({
       mem.scrollTop = getMainColumnScrollY();
       mem.headerInView = readHeaderInView();
     };
+    const releasePinForUserScroll = () => {
+      if (!isMainColumnScrollFrozen()) return;
+      freezeGenRef.current += 1;
+      clearMainColumnScrollFreeze();
+      releaseMainColumnScrollHeightHold();
+    };
     const onWheel = (event: WheelEvent) => {
       if (Math.abs(event.deltaY) < 1) return;
-      if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+      // Scrolling up reveals the cover. Scrolling down must not drop the pin —
+      // a loading swap would then clamp to the top and flash the header.
+      if (event.deltaY < 0) releasePinForUserScroll();
       markIntent();
     };
     const onTouch = () => {
-      if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+      releasePinForUserScroll();
       markIntent();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target) || !SCROLL_KEYS.has(event.key)) return;
-      if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+      if (
+        event.key === 'ArrowUp' ||
+        event.key === 'PageUp' ||
+        event.key === 'Home'
+      ) {
+        releasePinForUserScroll();
+      }
       markIntent();
     };
     const onPointerDown = (event: PointerEvent) => {
@@ -676,7 +630,7 @@ export function DhoStickySpaceChrome({
       }
       const root = getMainColumnScrollElement();
       if (root ? target === root : true) {
-        if (isMainColumnScrollFrozen()) clearMainColumnScrollFreeze();
+        releasePinForUserScroll();
         markIntent();
       }
     };
@@ -730,16 +684,17 @@ export function DhoStickySpaceChrome({
 
       const mem = spaceEntryMemory(spaceSlug);
       if (!mem.startPath) return;
-      mem.scrollTop = getMainColumnScrollY();
-      mem.headerInView = readHeaderInView();
-      // Pin before Next.js scroll and before the tab slot's height collapses.
-      freezeGenRef.current += 1;
-      freezeMainColumnScrollAt(mem.scrollTop);
-      releaseFreezeWhenStable(mem.scrollTop, false);
+      // Pin before Next.js scrollIntoView and before loading.tsx shrinks the
+      // tab slot. Settled scroll stays put. A visible cover jumps to the
+      // banner offset here — not to 0, and not after the swap.
+      const top = bannerPinTop();
+      mem.scrollTop = top;
+      mem.headerInView = false;
+      pinMainColumnAt(top);
     };
     document.addEventListener('click', onClickCapture, true);
     return () => document.removeEventListener('click', onClickCapture, true);
-  }, [readHeaderInView, releaseFreezeWhenStable, spaceSlug]);
+  }, [bannerPinTop, pinMainColumnAt, spaceSlug]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
 

@@ -117,7 +117,17 @@ export default async function DhoLayout({
         the column (reads as a dead strip beside the hero / secondary chrome). Use padding only.
       */}
       <div className="flex w-full min-w-0">
-        <div className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5">
+        {/*
+          `--hypha-space-scroll-hold` is set for the length of an in-space
+          screen change. Min-height keeps the scrollport from clamping to the
+          cover while the tab slot is a short loading skeleton. Padding on the
+          flex scrollport does not extend scrollHeight.
+        */}
+        <div
+          data-space-scroll-hold=""
+          className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5"
+          style={{ minHeight: 'var(--hypha-space-scroll-hold, 0px)' }}
+        >
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link

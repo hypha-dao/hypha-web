@@ -148,6 +148,73 @@ export function clearMainColumnScrollFreeze(): void {
   bindFreezeListener();
 }
 
+/**
+ * The main column is a flex column. Padding on that scroller does not extend
+ * scrollHeight in Chromium, so a short tab `loading.tsx` clamps `scrollTop`
+ * to 0 and the space cover flashes in. A min-height on the in-flow space
+ * column (`[data-space-scroll-hold]`) does extend it. Set the variable before
+ * the route commit so the clamp never happens.
+ */
+const SPACE_SCROLL_HOLD_VAR = '--hypha-space-scroll-hold';
+let heldOverflowAnchorEl: HTMLElement | null = null;
+let heldOverflowAnchorPrev: string | null = null;
+
+export function holdMainColumnScrollHeight(top: number): void {
+  if (typeof document === 'undefined') return;
+  const el = scrollRoot;
+  const needed =
+    clampScrollTop(top) + (el?.clientHeight ?? window.innerHeight) + 2;
+  document.documentElement.style.setProperty(
+    SPACE_SCROLL_HOLD_VAR,
+    `${needed}px`,
+  );
+  // Flush so the min-height is in effect before the caller writes scrollTop.
+  document.querySelector('[data-space-scroll-hold]')?.getBoundingClientRect();
+  if (!el) return;
+  if (heldOverflowAnchorEl !== el) {
+    if (heldOverflowAnchorEl) {
+      heldOverflowAnchorEl.style.overflowAnchor = heldOverflowAnchorPrev ?? '';
+    }
+    heldOverflowAnchorEl = el;
+    heldOverflowAnchorPrev = el.style.overflowAnchor;
+    el.style.overflowAnchor = 'none';
+  }
+}
+
+export function releaseMainColumnScrollHeightHold(): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.style.removeProperty(SPACE_SCROLL_HOLD_VAR);
+  if (!heldOverflowAnchorEl) return;
+  heldOverflowAnchorEl.style.overflowAnchor = heldOverflowAnchorPrev ?? '';
+  heldOverflowAnchorEl = null;
+  heldOverflowAnchorPrev = null;
+}
+
+/**
+ * Max scroll the column can hold without the route-change min-height.
+ * Measuring clears that min-height for the read; callers that are pinning
+ * must reapply the freeze before paint or the browser keeps a clamped top.
+ */
+export function getMainColumnNaturalMaxScroll(): number {
+  if (typeof window === 'undefined') return 0;
+  const el = scrollRoot;
+  if (!el) {
+    return Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight,
+    );
+  }
+  const hold = document.querySelector<HTMLElement>('[data-space-scroll-hold]');
+  if (!hold) return Math.max(0, el.scrollHeight - el.clientHeight);
+  const prev = hold.style.minHeight;
+  applyingFreeze = true;
+  hold.style.minHeight = '0px';
+  const natural = el.scrollHeight;
+  hold.style.minHeight = prev;
+  applyingFreeze = false;
+  return Math.max(0, natural - el.clientHeight);
+}
+
 export function scrollMainColumnBy(
   deltaY: number,
   behavior: ScrollBehavior = 'auto',
