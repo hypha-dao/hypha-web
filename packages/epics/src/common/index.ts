@@ -200,6 +200,9 @@ export {
   reapplyMainColumnScrollFreeze,
   clearMainColumnScrollFreeze,
   isMainColumnScrollFrozen,
+  holdMainColumnScrollHeight,
+  releaseMainColumnScrollHeightHold,
+  getMainColumnNaturalMaxScroll,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
 } from './main-column-scroll';

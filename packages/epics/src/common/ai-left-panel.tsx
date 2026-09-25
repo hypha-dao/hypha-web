@@ -785,6 +785,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ) : (
               <Link
                 href={item.href}
+                scroll={false}
                 onClick={handleMenuItemNavigation}
                 aria-label={item.label}
                 aria-current={item.active ? 'page' : undefined}
