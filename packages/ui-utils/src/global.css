@@ -396,6 +396,9 @@
   html {
     background-color: var(--page-background);
     font-family: var(--font-family-text);
+    /* Viewport rubber-band (when the document is the scroll root) pulls the banner
+       below the sticky menu. overscroll-behavior is not inherited, so set both. */
+    overscroll-behavior: none;
   }
 
   body {
@@ -403,6 +406,7 @@
 
     font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    overscroll-behavior: none;
   }
 }
 

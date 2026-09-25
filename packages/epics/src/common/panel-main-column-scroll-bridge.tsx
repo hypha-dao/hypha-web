@@ -102,11 +102,14 @@ export function PanelDualSidebarScrollBridge({
             | footer | panel in one horizontal row.
             `overflow-x-hidden`: Human/AI panels are `position:fixed`; clip horizontal pan so the
             scrollport cannot reveal a dead gap beside the fixed rails.
+            `overscroll-none`: at scrollTop 0 the macOS rubber-band pulls in-flow content
+            (the space banner) away from the sticky top menu and shows a strip of the page
+            between them. The menu stays pinned; the banner must not.
           */}
           <div
             id={HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID}
             ref={setMainColumnRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto narrow-scrollbar"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-none narrow-scrollbar"
           >
             {children}
           </div>
