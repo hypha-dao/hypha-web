@@ -204,7 +204,7 @@ export const MenuTop = ({
     <header
       ref={headerRef}
       className={clsx(
-        'relative z-30 flex h-[76px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        'relative z-30 flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
         'hypha-topbar bg-page-background px-4',
         /*
          * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
