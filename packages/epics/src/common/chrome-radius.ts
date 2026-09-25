@@ -5,11 +5,13 @@
 export const APP_CHROME_SUBTLE_SQUARE_RADIUS = 'rounded-chrome';
 
 /**
- * Square header / panel icon trigger — hairline only, quiet ink.
+ * Square header / panel icon trigger — 1px hairline, quiet ink, 36px.
+ * Border sits inside the box. A ring is a box-shadow, and MenuTop overflow
+ * clips that shadow on the leading edge so the square loses one side.
  * Use px sizes: theme `--spacing-8/9` are 48/64px and overflow the 76px MenuTop.
  */
 export const APP_CHROME_ICON_TRIGGER =
-  'flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-none bg-transparent p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:bg-foreground/5 hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]';
+  'box-border flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-none border border-border/70 bg-transparent p-0 text-muted-foreground shadow-none ring-0 transition-colors hover:bg-foreground/5 hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]';
 
 /**
  * MenuTop profile avatar button — same 36px square rhythm as icon / language chrome.

@@ -270,7 +270,7 @@ const MENU_ROW_LINK_BASE_CLASS = 'flex h-full w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
-  'relative flex size-9 items-center justify-center overflow-hidden rounded-none bg-transparent p-0 text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground';
+  'box-border flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-none border border-border/70 bg-transparent p-0 text-muted-foreground shadow-none outline-none ring-0 transition-colors hover:bg-foreground/5 hover:text-foreground';
 const MENU_CLOSE_BUTTON_CLASS =
   'flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
@@ -2873,7 +2873,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       className={MENU_TRIGGER_CANVAS_CLASS}
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
     >
-      <Menu className="craft-icon pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+      <Menu className="craft-icon pointer-events-none" />
     </button>
   );
   const closeButton = shouldCloseFromTrigger ? (
@@ -2933,8 +2933,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     return (
       <>
-        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-page-background dark:bg-background-2 px-4 py-2">
-          <div className="flex size-9 shrink-0 items-center justify-end">
+        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border bg-page-background dark:bg-background-2 px-4 py-2">
+          <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center">
             {triggerButton}
           </div>
         </SidebarHeader>

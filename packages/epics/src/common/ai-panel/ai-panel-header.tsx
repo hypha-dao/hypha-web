@@ -213,11 +213,11 @@ export function AiPanelHeader({
   return (
     <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-3 border-b border-border/70 bg-page-background ps-4 pe-5 py-2 dark:bg-background-2">
       {leftSlot ? (
-        <div className="flex size-9 shrink-0 items-center justify-center">
+        <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center">
           {leftSlot}
         </div>
       ) : (
-        <div className="size-9 shrink-0" aria-hidden />
+        <div className="h-[36px] w-[36px] shrink-0" aria-hidden />
       )}
 
       <div className="min-w-0 px-3">
