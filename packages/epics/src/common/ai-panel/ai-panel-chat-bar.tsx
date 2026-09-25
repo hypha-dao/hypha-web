@@ -322,8 +322,10 @@ export function AiPanelChatBar({
     const el = textareaRef.current;
     if (!el) return;
     if (!value.trim()) {
-      // Always collapse to single-line composer when cleared/reopened.
-      el.style.height = '36px';
+      // Same single-line box as the human-chat composer: padding + text-sm,
+      // not a forced 36px height that clips the placeholder.
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
       return;
     }
     autoResize();
@@ -543,8 +545,13 @@ export function AiPanelChatBar({
   );
   const canSendWithAttachments =
     (value.trim().length > 0 || draftAttachments.length > 0) && !isStreaming;
-  const recordingStopButtonClass =
-    'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  // `--spacing-9` is 64px, so `size-9` must not size these controls.
+  // Panel icons match the human-chat composer: one 36px square, 16px glyph.
+  const panelControlClass =
+    'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] max-h-[36px] max-w-[36px] flex-none shrink-0 basis-[36px] place-items-center rounded-none bg-transparent p-0 leading-none [&>svg]:pointer-events-none';
+  const recordingStopButtonClass = frameless
+    ? `${panelControlClass} text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`
+    : 'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
   const sendMessage = useCallback(() => {
     if (isDictating) {
       dictationInterruptForSendRef.current = true;
@@ -576,15 +583,17 @@ export function AiPanelChatBar({
     videoInputRef.current?.click();
   };
 
-  const iconButtonClass =
-    'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
-  const composerIconClass = 'size-3.5';
-  const composerIconStroke = 1.25;
+  const iconButtonClass = frameless
+    ? `${panelControlClass} text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`
+    : 'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  const composerIconClass = frameless ? 'h-4 w-4' : 'size-3.5';
+  const composerIconStroke = frameless ? 2 : 1.25;
   /* Prefer accent-9 (ink outside a space; space accent inside a space). */
   const heroSendButtonClass =
     'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-accent-9 p-0 text-accent-contrast shadow-none transition-all hover:bg-accent-10 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50';
-  const quietSendButtonClass =
-    'flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+  const quietSendButtonClass = frameless
+    ? `${panelControlClass} border-0 text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`
+    : 'flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
   useEffect(() => {
     if (!canAttachDrafts && attachMenuOpen) {
@@ -817,9 +826,8 @@ export function AiPanelChatBar({
             'min-w-0 w-full resize-none bg-transparent text-foreground outline-none placeholder:text-muted-foreground focus:outline-none',
             isHero
               ? 'relative min-h-[120px] overflow-y-auto px-4 py-3 text-3'
-              : 'min-h-[36px] max-h-[160px] px-3 py-2.5 text-sm leading-relaxed',
+              : 'block min-h-[36px] max-h-[160px] overflow-y-auto whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed',
           )}
-          style={isHero ? undefined : { minHeight: '36px', maxHeight: '160px' }}
         />
         <input
           ref={fileInputRef}
@@ -873,8 +881,20 @@ export function AiPanelChatBar({
               {dictationError ?? attachError}
             </p>
           )}
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-0.5">
+          <div
+            className={cn(
+              'flex min-w-0 items-center',
+              frameless
+                ? 'w-full flex-nowrap gap-2 overflow-visible'
+                : 'justify-between gap-2',
+            )}
+          >
+            <div
+              className={cn(
+                'flex min-w-0 items-center',
+                frameless ? 'gap-2' : 'flex-1 gap-0.5',
+              )}
+            >
               {canAttachDrafts ? (
                 <DropdownMenu
                   modal={isMobile}
@@ -1010,6 +1030,7 @@ export function AiPanelChatBar({
                   ? heroSendButtonClass
                   : cn(
                       quietSendButtonClass,
+                      'ml-auto',
                       !(canSendWithAttachments || canStop) &&
                         'cursor-not-allowed text-muted-foreground/50 hover:bg-transparent hover:text-muted-foreground/50',
                     ),
@@ -1027,12 +1048,15 @@ export function AiPanelChatBar({
                 isHero ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : (
-                  <Square className="size-3.5" strokeWidth={1.25} />
+                  <Square
+                    className={composerIconClass}
+                    strokeWidth={composerIconStroke}
+                  />
                 )
               ) : (
                 <Send
-                  className={isHero ? 'size-4' : 'size-3.5'}
-                  strokeWidth={isHero ? undefined : 1.25}
+                  className={isHero ? 'size-4' : composerIconClass}
+                  strokeWidth={isHero ? undefined : composerIconStroke}
                   aria-hidden
                 />
               )}
