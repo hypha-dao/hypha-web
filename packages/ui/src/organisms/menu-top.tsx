@@ -45,10 +45,12 @@ export const MenuTop = ({
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
   showMobileHamburger = true,
-  // Wider band than the original 232/256: My Wallet widened the desktop cluster,
-  // so iPad-landscape widths sit near the threshold and need more hysteresis.
-  compactSafeThresholdPx = 232,
-  compactReleaseThresholdPx = 320,
+  // Leftover pixels after the logo and the desktop links. Enter compact only
+  // when that leftover goes negative (the links would overflow). Require a
+  // few extra pixels to expand again so ResizeObserver noise cannot flicker.
+  // A side panel is not an input — it compacts the bar only by narrowing the row.
+  compactSafeThresholdPx = 0,
+  compactReleaseThresholdPx = 16,
   compactDataAttribute = 'data-compact-header',
   showLeadingActionOnlyWhenCompact = false,
 }: MenuTopProps) => {
@@ -118,6 +120,7 @@ export const MenuTop = ({
         desktopEl.offsetWidth,
         desktopEl.getBoundingClientRect().width,
       );
+      const hadDesktopMeasure = desktopNeededRef.current > 0;
       const desktopNeeded = resolveDesktopClusterWidth({
         measuredPx: liveDesktopWidth,
         isCompact: isCompactRef.current,
@@ -129,22 +132,18 @@ export const MenuTop = ({
 
       const freeSpace =
         rowWidth - leadWidth - desktopNeeded - ROW_CLUSTER_GAP_PX;
-      // Opening a side panel used to force compact mode and park the desktop
-      // links in an h-0 overflow-hidden slot, so the bar showed a clipped logo
-      // and no Network / My Spaces / My Wallet / Shape Hypha. Keep that row
-      // mounted on desktop; it scrolls if the column is tight. Compact stays
-      // for real mobile.
-      const keepDesktopNav = !mobileMq.matches;
+      // First real measure uses the fit test, not the "stay compact" band.
+      // The bar starts compact, so a wide row (including one narrowed by a
+      // side panel that still fits the links) must expand before paint
+      // instead of remaining overflow-hidden.
 
-      const nextCompact = keepDesktopNav
-        ? false
-        : shouldUseCompactHeader({
-            freeSpacePx: freeSpace,
-            isCurrentlyCompact: isCompactRef.current,
-            enterBelowPx: compactSafeThresholdPx,
-            exitBelowPx: compactReleaseThresholdPx,
-            forceCompactViewport: mobileMq.matches,
-          });
+      const nextCompact = shouldUseCompactHeader({
+        freeSpacePx: freeSpace,
+        isCurrentlyCompact: hadDesktopMeasure && isCompactRef.current,
+        enterBelowPx: compactSafeThresholdPx,
+        exitBelowPx: compactReleaseThresholdPx,
+        forceCompactViewport: mobileMq.matches,
+      });
 
       if (nextCompact !== isCompactRef.current) {
         isCompactRef.current = nextCompact;
@@ -220,13 +219,10 @@ export const MenuTop = ({
         ref={rowRef}
         className={clsx(
           'mx-auto flex w-full min-w-0 items-center gap-x-2',
-          // `justify-between` with overflow pushes the logo off the left edge
-          // (the "ypha" clip) and the end control off the right. Start-align
-          // and let the action cluster take the free space on the right.
+          // Start-align so a tight row cannot shove the logo off the left
+          // ("ypha"). The desktop cluster pins itself to the right; when it
+          // does not fit, compact mode hides it instead of scrolling.
           children || trailingAction ? 'justify-start' : 'justify-center',
-          // Scroll the bar instead of clipping the logo or links when panels narrow the column.
-          !isCompact &&
-            'overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
         <div
