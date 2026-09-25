@@ -73,10 +73,27 @@ export type ButtonProfileProps = {
   compact?: boolean;
 };
 
+/** 40px rows — same height as labeled controls, Manrope, square. */
 const menuItemClass =
-  'gap-2 px-2 py-2 text-2 font-sans [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
+  'min-h-10 gap-2 rounded-none px-3 py-0 text-2 font-normal font-sans leading-5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
 const compactSheetItemClass =
-  'flex min-h-11 w-full items-center gap-3 rounded-none px-3 py-2 text-left text-2 font-sans text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground';
+  'flex min-h-10 w-full items-center gap-2 rounded-none px-3 py-0 text-left text-2 font-normal font-sans leading-5 text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground';
+/** Square panel on the craft card surface (bg-background-2). */
+const profileMenuPanelClass = cn(
+  'w-[min(17.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-none border border-border p-0 shadow-none',
+  'bg-background-2 font-sans text-foreground',
+);
+const profileMenuLabelClass = 'cursor-default px-3 py-2 font-normal';
+const profileMenuNameClass =
+  'truncate text-2 font-medium leading-tight tracking-[-0.02em] text-foreground [font-family:var(--font-family-heading)]';
+const profileMenuSlugClass =
+  'truncate font-sans text-1 font-normal leading-tight text-muted-foreground';
+const profileMenuWalletClass = cn(
+  'flex h-10 items-center border-t border-border px-3 text-1 text-muted-foreground',
+  '[&_button]:h-full [&_button]:rounded-none [&_button]:px-0 [&_button]:py-0 [&_button]:hover:bg-muted/80',
+  '[&_button]:focus-visible:ring-1 [&_button]:focus-visible:ring-offset-0',
+);
+const profileMenuSeparatorClass = 'my-0 h-px bg-border';
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 function resolveNavItemIcon(href?: string) {
@@ -212,26 +229,21 @@ export const ButtonProfile = ({
               side="bottom"
               sideOffset={6}
               collisionPadding={12}
-              className={cn(
-                'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
-                'bg-popover text-popover-foreground shadow-xl',
-              )}
+              className={profileMenuPanelClass}
             >
-              <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
-                <div className="flex gap-3">
+              <DropdownMenuLabel className={profileMenuLabelClass}>
+                <div className="flex items-center gap-2.5">
                   <PersonAvatar
                     size="md"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
-                    shape="rounded"
+                    shape="square"
                     className="border-0 shadow-none ring-0"
                   />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="truncate text-2 font-semibold leading-snug text-foreground">
-                      {primaryLine}
-                    </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className={profileMenuNameClass}>{primaryLine}</span>
                     {displayName.trim() && person?.nickname ? (
-                      <span className="truncate text-1 text-muted-foreground">
+                      <span className={profileMenuSlugClass}>
                         {person.nickname}
                       </span>
                     ) : null}
@@ -239,21 +251,16 @@ export const ButtonProfile = ({
                 </div>
               </DropdownMenuLabel>
               {address ? (
-                <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
-                  <div
-                    className={cn(
-                      'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
-                      'text-1 text-muted-foreground',
-                    )}
-                  >
-                    <EthAddress address={address} onClick={handleAddressCopy} />
-                  </div>
+                <div className={profileMenuWalletClass}>
+                  <EthAddress address={address} onClick={handleAddressCopy} />
                 </div>
               ) : null}
               {navItems.length > 0 ? (
                 <>
-                  <DropdownMenuSeparator className="-mx-0 my-1" />
-                  <DropdownMenuGroup className="space-y-0.5">
+                  <DropdownMenuSeparator
+                    className={profileMenuSeparatorClass}
+                  />
+                  <DropdownMenuGroup>
                     {showNetworkFeedback ? (
                       <HyphaNetworkFeedbackMenuItem
                         variant="menu"
@@ -293,8 +300,10 @@ export const ButtonProfile = ({
               ) : null}
               {(profileUrl || onboardingUrl || notificationCentrePath) && (
                 <>
-                  <DropdownMenuSeparator className="-mx-0 my-1" />
-                  <DropdownMenuGroup className="space-y-0.5">
+                  <DropdownMenuSeparator
+                    className={profileMenuSeparatorClass}
+                  />
+                  <DropdownMenuGroup>
                     {profileUrl ? (
                       <DropdownMenuItem className={menuItemClass} asChild>
                         <Link href={profileUrl}>
@@ -338,8 +347,8 @@ export const ButtonProfile = ({
                   </DropdownMenuGroup>
                 </>
               )}
-              <DropdownMenuSeparator className="-mx-0 my-1" />
-              <DropdownMenuGroup className="space-y-0.5">
+              <DropdownMenuSeparator className={profileMenuSeparatorClass} />
+              <DropdownMenuGroup>
                 {onChangeThemeMode ? (
                   <DropdownMenuItem
                     className={menuItemClass}
@@ -365,7 +374,9 @@ export const ButtonProfile = ({
               </DropdownMenuGroup>
               {onDelete ? (
                 <>
-                  <DropdownMenuSeparator className="-mx-0 my-1" />
+                  <DropdownMenuSeparator
+                    className={profileMenuSeparatorClass}
+                  />
                   <DropdownMenuItem
                     onClick={onDelete}
                     className={cn(
@@ -379,7 +390,7 @@ export const ButtonProfile = ({
                   </DropdownMenuItem>
                 </>
               ) : null}
-              <DropdownMenuSeparator className="-mx-0 my-1" />
+              <DropdownMenuSeparator className={profileMenuSeparatorClass} />
               <DropdownMenuItem
                 onClick={onLogout}
                 disabled={loggingOut}
@@ -428,47 +439,45 @@ export const ButtonProfile = ({
             side="right"
             closeLabel={tCommon('close')}
             className={cn(
-              'w-[calc(100vw-1rem)] max-w-[560px] border-l border-border/80 p-0',
-              'bg-popover text-popover-foreground shadow-xl',
+              'w-[calc(100vw-1rem)] max-w-[560px] rounded-none border-l border-border p-0 shadow-none',
+              'bg-background-2 font-sans text-foreground',
             )}
           >
             <div className="flex h-full flex-col">
-              <div className="border-b border-border/60 px-4 pb-4 pt-5">
-                <div className="flex gap-3">
+              <div className="border-b border-border">
+                <div className="flex items-center gap-2.5 px-3 py-2">
                   <PersonAvatar
                     size="md"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
-                    shape="rounded"
+                    shape="square"
                     className="border-0 shadow-none ring-0"
                   />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1 pr-8">
-                    <span className="truncate text-2 font-semibold leading-snug text-foreground">
-                      {primaryLine}
-                    </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-8">
+                    <span className={profileMenuNameClass}>{primaryLine}</span>
                     {displayName.trim() && person?.nickname ? (
-                      <span className="truncate text-1 text-muted-foreground">
+                      <span className={profileMenuSlugClass}>
                         {person.nickname}
                       </span>
                     ) : null}
                   </div>
                 </div>
                 {address ? (
-                  <div className="mt-3 w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5 text-1 text-muted-foreground">
+                  <div className={profileMenuWalletClass}>
                     <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
                 ) : null}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-2 py-2">
+              <div className="flex-1 overflow-y-auto">
                 {trailingBeforeProfile ? (
                   <>
-                    <div className="px-1 pb-2">{trailingBeforeProfile}</div>
-                    <div className="mb-2 border-t border-border/60" />
+                    <div className="px-3 py-2">{trailingBeforeProfile}</div>
+                    <div className="border-t border-border" />
                   </>
                 ) : null}
 
-                <div className="space-y-1">
+                <div>
                   {showNetworkFeedback ? (
                     <HyphaNetworkFeedbackMenuItem
                       variant="sheet"
@@ -548,9 +557,9 @@ export const ButtonProfile = ({
                   ) : null}
                 </div>
 
-                <div className="my-2 border-t border-border/60" />
+                <div className="border-t border-border" />
 
-                <div className="space-y-1">
+                <div>
                   {onChangeThemeMode ? (
                     <button
                       type="button"
@@ -584,9 +593,9 @@ export const ButtonProfile = ({
                   </button>
                 </div>
 
-                <div className="my-2 border-t border-border/60" />
+                <div className="border-t border-border" />
 
-                <div className="space-y-1">
+                <div>
                   {onDelete ? (
                     <button
                       type="button"
@@ -780,26 +789,23 @@ export const ButtonProfile = ({
                 side="bottom"
                 sideOffset={6}
                 collisionPadding={12}
-                className={cn(
-                  'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
-                  'bg-popover text-popover-foreground shadow-xl',
-                )}
+                className={profileMenuPanelClass}
               >
-                <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
-                  <div className="flex gap-3">
+                <DropdownMenuLabel className={profileMenuLabelClass}>
+                  <div className="flex items-center gap-2.5">
                     <PersonAvatar
                       size="md"
                       avatarSrc={person?.avatarUrl}
                       userName={person?.nickname}
-                      shape="rounded"
+                      shape="square"
                       className="border-0 shadow-none ring-0"
                     />
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="truncate text-2 font-semibold leading-snug text-foreground">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className={profileMenuNameClass}>
                         {primaryLine}
                       </span>
                       {displayName.trim() && person?.nickname ? (
-                        <span className="truncate text-1 text-muted-foreground">
+                        <span className={profileMenuSlugClass}>
                           {person.nickname}
                         </span>
                       ) : null}
@@ -807,25 +813,17 @@ export const ButtonProfile = ({
                   </div>
                 </DropdownMenuLabel>
                 {address ? (
-                  <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
-                    <div
-                      className={cn(
-                        'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
-                        'text-1 text-muted-foreground',
-                      )}
-                    >
-                      <EthAddress
-                        address={address}
-                        onClick={handleAddressCopy}
-                      />
-                    </div>
+                  <div className={profileMenuWalletClass}>
+                    <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
                 ) : null}
 
                 {(profileUrl || onboardingUrl || notificationCentrePath) && (
                   <>
-                    <DropdownMenuSeparator className="-mx-0 my-1" />
-                    <DropdownMenuGroup className="space-y-0.5">
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
+                    />
+                    <DropdownMenuGroup>
                       {profileUrl ? (
                         <DropdownMenuItem className={menuItemClass} asChild>
                           <Link href={profileUrl}>
@@ -870,9 +868,9 @@ export const ButtonProfile = ({
                   </>
                 )}
 
-                <DropdownMenuSeparator className="-mx-0 my-1" />
+                <DropdownMenuSeparator className={profileMenuSeparatorClass} />
 
-                <DropdownMenuGroup className="space-y-0.5">
+                <DropdownMenuGroup>
                   {onChangeThemeMode ? (
                     <DropdownMenuItem
                       className={menuItemClass}
@@ -899,7 +897,9 @@ export const ButtonProfile = ({
 
                 {onDelete ? (
                   <>
-                    <DropdownMenuSeparator className="-mx-0 my-1" />
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
+                    />
                     <DropdownMenuItem
                       onClick={onDelete}
                       className={cn(
@@ -914,7 +914,7 @@ export const ButtonProfile = ({
                   </>
                 ) : null}
 
-                <DropdownMenuSeparator className="-mx-0 my-1" />
+                <DropdownMenuSeparator className={profileMenuSeparatorClass} />
 
                 <DropdownMenuItem
                   onClick={onLogout}
