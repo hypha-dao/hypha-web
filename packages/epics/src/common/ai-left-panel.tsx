@@ -273,7 +273,7 @@ const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
   'box-border flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-none border border-border/70 bg-transparent p-0 text-muted-foreground shadow-none outline-none ring-0 transition-colors hover:bg-foreground/5 hover:text-foreground';
 const MENU_CLOSE_BUTTON_CLASS =
-  'flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground';
+  'flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex size-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full';
 /**
@@ -3035,6 +3035,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
+            collapseLeftSlotAtMd={!isOnboardingPath}
             leftSlot={triggerButton}
             rightSlot={closeButton}
           />
@@ -3052,6 +3053,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
+            collapseLeftSlotAtMd={!isOnboardingPath}
             leftSlot={triggerButton}
             rightSlot={closeButton}
           />
@@ -3073,6 +3075,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
+            collapseLeftSlotAtMd={!isOnboardingPath}
             leftSlot={triggerButton}
             rightSlot={closeButton}
           />
@@ -3093,6 +3096,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
         <AiPanelHeader
           showCloseButton={false}
+          collapseLeftSlotAtMd={!isOnboardingPath}
           leftSlot={triggerButton}
           rightSlot={closeButton}
         />
