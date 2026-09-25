@@ -4407,12 +4407,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       /** #2456: still confirming this user doesn't already hold a live session
                        * elsewhere in this room — show a skeleton rather than either hiding the
                        * toolbar outright or letting a click race ahead of that check. */
-                      <div
-                        className="flex shrink-0 items-center gap-0.5"
-                        aria-hidden
-                      >
-                        <Skeleton className="h-[36px] w-[36px] rounded-none" />
-                        <Skeleton className="h-[36px] w-[36px] rounded-none" />
+                      <div className="contents" aria-hidden>
+                        <Skeleton className="h-[36px] w-[36px] shrink-0 rounded-none" />
+                        <Skeleton className="h-[36px] w-[36px] shrink-0 rounded-none" />
                       </div>
                     )
                   ) : null}

@@ -59,11 +59,7 @@ export function HumanChatPanelCallToolbar({
   const iconSize = 'craft-icon';
 
   return (
-    <div
-      className="relative z-10 flex flex-none shrink-0 items-center gap-0.5"
-      role="toolbar"
-      aria-label={t('callToolbarLabel')}
-    >
+    <div className="contents" role="toolbar" aria-label={t('callToolbarLabel')}>
       <button
         type="button"
         onClick={onAudio}
