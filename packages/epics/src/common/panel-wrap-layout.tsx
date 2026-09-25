@@ -47,43 +47,30 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [leftOverlayVisible, setLeftOverlayVisible] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
-  const leftOverlayHideTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
 
   const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
   const openLeft = useCallback(() => {
+    // Conversation open is not the nav menu. Leaving the menu flag true
+    // made the collapsed icon rail look "open" after this panel closed.
     setLeftOpen(true);
-    setLeftOverlayVisible(true);
+    setLeftOverlayVisible(false);
   }, []);
   const closeLeft = useCallback(() => {
     setLeftOpen(false);
     setLeftOverlayVisible(false);
   }, []);
   const showLeftOverlay = useCallback(() => {
-    if (leftOverlayHideTimeoutRef.current) {
-      clearTimeout(leftOverlayHideTimeoutRef.current);
-      leftOverlayHideTimeoutRef.current = null;
-    }
     // Ensure the compact overlay menu can open immediately from an expanded state.
     setLeftOpen(false);
     setLeftOverlayVisible(true);
   }, []);
   const setLeftOverlayVisibleImmediate = useCallback((visible: boolean) => {
-    if (leftOverlayHideTimeoutRef.current) {
-      clearTimeout(leftOverlayHideTimeoutRef.current);
-      leftOverlayHideTimeoutRef.current = null;
-    }
     setLeftOverlayVisible(visible);
   }, []);
   const hideLeftOverlay = useCallback(() => {
-    if (leftOverlayHideTimeoutRef.current) {
-      clearTimeout(leftOverlayHideTimeoutRef.current);
-    }
-    leftOverlayHideTimeoutRef.current = setTimeout(() => {
-      setLeftOverlayVisible(false);
-      leftOverlayHideTimeoutRef.current = null;
-    }, 220);
+    // Clear immediately. A delayed hide left the menu flag true after the
+    // conversation closed; the collapsed icon rail is not that menu.
+    setLeftOverlayVisible(false);
   }, []);
   const toggleLeftFromTrigger = useCallback(() => {
     setLeftOpen((prev) => {
@@ -92,14 +79,6 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
       setLeftOverlayVisible(false);
       return next;
     });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (leftOverlayHideTimeoutRef.current) {
-        clearTimeout(leftOverlayHideTimeoutRef.current);
-      }
-    };
   }, []);
 
   return (
