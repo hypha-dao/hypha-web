@@ -24,7 +24,6 @@ import {
   partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
   useAiPanel,
-  useHumanChatPanel,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -45,8 +44,7 @@ export function NavigationTabs({
   const tNav = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tCoherence = useTranslations('CoherenceTab');
-  const { open: aiPanelOpen, overlayVisible } = useAiPanel();
-  const { open: chatPanelOpen } = useHumanChatPanel();
+  const { open: aiPanelOpen } = useAiPanel();
   const pathname = usePathname();
   const activeTab = React.useMemo(
     () => getActiveTabFromPath(pathname),
@@ -120,11 +118,11 @@ export function NavigationTabs({
     ? stripActiveTab
     : '';
 
-  // Icon rail lists these sections only while both side panels are closed.
-  // Opening the AI panel, its overlay, or chat covers that rail — keep the
-  // text strip in the main column. Do not hide it in those states.
-  const sidePanelOpen = aiPanelOpen || overlayVisible || chatPanelOpen;
-  if (!sidePanelOpen) {
+  // The collapsed icon rail already lists these sections. `overlayVisible`
+  // is only the expanded nav menu; opening the conversation used to latch
+  // that flag, so this strip stayed after the AI screen closed. Show it
+  // only while the conversation panel itself is open.
+  if (!aiPanelOpen) {
     return null;
   }
 
