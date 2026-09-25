@@ -29,6 +29,17 @@ import {
   isAnsweredTransparencyLevel,
   mergeTransparencyAnswers,
 } from './onboarding-transparency-guidance';
+import {
+  hasOwnAssets,
+  isAnsweredVisualAssetsChoice,
+  isAnsweredVisualAssetsConfirmed,
+  wantsGeneratedPlaceholders,
+} from './onboarding-visual-assets-guidance';
+
+export {
+  applyVisualAssetsToKnownAnswers,
+  isAnsweredVisualAssetsConfirmed,
+} from './onboarding-visual-assets-guidance';
 
 const processSchema = z.enum([
   'create_space',
@@ -63,53 +74,6 @@ function normalizeChoice(value: unknown): string {
   return String(value ?? '')
     .trim()
     .toLowerCase();
-}
-
-function wantsGeneratedPlaceholders(value: unknown): boolean {
-  const normalized = normalizeChoice(value);
-  return (
-    normalized.includes('placeholder') ||
-    normalized.includes('generate') ||
-    normalized.includes('create for me') ||
-    normalized.includes('create them') ||
-    normalized.includes("don't have") ||
-    normalized.includes('do not have') ||
-    normalized.includes('not yet') ||
-    normalized.includes('no logo') ||
-    normalized.includes('no banner') ||
-    normalized === 'no' ||
-    normalized === 'no assets' ||
-    normalized === 'nope'
-  );
-}
-
-function hasOwnAssets(value: unknown): boolean {
-  const normalized = normalizeChoice(value);
-  return (
-    normalized.includes('i have') ||
-    normalized.includes('upload') ||
-    normalized.includes('use mine') ||
-    normalized.includes('already have') ||
-    normalized === 'yes' ||
-    normalized === 'yep'
-  );
-}
-
-function isAnsweredVisualAssetsChoice(value: unknown): boolean {
-  return hasOwnAssets(value) || wantsGeneratedPlaceholders(value);
-}
-
-function isAnsweredVisualAssetsConfirmed(value: unknown): boolean {
-  const normalized = normalizeChoice(value);
-  return (
-    normalized === 'yes' ||
-    normalized.includes('looks good') ||
-    normalized.includes('love it') ||
-    normalized.includes('perfect') ||
-    normalized.includes('confirm') ||
-    normalized.includes('proceed') ||
-    normalized.includes('use these')
-  );
 }
 
 function buildVisualAssetsSteps(): GuidanceStep[] {

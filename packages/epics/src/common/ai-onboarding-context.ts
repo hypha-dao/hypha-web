@@ -83,11 +83,13 @@ export type OnboardingConversationContext = {
   createdSpaceSlug?: string;
   /** Browser session: user completed at least one wallet/2FA sign this tab session. */
   walletSessionActive?: boolean;
-  /** Confirmed logo + hero banner URLs from upload or generation. */
+  /** Logo + hero banner URLs from upload or generation (may still await user OK). */
   visualAssets?: {
     logoUrl: string;
     leadImageUrl: string;
   };
+  /** True after the user accepted the logo + banner in chat/voice. */
+  visualAssetsConfirmed?: boolean;
   /** Chat text vs voice interview during discovery. */
   discoveryMode?: OnboardingDiscoveryMode;
   setupPlan?: {
@@ -438,6 +440,8 @@ export function readOnboardingConversationContext():
           ? parsed.createdSpaceSlug
           : undefined,
       visualAssets: parseStoredVisualAssets(parsed.visualAssets),
+      visualAssetsConfirmed:
+        parsed.visualAssetsConfirmed === true ? true : undefined,
       discoveryMode: parseOnboardingDiscoveryMode(parsed.discoveryMode),
       lastUserText:
         typeof parsed.lastUserText === 'string'
@@ -510,6 +514,7 @@ export function serializeConversationContextForChatApi(
       : {}),
     ...(context.walletSessionActive ? { walletSessionActive: true } : {}),
     ...(context.visualAssets ? { visualAssets: context.visualAssets } : {}),
+    ...(context.visualAssetsConfirmed ? { visualAssetsConfirmed: true } : {}),
     ...(discoveryMode ? { discoveryMode } : {}),
     ...(context.lastUserText ? { lastUserText: context.lastUserText } : {}),
     ...(context.locale ? { locale: context.locale } : {}),
@@ -863,6 +868,29 @@ function inferSetupJourneyFromUserText(
   return undefined;
 }
 
+function isVisualAssetsAcceptanceReply(text: string): boolean {
+  if (isPlainOnboardingConfirmationReply(text)) return true;
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[.,!?;:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) return false;
+  return (
+    normalized.includes('looks good') ||
+    normalized.includes('looks great') ||
+    normalized.includes('love it') ||
+    normalized.includes('love them') ||
+    normalized.includes('use these') ||
+    normalized.includes('use them') ||
+    normalized.includes('keep these') ||
+    normalized.includes('keep them') ||
+    normalized.includes('works for me') ||
+    normalized.includes('work for me')
+  );
+}
+
 export function applyOnboardingContextForUserText(
   context: OnboardingConversationContext,
   text: string,
@@ -871,10 +899,15 @@ export function applyOnboardingContextForUserText(
   const isExplicitConfirmation = isPlainOnboardingConfirmationReply(normalized);
   const inferredJourney =
     context.setupJourney ?? inferSetupJourneyFromUserText(normalized);
+  const acceptVisuals =
+    Boolean(context.visualAssets) &&
+    !context.visualAssetsConfirmed &&
+    isVisualAssetsAcceptanceReply(normalized);
   return {
     ...context,
     lastUserText: normalized,
     ...(inferredJourney ? { setupJourney: inferredJourney } : {}),
+    ...(acceptVisuals ? { visualAssetsConfirmed: true } : {}),
     setupPhase: isExplicitConfirmation
       ? 'confirm'
       : context.setupPhase === 'discover'
