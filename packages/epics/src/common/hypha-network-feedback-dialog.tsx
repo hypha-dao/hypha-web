@@ -52,22 +52,21 @@ function FeedbackOption({
   const router = useRouter();
 
   const cardClassName = clsx(
-    'group flex h-full flex-col rounded-lg border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
-    'cursor-pointer hover:border-accent-9 hover:bg-background-3/70',
-    'focus-visible:border-accent-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background-2',
+    'craft-card-interactive group flex h-full cursor-pointer flex-col rounded-none border border-border bg-background-2 p-5 shadow-none dark:bg-background-5 md:p-6',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
   );
 
   const cardBody = (
     <>
       <div className="flex items-start gap-4">
         <div
-          className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 [&_svg]:shrink-0"
+          className="craft-icon-box size-11 text-muted-foreground transition-[border-color,color] duration-200 group-hover:text-foreground"
           aria-hidden
         >
           {icon}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-2 font-semibold leading-snug text-foreground">
+        <div className="flex min-w-0 flex-1 flex-col gap-1 font-sans">
+          <span className="[font-family:var(--font-family-heading)] text-2 font-semibold leading-snug text-foreground">
             {title}
           </span>
           <span className="text-1 font-medium leading-snug text-foreground">
@@ -76,7 +75,7 @@ function FeedbackOption({
           <span className="text-1 leading-relaxed text-muted-foreground">
             {description}
           </span>
-          <span className="mt-2 text-1 font-medium text-accent-11 group-hover:underline">
+          <span className="mt-2 text-1 font-medium text-foreground group-hover:underline">
             {actionLabel} →
           </span>
         </div>
@@ -136,19 +135,19 @@ export function HyphaNetworkFeedbackDialog({
         // --sidebar-left-width inset on mobile and clip the panel on the right.
         overlayClassName="left-0 right-0"
         className={cn(
-          'gap-0 overflow-hidden rounded-none border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 sm:rounded-lg dark:ring-white/10',
+          'gap-0 overflow-hidden rounded-none border border-border bg-page-background p-0 font-sans shadow-none sm:rounded-none dark:bg-background-2',
           'left-1/2 max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]',
         )}
       >
         <div className="flex max-h-[min(90dvh,calc(100dvh-2rem))] min-w-0 flex-col gap-6 overflow-y-auto p-4 sm:p-6 lg:p-7">
           <DialogHeader className="space-y-2 pr-8 text-left">
-            <DialogTitle className="text-4 font-semibold tracking-tight">
+            <DialogTitle className="[font-family:var(--font-family-heading)] text-4 font-semibold tracking-tight text-foreground">
               {t('title')}
             </DialogTitle>
-            <DialogDescription className="text-2 leading-relaxed text-muted-foreground">
+            <DialogDescription className="font-sans text-2 leading-relaxed text-muted-foreground">
               {t('subtitle')}
             </DialogDescription>
-            <p className="text-2 leading-relaxed text-muted-foreground">
+            <p className="font-sans text-2 leading-relaxed text-muted-foreground">
               {t('intro')}
             </p>
           </DialogHeader>
@@ -175,7 +174,7 @@ export function HyphaNetworkFeedbackDialog({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(event) => event.stopPropagation()}
-                    className="font-medium text-accent-11 underline-offset-2 hover:underline"
+                    className="font-medium text-foreground underline-offset-2 hover:underline"
                   >
                     {t('governance.learnMore')}
                   </a>
