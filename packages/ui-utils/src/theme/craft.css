@@ -228,6 +228,21 @@
 }
 
 /*
+ * Selected / keyboard focus. Slightly stronger than the 3% hover, still
+ * mixed into the card rest (white, or #1c1c1c when the card sets
+ * --craft-card-rest). Not an accent fill and not a flat grey slab.
+ */
+:is(a, button):focus-visible > .craft-card-interactive,
+.craft-card-interactive:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 40%, var(--border));
+  background-color: color-mix(
+    in srgb,
+    var(--foreground) 6%,
+    var(--craft-card-rest)
+  );
+}
+
+/*
  * Signal cards (and any other dark:bg-background-5 card) rest on
  * --background-5 (#1c1c1c), above the #040404 page. Mixing the hover into
  * --background-2 would snap them back to #121212. Lift from #1c1c1c instead.
