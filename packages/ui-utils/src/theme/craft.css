@@ -220,6 +220,17 @@
   background-color: var(--background-2);
 }
 
+/*
+ * Signal cards add dark:bg-background-5 so the resting fill is #1c1c1c
+ * on the #040404 page. The rule above would paint that lift back to
+ * --background-2 (#121212) on hover. Hairline stays; only the fill holds.
+ * Selected cards use bg-transparent and do not carry this class.
+ */
+:is(.dark, .dark-theme, [data-theme='dark'])
+  .craft-card-interactive.dark\:bg-background-5:hover {
+  background-color: var(--background-5);
+}
+
 .craft-row-interactive:hover {
   /* Hairline inset — same in light and dark; no panel-tint fill. */
   box-shadow: inset 0 0 0 1px

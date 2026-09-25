@@ -152,6 +152,7 @@ export function SignalTaskCard({
       }
       className={cn(
         'craft-card-interactive group relative flex flex-col',
+        !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
