@@ -73,6 +73,59 @@ const CountValue = ({
   return <>{value}</>;
 };
 
+function countUniqueMemberAddresses(spaces: Space[]): number {
+  const acc = new Set<Lowercase<`0x${string}`>>();
+  for (const space of spaces) {
+    if (!space.memberAddresses) continue;
+    for (const address of space.memberAddresses) {
+      acc.add(toLowerHex(address));
+    }
+  }
+  return acc.size;
+}
+
+function countAgreements(spaces: Space[]): number {
+  return spaces.reduce(
+    (accumulator, { documentCount }) => accumulator + (documentCount ?? 0),
+    0,
+  );
+}
+
+function NetworkMetric({
+  value,
+  label,
+  privateLabel,
+  isLoading,
+}: {
+  value: number;
+  label: string;
+  privateLabel: string;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
+      <div className="flex justify-center text-7 font-medium">
+        <CountValue value={value} isLoading={isLoading} width={40} />
+      </div>
+      <div className="mt-2 flex justify-center text-1 text-neutral-500">
+        {label}
+      </div>
+      <div className="mt-1 flex justify-center text-1 text-neutral-9">
+        {isLoading ? (
+          <Skeleton
+            loading
+            width={64}
+            height={12}
+            className="inline-block align-middle"
+          />
+        ) : (
+          privateLabel
+        )}
+      </div>
+    </div>
+  );
+}
+
 const CategoryLabel = ({
   selectedSpaces,
   categoryGroups,
@@ -154,12 +207,15 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categoryGroups],
   );
 
-  const { filteredSpaces: selectedSpaces, isLoading: isFilterLoading } =
-    useFilterSpacesListWithDiscoverability({
-      spaces: categoryFilteredSpaces,
-      useGeneralState: true,
-      excludeSpaceLevelFromNetwork: true,
-    });
+  const {
+    filteredSpaces: selectedSpaces,
+    privateSpaces,
+    isLoading: isFilterLoading,
+  } = useFilterSpacesListWithDiscoverability({
+    spaces: categoryFilteredSpaces,
+    useGeneralState: true,
+    excludeSpaceLevelFromNetwork: true,
+  });
 
   // Discoverability is resolved on-chain, so the filtered set (and therefore the
   // total count) starts as "all spaces" and shrinks as the batch resolves, which
@@ -175,24 +231,23 @@ export function ExploreSpaces({
   }, [isFilterLoading]);
   const showSpacesSkeleton = !hasSettledFilter;
 
-  const agreementCount = React.useMemo(() => {
-    return selectedSpaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
-    );
-  }, [selectedSpaces]);
+  const agreementCount = React.useMemo(
+    () => countAgreements(selectedSpaces),
+    [selectedSpaces],
+  );
+  const privateAgreementCount = React.useMemo(
+    () => countAgreements(privateSpaces),
+    [privateSpaces],
+  );
 
-  const uniqueMemberAddresses = React.useMemo(() => {
-    const acc = new Set<Lowercase<`0x${string}`>>();
-    for (const space of selectedSpaces) {
-      if (!space.memberAddresses) continue;
-      for (const address of space.memberAddresses) {
-        acc.add(toLowerHex(address));
-      }
-    }
-    return acc;
-  }, [selectedSpaces]);
+  const memberCount = React.useMemo(
+    () => countUniqueMemberAddresses(selectedSpaces),
+    [selectedSpaces],
+  );
+  const privateMemberCount = React.useMemo(
+    () => countUniqueMemberAddresses(privateSpaces),
+    [privateSpaces],
+  );
 
   const tags = React.useMemo(
     () =>
@@ -375,50 +430,35 @@ export function ExploreSpaces({
   );
 
   const metricsSection = (
-    <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={selectedSpaces.length}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Spaces')}
-        </div>
-      </div>
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={uniqueMemberAddresses.size}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Members')}
-        </div>
-      </div>
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={agreementCount}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Agreements')}
-        </div>
+    <div className="flex flex-col items-center gap-3">
+      <p className="text-1 text-neutral-500">{t('transparent')}</p>
+      <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
+        <NetworkMetric
+          value={selectedSpaces.length}
+          label={tCommon('Spaces')}
+          privateLabel={t('privateCount', { count: privateSpaces.length })}
+          isLoading={showSpacesSkeleton}
+        />
+        <Separator
+          orientation="vertical"
+          className="h-auto self-stretch bg-neutral-6"
+        />
+        <NetworkMetric
+          value={memberCount}
+          label={tCommon('Members')}
+          privateLabel={t('privateCount', { count: privateMemberCount })}
+          isLoading={showSpacesSkeleton}
+        />
+        <Separator
+          orientation="vertical"
+          className="h-auto self-stretch bg-neutral-6"
+        />
+        <NetworkMetric
+          value={agreementCount}
+          label={tCommon('Agreements')}
+          privateLabel={t('privateCount', { count: privateAgreementCount })}
+          isLoading={showSpacesSkeleton}
+        />
       </div>
     </div>
   );

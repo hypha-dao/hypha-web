@@ -74,6 +74,17 @@ export function useSpacesDiscoverabilityBatch({
   };
 }
 
+/**
+ * Space-level discoverability. The network map and directory use this same
+ * on-chain flag (`getSpaceVisibility` discoverability) to keep a space off
+ * both surfaces, including for members.
+ */
+export function isNetworkPrivateDiscoverability(
+  discoverability: TransparencyLevel | undefined,
+): boolean {
+  return discoverability === TransparencyLevel.SPACE;
+}
+
 function useGeneralUserState(): UserSpaceState {
   const { isAuthenticated } = useAuthentication();
   return useMemo(() => {
@@ -95,6 +106,8 @@ export function useFilterSpacesListWithDiscoverability({
   excludeSpaceLevelFromNetwork?: boolean;
 }): {
   filteredSpaces: Space[];
+  /** Spaces whose discoverability is Space-level — off the network map and directory. */
+  privateSpaces: Space[];
   isLoading: boolean;
 } {
   const generalUserState = useGeneralUserState();
@@ -168,7 +181,7 @@ export function useFilterSpacesListWithDiscoverability({
       const discoverability = discoverabilityMap.get(space.web3SpaceId);
 
       if (useGeneralState) {
-        if (discoverability === TransparencyLevel.SPACE) {
+        if (isNetworkPrivateDiscoverability(discoverability)) {
           // Network is a public discovery surface: Space-level spaces belong
           // on My Spaces (and in-space navigation), not the Network list/map.
           if (excludeSpaceLevelFromNetwork) {
@@ -213,6 +226,17 @@ export function useFilterSpacesListWithDiscoverability({
     userMemberSpaceIdsSet,
   ]);
 
+  const privateSpaces = useMemo(
+    () =>
+      spaces.filter((space) => {
+        if (!space.web3SpaceId) return false;
+        return isNetworkPrivateDiscoverability(
+          discoverabilityMap.get(space.web3SpaceId),
+        );
+      }),
+    [spaces, discoverabilityMap],
+  );
+
   // For the network (general) list the filtered set depends on three async
   // inputs: on-chain discoverability, whether the viewer is logged in, and which
   // spaces they are a member of. On a hard refresh Privy isn't ready yet, so the
@@ -231,6 +255,7 @@ export function useFilterSpacesListWithDiscoverability({
 
   return {
     filteredSpaces,
+    privateSpaces,
     isLoading: useGeneralState
       ? isGeneralStateLoading
       : isUserStateLoading || isDiscoverabilityLoading,

@@ -1801,7 +1801,9 @@
     "all": "Todos",
     "exploreNetwork": "Explore a rede Hypha",
     "seeAll": "Ver tudo",
-    "noCategory": "Nenhuma categoria"
+    "noCategory": "Nenhuma categoria",
+    "transparent": "Transparente",
+    "privateCount": "{count, plural, one {# privado} other {# privados}}"
   },
   "Proposals": {
     "CreateNew": "Crie uma nova proposta",

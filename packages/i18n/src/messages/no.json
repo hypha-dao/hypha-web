@@ -1600,7 +1600,9 @@
     "all": "Alle",
     "exploreNetwork": "Utforsk Hypha-nettverket",
     "seeAll": "Se alle",
-    "noCategory": "Ingen kategori"
+    "noCategory": "Ingen kategori",
+    "transparent": "Transparente",
+    "privateCount": "{count, plural, one {# privat} other {# private}}"
   },
   "Proposals": {
     "CreateNew": "Opprett et nytt forslag",

@@ -1581,7 +1581,9 @@
     "all": "Сите",
     "exploreNetwork": "Истражете ја Hypha мрежата",
     "seeAll": "Види ги сите",
-    "noCategory": "Без категорија"
+    "noCategory": "Без категорија",
+    "transparent": "Транспарентни",
+    "privateCount": "{count, plural, one {# приватен} other {# приватни}}"
   },
   "Proposals": {
     "CreateNew": "Создај нов предлог",
