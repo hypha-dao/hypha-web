@@ -6,6 +6,7 @@ Project skills live under [`.agents/skills/`](../skills/). Each skill has a `SKI
 |-------|--------|
 | AI SDK | [../skills/ai-sdk/SKILL.md](../skills/ai-sdk/SKILL.md) |
 | Auto-fix CodeRabbit | [../skills/autofix/SKILL.md](../skills/autofix/SKILL.md) |
+| Triage & answer CodeRabbit PR comments (Hypha) | [../skills/hypha-coderabbit/SKILL.md](../skills/hypha-coderabbit/SKILL.md) |
 | Code review (CodeRabbit) | [../skills/code-review/SKILL.md](../skills/code-review/SKILL.md) |
 | Conventional commits | [../skills/conventional-commits/SKILL.md](../skills/conventional-commits/SKILL.md) |
 | Create agent role | [../skills/create-agent-role/SKILL.md](../skills/create-agent-role/SKILL.md) |
