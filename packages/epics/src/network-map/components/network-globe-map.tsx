@@ -170,6 +170,32 @@ function isPinVisibleOnProjection(
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
 }
 
+/** Walk from a bounding-box corner toward the center until it lies on the drawing. */
+function pointOnMap(
+  projection: d3.GeoProjection,
+  x: number,
+  y: number,
+  centerX: number,
+  centerY: number,
+): { x: number; y: number } {
+  let px = x;
+  let py = y;
+  for (let step = 0; step < 16; step += 1) {
+    const geo = projection.invert?.([px, py]);
+    if (
+      geo &&
+      Number.isFinite(geo[0]) &&
+      Number.isFinite(geo[1]) &&
+      isPinVisibleOnProjection(projection, geo[0], geo[1])
+    ) {
+      return { x: px, y: py };
+    }
+    px += (centerX - px) * 0.12;
+    py += (centerY - py) * 0.12;
+  }
+  return { x: centerX, y: centerY };
+}
+
 function parsePinTransform(element: Element): { x: number; y: number } | null {
   const transform = element.getAttribute('transform');
   if (!transform) {
@@ -834,6 +860,35 @@ export function NetworkGlobeMap({
         .attr('opacity', pinOpacity)
         .style('display', null);
     });
+
+    const [[x0, y0], [x1, y1]] = path.bounds({ type: 'Sphere' });
+    if ([x0, y0, x1, y1].every((value) => Number.isFinite(value))) {
+      const pad = 12;
+      const bottomRight = pointOnMap(projection, x1, y1, width / 2, height / 2);
+      const bottomLeft = pointOnMap(projection, x0, y1, width / 2, height / 2);
+      container
+        .querySelectorAll<HTMLElement>('[data-network-map-inset]')
+        .forEach((element) => {
+          const anchor =
+            element.dataset.networkMapInset === 'legend'
+              ? bottomLeft
+              : bottomRight;
+          element.style.bottom = `${Math.round(
+            Math.max(pad, height - anchor.y + pad),
+          )}px`;
+          if (element.dataset.networkMapInset === 'legend') {
+            element.style.left = `${Math.round(
+              Math.max(pad, anchor.x + pad),
+            )}px`;
+            element.style.right = 'auto';
+            return;
+          }
+          element.style.right = `${Math.round(
+            Math.max(pad, width - anchor.x + pad),
+          )}px`;
+          element.style.left = 'auto';
+        });
+    }
   }, [lang, router, t]);
 
   renderMapRef.current = renderMap;
@@ -1642,6 +1697,7 @@ export function NetworkGlobeMap({
   const mapLegend =
     !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
       <div
+        data-network-map-inset="legend"
         className={cn(
           'pointer-events-none absolute bottom-3 left-3 z-20',
           'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
@@ -1675,6 +1731,7 @@ export function NetworkGlobeMap({
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
+      data-network-map-inset="navigator"
       className={cn(
         'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
@@ -1698,6 +1755,7 @@ export function NetworkGlobeMap({
   const miniMapInset = showMiniMap ? (
     <button
       type="button"
+      data-network-map-inset="navigator"
       className={cn(
         'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
         'transition-[border-color,background-color] duration-150',
