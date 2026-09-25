@@ -131,23 +131,13 @@ function mapPaletteForTheme(theme: string | undefined): MapPalette {
 
 const MINI_GLOBE_SIZE = 88;
 
-/** Fallback stage height before the SVG has been measured. */
-const MIN_MAP_STAGE_HEIGHT = 420;
-/** About 2× the previous 560px cap, so the stage is a viewing area. */
-const MAX_MAP_STAGE_HEIGHT = 1120;
-
+/**
+ * Equirectangular world is 2:1. The stage must match that drawing: a taller
+ * box leaves empty paper above and below the coastlines and drops the
+ * corner navigator off the map.
+ */
 function mapStageHeight(width: number): number {
-  // Was clamp(360, width * 0.62, 560). Double that ratio and cap near 1120.
-  const tall = Math.max(720, Math.min(MAX_MAP_STAGE_HEIGHT, width * 1.24));
-  if (typeof window === 'undefined') {
-    return Math.round(tall);
-  }
-  // Short or narrow windows stay near 420px so the list underneath is reachable.
-  if (window.innerHeight < 760 || width < 640) {
-    const cap = window.innerHeight * 0.55;
-    return Math.round(Math.min(MIN_MAP_STAGE_HEIGHT, Math.max(320, cap)));
-  }
-  return Math.round(tall);
+  return Math.max(1, Math.round(width / 2));
 }
 const MINI_MAP_WIDTH = 120;
 const MINI_MAP_HEIGHT = 72;
@@ -216,7 +206,9 @@ function buildProjection(
   const zoom = Math.max(0.75, Math.min(zoomScale, MAX_MAP_ZOOM));
   // Frameless stage — keep a small inset so the disk limb isn’t clipped.
   const globeScale = (minDim / 2 - 10) * zoom;
-  const flatScale = (width / (2 * Math.PI)) * zoom;
+  // Cover the stage. Height is width/2, so this matches the world exactly;
+  // the max guards a 1px rounding gap from showing as empty paper.
+  const flatScale = (Math.max(width, height * 2) / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
 
   if (morph <= 0) {
@@ -420,9 +412,11 @@ export function NetworkGlobeMap({
 
     const width = container.clientWidth;
     const height = mapStageHeight(width);
-    if (width <= 0) {
+    if (width <= 0 || height <= 0) {
       return;
     }
+
+    container.style.height = `${height}px`;
 
     svg
       .attr('width', width)
@@ -1250,8 +1244,7 @@ export function NetworkGlobeMap({
 
     function mapDimensions() {
       const width = container!.clientWidth;
-      const height = mapStageHeight(width);
-      return { width, height };
+      return { width, height: mapStageHeight(width) };
     }
 
     function globeProjectionAtRotation(rotate: Rotation) {
@@ -1614,7 +1607,8 @@ export function NetworkGlobeMap({
               activePin.x,
               activePin.y,
               containerRef.current?.clientWidth ?? 640,
-              containerRef.current?.clientHeight ?? MIN_MAP_STAGE_HEIGHT,
+              containerRef.current?.clientHeight ??
+                mapStageHeight(containerRef.current?.clientWidth ?? 640),
             )
           : {})}
       />
@@ -1756,7 +1750,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[420px] w-full overflow-hidden bg-transparent [@media(min-width:640px)_and_(min-height:760px)]:min-h-[720px]"
+      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
@@ -1774,7 +1768,7 @@ export function NetworkGlobeMap({
       <svg
         ref={svgRef}
         className={cn(
-          'block w-full select-none',
+          'absolute inset-0 block h-full w-full select-none',
           projectionMode === 'globe'
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-default',
