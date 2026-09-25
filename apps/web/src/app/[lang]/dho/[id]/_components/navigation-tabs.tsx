@@ -136,9 +136,10 @@ export function NavigationTabs({
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
-        {/* Content-sized strip scrolls inside the column when side panels shrink it.
-            No scroll parallax — that caused mobile shortcut tabs to jump. */}
-        <TabsList className="flex h-10 w-max gap-0.5">
+        {/* Fill the column. Each label keeps its width (`min-w-max`) so a
+            narrower column scrolls this row instead of clipping or spilling
+            into the sticky badge. No scroll parallax — that jumped shortcut tabs. */}
+        <TabsList className="flex h-10 w-full min-w-max gap-0.5">
           {primary.map(({ key, href }) => {
             const Icon = SPACE_SECTION_NAV_ICONS[key];
             return (
@@ -146,7 +147,7 @@ export function NavigationTabs({
                 <Link
                   href={href}
                   scroll={false}
-                  className="flex items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
+                  className="flex min-w-max flex-1 items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
                 >
                   <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
                   {labelFor(key)}
