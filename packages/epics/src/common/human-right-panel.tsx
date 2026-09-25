@@ -4411,8 +4411,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         className="flex shrink-0 items-center gap-0.5"
                         aria-hidden
                       >
-                        <Skeleton className="size-7 rounded-lg" />
-                        <Skeleton className="size-7 rounded-lg" />
+                        <Skeleton className="h-[36px] w-[36px] rounded-none" />
+                        <Skeleton className="h-[36px] w-[36px] rounded-none" />
                       </div>
                     )
                   ) : null}

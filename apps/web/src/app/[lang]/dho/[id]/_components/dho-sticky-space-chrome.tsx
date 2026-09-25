@@ -376,7 +376,7 @@ export function DhoStickySpaceChrome({
            * The header hairline is a 1px rule, not a framed border.
            */
           'right-[calc(var(--panel-right-inset,var(--sidebar-right-width,0px))+0.25rem)]',
-          'h-[var(--secondary-chrome-actions-row-height,77px)]',
+          'h-[var(--secondary-chrome-actions-row-height,66px)]',
           'bg-page-background',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
           'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
