@@ -41,6 +41,13 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 
+/**
+ * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
+ * so the hit area is locked at 36px instead of a spacing token.
+ */
+const SIGNAL_CARD_ICON_BUTTON_CLASS =
+  'box-border inline-flex h-[36px] w-[36px] min-h-[36px] min-w-[36px] max-h-[36px] max-w-[36px] shrink-0 items-center justify-center gap-0 rounded-none border border-border bg-background-2 p-0 leading-none shadow-none text-muted-foreground hover:border-border hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]';
+
 type SignalCardProps = {
   isLoading: boolean;
   refresh: () => Promise<void>;
@@ -234,7 +241,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="min-h-0 overflow-hidden">
               <div
                 className={cn(
-                  'flex items-center justify-end gap-1 pb-2 transition-opacity duration-150',
+                  'flex items-center justify-end gap-2 pb-2 transition-opacity duration-150',
                   'group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
                   isActive ? 'opacity-100' : 'opacity-0',
                 )}
@@ -243,16 +250,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   title={title}
                   description={description}
                   size="md"
-                  className="rounded-none border border-border/70 bg-background-2 shadow-none"
+                  className={SIGNAL_CARD_ICON_BUTTON_CLASS}
                 />
                 {canManageSignal && slug ? (
-                  <div className="flex items-center gap-0.5 rounded-none border border-border/70 bg-background-2 shadow-none">
+                  <>
                     <Button
                       type="button"
                       variant="ghost"
                       colorVariant="neutral"
-                      size="sm"
-                      className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      className={SIGNAL_CARD_ICON_BUTTON_CLASS}
                       disabled={isLoading}
                       aria-label={tSignalCard('editMenu')}
                       title={tSignalCard('editMenu')}
@@ -267,14 +273,17 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                       }}
                       onKeyDown={stopCardActivationKey}
                     >
-                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                      <Pencil
+                        className="h-4 w-4"
+                        strokeWidth={1.25}
+                        aria-hidden
+                      />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       colorVariant="neutral"
-                      size="sm"
-                      className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      className={SIGNAL_CARD_ICON_BUTTON_CLASS}
                       disabled={isLoading || isArchiveMutating}
                       aria-label={
                         archived
@@ -294,12 +303,20 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                       onKeyDown={stopCardActivationKey}
                     >
                       {archived ? (
-                        <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
+                        <ArchiveRestore
+                          className="h-4 w-4"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
                       ) : (
-                        <Archive className="h-3.5 w-3.5" aria-hidden />
+                        <Archive
+                          className="h-4 w-4"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
                       )}
                     </Button>
-                  </div>
+                  </>
                 ) : null}
               </div>
             </div>
