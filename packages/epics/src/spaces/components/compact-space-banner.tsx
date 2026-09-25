@@ -198,8 +198,9 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     <section
       className={cn(
         /*
-         * Light paper: no card frame — a border only reads as “pasted on”
-         * against #fbfaf8. Dark ground already hides the same hairline, so keep it.
+         * Light paper: the cover ends at its own edge, then #fbfaf8. A border
+         * reads as a pasted card; a bottom fade washes the action row. Dark
+         * ground already hides the hairline, so keep that frame only.
          */
         'group/hero relative overflow-hidden rounded-none border-0 shadow-none',
         'dark:border dark:border-border/70',
@@ -222,15 +223,6 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           />
         </>
       )}
-      {/*
-        Light only: short fade of the cover into page paper so the bottom edge
-        does not cut as a hard slab. Dark cover already melts into #040404.
-      */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-14 bg-gradient-to-b from-transparent to-page-background dark:hidden"
-        aria-hidden
-      />
-
       <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
         {/*
           Identity row: left-aligned; vertically centered in the lead plate
