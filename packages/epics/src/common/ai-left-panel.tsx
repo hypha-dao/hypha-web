@@ -54,6 +54,7 @@ import {
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
+import { HYPHA_SPACE_SWITCH_LINK_ATTR } from './main-column-scroll';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import {
   buildSpaceSectionNavItems,
@@ -851,6 +852,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           >
             <Link
               href={safeHref}
+              scroll={false}
+              {...{ [HYPHA_SPACE_SWITCH_LINK_ATTR]: '' }}
               onClick={
                 mode === 'collapsed' ? undefined : handleExpandedMenuNavigation
               }

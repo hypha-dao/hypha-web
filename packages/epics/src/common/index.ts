@@ -189,6 +189,7 @@ export {
 } from './panel-wrap-layout';
 export { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 export {
+  HYPHA_SPACE_SWITCH_LINK_ATTR,
   useMainColumnScrollY,
   getMainColumnScrollY,
   getMainColumnScrollElement,
@@ -203,6 +204,7 @@ export {
   holdMainColumnScrollHeight,
   releaseMainColumnScrollHeightHold,
   getMainColumnNaturalMaxScroll,
+  planBannerContentFit,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
 } from './main-column-scroll';

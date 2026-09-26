@@ -3,6 +3,12 @@
 import { useSyncExternalStore } from 'react';
 
 /**
+ * Recently Visited rows. A click that changes space is a screen change:
+ * the destination settles on the banner and does not replay the cover intro.
+ */
+export const HYPHA_SPACE_SWITCH_LINK_ATTR = 'data-hypha-space-switch';
+
+/**
  * Scroll position for the primary app column. When space side panels wrap content in
  * `SidebarInset` with `overflow-y-auto`, the document does not scroll — this module
  * tracks whichever element is the current scroll root (inset or window).
@@ -195,6 +201,41 @@ export function releaseMainColumnScrollHeightHold(): void {
  * Measuring clears that min-height for the read; callers that are pinning
  * must reapply the freeze before paint or the browser keeps a clamped top.
  */
+const BANNER_FILL_SLACK_PX = 2;
+
+export type BannerContentFit = {
+  /** Scroll offset to write. */
+  top: number;
+  /**
+   * True when `desiredTop` sits on real content. False when that offset
+   * would leave empty space under a short screen.
+   */
+  fillsBanner: boolean;
+};
+
+/**
+ * Banner settle for `#hypha-screen-share-main-content`.
+ * A desired offset the content can fill is the banner.
+ * An offset past the content hides the header and leaves a gap, so the
+ * landing position is the top of the pane — usually 0, the smallest offset
+ * that does not leave empty space below the content. Callers must pass the
+ * natural max (no route-change min-height); a loading skeleton is not a
+ * short screen.
+ */
+export function planBannerContentFit(
+  desiredTop: number,
+  naturalMaxScroll: number,
+): BannerContentFit {
+  const desired = Number.isFinite(desiredTop) ? Math.max(0, desiredTop) : 0;
+  const natural = Number.isFinite(naturalMaxScroll)
+    ? Math.max(0, naturalMaxScroll)
+    : 0;
+  if (desired <= natural + BANNER_FILL_SLACK_PX) {
+    return { top: desired, fillsBanner: true };
+  }
+  return { top: 0, fillsBanner: false };
+}
+
 export function getMainColumnNaturalMaxScroll(): number {
   if (typeof window === 'undefined') return 0;
   const el = scrollRoot;
@@ -304,9 +345,11 @@ export function animateMainColumnScrollBy(
   let raf = 0;
   let cancelled = false;
   let corrected = false;
-  let heldFor = dest;
+  // Hold the taller of the two ends. Easing upward (a shorter banner) must
+  // not shrink the scrollport and clamp through 0 on the way.
+  let heldFor = Math.max(startY, dest);
 
-  if (options?.followFreeze) holdMainColumnScrollHeight(dest);
+  if (options?.followFreeze) holdMainColumnScrollHeight(heldFor);
 
   const write = (y: number) => {
     const next = clampScrollTop(y);
