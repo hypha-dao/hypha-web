@@ -43,8 +43,6 @@ const VISUALIZATION_CONFIG = {
   ORBIT_RATIO: 0.9,
   LOGO_RATIO: 0.25,
   ZOOM_DURATION: 720,
-  WIDTH: 900,
-  HEIGHT: 900,
   LOGO_STROKE_WIDTH: 20,
   STROKE_WIDTH_SCALE: 0.7,
   /** Names stay at least this large, even when a node is drawn small. */
@@ -103,12 +101,176 @@ function finiteOr(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) ? (value as number) : fallback;
 }
 
-function sanitizeZoomView(
-  view: [number, number, number],
-  fallbackDiameter = VISUALIZATION_CONFIG.BASE_RADIUS * 2,
-): [number, number, number] {
-  const diameter = finiteOr(view[2], fallbackDiameter);
-  return [finiteOr(view[0], 0), finiteOr(view[1], 0), Math.max(diameter, 1)];
+/** Screen inset so a hairline on the bounds is not cut by the stage edge. */
+const CLUSTER_FIT_PADDING = 12;
+
+type LayoutBounds = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+};
+
+type ClusterFrame = {
+  cx: number;
+  cy: number;
+  width: number;
+  height: number;
+};
+
+type LabelMetrics = {
+  labelFontSize: number;
+  labelTop: number;
+};
+
+function labelMetrics(
+  screenLogoRadius: number,
+  isCurrent: boolean,
+  isFocused: boolean,
+): LabelMetrics {
+  const labelFontSize = clampSvgLength(
+    Math.min(
+      VISUALIZATION_CONFIG.LABEL_MAX_FONT,
+      Math.max(VISUALIZATION_CONFIG.LABEL_MIN_FONT, screenLogoRadius * 0.42),
+    ),
+  );
+  const ringOutset = isCurrent
+    ? Math.max(4, screenLogoRadius * 0.14)
+    : isFocused
+    ? Math.max(3.5, screenLogoRadius * 0.12)
+    : 0;
+  const labelTop =
+    screenLogoRadius +
+    ringOutset +
+    3 +
+    Math.max(VISUALIZATION_CONFIG.LABEL_GAP, labelFontSize * 0.5);
+  return { labelFontSize, labelTop };
+}
+
+/** Middle-anchored names. Wide enough that a full label stays inside the fit. */
+function estimateLabelHalfWidth(name: string, fontSize: number): number {
+  const text = truncateLabel(name);
+  return (text.length * fontSize * 0.62) / 2;
+}
+
+function includePoint(bounds: LayoutBounds, x: number, y: number) {
+  if (x < bounds.minX) bounds.minX = x;
+  if (y < bounds.minY) bounds.minY = y;
+  if (x > bounds.maxX) bounds.maxX = x;
+  if (y > bounds.maxY) bounds.maxY = y;
+}
+
+function includeCircle(
+  bounds: LayoutBounds,
+  x: number,
+  y: number,
+  radius: number,
+) {
+  includePoint(bounds, x - radius, y - radius);
+  includePoint(bounds, x + radius, y + radius);
+}
+
+/**
+ * Rings and the labels under them, in layout units. Label size is in screen
+ * pixels, so the layout extent depends on the scale used to draw them.
+ */
+function clusterBounds(
+  focus: SpaceHierarchyNode,
+  scale: number,
+  showLabels: boolean,
+  currentSpaceId?: number,
+): LayoutBounds {
+  const bounds: LayoutBounds = {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -Infinity,
+    maxY: -Infinity,
+  };
+  const safeScale = Math.max(scale, 0.0001);
+  focus.each((node) => {
+    const d = node as SpaceHierarchyNode;
+    const x = finiteOr(d.x, 0);
+    const y = finiteOr(d.y, 0);
+    const radius = finiteOr(d.r, 0);
+    includeCircle(bounds, x, y, radius);
+    if (!showLabels) return;
+    const isCurrent =
+      typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
+    const isFocused = d === focus;
+    const screenLogoRadius =
+      radius * safeScale * VISUALIZATION_CONFIG.LOGO_RATIO;
+    const { labelFontSize, labelTop } = labelMetrics(
+      screenLogoRadius,
+      isCurrent,
+      isFocused,
+    );
+    const half = estimateLabelHalfWidth(d.data.name, labelFontSize) / safeScale;
+    const bottom = y + (labelTop + labelFontSize * 1.35) / safeScale;
+    includePoint(bounds, x - half, y);
+    includePoint(bounds, x + half, bottom);
+  });
+  if (!Number.isFinite(bounds.minX)) {
+    const x = finiteOr(focus.x, 0);
+    const y = finiteOr(focus.y, 0);
+    const radius = Math.max(finiteOr(focus.r, 1), 1);
+    includeCircle(bounds, x, y, radius);
+  }
+  return bounds;
+}
+
+function frameFromBounds(bounds: LayoutBounds): ClusterFrame {
+  const width = Math.max(bounds.maxX - bounds.minX, 1);
+  const height = Math.max(bounds.maxY - bounds.minY, 1);
+  return {
+    cx: (bounds.minX + bounds.maxX) / 2,
+    cy: (bounds.minY + bounds.maxY) / 2,
+    width,
+    height,
+  };
+}
+
+function fitScale(
+  frame: ClusterFrame,
+  viewWidth: number,
+  viewHeight: number,
+): number {
+  const innerW = Math.max(viewWidth - CLUSTER_FIT_PADDING * 2, 1);
+  const innerH = Math.max(viewHeight - CLUSTER_FIT_PADDING * 2, 1);
+  return Math.min(innerW / frame.width, innerH / frame.height);
+}
+
+/**
+ * Largest uniform scale that keeps the focused cluster — outer rings and the
+ * labels under the logos — inside the stage. Extra stage height is used until
+ * the width (or the label block) is the limit.
+ */
+function solveClusterFrame(
+  focus: SpaceHierarchyNode,
+  viewWidth: number,
+  viewHeight: number,
+  showLabels: boolean,
+  currentSpaceId?: number,
+): ClusterFrame {
+  const diameter = Math.max(finiteOr(focus.r, 1) * 2, 1);
+  let scale =
+    Math.min(Math.max(viewWidth, 1), Math.max(viewHeight, 1)) / diameter;
+  let frame = frameFromBounds(
+    clusterBounds(focus, scale, showLabels, currentSpaceId),
+  );
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const nextScale = fitScale(frame, viewWidth, viewHeight);
+    const nextFrame = frameFromBounds(
+      clusterBounds(focus, nextScale, showLabels, currentSpaceId),
+    );
+    const settled =
+      Math.abs(nextScale - scale) <= Math.max(0.002, Math.abs(scale) * 0.01) &&
+      Math.abs(nextFrame.width - frame.width) <= 0.5 &&
+      Math.abs(nextFrame.height - frame.height) <= 0.5;
+    scale = nextScale;
+    frame = nextFrame;
+    if (settled) break;
+  }
+  return frame;
 }
 
 function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
@@ -240,8 +402,6 @@ export function SpaceVisualization({
         Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
       );
     };
-
-    const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
@@ -428,15 +588,17 @@ export function SpaceVisualization({
 
     focusRef.current = focus;
     savedFocusIdRef.current = focus.data.id;
-    let view = sanitizeZoomView([
-      finiteOr(focus.x, 0),
-      finiteOr(focus.y, 0),
-      finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
-    ]);
+
+    const readStageSize = (): { width: number; height: number } | null => {
+      const el = containerRef.current;
+      const rect = el?.getBoundingClientRect();
+      if (!rect || rect.width < 2 || rect.height < 2) return null;
+      return { width: rect.width, height: rect.height };
+    };
 
     const svg = d3
       .select(svgRef.current)
-      .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet')
       .style('shape-rendering', 'auto')
       .style('cursor', 'pointer');
 
@@ -727,7 +889,19 @@ export function SpaceVisualization({
         .attr('stroke', 'none');
     });
 
-    zoomTo(view);
+    const initialSize = readStageSize();
+    let frame = initialSize
+      ? solveClusterFrame(
+          focus,
+          initialSize.width,
+          initialSize.height,
+          showNodeLabels,
+          currentSpaceId,
+        )
+      : frameFromBounds(
+          clusterBounds(focus, 1, showNodeLabels, currentSpaceId),
+        );
+    if (initialSize) applyFrame(frame);
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
@@ -741,20 +915,37 @@ export function SpaceVisualization({
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
 
+      const size = readStageSize();
+      if (!size) return;
+      const nextFrame = solveClusterFrame(
+        focus,
+        size.width,
+        size.height,
+        showNodeLabels,
+        currentSpaceId,
+      );
+      const startFrame = frame;
+
       const transition = svg
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
         .tween('zoom', () => {
-          const targetView = sanitizeZoomView([
-            finiteOr(focus.x, 0),
-            finiteOr(focus.y, 0),
-            finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
-          ]);
-          const startView = sanitizeZoomView(view);
-          const interpolator = d3.interpolateZoom(startView, targetView);
           return (t) => {
-            const next = sanitizeZoomView(interpolator(t), targetView[2]);
-            zoomTo(next);
+            const eased = d3.easeCubicInOut(t);
+            frame = {
+              cx: startFrame.cx + (nextFrame.cx - startFrame.cx) * eased,
+              cy: startFrame.cy + (nextFrame.cy - startFrame.cy) * eased,
+              width: Math.max(
+                startFrame.width + (nextFrame.width - startFrame.width) * eased,
+                1,
+              ),
+              height: Math.max(
+                startFrame.height +
+                  (nextFrame.height - startFrame.height) * eased,
+                1,
+              ),
+            };
+            applyFrame(frame);
           };
         });
 
@@ -809,15 +1000,21 @@ export function SpaceVisualization({
       };
     }
 
-    function zoomTo(v: [number, number, number]) {
-      const safeView = sanitizeZoomView(v, view[2]);
-      // A few viewBox units of inset so the hairline is not cut by the edge.
-      const k = (width - 6) / safeView[2];
-      view = safeView;
+    function applyFrame(next: ClusterFrame) {
+      const size = readStageSize();
+      if (!size) return;
+      const { width: viewWidth, height: viewHeight } = size;
+      // 1:1 with the stage. The cluster is placed in this box, so a tall stage
+      // is usable instead of letterboxing a square view.
+      svg.attr(
+        'viewBox',
+        `${-viewWidth / 2} ${-viewHeight / 2} ${viewWidth} ${viewHeight}`,
+      );
+      const k = fitScale(next, viewWidth, viewHeight);
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
-        const tx = (finiteOr(d.x, 0) - safeView[0]) * k;
-        const ty = (finiteOr(d.y, 0) - safeView[1]) * k;
+        const tx = (finiteOr(d.x, 0) - next.cx) * k;
+        const ty = (finiteOr(d.y, 0) - next.cy) * k;
         return `translate(${tx}, ${ty})`;
       };
 
@@ -843,24 +1040,13 @@ export function SpaceVisualization({
           const isFocused = d === focus;
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          const labelFontSize = clampSvgLength(
-            Math.min(
-              VISUALIZATION_CONFIG.LABEL_MAX_FONT,
-              Math.max(VISUALIZATION_CONFIG.LABEL_MIN_FONT, r * 0.42),
-            ),
-          );
-          const ringOutset = isCurrent
-            ? Math.max(4, r * 0.14)
-            : isFocused
-            ? Math.max(3.5, r * 0.12)
-            : 0;
           // Hanging baseline: y is the top of the glyphs. Clear the disk,
           // the accent or focus ring, and the hairline before the gap.
-          const labelY =
-            r +
-            ringOutset +
-            3 +
-            Math.max(VISUALIZATION_CONFIG.LABEL_GAP, labelFontSize * 0.5);
+          const { labelFontSize, labelTop: labelY } = labelMetrics(
+            r,
+            isCurrent,
+            isFocused,
+          );
           const selection = d3.select(this);
 
           selection
@@ -916,7 +1102,29 @@ export function SpaceVisualization({
           }
         });
     }
+
+    let fittedKey = initialSize
+      ? `${Math.round(initialSize.width)}x${Math.round(initialSize.height)}`
+      : '';
+    const stageObserver = new ResizeObserver(() => {
+      const size = readStageSize();
+      if (!size) return;
+      const key = `${Math.round(size.width)}x${Math.round(size.height)}`;
+      if (key === fittedKey) return;
+      fittedKey = key;
+      frame = solveClusterFrame(
+        focus,
+        size.width,
+        size.height,
+        showNodeLabels,
+        currentSpaceId,
+      );
+      applyFrame(frame);
+    });
+    if (containerRef.current) stageObserver.observe(containerRef.current);
+
     return () => {
+      stageObserver.disconnect();
       svg.interrupt();
       if (zoomApiRef) {
         zoomApiRef.current = { zoomIn: () => {}, zoomOut: () => {} };
@@ -933,7 +1141,7 @@ export function SpaceVisualization({
   return (
     <div
       ref={containerRef}
-      className={cn('relative aspect-square w-full', className)}
+      className={cn('relative aspect-square w-full overflow-hidden', className)}
     >
       <svg
         ref={svgRef}

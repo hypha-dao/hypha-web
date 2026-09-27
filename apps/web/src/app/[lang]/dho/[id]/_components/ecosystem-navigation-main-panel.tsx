@@ -331,11 +331,19 @@ export function EcosystemNavigationMainPanel({
       // width, so a phone still has a diagram under the membership stack.
       const next = slot >= 64 ? slot : stageWidth;
       if (
-        Math.abs(next - Math.round(current.getBoundingClientRect().height)) <= 2
+        Math.abs(next - Math.round(current.getBoundingClientRect().height)) <=
+          2 &&
+        current.style.aspectRatio === 'auto'
       ) {
         return;
       }
+      // The slot is the stage. A square aspect would ignore a short slot and
+      // spill past the footer, or leave the drawing as a small square at the
+      // top of a taller box.
+      current.style.aspectRatio = 'auto';
       current.style.height = `${next}px`;
+      current.style.maxHeight = `${next}px`;
+      current.style.minHeight = `${next}px`;
     };
 
     apply();
@@ -343,9 +351,15 @@ export function EcosystemNavigationMainPanel({
     const membership = stage.previousElementSibling;
     if (membership instanceof HTMLElement) observer.observe(membership);
     if (stage.parentElement) observer.observe(stage.parentElement);
+    if (scrollParent) observer.observe(scrollParent);
+    const footerWatch = new MutationObserver(apply);
+    if (scrollParent) {
+      footerWatch.observe(scrollParent, { childList: true });
+    }
     window.addEventListener('resize', apply);
     return () => {
       observer.disconnect();
+      footerWatch.disconnect();
       window.removeEventListener('resize', apply);
     };
   }, [hierarchyData, isLoading]);
@@ -409,7 +423,7 @@ export function EcosystemNavigationMainPanel({
             />
             <div
               ref={diagramStageRef}
-              className="relative aspect-square w-full shrink-0"
+              className="relative w-full shrink-0 overflow-hidden"
             >
               {hierarchyData ? (
                 <SpaceVisualization
