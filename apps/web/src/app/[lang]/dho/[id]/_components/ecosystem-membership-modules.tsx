@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Fragment,
-  type ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
@@ -17,9 +10,17 @@ import {
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 
-const AVATAR_SIZE_PX = 32;
+/** `h-8` / `w-8` — theme `--spacing-8` is 48px, not the default 32px scale. */
+const AVATAR_SIZE_PX = 48;
+/** `-space-x-2` overlap between circles in the stack. */
 const AVATAR_OVERLAP_PX = 8;
-const OVERFLOW_BADGE_RESERVE_PX = 40;
+/**
+ * Clear space after the last circle before +N.
+ * Matches `gap-3` (theme `--spacing-3`). Avatars still overlap each other.
+ */
+const COUNT_GAP_PX = 12;
+/** Width reserved for the "+NNN" label itself, not including COUNT_GAP_PX. */
+const OVERFLOW_COUNT_RESERVE_PX = 40;
 const MAX_VISIBLE_PREVIEW_COUNT = 8;
 
 type MembershipPreview = {
@@ -48,7 +49,8 @@ function fitVisibleAvatarCount(containerWidth: number, total: number): number {
   ) {
     const stackWidth =
       AVATAR_SIZE_PX + (count - 1) * (AVATAR_SIZE_PX - AVATAR_OVERLAP_PX);
-    const badgeWidth = count < total ? OVERFLOW_BADGE_RESERVE_PX : 0;
+    const badgeWidth =
+      count < total ? COUNT_GAP_PX + OVERFLOW_COUNT_RESERVE_PX : 0;
     if (stackWidth + badgeWidth <= containerWidth) {
       return count;
     }
@@ -84,7 +86,7 @@ function MembershipStack({
   }, [members.length]);
 
   if (members.length === 0) {
-    return <p className="craft-meta truncate">{emptyLabel}</p>;
+    return <p className="craft-meta text-pretty md:truncate">{emptyLabel}</p>;
   }
 
   const visible = members.slice(0, visibleCount);
@@ -93,9 +95,9 @@ function MembershipStack({
   return (
     <div
       ref={containerRef}
-      className="flex w-full min-h-8 min-w-0 items-center overflow-hidden"
+      className="flex w-full min-h-8 min-w-0 items-center gap-3"
     >
-      <div className="flex min-w-0 shrink -space-x-2">
+      <div className="flex min-w-0 overflow-hidden -space-x-2">
         {visible.map((member) =>
           member.accentClassName ? (
             <div
@@ -125,7 +127,7 @@ function MembershipStack({
         )}
       </div>
       {overflow > 0 ? (
-        <span className="ms-2 shrink-0 text-1 font-medium text-muted-foreground">
+        <span className="shrink-0 text-1 font-medium text-muted-foreground">
           +{overflow}
         </span>
       ) : null}
@@ -134,30 +136,27 @@ function MembershipStack({
 }
 
 const MODULE_COLUMN_START = [
-  'col-start-2',
-  'col-start-3',
-  'col-start-4',
+  'md:col-start-2',
+  'md:col-start-3',
+  'md:col-start-4',
 ] as const;
 
-/** Shared by the label and avatar cells so the column divider stays continuous. */
+/** Shared by the label and avatar cells so the desktop column divider stays continuous. */
 function membershipColumnClass(index: number, count: number): string {
-  if (index <= 0) return 'min-w-0 sm:pe-4';
+  if (index <= 0) return 'min-w-0 md:pe-4';
   if (index >= count - 1) {
-    return 'min-w-0 border-s border-border/50 sm:ps-4 sm:pe-2';
+    return 'min-w-0 md:border-s md:border-border/50 md:ps-4 md:pe-2';
   }
-  return 'min-w-0 border-s border-border/50 sm:px-4';
+  return 'min-w-0 md:border-s md:border-border/50 md:px-4';
 }
 
 /**
- * One strip: space name shares the label line with Individuals, Member spaces,
- * and AI agents. Avatars sit under those labels. Trailing controls span the strip.
+ * Below md the space name and actions share one line and the three groups
+ * stack under that name. From md up, one row: the name is vertically centered
+ * on the label + avatar group, labels share a line, avatars sit under them.
  */
 const MEMBERSHIP_ROW_CLASS =
-  'grid min-w-0 overflow-x-auto border-b border-border/50 py-2.5';
-
-const MEMBERSHIP_ROW_COLUMNS = {
-  gridTemplateColumns: 'fit-content(14rem) repeat(3, minmax(0, 1fr)) auto',
-} as const;
+  'flex min-w-0 flex-col gap-3 border-b border-border/50 py-2.5 md:grid md:gap-0 md:overflow-x-auto md:[grid-template-columns:fit-content(14rem)_repeat(3,minmax(0,1fr))_auto]';
 
 export function EcosystemMembershipModules({
   spaceSlug,
@@ -244,50 +243,57 @@ export function EcosystemMembershipModules({
   return (
     <div
       className={MEMBERSHIP_ROW_CLASS}
-      style={MEMBERSHIP_ROW_COLUMNS}
       role={isLoading ? 'status' : undefined}
       aria-live={isLoading ? 'polite' : undefined}
     >
-      {spaceTitle ? (
-        <p
-          className="craft-page-title col-start-1 row-start-1 max-w-56 self-baseline truncate pe-4 text-4 font-medium"
-          title={spaceTitle}
-        >
-          {spaceTitle}
-        </p>
-      ) : null}
-      {modules.map((module, index) => {
-        const columnClass = `${membershipColumnClass(index, modules.length)} ${
-          MODULE_COLUMN_START[index]
-        }`;
-        const showLoading =
-          isLoading && module.key !== 'agents' && module.members.length === 0;
+      <div className="flex min-w-0 items-center justify-between gap-3 md:contents">
+        {spaceTitle ? (
+          <p
+            className="craft-page-title min-w-0 flex-1 truncate text-4 font-medium md:col-start-1 md:row-span-2 md:row-start-1 md:max-w-56 md:flex-none md:self-center md:pe-4"
+            title={spaceTitle}
+          >
+            {spaceTitle}
+          </p>
+        ) : null}
+        {trailing ? (
+          <div className="flex w-max shrink-0 items-center gap-1 md:col-start-5 md:row-span-2 md:row-start-1 md:self-center">
+            {trailing}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex min-w-0 flex-col gap-3 md:contents">
+        {modules.map((module, index) => {
+          const columnClass = `${membershipColumnClass(
+            index,
+            modules.length,
+          )} ${MODULE_COLUMN_START[index]}`;
+          const showLoading =
+            isLoading && module.key !== 'agents' && module.members.length === 0;
 
-        return (
-          <Fragment key={module.key}>
-            <p
-              className={`${columnClass} row-start-1 self-baseline text-1 font-medium uppercase tracking-wide text-muted-foreground`}
+          return (
+            <div
+              key={module.key}
+              className="flex min-w-0 flex-col gap-1.5 md:contents"
             >
-              {module.label}
-            </p>
-            <div className={`${columnClass} row-start-2 pt-1.5`}>
-              {showLoading ? (
-                <p className="craft-meta">{t('navigation.loading')}</p>
-              ) : (
-                <MembershipStack
-                  members={module.members}
-                  emptyLabel={module.emptyLabel}
-                />
-              )}
+              <p
+                className={`${columnClass} text-1 font-medium uppercase tracking-wide text-muted-foreground md:row-start-1 md:self-baseline`}
+              >
+                {module.label}
+              </p>
+              <div className={`${columnClass} md:row-start-2 md:pt-1.5`}>
+                {showLoading ? (
+                  <p className="craft-meta">{t('navigation.loading')}</p>
+                ) : (
+                  <MembershipStack
+                    members={module.members}
+                    emptyLabel={module.emptyLabel}
+                  />
+                )}
+              </div>
             </div>
-          </Fragment>
-        );
-      })}
-      {trailing ? (
-        <div className="col-start-5 row-span-2 row-start-1 flex items-center self-center">
-          {trailing}
-        </div>
-      ) : null}
+          );
+        })}
+      </div>
     </div>
   );
 }
