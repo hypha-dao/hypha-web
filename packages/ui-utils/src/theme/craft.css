@@ -228,12 +228,19 @@
 }
 
 /*
- * Selected / keyboard focus. Slightly stronger than the 3% hover, still
- * mixed into the card rest (white, or #1c1c1c when the card sets
- * --craft-card-rest). Not an accent fill and not a flat grey slab.
+ * Keyboard focus. Slightly stronger than the 3% hover, still mixed into
+ * the card rest (white, or #1c1c1c when the card sets --craft-card-rest).
+ * Not an accent fill and not a flat grey slab.
+ *
+ * :focus-visible, not :focus-within. Dialog autofocus and mouse clicks
+ * focus the card without a keyboard modality, and :focus-within painted
+ * that as a selected state. :has(:focus-visible) keeps the border when
+ * keyboard focus is on a control inside the card (inline link, exit
+ * button) rather than on the card or a wrapping link/button.
  */
 :is(a, button):focus-visible > .craft-card-interactive,
-.craft-card-interactive:focus-within {
+.craft-card-interactive:focus-visible,
+.craft-card-interactive:has(:focus-visible) {
   border-color: color-mix(in srgb, var(--foreground) 40%, var(--border));
   background-color: color-mix(
     in srgb,
