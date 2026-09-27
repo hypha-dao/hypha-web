@@ -1596,8 +1596,8 @@ export function HomeTokenHoldingsDashboard({
                 <div
                   className={
                     showDistributionHistoryWidget
-                      ? 'grid min-w-0 items-stretch gap-4'
-                      : 'grid min-w-0 items-stretch gap-4 md:grid-cols-2'
+                      ? 'grid min-w-0 items-stretch gap-12'
+                      : 'grid min-w-0 items-stretch gap-12 md:grid-cols-2'
                   }
                 >
                   {data.tokens.map((token) => {
