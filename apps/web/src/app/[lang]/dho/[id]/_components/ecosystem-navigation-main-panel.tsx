@@ -13,7 +13,6 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
-  subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
@@ -46,25 +45,62 @@ type HierarchyNode = {
   children?: HierarchyNode[];
 };
 
-/**
- * How far the open cover sits below the collapsed banner.
- * Zero when the banner is already showing, so the settled stage size is unchanged.
- */
-function openCoverScrollDelta(): number {
-  const sentinel = document.querySelector('[data-space-banner-bottom]');
-  const bar = document.querySelector('[data-space-sticky-bar]');
-  if (!(sentinel instanceof HTMLElement) || !(bar instanceof HTMLElement)) {
-    return 0;
-  }
-  const barHeight = bar.getBoundingClientRect().height;
-  if (barHeight < 1) return 0;
+function readMenuTop(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(
     '--menu-top-height',
   );
   const parsed = Number.parseFloat(raw);
-  const menuTop = Number.isFinite(parsed) && parsed > 0 ? parsed : 70;
-  const delta = sentinel.getBoundingClientRect().bottom - (menuTop + barHeight);
-  return delta > 16 ? delta : 0;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 70;
+}
+
+/**
+ * Bottom of the collapsed header: top menu, plus the sticky space bar when
+ * it is actually painted. The bar is `hidden` below `md`, so its height is 0
+ * on a phone and must not be invented from the desktop row.
+ */
+function collapsedHeaderBottom(): number {
+  const bar = document.querySelector('[data-space-sticky-bar]');
+  const barHeight =
+    bar instanceof HTMLElement ? bar.getBoundingClientRect().height : 0;
+  return readMenuTop() + (barHeight >= 1 ? barHeight : 0);
+}
+
+/**
+ * Where the stage sits in the viewport once the cover has collapsed and the
+ * sticky banner is showing. The distance from the cover's bottom edge to the
+ * stage is a layout length, so scrolling the cover does not change it.
+ */
+function collapsedStageTop(stage: HTMLElement): number {
+  const sentinel = document.querySelector('[data-space-banner-bottom]');
+  const headerBottom = collapsedHeaderBottom();
+  if (!(sentinel instanceof HTMLElement)) {
+    return headerBottom;
+  }
+  const belowBanner =
+    stage.getBoundingClientRect().top - sentinel.getBoundingClientRect().bottom;
+  return headerBottom + belowBanner;
+}
+
+/** Blocks after the stage (the page footer). `offsetHeight` ignores scroll. */
+function followingBlockHeight(
+  scrollParent: HTMLElement | null,
+  stage: HTMLElement,
+): number {
+  if (!scrollParent) return 0;
+  let height = 0;
+  for (const child of Array.from(scrollParent.children)) {
+    if (!(child instanceof HTMLElement) || child.contains(stage)) continue;
+    if (
+      (stage.compareDocumentPosition(child) &
+        Node.DOCUMENT_POSITION_FOLLOWING) ===
+      0
+    ) {
+      continue;
+    }
+    if (child.offsetHeight < 24 || child.offsetWidth < 80) continue;
+    height += child.offsetHeight;
+  }
+  return height;
 }
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
@@ -242,12 +278,10 @@ export function EcosystemNavigationMainPanel({
     </header>
   );
 
-  // Fill the column between the membership row and the footer. The square
-  // drawing is centred in that stage (`xMidYMid`), so a tall slot balances
-  // it instead of leaving a dead band underneath. Ancestor padding is kept
-  // so the outer rings are not clipped by the footer. An open cover puts the
-  // stage in a leftover sliver; measure that pass against the collapsed
-  // banner so the short height is not locked. The settled pass is unchanged.
+  // One height for the collapsed banner (sticky header showing). Scrolling
+  // the cover must not remeasure: live viewport tops shrink the stage to a
+  // sliver and back on each frame. A phone with no room under the membership
+  // block gets a square of the column width instead of a zero-height stage.
   useLayoutEffect(() => {
     const stage = diagramStageRef.current;
     if (!stage || isLoading) return;
@@ -263,33 +297,18 @@ export function EcosystemNavigationMainPanel({
       const current = diagramStageRef.current;
       if (!current) return;
 
-      const stageRect = current.getBoundingClientRect();
-      if (stageRect.width <= 0) return;
+      const stageWidth = Math.round(current.getBoundingClientRect().width);
+      if (stageWidth < 64) return;
 
-      // Open cover: the footer sits in the leftover sliver, so do not use it
-      // as the cap. Size to the viewport under the collapsed banner instead.
-      const coverDelta = openCoverScrollDelta();
-      const stageTop = stageRect.top - coverDelta;
+      const stageTop = collapsedStageTop(current);
 
       let limit = window.innerHeight;
       if (scrollParent) {
         limit = Math.min(limit, scrollParent.getBoundingClientRect().bottom);
-        if (coverDelta === 0) {
-          for (const child of Array.from(scrollParent.children)) {
-            if (!(child instanceof HTMLElement) || child.contains(current)) {
-              continue;
-            }
-            const rect = child.getBoundingClientRect();
-            if (rect.height < 24 || rect.width < 80) continue;
-            if (rect.top > stageRect.top + 8) {
-              limit = Math.min(limit, rect.top);
-            }
-          }
-        }
       }
 
       // Padding under the stage (page `pb-8`, section padding). Skip
-      // `margin-bottom: auto` — that slack is the empty band we want to use.
+      // `margin-bottom: auto` — that slack is the empty band the stage fills.
       let chrome = 8;
       let node: HTMLElement | null = current.parentElement;
       while (node && node !== scrollParent) {
@@ -305,42 +324,29 @@ export function EcosystemNavigationMainPanel({
         node = node.parentElement;
       }
 
+      chrome += followingBlockHeight(scrollParent, current);
+
       const slot = Math.round(limit - stageTop - chrome);
-      const viewportCap = Math.round(window.innerHeight - stageTop - 8);
-      const next = Math.min(slot, viewportCap);
-      if (!Number.isFinite(next) || next < 64) return;
-      if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
+      // Collapsed slot when it can show the rings. Otherwise the column
+      // width, so a phone still has a diagram under the membership stack.
+      const next = slot >= 64 ? slot : stageWidth;
+      if (
+        Math.abs(next - Math.round(current.getBoundingClientRect().height)) <= 2
+      ) {
+        return;
+      }
       current.style.height = `${next}px`;
     };
 
     apply();
     const observer = new ResizeObserver(apply);
-    if (scrollParent) observer.observe(scrollParent);
+    const membership = stage.previousElementSibling;
+    if (membership instanceof HTMLElement) observer.observe(membership);
     if (stage.parentElement) observer.observe(stage.parentElement);
     window.addEventListener('resize', apply);
-    // Re-measure when an open cover settles, so a sliver measured earlier is
-    // replaced by the collapsed-banner size. Scrolling the cover back open
-    // must not restyle a stage that is already that size.
-    let coverOpen = openCoverScrollDelta() > 0;
-    const unsubscribeScroll = subscribeMainColumnScroll(() => {
-      const open = openCoverScrollDelta() > 0;
-      const crossed = open !== coverOpen;
-      coverOpen = open;
-      if (!crossed) return;
-      if (!open) {
-        apply();
-        return;
-      }
-      const stageEl = diagramStageRef.current;
-      if (!stageEl) return;
-      const rect = stageEl.getBoundingClientRect();
-      const wanted = window.innerHeight - (rect.top - openCoverScrollDelta());
-      if (rect.height + 2 < wanted) apply();
-    });
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', apply);
-      unsubscribeScroll();
     };
   }, [hierarchyData, isLoading]);
 
@@ -403,7 +409,7 @@ export function EcosystemNavigationMainPanel({
             />
             <div
               ref={diagramStageRef}
-              className="relative min-h-0 w-full shrink-0"
+              className="relative aspect-square w-full shrink-0"
             >
               {hierarchyData ? (
                 <SpaceVisualization

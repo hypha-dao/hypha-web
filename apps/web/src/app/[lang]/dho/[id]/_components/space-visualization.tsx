@@ -70,23 +70,32 @@ function clampSvgLength(value: number): number {
 }
 
 /**
- * Closed ring as four cubics.
- * A stroked circle starts and ends at the bottom. A round cap, or
- * `stroke-dasharray="none"`, paints that join as a kink. This loop meets
- * itself with the same tangent, so the hairline stays smooth.
+ * One continuous ring. A stroked circle, and a path closed with `Z`,
+ * starts and ends on a seam: the join gaps, stubs, or paints twice.
+ * Four cubics return to the start with the same tangent, then a short
+ * step continues along that tangent so the butt ends meet as one stroke.
  */
 function smoothClosedCirclePath(radius: number): string {
   const r = clampSvgLength(radius);
   if (r <= 0) return '';
   const k = r * 0.5522847498307936;
   const n = (value: number) => value.toFixed(3);
+  const overlap = Math.min(2.5, r * 0.02);
+  const theta = overlap / r;
+  const endX = r * Math.cos(theta);
+  const endY = r * Math.sin(theta);
+  const handle = overlap / 3;
+  const tx = -Math.sin(theta);
+  const ty = Math.cos(theta);
   return [
     `M ${n(r)} 0`,
     `C ${n(r)} ${n(k)} ${n(k)} ${n(r)} 0 ${n(r)}`,
     `C ${n(-k)} ${n(r)} ${n(-r)} ${n(k)} ${n(-r)} 0`,
     `C ${n(-r)} ${n(-k)} ${n(-k)} ${n(-r)} 0 ${n(-r)}`,
     `C ${n(k)} ${n(-r)} ${n(r)} ${n(-k)} ${n(r)} 0`,
-    'Z',
+    `C ${n(r)} ${n(handle)} ${n(endX - tx * handle)} ${n(
+      endY - ty * handle,
+    )} ${n(endX)} ${n(endY)}`,
   ].join(' ');
 }
 
@@ -213,9 +222,11 @@ export function SpaceVisualization({
     const dark = themeRef.current === 'dark';
     const ink = dark ? 'var(--hypha-text)' : 'var(--hypha-ink)';
     const paper = dark ? 'var(--hypha-ink)' : 'var(--hypha-paper)';
+    // Opaque mix of the same hairline. A translucent stroke darkens where
+    // the ring's ends meet; on the diagram ground this is the same colour.
     const hairline = dark
-      ? 'color-mix(in srgb, var(--hypha-text) 38%, transparent)'
-      : 'color-mix(in srgb, var(--hypha-ink) 34%, transparent)';
+      ? 'color-mix(in srgb, var(--hypha-text) 38%, var(--hypha-ink))'
+      : 'color-mix(in srgb, var(--hypha-ink) 34%, var(--hypha-paper))';
     const spaceAccent = 'var(--space-accent, var(--color-accent-9))';
     const getDiagramFillColor = () => paper;
     const getLabelFillColor = () => ink;
