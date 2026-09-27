@@ -47,18 +47,13 @@ const VISUALIZATION_CONFIG = {
   HEIGHT: 900,
   LOGO_STROKE_WIDTH: 20,
   STROKE_WIDTH_SCALE: 0.7,
-  MIN_LABEL_RADIUS: 14,
+  /** Names stay at least this large, even when a node is drawn small. */
+  LABEL_MIN_FONT: 11,
+  LABEL_MAX_FONT: 15,
+  /** Clear gap between the outermost ring and the top of the name. */
+  LABEL_GAP: 10,
   MAX_LABEL_CHARS: 18,
 } as const;
-
-function labelFitsNode(
-  name: string,
-  fontSize: number,
-  radius: number,
-): boolean {
-  const text = truncateLabel(name);
-  return text.length * fontSize * 0.56 <= Math.max(radius * 2.6, 1);
-}
 
 function truncateLabel(
   name: string,
@@ -72,6 +67,27 @@ function truncateLabel(
 /** SVG rejects negative `r` / `width` / `height`; clamp during zoom transitions. */
 function clampSvgLength(value: number): number {
   return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+/**
+ * Closed ring as four cubics.
+ * A stroked circle starts and ends at the bottom. A round cap, or
+ * `stroke-dasharray="none"`, paints that join as a kink. This loop meets
+ * itself with the same tangent, so the hairline stays smooth.
+ */
+function smoothClosedCirclePath(radius: number): string {
+  const r = clampSvgLength(radius);
+  if (r <= 0) return '';
+  const k = r * 0.5522847498307936;
+  const n = (value: number) => value.toFixed(3);
+  return [
+    `M ${n(r)} 0`,
+    `C ${n(r)} ${n(k)} ${n(k)} ${n(r)} 0 ${n(r)}`,
+    `C ${n(-k)} ${n(r)} ${n(-r)} ${n(k)} ${n(-r)} 0`,
+    `C ${n(-r)} ${n(-k)} ${n(-k)} ${n(-r)} 0 ${n(-r)}`,
+    `C ${n(k)} ${n(-r)} ${n(r)} ${n(-k)} ${n(r)} 0`,
+    'Z',
+  ].join(' ');
 }
 
 function finiteOr(value: number | undefined, fallback: number): number {
@@ -410,7 +426,7 @@ export function SpaceVisualization({
     const svg = d3
       .select(svgRef.current)
       .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
-      .style('shape-rendering', 'geometricPrecision')
+      .style('shape-rendering', 'auto')
       .style('cursor', 'pointer');
 
     svg.selectAll('*').remove();
@@ -419,17 +435,17 @@ export function SpaceVisualization({
 
     const defs = svg.append('defs');
     const orbits = g
-      .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
+      .selectAll<SVGPathElement, SpaceHierarchyNode>('path.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
-      .join('circle')
+      .join('path')
       .attr('class', 'orbit')
-      .style('fill', 'none')
+      .attr('fill', 'none')
       .attr('stroke', hairline)
       .attr('stroke-width', ORBIT_STROKE_WIDTH)
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-dasharray', 'none')
+      .attr('stroke-linecap', 'butt')
+      .attr('stroke-linejoin', 'round')
       .attr('vector-effect', 'non-scaling-stroke')
-      .attr('shape-rendering', 'geometricPrecision')
+      .attr('shape-rendering', 'auto')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
         if (focus !== d) {
@@ -508,34 +524,40 @@ export function SpaceVisualization({
         .attr('clip-path', `url(#${clipId})`);
 
       logoGroup
-        .append('circle')
+        .append('path')
         .attr('class', 'logo-ring')
         .attr('fill', 'none')
         .attr('stroke', getLogoRingColor())
         .attr('stroke-width', 1.25)
+        .attr('stroke-linecap', 'butt')
+        .attr('stroke-linejoin', 'round')
         .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
+        .attr('shape-rendering', 'auto')
         .style('pointer-events', 'none');
 
       logoGroup
-        .append('circle')
+        .append('path')
         .attr('class', 'focus-ring')
         .attr('fill', 'none')
         .attr('stroke', ink)
         .attr('stroke-width', 1.15)
+        .attr('stroke-linecap', 'butt')
+        .attr('stroke-linejoin', 'round')
         .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
+        .attr('shape-rendering', 'auto')
         .attr('opacity', 0)
         .style('pointer-events', 'none');
 
       logoGroup
-        .append('circle')
+        .append('path')
         .attr('class', 'current-ring')
         .attr('fill', 'none')
         .attr('stroke', spaceAccent)
         .attr('stroke-width', 1.25)
+        .attr('stroke-linecap', 'butt')
+        .attr('stroke-linejoin', 'round')
         .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
+        .attr('shape-rendering', 'auto')
         .attr('opacity', 0)
         .style('pointer-events', 'none');
 
@@ -726,7 +748,7 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
+        .selectAll<SVGElement, SpaceHierarchyNode>('path.orbit, g.logo')
         .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
           if (isVisible(d) && this instanceof SVGElement) {
@@ -778,7 +800,8 @@ export function SpaceVisualization({
 
     function zoomTo(v: [number, number, number]) {
       const safeView = sanitizeZoomView(v, view[2]);
-      const k = width / safeView[2];
+      // A few viewBox units of inset so the hairline is not cut by the edge.
+      const k = (width - 6) / safeView[2];
       view = safeView;
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
@@ -789,13 +812,14 @@ export function SpaceVisualization({
 
       orbits
         .attr('transform', nodeTransform)
-        .attr('r', (d: SpaceHierarchyNode) =>
-          clampSvgLength(finiteOr(d.r, 0) * k),
+        .attr('d', (d: SpaceHierarchyNode) =>
+          smoothClosedCirclePath(finiteOr(d.r, 0) * k),
         )
-        .style('fill', 'none')
+        .attr('fill', 'none')
         .attr('stroke', hairline)
         .attr('stroke-width', ORBIT_STROKE_WIDTH)
-        .attr('stroke-dasharray', 'none');
+        .attr('stroke-linecap', 'butt')
+        .attr('stroke-linejoin', 'round');
 
       logos
         .attr('transform', nodeTransform)
@@ -809,13 +833,23 @@ export function SpaceVisualization({
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
           const labelFontSize = clampSvgLength(
-            Math.min(15, Math.max(10, r * 0.42)),
+            Math.min(
+              VISUALIZATION_CONFIG.LABEL_MAX_FONT,
+              Math.max(VISUALIZATION_CONFIG.LABEL_MIN_FONT, r * 0.42),
+            ),
           );
-          const showLabel =
-            showNodeLabels &&
-            r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS &&
-            labelFitsNode(d.data.name, labelFontSize, r);
-          const labelY = r + Math.max(10, labelFontSize * 0.35);
+          const ringOutset = isCurrent
+            ? Math.max(4, r * 0.14)
+            : isFocused
+            ? Math.max(3.5, r * 0.12)
+            : 0;
+          // Hanging baseline: y is the top of the glyphs. Clear the disk,
+          // the accent or focus ring, and the hairline before the gap.
+          const labelY =
+            r +
+            ringOutset +
+            3 +
+            Math.max(VISUALIZATION_CONFIG.LABEL_GAP, labelFontSize * 0.5);
           const selection = d3.select(this);
 
           selection
@@ -834,20 +868,28 @@ export function SpaceVisualization({
             .attr('height', diameter);
 
           selection
-            .select('circle.logo-ring')
-            .attr('r', r)
+            .select('path.logo-ring')
+            .attr('d', smoothClosedCirclePath(r))
             .attr('stroke', getLogoRingColor())
             .attr('stroke-width', isFocused ? 1.5 : 1.15);
 
           selection
-            .select('circle.focus-ring')
-            .attr('r', clampSvgLength(r + Math.max(3.5, r * 0.12)))
+            .select('path.focus-ring')
+            .attr(
+              'd',
+              smoothClosedCirclePath(
+                clampSvgLength(r + Math.max(3.5, r * 0.12)),
+              ),
+            )
             .attr('stroke', ink)
             .attr('opacity', isFocused && !isCurrent ? 0.9 : 0);
 
           selection
-            .select('circle.current-ring')
-            .attr('r', clampSvgLength(r + Math.max(4, r * 0.14)))
+            .select('path.current-ring')
+            .attr(
+              'd',
+              smoothClosedCirclePath(clampSvgLength(r + Math.max(4, r * 0.14))),
+            )
             .attr('stroke', spaceAccent)
             .attr('opacity', isCurrent ? 1 : 0);
 
@@ -858,7 +900,7 @@ export function SpaceVisualization({
               .attr('font-size', `${labelFontSize}px`)
               .attr('fill', getLabelFillColor())
               .attr('stroke', getLabelStrokeColor())
-              .attr('opacity', showLabel && isVisible(d) ? 1 : 0)
+              .attr('opacity', showNodeLabels && isVisible(d) ? 1 : 0)
               .text(truncateLabel(d.data.name));
           }
         });

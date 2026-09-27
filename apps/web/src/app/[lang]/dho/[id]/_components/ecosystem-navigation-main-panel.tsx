@@ -220,8 +220,10 @@ export function EcosystemNavigationMainPanel({
     </header>
   );
 
-  // Size the stage to the visible scrollport. Stretching it to a footer below
-  // the fold centres the orbit in that tall box, so the screen is empty paper.
+  // Fill the column between the membership row and the footer. The square
+  // drawing is centred in that stage (`xMidYMid`), so a tall slot balances
+  // it instead of leaving a dead band underneath. Ancestor padding is kept
+  // so the outer rings are not clipped by the footer.
   useLayoutEffect(() => {
     const stage = diagramStageRef.current;
     if (!stage || isLoading) return;
@@ -232,40 +234,57 @@ export function EcosystemNavigationMainPanel({
       if (overflow === 'auto' || overflow === 'scroll') break;
       scrollParent = scrollParent.parentElement;
     }
-    if (!scrollParent) return;
 
     const apply = () => {
       const current = diagramStageRef.current;
-      if (!current || scrollParent == null) return;
+      if (!current) return;
 
       const stageRect = current.getBoundingClientRect();
-      const scrollRect = scrollParent.getBoundingClientRect();
       if (stageRect.width <= 0) return;
 
-      const footer = scrollParent.lastElementChild;
-      let limit = scrollRect.bottom;
-      if (
-        footer instanceof HTMLElement &&
-        !footer.contains(current) &&
-        footer.getBoundingClientRect().height > 0
-      ) {
-        const footerTop = footer.getBoundingClientRect().top;
-        if (footerTop > stageRect.top) {
-          limit = Math.min(limit, footerTop);
+      let limit = window.innerHeight;
+      if (scrollParent) {
+        limit = Math.min(limit, scrollParent.getBoundingClientRect().bottom);
+        for (const child of Array.from(scrollParent.children)) {
+          if (!(child instanceof HTMLElement) || child.contains(current)) {
+            continue;
+          }
+          const rect = child.getBoundingClientRect();
+          if (rect.height < 24 || rect.width < 80) continue;
+          if (rect.top > stageRect.top + 8) {
+            limit = Math.min(limit, rect.top);
+          }
         }
       }
 
-      const restGap = 48;
-      const visibleHeight = Math.round(limit - stageRect.top - restGap);
-      const cap = Math.max(320, Math.round(scrollRect.height - restGap));
-      const next = Math.max(320, Math.min(visibleHeight, cap));
+      // Padding under the stage (page `pb-8`, section padding). Skip
+      // `margin-bottom: auto` — that slack is the empty band we want to use.
+      let chrome = 8;
+      let node: HTMLElement | null = current.parentElement;
+      while (node && node !== scrollParent) {
+        const style = getComputedStyle(node);
+        chrome += Number.parseFloat(style.paddingBottom) || 0;
+        chrome += Number.parseFloat(style.borderBottomWidth) || 0;
+        const skipsAutoMargin =
+          node.classList.contains('mb-auto') ||
+          node.classList.contains('my-auto');
+        if (!skipsAutoMargin) {
+          chrome += Number.parseFloat(style.marginBottom) || 0;
+        }
+        node = node.parentElement;
+      }
+
+      const slot = Math.round(limit - stageRect.top - chrome);
+      const viewportCap = Math.round(window.innerHeight - stageRect.top - 8);
+      const next = Math.min(slot, viewportCap);
+      if (!Number.isFinite(next) || next < 64) return;
       if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
       current.style.height = `${next}px`;
     };
 
     apply();
     const observer = new ResizeObserver(apply);
-    observer.observe(scrollParent);
+    if (scrollParent) observer.observe(scrollParent);
     if (stage.parentElement) observer.observe(stage.parentElement);
     window.addEventListener('resize', apply);
     return () => {
@@ -275,7 +294,7 @@ export function EcosystemNavigationMainPanel({
   }, [hierarchyData, isLoading]);
 
   return (
-    <section className="flex w-full flex-col gap-4 py-4">
+    <section className="flex w-full flex-col gap-3 pt-2 pb-0">
       {isLoading ? (
         <>
           {ecosystemHeader}
@@ -289,7 +308,7 @@ export function EcosystemNavigationMainPanel({
           </div>
         </>
       ) : (
-        <EcosystemNavigationShell header={ecosystemHeader}>
+        <EcosystemNavigationShell className="gap-2" header={ecosystemHeader}>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <EcosystemMembershipModules
               spaceSlug={selectedSpaceSlug}
@@ -333,7 +352,7 @@ export function EcosystemNavigationMainPanel({
             />
             <div
               ref={diagramStageRef}
-              className="relative min-h-[20rem] w-full shrink-0"
+              className="relative min-h-0 w-full shrink-0"
             >
               {hierarchyData ? (
                 <SpaceVisualization
