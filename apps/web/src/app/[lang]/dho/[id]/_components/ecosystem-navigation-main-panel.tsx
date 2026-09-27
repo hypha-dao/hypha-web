@@ -13,6 +13,7 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
+  subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
@@ -44,6 +45,27 @@ type HierarchyNode = {
   value?: number;
   children?: HierarchyNode[];
 };
+
+/**
+ * How far the open cover sits below the collapsed banner.
+ * Zero when the banner is already showing, so the settled stage size is unchanged.
+ */
+function openCoverScrollDelta(): number {
+  const sentinel = document.querySelector('[data-space-banner-bottom]');
+  const bar = document.querySelector('[data-space-sticky-bar]');
+  if (!(sentinel instanceof HTMLElement) || !(bar instanceof HTMLElement)) {
+    return 0;
+  }
+  const barHeight = bar.getBoundingClientRect().height;
+  if (barHeight < 1) return 0;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(
+    '--menu-top-height',
+  );
+  const parsed = Number.parseFloat(raw);
+  const menuTop = Number.isFinite(parsed) && parsed > 0 ? parsed : 70;
+  const delta = sentinel.getBoundingClientRect().bottom - (menuTop + barHeight);
+  return delta > 16 ? delta : 0;
+}
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
@@ -223,7 +245,9 @@ export function EcosystemNavigationMainPanel({
   // Fill the column between the membership row and the footer. The square
   // drawing is centred in that stage (`xMidYMid`), so a tall slot balances
   // it instead of leaving a dead band underneath. Ancestor padding is kept
-  // so the outer rings are not clipped by the footer.
+  // so the outer rings are not clipped by the footer. An open cover puts the
+  // stage in a leftover sliver; measure that pass against the collapsed
+  // banner so the short height is not locked. The settled pass is unchanged.
   useLayoutEffect(() => {
     const stage = diagramStageRef.current;
     if (!stage || isLoading) return;
@@ -242,17 +266,24 @@ export function EcosystemNavigationMainPanel({
       const stageRect = current.getBoundingClientRect();
       if (stageRect.width <= 0) return;
 
+      // Open cover: the footer sits in the leftover sliver, so do not use it
+      // as the cap. Size to the viewport under the collapsed banner instead.
+      const coverDelta = openCoverScrollDelta();
+      const stageTop = stageRect.top - coverDelta;
+
       let limit = window.innerHeight;
       if (scrollParent) {
         limit = Math.min(limit, scrollParent.getBoundingClientRect().bottom);
-        for (const child of Array.from(scrollParent.children)) {
-          if (!(child instanceof HTMLElement) || child.contains(current)) {
-            continue;
-          }
-          const rect = child.getBoundingClientRect();
-          if (rect.height < 24 || rect.width < 80) continue;
-          if (rect.top > stageRect.top + 8) {
-            limit = Math.min(limit, rect.top);
+        if (coverDelta === 0) {
+          for (const child of Array.from(scrollParent.children)) {
+            if (!(child instanceof HTMLElement) || child.contains(current)) {
+              continue;
+            }
+            const rect = child.getBoundingClientRect();
+            if (rect.height < 24 || rect.width < 80) continue;
+            if (rect.top > stageRect.top + 8) {
+              limit = Math.min(limit, rect.top);
+            }
           }
         }
       }
@@ -274,8 +305,8 @@ export function EcosystemNavigationMainPanel({
         node = node.parentElement;
       }
 
-      const slot = Math.round(limit - stageRect.top - chrome);
-      const viewportCap = Math.round(window.innerHeight - stageRect.top - 8);
+      const slot = Math.round(limit - stageTop - chrome);
+      const viewportCap = Math.round(window.innerHeight - stageTop - 8);
       const next = Math.min(slot, viewportCap);
       if (!Number.isFinite(next) || next < 64) return;
       if (Math.abs(next - Math.round(stageRect.height)) <= 2) return;
@@ -287,9 +318,29 @@ export function EcosystemNavigationMainPanel({
     if (scrollParent) observer.observe(scrollParent);
     if (stage.parentElement) observer.observe(stage.parentElement);
     window.addEventListener('resize', apply);
+    // Re-measure when an open cover settles, so a sliver measured earlier is
+    // replaced by the collapsed-banner size. Scrolling the cover back open
+    // must not restyle a stage that is already that size.
+    let coverOpen = openCoverScrollDelta() > 0;
+    const unsubscribeScroll = subscribeMainColumnScroll(() => {
+      const open = openCoverScrollDelta() > 0;
+      const crossed = open !== coverOpen;
+      coverOpen = open;
+      if (!crossed) return;
+      if (!open) {
+        apply();
+        return;
+      }
+      const stageEl = diagramStageRef.current;
+      if (!stageEl) return;
+      const rect = stageEl.getBoundingClientRect();
+      const wanted = window.innerHeight - (rect.top - openCoverScrollDelta());
+      if (rect.height + 2 < wanted) apply();
+    });
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', apply);
+      unsubscribeScroll();
     };
   }, [hierarchyData, isLoading]);
 

@@ -204,23 +204,22 @@ export function releaseMainColumnScrollHeightHold(): void {
 const BANNER_FILL_SLACK_PX = 2;
 
 export type BannerContentFit = {
-  /** Scroll offset to write. */
+  /** Collapsed-banner scroll offset. Never a fallback to the open cover. */
   top: number;
   /**
-   * True when `desiredTop` sits on real content. False when that offset
-   * would leave empty space under a short screen.
+   * True when natural content can hold `top`. False when the caller must
+   * keep a scroll-height hold so the offset is not clamped back to 0.
    */
   fillsBanner: boolean;
 };
 
 /**
- * Banner settle for `#hypha-screen-share-main-content`.
- * A desired offset the content can fill is the banner.
- * An offset past the content hides the header and leaves a gap, so the
- * landing position is the top of the pane — usually 0, the smallest offset
- * that does not leave empty space below the content. Callers must pass the
- * natural max (no route-change min-height); a loading skeleton is not a
- * short screen.
+ * Banner settle for the main column.
+ * `top` is always the collapsed-banner offset, including on a short page.
+ * `fillsBanner` is false when natural content cannot hold that offset —
+ * the cover stays open only if the caller then drops the scroll. Callers
+ * keep a height hold and write `top` once. A loading skeleton is not a
+ * short screen; pass the natural max (no route-change min-height).
  */
 export function planBannerContentFit(
   desiredTop: number,
@@ -233,7 +232,7 @@ export function planBannerContentFit(
   if (desired <= natural + BANNER_FILL_SLACK_PX) {
     return { top: desired, fillsBanner: true };
   }
-  return { top: 0, fillsBanner: false };
+  return { top: desired, fillsBanner: false };
 }
 
 export function getMainColumnNaturalMaxScroll(): number {
@@ -248,10 +247,14 @@ export function getMainColumnNaturalMaxScroll(): number {
   const hold = document.querySelector<HTMLElement>('[data-space-scroll-hold]');
   if (!hold) return Math.max(0, el.scrollHeight - el.clientHeight);
   const prev = hold.style.minHeight;
+  const prevScroll = el.scrollTop;
   applyingFreeze = true;
   hold.style.minHeight = '0px';
   const natural = el.scrollHeight;
   hold.style.minHeight = prev;
+  // Zeroing the hold clamps a short page to 0. Put the offset back before
+  // paint so the read does not flash the open cover.
+  if (Math.abs(el.scrollTop - prevScroll) > 0.5) el.scrollTop = prevScroll;
   applyingFreeze = false;
   return Math.max(0, natural - el.clientHeight);
 }

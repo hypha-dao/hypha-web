@@ -431,7 +431,9 @@ export function DhoStickySpaceChrome({
   const freezeGenRef = React.useRef(0);
   const pathnameRef = React.useRef(pathname);
   pathnameRef.current = pathname;
-  const landOnVisibleHeaderRef = React.useRef<(top: number) => void>(() => {});
+  const landOnCollapsedBannerRef = React.useRef<(top: number) => void>(
+    () => {},
+  );
 
   const releaseFreezeWhenStable = React.useCallback((expectedTop: number) => {
     const gen = freezeGenRef.current;
@@ -447,16 +449,15 @@ export function DhoStickySpaceChrome({
       const navigatedNow = pathnameRef.current !== pinPath;
       const fit = planBannerContentFit(expectedTop, naturalMax);
       const elapsed = performance.now() - started;
-      // Real short content cannot hold the banner. Land on the header in
-      // this frame. A loading skeleton is short too — keep the pin so a
-      // long screen does not flash the cover. `elapsed` covers a pin that
-      // starts after the pathname has already updated.
+      // Real short content cannot hold the banner on its own. Stay on the
+      // banner and keep the height hold — releasing it clamps to 0 and opens
+      // the cover. A loading skeleton is not a short screen.
       if (
         !fit.fillsBanner &&
         !isSpaceTabLoading() &&
         (navigatedNow || elapsed > 48)
       ) {
-        landOnVisibleHeaderRef.current(fit.top);
+        landOnCollapsedBannerRef.current(expectedTop);
         return;
       }
       // The natural-height read drops min-height for one layout. Put the
@@ -470,15 +471,22 @@ export function DhoStickySpaceChrome({
       const navigated = navigatedNow;
       const tallEnough = naturalMax + 2 >= expectedTop;
       const quiet = now - lastChange > 350;
-      // Release only after the new screen can hold this offset on its own.
-      // The loading skeleton is often too short; letting go then shows the cover.
-      if ((navigated && tallEnough && quiet) || elapsed > 5000) {
+      // Release the hold only when the screen can keep this offset. Letting
+      // go of a short page clamps the scroll and opens the cover.
+      if (
+        (navigated && tallEnough && quiet) ||
+        (elapsed > 5000 && tallEnough)
+      ) {
         releaseMainColumnScrollHeightHold();
         reapplyMainColumnScrollFreeze();
         if (gen === freezeGenRef.current) {
           spaceSwitchFreezeHeld = false;
           clearMainColumnScrollFreeze();
         }
+        return;
+      }
+      if (elapsed > 5000 && !isSpaceTabLoading()) {
+        landOnCollapsedBannerRef.current(expectedTop);
         return;
       }
       requestAnimationFrame(tick);
@@ -521,45 +529,44 @@ export function DhoStickySpaceChrome({
   );
 
   /**
-   * Short screen. Drop the banner hold and show the header immediately.
-   * `top` is 0, or the smallest offset that does not leave a gap.
+   * Short screen. The cover collapses only by scrolling, and a short page
+   * has nothing to scroll, so extend the column first and write the banner
+   * offset once. Keep the hold — releasing it clamps back to the open cover.
+   * The freeze is cleared so a later scroll-up can still reveal the cover.
    */
-  const landOnVisibleHeader = React.useCallback(
+  const landOnCollapsedBanner = React.useCallback(
     (top: number) => {
       cancelSettleMotion();
       cancelActiveIntro?.();
       freezeGenRef.current += 1;
       spaceSwitchFreezeHeld = false;
       const safe = Math.max(0, top);
+      holdMainColumnScrollHeight(safe);
       clearMainColumnScrollFreeze();
-      releaseMainColumnScrollHeightHold();
       scrollMainColumnTo(safe, 'auto');
       if (!spaceSlug) return;
       const mem = spaceEntryMemory(spaceSlug);
       mem.introduced = true;
       mem.switchArrival = false;
       mem.scrollTop = safe;
-      mem.headerInView = true;
+      mem.headerInView = false;
       if (!mem.startPath) mem.startPath = pathnameRef.current;
     },
     [cancelSettleMotion, spaceSlug],
   );
-  landOnVisibleHeaderRef.current = landOnVisibleHeader;
+  landOnCollapsedBannerRef.current = landOnCollapsedBanner;
 
   /**
-   * Real content that cannot fill `top` lands on the header. A loading
-   * skeleton returns the banner offset so the hold can keep a long screen
-   * from flashing the cover.
+   * A loading skeleton keeps the banner offset so the hold can protect a
+   * long screen. Real content that cannot fill `top` is still the banner —
+   * the caller holds height instead of dropping to the open cover.
    */
   const bannerTopOrHeader = React.useCallback(
-    (
-      top: number,
-    ): { land: true; top: number } | { land: false; top: number } => {
+    (top: number): { short: boolean; top: number } => {
       const safe = Math.max(0, top);
-      if (isSpaceTabLoading()) return { land: false, top: safe };
+      if (isSpaceTabLoading()) return { short: false, top: safe };
       const fit = planBannerContentFit(safe, getMainColumnNaturalMaxScroll());
-      if (!fit.fillsBanner) return { land: true, top: fit.top };
-      return { land: false, top: fit.top };
+      return { short: !fit.fillsBanner, top: fit.top };
     },
     [],
   );
@@ -570,8 +577,8 @@ export function DhoStickySpaceChrome({
       cancelSettleMotion();
       cancelActiveIntro?.();
       const next = bannerTopOrHeader(top);
-      if (next.land) {
-        landOnVisibleHeader(next.top);
+      if (next.short) {
+        landOnCollapsedBanner(next.top);
         return;
       }
       rememberBanner(next.top);
@@ -580,7 +587,7 @@ export function DhoStickySpaceChrome({
     [
       bannerTopOrHeader,
       cancelSettleMotion,
-      landOnVisibleHeader,
+      landOnCollapsedBanner,
       pinMainColumnAt,
       rememberBanner,
     ],
@@ -595,8 +602,8 @@ export function DhoStickySpaceChrome({
       cancelSettleMotion();
       cancelActiveIntro?.();
       const next = bannerTopOrHeader(top);
-      if (next.land) {
-        landOnVisibleHeader(next.top);
+      if (next.short) {
+        landOnCollapsedBanner(next.top);
         return;
       }
       const safe = next.top;
@@ -614,10 +621,10 @@ export function DhoStickySpaceChrome({
       const watchForShortScreen = () => {
         if (gen !== freezeGenRef.current) return;
         const fit = planBannerContentFit(safe, getMainColumnNaturalMaxScroll());
-        // Stop on the first frame of real short content. Waiting for the
-        // ease to finish is the multi-second gap.
+        // Short content cannot finish the ease. Jump to the banner now and
+        // keep the hold. Do not correct back to the open cover.
         if (!isSpaceTabLoading() && !fit.fillsBanner) {
-          landOnVisibleHeader(fit.top);
+          landOnCollapsedBanner(safe);
           return;
         }
         reapplyMainColumnScrollFreeze();
@@ -641,7 +648,7 @@ export function DhoStickySpaceChrome({
     [
       bannerTopOrHeader,
       cancelSettleMotion,
-      landOnVisibleHeader,
+      landOnCollapsedBanner,
       pinBanner,
       pinMainColumnAt,
       readBannerDelta,
@@ -702,8 +709,28 @@ export function DhoStickySpaceChrome({
 
     const firstStart = mem.startPath == null;
     mem.startPath = pathname;
-    mem.headerInView = true;
     if (mem.holdStartedAt == null) mem.holdStartedAt = performance.now();
+
+    // Short page: the cover cannot collapse by user scroll. Land on the
+    // banner before the intro marks the cover open or waits to ease.
+    if (!isSpaceTabLoading() && !isMainColumnScrollFrozen()) {
+      const delta = bannerAlignDelta(
+        bannerBottomSentinelRef.current,
+        stickyBarRef.current,
+      );
+      if (delta != null && delta > STICKY_HYSTERESIS_PX) {
+        const fit = planBannerContentFit(
+          getMainColumnScrollY() + delta,
+          getMainColumnNaturalMaxScroll(),
+        );
+        if (!fit.fillsBanner) {
+          landOnCollapsedBanner(fit.top);
+          return;
+        }
+      }
+    }
+
+    mem.headerInView = true;
 
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -734,17 +761,17 @@ export function DhoStickySpaceChrome({
         getMainColumnScrollY() + delta,
         getMainColumnNaturalMaxScroll(),
       );
-      // Short screen: the header is already the landing position.
+      // Short screen: hold the column, then jump to the banner. Do not
+      // stay on the open cover.
       if (!isSpaceTabLoading() && !fit.fillsBanner) {
+        holdMainColumnScrollHeight(fit.top);
+        programmatic = true;
+        scrollMainColumnTo(fit.top, 'auto');
+        releaseProgrammatic();
         mem.introduced = true;
-        mem.headerInView = true;
+        mem.headerInView = false;
         mem.scrollTop = fit.top;
-        if (getMainColumnScrollY() > fit.top + 0.5) {
-          programmatic = true;
-          scrollMainColumnTo(fit.top, 'auto');
-          releaseProgrammatic();
-        }
-        return 'header';
+        return 'banner';
       }
       programmatic = true;
       scrollMainColumnBy(delta, 'auto');
@@ -759,7 +786,7 @@ export function DhoStickySpaceChrome({
     };
 
     if (reduceMotion) {
-      // Prefer reduced motion: jump. A short screen stays on the header.
+      // Prefer reduced motion: jump, including a short page.
       let frames = 0;
       let raf = 0;
       const tryJump = () => {
@@ -769,8 +796,7 @@ export function DhoStickySpaceChrome({
           raf = window.requestAnimationFrame(tryJump);
           return;
         }
-        const landed = jumpToSettled();
-        if (landed === 'header') return;
+        jumpToSettled();
         mem.introduced = true;
         mem.headerInView = false;
         mem.scrollTop = getMainColumnScrollY();
@@ -857,14 +883,13 @@ export function DhoStickySpaceChrome({
         getMainColumnNaturalMaxScroll(),
       );
       if (!isSpaceTabLoading() && !fit.fillsBanner) {
+        holdMainColumnScrollHeight(fit.top);
+        programmatic = true;
+        scrollMainColumnTo(fit.top, 'auto');
+        releaseProgrammatic();
         mem.introduced = true;
-        mem.headerInView = true;
+        mem.headerInView = false;
         mem.scrollTop = fit.top;
-        if (getMainColumnScrollY() > fit.top + 0.5) {
-          programmatic = true;
-          scrollMainColumnTo(fit.top, 'auto');
-          releaseProgrammatic();
-        }
         return;
       }
 
@@ -909,7 +934,13 @@ export function DhoStickySpaceChrome({
       window.removeEventListener('touchmove', onTouchMove, { capture: true });
       window.removeEventListener('keydown', onKeyDown, { capture: true });
     };
-  }, [pathname, readBannerDelta, readHeaderInView, spaceSlug]);
+  }, [
+    landOnCollapsedBanner,
+    pathname,
+    readBannerDelta,
+    readHeaderInView,
+    spaceSlug,
+  ]);
 
   const prevPathRef = React.useRef<string | null>(null);
 
@@ -987,6 +1018,44 @@ export function DhoStickySpaceChrome({
     applyBannerPlan(plan);
   }, [applyBannerPlan, bannerPinTop, cancelSettleMotion, pathname, spaceSlug]);
 
+  // Short pages have no scroll range, so the cover never collapses on its
+  // own. Hold the column and write the banner offset before paint. A loading
+  // skeleton is ignored until the real screen is in the DOM.
+  React.useLayoutEffect(() => {
+    if (!spaceSlug) return;
+    if (window.matchMedia('(max-width: 767px)').matches) return;
+
+    const collapseShort = (): boolean => {
+      if (isMainColumnScrollFrozen()) return false;
+      if (isSpaceTabLoading()) return false;
+      const mem = spaceEntryMemory(spaceSlug);
+      // The member scrolled the cover open. Leave it until the next screen.
+      if (mem.introduced && mem.headerInView) return true;
+      const delta = bannerAlignDelta(
+        bannerBottomSentinelRef.current,
+        stickyBarRef.current,
+      );
+      if (delta == null) return false;
+      if (delta <= STICKY_HYSTERESIS_PX) return true;
+      const fit = planBannerContentFit(
+        getMainColumnScrollY() + delta,
+        getMainColumnNaturalMaxScroll(),
+      );
+      if (fit.fillsBanner) return true;
+      landOnCollapsedBanner(fit.top);
+      return true;
+    };
+
+    if (collapseShort()) return;
+
+    const root = getMainColumnScrollElement() ?? document.body;
+    const observer = new MutationObserver(() => {
+      if (collapseShort()) observer.disconnect();
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [landOnCollapsedBanner, pathname, spaceSlug]);
+
   // Recently Visited landed on this space. Ease straight to the banner.
   // The long first-entry hold stays for other arrivals.
   React.useLayoutEffect(() => {
@@ -1027,8 +1096,8 @@ export function DhoStickySpaceChrome({
         requestAnimationFrame(tick);
         return;
       }
-      // The skeleton cannot fill the banner. Wait for the real screen so a
-      // short page lands on the header instead of scrolling into a gap.
+      // The skeleton cannot fill the banner. Wait for the real screen, then
+      // collapse a short page onto the banner instead of leaving the cover open.
       if (isSpaceTabLoading() && loadingFrames < 180) {
         loadingFrames += 1;
         requestAnimationFrame(tick);
@@ -1260,6 +1329,7 @@ export function DhoStickySpaceChrome({
     <>
       <div
         ref={stickyBarRef}
+        data-space-sticky-bar=""
         className={cn(
           /*
            * Use live panel inset vars (non-animated) so sticky chrome stays physically attached
@@ -1319,6 +1389,7 @@ export function DhoStickySpaceChrome({
           {banner}
           <div
             ref={bannerBottomSentinelRef}
+            data-space-banner-bottom=""
             className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
             aria-hidden
           />

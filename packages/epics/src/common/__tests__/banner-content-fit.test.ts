@@ -9,16 +9,16 @@ describe('planBannerContentFit', () => {
     });
   });
 
-  it('lands on the header when the banner offset would leave a gap', () => {
+  it('keeps the banner offset when the page cannot scroll that far', () => {
     expect(planBannerContentFit(220, 0)).toEqual({
-      top: 0,
+      top: 220,
       fillsBanner: false,
     });
   });
 
   it('does not stop part-way when a little overflow still hides the header', () => {
     expect(planBannerContentFit(220, 40)).toEqual({
-      top: 0,
+      top: 220,
       fillsBanner: false,
     });
   });
@@ -28,6 +28,9 @@ describe('planBannerContentFit', () => {
       top: 100,
       fillsBanner: true,
     });
-    expect(planBannerContentFit(100, 97).fillsBanner).toBe(false);
+    expect(planBannerContentFit(100, 97)).toEqual({
+      top: 100,
+      fillsBanner: false,
+    });
   });
 });
