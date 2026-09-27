@@ -457,7 +457,7 @@ export function CreateAgreementBaseFields({
                                 className="!h-auto min-h-10 w-full rounded-none border border-border bg-inherit py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 focus-visible:border-foreground sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
                                 disabled={isLoading}
                                 rightIcon={
-                                  <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
+                                  <RequirementMark className="h-4 w-4 text-error-11 sm:h-4 sm:w-4" />
                                 }
                                 {...field}
                               />
