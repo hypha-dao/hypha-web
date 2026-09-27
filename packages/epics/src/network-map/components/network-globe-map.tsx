@@ -63,6 +63,36 @@ const easeClusterSpreadIn = d3.easePolyOut.exponent(3);
 /** Quick fold-in before zoom-out begins. */
 const easeClusterSpreadOut = d3.easePolyIn.exponent(2);
 const FLAT_ROTATION: Rotation = [0, 0, 0];
+
+/**
+ * The overview intro (globe → flat) must run once per page load. A ref dies
+ * with the instance, so Strict Mode remounts and a second alignProjection
+ * would start the tween again. This lives on globalThis so a dev refresh of
+ * the module does not clear a tween that already finished in this tab.
+ */
+const AUTO_INTRO_KEY = '__hyphaNetworkMapAutoIntro';
+
+type AutoIntroLatch = {
+  target: NetworkMapProjectionMode | null;
+  finished: boolean;
+};
+
+function autoIntroLatch(): AutoIntroLatch {
+  const scope = globalThis as typeof globalThis & {
+    [AUTO_INTRO_KEY]?: AutoIntroLatch;
+  };
+  if (!scope[AUTO_INTRO_KEY]) {
+    scope[AUTO_INTRO_KEY] = { target: null, finished: false };
+  }
+  return scope[AUTO_INTRO_KEY];
+}
+
+function noteAutoIntroSettled(target: NetworkMapProjectionMode): void {
+  const latch = autoIntroLatch();
+  if (latch.target === target) {
+    latch.finished = true;
+  }
+}
 const DEFAULT_LAYER_VISIBILITY: NetworkMapLayerVisibility = {
   land: true,
   water: true,
@@ -246,9 +276,37 @@ function visibleDisk(projection: d3.GeoProjection): OverlayDisk | null {
   return { cx, cy, r: radius };
 }
 
+function placeOnInsetLimb(
+  disk: OverlayDisk,
+  size: OverlaySize,
+  side: 'left' | 'right',
+  theta: number,
+): OverlayBox {
+  const reach = disk.r - OVERLAY_INSET;
+  const along = reach * Math.sin(theta);
+  const down = reach * Math.cos(theta);
+  const y = disk.cy + down - size.h;
+  const x = side === 'right' ? disk.cx + along - size.w : disk.cx - along;
+  return { x, y, w: size.w, h: size.h };
+}
+
+/** The whole box stays on its own side of the disk, clear of the center line. */
+function boxStaysOffCenter(
+  box: OverlayBox,
+  disk: OverlayDisk,
+  side: 'left' | 'right',
+): boolean {
+  if (side === 'right') {
+    return box.x >= disk.cx + OVERLAY_GAP - 0.5;
+  }
+  return box.x + box.w <= disk.cx - OVERLAY_GAP + 0.5;
+}
+
 /**
- * Put the box's outer corner 12px inside the limb, as close to the bottom
- * corner of the disk as the box still fits. θ = 0 is straight down.
+ * Put the box's outer corner 12px inside the limb, in its own bottom corner.
+ * θ = 0 is straight down. A wide legend used to grow inward from 45° and meet
+ * the miniature on the center line; θ is large enough that the inner edge
+ * stays on this side of the disk.
  */
 function diskCornerBox(
   disk: OverlayDisk,
@@ -259,17 +317,38 @@ function diskCornerBox(
   if (!(reach > 1) || size.w > reach * 2 || size.h > reach * 2) {
     return null;
   }
-  const thetaMin = Math.asin(Math.min(1, size.w / 2 / reach));
-  const thetaMax = Math.acos(Math.min(1, size.h / 2 / reach));
-  if (thetaMin > thetaMax + 1e-4) {
-    return null;
+  const thetaMax = Math.acos(Math.min(1, size.h / (2 * reach)));
+  const sideRatio = (size.w + OVERLAY_GAP) / reach;
+  const thetaSide =
+    sideRatio < 1 ? Math.asin(sideRatio) : Number.POSITIVE_INFINITY;
+
+  const fitted = (theta: number): OverlayBox | null => {
+    if (!(theta >= 0) || theta > thetaMax + 1e-3) {
+      return null;
+    }
+    const box = placeOnInsetLimb(disk, size, side, Math.min(theta, thetaMax));
+    return cornersInsideRadius(box, disk.cx, disk.cy, reach + 1) ? box : null;
+  };
+
+  if (Number.isFinite(thetaSide)) {
+    const preferred = Math.min(thetaMax, Math.max(thetaSide, Math.PI / 4));
+    const preferredBox = fitted(preferred);
+    if (preferredBox && boxStaysOffCenter(preferredBox, disk, side)) {
+      return preferredBox;
+    }
+    for (
+      let theta = Math.max(thetaSide, Math.PI / 4);
+      theta <= thetaMax + 1e-4;
+      theta += 0.04
+    ) {
+      const box = fitted(theta);
+      if (box && boxStaysOffCenter(box, disk, side)) {
+        return box;
+      }
+    }
   }
-  const theta = Math.min(thetaMax, Math.max(thetaMin, Math.PI / 4));
-  const along = reach * Math.sin(theta);
-  const down = reach * Math.cos(theta);
-  const y = disk.cy + down - size.h;
-  const x = side === 'right' ? disk.cx + along - size.w : disk.cx - along;
-  return { x, y, w: size.w, h: size.h };
+
+  return fitted(Math.min(thetaMax, Math.PI / 4));
 }
 
 function stageCornerBox(
@@ -365,13 +444,17 @@ function legendLeftAtBottom(
   return { x, y, w: size.w, h: size.h };
 }
 
+/**
+ * Move the legend up the left limb until it clears the miniature.
+ * First keep it entirely on the left of center. If it is wider than that
+ * half, sit it above the miniature instead of in the same row.
+ */
 function shiftLegendClearOfNavigator(
   disk: OverlayDisk,
   width: number,
   height: number,
   legend: OverlaySize,
   nav: OverlayBox,
-  leftHalfOnly: boolean,
 ): OverlayBox | null {
   const reach = disk.r - OVERLAY_INSET;
   const lowest = Math.min(height - OVERLAY_INSET, disk.cy + reach);
@@ -379,20 +462,20 @@ function shiftLegendClearOfNavigator(
     legend.h + OVERLAY_INSET,
     disk.cy - reach + legend.h,
   );
+  let aboveNav: OverlayBox | null = null;
   for (let bottom = lowest; bottom >= highest; bottom -= 4) {
     const box = legendLeftAtBottom(disk, width, height, legend, bottom);
-    if (!box) {
+    if (!box || overlayBoxesOverlap(box, nav)) {
       continue;
     }
-    if (leftHalfOnly && box.x + box.w > disk.cx + 0.5) {
-      continue;
+    if (box.x + box.w <= disk.cx - OVERLAY_GAP + 0.5) {
+      return box;
     }
-    if (overlayBoxesOverlap(box, nav)) {
-      continue;
+    if (!aboveNav && box.y + box.h + OVERLAY_GAP <= nav.y) {
+      aboveNav = box;
     }
-    return box;
   }
-  return null;
+  return aboveNav;
 }
 
 function seatOnRectangle(
@@ -448,12 +531,11 @@ function seatOnDisk(
   if (
     legend &&
     legendBox &&
-    (legendBox.x + legendBox.w > disk.cx + 0.5 ||
+    (legendBox.x + legendBox.w > disk.cx - OVERLAY_GAP + 0.5 ||
       overlayBoxesOverlap(legendBox, navBox))
   ) {
     legendBox =
-      shiftLegendClearOfNavigator(disk, width, height, legend, navBox, true) ??
-      shiftLegendClearOfNavigator(disk, width, height, legend, navBox, false) ??
+      shiftLegendClearOfNavigator(disk, width, height, legend, navBox) ??
       legendBox;
   }
   return overlaySeatCss(width, height, legendBox, navBox);
@@ -652,7 +734,21 @@ export function NetworkGlobeMap({
     NetworkMapProjectionMode | undefined
   >(undefined);
 
-  morphRef.current = morphProgress;
+  // The tween writes morphRef every frame and only commits React state at the
+  // end. Copying state back mid-tween (auth hydration, pin list updates) paints
+  // one frame of the globe after the map has already opened flat.
+  if (animatingTargetRef.current == null) {
+    morphRef.current = morphProgress;
+  } else {
+    const tweenSettled =
+      animationFrameRef.current == null &&
+      ((animatingTargetRef.current === 'flat' && morphProgress >= 1) ||
+        (animatingTargetRef.current === 'globe' && morphProgress <= 0));
+    if (tweenSettled) {
+      animatingTargetRef.current = null;
+      morphRef.current = morphProgress;
+    }
+  }
   layersRef.current = layers;
   locatedSpacesRef.current = locatedSpaces;
   mapPinDataRef.current = mapPinData;
@@ -1482,11 +1578,11 @@ export function NetworkGlobeMap({
   }, [requestRender]);
 
   React.useEffect(() => {
-    if (
-      hasUserRotatedRef.current ||
-      morphRef.current >= 1 ||
-      animatingTargetRef.current != null
-    ) {
+    const tweening =
+      animatingTargetRef.current != null ||
+      animationFrameRef.current != null ||
+      (morphRef.current > 0.001 && morphRef.current < 0.999);
+    if (hasUserRotatedRef.current || morphRef.current >= 1 || tweening) {
       if (!hasUserRotatedRef.current) {
         savedGlobeRotateRef.current = globeRotationForCenter(
           initialCenter.longitude,
@@ -1844,6 +1940,7 @@ export function NetworkGlobeMap({
       }
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
       if (clusterAnimFrameRef.current != null) {
         cancelAnimationFrame(clusterAnimFrameRef.current);
@@ -1861,6 +1958,7 @@ export function NetworkGlobeMap({
       const fromMorph = morphRef.current;
       const toMorph = target === 'flat' ? 1 : 0;
       if (Math.abs(fromMorph - toMorph) < 1e-6) {
+        noteAutoIntroSettled(target);
         animatingTargetRef.current = null;
         return;
       }
@@ -1880,7 +1978,7 @@ export function NetworkGlobeMap({
       const interpolateRotation = interpolateAngles(fromRotate, toRotate);
 
       if (prefersReducedMotion()) {
-        animatingTargetRef.current = null;
+        noteAutoIntroSettled(target);
         morphRef.current = toMorph;
         rotateRef.current = toRotate;
         setMorphProgress(toMorph);
@@ -1900,8 +1998,10 @@ export function NetworkGlobeMap({
         if (t < 1) {
           animationFrameRef.current = requestAnimationFrame(step);
         } else {
+          // Leave animatingTargetRef set until the render sees the committed
+          // morph. Clearing it here lets the next render copy the stale 0.
           animationFrameRef.current = null;
-          animatingTargetRef.current = null;
+          noteAutoIntroSettled(target);
           morphRef.current = toMorph;
           rotateRef.current = toRotate;
           setMorphProgress(toMorph);
@@ -1926,9 +2026,28 @@ export function NetworkGlobeMap({
     if (alignedProjectionRef.current === alignProjection) {
       return;
     }
+    const latch = autoIntroLatch();
     alignedProjectionRef.current = alignProjection;
+    if (latch.finished && latch.target === alignProjection) {
+      const toMorph = alignProjection === 'flat' ? 1 : 0;
+      if (animationFrameRef.current != null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      animatingTargetRef.current = null;
+      morphRef.current = toMorph;
+      if (alignProjection === 'flat') {
+        rotateRef.current = FLAT_ROTATION;
+      }
+      setSelectedProjection(alignProjection);
+      setMorphProgress(toMorph);
+      setProjectionMode(alignProjection);
+      requestRender();
+      return;
+    }
+    latch.target = alignProjection;
     animateProjectionRef.current(alignProjection);
-  }, [alignProjection]);
+  }, [alignProjection, requestRender]);
 
   React.useEffect(() => {
     isMountedRef.current = true;
