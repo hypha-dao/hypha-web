@@ -33,7 +33,7 @@ type MembershipPreview = {
 
 type EcosystemMembershipModulesProps = {
   spaceSlug: string;
-  /** Current space name — same line as the section labels. */
+  /** Current space name — vertically centered on the label and avatar group. */
   spaceTitle?: string;
   /** Visit / add (and similar) controls — sits on the same header row. */
   trailing?: ReactNode;
