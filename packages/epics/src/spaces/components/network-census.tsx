@@ -38,7 +38,12 @@ function StatColumn({
       className={cn(
         'flex min-w-0 flex-col items-start border-border py-3 text-left',
         'md:items-center md:px-4 md:py-1 md:text-center',
-        index > 0 && 'max-md:border-t md:border-l',
+        // Phone is 2×2: a vertical hairline between the columns, a horizontal
+        // one between the rows. Left cells stay flush with the view switch.
+        index % 2 === 0 && 'max-md:pr-4',
+        index % 2 === 1 && 'max-md:border-l max-md:pl-4',
+        index >= 2 && 'max-md:border-t',
+        index > 0 && 'md:border-l',
       )}
     >
       <div className="[font-family:var(--font-family-heading)] text-7 font-medium tabular-nums tracking-[-0.03em] text-foreground md:text-8">
@@ -127,7 +132,7 @@ export function NetworkCensus({
   ];
 
   return (
-    <div className="grid w-full grid-cols-1 md:grid-cols-4">
+    <div className="grid w-full grid-cols-2 md:grid-cols-4">
       {columns.map((column, index) => (
         <StatColumn
           key={column.label}
