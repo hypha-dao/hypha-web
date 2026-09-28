@@ -817,9 +817,139 @@ export function NetworkGlobeMap({
     }
 
     const pinGroup = root.select<SVGGElement>('g.map-pins');
+    // Clusters paint after single dots so a co-located space pin cannot cover
+    // the count. The tooltip reads the cluster datum; the graphic must too.
+    const pinData = mapPinDataRef.current.slice().sort((a, b) => {
+      const rank = (datum: MapPinDatum) => (datum.kind === 'cluster' ? 1 : 0);
+      return rank(a) - rank(b);
+    });
     const pins = pinGroup
       .selectAll<SVGGElement, MapPinDatum>('g.map-pin')
-      .data(mapPinDataRef.current, (datum) => datum.pinKey);
+      .data(pinData, (datum) => datum.pinKey);
+
+    const setPinTitle = (
+      group: d3.Selection<SVGGElement, unknown, null, undefined>,
+      text: string,
+    ) => {
+      const titles = group.selectAll('title');
+      if (titles.size() === 1) {
+        titles.text(text);
+        return;
+      }
+      titles.remove();
+      group.append('title').text(text);
+    };
+
+    const syncPinGraphic = (node: SVGGElement, datum: MapPinDatum) => {
+      const group = d3.select(node);
+      const palette = mapPaletteRef.current;
+      const isCluster = datum.kind === 'cluster';
+      group
+        .classed('map-pin', true)
+        .classed('map-pin-cluster', isCluster)
+        .attr('role', isCluster ? 'button' : 'link');
+
+      if (isCluster) {
+        // A reused pin keeps the single-space dot/halo from enter. Those
+        // circles sit on the count and read as a bullseye while the <title>
+        // still says how many spaces share the point.
+        group.selectAll('circle.map-pin-halo, circle.map-pin-dot').remove();
+        if (group.select('circle.map-pin-hit').empty()) {
+          group
+            .insert('circle', ':first-child')
+            .attr('class', 'map-pin-hit')
+            .attr('fill', 'transparent')
+            .attr('pointer-events', 'all');
+        }
+        group.select('circle.map-pin-hit').attr('r', 15);
+        if (group.select('circle.map-pin-cluster-ring').empty()) {
+          group
+            .append('circle')
+            .attr('class', 'map-pin-cluster-ring')
+            .attr('r', 12)
+            .attr('fill', 'none')
+            .attr('stroke-width', 1.5)
+            .attr('opacity', 0.7)
+            .attr('pointer-events', 'none');
+        }
+        if (group.select('circle.map-pin-cluster-core').empty()) {
+          group
+            .append('circle')
+            .attr('class', 'map-pin-cluster-core')
+            .attr('r', 9)
+            .attr('stroke-width', 1.5)
+            .attr('pointer-events', 'none');
+        }
+        let countLabel = group.select<SVGTextElement>(
+          'text.map-pin-cluster-count',
+        );
+        if (countLabel.empty()) {
+          countLabel = group
+            .append('text')
+            .attr('class', 'map-pin-cluster-count')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.35em')
+            .attr('font-weight', 600)
+            .attr('font-family', 'var(--font-family-text, sans-serif)')
+            .attr('pointer-events', 'none');
+        }
+        countLabel
+          .attr('font-size', datum.count > 9 ? 9 : 10)
+          .attr('fill', palette.clusterCount)
+          .style('fill', palette.clusterCount)
+          .text(String(datum.count))
+          .raise();
+        group
+          .select('circle.map-pin-cluster-ring')
+          .attr('stroke', palette.clusterRing);
+        group
+          .select('circle.map-pin-cluster-core')
+          .attr('fill', palette.clusterFill)
+          .attr('stroke', palette.pinStroke);
+        setPinTitle(group, t('clusterExpandTitle', { count: datum.count }));
+        return;
+      }
+
+      group
+        .selectAll(
+          'circle.map-pin-cluster-ring, circle.map-pin-cluster-core, text.map-pin-cluster-count',
+        )
+        .remove();
+      const space = pinDatumSpace(datum);
+      if (!space) {
+        return;
+      }
+      if (group.select('circle.map-pin-hit').empty()) {
+        group
+          .insert('circle', ':first-child')
+          .attr('class', 'map-pin-hit')
+          .attr('fill', 'transparent')
+          .attr('pointer-events', 'all');
+      }
+      group.select('circle.map-pin-hit').attr('r', 12);
+      if (group.select('circle.map-pin-halo').empty()) {
+        group
+          .append('circle')
+          .attr('class', 'map-pin-halo')
+          .attr('r', 7)
+          .attr('opacity', 0)
+          .attr('pointer-events', 'none');
+      }
+      if (group.select('circle.map-pin-dot').empty()) {
+        group
+          .append('circle')
+          .attr('class', 'map-pin-dot')
+          .attr('r', 5)
+          .attr('stroke-width', 1.75)
+          .attr('pointer-events', 'none');
+      }
+      group.select('circle.map-pin-halo').attr('fill', palette.pinFill);
+      group
+        .select('circle.map-pin-dot')
+        .attr('fill', palette.pinFill)
+        .attr('stroke', palette.pinStroke);
+      setPinTitle(group, space.locationLabel ?? space.title);
+    };
 
     pins.exit().remove();
 
@@ -917,112 +1047,9 @@ export function NetworkGlobeMap({
         clearHoveredPinRef.current();
       });
 
-    pinsEnter.each(function (datum) {
-      const group = d3.select(this);
-      const palette = mapPaletteRef.current;
-      if (datum.kind === 'cluster') {
-        group
-          .append('circle')
-          .attr('class', 'map-pin-hit')
-          .attr('r', 15)
-          .attr('fill', 'transparent')
-          .attr('pointer-events', 'all');
-        group
-          .append('circle')
-          .attr('class', 'map-pin-cluster-ring')
-          .attr('r', 12)
-          .attr('fill', 'none')
-          .attr('stroke', palette.clusterRing)
-          .attr('stroke-width', 1.5)
-          .attr('opacity', 0.7)
-          .attr('pointer-events', 'none');
-        group
-          .append('circle')
-          .attr('class', 'map-pin-cluster-core')
-          .attr('r', 9)
-          .attr('fill', palette.clusterFill)
-          .attr('stroke', palette.pinStroke)
-          .attr('stroke-width', 1.5)
-          .attr('pointer-events', 'none');
-        group
-          .append('text')
-          .attr('class', 'map-pin-cluster-count')
-          .attr('text-anchor', 'middle')
-          .attr('dy', '0.35em')
-          .attr('font-size', datum.count > 9 ? 9 : 10)
-          .attr('font-weight', 600)
-          .attr('font-family', 'var(--font-family-text, sans-serif)')
-          .attr('fill', palette.clusterCount)
-          .attr('pointer-events', 'none')
-          .text(String(datum.count));
-        group
-          .append('title')
-          .text(t('clusterExpandTitle', { count: datum.count }));
-        return;
-      }
-
-      const space = pinDatumSpace(datum);
-      if (!space) {
-        return;
-      }
-
-      group
-        .append('circle')
-        .attr('class', 'map-pin-hit')
-        .attr('r', 12)
-        .attr('fill', 'transparent')
-        .attr('pointer-events', 'all');
-      group
-        .append('circle')
-        .attr('class', 'map-pin-halo')
-        .attr('r', 7)
-        .attr('fill', palette.pinFill)
-        .attr('opacity', 0)
-        .attr('pointer-events', 'none');
-      group
-        .append('circle')
-        .attr('class', 'map-pin-dot')
-        .attr('r', 5)
-        .attr('fill', palette.pinFill)
-        .attr('stroke', palette.pinStroke)
-        .attr('stroke-width', 1.75)
-        .attr('pointer-events', 'none');
-      group.append('title').text(space.locationLabel ?? space.title);
-    });
-
-    pins.merge(pinsEnter).each(function (datum) {
-      const group = d3.select(this);
-      const palette = mapPaletteRef.current;
-      if (
-        datum.kind === 'cluster' &&
-        group.select('circle.map-pin-hit').empty()
-      ) {
-        group
-          .insert('circle', ':first-child')
-          .attr('class', 'map-pin-hit')
-          .attr('r', 14)
-          .attr('fill', 'transparent')
-          .attr('pointer-events', 'all');
-      }
-
-      if (datum.kind === 'cluster') {
-        group
-          .select('circle.map-pin-cluster-ring')
-          .attr('stroke', palette.clusterRing);
-        group
-          .select('circle.map-pin-cluster-core')
-          .attr('fill', palette.clusterFill)
-          .attr('stroke', palette.pinStroke);
-        group
-          .select('text.map-pin-cluster-count')
-          .attr('fill', palette.clusterCount);
-      } else {
-        group.select('circle.map-pin-halo').attr('fill', palette.pinFill);
-        group
-          .select('circle.map-pin-dot')
-          .attr('fill', palette.pinFill)
-          .attr('stroke', palette.pinStroke);
-      }
+    const pinNodes = pins.merge(pinsEnter);
+    pinNodes.each(function (datum) {
+      syncPinGraphic(this, datum);
 
       const latitude =
         datum.kind === 'cluster' || datum.kind === 'spiderfy-space'
@@ -1080,6 +1107,7 @@ export function NetworkGlobeMap({
         .attr('opacity', pinOpacity)
         .style('display', null);
     });
+    pinNodes.order();
 
     const bounds = path.bounds({ type: 'Sphere' });
     const [[x0, y0], [x1, y1]] = bounds;
