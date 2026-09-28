@@ -45,11 +45,11 @@ type Props = {
 const VISUALIZATION_CONFIG = {
   BASE_RADIUS: 420,
   DEPTH_SCALE: 0.45,
-  ORBIT_RATIO: 0.9,
-  LOGO_RATIO: 0.25,
+  /** Center mark inside an enclosure, small enough that child rings fit around it. */
+  ENCLOSURE_LOGO_RATIO: 0.22,
+  /** Leaf mark inside its own ring: set off the stroke, not tight on the icon. */
+  LEAF_LOGO_RATIO: 0.46,
   ZOOM_DURATION: 720,
-  LOGO_STROKE_WIDTH: 20,
-  STROKE_WIDTH_SCALE: 0.7,
   /**
    * One caption size. Scaling with the logo pushed the center name down
    * into the child ring, where it no longer read as centered under the mark.
@@ -149,6 +149,55 @@ type LabelMetrics = {
   labelTop: number;
 };
 
+function logoRatio(node: { children?: readonly unknown[] }): number {
+  return node.children && node.children.length > 0
+    ? VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO
+    : VISUALIZATION_CONFIG.LEAF_LOGO_RATIO;
+}
+
+/**
+ * Child rings rest inside the parent ring, on one shared orbit, clear of the
+ * name under the center mark. They read as one cluster instead of discs
+ * pasted onto a frame.
+ */
+function placeChildRings(node: SpaceHierarchyNode): void {
+  const children = (node.children ?? []) as SpaceHierarchyNode[];
+  const n = children.length;
+  if (n === 0) return;
+
+  const parentR = Math.max(finiteOr(node.r, 1), 1);
+  const inner = parentR * 0.97;
+  const centerClear =
+    parentR * VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO + parentR * 0.16;
+
+  let childR = parentR * VISUALIZATION_CONFIG.DEPTH_SCALE;
+  if (n === 1) {
+    childR = Math.min(childR, (inner - centerClear) / 2);
+  } else {
+    const sin = Math.sin(Math.PI / n);
+    const insideParent = (inner - centerClear) / 2;
+    const separated = inner / (1 + 1.12 / sin);
+    childR = Math.min(childR, insideParent, separated);
+  }
+  childR = clampSvgLength(Math.max(childR, 1));
+
+  let orbit = inner - childR;
+  if (orbit < centerClear + childR) {
+    childR = clampSvgLength(Math.max((inner - centerClear) / 2, 1));
+    orbit = inner - childR;
+  }
+
+  const parentX = finiteOr(node.x, 0);
+  const parentY = finiteOr(node.y, 0);
+  const step = (2 * Math.PI) / n;
+  children.forEach((child, index) => {
+    child.r = childR;
+    const angle = -Math.PI / 2 + index * step;
+    child.x = parentX + Math.cos(angle) * orbit;
+    child.y = parentY + Math.sin(angle) * orbit;
+  });
+}
+
 function labelMetrics(screenLogoRadius: number): LabelMetrics {
   const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
   const labelTop = screenLogoRadius + VISUALIZATION_CONFIG.LABEL_GAP;
@@ -201,8 +250,7 @@ function clusterBounds(
     const radius = finiteOr(d.r, 0);
     includeCircle(bounds, x, y, radius);
     if (!showLabels) return;
-    const screenLogoRadius =
-      radius * safeScale * VISUALIZATION_CONFIG.LOGO_RATIO;
+    const screenLogoRadius = radius * safeScale * logoRatio(d);
     const { labelFontSize, labelTop } = labelMetrics(screenLogoRadius);
     const half = estimateLabelHalfWidth(d.data.name, labelFontSize) / safeScale;
     const bottom = y + (labelTop + labelFontSize * 1.35) / safeScale;
@@ -269,7 +317,7 @@ function screenSpan(
     includePoint(span, x + rad, y + rad);
     if (!showLabels) continue;
     const { labelFontSize, labelTop } = labelMetrics(
-      finiteOr(d.r, 0) * scale * VISUALIZATION_CONFIG.LOGO_RATIO,
+      finiteOr(d.r, 0) * scale * logoRatio(d),
     );
     const half = estimateLabelHalfWidth(d.data.name, labelFontSize);
     includePoint(span, x - half, y);
@@ -458,169 +506,23 @@ export function SpaceVisualization({
     // Opaque mix of the same hairline. A translucent stroke darkens where
     // the ring's ends meet; on the diagram ground this is the same colour.
     const hairline = dark
-      ? 'color-mix(in srgb, var(--hypha-text) 38%, var(--hypha-ink))'
-      : 'color-mix(in srgb, var(--hypha-ink) 34%, var(--hypha-paper))';
+      ? 'color-mix(in srgb, var(--hypha-text) 32%, var(--hypha-ink))'
+      : 'color-mix(in srgb, var(--hypha-ink) 26%, var(--hypha-paper))';
     const spaceAccent = 'var(--space-accent, var(--color-accent-9))';
     const getDiagramFillColor = () => paper;
     const getLabelFillColor = () => ink;
     const getLabelStrokeColor = () => paper;
-    const getLogoRingColor = () => hairline;
-    // Logo edges stay a hairline. The selected node's own orbit carries the
-    // heavier stroke: ink when it is the focus, the space accent only when
-    // it is the current space.
+    // One hairline for every ring. The current space is the same weight in
+    // the space accent — not a heavier frame, and not a stroke on the icon.
     const HAIRLINE = 1;
-    const MARK = 1.25;
-
-    const getStrokeWidth = (depth: number): number => {
-      return (
-        VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
-        Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
-      );
-    };
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
-    root.each((d) => {
-      (d as SpaceHierarchyNode).r =
-        VISUALIZATION_CONFIG.BASE_RADIUS *
-        Math.pow(VISUALIZATION_CONFIG.DEPTH_SCALE, d.depth);
-    });
-
+    root.r = VISUALIZATION_CONFIG.BASE_RADIUS;
     root.x = 0;
     root.y = 0;
-
     root.eachBefore((d) => {
-      if (!d.children || d.children.length === 0) return;
-
-      const node = d as SpaceHierarchyNode;
-      const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
-      const parentStrokeWidth = getStrokeWidth(node.depth);
-      const parentLogoRadiusWithStroke =
-        parentLogoRadius + parentStrokeWidth / 2;
-      const children = d.children.map((child) => child as SpaceHierarchyNode);
-      const n = children.length;
-
-      const calculateMinOrbitRadius = (
-        childRadii: number[],
-        childNodes: SpaceHierarchyNode[],
-      ): number => {
-        let maxChildRadiusWithStroke = 0;
-        childRadii.forEach((radius, index) => {
-          const childNode = childNodes[index];
-          if (childNode) {
-            const childStrokeWidth = getStrokeWidth(childNode.depth);
-            const childRadiusWithStroke = radius + childStrokeWidth / 2;
-            maxChildRadiusWithStroke = Math.max(
-              maxChildRadiusWithStroke,
-              childRadiusWithStroke,
-            );
-          }
-        });
-        const baseMinOrbitRadius =
-          parentLogoRadiusWithStroke + maxChildRadiusWithStroke;
-
-        if (n <= 1) {
-          return baseMinOrbitRadius;
-        }
-
-        const minOrbitRadiusForSpacing =
-          maxChildRadiusWithStroke / Math.sin(Math.PI / n);
-
-        return Math.max(baseMinOrbitRadius, minOrbitRadiusForSpacing);
-      };
-
-      children.forEach((childNode) => {
-        const childStrokeWidth = getStrokeWidth(childNode.depth);
-        const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
-        const minOrbitRadius =
-          parentLogoRadiusWithStroke + childRadiusWithStroke;
-        const maxOrbit = node.r! - childNode.r!;
-
-        if (minOrbitRadius > maxOrbit) {
-          childNode.r = clampSvgLength(
-            (node.r! - parentLogoRadiusWithStroke) / 2,
-          );
-        }
-      });
-
-      const childRadii = children.map((c) => c.r!);
-      let minOrbitRadius = calculateMinOrbitRadius(childRadii, children);
-      let maxOrbit = node.r! - Math.max(...childRadii);
-
-      if (minOrbitRadius > maxOrbit) {
-        let minChildRadius = 0;
-        let maxChildRadius = Math.max(...childRadii);
-        let bestChildRadius = maxChildRadius;
-        const tolerance = 0.1;
-
-        while (maxChildRadius - minChildRadius > tolerance) {
-          const testChildRadius = (minChildRadius + maxChildRadius) / 2;
-          const testRadii = children.map(() => testChildRadius);
-          const testMinOrbitRadius = calculateMinOrbitRadius(
-            testRadii,
-            children,
-          );
-          const testMaxOrbit = node.r! - testChildRadius;
-
-          if (testMinOrbitRadius <= testMaxOrbit) {
-            bestChildRadius = testChildRadius;
-            minChildRadius = testChildRadius;
-          } else {
-            maxChildRadius = testChildRadius;
-          }
-        }
-
-        children.forEach((childNode) => {
-          childNode.r = clampSvgLength(bestChildRadius);
-        });
-
-        const adjustedRadii = children.map((c) => c.r!);
-        minOrbitRadius = calculateMinOrbitRadius(adjustedRadii, children);
-      }
-
-      const maxChildRadius = Math.max(...children.map((c) => c.r!));
-      maxOrbit = node.r! - maxChildRadius;
-
-      const availableOrbit = Math.max(0, maxOrbit - minOrbitRadius);
-      let orbitRadius =
-        minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
-
-      if (n > 1) {
-        const minDistanceBetweenCenters =
-          2 * orbitRadius * Math.sin(Math.PI / n);
-        const requiredDistance = 2 * maxChildRadius;
-
-        if (minDistanceBetweenCenters < requiredDistance) {
-          let maxChildRadiusWithStroke = 0;
-          children.forEach((childNode) => {
-            const childStrokeWidth = getStrokeWidth(childNode.depth);
-            const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
-            maxChildRadiusWithStroke = Math.max(
-              maxChildRadiusWithStroke,
-              childRadiusWithStroke,
-            );
-          });
-          const safeOrbitRadius =
-            maxChildRadiusWithStroke / Math.sin(Math.PI / n);
-          orbitRadius = Math.max(
-            safeOrbitRadius,
-            parentLogoRadiusWithStroke + maxChildRadiusWithStroke,
-            orbitRadius,
-          );
-        }
-      }
-
-      const step = (2 * Math.PI) / n;
-      const safeOrbitRadius = Number.isFinite(orbitRadius)
-        ? Math.max(minOrbitRadius, orbitRadius)
-        : minOrbitRadius;
-      children.forEach((childNode, i) => {
-        const angle = i * step;
-        const parentX = finiteOr(d.x, 0);
-        const parentY = finiteOr(d.y, 0);
-        childNode.x = parentX + Math.cos(angle) * safeOrbitRadius;
-        childNode.y = parentY + Math.sin(angle) * safeOrbitRadius;
-      });
+      placeChildRings(d as SpaceHierarchyNode);
     });
 
     sanitizeHierarchyLayout(root);
@@ -770,18 +672,6 @@ export function SpaceVisualization({
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('aria-hidden', 'true')
         .attr('clip-path', `url(#${clipId})`);
-
-      logoGroup
-        .append('path')
-        .attr('class', 'logo-ring')
-        .attr('fill', 'none')
-        .attr('stroke', getLogoRingColor())
-        .attr('stroke-width', HAIRLINE)
-        .attr('stroke-linecap', 'butt')
-        .attr('stroke-linejoin', 'round')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
-        .style('pointer-events', 'none');
     });
 
     // Names paint after every ring. A child circle otherwise covers the
@@ -1176,24 +1066,16 @@ export function SpaceVisualization({
         .attr('stroke', (d: SpaceHierarchyNode) => {
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          if (isCurrent) return spaceAccent;
-          if (d === focus) return ink;
-          return hairline;
+          return isCurrent ? spaceAccent : hairline;
         })
-        .attr('stroke-width', (d: SpaceHierarchyNode) => {
-          const isCurrent =
-            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          return isCurrent || d === focus ? MARK : HAIRLINE;
-        })
+        .attr('stroke-width', HAIRLINE)
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round');
 
       logos
         .attr('transform', nodeTransform)
         .each(function (d: SpaceHierarchyNode) {
-          const r = clampSvgLength(
-            finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
-          );
+          const r = clampSvgLength(finiteOr(d.r, 0) * k * logoRatio(d));
           const clipId = `clip-${d.data.id}`;
           const diameter = clampSvgLength(r * 2);
           const selection = d3.select(this);
@@ -1212,12 +1094,6 @@ export function SpaceVisualization({
             .attr('y', -r)
             .attr('width', diameter)
             .attr('height', diameter);
-
-          selection
-            .select('path.logo-ring')
-            .attr('d', smoothClosedCirclePath(r))
-            .attr('stroke', getLogoRingColor())
-            .attr('stroke-width', HAIRLINE);
         });
 
       if (showNodeLabels) {
@@ -1225,9 +1101,7 @@ export function SpaceVisualization({
           .attr('transform', nodeTransform)
           .attr('x', 0)
           .attr('y', (d: SpaceHierarchyNode) => {
-            const r = clampSvgLength(
-              finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
-            );
+            const r = clampSvgLength(finiteOr(d.r, 0) * k * logoRatio(d));
             return labelMetrics(r).labelTop;
           })
           .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
