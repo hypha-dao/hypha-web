@@ -2,6 +2,7 @@
 
 import { Locale } from '@hypha-platform/i18n';
 import { Skeleton } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 
 type CensusFigures = {
@@ -14,13 +15,14 @@ function formatCount(value: number, lang: string): string {
   return new Intl.NumberFormat(lang).format(value);
 }
 
-function StatCard({
+function StatColumn({
   value,
   label,
   split,
   isLoading,
   reserveSplit = false,
   lang,
+  index,
 }: {
   value: number | null;
   label: string;
@@ -29,25 +31,33 @@ function StatCard({
   /** Skeleton a second line while the public/private split is still resolving. */
   reserveSplit?: boolean;
   lang: string;
+  index: number;
 }) {
   return (
-    <article className="flex h-full min-w-0 flex-col border border-border bg-background-2 px-4 py-3.5 dark:bg-background-5">
-      <div className="[font-family:var(--font-family-heading)] text-7 font-medium tabular-nums tracking-[-0.03em] text-foreground">
+    <div
+      className={cn(
+        'flex min-w-0 flex-col items-center border-border px-3 py-1 text-center sm:px-4',
+        index % 2 === 0 ? 'border-l-0' : 'border-l',
+        index % 3 === 0 ? 'sm:border-l-0' : 'sm:border-l',
+        index === 0 ? 'lg:border-l-0' : 'lg:border-l',
+      )}
+    >
+      <div className="[font-family:var(--font-family-heading)] text-7 font-medium tabular-nums tracking-[-0.03em] text-foreground sm:text-8">
         {isLoading ? (
-          <Skeleton loading width={72} height={28} />
+          <Skeleton loading width={72} height={36} />
         ) : value == null ? (
           '—'
         ) : (
           formatCount(value, lang)
         )}
       </div>
-      <div className="mt-1 text-1 text-muted-foreground">{label}</div>
+      <div className="mt-1 text-2 text-muted-foreground">{label}</div>
       {isLoading && reserveSplit ? (
         <Skeleton loading width={96} height={12} className="mt-1" />
       ) : split ? (
-        <div className="mt-1 text-1 text-muted-foreground">{split}</div>
+        <div className="mt-0.5 text-1 text-muted-foreground">{split}</div>
       ) : null}
-    </article>
+    </div>
   );
 }
 
@@ -79,54 +89,62 @@ export function NetworkCensus({
         })
       : null;
 
+  const columns = [
+    {
+      value: isLoading ? null : spaces.total,
+      label: tCommon('Spaces'),
+      split: isLoading ? null : split(spaces.publicCount, spaces.privateCount),
+      isLoading,
+      reserveSplit: true,
+    },
+    {
+      value: isLoading ? null : members.total,
+      label: tCommon('Members'),
+      split: isLoading
+        ? null
+        : split(members.publicCount, members.privateCount),
+      isLoading,
+      reserveSplit: true,
+    },
+    {
+      value: isLoading ? null : agreements.total,
+      label: tCommon('Agreements'),
+      split: isLoading
+        ? null
+        : split(agreements.publicCount, agreements.privateCount),
+      isLoading,
+      reserveSplit: true,
+    },
+    {
+      value: transactions?.total ?? null,
+      label: t('transactions'),
+      split: null,
+      isLoading: false,
+      reserveSplit: false,
+    },
+    {
+      value: tokens?.total ?? null,
+      label: t('tokens'),
+      split: null,
+      isLoading: false,
+      reserveSplit: false,
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <StatCard
-        lang={lang}
-        value={isLoading ? null : spaces.total}
-        label={tCommon('Spaces')}
-        split={
-          isLoading ? null : split(spaces.publicCount, spaces.privateCount)
-        }
-        isLoading={isLoading}
-        reserveSplit
-      />
-      <StatCard
-        lang={lang}
-        value={isLoading ? null : members.total}
-        label={tCommon('Members')}
-        split={
-          isLoading ? null : split(members.publicCount, members.privateCount)
-        }
-        isLoading={isLoading}
-        reserveSplit
-      />
-      <StatCard
-        lang={lang}
-        value={isLoading ? null : agreements.total}
-        label={tCommon('Agreements')}
-        split={
-          isLoading
-            ? null
-            : split(agreements.publicCount, agreements.privateCount)
-        }
-        isLoading={isLoading}
-        reserveSplit
-      />
-      <StatCard
-        lang={lang}
-        value={transactions?.total ?? null}
-        label={t('transactions')}
-        split={null}
-        isLoading={false}
-      />
-      <StatCard
-        lang={lang}
-        value={tokens?.total ?? null}
-        label={t('tokens')}
-        split={null}
-        isLoading={false}
-      />
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      {columns.map((column, index) => (
+        <StatColumn
+          key={column.label}
+          lang={lang}
+          index={index}
+          value={column.value}
+          label={column.label}
+          split={column.split}
+          isLoading={column.isLoading}
+          reserveSplit={column.reserveSplit}
+        />
+      ))}
     </div>
   );
 }
