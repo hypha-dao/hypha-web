@@ -1602,7 +1602,7 @@
     "exploreNetwork": "Explore the Hypha Network",
     "seeAll": "See all",
     "noCategory": "No Category",
-    "privateCount": "+ {count} private"
+    "directoryPrivateSplit": "{directory} in the directory · {private} private"
   },
   "Proposals": {
     "CreateNew": "Create a new Proposal",

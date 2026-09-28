@@ -94,14 +94,16 @@ function countAgreements(spaces: Space[]): number {
 function NetworkMetric({
   value,
   label,
-  privateLabel,
+  splitLabel,
   isLoading,
 }: {
   value: number;
   label: string;
-  privateLabel: string;
+  /** Directory and private breakdown. Null when the private count is zero. */
+  splitLabel: string | null;
   isLoading: boolean;
 }) {
+  const showSplit = isLoading || splitLabel != null;
   return (
     <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
       <div className="flex justify-center text-7 font-medium">
@@ -110,18 +112,20 @@ function NetworkMetric({
       <div className="mt-2 flex justify-center text-1 text-neutral-500">
         {label}
       </div>
-      <div className="mt-1 flex justify-center text-1 text-neutral-9">
-        {isLoading ? (
-          <Skeleton
-            loading
-            width={64}
-            height={12}
-            className="inline-block align-middle"
-          />
-        ) : (
-          privateLabel
-        )}
-      </div>
+      {showSplit ? (
+        <div className="mt-1 flex justify-center text-1 text-neutral-9">
+          {isLoading ? (
+            <Skeleton
+              loading
+              width={64}
+              height={12}
+              className="inline-block align-middle"
+            />
+          ) : (
+            splitLabel
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -429,12 +433,23 @@ export function ExploreSpaces({
     </div>
   );
 
+  const populationSplit = (directory: number, privateCount: number) =>
+    privateCount > 0
+      ? t('directoryPrivateSplit', {
+          directory,
+          private: privateCount,
+        })
+      : null;
+
   const metricsSection = (
     <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
       <NetworkMetric
-        value={selectedSpaces.length}
+        value={selectedSpaces.length + privateSpaces.length}
         label={tCommon('Spaces')}
-        privateLabel={t('privateCount', { count: privateSpaces.length })}
+        splitLabel={populationSplit(
+          selectedSpaces.length,
+          privateSpaces.length,
+        )}
         isLoading={showSpacesSkeleton}
       />
       <Separator
@@ -442,9 +457,9 @@ export function ExploreSpaces({
         className="h-auto self-stretch bg-neutral-6"
       />
       <NetworkMetric
-        value={memberCount}
+        value={memberCount + privateMemberCount}
         label={tCommon('Members')}
-        privateLabel={t('privateCount', { count: privateMemberCount })}
+        splitLabel={populationSplit(memberCount, privateMemberCount)}
         isLoading={showSpacesSkeleton}
       />
       <Separator
@@ -452,9 +467,9 @@ export function ExploreSpaces({
         className="h-auto self-stretch bg-neutral-6"
       />
       <NetworkMetric
-        value={agreementCount}
+        value={agreementCount + privateAgreementCount}
         label={tCommon('Agreements')}
-        privateLabel={t('privateCount', { count: privateAgreementCount })}
+        splitLabel={populationSplit(agreementCount, privateAgreementCount)}
         isLoading={showSpacesSkeleton}
       />
     </div>

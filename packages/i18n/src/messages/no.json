@@ -1601,7 +1601,7 @@
     "exploreNetwork": "Utforsk Hypha-nettverket",
     "seeAll": "Se alle",
     "noCategory": "Ingen kategori",
-    "privateCount": "+ {count, plural, one {# privat} other {# private}}"
+    "directoryPrivateSplit": "{directory} i katalogen · {private, plural, one {# privat} other {# private}}"
   },
   "Proposals": {
     "CreateNew": "Opprett et nytt forslag",

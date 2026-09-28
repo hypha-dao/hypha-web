@@ -1602,7 +1602,7 @@
     "exploreNetwork": "Verken het Hypha-netwerk",
     "seeAll": "Bekijk alles",
     "noCategory": "Geen categorie",
-    "privateCount": "+ {count} privé"
+    "directoryPrivateSplit": "{directory} in de directory · {private} privé"
   },
   "Proposals": {
     "CreateNew": "Maak een nieuw voorstel",
