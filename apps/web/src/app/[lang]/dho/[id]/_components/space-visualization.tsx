@@ -55,10 +55,8 @@ const VISUALIZATION_CONFIG = {
    * into the child ring, where it no longer read as centered under the mark.
    */
   LABEL_FONT: 11,
-  /** Gap between the node ring and the top of the name. */
+  /** Gap between the logo and the top of the name. */
   LABEL_GAP: 8,
-  /** Same optical gap for the focus ring and the current-space accent ring. */
-  MARK_OUTSET: 4,
   MAX_LABEL_CHARS: 18,
 } as const;
 
@@ -143,18 +141,9 @@ type LabelMetrics = {
   labelTop: number;
 };
 
-function labelMetrics(
-  screenLogoRadius: number,
-  isCurrent: boolean,
-  isFocused: boolean,
-): LabelMetrics {
+function labelMetrics(screenLogoRadius: number): LabelMetrics {
   const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
-  // The focus and accent rings share one outset. The name sits just
-  // outside that ring, centered on the node.
-  const ringOutset =
-    isCurrent || isFocused ? VISUALIZATION_CONFIG.MARK_OUTSET : 0;
-  const labelTop =
-    screenLogoRadius + ringOutset + VISUALIZATION_CONFIG.LABEL_GAP;
+  const labelTop = screenLogoRadius + VISUALIZATION_CONFIG.LABEL_GAP;
   return { labelFontSize, labelTop };
 }
 
@@ -189,7 +178,6 @@ function clusterBounds(
   focus: SpaceHierarchyNode,
   scale: number,
   showLabels: boolean,
-  currentSpaceId?: number,
 ): LayoutBounds {
   const bounds: LayoutBounds = {
     minX: Infinity,
@@ -205,16 +193,9 @@ function clusterBounds(
     const radius = finiteOr(d.r, 0);
     includeCircle(bounds, x, y, radius);
     if (!showLabels) return;
-    const isCurrent =
-      typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-    const isFocused = d === focus;
     const screenLogoRadius =
       radius * safeScale * VISUALIZATION_CONFIG.LOGO_RATIO;
-    const { labelFontSize, labelTop } = labelMetrics(
-      screenLogoRadius,
-      isCurrent,
-      isFocused,
-    );
+    const { labelFontSize, labelTop } = labelMetrics(screenLogoRadius);
     const half = estimateLabelHalfWidth(d.data.name, labelFontSize) / safeScale;
     const bottom = y + (labelTop + labelFontSize * 1.35) / safeScale;
     includePoint(bounds, x - half, y);
@@ -260,18 +241,15 @@ function solveClusterFrame(
   viewWidth: number,
   viewHeight: number,
   showLabels: boolean,
-  currentSpaceId?: number,
 ): ClusterFrame {
   const diameter = Math.max(finiteOr(focus.r, 1) * 2, 1);
   let scale =
     Math.min(Math.max(viewWidth, 1), Math.max(viewHeight, 1)) / diameter;
-  let frame = frameFromBounds(
-    clusterBounds(focus, scale, showLabels, currentSpaceId),
-  );
+  let frame = frameFromBounds(clusterBounds(focus, scale, showLabels));
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const nextScale = fitScale(frame, viewWidth, viewHeight);
     const nextFrame = frameFromBounds(
-      clusterBounds(focus, nextScale, showLabels, currentSpaceId),
+      clusterBounds(focus, nextScale, showLabels),
     );
     const settled =
       Math.abs(nextScale - scale) <= Math.max(0.002, Math.abs(scale) * 0.01) &&
@@ -406,8 +384,9 @@ export function SpaceVisualization({
     const getLabelFillColor = () => ink;
     const getLabelStrokeColor = () => paper;
     const getLogoRingColor = () => hairline;
-    // One hairline for every orbit and logo edge. The focus and accent
-    // marks are the only heavier strokes, and they share one weight.
+    // Logo edges stay a hairline. The selected node's own orbit carries the
+    // heavier stroke: ink when it is the focus, the space accent only when
+    // it is the current space.
     const HAIRLINE = 1;
     const MARK = 1.25;
 
@@ -722,32 +701,6 @@ export function SpaceVisualization({
         .attr('vector-effect', 'non-scaling-stroke')
         .attr('shape-rendering', 'geometricPrecision')
         .style('pointer-events', 'none');
-
-      logoGroup
-        .append('path')
-        .attr('class', 'focus-ring')
-        .attr('fill', 'none')
-        .attr('stroke', ink)
-        .attr('stroke-width', MARK)
-        .attr('stroke-linecap', 'butt')
-        .attr('stroke-linejoin', 'round')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
-        .attr('opacity', 0)
-        .style('pointer-events', 'none');
-
-      logoGroup
-        .append('path')
-        .attr('class', 'current-ring')
-        .attr('fill', 'none')
-        .attr('stroke', spaceAccent)
-        .attr('stroke-width', MARK)
-        .attr('stroke-linecap', 'butt')
-        .attr('stroke-linejoin', 'round')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
-        .attr('opacity', 0)
-        .style('pointer-events', 'none');
     });
 
     // Names paint after every ring. A child circle otherwise covers the
@@ -922,11 +875,8 @@ export function SpaceVisualization({
           initialSize.width,
           initialSize.height,
           showNodeLabels,
-          currentSpaceId,
         )
-      : frameFromBounds(
-          clusterBounds(focus, 1, showNodeLabels, currentSpaceId),
-        );
+      : frameFromBounds(clusterBounds(focus, 1, showNodeLabels));
     if (initialSize) applyFrame(frame);
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
@@ -1008,7 +958,6 @@ export function SpaceVisualization({
         size.width,
         size.height,
         showNodeLabels,
-        currentSpaceId,
       );
       const startFrame = frame;
       const duration = prefersReducedMotion()
@@ -1080,7 +1029,6 @@ export function SpaceVisualization({
             latest.width,
             latest.height,
             showNodeLabels,
-            currentSpaceId,
           );
           requestAnimationFrame(() => glideFrame(next));
         }
@@ -1135,8 +1083,18 @@ export function SpaceVisualization({
           smoothClosedCirclePath(finiteOr(d.r, 0) * k),
         )
         .attr('fill', 'none')
-        .attr('stroke', hairline)
-        .attr('stroke-width', HAIRLINE)
+        .attr('stroke', (d: SpaceHierarchyNode) => {
+          const isCurrent =
+            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
+          if (isCurrent) return spaceAccent;
+          if (d === focus) return ink;
+          return hairline;
+        })
+        .attr('stroke-width', (d: SpaceHierarchyNode) => {
+          const isCurrent =
+            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
+          return isCurrent || d === focus ? MARK : HAIRLINE;
+        })
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round');
 
@@ -1148,9 +1106,6 @@ export function SpaceVisualization({
           );
           const clipId = `clip-${d.data.id}`;
           const diameter = clampSvgLength(r * 2);
-          const isFocused = d === focus;
-          const isCurrent =
-            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
           const selection = d3.select(this);
 
           selection
@@ -1173,23 +1128,6 @@ export function SpaceVisualization({
             .attr('d', smoothClosedCirclePath(r))
             .attr('stroke', getLogoRingColor())
             .attr('stroke-width', HAIRLINE);
-
-          const markRadius = clampSvgLength(
-            r + VISUALIZATION_CONFIG.MARK_OUTSET,
-          );
-          selection
-            .select('path.focus-ring')
-            .attr('d', smoothClosedCirclePath(markRadius))
-            .attr('stroke', ink)
-            .attr('stroke-width', MARK)
-            .attr('opacity', isFocused && !isCurrent ? 1 : 0);
-
-          selection
-            .select('path.current-ring')
-            .attr('d', smoothClosedCirclePath(markRadius))
-            .attr('stroke', spaceAccent)
-            .attr('stroke-width', MARK)
-            .attr('opacity', isCurrent ? 1 : 0);
         });
 
       if (showNodeLabels) {
@@ -1200,11 +1138,7 @@ export function SpaceVisualization({
             const r = clampSvgLength(
               finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
             );
-            const isFocused = d === focus;
-            const isCurrent =
-              typeof currentSpaceId === 'number' &&
-              d.data.id === currentSpaceId;
-            return labelMetrics(r, isCurrent, isFocused).labelTop;
+            return labelMetrics(r).labelTop;
           })
           .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
           .attr('fill', getLabelFillColor())
@@ -1235,7 +1169,6 @@ export function SpaceVisualization({
           size.width,
           size.height,
           showNodeLabels,
-          currentSpaceId,
         );
         // First measurement paints in place. Later passes — banner, scroll
         // hold, row height — share one glide to the latest box.
