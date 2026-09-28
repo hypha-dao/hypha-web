@@ -34,6 +34,7 @@ import {
   globeRotationForCenter,
 } from '../lib/globe-rotation';
 import { setNetworkGlobeReady } from '../lib/network-globe-ready-store';
+import { seatOnDisk } from '../lib/overlay-seat';
 import {
   buildMapPinData,
   pinDatumSpace,
@@ -233,13 +234,6 @@ const OVERLAY_GAP = 12;
 
 type OverlaySize = { w: number; h: number };
 type OverlayBox = OverlaySize & { x: number; y: number };
-/** Axis-aligned box of the painted map, in the overlay parent's pixels. */
-type DrawingRect = {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-};
 type OverlaySeat = {
   legendLeft: number;
   legendBottom: number;
@@ -263,75 +257,6 @@ function overlayBoxesOverlap(a: OverlayBox, b: OverlayBox): boolean {
 function projectionDrawsDisk(projection: d3.GeoProjection): boolean {
   const clip = projection.clipAngle?.();
   return clip != null && clip > 0 && clip < 180;
-}
-
-/**
- * Bounding box of the painted sphere, in the same pixels as the HTML overlays.
- * A ray from the projection center is a different space and parks both
- * controls in the lower middle of the disk.
- */
-function circleBoundsInContainer(
-  pathEl: SVGGraphicsElement,
-  container: HTMLElement,
-): DrawingRect | null {
-  let bbox: DOMRect;
-  try {
-    bbox = pathEl.getBBox();
-  } catch {
-    return null;
-  }
-  if (!(bbox.width > 1) || !(bbox.height > 1)) {
-    return null;
-  }
-  const svg = pathEl.ownerSVGElement;
-  const ctm = pathEl.getScreenCTM();
-  if (!svg || !ctm) {
-    return null;
-  }
-  const point = svg.createSVGPoint();
-  const origin = container.getBoundingClientRect();
-  const mapPoint = (x: number, y: number) => {
-    point.x = x;
-    point.y = y;
-    const screen = point.matrixTransform(ctm);
-    return {
-      x: screen.x - origin.left,
-      y: screen.y - origin.top,
-    };
-  };
-  const min = mapPoint(bbox.x, bbox.y);
-  const max = mapPoint(bbox.x + bbox.width, bbox.y + bbox.height);
-  if (![min.x, min.y, max.x, max.y].every((value) => Number.isFinite(value))) {
-    return null;
-  }
-  return {
-    left: Math.min(min.x, max.x),
-    top: Math.min(min.y, max.y),
-    right: Math.max(min.x, max.x),
-    bottom: Math.max(min.y, max.y),
-  };
-}
-
-/**
- * Pin the legend to the circle's lower-left and the miniature to its
- * lower-right, 12px inside that drawn box. The two outer corners are on
- * opposite limbs, so the open disk stays between them. The stage is not the
- * reference; it only clips a disk that has grown past the visible stage.
- */
-function seatOnCircleBounds(
-  circle: DrawingRect,
-  width: number,
-  height: number,
-): OverlaySeat {
-  const left = Math.max(circle.left, 0);
-  const right = Math.min(circle.right, width);
-  const bottom = Math.min(circle.bottom, height);
-  return {
-    legendLeft: Math.round(left + OVERLAY_INSET),
-    legendBottom: Math.round(height - (bottom - OVERLAY_INSET)),
-    navRight: Math.round(width - (right - OVERLAY_INSET)),
-    navBottom: Math.round(height - (bottom - OVERLAY_INSET)),
-  };
 }
 
 function seatOnRectangle(
@@ -1119,6 +1044,10 @@ export function NetworkGlobeMap({
       const legendEl = container.querySelector<HTMLElement>(
         '[data-network-map-inset="legend"]',
       );
+      const legendSize =
+        legendEl && legendEl.offsetWidth > 0
+          ? { w: legendEl.offsetWidth, h: legendEl.offsetHeight }
+          : null;
       const seatKey = [
         width,
         height,
@@ -1129,7 +1058,7 @@ export function NetworkGlobeMap({
         y1.toFixed(1),
         navSize.w,
         navSize.h,
-        drawsDisk ? '' : legendEl?.textContent ?? '',
+        legendSize ? `${legendSize.w}x${legendSize.h}` : '',
       ].join('|');
       let seat =
         overlaySeatRef.current?.key === seatKey
@@ -1137,21 +1066,22 @@ export function NetworkGlobeMap({
           : null;
       if (!seat) {
         if (drawsDisk) {
-          const sphereNode = sphereEdge.node();
-          const circle = sphereNode
-            ? circleBoundsInContainer(sphereNode, container)
-            : null;
-          seat = seatOnCircleBounds(
-            circle ?? { left: x0, top: y0, right: x1, bottom: y1 },
+          const [cx, cy] = projection.translate();
+          const clip = projection.clipAngle?.() ?? 90;
+          const radius = projection.scale() * Math.sin((clip * Math.PI) / 180);
+          // scale and translate are the SVG pixels the overlays share.
+          // The square around that circle sits outside the disk.
+          seat = seatOnDisk(
+            { cx, cy, r: radius },
             width,
             height,
+            legendSize ?? { w: 196, h: 32 },
+            navSize,
           );
-          overlaySeatRef.current = { key: seatKey, seat };
+          if (!legendEl || legendSize) {
+            overlaySeatRef.current = { key: seatKey, seat };
+          }
         } else {
-          const legendSize =
-            legendEl && legendEl.offsetWidth > 0
-              ? { w: legendEl.offsetWidth, h: legendEl.offsetHeight }
-              : null;
           seat = seatOnRectangle(width, height, bounds, legendSize, navSize);
           if (!legendEl || legendSize) {
             overlaySeatRef.current = { key: seatKey, seat };
