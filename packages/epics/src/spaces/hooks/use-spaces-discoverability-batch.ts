@@ -106,7 +106,11 @@ export function useFilterSpacesListWithDiscoverability({
   excludeSpaceLevelFromNetwork?: boolean;
 }): {
   filteredSpaces: Space[];
-  /** Spaces whose discoverability is Space-level — off the network map and directory. */
+  /**
+   * Spaces from the input that `filteredSpaces` left out. On the network
+   * page that is the directory and the map's source set, so this is every
+   * space those surfaces omit — not only Space-level discoverability.
+   */
   privateSpaces: Space[];
   isLoading: boolean;
 } {
@@ -226,16 +230,10 @@ export function useFilterSpacesListWithDiscoverability({
     userMemberSpaceIdsSet,
   ]);
 
-  const privateSpaces = useMemo(
-    () =>
-      spaces.filter((space) => {
-        if (!space.web3SpaceId) return false;
-        return isNetworkPrivateDiscoverability(
-          discoverabilityMap.get(space.web3SpaceId),
-        );
-      }),
-    [spaces, discoverabilityMap],
-  );
+  const privateSpaces = useMemo(() => {
+    const onNetworkView = new Set(filteredSpaces.map((space) => space.id));
+    return spaces.filter((space) => !onNetworkView.has(space.id));
+  }, [spaces, filteredSpaces]);
 
   // For the network (general) list the filtered set depends on three async
   // inputs: on-chain discoverability, whether the viewer is logged in, and which
