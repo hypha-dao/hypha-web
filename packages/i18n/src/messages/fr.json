@@ -1031,7 +1031,7 @@
     "exploreNetwork": "Explorer le réseau Hypha",
     "seeAll": "Voir tout",
     "noCategory": "Aucune catégorie",
-    "directoryPrivateSplit": "{directory} dans le répertoire · {private, plural, one {# privé} other {# privés}}"
+    "directoryPrivateSplit": "{directory, plural, one {# public} other {# publics}} · {private, plural, one {# privé} other {# privés}}"
   },
   "Proposals": {
     "CreateNew": "Créer une nouvelle proposition",

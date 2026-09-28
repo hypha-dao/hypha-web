@@ -1582,7 +1582,7 @@
     "exploreNetwork": "Истражете ја Hypha мрежата",
     "seeAll": "Види ги сите",
     "noCategory": "Без категорија",
-    "directoryPrivateSplit": "{directory} во директориумот · {private, plural, one {# приватен} other {# приватни}}"
+    "directoryPrivateSplit": "{directory, plural, one {# јавен} other {# јавни}} · {private, plural, one {# приватен} other {# приватни}}"
   },
   "Proposals": {
     "CreateNew": "Создај нов предлог",
