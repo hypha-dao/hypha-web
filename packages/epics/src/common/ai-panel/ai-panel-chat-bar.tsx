@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   FileIcon,
   Eye,
@@ -310,26 +317,28 @@ export function AiPanelChatBar({
   valueRef.current = value;
 
   const autoResize = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 160) + 'px';
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isHero) return;
     const el = textareaRef.current;
-    if (!el) return;
-    if (!value.trim()) {
-      // Same single-line box as the human-chat composer: padding + text-sm,
-      // not a forced 36px height that clips the placeholder.
-      el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-      return;
+    if (!el || isHero) return;
+    const content = valueRef.current;
+    // Same measure as the human-chat composer. An empty in-space field
+    // measured with height:auto keeps the 160px cap, so the text row sits
+    // taller than chat. Quiet onboarding keeps the previous measure.
+    if (variant === 'panel' && content.length === 0) {
+      el.style.height = '0px';
+      el.style.minHeight = '0';
+      void el.offsetHeight;
     }
+    el.style.height = 'auto';
+    el.style.minHeight = '';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    if (variant === 'panel' && content.length === 0) {
+      el.scrollTop = 0;
+    }
+  }, [isHero, variant]);
+
+  useLayoutEffect(() => {
     autoResize();
-  }, [isHero, value, autoResize]);
+  }, [autoResize, value]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -820,7 +829,11 @@ export function AiPanelChatBar({
             'min-w-0 w-full resize-none bg-transparent text-foreground outline-none placeholder:text-muted-foreground focus:outline-none',
             isHero
               ? 'relative min-h-[120px] overflow-y-auto px-4 py-3 text-3'
-              : 'block min-h-[36px] max-h-[160px] overflow-y-auto whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed',
+              : cn(
+                  'block min-h-[36px] max-h-[160px] overflow-y-auto whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed',
+                  // Column flex must not grow this past the measured line.
+                  variant === 'panel' && 'flex-none',
+                ),
           )}
         />
         <input
