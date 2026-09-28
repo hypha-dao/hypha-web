@@ -72,6 +72,11 @@ function px(value: string): number {
 }
 
 function findScrollParent(stage: HTMLElement): HTMLElement | null {
+  const main = document.getElementById('hypha-screen-share-main-content');
+  if (main instanceof HTMLElement && main.contains(stage)) {
+    const overflow = getComputedStyle(main).overflowY;
+    if (overflow === 'auto' || overflow === 'scroll') return main;
+  }
   let node: HTMLElement | null = stage.parentElement;
   while (node) {
     const overflow = getComputedStyle(node).overflowY;
@@ -154,6 +159,40 @@ function stageHeightForCollapsedColumn(
   scrollportHeight: number,
 ): number {
   return stageHeight + collapsedScroll + scrollportHeight - contentHeight;
+}
+
+/**
+ * Page footer after the space column inside the scrollport. The space
+ * footer is a plain div ("Powered by"), not a `<footer>` element.
+ */
+function findColumnFooter(
+  scrollParent: HTMLElement,
+  stage: HTMLElement,
+): HTMLElement | null {
+  const kids = Array.from(scrollParent.children).filter(
+    (kid): kid is HTMLElement => kid instanceof HTMLElement,
+  );
+  const contentIndex = kids.findIndex((kid) => kid.contains(stage));
+  if (contentIndex < 0) return null;
+  for (let i = kids.length - 1; i > contentIndex; i -= 1) {
+    const kid = kids[i];
+    if (kid.offsetHeight >= 8) return kid;
+  }
+  return null;
+}
+
+/**
+ * How far the stage's border box extends past the footer's top.
+ * Scroll-invariant: both edges move together when the column scrolls.
+ * Positive when the stage paints underneath the footer.
+ */
+function stageOverlapUnderFooter(
+  stage: HTMLElement,
+  footer: HTMLElement,
+): number {
+  return (
+    stage.getBoundingClientRect().bottom - footer.getBoundingClientRect().top
+  );
 }
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
@@ -346,6 +385,15 @@ export function EcosystemNavigationMainPanel({
     // heights rewrites the stage, and the diagram refits its viewBox on
     // every pass. Holding the row still leaves the stage on one measurement.
     let settledMembershipHeight = 0;
+    // Once the stage is seen painting under the footer, keep that clearance.
+    // Re-reading the overlap after the shrink would chase an in-flow footer
+    // and jump the height on every pass. Keyed by column width and footer
+    // height so a real resize can measure again. Not tied to scroll position.
+    let footerClearance: number | null = null;
+    let footerClearanceKey = '';
+    let footerChecked = false;
+    let footerObserved = false;
+    let observer: ResizeObserver | null = null;
 
     const holdMembershipRow = (stageEl: HTMLElement) => {
       const membership = stageEl.previousElementSibling;
@@ -377,15 +425,48 @@ export function EcosystemNavigationMainPanel({
         holdMembershipRow(current);
         const contentHeight = columnContentHeight(scrollParent);
         const collapsedScroll = collapsedBannerScroll(scrollParent);
-        // Room left for the stage once the banner is collapsed and the footer
-        // sits on the scrollport bottom. A viewport-top reading leaves the
-        // auto-margin / scroll-hold band empty under a short drawing.
-        const room = stageHeightForCollapsedColumn(
+        const footer = findColumnFooter(scrollParent, current);
+        if (footer && observer && !footerObserved) {
+          observer.observe(footer);
+          footerObserved = true;
+        }
+        // Room left for the stage once the banner is collapsed. The footer
+        // is in the scrollport and paints over whatever runs past its top,
+        // so a stage that fills the scrollport tucks the lower rings under
+        // "Powered by". Clearance is the overlap measured once per column
+        // width — not on each scroll frame.
+        let room = stageHeightForCollapsedColumn(
           current.offsetHeight,
           contentHeight,
           collapsedScroll,
           scrollParent.clientHeight,
         );
+        const footerKey = `${stageWidth}:${footer?.offsetHeight ?? 0}`;
+        if (footerKey !== footerClearanceKey) {
+          footerClearanceKey = footerKey;
+          footerClearance = null;
+          footerChecked = false;
+        }
+        if (footer && footerClearance == null && !footerChecked) {
+          // Paint the filled height first, then read whether that box crosses
+          // the footer. Both writes happen before paint, so the diagram fits
+          // the cleared slot once instead of jumping.
+          const filledHeight = Math.max(0, Math.round(room));
+          if (Math.abs(current.offsetHeight - filledHeight) > 2) {
+            const filledPx = `${filledHeight}px`;
+            current.style.height = filledPx;
+            current.style.maxHeight = filledPx;
+            current.style.minHeight = filledPx;
+          }
+          const overlap = stageOverlapUnderFooter(current, footer);
+          footerChecked = true;
+          if (overlap > 1) {
+            footerClearance = Math.max(0, current.offsetHeight - overlap);
+          }
+        }
+        if (footerClearance != null) {
+          room = Math.min(room, footerClearance);
+        }
         const next = room >= 64 ? Math.round(room) : stageWidth;
         const heightMatches =
           Math.abs(next - current.offsetHeight) <= 2 &&
@@ -411,21 +492,22 @@ export function EcosystemNavigationMainPanel({
     };
 
     apply();
-    const observer = new ResizeObserver(apply);
+    observer = new ResizeObserver(apply);
+    const stageObserver = observer;
     const membership = stage.previousElementSibling;
-    if (membership instanceof HTMLElement) observer.observe(membership);
-    if (stage.parentElement) observer.observe(stage.parentElement);
+    if (membership instanceof HTMLElement) stageObserver.observe(membership);
+    if (stage.parentElement) stageObserver.observe(stage.parentElement);
     if (scrollParent) {
-      observer.observe(scrollParent);
+      stageObserver.observe(scrollParent);
       for (const child of scrollParent.children) {
         if (child instanceof HTMLElement && !child.contains(stage)) {
-          observer.observe(child);
+          stageObserver.observe(child);
         }
       }
     }
     const banner = document.querySelector('[data-space-banner-bottom]');
     if (banner?.parentElement instanceof HTMLElement) {
-      observer.observe(banner.parentElement);
+      stageObserver.observe(banner.parentElement);
     }
     const footerWatch = new MutationObserver(apply);
     if (scrollParent) {
@@ -433,7 +515,7 @@ export function EcosystemNavigationMainPanel({
     }
     window.addEventListener('resize', apply);
     return () => {
-      observer.disconnect();
+      stageObserver.disconnect();
       footerWatch.disconnect();
       window.removeEventListener('resize', apply);
       const membership = diagramStageRef.current?.previousElementSibling;
