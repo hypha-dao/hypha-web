@@ -440,7 +440,6 @@ export function ExploreSpaces({
             }
           : null
       }
-      growth={networkGrowth}
     />
   ) : null;
 
