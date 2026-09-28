@@ -57,6 +57,8 @@ const VISUALIZATION_CONFIG = {
   LABEL_FONT: 11,
   /** Gap between the node ring and the top of the name. */
   LABEL_GAP: 8,
+  /** Same optical gap for the focus ring and the current-space accent ring. */
+  MARK_OUTSET: 4,
   MAX_LABEL_CHARS: 18,
 } as const;
 
@@ -147,13 +149,10 @@ function labelMetrics(
   isFocused: boolean,
 ): LabelMetrics {
   const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
-  // Match the focus and accent rings drawn in applyFrame, then sit the
-  // name just outside that ring, centered on the node.
-  const ringOutset = isCurrent
-    ? Math.max(4, screenLogoRadius * 0.14)
-    : isFocused
-    ? Math.max(3.5, screenLogoRadius * 0.12)
-    : 0;
+  // The focus and accent rings share one outset. The name sits just
+  // outside that ring, centered on the node.
+  const ringOutset =
+    isCurrent || isFocused ? VISUALIZATION_CONFIG.MARK_OUTSET : 0;
   const labelTop =
     screenLogoRadius + ringOutset + VISUALIZATION_CONFIG.LABEL_GAP;
   return { labelFontSize, labelTop };
@@ -407,7 +406,10 @@ export function SpaceVisualization({
     const getLabelFillColor = () => ink;
     const getLabelStrokeColor = () => paper;
     const getLogoRingColor = () => hairline;
-    const ORBIT_STROKE_WIDTH = 1.15;
+    // One hairline for every orbit and logo edge. The focus and accent
+    // marks are the only heavier strokes, and they share one weight.
+    const HAIRLINE = 1;
+    const MARK = 1.25;
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -627,11 +629,11 @@ export function SpaceVisualization({
       .attr('class', 'orbit')
       .attr('fill', 'none')
       .attr('stroke', hairline)
-      .attr('stroke-width', ORBIT_STROKE_WIDTH)
+      .attr('stroke-width', HAIRLINE)
       .attr('stroke-linecap', 'butt')
       .attr('stroke-linejoin', 'round')
       .attr('vector-effect', 'non-scaling-stroke')
-      .attr('shape-rendering', 'auto')
+      .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
         if (focus !== d) {
@@ -714,11 +716,11 @@ export function SpaceVisualization({
         .attr('class', 'logo-ring')
         .attr('fill', 'none')
         .attr('stroke', getLogoRingColor())
-        .attr('stroke-width', 1.25)
+        .attr('stroke-width', HAIRLINE)
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round')
         .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'auto')
+        .attr('shape-rendering', 'geometricPrecision')
         .style('pointer-events', 'none');
 
       logoGroup
@@ -726,11 +728,11 @@ export function SpaceVisualization({
         .attr('class', 'focus-ring')
         .attr('fill', 'none')
         .attr('stroke', ink)
-        .attr('stroke-width', 1.15)
+        .attr('stroke-width', MARK)
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round')
         .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'auto')
+        .attr('shape-rendering', 'geometricPrecision')
         .attr('opacity', 0)
         .style('pointer-events', 'none');
 
@@ -739,33 +741,38 @@ export function SpaceVisualization({
         .attr('class', 'current-ring')
         .attr('fill', 'none')
         .attr('stroke', spaceAccent)
-        .attr('stroke-width', 1.25)
+        .attr('stroke-width', MARK)
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round')
         .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'auto')
+        .attr('shape-rendering', 'geometricPrecision')
         .attr('opacity', 0)
         .style('pointer-events', 'none');
-
-      if (showNodeLabels) {
-        logoGroup
-          .append('text')
-          .attr('class', 'node-label')
-          .attr('x', 0)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'hanging')
-          .attr('fill', getLabelFillColor())
-          .attr('stroke', getLabelStrokeColor())
-          .attr('stroke-width', 1.25)
-          .attr('paint-order', 'stroke fill')
-          .style('font-family', 'var(--font-family-text), sans-serif')
-          .style('font-weight', '500')
-          .style('letter-spacing', '-0.01em')
-          .style('text-anchor', 'middle')
-          .style('pointer-events', 'none')
-          .text(truncateLabel(d.data.name));
-      }
     });
+
+    // Names paint after every ring. A child circle otherwise covers the
+    // center caption, so the visible part no longer sits under the mark.
+    const labelText = g
+      .append('g')
+      .attr('class', 'node-labels')
+      .style('pointer-events', 'none')
+      .selectAll<SVGTextElement, SpaceHierarchyNode>('text.node-label')
+      .data(showNodeLabels ? (root.descendants() as SpaceHierarchyNode[]) : [])
+      .join('text')
+      .attr('class', 'node-label')
+      .attr('x', 0)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'hanging')
+      .attr('fill', getLabelFillColor())
+      .attr('stroke', getLabelStrokeColor())
+      .attr('stroke-width', 4)
+      .attr('stroke-linejoin', 'round')
+      .attr('paint-order', 'stroke fill')
+      .style('font-family', 'var(--font-family-text), sans-serif')
+      .style('font-weight', '500')
+      .style('letter-spacing', '-0.01em')
+      .style('text-anchor', 'middle')
+      .text((d) => truncateLabel(d.data.name));
 
     svg.on('click', () => {
       if (focus.parent) {
@@ -888,10 +895,16 @@ export function SpaceVisualization({
 
     orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
+    labelText.style('opacity', (d: SpaceHierarchyNode) =>
+      isVisible(d) ? 1 : 0,
+    );
     orbits.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
     logos.style('display', (d: SpaceHierarchyNode) =>
+      isVisible(d) ? 'block' : 'none',
+    );
+    labelText.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
 
@@ -1026,7 +1039,9 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('path.orbit, g.logo')
+        .selectAll<SVGElement, SpaceHierarchyNode>(
+          'path.orbit, g.logo, text.node-label',
+        )
         .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
           if (isVisible(d) && this instanceof SVGElement) {
@@ -1121,7 +1136,7 @@ export function SpaceVisualization({
         )
         .attr('fill', 'none')
         .attr('stroke', hairline)
-        .attr('stroke-width', ORBIT_STROKE_WIDTH)
+        .attr('stroke-width', HAIRLINE)
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round');
 
@@ -1136,13 +1151,6 @@ export function SpaceVisualization({
           const isFocused = d === focus;
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          // Hanging baseline: y is the top of the glyphs. Clear the disk,
-          // the accent or focus ring, and the hairline before the gap.
-          const { labelFontSize, labelTop: labelY } = labelMetrics(
-            r,
-            isCurrent,
-            isFocused,
-          );
           const selection = d3.select(this);
 
           selection
@@ -1164,41 +1172,46 @@ export function SpaceVisualization({
             .select('path.logo-ring')
             .attr('d', smoothClosedCirclePath(r))
             .attr('stroke', getLogoRingColor())
-            .attr('stroke-width', isFocused ? 1.5 : 1.15);
+            .attr('stroke-width', HAIRLINE);
 
+          const markRadius = clampSvgLength(
+            r + VISUALIZATION_CONFIG.MARK_OUTSET,
+          );
           selection
             .select('path.focus-ring')
-            .attr(
-              'd',
-              smoothClosedCirclePath(
-                clampSvgLength(r + Math.max(3.5, r * 0.12)),
-              ),
-            )
+            .attr('d', smoothClosedCirclePath(markRadius))
             .attr('stroke', ink)
-            .attr('opacity', isFocused && !isCurrent ? 0.9 : 0);
+            .attr('stroke-width', MARK)
+            .attr('opacity', isFocused && !isCurrent ? 1 : 0);
 
           selection
             .select('path.current-ring')
-            .attr(
-              'd',
-              smoothClosedCirclePath(clampSvgLength(r + Math.max(4, r * 0.14))),
-            )
+            .attr('d', smoothClosedCirclePath(markRadius))
             .attr('stroke', spaceAccent)
+            .attr('stroke-width', MARK)
             .attr('opacity', isCurrent ? 1 : 0);
-
-          if (showNodeLabels) {
-            selection
-              .select('text.node-label')
-              .attr('x', 0)
-              .attr('y', labelY)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', `${labelFontSize}px`)
-              .attr('fill', getLabelFillColor())
-              .attr('stroke', getLabelStrokeColor())
-              .attr('opacity', showNodeLabels && isVisible(d) ? 1 : 0)
-              .text(truncateLabel(d.data.name));
-          }
         });
+
+      if (showNodeLabels) {
+        labelText
+          .attr('transform', nodeTransform)
+          .attr('x', 0)
+          .attr('y', (d: SpaceHierarchyNode) => {
+            const r = clampSvgLength(
+              finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
+            );
+            const isFocused = d === focus;
+            const isCurrent =
+              typeof currentSpaceId === 'number' &&
+              d.data.id === currentSpaceId;
+            return labelMetrics(r, isCurrent, isFocused).labelTop;
+          })
+          .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
+          .attr('fill', getLabelFillColor())
+          .attr('stroke', getLabelStrokeColor())
+          .attr('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
+          .text((d: SpaceHierarchyNode) => truncateLabel(d.data.name));
+      }
     }
 
     let fittedKey = initialSize ? stageSizeKey(initialSize) : '';
