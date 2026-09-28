@@ -1063,24 +1063,15 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>(
-          'path.orbit, g.logo, text.node-label',
-        )
-        .style('opacity', function (d: SpaceHierarchyNode) {
-          const label = this instanceof SVGElement && this.tagName === 'text';
-          return (label ? isLabelShown(d) : isVisible(d)) ? 1 : 0;
-        })
+        .selectAll<SVGElement, SpaceHierarchyNode>('path.orbit, g.logo')
+        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
-          const label = this instanceof SVGElement && this.tagName === 'text';
-          const shown = label ? isLabelShown(d) : isVisible(d);
-          if (shown && this instanceof SVGElement) {
+          if (isVisible(d) && this instanceof SVGElement) {
             this.style.display = 'block';
           }
         })
         .on('end', function (d: SpaceHierarchyNode) {
-          const label = this instanceof SVGElement && this.tagName === 'text';
-          const shown = label ? isLabelShown(d) : isVisible(d);
-          if (!shown && this instanceof SVGElement) {
+          if (!isVisible(d) && this instanceof SVGElement) {
             this.style.display = 'none';
           }
         });
@@ -1235,12 +1226,11 @@ export function SpaceVisualization({
           .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
           .attr('fill', getLabelFillColor())
           .attr('stroke', getLabelStrokeColor())
+          .style('display', (d: SpaceHierarchyNode) =>
+            isLabelShown(d) ? 'block' : 'none',
+          )
+          .style('opacity', (d: SpaceHierarchyNode) => (isLabelShown(d) ? 1 : 0))
           .text((d: SpaceHierarchyNode) => truncateLabel(d.data.name));
-        if (explicitScale == null) {
-          labelText.attr('opacity', (d: SpaceHierarchyNode) =>
-            isLabelShown(d) ? 1 : 0,
-          );
-        }
       }
     }
 
