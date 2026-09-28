@@ -66,7 +66,6 @@ export function NetworkCensus({
   spaces,
   members,
   agreements,
-  transactions,
   tokens,
 }: {
   lang: Locale;
@@ -74,7 +73,6 @@ export function NetworkCensus({
   spaces: CensusFigures;
   members: CensusFigures;
   agreements: CensusFigures;
-  transactions: CensusFigures | null;
   tokens: CensusFigures | null;
 }) {
   const t = useTranslations('Network');
@@ -115,13 +113,6 @@ export function NetworkCensus({
       reserveSplit: true,
     },
     {
-      value: transactions?.total ?? null,
-      label: t('transactions'),
-      split: null,
-      isLoading: false,
-      reserveSplit: false,
-    },
-    {
       value: tokens?.total ?? null,
       label: t('tokens'),
       split: null,
@@ -131,7 +122,7 @@ export function NetworkCensus({
   ];
 
   return (
-    <div className="grid w-full grid-cols-1 md:grid-cols-5">
+    <div className="grid w-full grid-cols-1 md:grid-cols-4">
       {columns.map((column, index) => (
         <StatColumn
           key={column.label}

@@ -413,15 +413,6 @@ export function ExploreSpaces({
         publicCount: agreementCount,
         privateCount: privateAgreementCount,
       }}
-      transactions={
-        networkGrowth
-          ? {
-              total: networkGrowth.transactions.total,
-              publicCount: networkGrowth.transactions.total,
-              privateCount: 0,
-            }
-          : null
-      }
       tokens={
         networkGrowth
           ? {

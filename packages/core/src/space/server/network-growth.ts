@@ -4,7 +4,6 @@ import {
   memberships,
   spaces,
   tokens,
-  transfers,
 } from '@hypha-platform/storage-postgres';
 import { HIDDEN_TOKEN_ADDRESSES } from '../../common/web3/tokens';
 import type { DbConfig } from '../../common/server/types';
@@ -60,9 +59,8 @@ export async function getNetworkGrowth(
         )})
         )`;
 
-  const [memberResult, agreementResult, transferRows, tokenRows] =
-    await Promise.all([
-      db.execute(sql`
+  const [memberResult, agreementResult, tokenRows] = await Promise.all([
+    db.execute(sql`
         WITH first_join AS (
           SELECT ${memberships.personId} AS person_id,
                  min(${memberships.createdAt}) AS first_at
@@ -77,7 +75,7 @@ export async function getNetworkGrowth(
         GROUP BY 1
         ORDER BY 1
       `),
-      db.execute(sql`
+    db.execute(sql`
         SELECT to_char(date_trunc('month', ${documents.createdAt}), 'YYYY-MM') AS month,
                count(*)::int AS count
         FROM ${documents}
@@ -87,31 +85,26 @@ export async function getNetworkGrowth(
         GROUP BY 1
         ORDER BY 1
       `),
-      db.select({ total: sql<number>`count(*)::int` }).from(transfers),
-      db
-        .select({
-          total: sql<number>`count(*)::int`,
-          thisMonth: sql<number>`count(*) filter (where ${tokens.createdAt} >= ${monthStart})::int`,
-        })
-        .from(tokens)
-        .leftJoin(spaces, eq(tokens.spaceId, spaces.id))
-        .where(
-          and(
-            eq(tokens.archived, false),
-            or(isNull(tokens.spaceId), countedSpace),
-            notHidden,
-          ),
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        thisMonth: sql<number>`count(*) filter (where ${tokens.createdAt} >= ${monthStart})::int`,
+      })
+      .from(tokens)
+      .leftJoin(spaces, eq(tokens.spaceId, spaces.id))
+      .where(
+        and(
+          eq(tokens.archived, false),
+          or(isNull(tokens.spaceId), countedSpace),
+          notHidden,
         ),
-    ]);
+      ),
+  ]);
 
   const memberMonths = asMonthly(memberResult.rows);
   const agreementMonths = asMonthly(agreementResult.rows);
 
   return {
-    transactions: {
-      total: asCount(transferRows[0]?.total),
-      thisMonth: null,
-    },
     tokens: {
       total: asCount(tokenRows[0]?.total),
       thisMonth: asCount(tokenRows[0]?.thisMonth),

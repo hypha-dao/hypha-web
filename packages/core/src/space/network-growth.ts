@@ -16,13 +16,9 @@ export type CumulativePoint = {
  *
  * Spaces, members, and agreements on the page still use the loaded directory
  * (public plus private). These figures are the dated additions and the two
- * cumulative series, plus transfer and token totals.
- *
- * `transactions.thisMonth` stays null: the `transfers` table stores a hash
- * and a memo, and no timestamp, so a this-month delta would be invented.
+ * cumulative series, plus the token total.
  */
 export type NetworkGrowth = {
-  transactions: { total: number; thisMonth: null };
   tokens: { total: number; thisMonth: number };
   membersThisMonth: number;
   agreementsThisMonth: number;
