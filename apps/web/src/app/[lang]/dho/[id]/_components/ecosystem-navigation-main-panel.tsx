@@ -176,7 +176,7 @@ function findColumnFooter(
   if (contentIndex < 0) return null;
   for (let i = kids.length - 1; i > contentIndex; i -= 1) {
     const kid = kids[i];
-    if (kid.offsetHeight >= 8) return kid;
+    if (kid && kid.offsetHeight >= 8) return kid;
   }
   return null;
 }
