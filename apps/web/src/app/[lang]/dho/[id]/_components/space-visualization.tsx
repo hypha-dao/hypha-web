@@ -47,15 +47,15 @@ const VISUALIZATION_CONFIG = {
   DEPTH_SCALE: 0.45,
   /** Center mark inside an enclosure, small enough that child rings fit around it. */
   ENCLOSURE_LOGO_RATIO: 0.22,
-  /** Leaf mark inside its own ring: set off the stroke, not tight on the icon. */
-  LEAF_LOGO_RATIO: 0.46,
+  /** Leaf mark inside its own ring: narrow gap inside the stroke, ring stays visible. */
+  LEAF_LOGO_RATIO: 0.84,
   ZOOM_DURATION: 720,
   /**
    * One caption size. Scaling with the logo pushed the center name down
    * into the child ring, where it no longer read as centered under the mark.
    */
   LABEL_FONT: 11,
-  /** Gap between the logo and the top of the name. */
+  /** Gap between the node shape and the top of the name. */
   LABEL_GAP: 8,
   MAX_LABEL_CHARS: 18,
 } as const;
@@ -198,9 +198,19 @@ function placeChildRings(node: SpaceHierarchyNode): void {
   });
 }
 
-function labelMetrics(screenLogoRadius: number): LabelMetrics {
+function nodeShapeRadius(d: SpaceHierarchyNode, k: number): number {
+  const hasChildren = Boolean(d.children && d.children.length > 0);
+  const r = finiteOr(d.r, 0) * k;
+  return hasChildren ? r * logoRatio(d) : r;
+}
+
+function nodeLabelTop(d: SpaceHierarchyNode, k: number): number {
+  return nodeShapeRadius(d, k) + VISUALIZATION_CONFIG.LABEL_GAP;
+}
+
+function labelMetrics(screenShapeRadius: number): LabelMetrics {
   const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
-  const labelTop = screenLogoRadius + VISUALIZATION_CONFIG.LABEL_GAP;
+  const labelTop = screenShapeRadius + VISUALIZATION_CONFIG.LABEL_GAP;
   return { labelFontSize, labelTop };
 }
 
@@ -250,10 +260,10 @@ function clusterBounds(
     const radius = finiteOr(d.r, 0);
     includeCircle(bounds, x, y, radius);
     if (!showLabels) return;
-    const screenLogoRadius = radius * safeScale * logoRatio(d);
-    const { labelFontSize, labelTop } = labelMetrics(screenLogoRadius);
+    const top = nodeLabelTop(d, safeScale);
+    const { labelFontSize } = labelMetrics(nodeShapeRadius(d, safeScale));
     const half = estimateLabelHalfWidth(d.data.name, labelFontSize) / safeScale;
-    const bottom = y + (labelTop + labelFontSize * 1.35) / safeScale;
+    const bottom = y + (top + labelFontSize * 1.35) / safeScale;
     includePoint(bounds, x - half, y);
     includePoint(bounds, x + half, bottom);
   });
@@ -316,12 +326,11 @@ function screenSpan(
     includePoint(span, x - rad, y - rad);
     includePoint(span, x + rad, y + rad);
     if (!showLabels) continue;
-    const { labelFontSize, labelTop } = labelMetrics(
-      finiteOr(d.r, 0) * scale * logoRatio(d),
-    );
+    const top = nodeLabelTop(d, scale);
+    const { labelFontSize } = labelMetrics(nodeShapeRadius(d, scale));
     const half = estimateLabelHalfWidth(d.data.name, labelFontSize);
     includePoint(span, x - half, y);
-    includePoint(span, x + half, y + labelTop + labelFontSize * 1.35);
+    includePoint(span, x + half, y + top + labelFontSize * 1.35);
   }
   if (!Number.isFinite(span.minX)) {
     includePoint(span, -1, -1);
@@ -1153,8 +1162,7 @@ export function SpaceVisualization({
           .attr('transform', nodeTransform)
           .attr('x', 0)
           .attr('y', (d: SpaceHierarchyNode) => {
-            const r = clampSvgLength(finiteOr(d.r, 0) * k * logoRatio(d));
-            return labelMetrics(r).labelTop;
+            return nodeLabelTop(d, k);
           })
           .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
           .attr('fill', getLabelFillColor())
