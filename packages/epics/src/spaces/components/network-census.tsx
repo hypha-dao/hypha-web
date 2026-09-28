@@ -37,10 +37,7 @@ function StatColumn({
     <div
       className={cn(
         'flex min-w-0 flex-col items-start border-border py-3 text-left',
-        // Equal columns stay; outer counts share the toolbar edges.
         'md:items-center md:px-4 md:py-1 md:text-center',
-        'md:first:items-start md:first:pl-0 md:first:text-left',
-        'md:last:items-end md:last:pr-0 md:last:text-right',
         index > 0 && 'max-md:border-t md:border-l',
       )}
     >
