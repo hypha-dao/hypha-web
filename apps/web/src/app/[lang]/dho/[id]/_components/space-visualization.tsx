@@ -875,9 +875,7 @@ export function SpaceVisualization({
     if (showNodeLabels) {
       const stage = readStageSize();
       const span = Math.max(finiteOr(root.r, 1) * 2, 1);
-      let scale = stage
-        ? Math.min(stage.width, stage.height) / span
-        : 1;
+      let scale = stage ? Math.min(stage.width, stage.height) / span : 1;
       for (let pass = 0; pass < 3; pass += 1) {
         growRingAroundLabels(root, scale);
         if (!stage) break;
@@ -1229,7 +1227,9 @@ export function SpaceVisualization({
           .style('display', (d: SpaceHierarchyNode) =>
             isLabelShown(d) ? 'block' : 'none',
           )
-          .style('opacity', (d: SpaceHierarchyNode) => (isLabelShown(d) ? 1 : 0))
+          .style('opacity', (d: SpaceHierarchyNode) =>
+            isLabelShown(d) ? 1 : 0,
+          )
           .text((d: SpaceHierarchyNode) => truncateLabel(d.data.name));
       }
     }
