@@ -321,13 +321,19 @@ function frameFromBounds(bounds: LayoutBounds): ClusterFrame {
   };
 }
 
+/** Phones keep a tight inset so the disc fills the column. */
+function clusterFitPadding(viewWidth: number): number {
+  return viewWidth < 768 ? 8 : CLUSTER_FIT_PADDING;
+}
+
 function fitScale(
   frame: ClusterFrame,
   viewWidth: number,
   viewHeight: number,
 ): number {
-  const innerW = Math.max(viewWidth - CLUSTER_FIT_PADDING * 2, 1);
-  const innerH = Math.max(viewHeight - CLUSTER_FIT_PADDING * 2, 1);
+  const pad = clusterFitPadding(viewWidth);
+  const innerW = Math.max(viewWidth - pad * 2, 1);
+  const innerH = Math.max(viewHeight - pad * 2, 1);
   return Math.min(innerW / frame.width, innerH / frame.height);
 }
 
@@ -387,8 +393,9 @@ function containScale(
   scale: number,
   showLabels: boolean,
 ): number {
-  const limitX = Math.max(viewWidth / 2 - CLUSTER_FIT_PADDING, 1);
-  const limitY = Math.max(viewHeight / 2 - CLUSTER_FIT_PADDING, 1);
+  const pad = clusterFitPadding(viewWidth);
+  const limitX = Math.max(viewWidth / 2 - pad, 1);
+  const limitY = Math.max(viewHeight / 2 - pad, 1);
   let k = Math.max(scale, 0.0001);
   for (let pass = 0; pass < 4; pass += 1) {
     const span = screenSpan(nodes, cx, cy, k, showLabels);
@@ -773,33 +780,16 @@ export function SpaceVisualization({
       return false;
     }
 
-    function isAncestorOf(
-      ancestor: SpaceHierarchyNode,
-      node: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
     function isVisibleForFocus(
       d: SpaceHierarchyNode,
       focusNode: SpaceHierarchyNode,
     ): boolean {
       if (d === focusNode) return true;
 
-      if (isDescendantOfOrSelf(d, focusNode)) {
-        return true;
-      }
-
-      if (isAncestorOf(d, focusNode)) {
-        return true;
-      }
-
-      return false;
+      // Ancestors stay out of the focused view. A parent ring passes just
+      // outside its children, so leaving it visible after a zoom parks a
+      // cropped logo on the edge of the stage.
+      return isDescendantOfOrSelf(d, focusNode);
     }
 
     function isVisible(d: SpaceHierarchyNode): boolean {
@@ -1001,6 +991,9 @@ export function SpaceVisualization({
       const size = readStageSize();
       if (!size) return;
       const sizeKeyAtStart = stageSizeKey(size);
+      // Membership row height changes with the focused space and resizes the
+      // stage. Reading that live size inside the tween jumps the viewBox.
+      const lockedSize = { width: size.width, height: size.height };
       const startFocus = focus;
       const startScale = containScale(
         startFocus.descendants() as SpaceHierarchyNode[],
@@ -1057,7 +1050,7 @@ export function SpaceVisualization({
               ),
             };
             const currentScale = startScale + (targetScale - startScale) * t;
-            applyFrame(frame, currentScale);
+            applyFrame(frame, currentScale, lockedSize);
           };
         });
 
@@ -1133,8 +1126,12 @@ export function SpaceVisualization({
       };
     }
 
-    function applyFrame(next: ClusterFrame, explicitScale?: number) {
-      const size = readStageSize();
+    function applyFrame(
+      next: ClusterFrame,
+      explicitScale?: number,
+      lockedSize?: { width: number; height: number },
+    ) {
+      const size = lockedSize ?? readStageSize();
       if (!size) return;
       const { width: viewWidth, height: viewHeight } = size;
       // 1:1 with the stage. The cluster is placed in this box, so a tall stage
@@ -1223,8 +1220,12 @@ export function SpaceVisualization({
           .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
           .attr('fill', getLabelFillColor())
           .attr('stroke', getLabelStrokeColor())
-          .attr('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
           .text((d: SpaceHierarchyNode) => truncateLabel(d.data.name));
+        if (explicitScale == null) {
+          labelText.attr('opacity', (d: SpaceHierarchyNode) =>
+            isVisible(d) ? 1 : 0,
+          );
+        }
       }
     }
 

@@ -467,6 +467,12 @@ export function EcosystemNavigationMainPanel({
         if (footerClearance != null) {
           room = Math.min(room, footerClearance);
         }
+        // A phone column is short once the membership row is in it, so the
+        // leftover slot shrinks the disc. Keep at least a square and let the
+        // page scroll instead of crushing the cluster.
+        if (stageWidth < 768) {
+          room = Math.max(room, stageWidth);
+        }
         const next = room >= 64 ? Math.round(room) : stageWidth;
         const heightMatches =
           Math.abs(next - current.offsetHeight) <= 2 &&
