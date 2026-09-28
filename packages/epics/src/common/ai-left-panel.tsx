@@ -479,6 +479,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const transferredMobilizedAgentsSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  /** True only after this page load has started an AI turn. */
+  const hasSeenGenerationRef = useRef(false);
+  /** Navigation already in the restored chat. Reloading must not follow it. */
+  const sealedNavigationKeyRef = useRef<string | null>(null);
   const lastPrepareGovernanceResubmitKeyRef = useRef<string | null>(null);
   const wasOnProposalCreatePathRef = useRef(false);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
@@ -974,6 +978,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  useEffect(() => {
+    if (isStreaming) hasSeenGenerationRef.current = true;
+  }, [isStreaming]);
+
   const hasUserMessage = useMemo(
     () =>
       (messages as ChatUIMessage[]).some((message) => message.role === 'user'),
@@ -1060,6 +1068,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     lastChatSpaceSlugRef.current = nextSlug;
     lastMcpNavigationTargetSpaceSlugRef.current = null;
     lastAutoNavigationKeyRef.current = null;
+    hasSeenGenerationRef.current = false;
+    sealedNavigationKeyRef.current = null;
     stop();
     clearError();
     setMessages([]);
@@ -1477,6 +1487,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const prepareUpdate = findLatestPrepareGovernanceProposalUpdate(messages);
     if (!prepareUpdate?.resubmitPayload) return;
     if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
+    if (!hasSeenGenerationRef.current) {
+      sealedNavigationKeyRef.current = prepareUpdate.key;
+      lastPrepareGovernanceResubmitKeyRef.current = prepareUpdate.key;
+      return;
+    }
+    if (sealedNavigationKeyRef.current === prepareUpdate.key) return;
     if (lastPrepareGovernanceResubmitKeyRef.current === prepareUpdate.key) {
       return;
     }
@@ -1514,6 +1530,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
+    const navigationKey = navigationTarget.key;
+    if (!hasSeenGenerationRef.current) {
+      sealedNavigationKeyRef.current = navigationKey;
+      return;
+    }
+    if (sealedNavigationKeyRef.current === navigationKey) return;
 
     const allowWhileStreaming =
       navigationTarget &&
@@ -1527,7 +1549,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const currentSearch =
       typeof window !== 'undefined' ? window.location.search : '';
-    const navigationKey = navigationTarget.key;
     const isSignalCreateNavigation =
       navigationTarget.toolName === 'create_space_signal_by_slug' ||
       navigationTarget.toolName === 'relay_ecosystem_signal';
