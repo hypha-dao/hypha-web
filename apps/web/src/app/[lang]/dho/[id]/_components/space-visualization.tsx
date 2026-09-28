@@ -106,6 +106,17 @@ function finiteOr(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) ? (value as number) : fallback;
 }
 
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+function stageSizeKey(size: { width: number; height: number }): string {
+  return `${Math.round(size.width)}x${Math.round(size.height)}`;
+}
+
 /** Screen inset so a hairline on the bounds is not cut by the stage edge. */
 const CLUSTER_FIT_PADDING = 12;
 
@@ -911,6 +922,65 @@ export function SpaceVisualization({
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
+    // One named transition for the cluster frame. A second ease inside the
+    // tween stacks on d3's own easing and rushes the middle of the zoom.
+    // Stage resizes share this name so they retarget the same motion
+    // instead of snapping a new viewBox over it.
+    const DIAGRAM_MOTION = 'diagram';
+    let focusMotion = false;
+
+    function framesMatch(a: ClusterFrame, b: ClusterFrame): boolean {
+      return (
+        Math.abs(a.cx - b.cx) < 0.5 &&
+        Math.abs(a.cy - b.cy) < 0.5 &&
+        Math.abs(a.width - b.width) < 0.5 &&
+        Math.abs(a.height - b.height) < 0.5
+      );
+    }
+
+    function commitFrame(next: ClusterFrame) {
+      frame = next;
+      applyFrame(frame);
+    }
+
+    /** Glide the cluster to `next`. Reduced motion jumps. */
+    function glideFrame(next: ClusterFrame) {
+      const duration = prefersReducedMotion()
+        ? 0
+        : VISUALIZATION_CONFIG.ZOOM_DURATION;
+      if (duration === 0 || framesMatch(frame, next)) {
+        svg.interrupt(DIAGRAM_MOTION);
+        commitFrame(next);
+        return;
+      }
+      const startFrame = {
+        cx: frame.cx,
+        cy: frame.cy,
+        width: frame.width,
+        height: frame.height,
+      };
+      svg.interrupt(DIAGRAM_MOTION);
+      svg
+        .transition(DIAGRAM_MOTION)
+        .duration(duration)
+        .ease(d3.easeCubicInOut)
+        .tween('frame', () => (t: number) => {
+          frame = {
+            cx: startFrame.cx + (next.cx - startFrame.cx) * t,
+            cy: startFrame.cy + (next.cy - startFrame.cy) * t,
+            width: Math.max(
+              startFrame.width + (next.width - startFrame.width) * t,
+              1,
+            ),
+            height: Math.max(
+              startFrame.height + (next.height - startFrame.height) * t,
+              1,
+            ),
+          };
+          applyFrame(frame);
+        });
+    }
+
     function zoom(
       target: SpaceHierarchyNode,
       options?: {
@@ -923,6 +993,7 @@ export function SpaceVisualization({
 
       const size = readStageSize();
       if (!size) return;
+      const sizeKeyAtStart = stageSizeKey(size);
       const nextFrame = solveClusterFrame(
         focus,
         size.width,
@@ -931,23 +1002,26 @@ export function SpaceVisualization({
         currentSpaceId,
       );
       const startFrame = frame;
+      const duration = prefersReducedMotion()
+        ? 0
+        : VISUALIZATION_CONFIG.ZOOM_DURATION;
+      focusMotion = duration > 0;
 
       const transition = svg
-        .transition()
-        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+        .transition(DIAGRAM_MOTION)
+        .duration(duration)
+        .ease(d3.easeCubicInOut)
         .tween('zoom', () => {
           return (t) => {
-            const eased = d3.easeCubicInOut(t);
             frame = {
-              cx: startFrame.cx + (nextFrame.cx - startFrame.cx) * eased,
-              cy: startFrame.cy + (nextFrame.cy - startFrame.cy) * eased,
+              cx: startFrame.cx + (nextFrame.cx - startFrame.cx) * t,
+              cy: startFrame.cy + (nextFrame.cy - startFrame.cy) * t,
               width: Math.max(
-                startFrame.width + (nextFrame.width - startFrame.width) * eased,
+                startFrame.width + (nextFrame.width - startFrame.width) * t,
                 1,
               ),
               height: Math.max(
-                startFrame.height +
-                  (nextFrame.height - startFrame.height) * eased,
+                startFrame.height + (nextFrame.height - startFrame.height) * t,
                 1,
               ),
             };
@@ -973,12 +1047,32 @@ export function SpaceVisualization({
         d3.select(this)
           .select('circle.logo-disk')
           .transition()
-          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+          .duration(duration)
           .attr('fill', getDiagramFillColor())
           .attr('stroke', 'none');
       });
 
+      transition.on('interrupt', () => {
+        focusMotion = false;
+      });
+
       transition.on('end', () => {
+        focusMotion = false;
+        const latest = readStageSize();
+        const latestKey = latest ? stageSizeKey(latest) : '';
+        // A stage resize during the zoom continues as one settle after the
+        // focus motion, instead of a second snap on top of it.
+        if (latest && latestKey !== sizeKeyAtStart) {
+          fittedKey = latestKey;
+          const next = solveClusterFrame(
+            focus,
+            latest.width,
+            latest.height,
+            showNodeLabels,
+            currentSpaceId,
+          );
+          requestAnimationFrame(() => glideFrame(next));
+        }
         notifyVisibleSpaces(focus);
         options?.onEnd?.();
       });
@@ -1109,28 +1203,46 @@ export function SpaceVisualization({
         });
     }
 
-    let fittedKey = initialSize
-      ? `${Math.round(initialSize.width)}x${Math.round(initialSize.height)}`
-      : '';
+    let fittedKey = initialSize ? stageSizeKey(initialSize) : '';
+    let fittedOnce = Boolean(initialSize);
+    let settleRaf = 0;
     const stageObserver = new ResizeObserver(() => {
-      const size = readStageSize();
-      if (!size) return;
-      const key = `${Math.round(size.width)}x${Math.round(size.height)}`;
-      if (key === fittedKey) return;
-      fittedKey = key;
-      frame = solveClusterFrame(
-        focus,
-        size.width,
-        size.height,
-        showNodeLabels,
-        currentSpaceId,
-      );
-      applyFrame(frame);
+      // The focus tween already reads the live stage each tick. A parallel
+      // viewBox write here is the extra jump in the middle of the zoom.
+      if (focusMotion) return;
+      if (settleRaf) cancelAnimationFrame(settleRaf);
+      settleRaf = requestAnimationFrame(() => {
+        settleRaf = 0;
+        if (focusMotion) return;
+        const size = readStageSize();
+        if (!size) return;
+        const key = stageSizeKey(size);
+        if (key === fittedKey) return;
+        fittedKey = key;
+        const next = solveClusterFrame(
+          focus,
+          size.width,
+          size.height,
+          showNodeLabels,
+          currentSpaceId,
+        );
+        // First measurement paints in place. Later passes — banner, scroll
+        // hold, row height — share one glide to the latest box.
+        if (!fittedOnce || prefersReducedMotion()) {
+          fittedOnce = true;
+          commitFrame(next);
+          return;
+        }
+        fittedOnce = true;
+        glideFrame(next);
+      });
     });
     if (containerRef.current) stageObserver.observe(containerRef.current);
 
     return () => {
+      if (settleRaf) cancelAnimationFrame(settleRaf);
       stageObserver.disconnect();
+      svg.interrupt(DIAGRAM_MOTION);
       svg.interrupt();
       if (zoomApiRef) {
         zoomApiRef.current = { zoomIn: () => {}, zoomOut: () => {} };

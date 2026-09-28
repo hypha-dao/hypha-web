@@ -341,6 +341,29 @@ export function EcosystemNavigationMainPanel({
 
     const scrollParent = findScrollParent(stage);
     let measuring = false;
+    // Last painted membership-row height. The row is `role="status"` while
+    // member avatars load: it collapses, then grows back. Each of those
+    // heights rewrites the stage, and the diagram refits its viewBox on
+    // every pass. Holding the row still leaves the stage on one measurement.
+    let settledMembershipHeight = 0;
+
+    const holdMembershipRow = (stageEl: HTMLElement) => {
+      const membership = stageEl.previousElementSibling;
+      if (!(membership instanceof HTMLElement)) return;
+      const loading = membership.getAttribute('role') === 'status';
+      if (loading && settledMembershipHeight > 0) {
+        const held = `${Math.round(settledMembershipHeight)}px`;
+        if (membership.style.minHeight !== held) {
+          membership.style.minHeight = held;
+        }
+        return;
+      }
+      if (!loading) {
+        if (membership.style.minHeight) membership.style.minHeight = '';
+        const height = membership.offsetHeight;
+        if (height > 0) settledMembershipHeight = height;
+      }
+    };
 
     const apply = () => {
       if (measuring) return;
@@ -351,6 +374,7 @@ export function EcosystemNavigationMainPanel({
         const stageWidth = Math.round(current.getBoundingClientRect().width);
         if (stageWidth < 64) return;
 
+        holdMembershipRow(current);
         const contentHeight = columnContentHeight(scrollParent);
         const collapsedScroll = collapsedBannerScroll(scrollParent);
         // Room left for the stage once the banner is collapsed and the footer
@@ -412,6 +436,10 @@ export function EcosystemNavigationMainPanel({
       observer.disconnect();
       footerWatch.disconnect();
       window.removeEventListener('resize', apply);
+      const membership = diagramStageRef.current?.previousElementSibling;
+      if (membership instanceof HTMLElement && membership.style.minHeight) {
+        membership.style.minHeight = '';
+      }
     };
   }, [hierarchyData, isLoading]);
 
