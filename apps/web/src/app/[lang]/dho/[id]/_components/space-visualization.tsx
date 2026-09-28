@@ -765,14 +765,6 @@ export function SpaceVisualization({
         return true;
       }
 
-      let currentAncestor = focusNode.parent;
-      while (currentAncestor) {
-        if (isDescendantOfOrSelf(d, currentAncestor)) {
-          return true;
-        }
-        currentAncestor = currentAncestor.parent;
-      }
-
       return false;
     }
 

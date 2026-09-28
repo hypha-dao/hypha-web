@@ -526,7 +526,7 @@ export function EcosystemNavigationMainPanel({
   }, [hierarchyData, isLoading]);
 
   return (
-    <section className="flex w-full flex-col gap-3 pt-2 pb-0">
+    <section className="flex w-full flex-col gap-3 pt-2 pb-0 -mb-8">
       {isLoading ? (
         <>
           {ecosystemHeader}
