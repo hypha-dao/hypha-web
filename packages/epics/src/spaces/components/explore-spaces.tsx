@@ -399,7 +399,7 @@ export function ExploreSpaces({
   );
 
   const listMetaRow = (
-    <div className="mb-4 flex w-full flex-row items-center justify-between gap-2">
+    <div className="mb-7 flex w-full flex-row items-center justify-between gap-2">
       <CategoryLabel
         selectedSpaces={selectedSpaces}
         categoryGroups={categoryGroups}
@@ -456,7 +456,7 @@ export function ExploreSpaces({
             <NetworkGlobeMap
               lang={lang}
               spaces={mapSpaces}
-              className={cn('w-full', showMapStage && 'mb-4')}
+              className={cn('w-full', showMapStage && 'mb-7')}
               isActive={showMapStage}
               showStage={showMapStage}
               alignProjection={view === 'overview' ? 'flat' : undefined}
