@@ -797,6 +797,14 @@ export function SpaceVisualization({
       return isVisibleForFocus(d, focus);
     }
 
+    // An intermediate ring's caption lands on the level below it. The focused
+    // node keeps its name; a second-level name stays off while N+2 is drawn.
+    function isLabelShown(d: SpaceHierarchyNode): boolean {
+      if (!isVisible(d)) return false;
+      if (d !== focus && d.children && d.children.length > 0) return false;
+      return true;
+    }
+
     function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
       const visibleSpaces: VisibleSpace[] = [
         {
@@ -845,7 +853,7 @@ export function SpaceVisualization({
     orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     labelText.style('opacity', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 1 : 0,
+      isLabelShown(d) ? 1 : 0,
     );
     orbits.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
@@ -854,7 +862,7 @@ export function SpaceVisualization({
       isVisible(d) ? 'block' : 'none',
     );
     labelText.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
+      isLabelShown(d) ? 'block' : 'none',
     );
 
     logos.each(function () {
@@ -1058,15 +1066,22 @@ export function SpaceVisualization({
         .selectAll<SVGElement, SpaceHierarchyNode>(
           'path.orbit, g.logo, text.node-label',
         )
-        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
+        .style('opacity', function (d: SpaceHierarchyNode) {
+          const label = this instanceof SVGElement && this.tagName === 'text';
+          return (label ? isLabelShown(d) : isVisible(d)) ? 1 : 0;
+        })
         .on('start', function (d: SpaceHierarchyNode) {
-          if (isVisible(d) && this instanceof SVGElement) {
-            (this as SVGElement).style.display = 'block';
+          const label = this instanceof SVGElement && this.tagName === 'text';
+          const shown = label ? isLabelShown(d) : isVisible(d);
+          if (shown && this instanceof SVGElement) {
+            this.style.display = 'block';
           }
         })
         .on('end', function (d: SpaceHierarchyNode) {
-          if (!isVisible(d) && this instanceof SVGElement) {
-            (this as SVGElement).style.display = 'none';
+          const label = this instanceof SVGElement && this.tagName === 'text';
+          const shown = label ? isLabelShown(d) : isVisible(d);
+          if (!shown && this instanceof SVGElement) {
+            this.style.display = 'none';
           }
         });
 
@@ -1223,7 +1238,7 @@ export function SpaceVisualization({
           .text((d: SpaceHierarchyNode) => truncateLabel(d.data.name));
         if (explicitScale == null) {
           labelText.attr('opacity', (d: SpaceHierarchyNode) =>
-            isVisible(d) ? 1 : 0,
+            isLabelShown(d) ? 1 : 0,
           );
         }
       }
