@@ -883,6 +883,29 @@ export function SpaceVisualization({
         commitFrame(next);
         return;
       }
+      const size = readStageSize();
+      const startScale = size
+        ? containScale(
+            focus.descendants() as SpaceHierarchyNode[],
+            frame.cx,
+            frame.cy,
+            size.width,
+            size.height,
+            fitScale(frame, size.width, size.height),
+            showNodeLabels,
+          )
+        : null;
+      const targetScale = size
+        ? containScale(
+            focus.descendants() as SpaceHierarchyNode[],
+            next.cx,
+            next.cy,
+            size.width,
+            size.height,
+            fitScale(next, size.width, size.height),
+            showNodeLabels,
+          )
+        : null;
       const startFrame = {
         cx: frame.cx,
         cy: frame.cy,
@@ -907,7 +930,11 @@ export function SpaceVisualization({
               1,
             ),
           };
-          applyFrame(frame);
+          const currentScale =
+            startScale != null && targetScale != null
+              ? startScale + (targetScale - startScale) * t
+              : undefined;
+          applyFrame(frame, currentScale);
         });
     }
 
@@ -917,19 +944,40 @@ export function SpaceVisualization({
         onEnd?: () => void;
       },
     ) {
+      const size = readStageSize();
+      if (!size) return;
+      const sizeKeyAtStart = stageSizeKey(size);
+      const startFocus = focus;
+      const startScale = containScale(
+        startFocus.descendants() as SpaceHierarchyNode[],
+        frame.cx,
+        frame.cy,
+        size.width,
+        size.height,
+        fitScale(frame, size.width, size.height),
+        showNodeLabels,
+      );
+
       focus = target;
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
 
-      const size = readStageSize();
-      if (!size) return;
-      const sizeKeyAtStart = stageSizeKey(size);
       const nextFrame = solveClusterFrame(
         focus,
         size.width,
         size.height,
         showNodeLabels,
       );
+      const targetScale = containScale(
+        focus.descendants() as SpaceHierarchyNode[],
+        nextFrame.cx,
+        nextFrame.cy,
+        size.width,
+        size.height,
+        fitScale(nextFrame, size.width, size.height),
+        showNodeLabels,
+      );
+
       const startFrame = frame;
       const duration = prefersReducedMotion()
         ? 0
@@ -954,7 +1002,8 @@ export function SpaceVisualization({
                 1,
               ),
             };
-            applyFrame(frame);
+            const currentScale = startScale + (targetScale - startScale) * t;
+            applyFrame(frame, currentScale);
           };
         });
 
@@ -1030,7 +1079,7 @@ export function SpaceVisualization({
       };
     }
 
-    function applyFrame(next: ClusterFrame) {
+    function applyFrame(next: ClusterFrame, explicitScale?: number) {
       const size = readStageSize();
       if (!size) return;
       const { width: viewWidth, height: viewHeight } = size;
@@ -1041,15 +1090,18 @@ export function SpaceVisualization({
         `${-viewWidth / 2} ${-viewHeight / 2} ${viewWidth} ${viewHeight}`,
       );
       const fitted = fitScale(next, viewWidth, viewHeight);
-      const k = containScale(
-        focus.descendants() as SpaceHierarchyNode[],
-        next.cx,
-        next.cy,
-        viewWidth,
-        viewHeight,
-        fitted,
-        showNodeLabels,
-      );
+      const k =
+        typeof explicitScale === 'number' && Number.isFinite(explicitScale)
+          ? explicitScale
+          : containScale(
+              focus.descendants() as SpaceHierarchyNode[],
+              next.cx,
+              next.cy,
+              viewWidth,
+              viewHeight,
+              fitted,
+              showNodeLabels,
+            );
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
         const tx = (finiteOr(d.x, 0) - next.cx) * k;
