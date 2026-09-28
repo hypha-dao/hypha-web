@@ -50,11 +50,13 @@ const VISUALIZATION_CONFIG = {
   ZOOM_DURATION: 720,
   LOGO_STROKE_WIDTH: 20,
   STROKE_WIDTH_SCALE: 0.7,
-  /** Names stay at least this large, even when a node is drawn small. */
-  LABEL_MIN_FONT: 11,
-  LABEL_MAX_FONT: 15,
-  /** Clear gap between the outermost ring and the top of the name. */
-  LABEL_GAP: 10,
+  /**
+   * One caption size. Scaling with the logo pushed the center name down
+   * into the child ring, where it no longer read as centered under the mark.
+   */
+  LABEL_FONT: 11,
+  /** Gap between the node ring and the top of the name. */
+  LABEL_GAP: 8,
   MAX_LABEL_CHARS: 18,
 } as const;
 
@@ -144,22 +146,16 @@ function labelMetrics(
   isCurrent: boolean,
   isFocused: boolean,
 ): LabelMetrics {
-  const labelFontSize = clampSvgLength(
-    Math.min(
-      VISUALIZATION_CONFIG.LABEL_MAX_FONT,
-      Math.max(VISUALIZATION_CONFIG.LABEL_MIN_FONT, screenLogoRadius * 0.42),
-    ),
-  );
+  const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
+  // Match the focus and accent rings drawn in applyFrame, then sit the
+  // name just outside that ring, centered on the node.
   const ringOutset = isCurrent
     ? Math.max(4, screenLogoRadius * 0.14)
     : isFocused
     ? Math.max(3.5, screenLogoRadius * 0.12)
     : 0;
   const labelTop =
-    screenLogoRadius +
-    ringOutset +
-    3 +
-    Math.max(VISUALIZATION_CONFIG.LABEL_GAP, labelFontSize * 0.5);
+    screenLogoRadius + ringOutset + VISUALIZATION_CONFIG.LABEL_GAP;
   return { labelFontSize, labelTop };
 }
 
@@ -710,7 +706,7 @@ export function SpaceVisualization({
         .append('image')
         .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
         .attr('preserveAspectRatio', 'xMidYMid slice')
-        .attr('alt', `${d.data.name} logo`)
+        .attr('aria-hidden', 'true')
         .attr('clip-path', `url(#${clipId})`);
 
       logoGroup
@@ -755,6 +751,7 @@ export function SpaceVisualization({
         logoGroup
           .append('text')
           .attr('class', 'node-label')
+          .attr('x', 0)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'hanging')
           .attr('fill', getLabelFillColor())
@@ -764,11 +761,10 @@ export function SpaceVisualization({
           .style('font-family', 'var(--font-family-text), sans-serif')
           .style('font-weight', '500')
           .style('letter-spacing', '-0.01em')
+          .style('text-anchor', 'middle')
           .style('pointer-events', 'none')
           .text(truncateLabel(d.data.name));
       }
-
-      logoGroup.append('title').text(d.data.name);
     });
 
     svg.on('click', () => {
@@ -1193,7 +1189,9 @@ export function SpaceVisualization({
           if (showNodeLabels) {
             selection
               .select('text.node-label')
+              .attr('x', 0)
               .attr('y', labelY)
+              .attr('text-anchor', 'middle')
               .attr('font-size', `${labelFontSize}px`)
               .attr('fill', getLabelFillColor())
               .attr('stroke', getLabelStrokeColor())
