@@ -33,6 +33,11 @@ type Props = {
   ariaLabel?: string;
   /** Parent row calls these so zoom stays on the membership line. */
   zoomApiRef?: MutableRefObject<SpaceVisualizationZoomApi>;
+  /**
+   * `square` sizes from the column width. `fill` stretches to the positioned
+   * stage so a tall slot is the drawing box, not empty space under a square.
+   */
+  layout?: 'square' | 'fill';
   /** Stage fill. Default is a square that sizes from width. */
   className?: string;
 };
@@ -290,6 +295,7 @@ export function SpaceVisualization({
   showNodeLabels = true,
   ariaLabel = 'Space hierarchy visualization',
   zoomApiRef,
+  layout = 'square',
   className,
 }: Props) {
   const { resolvedTheme } = useTheme();
@@ -1141,11 +1147,18 @@ export function SpaceVisualization({
   return (
     <div
       ref={containerRef}
-      className={cn('relative aspect-square w-full overflow-hidden', className)}
+      className={cn(
+        layout === 'fill'
+          ? 'absolute inset-0 h-full w-full overflow-hidden'
+          : 'relative aspect-square w-full overflow-hidden',
+        className,
+      )}
     >
       <svg
         ref={svgRef}
         className="absolute inset-0 block h-full w-full"
+        width="100%"
+        height="100%"
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={ariaLabel}

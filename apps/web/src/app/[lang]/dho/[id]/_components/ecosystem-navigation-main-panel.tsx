@@ -13,6 +13,7 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
+  releaseMainColumnScrollHeightHold,
 } from '@hypha-platform/epics';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
@@ -65,42 +66,94 @@ function collapsedHeaderBottom(): number {
   return readMenuTop() + (barHeight >= 1 ? barHeight : 0);
 }
 
-/**
- * Where the stage sits in the viewport once the cover has collapsed and the
- * sticky banner is showing. The distance from the cover's bottom edge to the
- * stage is a layout length, so scrolling the cover does not change it.
- */
-function collapsedStageTop(stage: HTMLElement): number {
-  const sentinel = document.querySelector('[data-space-banner-bottom]');
-  const headerBottom = collapsedHeaderBottom();
-  if (!(sentinel instanceof HTMLElement)) {
-    return headerBottom;
-  }
-  const belowBanner =
-    stage.getBoundingClientRect().top - sentinel.getBoundingClientRect().bottom;
-  return headerBottom + belowBanner;
+function px(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-/** Blocks after the stage (the page footer). `offsetHeight` ignores scroll. */
-function followingBlockHeight(
-  scrollParent: HTMLElement | null,
-  stage: HTMLElement,
-): number {
-  if (!scrollParent) return 0;
-  let height = 0;
-  for (const child of Array.from(scrollParent.children)) {
-    if (!(child instanceof HTMLElement) || child.contains(stage)) continue;
-    if (
-      (stage.compareDocumentPosition(child) &
-        Node.DOCUMENT_POSITION_FOLLOWING) ===
-      0
-    ) {
-      continue;
-    }
-    if (child.offsetHeight < 24 || child.offsetWidth < 80) continue;
-    height += child.offsetHeight;
+function findScrollParent(stage: HTMLElement): HTMLElement | null {
+  let node: HTMLElement | null = stage.parentElement;
+  while (node) {
+    const overflow = getComputedStyle(node).overflowY;
+    if (overflow === 'auto' || overflow === 'scroll') return node;
+    node = node.parentElement;
   }
-  return height;
+  return null;
+}
+
+/**
+ * Scroll offset that puts the banner's bottom edge on the sticky row.
+ * `scrollTop + sentinelBottom` is a content length, so live scrolling does
+ * not change it.
+ */
+function collapsedBannerScroll(scrollParent: HTMLElement): number {
+  const sentinel = document.querySelector('[data-space-banner-bottom]');
+  if (!(sentinel instanceof HTMLElement)) return 0;
+  return Math.max(
+    0,
+    scrollParent.scrollTop +
+      sentinel.getBoundingClientRect().bottom -
+      collapsedHeaderBottom(),
+  );
+}
+
+/**
+ * In-flow column height, without the empty band. Auto margins and the
+ * route-change min-height are that band — counting them locks the stage at
+ * its current (short) size.
+ */
+function columnContentHeight(scrollParent: HTMLElement): number {
+  const hold = scrollParent.querySelector<HTMLElement>(
+    '[data-space-scroll-hold]',
+  );
+  const prevMin = hold?.style.minHeight ?? '';
+  const prevScroll = scrollParent.scrollTop;
+  if (hold) hold.style.minHeight = '0px';
+
+  const parentStyle = getComputedStyle(scrollParent);
+  let used =
+    px(parentStyle.paddingTop) +
+    px(parentStyle.paddingBottom) +
+    px(parentStyle.borderTopWidth) +
+    px(parentStyle.borderBottomWidth);
+
+  const kids = Array.from(scrollParent.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement,
+  );
+  const gap = px(parentStyle.rowGap);
+  if (kids.length > 1 && gap > 0) used += gap * (kids.length - 1);
+
+  for (const child of kids) {
+    used += child.offsetHeight;
+    const style = getComputedStyle(child);
+    const skipBottom =
+      child.classList.contains('mb-auto') ||
+      child.classList.contains('my-auto');
+    const skipTop =
+      child.classList.contains('mt-auto') ||
+      child.classList.contains('my-auto');
+    if (!skipTop) used += px(style.marginTop);
+    if (!skipBottom) used += px(style.marginBottom);
+  }
+
+  if (hold) hold.style.minHeight = prevMin;
+  if (Math.abs(scrollParent.scrollTop - prevScroll) > 0.5) {
+    scrollParent.scrollTop = prevScroll;
+  }
+  return used;
+}
+
+/**
+ * Stage box that makes the column exactly fill the scrollport once the
+ * banner is collapsed. Independent of the stage's current height.
+ */
+function stageHeightForCollapsedColumn(
+  stageHeight: number,
+  contentHeight: number,
+  collapsedScroll: number,
+  scrollportHeight: number,
+): number {
+  return stageHeight + collapsedScroll + scrollportHeight - contentHeight;
 }
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
@@ -286,64 +339,51 @@ export function EcosystemNavigationMainPanel({
     const stage = diagramStageRef.current;
     if (!stage || isLoading) return;
 
-    let scrollParent: HTMLElement | null = stage.parentElement;
-    while (scrollParent) {
-      const overflow = getComputedStyle(scrollParent).overflowY;
-      if (overflow === 'auto' || overflow === 'scroll') break;
-      scrollParent = scrollParent.parentElement;
-    }
+    const scrollParent = findScrollParent(stage);
+    let measuring = false;
 
     const apply = () => {
+      if (measuring) return;
       const current = diagramStageRef.current;
-      if (!current) return;
+      if (!current || !scrollParent) return;
+      measuring = true;
+      try {
+        const stageWidth = Math.round(current.getBoundingClientRect().width);
+        if (stageWidth < 64) return;
 
-      const stageWidth = Math.round(current.getBoundingClientRect().width);
-      if (stageWidth < 64) return;
-
-      const stageTop = collapsedStageTop(current);
-
-      let limit = window.innerHeight;
-      if (scrollParent) {
-        limit = Math.min(limit, scrollParent.getBoundingClientRect().bottom);
-      }
-
-      // Padding under the stage (page `pb-8`, section padding). Skip
-      // `margin-bottom: auto` — that slack is the empty band the stage fills.
-      let chrome = 8;
-      let node: HTMLElement | null = current.parentElement;
-      while (node && node !== scrollParent) {
-        const style = getComputedStyle(node);
-        chrome += Number.parseFloat(style.paddingBottom) || 0;
-        chrome += Number.parseFloat(style.borderBottomWidth) || 0;
-        const skipsAutoMargin =
-          node.classList.contains('mb-auto') ||
-          node.classList.contains('my-auto');
-        if (!skipsAutoMargin) {
-          chrome += Number.parseFloat(style.marginBottom) || 0;
+        const contentHeight = columnContentHeight(scrollParent);
+        const collapsedScroll = collapsedBannerScroll(scrollParent);
+        // Room left for the stage once the banner is collapsed and the footer
+        // sits on the scrollport bottom. A viewport-top reading leaves the
+        // auto-margin / scroll-hold band empty under a short drawing.
+        const room = stageHeightForCollapsedColumn(
+          current.offsetHeight,
+          contentHeight,
+          collapsedScroll,
+          scrollParent.clientHeight,
+        );
+        const next = room >= 64 ? Math.round(room) : stageWidth;
+        const heightMatches =
+          Math.abs(next - current.offsetHeight) <= 2 &&
+          current.style.aspectRatio === 'auto';
+        if (!heightMatches) {
+          current.style.aspectRatio = 'auto';
+          current.style.height = `${next}px`;
+          current.style.maxHeight = `${next}px`;
+          current.style.minHeight = `${next}px`;
         }
-        node = node.parentElement;
-      }
 
-      chrome += followingBlockHeight(scrollParent, current);
-
-      const slot = Math.round(limit - stageTop - chrome);
-      // Collapsed slot when it can show the rings. Otherwise the column
-      // width, so a phone still has a diagram under the membership stack.
-      const next = slot >= 64 ? slot : stageWidth;
-      if (
-        Math.abs(next - Math.round(current.getBoundingClientRect().height)) <=
-          2 &&
-        current.style.aspectRatio === 'auto'
-      ) {
-        return;
+        // The hold extends the space column so a short page can keep the
+        // banner collapsed. Once the stage fills that scroll, the hold is the
+        // black band under the cluster — drop it.
+        const filled =
+          columnContentHeight(scrollParent) - scrollParent.clientHeight;
+        if (filled + 2 >= collapsedScroll) {
+          releaseMainColumnScrollHeightHold();
+        }
+      } finally {
+        measuring = false;
       }
-      // The slot is the stage. A square aspect would ignore a short slot and
-      // spill past the footer, or leave the drawing as a small square at the
-      // top of a taller box.
-      current.style.aspectRatio = 'auto';
-      current.style.height = `${next}px`;
-      current.style.maxHeight = `${next}px`;
-      current.style.minHeight = `${next}px`;
     };
 
     apply();
@@ -351,7 +391,18 @@ export function EcosystemNavigationMainPanel({
     const membership = stage.previousElementSibling;
     if (membership instanceof HTMLElement) observer.observe(membership);
     if (stage.parentElement) observer.observe(stage.parentElement);
-    if (scrollParent) observer.observe(scrollParent);
+    if (scrollParent) {
+      observer.observe(scrollParent);
+      for (const child of scrollParent.children) {
+        if (child instanceof HTMLElement && !child.contains(stage)) {
+          observer.observe(child);
+        }
+      }
+    }
+    const banner = document.querySelector('[data-space-banner-bottom]');
+    if (banner?.parentElement instanceof HTMLElement) {
+      observer.observe(banner.parentElement);
+    }
     const footerWatch = new MutationObserver(apply);
     if (scrollParent) {
       footerWatch.observe(scrollParent, { childList: true });
@@ -427,13 +478,13 @@ export function EcosystemNavigationMainPanel({
             >
               {hierarchyData ? (
                 <SpaceVisualization
+                  layout="fill"
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}
                   enableHoverActions={false}
                   showNodeLabels
                   ariaLabel={t('diagram.ariaLabel')}
                   onVisibleSpacesChange={handleVisibleSpacesChange}
-                  className="absolute inset-0 h-full w-full aspect-auto"
                 />
               ) : (
                 <div className="flex h-full min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8">
