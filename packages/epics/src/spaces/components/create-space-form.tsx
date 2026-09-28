@@ -957,8 +957,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isSandbox,
-                  'hover:border-accent-5': !isSandbox,
+                  'border-primary': isSandbox,
+                  'hover:border-foreground/25': !isSandbox,
                 },
               )}
               onClick={toggleSandbox}
@@ -976,8 +976,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isDemo,
-                  'hover:border-accent-5': !isDemo,
+                  'border-primary': isDemo,
+                  'hover:border-foreground/25': !isDemo,
                 },
               )}
               onClick={toggleDemo}
@@ -995,8 +995,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isLive,
-                  'hover:border-accent-5': !isLive,
+                  'border-primary': isLive,
+                  'hover:border-foreground/25': !isLive,
                 },
               )}
               onClick={toggleLive}
@@ -1015,8 +1015,8 @@ export const SpaceForm = ({
                 className={clsx(
                   'flex p-6 cursor-pointer space-x-4 items-center border-2',
                   {
-                    'border-accent-9': isArchived,
-                    'hover:border-accent-5': !isArchived,
+                    'border-primary': isArchived,
+                    'hover:border-foreground/25': !isArchived,
                   },
                 )}
                 onClick={toggleArchived}
@@ -1066,6 +1066,12 @@ export const SpaceForm = ({
               <Button
                 type="submit"
                 variant={isSubmitting ? 'outline' : 'default'}
+                colorVariant={isSubmitting ? 'neutral' : 'accent'}
+                className={
+                  isSubmitting
+                    ? undefined
+                    : 'bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-foreground))]'
+                }
                 disabled={isSubmitting}
               >
                 {isSubmitting
@@ -1094,6 +1100,12 @@ export const SpaceForm = ({
                 type="submit"
                 form={spaceConfigurationFormId}
                 variant={isSubmitting ? 'outline' : 'default'}
+                colorVariant={isSubmitting ? 'neutral' : 'accent'}
+                className={
+                  isSubmitting
+                    ? undefined
+                    : 'bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-foreground))]'
+                }
                 disabled={isSubmitting}
               >
                 {isSubmitting
