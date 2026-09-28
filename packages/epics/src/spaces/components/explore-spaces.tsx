@@ -452,12 +452,12 @@ export function ExploreSpaces({
 
         {enableNetworkMap ? (
           <>
-            <div className="mb-3">{networkCensus}</div>
+            {renderMapToolbar()}
+            <div className="my-3">{networkCensus}</div>
             <NetworkGlobeMap
               lang={lang}
               spaces={mapSpaces}
-              className="mb-4 w-full"
-              renderToolbar={renderMapToolbar}
+              className={cn('w-full', showMapStage && 'mb-4')}
               isActive={showMapStage}
               showStage={showMapStage}
               alignProjection={view === 'overview' ? 'flat' : undefined}
