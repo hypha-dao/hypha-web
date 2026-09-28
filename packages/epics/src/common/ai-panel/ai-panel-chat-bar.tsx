@@ -320,9 +320,15 @@ export function AiPanelChatBar({
     const el = textareaRef.current;
     if (!el || isHero) return;
     const content = valueRef.current;
-    // Same measure as the human-chat composer. An empty in-space field
-    // measured with height:auto keeps the 160px cap, so the text row sits
-    // taller than chat. Quiet onboarding keeps the previous measure.
+    // A closed rail measures this field at a sliver of width, so the
+    // placeholder stacks up to the 160px cap. Keep one line until the
+    // panel is actually open, then measure like the chat composer.
+    if (variant === 'panel' && el.clientWidth < 48) {
+      el.style.height = '36px';
+      el.style.minHeight = '';
+      el.scrollTop = 0;
+      return;
+    }
     if (variant === 'panel' && content.length === 0) {
       el.style.height = '0px';
       el.style.minHeight = '0';
@@ -339,6 +345,21 @@ export function AiPanelChatBar({
   useLayoutEffect(() => {
     autoResize();
   }, [autoResize, value]);
+
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    const parent = el?.parentElement;
+    if (!el || !parent || variant !== 'panel') return;
+    let lastWidth = parent.clientWidth;
+    const observer = new ResizeObserver(() => {
+      const width = parent.clientWidth;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      autoResize();
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, [autoResize, variant]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -633,6 +654,8 @@ export function AiPanelChatBar({
       className={cn(
         'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent',
         !isHero && 'px-3 pb-2 pt-2',
+        // Same hairline the chat composer uses above its field.
+        variant === 'panel' && 'border-t border-border/70',
       )}
     >
       <div

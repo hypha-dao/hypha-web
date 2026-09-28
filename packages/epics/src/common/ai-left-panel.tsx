@@ -3234,7 +3234,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
         />
       </SidebarContent>
-      <SidebarFooter className="overflow-visible border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
+      <SidebarFooter className="relative z-20 overflow-visible bg-page-background p-0 dark:bg-background-2">
         {showDiscoveryModeToggle ? (
           <div className="flex justify-center px-3 pb-1 pt-3">
             <OnboardingDiscoveryModeToggle
