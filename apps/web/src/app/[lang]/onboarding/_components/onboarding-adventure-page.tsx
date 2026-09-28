@@ -519,7 +519,12 @@ export function OnboardingAdventurePage({
 
       <Container className="flex flex-col gap-10 py-10 md:py-12">
         <ol className="mx-auto flex w-full max-w-3xl list-none flex-wrap items-center justify-center gap-2 px-2">
-          {[t('explore.title'), t('create.title'), t('join.title')].map(
+          {[
+            t('explore.title'),
+            t('create.title'),
+            t('join.title'),
+            t('deposit.title'),
+          ].map(
             (label, index) => (
               <li
                 key={label}
