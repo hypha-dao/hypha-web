@@ -1163,18 +1163,29 @@ export function SpaceVisualization({
         return `translate(${tx}, ${ty})`;
       };
 
+      // The focused cluster's outer ring is a quiet disc. Names sit on it.
+      // Smaller rings stay hairlines, with the accent only on the current space.
+      const enclosureFill = dark ? 'var(--hypha-mid)' : 'var(--hypha-panel)';
+      const isEnclosure = (d: SpaceHierarchyNode) =>
+        d === focus && Boolean(d.children && d.children.length > 0);
+
       orbits
         .attr('transform', nodeTransform)
         .attr('d', (d: SpaceHierarchyNode) =>
           smoothClosedCirclePath(finiteOr(d.r, 0) * k),
         )
-        .attr('fill', 'none')
+        .attr('fill', (d: SpaceHierarchyNode) =>
+          isEnclosure(d) ? enclosureFill : 'none',
+        )
         .attr('stroke', (d: SpaceHierarchyNode) => {
+          if (isEnclosure(d)) return 'none';
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
           return isCurrent ? spaceAccent : hairline;
         })
-        .attr('stroke-width', HAIRLINE)
+        .attr('stroke-width', (d: SpaceHierarchyNode) =>
+          isEnclosure(d) ? 0 : HAIRLINE,
+        )
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round');
 
