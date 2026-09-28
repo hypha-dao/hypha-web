@@ -325,7 +325,6 @@ export function ExploreSpaces({
   const renderMapToolbar = React.useCallback(
     () => (
       <NetworkControlStrip
-        className="mb-1"
         viewToggle={
           <NetworkMapViewToggle
             value={view}
@@ -453,8 +452,7 @@ export function ExploreSpaces({
         {enableNetworkMap ? (
           <>
             {renderMapToolbar()}
-            {/* Desktop: extra spacing-1 below balances the toolbar mb-1. */}
-            <div className="my-3 md:mb-4">{networkCensus}</div>
+            <div className="my-6">{networkCensus}</div>
             <NetworkGlobeMap
               lang={lang}
               spaces={mapSpaces}

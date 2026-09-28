@@ -37,7 +37,7 @@ function StatColumn({
     <div
       className={cn(
         'flex min-w-0 flex-col items-start border-border py-3 text-left',
-        'md:items-center md:px-4 md:py-1 md:text-center',
+        'md:items-center md:px-4 md:py-2 md:text-center',
         // Phone is 2×2: a vertical hairline between the columns, a horizontal
         // one between the rows. Left cells stay flush with the view switch.
         index % 2 === 0 && 'max-md:pr-4',
