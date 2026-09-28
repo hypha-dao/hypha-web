@@ -75,15 +75,19 @@ function clampSvgLength(value: number): number {
 }
 
 /**
- * One continuous ring. A stroked circle starts and ends on a seam: butt
- * caps leave a gap, and `Z` leaves a corner. Three arcs under 180° draw
- * the circle, then a short arc continues past the start along the same
- * tangent so the caps overlap on the stroke instead of meeting at a point.
+ * One continuous ring. Butt caps on a seam leave a gap, and `Z` leaves a
+ * corner. The join sits on the right (3 o'clock), so the bottom of the
+ * circle is the middle of an arc, not a seam. Three steps under 180° draw
+ * the turn, then a longer arc continues past the start along the same
+ * tangent so the caps overlap on the stroke.
  */
 function smoothClosedCirclePath(radius: number): string {
   const r = clampSvgLength(radius);
   if (r <= 0) return '';
-  const overlap = Math.min(Math.max(12, r * 0.04), r * 0.2);
+  // Long enough that the overlapping caps cover the join even when the
+  // stroke is clipped to a device pixel. Capped so the extra arc stays
+  // well under 180°.
+  const overlap = Math.min(Math.max(24, r * 0.1), r * 0.28);
   const theta = overlap / r;
   const n = (value: number) => value.toFixed(3);
   const point = (angle: number) => {
@@ -91,8 +95,8 @@ function smoothClosedCirclePath(radius: number): string {
     const y = r * Math.sin(angle);
     return `${n(x)} ${n(y)}`;
   };
-  // Sweep-flag 1 follows increasing angle (clockwise in SVG). Each step
-  // stays under 180° so the large-arc flag cannot flip the semicircle.
+  // Sweep-flag 1 follows increasing angle (clockwise in SVG, y downward).
+  // Each step stays under 180° so the large-arc flag cannot flip it.
   const arc = (angle: number) => `A ${n(r)} ${n(r)} 0 0 1 ${point(angle)}`;
   const start = -theta;
   return [
@@ -100,7 +104,7 @@ function smoothClosedCirclePath(radius: number): string {
     arc(start + (2 * Math.PI) / 3),
     arc(start + (4 * Math.PI) / 3),
     arc(start + 2 * Math.PI),
-    arc(theta),
+    arc(start + 2 * Math.PI + 2 * theta),
   ].join(' ');
 }
 
@@ -119,8 +123,12 @@ function stageSizeKey(size: { width: number; height: number }): string {
   return `${Math.round(size.width)}x${Math.round(size.height)}`;
 }
 
-/** Screen inset so a hairline on the bounds is not cut by the stage edge. */
-const CLUSTER_FIT_PADDING = 12;
+/**
+ * Screen inset so the bottom of a ring — where the curve is flattest — is
+ * not shaved off by the stage. A 12px pad left that curve on the clip edge,
+ * so the two sides stopped short of each other above the footer.
+ */
+const CLUSTER_FIT_PADDING = 36;
 
 type LayoutBounds = {
   minX: number;
@@ -229,6 +237,79 @@ function fitScale(
   const innerW = Math.max(viewWidth - CLUSTER_FIT_PADDING * 2, 1);
   const innerH = Math.max(viewHeight - CLUSTER_FIT_PADDING * 2, 1);
   return Math.min(innerW / frame.width, innerH / frame.height);
+}
+
+type ScreenSpan = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+};
+
+/** Circles and the names under them, in viewBox pixels around the frame center. */
+function screenSpan(
+  nodes: SpaceHierarchyNode[],
+  cx: number,
+  cy: number,
+  scale: number,
+  showLabels: boolean,
+): ScreenSpan {
+  const span: ScreenSpan = {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -Infinity,
+    maxY: -Infinity,
+  };
+  const strokePad = 1;
+  for (const d of nodes) {
+    const x = (finiteOr(d.x, 0) - cx) * scale;
+    const y = (finiteOr(d.y, 0) - cy) * scale;
+    const rad = finiteOr(d.r, 0) * scale + strokePad;
+    includePoint(span, x - rad, y - rad);
+    includePoint(span, x + rad, y + rad);
+    if (!showLabels) continue;
+    const { labelFontSize, labelTop } = labelMetrics(
+      finiteOr(d.r, 0) * scale * VISUALIZATION_CONFIG.LOGO_RATIO,
+    );
+    const half = estimateLabelHalfWidth(d.data.name, labelFontSize);
+    includePoint(span, x - half, y);
+    includePoint(span, x + half, y + labelTop + labelFontSize * 1.35);
+  }
+  if (!Number.isFinite(span.minX)) {
+    includePoint(span, -1, -1);
+    includePoint(span, 1, 1);
+  }
+  return span;
+}
+
+/**
+ * Shrink `scale` until every focused ring and its name sits inside the
+ * stage inset. The flat bottom of a circle is the first thing a clip cuts,
+ * and that reads as a broken stroke.
+ */
+function containScale(
+  nodes: SpaceHierarchyNode[],
+  cx: number,
+  cy: number,
+  viewWidth: number,
+  viewHeight: number,
+  scale: number,
+  showLabels: boolean,
+): number {
+  const limitX = Math.max(viewWidth / 2 - CLUSTER_FIT_PADDING, 1);
+  const limitY = Math.max(viewHeight / 2 - CLUSTER_FIT_PADDING, 1);
+  let k = Math.max(scale, 0.0001);
+  for (let pass = 0; pass < 4; pass += 1) {
+    const span = screenSpan(nodes, cx, cy, k, showLabels);
+    const fit = Math.min(
+      limitX / Math.max(Math.abs(span.minX), Math.abs(span.maxX), 1),
+      limitY / Math.max(Math.abs(span.minY), Math.abs(span.maxY), 1),
+      1,
+    );
+    if (fit > 0.995) break;
+    k *= fit;
+  }
+  return k;
 }
 
 /**
@@ -1069,7 +1150,16 @@ export function SpaceVisualization({
         'viewBox',
         `${-viewWidth / 2} ${-viewHeight / 2} ${viewWidth} ${viewHeight}`,
       );
-      const k = fitScale(next, viewWidth, viewHeight);
+      const fitted = fitScale(next, viewWidth, viewHeight);
+      const k = containScale(
+        focus.descendants() as SpaceHierarchyNode[],
+        next.cx,
+        next.cy,
+        viewWidth,
+        viewHeight,
+        fitted,
+        showNodeLabels,
+      );
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
         const tx = (finiteOr(d.x, 0) - next.cx) * k;
