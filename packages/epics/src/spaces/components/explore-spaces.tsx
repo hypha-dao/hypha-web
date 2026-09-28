@@ -2,7 +2,6 @@
 
 import {
   CategoryGroupId,
-  countCreatedInMonth,
   Space,
   SpaceOrder,
   CATEGORY_GROUPS,
@@ -395,7 +394,6 @@ export function ExploreSpaces({
     </div>
   );
 
-  const countedSpaces = [...selectedSpaces, ...privateSpaces];
   const networkCensus = enableNetworkMap ? (
     <NetworkCensus
       lang={lang}
@@ -404,21 +402,16 @@ export function ExploreSpaces({
         total: selectedSpaces.length + privateSpaces.length,
         publicCount: selectedSpaces.length,
         privateCount: privateSpaces.length,
-        thisMonth: showSpacesSkeleton
-          ? null
-          : countCreatedInMonth(countedSpaces.map((space) => space.createdAt)),
       }}
       members={{
         total: memberCount + privateMemberCount,
         publicCount: memberCount,
         privateCount: privateMemberCount,
-        thisMonth: networkGrowth?.membersThisMonth ?? null,
       }}
       agreements={{
         total: agreementCount + privateAgreementCount,
         publicCount: agreementCount,
         privateCount: privateAgreementCount,
-        thisMonth: networkGrowth?.agreementsThisMonth ?? null,
       }}
       transactions={
         networkGrowth
@@ -426,7 +419,6 @@ export function ExploreSpaces({
               total: networkGrowth.transactions.total,
               publicCount: networkGrowth.transactions.total,
               privateCount: 0,
-              thisMonth: networkGrowth.transactions.thisMonth,
             }
           : null
       }
@@ -436,7 +428,6 @@ export function ExploreSpaces({
               total: networkGrowth.tokens.total,
               publicCount: networkGrowth.tokens.total,
               privateCount: 0,
-              thisMonth: networkGrowth.tokens.thisMonth,
             }
           : null
       }

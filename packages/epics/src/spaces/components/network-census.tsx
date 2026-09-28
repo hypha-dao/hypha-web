@@ -8,8 +8,6 @@ type CensusFigures = {
   total: number;
   publicCount: number;
   privateCount: number;
-  /** Null when the source has no timestamp, so a delta would be invented. */
-  thisMonth: number | null;
 };
 
 function formatCount(value: number, lang: string): string {
@@ -20,8 +18,6 @@ function StatCard({
   value,
   label,
   split,
-  thisMonth,
-  thisMonthLabel,
   isLoading,
   reserveSplit = false,
   lang,
@@ -29,8 +25,6 @@ function StatCard({
   value: number | null;
   label: string;
   split: string | null;
-  thisMonth: number | null;
-  thisMonthLabel: (count: number) => string;
   isLoading: boolean;
   /** Skeleton a second line while the public/private split is still resolving. */
   reserveSplit?: boolean;
@@ -53,13 +47,6 @@ function StatCard({
       ) : split ? (
         <div className="mt-1 text-1 text-muted-foreground">{split}</div>
       ) : null}
-      {!isLoading && thisMonth != null ? (
-        <div className="mt-auto pt-3 text-1 font-medium tabular-nums text-[color:var(--hypha-chart)]">
-          {thisMonthLabel(thisMonth)}
-        </div>
-      ) : (
-        <div className="mt-auto" />
-      )}
     </article>
   );
 }
@@ -92,8 +79,6 @@ export function NetworkCensus({
         })
       : null;
 
-  const thisMonthLabel = (count: number) => t('addedThisMonth', { count });
-
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <StatCard
@@ -103,8 +88,6 @@ export function NetworkCensus({
         split={
           isLoading ? null : split(spaces.publicCount, spaces.privateCount)
         }
-        thisMonth={isLoading ? null : spaces.thisMonth}
-        thisMonthLabel={thisMonthLabel}
         isLoading={isLoading}
         reserveSplit
       />
@@ -115,8 +98,6 @@ export function NetworkCensus({
         split={
           isLoading ? null : split(members.publicCount, members.privateCount)
         }
-        thisMonth={isLoading ? null : members.thisMonth}
-        thisMonthLabel={thisMonthLabel}
         isLoading={isLoading}
         reserveSplit
       />
@@ -129,8 +110,6 @@ export function NetworkCensus({
             ? null
             : split(agreements.publicCount, agreements.privateCount)
         }
-        thisMonth={isLoading ? null : agreements.thisMonth}
-        thisMonthLabel={thisMonthLabel}
         isLoading={isLoading}
         reserveSplit
       />
@@ -139,8 +118,6 @@ export function NetworkCensus({
         value={transactions?.total ?? null}
         label={t('transactions')}
         split={null}
-        thisMonth={transactions?.thisMonth ?? null}
-        thisMonthLabel={thisMonthLabel}
         isLoading={false}
       />
       <StatCard
@@ -148,8 +125,6 @@ export function NetworkCensus({
         value={tokens?.total ?? null}
         label={t('tokens')}
         split={null}
-        thisMonth={tokens?.thisMonth ?? null}
-        thisMonthLabel={thisMonthLabel}
         isLoading={false}
       />
     </div>
