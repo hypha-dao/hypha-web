@@ -5,6 +5,8 @@ import {
   countInMonth,
   cumulativePlotDomain,
   recentMonthKeys,
+  splitTokensByNetworkSpaces,
+  summarizeTokenCounts,
 } from '../network-growth';
 
 const september = new Date(Date.UTC(2026, 8, 15));
@@ -85,6 +87,64 @@ describe('countCreatedInMonth', () => {
         september,
       ),
     ).toBe(2);
+  });
+});
+
+describe('summarizeTokenCounts', () => {
+  it('keeps tokens with no space in the total and out of the space buckets', () => {
+    const summary = summarizeTokenCounts([
+      { spaceId: 1, count: 10, thisMonth: 1 },
+      { spaceId: null, count: 4, thisMonth: 2 },
+      { spaceId: 2, count: 3, thisMonth: 0 },
+    ]);
+
+    expect(summary).toEqual({
+      total: 17,
+      thisMonth: 3,
+      unscoped: 4,
+      bySpace: [
+        { spaceId: 1, count: 10 },
+        { spaceId: 2, count: 3 },
+      ],
+    });
+  });
+});
+
+describe('splitTokensByNetworkSpaces', () => {
+  it('assigns a token by whether its space is on the network directory', () => {
+    expect(
+      splitTokensByNetworkSpaces(
+        [
+          { spaceId: 1, count: 10 },
+          { spaceId: 2, count: 3 },
+          { spaceId: 9, count: 5 },
+        ],
+        new Set([1]),
+        new Set([2]),
+      ),
+    ).toEqual({ publicCount: 10, privateCount: 3, unmatched: 5 });
+  });
+
+  it('leaves the full total intact when unscoped and unmatched are set aside', () => {
+    const summary = summarizeTokenCounts([
+      { spaceId: 1, count: 200, thisMonth: 0 },
+      { spaceId: 2, count: 160, thisMonth: 0 },
+      { spaceId: 9, count: 5, thisMonth: 0 },
+      { spaceId: null, count: 4, thisMonth: 0 },
+    ]);
+    const split = splitTokensByNetworkSpaces(
+      summary.bySpace,
+      new Set([1]),
+      new Set([2]),
+    );
+
+    expect(summary.total).toBe(369);
+    expect(
+      split.publicCount +
+        split.privateCount +
+        split.unmatched +
+        summary.unscoped,
+    ).toBe(summary.total);
   });
 });
 

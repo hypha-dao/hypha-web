@@ -5,11 +5,15 @@ export {
   countInMonth,
   cumulativePlotDomain,
   NETWORK_GROWTH_MONTHS,
+  splitTokensByNetworkSpaces,
+  summarizeTokenCounts,
 } from './network-growth';
 export type {
   CumulativePoint,
   MonthlyCount,
   NetworkGrowth,
+  TokenCountRow,
+  TokenSpaceCount,
 } from './network-growth';
 export * from './types';
 export * from './utils';

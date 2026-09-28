@@ -10,6 +10,7 @@ import {
   isSpaceArchived,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
+  splitTokensByNetworkSpaces,
   type NetworkGrowth,
 } from '@hypha-platform/core/client';
 import {
@@ -215,6 +216,22 @@ export function ExploreSpaces({
     [privateSpaces],
   );
 
+  const tokenCensus = React.useMemo(() => {
+    if (!networkGrowth) return null;
+    const onNetwork = new Set(selectedSpaces.map((space) => space.id));
+    const offNetwork = new Set(privateSpaces.map((space) => space.id));
+    const splitCounts = splitTokensByNetworkSpaces(
+      networkGrowth.tokens.bySpace,
+      onNetwork,
+      offNetwork,
+    );
+    return {
+      total: networkGrowth.tokens.total,
+      publicCount: splitCounts.publicCount,
+      privateCount: splitCounts.privateCount,
+    };
+  }, [networkGrowth, selectedSpaces, privateSpaces]);
+
   const tags = React.useMemo(
     () =>
       CATEGORY_GROUPS.filter((group) =>
@@ -413,15 +430,7 @@ export function ExploreSpaces({
         publicCount: agreementCount,
         privateCount: privateAgreementCount,
       }}
-      tokens={
-        networkGrowth
-          ? {
-              total: networkGrowth.tokens.total,
-              publicCount: networkGrowth.tokens.total,
-              privateCount: 0,
-            }
-          : null
-      }
+      tokens={tokenCensus}
     />
   ) : null;
 

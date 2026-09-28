@@ -11,20 +11,105 @@ export type CumulativePoint = {
   cumulative: number;
 };
 
+/** Tokens already included in the census total, grouped by their space. */
+export type TokenSpaceCount = {
+  spaceId: number;
+  count: number;
+};
+
 /**
  * Network census that the database can answer.
  *
  * Spaces, members, and agreements on the page still use the loaded directory
  * (public plus private). These figures are the dated additions and the two
  * cumulative series, plus the token total.
+ *
+ * `tokens.total` is every non-archived, non-hidden token whose space is
+ * missing or still counted. `tokens.bySpace` is that same set grouped by
+ * space, and `tokens.unscoped` is the part with no space. The page assigns
+ * each grouped count to public or private from the network directory.
+ * Unscoped tokens stay in `total` and are neither public nor private.
  */
 export type NetworkGrowth = {
-  tokens: { total: number; thisMonth: number };
+  tokens: {
+    total: number;
+    thisMonth: number;
+    bySpace: TokenSpaceCount[];
+    unscoped: number;
+  };
   membersThisMonth: number;
   agreementsThisMonth: number;
   members: CumulativePoint[];
   agreements: CumulativePoint[];
 };
+
+export type TokenCountRow = {
+  spaceId: number | null;
+  count: number;
+  thisMonth: number;
+};
+
+function finiteCount(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Fold grouped token rows into the census total. Rows with no space stay in
+ * the total as `unscoped` so they are not called public or private.
+ */
+export function summarizeTokenCounts(rows: readonly TokenCountRow[]): {
+  total: number;
+  thisMonth: number;
+  bySpace: TokenSpaceCount[];
+  unscoped: number;
+} {
+  let total = 0;
+  let thisMonth = 0;
+  let unscoped = 0;
+  const bySpace: TokenSpaceCount[] = [];
+
+  for (const row of rows) {
+    const count = finiteCount(row.count);
+    total += count;
+    thisMonth += finiteCount(row.thisMonth);
+    if (row.spaceId == null) {
+      unscoped += count;
+      continue;
+    }
+    bySpace.push({ spaceId: row.spaceId, count });
+  }
+
+  return { total, thisMonth, bySpace, unscoped };
+}
+
+/**
+ * Public tokens belong to a space on the network directory. Private tokens
+ * belong to a loaded space that directory leaves out. A token whose space is
+ * in neither set stays unmatched — a search or category chip removed that
+ * space from the page — and is not called public or private.
+ */
+export function splitTokensByNetworkSpaces(
+  bySpace: readonly TokenSpaceCount[],
+  onNetworkSpaceIds: ReadonlySet<number>,
+  offNetworkSpaceIds: ReadonlySet<number>,
+): { publicCount: number; privateCount: number; unmatched: number } {
+  let publicCount = 0;
+  let privateCount = 0;
+  let unmatched = 0;
+
+  for (const entry of bySpace) {
+    const count = finiteCount(entry.count);
+    if (onNetworkSpaceIds.has(entry.spaceId)) {
+      publicCount += count;
+    } else if (offNetworkSpaceIds.has(entry.spaceId)) {
+      privateCount += count;
+    } else {
+      unmatched += count;
+    }
+  }
+
+  return { publicCount, privateCount, unmatched };
+}
 
 export function toMonthKey(date: Date): string {
   const year = date.getUTCFullYear();

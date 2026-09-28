@@ -10,6 +10,7 @@ import type { DbConfig } from '../../common/server/types';
 import {
   buildCumulativeSeries,
   countInMonth,
+  summarizeTokenCounts,
   type MonthlyCount,
   type NetworkGrowth,
 } from '../network-growth';
@@ -59,7 +60,7 @@ export async function getNetworkGrowth(
         )})
         )`;
 
-  const [memberResult, agreementResult, tokenRows] = await Promise.all([
+  const [memberResult, agreementResult, tokenGroupRows] = await Promise.all([
     db.execute(sql`
         WITH first_join AS (
           SELECT ${memberships.personId} AS person_id,
@@ -87,6 +88,7 @@ export async function getNetworkGrowth(
       `),
     db
       .select({
+        spaceId: tokens.spaceId,
         total: sql<number>`count(*)::int`,
         thisMonth: sql<number>`count(*) filter (where ${tokens.createdAt} >= ${monthStart})::int`,
       })
@@ -98,17 +100,24 @@ export async function getNetworkGrowth(
           or(isNull(tokens.spaceId), countedSpace),
           notHidden,
         ),
-      ),
+      )
+      .groupBy(tokens.spaceId),
   ]);
 
   const memberMonths = asMonthly(memberResult.rows);
   const agreementMonths = asMonthly(agreementResult.rows);
+  // Same rows as the previous single count(*): grouping does not add or
+  // drop tokens. Unscoped rows stay inside `total`.
+  const tokenSummary = summarizeTokenCounts(
+    tokenGroupRows.map((row) => ({
+      spaceId: row.spaceId,
+      count: asCount(row.total),
+      thisMonth: asCount(row.thisMonth),
+    })),
+  );
 
   return {
-    tokens: {
-      total: asCount(tokenRows[0]?.total),
-      thisMonth: asCount(tokenRows[0]?.thisMonth),
-    },
+    tokens: tokenSummary,
     membersThisMonth: countInMonth(memberMonths, now),
     agreementsThisMonth: countInMonth(agreementMonths, now),
     members: buildCumulativeSeries(memberMonths, now),

@@ -117,9 +117,12 @@ export function NetworkCensus({
       // same settle flag as the directory counts so it does not paint early.
       value: isLoading ? null : tokens?.total ?? null,
       label: t('tokens'),
-      split: null,
+      split:
+        !isLoading && tokens
+          ? split(tokens.publicCount, tokens.privateCount)
+          : null,
       isLoading,
-      reserveSplit: false,
+      reserveSplit: true,
     },
   ];
 
