@@ -208,6 +208,40 @@ function nodeLabelTop(d: SpaceHierarchyNode, k: number): number {
   return nodeShapeRadius(d, k) + VISUALIZATION_CONFIG.LABEL_GAP;
 }
 
+/**
+ * The child rings sit on the parent stroke, so the names under them cross it.
+ * Grow the parent ring until every name is inside, with air between the
+ * type and the stroke. Children stay where they are.
+ */
+function growRingAroundLabels(node: SpaceHierarchyNode, scale: number): void {
+  const children = (node.children ?? []) as SpaceHierarchyNode[];
+  for (const child of children) {
+    growRingAroundLabels(child, scale);
+  }
+  if (children.length === 0) return;
+
+  const safeScale = Math.max(scale, 0.0001);
+  const pad = 18 / safeScale;
+  const parentX = finiteOr(node.x, 0);
+  const parentY = finiteOr(node.y, 0);
+  let needed = finiteOr(node.r, 1);
+  for (const child of children) {
+    const top = nodeLabelTop(child, safeScale);
+    const { labelFontSize } = labelMetrics(nodeShapeRadius(child, safeScale));
+    const bottom = (top + labelFontSize * 1.35) / safeScale;
+    const half =
+      estimateLabelHalfWidth(child.data.name, labelFontSize) / safeScale;
+    const dx = finiteOr(child.x, 0) - parentX;
+    const dy = finiteOr(child.y, 0) - parentY;
+    needed = Math.max(
+      needed,
+      Math.hypot(dx - half, dy + bottom) + pad,
+      Math.hypot(dx + half, dy + bottom) + pad,
+    );
+  }
+  node.r = needed;
+}
+
 function labelMetrics(screenShapeRadius: number): LabelMetrics {
   const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
   const labelTop = screenShapeRadius + VISUALIZATION_CONFIG.LABEL_GAP;
@@ -839,6 +873,25 @@ export function SpaceVisualization({
         .attr('fill', getDiagramFillColor())
         .attr('stroke', 'none');
     });
+
+    if (showNodeLabels) {
+      const stage = readStageSize();
+      const span = Math.max(finiteOr(root.r, 1) * 2, 1);
+      let scale = stage
+        ? Math.min(stage.width, stage.height) / span
+        : 1;
+      for (let pass = 0; pass < 3; pass += 1) {
+        growRingAroundLabels(root, scale);
+        if (!stage) break;
+        const next = solveClusterFrame(
+          root,
+          stage.width,
+          stage.height,
+          showNodeLabels,
+        );
+        scale = fitScale(next, stage.width, stage.height);
+      }
+    }
 
     const initialSize = readStageSize();
     let frame = initialSize
