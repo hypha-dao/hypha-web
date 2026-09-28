@@ -63,6 +63,11 @@ const easeClusterSpreadIn = d3.easePolyOut.exponent(3);
 /** Quick fold-in before zoom-out begins. */
 const easeClusterSpreadOut = d3.easePolyIn.exponent(2);
 const FLAT_ROTATION: Rotation = [0, 0, 0];
+/**
+ * Equirectangular home. Rotation is discarded once the overview is flat, so
+ * a zoom with this center looks at 0°, 0° — the Gulf of Guinea — not the dot.
+ */
+const FLAT_GEOGRAPHIC_CENTER: [number, number] = [0, 0];
 
 /**
  * The overview intro (globe → flat) must run once per page load. A ref dies
@@ -636,6 +641,7 @@ function buildProjection(
   morph: number,
   rotate: Rotation,
   zoomScale = 1,
+  flatCenter: [number, number] = FLAT_GEOGRAPHIC_CENTER,
 ): d3.GeoProjection {
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
@@ -661,7 +667,8 @@ function buildProjection(
       .geoEquirectangular()
       .scale(flatScale)
       .translate(center)
-      .rotate(rotation);
+      .rotate(rotation)
+      .center(flatCenter);
   }
 
   const scale = globeScale * (1 - morph) + flatScale * morph;
@@ -757,6 +764,7 @@ export function NetworkGlobeMap({
   const focusedClusterIdRef = React.useRef<string | null>(null);
   const clusterSpreadRef = React.useRef(0);
   const globeZoomRef = React.useRef(1);
+  const flatCenterRef = React.useRef<[number, number]>(FLAT_GEOGRAPHIC_CENTER);
   const clusterAnimFrameRef = React.useRef<number | null>(null);
   const clusterAnimatingRef = React.useRef(false);
   const [clusterAnimating, setClusterAnimating] = React.useState(false);
@@ -892,6 +900,7 @@ export function NetworkGlobeMap({
       morph,
       rotate,
       globeZoomRef.current,
+      flatCenterRef.current,
     );
     const path = d3.geoPath(projection);
     const layerState = layersRef.current;
@@ -1496,9 +1505,15 @@ export function NetworkGlobeMap({
 
     const fromZoom = globeZoomRef.current;
     const fromSpread = clusterSpreadRef.current;
+    const flat = morphRef.current >= 1;
+    const fromFlatCenter: [number, number] = [
+      flatCenterRef.current[0],
+      flatCenterRef.current[1],
+    ];
 
     if (prefersReducedMotion()) {
       globeZoomRef.current = 1;
+      flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
       clusterSpreadRef.current = 0;
       focusedClusterIdRef.current = null;
       setFocusedClusterId(null);
@@ -1523,12 +1538,19 @@ export function NetworkGlobeMap({
       clusterSpreadRef.current = fromSpread * spreadRemaining;
       setClusterSpread(fromSpread * spreadRemaining);
       globeZoomRef.current = 1 + (fromZoom - 1) * zoomRemaining;
+      if (flat) {
+        flatCenterRef.current = [
+          fromFlatCenter[0] * zoomRemaining,
+          fromFlatCenter[1] * zoomRemaining,
+        ];
+      }
       requestRender();
 
       if (t < 1) {
         clusterAnimFrameRef.current = requestAnimationFrame(step);
       } else {
         globeZoomRef.current = 1;
+        flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
         clusterSpreadRef.current = 0;
         focusedClusterIdRef.current = null;
         setFocusedClusterId(null);
@@ -1558,6 +1580,7 @@ export function NetworkGlobeMap({
 
       const fromZoom = globeZoomRef.current;
       const toZoom = CLUSTER_ZOOM_SCALE;
+      const flat = morphRef.current >= 1;
       const centeredRotation = globeRotationForCenter(
         cluster.longitude,
         cluster.latitude,
@@ -1566,10 +1589,20 @@ export function NetworkGlobeMap({
       focusedClusterIdRef.current = cluster.clusterId;
       setFocusedClusterId(cluster.clusterId);
 
+      if (flat) {
+        // Overview drops spherical rotation, so the zoom scale alone would
+        // enlarge 0°, 0°. Center the equirectangular camera on this cluster.
+        flatCenterRef.current = [cluster.longitude, cluster.latitude];
+      } else {
+        flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
+      }
+
       if (prefersReducedMotion()) {
-        rotateRef.current = centeredRotation;
+        if (!flat) {
+          rotateRef.current = centeredRotation;
+          savedGlobeRotateRef.current = centeredRotation;
+        }
         globeZoomRef.current = toZoom;
-        savedGlobeRotateRef.current = centeredRotation;
         clusterSpreadRef.current = 1;
         setClusterSpread(1);
         syncClusterAnimating(false);
@@ -1581,13 +1614,17 @@ export function NetworkGlobeMap({
       clusterSpreadRef.current = 0;
       setClusterSpread(0);
       const start = performance.now();
-      savedGlobeRotateRef.current = centeredRotation;
+      if (!flat) {
+        savedGlobeRotateRef.current = centeredRotation;
+      }
 
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / CLUSTER_FOCUS_MS);
 
         // Keep the cluster anchor pinned at the viewport center while zooming.
-        rotateRef.current = centeredRotation;
+        if (!flat) {
+          rotateRef.current = centeredRotation;
+        }
         globeZoomRef.current =
           fromZoom + (toZoom - fromZoom) * easeClusterZoomIn(t);
 
@@ -2002,6 +2039,7 @@ export function NetworkGlobeMap({
         syncClusterAnimating(false);
       }
       globeZoomRef.current = 1;
+      flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
 
       const fromMorph = morphRef.current;
       const toMorph = target === 'flat' ? 1 : 0;
