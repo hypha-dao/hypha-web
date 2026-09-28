@@ -127,7 +127,7 @@ const DARK_GLOBE_PALETTE: MapPalette = {
   landFill: 'var(--hypha-ink)',
   landStroke: 'color-mix(in srgb, var(--hypha-text) 52%, transparent)',
   coastHalo: 'color-mix(in srgb, var(--hypha-mid) 55%, transparent)',
-  sphereEdge: 'color-mix(in srgb, var(--hypha-text) 28%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-text) 14%, transparent)',
   grid: 'color-mix(in srgb, var(--hypha-mid) 70%, transparent)',
   clusterFill: 'var(--hypha-text)',
   clusterRing: 'color-mix(in srgb, var(--hypha-text) 42%, transparent)',
@@ -143,7 +143,7 @@ const LIGHT_GLOBE_PALETTE: MapPalette = {
   landFill: 'var(--hypha-paper)',
   landStroke: 'color-mix(in srgb, var(--hypha-ink) 48%, transparent)',
   coastHalo: 'color-mix(in srgb, var(--hypha-ink) 8%, transparent)',
-  sphereEdge: 'color-mix(in srgb, var(--hypha-ink) 22%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-ink) 10%, transparent)',
   grid: 'color-mix(in srgb, var(--hypha-ink) 12%, transparent)',
   clusterFill: 'var(--hypha-ink)',
   clusterRing: 'color-mix(in srgb, var(--hypha-ink) 38%, transparent)',
@@ -985,8 +985,8 @@ export function NetworkGlobeMap({
       .attr('d', spherePath)
       .attr('fill', 'none')
       .attr('stroke', palette.sphereEdge)
-      .attr('stroke-width', isGlobeView ? 1.25 : 0.65)
-      .attr('opacity', isGlobeView ? 1 : 0.55)
+      .attr('stroke-width', isGlobeView ? 0.7 : 0.4)
+      .attr('opacity', isGlobeView ? 0.55 : 0.35)
       .attr('pointer-events', 'none')
       .style('display', null);
 
@@ -2247,16 +2247,14 @@ export function NetworkGlobeMap({
       </div>
     ) : null;
 
+  const miniatureInsetClassName =
+    'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 border-0 bg-transparent p-0 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
+
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
       data-network-map-inset="navigator"
-      className={cn(
-        'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
-        'transition-[border-color,background-color] duration-150',
-        'hover:border-border hover:bg-muted/15',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-      )}
+      className={miniatureInsetClassName}
       style={{ width: MINI_GLOBE_SIZE, height: MINI_GLOBE_SIZE }}
       aria-label={t('globeView')}
       title={t('globeView')}
@@ -2275,12 +2273,7 @@ export function NetworkGlobeMap({
     <button
       type="button"
       data-network-map-inset="navigator"
-      className={cn(
-        'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
-        'transition-[border-color,background-color] duration-150',
-        'hover:border-border hover:bg-muted/15',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-      )}
+      className={miniatureInsetClassName}
       style={{ width: MINI_MAP_WIDTH, height: MINI_MAP_HEIGHT }}
       aria-label={t('flatView')}
       title={t('flatView')}
