@@ -36,13 +36,12 @@ function StatColumn({
   return (
     <div
       className={cn(
-        'flex min-w-0 flex-col items-center border-border px-3 py-1 text-center sm:px-4',
-        index % 2 === 0 ? 'border-l-0' : 'border-l',
-        index % 3 === 0 ? 'sm:border-l-0' : 'sm:border-l',
-        index === 0 ? 'lg:border-l-0' : 'lg:border-l',
+        'flex min-w-0 flex-col items-start border-border py-3 text-left',
+        'md:items-center md:px-4 md:py-1 md:text-center',
+        index > 0 && 'max-md:border-t md:border-l',
       )}
     >
-      <div className="[font-family:var(--font-family-heading)] text-7 font-medium tabular-nums tracking-[-0.03em] text-foreground sm:text-8">
+      <div className="[font-family:var(--font-family-heading)] text-7 font-medium tabular-nums tracking-[-0.03em] text-foreground md:text-8">
         {isLoading ? (
           <Skeleton loading width={72} height={36} />
         ) : value == null ? (
@@ -132,7 +131,7 @@ export function NetworkCensus({
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid w-full grid-cols-1 md:grid-cols-5">
       {columns.map((column, index) => (
         <StatColumn
           key={column.label}
