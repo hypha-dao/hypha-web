@@ -476,7 +476,7 @@ export function OnboardingAdventurePage({
 
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
-              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md">
+              <div className="relative overflow-hidden rounded-none border border-foreground/15">
                 <AiPanelChatBar
                   variant="hero"
                   value={aiPrompt}

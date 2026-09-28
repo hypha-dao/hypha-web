@@ -546,12 +546,10 @@ export function AiPanelChatBar({
   const canSendWithAttachments =
     (value.trim().length > 0 || draftAttachments.length > 0) && !isStreaming;
   // `--spacing-9` is 64px, so `size-9` must not size these controls.
-  // Panel icons match the human-chat composer: one 36px square, 16px glyph.
+  // Hero and panel icons match the human-chat composer: one 36px square, 16px glyph.
   const panelControlClass =
     'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] max-h-[36px] max-w-[36px] flex-none shrink-0 basis-[36px] place-items-center rounded-none bg-transparent p-0 leading-none [&>svg]:pointer-events-none';
-  const recordingStopButtonClass = frameless
-    ? `${panelControlClass} text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`
-    : 'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  const recordingStopButtonClass = `${panelControlClass} text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`;
   const sendMessage = useCallback(() => {
     if (isDictating) {
       dictationInterruptForSendRef.current = true;
@@ -583,17 +581,13 @@ export function AiPanelChatBar({
     videoInputRef.current?.click();
   };
 
-  const iconButtonClass = frameless
-    ? `${panelControlClass} text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`
-    : 'inline-flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
-  const composerIconClass = frameless ? 'h-4 w-4' : 'size-3.5';
-  const composerIconStroke = frameless ? 2 : 1.25;
+  const iconButtonClass = `${panelControlClass} text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`;
+  const composerIconClass = 'h-4 w-4';
+  const composerIconStroke = 2;
   /* Prefer accent-9 (ink outside a space; space accent inside a space). */
   const heroSendButtonClass =
     'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-accent-9 p-0 text-accent-contrast shadow-none transition-all hover:bg-accent-10 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50';
-  const quietSendButtonClass = frameless
-    ? `${panelControlClass} border-0 text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`
-    : 'flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+  const quietSendButtonClass = `${panelControlClass} border-0 text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`;
 
   useEffect(() => {
     if (!canAttachDrafts && attachMenuOpen) {
@@ -872,8 +866,10 @@ export function AiPanelChatBar({
 
         <div
           className={cn(
-            'flex min-w-0 flex-col gap-1 pt-0',
-            isHero ? 'px-3 pb-2.5' : 'px-2 pb-2.5',
+            'flex min-w-0 flex-col gap-1',
+            isHero
+              ? 'border-t border-border/70 px-3 pb-2.5 pt-1.5'
+              : 'px-2 pb-2.5 pt-0',
           )}
         >
           {(dictationError || attachError) && (
