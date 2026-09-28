@@ -880,9 +880,7 @@ export function AiPanelChatBar({
         <div
           className={cn(
             'flex min-w-0 flex-col gap-1',
-            isHero
-              ? 'border-t border-border/70 px-3 pb-2.5 pt-1.5'
-              : 'px-2 pb-2.5 pt-0',
+            isHero ? 'px-3 pb-2.5 pt-1.5' : 'px-2 pb-2.5 pt-0',
           )}
         >
           {(dictationError || attachError) && (
