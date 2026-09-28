@@ -116,10 +116,12 @@ export function NetworkCensus({
       reserveSplit: true,
     },
     {
-      value: tokens?.total ?? null,
+      // The token total is already in the server payload. Keep it behind the
+      // same settle flag as the directory counts so it does not paint early.
+      value: isLoading ? null : tokens?.total ?? null,
       label: t('tokens'),
       split: null,
-      isLoading: false,
+      isLoading,
       reserveSplit: false,
     },
   ];
