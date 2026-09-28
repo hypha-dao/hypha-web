@@ -524,24 +524,22 @@ export function OnboardingAdventurePage({
             t('create.title'),
             t('join.title'),
             t('deposit.title'),
-          ].map(
-            (label, index) => (
-              <li
-                key={label}
-                className="inline-flex items-center gap-2 text-1 text-muted-foreground"
-              >
-                {index > 0 ? (
-                  <span className="text-border" aria-hidden>
-                    ·
-                  </span>
-                ) : null}
-                <span className="inline-flex size-6 items-center justify-center rounded-full border border-border/70 bg-background-2 text-[11px] font-semibold text-foreground">
-                  {index + 1}
+          ].map((label, index) => (
+            <li
+              key={label}
+              className="inline-flex items-center gap-2 text-1 text-muted-foreground"
+            >
+              {index > 0 ? (
+                <span className="text-border" aria-hidden>
+                  ·
                 </span>
-                <span>{label}</span>
-              </li>
-            ),
-          )}
+              ) : null}
+              <span className="inline-flex size-6 items-center justify-center rounded-full border border-border/70 bg-background-2 text-[11px] font-semibold text-foreground">
+                {index + 1}
+              </span>
+              <span>{label}</span>
+            </li>
+          ))}
         </ol>
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className={onboardingCardClass}>
