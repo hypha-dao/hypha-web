@@ -1582,7 +1582,13 @@
     "exploreNetwork": "Истражете ја Hypha мрежата",
     "seeAll": "Види ги сите",
     "noCategory": "Без категорија",
-    "directoryPrivateSplit": "{directory, plural, one {# јавен} other {# јавни}} · {private, plural, one {# приватен} other {# приватни}}"
+    "directoryPrivateSplit": "{directory, plural, one {# јавен} other {# јавни}} · {private, plural, one {# приватен} other {# приватни}}",
+    "addedThisMonth": "+ {count, number} овој месец",
+    "transactions": "Трансакции",
+    "tokens": "Токени",
+    "cumulative": "Кумулативно",
+    "memberGrowthChart": "Кумулативни членови во последните 12 месеци",
+    "agreementGrowthChart": "Кумулативни договори во последните 12 месеци"
   },
   "Proposals": {
     "CreateNew": "Создај нов предлог",

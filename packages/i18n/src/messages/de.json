@@ -1603,7 +1603,13 @@
     "exploreNetwork": "Das Hypha-Netzwerk erkunden",
     "seeAll": "Alle anzeigen",
     "noCategory": "Keine Kategorie",
-    "directoryPrivateSplit": "{directory} öffentlich · {private} privat"
+    "directoryPrivateSplit": "{directory} öffentlich · {private} privat",
+    "addedThisMonth": "+ {count, number} diesen Monat",
+    "transactions": "Transaktionen",
+    "tokens": "Token",
+    "cumulative": "Kumulativ",
+    "memberGrowthChart": "Kumulative Mitglieder der letzten 12 Monate",
+    "agreementGrowthChart": "Kumulative Vereinbarungen der letzten 12 Monate"
   },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",

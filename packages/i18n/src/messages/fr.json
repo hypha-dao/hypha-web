@@ -1031,7 +1031,13 @@
     "exploreNetwork": "Explorer le réseau Hypha",
     "seeAll": "Voir tout",
     "noCategory": "Aucune catégorie",
-    "directoryPrivateSplit": "{directory, plural, one {# public} other {# publics}} · {private, plural, one {# privé} other {# privés}}"
+    "directoryPrivateSplit": "{directory, plural, one {# public} other {# publics}} · {private, plural, one {# privé} other {# privés}}",
+    "addedThisMonth": "+ {count, number} ce mois-ci",
+    "transactions": "Transactions",
+    "tokens": "Tokens",
+    "cumulative": "Cumul",
+    "memberGrowthChart": "Membres cumulés sur les 12 derniers mois",
+    "agreementGrowthChart": "Accords cumulés sur les 12 derniers mois"
   },
   "Proposals": {
     "CreateNew": "Créer une nouvelle proposition",

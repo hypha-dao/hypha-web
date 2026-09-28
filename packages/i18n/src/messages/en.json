@@ -1602,7 +1602,13 @@
     "exploreNetwork": "Explore the Hypha Network",
     "seeAll": "See all",
     "noCategory": "No Category",
-    "directoryPrivateSplit": "{directory} public · {private} private"
+    "directoryPrivateSplit": "{directory} public · {private} private",
+    "addedThisMonth": "+ {count, number} this month",
+    "transactions": "Transactions",
+    "tokens": "Tokens",
+    "cumulative": "Cumulative",
+    "memberGrowthChart": "Cumulative members over the last 12 months",
+    "agreementGrowthChart": "Cumulative agreements over the last 12 months"
   },
   "Proposals": {
     "CreateNew": "Create a new Proposal",

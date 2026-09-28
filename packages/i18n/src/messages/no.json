@@ -1601,7 +1601,13 @@
     "exploreNetwork": "Utforsk Hypha-nettverket",
     "seeAll": "Se alle",
     "noCategory": "Ingen kategori",
-    "directoryPrivateSplit": "{directory, plural, one {# offentlig} other {# offentlige}} · {private, plural, one {# privat} other {# private}}"
+    "directoryPrivateSplit": "{directory, plural, one {# offentlig} other {# offentlige}} · {private, plural, one {# privat} other {# private}}",
+    "addedThisMonth": "+ {count, number} denne måneden",
+    "transactions": "Transaksjoner",
+    "tokens": "Tokener",
+    "cumulative": "Kumulativ",
+    "memberGrowthChart": "Kumulative medlemmer de siste 12 månedene",
+    "agreementGrowthChart": "Kumulative avtaler de siste 12 månedene"
   },
   "Proposals": {
     "CreateNew": "Opprett et nytt forslag",

@@ -2,6 +2,7 @@
 
 import {
   CategoryGroupId,
+  countCreatedInMonth,
   Space,
   SpaceOrder,
   CATEGORY_GROUPS,
@@ -10,17 +11,18 @@ import {
   isSpaceArchived,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
+  type NetworkGrowth,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
   NetworkControlStrip,
   NetworkGlobeMap,
   NetworkMapViewToggle,
-  useNetworkGlobeReady,
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
 import { CreateSpaceButton } from './create-space-button';
+import { NetworkCensus } from './network-census';
 import { NetworkLoadingGrid } from './network-loading-grid';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
@@ -29,7 +31,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
+import { Badge, Heading, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -45,6 +47,7 @@ interface ExploreSpacesProps {
   order?: SpaceOrder;
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
+  networkGrowth?: NetworkGrowth | null;
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -88,45 +91,6 @@ function countAgreements(spaces: Space[]): number {
   return spaces.reduce(
     (accumulator, { documentCount }) => accumulator + (documentCount ?? 0),
     0,
-  );
-}
-
-function NetworkMetric({
-  value,
-  label,
-  splitLabel,
-  isLoading,
-}: {
-  value: number;
-  label: string;
-  /** Directory and private breakdown. Null when the private count is zero. */
-  splitLabel: string | null;
-  isLoading: boolean;
-}) {
-  const showSplit = isLoading || splitLabel != null;
-  return (
-    <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-      <div className="flex justify-center text-7 font-medium">
-        <CountValue value={value} isLoading={isLoading} width={40} />
-      </div>
-      <div className="mt-2 flex justify-center text-1 text-neutral-500">
-        {label}
-      </div>
-      {showSplit ? (
-        <div className="mt-1 flex justify-center text-1 text-neutral-9">
-          {isLoading ? (
-            <Skeleton
-              loading
-              width={64}
-              height={12}
-              className="inline-block align-middle"
-            />
-          ) : (
-            splitLabel
-          )}
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -181,14 +145,13 @@ export function ExploreSpaces({
   order,
   uniqueCategoryGroups,
   enableNetworkMap = false,
+  networkGrowth = null,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
-  const tCommon = useTranslations('Common');
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
-  const globeReady = useNetworkGlobeReady();
 
   React.useEffect(() => {
     if (enableNetworkMap) {
@@ -400,7 +363,6 @@ export function ExploreSpaces({
     !enableNetworkMap || view === 'list' || view === 'overview';
   const showMapStage = view === 'map' || view === 'overview';
   const showSpacesList = view === 'list' || view === 'overview';
-  const deferBelowMapContent = enableNetworkMap && showMapStage && !globeReady;
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-row items-center gap-3">
@@ -433,47 +395,54 @@ export function ExploreSpaces({
     </div>
   );
 
-  const populationSplit = (directory: number, privateCount: number) =>
-    privateCount > 0
-      ? t('directoryPrivateSplit', {
-          directory,
-          private: privateCount,
-        })
-      : null;
-
-  const metricsSection = (
-    <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
-      <NetworkMetric
-        value={selectedSpaces.length + privateSpaces.length}
-        label={tCommon('Spaces')}
-        splitLabel={populationSplit(
-          selectedSpaces.length,
-          privateSpaces.length,
-        )}
-        isLoading={showSpacesSkeleton}
-      />
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <NetworkMetric
-        value={memberCount + privateMemberCount}
-        label={tCommon('Members')}
-        splitLabel={populationSplit(memberCount, privateMemberCount)}
-        isLoading={showSpacesSkeleton}
-      />
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <NetworkMetric
-        value={agreementCount + privateAgreementCount}
-        label={tCommon('Agreements')}
-        splitLabel={populationSplit(agreementCount, privateAgreementCount)}
-        isLoading={showSpacesSkeleton}
-      />
-    </div>
-  );
+  const countedSpaces = [...selectedSpaces, ...privateSpaces];
+  const networkCensus = enableNetworkMap ? (
+    <NetworkCensus
+      lang={lang}
+      isLoading={showSpacesSkeleton}
+      spaces={{
+        total: selectedSpaces.length + privateSpaces.length,
+        publicCount: selectedSpaces.length,
+        privateCount: privateSpaces.length,
+        thisMonth: showSpacesSkeleton
+          ? null
+          : countCreatedInMonth(countedSpaces.map((space) => space.createdAt)),
+      }}
+      members={{
+        total: memberCount + privateMemberCount,
+        publicCount: memberCount,
+        privateCount: privateMemberCount,
+        thisMonth: networkGrowth?.membersThisMonth ?? null,
+      }}
+      agreements={{
+        total: agreementCount + privateAgreementCount,
+        publicCount: agreementCount,
+        privateCount: privateAgreementCount,
+        thisMonth: networkGrowth?.agreementsThisMonth ?? null,
+      }}
+      transactions={
+        networkGrowth
+          ? {
+              total: networkGrowth.transactions.total,
+              publicCount: networkGrowth.transactions.total,
+              privateCount: 0,
+              thisMonth: networkGrowth.transactions.thisMonth,
+            }
+          : null
+      }
+      tokens={
+        networkGrowth
+          ? {
+              total: networkGrowth.tokens.total,
+              publicCount: networkGrowth.tokens.total,
+              privateCount: 0,
+              thisMonth: networkGrowth.tokens.thisMonth,
+            }
+          : null
+      }
+      growth={networkGrowth}
+    />
+  ) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
@@ -493,6 +462,7 @@ export function ExploreSpaces({
 
         {enableNetworkMap ? (
           <>
+            <div className="mb-3">{networkCensus}</div>
             <NetworkGlobeMap
               lang={lang}
               spaces={mapSpaces}
@@ -505,9 +475,6 @@ export function ExploreSpaces({
             <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
               {spacesListContent}
-            </div>
-            <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
-              {metricsSection}
             </div>
           </>
         ) : (

@@ -1802,7 +1802,13 @@
     "exploreNetwork": "Explore a rede Hypha",
     "seeAll": "Ver tudo",
     "noCategory": "Nenhuma categoria",
-    "directoryPrivateSplit": "{directory, plural, one {# público} other {# públicos}} · {private, plural, one {# privado} other {# privados}}"
+    "directoryPrivateSplit": "{directory, plural, one {# público} other {# públicos}} · {private, plural, one {# privado} other {# privados}}",
+    "addedThisMonth": "+ {count, number} este mês",
+    "transactions": "Transações",
+    "tokens": "Tokens",
+    "cumulative": "Acumulado",
+    "memberGrowthChart": "Membros acumulados nos últimos 12 meses",
+    "agreementGrowthChart": "Acordos acumulados nos últimos 12 meses"
   },
   "Proposals": {
     "CreateNew": "Crie uma nova proposta",

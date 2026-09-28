@@ -1602,7 +1602,13 @@
     "exploreNetwork": "Verken het Hypha-netwerk",
     "seeAll": "Bekijk alles",
     "noCategory": "Geen categorie",
-    "directoryPrivateSplit": "{directory} openbaar · {private} privé"
+    "directoryPrivateSplit": "{directory} openbaar · {private} privé",
+    "addedThisMonth": "+ {count, number} deze maand",
+    "transactions": "Transacties",
+    "tokens": "Tokens",
+    "cumulative": "Cumulatief",
+    "memberGrowthChart": "Cumulatieve leden in de afgelopen 12 maanden",
+    "agreementGrowthChart": "Cumulatieve overeenkomsten in de afgelopen 12 maanden"
   },
   "Proposals": {
     "CreateNew": "Maak een nieuw voorstel",
