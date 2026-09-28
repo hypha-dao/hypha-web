@@ -276,18 +276,19 @@ function visibleDisk(projection: d3.GeoProjection): OverlayDisk | null {
   return { cx, cy, r: radius };
 }
 
-function placeOnInsetLimb(
+/** Horizontal chord of the inset disk at this y. */
+function insetChord(
   disk: OverlayDisk,
-  size: OverlaySize,
-  side: 'left' | 'right',
-  theta: number,
-): OverlayBox {
+  y: number,
+): { left: number; right: number } | null {
   const reach = disk.r - OVERLAY_INSET;
-  const along = reach * Math.sin(theta);
-  const down = reach * Math.cos(theta);
-  const y = disk.cy + down - size.h;
-  const x = side === 'right' ? disk.cx + along - size.w : disk.cx - along;
-  return { x, y, w: size.w, h: size.h };
+  const dy = y - disk.cy;
+  const remainder = reach * reach - dy * dy;
+  if (remainder < 0) {
+    return null;
+  }
+  const half = Math.sqrt(remainder);
+  return { left: disk.cx - half, right: disk.cx + half };
 }
 
 /** The whole box stays on its own side of the disk, clear of the center line. */
@@ -303,10 +304,49 @@ function boxStaysOffCenter(
 }
 
 /**
- * Put the box's outer corner 12px inside the limb, in its own bottom corner.
- * θ = 0 is straight down. A wide legend used to grow inward from 45° and meet
- * the miniature on the center line; θ is large enough that the inner edge
- * stays on this side of the disk.
+ * Pin the outer edge to the inset limb at this bottom. The bottom corner is
+ * the narrow part of the chord, so that edge — not a ray from the center —
+ * is what sits 12px inside the circle.
+ */
+function boxFlushToLimb(
+  disk: OverlayDisk,
+  size: OverlaySize,
+  side: 'left' | 'right',
+  bottom: number,
+): OverlayBox | null {
+  const top = bottom - size.h;
+  const atBottom = insetChord(disk, bottom);
+  const atTop = insetChord(disk, top);
+  if (!atBottom || !atTop) {
+    return null;
+  }
+  const left = Math.max(atBottom.left, atTop.left);
+  const right = Math.min(atBottom.right, atTop.right);
+  if (right - left < size.w - 0.5) {
+    return null;
+  }
+  const x = side === 'left' ? left : right - size.w;
+  const box = { x, y: top, w: size.w, h: size.h };
+  const reach = disk.r - OVERLAY_INSET;
+  return cornersInsideRadius(box, disk.cx, disk.cy, reach + 1) ? box : null;
+}
+
+function outwardExtent(
+  box: OverlayBox,
+  disk: OverlayDisk,
+  side: 'left' | 'right',
+): number {
+  return side === 'right' ? box.x + box.w - disk.cx : disk.cx - box.x;
+}
+
+/**
+ * Seat the box on the lower left or lower right edge of the disk.
+ *
+ * A ray from the center (45°, or just steep enough that the inner edge
+ * clears the center line) parks both controls in the lower middle and
+ * leaves the left and right of the circle empty. The outer edge has to
+ * reach the side of the disk — within 12px of its leftmost or rightmost
+ * point — and only then sit as low as that still allows.
  */
 function diskCornerBox(
   disk: OverlayDisk,
@@ -317,38 +357,39 @@ function diskCornerBox(
   if (!(reach > 1) || size.w > reach * 2 || size.h > reach * 2) {
     return null;
   }
-  const thetaMax = Math.acos(Math.min(1, size.h / (2 * reach)));
-  const sideRatio = (size.w + OVERLAY_GAP) / reach;
-  const thetaSide =
-    sideRatio < 1 ? Math.asin(sideRatio) : Number.POSITIVE_INFINITY;
-
-  const fitted = (theta: number): OverlayBox | null => {
-    if (!(theta >= 0) || theta > thetaMax + 1e-3) {
-      return null;
+  // Lowest seat whose outer edge still reaches the side of the disk.
+  // Top of the box on the midline: any lower and the limb curves in,
+  // leaving the empty arc beside the control.
+  const sideReach = Math.sqrt(Math.max(0, reach * reach - size.h * size.h));
+  const lowest = disk.cy + reach;
+  const highest = disk.cy - reach + size.h;
+  let widestOnSide: OverlayBox | null = null;
+  let widestOnSideOutward = -1;
+  let widestFlush: OverlayBox | null = null;
+  let widestFlushOutward = -1;
+  for (let bottom = lowest; bottom >= highest; bottom -= 2) {
+    const box = boxFlushToLimb(disk, size, side, bottom);
+    if (!box) {
+      continue;
     }
-    const box = placeOnInsetLimb(disk, size, side, Math.min(theta, thetaMax));
-    return cornersInsideRadius(box, disk.cx, disk.cy, reach + 1) ? box : null;
-  };
-
-  if (Number.isFinite(thetaSide)) {
-    const preferred = Math.min(thetaMax, Math.max(thetaSide, Math.PI / 4));
-    const preferredBox = fitted(preferred);
-    if (preferredBox && boxStaysOffCenter(preferredBox, disk, side)) {
-      return preferredBox;
+    const outward = outwardExtent(box, disk, side);
+    if (outward > widestFlushOutward) {
+      widestFlush = box;
+      widestFlushOutward = outward;
     }
-    for (
-      let theta = Math.max(thetaSide, Math.PI / 4);
-      theta <= thetaMax + 1e-4;
-      theta += 0.04
-    ) {
-      const box = fitted(theta);
-      if (box && boxStaysOffCenter(box, disk, side)) {
-        return box;
-      }
+    if (!boxStaysOffCenter(box, disk, side)) {
+      continue;
+    }
+    if (outward > widestOnSideOutward) {
+      widestOnSide = box;
+      widestOnSideOutward = outward;
+    }
+    if (outward + 0.5 >= sideReach) {
+      return box;
     }
   }
-
-  return fitted(Math.min(thetaMax, Math.PI / 4));
+  // A legend wider than the left half still belongs on that edge.
+  return widestOnSide ?? widestFlush;
 }
 
 function stageCornerBox(
@@ -445,9 +486,9 @@ function legendLeftAtBottom(
 }
 
 /**
- * Move the legend up the left limb until it clears the miniature.
- * First keep it entirely on the left of center. If it is wider than that
- * half, sit it above the miniature instead of in the same row.
+ * The legend meets the miniature when its inner edge sits on the center line.
+ * Slide it up the left limb to the seat furthest from that line. If it is
+ * wider than the left half, sit it above the miniature instead.
  */
 function shiftLegendClearOfNavigator(
   disk: OverlayDisk,
@@ -463,19 +504,26 @@ function shiftLegendClearOfNavigator(
     disk.cy - reach + legend.h,
   );
   let aboveNav: OverlayBox | null = null;
+  let bestSide: OverlayBox | null = null;
+  let bestOutward = -1;
   for (let bottom = lowest; bottom >= highest; bottom -= 4) {
     const box = legendLeftAtBottom(disk, width, height, legend, bottom);
     if (!box || overlayBoxesOverlap(box, nav)) {
       continue;
     }
     if (box.x + box.w <= disk.cx - OVERLAY_GAP + 0.5) {
-      return box;
+      const outward = disk.cx - box.x;
+      if (outward > bestOutward) {
+        bestSide = box;
+        bestOutward = outward;
+      }
+      continue;
     }
     if (!aboveNav && box.y + box.h + OVERLAY_GAP <= nav.y) {
       aboveNav = box;
     }
   }
-  return aboveNav;
+  return bestSide ?? aboveNav;
 }
 
 function seatOnRectangle(
