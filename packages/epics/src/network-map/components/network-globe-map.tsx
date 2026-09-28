@@ -69,6 +69,28 @@ const FLAT_ROTATION: Rotation = [0, 0, 0];
  */
 const FLAT_GEOGRAPHIC_CENTER: [number, number] = [0, 0];
 
+/** Fold degrees into (−180, 180]. */
+function wrapLongitude(longitude: number): number {
+  return (((longitude % 360) + 540) % 360) - 180;
+}
+
+/**
+ * One blend for the flat camera. The overview ignores globe rotation, so the
+ * center has to travel with the zoom; a snap lands on the cluster and then
+ * the scale eases in on top of it.
+ */
+function easeFlatCenter(
+  from: readonly [number, number],
+  to: readonly [number, number],
+  t: number,
+): [number, number] {
+  const deltaLon = wrapLongitude(to[0] - from[0]);
+  return [
+    wrapLongitude(from[0] + deltaLon * t),
+    from[1] + (to[1] - from[1]) * t,
+  ];
+}
+
 /**
  * The overview intro (globe → flat) must run once per page load. A ref dies
  * with the instance, so Strict Mode remounts and a second alignProjection
@@ -1539,10 +1561,11 @@ export function NetworkGlobeMap({
       setClusterSpread(fromSpread * spreadRemaining);
       globeZoomRef.current = 1 + (fromZoom - 1) * zoomRemaining;
       if (flat) {
-        flatCenterRef.current = [
-          fromFlatCenter[0] * zoomRemaining,
-          fromFlatCenter[1] * zoomRemaining,
-        ];
+        flatCenterRef.current = easeFlatCenter(
+          fromFlatCenter,
+          FLAT_GEOGRAPHIC_CENTER,
+          1 - zoomRemaining,
+        );
       }
       requestRender();
 
@@ -1581,26 +1604,34 @@ export function NetworkGlobeMap({
       const fromZoom = globeZoomRef.current;
       const toZoom = CLUSTER_ZOOM_SCALE;
       const flat = morphRef.current >= 1;
+      const fromFlatCenter: [number, number] = [
+        flatCenterRef.current[0],
+        flatCenterRef.current[1],
+      ];
+      const toFlatCenter: [number, number] = [
+        cluster.longitude,
+        cluster.latitude,
+      ];
       const centeredRotation = globeRotationForCenter(
         cluster.longitude,
         cluster.latitude,
+      );
+      const fromRotation = [...rotateRef.current] as Rotation;
+      const interpolateRotation = interpolateAngles(
+        fromRotation,
+        centeredRotation,
       );
 
       focusedClusterIdRef.current = cluster.clusterId;
       setFocusedClusterId(cluster.clusterId);
 
-      if (flat) {
-        // Overview drops spherical rotation, so the zoom scale alone would
-        // enlarge 0°, 0°. Center the equirectangular camera on this cluster.
-        flatCenterRef.current = [cluster.longitude, cluster.latitude];
-      } else {
-        flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
-      }
-
       if (prefersReducedMotion()) {
-        if (!flat) {
+        if (flat) {
+          flatCenterRef.current = toFlatCenter;
+        } else {
           rotateRef.current = centeredRotation;
           savedGlobeRotateRef.current = centeredRotation;
+          flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
         }
         globeZoomRef.current = toZoom;
         clusterSpreadRef.current = 1;
@@ -1614,19 +1645,25 @@ export function NetworkGlobeMap({
       clusterSpreadRef.current = 0;
       setClusterSpread(0);
       const start = performance.now();
-      if (!flat) {
-        savedGlobeRotateRef.current = centeredRotation;
-      }
 
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / CLUSTER_FOCUS_MS);
+        const eased = easeClusterZoomIn(t);
 
-        // Keep the cluster anchor pinned at the viewport center while zooming.
-        if (!flat) {
-          rotateRef.current = centeredRotation;
+        if (flat) {
+          // Same ease as the scale, so the coast arrives with the zoom.
+          flatCenterRef.current = easeFlatCenter(
+            fromFlatCenter,
+            toFlatCenter,
+            eased,
+          );
+        } else {
+          const rotation = interpolateRotation(eased);
+          rotateRef.current = rotation;
+          savedGlobeRotateRef.current = rotation;
+          flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
         }
-        globeZoomRef.current =
-          fromZoom + (toZoom - fromZoom) * easeClusterZoomIn(t);
+        globeZoomRef.current = fromZoom + (toZoom - fromZoom) * eased;
 
         const spreadT =
           t <= SPIDERFY_START ? 0 : (t - SPIDERFY_START) / (1 - SPIDERFY_START);
@@ -1638,6 +1675,14 @@ export function NetworkGlobeMap({
         if (t < 1) {
           clusterAnimFrameRef.current = requestAnimationFrame(step);
         } else {
+          if (flat) {
+            flatCenterRef.current = toFlatCenter;
+          } else {
+            rotateRef.current = centeredRotation;
+            savedGlobeRotateRef.current = centeredRotation;
+            flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
+          }
+          globeZoomRef.current = toZoom;
           clusterSpreadRef.current = 1;
           setClusterSpread(1);
           clusterAnimFrameRef.current = null;
