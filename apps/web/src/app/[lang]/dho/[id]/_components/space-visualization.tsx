@@ -77,32 +77,32 @@ function clampSvgLength(value: number): number {
 }
 
 /**
- * One continuous ring. A stroked circle, and a path closed with `Z`,
- * starts and ends on a seam: the join gaps, stubs, or paints twice.
- * Four cubics return to the start with the same tangent, then a short
- * step continues along that tangent so the butt ends meet as one stroke.
+ * One continuous ring. A stroked circle starts and ends on a seam: butt
+ * caps leave a gap, and `Z` leaves a corner. Three arcs under 180° draw
+ * the circle, then a short arc continues past the start along the same
+ * tangent so the caps overlap on the stroke instead of meeting at a point.
  */
 function smoothClosedCirclePath(radius: number): string {
   const r = clampSvgLength(radius);
   if (r <= 0) return '';
-  const k = r * 0.5522847498307936;
-  const n = (value: number) => value.toFixed(3);
-  const overlap = Math.min(2.5, r * 0.02);
+  const overlap = Math.min(Math.max(12, r * 0.04), r * 0.2);
   const theta = overlap / r;
-  const endX = r * Math.cos(theta);
-  const endY = r * Math.sin(theta);
-  const handle = overlap / 3;
-  const tx = -Math.sin(theta);
-  const ty = Math.cos(theta);
+  const n = (value: number) => value.toFixed(3);
+  const point = (angle: number) => {
+    const x = r * Math.cos(angle);
+    const y = r * Math.sin(angle);
+    return `${n(x)} ${n(y)}`;
+  };
+  // Sweep-flag 1 follows increasing angle (clockwise in SVG). Each step
+  // stays under 180° so the large-arc flag cannot flip the semicircle.
+  const arc = (angle: number) => `A ${n(r)} ${n(r)} 0 0 1 ${point(angle)}`;
+  const start = -theta;
   return [
-    `M ${n(r)} 0`,
-    `C ${n(r)} ${n(k)} ${n(k)} ${n(r)} 0 ${n(r)}`,
-    `C ${n(-k)} ${n(r)} ${n(-r)} ${n(k)} ${n(-r)} 0`,
-    `C ${n(-r)} ${n(-k)} ${n(-k)} ${n(-r)} 0 ${n(-r)}`,
-    `C ${n(k)} ${n(-r)} ${n(r)} ${n(-k)} ${n(r)} 0`,
-    `C ${n(r)} ${n(handle)} ${n(endX - tx * handle)} ${n(
-      endY - ty * handle,
-    )} ${n(endX)} ${n(endY)}`,
+    `M ${point(start)}`,
+    arc(start + (2 * Math.PI) / 3),
+    arc(start + (4 * Math.PI) / 3),
+    arc(start + 2 * Math.PI),
+    arc(theta),
   ].join(' ');
 }
 
