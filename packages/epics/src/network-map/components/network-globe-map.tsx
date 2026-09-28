@@ -1170,6 +1170,19 @@ export function NetworkGlobeMap({
           '--map-legend-bottom',
           `${seat.legendBottom}px`,
         );
+        // Zoom out sits in the stage's bottom-right corner. When that corner
+        // is the miniature (zoomed disk fills the stage), lift the button so
+        // both stay visible. The miniature's seat is left alone.
+        const zoomOverlapsNav =
+          seat.navRight < OVERLAY_INSET + 160 &&
+          seat.navBottom < OVERLAY_INSET + 32;
+        const zoomBottom = zoomOverlapsNav
+          ? seat.navBottom + navSize.h + OVERLAY_GAP
+          : OVERLAY_INSET;
+        container.style.setProperty(
+          '--map-zoom-bottom',
+          `${Math.round(zoomBottom)}px`,
+        );
       }
     }
   }, [lang, router, t]);
@@ -2069,13 +2082,13 @@ export function NetworkGlobeMap({
   const clusterControls = focusedClusterId ? (
     <div
       data-network-map-cluster-controls
-      className="absolute left-3 top-3 z-20"
+      className="absolute bottom-[var(--map-zoom-bottom)] right-3 z-30"
     >
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 border-border bg-background shadow-sm"
+        className="h-8 gap-1.5 rounded-none border-border bg-background shadow-none"
         onClick={clearClusterFocus}
       >
         <Minus className="size-3.5" aria-hidden />
@@ -2196,7 +2209,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem]"
+      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
