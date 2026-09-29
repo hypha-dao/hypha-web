@@ -327,55 +327,55 @@ function clusterBounds(
     const radius = Math.max(finiteOr(focus.r, 1), 1);
     includeCircle(bounds, x, y, radius);
   }
-  includeZoomContext(bounds, focus, safeScale, showLabels);
+  includeZoomContext(bounds, focus);
   return bounds;
 }
 
-/** Parent mark and the two neighbouring spaces, so a zoom keeps them in frame. */
+function adjacentSpaces(focus: SpaceHierarchyNode): SpaceHierarchyNode[] {
+  const parent = focus.parent as SpaceHierarchyNode | null;
+  const siblings = (parent?.children ?? []) as SpaceHierarchyNode[];
+  const index = siblings.indexOf(focus);
+  if (index < 0 || siblings.length < 2) return [];
+  const count = siblings.length;
+  return [
+    siblings[(index - 1 + count) % count],
+    siblings[(index + 1) % count],
+  ].filter((node): node is SpaceHierarchyNode =>
+    Boolean(node && node !== focus),
+  );
+}
+
+/**
+ * The opened space stays in the middle. The frame grows just far enough
+ * that a slice of each neighbour enters, so the zoom stays close.
+ */
 function includeZoomContext(
   bounds: LayoutBounds,
   focus: SpaceHierarchyNode,
-  scale: number,
-  showLabels: boolean,
 ): void {
-  const parent = focus.parent as SpaceHierarchyNode | null;
-  if (!parent) return;
-  const parentR = finiteOr(parent.r, 0);
-  includeCircle(
-    bounds,
-    finiteOr(parent.x, 0),
-    finiteOr(parent.y, 0),
-    Math.max(parentR * VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO, 1),
+  const neighbours = adjacentSpaces(focus);
+  if (neighbours.length === 0 || !Number.isFinite(bounds.minX)) return;
+  const fx = finiteOr(focus.x, 0);
+  const fy = finiteOr(focus.y, 0);
+  let reach = Math.max(
+    fx - bounds.minX,
+    bounds.maxX - fx,
+    fy - bounds.minY,
+    bounds.maxY - fy,
+    1,
   );
-  const siblings = (parent.children ?? []) as SpaceHierarchyNode[];
-  const index = siblings.indexOf(focus);
-  if (index < 0 || siblings.length < 2) return;
-  const neighbours = [
-    siblings[(index - 1 + siblings.length) % siblings.length],
-    siblings[(index + 1) % siblings.length],
-  ];
   for (const sibling of neighbours) {
-    if (!sibling || sibling === focus) continue;
-    includeNodeExtent(bounds, sibling, scale, showLabels);
+    const dist = Math.hypot(
+      finiteOr(sibling.x, 0) - fx,
+      finiteOr(sibling.y, 0) - fy,
+    );
+    const siblingRadius = finiteOr(sibling.r, 0);
+    reach = Math.max(reach, dist - siblingRadius + siblingRadius * 0.22);
   }
-}
-
-function includeNodeExtent(
-  bounds: LayoutBounds,
-  node: SpaceHierarchyNode,
-  scale: number,
-  showLabels: boolean,
-): void {
-  const x = finiteOr(node.x, 0);
-  const y = finiteOr(node.y, 0);
-  includeCircle(bounds, x, y, finiteOr(node.r, 0));
-  if (!showLabels) return;
-  const top = nodeLabelTop(node, scale);
-  const { labelFontSize } = labelMetrics(nodeShapeRadius(node, scale));
-  const half = estimateLabelHalfWidth(node.data.name, labelFontSize) / scale;
-  const bottom = y + (top + labelFontSize * 1.35) / scale;
-  includePoint(bounds, x - half, y);
-  includePoint(bounds, x + half, bottom);
+  bounds.minX = fx - reach;
+  bounds.maxX = fx + reach;
+  bounds.minY = fy - reach;
+  bounds.maxY = fy + reach;
 }
 
 function frameFromBounds(bounds: LayoutBounds): ClusterFrame {
@@ -867,9 +867,7 @@ export function SpaceVisualization({
       if (d === focusNode) return true;
       if (isDescendantOfOrSelf(d, focusNode)) return true;
       if (isAncestorOf(d, focusNode)) return true;
-      // The spaces beside the one you opened stay in the picture.
-      const parent = focusNode.parent;
-      return Boolean(parent && d.parent === parent);
+      return adjacentSpaces(focusNode).includes(d);
     }
 
     function isVisible(d: SpaceHierarchyNode): boolean {
