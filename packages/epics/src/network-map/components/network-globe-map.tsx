@@ -34,7 +34,6 @@ import {
   globeRotationForCenter,
 } from '../lib/globe-rotation';
 import { setNetworkGlobeReady } from '../lib/network-globe-ready-store';
-import { seatOnDisk } from '../lib/overlay-seat';
 import {
   buildMapPinData,
   pinDatumSpace,
@@ -228,90 +227,6 @@ function isPinVisibleOnProjection(
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
 }
 
-/** Legend and miniature sit this far inside the visible drawing. */
-const OVERLAY_INSET = 12;
-const OVERLAY_GAP = 12;
-
-type OverlaySize = { w: number; h: number };
-type OverlayBox = OverlaySize & { x: number; y: number };
-type OverlaySeat = {
-  legendLeft: number;
-  legendBottom: number;
-  navRight: number;
-  navBottom: number;
-};
-
-function overlayBoxesOverlap(a: OverlayBox, b: OverlayBox): boolean {
-  return (
-    a.x < b.x + b.w + OVERLAY_GAP &&
-    a.x + a.w + OVERLAY_GAP > b.x &&
-    a.y < b.y + b.h + OVERLAY_GAP &&
-    a.y + a.h + OVERLAY_GAP > b.y
-  );
-}
-
-/**
- * Orthographic draws a disk. A clip under 180° is that disk; equirectangular
- * reports clipAngle 0 and fills its bounds rectangle instead.
- */
-function projectionDrawsDisk(projection: d3.GeoProjection): boolean {
-  const clip = projection.clipAngle?.();
-  return clip != null && clip > 0 && clip < 180;
-}
-
-function seatOnRectangle(
-  width: number,
-  height: number,
-  bounds: [[number, number], [number, number]],
-  legend: OverlaySize | null,
-  nav: OverlaySize,
-): OverlaySeat {
-  const [[x0, y0], [x1, y1]] = bounds;
-  const left = Math.max(OVERLAY_INSET, x0 + OVERLAY_INSET);
-  const right = Math.min(width - OVERLAY_INSET, x1 - OVERLAY_INSET);
-  const bottom = Math.min(height - OVERLAY_INSET, y1 - OVERLAY_INSET);
-  const top = Math.max(OVERLAY_INSET, y0 + OVERLAY_INSET);
-  const navBox: OverlayBox = {
-    x: Math.max(left, right - nav.w),
-    y: Math.max(top, bottom - nav.h),
-    w: nav.w,
-    h: nav.h,
-  };
-  let legendBox: OverlayBox | null = null;
-  if (legend) {
-    legendBox = {
-      x: left,
-      y: Math.max(top, bottom - legend.h),
-      w: legend.w,
-      h: legend.h,
-    };
-    if (overlayBoxesOverlap(legendBox, navBox)) {
-      legendBox = {
-        ...legendBox,
-        y: Math.max(top, navBox.y - OVERLAY_GAP - legend.h),
-      };
-    }
-  }
-  return overlaySeatCss(width, height, legendBox, navBox);
-}
-
-function overlaySeatCss(
-  width: number,
-  height: number,
-  legend: OverlayBox | null,
-  nav: OverlayBox,
-): OverlaySeat {
-  return {
-    legendLeft: Math.max(OVERLAY_INSET, Math.round(legend?.x ?? OVERLAY_INSET)),
-    legendBottom: Math.max(
-      OVERLAY_INSET,
-      Math.round(legend ? height - (legend.y + legend.h) : OVERLAY_INSET),
-    ),
-    navRight: Math.max(OVERLAY_INSET, Math.round(width - (nav.x + nav.w))),
-    navBottom: Math.max(OVERLAY_INSET, Math.round(height - (nav.y + nav.h))),
-  };
-}
-
 function parsePinTransform(element: Element): { x: number; y: number } | null {
   const transform = element.getAttribute('transform');
   if (!transform) {
@@ -478,10 +393,6 @@ export function NetworkGlobeMap({
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
-  const overlaySeatRef = React.useRef<{
-    key: string;
-    seat: OverlaySeat;
-  } | null>(null);
   const renderMiniGlobeRef = React.useRef<() => void>(() => {});
   const isMountedRef = React.useRef(true);
   const animatingTargetRef = React.useRef<NetworkMapProjectionMode | null>(
@@ -1033,88 +944,6 @@ export function NetworkGlobeMap({
         .style('display', null);
     });
     pinNodes.order();
-
-    const bounds = path.bounds({ type: 'Sphere' });
-    const [[x0, y0], [x1, y1]] = bounds;
-    if ([x0, y0, x1, y1].every((value) => Number.isFinite(value))) {
-      const drawsDisk = projectionDrawsDisk(projection);
-      const navSize = miniGlobeRef.current
-        ? { w: MINI_GLOBE_SIZE, h: MINI_GLOBE_SIZE }
-        : { w: MINI_MAP_WIDTH, h: MINI_MAP_HEIGHT };
-      const legendEl = container.querySelector<HTMLElement>(
-        '[data-network-map-inset="legend"]',
-      );
-      const legendSize =
-        legendEl && legendEl.offsetWidth > 0
-          ? { w: legendEl.offsetWidth, h: legendEl.offsetHeight }
-          : null;
-      const seatKey = [
-        width,
-        height,
-        drawsDisk ? 'disk' : 'rect',
-        x0.toFixed(1),
-        y0.toFixed(1),
-        x1.toFixed(1),
-        y1.toFixed(1),
-        navSize.w,
-        navSize.h,
-        legendSize ? `${legendSize.w}x${legendSize.h}` : '',
-      ].join('|');
-      let seat =
-        overlaySeatRef.current?.key === seatKey
-          ? overlaySeatRef.current.seat
-          : null;
-      if (!seat) {
-        if (drawsDisk) {
-          const [cx, cy] = projection.translate();
-          const clip = projection.clipAngle?.() ?? 90;
-          const radius = projection.scale() * Math.sin((clip * Math.PI) / 180);
-          // scale and translate are the SVG pixels the overlays share.
-          // The square around that circle sits outside the disk.
-          seat = seatOnDisk(
-            { cx, cy, r: radius },
-            width,
-            height,
-            legendSize ?? { w: 196, h: 32 },
-            navSize,
-          );
-          if (!legendEl || legendSize) {
-            overlaySeatRef.current = { key: seatKey, seat };
-          }
-        } else {
-          seat = seatOnRectangle(width, height, bounds, legendSize, navSize);
-          if (!legendEl || legendSize) {
-            overlaySeatRef.current = { key: seatKey, seat };
-          }
-        }
-      }
-      if (seat) {
-        // Variables survive React re-renders that reset the buttons' style prop.
-        container.style.setProperty('--map-nav-right', `${seat.navRight}px`);
-        container.style.setProperty('--map-nav-bottom', `${seat.navBottom}px`);
-        container.style.setProperty(
-          '--map-legend-left',
-          `${seat.legendLeft}px`,
-        );
-        container.style.setProperty(
-          '--map-legend-bottom',
-          `${seat.legendBottom}px`,
-        );
-        // Zoom out sits in the stage's bottom-right corner. When that corner
-        // is the miniature (zoomed disk fills the stage), lift the button so
-        // both stay visible. The miniature's seat is left alone.
-        const zoomOverlapsNav =
-          seat.navRight < OVERLAY_INSET + 160 &&
-          seat.navBottom < OVERLAY_INSET + 32;
-        const zoomBottom = zoomOverlapsNav
-          ? seat.navBottom + navSize.h + OVERLAY_GAP
-          : OVERLAY_INSET;
-        container.style.setProperty(
-          '--map-zoom-bottom',
-          `${Math.round(zoomBottom)}px`,
-        );
-      }
-    }
   }, [lang, router, t]);
 
   renderMapRef.current = renderMap;
@@ -2012,7 +1841,7 @@ export function NetworkGlobeMap({
   const clusterControls = focusedClusterId ? (
     <div
       data-network-map-cluster-controls
-      className="absolute bottom-[var(--map-zoom-bottom)] right-3 z-30"
+      className="absolute bottom-3 right-3 z-30"
     >
       <Button
         type="button"
@@ -2037,8 +1866,8 @@ export function NetworkGlobeMap({
       <div
         data-network-map-inset="legend"
         className={cn(
-          'pointer-events-none absolute bottom-[var(--map-legend-bottom)] left-[var(--map-legend-left)] z-20',
-          'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
+          'pointer-events-none shrink-0',
+          'inline-flex max-w-[20rem] items-center gap-3',
           'rounded-md border border-border bg-background/90 px-2.5 py-1.5',
           'text-1 text-muted-foreground shadow-sm backdrop-blur-sm',
         )}
@@ -2067,7 +1896,7 @@ export function NetworkGlobeMap({
     ) : null;
 
   const miniatureInsetClassName =
-    'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 border-0 bg-transparent p-0 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
+    'shrink-0 border-0 bg-transparent p-0 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
   const miniGlobeInset = showMiniGlobe ? (
     <button
@@ -2137,10 +1966,12 @@ export function NetworkGlobeMap({
   );
 
   const mapStage = (
-    <div
-      ref={containerRef}
-      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]"
-    >
+    <div className="flex w-full min-w-0 items-center gap-3">
+      {mapLegend}
+      <div
+        ref={containerRef}
+        className="relative aspect-[2/1] min-w-0 flex-1 overflow-hidden bg-transparent"
+      >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
           <Loader2 className="size-5 animate-spin" />
@@ -2166,10 +1997,10 @@ export function NetworkGlobeMap({
         role="img"
         aria-label={t('mapAriaLabel')}
       />
-      {mapLegend}
+      {hoverCard}
+      </div>
       {miniGlobeInset}
       {miniMapInset}
-      {hoverCard}
     </div>
   );
 
