@@ -1972,32 +1972,32 @@ export function NetworkGlobeMap({
         ref={containerRef}
         className="relative aspect-[2/1] min-w-0 flex-1 overflow-hidden bg-transparent"
       >
-      {isLoadingGeo ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-          <Loader2 className="size-5 animate-spin" />
-          <span>{t('loadingMap')}</span>
-        </div>
-      ) : null}
-      {loadError ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
-          {loadError}
-        </div>
-      ) : null}
-      {mapClusterStyles}
-      {clusterControls}
-      <svg
-        ref={svgRef}
-        className={cn(
-          'absolute inset-0 block h-full w-full select-none',
-          projectionMode === 'globe'
-            ? 'cursor-grab active:cursor-grabbing'
-            : 'cursor-default',
-          isLoadingGeo ? 'invisible' : undefined,
-        )}
-        role="img"
-        aria-label={t('mapAriaLabel')}
-      />
-      {hoverCard}
+        {isLoadingGeo ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
+            <Loader2 className="size-5 animate-spin" />
+            <span>{t('loadingMap')}</span>
+          </div>
+        ) : null}
+        {loadError ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
+            {loadError}
+          </div>
+        ) : null}
+        {mapClusterStyles}
+        {clusterControls}
+        <svg
+          ref={svgRef}
+          className={cn(
+            'absolute inset-0 block h-full w-full select-none',
+            projectionMode === 'globe'
+              ? 'cursor-grab active:cursor-grabbing'
+              : 'cursor-default',
+            isLoadingGeo ? 'invisible' : undefined,
+          )}
+          role="img"
+          aria-label={t('mapAriaLabel')}
+        />
+        {hoverCard}
       </div>
       {miniGlobeInset}
       {miniMapInset}
