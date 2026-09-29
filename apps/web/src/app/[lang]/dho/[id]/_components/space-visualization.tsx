@@ -328,7 +328,31 @@ function frameForFocus(
   const aspect = Math.max(viewWidth, 1) / Math.max(viewHeight, 1);
   if (width / height < aspect) width = height * aspect;
   else height = width / aspect;
+  // A wide stage would otherwise open far enough to show the disc's rim.
+  // Keep the frame inside the disc so the fill covers the stage.
+  const covered = discCoverFrame(focus, viewWidth, viewHeight);
+  if (covered) {
+    width = Math.min(width, covered.width);
+    height = Math.min(height, covered.height);
+  }
   return { cx: fx, cy: fy, width, height };
+}
+
+/** Frame that keeps the enclosure fill over the whole stage, centred on `focus`. */
+function discCoverFrame(
+  focus: SpaceHierarchyNode,
+  viewWidth: number,
+  viewHeight: number,
+): { width: number; height: number } | null {
+  if (!(focus.children && focus.children.length > 0)) return null;
+  const er = Math.max(finiteOr(focus.r, 1), 1);
+  const pad = clusterFitPadding(viewWidth);
+  const half = Math.hypot(Math.max(viewWidth, 1), Math.max(viewHeight, 1)) / 2;
+  const kCover = (half * 1.04) / er;
+  return {
+    width: Math.max(viewWidth - pad * 2, 1) / kCover,
+    height: Math.max(viewHeight - pad * 2, 1) / kCover,
+  };
 }
 
 /** Phones keep a tight inset so the disc fills the column. */
