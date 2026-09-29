@@ -297,10 +297,9 @@ function focusLabelReach(focus: SpaceHierarchyNode, scale: number): number {
 }
 
 /**
- * A frame centred on the opened space. The outer disc is ground, not the
- * thing being fitted, so the mark stays large. The frame only opens far
- * enough for a slice of each surrounding space, then matches the stage
- * shape so the extra width or height is used.
+ * A frame centred on the opened space. The mark fills the stage. The disc
+ * rim is ground, so the frame does not open out to it — that lands the view
+ * on empty fill with the space clipped at the edge.
  */
 function frameForFocus(
   focus: SpaceHierarchyNode,
@@ -312,15 +311,15 @@ function frameForFocus(
   const fx = finiteOr(focus.x, 0);
   const fy = finiteOr(focus.y, 0);
   const mark = Math.max(drawnRadius(focus), 1);
-  // The opened mark stays the subject. Surrounding rings only contribute a slice.
-  const NEIGHBOUR_SLICE = 0.16;
-  const maxReach = mark / 0.72;
-  let reach = showLabels ? Math.max(mark, focusLabelReach(focus, scale)) : mark;
+  const labelReach = showLabels ? focusLabelReach(focus, scale) : mark;
+  // The opened mark stays fully on screen and clearly the subject.
+  let reach = Math.max(mark * 1.35, labelReach);
+  const maxReach = Math.max(mark / 0.58, labelReach);
   for (const node of ringMates(focus)) {
     const dist = Math.hypot(finiteOr(node.x, 0) - fx, finiteOr(node.y, 0) - fy);
     const rad = finiteOr(node.r, 0);
-    const slice = dist - rad + rad * NEIGHBOUR_SLICE;
-    reach = Math.max(reach, Math.min(slice, maxReach));
+    const slice = dist - rad + rad * 0.28;
+    if (slice > 0) reach = Math.max(reach, Math.min(slice, maxReach));
   }
   reach = Math.max(reach, 1);
   let width = reach * 2;
@@ -328,31 +327,7 @@ function frameForFocus(
   const aspect = Math.max(viewWidth, 1) / Math.max(viewHeight, 1);
   if (width / height < aspect) width = height * aspect;
   else height = width / aspect;
-  // A wide stage would otherwise open far enough to show the disc's rim.
-  // Keep the frame inside the disc so the fill covers the stage.
-  const covered = discCoverFrame(focus, viewWidth, viewHeight);
-  if (covered) {
-    width = Math.min(width, covered.width);
-    height = Math.min(height, covered.height);
-  }
   return { cx: fx, cy: fy, width, height };
-}
-
-/** Frame that keeps the enclosure fill over the whole stage, centred on `focus`. */
-function discCoverFrame(
-  focus: SpaceHierarchyNode,
-  viewWidth: number,
-  viewHeight: number,
-): { width: number; height: number } | null {
-  if (!(focus.children && focus.children.length > 0)) return null;
-  const er = Math.max(finiteOr(focus.r, 1), 1);
-  const pad = clusterFitPadding(viewWidth);
-  const half = Math.hypot(Math.max(viewWidth, 1), Math.max(viewHeight, 1)) / 2;
-  const kCover = (half * 1.04) / er;
-  return {
-    width: Math.max(viewWidth - pad * 2, 1) / kCover,
-    height: Math.max(viewHeight - pad * 2, 1) / kCover,
-  };
 }
 
 /** Phones keep a tight inset so the disc fills the column. */
@@ -806,6 +781,7 @@ export function SpaceVisualization({
       k: 1,
       width: 1,
       height: 1,
+      lift: 0,
       ready: false,
     };
 
@@ -818,7 +794,7 @@ export function SpaceVisualization({
     function markInView(d: SpaceHierarchyNode): boolean {
       if (!shown.ready) return true;
       const x = (finiteOr(d.x, 0) - shown.cx) * shown.k;
-      const y = (finiteOr(d.y, 0) - shown.cy) * shown.k;
+      const y = (finiteOr(d.y, 0) - shown.cy) * shown.k - shown.lift;
       const rad = Math.max(drawnRadius(d) * shown.k, 1);
       const hx = shown.width / 2;
       const hy = shown.height / 2;
@@ -1181,18 +1157,24 @@ export function SpaceVisualization({
               showNodeLabels,
             );
 
+      const lift =
+        typeof window !== 'undefined' && viewHeight > window.innerHeight * 0.85
+          ? Math.min((viewHeight - window.innerHeight) / 2, viewHeight * 0.28)
+          : 0;
+
       shown = {
         cx: next.cx,
         cy: next.cy,
         k,
         width: viewWidth,
         height: viewHeight,
+        lift,
         ready: true,
       };
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
         const tx = (finiteOr(d.x, 0) - next.cx) * k;
-        const ty = (finiteOr(d.y, 0) - next.cy) * k;
+        const ty = (finiteOr(d.y, 0) - next.cy) * k - lift;
         return `translate(${tx}, ${ty})`;
       };
 
