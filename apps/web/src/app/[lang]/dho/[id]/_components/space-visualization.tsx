@@ -802,16 +802,27 @@ export function SpaceVisualization({
       return false;
     }
 
+    function isAncestorOf(
+      ancestor: SpaceHierarchyNode,
+      node: SpaceHierarchyNode,
+    ): boolean {
+      let current = node.parent;
+      while (current) {
+        if (current === ancestor) return true;
+        current = current.parent;
+      }
+      return false;
+    }
+
     function isVisibleForFocus(
       d: SpaceHierarchyNode,
       focusNode: SpaceHierarchyNode,
     ): boolean {
       if (d === focusNode) return true;
-
-      // Ancestors stay out of the focused view. A parent ring passes just
-      // outside its children, so leaving it visible after a zoom parks a
-      // cropped logo on the edge of the stage.
-      return isDescendantOfOrSelf(d, focusNode);
+      if (isDescendantOfOrSelf(d, focusNode)) return true;
+      // The parent stays in frame, so a zoom still shows a piece of the
+      // neighbouring mark at the edge.
+      return isAncestorOf(d, focusNode);
     }
 
     function isVisible(d: SpaceHierarchyNode): boolean {
