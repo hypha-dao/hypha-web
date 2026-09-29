@@ -3,3 +3,4 @@ export * from './hooks';
 export { SPACE_ACCENT_FALLBACK } from './utils/extract-space-accent';
 export * from './utils/transparency-access';
 export { isSafeImageUrl, isSafeExternalUrl } from './utils/safe-image-url';
+export { formatCreateSpaceError } from './lib/format-create-space-error';

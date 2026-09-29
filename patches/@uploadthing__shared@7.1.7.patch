@@ -1,0 +1,34 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index a8b44d4f27497a0e3186d7ba44ef99cf7874fa36..cb1e6b349cf9325ea3fc5d1cb737f1821c827d1d 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -697,8 +697,10 @@ const generateSignedURL = (url, secretKey, opts)=>Micro__namespace.gen(function*
+         if (opts.data) {
+             Object.entries(opts.data).forEach(([key, value])=>{
+                 if (value == null) return;
+-                const encoded = encodeURIComponent(value);
+-                parsedURL.searchParams.append(key, encoded);
++                // URLSearchParams.append already percent-encodes. Pre-encoding
++                // MIME types (image/jpeg → image%2Fjpeg) becomes image%252Fjpeg
++                // and UploadThing ingest rejects the PUT with 400.
++                parsedURL.searchParams.append(key, String(value));
+             });
+         }
+         const signature = yield* signPayload(parsedURL.toString(), secretKey);
+diff --git a/dist/index.js b/dist/index.js
+index 24b096ceb2838844101c5e164be409e66c1140ff..b69e7b5c5d98d06be37a128ed61848519ed5f696 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -667,8 +667,10 @@ const generateSignedURL = (url, secretKey, opts)=>Micro.gen(function*() {
+         if (opts.data) {
+             Object.entries(opts.data).forEach(([key, value])=>{
+                 if (value == null) return;
+-                const encoded = encodeURIComponent(value);
+-                parsedURL.searchParams.append(key, encoded);
++                // URLSearchParams.append already percent-encodes. Pre-encoding
++                // MIME types (image/jpeg → image%2Fjpeg) becomes image%252Fjpeg
++                // and UploadThing ingest rejects the PUT with 400.
++                parsedURL.searchParams.append(key, String(value));
+             });
+         }
+         const signature = yield* signPayload(parsedURL.toString(), secretKey);

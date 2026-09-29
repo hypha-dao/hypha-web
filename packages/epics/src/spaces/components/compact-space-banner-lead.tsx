@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import { isUploadThingCdnUrl } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
 
@@ -21,26 +22,6 @@ function clampParallaxScrollY(scrollY: number): number {
     PARALLAX_MAX_SHIFT_PX,
     Math.max(-PARALLAX_MAX_SHIFT_PX, scrollY * PARALLAX_SCROLL_RATE),
   );
-}
-
-/** UploadThing/CDN hosts that must bypass `/_next/image` downscaling. */
-const UNOPTIMIZED_REMOTE_IMAGE_HOSTS = new Set([
-  'utfs.io',
-  'uploadthing.com',
-  'ufs.sh',
-]);
-
-function shouldUseUnoptimizedRemoteImage(src: string): boolean {
-  if (!src.startsWith('http://') && !src.startsWith('https://')) {
-    return false;
-  }
-  try {
-    const hostname = new URL(src).hostname.toLowerCase();
-    if (UNOPTIMIZED_REMOTE_IMAGE_HOSTS.has(hostname)) return true;
-    return hostname.endsWith('.utfs.io');
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -102,7 +83,8 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
   const loadedOverlayOpacity = imageVisible ? 1 : 0;
-  const unoptimized = shouldUseUnoptimizedRemoteImage(src);
+  // Serve UploadThing originals (including v7 `*.ufs.sh`) without `/_next/image`.
+  const unoptimized = isUploadThingCdnUrl(src);
   const predecodePlateStyle = {
     backgroundImage:
       'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(14,17,25) 0%, rgb(10,13,20) 42%, rgb(7,9,15) 68%, rgb(4,6,11) 100%)',

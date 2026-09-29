@@ -2,6 +2,7 @@
 
 import {
   ALLOWED_IMAGE_FILE_SIZE,
+  getUploadThingClientFileUrl,
   UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
   useImageUpload,
 } from '@hypha-platform/core/client';
@@ -50,13 +51,12 @@ export const useTokenFileUploads = (
 
       try {
         const result = await upload([fileInput.iconUrl]);
-        if (result?.[0]?.ufsUrl) {
-          const uploadedUrl = result[0].ufsUrl;
+        const uploadedUrl = getUploadThingClientFileUrl(result);
+        if (uploadedUrl) {
           setFile({ iconUrl: uploadedUrl });
           return { iconUrl: uploadedUrl };
-        } else {
-          throw new Error('Failed to get URL of uploaded file');
         }
+        throw new Error('Failed to get URL of uploaded file');
       } catch (error) {
         console.error('Error loading token icon:', error);
         throw error;
