@@ -263,112 +263,72 @@ function includePoint(bounds: LayoutBounds, x: number, y: number) {
   if (y > bounds.maxY) bounds.maxY = y;
 }
 
-function includeCircle(
-  bounds: LayoutBounds,
-  x: number,
-  y: number,
-  radius: number,
-) {
-  includePoint(bounds, x - radius, y - radius);
-  includePoint(bounds, x + radius, y + radius);
+/** The mark that is actually drawn. An enclosure's ring is the grey ground. */
+function drawnRadius(d: SpaceHierarchyNode): number {
+  const ring = finiteOr(d.r, 0);
+  return d.children && d.children.length > 0 ? ring * logoRatio(d) : ring;
 }
 
 /**
- * Rings and the labels under them, in layout units. Label size is in screen
- * pixels, so the layout extent depends on the scale used to draw them.
+ * Nodes on the ring around the opened space: its children, or its siblings
+ * when it is a leaf.
  */
-function clusterBounds(
+function ringMates(focus: SpaceHierarchyNode): SpaceHierarchyNode[] {
+  const children = (focus.children ?? []) as SpaceHierarchyNode[];
+  if (children.length > 0) return children;
+  const parent = focus.parent as SpaceHierarchyNode | null;
+  return ((parent?.children ?? []) as SpaceHierarchyNode[]).filter(
+    (node) => node !== focus,
+  );
+}
+
+/**
+ * How far the name under the opened space extends, in layout units.
+ * Label size is in screen pixels, so this depends on the scale used to draw it.
+ */
+function focusLabelReach(focus: SpaceHierarchyNode, scale: number): number {
+  const safeScale = Math.max(scale, 0.0001);
+  const top = nodeLabelTop(focus, safeScale);
+  const { labelFontSize } = labelMetrics(nodeShapeRadius(focus, safeScale));
+  const half =
+    estimateLabelHalfWidth(focus.data.name, labelFontSize) / safeScale;
+  const bottom = (top + labelFontSize * 1.35) / safeScale;
+  return Math.max(half, bottom, 1);
+}
+
+/**
+ * A frame centred on the opened space. The outer disc is ground, not the
+ * thing being fitted, so the mark stays large. The frame only opens far
+ * enough for a slice of each surrounding space, then matches the stage
+ * shape so the extra width or height is used.
+ */
+function frameForFocus(
   focus: SpaceHierarchyNode,
   scale: number,
   showLabels: boolean,
-): LayoutBounds {
-  const bounds: LayoutBounds = {
-    minX: Infinity,
-    minY: Infinity,
-    maxX: -Infinity,
-    maxY: -Infinity,
-  };
-  const safeScale = Math.max(scale, 0.0001);
-  focus.each((node) => {
-    const d = node as SpaceHierarchyNode;
-    const x = finiteOr(d.x, 0);
-    const y = finiteOr(d.y, 0);
-    const radius = finiteOr(d.r, 0);
-    includeCircle(bounds, x, y, radius);
-    if (!showLabels) return;
-    const top = nodeLabelTop(d, safeScale);
-    const { labelFontSize } = labelMetrics(nodeShapeRadius(d, safeScale));
-    const half = estimateLabelHalfWidth(d.data.name, labelFontSize) / safeScale;
-    const bottom = y + (top + labelFontSize * 1.35) / safeScale;
-    includePoint(bounds, x - half, y);
-    includePoint(bounds, x + half, bottom);
-  });
-  if (!Number.isFinite(bounds.minX)) {
-    const x = finiteOr(focus.x, 0);
-    const y = finiteOr(focus.y, 0);
-    const radius = Math.max(finiteOr(focus.r, 1), 1);
-    includeCircle(bounds, x, y, radius);
-  }
-  includeZoomContext(bounds, focus);
-  return bounds;
-}
-
-function adjacentSpaces(focus: SpaceHierarchyNode): SpaceHierarchyNode[] {
-  const parent = focus.parent as SpaceHierarchyNode | null;
-  const siblings = (parent?.children ?? []) as SpaceHierarchyNode[];
-  const index = siblings.indexOf(focus);
-  if (index < 0 || siblings.length < 2) return [];
-  const count = siblings.length;
-  return [
-    siblings[(index - 1 + count) % count],
-    siblings[(index + 1) % count],
-  ].filter((node): node is SpaceHierarchyNode =>
-    Boolean(node && node !== focus),
-  );
-}
-
-/**
- * The opened space stays in the middle. The frame grows just far enough
- * that a slice of each neighbour enters, so the zoom stays close.
- */
-function includeZoomContext(
-  bounds: LayoutBounds,
-  focus: SpaceHierarchyNode,
-): void {
-  const neighbours = adjacentSpaces(focus);
-  if (neighbours.length === 0 || !Number.isFinite(bounds.minX)) return;
+  viewWidth: number,
+  viewHeight: number,
+): ClusterFrame {
   const fx = finiteOr(focus.x, 0);
   const fy = finiteOr(focus.y, 0);
-  let reach = Math.max(
-    fx - bounds.minX,
-    bounds.maxX - fx,
-    fy - bounds.minY,
-    bounds.maxY - fy,
-    1,
-  );
-  for (const sibling of neighbours) {
-    const dist = Math.hypot(
-      finiteOr(sibling.x, 0) - fx,
-      finiteOr(sibling.y, 0) - fy,
-    );
-    const siblingRadius = finiteOr(sibling.r, 0);
-    reach = Math.max(reach, dist - siblingRadius + siblingRadius * 0.22);
+  const mark = Math.max(drawnRadius(focus), 1);
+  // The opened mark stays the subject. Surrounding rings only contribute a slice.
+  const NEIGHBOUR_SLICE = 0.16;
+  const maxReach = mark / 0.72;
+  let reach = showLabels ? Math.max(mark, focusLabelReach(focus, scale)) : mark;
+  for (const node of ringMates(focus)) {
+    const dist = Math.hypot(finiteOr(node.x, 0) - fx, finiteOr(node.y, 0) - fy);
+    const rad = finiteOr(node.r, 0);
+    const slice = dist - rad + rad * NEIGHBOUR_SLICE;
+    reach = Math.max(reach, Math.min(slice, maxReach));
   }
-  bounds.minX = fx - reach;
-  bounds.maxX = fx + reach;
-  bounds.minY = fy - reach;
-  bounds.maxY = fy + reach;
-}
-
-function frameFromBounds(bounds: LayoutBounds): ClusterFrame {
-  const width = Math.max(bounds.maxX - bounds.minX, 1);
-  const height = Math.max(bounds.maxY - bounds.minY, 1);
-  return {
-    cx: (bounds.minX + bounds.maxX) / 2,
-    cy: (bounds.minY + bounds.maxY) / 2,
-    width,
-    height,
-  };
+  reach = Math.max(reach, 1);
+  let width = reach * 2;
+  let height = reach * 2;
+  const aspect = Math.max(viewWidth, 1) / Math.max(viewHeight, 1);
+  if (width / height < aspect) width = height * aspect;
+  else height = width / aspect;
+  return { cx: fx, cy: fy, width, height };
 }
 
 /** Phones keep a tight inset so the disc fills the column. */
@@ -412,7 +372,7 @@ function screenSpan(
   for (const d of nodes) {
     const x = (finiteOr(d.x, 0) - cx) * scale;
     const y = (finiteOr(d.y, 0) - cy) * scale;
-    const rad = finiteOr(d.r, 0) * scale + strokePad;
+    const rad = drawnRadius(d) * scale + strokePad;
     includePoint(span, x - rad, y - rad);
     includePoint(span, x + rad, y + rad);
     if (!showLabels) continue;
@@ -471,14 +431,18 @@ function solveClusterFrame(
   viewHeight: number,
   showLabels: boolean,
 ): ClusterFrame {
-  const diameter = Math.max(finiteOr(focus.r, 1) * 2, 1);
+  const diameter = Math.max(drawnRadius(focus) * 2, 1);
   let scale =
     Math.min(Math.max(viewWidth, 1), Math.max(viewHeight, 1)) / diameter;
-  let frame = frameFromBounds(clusterBounds(focus, scale, showLabels));
+  let frame = frameForFocus(focus, scale, showLabels, viewWidth, viewHeight);
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const nextScale = fitScale(frame, viewWidth, viewHeight);
-    const nextFrame = frameFromBounds(
-      clusterBounds(focus, nextScale, showLabels),
+    const nextFrame = frameForFocus(
+      focus,
+      nextScale,
+      showLabels,
+      viewWidth,
+      viewHeight,
     );
     const settled =
       Math.abs(nextScale - scale) <= Math.max(0.002, Math.abs(scale) * 0.01) &&
@@ -804,57 +768,43 @@ export function SpaceVisualization({
       }
     });
 
-    function isDescendantOf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
+    let shown = {
+      cx: 0,
+      cy: 0,
+      k: 1,
+      width: 1,
+      height: 1,
+      ready: false,
+    };
+
+    function clusterEnclosure(node: SpaceHierarchyNode): SpaceHierarchyNode {
+      if (node.children && node.children.length > 0) return node;
+      return (node.parent as SpaceHierarchyNode | null) ?? node;
     }
 
-    function isDescendantOfOrSelf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      if (node === ancestor) return true;
-
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isAncestorOf(
-      ancestor: SpaceHierarchyNode,
-      node: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isVisibleForFocus(
-      d: SpaceHierarchyNode,
-      focusNode: SpaceHierarchyNode,
-    ): boolean {
-      if (d === focusNode) return true;
-      if (isDescendantOfOrSelf(d, focusNode)) return true;
-      if (isAncestorOf(d, focusNode)) return true;
-      return adjacentSpaces(focusNode).includes(d);
+    /** A space is on screen when its mark crosses the stage. */
+    function markInView(d: SpaceHierarchyNode): boolean {
+      if (!shown.ready) return true;
+      const x = (finiteOr(d.x, 0) - shown.cx) * shown.k;
+      const y = (finiteOr(d.y, 0) - shown.cy) * shown.k;
+      const rad = Math.max(drawnRadius(d) * shown.k, 1);
+      const hx = shown.width / 2;
+      const hy = shown.height / 2;
+      const nx = Math.max(-hx, Math.min(hx, x));
+      const ny = Math.max(-hy, Math.min(hy, y));
+      const dx = x - nx;
+      const dy = y - ny;
+      return dx * dx + dy * dy <= rad * rad;
     }
 
     function isVisible(d: SpaceHierarchyNode): boolean {
-      if (!focus) return false;
-      return isVisibleForFocus(d, focus);
+      if (d === focus) return true;
+      return markInView(d);
+    }
+
+    function isOrbitShown(d: SpaceHierarchyNode): boolean {
+      if (d === clusterEnclosure(focus)) return true;
+      return isVisible(d);
     }
 
     // An intermediate ring's caption lands on the level below it. The focused
@@ -910,13 +860,15 @@ export function SpaceVisualization({
       }
     }
 
-    orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
+    orbits.style('opacity', (d: SpaceHierarchyNode) =>
+      isOrbitShown(d) ? 1 : 0,
+    );
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     labelText.style('opacity', (d: SpaceHierarchyNode) =>
       isLabelShown(d) ? 1 : 0,
     );
     orbits.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
+      isOrbitShown(d) ? 'block' : 'none',
     );
     logos.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
@@ -950,7 +902,7 @@ export function SpaceVisualization({
           initialSize.height,
           showNodeLabels,
         )
-      : frameFromBounds(clusterBounds(focus, 1, showNodeLabels));
+      : frameForFocus(focus, 1, showNodeLabels, 1, 1);
     if (initialSize) applyFrame(frame);
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
@@ -989,7 +941,7 @@ export function SpaceVisualization({
       const size = readStageSize();
       const startScale = size
         ? containScale(
-            focus.descendants() as SpaceHierarchyNode[],
+            [focus],
             frame.cx,
             frame.cy,
             size.width,
@@ -1000,7 +952,7 @@ export function SpaceVisualization({
         : null;
       const targetScale = size
         ? containScale(
-            focus.descendants() as SpaceHierarchyNode[],
+            [focus],
             next.cx,
             next.cy,
             size.width,
@@ -1055,7 +1007,7 @@ export function SpaceVisualization({
       const lockedSize = { width: size.width, height: size.height };
       const startFocus = focus;
       const startScale = containScale(
-        startFocus.descendants() as SpaceHierarchyNode[],
+        [startFocus],
         frame.cx,
         frame.cy,
         size.width,
@@ -1075,7 +1027,7 @@ export function SpaceVisualization({
         showNodeLabels,
       );
       const targetScale = containScale(
-        focus.descendants() as SpaceHierarchyNode[],
+        [focus],
         nextFrame.cx,
         nextFrame.cy,
         size.width,
@@ -1111,20 +1063,6 @@ export function SpaceVisualization({
             const currentScale = startScale + (targetScale - startScale) * t;
             applyFrame(frame, currentScale, lockedSize);
           };
-        });
-
-      transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('path.orbit, g.logo')
-        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
-        .on('start', function (d: SpaceHierarchyNode) {
-          if (isVisible(d) && this instanceof SVGElement) {
-            this.style.display = 'block';
-          }
-        })
-        .on('end', function (d: SpaceHierarchyNode) {
-          if (!isVisible(d) && this instanceof SVGElement) {
-            this.style.display = 'none';
-          }
         });
 
       logos.each(function () {
@@ -1202,7 +1140,7 @@ export function SpaceVisualization({
         typeof explicitScale === 'number' && Number.isFinite(explicitScale)
           ? explicitScale
           : containScale(
-              focus.descendants() as SpaceHierarchyNode[],
+              [focus],
               next.cx,
               next.cy,
               viewWidth,
@@ -1210,6 +1148,15 @@ export function SpaceVisualization({
               fitted,
               showNodeLabels,
             );
+
+      shown = {
+        cx: next.cx,
+        cy: next.cy,
+        k,
+        width: viewWidth,
+        height: viewHeight,
+        ready: true,
+      };
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
         const tx = (finiteOr(d.x, 0) - next.cx) * k;
@@ -1244,10 +1191,18 @@ export function SpaceVisualization({
           isEnclosure(d) ? 0 : HAIRLINE,
         )
         .attr('stroke-linecap', 'butt')
-        .attr('stroke-linejoin', 'round');
+        .attr('stroke-linejoin', 'round')
+        .style('display', (d: SpaceHierarchyNode) =>
+          isOrbitShown(d) ? 'block' : 'none',
+        )
+        .style('opacity', (d: SpaceHierarchyNode) => (isOrbitShown(d) ? 1 : 0));
 
       logos
         .attr('transform', nodeTransform)
+        .style('display', (d: SpaceHierarchyNode) =>
+          isVisible(d) ? 'block' : 'none',
+        )
+        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .each(function (d: SpaceHierarchyNode) {
           const r = clampSvgLength(finiteOr(d.r, 0) * k * logoRatio(d));
           const clipId = `clip-${d.data.id}`;
