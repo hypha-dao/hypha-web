@@ -34,7 +34,6 @@ import {
   globeRotationForCenter,
 } from '../lib/globe-rotation';
 import { setNetworkGlobeReady } from '../lib/network-globe-ready-store';
-import { seatOnDisk } from '../lib/overlay-seat';
 import {
   buildMapPinData,
   pinDatumSpace,
@@ -1066,16 +1065,19 @@ export function NetworkGlobeMap({
           : null;
       if (!seat) {
         if (drawsDisk) {
-          const [cx, cy] = projection.translate();
-          const clip = projection.clipAngle?.() ?? 90;
-          const radius = projection.scale() * Math.sin((clip * Math.PI) / 180);
-          // scale and translate are the SVG pixels the overlays share.
-          // The square around that circle sits outside the disk.
-          seat = seatOnDisk(
-            { cx, cy, r: radius },
+          // The flat map seats on the stage rectangle. Use that same rectangle
+          // here so the legend and miniature do not move when the view
+          // switches. The disk keeps its scale; these controls are not walked
+          // down its rim or placed outside the stage.
+          const stageBounds: [[number, number], [number, number]] = [
+            [0, 0],
+            [width, height],
+          ];
+          seat = seatOnRectangle(
             width,
             height,
-            legendSize ?? { w: 196, h: 32 },
+            stageBounds,
+            legendSize,
             navSize,
           );
           if (!legendEl || legendSize) {
