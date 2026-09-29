@@ -329,9 +329,9 @@ export function getAgentAvatarInitials(roleLabel: string): string {
 }
 
 export function tagGroupAccentClass(tagGroup: string): string {
-  /* One quiet ink hairline — no second hue fills behind agent icons. */
+  /* One ink hairline, no second hue. border-border/70 disappears on the dark ground. */
   void tagGroup;
-  return 'border border-border/70 bg-transparent text-muted-foreground';
+  return 'border border-foreground/55 bg-transparent text-[12px] text-foreground';
 }
 
 type ChatMessagePart = {

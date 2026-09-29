@@ -103,7 +103,7 @@ function MembershipStack({
             <div
               key={member.id}
               title={member.label}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${member.accentClassName}`}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold ${member.accentClassName}`}
               aria-label={member.label}
             >
               {member.initials ?? member.label.slice(0, 2).toUpperCase()}
