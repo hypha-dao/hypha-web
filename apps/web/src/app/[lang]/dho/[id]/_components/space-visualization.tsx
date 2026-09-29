@@ -268,34 +268,87 @@ function drawnRadius(d: SpaceHierarchyNode): number {
   return d.children && d.children.length > 0 ? ring * logoRatio(d) : ring;
 }
 
-/** The filled disc behind the opened space. The root cluster is its own disc. */
-function discNode(focus: SpaceHierarchyNode): SpaceHierarchyNode {
-  if (focus.children && focus.children.length > 0) return focus;
-  return (focus.parent as SpaceHierarchyNode | null) ?? focus;
+/**
+ * Nodes on the ring around the opened space: its children, or its siblings
+ * when it is a leaf.
+ */
+function ringMates(focus: SpaceHierarchyNode): SpaceHierarchyNode[] {
+  const children = (focus.children ?? []) as SpaceHierarchyNode[];
+  if (children.length > 0) return children;
+  const parent = focus.parent as SpaceHierarchyNode | null;
+  return ((parent?.children ?? []) as SpaceHierarchyNode[]).filter(
+    (node) => node !== focus,
+  );
 }
 
 /**
- * A frame centred on the opened space, grown until the whole disc sits inside
- * it. A tighter frame slices the rim off the top and bottom of the stage.
+ * How far the name under a space extends, in layout units.
+ * Label size is in screen pixels, so this depends on the scale used to draw it.
+ */
+function labelReach(node: SpaceHierarchyNode, scale: number): number {
+  const safeScale = Math.max(scale, 0.0001);
+  const top = nodeLabelTop(node, safeScale);
+  const { labelFontSize } = labelMetrics(nodeShapeRadius(node, safeScale));
+  const half =
+    estimateLabelHalfWidth(node.data.name, labelFontSize) / safeScale;
+  const bottom = (top + labelFontSize * 1.35) / safeScale;
+  return Math.max(half, bottom, 1);
+}
+
+/**
+ * The full ecosystem is framed on its grey disc, so the rim stays on screen.
+ * A zoomed space stays close; that view may crop the disc.
  */
 function frameForFocus(
   focus: SpaceHierarchyNode,
-  _scale: number,
-  _showLabels: boolean,
+  scale: number,
+  showLabels: boolean,
   viewWidth: number,
   viewHeight: number,
 ): ClusterFrame {
   const fx = finiteOr(focus.x, 0);
   const fy = finiteOr(focus.y, 0);
-  const disc = discNode(focus);
-  const ex = finiteOr(disc.x, 0);
-  const ey = finiteOr(disc.y, 0);
-  const er = Math.max(finiteOr(disc.r, 0), 1);
-  const margin = 1.06;
-  const halfW = Math.abs(fx - ex) + er * margin;
-  const halfH = Math.abs(fy - ey) + er * margin;
-  let width = Math.max(halfW * 2, 1);
-  let height = Math.max(halfH * 2, 1);
+  const mark = Math.max(drawnRadius(focus), 1);
+  const children = (focus.children ?? []) as SpaceHierarchyNode[];
+  let reach = mark;
+  if (!focus.parent) {
+    reach = Math.max(finiteOr(focus.r, 0), 1);
+    for (const child of children) {
+      const dist = Math.hypot(
+        finiteOr(child.x, 0) - fx,
+        finiteOr(child.y, 0) - fy,
+      );
+      const edge = dist + finiteOr(child.r, 0);
+      const name = showLabels ? labelReach(child, scale) : 0;
+      reach = Math.max(reach, edge, dist + name);
+    }
+    reach *= 1.04;
+  } else if (children.length > 0) {
+    for (const child of children) {
+      const dist = Math.hypot(
+        finiteOr(child.x, 0) - fx,
+        finiteOr(child.y, 0) - fy,
+      );
+      reach = Math.max(reach, dist + finiteOr(child.r, 0) * 0.9);
+    }
+    if (showLabels) reach = Math.max(reach, labelReach(focus, scale));
+  } else {
+    const nameReach = showLabels ? labelReach(focus, scale) : mark;
+    reach = Math.max(mark * 1.35, nameReach);
+    const maxReach = Math.max(mark / 0.62, nameReach);
+    for (const node of ringMates(focus)) {
+      const dist = Math.hypot(
+        finiteOr(node.x, 0) - fx,
+        finiteOr(node.y, 0) - fy,
+      );
+      const rad = finiteOr(node.r, 0);
+      const slice = dist - rad + rad * 0.22;
+      if (slice > 0) reach = Math.max(reach, Math.min(slice, maxReach));
+    }
+  }
+  reach = Math.max(reach, 1);
+  let width = reach * 2;
+  let height = reach * 2;
   const aspect = Math.max(viewWidth, 1) / Math.max(viewHeight, 1);
   if (width / height < aspect) width = height * aspect;
   else height = width / aspect;
