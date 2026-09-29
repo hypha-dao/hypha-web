@@ -209,6 +209,21 @@ function nodeLabelTop(d: SpaceHierarchyNode, k: number): number {
 }
 
 /**
+ * A focused leaf has no cluster disc of its own. Give it one that wraps the
+ * mark and the name, so a zoom still lands on the same filled ground.
+ */
+function focusDiscRadius(d: SpaceHierarchyNode, scale: number): number {
+  const ring = finiteOr(d.r, 0);
+  if (d.children && d.children.length > 0) return ring;
+  const safeScale = Math.max(scale, 0.0001);
+  const top = nodeLabelTop(d, safeScale);
+  const { labelFontSize } = labelMetrics(nodeShapeRadius(d, safeScale));
+  const half = estimateLabelHalfWidth(d.data.name, labelFontSize) / safeScale;
+  const bottom = (top + labelFontSize * 1.35) / safeScale;
+  return Math.max(ring, Math.hypot(half, bottom) + 8 / safeScale);
+}
+
+/**
  * Size the filled disc to the cluster already on its rim. A previous pass's
  * radius is not a floor — that ratcheted the fill outward and left the logos
  * in the middle. Leaf names add a little air; an intermediate caption is
@@ -295,7 +310,10 @@ function clusterBounds(
     const d = node as SpaceHierarchyNode;
     const x = finiteOr(d.x, 0);
     const y = finiteOr(d.y, 0);
-    const radius = finiteOr(d.r, 0);
+    const radius =
+      d === focus && !(d.children && d.children.length > 0)
+        ? focusDiscRadius(d, safeScale)
+        : finiteOr(d.r, 0);
     includeCircle(bounds, x, y, radius);
     if (!showLabels) return;
     const top = nodeLabelTop(d, safeScale);
@@ -1168,17 +1186,20 @@ export function SpaceVisualization({
         return `translate(${tx}, ${ty})`;
       };
 
-      // The focused cluster's outer ring is a quiet disc. Names sit on it.
+      // The focused space is always a quiet disc, including a zoomed leaf.
       // Smaller rings stay hairlines, with the accent only on the current space.
       const enclosureFill = dark ? 'var(--hypha-mid)' : 'var(--hypha-panel)';
-      const isEnclosure = (d: SpaceHierarchyNode) =>
-        d === focus && Boolean(d.children && d.children.length > 0);
+      const isEnclosure = (d: SpaceHierarchyNode) => d === focus;
 
       orbits
         .attr('transform', nodeTransform)
-        .attr('d', (d: SpaceHierarchyNode) =>
-          smoothClosedCirclePath(finiteOr(d.r, 0) * k),
-        )
+        .attr('d', (d: SpaceHierarchyNode) => {
+          const layoutR =
+            d === focus && !(d.children && d.children.length > 0)
+              ? focusDiscRadius(d, k)
+              : finiteOr(d.r, 0);
+          return smoothClosedCirclePath(layoutR * k);
+        })
         .attr('fill', (d: SpaceHierarchyNode) =>
           isEnclosure(d) ? enclosureFill : 'none',
         )
