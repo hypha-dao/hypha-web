@@ -648,6 +648,20 @@ export function SpaceVisualization({
     const g = svg.append('g');
 
     const defs = svg.append('defs');
+
+    function handleSpaceClick(
+      event: { stopPropagation: () => void },
+      d: SpaceHierarchyNode,
+    ) {
+      event.stopPropagation();
+      if (focus === d) {
+        const parent = focus.parent as SpaceHierarchyNode | null;
+        if (parent) zoom(parent);
+        return;
+      }
+      zoom(d);
+    }
+
     const orbits = g
       .selectAll<SVGPathElement, SpaceHierarchyNode>('path.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
@@ -662,10 +676,7 @@ export function SpaceVisualization({
       .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
-        if (focus !== d) {
-          event.stopPropagation();
-          zoom(d);
-        }
+        handleSpaceClick(event, d);
       });
 
     const logos = g
@@ -676,10 +687,7 @@ export function SpaceVisualization({
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
       .on('click', (event, d) => {
-        if (focus !== d) {
-          event.stopPropagation();
-          zoom(d);
-        }
+        handleSpaceClick(event, d);
       });
 
     if (enableHoverActions) {
