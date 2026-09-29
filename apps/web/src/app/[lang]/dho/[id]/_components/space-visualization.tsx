@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 import type { VisibleSpace } from './types';
 
 type SpaceNode = {
@@ -18,41 +19,45 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
   r?: number;
 };
 
+export type SpaceVisualizationZoomApi = {
+  zoomIn: () => void;
+  zoomOut: () => void;
+};
+
 type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
-  rootAccentHex?: string;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
   showNodeLabels?: boolean;
   ariaLabel?: string;
+  /** Parent row calls these so zoom stays on the membership line. */
+  zoomApiRef?: MutableRefObject<SpaceVisualizationZoomApi>;
+  /**
+   * `square` sizes from the column width. `fill` stretches to the positioned
+   * stage so a tall slot is the drawing box, not empty space under a square.
+   */
+  layout?: 'square' | 'fill';
+  /** Stage fill. Default is a square that sizes from width. */
+  className?: string;
 };
-
-const SPACE_ACCENT_FALLBACK = '#14b8a6';
-
-/** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
-const COOL_ACCENT_HUES = [162, 172, 182, 192, 152, 202, 142] as const;
 
 const VISUALIZATION_CONFIG = {
   BASE_RADIUS: 420,
   DEPTH_SCALE: 0.45,
-  ORBIT_RATIO: 0.9,
-  LOGO_RATIO: 0.25,
-  ZOOM_DURATION: 720,
-  WIDTH: 900,
-  HEIGHT: 900,
-  LOGO_STROKE_WIDTH: 20,
-  STROKE_WIDTH_SCALE: 0.7,
-  MIN_LABEL_RADIUS: 14,
+  /** Center mark inside an enclosure, small enough that child rings fit around it. */
+  ENCLOSURE_LOGO_RATIO: 0.22,
+  /** Leaf mark inside its own ring: narrow gap inside the stroke, ring stays visible. */
+  LEAF_LOGO_RATIO: 0.84,
+  /**
+   * One caption size. Scaling with the logo pushed the center name down
+   * into the child ring, where it no longer read as centered under the mark.
+   */
+  LABEL_FONT: 11,
+  /** Gap between the node shape and the top of the name. */
+  LABEL_GAP: 8,
   MAX_LABEL_CHARS: 18,
 } as const;
-
-function accentFromSpaceId(id: number): string {
-  const hue =
-    COOL_ACCENT_HUES[Math.abs(id * 47) % COOL_ACCENT_HUES.length] ??
-    COOL_ACCENT_HUES[0];
-  return `hsl(${hue} 40% 42%)`;
-}
 
 function truncateLabel(
   name: string,
@@ -63,114 +68,449 @@ function truncateLabel(
   return `${trimmed.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
 }
 
-function toSampleableImageSrc(src?: string | null): string | null {
-  if (!src) return null;
-  const candidate = src.trim();
-  if (!candidate) return null;
-  if (candidate.startsWith('/')) {
-    return candidate.startsWith('//') ? null : candidate;
-  }
-  try {
-    const url = new URL(candidate);
-    if (url.protocol === 'http:' || url.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-async function sampleAccentHex(src?: string | null): Promise<string | null> {
-  const imageSrc = toSampleableImageSrc(src);
-  if (!imageSrc) return null;
-  return await new Promise((resolve) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => {
-      try {
-        const maxSide = 96;
-        const scale = Math.min(
-          maxSide / image.width,
-          maxSide / image.height,
-          1,
-        );
-        const width = Math.max(8, Math.round(image.width * scale));
-        const height = Math.max(8, Math.round(image.height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          resolve(null);
-          return;
-        }
-        context.drawImage(image, 0, 0, width, height);
-        const pixels = context.getImageData(0, 0, width, height).data;
-        let rSum = 0;
-        let gSum = 0;
-        let bSum = 0;
-        let count = 0;
-        for (let i = 0; i < pixels.length; i += 4) {
-          const alpha = pixels[i + 3] ?? 0;
-          if (alpha < 40) continue;
-          const r = pixels[i] ?? 0;
-          const g = pixels[i + 1] ?? 0;
-          const b = pixels[i + 2] ?? 0;
-          const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
-          const saturation = max === 0 ? 0 : (max - min) / max;
-          if (saturation < 0.12) continue;
-          rSum += r;
-          gSum += g;
-          bSum += b;
-          count++;
-        }
-        if (count < 6) {
-          resolve(null);
-          return;
-        }
-        const r = Math.round(rSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        const g = Math.round(gSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        const b = Math.round(bSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        resolve(`#${r}${g}${b}`);
-      } catch {
-        resolve(null);
-      }
-    };
-    image.onerror = () => resolve(null);
-    image.src = imageSrc;
-  });
-}
-
-function withAlpha(color: string, alpha: number): string {
-  const parsed = d3.color(color);
-  if (!parsed) return color;
-  parsed.opacity = alpha;
-  return parsed.formatRgb();
-}
-
 /** SVG rejects negative `r` / `width` / `height`; clamp during zoom transitions. */
 function clampSvgLength(value: number): number {
   return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+/**
+ * One continuous ring. Butt caps on a seam leave a gap, and `Z` leaves a
+ * corner. The join sits on the right (3 o'clock), so the bottom of the
+ * circle is the middle of an arc, not a seam. Three steps under 180° draw
+ * the turn, then a longer arc continues past the start along the same
+ * tangent so the caps overlap on the stroke.
+ */
+function smoothClosedCirclePath(radius: number): string {
+  const r = clampSvgLength(radius);
+  if (r <= 0) return '';
+  // Long enough that the overlapping caps cover the join even when the
+  // stroke is clipped to a device pixel. Capped so the extra arc stays
+  // well under 180°.
+  const overlap = Math.min(Math.max(24, r * 0.1), r * 0.28);
+  const theta = overlap / r;
+  const n = (value: number) => value.toFixed(3);
+  const point = (angle: number) => {
+    const x = r * Math.cos(angle);
+    const y = r * Math.sin(angle);
+    return `${n(x)} ${n(y)}`;
+  };
+  // Sweep-flag 1 follows increasing angle (clockwise in SVG, y downward).
+  // Each step stays under 180° so the large-arc flag cannot flip it.
+  const arc = (angle: number) => `A ${n(r)} ${n(r)} 0 0 1 ${point(angle)}`;
+  const start = -theta;
+  return [
+    `M ${point(start)}`,
+    arc(start + (2 * Math.PI) / 3),
+    arc(start + (4 * Math.PI) / 3),
+    arc(start + 2 * Math.PI),
+    arc(start + 2 * Math.PI + 2 * theta),
+  ].join(' ');
 }
 
 function finiteOr(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) ? (value as number) : fallback;
 }
 
-function sanitizeZoomView(
-  view: [number, number, number],
-  fallbackDiameter = VISUALIZATION_CONFIG.BASE_RADIUS * 2,
-): [number, number, number] {
-  const diameter = finiteOr(view[2], fallbackDiameter);
-  return [finiteOr(view[0], 0), finiteOr(view[1], 0), Math.max(diameter, 1)];
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+function stageSizeKey(size: { width: number; height: number }): string {
+  return `${Math.round(size.width)}x${Math.round(size.height)}`;
+}
+
+/**
+ * Screen inset so the bottom of a ring — where the curve is flattest — is
+ * not shaved off by the stage. A 12px pad left that curve on the clip edge,
+ * so the two sides stopped short of each other above the footer.
+ */
+const CLUSTER_FIT_PADDING = 36;
+
+type LayoutBounds = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+};
+
+type ClusterFrame = {
+  cx: number;
+  cy: number;
+  width: number;
+  height: number;
+};
+
+type LabelMetrics = {
+  labelFontSize: number;
+  labelTop: number;
+};
+
+function logoRatio(node: { children?: readonly unknown[] }): number {
+  return node.children && node.children.length > 0
+    ? VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO
+    : VISUALIZATION_CONFIG.LEAF_LOGO_RATIO;
+}
+
+/**
+ * Child rings rest inside the parent ring, on one shared orbit, clear of the
+ * name under the center mark. They read as one cluster instead of discs
+ * pasted onto a frame.
+ */
+function placeChildRings(node: SpaceHierarchyNode): void {
+  const children = (node.children ?? []) as SpaceHierarchyNode[];
+  const n = children.length;
+  if (n === 0) return;
+
+  const parentR = Math.max(finiteOr(node.r, 1), 1);
+  const inner = parentR * 0.97;
+  const centerClear =
+    parentR * VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO + parentR * 0.16;
+
+  let childR = parentR * VISUALIZATION_CONFIG.DEPTH_SCALE;
+  if (n === 1) {
+    childR = Math.min(childR, (inner - centerClear) / 2);
+  } else {
+    const sin = Math.sin(Math.PI / n);
+    const insideParent = (inner - centerClear) / 2;
+    const separated = inner / (1 + 1.12 / sin);
+    childR = Math.min(childR, insideParent, separated);
+  }
+  childR = clampSvgLength(Math.max(childR, 1));
+
+  let orbit = inner - childR;
+  if (orbit < centerClear + childR) {
+    childR = clampSvgLength(Math.max((inner - centerClear) / 2, 1));
+    orbit = inner - childR;
+  }
+
+  const parentX = finiteOr(node.x, 0);
+  const parentY = finiteOr(node.y, 0);
+  const step = (2 * Math.PI) / n;
+  children.forEach((child, index) => {
+    child.r = childR;
+    const angle = -Math.PI / 2 + index * step;
+    child.x = parentX + Math.cos(angle) * orbit;
+    child.y = parentY + Math.sin(angle) * orbit;
+  });
+}
+
+function nodeShapeRadius(d: SpaceHierarchyNode, k: number): number {
+  const hasChildren = Boolean(d.children && d.children.length > 0);
+  const r = finiteOr(d.r, 0) * k;
+  return hasChildren ? r * logoRatio(d) : r;
+}
+
+function nodeLabelTop(d: SpaceHierarchyNode, k: number): number {
+  return nodeShapeRadius(d, k) + VISUALIZATION_CONFIG.LABEL_GAP;
+}
+
+/**
+ * Size the filled disc to the cluster on its rim, once. Measuring again
+ * after the fill grows treats the labels as larger and hollows out the disc.
+ */
+function growRingAroundLabels(node: SpaceHierarchyNode, scale: number): void {
+  const children = (node.children ?? []) as SpaceHierarchyNode[];
+  for (const child of children) {
+    growRingAroundLabels(child, scale);
+  }
+  if (children.length === 0) return;
+
+  const safeScale = Math.max(scale, 0.0001);
+  const pad = 8 / safeScale;
+  const parentX = finiteOr(node.x, 0);
+  const parentY = finiteOr(node.y, 0);
+  let needed = 1;
+  for (const child of children) {
+    const dx = finiteOr(child.x, 0) - parentX;
+    const dy = finiteOr(child.y, 0) - parentY;
+    const childEdge = Math.hypot(dx, dy) + finiteOr(child.r, 0);
+    needed = Math.max(needed, childEdge + pad);
+    if (child.children && child.children.length > 0) continue;
+    const top = nodeLabelTop(child, safeScale);
+    const { labelFontSize } = labelMetrics(nodeShapeRadius(child, safeScale));
+    const bottom = (top + labelFontSize * 1.35) / safeScale;
+    const half =
+      estimateLabelHalfWidth(child.data.name, labelFontSize) / safeScale;
+    needed = Math.max(
+      needed,
+      Math.hypot(dx - half, dy + bottom) + pad,
+      Math.hypot(dx + half, dy + bottom) + pad,
+    );
+  }
+  node.r = needed;
+}
+
+function labelMetrics(screenShapeRadius: number): LabelMetrics {
+  const labelFontSize = VISUALIZATION_CONFIG.LABEL_FONT;
+  const labelTop = screenShapeRadius + VISUALIZATION_CONFIG.LABEL_GAP;
+  return { labelFontSize, labelTop };
+}
+
+/** Middle-anchored names. Wide enough that a full label stays inside the fit. */
+function estimateLabelHalfWidth(name: string, fontSize: number): number {
+  const text = truncateLabel(name);
+  return (text.length * fontSize * 0.62) / 2;
+}
+
+function includePoint(bounds: LayoutBounds, x: number, y: number) {
+  if (x < bounds.minX) bounds.minX = x;
+  if (y < bounds.minY) bounds.minY = y;
+  if (x > bounds.maxX) bounds.maxX = x;
+  if (y > bounds.maxY) bounds.maxY = y;
+}
+
+/** The mark that is actually drawn. An enclosure's ring is the grey ground. */
+function drawnRadius(d: SpaceHierarchyNode): number {
+  const ring = finiteOr(d.r, 0);
+  return d.children && d.children.length > 0 ? ring * logoRatio(d) : ring;
+}
+
+/**
+ * Nodes on the ring around the opened space: its children, or its siblings
+ * when it is a leaf.
+ */
+function ringMates(focus: SpaceHierarchyNode): SpaceHierarchyNode[] {
+  const children = (focus.children ?? []) as SpaceHierarchyNode[];
+  if (children.length > 0) return children;
+  const parent = focus.parent as SpaceHierarchyNode | null;
+  return ((parent?.children ?? []) as SpaceHierarchyNode[]).filter(
+    (node) => node !== focus,
+  );
+}
+
+/**
+ * How far the name under a space extends, in layout units.
+ * Label size is in screen pixels, so this depends on the scale used to draw it.
+ */
+function labelReach(node: SpaceHierarchyNode, scale: number): number {
+  const safeScale = Math.max(scale, 0.0001);
+  const top = nodeLabelTop(node, safeScale);
+  const { labelFontSize } = labelMetrics(nodeShapeRadius(node, safeScale));
+  const half =
+    estimateLabelHalfWidth(node.data.name, labelFontSize) / safeScale;
+  const bottom = (top + labelFontSize * 1.35) / safeScale;
+  return Math.max(half, bottom, 1);
+}
+
+/**
+ * The full ecosystem is framed on its grey disc, so the rim stays on screen.
+ * A zoomed space stays close; that view may crop the disc.
+ */
+function frameForFocus(
+  focus: SpaceHierarchyNode,
+  scale: number,
+  showLabels: boolean,
+  viewWidth: number,
+  viewHeight: number,
+): ClusterFrame {
+  const fx = finiteOr(focus.x, 0);
+  const fy = finiteOr(focus.y, 0);
+  const mark = Math.max(drawnRadius(focus), 1);
+  const children = (focus.children ?? []) as SpaceHierarchyNode[];
+  let reach = mark;
+  if (!focus.parent) {
+    reach = Math.max(finiteOr(focus.r, 0), 1);
+    for (const child of children) {
+      const dist = Math.hypot(
+        finiteOr(child.x, 0) - fx,
+        finiteOr(child.y, 0) - fy,
+      );
+      const edge = dist + finiteOr(child.r, 0);
+      const name = showLabels ? labelReach(child, scale) : 0;
+      reach = Math.max(reach, edge, dist + name);
+    }
+    reach *= 1.04;
+  } else if (children.length > 0) {
+    for (const child of children) {
+      const dist = Math.hypot(
+        finiteOr(child.x, 0) - fx,
+        finiteOr(child.y, 0) - fy,
+      );
+      reach = Math.max(reach, dist + finiteOr(child.r, 0) * 0.9);
+    }
+    if (showLabels) reach = Math.max(reach, labelReach(focus, scale));
+  } else {
+    const nameReach = showLabels ? labelReach(focus, scale) : mark;
+    reach = Math.max(mark * 1.35, nameReach);
+    const maxReach = Math.max(mark / 0.62, nameReach);
+    for (const node of ringMates(focus)) {
+      const dist = Math.hypot(
+        finiteOr(node.x, 0) - fx,
+        finiteOr(node.y, 0) - fy,
+      );
+      const rad = finiteOr(node.r, 0);
+      const slice = dist - rad + rad * 0.22;
+      if (slice > 0) reach = Math.max(reach, Math.min(slice, maxReach));
+    }
+  }
+  reach = Math.max(reach, 1);
+  let width = reach * 2;
+  let height = reach * 2;
+  const aspect = Math.max(viewWidth, 1) / Math.max(viewHeight, 1);
+  if (width / height < aspect) width = height * aspect;
+  else height = width / aspect;
+  return { cx: fx, cy: fy, width, height };
+}
+
+type CameraFlight = {
+  at: (t: number) => ClusterFrame;
+  /** Milliseconds for a steady zoom. The curve already eases itself. */
+  duration: number;
+};
+
+/**
+ * Camera flight that pulls back while it recentres. A straight blend of the
+ * two centres slides every mark sideways at one zoom.
+ */
+function flyFrame(start: ClusterFrame, end: ClusterFrame): CameraFlight {
+  const flight = d3.interpolateZoom(
+    [start.cx, start.cy, Math.max(start.width, 1)],
+    [end.cx, end.cy, Math.max(end.width, 1)],
+  );
+  const startRatio = start.height / Math.max(start.width, 1);
+  const endRatio = end.height / Math.max(end.width, 1);
+  const natural = Number.isFinite(flight.duration) ? flight.duration : 1000;
+  return {
+    duration: Math.round(Math.min(1400, Math.max(780, natural))),
+    at: (t: number) => {
+      const next = flight(t);
+      const width = Math.max(next[2], 1);
+      const ratio = startRatio + (endRatio - startRatio) * t;
+      return {
+        cx: next[0],
+        cy: next[1],
+        width,
+        height: Math.max(width * ratio, 1),
+      };
+    },
+  };
+}
+
+/** Phones keep a tight inset so the disc fills the column. */
+function clusterFitPadding(viewWidth: number): number {
+  return viewWidth < 768 ? 8 : CLUSTER_FIT_PADDING;
+}
+
+function fitScale(
+  frame: ClusterFrame,
+  viewWidth: number,
+  viewHeight: number,
+): number {
+  const pad = clusterFitPadding(viewWidth);
+  const innerW = Math.max(viewWidth - pad * 2, 1);
+  const innerH = Math.max(viewHeight - pad * 2, 1);
+  return Math.min(innerW / frame.width, innerH / frame.height);
+}
+
+type ScreenSpan = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+};
+
+/** Circles and the names under them, in viewBox pixels around the frame center. */
+function screenSpan(
+  nodes: SpaceHierarchyNode[],
+  cx: number,
+  cy: number,
+  scale: number,
+  showLabels: boolean,
+): ScreenSpan {
+  const span: ScreenSpan = {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -Infinity,
+    maxY: -Infinity,
+  };
+  const strokePad = 1;
+  for (const d of nodes) {
+    const x = (finiteOr(d.x, 0) - cx) * scale;
+    const y = (finiteOr(d.y, 0) - cy) * scale;
+    const rad = drawnRadius(d) * scale + strokePad;
+    includePoint(span, x - rad, y - rad);
+    includePoint(span, x + rad, y + rad);
+    if (!showLabels) continue;
+    const top = nodeLabelTop(d, scale);
+    const { labelFontSize } = labelMetrics(nodeShapeRadius(d, scale));
+    const half = estimateLabelHalfWidth(d.data.name, labelFontSize);
+    includePoint(span, x - half, y);
+    includePoint(span, x + half, y + top + labelFontSize * 1.35);
+  }
+  if (!Number.isFinite(span.minX)) {
+    includePoint(span, -1, -1);
+    includePoint(span, 1, 1);
+  }
+  return span;
+}
+
+/**
+ * Shrink `scale` until every focused ring and its name sits inside the
+ * stage inset. The flat bottom of a circle is the first thing a clip cuts,
+ * and that reads as a broken stroke.
+ */
+function containScale(
+  nodes: SpaceHierarchyNode[],
+  cx: number,
+  cy: number,
+  viewWidth: number,
+  viewHeight: number,
+  scale: number,
+  showLabels: boolean,
+): number {
+  const pad = clusterFitPadding(viewWidth);
+  const limitX = Math.max(viewWidth / 2 - pad, 1);
+  const limitY = Math.max(viewHeight / 2 - pad, 1);
+  let k = Math.max(scale, 0.0001);
+  for (let pass = 0; pass < 4; pass += 1) {
+    const span = screenSpan(nodes, cx, cy, k, showLabels);
+    const fit = Math.min(
+      limitX / Math.max(Math.abs(span.minX), Math.abs(span.maxX), 1),
+      limitY / Math.max(Math.abs(span.minY), Math.abs(span.maxY), 1),
+      1,
+    );
+    if (fit > 0.995) break;
+    k *= fit;
+  }
+  return k;
+}
+
+/**
+ * Largest uniform scale that keeps the focused cluster — outer rings and the
+ * labels under the logos — inside the stage. Extra stage height is used until
+ * the width (or the label block) is the limit.
+ */
+function solveClusterFrame(
+  focus: SpaceHierarchyNode,
+  viewWidth: number,
+  viewHeight: number,
+  showLabels: boolean,
+): ClusterFrame {
+  const diameter = Math.max(drawnRadius(focus) * 2, 1);
+  let scale =
+    Math.min(Math.max(viewWidth, 1), Math.max(viewHeight, 1)) / diameter;
+  let frame = frameForFocus(focus, scale, showLabels, viewWidth, viewHeight);
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const nextScale = fitScale(frame, viewWidth, viewHeight);
+    const nextFrame = frameForFocus(
+      focus,
+      nextScale,
+      showLabels,
+      viewWidth,
+      viewHeight,
+    );
+    const settled =
+      Math.abs(nextScale - scale) <= Math.max(0.002, Math.abs(scale) * 0.01) &&
+      Math.abs(nextFrame.width - frame.width) <= 0.5 &&
+      Math.abs(nextFrame.height - frame.height) <= 0.5;
+    scale = nextScale;
+    frame = nextFrame;
+    if (settled) break;
+  }
+  return frame;
 }
 
 function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
@@ -185,11 +525,13 @@ function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
 export function SpaceVisualization({
   data,
   currentSpaceId,
-  rootAccentHex,
   onVisibleSpacesChange,
   enableHoverActions = true,
   showNodeLabels = true,
   ariaLabel = 'Space hierarchy visualization',
+  zoomApiRef,
+  layout = 'square',
+  className,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -209,9 +551,6 @@ export function SpaceVisualization({
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const tooltipHideTimeoutRef = useRef<number | null>(null);
-  const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
-    new Map(),
-  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -283,233 +622,29 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
-    const getRootFillColor = (accentColor: string) => {
-      const parsed = d3.hsl(accentColor);
-      if (!parsed) {
-        return themeRef.current === 'dark'
-          ? 'rgba(255,255,255,0.06)'
-          : 'rgba(15,23,42,0.08)';
-      }
-      // Keep root tint barely present — space hue without a neon wash.
-      const softAccent = d3.hsl(
-        parsed.h,
-        Math.max(0.12, Math.min(parsed.s * 0.4, 0.28)),
-        themeRef.current === 'dark' ? 0.62 : 0.42,
-      );
-      softAccent.opacity = themeRef.current === 'dark' ? 0.12 : 0.08;
-      return softAccent.formatRgb();
-    };
-    const getDiagramFillColor = () => 'var(--color-background)';
-    const getLabelFillColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(226, 232, 240, 0.92)'
-        : 'rgba(30, 41, 59, 0.88)';
-    const getLabelStrokeColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(11, 15, 24, 0.88)'
-        : 'rgba(255, 255, 255, 0.92)';
-    const getLogoRingColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(148, 163, 184, 0.42)'
-        : 'rgba(71, 85, 105, 0.28)';
-    const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.64 : 0.7;
-    const ROOT_ORBIT_STROKE_WIDTH = 1.35;
-    // Hairline dashed orbits — calm, readable structure.
-    const ORBIT_DASH_PATTERN = '1.5 5';
-    const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
-    const pageBackdropLab = d3.lab(
-      themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
-    );
-    const MIN_LIGHTNESS_DELTA = 18;
-    const getOrbitStrokeStyle = (
-      accentColor: string,
-    ): { color: string; width: number } => {
-      const parsed = d3.hsl(accentColor);
-      if (!parsed) {
-        return {
-          color: withAlpha(accentColor, getOrbitStrokeAlpha()),
-          width: 1.25,
-        };
-      }
-
-      // Soften purple/magenta samples into mycelium teal; keep other brand hues.
-      const sampleHue = parsed.h;
-      const isPurpleMagenta =
-        Number.isFinite(sampleHue) && sampleHue >= 260 && sampleHue <= 330;
-      const tuned = d3.hsl(
-        isPurpleMagenta ? 172 : sampleHue,
-        Math.min(Math.max(parsed.s, 0.36), 0.52),
-        themeRef.current === 'dark'
-          ? Math.min(Math.max(parsed.l, 0.55), 0.7)
-          : Math.min(Math.max(parsed.l, 0.34), 0.48),
-      );
-
-      const tunedLab = d3.lab(tuned.formatRgb());
-      const rootDelta = Math.abs(tunedLab.l - rootFillLab.l);
-      const backdropDelta = Math.abs(tunedLab.l - pageBackdropLab.l);
-      const minDelta = Math.min(rootDelta, backdropDelta);
-      const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.45 : 1.25;
-
-      return {
-        color: withAlpha(tuned.formatRgb(), getOrbitStrokeAlpha()),
-        width,
-      };
-    };
-
-    const getStrokeWidth = (depth: number): number => {
-      return (
-        VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
-        Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
-      );
-    };
-
-    const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
+    const dark = themeRef.current === 'dark';
+    const ink = dark ? 'var(--hypha-text)' : 'var(--hypha-ink)';
+    const paper = dark ? 'var(--hypha-ink)' : 'var(--hypha-paper)';
+    // Opaque mix of the same hairline. A translucent stroke darkens where
+    // the ring's ends meet; on the diagram ground this is the same colour.
+    const hairline = dark
+      ? 'color-mix(in srgb, var(--hypha-text) 32%, var(--hypha-ink))'
+      : 'color-mix(in srgb, var(--hypha-ink) 26%, var(--hypha-paper))';
+    const spaceAccent = 'var(--space-accent, var(--color-accent-9))';
+    const getDiagramFillColor = () => paper;
+    const getLabelFillColor = () => ink;
+    const getLabelStrokeColor = () => paper;
+    // One hairline for every ring. The current space is the same weight in
+    // the space accent — not a heavier frame, and not a stroke on the icon.
+    const HAIRLINE = 1;
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
-    root.each((d) => {
-      (d as SpaceHierarchyNode).r =
-        VISUALIZATION_CONFIG.BASE_RADIUS *
-        Math.pow(VISUALIZATION_CONFIG.DEPTH_SCALE, d.depth);
-    });
-
+    root.r = VISUALIZATION_CONFIG.BASE_RADIUS;
     root.x = 0;
     root.y = 0;
-
     root.eachBefore((d) => {
-      if (!d.children || d.children.length === 0) return;
-
-      const node = d as SpaceHierarchyNode;
-      const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
-      const parentStrokeWidth = getStrokeWidth(node.depth);
-      const parentLogoRadiusWithStroke =
-        parentLogoRadius + parentStrokeWidth / 2;
-      const children = d.children.map((child) => child as SpaceHierarchyNode);
-      const n = children.length;
-
-      const calculateMinOrbitRadius = (
-        childRadii: number[],
-        childNodes: SpaceHierarchyNode[],
-      ): number => {
-        let maxChildRadiusWithStroke = 0;
-        childRadii.forEach((radius, index) => {
-          const childNode = childNodes[index];
-          if (childNode) {
-            const childStrokeWidth = getStrokeWidth(childNode.depth);
-            const childRadiusWithStroke = radius + childStrokeWidth / 2;
-            maxChildRadiusWithStroke = Math.max(
-              maxChildRadiusWithStroke,
-              childRadiusWithStroke,
-            );
-          }
-        });
-        const baseMinOrbitRadius =
-          parentLogoRadiusWithStroke + maxChildRadiusWithStroke;
-
-        if (n <= 1) {
-          return baseMinOrbitRadius;
-        }
-
-        const minOrbitRadiusForSpacing =
-          maxChildRadiusWithStroke / Math.sin(Math.PI / n);
-
-        return Math.max(baseMinOrbitRadius, minOrbitRadiusForSpacing);
-      };
-
-      children.forEach((childNode) => {
-        const childStrokeWidth = getStrokeWidth(childNode.depth);
-        const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
-        const minOrbitRadius =
-          parentLogoRadiusWithStroke + childRadiusWithStroke;
-        const maxOrbit = node.r! - childNode.r!;
-
-        if (minOrbitRadius > maxOrbit) {
-          childNode.r = clampSvgLength(
-            (node.r! - parentLogoRadiusWithStroke) / 2,
-          );
-        }
-      });
-
-      const childRadii = children.map((c) => c.r!);
-      let minOrbitRadius = calculateMinOrbitRadius(childRadii, children);
-      let maxOrbit = node.r! - Math.max(...childRadii);
-
-      if (minOrbitRadius > maxOrbit) {
-        let minChildRadius = 0;
-        let maxChildRadius = Math.max(...childRadii);
-        let bestChildRadius = maxChildRadius;
-        const tolerance = 0.1;
-
-        while (maxChildRadius - minChildRadius > tolerance) {
-          const testChildRadius = (minChildRadius + maxChildRadius) / 2;
-          const testRadii = children.map(() => testChildRadius);
-          const testMinOrbitRadius = calculateMinOrbitRadius(
-            testRadii,
-            children,
-          );
-          const testMaxOrbit = node.r! - testChildRadius;
-
-          if (testMinOrbitRadius <= testMaxOrbit) {
-            bestChildRadius = testChildRadius;
-            minChildRadius = testChildRadius;
-          } else {
-            maxChildRadius = testChildRadius;
-          }
-        }
-
-        children.forEach((childNode) => {
-          childNode.r = clampSvgLength(bestChildRadius);
-        });
-
-        const adjustedRadii = children.map((c) => c.r!);
-        minOrbitRadius = calculateMinOrbitRadius(adjustedRadii, children);
-      }
-
-      const maxChildRadius = Math.max(...children.map((c) => c.r!));
-      maxOrbit = node.r! - maxChildRadius;
-
-      const availableOrbit = Math.max(0, maxOrbit - minOrbitRadius);
-      let orbitRadius =
-        minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
-
-      if (n > 1) {
-        const minDistanceBetweenCenters =
-          2 * orbitRadius * Math.sin(Math.PI / n);
-        const requiredDistance = 2 * maxChildRadius;
-
-        if (minDistanceBetweenCenters < requiredDistance) {
-          let maxChildRadiusWithStroke = 0;
-          children.forEach((childNode) => {
-            const childStrokeWidth = getStrokeWidth(childNode.depth);
-            const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
-            maxChildRadiusWithStroke = Math.max(
-              maxChildRadiusWithStroke,
-              childRadiusWithStroke,
-            );
-          });
-          const safeOrbitRadius =
-            maxChildRadiusWithStroke / Math.sin(Math.PI / n);
-          orbitRadius = Math.max(
-            safeOrbitRadius,
-            parentLogoRadiusWithStroke + maxChildRadiusWithStroke,
-            orbitRadius,
-          );
-        }
-      }
-
-      const step = (2 * Math.PI) / n;
-      const safeOrbitRadius = Number.isFinite(orbitRadius)
-        ? Math.max(minOrbitRadius, orbitRadius)
-        : minOrbitRadius;
-      children.forEach((childNode, i) => {
-        const angle = i * step;
-        const parentX = finiteOr(d.x, 0);
-        const parentY = finiteOr(d.y, 0);
-        childNode.x = parentX + Math.cos(angle) * safeOrbitRadius;
-        childNode.y = parentY + Math.sin(angle) * safeOrbitRadius;
-      });
+      placeChildRings(d as SpaceHierarchyNode);
     });
 
     sanitizeHierarchyLayout(root);
@@ -530,16 +665,10 @@ export function SpaceVisualization({
       return null;
     };
 
-    // Open on the space the user is viewing so membership modules (individuals /
-    // spaces / agents) match that space's Members tab. Drill-in focus is
-    // remembered across re-renders; zoom out still reaches the org root.
+    // The diagram opens on the whole ecosystem. A click zooms into one
+    // space; clicking that space again returns here. A zoom is remembered
+    // across re-renders until the space changes.
     let focus = root;
-    if (typeof currentSpaceId === 'number') {
-      const currentNode = findNodeById(root, currentSpaceId);
-      if (currentNode) {
-        focus = currentNode;
-      }
-    }
 
     if (savedFocusIdRef.current) {
       const savedNode = findNodeById(root, savedFocusIdRef.current);
@@ -552,50 +681,56 @@ export function SpaceVisualization({
 
     focusRef.current = focus;
     savedFocusIdRef.current = focus.data.id;
-    let view = sanitizeZoomView([
-      finiteOr(focus.x, 0),
-      finiteOr(focus.y, 0),
-      finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
-    ]);
+
+    const readStageSize = (): { width: number; height: number } | null => {
+      const el = containerRef.current;
+      const rect = el?.getBoundingClientRect();
+      if (!rect || rect.width < 2 || rect.height < 2) return null;
+      return { width: rect.width, height: rect.height };
+    };
 
     const svg = d3
       .select(svgRef.current)
-      .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
-      .style('shape-rendering', 'geometricPrecision')
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .style('shape-rendering', 'auto')
       .style('cursor', 'pointer');
 
     svg.selectAll('*').remove();
 
     const g = svg.append('g');
-    const nodeAccents = new Map<number, string>();
-    const getNodeAccent = (d: SpaceHierarchyNode): string =>
-      nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
 
     const defs = svg.append('defs');
+
+    function handleSpaceClick(
+      event: { stopPropagation: () => void },
+      d: SpaceHierarchyNode,
+    ) {
+      event.stopPropagation();
+      // Already zoomed into this space, or a click on the org while zoomed:
+      // return to the full ecosystem.
+      if (focus !== root && (d === focus || d === root)) {
+        zoom(root);
+        return;
+      }
+      if (d === focus) return;
+      zoom(d);
+    }
+
     const orbits = g
-      .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
+      .selectAll<SVGPathElement, SpaceHierarchyNode>('path.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
-      .join('circle')
+      .join('path')
       .attr('class', 'orbit')
-      .style('fill', 'none')
-      .attr('stroke', (d: SpaceHierarchyNode) => {
-        const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-        return getOrbitStrokeStyle(accent).color;
-      })
-      .attr('stroke-width', (d: SpaceHierarchyNode) => {
-        if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-        return getOrbitStrokeStyle(getNodeAccent(d)).width;
-      })
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-dasharray', ORBIT_DASH_PATTERN)
+      .attr('fill', 'none')
+      .attr('stroke', hairline)
+      .attr('stroke-width', HAIRLINE)
+      .attr('stroke-linecap', 'butt')
+      .attr('stroke-linejoin', 'round')
       .attr('vector-effect', 'non-scaling-stroke')
       .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
-        if (focus !== d) {
-          event.stopPropagation();
-          zoom(d);
-        }
+        handleSpaceClick(event, d);
       });
 
     const logos = g
@@ -606,10 +741,7 @@ export function SpaceVisualization({
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
       .on('click', (event, d) => {
-        if (focus !== d) {
-          event.stopPropagation();
-          zoom(d);
-        }
+        handleSpaceClick(event, d);
       });
 
     if (enableHoverActions) {
@@ -664,134 +796,83 @@ export function SpaceVisualization({
         .append('image')
         .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
         .attr('preserveAspectRatio', 'xMidYMid slice')
-        .attr('alt', `${d.data.name} logo`)
+        .attr('aria-hidden', 'true')
         .attr('clip-path', `url(#${clipId})`);
-
-      logoGroup
-        .append('circle')
-        .attr('class', 'logo-ring')
-        .attr('fill', 'none')
-        .attr('stroke', getLogoRingColor())
-        .attr('stroke-width', 1.25)
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
-        .style('pointer-events', 'none');
-
-      logoGroup
-        .append('circle')
-        .attr('class', 'focus-ring')
-        .attr('fill', 'none')
-        .attr('stroke', resolvedRootAccent)
-        .attr('stroke-width', 1.75)
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
-        .attr('opacity', 0)
-        .style('pointer-events', 'none');
-
-      logoGroup
-        .append('circle')
-        .attr('class', 'current-ring')
-        .attr('fill', 'none')
-        .attr('stroke', resolvedRootAccent)
-        .attr('stroke-width', 1.25)
-        .attr('stroke-dasharray', '2.5 3.5')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('shape-rendering', 'geometricPrecision')
-        .attr('opacity', 0)
-        .style('pointer-events', 'none');
-
-      if (showNodeLabels) {
-        logoGroup
-          .append('text')
-          .attr('class', 'node-label')
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'hanging')
-          .attr('fill', getLabelFillColor())
-          .attr('stroke', getLabelStrokeColor())
-          .attr('stroke-width', 3.5)
-          .attr('paint-order', 'stroke fill')
-          .style('font-family', 'var(--font-family-text), sans-serif')
-          .style('font-weight', '500')
-          .style('letter-spacing', '-0.01em')
-          .style('pointer-events', 'none')
-          .text(truncateLabel(d.data.name));
-      }
-
-      logoGroup.append('title').text(d.data.name);
     });
+
+    // Names paint after every ring. A child circle otherwise covers the
+    // center caption, so the visible part no longer sits under the mark.
+    const labelText = g
+      .append('g')
+      .attr('class', 'node-labels')
+      .style('pointer-events', 'none')
+      .selectAll<SVGTextElement, SpaceHierarchyNode>('text.node-label')
+      .data(showNodeLabels ? (root.descendants() as SpaceHierarchyNode[]) : [])
+      .join('text')
+      .attr('class', 'node-label')
+      .attr('x', 0)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'hanging')
+      .attr('fill', getLabelFillColor())
+      .attr('stroke', getLabelStrokeColor())
+      .attr('stroke-width', 4)
+      .attr('stroke-linejoin', 'round')
+      .attr('paint-order', 'stroke fill')
+      .style('font-family', 'var(--font-family-text), sans-serif')
+      .style('font-weight', '500')
+      .style('letter-spacing', '-0.01em')
+      .style('text-anchor', 'middle')
+      .text((d) => truncateLabel(d.data.name));
 
     svg.on('click', () => {
-      if (focus.parent) {
-        zoom(focus.parent);
-      }
+      if (focus !== root) zoom(root);
     });
 
-    function isDescendantOf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
+    let shown = {
+      cx: 0,
+      cy: 0,
+      k: 1,
+      width: 1,
+      height: 1,
+      ready: false,
+    };
+
+    function clusterEnclosure(node: SpaceHierarchyNode): SpaceHierarchyNode {
+      if (node.children && node.children.length > 0) return node;
+      return (node.parent as SpaceHierarchyNode | null) ?? node;
     }
 
-    function isDescendantOfOrSelf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      if (node === ancestor) return true;
-
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isAncestorOf(
-      ancestor: SpaceHierarchyNode,
-      node: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isVisibleForFocus(
-      d: SpaceHierarchyNode,
-      focusNode: SpaceHierarchyNode,
-    ): boolean {
-      if (d === focusNode) return true;
-
-      if (isDescendantOfOrSelf(d, focusNode)) {
-        return true;
-      }
-
-      if (isAncestorOf(d, focusNode)) {
-        return true;
-      }
-
-      let currentAncestor = focusNode.parent;
-      while (currentAncestor) {
-        if (isDescendantOfOrSelf(d, currentAncestor)) {
-          return true;
-        }
-        currentAncestor = currentAncestor.parent;
-      }
-
-      return false;
+    /** A space is on screen when its mark crosses the stage. */
+    function markInView(d: SpaceHierarchyNode): boolean {
+      if (!shown.ready) return true;
+      const x = (finiteOr(d.x, 0) - shown.cx) * shown.k;
+      const y = (finiteOr(d.y, 0) - shown.cy) * shown.k;
+      const rad = Math.max(drawnRadius(d) * shown.k, 1);
+      const hx = shown.width / 2;
+      const hy = shown.height / 2;
+      const nx = Math.max(-hx, Math.min(hx, x));
+      const ny = Math.max(-hy, Math.min(hy, y));
+      const dx = x - nx;
+      const dy = y - ny;
+      return dx * dx + dy * dy <= rad * rad;
     }
 
     function isVisible(d: SpaceHierarchyNode): boolean {
-      if (!focus) return false;
-      return isVisibleForFocus(d, focus);
+      if (d === focus) return true;
+      return markInView(d);
+    }
+
+    function isOrbitShown(d: SpaceHierarchyNode): boolean {
+      if (d === clusterEnclosure(focus)) return true;
+      return isVisible(d);
+    }
+
+    // An intermediate ring's caption lands on the level below it. The focused
+    // node keeps its name; a second-level name stays off while N+2 is drawn.
+    function isLabelShown(d: SpaceHierarchyNode): boolean {
+      if (!isVisible(d)) return false;
+      if (d !== focus && d.children && d.children.length > 0) return false;
+      return true;
     }
 
     function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
@@ -839,13 +920,21 @@ export function SpaceVisualization({
       }
     }
 
-    orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
+    orbits.style('opacity', (d: SpaceHierarchyNode) =>
+      isOrbitShown(d) ? 1 : 0,
+    );
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
+    labelText.style('opacity', (d: SpaceHierarchyNode) =>
+      isLabelShown(d) ? 1 : 0,
+    );
     orbits.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
+      isOrbitShown(d) ? 'block' : 'none',
     );
     logos.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
+    );
+    labelText.style('display', (d: SpaceHierarchyNode) =>
+      isLabelShown(d) ? 'block' : 'none',
     );
 
     logos.each(function () {
@@ -855,9 +944,79 @@ export function SpaceVisualization({
         .attr('stroke', 'none');
     });
 
-    zoomTo(view);
+    if (showNodeLabels) {
+      const stage = readStageSize();
+      // One measurement against the placed cluster. Repeating this with the
+      // grown disc shrinks the scale, inflates the fill, and leaves the
+      // logos in the middle.
+      const span = Math.max(finiteOr(root.r, 1) * 2, 1);
+      const scale = stage ? Math.min(stage.width, stage.height) / span : 1;
+      growRingAroundLabels(root, scale);
+    }
+
+    const initialSize = readStageSize();
+    let frame = initialSize
+      ? solveClusterFrame(
+          focus,
+          initialSize.width,
+          initialSize.height,
+          showNodeLabels,
+        )
+      : frameForFocus(focus, 1, showNodeLabels, 1, 1);
+    if (initialSize) applyFrame(frame);
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
+
+    // One named transition for the cluster frame. A second ease inside the
+    // tween stacks on d3's own easing and rushes the middle of the zoom.
+    // Stage resizes share this name so they retarget the same motion
+    // instead of snapping a new viewBox over it.
+    const DIAGRAM_MOTION = 'diagram';
+    let focusMotion = false;
+    let zoomSerial = 0;
+
+    function framesMatch(a: ClusterFrame, b: ClusterFrame): boolean {
+      return (
+        Math.abs(a.cx - b.cx) < 0.5 &&
+        Math.abs(a.cy - b.cy) < 0.5 &&
+        Math.abs(a.width - b.width) < 0.5 &&
+        Math.abs(a.height - b.height) < 0.5
+      );
+    }
+
+    function commitFrame(next: ClusterFrame) {
+      frame = next;
+      applyFrame(frame);
+    }
+
+    /** Glide the cluster to `next`. Reduced motion jumps. */
+    function glideFrame(next: ClusterFrame) {
+      const generation = zoomSerial;
+      const flight = flyFrame(frame, next);
+      const duration = prefersReducedMotion() ? 0 : flight.duration;
+      if (duration === 0 || framesMatch(frame, next)) {
+        svg.interrupt(DIAGRAM_MOTION);
+        commitFrame(next);
+        if (generation === zoomSerial) focusMotion = false;
+        return;
+      }
+      svg.interrupt(DIAGRAM_MOTION);
+      focusMotion = true;
+      const transition = svg
+        .transition(DIAGRAM_MOTION)
+        .duration(duration)
+        .ease(d3.easeLinear)
+        .tween('frame', () => (t: number) => {
+          frame = flight.at(t);
+          applyFrame(frame);
+        });
+      transition.on('interrupt', () => {
+        if (generation === zoomSerial) focusMotion = false;
+      });
+      transition.on('end', () => {
+        if (generation === zoomSerial) focusMotion = false;
+      });
+    }
 
     function zoom(
       target: SpaceHierarchyNode,
@@ -865,100 +1024,200 @@ export function SpaceVisualization({
         onEnd?: () => void;
       },
     ) {
+      const generation = ++zoomSerial;
+      // Drop the previous flight before the new one owns the motion flag.
+      svg.interrupt(DIAGRAM_MOTION);
       focus = target;
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
 
-      const transition = svg
-        .transition()
-        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-        .tween('zoom', () => {
-          const targetView = sanitizeZoomView([
-            finiteOr(focus.x, 0),
-            finiteOr(focus.y, 0),
-            finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
-          ]);
-          const startView = sanitizeZoomView(view);
-          const interpolator = d3.interpolateZoom(startView, targetView);
-          return (t) => {
-            const next = sanitizeZoomView(interpolator(t), targetView[2]);
-            zoomTo(next);
-          };
-        });
+      const size = readStageSize();
+      if (!size) {
+        focusMotion = false;
+        return;
+      }
+      const sizeKeyAtStart = stageSizeKey(size);
+      // The membership row resizes the stage when the opened space changes.
+      // Reading that live size inside the tween jumps the viewBox, so the
+      // flight keeps the box it started with.
+      const lockedSize = { width: size.width, height: size.height };
+      const nextFrame = solveClusterFrame(
+        focus,
+        size.width,
+        size.height,
+        showNodeLabels,
+      );
+      const flight = flyFrame(frame, nextFrame);
+      const duration = prefersReducedMotion() ? 0 : flight.duration;
+      if (duration === 0 || framesMatch(frame, nextFrame)) {
+        focusMotion = false;
+        commitFrame(nextFrame);
+        notifyVisibleSpaces(focus);
+        options?.onEnd?.();
+        return;
+      }
 
-      transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
-        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
-        .on('start', function (d: SpaceHierarchyNode) {
-          if (isVisible(d) && this instanceof SVGElement) {
-            (this as SVGElement).style.display = 'block';
-          }
-        })
-        .on('end', function (d: SpaceHierarchyNode) {
-          if (!isVisible(d) && this instanceof SVGElement) {
-            (this as SVGElement).style.display = 'none';
-          }
+      focusMotion = true;
+      const transition = svg
+        .transition(DIAGRAM_MOTION)
+        .duration(duration)
+        .ease(d3.easeLinear)
+        .tween('zoom', () => {
+          return (t: number) => {
+            frame = flight.at(t);
+            applyFrame(frame, undefined, lockedSize);
+          };
         });
 
       logos.each(function () {
         d3.select(this)
           .select('circle.logo-disk')
           .transition()
-          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+          .duration(duration)
           .attr('fill', getDiagramFillColor())
           .attr('stroke', 'none');
       });
 
+      transition.on('interrupt', () => {
+        if (generation === zoomSerial) focusMotion = false;
+      });
+
       transition.on('end', () => {
+        if (generation !== zoomSerial) return;
         notifyVisibleSpaces(focus);
-        options?.onEnd?.();
+        // Let the row finish its layout, then one settle if the stage moved.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (generation !== zoomSerial) return;
+            const latest = readStageSize();
+            const latestKey = latest ? stageSizeKey(latest) : '';
+            if (latest && latestKey !== sizeKeyAtStart) {
+              fittedKey = latestKey;
+              glideFrame(
+                solveClusterFrame(
+                  focus,
+                  latest.width,
+                  latest.height,
+                  showNodeLabels,
+                ),
+              );
+            } else {
+              focusMotion = false;
+            }
+            options?.onEnd?.();
+          });
+        });
       });
     }
 
-    function zoomTo(v: [number, number, number]) {
-      const safeView = sanitizeZoomView(v, view[2]);
-      const k = width / safeView[2];
-      view = safeView;
+    const zoomByDirection = (direction: 1 | -1) => {
+      const current = focusRef.current as SpaceHierarchyNode | null;
+      if (!current) return;
+      if (direction < 0) {
+        if (current !== root) zoom(root);
+        return;
+      }
+      const children = (current.children ?? []) as SpaceHierarchyNode[];
+      if (children.length === 0) return;
+      const next = children.reduce((largest, child) =>
+        (child.r ?? 0) > (largest.r ?? 0) ? child : largest,
+      );
+      zoom(next);
+    };
+
+    if (zoomApiRef) {
+      zoomApiRef.current = {
+        zoomIn: () => zoomByDirection(1),
+        zoomOut: () => zoomByDirection(-1),
+      };
+    }
+
+    function applyFrame(
+      next: ClusterFrame,
+      explicitScale?: number,
+      lockedSize?: { width: number; height: number },
+    ) {
+      const size = lockedSize ?? readStageSize();
+      if (!size) return;
+      const { width: viewWidth, height: viewHeight } = size;
+      // 1:1 with the stage. The cluster is placed in this box, so a tall stage
+      // is usable instead of letterboxing a square view.
+      svg.attr(
+        'viewBox',
+        `${-viewWidth / 2} ${-viewHeight / 2} ${viewWidth} ${viewHeight}`,
+      );
+      const fitted = fitScale(next, viewWidth, viewHeight);
+      const k =
+        typeof explicitScale === 'number' && Number.isFinite(explicitScale)
+          ? explicitScale
+          : containScale(
+              [focus],
+              next.cx,
+              next.cy,
+              viewWidth,
+              viewHeight,
+              fitted,
+              showNodeLabels,
+            );
+
+      shown = {
+        cx: next.cx,
+        cy: next.cy,
+        k,
+        width: viewWidth,
+        height: viewHeight,
+        ready: true,
+      };
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
-        const tx = (finiteOr(d.x, 0) - safeView[0]) * k;
-        const ty = (finiteOr(d.y, 0) - safeView[1]) * k;
+        const tx = (finiteOr(d.x, 0) - next.cx) * k;
+        const ty = (finiteOr(d.y, 0) - next.cy) * k;
         return `translate(${tx}, ${ty})`;
       };
 
+      // The grey disc is the outer circle. A zoomed leaf keeps its hairline;
+      // the parent ring is the fill, not a second stroke around it.
+      const enclosureFill = dark ? 'var(--hypha-mid)' : 'var(--hypha-panel)';
+      const enclosure =
+        focus.children && focus.children.length > 0
+          ? focus
+          : (focus.parent as SpaceHierarchyNode | null) ?? focus;
+      const isEnclosure = (d: SpaceHierarchyNode) => d === enclosure;
+
       orbits
         .attr('transform', nodeTransform)
-        .attr('r', (d: SpaceHierarchyNode) =>
-          clampSvgLength(finiteOr(d.r, 0) * k),
+        .attr('d', (d: SpaceHierarchyNode) =>
+          smoothClosedCirclePath(finiteOr(d.r, 0) * k),
         )
-        .style('fill', 'none')
+        .attr('fill', (d: SpaceHierarchyNode) =>
+          isEnclosure(d) ? enclosureFill : 'none',
+        )
         .attr('stroke', (d: SpaceHierarchyNode) => {
-          const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-          return getOrbitStrokeStyle(accent).color;
+          if (isEnclosure(d)) return 'none';
+          const isCurrent =
+            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
+          return isCurrent ? spaceAccent : hairline;
         })
-        .attr('stroke-width', (d: SpaceHierarchyNode) => {
-          if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-          return getOrbitStrokeStyle(getNodeAccent(d)).width;
-        })
-        .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
+        .attr('stroke-width', (d: SpaceHierarchyNode) =>
+          isEnclosure(d) ? 0 : HAIRLINE,
+        )
+        .attr('stroke-linecap', 'butt')
+        .attr('stroke-linejoin', 'round')
+        .style('display', (d: SpaceHierarchyNode) =>
+          isOrbitShown(d) ? 'block' : 'none',
+        )
+        .style('opacity', (d: SpaceHierarchyNode) => (isOrbitShown(d) ? 1 : 0));
 
       logos
         .attr('transform', nodeTransform)
+        .style('display', (d: SpaceHierarchyNode) =>
+          isVisible(d) ? 'block' : 'none',
+        )
+        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .each(function (d: SpaceHierarchyNode) {
-          const r = clampSvgLength(
-            finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
-          );
+          const r = clampSvgLength(finiteOr(d.r, 0) * k * logoRatio(d));
           const clipId = `clip-${d.data.id}`;
           const diameter = clampSvgLength(r * 2);
-          const isFocused = d === focus;
-          const isCurrent =
-            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          const showLabel =
-            showNodeLabels && r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS;
-          const labelFontSize = clampSvgLength(
-            Math.min(15, Math.max(10, r * 0.42)),
-          );
-          const labelY = r + Math.max(10, labelFontSize * 0.35);
           const selection = d3.select(this);
 
           selection
@@ -975,76 +1234,73 @@ export function SpaceVisualization({
             .attr('y', -r)
             .attr('width', diameter)
             .attr('height', diameter);
-
-          selection
-            .select('circle.logo-ring')
-            .attr('r', r)
-            .attr('stroke', getLogoRingColor())
-            .attr('stroke-width', isFocused ? 1.5 : 1.15);
-
-          selection
-            .select('circle.focus-ring')
-            .attr('r', clampSvgLength(r + Math.max(3.5, r * 0.12)))
-            .attr('stroke', resolvedRootAccent)
-            .attr('opacity', isFocused ? 0.9 : 0);
-
-          selection
-            .select('circle.current-ring')
-            .attr('r', clampSvgLength(r + Math.max(6, r * 0.18)))
-            .attr('stroke', resolvedRootAccent)
-            .attr('opacity', isCurrent && !isFocused ? 0.55 : 0);
-
-          if (showNodeLabels) {
-            selection
-              .select('text.node-label')
-              .attr('y', labelY)
-              .attr('font-size', `${labelFontSize}px`)
-              .attr('fill', getLabelFillColor())
-              .attr('stroke', getLabelStrokeColor())
-              .attr('opacity', showLabel && isVisible(d) ? 1 : 0)
-              .text(truncateLabel(d.data.name));
-          }
         });
+
+      if (showNodeLabels) {
+        labelText
+          .attr('transform', nodeTransform)
+          .attr('x', 0)
+          .attr('y', (d: SpaceHierarchyNode) => {
+            return nodeLabelTop(d, k);
+          })
+          .attr('font-size', `${VISUALIZATION_CONFIG.LABEL_FONT}px`)
+          .attr('fill', getLabelFillColor())
+          .attr('stroke', getLabelStrokeColor())
+          .style('display', (d: SpaceHierarchyNode) =>
+            isLabelShown(d) ? 'block' : 'none',
+          )
+          .style('opacity', (d: SpaceHierarchyNode) =>
+            isLabelShown(d) ? 1 : 0,
+          )
+          .text((d: SpaceHierarchyNode) => truncateLabel(d.data.name));
+      }
     }
-    let isCancelled = false;
-    root.each((node) => {
-      void (async () => {
-        const cacheKey = (node.data.logoUrl ?? '').trim();
-        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
-        if (!accentPromise) {
-          accentPromise = sampleAccentHex(node.data.logoUrl);
-          accentSampleCacheRef.current.set(cacheKey, accentPromise);
+
+    let fittedKey = initialSize ? stageSizeKey(initialSize) : '';
+    let fittedOnce = Boolean(initialSize);
+    let settleRaf = 0;
+    const stageObserver = new ResizeObserver(() => {
+      // The focus tween already reads the live stage each tick. A parallel
+      // viewBox write here is the extra jump in the middle of the zoom.
+      if (focusMotion) return;
+      if (settleRaf) cancelAnimationFrame(settleRaf);
+      settleRaf = requestAnimationFrame(() => {
+        settleRaf = 0;
+        if (focusMotion) return;
+        const size = readStageSize();
+        if (!size) return;
+        const key = stageSizeKey(size);
+        if (key === fittedKey) return;
+        fittedKey = key;
+        const next = solveClusterFrame(
+          focus,
+          size.width,
+          size.height,
+          showNodeLabels,
+        );
+        // First measurement paints in place. Later passes — banner, scroll
+        // hold, row height — share one glide to the latest box.
+        if (!fittedOnce || prefersReducedMotion()) {
+          fittedOnce = true;
+          commitFrame(next);
+          return;
         }
-        const sampledAccent = await accentPromise;
-        if (isCancelled) return;
-        const resolvedAccent = sampledAccent ?? accentFromSpaceId(node.data.id);
-        nodeAccents.set(node.data.id, resolvedAccent);
-        orbits
-          .filter((d) => d.data.id === node.data.id)
-          .style('fill', 'none')
-          .attr('stroke', (d: SpaceHierarchyNode) => {
-            const accent = d.depth === 0 ? resolvedRootAccent : resolvedAccent;
-            return getOrbitStrokeStyle(accent).color;
-          })
-          .attr('stroke-width', (d: SpaceHierarchyNode) => {
-            if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-            return getOrbitStrokeStyle(resolvedAccent).width;
-          })
-          .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
-      })();
+        fittedOnce = true;
+        glideFrame(next);
+      });
     });
+    if (containerRef.current) stageObserver.observe(containerRef.current);
+
     return () => {
-      isCancelled = true;
+      if (settleRaf) cancelAnimationFrame(settleRaf);
+      stageObserver.disconnect();
+      svg.interrupt(DIAGRAM_MOTION);
       svg.interrupt();
+      if (zoomApiRef) {
+        zoomApiRef.current = { zoomIn: () => {}, zoomOut: () => {} };
+      }
     };
-  }, [
-    data,
-    currentSpaceId,
-    resolvedTheme,
-    enableHoverActions,
-    rootAccentHex,
-    showNodeLabels,
-  ]);
+  }, [data, currentSpaceId, resolvedTheme, enableHoverActions, showNodeLabels]);
 
   useEffect(() => {
     return () => {
@@ -1053,10 +1309,21 @@ export function SpaceVisualization({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className={cn(
+        layout === 'fill'
+          ? 'absolute inset-0 h-full w-full overflow-hidden'
+          : 'relative aspect-square w-full overflow-hidden',
+        className,
+      )}
+    >
       <svg
         ref={svgRef}
-        className="h-auto w-full"
+        className="absolute inset-0 block h-full w-full"
+        width="100%"
+        height="100%"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={ariaLabel}
       />
@@ -1065,7 +1332,7 @@ export function SpaceVisualization({
           ref={tooltipRef}
           onMouseEnter={clearTooltipHideTimeout}
           onMouseLeave={scheduleTooltipHide}
-          className="absolute z-50 rounded-xl border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
+          className="absolute z-50 rounded-none border border-border/70 bg-background px-2.5 py-1.5 shadow-none"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,

@@ -44,8 +44,8 @@ export function DealCard({
       }}
       onClick={() => onClick?.(deal)}
       className={cn(
-        'w-full rounded-lg border border-neutral-6 bg-neutral-1 p-3 text-left shadow-sm transition hover:border-accent-8',
-        active && 'border-accent-9 ring-1 ring-accent-8',
+        'craft-card-interactive w-full p-3 text-left',
+        active && 'border-foreground/35 shadow-none',
         deal.blocked && 'opacity-80',
       )}
     >
@@ -55,7 +55,7 @@ export function DealCard({
         </span>
         <span
           className={cn(
-            'shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase',
+            'shrink-0 rounded-none border px-1.5 py-0.5 text-[10px] uppercase shadow-none',
             priorityClass[deal.priority] ?? priorityClass.medium,
           )}
         >

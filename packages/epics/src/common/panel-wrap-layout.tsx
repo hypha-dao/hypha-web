@@ -47,43 +47,30 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [leftOverlayVisible, setLeftOverlayVisible] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
-  const leftOverlayHideTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
 
   const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
   const openLeft = useCallback(() => {
+    // Conversation open is not the nav menu. Leaving the menu flag true
+    // made the collapsed icon rail look "open" after this panel closed.
     setLeftOpen(true);
-    setLeftOverlayVisible(true);
+    setLeftOverlayVisible(false);
   }, []);
   const closeLeft = useCallback(() => {
     setLeftOpen(false);
     setLeftOverlayVisible(false);
   }, []);
   const showLeftOverlay = useCallback(() => {
-    if (leftOverlayHideTimeoutRef.current) {
-      clearTimeout(leftOverlayHideTimeoutRef.current);
-      leftOverlayHideTimeoutRef.current = null;
-    }
     // Ensure the compact overlay menu can open immediately from an expanded state.
     setLeftOpen(false);
     setLeftOverlayVisible(true);
   }, []);
   const setLeftOverlayVisibleImmediate = useCallback((visible: boolean) => {
-    if (leftOverlayHideTimeoutRef.current) {
-      clearTimeout(leftOverlayHideTimeoutRef.current);
-      leftOverlayHideTimeoutRef.current = null;
-    }
     setLeftOverlayVisible(visible);
   }, []);
   const hideLeftOverlay = useCallback(() => {
-    if (leftOverlayHideTimeoutRef.current) {
-      clearTimeout(leftOverlayHideTimeoutRef.current);
-    }
-    leftOverlayHideTimeoutRef.current = setTimeout(() => {
-      setLeftOverlayVisible(false);
-      leftOverlayHideTimeoutRef.current = null;
-    }, 220);
+    // Clear immediately. A delayed hide left the menu flag true after the
+    // conversation closed; the collapsed icon rail is not that menu.
+    setLeftOverlayVisible(false);
   }, []);
   const toggleLeftFromTrigger = useCallback(() => {
     setLeftOpen((prev) => {
@@ -92,14 +79,6 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
       setLeftOverlayVisible(false);
       return next;
     });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (leftOverlayHideTimeoutRef.current) {
-        clearTimeout(leftOverlayHideTimeoutRef.current);
-      }
-    };
   }, []);
 
   return (
@@ -228,14 +207,9 @@ export function HumanSidebarTrigger() {
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
-  // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  // Always shown otherwise, in or out of a space (#2470 D18) — outside a space it opens to the
-  // existing "not in a space" empty state (human-right-panel.tsx's `notInSpaceEmptyState`),
-  // which already renders independent of whether a call is active (gated purely on
-  // `!spaceSlug`) — the elsewhere-call case (#2424) was never actually coupled to that content,
-  // only to this trigger's visibility. Unread mentions only surface in-space: outside spaces the
-  // panel has no mentions destination.
-  if (open) return null;
+  // Chat is space-only. Hide the header trigger outside a space, and while the
+  // panel is open (the panel has its own chrome). Unread mentions only exist in-space.
+  if (!isSpace || open) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
@@ -308,6 +282,8 @@ const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const PANEL_OPEN_ATTR = 'data-side-panels-open';
 const LEFT_PANEL_EXPANDED_ATTR = 'data-left-panel-expanded';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
+const LEFT_AI_PANEL_WIDTH_PX = 320;
+const LEFT_SIDEBAR_ICON_WIDTH_PX = 72;
 const RIGHT_SIDEBAR_WIDTH = '320px';
 // Mobile: keep only a slim gutter so chat/menu content uses almost full width.
 const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
@@ -376,10 +352,19 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isOnboarding = pathname.includes('/onboarding');
   const effectiveLeft = isSpace ? left : undefined;
-  // Right human panel is openable outside a space too (#2424) — the trigger only
-  // surfaces there when there's a call elsewhere to jump to, and `HumanRightPanel`
-  // itself renders a dedicated "not in a space" state instead of its space-only UI.
-  const effectiveRight = right;
+  // Human chat is space-only (`/[lang]/dho/[id]/…`). Outside a space the panel
+  // is not mounted, so it cannot stay open on network, my spaces, or wallet.
+  const effectiveRight = isSpace ? right : undefined;
+
+  // Close when the route leaves a space. Does not run again if something opens
+  // the panel while already outside a space and then navigates into one (the
+  // call dock opens chat and pushes the space route together).
+  useEffect(() => {
+    if (!isSpace) {
+      closeHumanChatPanel();
+    }
+  }, [isSpace, closeHumanChatPanel]);
+
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return MOBILE_PANEL_BREAKPOINT_PX;
@@ -389,12 +374,20 @@ export function PanelWrapLayout({
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
+  const isMobileViewport = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
+  // Desktop conversation sits beside the icon rail, so the left track is
+  // rail + panel. The hamburger menu still replaces the rail and stays 320px.
+  // Below md the sheet stays full width and does not reserve a rail column.
+  const dockIconRailBesideAi =
+    !isOnboarding && !isMobileViewport && leftOpen && !leftOverlayVisible;
+  const leftIconRailPx = dockIconRailBesideAi ? LEFT_SIDEBAR_ICON_WIDTH_PX : 0;
+  const leftExpandedWidthPx = LEFT_AI_PANEL_WIDTH_PX + leftIconRailPx;
   const leftFootprintPx = isOnboarding
     ? 0
     : leftExpanded
-    ? 320
+    ? leftExpandedWidthPx
     : isSpace
-    ? 72
+    ? LEFT_SIDEBAR_ICON_WIDTH_PX
     : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
   const forceCompactPanels =
@@ -402,7 +395,6 @@ export function PanelWrapLayout({
     (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
       viewportWidth - leftFootprintPx - rightFootprintPx <
         MIN_MAIN_COLUMN_WIDTH_PX);
-  const isMobileViewport = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
   const isMutuallyExclusivePanels =
     Boolean(effectiveLeft && effectiveRight) &&
     (forceCompactPanels || isMobileViewport);
@@ -417,6 +409,8 @@ export function PanelWrapLayout({
     : RIGHT_SIDEBAR_WIDTH;
   const leftExpandedSidebarWidth = isOnboarding
     ? '100vw'
+    : dockIconRailBesideAi
+    ? `${leftExpandedWidthPx}px`
     : LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft
     ? isOnboarding
@@ -563,6 +557,7 @@ export function PanelWrapLayout({
         leftOpen={leftExpanded}
         leftPanelOpen={leftOpen}
         leftSidebarWidth={leftExpandedSidebarWidth}
+        leftIconRailPx={leftIconRailPx}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
@@ -653,7 +648,13 @@ export function PanelWrapLayout({
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}
-          {!isOnboarding ? <SidebarResizeHandle /> : null}
+          {!isOnboarding ? (
+            <SidebarResizeHandle
+              minWidth={280 + leftIconRailPx}
+              maxWidth={600 + leftIconRailPx}
+              defaultWidth={320 + leftIconRailPx}
+            />
+          ) : null}
         </Sidebar>
         <PanelScrollInset className="overflow-y-auto">
           {content}

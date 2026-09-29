@@ -160,7 +160,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
               <div key={agent.id} className="craft-card p-4">
                 <div className="mb-3 flex items-start gap-3">
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${tagGroupAccentClass(
+                    className={`craft-icon-box flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
                       agent.tagGroup,
                     )}`}
                     aria-hidden="true"
@@ -168,10 +168,10 @@ export const MembersSection: FC<MemberSectionProps> = ({
                     {getAgentAvatarInitials(tCoherence(agent.role))}
                   </div>
                   <div className="min-w-0">
-                    <div className="mb-1 text-sm font-semibold text-foreground">
+                    <div className="mb-1 text-sm font-medium text-foreground">
                       {tCoherence(agent.role)}
                     </div>
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <div className="craft-meta">
                       {tCoherence(`tagGroup.${agent.tagGroup}`)}
                     </div>
                   </div>

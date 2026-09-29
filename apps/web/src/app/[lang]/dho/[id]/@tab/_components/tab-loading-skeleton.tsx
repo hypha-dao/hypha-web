@@ -16,7 +16,7 @@ export function TabLoadingSkeleton({
   showTitle = true,
 }: TabLoadingSkeletonProps) {
   return (
-    <div className="flex flex-col gap-4 py-4">
+    <div className="flex flex-col gap-4 py-4" data-tab-loading="">
       {showTitle ? (
         <div className="flex flex-col gap-3">
           <Skeleton loading width={180} height={28} className="rounded-md" />

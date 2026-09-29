@@ -27,6 +27,7 @@ import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import { cn } from '@hypha-platform/ui-utils';
 
 function getDisplayIcon(
   space: Space | undefined,
@@ -35,16 +36,32 @@ function getDisplayIcon(
   return resolveSpaceDisplayLogoUrl(space, preferredVariant);
 }
 
+/** Labeled identity control stays 40px inside the 70px bar. Icon chrome stays 36px. */
+const SPACE_SWITCHER_CLASS =
+  'inline-flex h-[40px] w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-lg font-medium leading-none tracking-tight text-foreground';
+/** 32px circle — larger than the previous 24px mark, still inside the 40px control. */
+const SPACE_SWITCHER_AVATAR_CLASS =
+  'h-6 w-6 shrink-0 overflow-hidden rounded-full';
+
 export function AiPanelHeader({
   showCloseButton = true,
   onCloseButtonClick,
   leftSlot,
   rightSlot,
+  className,
+  collapseLeftSlotAtMd = false,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
   rightSlot?: ReactNode;
+  className?: string;
+  /**
+   * Hide the leading slot from the `md` breakpoint up and drop its grid column.
+   * The desktop icon rail already owns the menu trigger; below `md` the rail
+   * is not shown, so the slot stays.
+   */
+  collapseLeftSlotAtMd?: boolean;
 }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
@@ -187,7 +204,7 @@ export function AiPanelHeader({
         }
         className="flex min-w-0 items-center gap-2"
       >
-        <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
+        <span className="h-5 w-5 overflow-hidden rounded-full">
           {getDisplayIcon(space, logoVariant) ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -198,7 +215,7 @@ export function AiPanelHeader({
               />
             </>
           ) : (
-            <span className="flex h-full w-full items-center justify-center bg-muted">
+            <span className="flex h-full w-full items-center justify-center">
               <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
             </span>
           )}
@@ -210,18 +227,35 @@ export function AiPanelHeader({
     </DropdownMenuItem>
   );
 
+  const showLeftSlot = Boolean(leftSlot);
+  const reserveDesktopLeftColumn = showLeftSlot && !collapseLeftSlotAtMd;
+
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3 border-b border-border bg-background-2 ps-4 pe-5 py-2">
-      {leftSlot ? (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+    <div
+      className={cn(
+        'grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center gap-3 border-b border-border/70 bg-page-background py-2 dark:bg-background-2',
+        reserveDesktopLeftColumn
+          ? 'grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] ps-4 pe-4'
+          : 'grid-cols-[minmax(0,1fr)_2.25rem] ps-4 pe-4',
+        showLeftSlot &&
+          collapseLeftSlotAtMd &&
+          'max-md:grid-cols-[2.25rem_minmax(0,1fr)_2.25rem]',
+        className,
+      )}
+    >
+      {showLeftSlot ? (
+        <div
+          className={cn(
+            'flex h-[36px] w-[36px] shrink-0 items-center justify-center',
+            collapseLeftSlotAtMd && 'md:hidden',
+          )}
+        >
           {leftSlot}
         </div>
-      ) : (
-        <div className="h-8 w-8 shrink-0" aria-hidden />
-      )}
+      ) : null}
 
-      <div className="min-w-0 px-3">
-        <div className="mx-auto flex w-full min-w-0 max-w-[22rem] justify-center transition-[max-width] duration-200 ease-out">
+      <div className="min-w-0">
+        <div className="mx-auto flex w-full min-w-0 justify-center">
           {canOpenSpaceMenu ? (
             <DropdownMenu
               modal={true}
@@ -231,10 +265,13 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="craft-chip craft-chip-interactive inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 px-2.5 text-sm tracking-tight"
+                  className={cn(
+                    SPACE_SWITCHER_CLASS,
+                    'shadow-none transition-colors hover:bg-foreground/5',
+                  )}
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md border border-border/50">
+                  <span className={SPACE_SWITCHER_AVATAR_CLASS}>
                     {currentIcon ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -245,15 +282,15 @@ export function AiPanelHeader({
                         />
                       </>
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center bg-muted/40">
-                        <Sparkles className="craft-icon-sm text-muted-foreground" />
+                      <span className="flex h-full w-full items-center justify-center">
+                        <Sparkles className="craft-icon text-muted-foreground" />
                       </span>
                     )}
                   </span>
-                  <span className="min-w-0 max-w-[14rem] truncate text-center font-medium">
+                  <span className="min-w-0 truncate text-center">
                     {currentTitle}
                   </span>
-                  <ChevronsUpDown className="craft-icon-sm shrink-0 text-muted-foreground" />
+                  <ChevronsUpDown className="craft-icon shrink-0 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -318,8 +355,8 @@ export function AiPanelHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="craft-chip inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 px-3 text-sm text-foreground/90">
-              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/50">
+            <div className={SPACE_SWITCHER_CLASS}>
+              <span className={SPACE_SWITCHER_AVATAR_CLASS}>
                 {currentIcon ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -330,12 +367,12 @@ export function AiPanelHeader({
                     />
                   </>
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-muted/40">
-                    <Sparkles className="craft-icon-sm text-muted-foreground" />
+                  <span className="flex h-full w-full items-center justify-center">
+                    <Sparkles className="craft-icon text-muted-foreground" />
                   </span>
                 )}
               </span>
-              <span className="min-w-0 max-w-[16rem] truncate text-center font-medium">
+              <span className="min-w-0 truncate text-center">
                 {fallbackTitle}
               </span>
             </div>
@@ -343,14 +380,14 @@ export function AiPanelHeader({
         </div>
       </div>
 
-      <div className="flex h-8 w-8 shrink-0 items-center justify-end">
+      <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-end">
         {rightSlot ? (
           rightSlot
         ) : showCloseButton ? (
           <button
             type="button"
             onClick={onCloseButtonClick ?? closeAiPanel}
-            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >

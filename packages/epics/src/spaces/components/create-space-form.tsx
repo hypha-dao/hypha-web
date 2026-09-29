@@ -585,7 +585,7 @@ export const SpaceForm = ({
                               rootClassName="h-auto min-h-10 w-full sm:min-h-11"
                               rightIcon={!field.value && <RequirementMark />}
                               placeholder={tSpaces('nameYourSpace')}
-                              className="h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:text-lg"
+                              className="h-auto min-h-10 w-full rounded-none border border-border bg-inherit py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 focus-visible:border-foreground sm:min-h-11 sm:text-xl sm:placeholder:text-lg"
                               disabled={isLoading}
                               {...field}
                               onChange={(
@@ -957,8 +957,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isSandbox,
-                  'hover:border-accent-5': !isSandbox,
+                  'border-primary': isSandbox,
+                  'hover:border-foreground/25': !isSandbox,
                 },
               )}
               onClick={toggleSandbox}
@@ -976,8 +976,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isDemo,
-                  'hover:border-accent-5': !isDemo,
+                  'border-primary': isDemo,
+                  'hover:border-foreground/25': !isDemo,
                 },
               )}
               onClick={toggleDemo}
@@ -995,8 +995,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isLive,
-                  'hover:border-accent-5': !isLive,
+                  'border-primary': isLive,
+                  'hover:border-foreground/25': !isLive,
                 },
               )}
               onClick={toggleLive}
@@ -1015,8 +1015,8 @@ export const SpaceForm = ({
                 className={clsx(
                   'flex p-6 cursor-pointer space-x-4 items-center border-2',
                   {
-                    'border-accent-9': isArchived,
-                    'hover:border-accent-5': !isArchived,
+                    'border-primary': isArchived,
+                    'hover:border-foreground/25': !isArchived,
                   },
                 )}
                 onClick={toggleArchived}
@@ -1066,6 +1066,12 @@ export const SpaceForm = ({
               <Button
                 type="submit"
                 variant={isSubmitting ? 'outline' : 'default'}
+                colorVariant={isSubmitting ? 'neutral' : 'accent'}
+                className={
+                  isSubmitting
+                    ? undefined
+                    : 'bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-foreground))]'
+                }
                 disabled={isSubmitting}
               >
                 {isSubmitting
@@ -1094,6 +1100,12 @@ export const SpaceForm = ({
                 type="submit"
                 form={spaceConfigurationFormId}
                 variant={isSubmitting ? 'outline' : 'default'}
+                colorVariant={isSubmitting ? 'neutral' : 'accent'}
+                className={
+                  isSubmitting
+                    ? undefined
+                    : 'bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-foreground))]'
+                }
                 disabled={isSubmitting}
               >
                 {isSubmitting

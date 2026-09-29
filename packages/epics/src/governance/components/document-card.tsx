@@ -161,7 +161,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
       className={cn('craft-card-interactive group flex h-full w-full flex-col')}
     >
       <CardHeader
-        className="flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0"
+        className="flex-shrink-0 overflow-hidden rounded-none p-0"
         style={{ height: LEAD_IMAGE_HEIGHT_PX }}
       >
         <Skeleton
@@ -171,7 +171,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           width="250px"
         >
           <Image
-            className="h-full w-full rounded-tl-lg rounded-tr-lg object-cover"
+            className="h-full w-full rounded-none object-cover"
             src={leadImage || '/placeholder/document-lead-image.webp'}
             alt={title || ''}
             width={250}

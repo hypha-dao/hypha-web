@@ -951,11 +951,11 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                           <Label htmlFor="payout-swift-iban-country">
                             {t('country')}
                           </Label>
-                          <div className="relative flex min-h-6 w-full items-center">
+                          <div className="relative flex min-h-10 w-full items-center">
                             <select
                               id="payout-swift-iban-country"
                               className={cn(
-                                'min-h-6 w-full appearance-none rounded border border-input bg-neutral-1 px-3 py-2 text-2 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                'h-10 min-h-10 w-full appearance-none rounded-none border border-border bg-neutral-1 px-3 py-2 text-2 transition-colors focus:outline-none focus-visible:border-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
                                 fieldErrors.swiftIbanCountry &&
                                   'border-destructive ring-2 ring-destructive',
                               )}
@@ -1335,11 +1335,11 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     <Label htmlFor="swift-category">
                       {t('swift.categoryLabel')}
                     </Label>
-                    <div className="relative flex min-h-6 w-full items-center">
+                    <div className="relative flex min-h-10 w-full items-center">
                       <select
                         id="swift-category"
                         className={cn(
-                          'min-h-6 w-full appearance-none rounded border border-input bg-neutral-1 px-3 py-2 text-2 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                          'h-10 min-h-10 w-full appearance-none rounded-none border border-border bg-neutral-1 px-3 py-2 text-2 transition-colors focus:outline-none focus-visible:border-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
                           fieldErrors.swiftCategory &&
                             'border-destructive ring-2 ring-destructive',
                         )}
