@@ -648,16 +648,10 @@ export function SpaceVisualization({
       return null;
     };
 
-    // Open on the space the user is viewing so membership modules (individuals /
-    // spaces / agents) match that space's Members tab. Drill-in focus is
-    // remembered across re-renders; zoom out still reaches the org root.
+    // The diagram opens on the whole ecosystem. A click zooms into one
+    // space; clicking that space again returns here. A zoom is remembered
+    // across re-renders until the space changes.
     let focus = root;
-    if (typeof currentSpaceId === 'number') {
-      const currentNode = findNodeById(root, currentSpaceId);
-      if (currentNode) {
-        focus = currentNode;
-      }
-    }
 
     if (savedFocusIdRef.current) {
       const savedNode = findNodeById(root, savedFocusIdRef.current);
@@ -695,11 +689,13 @@ export function SpaceVisualization({
       d: SpaceHierarchyNode,
     ) {
       event.stopPropagation();
-      if (focus === d) {
-        const parent = focus.parent as SpaceHierarchyNode | null;
-        if (parent) zoom(parent);
+      // Already zoomed into this space, or a click on the org while zoomed:
+      // return to the full ecosystem.
+      if (focus !== root && (d === focus || d === root)) {
+        zoom(root);
         return;
       }
+      if (d === focus) return;
       zoom(d);
     }
 
@@ -812,9 +808,7 @@ export function SpaceVisualization({
       .text((d) => truncateLabel(d.data.name));
 
     svg.on('click', () => {
-      if (focus.parent) {
-        zoom(focus.parent);
-      }
+      if (focus !== root) zoom(root);
     });
 
     let shown = {
@@ -1085,7 +1079,7 @@ export function SpaceVisualization({
       const current = focusRef.current as SpaceHierarchyNode | null;
       if (!current) return;
       if (direction < 0) {
-        if (current.parent) zoom(current.parent as SpaceHierarchyNode);
+        if (current !== root) zoom(root);
         return;
       }
       const children = (current.children ?? []) as SpaceHierarchyNode[];
