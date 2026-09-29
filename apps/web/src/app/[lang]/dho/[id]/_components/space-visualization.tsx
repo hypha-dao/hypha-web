@@ -224,10 +224,8 @@ function focusDiscRadius(d: SpaceHierarchyNode, scale: number): number {
 }
 
 /**
- * Size the filled disc to the cluster already on its rim. A previous pass's
- * radius is not a floor — that ratcheted the fill outward and left the logos
- * in the middle. Leaf names add a little air; an intermediate caption is
- * hidden, so it must not inflate the disc.
+ * Size the filled disc to the cluster on its rim, once. Measuring again
+ * after the fill grows treats the labels as larger and hollows out the disc.
  */
 function growRingAroundLabels(node: SpaceHierarchyNode, scale: number): void {
   const children = (node.children ?? []) as SpaceHierarchyNode[];
@@ -329,7 +327,55 @@ function clusterBounds(
     const radius = Math.max(finiteOr(focus.r, 1), 1);
     includeCircle(bounds, x, y, radius);
   }
+  includeZoomContext(bounds, focus, safeScale, showLabels);
   return bounds;
+}
+
+/** Parent mark and the two neighbouring spaces, so a zoom keeps them in frame. */
+function includeZoomContext(
+  bounds: LayoutBounds,
+  focus: SpaceHierarchyNode,
+  scale: number,
+  showLabels: boolean,
+): void {
+  const parent = focus.parent as SpaceHierarchyNode | null;
+  if (!parent) return;
+  const parentR = finiteOr(parent.r, 0);
+  includeCircle(
+    bounds,
+    finiteOr(parent.x, 0),
+    finiteOr(parent.y, 0),
+    Math.max(parentR * VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO, 1),
+  );
+  const siblings = (parent.children ?? []) as SpaceHierarchyNode[];
+  const index = siblings.indexOf(focus);
+  if (index < 0 || siblings.length < 2) return;
+  const neighbours = [
+    siblings[(index - 1 + siblings.length) % siblings.length],
+    siblings[(index + 1) % siblings.length],
+  ];
+  for (const sibling of neighbours) {
+    if (!sibling || sibling === focus) continue;
+    includeNodeExtent(bounds, sibling, scale, showLabels);
+  }
+}
+
+function includeNodeExtent(
+  bounds: LayoutBounds,
+  node: SpaceHierarchyNode,
+  scale: number,
+  showLabels: boolean,
+): void {
+  const x = finiteOr(node.x, 0);
+  const y = finiteOr(node.y, 0);
+  includeCircle(bounds, x, y, finiteOr(node.r, 0));
+  if (!showLabels) return;
+  const top = nodeLabelTop(node, scale);
+  const { labelFontSize } = labelMetrics(nodeShapeRadius(node, scale));
+  const half = estimateLabelHalfWidth(node.data.name, labelFontSize) / scale;
+  const bottom = y + (top + labelFontSize * 1.35) / scale;
+  includePoint(bounds, x - half, y);
+  includePoint(bounds, x + half, bottom);
 }
 
 function frameFromBounds(bounds: LayoutBounds): ClusterFrame {
@@ -820,9 +866,10 @@ export function SpaceVisualization({
     ): boolean {
       if (d === focusNode) return true;
       if (isDescendantOfOrSelf(d, focusNode)) return true;
-      // The parent stays in frame, so a zoom still shows a piece of the
-      // neighbouring mark at the edge.
-      return isAncestorOf(d, focusNode);
+      if (isAncestorOf(d, focusNode)) return true;
+      // The spaces beside the one you opened stay in the picture.
+      const parent = focusNode.parent;
+      return Boolean(parent && d.parent === parent);
     }
 
     function isVisible(d: SpaceHierarchyNode): boolean {
@@ -907,19 +954,12 @@ export function SpaceVisualization({
 
     if (showNodeLabels) {
       const stage = readStageSize();
+      // One measurement against the placed cluster. Repeating this with the
+      // grown disc shrinks the scale, inflates the fill, and leaves the
+      // logos in the middle.
       const span = Math.max(finiteOr(root.r, 1) * 2, 1);
-      let scale = stage ? Math.min(stage.width, stage.height) / span : 1;
-      for (let pass = 0; pass < 3; pass += 1) {
-        growRingAroundLabels(root, scale);
-        if (!stage) break;
-        const next = solveClusterFrame(
-          root,
-          stage.width,
-          stage.height,
-          showNodeLabels,
-        );
-        scale = fitScale(next, stage.width, stage.height);
-      }
+      const scale = stage ? Math.min(stage.width, stage.height) / span : 1;
+      growRingAroundLabels(root, scale);
     }
 
     const initialSize = readStageSize();
