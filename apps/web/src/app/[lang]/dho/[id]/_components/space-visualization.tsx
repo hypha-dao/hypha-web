@@ -49,7 +49,6 @@ const VISUALIZATION_CONFIG = {
   ENCLOSURE_LOGO_RATIO: 0.22,
   /** Leaf mark inside its own ring: narrow gap inside the stroke, ring stays visible. */
   LEAF_LOGO_RATIO: 0.84,
-  ZOOM_DURATION: 720,
   /**
    * One caption size. Scaling with the logo pushed the center name down
    * into the child ring, where it no longer read as centered under the mark.
@@ -269,106 +268,71 @@ function drawnRadius(d: SpaceHierarchyNode): number {
   return d.children && d.children.length > 0 ? ring * logoRatio(d) : ring;
 }
 
-/**
- * Nodes on the ring around the opened space: its children, or its siblings
- * when it is a leaf.
- */
-function ringMates(focus: SpaceHierarchyNode): SpaceHierarchyNode[] {
-  const children = (focus.children ?? []) as SpaceHierarchyNode[];
-  if (children.length > 0) return children;
-  const parent = focus.parent as SpaceHierarchyNode | null;
-  return ((parent?.children ?? []) as SpaceHierarchyNode[]).filter(
-    (node) => node !== focus,
-  );
+/** The filled disc behind the opened space. The root cluster is its own disc. */
+function discNode(focus: SpaceHierarchyNode): SpaceHierarchyNode {
+  if (focus.children && focus.children.length > 0) return focus;
+  return (focus.parent as SpaceHierarchyNode | null) ?? focus;
 }
 
 /**
- * How far the name under the opened space extends, in layout units.
- * Label size is in screen pixels, so this depends on the scale used to draw it.
- */
-function focusLabelReach(focus: SpaceHierarchyNode, scale: number): number {
-  const safeScale = Math.max(scale, 0.0001);
-  const top = nodeLabelTop(focus, safeScale);
-  const { labelFontSize } = labelMetrics(nodeShapeRadius(focus, safeScale));
-  const half =
-    estimateLabelHalfWidth(focus.data.name, labelFontSize) / safeScale;
-  const bottom = (top + labelFontSize * 1.35) / safeScale;
-  return Math.max(half, bottom, 1);
-}
-
-/**
- * A frame centred on the opened space. A cluster zooms out far enough to
- * show the spaces inside it. A leaf stays close, with only a slice of each
- * neighbour.
+ * A frame centred on the opened space, grown until the whole disc sits inside
+ * it. A tighter frame slices the rim off the top and bottom of the stage.
  */
 function frameForFocus(
   focus: SpaceHierarchyNode,
-  scale: number,
-  showLabels: boolean,
+  _scale: number,
+  _showLabels: boolean,
   viewWidth: number,
   viewHeight: number,
 ): ClusterFrame {
   const fx = finiteOr(focus.x, 0);
   const fy = finiteOr(focus.y, 0);
-  const mark = Math.max(drawnRadius(focus), 1);
-  const children = (focus.children ?? []) as SpaceHierarchyNode[];
-  let reach = mark;
-  if (children.length > 0) {
-    for (const child of children) {
-      const dist = Math.hypot(
-        finiteOr(child.x, 0) - fx,
-        finiteOr(child.y, 0) - fy,
-      );
-      reach = Math.max(reach, dist + finiteOr(child.r, 0) * 0.9);
-    }
-    if (showLabels) reach = Math.max(reach, focusLabelReach(focus, scale));
-  } else {
-    const labelReach = showLabels ? focusLabelReach(focus, scale) : mark;
-    reach = Math.max(mark * 1.35, labelReach);
-    const maxReach = Math.max(mark / 0.62, labelReach);
-    for (const node of ringMates(focus)) {
-      const dist = Math.hypot(
-        finiteOr(node.x, 0) - fx,
-        finiteOr(node.y, 0) - fy,
-      );
-      const rad = finiteOr(node.r, 0);
-      const slice = dist - rad + rad * 0.22;
-      if (slice > 0) reach = Math.max(reach, Math.min(slice, maxReach));
-    }
-  }
-  reach = Math.max(reach, 1);
-  let width = reach * 2;
-  let height = reach * 2;
+  const disc = discNode(focus);
+  const ex = finiteOr(disc.x, 0);
+  const ey = finiteOr(disc.y, 0);
+  const er = Math.max(finiteOr(disc.r, 0), 1);
+  const margin = 1.06;
+  const halfW = Math.abs(fx - ex) + er * margin;
+  const halfH = Math.abs(fy - ey) + er * margin;
+  let width = Math.max(halfW * 2, 1);
+  let height = Math.max(halfH * 2, 1);
   const aspect = Math.max(viewWidth, 1) / Math.max(viewHeight, 1);
   if (width / height < aspect) width = height * aspect;
   else height = width / aspect;
   return { cx: fx, cy: fy, width, height };
 }
 
+type CameraFlight = {
+  at: (t: number) => ClusterFrame;
+  /** Milliseconds for a steady zoom. The curve already eases itself. */
+  duration: number;
+};
+
 /**
  * Camera flight that pulls back while it recentres. A straight blend of the
  * two centres slides every mark sideways at one zoom.
  */
-function flyFrame(
-  start: ClusterFrame,
-  end: ClusterFrame,
-): (t: number) => ClusterFrame {
+function flyFrame(start: ClusterFrame, end: ClusterFrame): CameraFlight {
   const flight = d3.interpolateZoom(
     [start.cx, start.cy, Math.max(start.width, 1)],
     [end.cx, end.cy, Math.max(end.width, 1)],
   );
   const startRatio = start.height / Math.max(start.width, 1);
   const endRatio = end.height / Math.max(end.width, 1);
-  return (t: number) => {
-    const next = flight(t);
-    const width = Math.max(next[2], 1);
-    const ratio = startRatio + (endRatio - startRatio) * t;
-    return {
-      cx: next[0],
-      cy: next[1],
-      width,
-      height: Math.max(width * ratio, 1),
-    };
+  const natural = Number.isFinite(flight.duration) ? flight.duration : 1000;
+  return {
+    duration: Math.round(Math.min(1400, Math.max(780, natural))),
+    at: (t: number) => {
+      const next = flight(t);
+      const width = Math.max(next[2], 1);
+      const ratio = startRatio + (endRatio - startRatio) * t;
+      return {
+        cx: next[0],
+        cy: next[1],
+        width,
+        height: Math.max(width * ratio, 1),
+      };
+    },
   };
 }
 
@@ -956,6 +920,7 @@ export function SpaceVisualization({
     // instead of snapping a new viewBox over it.
     const DIAGRAM_MOTION = 'diagram';
     let focusMotion = false;
+    let zoomSerial = 0;
 
     function framesMatch(a: ClusterFrame, b: ClusterFrame): boolean {
       return (
@@ -973,30 +938,31 @@ export function SpaceVisualization({
 
     /** Glide the cluster to `next`. Reduced motion jumps. */
     function glideFrame(next: ClusterFrame) {
-      const duration = prefersReducedMotion()
-        ? 0
-        : VISUALIZATION_CONFIG.ZOOM_DURATION;
+      const generation = zoomSerial;
+      const flight = flyFrame(frame, next);
+      const duration = prefersReducedMotion() ? 0 : flight.duration;
       if (duration === 0 || framesMatch(frame, next)) {
         svg.interrupt(DIAGRAM_MOTION);
         commitFrame(next);
+        if (generation === zoomSerial) focusMotion = false;
         return;
       }
-      const startFrame = {
-        cx: frame.cx,
-        cy: frame.cy,
-        width: frame.width,
-        height: frame.height,
-      };
-      const flight = flyFrame(startFrame, next);
       svg.interrupt(DIAGRAM_MOTION);
-      svg
+      focusMotion = true;
+      const transition = svg
         .transition(DIAGRAM_MOTION)
         .duration(duration)
-        .ease(d3.easeCubicInOut)
+        .ease(d3.easeLinear)
         .tween('frame', () => (t: number) => {
-          frame = flight(t);
+          frame = flight.at(t);
           applyFrame(frame);
         });
+      transition.on('interrupt', () => {
+        if (generation === zoomSerial) focusMotion = false;
+      });
+      transition.on('end', () => {
+        if (generation === zoomSerial) focusMotion = false;
+      });
     }
 
     function zoom(
@@ -1005,38 +971,47 @@ export function SpaceVisualization({
         onEnd?: () => void;
       },
     ) {
-      const size = readStageSize();
-      if (!size) return;
-      const sizeKeyAtStart = stageSizeKey(size);
-      // Membership row height changes with the focused space and resizes the
-      // stage. Reading that live size inside the tween jumps the viewBox.
-      const lockedSize = { width: size.width, height: size.height };
-
+      const generation = ++zoomSerial;
+      // Drop the previous flight before the new one owns the motion flag.
+      svg.interrupt(DIAGRAM_MOTION);
       focus = target;
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
 
+      const size = readStageSize();
+      if (!size) {
+        focusMotion = false;
+        return;
+      }
+      const sizeKeyAtStart = stageSizeKey(size);
+      // The membership row resizes the stage when the opened space changes.
+      // Reading that live size inside the tween jumps the viewBox, so the
+      // flight keeps the box it started with.
+      const lockedSize = { width: size.width, height: size.height };
       const nextFrame = solveClusterFrame(
         focus,
         size.width,
         size.height,
         showNodeLabels,
       );
+      const flight = flyFrame(frame, nextFrame);
+      const duration = prefersReducedMotion() ? 0 : flight.duration;
+      if (duration === 0 || framesMatch(frame, nextFrame)) {
+        focusMotion = false;
+        commitFrame(nextFrame);
+        notifyVisibleSpaces(focus);
+        options?.onEnd?.();
+        return;
+      }
 
-      const startFrame = frame;
-      const duration = prefersReducedMotion()
-        ? 0
-        : VISUALIZATION_CONFIG.ZOOM_DURATION;
-      const flight = flyFrame(startFrame, nextFrame);
-      focusMotion = duration > 0;
-
+      focusMotion = true;
       const transition = svg
         .transition(DIAGRAM_MOTION)
         .duration(duration)
-        .ease(d3.easeCubicInOut)
+        .ease(d3.easeLinear)
         .tween('zoom', () => {
-          return (t) => {
-            frame = flight(t);
+          return (t: number) => {
+            frame = flight.at(t);
             applyFrame(frame, undefined, lockedSize);
           };
         });
@@ -1051,27 +1026,34 @@ export function SpaceVisualization({
       });
 
       transition.on('interrupt', () => {
-        focusMotion = false;
+        if (generation === zoomSerial) focusMotion = false;
       });
 
       transition.on('end', () => {
-        focusMotion = false;
-        const latest = readStageSize();
-        const latestKey = latest ? stageSizeKey(latest) : '';
-        // A stage resize during the zoom continues as one settle after the
-        // focus motion, instead of a second snap on top of it.
-        if (latest && latestKey !== sizeKeyAtStart) {
-          fittedKey = latestKey;
-          const next = solveClusterFrame(
-            focus,
-            latest.width,
-            latest.height,
-            showNodeLabels,
-          );
-          requestAnimationFrame(() => glideFrame(next));
-        }
+        if (generation !== zoomSerial) return;
         notifyVisibleSpaces(focus);
-        options?.onEnd?.();
+        // Let the row finish its layout, then one settle if the stage moved.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (generation !== zoomSerial) return;
+            const latest = readStageSize();
+            const latestKey = latest ? stageSizeKey(latest) : '';
+            if (latest && latestKey !== sizeKeyAtStart) {
+              fittedKey = latestKey;
+              glideFrame(
+                solveClusterFrame(
+                  focus,
+                  latest.width,
+                  latest.height,
+                  showNodeLabels,
+                ),
+              );
+            } else {
+              focusMotion = false;
+            }
+            options?.onEnd?.();
+          });
+        });
       });
     }
 
