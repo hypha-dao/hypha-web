@@ -209,9 +209,10 @@ function nodeLabelTop(d: SpaceHierarchyNode, k: number): number {
 }
 
 /**
- * The child rings sit on the parent stroke, so the names under them cross it.
- * Grow the parent ring until every name is inside, with air between the
- * type and the stroke. Children stay where they are.
+ * Size the filled disc to the cluster already on its rim. A previous pass's
+ * radius is not a floor — that ratcheted the fill outward and left the logos
+ * in the middle. Leaf names add a little air; an intermediate caption is
+ * hidden, so it must not inflate the disc.
  */
 function growRingAroundLabels(node: SpaceHierarchyNode, scale: number): void {
   const children = (node.children ?? []) as SpaceHierarchyNode[];
@@ -221,18 +222,21 @@ function growRingAroundLabels(node: SpaceHierarchyNode, scale: number): void {
   if (children.length === 0) return;
 
   const safeScale = Math.max(scale, 0.0001);
-  const pad = 18 / safeScale;
+  const pad = 8 / safeScale;
   const parentX = finiteOr(node.x, 0);
   const parentY = finiteOr(node.y, 0);
-  let needed = finiteOr(node.r, 1);
+  let needed = 1;
   for (const child of children) {
+    const dx = finiteOr(child.x, 0) - parentX;
+    const dy = finiteOr(child.y, 0) - parentY;
+    const childEdge = Math.hypot(dx, dy) + finiteOr(child.r, 0);
+    needed = Math.max(needed, childEdge + pad);
+    if (child.children && child.children.length > 0) continue;
     const top = nodeLabelTop(child, safeScale);
     const { labelFontSize } = labelMetrics(nodeShapeRadius(child, safeScale));
     const bottom = (top + labelFontSize * 1.35) / safeScale;
     const half =
       estimateLabelHalfWidth(child.data.name, labelFontSize) / safeScale;
-    const dx = finiteOr(child.x, 0) - parentX;
-    const dy = finiteOr(child.y, 0) - parentY;
     needed = Math.max(
       needed,
       Math.hypot(dx - half, dy + bottom) + pad,
