@@ -297,9 +297,9 @@ function focusLabelReach(focus: SpaceHierarchyNode, scale: number): number {
 }
 
 /**
- * A frame centred on the opened space. The mark fills the stage. The disc
- * rim is ground, so the frame does not open out to it — that lands the view
- * on empty fill with the space clipped at the edge.
+ * A frame centred on the opened space. A cluster zooms out far enough to
+ * show the spaces inside it. A leaf stays close, with only a slice of each
+ * neighbour.
  */
 function frameForFocus(
   focus: SpaceHierarchyNode,
@@ -311,15 +311,30 @@ function frameForFocus(
   const fx = finiteOr(focus.x, 0);
   const fy = finiteOr(focus.y, 0);
   const mark = Math.max(drawnRadius(focus), 1);
-  const labelReach = showLabels ? focusLabelReach(focus, scale) : mark;
-  // The opened mark stays fully on screen and clearly the subject.
-  let reach = Math.max(mark * 1.35, labelReach);
-  const maxReach = Math.max(mark / 0.58, labelReach);
-  for (const node of ringMates(focus)) {
-    const dist = Math.hypot(finiteOr(node.x, 0) - fx, finiteOr(node.y, 0) - fy);
-    const rad = finiteOr(node.r, 0);
-    const slice = dist - rad + rad * 0.28;
-    if (slice > 0) reach = Math.max(reach, Math.min(slice, maxReach));
+  const children = (focus.children ?? []) as SpaceHierarchyNode[];
+  let reach = mark;
+  if (children.length > 0) {
+    for (const child of children) {
+      const dist = Math.hypot(
+        finiteOr(child.x, 0) - fx,
+        finiteOr(child.y, 0) - fy,
+      );
+      reach = Math.max(reach, dist + finiteOr(child.r, 0) * 0.9);
+    }
+    if (showLabels) reach = Math.max(reach, focusLabelReach(focus, scale));
+  } else {
+    const labelReach = showLabels ? focusLabelReach(focus, scale) : mark;
+    reach = Math.max(mark * 1.35, labelReach);
+    const maxReach = Math.max(mark / 0.62, labelReach);
+    for (const node of ringMates(focus)) {
+      const dist = Math.hypot(
+        finiteOr(node.x, 0) - fx,
+        finiteOr(node.y, 0) - fy,
+      );
+      const rad = finiteOr(node.r, 0);
+      const slice = dist - rad + rad * 0.22;
+      if (slice > 0) reach = Math.max(reach, Math.min(slice, maxReach));
+    }
   }
   reach = Math.max(reach, 1);
   let width = reach * 2;
@@ -328,6 +343,33 @@ function frameForFocus(
   if (width / height < aspect) width = height * aspect;
   else height = width / aspect;
   return { cx: fx, cy: fy, width, height };
+}
+
+/**
+ * Camera flight that pulls back while it recentres. A straight blend of the
+ * two centres slides every mark sideways at one zoom.
+ */
+function flyFrame(
+  start: ClusterFrame,
+  end: ClusterFrame,
+): (t: number) => ClusterFrame {
+  const flight = d3.interpolateZoom(
+    [start.cx, start.cy, Math.max(start.width, 1)],
+    [end.cx, end.cy, Math.max(end.width, 1)],
+  );
+  const startRatio = start.height / Math.max(start.width, 1);
+  const endRatio = end.height / Math.max(end.width, 1);
+  return (t: number) => {
+    const next = flight(t);
+    const width = Math.max(next[2], 1);
+    const ratio = startRatio + (endRatio - startRatio) * t;
+    return {
+      cx: next[0],
+      cy: next[1],
+      width,
+      height: Math.max(width * ratio, 1),
+    };
+  };
 }
 
 /** Phones keep a tight inset so the disc fills the column. */
@@ -781,7 +823,6 @@ export function SpaceVisualization({
       k: 1,
       width: 1,
       height: 1,
-      lift: 0,
       ready: false,
     };
 
@@ -794,7 +835,7 @@ export function SpaceVisualization({
     function markInView(d: SpaceHierarchyNode): boolean {
       if (!shown.ready) return true;
       const x = (finiteOr(d.x, 0) - shown.cx) * shown.k;
-      const y = (finiteOr(d.y, 0) - shown.cy) * shown.k - shown.lift;
+      const y = (finiteOr(d.y, 0) - shown.cy) * shown.k;
       const rad = Math.max(drawnRadius(d) * shown.k, 1);
       const hx = shown.width / 2;
       const hy = shown.height / 2;
@@ -946,58 +987,21 @@ export function SpaceVisualization({
         commitFrame(next);
         return;
       }
-      const size = readStageSize();
-      const startScale = size
-        ? containScale(
-            [focus],
-            frame.cx,
-            frame.cy,
-            size.width,
-            size.height,
-            fitScale(frame, size.width, size.height),
-            showNodeLabels,
-          )
-        : null;
-      const targetScale = size
-        ? containScale(
-            [focus],
-            next.cx,
-            next.cy,
-            size.width,
-            size.height,
-            fitScale(next, size.width, size.height),
-            showNodeLabels,
-          )
-        : null;
       const startFrame = {
         cx: frame.cx,
         cy: frame.cy,
         width: frame.width,
         height: frame.height,
       };
+      const flight = flyFrame(startFrame, next);
       svg.interrupt(DIAGRAM_MOTION);
       svg
         .transition(DIAGRAM_MOTION)
         .duration(duration)
         .ease(d3.easeCubicInOut)
         .tween('frame', () => (t: number) => {
-          frame = {
-            cx: startFrame.cx + (next.cx - startFrame.cx) * t,
-            cy: startFrame.cy + (next.cy - startFrame.cy) * t,
-            width: Math.max(
-              startFrame.width + (next.width - startFrame.width) * t,
-              1,
-            ),
-            height: Math.max(
-              startFrame.height + (next.height - startFrame.height) * t,
-              1,
-            ),
-          };
-          const currentScale =
-            startScale != null && targetScale != null
-              ? startScale + (targetScale - startScale) * t
-              : undefined;
-          applyFrame(frame, currentScale);
+          frame = flight(t);
+          applyFrame(frame);
         });
     }
 
@@ -1013,16 +1017,6 @@ export function SpaceVisualization({
       // Membership row height changes with the focused space and resizes the
       // stage. Reading that live size inside the tween jumps the viewBox.
       const lockedSize = { width: size.width, height: size.height };
-      const startFocus = focus;
-      const startScale = containScale(
-        [startFocus],
-        frame.cx,
-        frame.cy,
-        size.width,
-        size.height,
-        fitScale(frame, size.width, size.height),
-        showNodeLabels,
-      );
 
       focus = target;
       focusRef.current = focus;
@@ -1034,20 +1028,12 @@ export function SpaceVisualization({
         size.height,
         showNodeLabels,
       );
-      const targetScale = containScale(
-        [focus],
-        nextFrame.cx,
-        nextFrame.cy,
-        size.width,
-        size.height,
-        fitScale(nextFrame, size.width, size.height),
-        showNodeLabels,
-      );
 
       const startFrame = frame;
       const duration = prefersReducedMotion()
         ? 0
         : VISUALIZATION_CONFIG.ZOOM_DURATION;
+      const flight = flyFrame(startFrame, nextFrame);
       focusMotion = duration > 0;
 
       const transition = svg
@@ -1056,20 +1042,8 @@ export function SpaceVisualization({
         .ease(d3.easeCubicInOut)
         .tween('zoom', () => {
           return (t) => {
-            frame = {
-              cx: startFrame.cx + (nextFrame.cx - startFrame.cx) * t,
-              cy: startFrame.cy + (nextFrame.cy - startFrame.cy) * t,
-              width: Math.max(
-                startFrame.width + (nextFrame.width - startFrame.width) * t,
-                1,
-              ),
-              height: Math.max(
-                startFrame.height + (nextFrame.height - startFrame.height) * t,
-                1,
-              ),
-            };
-            const currentScale = startScale + (targetScale - startScale) * t;
-            applyFrame(frame, currentScale, lockedSize);
+            frame = flight(t);
+            applyFrame(frame, undefined, lockedSize);
           };
         });
 
@@ -1157,24 +1131,18 @@ export function SpaceVisualization({
               showNodeLabels,
             );
 
-      const lift =
-        typeof window !== 'undefined' && viewHeight > window.innerHeight * 0.85
-          ? Math.min((viewHeight - window.innerHeight) / 2, viewHeight * 0.28)
-          : 0;
-
       shown = {
         cx: next.cx,
         cy: next.cy,
         k,
         width: viewWidth,
         height: viewHeight,
-        lift,
         ready: true,
       };
 
       const nodeTransform = (d: SpaceHierarchyNode) => {
         const tx = (finiteOr(d.x, 0) - next.cx) * k;
-        const ty = (finiteOr(d.y, 0) - next.cy) * k - lift;
+        const ty = (finiteOr(d.y, 0) - next.cy) * k;
         return `translate(${tx}, ${ty})`;
       };
 
