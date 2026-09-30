@@ -36,23 +36,28 @@ function invalidInput(message: string): ToolResult {
 async function loadMemberIntelligence(
   limit: number,
 ): Promise<{ intelligence: MemberIntelligence } | { error: string }> {
-  const person = await resolvePersonFromAuthToken(
-    process.env.HYPHA_MCP_AUTH_TOKEN,
-  );
-  if (!person) {
-    return {
-      error:
-        'No member for HYPHA_MCP_AUTH_TOKEN. Set a Privy JWT for the signed-in person.',
-    };
-  }
-  const intelligence = await getMemberIntelligence(
-    { personId: person.id, limit },
-    { db },
-  );
-  if (!intelligence) {
+  try {
+    const person = await resolvePersonFromAuthToken(
+      process.env.HYPHA_MCP_AUTH_TOKEN,
+    );
+    if (!person) {
+      return {
+        error:
+          'No member for HYPHA_MCP_AUTH_TOKEN. Set a Privy JWT for the signed-in person.',
+      };
+    }
+    const intelligence = await getMemberIntelligence(
+      { personId: person.id, limit },
+      { db },
+    );
+    if (!intelligence) {
+      return { error: 'Member profile could not be loaded.' };
+    }
+    return { intelligence };
+  } catch (error) {
+    console.error('[loadMemberIntelligence] failed', error);
     return { error: 'Member profile could not be loaded.' };
   }
-  return { intelligence };
 }
 
 function registerSlice<T extends z.ZodTypeAny>(

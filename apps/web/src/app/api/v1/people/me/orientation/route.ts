@@ -19,7 +19,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const body = (await request.json()) as { primaryOrientation?: string };
+    let body: { primaryOrientation?: string };
+    try {
+      body = (await request.json()) as { primaryOrientation?: string };
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const primaryOrientation = ORIENTATIONS.find(
       (orientation) => orientation === body.primaryOrientation,
     );

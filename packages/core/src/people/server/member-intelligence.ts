@@ -19,6 +19,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import type { DbConfig } from '../../server';
+import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 import {
   buildMemberGuidance,
@@ -172,77 +173,87 @@ export async function getMemberIntelligence(
         )[0]?.value ?? 0;
 
   const others = alias(memberships, 'shared_memberships');
-  const connectionRows = await db
-    .select({
-      id: people.id,
-      slug: people.slug,
-      name: people.name,
-      surname: people.surname,
-      nickname: people.nickname,
-      avatarUrl: people.avatarUrl,
-      sharedSpaceCount: sql<number>`cast(count(*) as integer)`,
-    })
-    .from(memberships)
-    .innerJoin(
-      others,
-      and(
-        eq(others.spaceId, memberships.spaceId),
-        ne(others.personId, personId),
-      ),
-    )
-    .innerJoin(people, eq(people.id, others.personId))
-    .where(
-      and(
-        eq(memberships.personId, personId),
-        or(
-          isNull(people.sub),
-          notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
-        ),
-      ),
-    )
-    .groupBy(
-      people.id,
-      people.slug,
-      people.name,
-      people.surname,
-      people.nickname,
-      people.avatarUrl,
-    )
-    .orderBy(desc(sql`count(*)`))
-    .limit(listLimit);
+  const connectionRows =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: people.id,
+            slug: people.slug,
+            name: people.name,
+            surname: people.surname,
+            nickname: people.nickname,
+            avatarUrl: people.avatarUrl,
+            sharedSpaceCount: sql<number>`cast(count(*) as integer)`,
+          })
+          .from(memberships)
+          .innerJoin(
+            others,
+            and(
+              eq(others.spaceId, memberships.spaceId),
+              ne(others.personId, personId),
+            ),
+          )
+          .innerJoin(people, eq(people.id, others.personId))
+          .where(
+            and(
+              eq(memberships.personId, personId),
+              inArray(memberships.spaceId, spaceIds),
+              or(
+                isNull(people.sub),
+                notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
+              ),
+            ),
+          )
+          .groupBy(
+            people.id,
+            people.slug,
+            people.name,
+            people.surname,
+            people.nickname,
+            people.avatarUrl,
+          )
+          .orderBy(desc(sql`count(*)`))
+          .limit(listLimit);
 
-  const connectionCountRow = await db
-    .select({
-      value: sql<number>`cast(count(distinct ${others.personId}) as integer)`,
-    })
-    .from(memberships)
-    .innerJoin(
-      others,
-      and(
-        eq(others.spaceId, memberships.spaceId),
-        ne(others.personId, personId),
-      ),
-    )
-    .innerJoin(people, eq(people.id, others.personId))
-    .where(
-      and(
-        eq(memberships.personId, personId),
-        or(
-          isNull(people.sub),
-          notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
-        ),
-      ),
-    );
+  const connectionCountRow =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            value: sql<number>`cast(count(distinct ${others.personId}) as integer)`,
+          })
+          .from(memberships)
+          .innerJoin(
+            others,
+            and(
+              eq(others.spaceId, memberships.spaceId),
+              ne(others.personId, personId),
+            ),
+          )
+          .innerJoin(people, eq(people.id, others.personId))
+          .where(
+            and(
+              eq(memberships.personId, personId),
+              inArray(memberships.spaceId, spaceIds),
+              or(
+                isNull(people.sub),
+                notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
+              ),
+            ),
+          );
 
   const capitalAskCount =
     (
       await db
         .select({ value: sql<number>`cast(count(*) as integer)` })
         .from(documents)
+        .innerJoin(spaces, eq(documents.spaceId, spaces.id))
         .where(
           and(
             eq(documents.label, 'Investment'),
             inArray(documents.state, ['proposal', 'agreement']),
+            eq(spaces.isArchived, false),
           ),
         )
     )[0]?.value ?? 0;
@@ -360,7 +371,7 @@ export async function getMemberIntelligence(
 
 export async function listNetworkCapitalAsks(
   { limit = 24 }: { limit?: number },
-  { db }: DbConfig,
+  { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<NetworkCapitalAsk[]> {
   const rows = await db
     .select({
@@ -370,6 +381,8 @@ export async function listNetworkCapitalAsks(
       description: documents.description,
       state: documents.state,
       createdAt: documents.createdAt,
+      spaceId: spaces.id,
+      web3SpaceId: spaces.web3SpaceId,
       spaceSlug: spaces.slug,
       spaceTitle: spaces.title,
     })
@@ -383,16 +396,30 @@ export async function listNetworkCapitalAsks(
       ),
     )
     .orderBy(desc(documents.createdAt))
-    .limit(Math.min(Math.max(limit, 1), 50));
+    .limit(50);
 
-  return rows.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    title: row.title?.trim() || 'Untitled ask',
-    excerpt: excerpt(row.description),
-    state: row.state,
-    spaceSlug: row.spaceSlug,
-    spaceTitle: row.spaceTitle,
-    createdAt: row.createdAt.toISOString(),
-  }));
+  const accessibleRows = (
+    await Promise.all(
+      rows.map(async (row) => {
+        const gate = await checkSpaceAccessForSpace(
+          { id: row.spaceId, web3SpaceId: row.web3SpaceId },
+          authToken,
+        );
+        return gate.hasAccess ? row : null;
+      }),
+    )
+  ).filter((row): row is (typeof rows)[number] => row !== null);
+
+  return accessibleRows
+    .slice(0, Math.min(Math.max(limit, 1), 50))
+    .map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      title: row.title?.trim() || 'Untitled ask',
+      excerpt: excerpt(row.description),
+      state: row.state,
+      spaceSlug: row.spaceSlug,
+      spaceTitle: row.spaceTitle,
+      createdAt: row.createdAt.toISOString(),
+    }));
 }

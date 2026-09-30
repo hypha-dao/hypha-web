@@ -84,16 +84,20 @@ export function SignupFlow({
   const finish = async () => {
     if (!orientation || !walletAddress) return;
     setFieldError(null);
-    await onComplete({
-      name: name.trim(),
-      surname: surname.trim(),
-      nickname: nickname.trim(),
-      description: description.trim(),
-      email: email?.trim() || undefined,
-      address: walletAddress,
-      links: [],
-      primaryOrientation: orientation,
-    });
+    try {
+      await onComplete({
+        name: name.trim(),
+        surname: surname.trim(),
+        nickname: nickname.trim(),
+        description: description.trim(),
+        email: email?.trim() || undefined,
+        address: walletAddress,
+        links: [],
+        primaryOrientation: orientation,
+      });
+    } catch (err) {
+      setFieldError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (

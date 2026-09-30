@@ -216,10 +216,18 @@
     "signInBody": "Sign in to see where you can be useful.",
     "signIn": "Sign in",
     "loading": "Gathering your home…",
+    "metaTitle": "Home | Hypha",
+    "metaDescription": "Where you can be useful: your spaces, people, proposals, and wallet.",
+    "fallbackName": "there",
+    "fallbackMember": "Member",
+    "orientationSaveError": "That choice could not be saved. Try again.",
     "error": "Your home could not be loaded.",
     "retry": "Try again"
   },
   "Marketplace": {
+    "metaTitle": "Network marketplace | Hypha",
+    "metaDescription": "Investment asks published by spaces across the network.",
+    "loadError": "The marketplace could not be loaded. Try again in a moment.",
     "eyebrow": "Network marketplace",
     "title": "What the network is asking for",
     "body": "Spaces publish an investment ask when they are ready for capital. Open one to read it, then deploy capital from the proposal.",
