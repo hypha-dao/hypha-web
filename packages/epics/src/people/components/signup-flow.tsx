@@ -107,17 +107,17 @@ export function SignupFlow({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/35"
       />
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center px-6 py-16 text-center">
         <p
           className="text-2 tracking-[0.18em] text-neutral-11 uppercase"
           style={{ fontFamily: 'var(--font-family-heading)' }}
         >
           Hypha
         </p>
-        <p className="mt-6 text-1 text-neutral-11">
+        <p className="mt-6 w-full text-1 text-neutral-11">
           {t('step', { current: index + 1, total: STEPS.length })}
         </p>
-        <div className="mt-3 flex gap-1" aria-hidden>
+        <div className="mt-3 flex w-full justify-center gap-1" aria-hidden>
           {STEPS.map((item, itemIndex) => (
             <span
               key={item}
@@ -129,7 +129,7 @@ export function SignupFlow({
           ))}
         </div>
 
-        <div className="mt-10">
+        <div className="mt-10 w-full">
           {step === 'welcome' ? (
             <Screen
               eyebrow={t('welcome.eyebrow')}
@@ -195,7 +195,7 @@ export function SignupFlow({
               title={t('orientation.title')}
               body={t('orientation.body')}
             >
-              <div className="grid gap-3">
+              <div className="grid w-full gap-3">
                 {ORIENTATIONS.map((option) => {
                   const selected = orientation === option;
                   return (
@@ -239,20 +239,22 @@ export function SignupFlow({
         </div>
 
         {email ? (
-          <p className="mt-8 text-1 text-neutral-11">
+          <p className="mt-8 w-full text-1 text-neutral-11">
             {t('signedInAs', { email })}
           </p>
         ) : null}
         {!walletReady ? (
-          <p className="mt-3 text-1 text-neutral-11">{t('walletWait')}</p>
+          <p className="mt-3 w-full text-1 text-neutral-11">
+            {t('walletWait')}
+          </p>
         ) : null}
         {fieldError || error ? (
-          <p className="mt-4 text-2 text-error-11" role="alert">
+          <p className="mt-4 w-full text-2 text-error-11" role="alert">
             {fieldError || error}
           </p>
         ) : null}
 
-        <div className="mt-8 flex items-center gap-3">
+        <div className="mt-8 flex w-full items-center justify-center gap-3">
           {index > 0 ? (
             <Button
               type="button"
@@ -307,7 +309,7 @@ function Screen({
   children?: ReactNode;
 }) {
   return (
-    <div>
+    <div className="w-full">
       <p className="text-1 tracking-[0.16em] text-neutral-11 uppercase">
         {eyebrow}
       </p>
@@ -317,10 +319,12 @@ function Screen({
       >
         {title}
       </h1>
-      <p className="mt-4 max-w-[42ch] text-2 leading-relaxed text-neutral-11">
+      <p className="mx-auto mt-4 max-w-[42ch] text-2 leading-relaxed text-neutral-11">
         {body}
       </p>
-      {children ? <div className="mt-8 grid gap-5">{children}</div> : null}
+      {children ? (
+        <div className="mt-8 grid w-full gap-5 text-left">{children}</div>
+      ) : null}
     </div>
   );
 }
@@ -335,7 +339,7 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid w-full gap-2 text-left">
       <span className="text-1 text-neutral-11">{label}</span>
       {children}
       {hint ? <span className="text-1 text-neutral-10">{hint}</span> : null}
