@@ -69,6 +69,7 @@ export const SignupPanel = ({
       email: undefined,
       address: '',
       links: [],
+      primaryOrientation: 'member',
     },
   });
 

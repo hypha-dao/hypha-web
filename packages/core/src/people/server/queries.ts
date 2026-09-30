@@ -41,6 +41,7 @@ export const getDefaultFields = () => {
     address: people.address,
     leadImageUrl: people.leadImageUrl,
     preferredCurrency: people.preferredCurrency,
+    primaryOrientation: people.primaryOrientation,
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
@@ -64,6 +65,12 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     preferredCurrency: nullToUndefined(dbPerson.preferredCurrency ?? null),
+    primaryOrientation:
+      dbPerson.primaryOrientation === 'member' ||
+      dbPerson.primaryOrientation === 'builder' ||
+      dbPerson.primaryOrientation === 'investor'
+        ? dbPerson.primaryOrientation
+        : null,
     links: nullToUndefined(dbPerson.links ?? null),
     createdAt: dbPerson.createdAt!,
     updatedAt: dbPerson.updatedAt!,

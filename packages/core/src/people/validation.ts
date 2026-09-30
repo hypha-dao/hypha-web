@@ -61,6 +61,9 @@ const signupPersonWeb2Props = {
     .max(3)
     .default([])
     .optional(),
+  primaryOrientation: z.enum(['member', 'builder', 'investor'], {
+    message: 'Choose how you primarily show up',
+  }),
 };
 
 const editPersonWeb2Props = {
