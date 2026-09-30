@@ -16,7 +16,7 @@ export function LandingPage({ lang }: { lang: Locale }) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace(`/${lang}/my-spaces`);
+      router.replace(`/${lang}/home`);
     }
   }, [isLoading, isAuthenticated, lang, router]);
 
@@ -46,7 +46,7 @@ export function LandingPage({ lang }: { lang: Locale }) {
             size="lg"
             onClick={() => {
               if (isAuthenticated) {
-                router.push(`/${lang}/my-spaces`);
+                router.push(`/${lang}/home`);
                 return;
               }
               void login?.();

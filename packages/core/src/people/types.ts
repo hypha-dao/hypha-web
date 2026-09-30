@@ -13,6 +13,8 @@ export interface Person {
   address?: string;
   /** ISO 4217 code balances are shown in. Undefined means USD. */
   preferredCurrency?: string;
+  /** How this person primarily shows up. Unset until they choose. */
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
   links?: string[];
   createdAt: Date;
   updatedAt: Date;

@@ -102,6 +102,7 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
+  let navHomeLabel = 'Home';
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
@@ -163,6 +164,7 @@ export default async function RootLayout({
 
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
+    navHomeLabel = tNav('home');
     navMySpacesLabel = tNav('mySpaces');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
@@ -294,8 +296,12 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={`/${locale}/home`}
                                   navItems={[
+                                    {
+                                      label: navHomeLabel,
+                                      href: `/${locale}/home`,
+                                    },
                                     {
                                       label: navMySpacesLabel,
                                       href: `/${locale}/my-spaces`,
@@ -326,8 +332,12 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={`/${locale}/home`}
                                   navItems={[
+                                    {
+                                      label: navHomeLabel,
+                                      href: `/${locale}/home`,
+                                    },
                                     {
                                       label: navMySpacesLabel,
                                       href: `/${locale}/my-spaces`,
