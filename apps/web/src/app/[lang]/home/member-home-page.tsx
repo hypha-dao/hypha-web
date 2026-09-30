@@ -25,6 +25,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: isPersonLoading, meError, revalidate } = useMe();
   const [isSavingOrientation, setIsSavingOrientation] = useState(false);
+  const [orientationError, setOrientationError] = useState<string | null>(null);
 
   const {
     data,
@@ -49,6 +50,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     async (primaryOrientation: SignupOrientation) => {
       if (!jwt) return;
       setIsSavingOrientation(true);
+      setOrientationError(null);
       try {
         const response = await fetch('/api/v1/people/me/orientation', {
           method: 'POST',
@@ -58,13 +60,18 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
           },
           body: JSON.stringify({ primaryOrientation }),
         });
-        if (!response.ok) return;
+        if (!response.ok) {
+          setOrientationError(t('orientationSaveError'));
+          return;
+        }
         await mutate();
+      } catch {
+        setOrientationError(t('orientationSaveError'));
       } finally {
         setIsSavingOrientation(false);
       }
     },
-    [jwt, mutate],
+    [jwt, mutate, t],
   );
 
   // Privy `authenticated` (what the header uses) can be true before
@@ -155,6 +162,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       lang={lang}
       intelligence={data}
       isSavingOrientation={isSavingOrientation}
+      orientationError={orientationError}
       onChooseOrientation={(orientation) => {
         void chooseOrientation(orientation);
       }}

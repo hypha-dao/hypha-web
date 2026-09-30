@@ -1,12 +1,15 @@
 import { Locale } from '@hypha-platform/i18n';
+import { getTranslations } from 'next-intl/server';
 
 import { MemberHomePage } from './member-home-page';
 
-export const metadata = {
-  title: 'Home | Hypha',
-  description:
-    'Where you can be useful: your spaces, people, proposals, and wallet.',
-};
+export async function generateMetadata() {
+  const t = await getTranslations('MemberHome');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
