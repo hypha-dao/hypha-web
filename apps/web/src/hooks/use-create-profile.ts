@@ -2,13 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { z } from 'zod';
-import {
-  Person,
-  schemaSignupPerson,
-  PersonFiles,
-  useJwt,
-} from '@hypha-platform/core/client';
+import { Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import type { ProfileFormData } from './profile-form-data';
@@ -87,10 +81,10 @@ export const useCreateProfile = (
           pathname:
             typeof window !== 'undefined' ? window.location.pathname : '',
           lang: typeof lang === 'string' ? lang : undefined,
-          baseRedirectPath: lang ? `/${lang}/onboarding` : '/en/profile',
+          baseRedirectPath: lang ? `/${lang}/home` : '/en/home',
         });
-        const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
-        const nextPath = spaceContextReturnPath ?? onboardingPath;
+        const homePath = lang ? `/${lang}/home` : '/en/home';
+        const nextPath = spaceContextReturnPath ?? homePath;
 
         // Prevent post-signup redirect guards from briefly treating the user
         // as profile-less on the next route transition.
@@ -98,16 +92,6 @@ export const useCreateProfile = (
           await mutate(['/api/v1/people/me', jwt], createdProfile, {
             revalidate: false,
           });
-        }
-        if (!spaceContextReturnPath) {
-          try {
-            window.sessionStorage.setItem(
-              'hypha:onboarding-adventure:just-signed-up:v1',
-              'true',
-            );
-          } catch {
-            // Ignore storage failures; onboarding falls back to existing logic.
-          }
         }
         router.replace(nextPath);
         return createdProfile;

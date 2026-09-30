@@ -11,6 +11,8 @@ export * from './members-section';
 export * from './person-head';
 export * from './person-label';
 export * from './signup-panel';
+export * from './signup-flow';
+export * from './member-home';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';
 export * from './people-redeem-form';

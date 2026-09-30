@@ -90,6 +90,7 @@
   },
   "Navigation": {
     "network": "Network",
+    "home": "Home",
     "mySpaces": "My Spaces",
     "myWallet": "My Wallet",
     "openMenu": "Open menu",
@@ -109,6 +110,124 @@
     "getStarted": "Get started",
     "ecosystemLogo": "Ecosystem Logo",
     "continueAdventure": "Continue your adventure"
+  },
+  "WelcomeFlow": {
+    "step": "Step {current} of {total}",
+    "continue": "Continue",
+    "back": "Back",
+    "begin": "Begin",
+    "thisIsMe": "This is me",
+    "enterHome": "Enter your home",
+    "saving": "Opening your home…",
+    "walletWait": "Connecting your wallet…",
+    "signedInAs": "Signed in as {email}",
+    "welcome": {
+      "eyebrow": "Welcome",
+      "title": "You are joining a living network",
+      "body": "Hypha brings people, purpose, decisions, resources, and AI into one system that can learn and act. This only takes a moment."
+    },
+    "name": {
+      "eyebrow": "About you",
+      "title": "What should we call you?",
+      "body": "Your name is how people in the network will greet you.",
+      "firstName": "First name",
+      "lastName": "Last name"
+    },
+    "presence": {
+      "eyebrow": "Your presence",
+      "title": "How will the network know you?",
+      "body": "A short name, and one line about what you care for. You can change this later.",
+      "nickname": "Nickname",
+      "nicknameHint": "Up to 12 characters. This becomes your profile address.",
+      "purpose": "What you care for",
+      "purposePlaceholder": "A line about what you are here to do"
+    },
+    "orientation": {
+      "eyebrow": "Your place",
+      "title": "Who are you here as, primarily?",
+      "body": "This sets the home that greets you. You can change it later.",
+      "member": {
+        "title": "Member",
+        "body": "You take part in spaces, decisions, and the people around you."
+      },
+      "builder": {
+        "title": "Builder",
+        "body": "You shape spaces around a vision and bring others in."
+      },
+      "investor": {
+        "title": "Investor",
+        "body": "You read what the network is asking for and deploy capital."
+      }
+    },
+    "arrival": {
+      "eyebrow": "You are in",
+      "title": "Welcome, {name}.",
+      "member": "Your home shows where you can be useful, the spaces you belong to, and what is asking for you.",
+      "builder": "Your home is that same living view, plus a way to shape a space around your vision.",
+      "investor": "Your home is that same living view, plus the network marketplace where spaces publish their asks."
+    }
+  },
+  "MemberHome": {
+    "greetingMorning": "Good morning, {name}.",
+    "greetingAfternoon": "Good afternoon, {name}.",
+    "greetingEvening": "Good evening, {name}.",
+    "peopleAround": "{count} of your people around",
+    "peopleAroundEmpty": "Your people will gather here",
+    "openChat": "Open chat",
+    "useful": "Where you can be useful",
+    "weighIn": "Step in",
+    "viewSignal": "Open signal",
+    "quiet": "Nothing is waiting",
+    "counts": {
+      "spaces": "Spaces",
+      "proposals": "Proposals",
+      "signals": "Signals",
+      "people": "People"
+    },
+    "wallet": "Wallet",
+    "walletEmpty": "Your wallet appears here once it is connected.",
+    "openWallet": "Open wallet",
+    "connections": "Connections",
+    "sharedSpaces": "{count} shared",
+    "noConnections": "People you share a space with show up here.",
+    "spaces": "My spaces",
+    "noSpaces": "You are not in a space yet.",
+    "signals": "My signals",
+    "noSignals": "Signals from your spaces show up here.",
+    "notifications": "My notifications",
+    "noNotifications": "Nothing needs you right now.",
+    "seeAllNotifications": "Notification centre",
+    "proposals": "My proposals",
+    "noProposals": "Proposals in your spaces show up here.",
+    "createSpace": "Create a space",
+    "builderTitle": "Shape a space on your vision",
+    "builderBody": "Walk through the AI experience and bring a space into the network around what you want to build.",
+    "builderAction": "Begin the experience",
+    "investorTitle": "Network marketplace",
+    "investorBody": "Spaces publish what they are asking for. Read an ask, then deploy capital into it.",
+    "investorAction": "See the asks",
+    "investorCount": "{count} open asks",
+    "chooseTitle": "How do you mainly show up?",
+    "chooseBody": "Member, builder, or investor. This tunes your home. You can change it any time.",
+    "orientationMember": "Member",
+    "orientationBuilder": "Builder",
+    "orientationInvestor": "Investor",
+    "signInTitle": "Your home is waiting",
+    "signInBody": "Sign in to see where you can be useful.",
+    "signIn": "Sign in",
+    "loading": "Gathering your home…",
+    "error": "Your home could not be loaded.",
+    "retry": "Try again"
+  },
+  "Marketplace": {
+    "eyebrow": "Network marketplace",
+    "title": "What the network is asking for",
+    "body": "Spaces publish an investment ask when they are ready for capital. Open one to read it, then deploy capital from the proposal.",
+    "empty": "No open asks yet. When a space publishes an investment proposal, it will appear here.",
+    "deploy": "Deploy capital",
+    "proposal": "Proposal",
+    "agreement": "Agreement",
+    "backHome": "Back to home"
   },
   "NetworkFeedback": {
     "triggerLabel": "Shape Hypha",
