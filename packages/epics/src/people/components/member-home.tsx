@@ -15,6 +15,7 @@ type MemberHomeProps = {
   lang: Locale;
   intelligence: MemberIntelligence;
   isSavingOrientation?: boolean;
+  orientationError?: string | null;
   onChooseOrientation: (orientation: SignupOrientation) => void;
 };
 
@@ -32,27 +33,32 @@ function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-function personLabel(person: {
-  name: string | null;
-  surname: string | null;
-  nickname: string | null;
-}) {
+function personLabel(
+  person: {
+    name: string | null;
+    surname: string | null;
+    nickname: string | null;
+  },
+  fallback: string,
+) {
   const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  return full || person.nickname || 'Member';
+  return full || person.nickname || fallback;
 }
 
 export function MemberHome({
   lang,
   intelligence,
   isSavingOrientation,
+  orientationError,
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
+  const memberFallback = t('fallbackMember');
   const orientation = intelligence.person.primaryOrientation;
   const displayName =
     intelligence.person.name?.trim() ||
     intelligence.person.nickname?.trim() ||
-    'there';
+    t('fallbackName');
   const lead = intelligence.attention[0];
   const leadHref = lead
     ? lead.kind === 'proposal'
@@ -96,7 +102,7 @@ export function MemberHome({
                       ? `/${lang}/profile/${person.slug}`
                       : `/${lang}/network`
                   }
-                  title={personLabel(person)}
+                  title={personLabel(person, memberFallback)}
                   className={cn(
                     'relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-background bg-accent-3 text-1',
                     index > 0 && '-ml-2',
@@ -109,7 +115,7 @@ export function MemberHome({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    personLabel(person).slice(0, 1)
+                    personLabel(person, memberFallback).slice(0, 1)
                   )}
                 </Link>
               ))}
@@ -154,6 +160,11 @@ export function MemberHome({
                 </Button>
               ))}
             </div>
+            {orientationError ? (
+              <p className="mt-3 text-2 text-error-11" role="alert">
+                {orientationError}
+              </p>
+            ) : null}
           </section>
         ) : (
           <p className="mt-3 text-1 text-neutral-11">
@@ -248,7 +259,7 @@ export function MemberHome({
                       }
                       className="flex items-baseline justify-between gap-3 text-2 hover:underline"
                     >
-                      <span>{personLabel(person)}</span>
+                      <span>{personLabel(person, memberFallback)}</span>
                       <span className="text-1 text-neutral-11">
                         {t('sharedSpaces', { count: person.sharedSpaceCount })}
                       </span>

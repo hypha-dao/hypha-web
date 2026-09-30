@@ -5,10 +5,13 @@ import { Button } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'Network marketplace | Hypha',
-  description: 'Investment asks published by spaces across the network.',
-};
+export async function generateMetadata() {
+  const t = await getTranslations('Marketplace');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
@@ -18,9 +21,11 @@ export default async function NetworkMarketplacePage(props: PageProps) {
   const { lang } = await props.params;
   const t = await getTranslations('Marketplace');
   let asks: Awaited<ReturnType<typeof listNetworkCapitalAsks>> = [];
+  let loadFailed = false;
   try {
     asks = await listNetworkCapitalAsks({ limit: 24 }, { db });
   } catch (error) {
+    loadFailed = true;
     console.error('[marketplace] Failed to load capital asks', error);
   }
 
@@ -45,7 +50,11 @@ export default async function NetworkMarketplacePage(props: PageProps) {
         {t('backHome')}
       </Link>
 
-      {asks.length === 0 ? (
+      {loadFailed ? (
+        <p className="mt-10 border border-border p-5 text-2 text-error-11">
+          {t('loadError')}
+        </p>
+      ) : asks.length === 0 ? (
         <p className="mt-10 border border-border p-5 text-2 text-neutral-11">
           {t('empty')}
         </p>
