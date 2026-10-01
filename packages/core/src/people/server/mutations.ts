@@ -45,6 +45,27 @@ export const updatePerson = async (
   return mapToDomainPerson(dbPerson);
 };
 
+export const updatePersonPrimaryOrientation = async (
+  {
+    id,
+    primaryOrientation,
+  }: {
+    id: number;
+    primaryOrientation: 'member' | 'builder' | 'investor';
+  },
+  { db }: CreatePersonConfig,
+) => {
+  const [dbPerson] = await db
+    .update(people)
+    .set({ primaryOrientation, updatedAt: new Date() })
+    .where(eq(people.id, id))
+    .returning();
+  if (!dbPerson) {
+    throw new Error('Failed to update orientation');
+  }
+  return mapToDomainPerson(dbPerson);
+};
+
 export type DeletePersonInput = {
   id: number;
 };
