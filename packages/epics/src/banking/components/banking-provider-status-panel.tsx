@@ -6,10 +6,13 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { DEFAULT_BANK_PROVIDER } from '@hypha-platform/core/client';
 
+import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import {
   bankRailNeedsEndorsementRequest,
   getBankEndorsementStatusesForPanel,
+  getRequestableOnboardingCurrencies,
   ownerText,
   type BankingOwnerContext,
 } from '../banking-ui';
@@ -22,7 +25,6 @@ import {
   type BankPendingUbo,
   type BankVerificationProcedurePublic,
 } from '../hooks/types';
-import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 import { BankingSandboxDemoBar } from './banking-sandbox-demo-bar';
 
 export type BankingProviderStatusPanelProps = {
@@ -31,7 +33,8 @@ export type BankingProviderStatusPanelProps = {
   basePath?: string;
   /** Whether this panel is for a space or an individual member's profile. Defaults to 'space'. */
   ownerContext?: BankingOwnerContext;
-  status: BankCustomerPublicStatus | null | undefined;
+  /** Every provider's status for this owner (D11) — one entry per `bank_customers` row (D3). */
+  providers: BankCustomerPublicStatus[];
   isLoading: boolean;
   isRefreshing: boolean;
   canManage: boolean;
@@ -40,6 +43,14 @@ export type BankingProviderStatusPanelProps = {
   /** Full-page verification view (banking tab before any rail is approved). */
   showPageHeader?: boolean;
   onOpenGear?: () => void;
+  /**
+   * Starts onboarding for a currency of a provider this owner has no row for yet (e.g. AUD for a
+   * space that only has Bridge). When omitted, or when `canManage` is false, the "add another
+   * currency" card isn't shown.
+   */
+  onRequestCurrencyOnboarding?: (
+    currencies: BankOnboardingCurrencyCode[],
+  ) => void;
 };
 
 function getInProgressStatusLabel(
@@ -342,6 +353,66 @@ function EndorsementValidationsList({
   );
 }
 
+/**
+ * Currencies of providers the owner isn't onboarded with yet, each with a Request button that
+ * starts that provider's onboarding — same row shape as the endorsement list above it, but these
+ * aren't endorsements on an existing customer: each needs its own onboarding (D3).
+ */
+function AdditionalCurrenciesList({
+  currencies,
+  tAdvanced,
+  tOpenAccount,
+  tCurrencies,
+  onRequest,
+}: {
+  currencies: BankOnboardingCurrencyCode[];
+  tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
+  tOpenAccount: ReturnType<typeof useTranslations<'BankingTab.openAccount'>>;
+  tCurrencies: ReturnType<typeof useTranslations<'BankingTab.currencies'>>;
+  onRequest: (currency: BankOnboardingCurrencyCode) => void;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <h3 className="text-2 font-semibold text-foreground">
+        {tAdvanced('additionalCurrenciesTitle')}
+      </h3>
+      <p className="mt-2 text-1 text-muted-foreground">
+        {tAdvanced('additionalCurrenciesHint')}
+      </p>
+      <dl className="mt-3 flex flex-col gap-2">
+        {currencies.map((currency) => (
+          <div
+            key={currency}
+            className="flex items-center justify-between gap-3 py-0.5"
+          >
+            <dt className="min-w-0 text-2 font-medium text-foreground">
+              {tCurrencies(`${currency}.code`)} (
+              {tCurrencies(`${currency}.payoutMethod`)})
+            </dt>
+            <dd className="flex shrink-0 items-center gap-2">
+              <Badge
+                variant="outline"
+                colorVariant="neutral"
+                className="pointer-events-none cursor-default text-1 shadow-none"
+              >
+                {tAdvanced('currencyStatus.not_requested')}
+              </Badge>
+              <Button
+                type="button"
+                colorVariant="accent"
+                className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
+                onClick={() => onRequest(currency)}
+              >
+                {tOpenAccount('requestRail')}
+              </Button>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
 function UboPendingNotice({
   ubos,
   tAdvanced,
@@ -379,10 +450,55 @@ function UboPendingNotice({
   );
 }
 
+/**
+ * A provider row that is still waiting on the #2288 email-ownership confirmation: no verification
+ * link exists yet, so there are no procedures to show — just what to do next, and a resend.
+ */
+function PendingConfirmationSection({
+  currencyLabel,
+  onResend,
+}: {
+  currencyLabel?: string;
+  onResend?: () => void;
+}) {
+  const t = useTranslations('BankingTab.pendingEmailConfirmation');
+
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-2 font-semibold text-foreground">{t('title')}</h3>
+        {currencyLabel ? (
+          <Badge
+            variant="outline"
+            colorVariant="neutral"
+            className="pointer-events-none cursor-default text-1 shadow-none"
+          >
+            {currencyLabel}
+          </Badge>
+        ) : null}
+      </div>
+      <p className="mt-2 text-1 text-muted-foreground">{t('description')}</p>
+      {onResend ? (
+        <Button
+          type="button"
+          variant="outline"
+          colorVariant="neutral"
+          size="sm"
+          className="mt-3"
+          onClick={onResend}
+        >
+          {t('resendCta')}
+        </Button>
+      ) : null}
+    </section>
+  );
+}
+
 function ProviderValidationsSection({
   spaceSlug,
   basePath,
   status,
+  currencyLabel,
   t,
   tTos,
   tAdvanced,
@@ -396,6 +512,12 @@ function ProviderValidationsSection({
   spaceSlug?: string;
   basePath?: string;
   status: NonNullable<BankCustomerPublicStatus>;
+  /**
+   * Currency codes this entry covers (e.g. "AUD" or "EUR, USD") — shown only when the owner has
+   * more than one provider row, so a multi-currency owner can tell the sections apart. Currency
+   * only, never a provider name (spec AC).
+   */
+  currencyLabel?: string;
   t: ReturnType<typeof useTranslations<'BankingTab'>>;
   tTos: ReturnType<typeof useTranslations<'BankingTab.tosStatus'>>;
   tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
@@ -426,9 +548,20 @@ function ProviderValidationsSection({
 
   return (
     <section className="rounded-lg border border-border bg-card p-4">
-      <h3 className="text-2 font-semibold text-foreground">
-        {tAdvanced('providerValidationsTitle')}
-      </h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-2 font-semibold text-foreground">
+          {tAdvanced('providerValidationsTitle')}
+        </h3>
+        {currencyLabel ? (
+          <Badge
+            variant="outline"
+            colorVariant="neutral"
+            className="pointer-events-none cursor-default text-1 shadow-none"
+          >
+            {currencyLabel}
+          </Badge>
+        ) : null}
+      </div>
 
       <p className="mt-2 text-1 text-muted-foreground">
         {tAdvanced('dataMinimizationNotice')}
@@ -437,16 +570,18 @@ function ProviderValidationsSection({
       <div className="mt-3 flex flex-col gap-3">
         {showProcedures && status.procedures ? (
           <>
-            <ProcedureRow
-              kind="tos"
-              title={tAdvanced('tosProcedure')}
-              procedure={status.procedures.tos}
-              openLinkLabel={t('actions.viewTerms')}
-              t={t}
-              tTos={tTos}
-              tAdvanced={tAdvanced}
-              ownerContext={ownerContext}
-            />
+            {status.procedures.tos ? (
+              <ProcedureRow
+                kind="tos"
+                title={tAdvanced('tosProcedure')}
+                procedure={status.procedures.tos}
+                openLinkLabel={t('actions.viewTerms')}
+                t={t}
+                tTos={tTos}
+                tAdvanced={tAdvanced}
+                ownerContext={ownerContext}
+              />
+            ) : null}
             <ProcedureRow
               kind="kyc"
               title={ownerText(tAdvanced, ownerContext, 'kybProcedure')}
@@ -498,7 +633,7 @@ export const BankingProviderStatusPanel: FC<
 > = ({
   spaceSlug,
   basePath,
-  status,
+  providers,
   isLoading,
   isRefreshing,
   canManage,
@@ -506,6 +641,7 @@ export const BankingProviderStatusPanel: FC<
   onRefreshStatus,
   showPageHeader = false,
   onOpenGear,
+  onRequestCurrencyOnboarding,
   ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab');
@@ -513,6 +649,20 @@ export const BankingProviderStatusPanel: FC<
   const tAdvanced = useTranslations('BankingTab.advanced');
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tEndorsements = useTranslations('BankingTab.endorsements');
+  const tCurrencies = useTranslations('BankingTab.currencies');
+
+  const requestableCurrencies =
+    canManage && onRequestCurrencyOnboarding
+      ? getRequestableOnboardingCurrencies(
+          providers.map((entry) => entry.provider),
+        )
+      : [];
+
+  const bridgeStatus =
+    providers.find(
+      (entry) =>
+        (entry.provider ?? DEFAULT_BANK_PROVIDER) === DEFAULT_BANK_PROVIDER,
+    ) ?? null;
 
   const renderBody = () => {
     if (isLoading) {
@@ -524,7 +674,7 @@ export const BankingProviderStatusPanel: FC<
       );
     }
 
-    if (status == null) {
+    if (providers.length === 0) {
       return (
         <p className="text-2 text-muted-foreground">
           {ownerText(tAdvanced, ownerContext, 'noCustomer')}
@@ -532,27 +682,76 @@ export const BankingProviderStatusPanel: FC<
       );
     }
 
+    // Currency labels only needed to tell entries apart once there's more than one (spec AC: no
+    // provider name in user-facing copy).
+    const showCurrencyLabels = providers.length > 1;
+
     return (
       <div className="flex flex-col gap-3">
-        {status.approvalRegistered ? (
+        {providers.every((entry) => entry.approvalRegistered) ? (
           <p className="text-2 text-muted-foreground">
             {tAdvanced('approvedSummary')}
           </p>
         ) : null}
-        <ProviderValidationsSection
-          spaceSlug={spaceSlug}
-          basePath={basePath}
-          status={status}
-          t={t}
-          tTos={tTos}
-          tAdvanced={tAdvanced}
-          tOpenAccount={tOpenAccount}
-          tEndorsements={tEndorsements}
-          showProcedures={!status.approvalRegistered}
-          onOpenGear={onOpenGear}
-          onRefreshStatus={onRefreshStatus}
-          ownerContext={ownerContext}
-        />
+        {providers.map((entry, index) =>
+          entry.pendingEmailConfirmation ? (
+            <PendingConfirmationSection
+              key={entry.provider ?? `entry-${index}`}
+              currencyLabel={
+                showCurrencyLabels
+                  ? entry.pendingEmailConfirmation.requestedRails
+                      .map((c) => c.toUpperCase())
+                      .join(', ')
+                  : undefined
+              }
+              onResend={
+                canManage && onRequestCurrencyOnboarding
+                  ? () => {
+                      // The pending row's whole currency set, so the resend keeps every rail
+                      // (and resolves to the same provider) instead of narrowing to one.
+                      const rails =
+                        entry.pendingEmailConfirmation?.requestedRails ?? [];
+                      if (rails.length > 0) {
+                        onRequestCurrencyOnboarding(
+                          rails as BankOnboardingCurrencyCode[],
+                        );
+                      }
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <ProviderValidationsSection
+              key={entry.provider ?? `entry-${index}`}
+              spaceSlug={spaceSlug}
+              basePath={basePath}
+              status={entry}
+              currencyLabel={
+                showCurrencyLabels
+                  ? entry.requestedRails.map((c) => c.toUpperCase()).join(', ')
+                  : undefined
+              }
+              t={t}
+              tTos={tTos}
+              tAdvanced={tAdvanced}
+              tOpenAccount={tOpenAccount}
+              tEndorsements={tEndorsements}
+              showProcedures={!entry.approvalRegistered}
+              onOpenGear={onOpenGear}
+              onRefreshStatus={onRefreshStatus}
+              ownerContext={ownerContext}
+            />
+          ),
+        )}
+        {requestableCurrencies.length > 0 && onRequestCurrencyOnboarding ? (
+          <AdditionalCurrenciesList
+            currencies={requestableCurrencies}
+            tAdvanced={tAdvanced}
+            tOpenAccount={tOpenAccount}
+            tCurrencies={tCurrencies}
+            onRequest={(currency) => onRequestCurrencyOnboarding([currency])}
+          />
+        ) : null}
       </div>
     );
   };
@@ -582,9 +781,9 @@ export const BankingProviderStatusPanel: FC<
       {renderBody()}
 
       {!isLoading &&
-      status != null &&
-      !status.approvalRegistered &&
-      !status.isApproved ? (
+      bridgeStatus != null &&
+      !bridgeStatus.approvalRegistered &&
+      !bridgeStatus.isApproved ? (
         <BankingSandboxDemoBar
           spaceSlug={spaceSlug}
           basePath={basePath}
