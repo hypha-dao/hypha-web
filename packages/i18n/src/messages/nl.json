@@ -476,7 +476,7 @@
       },
       "activateSpaces": {
         "title": "Activeer ruimte(n)",
-        "description": "Draag bij aan HYPHA of USDC om uw ruimte(s) te activeren en steun het Hypha-netwerk."
+        "description": "Draag bij aan HYPHA, USDC of EURC om uw ruimte(s) te activeren en steun het Hypha-netwerk."
       },
       "votingMethod": {
         "title": "Stemmethode",
@@ -624,7 +624,7 @@
       },
       "activateSpaces": {
         "title": "Activeer ruimte(n)",
-        "description": "Draag bij aan HYPHA of USDC om uw ruimte(s) te activeren en steun het Hypha-netwerk."
+        "description": "Draag bij aan HYPHA, USDC of EURC om uw ruimte(s) te activeren en steun het Hypha-netwerk."
       }
     }
   },
@@ -1456,7 +1456,7 @@
       },
       "activateSpaces": {
         "title": "Activeer ruimte(n)",
-        "description": "Sponsor en activeer uw favoriete ruimte(s) door een bijdrage te leveren aan HYPHA of USDC, ter ondersteuning van het Hypha-netwerk."
+        "description": "Sponsor en activeer uw favoriete ruimte(s) door een bijdrage te leveren aan HYPHA, USDC of EURC, ter ondersteuning van het Hypha-netwerk."
       },
       "migrateHyphaTokens": {
         "title": "Hypha-tokens migreren (Telos → Base)",
@@ -1495,11 +1495,12 @@
     },
     "activateSpaces": {
       "title": "Activeer ruimte(n)",
-      "contentPrefix": "Sponsor en activeer uw favoriete ruimte(s) door een bijdrage te leveren aan HYPHA of USDC, ter ondersteuning van het Hypha-netwerk. Meer details binnen",
+      "contentPrefix": "Sponsor en activeer uw favoriete ruimte(s) door een bijdrage te leveren aan HYPHA, USDC of EURC, ter ondersteuning van het Hypha-netwerk. Meer details binnen",
       "contentSuffix": ".",
       "form": {
         "icons": {
           "usdcAlt": "USDC-pictogram",
+          "eurcAlt": "EURC-pictogram",
           "hyphaAlt": "Hypha-tokenpictogram"
         },
         "actions": {
@@ -2081,7 +2082,9 @@
         "payWith": "Betaal met:",
         "totalAmountIn": "Totaalbedrag in {token}:",
         "paidBy": "Betaald door",
-        "paidTo": "Betaald aan"
+        "paidTo": "Betaald aan",
+        "eurcNotSupportedOnchain": "EURC kan een verlenging nog niet on-chain afronden. Het abonnementscontract accepteert alleen USDC en HYPHA. Betaal met USDC of HYPHA, of vraag een Hypha-beheerder om het abonnement te verlengen na een EURC-overdracht.",
+        "eurcRateUnavailable": "De EUR/USD-koers is niet beschikbaar. Kies USDC of HYPHA, of probeer het zo opnieuw."
       },
       "buyHyphaTokens": {
         "purchaseAmount": "Aankoopbedrag",

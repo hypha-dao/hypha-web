@@ -1,23 +1,19 @@
 'use client';
 
-import {
-  Separator,
-  Tabs,
-  TabsTrigger,
-  TabsList,
-  Label,
-  Input,
-  Image,
-} from '@hypha-platform/ui';
+import { Separator } from '@hypha-platform/ui';
 import { RecipientField } from '../components/common/recipient-field';
 import { useFormContext, useWatch } from 'react-hook-form';
 import {
   useOrganisationSpacesBySingleSlug,
   useSpacesByWeb3Ids,
   type Space,
+  type SpaceActivationPaymentToken,
 } from '@hypha-platform/core/client';
 import { useActivateSpaces } from '../../../people/hooks/use-activate-hypha-spaces';
-import { SpaceWithNumberOfMonthsFieldArray } from '../../../people';
+import {
+  ActivateSpacesCheckout,
+  SpaceWithNumberOfMonthsFieldArray,
+} from '../../../people';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -43,10 +39,12 @@ export const ActivateSpacesPlugin = ({
     isLoading: isSpacesLoading,
   } = useSpacesByWeb3Ids(spaceWeb3Id ? [spaceWeb3Id] : [], false);
 
-  const { totalUSDC, totalHYPHA } = useActivateSpaces({
-    spaces: watchedSpaces,
-    paymentToken: watchedPaymentToken,
-  });
+  const { totalUSDC, totalHYPHA, totalEURC, eurcRateReady } = useActivateSpaces(
+    {
+      spaces: watchedSpaces,
+      paymentToken: watchedPaymentToken,
+    },
+  );
 
   const buyerSpace: Space[] = React.useMemo(() => {
     return !isSpacesLoading && space ? [space] : [];
@@ -69,75 +67,16 @@ export const ActivateSpacesPlugin = ({
         name="spaces"
       />
       <Separator />
-      <Label>{tAgreementFlow('plugins.activateSpaces.checkOut')}</Label>
-      <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11 w-full">
-          {tAgreementFlow('plugins.activateSpaces.totalContribution')}
-        </span>
-        <span className="text-2 text-neutral-11 text-nowrap">
-          $ {totalUSDC.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-        </span>
-      </div>
-      <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">
-          {tAgreementFlow('plugins.activateSpaces.payWith')}
-        </span>
-        <Tabs
-          value={watchedPaymentToken}
-          onValueChange={(value) =>
-            setValue('paymentToken', value as 'HYPHA' | 'USDC')
-          }
-        >
-          <TabsList triggerVariant="switch">
-            <TabsTrigger variant="switch" value="HYPHA">
-              HYPHA
-            </TabsTrigger>
-            <TabsTrigger variant="switch" value="USDC">
-              USDC
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-      <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11 w-full">
-          {tAgreementFlow('plugins.activateSpaces.totalAmountIn', {
-            token: watchedPaymentToken,
-          })}
-        </span>
-        <span className="text-2 text-neutral-11 text-nowrap">
-          {watchedPaymentToken === 'USDC' ? (
-            <Input
-              leftIcon={
-                <Image
-                  src="/placeholder/usdc-icon.svg"
-                  width={24}
-                  height={24}
-                  alt="USDC Icon"
-                />
-              }
-              value={totalUSDC.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}
-              disabled
-            />
-          ) : (
-            <Input
-              leftIcon={
-                <Image
-                  src="/placeholder/space-avatar-image.svg"
-                  width={24}
-                  height={24}
-                  alt="Hypha Token Icon"
-                />
-              }
-              value={totalHYPHA.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}
-              disabled
-            />
-          )}
-        </span>
-      </div>
+      <ActivateSpacesCheckout
+        paymentToken={watchedPaymentToken}
+        onPaymentTokenChange={(value) =>
+          setValue('paymentToken', value as SpaceActivationPaymentToken)
+        }
+        totalUSDC={totalUSDC}
+        totalHYPHA={totalHYPHA}
+        totalEURC={totalEURC}
+        eurcRateReady={eurcRateReady}
+      />
       <Separator />
       <RecipientField
         label={tAgreementFlow('plugins.activateSpaces.paidBy')}

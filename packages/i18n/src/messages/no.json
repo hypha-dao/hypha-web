@@ -475,7 +475,7 @@
       },
       "activateSpaces": {
         "title": "Aktiver rom",
-        "description": "Bidra med HYPHA eller USDC for å aktivere rommet ditt eller rommene dine og støtte Hypha-nettverket."
+        "description": "Bidra med HYPHA, USDC eller EURC for å aktivere rommet ditt eller rommene dine og støtte Hypha-nettverket."
       },
       "votingMethod": {
         "title": "Avstemningsmetode",
@@ -623,7 +623,7 @@
       },
       "activateSpaces": {
         "title": "Aktiver rom",
-        "description": "Bidra med HYPHA eller USDC for å aktivere rommet ditt eller rommene dine og støtte Hypha-nettverket."
+        "description": "Bidra med HYPHA, USDC eller EURC for å aktivere rommet ditt eller rommene dine og støtte Hypha-nettverket."
       }
     }
   },
@@ -1455,7 +1455,7 @@
       },
       "activateSpaces": {
         "title": "Aktiver rom",
-        "description": "Sponse og aktiver favorittrommene dine ved å bidra med HYPHA eller USDC, og støtt Hypha-nettverket."
+        "description": "Sponse og aktiver favorittrommene dine ved å bidra med HYPHA, USDC eller EURC, og støtt Hypha-nettverket."
       },
       "migrateHyphaTokens": {
         "title": "Migrer Hypha-tokener (Telos → Base)",
@@ -1494,11 +1494,12 @@
     },
     "activateSpaces": {
       "title": "Aktiver rom",
-      "contentPrefix": "Sponse og aktiver favorittrommene dine ved å bidra med HYPHA eller USDC, og støtt Hypha-nettverket. Flere detaljer i",
+      "contentPrefix": "Sponse og aktiver favorittrommene dine ved å bidra med HYPHA, USDC eller EURC, og støtt Hypha-nettverket. Flere detaljer i",
       "contentSuffix": ".",
       "form": {
         "icons": {
           "usdcAlt": "USDC-ikon",
+          "eurcAlt": "EURC-ikon",
           "hyphaAlt": "Hypha-tokenikon"
         },
         "actions": {
@@ -2080,7 +2081,9 @@
         "payWith": "Betal med:",
         "totalAmountIn": "Totalbeløp i {token}:",
         "paidBy": "Betalt av",
-        "paidTo": "Betalt til"
+        "paidTo": "Betalt til",
+        "eurcNotSupportedOnchain": "EURC kan ennå ikke fullføre en fornyelse on-chain. Abonnementskontrakten godtar bare USDC og HYPHA. Betal med USDC eller HYPHA, eller be en Hypha-administrator om å forlenge abonnementet etter en EURC-overføring.",
+        "eurcRateUnavailable": "EUR/USD-kursen er utilgjengelig. Velg USDC eller HYPHA, eller prøv igjen om litt."
       },
       "buyHyphaTokens": {
         "purchaseAmount": "Kjøpsbeløp",

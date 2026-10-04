@@ -5,7 +5,6 @@ import {
   createAgreementFiles,
   schemaActivateSpaces,
   useMe,
-  TOKENS,
   useActivateSpacesOrchestrator,
   useJwt,
   useSpaceDetailsWeb3Rpc,
@@ -33,7 +32,6 @@ import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-re
 const ACTIVATE_SPACES_RESUBMIT_SEGMENT = 'activate-spaces';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
-const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 
 const combinedSchemaActivateSpaces = schemaActivateSpaces
   .extend(createAgreementFiles)
@@ -71,9 +69,6 @@ export const ActivateSpacesFormSpace = ({
     spaceId: web3SpaceId as number,
   });
   const { assets } = useAssets({ filter: { type: 'all' } });
-  const paymentAsset = assets.find(
-    (a) => a.symbol === 'USDC' || a.symbol === 'HYPHA',
-  );
   const [insufficientFunds, setInsufficientFunds] = React.useState(false);
   const [paymentTokenForTopUp, setPaymentTokenForTopUp] = React.useState('');
 
@@ -130,16 +125,24 @@ export const ActivateSpacesFormSpace = ({
     }
   }, [web3SpaceId, spaceDetails?.executor]);
 
-  const { totalUSDC, totalHYPHA } = useActivateSpaces({
+  const { totalUSDC, totalHYPHA, totalEURC } = useActivateSpaces({
     spaces: form.watch('spaces'),
     paymentToken: form.watch('paymentToken'),
   });
 
   const watchedPaymentToken = form.watch('paymentToken');
-  const total = watchedPaymentToken === 'USDC' ? totalUSDC : totalHYPHA;
+  const paymentAsset = assets.find((a) => a.symbol === watchedPaymentToken);
+  const total =
+    watchedPaymentToken === 'USDC'
+      ? totalUSDC
+      : watchedPaymentToken === 'EURC'
+      ? totalEURC ?? 0
+      : totalHYPHA;
+  const canSubmitOnChain = watchedPaymentToken !== 'EURC';
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || spaceId === undefined) return;
+    if (data.paymentToken === 'EURC') return;
 
     const walletBalance = parseFloat((paymentAsset?.value ?? 0).toString());
 
@@ -179,7 +182,16 @@ export const ActivateSpacesFormSpace = ({
               )}
               <br />{' '}
               {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
-              {paymentTokenForTopUp === 'USDC' ? (
+              {paymentTokenForTopUp === 'HYPHA' ? (
+                <Link
+                  href={`/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`}
+                  className="font-bold cursor-pointer text-accent-9 underline"
+                >
+                  {tAgreementFlow(
+                    'activateSpacesForm.insufficientFunds.buyHyphaTokens',
+                  )}
+                </Link>
+              ) : (
                 <span
                   onClick={() => {
                     setInsufficientFunds(false);
@@ -194,15 +206,6 @@ export const ActivateSpacesFormSpace = ({
                     },
                   )}
                 </span>
-              ) : (
-                <Link
-                  href={`/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`}
-                  className="font-bold cursor-pointer text-accent-9 underline"
-                >
-                  {tAgreementFlow(
-                    'activateSpacesForm.insufficientFunds.buyHyphaTokens',
-                  )}
-                </Link>
               )}{' '}
               {tAgreementFlow('activateSpacesForm.insufficientFunds.toProceed')}
             </span>
@@ -250,7 +253,9 @@ export const ActivateSpacesFormSpace = ({
           {children}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+            <Button type="submit" disabled={!canSubmitOnChain}>
+              {tAgreementFlow('buttons.publish')}
+            </Button>
           </div>
         </form>
       </Form>

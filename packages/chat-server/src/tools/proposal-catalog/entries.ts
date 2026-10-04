@@ -694,7 +694,20 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     source: 'space_settings',
     prepareStrategy: 'prepare_governance_proposal',
     onChain: true,
-    discoveryIntro: 'Collect which spaces to activate.',
+    discoveryIntro: 'Collect which spaces to activate and how to pay.',
+    requiredFields: [
+      titleField,
+      descriptionField,
+      {
+        key: 'paymentToken',
+        label: 'Payment token',
+        required: true,
+        description:
+          'How should the space pay? HYPHA and USDC complete the on-chain renewal. EURC can be selected to preview the euro amount; on-chain EURC payment is not available until HyphaToken is upgraded to accept it.',
+        fieldType: 'string',
+        formSection: 'payment',
+      },
+    ],
     optionalFields: [...governancePluginFields],
   }),
 };

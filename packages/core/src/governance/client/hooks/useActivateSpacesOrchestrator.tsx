@@ -13,7 +13,9 @@ import {
   schemaActivateSpaces,
   schemaCreateAgreementFiles,
   schemaCreateAgreementWeb2,
-  HYPHA_PRICE_USD,
+  assertOnChainSpaceRenewalSupported,
+  getSpaceActivationBreakdown,
+  getSpaceActivationPaymentAmounts,
 } from '@hypha-platform/core/client';
 import { Config } from '@wagmi/core';
 
@@ -155,6 +157,9 @@ export const useActivateSpacesOrchestrator = ({
   const { trigger: activateSpaces } = useSWRMutation(
     'activateSpacesOrchestration',
     async (_: string, { arg }: { arg: ActivateSpacesArg }) => {
+      // Fail before creating a Web2 agreement — EURC cannot be executed on-chain.
+      assertOnChainSpaceRenewalSupported(arg.paymentToken);
+
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse({
         ...arg,
@@ -168,17 +173,12 @@ export const useActivateSpacesOrchestrator = ({
       try {
         if (config) {
           startTask('CREATE_WEB3_ACTIVATION');
-          const HYPHA_PER_MONTH = 44;
-          const breakdown = arg.spaces.map(({ spaceId, months }) => ({
-            spaceId,
-            hypha: months * HYPHA_PER_MONTH,
-            usdc: months * HYPHA_PER_MONTH * HYPHA_PRICE_USD,
-          }));
-          const spaceIds = breakdown.map((b) => b.spaceId);
-          const amounts =
-            arg.paymentToken === 'USDC'
-              ? breakdown.map((b) => b.usdc)
-              : breakdown.map((b) => b.hypha);
+          const breakdown = getSpaceActivationBreakdown(arg.spaces);
+          const spaceIds = breakdown.items.map((b) => b.spaceId);
+          const amounts = getSpaceActivationPaymentAmounts(
+            breakdown,
+            arg.paymentToken,
+          );
           await web3.activateInSpaces({
             spaceIds,
             amounts,

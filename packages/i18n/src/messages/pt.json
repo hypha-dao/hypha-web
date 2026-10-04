@@ -185,7 +185,9 @@
         "payWith": "Pague com:",
         "totalAmountIn": "Valor total em {token}:",
         "paidBy": "Pago por",
-        "paidTo": "Pago para"
+        "paidTo": "Pago para",
+        "eurcNotSupportedOnchain": "A EURC ainda não consegue concluir uma renovação on-chain. O contrato de subscrição aceita apenas USDC e HYPHA. Pague com USDC ou HYPHA, ou peça a um administrador Hypha para prorrogar a subscrição após uma transferência de EURC.",
+        "eurcRateUnavailable": "A taxa EUR/USD está indisponível. Escolha USDC ou HYPHA, ou tente novamente em breve."
       },
       "buyHyphaTokens": {
         "purchaseAmount": "Valor da compra",
@@ -1248,7 +1250,7 @@
       },
       "activateSpaces": {
         "title": "Ativar espaço(s)",
-        "description": "Contribua com HYPHA ou USDC para ativar seu(s) espaço(s) e apoiar a Rede Hypha."
+        "description": "Contribua com HYPHA, USDC ou EURC para ativar seu(s) espaço(s) e apoiar a Rede Hypha."
       },
       "votingMethod": {
         "title": "Método de votação",
@@ -1396,7 +1398,7 @@
       },
       "activateSpaces": {
         "title": "Ativar espaço(s)",
-        "description": "Contribua com HYPHA ou USDC para ativar seu(s) espaço(s) e apoiar a Rede Hypha."
+        "description": "Contribua com HYPHA, USDC ou EURC para ativar seu(s) espaço(s) e apoiar a Rede Hypha."
       }
     }
   },
@@ -1656,7 +1658,7 @@
       },
       "activateSpaces": {
         "title": "Ativar espaço(s)",
-        "description": "Patrocine e ative seu(s) espaço(s) favorito(s) contribuindo com HYPHA ou USDC, apoiando a Rede Hypha."
+        "description": "Patrocine e ative seu(s) espaço(s) favorito(s) contribuindo com HYPHA, USDC ou EURC, apoiando a Rede Hypha."
       },
       "migrateHyphaTokens": {
         "title": "Migrar tokens Hypha (Telos → Base)",
@@ -1695,11 +1697,12 @@
     },
     "activateSpaces": {
       "title": "Ativar espaço(s)",
-      "contentPrefix": "Patrocine e ative seu(s) espaço(s) favorito(s) contribuindo com HYPHA ou USDC, apoiando a Rede Hypha. Mais detalhes em",
+      "contentPrefix": "Patrocine e ative seu(s) espaço(s) favorito(s) contribuindo com HYPHA, USDC ou EURC, apoiando a Rede Hypha. Mais detalhes em",
       "contentSuffix": ".",
       "form": {
         "icons": {
           "usdcAlt": "Ícone USDC",
+          "eurcAlt": "Ícone EURC",
           "hyphaAlt": "Ícone de token Hypha"
         },
         "actions": {
