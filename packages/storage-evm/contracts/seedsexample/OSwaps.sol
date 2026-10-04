@@ -6,8 +6,11 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import { UD60x18, ud } from '@prb/math/src/UD60x18.sol';
 
 /**
@@ -29,8 +32,16 @@ import { UD60x18, ud } from '@prb/math/src/UD60x18.sol';
  *
  * See OSwaps.docs.md for the full contract reference and OSwaps.EOSIO-PARITY.md
  * for a comparison against the original Antelope implementation.
+ *
+ * Deployed behind a UUPS proxy. The owner can upgrade the implementation and
+ * can set the pool manager at any time. The manager still rotates itself.
  */
-contract OSwaps is Ownable, ReentrancyGuard {
+contract OSwaps is
+  Initializable,
+  OwnableUpgradeable,
+  ReentrancyGuardUpgradeable,
+  UUPSUpgradeable
+{
   using SafeERC20 for IERC20;
 
   // ============ Structs ============
@@ -127,18 +138,30 @@ contract OSwaps is Ownable, ReentrancyGuard {
 
   // ============ Constructor ============
 
-  constructor() Ownable(msg.sender) {
-    // Informational only, mirroring the original contract's chain_id field. The
-    // original recorded the home chain to support future cross-chain assets.
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
+  /**
+   * @dev Proxy initializer. Sets the owner and records the home chain id.
+   * The chain id is informational only, mirroring the original contract.
+   */
+  function initialize(address initialOwner) public initializer {
+    __Ownable_init(initialOwner);
+    __ReentrancyGuard_init();
+    __UUPSUpgradeable_init();
     config.chainId = bytes32(block.chainid);
     config.lastTokenId = 0;
   }
 
+  function _authorizeUpgrade(address) internal override onlyOwner {}
+
   // ============ Admin Functions ============
 
   /**
-   * @dev Set the initial manager. Callable once by the owner; afterwards the
-   * manager rotates itself via setManager.
+   * @dev Set the initial manager. Callable once by the owner. Later changes
+   * go through setManager, which the owner can also call.
    */
   function init(address manager) external onlyOwner {
     require(config.manager == address(0), 'Already initialized');
@@ -148,10 +171,14 @@ contract OSwaps is Ownable, ReentrancyGuard {
   }
 
   /**
-   * @dev Transfer manager authority. The original protocol allowed the incumbent
-   * manager to hand over to a replacement; this is that path.
+   * @dev Transfer manager authority. The incumbent manager can hand the role
+   * on, and the owner can replace the manager at any time.
    */
-  function setManager(address newManager) external onlyManager {
+  function setManager(address newManager) external {
+    require(
+      msg.sender == owner() || msg.sender == config.manager,
+      'Only manager or owner'
+    );
     require(newManager != address(0), 'Zero manager');
     address previous = config.manager;
     config.manager = newManager;

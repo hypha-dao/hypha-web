@@ -290,7 +290,9 @@ npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network bas
 
 ### Deploy OSwaps
 
-Deploys OSwaps on Base mainnet and initializes the manager (override with `OSWAPS_MANAGER`).
+Deploys OSwaps and RainbowFactory as UUPS proxies on Base mainnet. The deployer is the owner of
+both. OSwaps is initialized with `OSWAPS_MANAGER`, or with
+`0xf3c84d4d116c219ad93e5699708296ff0a55ff76` when that variable is unset.
 
 ```bash
 npx nx run storage-evm:script ./scripts/oswaps.deploy.ts --network base-mainnet

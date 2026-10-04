@@ -10,11 +10,14 @@ This folder contains Solidity (EVM) implementations of the Seeds/Rainbows token 
 
 ## Deployed Addresses (Base mainnet)
 
-| Contract        | Address                                      | Basescan                                                                |
-| --------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
-| OSwaps          | `0xA8b0Da630351E038E9D8E4d5135D029fB9757298` | https://basescan.org/address/0xA8b0Da630351E038E9D8E4d5135D029fB9757298 |
-| RainbowFactory  | `0x172fe07761C566661fAe90069b3fa140644fF16a` | https://basescan.org/address/0x172fe07761C566661fAe90069b3fa140644fF16a |
-| Owner / manager | `0x2687fe290b54d824c136Ceff2d5bD362Bc62019a` | https://basescan.org/address/0x2687fe290b54d824c136Ceff2d5bD362Bc62019a |
+| Contract                      | Address                                      | Basescan                                                                |
+| ----------------------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
+| OSwaps proxy                  | `0xE604eFB1C468f6ebfcc889D4f358008B29a158Fd` | https://basescan.org/address/0xE604eFB1C468f6ebfcc889D4f358008B29a158Fd |
+| OSwaps implementation         | `0xFC0157A6dA235Eb4E049A57432585551BC432fC6` | https://basescan.org/address/0xFC0157A6dA235Eb4E049A57432585551BC432fC6 |
+| RainbowFactory proxy          | `0xA7bBd8Fd8F0ABA762475FAc7B8c44c7498c6dD40` | https://basescan.org/address/0xA7bBd8Fd8F0ABA762475FAc7B8c44c7498c6dD40 |
+| RainbowFactory implementation | `0xdb2a6A173E551924f6713Ffa7aAA45B1c5c776d2` | https://basescan.org/address/0xdb2a6A173E551924f6713Ffa7aAA45B1c5c776d2 |
+| Owner                         | `0x2687fe290b54d824c136Ceff2d5bD362Bc62019a` | https://basescan.org/address/0x2687fe290b54d824c136Ceff2d5bD362Bc62019a |
+| OSwaps manager                | `0xF3C84D4d116C219ad93E5699708296FF0A55Ff76` | https://basescan.org/address/0xF3C84D4d116C219ad93E5699708296FF0A55Ff76 |
 
 Liquidity receipt tokens (`LIQ{tokenId}`) are created by `OSwaps.createAsset()` and are not pre-deployed.
 
@@ -25,7 +28,7 @@ cd packages/storage-evm
 npx hardhat run scripts/oswaps.deploy.ts --network base-mainnet
 ```
 
-Optional: set `OSWAPS_MANAGER` to initialize OSwaps with a manager other than the deployer. The script calls `init(manager)` immediately after deploy.
+The script deploys both contracts as UUPS proxies, with the deployer as owner. It then calls `init(manager)` on OSwaps. Set `OSWAPS_MANAGER` to override the default manager `0xf3c84d4d116c219ad93e5699708296ff0a55ff76`.
 
 ## Further documentation on OSwaps
 
@@ -61,7 +64,8 @@ A decentralized token swap protocol implementing a multi-token liquidity pool us
 - `quoteExactIn()` / `quoteExactOut()` - Price a swap without executing it
 - `queryPool()` - Get pool status for tokens
 - `getTokenIds()` / `getAsset()` - Enumerate and read registered assets
-- `setManager()` - Hand the manager role to a replacement (manager only)
+- `setManager()` - Hand the manager role to a replacement (owner or manager)
+- `upgradeToAndCall()` - Upgrade the UUPS proxy (owner only)
 
 See [`OSwaps.docs.md`](./OSwaps.docs.md) for the full surface. Note the bootstrap sequence: a new
 asset needs `createAsset` → `unfreeze` → `addLiquidity` with a non-zero weight → `unfreeze` again
@@ -95,7 +99,7 @@ An advanced ERC20 token with backing, demurrage, membership requirements, and cr
 
 ### 3. RainbowFactory.sol
 
-Factory contract for deploying new RainbowToken instances.
+Factory contract for deploying new RainbowToken instances. The factory itself is a UUPS proxy; the owner can upgrade it. Tokens it creates are not upgradeable.
 
 **Features:**
 
@@ -249,7 +253,7 @@ token.retire(amount, true);
 
 ## Testing
 
-`test/OSwaps.test.ts` covers OSwaps with 85 cases: the full external surface and access-control
+`test/OSwaps.test.ts` covers OSwaps with 86 cases: the full external surface and access-control
 matrix, the bootstrap and retirement sequences, weight rescaling, LIQ receipt behaviour, reentrancy
 and misbehaving-token handling, and a pricing-math section that checks accuracy against a
 double-precision reference, invariant preservation, exact-in/exact-out duality, and the domain limit.
