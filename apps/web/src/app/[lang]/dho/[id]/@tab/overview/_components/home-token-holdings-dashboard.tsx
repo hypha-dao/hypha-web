@@ -26,6 +26,7 @@ import {
 } from './members-chart-baseline';
 import { PayingSpacesDashboard } from '@web/components/paying-spaces-dashboard';
 import { ExportTokenHoldersButton } from './export-token-holders-button';
+import { ExportTokenHoldersIconButton } from './export-token-holders-icon-button';
 import {
   createTokenHoldingsFetcher,
   TokenHoldingsFetchError,
@@ -1679,12 +1680,20 @@ export function HomeTokenHoldingsDashboard({
                                 </CardDescription>
                               ) : null}
                             </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 rounded-none border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"
-                            >
-                              {getTokenTypeLabel(token.type)}
-                            </Badge>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <ExportTokenHoldersIconButton
+                                spaceSlug={spaceSlug}
+                                tokenAddress={token.token_address}
+                                tokenSymbol={token.symbol}
+                                getAccessToken={getAccessToken}
+                              />
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 rounded-none border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"
+                              >
+                                {getTokenTypeLabel(token.type)}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                         <div className="flex flex-1 flex-col">

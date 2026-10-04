@@ -365,6 +365,8 @@
     "exportHoldersError": "Impossible d'exporter la liste des détenteurs. Veuillez réessayer.",
     "exportHoldersIncomplete": "La découverte des détenteurs est incomplète. Veuillez réessayer l'export.",
     "exportHoldersAria": "Exporter la liste complète des détenteurs",
+    "exportTokenHoldersAria": "Exporter les détenteurs de {tokenSymbol}",
+    "exportTokenHoldersTooltip": "Exporter les détenteurs",
     "tooltip": {
       "totalSupply": "Offre totale",
       "other": "Autres",

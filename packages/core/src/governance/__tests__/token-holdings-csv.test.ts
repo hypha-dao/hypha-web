@@ -171,13 +171,30 @@ describe('tokenHoldingsCsvFilename', () => {
     ).toBe('hypha-token-holders-2026-09-17.csv');
   });
 
-  it('sanitizes unsafe slug characters', () => {
+  it('uses space slug, token symbol, and ISO date for a single token', () => {
+    expect(
+      tokenHoldingsCsvFilename(
+        'hypha-energy',
+        new Date('2026-10-04T12:00:00.000Z'),
+        'ENERGY',
+      ),
+    ).toBe('hypha-energy-ENERGY-holders-2026-10-04.csv');
+  });
+
+  it('sanitizes unsafe slug and symbol characters', () => {
     expect(
       tokenHoldingsCsvFilename(
         '../weird slug!',
         new Date('2026-09-17T12:00:00.000Z'),
       ),
     ).toBe('weird-slug-token-holders-2026-09-17.csv');
+    expect(
+      tokenHoldingsCsvFilename(
+        'hypha-energy',
+        new Date('2026-10-04T12:00:00.000Z'),
+        'VO/ICE',
+      ),
+    ).toBe('hypha-energy-VO-ICE-holders-2026-10-04.csv');
   });
 
   it('handles hyphen-heavy input without regex backtracking', () => {

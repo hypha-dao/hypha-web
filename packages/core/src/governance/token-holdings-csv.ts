@@ -125,7 +125,14 @@ function sanitizeFilenameSlug(spaceSlug: string): string {
 export function tokenHoldingsCsvFilename(
   spaceSlug: string,
   date = new Date(),
+  tokenSymbol?: string,
 ): string {
   const day = date.toISOString().slice(0, 10);
-  return `${sanitizeFilenameSlug(spaceSlug)}-token-holders-${day}.csv`;
+  const space = sanitizeFilenameSlug(spaceSlug);
+  const trimmedSymbol = tokenSymbol?.trim() ?? '';
+  const symbol = trimmedSymbol ? sanitizeFilenameSlug(trimmedSymbol) : '';
+  if (symbol) {
+    return `${space}-${symbol}-holders-${day}.csv`;
+  }
+  return `${space}-token-holders-${day}.csv`;
 }

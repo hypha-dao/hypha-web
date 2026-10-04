@@ -64,6 +64,8 @@ export type AssetItem = {
     slug: string;
   };
   address?: string;
+  /** True when this space issued the token — keep visible at 0 balance. */
+  issuedBySpace?: boolean;
   /**
    * Mutual credit info — only present for RegularSpaceToken instances that have
    * mutual credit configured. `netBalance` is negative when the holder owes credit.

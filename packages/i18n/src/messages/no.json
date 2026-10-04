@@ -363,6 +363,8 @@
     "exportHoldersError": "Kunne ikke eksportere innehaverlisten. Prøv på nytt.",
     "exportHoldersIncomplete": "Innehaveroppdagelsen er ufullstendig. Prøv eksporten på nytt.",
     "exportHoldersAria": "Eksporter hele innehaverlisten",
+    "exportTokenHoldersAria": "Eksporter innehavere av {tokenSymbol}",
+    "exportTokenHoldersTooltip": "Eksporter innehavere",
     "tooltip": {
       "totalSupply": "Total forsyning",
       "other": "Annet",

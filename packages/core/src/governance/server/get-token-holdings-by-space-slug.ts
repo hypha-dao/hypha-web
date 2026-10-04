@@ -16,6 +16,7 @@ import { fetchSpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetai
 import { web3Client } from '../../common/server/web3-rpc/client';
 import { isHiddenToken } from '../../common/web3/tokens';
 import { tokens } from '@hypha-platform/storage-postgres';
+import { applyTokenAddressFilter } from '../token-holdings-query';
 
 type HolderKind = 'person' | 'space' | 'treasury' | 'other';
 
@@ -53,6 +54,8 @@ export type GetTokenHoldingsBySpaceSlugInput = {
   collapseBelowPct?: number;
   /** Enumerate unnamed wallets instead of collapsing them into Other. */
   expandUnknownHolders?: boolean;
+  /** When set, only this space token is processed. */
+  tokenAddress?: string;
 };
 
 export type GetTokenHoldingsBySpaceSlugResult =
@@ -327,6 +330,7 @@ export async function getTokenHoldingsBySpaceSlug(
     includeTreasury = true,
     collapseBelowPct,
     expandUnknownHolders = false,
+    tokenAddress,
   }: GetTokenHoldingsBySpaceSlugInput,
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
@@ -441,6 +445,7 @@ export async function getTokenHoldingsBySpaceSlug(
 
   // Drop retired/hidden tokens so they never appear in holder breakdowns.
   tokenAddresses = tokenAddresses.filter((address) => !isHiddenToken(address));
+  tokenAddresses = applyTokenAddressFilter(tokenAddresses, tokenAddress);
 
   const computedRoster = await computeSpaceMemberEntries(spaceSlug, { db });
   const holderMap = new Map<`0x${string}`, HolderDescriptor>();
