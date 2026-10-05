@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 
 import type { DbConfig } from '../../server';
@@ -14,8 +14,13 @@ import {
 import { computeSpaceMemberEntries } from '../../space/server/get-space-members-roster';
 import { fetchSpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
 import { web3Client } from '../../common/server/web3-rpc/client';
-import { isHiddenToken } from '../../common/web3/tokens';
+import {
+  isEpartsToken,
+  isHiddenToken,
+  isHyphaToken,
+} from '../../common/web3/tokens';
 import { tokens } from '@hypha-platform/storage-postgres';
+import { extraSharedDistributionTokenAddresses } from '../distribution-shared-tokens';
 
 type HolderKind = 'person' | 'space' | 'treasury' | 'other';
 
@@ -87,10 +92,18 @@ type HolderDescriptor = {
   slug: string | null;
 };
 
-const HYPHA_SHARED_TOKEN_ADDRESS =
-  '0x8b93862835c36e9689e9bb1ab21de3982e266cd3' as const;
 const BALANCE_MULTICALL_CHUNK_SIZE = 200;
 const TOKEN_PROCESS_CONCURRENCY = 4;
+const TOKEN_META_COLUMNS = {
+  id: tokens.id,
+  name: tokens.name,
+  symbol: tokens.symbol,
+  maxSupply: tokens.maxSupply,
+  type: tokens.type,
+  iconUrl: tokens.iconUrl,
+  address: tokens.address,
+  archived: tokens.archived,
+} as const;
 
 function normalizeAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
@@ -133,20 +146,6 @@ function resolvePersonDisplayName(entry: {
 function dedupeAddresses(addresses: readonly `0x${string}`[]): `0x${string}`[] {
   return Array.from(
     new Set(addresses.map((address) => normalizeAddress(address))),
-  );
-}
-
-function shouldIncludeHyphaSharedToken(input: {
-  spaceSlug: string;
-  spaceTitle: string;
-}): boolean {
-  const slug = input.spaceSlug.toLowerCase();
-  const title = input.spaceTitle.toLowerCase();
-  return (
-    slug === 'hypha' ||
-    slug.startsWith('hypha-') ||
-    title === 'hypha' ||
-    title.startsWith('hypha ')
   );
 }
 
@@ -378,23 +377,31 @@ export async function getTokenHoldingsBySpaceSlug(
   }
 
   const dbTokens = await db
-    .select({
-      id: tokens.id,
-      name: tokens.name,
-      symbol: tokens.symbol,
-      maxSupply: tokens.maxSupply,
-      type: tokens.type,
-      iconUrl: tokens.iconUrl,
-      address: tokens.address,
-      archived: tokens.archived,
-    })
+    .select(TOKEN_META_COLUMNS)
     .from(tokens)
     .where(and(eq(tokens.spaceId, host.id), eq(tokens.archived, false)));
 
+  const parentOwnershipTokens =
+    host.parentId == null
+      ? []
+      : await db
+          .select(TOKEN_META_COLUMNS)
+          .from(tokens)
+          .where(
+            and(
+              eq(tokens.spaceId, host.parentId),
+              eq(tokens.archived, false),
+              eq(tokens.type, 'ownership'),
+            ),
+          );
+
   const dbTokenByAddress = new Map<`0x${string}`, (typeof dbTokens)[number]>();
-  for (const dbToken of dbTokens) {
+  for (const dbToken of [...dbTokens, ...parentOwnershipTokens]) {
     if (!dbToken.address || !isAddress(dbToken.address)) continue;
-    dbTokenByAddress.set(normalizeAddress(dbToken.address), dbToken);
+    const address = normalizeAddress(dbToken.address);
+    if (!dbTokenByAddress.has(address)) {
+      dbTokenByAddress.set(address, dbToken);
+    }
   }
 
   let tokenAddresses: `0x${string}`[] = [];
@@ -418,29 +425,43 @@ export async function getTokenHoldingsBySpaceSlug(
     }
   }
 
-  if (tokenAddresses.length === 0) {
-    tokenAddresses = Array.from(dbTokenByAddress.keys());
-  } else {
-    tokenAddresses = dedupeAddresses([
-      ...tokenAddresses,
-      ...Array.from(dbTokenByAddress.keys()),
-    ]);
-  }
-
-  if (
-    shouldIncludeHyphaSharedToken({
+  tokenAddresses = dedupeAddresses([
+    ...tokenAddresses,
+    ...Array.from(dbTokenByAddress.keys()),
+    ...extraSharedDistributionTokenAddresses({
       spaceSlug: host.slug,
       spaceTitle: host.title,
-    })
-  ) {
-    tokenAddresses = dedupeAddresses([
-      ...tokenAddresses,
-      normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS),
-    ]);
-  }
+    }).map((address) => normalizeAddress(address)),
+  ]);
 
   // Drop retired/hidden tokens so they never appear in holder breakdowns.
   tokenAddresses = tokenAddresses.filter((address) => !isHiddenToken(address));
+
+  const missingMetaAddresses = tokenAddresses.filter(
+    (address) => !dbTokenByAddress.has(address),
+  );
+  if (missingMetaAddresses.length > 0) {
+    const extraTokens = await db
+      .select(TOKEN_META_COLUMNS)
+      .from(tokens)
+      .where(
+        and(
+          eq(tokens.archived, false),
+          or(
+            ...missingMetaAddresses.map(
+              (address) => sql`lower(${tokens.address}) = ${address}`,
+            ),
+          ),
+        ),
+      );
+    for (const extra of extraTokens) {
+      if (!extra.address || !isAddress(extra.address)) continue;
+      const address = normalizeAddress(extra.address);
+      if (!dbTokenByAddress.has(address)) {
+        dbTokenByAddress.set(address, extra);
+      }
+    }
+  }
 
   const computedRoster = await computeSpaceMemberEntries(spaceSlug, { db });
   const holderMap = new Map<`0x${string}`, HolderDescriptor>();
@@ -491,8 +512,8 @@ export async function getTokenHoldingsBySpaceSlug(
   ): Promise<{ row: TokenHoldingRow; holdersComplete: boolean }> => {
     const contractInfo = await readTokenContractInfo(tokenAddress);
     const tokenMeta = dbTokenByAddress.get(tokenAddress);
-    const isHyphaSharedToken =
-      tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS);
+    const isHyphaSharedToken = isHyphaToken(tokenAddress);
+    const isEpartsSharedToken = isEpartsToken(tokenAddress);
     const isVoiceToken =
       tokenMeta?.type === 'voice' || isVoiceTokenSymbol(contractInfo.symbol);
     const decimals = contractInfo.decimals;
@@ -641,7 +662,12 @@ export async function getTokenHoldingsBySpaceSlug(
         icon_url: tokenMeta?.iconUrl ?? null,
         type: isVoiceToken
           ? 'voice'
-          : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
+          : tokenMeta?.type ??
+            (isHyphaSharedToken
+              ? 'utility'
+              : isEpartsSharedToken
+              ? 'ownership'
+              : 'unknown'),
         decimals,
         max_supply: tokenMeta?.maxSupply ?? null,
         total_supply: formatUnits(totalSupplyRaw, decimals),
