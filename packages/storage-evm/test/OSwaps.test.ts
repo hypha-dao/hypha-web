@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
@@ -90,7 +90,10 @@ async function deployBare() {
   const [owner, manager, lp, trader, recipient, outsider] =
     await ethers.getSigners();
   const OSwaps = await ethers.getContractFactory('OSwaps');
-  const oswaps = await OSwaps.deploy();
+  const oswaps = await upgrades.deployProxy(OSwaps, [owner.address], {
+    initializer: 'initialize',
+    kind: 'uups',
+  });
   return { oswaps, owner, manager, lp, trader, recipient, outsider };
 }
 
@@ -262,16 +265,26 @@ describe('OSwaps', function () {
       );
     });
 
+    it('Should let the owner replace the manager', async function () {
+      const { oswaps, owner, manager, outsider } = await loadFixture(
+        deployInitialised,
+      );
+      await expect(oswaps.connect(owner).setManager(outsider.address))
+        .to.emit(oswaps, 'ManagerUpdated')
+        .withArgs(manager.address, outsider.address);
+      expect((await oswaps.config()).manager).to.equal(outsider.address);
+    });
+
     it('Should reject rotation by non-managers and to the zero address', async function () {
       const { oswaps, owner, manager, outsider } = await loadFixture(
         deployInitialised,
       );
       await expect(
         oswaps.connect(outsider).setManager(outsider.address),
-      ).to.be.revertedWith('Only manager');
+      ).to.be.revertedWith('Only manager or owner');
       await expect(
-        oswaps.connect(owner).setManager(owner.address),
-      ).to.be.revertedWith('Only manager');
+        oswaps.connect(owner).setManager(ethers.ZeroAddress),
+      ).to.be.revertedWith('Zero manager');
       await expect(
         oswaps.connect(manager).setManager(ethers.ZeroAddress),
       ).to.be.revertedWith('Zero manager');

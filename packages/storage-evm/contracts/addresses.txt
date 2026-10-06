@@ -188,3 +188,11 @@ OSwaps deployed to: 0xA8b0Da630351E038E9D8E4d5135D029fB9757298
 OSwaps initialized. Manager: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying RainbowFactory...
 RainbowFactory deployed to: 0x172fe07761C566661fAe90069b3fa140644fF16a
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+OSwaps manager: 0xF3C84D4d116C219ad93E5699708296FF0A55Ff76
+OSwaps deployed to: 0xE604eFB1C468f6ebfcc889D4f358008B29a158Fd
+OSwaps implementation: 0xFC0157A6dA235Eb4E049A57432585551BC432fC6
+OSwaps initialized. Manager: 0xF3C84D4d116C219ad93E5699708296FF0A55Ff76
+RainbowFactory deployed to: 0xA7bBd8Fd8F0ABA762475FAc7B8c44c7498c6dD40
+RainbowFactory implementation: 0xdb2a6A173E551924f6713Ffa7aAA45B1c5c776d2
