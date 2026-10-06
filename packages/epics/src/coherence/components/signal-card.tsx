@@ -32,6 +32,7 @@ import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import {
@@ -70,6 +71,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   roomId,
   creatorId,
   assigneeIds,
+  assigneeAcknowledgedAt,
   upvotes,
   refresh,
   onOpenConversation,
@@ -379,6 +381,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 className="content-start gap-1 pl-3.5"
               />
             ) : null}
+            <SignalOwnerSeen
+              assigneeIds={assigneeIds}
+              acknowledgements={assigneeAcknowledgedAt}
+              className="pl-3.5"
+            />
           </div>
         </div>
 

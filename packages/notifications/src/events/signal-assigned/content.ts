@@ -33,6 +33,8 @@ export const buildSignalAssignedContent: ContentBuilder<SignalAssignedEvent> = (
           spaceTitle,
           actorDisplayName,
           url,
+          dueAt:
+            event.payload.dueAt ?? (recipient.data?.dueAt as string | null),
         }),
       },
     },

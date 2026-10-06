@@ -69,7 +69,34 @@ export interface SignalAssignedEvent {
     /** The caller — resolved server-side from the mutation's own auth, never notified about their own assignment. */
     actorPersonId: number | null;
   };
-  payload: { signalSlug: string; signalTitle: string };
+  payload: {
+    signalSlug: string;
+    signalTitle: string;
+    dueAt?: string | null;
+  };
+}
+
+export type SignalBoardNoticeKind =
+  | 'deadline_changed'
+  | 'mentioned'
+  | 'deadline_reminder'
+  | 'deadline_overdue';
+
+export interface SignalBoardNoticeEvent {
+  type: 'signal.notice';
+  source: { kind: 'domain'; entityType: 'coherence'; entityId: string };
+  context: {
+    spaceId: number;
+    recipientPersonIds: number[];
+    actorPersonId: number | null;
+    kind: SignalBoardNoticeKind;
+  };
+  payload: {
+    signalSlug: string;
+    signalTitle: string;
+    dueAt?: string | null;
+    mentionExcerpt?: string;
+  };
 }
 
 export interface ScheduledItemInvitedEvent {
@@ -96,6 +123,7 @@ export type NotificationEvent =
   | ProposalAcceptedEvent
   | ProposalRejectedEvent
   | SignalAssignedEvent
+  | SignalBoardNoticeEvent
   | ScheduledItemInvitedEvent
   | ChatNotificationEvent;
 

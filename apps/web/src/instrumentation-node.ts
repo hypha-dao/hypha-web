@@ -5,8 +5,8 @@
  */
 export async function register() {
   const [
-    { setSignalAssignedNotifier },
-    { dispatch, buildSignalAssignedEvent },
+    { setSignalAssignedNotifier, setSignalLifecycleNotifier },
+    { dispatch, buildSignalAssignedEvent, buildSignalNoticeEvent },
   ] = await Promise.all([
     import('@hypha-platform/core/server'),
     import('@hypha-platform/notifications/server'),
@@ -14,5 +14,33 @@ export async function register() {
 
   setSignalAssignedNotifier(async (input) => {
     await dispatch(buildSignalAssignedEvent(input));
+  });
+
+  setSignalLifecycleNotifier(async (input) => {
+    if (input.kind === 'assigned') {
+      await dispatch(
+        buildSignalAssignedEvent({
+          spaceId: input.spaceId,
+          assigneePersonIds: input.recipientPersonIds,
+          actorPersonId: input.actorPersonId,
+          signalSlug: input.signalSlug,
+          signalTitle: input.signalTitle,
+          dueAt: input.dueAt,
+        }),
+      );
+      return;
+    }
+    await dispatch(
+      buildSignalNoticeEvent({
+        kind: input.kind,
+        spaceId: input.spaceId,
+        recipientPersonIds: input.recipientPersonIds,
+        actorPersonId: input.actorPersonId,
+        signalSlug: input.signalSlug,
+        signalTitle: input.signalTitle,
+        dueAt: input.dueAt,
+        mentionExcerpt: input.mentionExcerpt,
+      }),
+    );
   });
 }

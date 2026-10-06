@@ -21,6 +21,11 @@ import {
   resolveDefaultBoard,
   resolveDefaultProgressStatus,
 } from '../signal-workflow';
+import { mergeTagInList, normalizeTagKey } from '../signal-tags';
+import {
+  assigneeAcknowledgementMap,
+  resetDeadlineNotifyState,
+} from '../signal-notification-triggers';
 
 export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
@@ -83,6 +88,10 @@ async function getCoherenceRowForTaskPatch(
       progressStatus: coherences.progressStatus,
       board: coherences.board,
       assigneeIds: coherences.assigneeIds,
+      dueAt: coherences.dueAt,
+      description: coherences.description,
+      assigneeAcknowledgedAt: coherences.assigneeAcknowledgedAt,
+      deadlineNotifyState: coherences.deadlineNotifyState,
     })
     .from(coherences)
     .where(eq(coherences.slug, slug));
@@ -232,6 +241,11 @@ export const updateCoherenceSignalBySlug = async (
     row.progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS;
   const nextBoard = board ?? null;
   const currentBoard = row.board?.trim() || null;
+  const nextAssigneeIds =
+    assigneeIds !== undefined
+      ? normalizeAssigneeIds(assigneeIds)
+      : normalizeAssigneeIds(row.assigneeIds);
+  const nextDueAt = dueAt ?? null;
 
   if (row.spaceId != null) {
     const workflow = await ensureSignalWorkflowConfig(
@@ -254,12 +268,18 @@ export const updateCoherenceSignalBySlug = async (
       title,
       description,
       tags,
-      dueAt: dueAt ?? null,
+      dueAt: nextDueAt,
       progressStatus: nextProgressStatus,
       board: nextBoard,
-      ...(assigneeIds !== undefined
-        ? { assigneeIds: normalizeAssigneeIds(assigneeIds) }
-        : {}),
+      assigneeIds: nextAssigneeIds,
+      assigneeAcknowledgedAt: assigneeAcknowledgementMap(
+        nextAssigneeIds,
+        row.assigneeAcknowledgedAt,
+      ),
+      deadlineNotifyState: resetDeadlineNotifyState(
+        nextDueAt,
+        row.deadlineNotifyState,
+      ),
       ...(archived !== undefined ? { archived } : {}),
     })
     .where(eq(coherences.id, row.id))
@@ -294,6 +314,10 @@ export const patchCoherenceTaskBySlug = async (
 
   if (rest.dueAt !== undefined) {
     patch.dueAt = rest.dueAt;
+    patch.deadlineNotifyState = resetDeadlineNotifyState(
+      rest.dueAt,
+      row.deadlineNotifyState,
+    );
   }
   if (rest.progressStatus !== undefined) {
     patch.progressStatus =
@@ -303,7 +327,12 @@ export const patchCoherenceTaskBySlug = async (
     patch.board = rest.board;
   }
   if (rest.assigneeIds !== undefined) {
-    patch.assigneeIds = normalizeAssigneeIds(rest.assigneeIds);
+    const nextAssigneeIds = normalizeAssigneeIds(rest.assigneeIds);
+    patch.assigneeIds = nextAssigneeIds;
+    patch.assigneeAcknowledgedAt = assigneeAcknowledgementMap(
+      nextAssigneeIds,
+      row.assigneeAcknowledgedAt,
+    );
   }
   if (rest.priority !== undefined) {
     patch.priority = rest.priority;
@@ -357,4 +386,69 @@ export const deleteCoherenceBySlug = async (
   }
 
   return deleted[0];
+};
+
+export const mergeCoherenceTags = async (
+  {
+    spaceId,
+    fromTag,
+    toTag,
+  }: { spaceId: number; fromTag: string; toTag: string },
+  { db }: { db: DatabaseInstance },
+) => {
+  const fromKey = normalizeTagKey(fromTag);
+  const toKey = normalizeTagKey(toTag);
+  if (!fromKey || !toKey) {
+    throw new Error('Both tags are required to merge');
+  }
+  if (fromKey === toKey) {
+    return { updated: 0 };
+  }
+
+  const rows = await db
+    .select({ id: coherences.id, tags: coherences.tags })
+    .from(coherences)
+    .where(eq(coherences.spaceId, spaceId));
+
+  let updated = 0;
+  for (const row of rows) {
+    const current = Array.isArray(row.tags) ? row.tags : [];
+    const next = mergeTagInList(current, fromTag, toTag);
+    const changed =
+      next.length !== current.length ||
+      next.some((tag, index) => tag !== current[index]);
+    if (!changed) continue;
+    await db
+      .update(coherences)
+      .set({ tags: next, updatedAt: new Date() })
+      .where(eq(coherences.id, row.id));
+    updated += 1;
+  }
+
+  return { updated };
+};
+
+export const acknowledgeCoherenceAssignment = async (
+  { slug, personId }: { slug: string; personId: number },
+  { db }: { db: DatabaseInstance },
+) => {
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
+  const assigneeIds = normalizeAssigneeIds(row.assigneeIds);
+  if (!assigneeIds.includes(personId)) {
+    return null;
+  }
+  const previous = row.assigneeAcknowledgedAt ?? {};
+  if (previous[String(personId)]) {
+    return null;
+  }
+  const next = {
+    ...previous,
+    [String(personId)]: new Date().toISOString(),
+  };
+  const [updated] = await db
+    .update(coherences)
+    .set({ assigneeAcknowledgedAt: next, updatedAt: new Date() })
+    .where(eq(coherences.id, row.id))
+    .returning();
+  return updated ?? null;
 };

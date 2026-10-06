@@ -6,16 +6,22 @@ import {
 } from '@hypha-platform/core/server';
 import { db, people } from '@hypha-platform/storage-postgres';
 import type { RecipientResolver } from '../../core/recipient-resolver';
-import type { Recipient, SignalAssignedEvent } from '../../core/types';
+import type {
+  Recipient,
+  SignalBoardNoticeEvent,
+  SignalBoardNoticeKind,
+} from '../../core/types';
 
-export function buildSignalAssignedEvent(input: {
+export function buildSignalNoticeEvent(input: {
+  kind: SignalBoardNoticeKind;
   spaceId: number;
-  assigneePersonIds: number[];
+  recipientPersonIds: number[];
   actorPersonId: number | null;
   signalSlug: string;
   signalTitle: string;
   dueAt?: Date | string | null;
-}): SignalAssignedEvent {
+  mentionExcerpt?: string;
+}): SignalBoardNoticeEvent {
   const dueAt =
     input.dueAt == null
       ? null
@@ -23,7 +29,7 @@ export function buildSignalAssignedEvent(input: {
       ? input.dueAt.toISOString()
       : input.dueAt;
   return {
-    type: 'signal.assigned',
+    type: 'signal.notice',
     source: {
       kind: 'domain',
       entityType: 'coherence',
@@ -31,28 +37,29 @@ export function buildSignalAssignedEvent(input: {
     },
     context: {
       spaceId: input.spaceId,
-      assigneePersonIds: [...new Set(input.assigneePersonIds)].filter(
+      recipientPersonIds: [...new Set(input.recipientPersonIds)].filter(
         (id) => Number.isInteger(id) && id > 0,
       ),
       actorPersonId: input.actorPersonId,
+      kind: input.kind,
     },
     payload: {
       signalSlug: input.signalSlug,
       signalTitle: input.signalTitle,
       dueAt,
+      mentionExcerpt: input.mentionExcerpt,
     },
   };
 }
 
-/** Re-derives `notify-signal-assigned.ts`'s prior logic (self-assignment excluded, email only). */
-export const resolveSignalAssignedRecipients: RecipientResolver<
-  SignalAssignedEvent
+export const resolveSignalNoticeRecipients: RecipientResolver<
+  SignalBoardNoticeEvent
 > = async (event) => {
-  const { spaceId, assigneePersonIds, actorPersonId } = event.context;
-  const recipientIds = assigneePersonIds.filter((id) => id !== actorPersonId);
+  const { spaceId, recipientPersonIds, actorPersonId } = event.context;
+  const recipientIds = recipientPersonIds.filter((id) => id !== actorPersonId);
   if (recipientIds.length === 0) return [];
 
-  const [space, actor, assignees] = await Promise.all([
+  const [space, actor, peopleRows] = await Promise.all([
     findSpaceById({ id: spaceId }, { db }),
     actorPersonId
       ? findPersonById({ id: actorPersonId }, { db })
@@ -64,9 +71,7 @@ export const resolveSignalAssignedRecipients: RecipientResolver<
   ]);
 
   if (!space) {
-    console.warn('[notifications] signal.assigned: space not found', {
-      spaceId,
-    });
+    console.warn('[notifications] signal.notice: space not found', { spaceId });
     return [];
   }
 
@@ -85,9 +90,9 @@ export const resolveSignalAssignedRecipients: RecipientResolver<
   };
 
   const recipients: Recipient[] = [];
-  for (const { slug } of assignees) {
+  for (const { slug } of peopleRows) {
     if (!slug) continue;
-    recipients.push({ personSlug: slug, role: 'assignee', data });
+    recipients.push({ personSlug: slug, role: event.context.kind, data });
   }
   return recipients;
 };

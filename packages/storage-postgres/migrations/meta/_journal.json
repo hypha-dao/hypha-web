@@ -561,6 +561,13 @@
       "when": 1784000000010,
       "tag": "0079_notification_processed_events_common_date_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1784000000011,
+      "tag": "0080_signal_owner_notifications",
+      "breakpoints": true
     }
   ]
 }

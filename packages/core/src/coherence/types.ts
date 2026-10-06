@@ -110,6 +110,12 @@ export type Coherence = {
   progressStatus: string | null;
   board: string | null;
   assigneeIds: number[];
+  assigneeAcknowledgedAt: Record<string, string>;
+  deadlineNotifyState: {
+    dueAtIso?: string | null;
+    reminderSentAt?: string | null;
+    overdueSentAt?: string | null;
+  };
   /** `space_api_keys.source` when written by a community app integration. */
   source: string | null;
   /** The integration's own identifier for the record. */
