@@ -21,6 +21,7 @@ import {
 } from '../../common/web3/tokens';
 import { tokens } from '@hypha-platform/storage-postgres';
 import { extraSharedDistributionTokenAddresses } from '../distribution-shared-tokens';
+import { shouldIncludeChartOtherBucket } from '../distribution-chart-holders';
 
 type HolderKind = 'person' | 'space' | 'treasury' | 'other';
 
@@ -235,11 +236,73 @@ async function readBalancesForHolders(
   return balances;
 }
 
+function attachPlaceholderHolders(
+  holdersByAddress: Map<`0x${string}`, HolderDescriptor>,
+  addresses: readonly `0x${string}`[],
+) {
+  for (const address of addresses) {
+    if (holdersByAddress.has(address)) continue;
+    holdersByAddress.set(address, {
+      address,
+      holder_kind: 'other',
+      display_name: '',
+      slug: null,
+    });
+  }
+}
+
+async function resolveHolderIdentities(
+  holders: HolderDescriptor[],
+  db: DbConfig['db'],
+): Promise<void> {
+  const unnamed = holders.filter(
+    (holder) => holder.address && !holder.display_name,
+  );
+  if (unnamed.length === 0) return;
+
+  const unknownAddresses = unnamed.map((holder) => holder.address);
+  const [people, spacesResult] = await Promise.all([
+    findPeopleByWeb3Addresses({ addresses: unknownAddresses }, { db }),
+    findSpaceByAddresses(unknownAddresses, {}, { db }),
+  ]);
+
+  const peopleByAddress = new Map(
+    people
+      .filter((person) => person.address && isAddress(person.address))
+      .map((person) => [normalizeAddress(person.address!), person]),
+  );
+  const spacesByAddress = new Map(
+    spacesResult.data
+      .filter((space) => space.address && isAddress(space.address))
+      .map((space) => [normalizeAddress(space.address!), space]),
+  );
+
+  for (const holder of unnamed) {
+    const person = peopleByAddress.get(holder.address);
+    if (person) {
+      holder.holder_kind = 'person';
+      holder.display_name = resolvePersonDisplayName({ person });
+      holder.slug = person.slug ?? null;
+      continue;
+    }
+
+    const space = spacesByAddress.get(holder.address);
+    if (space) {
+      holder.holder_kind = 'space';
+      holder.display_name =
+        space.title || space.slug || shortAddress(holder.address);
+      holder.slug = space.slug ?? null;
+    }
+  }
+}
+
 async function withDiscoveredHolders(
   tokenAddress: `0x${string}`,
   knownHolders: HolderDescriptor[],
   db: DbConfig['db'],
+  options: { resolveNames?: boolean } = {},
 ): Promise<{ holders: HolderDescriptor[]; complete: boolean }> {
+  const resolveNames = options.resolveNames !== false;
   const holdersByAddress = new Map(
     knownHolders.map((holder) => [holder.address, holder]),
   );
@@ -265,57 +328,13 @@ async function withDiscoveredHolders(
     return { holders: knownHolders, complete };
   }
 
-  const [people, spacesResult] = await Promise.all([
-    findPeopleByWeb3Addresses({ addresses: unknownAddresses }, { db }),
-    findSpaceByAddresses(unknownAddresses, {}, { db }),
-  ]);
-
-  const peopleByAddress = new Map(
-    people
-      .filter((person) => person.address && isAddress(person.address))
-      .map((person) => [normalizeAddress(person.address!), person]),
-  );
-  const spacesByAddress = new Map(
-    spacesResult.data
-      .filter((space) => space.address && isAddress(space.address))
-      .map((space) => [normalizeAddress(space.address!), space]),
-  );
-
-  for (const address of unknownAddresses) {
-    const person = peopleByAddress.get(address);
-    if (person) {
-      holdersByAddress.set(address, {
-        address,
-        holder_kind: 'person',
-        display_name: resolvePersonDisplayName({ person }),
-        slug: person.slug ?? null,
-      });
-      continue;
-    }
-
-    const space = spacesByAddress.get(address);
-    if (space) {
-      holdersByAddress.set(address, {
-        address,
-        holder_kind: 'space',
-        display_name: space.title || space.slug || shortAddress(address),
-        slug: space.slug ?? null,
-      });
-      continue;
-    }
-
-    holdersByAddress.set(address, {
-      address,
-      holder_kind: 'other',
-      display_name: '',
-      slug: null,
-    });
+  attachPlaceholderHolders(holdersByAddress, unknownAddresses);
+  const holders = Array.from(holdersByAddress.values());
+  if (resolveNames) {
+    await resolveHolderIdentities(holders, db);
   }
 
-  return {
-    holders: Array.from(holdersByAddress.values()),
-    complete,
-  };
+  return { holders, complete };
 }
 
 export async function getTokenHoldingsBySpaceSlug(
@@ -505,7 +524,11 @@ export async function getTokenHoldingsBySpaceSlug(
   const rosterHolders = Array.from(holderMap.values());
   const expandHolders = expandUnknownHolders === true;
   const effectiveCollapseBelowPct = expandHolders ? 0 : safeCollapseBelowPct;
-  const effectiveHolderLimit = expandHolders ? undefined : safeHolderLimit;
+  const effectiveHolderLimit = safeHolderLimit;
+  const includeOtherBucket = shouldIncludeChartOtherBucket({
+    expandUnknownHolders: expandHolders,
+    holderLimit: effectiveHolderLimit,
+  });
 
   const buildTokenRow = async (
     tokenAddress: `0x${string}`,
@@ -526,6 +549,7 @@ export async function getTokenHoldingsBySpaceSlug(
         tokenAddress,
         rosterHolders,
         db,
+        { resolveNames: false },
       );
       holderDescriptors = discovered.holders;
       holdersComplete = discovered.complete;
@@ -535,6 +559,26 @@ export async function getTokenHoldingsBySpaceSlug(
       tokenAddress,
       holderDescriptors,
     );
+
+    if (expandHolders) {
+      const rankedForNames = [...holderDescriptors]
+        .filter((descriptor) => {
+          const balanceRaw = balancesByAddress.get(descriptor.address) ?? 0n;
+          return includeZeroBalances || balanceRaw > 0n;
+        })
+        .sort((left, right) => {
+          const diff =
+            (balancesByAddress.get(right.address) ?? 0n) -
+            (balancesByAddress.get(left.address) ?? 0n);
+          if (diff > 0n) return 1;
+          if (diff < 0n) return -1;
+          return left.display_name.localeCompare(right.display_name);
+        });
+      const nameResolveHolders = effectiveHolderLimit
+        ? rankedForNames.slice(0, effectiveHolderLimit)
+        : rankedForNames;
+      await resolveHolderIdentities(nameResolveHolders, db);
+    }
 
     const treasuryDescriptor = holderDescriptors.find(
       (holder) => holder.holder_kind === 'treasury',
@@ -574,7 +618,11 @@ export async function getTokenHoldingsBySpaceSlug(
         rows.push({
           holder_kind: descriptor.holder_kind,
           address: descriptor.address,
-          display_name: descriptor.display_name,
+          display_name:
+            descriptor.display_name ||
+            (includeOtherBucket
+              ? shortAddress(descriptor.address)
+              : descriptor.display_name),
           slug: descriptor.slug,
           balance: formatUnits(balanceRaw, decimals),
           balance_raw: balanceRaw.toString(),
@@ -641,7 +689,7 @@ export async function getTokenHoldingsBySpaceSlug(
 
     const otherRaw =
       externalOtherRaw + collapsedSmallHolderRaw + overflowToOtherRaw;
-    if (!expandHolders && (otherRaw > 0n || includeZeroBalances)) {
+    if (includeOtherBucket && (otherRaw > 0n || includeZeroBalances)) {
       holderRows.push({
         holder_kind: 'other',
         address: null,
