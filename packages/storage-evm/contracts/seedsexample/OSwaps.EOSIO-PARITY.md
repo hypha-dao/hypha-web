@@ -188,8 +188,9 @@ if(reconfig) { require_auth(cfg.manager); } else { require_auth2(get_self().valu
 ```
 
 with the header stating the intent: "The manager account may transfer authority to a replacement
-manager account." The port splits this into `init` (owner, once) and `setManager` (incumbent
-manager), which is the same two-case authorisation expressed as two functions.
+manager account." The port splits this into `init` (owner, once) and `setManager`. `setManager` can
+be called by the incumbent manager or by the contract owner, so the owner can reclaim the role.
+That owner override is an EVM divergence from the original cold-owner design.
 
 ### LIQ receipts are not tradeable
 
@@ -389,10 +390,10 @@ Chuck's header is unusually explicit that the owner is meant to be powerless aft
 > uploading the contract and once for specifying a manager account. **It has no operational role
 > after that**, however for test purposes the `reset` action is implemented.
 
-The port honours this. `owner` can call `init` once and nothing else; there is no owner-level
-withdrawal, no pause, and no upgrade path. Every operational power — freeze, unfreeze, withdraw,
-forgetAsset, and rotation of the role itself — sits with `manager`, which the incumbent manager can
-hand on but the owner cannot reclaim.
+The port keeps the owner out of the funds. There is no owner-level withdrawal and no pause. Freeze,
+unfreeze, withdraw, and forgetAsset stay with the manager. Two powers were added for the EVM
+deployment: the contract is a UUPS proxy the owner can upgrade, and the owner can call `setManager`
+at any time. The incumbent manager can still hand the role on.
 
 That concentration is the protocol's own design, not an artefact of the port, and it has a sharp
 consequence that any deployment has to confront directly: **liquidity providers cannot exit without
@@ -432,7 +433,7 @@ or an EVM-specific hazard; all are now closed.
 | Fee-on-transfer and rebasing tokens mispriced silently                                             | Rejected with `Unexpected balance change`                           |
 | Weight changes emitted no event                                                                    | `WeightUpdated`; `forgetAsset` and manager changes also emit now    |
 | Dead `onlyActive` modifier                                                                         | Removed                                                             |
-| No tests, no deploy script                                                                         | 85-case suite in `test/OSwaps.test.ts`; `scripts/oswaps.deploy.ts`  |
+| No tests, no deploy script                                                                         | 86-case suite in `test/OSwaps.test.ts`; `scripts/oswaps.deploy.ts`  |
 
 The one judgement call worth restating. Replacing the Taylor series moves the code _further_ from a
 literal transcription of Chuck's C++ while moving it _closer_ to the protocol's intended behaviour.
@@ -451,7 +452,7 @@ A fixed-point `pow` is the closest EVM equivalent of that primitive.
 | Semantic rules (freeze-on-reprice, weight-zero, symbol guard, manager-gated exit) | Faithful                                                                   |
 | EVM rearchitecting (pull vs push, exact-pull swap, reentrancy, slippage floor)    | Well judged; an improvement                                                |
 | Numerical accuracy                                                                | Equivalent to the original. < 1e-10 relative error, no practical trade cap |
-| Trust model                                                                       | Faithful. Owner is powerless after `init`; all power sits with the manager |
+| Trust model                                                                       | Diverges. Owner cannot move funds, but can upgrade and replace the manager |
 | LIQ token behaviour                                                               | Faithful on precision, 1:1 issuance, and the no-p2p restriction            |
 | Operational completeness                                                          | Complete: rotation, full `forgetAsset`, no stranded balances               |
 | Production readiness                                                              | **Unaudited.** Tested and deployable, but not reviewed by a third party    |
