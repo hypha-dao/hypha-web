@@ -6,6 +6,7 @@ import * as d3 from 'd3';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
 import {
+  isPayingSpacesDashboardEnabled,
   previousMonthKey,
   type PayingSpacesDashboardData,
 } from '@hypha-platform/core/client';
@@ -259,8 +260,11 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
   const tCommon = useTranslations('Common');
   const authReady = !isAuthLoading && accessTokenReady;
   const authKey = isAuthenticated ? 'auth' : 'anon';
+  const dashboardEnabled = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
   const { data, error, isLoading } = useSWR(
-    authReady ? ['platform-paying-spaces-v4', spaceSlug, authKey] : null,
+    dashboardEnabled && authReady
+      ? ['platform-paying-spaces-v4', spaceSlug, authKey]
+      : null,
     ([, slug]) => fetchPayingSpaces(slug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 15 * 60_000 },
   );
@@ -342,6 +346,10 @@ export function PayingSpacesDashboard({ spaceSlug }: { spaceSlug: string }) {
   );
   const visibleSpaces = spaces.slice(0, visibleSpaceCount);
   const hasMoreSpaces = visibleSpaceCount < spaces.length;
+
+  if (!dashboardEnabled) {
+    return null;
+  }
 
   if (loading) {
     return <PayingSpacesDashboardSkeleton />;

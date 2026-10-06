@@ -1,8 +1,21 @@
 import { Container, Heading } from '@hypha-platform/ui';
+import { isPayingSpacesDashboardEnabled } from '@hypha-platform/core/client';
+import { Locale } from '@hypha-platform/i18n';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { PayingSpacesDashboard } from '@web/components/paying-spaces-dashboard';
+import { getDhoPathOverview } from '../../dho/[id]/@tab/overview/constants';
 
-export default async function PlatformDashboardPage() {
+type PageProps = {
+  params: Promise<{ lang: Locale }>;
+};
+
+export default async function PlatformDashboardPage({ params }: PageProps) {
+  const { lang } = await params;
+  if (!isPayingSpacesDashboardEnabled({ slug: 'hypha' })) {
+    redirect(getDhoPathOverview(lang, 'hypha'));
+  }
+
   const t = await getTranslations('TokenHoldingsDashboard.payingSpaces');
 
   return (
