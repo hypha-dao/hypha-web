@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Cog } from 'lucide-react';
+import { Cog, Plus } from 'lucide-react';
 import {
   Button,
   Checkbox,
@@ -20,6 +20,7 @@ type SignalViewControlsProps = {
   hideArchived: boolean;
   onHideArchivedChange: (checked: boolean) => void;
   workflowSettingsHref?: string | null;
+  createSignalHref?: string | null;
   className?: string;
 };
 
@@ -29,6 +30,7 @@ export function SignalViewControls({
   hideArchived,
   onHideArchivedChange,
   workflowSettingsHref,
+  createSignalHref,
   className,
 }: SignalViewControlsProps) {
   const t = useTranslations('CoherenceTab');
@@ -42,25 +44,54 @@ export function SignalViewControls({
     >
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
         <div className="inline-flex w-max flex-nowrap items-center gap-2">
-          {workflowSettingsHref ? (
+          {createSignalHref || workflowSettingsHref ? (
             <div className="inline-flex h-10 shrink-0 items-center rounded-none border border-border/70 px-1">
-              <Button
-                asChild
-                type="button"
-                variant="ghost"
-                colorVariant="neutral"
-                size="sm"
-                className="h-8 min-h-0 w-8 shrink-0 rounded-none p-0 text-muted-foreground hover:text-foreground"
-              >
-                <Link
-                  href={workflowSettingsHref}
-                  scroll={false}
-                  aria-label={t('signalWorkflowSettings')}
-                  title={t('signalWorkflowSettings')}
+              {createSignalHref ? (
+                <Button
+                  asChild
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-8 min-h-0 w-8 shrink-0 rounded-none p-0 text-muted-foreground hover:text-foreground"
                 >
-                  <Cog className="craft-icon" strokeWidth={1.25} aria-hidden />
-                </Link>
-              </Button>
+                  <Link
+                    href={createSignalHref}
+                    scroll={false}
+                    aria-label={t('newSignal')}
+                    title={t('newSignal')}
+                  >
+                    <Plus
+                      className="craft-icon"
+                      strokeWidth={1.25}
+                      aria-hidden
+                    />
+                  </Link>
+                </Button>
+              ) : null}
+              {workflowSettingsHref ? (
+                <Button
+                  asChild
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-8 min-h-0 w-8 shrink-0 rounded-none p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <Link
+                    href={workflowSettingsHref}
+                    scroll={false}
+                    aria-label={t('signalWorkflowSettings')}
+                    title={t('signalWorkflowSettings')}
+                  >
+                    <Cog
+                      className="craft-icon"
+                      strokeWidth={1.25}
+                      aria-hidden
+                    />
+                  </Link>
+                </Button>
+              ) : null}
             </div>
           ) : null}
           <Tabs
