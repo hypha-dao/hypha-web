@@ -68,13 +68,61 @@ describe('shouldIncludeHyphaEnergyOwnershipToken', () => {
         spaceId: HYPHA_ENERGY_GENERAL_ASSEMBLY_SPACE_ID,
       }),
     ).toBe(true);
+  });
+
+  it('keeps Capital BV and GA even when parent access is denied', () => {
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'child-space',
+        spaceTitle: 'Capital',
+        spaceId: HYPHA_ENERGY_CAPITAL_SPACE_ID,
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: { hasAccess: false },
+      }),
+    ).toBe(true);
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'ga',
+        spaceTitle: 'General Assembly',
+        spaceId: HYPHA_ENERGY_GENERAL_ASSEMBLY_SPACE_ID,
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('includes a Hypha Energy child only when the caller can see the parent', () => {
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'child-space',
+        spaceTitle: 'Child',
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: { hasAccess: true },
+      }),
+    ).toBe(true);
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'child-space',
+        spaceTitle: 'Child',
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: { hasAccess: false },
+      }),
+    ).toBe(false);
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'child-space',
+        spaceTitle: 'Child',
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: null,
+      }),
+    ).toBe(false);
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
         spaceSlug: 'child-space',
         spaceTitle: 'Child',
         parentId: HYPHA_ENERGY_SPACE_ID,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('does not match a title-only Hypha Energy prefix or unrelated spaces', () => {
@@ -142,6 +190,30 @@ describe('extraSharedDistributionTokenAddresses', () => {
         spaceTitle: 'LocalScale',
       }),
     ).toEqual([]);
+  });
+
+  it('omits EPARTS for a Hypha Energy child when parent access is denied', () => {
+    expect(
+      extraSharedDistributionTokenAddresses({
+        spaceSlug: 'child-space',
+        spaceTitle: 'Child',
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: { hasAccess: false },
+      }),
+    ).toEqual([]);
+  });
+
+  it('still adds EPARTS for Capital BV when parent access is denied', () => {
+    const capital = extraSharedDistributionTokenAddresses({
+      spaceSlug: 'other-slug',
+      spaceTitle: 'Capital',
+      spaceId: HYPHA_ENERGY_CAPITAL_SPACE_ID,
+      parentId: HYPHA_ENERGY_SPACE_ID,
+      parentAccess: { hasAccess: false },
+    });
+    expect(capital.map((address) => address.toLowerCase())).toEqual([
+      EPARTS_TOKEN_ADDRESS.toLowerCase(),
+    ]);
   });
 });
 

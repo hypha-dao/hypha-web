@@ -21,10 +21,19 @@ export type SpaceIdentity = {
   spaceTitle: string;
   spaceId?: number | null;
   parentId?: number | null;
+  /** Same parent-visibility decision used for DB parent ownership tokens. */
+  parentAccess?: { hasAccess: boolean } | null;
 };
 
 function normalizeIdentity(value: string): string {
   return value.trim().toLowerCase();
+}
+
+/** Parent ownership tokens are visible only when the caller can see the parent. */
+export function shouldIncludeParentOwnershipTokens(
+  parentAccess: { hasAccess: boolean } | null,
+): boolean {
+  return parentAccess?.hasAccess === true;
 }
 
 /**
@@ -45,8 +54,8 @@ export function shouldIncludeHyphaSharedToken(input: SpaceIdentity): boolean {
 /**
  * EPARTS is issued by Hypha Energy (space 658) and used for ownership / voting
  * in Capital BV (562) and the General Assembly (1041). Match canonical ids,
- * a parent of Hypha Energy, or the `hypha-energy` / `hypha-energy-*` slugs —
- * not a free-form title prefix.
+ * a Hypha Energy parent the caller can see, or the `hypha-energy` /
+ * `hypha-energy-*` slugs — not a free-form title prefix.
  */
 export function shouldIncludeHyphaEnergyOwnershipToken(
   input: SpaceIdentity,
@@ -57,18 +66,14 @@ export function shouldIncludeHyphaEnergyOwnershipToken(
   ) {
     return true;
   }
-  if (input.parentId === HYPHA_ENERGY_SPACE_ID) {
+  if (
+    input.parentId === HYPHA_ENERGY_SPACE_ID &&
+    shouldIncludeParentOwnershipTokens(input.parentAccess ?? null)
+  ) {
     return true;
   }
   const slug = normalizeIdentity(input.spaceSlug);
   return slug === 'hypha-energy' || slug.startsWith('hypha-energy-');
-}
-
-/** Parent ownership tokens are visible only when the caller can see the parent. */
-export function shouldIncludeParentOwnershipTokens(
-  parentAccess: { hasAccess: boolean } | null,
-): boolean {
-  return parentAccess?.hasAccess === true;
 }
 
 /**

@@ -25,7 +25,10 @@ import {
   extraSharedDistributionTokenAddresses,
   shouldIncludeParentOwnershipTokens,
 } from '../distribution-shared-tokens';
-import { shouldIncludeChartOtherBucket } from '../distribution-chart-holders';
+import {
+  compareByBalanceThenAddress,
+  shouldIncludeChartOtherBucket,
+} from '../distribution-chart-holders';
 
 type HolderKind = 'person' | 'space' | 'treasury' | 'other';
 
@@ -422,9 +425,10 @@ export async function getTokenHoldingsBySpaceSlug(
     .where(and(eq(tokens.spaceId, host.id), eq(tokens.archived, false)));
 
   let parentOwnershipTokens: typeof dbTokens = [];
+  let parentAccess: { hasAccess: boolean } | null = null;
   if (host.parentId != null) {
     const parent = await findParentSpaceById({ id: host.parentId }, { db });
-    const parentAccess = parent
+    parentAccess = parent
       ? await checkSpaceAccessForSpace(
           { id: parent.id, web3SpaceId: parent.web3SpaceId },
           authToken,
@@ -482,6 +486,7 @@ export async function getTokenHoldingsBySpaceSlug(
       spaceTitle: host.title,
       spaceId: host.id,
       parentId: host.parentId,
+      parentAccess,
     }).map((address) => normalizeAddress(address)),
   ]);
 
@@ -598,14 +603,14 @@ export async function getTokenHoldingsBySpaceSlug(
           const balanceRaw = balancesByAddress.get(descriptor.address) ?? 0n;
           return includeZeroBalances || balanceRaw > 0n;
         })
-        .sort((left, right) => {
-          const diff =
-            (balancesByAddress.get(right.address) ?? 0n) -
-            (balancesByAddress.get(left.address) ?? 0n);
-          if (diff > 0n) return 1;
-          if (diff < 0n) return -1;
-          return left.display_name.localeCompare(right.display_name);
-        });
+        .sort((left, right) =>
+          compareByBalanceThenAddress(
+            balancesByAddress.get(left.address) ?? 0n,
+            left.address,
+            balancesByAddress.get(right.address) ?? 0n,
+            right.address,
+          ),
+        );
       const nameResolveHolders = effectiveHolderLimit
         ? rankedForNames.slice(0, effectiveHolderLimit)
         : rankedForNames;
@@ -700,12 +705,14 @@ export async function getTokenHoldingsBySpaceSlug(
       });
     }
 
-    rows.sort((a, b) => {
-      const diff = BigInt(b.balance_raw) - BigInt(a.balance_raw);
-      if (diff > 0n) return 1;
-      if (diff < 0n) return -1;
-      return a.display_name.localeCompare(b.display_name);
-    });
+    rows.sort((a, b) =>
+      compareByBalanceThenAddress(
+        BigInt(a.balance_raw),
+        a.address,
+        BigInt(b.balance_raw),
+        b.address,
+      ),
+    );
 
     let holderRows = rows;
     let overflowToOtherRaw = 0n;
