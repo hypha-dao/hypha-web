@@ -66,11 +66,8 @@ export function shouldIncludeHyphaEnergyOwnershipToken(
   ) {
     return true;
   }
-  if (
-    input.parentId === HYPHA_ENERGY_SPACE_ID &&
-    shouldIncludeParentOwnershipTokens(input.parentAccess ?? null)
-  ) {
-    return true;
+  if (input.parentId === HYPHA_ENERGY_SPACE_ID) {
+    return shouldIncludeParentOwnershipTokens(input.parentAccess ?? null);
   }
   const slug = normalizeIdentity(input.spaceSlug);
   return slug === 'hypha-energy' || slug.startsWith('hypha-energy-');

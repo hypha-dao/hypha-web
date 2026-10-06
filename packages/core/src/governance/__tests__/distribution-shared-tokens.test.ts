@@ -125,6 +125,17 @@ describe('shouldIncludeHyphaEnergyOwnershipToken', () => {
     ).toBe(false);
   });
 
+  it('does not fall through to a hypha-energy-* slug when parent access is denied', () => {
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'hypha-energy-workshop',
+        spaceTitle: 'Workshop',
+        parentId: HYPHA_ENERGY_SPACE_ID,
+        parentAccess: { hasAccess: false },
+      }),
+    ).toBe(false);
+  });
+
   it('does not match a title-only Hypha Energy prefix or unrelated spaces', () => {
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
