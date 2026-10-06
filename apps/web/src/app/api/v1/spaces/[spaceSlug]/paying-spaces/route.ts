@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getPayingSpacesMetrics,
-  isHyphaPlatformSpace,
+  isPayingSpacesDashboardEnabled,
   verifyPrivyAuthToken,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -37,12 +37,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
-    }
-
-    if (!isHyphaPlatformSpace({ slug: space.slug })) {
+    if (!isPayingSpacesDashboardEnabled({ slug: spaceSlug })) {
       return NextResponse.json(
         {
           error:
@@ -50,6 +45,11 @@ export async function GET(
         },
         { status: 404 },
       );
+    }
+
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+    if (!space) {
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
     if (!space.web3SpaceId || !canConvertToBigInt(space.web3SpaceId)) {

@@ -1,5 +1,11 @@
 export { isHyphaPlatformSpace } from './is-hypha-platform-space';
 export {
+  DEFAULT_PAYING_SPACES_HIDDEN_SLUGS,
+  getPayingSpacesHiddenSlugs,
+  isPayingSpacesDashboardEnabled,
+  isPayingSpacesHiddenForSlug,
+} from './is-paying-spaces-dashboard-enabled';
+export {
   isPlaceholderPayingSpace,
   isPlaceholderSpaceTitle,
   normalizePayingSpaceTitle,

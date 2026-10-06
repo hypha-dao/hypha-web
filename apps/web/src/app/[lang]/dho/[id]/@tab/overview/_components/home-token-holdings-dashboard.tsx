@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@hypha-platform/ui';
-import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
+import { isPayingSpacesDashboardEnabled } from '@hypha-platform/core/client';
 import { useSpaceAccentPortalStyles } from '@hypha-platform/epics';
 import {
   withMembersChartBaseline,
@@ -1453,7 +1453,7 @@ export function HomeTokenHoldingsDashboard({
   const hasEnergyData = Boolean(activityData?.energy.available);
   // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
   const showEnergyWidget = false && hasEnergyData;
-  const showPayingSpaces = isHyphaPlatformSpace({ slug: spaceSlug });
+  const showPayingSpaces = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
   const filterItems = React.useMemo(
     () =>
       [
