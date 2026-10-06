@@ -160,9 +160,15 @@ interface MultiSelectProps
     mostUsed?: string;
     allTags?: string;
     create?: (term: string) => string;
+    createWarning?: string;
     clear?: string;
     close?: string;
   };
+
+  /**
+   * When creating a tag, return a warning (near-duplicate) to show above create.
+   */
+  getCreateWarning?: (term: string) => string | null;
 }
 
 const DEFAULT_MULTISELECT_LABELS = {
@@ -221,6 +227,7 @@ export const MultiSelect = React.forwardRef<
       uiStyle = 'default',
       className,
       labels,
+      getCreateWarning,
       ...props
     },
     ref,
@@ -394,13 +401,12 @@ export const MultiSelect = React.forwardRef<
               option,
               usage: tagUsageMap[option.value.toLowerCase()] ?? 0,
             }))
-            .filter(({ usage }) => usage > 0)
             .sort((a, b) => {
               if (a.usage !== b.usage) return b.usage - a.usage;
               return a.option.label.localeCompare(b.option.label);
             })
             .map(({ option }) => option);
-          return rankedByUsage.slice(0, MAX_TAG_PICKER_RESULTS);
+          return rankedByUsage.slice(0, 24);
         }
 
         const startsWithMatches: typeof selectableOptions = [];
@@ -489,11 +495,14 @@ export const MultiSelect = React.forwardRef<
     const renderedOptions =
       uiStyle === 'tag-picker'
         ? trimmedSearchValue.length === 0
-          ? []
+          ? filteredOptions
           : groupedFilteredTagPickerOptions.length > 0
           ? groupedFilteredTagPickerOptions
           : filteredOptions
         : filteredOptions;
+    const createWarning = canCreateOption
+      ? getCreateWarning?.(trimmedSearchValue) ?? null
+      : null;
 
     const focusCommandItem = React.useCallback(
       (direction: 'first' | 'last') => {
@@ -539,7 +548,6 @@ export const MultiSelect = React.forwardRef<
       if (event.key === 'ArrowDown' && uiStyle === 'tag-picker') {
         event.preventDefault();
         if (!isPopoverOpen) {
-          if (trimmedSearchValue.length === 0) return;
           setIsPopoverOpen(true);
           requestAnimationFrame(() => focusCommandItem('first'));
           return;
@@ -550,7 +558,6 @@ export const MultiSelect = React.forwardRef<
       if (event.key === 'ArrowUp' && uiStyle === 'tag-picker') {
         event.preventDefault();
         if (!isPopoverOpen) {
-          if (trimmedSearchValue.length === 0) return;
           setIsPopoverOpen(true);
           requestAnimationFrame(() => focusCommandItem('last'));
           return;
@@ -570,14 +577,6 @@ export const MultiSelect = React.forwardRef<
       <Popover
         open={isPopoverOpen}
         onOpenChange={(open) => {
-          if (
-            uiStyle === 'tag-picker' &&
-            open &&
-            searchValue.trim().length === 0
-          ) {
-            setIsPopoverOpen(false);
-            return;
-          }
           setIsPopoverOpen(open);
         }}
         modal={modalPopover}
@@ -678,20 +677,16 @@ export const MultiSelect = React.forwardRef<
                 value={searchValue}
                 onChange={(event) => {
                   const nextValue = event.currentTarget.value;
-                  const nextTrimmedValue = nextValue.trim();
                   setSearchValue(nextValue);
-                  if (nextTrimmedValue.length === 0) {
-                    setIsPopoverOpen(false);
-                    return;
-                  }
                   setIsPopoverOpen(true);
                 }}
-                onKeyDown={handleInputKeyDown}
                 onFocus={(event) => {
                   props.onFocus?.(
                     event as unknown as React.FocusEvent<HTMLButtonElement>,
                   );
+                  setIsPopoverOpen(true);
                 }}
+                onKeyDown={handleInputKeyDown}
                 placeholder={searchPlaceholder}
                 className="h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 disabled={props.disabled}
@@ -841,19 +836,6 @@ export const MultiSelect = React.forwardRef<
                   : resolvedLabels.noResults}
               </CommandEmpty>
               <CommandGroup>
-                {canCreateOption ? (
-                  <>
-                    <CommandItem
-                      key={`create-${searchValue}`}
-                      value={`create-${searchValue.trim().toLowerCase()}`}
-                      onSelect={() => toggleOption(searchValue.trim())}
-                      className="cursor-pointer"
-                    >
-                      <span>{resolvedLabels.create(searchValue.trim())}</span>
-                    </CommandItem>
-                    <CommandSeparator />
-                  </>
-                ) : null}
                 {allowToggleAll && uiStyle !== 'tag-picker' && (
                   <>
                     <CommandItem
@@ -943,6 +925,24 @@ export const MultiSelect = React.forwardRef<
                     </CommandItem>
                   );
                 })}
+                {canCreateOption ? (
+                  <>
+                    {renderedOptions.length > 0 ? <CommandSeparator /> : null}
+                    {createWarning ? (
+                      <div className="px-2 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+                        {createWarning}
+                      </div>
+                    ) : null}
+                    <CommandItem
+                      key={`create-${searchValue}`}
+                      value={`create-${searchValue.trim().toLowerCase()}`}
+                      onSelect={() => toggleOption(searchValue.trim())}
+                      className="cursor-pointer"
+                    >
+                      <span>{resolvedLabels.create(searchValue.trim())}</span>
+                    </CommandItem>
+                  </>
+                ) : null}
               </CommandGroup>
               {uiStyle === 'default' ? (
                 <>
