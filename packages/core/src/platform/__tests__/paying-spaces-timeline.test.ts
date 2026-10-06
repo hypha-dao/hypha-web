@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { isHyphaPlatformSpace } from '../is-hypha-platform-space';
 import {
+  isExcludedNetworkSpaceTitle,
   isPlaceholderPayingSpace,
   isPlaceholderSpaceTitle,
 } from '../is-placeholder-space-title';
@@ -48,6 +49,16 @@ describe('isPlaceholderSpaceTitle', () => {
     expect(isPlaceholderSpaceTitle('SpaceX')).toBe(false);
     expect(isPlaceholderSpaceTitle('My Space 224')).toBe(false);
     expect(isPlaceholderSpaceTitle('Space')).toBe(false);
+  });
+
+  it('excludes placeholder and blank titles from the public network count', () => {
+    expect(isExcludedNetworkSpaceTitle('Space 233')).toBe(true);
+    expect(isExcludedNetworkSpaceTitle('  SPACE  12  ')).toBe(true);
+    expect(isExcludedNetworkSpaceTitle('')).toBe(true);
+    expect(isExcludedNetworkSpaceTitle('\u00A0')).toBe(true);
+    expect(isExcludedNetworkSpaceTitle('Hypha')).toBe(false);
+    expect(isExcludedNetworkSpaceTitle('Space1')).toBe(false);
+    expect(isExcludedNetworkSpaceTitle('My Space 224')).toBe(false);
   });
 
   it('treats blank titles as the Space {id} fallback', () => {

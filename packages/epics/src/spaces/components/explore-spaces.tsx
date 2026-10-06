@@ -47,6 +47,7 @@ interface ExploreSpacesProps {
   order?: SpaceOrder;
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
+  showHeading?: boolean;
   networkGrowth?: NetworkGrowth | null;
 }
 
@@ -145,6 +146,7 @@ export function ExploreSpaces({
   order,
   uniqueCategoryGroups,
   enableNetworkMap = false,
+  showHeading = true,
   networkGrowth = null,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
@@ -435,16 +437,18 @@ export function ExploreSpaces({
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex flex-col"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
+      {showHeading ? (
+        <Heading
+          size="9"
+          color="secondary"
+          weight="medium"
+          align="center"
+          className="flex flex-col"
+        >
+          <span>{t('manySpaces')}</span>
+          <span>{t('oneVibrantNetwork')}</span>
+        </Heading>
+      ) : null}
 
       <div className="flex min-w-0 flex-col">
         {sharedHeader}

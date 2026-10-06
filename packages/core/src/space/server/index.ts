@@ -7,6 +7,8 @@ export * from './is-on-chain-member-or-delegate';
 export * from './resolve-space-executor-address';
 export * from './serialize-space-members-roster-for-json';
 export * from './queries';
+export * from './find-network-dashboard-stats';
+export * from './find-network-treasury-stats';
 export { getNetworkGrowth } from './network-growth';
 export type { NetworkGrowth } from '../network-growth';
 export * from './organizational-guidance';

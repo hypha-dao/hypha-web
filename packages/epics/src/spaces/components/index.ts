@@ -21,6 +21,7 @@ export * from './inner-space-card-list';
 export * from './inner-space-card.container';
 export * from './join-space';
 export * from './network-selected';
+export * from './network-loading-grid';
 export * from './breadcrumbs';
 export * from './parent-space-selector';
 export * from './space-card-list';

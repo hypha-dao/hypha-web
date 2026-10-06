@@ -40,6 +40,29 @@ export function isConvertibleCurrency(
   return currency != null && CONVERTIBLE_SET.has(currency);
 }
 
+const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
+
+/**
+ * DB `reference_currency` is usually a code (`EUR`) but some rows store the
+ * Chainlink feed address instead. Map either form to a convertible code.
+ */
+export function resolveReferenceCurrencyCode(
+  value: string | null | undefined,
+): ConvertibleCurrency | undefined {
+  if (value == null) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (isConvertibleCurrency(trimmed)) return trimmed;
+  if (!EVM_ADDRESS.test(trimmed)) return undefined;
+  const normalized = trimmed.toLowerCase();
+  for (const [code, feed] of Object.entries(CURRENCY_FEEDS)) {
+    if (feed.toLowerCase() === normalized && isConvertibleCurrency(code)) {
+      return code;
+    }
+  }
+  return undefined;
+}
+
 export function isOffchainUsdCurrency(
   currency: string | null | undefined,
 ): currency is OffchainUsdCurrency {
