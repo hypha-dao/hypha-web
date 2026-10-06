@@ -4,6 +4,7 @@ import {
   newlyMentionedSlugs,
   parseSignalMentions,
   personProfileHref,
+  splitSignalMentionText,
 } from '../signal-mentions';
 
 describe('parseSignalMentions', () => {
@@ -22,6 +23,25 @@ describe('parseSignalMentions', () => {
         '[@Ada](/profile/ada) and again [@Ada Lovelace](/profile/ada)',
       ),
     ).toEqual([{ slug: 'ada', label: 'Ada', href: '/profile/ada' }]);
+  });
+
+  it('reads hypha-person hrefs', () => {
+    expect(parseSignalMentions('Ping [@Ada](hypha-person:ada)')).toEqual([
+      { slug: 'ada', label: 'Ada', href: '/profile/ada' },
+    ]);
+  });
+});
+
+describe('splitSignalMentionText', () => {
+  it('keeps surrounding text and mention segments in order', () => {
+    expect(splitSignalMentionText('Ask [@Ada](/profile/ada) please.')).toEqual([
+      { type: 'text', value: 'Ask ' },
+      {
+        type: 'mention',
+        mention: { slug: 'ada', label: 'Ada', href: '/profile/ada' },
+      },
+      { type: 'text', value: ' please.' },
+    ]);
   });
 });
 

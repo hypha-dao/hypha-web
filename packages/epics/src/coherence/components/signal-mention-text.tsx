@@ -4,13 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import {
-  parseSignalMentions,
   personProfileHref,
+  splitSignalMentionText,
 } from '@hypha-platform/core/client';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-
-const MENTION_SPLIT_RE =
-  /(\[@[^\]]+\]\((?:(?:\/[a-z]{2})?\/profile\/|hypha-person:)[^)\s]+\))/gi;
 
 export function SignalMentionText({
   text,
@@ -20,7 +17,7 @@ export function SignalMentionText({
   className?: string;
 }) {
   const lang = useLocale();
-  const mentions = React.useMemo(() => parseSignalMentions(text), [text]);
+  const segments = React.useMemo(() => splitSignalMentionText(text), [text]);
   const plainPart = (part: string) =>
     stripDescription(
       stripMarkdown(part, {
@@ -28,24 +25,28 @@ export function SignalMentionText({
         unorderedListMarkers: false,
       }),
     );
-  if (mentions.length === 0) {
+
+  if (segments.every((segment) => segment.type === 'text')) {
     return <span className={className}>{plainPart(text)}</span>;
   }
 
-  const parts = text.split(MENTION_SPLIT_RE);
   return (
     <span className={className}>
-      {parts.map((part, index) => {
-        const mention = parseSignalMentions(part)[0];
-        if (!mention)
-          return <React.Fragment key={index}>{plainPart(part)}</React.Fragment>;
+      {segments.map((segment, index) => {
+        if (segment.type === 'text') {
+          return (
+            <React.Fragment key={index}>
+              {plainPart(segment.value)}
+            </React.Fragment>
+          );
+        }
         return (
           <Link
-            key={`${mention.slug}-${index}`}
-            href={personProfileHref(mention.slug, lang)}
+            key={`${segment.mention.slug}-${index}`}
+            href={personProfileHref(segment.mention.slug, lang)}
             className="font-medium text-accent-11 underline-offset-2 hover:underline"
           >
-            @{mention.label}
+            @{segment.mention.label}
           </Link>
         );
       })}
