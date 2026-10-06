@@ -9,15 +9,17 @@ traps that will otherwise cost you a day of debugging.
 
 > **Status: deployed on Base mainnet.**
 >
-> | Field           | Value                                                                   |
-> | --------------- | ----------------------------------------------------------------------- |
-> | OSwaps          | `0xA8b0Da630351E038E9D8E4d5135D029fB9757298`                            |
-> | Owner / manager | `0x2687fe290b54d824c136Ceff2d5bD362Bc62019a`                            |
-> | Basescan        | https://basescan.org/address/0xA8b0Da630351E038E9D8E4d5135D029fB9757298 |
+> | Field          | Value                                                                   |
+> | -------------- | ----------------------------------------------------------------------- |
+> | OSwaps proxy   | `0xE604eFB1C468f6ebfcc889D4f358008B29a158Fd`                            |
+> | Implementation | `0xFC0157A6dA235Eb4E049A57432585551BC432fC6`                            |
+> | Owner          | `0x2687fe290b54d824c136Ceff2d5bD362Bc62019a`                            |
+> | Manager        | `0xF3C84D4d116C219ad93E5699708296FF0A55Ff76`                            |
+> | Basescan       | https://basescan.org/address/0xE604eFB1C468f6ebfcc889D4f358008B29a158Fd |
 >
-> The address is recorded in `contracts/addresses.txt`. OSwaps is still excluded from
+> The address is the UUPS proxy, recorded in `contracts/addresses.txt`. OSwaps is still excluded from
 > `wagmi.config.ts`, so it does not appear in `packages/core/src/generated.ts`. Deploy script:
-> `scripts/oswaps.deploy.ts`. Test suite: `test/OSwaps.test.ts` (85 cases).
+> `scripts/oswaps.deploy.ts`. Test suite: `test/OSwaps.test.ts` (86 cases).
 >
 > For how faithfully this reproduces the original protocol, see
 > [`OSwaps.EOSIO-PARITY.md`](./OSwaps.EOSIO-PARITY.md).
@@ -61,23 +63,22 @@ the absolute scale is arbitrary and no normalisation is enforced or required. We
 
 | Role      | How it is set                        | Powers                                                                  |
 | --------- | ------------------------------------ | ----------------------------------------------------------------------- |
-| `owner`   | Deployer, via OpenZeppelin `Ownable` | `init` only, and only once                                              |
+| `owner`   | Proxy `initialize`, UUPS upgrade key | `init` once, `setManager` at any time, upgrade the implementation       |
 | `manager` | `init`, then rotated by `setManager` | `freeze`, `unfreeze`, `forgetAsset`, `withdraw`, `setManager`           |
 | anyone    | —                                    | `createAsset`, `addLiquidity`, `swapExactIn`, `swapExactOut`, all views |
 
-**The owner cannot move funds.** There is no owner-level withdrawal path. Once `init` has run, the
-owner has no remaining powers at all, which matches the original protocol's design intent that the
-owner key is cold and has no operational role.
+**The owner cannot move funds.** There is no owner-level withdrawal path. The owner can replace the
+manager at any time and can upgrade the proxy. Freeze, unfreeze, withdraw, and forget stay with the
+manager.
 
 **Liquidity providers cannot withdraw their own liquidity.** `withdraw` is `onlyManager`. An LP
 deposits permissionlessly and receives LIQ receipt tokens, but exit is entirely at the manager's
 discretion. This is faithful to the original design, not an oversight. Do not build a "remove
 liquidity" button for ordinary users — build a manager console.
 
-`manager` is `address(0)` until `init` is called, so every manager function reverts before
-initialisation. `init` rejects the zero address and can only be called once; after that the
-incumbent manager hands over via `setManager`, so the role is recoverable through governance but not
-through the owner.
+`manager` is `address(0)` until `init` or `setManager` is called, so every manager function reverts
+before that. `init` rejects the zero address and can only be called once. After that the incumbent
+manager hands over via `setManager`, and the owner can call `setManager` at any time as well.
 
 ---
 
@@ -85,7 +86,7 @@ through the owner.
 
 ```solidity
 struct Config {
-  address manager;      // set by init, rotated by setManager
+  address manager;      // set by init, rotated by setManager (owner or manager)
   bytes32 chainId;      // block.chainid at deployment; informational, never read
   uint64  lastTokenId;  // monotonically increasing; last id issued by createAsset
 }
@@ -178,8 +179,8 @@ live asset cannot be emptied (its price would be undefined), so the freeze comes
 
 ### `setManager(address newManager)`
 
-`onlyManager`. Hands the manager role to another address. Reverts `Zero manager` on `address(0)`.
-The owner cannot call this — only the incumbent manager can. Emits
+Owner or current manager. Hands the manager role to another address. Reverts `Zero manager` on
+`address(0)` and `Only manager or owner` for anyone else. Emits
 `ManagerUpdated(previous, newManager)`.
 
 ### `createAsset(address tokenContract, string symbol, string metadata) → uint64 tokenId`
@@ -432,6 +433,7 @@ is indexed on `TokenSwapped`, so filtering by output token must happen client-si
 | Message                                            | Source                                                                       |
 | -------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `Only manager`                                     | manager-gated function called by another address, including by the owner     |
+| `Only manager or owner`                            | `setManager` called by an address that is neither the owner nor the manager  |
 | `Already initialized`                              | second `init`                                                                |
 | `Zero manager`                                     | `init` or `setManager` with `address(0)`                                     |
 | `Token not found`                                  | `freeze`, `unfreeze`, `forgetAsset`, `queryPool`, `addLiquidity`, `withdraw` |
@@ -525,8 +527,9 @@ sequence behind a destructive confirmation. Surface which assets are frozen and 
 1. **Get an audit.** The contract is unaudited reference code. The pricing math is now delegated to
    PRBMath, but the surrounding accounting, the manager trust model, and the weight-rescaling
    arithmetic have only been reviewed internally.
-2. **Decide the manager's governance.** Every operational power sits with one address and there is no
-   owner override. A Hypha space `Executor` or a multisig is the sensible target; an EOA is not.
+2. **Decide the manager's governance.** Freeze, withdraw, and the other operational actions sit with
+   the manager. The owner can replace that manager and can upgrade the proxy. A Hypha space
+   `Executor` or a multisig is the sensible target for the manager; an EOA is not.
 3. **Add the contract to `wagmi.config.ts`** so typed bindings land in
    `packages/core/src/generated.ts` and the UI is not hand-writing ABIs.
 4. **Decide the asset allowlist policy.** Registration is permissionless; presentation should not be.
