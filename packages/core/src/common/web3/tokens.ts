@@ -32,6 +32,23 @@ export function isHyphaToken(address?: string | null): boolean {
   return address.toLowerCase() === HYPHA_TOKEN_ADDRESS.toLowerCase();
 }
 
+/**
+ * Hypha Energy ownership token (EPARTS) on Base. Issued by Hypha Energy
+ * (`hypha-energy`, space 658) and used for ownership / voting in Capital BV
+ * and the General Assembly even though those spaces did not mint it.
+ *
+ * Not a {@link TOKENS} catalogue entry — do not treat it as a transferable
+ * treasury default. Distribution injects it via shared-token matching.
+ */
+export const EPARTS_TOKEN_ADDRESS =
+  '0x5d3394CAa6D09214aB86CF048e39dea058eC1921' as const;
+
+/** True when `address` is the Hypha Energy EPARTS ownership token. */
+export function isEpartsToken(address?: string | null): boolean {
+  if (!address) return false;
+  return address.toLowerCase() === EPARTS_TOKEN_ADDRESS.toLowerCase();
+}
+
 export const TOKENS: Token[] = [
   {
     symbol: 'USDC',

@@ -127,6 +127,8 @@ const COLOR_RANGE = [
   'var(--craft-chart-accent-7)',
   'var(--craft-chart-accent-8)',
 ];
+const OTHER_SLICE_COLOR =
+  'color-mix(in oklab, var(--muted-foreground) 38%, white 62%)';
 /** On voting / accepted / refused — clear light / mid / dark accent steps */
 const PROPOSALS_COLOR_RANGE = [
   'var(--craft-chart-accent-2)',
@@ -308,6 +310,13 @@ function TokenDonutChart({
     const domain = chartData.map((slice) => slice.display_name);
     return d3.scaleOrdinal<string, string>().domain(domain).range(COLOR_RANGE);
   }, [chartData]);
+  const colorForSlice = React.useCallback(
+    (slice: ChartSlice) =>
+      slice.holder_kind === 'other' && !slice.address
+        ? OTHER_SLICE_COLOR
+        : colorScale(slice.display_name),
+    [colorScale],
+  );
   const hasHoveredSlice = hoveredSliceKey !== null;
   const hoveredSlice = chartData.find(
     (slice) => slice.hover_key === hoveredSliceKey,
@@ -336,7 +345,7 @@ function TokenDonutChart({
                     ? activeArcGenerator(segment)
                     : arcGenerator(segment)) ?? ''
                 }
-                fill={colorScale(segment.data.display_name)}
+                fill={colorForSlice(segment.data)}
                 stroke={DONUT_SEGMENT_STROKE}
                 strokeWidth={DONUT_SEGMENT_STROKE_WIDTH}
                 strokeLinejoin="round"
@@ -401,7 +410,7 @@ function TokenDonutChart({
               <span
                 aria-hidden="true"
                 className="h-2 w-2 shrink-0 rounded-[2px]"
-                style={{ backgroundColor: colorScale(slice.display_name) }}
+                style={{ backgroundColor: colorForSlice(slice) }}
               />
               <span className="truncate text-2 text-foreground">
                 {slice.display_name}

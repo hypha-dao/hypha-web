@@ -1,6 +1,7 @@
 'use client';
 
 import { z } from 'zod';
+import { DISTRIBUTION_CHART_NAMED_HOLDER_LIMIT } from '@hypha-platform/core/client';
 
 export const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
@@ -71,13 +72,16 @@ export type TokenHoldingsFetchOptions = {
   expandUnknownHolders?: boolean;
 };
 
-/** Chart query: named slices ≥0.5%, capped at top 10 (+ Other for the rest). */
-export const TOKEN_HOLDINGS_CHART_QUERY: Required<
-  Omit<TokenHoldingsFetchOptions, 'expandUnknownHolders'>
-> = {
+/**
+ * Chart query: discover on-chain wallets, name the top 8 holders, and collapse
+ * the rest into Other. Roster-only charts hid most holders on spaces that use
+ * a token minted elsewhere (e.g. EPARTS on Capital BV / GA).
+ */
+export const TOKEN_HOLDINGS_CHART_QUERY: Required<TokenHoldingsFetchOptions> = {
   includeTreasury: true,
-  collapseBelowPct: 0.5,
-  holderLimit: 10,
+  collapseBelowPct: 0,
+  holderLimit: DISTRIBUTION_CHART_NAMED_HOLDER_LIMIT,
+  expandUnknownHolders: true,
 };
 
 /** Export query: full per-wallet list, no chart collapse, cap, or Other bucket. */
