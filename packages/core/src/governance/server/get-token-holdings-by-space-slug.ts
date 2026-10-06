@@ -8,6 +8,7 @@ import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-
 import { findPeopleByWeb3Addresses } from '../../people/server/queries';
 import { getErc20HolderAddresses } from '../../common/server/get-erc20-holder-addresses';
 import {
+  findParentSpaceById,
   findSpaceHostFieldsBySlug,
   findSpaceByAddresses,
 } from '../../space/server/queries';
@@ -20,7 +21,10 @@ import {
   isHyphaToken,
 } from '../../common/web3/tokens';
 import { tokens } from '@hypha-platform/storage-postgres';
-import { extraSharedDistributionTokenAddresses } from '../distribution-shared-tokens';
+import {
+  extraSharedDistributionTokenAddresses,
+  shouldIncludeParentOwnershipTokens,
+} from '../distribution-shared-tokens';
 import { shouldIncludeChartOtherBucket } from '../distribution-chart-holders';
 
 type HolderKind = 'person' | 'space' | 'treasury' | 'other';
@@ -94,6 +98,7 @@ type HolderDescriptor = {
 };
 
 const BALANCE_MULTICALL_CHUNK_SIZE = 200;
+const BALANCE_MULTICALL_CONCURRENCY = 8;
 const TOKEN_PROCESS_CONCURRENCY = 4;
 const TOKEN_META_COLUMNS = {
   id: tokens.id,
@@ -201,16 +206,18 @@ async function readBalancesForHolders(
 ): Promise<Map<`0x${string}`, bigint>> {
   if (holders.length === 0) return new Map();
   const balances = new Map<`0x${string}`, bigint>();
-
+  const chunks: HolderDescriptor[][] = [];
   for (
     let startIndex = 0;
     startIndex < holders.length;
     startIndex += BALANCE_MULTICALL_CHUNK_SIZE
   ) {
-    const holderChunk = holders.slice(
-      startIndex,
-      startIndex + BALANCE_MULTICALL_CHUNK_SIZE,
+    chunks.push(
+      holders.slice(startIndex, startIndex + BALANCE_MULTICALL_CHUNK_SIZE),
     );
+  }
+
+  const readChunk = async (holderChunk: HolderDescriptor[]) => {
     const contracts = holderChunk.map((holder) => ({
       address: tokenAddress,
       abi: erc20Abi,
@@ -222,15 +229,29 @@ async function readBalancesForHolders(
       blockTag: 'safe',
       contracts,
     });
+    return { holderChunk, results };
+  };
 
-    results.forEach((result, index) => {
-      const address = holderChunk[index]?.address;
-      if (!address) return;
-      balances.set(
-        address,
-        result.status === 'success' ? (result.result as bigint) : 0n,
-      );
-    });
+  for (
+    let startIndex = 0;
+    startIndex < chunks.length;
+    startIndex += BALANCE_MULTICALL_CONCURRENCY
+  ) {
+    const batch = chunks.slice(
+      startIndex,
+      startIndex + BALANCE_MULTICALL_CONCURRENCY,
+    );
+    const batchResults = await Promise.all(batch.map(readChunk));
+    for (const { holderChunk, results } of batchResults) {
+      results.forEach((result, index) => {
+        const address = holderChunk[index]?.address;
+        if (!address) return;
+        balances.set(
+          address,
+          result.status === 'success' ? (result.result as bigint) : 0n,
+        );
+      });
+    }
   }
 
   return balances;
@@ -400,19 +421,28 @@ export async function getTokenHoldingsBySpaceSlug(
     .from(tokens)
     .where(and(eq(tokens.spaceId, host.id), eq(tokens.archived, false)));
 
-  const parentOwnershipTokens =
-    host.parentId == null
-      ? []
-      : await db
-          .select(TOKEN_META_COLUMNS)
-          .from(tokens)
-          .where(
-            and(
-              eq(tokens.spaceId, host.parentId),
-              eq(tokens.archived, false),
-              eq(tokens.type, 'ownership'),
-            ),
-          );
+  let parentOwnershipTokens: typeof dbTokens = [];
+  if (host.parentId != null) {
+    const parent = await findParentSpaceById({ id: host.parentId }, { db });
+    const parentAccess = parent
+      ? await checkSpaceAccessForSpace(
+          { id: parent.id, web3SpaceId: parent.web3SpaceId },
+          authToken,
+        )
+      : null;
+    if (shouldIncludeParentOwnershipTokens(parentAccess)) {
+      parentOwnershipTokens = await db
+        .select(TOKEN_META_COLUMNS)
+        .from(tokens)
+        .where(
+          and(
+            eq(tokens.spaceId, host.parentId),
+            eq(tokens.archived, false),
+            eq(tokens.type, 'ownership'),
+          ),
+        );
+    }
+  }
 
   const dbTokenByAddress = new Map<`0x${string}`, (typeof dbTokens)[number]>();
   for (const dbToken of [...dbTokens, ...parentOwnershipTokens]) {
@@ -450,6 +480,8 @@ export async function getTokenHoldingsBySpaceSlug(
     ...extraSharedDistributionTokenAddresses({
       spaceSlug: host.slug,
       spaceTitle: host.title,
+      spaceId: host.id,
+      parentId: host.parentId,
     }).map((address) => normalizeAddress(address)),
   ]);
 

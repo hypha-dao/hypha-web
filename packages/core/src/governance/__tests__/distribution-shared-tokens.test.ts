@@ -8,8 +8,12 @@ import {
 } from '../../common/web3/tokens';
 import {
   extraSharedDistributionTokenAddresses,
+  HYPHA_ENERGY_CAPITAL_SPACE_ID,
+  HYPHA_ENERGY_GENERAL_ASSEMBLY_SPACE_ID,
+  HYPHA_ENERGY_SPACE_ID,
   shouldIncludeHyphaEnergyOwnershipToken,
   shouldIncludeHyphaSharedToken,
+  shouldIncludeParentOwnershipTokens,
 } from '../distribution-shared-tokens';
 
 describe('shouldIncludeHyphaSharedToken', () => {
@@ -42,34 +46,44 @@ describe('shouldIncludeHyphaSharedToken', () => {
 });
 
 describe('shouldIncludeHyphaEnergyOwnershipToken', () => {
-  it('matches Hypha Energy and its named spaces, including Capital BV and GA', () => {
+  it('matches Hypha Energy slugs and the canonical Capital BV / GA / home ids', () => {
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
         spaceSlug: 'hypha-energy',
         spaceTitle: 'Hypha Energy',
+        spaceId: HYPHA_ENERGY_SPACE_ID,
       }),
     ).toBe(true);
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
         spaceSlug: 'hypha-energy-capital',
         spaceTitle: 'Hypha Energy Capital BV',
+        spaceId: HYPHA_ENERGY_CAPITAL_SPACE_ID,
       }),
     ).toBe(true);
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
-        spaceSlug: 'hypha-energy-general-assembly',
-        spaceTitle: 'Hypha Energy General Assembly',
+        spaceSlug: 'some-other-slug',
+        spaceTitle: 'General Assembly',
+        spaceId: HYPHA_ENERGY_GENERAL_ASSEMBLY_SPACE_ID,
       }),
     ).toBe(true);
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
-        spaceSlug: 'unknown-slug',
-        spaceTitle: 'Hypha Energy General Assembly',
+        spaceSlug: 'child-space',
+        spaceTitle: 'Child',
+        parentId: HYPHA_ENERGY_SPACE_ID,
       }),
     ).toBe(true);
   });
 
-  it('does not match other Hypha-branded or LocalScale spaces', () => {
+  it('does not match a title-only Hypha Energy prefix or unrelated spaces', () => {
+    expect(
+      shouldIncludeHyphaEnergyOwnershipToken({
+        spaceSlug: 'unknown-slug',
+        spaceTitle: 'Hypha Energy Community',
+      }),
+    ).toBe(false);
     expect(
       shouldIncludeHyphaEnergyOwnershipToken({
         spaceSlug: 'hypha',
@@ -88,6 +102,16 @@ describe('shouldIncludeHyphaEnergyOwnershipToken', () => {
         spaceTitle: 'Ponta do Sol Energy Community',
       }),
     ).toBe(false);
+  });
+});
+
+describe('shouldIncludeParentOwnershipTokens', () => {
+  it('includes parent tokens only when parent access is granted', () => {
+    expect(shouldIncludeParentOwnershipTokens({ hasAccess: true })).toBe(true);
+    expect(shouldIncludeParentOwnershipTokens({ hasAccess: false })).toBe(
+      false,
+    );
+    expect(shouldIncludeParentOwnershipTokens(null)).toBe(false);
   });
 });
 
