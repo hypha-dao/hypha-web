@@ -12,8 +12,6 @@ export const DEFAULT_PAYING_SPACES_HIDDEN_SLUGS = [
   'hypha-platform',
 ] as const;
 
-const HIDDEN_SLUGS_ENV = 'NEXT_PUBLIC_PAYING_SPACES_HIDDEN_SLUGS';
-
 function parseHiddenSlugs(raw: string | undefined): readonly string[] | null {
   if (raw === undefined) return null;
   return raw
@@ -23,7 +21,10 @@ function parseHiddenSlugs(raw: string | undefined): readonly string[] | null {
 }
 
 export function getPayingSpacesHiddenSlugs(): ReadonlySet<string> {
-  const parsed = parseHiddenSlugs(process.env[HIDDEN_SLUGS_ENV]);
+  // Literal NEXT_PUBLIC_* access so Next.js inlines this in client bundles.
+  const parsed = parseHiddenSlugs(
+    process.env.NEXT_PUBLIC_PAYING_SPACES_HIDDEN_SLUGS,
+  );
   if (parsed) return new Set(parsed);
   return new Set(DEFAULT_PAYING_SPACES_HIDDEN_SLUGS);
 }
