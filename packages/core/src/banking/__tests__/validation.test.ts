@@ -44,6 +44,48 @@ describe('schemaSpaceBankCustomerOnboarding', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts aud in requestedRails (#2474 WS6)', () => {
+    const result = schemaSpaceBankCustomerOnboarding.safeParse({
+      legalName: 'Jane Doe',
+      contactEmail: 'jane@example.com',
+      requestedRails: ['aud'],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.requestedRails).toEqual(['aud']);
+    }
+  });
+
+  it('accepts onboardingFields as an open string map (D10)', () => {
+    const result = schemaSpaceBankCustomerOnboarding.safeParse({
+      legalName: 'Jane Doe',
+      contactEmail: 'jane@example.com',
+      requestedRails: ['aud'],
+      onboardingFields: {
+        firstName: 'Jane',
+        lastName: 'Doe',
+        companyType: 'INDIVIDUAL',
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.onboardingFields).toEqual({
+        firstName: 'Jane',
+        lastName: 'Doe',
+        companyType: 'INDIVIDUAL',
+      });
+    }
+  });
+
+  it('rejects a non-string onboardingFields value', () => {
+    const result = schemaSpaceBankCustomerOnboarding.safeParse({
+      legalName: 'Jane Doe',
+      contactEmail: 'jane@example.com',
+      onboardingFields: { firstName: 123 },
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('schemaProvisionVirtualAccount', () => {

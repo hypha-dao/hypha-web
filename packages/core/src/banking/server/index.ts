@@ -38,11 +38,16 @@ export * from './build-banking-redirect-uri';
 export * from './sync-space-banking-from-bridge';
 export * from './simulate-space-bank-kyc-approval';
 export type {
+  BankIdentityProvider,
   BankKycProvider,
+  BankOnboardingFieldDescriptor,
+  BankOnboardingStepDescriptor,
   CreateKycLinkInput,
   CreateKycLinkResult,
   CreateTransferInput,
   CreateTransferResult,
+  GetKycStatusInput,
+  KycStatusResult,
   ProvisionVirtualAccountInput,
   ProvisionVirtualAccountResult,
   RegisterExternalAccountInput,
@@ -50,4 +55,15 @@ export type {
   CreateLiquidationAddressInput,
   CreateLiquidationAddressResult,
 } from './providers/types';
-export { getBankKycProvider } from './providers';
+export {
+  AUDD_REQUIRED_ONBOARDING_FIELDS,
+  BANK_PROVIDERS,
+  BRIDGE_REQUIRED_ONBOARDING_FIELDS,
+  bankProviderManifest,
+  getBankIdentityProvider,
+  getBankKycProvider,
+  getEnabledCurrenciesForProvider,
+  resolveProviderForCurrency,
+  resolveProviderForRails,
+} from './providers';
+export type { BankProviderManifestEntry } from './providers';
