@@ -1,19 +1,10 @@
 'use client';
 
-import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Download } from 'lucide-react';
-import {
-  buildTokenHoldingsCsv,
-  tokenHoldingsCsvFilename,
-} from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
-import {
-  downloadCsv,
-  fetchTokenHoldings,
-  TOKEN_HOLDINGS_EXPORT_QUERY,
-} from './token-holdings-api';
+import { useExportTokenHolders } from './use-export-token-holders';
 
 type ExportTokenHoldersButtonProps = {
   spaceSlug: string;
@@ -25,34 +16,10 @@ export function ExportTokenHoldersButton({
   getAccessToken,
 }: ExportTokenHoldersButtonProps) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
-  const [isExporting, setIsExporting] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const inFlightRef = React.useRef(false);
-
-  const handleExport = React.useCallback(async () => {
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
-    setIsExporting(true);
-    setErrorMessage(null);
-    try {
-      const data = await fetchTokenHoldings(
-        spaceSlug,
-        getAccessToken,
-        TOKEN_HOLDINGS_EXPORT_QUERY,
-      );
-      if (data.holders_complete === false) {
-        setErrorMessage(tTokenHoldings('exportHoldersIncomplete'));
-        return;
-      }
-      const csv = buildTokenHoldingsCsv(data.tokens);
-      downloadCsv(tokenHoldingsCsvFilename(spaceSlug), csv);
-    } catch {
-      setErrorMessage(tTokenHoldings('exportHoldersError'));
-    } finally {
-      inFlightRef.current = false;
-      setIsExporting(false);
-    }
-  }, [getAccessToken, spaceSlug, tTokenHoldings]);
+  const { isExporting, errorMessage, exportHolders } = useExportTokenHolders({
+    spaceSlug,
+    getAccessToken,
+  });
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -64,7 +31,7 @@ export function ExportTokenHoldersButton({
         aria-busy={isExporting}
         aria-label={tTokenHoldings('exportHoldersAria')}
         onClick={() => {
-          void handleExport();
+          void exportHolders();
         }}
       >
         <Download className="mr-1 size-3.5" />

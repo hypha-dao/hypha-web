@@ -365,6 +365,8 @@
     "exportHoldersError": "Die Inhaberliste konnte nicht exportiert werden. Bitte erneut versuchen.",
     "exportHoldersIncomplete": "Die Inhaberermittlung ist unvollständig. Bitte den Export erneut versuchen.",
     "exportHoldersAria": "Vollständige Inhaberliste exportieren",
+    "exportTokenHoldersAria": "Inhaber für {tokenSymbol} exportieren",
+    "exportTokenHoldersTooltip": "Inhaber exportieren",
     "tooltip": {
       "totalSupply": "Gesamtangebot",
       "other": "Sonstige",

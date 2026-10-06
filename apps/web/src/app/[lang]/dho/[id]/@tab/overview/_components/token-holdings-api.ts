@@ -1,6 +1,19 @@
 'use client';
 
 import { z } from 'zod';
+import {
+  buildTokenHoldingsSearchParams,
+  TOKEN_HOLDINGS_CHART_QUERY,
+  TOKEN_HOLDINGS_EXPORT_QUERY,
+  type TokenHoldingsFetchOptions,
+} from '@hypha-platform/core/client';
+
+export {
+  buildTokenHoldingsSearchParams,
+  TOKEN_HOLDINGS_CHART_QUERY,
+  TOKEN_HOLDINGS_EXPORT_QUERY,
+  type TokenHoldingsFetchOptions,
+} from '@hypha-platform/core/client';
 
 export const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
@@ -62,52 +75,6 @@ export class TokenHoldingsFetchError extends Error {
     super(message);
     this.name = 'TokenHoldingsFetchError';
   }
-}
-
-export type TokenHoldingsFetchOptions = {
-  includeTreasury?: boolean;
-  collapseBelowPct?: number;
-  holderLimit?: number;
-  expandUnknownHolders?: boolean;
-};
-
-/** Chart query: named slices ≥0.5%, capped at top 10 (+ Other for the rest). */
-export const TOKEN_HOLDINGS_CHART_QUERY: Required<
-  Omit<TokenHoldingsFetchOptions, 'expandUnknownHolders'>
-> = {
-  includeTreasury: true,
-  collapseBelowPct: 0.5,
-  holderLimit: 10,
-};
-
-/** Export query: full per-wallet list, no chart collapse, cap, or Other bucket. */
-export const TOKEN_HOLDINGS_EXPORT_QUERY: TokenHoldingsFetchOptions = {
-  includeTreasury: true,
-  collapseBelowPct: 0,
-  expandUnknownHolders: true,
-};
-
-export function buildTokenHoldingsSearchParams(
-  options: TokenHoldingsFetchOptions = {},
-): URLSearchParams {
-  const params = new URLSearchParams();
-  params.set(
-    'include_treasury',
-    options.includeTreasury ?? true ? 'true' : 'false',
-  );
-  if (options.collapseBelowPct != null) {
-    params.set('collapse_below_pct', String(options.collapseBelowPct));
-  }
-  if (options.holderLimit != null) {
-    params.set('holder_limit', String(options.holderLimit));
-  }
-  if (options.expandUnknownHolders != null) {
-    params.set(
-      'expand_unknown_holders',
-      options.expandUnknownHolders ? 'true' : 'false',
-    );
-  }
-  return params;
 }
 
 export async function fetchTokenHoldings(

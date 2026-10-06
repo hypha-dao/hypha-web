@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AssetsSection,
   BankingSection,
@@ -20,6 +21,7 @@ import {
 } from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { TabScreenTitle } from '../@tab/_components/tab-screen-title';
+import { ExportTokenHoldersIconButton } from '../@tab/overview/_components/export-token-holders-icon-button';
 
 type TreasuryTabsProps = {
   basePath: string;
@@ -36,6 +38,7 @@ export function TreasuryTabs({
   const tTreasury = useTranslations('TreasuryTab');
   const format = useFormatter();
   const searchParams = useSearchParams();
+  const { getAccessToken } = useAuthentication();
   const [activeTab, setActiveTab] = useState('balance');
 
   useEffect(() => {
@@ -99,7 +102,23 @@ export function TreasuryTabs({
         </ScrollableTabsList>
 
         <TabsContent value="balance" className="mt-0">
-          <AssetsSection basePath={basePath} web3SpaceId={web3SpaceId} />
+          <AssetsSection
+            basePath={basePath}
+            web3SpaceId={web3SpaceId}
+            renderAssetAction={(asset) => {
+              if (!asset.issuedBySpace || !asset.address || !asset.symbol) {
+                return null;
+              }
+              return (
+                <ExportTokenHoldersIconButton
+                  spaceSlug={spaceSlug}
+                  tokenAddress={asset.address}
+                  tokenSymbol={asset.symbol}
+                  getAccessToken={getAccessToken}
+                />
+              );
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="bank-accounts" className="mt-0">

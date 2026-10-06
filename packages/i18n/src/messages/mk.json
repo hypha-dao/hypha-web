@@ -344,6 +344,8 @@
     "exportHoldersError": "Не може да се извезе списокот на иматели. Обидете се повторно.",
     "exportHoldersIncomplete": "Откривањето на иматели е нецелосно. Обидете се повторно да извезете.",
     "exportHoldersAria": "Извези го целиот список на иматели",
+    "exportTokenHoldersAria": "Извези иматели за {tokenSymbol}",
+    "exportTokenHoldersTooltip": "Извези иматели",
     "tooltip": {
       "totalSupply": "Вкупна понуда",
       "other": "Останато",

@@ -1,10 +1,9 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { AssetCard } from './asset-card';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import Link from 'next/link';
 import type { AssetItem } from '../../hooks/use-user-assets';
 
 export type { AssetItem };
@@ -14,12 +13,13 @@ type AssetsListProps = {
   activeFilter: string;
   basePath?: string;
   isLoading?: boolean;
+  renderAssetAction?: (asset: AssetItem) => ReactNode;
 };
 
 export const AssetsList: FC<AssetsListProps> = ({
   assets,
-  activeFilter,
   isLoading,
+  renderAssetAction,
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
   return (
@@ -36,6 +36,7 @@ export const AssetsList: FC<AssetsListProps> = ({
             {...asset}
             isLoading={isLoading}
             lang={lang}
+            headerAction={renderAssetAction?.(asset)}
           />
           // </Link>
         ))}

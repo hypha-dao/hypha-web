@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathDefaultLanding } from '@hypha-platform/epics';
@@ -44,6 +45,8 @@ type AssetCardProps = {
     netBalance: number;
     whitelistedSpaceIds: number[];
   };
+  /** Optional corner action (e.g. per-token holders export). */
+  headerAction?: ReactNode;
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -62,6 +65,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   createdAt,
   layout = 'grid',
   mutualCredit,
+  headerAction,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -104,11 +108,16 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   return (
     <Card
       className={cn(
-        'craft-card-interactive group flex w-full flex-col gap-3 p-3.5',
+        'craft-card-interactive group relative flex w-full flex-col gap-3 p-3.5',
         isSolo ? 'h-auto' : 'h-full min-h-[10.5rem]',
       )}
     >
-      <div className="flex min-w-0 items-start gap-3">
+      {headerAction ? (
+        <div className="absolute right-2 top-2 z-10">{headerAction}</div>
+      ) : null}
+      <div
+        className={cn('flex min-w-0 items-start gap-3', headerAction && 'pr-7')}
+      >
         <Skeleton
           width="32px"
           height="32px"

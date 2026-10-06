@@ -1,6 +1,7 @@
 'use client';
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { AssetsList } from './assets-list';
+import type { AssetItem } from '../../hooks/use-user-assets';
 import { Text } from '@radix-ui/themes';
 import { useAssetsSection } from '../../hooks/use-assets-section';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
@@ -23,11 +24,13 @@ import { SearchIcon } from 'lucide-react';
 type AssetSectionProps = {
   basePath: string;
   web3SpaceId?: number;
+  renderAssetAction?: (asset: AssetItem) => ReactNode;
 };
 
 export const AssetsSection: FC<AssetSectionProps> = ({
   basePath,
   web3SpaceId,
+  renderAssetAction,
 }) => {
   const tCommon = useTranslations('Common');
   const tTreasury = useTranslations('TreasuryTab');
@@ -143,6 +146,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           assets={filteredAssets}
           activeFilter={activeFilter}
           isLoading={isLoading}
+          renderAssetAction={renderAssetAction}
         />
       )}
       {hasMore &&

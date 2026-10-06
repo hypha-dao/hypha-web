@@ -364,6 +364,8 @@
     "exportHoldersError": "Unable to export the holder list. Please retry.",
     "exportHoldersIncomplete": "Holder discovery is incomplete. Please retry the export.",
     "exportHoldersAria": "Export the full holder list",
+    "exportTokenHoldersAria": "Export holders for {tokenSymbol}",
+    "exportTokenHoldersTooltip": "Export holders",
     "tooltip": {
       "totalSupply": "Total supply",
       "other": "Other",

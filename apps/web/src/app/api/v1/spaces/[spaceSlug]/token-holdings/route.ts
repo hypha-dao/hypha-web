@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getTokenHoldingsBySpaceSlug,
+  parseTokenAddressQuery,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
@@ -118,6 +119,16 @@ export async function GET(
       ['expandUnknownHolders', 'expand_unknown_holders'],
       false,
     );
+    const tokenAddressParam = parseTokenAddressQuery(
+      url.searchParams.get('token_address') ??
+        url.searchParams.get('tokenAddress'),
+    );
+    if (tokenAddressParam.status === 'invalid') {
+      return NextResponse.json(
+        { error: 'Invalid token address' },
+        { status: 400 },
+      );
+    }
 
     const gated = await getTokenHoldingsBySpaceSlug(
       {
@@ -127,6 +138,10 @@ export async function GET(
         holderLimit,
         collapseBelowPct,
         expandUnknownHolders,
+        tokenAddress:
+          tokenAddressParam.status === 'ok'
+            ? tokenAddressParam.address
+            : undefined,
       },
       { db, authToken: bearer },
     );
