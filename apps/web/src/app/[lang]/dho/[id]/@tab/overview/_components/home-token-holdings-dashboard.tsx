@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
-import { useSpaceAccentPortalStyles } from '@hypha-platform/epics';
+import { useAssets, useSpaceAccentPortalStyles } from '@hypha-platform/epics';
 import {
   withMembersChartBaseline,
   type MembersMonthlyPoint,
@@ -1432,6 +1432,19 @@ export function HomeTokenHoldingsDashboard({
   // SWR reports isLoading=false when the key is null — treat auth wait as loading.
   const activityLoading = !authReady || activityLoadingRaw;
   const holdingsLoading = !authReady || isLoading;
+  const { assets } = useAssets({
+    bestEffort: true,
+    refreshInterval: 60_000,
+  });
+  const issuedBySpaceAddresses = React.useMemo(() => {
+    const addresses = new Set<string>();
+    for (const asset of assets) {
+      if (asset.issuedBySpace && asset.address && asset.symbol) {
+        addresses.add(asset.address.toLowerCase());
+      }
+    }
+    return addresses;
+  }, [assets]);
 
   const [activeFilter, setActiveFilter] =
     React.useState<HomeSectionFilter>('activity');
@@ -1681,12 +1694,16 @@ export function HomeTokenHoldingsDashboard({
                               ) : null}
                             </div>
                             <div className="flex shrink-0 items-center gap-1">
-                              <ExportTokenHoldersIconButton
-                                spaceSlug={spaceSlug}
-                                tokenAddress={token.token_address}
-                                tokenSymbol={token.symbol}
-                                getAccessToken={getAccessToken}
-                              />
+                              {issuedBySpaceAddresses.has(
+                                token.token_address.toLowerCase(),
+                              ) ? (
+                                <ExportTokenHoldersIconButton
+                                  spaceSlug={spaceSlug}
+                                  tokenAddress={token.token_address}
+                                  tokenSymbol={token.symbol}
+                                  getAccessToken={getAccessToken}
+                                />
+                              ) : null}
                               <Badge
                                 variant="outline"
                                 className="shrink-0 rounded-none border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"

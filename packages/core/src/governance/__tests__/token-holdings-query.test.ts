@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getAddress } from 'viem';
 
 import {
   applyTokenAddressFilter,
@@ -6,6 +7,22 @@ import {
   parseTokenAddressQuery,
   TOKEN_HOLDINGS_EXPORT_QUERY,
 } from '../token-holdings-query';
+
+function withBrokenChecksum(address: `0x${string}`): string {
+  const chars = [...address];
+  for (let index = 2; index < chars.length; index += 1) {
+    const char = chars[index];
+    if (char >= 'a' && char <= 'f') {
+      chars[index] = char.toUpperCase();
+      return chars.join('');
+    }
+    if (char >= 'A' && char <= 'F') {
+      chars[index] = char.toLowerCase();
+      return chars.join('');
+    }
+  }
+  throw new Error('address has no hex letters to flip');
+}
 
 describe('parseTokenAddressQuery', () => {
   it('treats missing and blank values as none', () => {
@@ -41,6 +58,22 @@ describe('parseTokenAddressQuery', () => {
     expect(
       parseTokenAddressQuery('0xZZ93862835c36e9689e9bb1ab21de3982e266cd3'),
     ).toEqual({ status: 'invalid' });
+  });
+
+  it('rejects a wrong mixed-case checksum and accepts a valid address', () => {
+    const lowercase = '0x8b93862835c36e9689e9bb1ab21de3982e266cd3';
+    const checksummed = getAddress(lowercase);
+    expect(parseTokenAddressQuery(withBrokenChecksum(checksummed))).toEqual({
+      status: 'invalid',
+    });
+    expect(parseTokenAddressQuery(checksummed)).toEqual({
+      status: 'ok',
+      address: lowercase,
+    });
+    expect(parseTokenAddressQuery(lowercase)).toEqual({
+      status: 'ok',
+      address: lowercase,
+    });
   });
 });
 

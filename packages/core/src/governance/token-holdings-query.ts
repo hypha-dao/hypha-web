@@ -1,3 +1,5 @@
+import { isAddress } from 'viem';
+
 export type TokenHoldingsFetchOptions = {
   includeTreasury?: boolean;
   collapseBelowPct?: number;
@@ -28,31 +30,13 @@ export type ParsedTokenAddressQuery =
   | { status: 'invalid' }
   | { status: 'ok'; address: `0x${string}` };
 
-function isHexCharCode(code: number): boolean {
-  return (
-    (code >= 48 && code <= 57) ||
-    (code >= 65 && code <= 70) ||
-    (code >= 97 && code <= 102)
-  );
-}
-
-/** Linear address check — avoid quantified regex on caller-controlled input. */
-function isHexAddress(value: string): value is `0x${string}` {
-  if (value.length !== 42) return false;
-  if (value[0] !== '0' || value[1] !== 'x') return false;
-  for (let index = 2; index < 42; index += 1) {
-    if (!isHexCharCode(value.charCodeAt(index))) return false;
-  }
-  return true;
-}
-
 export function parseTokenAddressQuery(
   raw: string | null | undefined,
 ): ParsedTokenAddressQuery {
   if (raw == null) return { status: 'none' };
   const value = raw.trim();
   if (value === '') return { status: 'none' };
-  if (!isHexAddress(value)) {
+  if (!isAddress(value)) {
     return { status: 'invalid' };
   }
   return {
