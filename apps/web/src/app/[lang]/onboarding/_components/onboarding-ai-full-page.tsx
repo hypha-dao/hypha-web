@@ -1012,106 +1012,97 @@ export function OnboardingAiFullPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 md:px-8 lg:px-12">
-      <div className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden rounded-[2rem] border border-border/60 bg-background/85 p-4 shadow-[0_40px_120px_-70px_rgba(0,0,0,0.75)] md:p-6">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,oklch(0.7_0.12_255_/_0.2),transparent_45%),radial-gradient(circle_at_80%_85%,oklch(0.7_0.14_330_/_0.14),transparent_42%)]"
-        />
-        <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-          <div className="mb-4 flex items-center justify-between gap-3 px-2 md:px-4">
-            <div>
-              <p className="text-1 text-muted-foreground">
-                {t('aiHero.flow.badge')}
-              </p>
-              <h2 className="text-7 font-semibold tracking-tight text-foreground">
-                {t('aiHero.title')}
-              </h2>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant="neutral"
-                onClick={onExit}
-                className="text-neutral-10 px-0 md:px-3"
-              >
-                <ChevronLeftIcon className="size-4" />
-                {tCommon('back')}
-              </Button>
-              <OnboardingDiscoveryModeToggle
-                mode={discoveryMode}
-                disabled={isStreaming}
-                onChange={handleDiscoveryModeChange}
-              />
-            </div>
+      <div className="relative flex h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden rounded-none border border-foreground/15 bg-background-2 p-4 shadow-none md:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="craft-page-header min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              {t('aiHero.flow.badge')}
+            </p>
+            <h2 className="craft-page-title text-7">{t('aiHero.title')}</h2>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/70 bg-background/70">
-            <AiPanelMessages
-              messages={messages as ChatMessage[]}
-              suggestionItems={suggestionItems}
-              showInlineSuggestions={!isStreaming && !hasUserMessage}
-              onSuggestionSelect={(text) => setInput(text)}
-              isStreaming={isStreaming}
-              onActionReplySelect={handleActionReplySelect}
-              onboardingContext={onboardingContext}
-              onOnboardingLocationConfirm={handleOnboardingLocationConfirm}
-              onOnboardingLocationSkip={handleOnboardingLocationSkip}
-              onOnboardingSetupJourneySelect={
-                handleOnboardingSetupJourneySelect
-              }
-              onOnboardingActivationSelect={handleOnboardingActivationSelect}
-              onOnboardingTransparencyConfirm={
-                handleOnboardingTransparencyConfirm
-              }
-              onOnboardingDiscoverabilityConfirm={
-                handleOnboardingDiscoverabilityConfirm
-              }
-              onOnboardingEntryMethodConfirm={
-                handleOnboardingEntryMethodConfirm
-              }
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="accent"
+              size="sm"
+              onClick={onExit}
+              className="shadow-none"
+            >
+              <ChevronLeftIcon className="size-3.5" strokeWidth={1.25} />
+              {tCommon('back')}
+            </Button>
+            <OnboardingDiscoveryModeToggle
+              mode={discoveryMode}
+              disabled={isStreaming}
+              onChange={handleDiscoveryModeChange}
             />
-            {isVoiceInterview ? (
-              <OnboardingVoiceInterviewBar
-                phase={voiceInterview.phase}
-                liveTranscript={voiceInterview.liveTranscript}
-                voiceError={voiceInterview.voiceError}
-                disabled={isStreaming}
-                isConnecting={voiceInterview.isConnecting}
-                isRealtimeConnected={voiceInterview.isRealtimeConnected}
-                transport={voiceInterview.transport}
-                realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
-                usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
-                onToggleListening={voiceInterview.toggleListening}
-              />
-            ) : (
-              <AiPanelChatBar
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                onStop={() => void stop()}
-                isStreaming={isStreaming}
-                draftAttachments={draftAttachments}
-                onDraftAttachmentsChange={setDraftAttachments}
-                placeholder={t('aiHero.placeholder')}
-              />
-            )}
           </div>
-          {error ? (
-            <p className="mt-2 px-2 text-1 text-destructive">
-              {String(error.message || error)}
-            </p>
-          ) : null}
-          {isWalletCreatePending && walletCreateAction ? (
-            <p className="mt-2 px-2 text-1 text-muted-foreground">
-              {walletCreateAction}
-            </p>
-          ) : null}
-          {isWalletCreateError && walletCreateErrors.length > 0 ? (
-            <p className="mt-2 px-2 text-1 text-destructive">
-              {String(walletCreateErrors[0]?.message ?? walletCreateErrors[0])}
-            </p>
-          ) : null}
         </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
+          <AiPanelMessages
+            chrome="quiet"
+            messages={messages as ChatMessage[]}
+            suggestionItems={suggestionItems}
+            showInlineSuggestions={!isStreaming && !hasUserMessage}
+            onSuggestionSelect={(text) => setInput(text)}
+            isStreaming={isStreaming}
+            onActionReplySelect={handleActionReplySelect}
+            onboardingContext={onboardingContext}
+            onOnboardingLocationConfirm={handleOnboardingLocationConfirm}
+            onOnboardingLocationSkip={handleOnboardingLocationSkip}
+            onOnboardingSetupJourneySelect={handleOnboardingSetupJourneySelect}
+            onOnboardingActivationSelect={handleOnboardingActivationSelect}
+            onOnboardingTransparencyConfirm={
+              handleOnboardingTransparencyConfirm
+            }
+            onOnboardingDiscoverabilityConfirm={
+              handleOnboardingDiscoverabilityConfirm
+            }
+            onOnboardingEntryMethodConfirm={handleOnboardingEntryMethodConfirm}
+          />
+          {isVoiceInterview ? (
+            <OnboardingVoiceInterviewBar
+              phase={voiceInterview.phase}
+              liveTranscript={voiceInterview.liveTranscript}
+              voiceError={voiceInterview.voiceError}
+              disabled={isStreaming}
+              isConnecting={voiceInterview.isConnecting}
+              isRealtimeConnected={voiceInterview.isRealtimeConnected}
+              transport={voiceInterview.transport}
+              realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
+              usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
+              onToggleListening={voiceInterview.toggleListening}
+            />
+          ) : (
+            <AiPanelChatBar
+              variant="quiet"
+              value={input}
+              onChange={setInput}
+              onSend={handleSend}
+              onStop={() => void stop()}
+              isStreaming={isStreaming}
+              draftAttachments={draftAttachments}
+              onDraftAttachmentsChange={setDraftAttachments}
+              placeholder={t('aiHero.placeholder')}
+            />
+          )}
+        </div>
+        {error ? (
+          <p className="mt-2 px-2 text-1 text-destructive">
+            {String(error.message || error)}
+          </p>
+        ) : null}
+        {isWalletCreatePending && walletCreateAction ? (
+          <p className="mt-2 px-2 text-1 text-muted-foreground">
+            {walletCreateAction}
+          </p>
+        ) : null}
+        {isWalletCreateError && walletCreateErrors.length > 0 ? (
+          <p className="mt-2 px-2 text-1 text-destructive">
+            {String(walletCreateErrors[0]?.message ?? walletCreateErrors[0])}
+          </p>
+        ) : null}
       </div>
     </div>
   );

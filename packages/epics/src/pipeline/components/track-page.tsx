@@ -19,6 +19,10 @@ import { FilterBar } from './filter-bar';
 import { SavedViewsMenu } from './saved-views-menu';
 import { PipelineSummary } from './pipeline-summary';
 import { KanbanBoard } from './kanban-board';
+import {
+  PipelineLaneSection,
+  useCollapsedPipelineLanes,
+} from './pipeline-lane-section';
 import { NewDealDialog } from './new-deal-dialog';
 import { exportDealsToXlsx } from '../utils/export-deals';
 import type { UseMembers } from '../../spaces';
@@ -47,6 +51,7 @@ export function TrackPage({
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
   const { probabilities } = usePipelineConfig(spaceSlug);
+  const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
 
   React.useEffect(() => {
     setFilters((prev) => ({ ...prev, swimlane }));
@@ -67,7 +72,7 @@ export function TrackPage({
   );
 
   return (
-    <div className="flex flex-col gap-4 pb-8">
+    <div className="flex min-w-0 flex-col gap-4 pb-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <Link
@@ -113,14 +118,22 @@ export function TrackPage({
       {isLoading && deals.length === 0 ? (
         <div className="text-2 text-neutral-11">{t('loading')}</div>
       ) : (
-        <KanbanBoard
-          deals={filtered}
-          onDealClick={(deal) => onDealOpen(deal.id)}
-          onMoveStatus={onMoveStatus}
-          activeDealId={activeDealId}
-          wide
-          probabilities={probabilities}
-        />
+        <PipelineLaneSection
+          laneSlug={swimlane}
+          title={swimlane}
+          count={filtered.length}
+          collapsed={collapsedLanes.includes(swimlane)}
+          onToggle={() => toggleLane(swimlane)}
+        >
+          <KanbanBoard
+            deals={filtered}
+            onDealClick={(deal) => onDealOpen(deal.id)}
+            onMoveStatus={onMoveStatus}
+            activeDealId={activeDealId}
+            wide
+            probabilities={probabilities}
+          />
+        </PipelineLaneSection>
       )}
 
       <NewDealDialog

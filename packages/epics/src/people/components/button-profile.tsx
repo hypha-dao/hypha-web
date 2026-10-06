@@ -39,6 +39,7 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
+import { APP_CHROME_AVATAR_TRIGGER } from '../../common/chrome-radius';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
 import {
@@ -64,7 +65,7 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
-  /** When true, show Shape Hypha before main nav links. */
+  /** When true, show Shape Hypha after the main nav links. */
   showNetworkFeedback?: boolean;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
@@ -72,10 +73,27 @@ export type ButtonProfileProps = {
   compact?: boolean;
 };
 
+/** 40px rows — same height as labeled controls, Manrope, square. */
 const menuItemClass =
-  'gap-2 px-2 py-2 text-2 [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
+  'min-h-10 gap-2 rounded-none px-3 py-0 text-2 font-normal font-sans leading-5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
 const compactSheetItemClass =
-  'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'flex min-h-10 w-full items-center gap-2 rounded-none px-3 py-0 text-left text-2 font-normal font-sans leading-5 text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground';
+/** Square panel on the craft card surface (bg-background-2). */
+const profileMenuPanelClass = cn(
+  'w-[min(17.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-none border border-border p-0 shadow-none',
+  'bg-background-2 font-sans text-foreground',
+);
+const profileMenuLabelClass = 'cursor-default px-3 py-2 font-normal';
+const profileMenuNameClass =
+  'truncate text-2 font-medium leading-tight tracking-[-0.02em] text-foreground [font-family:var(--font-family-heading)]';
+const profileMenuSlugClass =
+  'truncate font-sans text-1 font-normal leading-tight text-muted-foreground';
+const profileMenuWalletClass = cn(
+  'flex h-10 items-center border-t border-border text-1 text-muted-foreground',
+  '[&_button]:h-full [&_button]:w-full [&_button]:rounded-none [&_button]:px-3 [&_button]:py-0',
+  '[&_button]:hover:bg-muted/80 [&_button]:focus-visible:ring-1 [&_button]:focus-visible:ring-offset-0',
+);
+const profileMenuSeparatorClass = 'my-0 h-px bg-border';
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 function resolveNavItemIcon(href?: string) {
@@ -83,22 +101,13 @@ function resolveNavItemIcon(href?: string) {
     return null;
   }
   if (href.includes('/my-spaces')) {
-    return (
-      <LayoutGrid
-        className="size-4 shrink-0 text-muted-foreground"
-        aria-hidden
-      />
-    );
+    return <LayoutGrid className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/my-wallet')) {
-    return (
-      <Wallet className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-    );
+    return <Wallet className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/network')) {
-    return (
-      <Globe2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-    );
+    return <Globe2 className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   return null;
 }
@@ -202,14 +211,7 @@ export const ButtonProfile = ({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className={cn(
-                  'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center',
-                  'isolate overflow-hidden rounded-chrome bg-neutral-1 p-0 text-neutral-12 outline-none',
-                  'ring-1 ring-border/70 transition-colors duration-150',
-                  'hover:text-foreground',
-                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  'data-[state=open]:ring-border',
-                )}
+                className={cn(APP_CHROME_AVATAR_TRIGGER)}
                 aria-label={t('openProfileMenu')}
                 aria-haspopup="menu"
               >
@@ -217,8 +219,8 @@ export const ButtonProfile = ({
                   size="toolbar"
                   avatarSrc={person?.avatarUrl}
                   userName={person?.nickname}
-                  shape="rounded"
-                  className="h-full w-full rounded-chrome ring-0"
+                  shape="square"
+                  className="h-full w-full rounded-none border-0 shadow-none ring-0"
                 />
               </button>
             </DropdownMenuTrigger>
@@ -227,26 +229,21 @@ export const ButtonProfile = ({
               side="bottom"
               sideOffset={6}
               collisionPadding={12}
-              className={cn(
-                'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
-                'bg-popover text-popover-foreground shadow-xl',
-              )}
+              className={profileMenuPanelClass}
             >
-              <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
-                <div className="flex gap-3">
+              <DropdownMenuLabel className={profileMenuLabelClass}>
+                <div className="flex items-center gap-2.5">
                   <PersonAvatar
                     size="md"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
-                    shape="rounded"
-                    className="ring-1 ring-border/60"
+                    shape="square"
+                    className="border-0 shadow-none ring-0"
                   />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="truncate text-2 font-semibold leading-snug text-foreground">
-                      {primaryLine}
-                    </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className={profileMenuNameClass}>{primaryLine}</span>
                     {displayName.trim() && person?.nickname ? (
-                      <span className="truncate text-1 text-muted-foreground">
+                      <span className={profileMenuSlugClass}>
                         {person.nickname}
                       </span>
                     ) : null}
@@ -254,21 +251,16 @@ export const ButtonProfile = ({
                 </div>
               </DropdownMenuLabel>
               {address ? (
-                <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
-                  <div
-                    className={cn(
-                      'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
-                      'text-1 text-muted-foreground',
-                    )}
-                  >
-                    <EthAddress address={address} onClick={handleAddressCopy} />
-                  </div>
+                <div className={profileMenuWalletClass}>
+                  <EthAddress address={address} onClick={handleAddressCopy} />
                 </div>
               ) : null}
               {navItems.length > 0 ? (
                 <>
-                  <DropdownMenuSeparator className="-mx-0 my-1" />
-                  <DropdownMenuGroup className="space-y-0.5">
+                  <DropdownMenuSeparator
+                    className={profileMenuSeparatorClass}
+                  />
+                  <DropdownMenuGroup>
                     {showNetworkFeedback ? (
                       <HyphaNetworkFeedbackMenuItem
                         variant="menu"
@@ -287,7 +279,7 @@ export const ButtonProfile = ({
                               {resolveNavItemIcon(item.href)}
                               <span className="flex-1">{item.label}</span>
                               <ChevronRight
-                                className="ml-auto size-4 opacity-60"
+                                className="ml-auto craft-icon opacity-60"
                                 aria-hidden
                               />
                             </Link>
@@ -308,15 +300,17 @@ export const ButtonProfile = ({
               ) : null}
               {(profileUrl || onboardingUrl || notificationCentrePath) && (
                 <>
-                  <DropdownMenuSeparator className="-mx-0 my-1" />
-                  <DropdownMenuGroup className="space-y-0.5">
+                  <DropdownMenuSeparator
+                    className={profileMenuSeparatorClass}
+                  />
+                  <DropdownMenuGroup>
                     {profileUrl ? (
                       <DropdownMenuItem className={menuItemClass} asChild>
                         <Link href={profileUrl}>
-                          <UserRound className="size-4 shrink-0" aria-hidden />
+                          <UserRound className="craft-icon" aria-hidden />
                           <span className="flex-1">{t('viewProfile')}</span>
                           <ChevronRight
-                            className="ml-auto size-4 opacity-60"
+                            className="ml-auto craft-icon opacity-60"
                             aria-hidden
                           />
                         </Link>
@@ -325,12 +319,12 @@ export const ButtonProfile = ({
                     {onboardingUrl ? (
                       <DropdownMenuItem className={menuItemClass} asChild>
                         <Link href={onboardingUrl}>
-                          <Compass className="size-4 shrink-0" aria-hidden />
+                          <Compass className="craft-icon" aria-hidden />
                           <span className="flex-1">
                             {t('continueAdventure')}
                           </span>
                           <ChevronRight
-                            className="ml-auto size-4 opacity-60"
+                            className="ml-auto craft-icon opacity-60"
                             aria-hidden
                           />
                         </Link>
@@ -339,12 +333,12 @@ export const ButtonProfile = ({
                     {notificationCentrePath ? (
                       <DropdownMenuItem className={menuItemClass} asChild>
                         <Link href={notificationCentrePath}>
-                          <Bell className="size-4 shrink-0" aria-hidden />
+                          <Bell className="craft-icon" aria-hidden />
                           <span className="flex-1">
                             {t('notificationCentre')}
                           </span>
                           <ChevronRight
-                            className="ml-auto size-4 opacity-60"
+                            className="ml-auto craft-icon opacity-60"
                             aria-hidden
                           />
                         </Link>
@@ -353,8 +347,8 @@ export const ButtonProfile = ({
                   </DropdownMenuGroup>
                 </>
               )}
-              <DropdownMenuSeparator className="-mx-0 my-1" />
-              <DropdownMenuGroup className="space-y-0.5">
+              <DropdownMenuSeparator className={profileMenuSeparatorClass} />
+              <DropdownMenuGroup>
                 {onChangeThemeMode ? (
                   <DropdownMenuItem
                     className={menuItemClass}
@@ -365,7 +359,7 @@ export const ButtonProfile = ({
                         ? t('switchToLightMode')
                         : t('switchToDarkMode')}
                     </span>
-                    <Repeat className="size-4 shrink-0" aria-hidden />
+                    <Repeat className="craft-icon" aria-hidden />
                   </DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem
@@ -375,12 +369,14 @@ export const ButtonProfile = ({
                   <span className="flex-1">
                     {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
                   </span>
-                  <Shield className="size-4 shrink-0" aria-hidden />
+                  <Shield className="craft-icon" aria-hidden />
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               {onDelete ? (
                 <>
-                  <DropdownMenuSeparator className="-mx-0 my-1" />
+                  <DropdownMenuSeparator
+                    className={profileMenuSeparatorClass}
+                  />
                   <DropdownMenuItem
                     onClick={onDelete}
                     className={cn(
@@ -390,11 +386,11 @@ export const ButtonProfile = ({
                     disabled
                   >
                     <span className="flex-1">{t('delete')}</span>
-                    <TrashIcon className="size-4 shrink-0" aria-hidden />
+                    <TrashIcon className="craft-icon" aria-hidden />
                   </DropdownMenuItem>
                 </>
               ) : null}
-              <DropdownMenuSeparator className="-mx-0 my-1" />
+              <DropdownMenuSeparator className={profileMenuSeparatorClass} />
               <DropdownMenuItem
                 onClick={onLogout}
                 disabled={loggingOut}
@@ -405,12 +401,9 @@ export const ButtonProfile = ({
               >
                 <span className="flex-1">{t('logout')}</span>
                 {loggingOut ? (
-                  <Loader2
-                    className="size-4 shrink-0 animate-spin"
-                    aria-hidden
-                  />
+                  <Loader2 className="craft-icon animate-spin" aria-hidden />
                 ) : (
-                  <LogOutIcon className="size-4 shrink-0" aria-hidden />
+                  <LogOutIcon className="craft-icon" aria-hidden />
                 )}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -428,13 +421,7 @@ export const ButtonProfile = ({
         <Sheet open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <button
             type="button"
-            className={cn(
-              'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center',
-              'isolate overflow-hidden rounded-chrome bg-neutral-1 p-0 text-neutral-12 outline-none',
-              'ring-1 ring-border/70 transition-colors duration-150',
-              'hover:text-foreground',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            )}
+            className={cn(APP_CHROME_AVATAR_TRIGGER)}
             aria-label={t('openProfileMenu')}
             aria-haspopup="dialog"
             aria-expanded={profileMenuOpen}
@@ -444,55 +431,53 @@ export const ButtonProfile = ({
               size="toolbar"
               avatarSrc={person?.avatarUrl}
               userName={person?.nickname}
-              shape="rounded"
-              className="h-full w-full rounded-chrome ring-0"
+              shape="square"
+              className="h-full w-full rounded-none border-0 shadow-none ring-0"
             />
           </button>
           <SheetContent
             side="right"
             closeLabel={tCommon('close')}
             className={cn(
-              'w-[calc(100vw-1rem)] max-w-[560px] border-l border-border/80 p-0',
-              'bg-popover text-popover-foreground shadow-xl',
+              'w-[calc(100vw-1rem)] max-w-[560px] rounded-none border-l border-border p-0 shadow-none',
+              'bg-background-2 font-sans text-foreground',
             )}
           >
             <div className="flex h-full flex-col">
-              <div className="border-b border-border/60 px-4 pb-4 pt-5">
-                <div className="flex gap-3">
+              <div className="border-b border-border">
+                <div className="flex items-center gap-2.5 px-3 py-2">
                   <PersonAvatar
                     size="md"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
-                    shape="rounded"
-                    className="ring-1 ring-border/60"
+                    shape="square"
+                    className="border-0 shadow-none ring-0"
                   />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1 pr-8">
-                    <span className="truncate text-2 font-semibold leading-snug text-foreground">
-                      {primaryLine}
-                    </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-8">
+                    <span className={profileMenuNameClass}>{primaryLine}</span>
                     {displayName.trim() && person?.nickname ? (
-                      <span className="truncate text-1 text-muted-foreground">
+                      <span className={profileMenuSlugClass}>
                         {person.nickname}
                       </span>
                     ) : null}
                   </div>
                 </div>
                 {address ? (
-                  <div className="mt-3 w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5 text-1 text-muted-foreground">
+                  <div className={profileMenuWalletClass}>
                     <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
                 ) : null}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-2 py-2">
+              <div className="flex-1 overflow-y-auto">
                 {trailingBeforeProfile ? (
                   <>
-                    <div className="px-1 pb-2">{trailingBeforeProfile}</div>
-                    <div className="mb-2 border-t border-border/60" />
+                    <div className="px-3 py-2">{trailingBeforeProfile}</div>
+                    <div className="border-t border-border" />
                   </>
                 ) : null}
 
-                <div className="space-y-1">
+                <div>
                   {showNetworkFeedback ? (
                     <HyphaNetworkFeedbackMenuItem
                       variant="sheet"
@@ -510,7 +495,7 @@ export const ButtonProfile = ({
                           {resolveNavItemIcon(item.href)}
                           <span className="flex-1">{item.label}</span>
                           <ChevronRight
-                            className="ml-auto size-4 text-muted-foreground"
+                            className="ml-auto craft-icon text-muted-foreground"
                             aria-hidden
                           />
                         </Link>
@@ -534,10 +519,10 @@ export const ButtonProfile = ({
                       className={compactSheetItemClass}
                       onClick={() => setProfileMenuOpen(false)}
                     >
-                      <UserRound className="size-4 shrink-0 text-muted-foreground" />
+                      <UserRound className="craft-icon text-muted-foreground" />
                       <span className="flex-1">{t('viewProfile')}</span>
                       <ChevronRight
-                        className="ml-auto size-4 text-muted-foreground"
+                        className="ml-auto craft-icon text-muted-foreground"
                         aria-hidden
                       />
                     </Link>
@@ -548,10 +533,10 @@ export const ButtonProfile = ({
                       className={compactSheetItemClass}
                       onClick={() => setProfileMenuOpen(false)}
                     >
-                      <Compass className="size-4 shrink-0 text-muted-foreground" />
+                      <Compass className="craft-icon text-muted-foreground" />
                       <span className="flex-1">{t('continueAdventure')}</span>
                       <ChevronRight
-                        className="ml-auto size-4 text-muted-foreground"
+                        className="ml-auto craft-icon text-muted-foreground"
                         aria-hidden
                       />
                     </Link>
@@ -562,19 +547,19 @@ export const ButtonProfile = ({
                       className={compactSheetItemClass}
                       onClick={() => setProfileMenuOpen(false)}
                     >
-                      <Bell className="size-4 shrink-0 text-muted-foreground" />
+                      <Bell className="craft-icon text-muted-foreground" />
                       <span className="flex-1">{t('notificationCentre')}</span>
                       <ChevronRight
-                        className="ml-auto size-4 text-muted-foreground"
+                        className="ml-auto craft-icon text-muted-foreground"
                         aria-hidden
                       />
                     </Link>
                   ) : null}
                 </div>
 
-                <div className="my-2 border-t border-border/60" />
+                <div className="border-t border-border" />
 
-                <div className="space-y-1">
+                <div>
                   {onChangeThemeMode ? (
                     <button
                       type="button"
@@ -589,7 +574,7 @@ export const ButtonProfile = ({
                           ? t('switchToLightMode')
                           : t('switchToDarkMode')}
                       </span>
-                      <Repeat className="size-4 shrink-0 text-muted-foreground" />
+                      <Repeat className="craft-icon text-muted-foreground" />
                     </button>
                   ) : null}
 
@@ -604,13 +589,13 @@ export const ButtonProfile = ({
                     <span className="flex-1">
                       {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
                     </span>
-                    <Shield className="size-4 shrink-0 text-muted-foreground" />
+                    <Shield className="craft-icon text-muted-foreground" />
                   </button>
                 </div>
 
-                <div className="my-2 border-t border-border/60" />
+                <div className="border-t border-border" />
 
-                <div className="space-y-1">
+                <div>
                   {onDelete ? (
                     <button
                       type="button"
@@ -625,7 +610,7 @@ export const ButtonProfile = ({
                       disabled
                     >
                       <span className="flex-1">{t('delete')}</span>
-                      <TrashIcon className="size-4 shrink-0 text-error-11" />
+                      <TrashIcon className="craft-icon text-error-11" />
                     </button>
                   ) : null}
 
@@ -643,9 +628,9 @@ export const ButtonProfile = ({
                   >
                     <span className="flex-1">{t('logout')}</span>
                     {loggingOut ? (
-                      <Loader2 className="size-4 shrink-0 animate-spin text-error-11" />
+                      <Loader2 className="craft-icon animate-spin text-error-11" />
                     ) : (
-                      <LogOutIcon className="size-4 shrink-0 text-error-11" />
+                      <LogOutIcon className="craft-icon text-error-11" />
                     )}
                   </button>
                 </div>
@@ -669,8 +654,8 @@ export const ButtonProfile = ({
           <div className="flex flex-col justify-center gap-6 md:hidden">
             <div
               className={cn(
-                'flex flex-col items-center gap-3 rounded-xl border border-border/80',
-                'bg-popover px-4 py-5 text-popover-foreground shadow-sm',
+                'flex flex-col items-center gap-3 rounded-none border border-border/80',
+                'bg-popover px-4 py-5 text-popover-foreground shadow-none',
               )}
             >
               <PersonAvatar
@@ -758,18 +743,15 @@ export const ButtonProfile = ({
               disabled={loggingOut}
               icon={
                 loggingOut ? (
-                  <Loader2
-                    className="size-4 shrink-0 animate-spin"
-                    aria-hidden
-                  />
+                  <Loader2 className="craft-icon animate-spin" aria-hidden />
                 ) : undefined
               }
             />
           </div>
 
           {/* Desktop */}
-          <div className="hidden md:flex gap-2">
-            <div className="flex gap-2">
+          <div className="hidden items-center gap-2 md:flex">
+            <div className="flex items-center gap-2">
               {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
               {navItems.map((item) => (
                 <ButtonNavItem
@@ -789,15 +771,7 @@ export const ButtonProfile = ({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={cn(
-                    /* Match LanguageSelect trigger: h-10 toolbar row, square hit target */
-                    'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
-                    'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
-                    'shadow-sm transition-colors duration-150',
-                    'hover:text-foreground',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    'data-[state=open]:shadow-md',
-                  )}
+                  className={cn(APP_CHROME_AVATAR_TRIGGER)}
                   aria-label={t('openProfileMenu')}
                   aria-haspopup="menu"
                 >
@@ -805,8 +779,8 @@ export const ButtonProfile = ({
                     size="toolbar"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
-                    shape="rounded"
-                    className="h-full w-full rounded-md ring-0"
+                    shape="square"
+                    className="h-full w-full rounded-none border-0 shadow-none ring-0"
                   />
                 </button>
               </DropdownMenuTrigger>
@@ -815,26 +789,23 @@ export const ButtonProfile = ({
                 side="bottom"
                 sideOffset={6}
                 collisionPadding={12}
-                className={cn(
-                  'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
-                  'bg-popover text-popover-foreground shadow-xl',
-                )}
+                className={profileMenuPanelClass}
               >
-                <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
-                  <div className="flex gap-3">
+                <DropdownMenuLabel className={profileMenuLabelClass}>
+                  <div className="flex items-center gap-2.5">
                     <PersonAvatar
                       size="md"
                       avatarSrc={person?.avatarUrl}
                       userName={person?.nickname}
-                      shape="rounded"
-                      className="ring-1 ring-border/60"
+                      shape="square"
+                      className="border-0 shadow-none ring-0"
                     />
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="truncate text-2 font-semibold leading-snug text-foreground">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className={profileMenuNameClass}>
                         {primaryLine}
                       </span>
                       {displayName.trim() && person?.nickname ? (
-                        <span className="truncate text-1 text-muted-foreground">
+                        <span className={profileMenuSlugClass}>
                           {person.nickname}
                         </span>
                       ) : null}
@@ -842,35 +813,24 @@ export const ButtonProfile = ({
                   </div>
                 </DropdownMenuLabel>
                 {address ? (
-                  <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
-                    <div
-                      className={cn(
-                        'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
-                        'text-1 text-muted-foreground',
-                      )}
-                    >
-                      <EthAddress
-                        address={address}
-                        onClick={handleAddressCopy}
-                      />
-                    </div>
+                  <div className={profileMenuWalletClass}>
+                    <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
                 ) : null}
 
                 {(profileUrl || onboardingUrl || notificationCentrePath) && (
                   <>
-                    <DropdownMenuSeparator className="-mx-0 my-1" />
-                    <DropdownMenuGroup className="space-y-0.5">
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
+                    />
+                    <DropdownMenuGroup>
                       {profileUrl ? (
                         <DropdownMenuItem className={menuItemClass} asChild>
                           <Link href={profileUrl}>
-                            <UserRound
-                              className="size-4 shrink-0"
-                              aria-hidden
-                            />
+                            <UserRound className="craft-icon" aria-hidden />
                             <span className="flex-1">{t('viewProfile')}</span>
                             <ChevronRight
-                              className="ml-auto size-4 opacity-60"
+                              className="ml-auto craft-icon opacity-60"
                               aria-hidden
                             />
                           </Link>
@@ -879,12 +839,12 @@ export const ButtonProfile = ({
                       {onboardingUrl ? (
                         <DropdownMenuItem className={menuItemClass} asChild>
                           <Link href={onboardingUrl}>
-                            <Compass className="size-4 shrink-0" aria-hidden />
+                            <Compass className="craft-icon" aria-hidden />
                             <span className="flex-1">
                               {t('continueAdventure')}
                             </span>
                             <ChevronRight
-                              className="ml-auto size-4 opacity-60"
+                              className="ml-auto craft-icon opacity-60"
                               aria-hidden
                             />
                           </Link>
@@ -893,12 +853,12 @@ export const ButtonProfile = ({
                       {notificationCentrePath ? (
                         <DropdownMenuItem className={menuItemClass} asChild>
                           <Link href={notificationCentrePath}>
-                            <Bell className="size-4 shrink-0" aria-hidden />
+                            <Bell className="craft-icon" aria-hidden />
                             <span className="flex-1">
                               {t('notificationCentre')}
                             </span>
                             <ChevronRight
-                              className="ml-auto size-4 opacity-60"
+                              className="ml-auto craft-icon opacity-60"
                               aria-hidden
                             />
                           </Link>
@@ -908,9 +868,9 @@ export const ButtonProfile = ({
                   </>
                 )}
 
-                <DropdownMenuSeparator className="-mx-0 my-1" />
+                <DropdownMenuSeparator className={profileMenuSeparatorClass} />
 
-                <DropdownMenuGroup className="space-y-0.5">
+                <DropdownMenuGroup>
                   {onChangeThemeMode ? (
                     <DropdownMenuItem
                       className={menuItemClass}
@@ -921,7 +881,7 @@ export const ButtonProfile = ({
                           ? t('switchToLightMode')
                           : t('switchToDarkMode')}
                       </span>
-                      <Repeat className="size-4 shrink-0" aria-hidden />
+                      <Repeat className="craft-icon" aria-hidden />
                     </DropdownMenuItem>
                   ) : null}
                   <DropdownMenuItem
@@ -931,13 +891,15 @@ export const ButtonProfile = ({
                     <span className="flex-1">
                       {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
                     </span>
-                    <Shield className="size-4 shrink-0" aria-hidden />
+                    <Shield className="craft-icon" aria-hidden />
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
 
                 {onDelete ? (
                   <>
-                    <DropdownMenuSeparator className="-mx-0 my-1" />
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
+                    />
                     <DropdownMenuItem
                       onClick={onDelete}
                       className={cn(
@@ -947,12 +909,12 @@ export const ButtonProfile = ({
                       disabled
                     >
                       <span className="flex-1">{t('delete')}</span>
-                      <TrashIcon className="size-4 shrink-0" aria-hidden />
+                      <TrashIcon className="craft-icon" aria-hidden />
                     </DropdownMenuItem>
                   </>
                 ) : null}
 
-                <DropdownMenuSeparator className="-mx-0 my-1" />
+                <DropdownMenuSeparator className={profileMenuSeparatorClass} />
 
                 <DropdownMenuItem
                   onClick={onLogout}
@@ -964,12 +926,9 @@ export const ButtonProfile = ({
                 >
                   <span className="flex-1">{t('logout')}</span>
                   {loggingOut ? (
-                    <Loader2
-                      className="size-4 shrink-0 animate-spin"
-                      aria-hidden
-                    />
+                    <Loader2 className="craft-icon animate-spin" aria-hidden />
                   ) : (
-                    <LogOutIcon className="size-4 shrink-0" aria-hidden />
+                    <LogOutIcon className="craft-icon" aria-hidden />
                   )}
                 </DropdownMenuItem>
               </DropdownMenuContent>

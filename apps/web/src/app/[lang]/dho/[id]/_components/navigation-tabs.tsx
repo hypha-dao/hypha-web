@@ -23,6 +23,7 @@ import {
   getActiveTabFromPath,
   partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
+  useAiPanel,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -43,6 +44,7 @@ export function NavigationTabs({
   const tNav = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tCoherence = useTranslations('CoherenceTab');
+  const { open: aiPanelOpen } = useAiPanel();
   const pathname = usePathname();
   const activeTab = React.useMemo(
     () => getActiveTabFromPath(pathname),
@@ -105,37 +107,46 @@ export function NavigationTabs({
     ],
   );
 
-  // Promote an active More item into the last primary slot so context stays visible.
+  // Primary tabs stay fixed. An active More screen is selected in the menu.
   const { primary, more } = React.useMemo(
     () => partitionSpaceSectionNavForTabs(items),
     [items],
   );
   // Banking is under Treasury — highlight Treasury on /banking routes.
   const stripActiveTab = activeTab === 'banking' ? 'treasury' : activeTab;
-  // After promotion the active key is always in primary, so Tabs can select it directly.
-  const tabsValue = stripActiveTab;
+  const tabsValue = primary.some((item) => item.key === stripActiveTab)
+    ? stripActiveTab
+    : '';
+
+  // The persistent icon rail is the desktop section switcher, including
+  // while the AI conversation is open. Below md that rail is not on screen,
+  // so this strip stays the switcher while the conversation sheet is open.
+  if (!aiPanelOpen) {
+    return null;
+  }
 
   return (
-    <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
+    <Tabs value={tabsValue} className="mt-4 w-full min-w-0 md:hidden">
       <div
         className={cn(
-          'mb-3 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
+          'mb-3 w-full min-w-0 overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
-        {/* Keep content-sized strip so overflow-x on the parent can scroll at iPad
-            widths when side panels shrink the main column (viewport md ≠ usable width).
-            No scroll parallax — that caused mobile shortcut tabs to jump. */}
-        <TabsList className="flex h-10 min-w-max gap-0.5">
+        {/* Fill the column. Each label keeps its width (`min-w-max`) so a
+            narrower column scrolls this row instead of clipping or spilling
+            into the sticky badge. No scroll parallax — that jumped shortcut tabs. */}
+        <TabsList className="flex h-10 w-full min-w-max gap-0.5">
           {primary.map(({ key, href }) => {
             const Icon = SPACE_SECTION_NAV_ICONS[key];
             return (
               <TabsTrigger asChild key={key} value={key} variant="ghost">
                 <Link
                   href={href}
-                  className="flex w-full items-center justify-center gap-1.5"
+                  scroll={false}
+                  className="flex min-w-max flex-1 items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
                 >
-                  <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                  <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
                   {labelFor(key)}
                 </Link>
               </TabsTrigger>
@@ -148,11 +159,15 @@ export function NavigationTabs({
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
-                  className="h-10 shrink-0 gap-1 px-3 text-2 font-medium"
+                  className="h-10 shrink-0 gap-1 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.12em]"
                   aria-label={t('moreNav')}
                 >
                   {t('moreNav')}
-                  <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+                  <ChevronDown
+                    className="craft-icon"
+                    strokeWidth={1.25}
+                    aria-hidden
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
@@ -162,16 +177,21 @@ export function NavigationTabs({
                     <DropdownMenuItem key={key} asChild>
                       <Link
                         href={href}
+                        scroll={false}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
                           'flex cursor-pointer items-center gap-2',
                           // Space accent mirrors a light-mode ramp to `:root`; accent-3/12
                           // pairs wash out in dark mode. Tint + foreground matches AI nav.
                           active &&
-                            'bg-accent-9/18 text-foreground data-[highlighted]:bg-accent-9/25 data-[highlighted]:text-foreground',
+                            'text-foreground data-[highlighted]:text-foreground',
                         )}
                       >
-                        <Icon className="size-4 shrink-0" aria-hidden />
+                        <Icon
+                          className="craft-icon"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
                         {labelFor(key)}
                       </Link>
                     </DropdownMenuItem>

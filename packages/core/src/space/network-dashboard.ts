@@ -3,11 +3,7 @@ import {
   resolveReferenceCurrencyCode,
   type UsdRates,
 } from '../common/web3/currency-conversion';
-
-export type MonthlyCount = {
-  month: string;
-  count: number;
-};
+import type { MonthlyCount } from './network-growth';
 
 export type NetworkDashboardStats = {
   spaceCount: number;

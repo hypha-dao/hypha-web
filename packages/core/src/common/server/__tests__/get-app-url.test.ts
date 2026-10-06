@@ -17,10 +17,25 @@ describe('getAppBaseUrl', () => {
     expect(getAppBaseUrl()).toBe('http://localhost:3000');
   });
 
-  it('falls back to https VERCEL_URL', () => {
+  it('falls back to https VERCEL_URL on a preview deployment', () => {
     delete process.env.NEXT_PUBLIC_APP_URL;
+    process.env.VERCEL_ENV = 'preview';
     process.env.VERCEL_URL = 'my-preview.vercel.app';
     expect(getAppBaseUrl()).toBe('https://my-preview.vercel.app');
+  });
+
+  it('ignores the per-deployment VERCEL_URL on production and uses the canonical origin', () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    process.env.VERCEL_ENV = 'production';
+    process.env.VERCEL_URL = 'hypha-abc123-hypha-dao.vercel.app';
+    expect(getAppBaseUrl()).toBe('https://app.hypha.earth');
+  });
+
+  it('still honours NEXT_PUBLIC_APP_URL on production', () => {
+    process.env.NEXT_PUBLIC_APP_URL = 'https://app.example.org/';
+    process.env.VERCEL_ENV = 'production';
+    process.env.VERCEL_URL = 'hypha-abc123-hypha-dao.vercel.app';
+    expect(getAppBaseUrl()).toBe('https://app.example.org');
   });
 
   it('defaults to production app origin', () => {

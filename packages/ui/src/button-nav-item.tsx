@@ -27,7 +27,9 @@ export const ButtonNavItem = ({
   const content = (
     <>
       {icon ? (
-        <span className="mr-1.5 inline-flex shrink-0">{icon}</span>
+        <span className="mr-1.5 inline-flex shrink-0 items-center text-current [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]">
+          {icon}
+        </span>
       ) : null}
       {label}
     </>
@@ -38,8 +40,8 @@ export const ButtonNavItem = ({
       variant="ghost"
       colorVariant="neutral"
       className={clsx(
-        isActive && 'bg-neutral-3',
-        'hover:bg-neutral-3',
+        'rounded-none border-b border-transparent shadow-none hover:bg-transparent hover:border-foreground/25',
+        isActive && 'border-accent-9 text-foreground hover:border-accent-9',
         classNames,
       )}
       asChild={!disabled && !!href}

@@ -651,7 +651,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        'relative flex w-full flex-1 flex-col overflow-x-hidden min-w-0 bg-background',
+        'relative flex w-full flex-1 flex-col overflow-x-hidden min-w-0 bg-transparent',
         'md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-lg md:peer-data-[variant=inset]:shadow-sm',
         className,
       )}
@@ -868,6 +868,12 @@ export interface SidebarMenuButtonProps
     VariantProps<typeof sidebarMenuButtonVariants> {
   asChild?: boolean;
   isActive?: boolean;
+  /**
+   * Keep the tooltip when the parent sidebar is expanded. The docked icon
+   * rail stays collapsed beside the AI conversation, but it shares that
+   * sidebar's expanded state.
+   */
+  forceTooltip?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 }
 
@@ -882,6 +888,7 @@ const SidebarMenuButton = React.forwardRef<
       variant = 'default',
       size = 'default',
       tooltip,
+      forceTooltip = false,
       className,
       ...props
     },
@@ -918,7 +925,7 @@ const SidebarMenuButton = React.forwardRef<
         <TooltipContent
           side="right"
           align="center"
-          hidden={state !== 'collapsed' || isMobile}
+          hidden={isMobile || (!forceTooltip && state !== 'collapsed')}
           {...tooltip}
         />
       </Tooltip>

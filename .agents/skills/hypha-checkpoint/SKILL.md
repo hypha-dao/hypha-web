@@ -9,11 +9,20 @@ Record what happened since the last checkpoint and fold it back into the shared 
 
 **Explicit invocation rule:** when the developer explicitly invokes this skill, **commit and push immediately** — do not ask for confirmation. Only pause if something is genuinely off (unexpected files staged, `.local/` content included, conflicts). For proactive/automatic firings, offer first.
 
+## Path resolution
+
+Resolve these once from `.hypha-context.local/pointers.md` (this developer's machine-specific paths).
+Never hardcode a person's folder or assume a directory layout.
+
+- `{hypha_context_root}` ← `hypha_context_root` (fallback: `../hypha-context`)
+- `{member_progress}` ← `member_progress` (fallback: `{hypha_context_root}/progress/members/<developer>`, where `<developer>` is `developer` in `{hypha_context_root}/AGENTS.local.md`; if it can't be determined, ask — never use another member's folder)
+- `{platform_progress}` ← `platform_progress` (fallback: `{hypha_context_root}/progress/platform`)
+
 ## Dual-repo context
 
 | Repo | Artifacts to update |
 |------|---------------------|
-| `../hypha-context` | spec.md header, decisions.md, activity-log.md, platform view |
+| `{hypha_context_root}` | spec.md header, decisions.md, activity-log.md, platform view |
 | `hypha-web` (this repo) | code changes; satellite `.hypha-context.local/` spec-active state |
 
 A checkpoint may commit to **both repos** — hypha-web first (code), then hypha-context (spec/log). Run `git status` in both before closing.
@@ -21,7 +30,7 @@ A checkpoint may commit to **both repos** — hypha-web first (code), then hypha
 ## Steps
 
 ### 1. Establish the watermark
-Read the last dated entry in `../hypha-context/progress/members/gerroza/activity-log.md`. Everything since that entry is uncaptured. Reconstruct from the session conversation and current git state.
+Read the last dated entry in `{member_progress}/activity-log.md`. Everything since that entry is uncaptured. Reconstruct from the session conversation and current git state.
 
 ### 2. Verify acceptance criteria (before marking Complete)
 If a ticket is about to move to Complete, re-read its `spec.md` acceptance criteria and confirm each is verifiably met. If any are unmet, record as open threads instead.
@@ -36,21 +45,21 @@ If a ticket is about to move to Complete, re-read its `spec.md` acceptance crite
 | `analysis.md` | Discovery/investigation continued |
 
 ### 4. Append to activity log
-Add a dated entry (newest first) to `../hypha-context/progress/members/gerroza/activity-log.md`. Terse, factual, linking to the ticket spec/decisions and GitHub issue/PR.
+Add a dated entry (newest first) to `{member_progress}/activity-log.md`. Terse, factual, linking to the ticket spec/decisions and GitHub issue/PR.
 
 ### 5. Update the platform view
-If the work advanced a platform area, update the matching `../hypha-context/progress/platform/features/<area>.md`. Only touch areas with real movement.
+If the work advanced a platform area, update the matching `{platform_progress}/features/<area>.md`. Only touch areas with real movement.
 
 ### 6. Satellite — park or deactivate spec
 - **Ticket Complete:** move `spec-active.local.md` content to `specs-done-cache.local.md` (set `context-wrapup-done: true`), clear `spec-active.local.md`, update `pointers.md`.
 - **Session wrap, ticket ongoing:** auto-park `spec-active.local.md` to `specs-parked.local.md` (no need to ask). Set `context-wrapup-done: true` after push confirmed.
 
 ### 7. Run git status in both repos, then commit and push
-Check both `hypha-web` and `../hypha-context`. Flag any unstaged changes. Heavy/private material in `.local/` is never committed. Then commit and push (explicit invocation = do this immediately without asking).
+Check both `hypha-web` and `{hypha_context_root}`. Flag any unstaged changes. Heavy/private material in `.local/` is never committed. Then commit and push (explicit invocation = do this immediately without asking).
 
 ### 8. Surface open threads
 State: where we are, what's next, anything blocked.
 
 ---
 
-**Canonical procedure:** `../hypha-context/workflow/checkpoint.md`
+**Canonical procedure:** `{hypha_context_root}/workflow/checkpoint.md`

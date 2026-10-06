@@ -131,8 +131,6 @@ regular-token-factory-proxy.upgrade.ts
 regular-space-token-proxy.deploy.ts
 ```
 
-
-
 ### regular-token-factory-proxy.deploy
 
 ```bash
@@ -289,6 +287,18 @@ npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --netw
 ```bash
 npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
 ```
+
+### Deploy OSwaps
+
+Deploys OSwaps and RainbowFactory as UUPS proxies on Base mainnet. The deployer is the owner of
+both. OSwaps is initialized with `OSWAPS_MANAGER`, or with
+`0xf3c84d4d116c219ad93e5699708296ff0a55ff76` when that variable is unset.
+
+```bash
+npx nx run storage-evm:script ./scripts/oswaps.deploy.ts --network base-mainnet
+```
+
+See [seedsexample/README.md](../contracts/seedsexample/README.md) for the live address and usage.
 
 ## Utility Scripts
 

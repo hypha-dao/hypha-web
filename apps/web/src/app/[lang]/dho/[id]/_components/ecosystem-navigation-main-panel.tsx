@@ -8,24 +8,26 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
-  APP_CHROME_SUBTLE_SQUARE_RADIUS,
+  APP_CHROME_ICON_TRIGGER,
   useCanMutateInSpace,
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
+  releaseMainColumnScrollHeightHold,
 } from '@hypha-platform/epics';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@hypha-platform/ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
-import { sampleAccentHex } from './space-accent-utils';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
@@ -44,7 +46,154 @@ type HierarchyNode = {
   children?: HierarchyNode[];
 };
 
-const SELECTED_SPACE_ACCENT_FALLBACK = '#14b8a6';
+function readMenuTop(): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(
+    '--menu-top-height',
+  );
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 70;
+}
+
+/**
+ * Bottom of the collapsed header: top menu, plus the sticky space bar when
+ * it is actually painted. The bar is `hidden` below `md`, so its height is 0
+ * on a phone and must not be invented from the desktop row.
+ */
+function collapsedHeaderBottom(): number {
+  const bar = document.querySelector('[data-space-sticky-bar]');
+  const barHeight =
+    bar instanceof HTMLElement ? bar.getBoundingClientRect().height : 0;
+  return readMenuTop() + (barHeight >= 1 ? barHeight : 0);
+}
+
+function px(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function findScrollParent(stage: HTMLElement): HTMLElement | null {
+  const main = document.getElementById('hypha-screen-share-main-content');
+  if (main instanceof HTMLElement && main.contains(stage)) {
+    const overflow = getComputedStyle(main).overflowY;
+    if (overflow === 'auto' || overflow === 'scroll') return main;
+  }
+  let node: HTMLElement | null = stage.parentElement;
+  while (node) {
+    const overflow = getComputedStyle(node).overflowY;
+    if (overflow === 'auto' || overflow === 'scroll') return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Scroll offset that puts the banner's bottom edge on the sticky row.
+ * `scrollTop + sentinelBottom` is a content length, so live scrolling does
+ * not change it.
+ */
+function collapsedBannerScroll(scrollParent: HTMLElement): number {
+  const sentinel = document.querySelector('[data-space-banner-bottom]');
+  if (!(sentinel instanceof HTMLElement)) return 0;
+  return Math.max(
+    0,
+    scrollParent.scrollTop +
+      sentinel.getBoundingClientRect().bottom -
+      collapsedHeaderBottom(),
+  );
+}
+
+/**
+ * In-flow column height, without the empty band. Auto margins and the
+ * route-change min-height are that band — counting them locks the stage at
+ * its current (short) size.
+ */
+function columnContentHeight(scrollParent: HTMLElement): number {
+  const hold = scrollParent.querySelector<HTMLElement>(
+    '[data-space-scroll-hold]',
+  );
+  const prevMin = hold?.style.minHeight ?? '';
+  const prevScroll = scrollParent.scrollTop;
+  if (hold) hold.style.minHeight = '0px';
+
+  const parentStyle = getComputedStyle(scrollParent);
+  let used =
+    px(parentStyle.paddingTop) +
+    px(parentStyle.paddingBottom) +
+    px(parentStyle.borderTopWidth) +
+    px(parentStyle.borderBottomWidth);
+
+  const kids = Array.from(scrollParent.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement,
+  );
+  const gap = px(parentStyle.rowGap);
+  if (kids.length > 1 && gap > 0) used += gap * (kids.length - 1);
+
+  for (const child of kids) {
+    used += child.offsetHeight;
+    const style = getComputedStyle(child);
+    const skipBottom =
+      child.classList.contains('mb-auto') ||
+      child.classList.contains('my-auto');
+    const skipTop =
+      child.classList.contains('mt-auto') ||
+      child.classList.contains('my-auto');
+    if (!skipTop) used += px(style.marginTop);
+    if (!skipBottom) used += px(style.marginBottom);
+  }
+
+  if (hold) hold.style.minHeight = prevMin;
+  if (Math.abs(scrollParent.scrollTop - prevScroll) > 0.5) {
+    scrollParent.scrollTop = prevScroll;
+  }
+  return used;
+}
+
+/**
+ * Stage box that makes the column exactly fill the scrollport once the
+ * banner is collapsed. Independent of the stage's current height.
+ */
+function stageHeightForCollapsedColumn(
+  stageHeight: number,
+  contentHeight: number,
+  collapsedScroll: number,
+  scrollportHeight: number,
+): number {
+  return stageHeight + collapsedScroll + scrollportHeight - contentHeight;
+}
+
+/**
+ * Page footer after the space column inside the scrollport. The space
+ * footer is a plain div ("Powered by"), not a `<footer>` element.
+ */
+function findColumnFooter(
+  scrollParent: HTMLElement,
+  stage: HTMLElement,
+): HTMLElement | null {
+  const kids = Array.from(scrollParent.children).filter(
+    (kid): kid is HTMLElement => kid instanceof HTMLElement,
+  );
+  const contentIndex = kids.findIndex((kid) => kid.contains(stage));
+  if (contentIndex < 0) return null;
+  for (let i = kids.length - 1; i > contentIndex; i -= 1) {
+    const kid = kids[i];
+    if (kid && kid.offsetHeight >= 8) return kid;
+  }
+  return null;
+}
+
+/**
+ * How far the stage's border box extends past the footer's top.
+ * Scroll-invariant: both edges move together when the column scrolls.
+ * Positive when the stage paints underneath the footer.
+ */
+function stageOverlapUnderFooter(
+  stage: HTMLElement,
+  footer: HTMLElement,
+): number {
+  return (
+    stage.getBoundingClientRect().bottom - footer.getBoundingClientRect().top
+  );
+}
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
@@ -92,13 +241,7 @@ export function EcosystemNavigationMainPanel({
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState('nested-spaces');
-  const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
-    SELECTED_SPACE_ACCENT_FALLBACK,
-  );
-  const [rootSpaceAccent, setRootSpaceAccent] = useState(
-    SELECTED_SPACE_ACCENT_FALLBACK,
-  );
+  const diagramStageRef = useRef<HTMLDivElement>(null);
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -214,193 +357,187 @@ export function EcosystemNavigationMainPanel({
   const canVisitSpace = Boolean(currentSpace && visitSpaceHref);
   const addSpaceHref =
     canAddSpace && visitSpaceHref ? `${visitSpaceHref}/space/create` : null;
-  const rootSpaceRecord = useMemo(() => {
-    if (!currentSpace) return null;
-    const spacesWithCurrent = nonArchivedSpaces.some(
-      (s) => s.id === currentSpace.id,
-    )
-      ? nonArchivedSpaces
-      : [...nonArchivedSpaces, currentSpace];
-    return findRootSpace(currentSpace, spacesWithCurrent);
-  }, [currentSpace, nonArchivedSpaces]);
-  useEffect(() => {
-    let cancelled = false;
-    setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
-    void (async () => {
-      const [logoAccent, leadAccent] = await Promise.all([
-        sampleAccentHex(selectedSpaceRecord?.logoUrl),
-        sampleAccentHex(selectedSpaceRecord?.leadImage),
-      ]);
-      if (cancelled) return;
-      setSelectedSpaceAccent(
-        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSpaceRecord?.logoUrl, selectedSpaceRecord?.leadImage]);
-  useEffect(() => {
-    let cancelled = false;
-    setRootSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
-    void (async () => {
-      const [logoAccent, leadAccent] = await Promise.all([
-        sampleAccentHex(rootSpaceRecord?.logoUrl),
-        sampleAccentHex(rootSpaceRecord?.leadImage),
-      ]);
-      if (cancelled) return;
-      setRootSpaceAccent(
-        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [rootSpaceRecord?.logoUrl, rootSpaceRecord?.leadImage]);
-
-  const tabs = useMemo(
-    () => [
-      {
-        value: 'nested-spaces',
-        label: t('tabs.nestedSpaces'),
-        content: (
-          <div className="craft-card overflow-hidden">
-            <div className="flex items-center justify-between gap-3 border-b border-border/70 px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-3.5 w-0.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedSpaceAccent }}
-                />
-                <div className="min-w-0">
-                  <p
-                    className="truncate text-2 font-medium tracking-tight text-foreground"
-                    title={selectedSpaceTitle}
-                  >
-                    {selectedSpaceTitle}
-                  </p>
-                  <p className="craft-meta truncate">{t('diagram.hint')}</p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-0.5">
-                {canVisitSpace && visitSpaceHref ? (
-                  <Tooltip delayDuration={80}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="icon"
-                        className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
-                        aria-label={t('visibleSpaces.visitSpace')}
-                      >
-                        <Link href={visitSpaceHref}>
-                          <ArrowTopRightIcon />
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('visibleSpaces.visitSpace')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null}
-                {canAddSpace && addSpaceHref ? (
-                  <Tooltip delayDuration={80}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="icon"
-                        className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
-                        aria-label={t('visibleSpaces.addSpace')}
-                      >
-                        <Link href={addSpaceHref}>
-                          <PlusIcon />
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('visibleSpaces.addSpace')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null}
-              </div>
-            </div>
-            <EcosystemMembershipModules spaceSlug={selectedSpaceSlug} />
-            {hierarchyData ? (
-              <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-4 sm:px-3 sm:pb-3 sm:pt-5">
-                <SpaceVisualization
-                  data={hierarchyData}
-                  currentSpaceId={currentSpace?.id}
-                  rootAccentHex={rootSpaceAccent}
-                  enableHoverActions={false}
-                  showNodeLabels
-                  ariaLabel={t('diagram.ariaLabel')}
-                  onVisibleSpacesChange={handleVisibleSpacesChange}
-                />
-              </div>
-            ) : (
-              <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-                <div className="craft-empty-mark" aria-hidden />
-                <p className="craft-meta text-center">{t('diagram.empty')}</p>
-              </div>
-            )}
-          </div>
-        ),
-      },
-      {
-        value: 'space-to-space',
-        label: t('tabs.spaceToSpace'),
-        content: (
-          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta text-center">
-              {t('comingSoon.spaceToSpaceVisualization')}
-            </p>
-          </div>
-        ),
-      },
-      {
-        value: 'values-flows',
-        label: t('tabs.valuesFlows'),
-        content: (
-          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
-            <div className="craft-empty-mark" aria-hidden />
-            <p className="craft-meta text-center">
-              {t('comingSoon.valuesFlowsVisualization')}
-            </p>
-          </div>
-        ),
-      },
-    ],
-    [
-      addSpaceHref,
-      canAddSpace,
-      canVisitSpace,
-      currentSpace?.id,
-      handleVisibleSpacesChange,
-      hierarchyData,
-      rootSpaceAccent,
-      selectedSpaceAccent,
-      selectedSpaceSlug,
-      selectedSpaceTitle,
-      t,
-      visitSpaceHref,
-    ],
+  const ecosystemHeader = (
+    <header className="craft-page-header">
+      <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
+        <span>{t('ecosystem')}</span>
+        {isLoading ? null : (
+          <span className="text-3 font-normal text-muted-foreground">
+            {format.number(ecosystemSpaceCount)}
+          </span>
+        )}
+      </h1>
+    </header>
   );
 
+  // One height for the collapsed banner (sticky header showing). Scrolling
+  // the cover must not remeasure: live viewport tops shrink the stage to a
+  // sliver and back on each frame. A phone with no room under the membership
+  // block gets a square of the column width instead of a zero-height stage.
+  useLayoutEffect(() => {
+    const stage = diagramStageRef.current;
+    if (!stage || isLoading) return;
+
+    const scrollParent = findScrollParent(stage);
+    let measuring = false;
+    // Last painted membership-row height. The row is `role="status"` while
+    // member avatars load: it collapses, then grows back. Each of those
+    // heights rewrites the stage, and the diagram refits its viewBox on
+    // every pass. Holding the row still leaves the stage on one measurement.
+    let settledMembershipHeight = 0;
+    // Once the stage is seen painting under the footer, keep that clearance.
+    // Re-reading the overlap after the shrink would chase an in-flow footer
+    // and jump the height on every pass. Keyed by column width and footer
+    // height so a real resize can measure again. Not tied to scroll position.
+    let footerClearance: number | null = null;
+    let footerClearanceKey = '';
+    let footerChecked = false;
+    let footerObserved = false;
+    let observer: ResizeObserver | null = null;
+
+    const holdMembershipRow = (stageEl: HTMLElement) => {
+      const membership = stageEl.previousElementSibling;
+      if (!(membership instanceof HTMLElement)) return;
+      const loading = membership.getAttribute('role') === 'status';
+      if (loading && settledMembershipHeight > 0) {
+        const held = `${Math.round(settledMembershipHeight)}px`;
+        if (membership.style.minHeight !== held) {
+          membership.style.minHeight = held;
+        }
+        return;
+      }
+      if (!loading) {
+        if (membership.style.minHeight) membership.style.minHeight = '';
+        const height = membership.offsetHeight;
+        if (height > 0) settledMembershipHeight = height;
+      }
+    };
+
+    const apply = () => {
+      if (measuring) return;
+      const current = diagramStageRef.current;
+      if (!current || !scrollParent) return;
+      measuring = true;
+      try {
+        const stageWidth = Math.round(current.getBoundingClientRect().width);
+        if (stageWidth < 64) return;
+
+        holdMembershipRow(current);
+        const contentHeight = columnContentHeight(scrollParent);
+        const collapsedScroll = collapsedBannerScroll(scrollParent);
+        const footer = findColumnFooter(scrollParent, current);
+        if (footer && observer && !footerObserved) {
+          observer.observe(footer);
+          footerObserved = true;
+        }
+        // Room left for the stage once the banner is collapsed. The footer
+        // is in the scrollport and paints over whatever runs past its top,
+        // so a stage that fills the scrollport tucks the lower rings under
+        // "Powered by". Clearance is the overlap measured once per column
+        // width — not on each scroll frame.
+        let room = stageHeightForCollapsedColumn(
+          current.offsetHeight,
+          contentHeight,
+          collapsedScroll,
+          scrollParent.clientHeight,
+        );
+        const footerKey = `${stageWidth}:${footer?.offsetHeight ?? 0}`;
+        if (footerKey !== footerClearanceKey) {
+          footerClearanceKey = footerKey;
+          footerClearance = null;
+          footerChecked = false;
+        }
+        if (footer && footerClearance == null && !footerChecked) {
+          // Paint the filled height first, then read whether that box crosses
+          // the footer. Both writes happen before paint, so the diagram fits
+          // the cleared slot once instead of jumping.
+          const filledHeight = Math.max(0, Math.round(room));
+          if (Math.abs(current.offsetHeight - filledHeight) > 2) {
+            const filledPx = `${filledHeight}px`;
+            current.style.height = filledPx;
+            current.style.maxHeight = filledPx;
+            current.style.minHeight = filledPx;
+          }
+          const overlap = stageOverlapUnderFooter(current, footer);
+          footerChecked = true;
+          if (overlap > 1) {
+            footerClearance = Math.max(0, current.offsetHeight - overlap);
+          }
+        }
+        if (footerClearance != null) {
+          room = Math.min(room, footerClearance);
+        }
+        // A phone column is short once the membership row is in it, so the
+        // leftover slot shrinks the disc. Keep at least a square and let the
+        // page scroll instead of crushing the cluster.
+        if (stageWidth < 768) {
+          room = Math.max(room, stageWidth);
+        }
+        const next = room >= 64 ? Math.round(room) : stageWidth;
+        const heightMatches =
+          Math.abs(next - current.offsetHeight) <= 2 &&
+          current.style.aspectRatio === 'auto';
+        if (!heightMatches) {
+          current.style.aspectRatio = 'auto';
+          current.style.height = `${next}px`;
+          current.style.maxHeight = `${next}px`;
+          current.style.minHeight = `${next}px`;
+        }
+
+        // The hold extends the space column so a short page can keep the
+        // banner collapsed. Once the stage fills that scroll, the hold is the
+        // black band under the cluster — drop it.
+        const filled =
+          columnContentHeight(scrollParent) - scrollParent.clientHeight;
+        if (filled + 2 >= collapsedScroll) {
+          releaseMainColumnScrollHeightHold();
+        }
+      } finally {
+        measuring = false;
+      }
+    };
+
+    apply();
+    observer = new ResizeObserver(apply);
+    const stageObserver = observer;
+    const membership = stage.previousElementSibling;
+    if (membership instanceof HTMLElement) stageObserver.observe(membership);
+    if (stage.parentElement) stageObserver.observe(stage.parentElement);
+    if (scrollParent) {
+      stageObserver.observe(scrollParent);
+      for (const child of scrollParent.children) {
+        if (child instanceof HTMLElement && !child.contains(stage)) {
+          stageObserver.observe(child);
+        }
+      }
+    }
+    const banner = document.querySelector('[data-space-banner-bottom]');
+    if (banner?.parentElement instanceof HTMLElement) {
+      stageObserver.observe(banner.parentElement);
+    }
+    const footerWatch = new MutationObserver(apply);
+    if (scrollParent) {
+      footerWatch.observe(scrollParent, { childList: true });
+    }
+    window.addEventListener('resize', apply);
+    return () => {
+      stageObserver.disconnect();
+      footerWatch.disconnect();
+      window.removeEventListener('resize', apply);
+      const membership = diagramStageRef.current?.previousElementSibling;
+      if (membership instanceof HTMLElement && membership.style.minHeight) {
+        membership.style.minHeight = '';
+      }
+    };
+  }, [hierarchyData, isLoading]);
+
   return (
-    <section className="flex w-full flex-col gap-4 py-4">
+    <section className="flex w-full flex-col gap-3 pt-2 pb-0 -mb-8">
       {isLoading ? (
         <>
-          <header className="craft-page-header">
-            <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-              <span>{t('ecosystem')}</span>
-            </h1>
-          </header>
+          {ecosystemHeader}
           <div
-            className="craft-card flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
+            className="flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
             role="status"
             aria-live="polite"
           >
@@ -409,23 +546,71 @@ export function EcosystemNavigationMainPanel({
           </div>
         </>
       ) : (
-        <EcosystemNavigationShell
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          tabs={tabs}
-          beforeTabsContent={
-            <header className="craft-page-header">
-              <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-                <span>{t('ecosystem')}</span>
-                <span className="text-3 font-normal text-muted-foreground">
-                  {format.number(ecosystemSpaceCount)}
-                </span>
-              </h1>
-              <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
-            </header>
-          }
-          visualizationClassName="min-h-0"
-        />
+        <EcosystemNavigationShell className="gap-2" header={ecosystemHeader}>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <EcosystemMembershipModules
+              spaceSlug={selectedSpaceSlug}
+              spaceTitle={selectedSpaceTitle}
+              trailing={
+                <div className="flex shrink-0 items-center gap-1">
+                  {canVisitSpace && visitSpaceHref ? (
+                    <Tooltip delayDuration={80}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={visitSpaceHref}
+                          className={APP_CHROME_ICON_TRIGGER}
+                          aria-label={t('visibleSpaces.visitSpace')}
+                        >
+                          <ArrowTopRightIcon />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('visibleSpaces.visitSpace')}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {canAddSpace && addSpaceHref ? (
+                    <Tooltip delayDuration={80}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={addSpaceHref}
+                          className={APP_CHROME_ICON_TRIGGER}
+                          aria-label={t('visibleSpaces.addSpace')}
+                        >
+                          <PlusIcon />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('visibleSpaces.addSpace')}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              }
+            />
+            <div
+              ref={diagramStageRef}
+              className="relative w-full shrink-0 overflow-hidden"
+            >
+              {hierarchyData ? (
+                <SpaceVisualization
+                  layout="fill"
+                  data={hierarchyData}
+                  currentSpaceId={currentSpace?.id}
+                  enableHoverActions={false}
+                  showNodeLabels
+                  ariaLabel={t('diagram.ariaLabel')}
+                  onVisibleSpacesChange={handleVisibleSpacesChange}
+                />
+              ) : (
+                <div className="flex h-full min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8">
+                  <div className="craft-empty-mark" aria-hidden />
+                  <p className="craft-meta text-center">{t('diagram.empty')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </EcosystemNavigationShell>
       )}
     </section>
   );

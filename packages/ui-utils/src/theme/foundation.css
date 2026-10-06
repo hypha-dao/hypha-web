@@ -1,0 +1,55 @@
+/**
+ * Hypha foundation — taken from https://io.hypha.earth/website.
+ *
+ * Ink and paper are the only colours outside a space. Space screens remap
+ * `--accent-*` from their own imagery. The page ground is solid paper in
+ * light and solid ink in dark.
+ *
+ *   Ink    #030615   Deep   #091025   Mid    #1c2746
+ *   Paper  #fbfaf8   Panel  #eae8e1   Text   #f8fafd
+ *   Type   Sora (titles) · Manrope (UI) · IBM Plex Mono (code)
+ *   Controls are square. Letterforms on controls are small, tracked, uppercase.
+ *
+ * Light surfaces mix toward Panel / Wash — never cool Ink — so filled panels
+ * stay in the website’s warm paper family. Ink stays for type and dark mode.
+ */
+
+:root,
+.light,
+.light-theme {
+  --hypha-ink: #030615;
+  --hypha-deep: #091025;
+  --hypha-mid: #1c2746;
+  /* Website hero paper — lab(~97.14) / rgb(251, 250, 248) */
+  --hypha-paper: #fbfaf8;
+  /* Website light --site-panel (filled steps, chips, soft chrome) */
+  --hypha-panel: #eae8e1;
+  /* Website light --site-ink — warm wash for deeper light neutrals only */
+  --hypha-wash: #0d1013;
+  --hypha-text: #f8fafd;
+  --hypha-text-dim: #677284;
+  --hypha-text-faint: #8b95a8;
+  --hypha-border: color-mix(in srgb, var(--hypha-wash) 14%, transparent);
+  /*
+   * Quiet chart hue outside a space — soft teal, not ink and not neon.
+   * Buttons stay monochrome via accent-*; charts use --craft-chart-* instead.
+   */
+  --hypha-chart: oklch(52% 0.068 176);
+}
+
+.dark,
+.dark-theme {
+  /*
+   * Computed from the live dark page, not the unused navy variables.
+   * Ground #040404 and panel #121212 have no blue. #030615 / #091025 / #1c2746
+   * are the old stylesheet values and read as navy when used as chrome.
+   */
+  --hypha-ink: #040404;
+  --hypha-deep: #121212;
+  --hypha-mid: #1c1c1c;
+  --hypha-text: #f7f7f7;
+  --hypha-text-dim: #a1a1a1;
+  --hypha-text-faint: #737373;
+  --hypha-border: rgb(255 255 255 / 0.12);
+  --hypha-chart: oklch(62% 0.072 178);
+}

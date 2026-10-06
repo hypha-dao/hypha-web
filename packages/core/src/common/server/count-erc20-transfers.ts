@@ -9,8 +9,8 @@ import { getAlchemy } from './alchemy-client';
 import {
   NETWORK_DASHBOARD_MONTHS,
   utcMonthKeys,
-  type MonthlyCount,
 } from '../../space/network-dashboard';
+import type { MonthlyCount } from '../../space/network-growth';
 
 const TRANSFER_PAGE_SIZE = 1000;
 const MAX_TRANSFER_PAGES = 40;

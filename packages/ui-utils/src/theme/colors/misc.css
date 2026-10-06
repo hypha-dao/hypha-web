@@ -5,20 +5,12 @@
   --white-to-dark-2: hsl(var(--white) / 0.9);
   --dark-to-white: var(--neutral-12);
   --backdrop: var(--neutral-alpha-8);
-  /*
-   * Slightly lifted cool canvas — breaks flat gray slab.
-   * Not warm stone/cream paper (reverted organic treatment).
-   */
-  --page-background: oklch(0.968 0.004 264);
+  --page-background: var(--hypha-paper);
 }
 .dark,
 .dark-theme {
   --white-to-dark: var(--neutral-1);
   --white-to-dark-2: hsl(var(--white) / 0.9);
   --black-to-dark: var(--white);
-  /*
-   * Lifted ink canvas — not empty near-black void.
-   * Cool whisper only; no earthen stone chroma package.
-   */
-  --page-background: oklch(0.198 0.006 264);
+  --page-background: var(--hypha-ink);
 }

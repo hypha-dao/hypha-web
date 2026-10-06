@@ -14,7 +14,7 @@ import { cn } from '@hypha-platform/ui-utils';
 
 /** Match `@hypha-platform/ui` SelectTrigger sizing/look. */
 const TRIGGER_CLASS =
-  'h-6 flex w-full items-center justify-between rounded border border-input bg-neutral-1 px-3 py-2 text-2 font-normal ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
+  'flex h-10 w-full items-center justify-between rounded-none border border-border bg-neutral-1 px-3 py-2 text-2 font-normal focus:outline-none focus-visible:border-foreground focus-visible:outline-none data-[state=open]:border-foreground disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
 
 type CountryOption = {
   code: string;

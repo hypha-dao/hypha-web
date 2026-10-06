@@ -38,6 +38,7 @@ import { deals } from './deal';
 import { pipelineSavedViews } from './pipeline-saved-view';
 import { pipelineUserSettings } from './pipeline-user-settings';
 import { spaceApiKeys } from './space-api-key';
+import { notificationProcessedEvents } from './notification-processed-events';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -64,6 +65,7 @@ export * from './deal';
 export * from './pipeline-saved-view';
 export * from './pipeline-user-settings';
 export * from './space-api-key';
+export * from './notification-processed-events';
 
 export const schema = {
   documents,
@@ -100,4 +102,5 @@ export const schema = {
   pipelineSavedViews,
   pipelineUserSettings,
   spaceApiKeys,
+  notificationProcessedEvents,
 };

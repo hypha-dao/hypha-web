@@ -8,7 +8,6 @@ import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2, Minus } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
-import { NetworkMapLayerControls } from './network-map-layer-controls';
 import type {
   NetworkGlobeMapProps,
   NetworkMapLayerVisibility,
@@ -64,6 +63,63 @@ const easeClusterSpreadIn = d3.easePolyOut.exponent(3);
 /** Quick fold-in before zoom-out begins. */
 const easeClusterSpreadOut = d3.easePolyIn.exponent(2);
 const FLAT_ROTATION: Rotation = [0, 0, 0];
+/**
+ * Equirectangular home. Rotation is discarded once the overview is flat, so
+ * a zoom with this center looks at 0°, 0° — the Gulf of Guinea — not the dot.
+ */
+const FLAT_GEOGRAPHIC_CENTER: [number, number] = [0, 0];
+
+/** Fold degrees into (−180, 180]. */
+function wrapLongitude(longitude: number): number {
+  return (((longitude % 360) + 540) % 360) - 180;
+}
+
+/**
+ * One blend for the flat camera. The overview ignores globe rotation, so the
+ * center has to travel with the zoom; a snap lands on the cluster and then
+ * the scale eases in on top of it.
+ */
+function easeFlatCenter(
+  from: readonly [number, number],
+  to: readonly [number, number],
+  t: number,
+): [number, number] {
+  const deltaLon = wrapLongitude(to[0] - from[0]);
+  return [
+    wrapLongitude(from[0] + deltaLon * t),
+    from[1] + (to[1] - from[1]) * t,
+  ];
+}
+
+/**
+ * The overview intro (globe → flat) must run once per page load. A ref dies
+ * with the instance, so Strict Mode remounts and a second alignProjection
+ * would start the tween again. This lives on globalThis so a dev refresh of
+ * the module does not clear a tween that already finished in this tab.
+ */
+const AUTO_INTRO_KEY = '__hyphaNetworkMapAutoIntro';
+
+type AutoIntroLatch = {
+  target: NetworkMapProjectionMode | null;
+  finished: boolean;
+};
+
+function autoIntroLatch(): AutoIntroLatch {
+  const scope = globalThis as typeof globalThis & {
+    [AUTO_INTRO_KEY]?: AutoIntroLatch;
+  };
+  if (!scope[AUTO_INTRO_KEY]) {
+    scope[AUTO_INTRO_KEY] = { target: null, finished: false };
+  }
+  return scope[AUTO_INTRO_KEY];
+}
+
+function noteAutoIntroSettled(target: NetworkMapProjectionMode): void {
+  const latch = autoIntroLatch();
+  if (latch.target === target) {
+    latch.finished = true;
+  }
+}
 const DEFAULT_LAYER_VISIBILITY: NetworkMapLayerVisibility = {
   land: true,
   water: true,
@@ -72,64 +128,76 @@ const DEFAULT_LAYER_VISIBILITY: NetworkMapLayerVisibility = {
 
 type MapPalette = {
   ocean: string;
+  /** Matches ocean so continents read as hairline outlines only. */
   landFill: string;
   landStroke: string;
-  /** Soft water-side band under coast lines — reads as shoreline, not outline chrome. */
+  /** Soft water-side band under coast lines — quiet shoreline, same family. */
   coastHalo: string;
   /** Globe disk / flat map limb against the page (no stage frame). */
   sphereEdge: string;
   grid: string;
   clusterFill: string;
   clusterRing: string;
+  clusterCount: string;
+  pinFill: string;
   pinStroke: string;
   spiderfyStroke: string;
   sphereShadow: string | null;
 };
 
 /**
- * Cartographic contrast without neon: deep water, elevated land, thin coast.
- * Disk edge carries silhouette so the map can sit frameless on the page.
+ * Foundation ink/paper only — no accent hues, no pin rainbow.
+ * Land is outlined on the ocean ground (image-3 spirit) in both globe and flat.
  */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(23% 0.034 236)',
-  landFill: 'oklch(36% 0.018 98)',
-  landStroke: 'oklch(54% 0.022 232)',
-  coastHalo: 'oklch(28% 0.03 236)',
-  sphereEdge: 'oklch(48% 0.022 236)',
-  grid: 'oklch(42% 0.02 236)',
-  clusterFill: 'var(--accent-9)',
-  clusterRing: 'var(--accent-8)',
-  pinStroke: 'oklch(97% 0.005 250)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 45%, transparent)',
+  ocean: 'var(--hypha-ink)',
+  landFill: 'var(--hypha-ink)',
+  landStroke: 'color-mix(in srgb, var(--hypha-text) 52%, transparent)',
+  coastHalo: 'color-mix(in srgb, var(--hypha-mid) 55%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-text) 14%, transparent)',
+  grid: 'color-mix(in srgb, var(--hypha-mid) 70%, transparent)',
+  clusterFill: 'var(--hypha-text)',
+  clusterRing: 'color-mix(in srgb, var(--hypha-text) 42%, transparent)',
+  clusterCount: 'var(--hypha-ink)',
+  pinFill: 'var(--hypha-text)',
+  pinStroke: 'var(--hypha-ink)',
+  spiderfyStroke: 'color-mix(in srgb, var(--hypha-text) 35%, transparent)',
   sphereShadow: null,
 };
 
 const LIGHT_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(93% 0.022 232)',
-  landFill: 'oklch(87% 0.014 95)',
-  landStroke: 'oklch(58% 0.02 250)',
-  coastHalo: 'oklch(88% 0.028 230)',
-  sphereEdge: 'oklch(74% 0.018 250)',
-  grid: 'var(--neutral-7)',
-  clusterFill: 'var(--accent-9)',
-  clusterRing: 'var(--accent-8)',
-  pinStroke: 'oklch(99% 0.002 250)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 30%, transparent)',
+  ocean: 'var(--hypha-paper)',
+  landFill: 'var(--hypha-paper)',
+  landStroke: 'color-mix(in srgb, var(--hypha-ink) 48%, transparent)',
+  coastHalo: 'color-mix(in srgb, var(--hypha-ink) 8%, transparent)',
+  sphereEdge: 'color-mix(in srgb, var(--hypha-ink) 10%, transparent)',
+  grid: 'color-mix(in srgb, var(--hypha-ink) 12%, transparent)',
+  clusterFill: 'var(--hypha-ink)',
+  clusterRing: 'color-mix(in srgb, var(--hypha-ink) 38%, transparent)',
+  clusterCount: 'var(--hypha-paper)',
+  pinFill: 'var(--hypha-ink)',
+  pinStroke: 'var(--hypha-paper)',
+  spiderfyStroke: 'color-mix(in srgb, var(--hypha-ink) 28%, transparent)',
   sphereShadow:
-    'drop-shadow(0 1px 3px color-mix(in oklab, var(--neutral-12) 10%, transparent))',
+    'drop-shadow(0 1px 3px color-mix(in srgb, var(--hypha-ink) 10%, transparent))',
 };
 
 function mapPaletteForTheme(theme: string | undefined): MapPalette {
   return theme === 'light' ? LIGHT_GLOBE_PALETTE : DARK_GLOBE_PALETTE;
 }
 
-/** Stable per-space accent hues for pin dots (not chrome). */
-function pinColor(id: number): string {
-  const hue = Math.abs((id * 47) % 360);
-  return `oklch(62% 0.14 ${hue})`;
-}
-
 const MINI_GLOBE_SIZE = 88;
+
+/**
+ * Equirectangular world is 2:1. The stage must match that drawing: a taller
+ * box leaves empty paper above and below the coastlines and drops the
+ * corner navigator off the map.
+ */
+function mapStageHeight(width: number): number {
+  return Math.max(1, Math.round(width / 2));
+}
+const MINI_MAP_WIDTH = 120;
+const MINI_MAP_HEIGHT = 72;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') {
@@ -157,6 +225,90 @@ function isPinVisibleOnProjection(
   const rotate = projection.rotate();
   const center: [number, number] = [-rotate[0], -rotate[1]];
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
+}
+
+/** Legend and miniature sit this far inside the visible drawing. */
+const OVERLAY_INSET = 12;
+const OVERLAY_GAP = 12;
+
+type OverlaySize = { w: number; h: number };
+type OverlayBox = OverlaySize & { x: number; y: number };
+type OverlaySeat = {
+  legendLeft: number;
+  legendBottom: number;
+  navRight: number;
+  navBottom: number;
+};
+
+function overlayBoxesOverlap(a: OverlayBox, b: OverlayBox): boolean {
+  return (
+    a.x < b.x + b.w + OVERLAY_GAP &&
+    a.x + a.w + OVERLAY_GAP > b.x &&
+    a.y < b.y + b.h + OVERLAY_GAP &&
+    a.y + a.h + OVERLAY_GAP > b.y
+  );
+}
+
+/**
+ * Orthographic draws a disk. A clip under 180° is that disk; equirectangular
+ * reports clipAngle 0 and fills its bounds rectangle instead.
+ */
+function projectionDrawsDisk(projection: d3.GeoProjection): boolean {
+  const clip = projection.clipAngle?.();
+  return clip != null && clip > 0 && clip < 180;
+}
+
+function seatOnRectangle(
+  width: number,
+  height: number,
+  bounds: [[number, number], [number, number]],
+  legend: OverlaySize | null,
+  nav: OverlaySize,
+): OverlaySeat {
+  const [[x0, y0], [x1, y1]] = bounds;
+  const left = Math.max(OVERLAY_INSET, x0 + OVERLAY_INSET);
+  const right = Math.min(width - OVERLAY_INSET, x1 - OVERLAY_INSET);
+  const bottom = Math.min(height - OVERLAY_INSET, y1 - OVERLAY_INSET);
+  const top = Math.max(OVERLAY_INSET, y0 + OVERLAY_INSET);
+  const navBox: OverlayBox = {
+    x: Math.max(left, right - nav.w),
+    y: Math.max(top, bottom - nav.h),
+    w: nav.w,
+    h: nav.h,
+  };
+  let legendBox: OverlayBox | null = null;
+  if (legend) {
+    legendBox = {
+      x: left,
+      y: Math.max(top, bottom - legend.h),
+      w: legend.w,
+      h: legend.h,
+    };
+    if (overlayBoxesOverlap(legendBox, navBox)) {
+      legendBox = {
+        ...legendBox,
+        y: Math.max(top, navBox.y - OVERLAY_GAP - legend.h),
+      };
+    }
+  }
+  return overlaySeatCss(width, height, legendBox, navBox);
+}
+
+function overlaySeatCss(
+  width: number,
+  height: number,
+  legend: OverlayBox | null,
+  nav: OverlayBox,
+): OverlaySeat {
+  return {
+    legendLeft: Math.max(OVERLAY_INSET, Math.round(legend?.x ?? OVERLAY_INSET)),
+    legendBottom: Math.max(
+      OVERLAY_INSET,
+      Math.round(legend ? height - (legend.y + legend.h) : OVERLAY_INSET),
+    ),
+    navRight: Math.max(OVERLAY_INSET, Math.round(width - (nav.x + nav.w))),
+    navBottom: Math.max(OVERLAY_INSET, Math.round(height - (nav.y + nav.h))),
+  };
 }
 
 function parsePinTransform(element: Element): { x: number; y: number } | null {
@@ -189,13 +341,16 @@ function buildProjection(
   morph: number,
   rotate: Rotation,
   zoomScale = 1,
+  flatCenter: [number, number] = FLAT_GEOGRAPHIC_CENTER,
 ): d3.GeoProjection {
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
   const zoom = Math.max(0.75, Math.min(zoomScale, MAX_MAP_ZOOM));
   // Frameless stage — keep a small inset so the disk limb isn’t clipped.
   const globeScale = (minDim / 2 - 10) * zoom;
-  const flatScale = (width / (2 * Math.PI)) * zoom;
+  // Cover the stage. Height is width/2, so this matches the world exactly;
+  // the max guards a 1px rounding gap from showing as empty paper.
+  const flatScale = (Math.max(width, height * 2) / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
 
   if (morph <= 0) {
@@ -212,7 +367,8 @@ function buildProjection(
       .geoEquirectangular()
       .scale(flatScale)
       .translate(center)
-      .rotate(rotation);
+      .rotate(rotation)
+      .center(flatCenter);
   }
 
   const scale = globeScale * (1 - morph) + flatScale * morph;
@@ -239,6 +395,8 @@ export function NetworkGlobeMap({
   renderToolbar,
   isActive = true,
   showStage = true,
+  alignProjection,
+  onProjectionModeChange,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -247,6 +405,7 @@ export function NetworkGlobeMap({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const miniGlobeRef = React.useRef<SVGSVGElement>(null);
+  const miniMapRef = React.useRef<SVGSVGElement>(null);
 
   const mapPalette = React.useMemo(
     () => mapPaletteForTheme(resolvedTheme),
@@ -305,6 +464,7 @@ export function NetworkGlobeMap({
   const focusedClusterIdRef = React.useRef<string | null>(null);
   const clusterSpreadRef = React.useRef(0);
   const globeZoomRef = React.useRef(1);
+  const flatCenterRef = React.useRef<[number, number]>(FLAT_GEOGRAPHIC_CENTER);
   const clusterAnimFrameRef = React.useRef<number | null>(null);
   const clusterAnimatingRef = React.useRef(false);
   const [clusterAnimating, setClusterAnimating] = React.useState(false);
@@ -317,9 +477,34 @@ export function NetworkGlobeMap({
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
+  const overlaySeatRef = React.useRef<{
+    key: string;
+    seat: OverlaySeat;
+  } | null>(null);
   const renderMiniGlobeRef = React.useRef<() => void>(() => {});
+  const isMountedRef = React.useRef(true);
+  const animatingTargetRef = React.useRef<NetworkMapProjectionMode | null>(
+    null,
+  );
+  const alignedProjectionRef = React.useRef<
+    NetworkMapProjectionMode | undefined
+  >(undefined);
 
-  morphRef.current = morphProgress;
+  // The tween writes morphRef every frame and only commits React state at the
+  // end. Copying state back mid-tween (auth hydration, pin list updates) paints
+  // one frame of the globe after the map has already opened flat.
+  if (animatingTargetRef.current == null) {
+    morphRef.current = morphProgress;
+  } else {
+    const tweenSettled =
+      animationFrameRef.current == null &&
+      ((animatingTargetRef.current === 'flat' && morphProgress >= 1) ||
+        (animatingTargetRef.current === 'globe' && morphProgress <= 0));
+    if (tweenSettled) {
+      animatingTargetRef.current = null;
+      morphRef.current = morphProgress;
+    }
+  }
   layersRef.current = layers;
   locatedSpacesRef.current = locatedSpaces;
   mapPinDataRef.current = mapPinData;
@@ -395,10 +580,12 @@ export function NetworkGlobeMap({
     }
 
     const width = container.clientWidth;
-    const height = Math.max(360, Math.min(560, width * 0.62));
-    if (width <= 0) {
+    const height = mapStageHeight(width);
+    if (width <= 0 || height <= 0) {
       return;
     }
+
+    container.style.height = `${height}px`;
 
     svg
       .attr('width', width)
@@ -413,6 +600,7 @@ export function NetworkGlobeMap({
       morph,
       rotate,
       globeZoomRef.current,
+      flatCenterRef.current,
     );
     const path = d3.geoPath(projection);
     const layerState = layersRef.current;
@@ -506,8 +694,8 @@ export function NetworkGlobeMap({
       .attr('d', spherePath)
       .attr('fill', 'none')
       .attr('stroke', palette.sphereEdge)
-      .attr('stroke-width', isGlobeView ? 1.1 : 0.7)
-      .attr('opacity', isGlobeView ? 0.85 : 0.45)
+      .attr('stroke-width', isGlobeView ? 0.7 : 0.4)
+      .attr('opacity', isGlobeView ? 0.55 : 0.35)
       .attr('pointer-events', 'none')
       .style('display', null);
 
@@ -517,8 +705,8 @@ export function NetworkGlobeMap({
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', palette.grid)
-        .attr('stroke-width', 0.3)
-        .attr('opacity', isGlobeView ? 0.4 : 0.5)
+        .attr('stroke-width', isGlobeView ? 0.35 : 0.28)
+        .attr('opacity', isGlobeView ? 0.55 : 0.45)
         .style('display', null);
     } else {
       gridPath.attr('d', null).style('display', 'none');
@@ -532,17 +720,18 @@ export function NetworkGlobeMap({
         .attr('d', landD)
         .attr('fill', 'none')
         .attr('stroke', palette.coastHalo)
-        .attr('stroke-width', 2.25)
+        .attr('stroke-width', isGlobeView ? 1.6 : 1.2)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
-        .attr('opacity', 0.9)
+        .attr('opacity', 0.7)
         .attr('pointer-events', 'none')
         .style('display', null);
+      // Outlined continents: fill matches ocean; hairline stroke carries the land.
       landPath
         .attr('d', landD)
         .attr('fill', palette.landFill)
         .attr('stroke', palette.landStroke)
-        .attr('stroke-width', 0.55)
+        .attr('stroke-width', isGlobeView ? 0.7 : 0.5)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
         .style('display', null);
@@ -552,9 +741,139 @@ export function NetworkGlobeMap({
     }
 
     const pinGroup = root.select<SVGGElement>('g.map-pins');
+    // Clusters paint after single dots so a co-located space pin cannot cover
+    // the count. The tooltip reads the cluster datum; the graphic must too.
+    const pinData = mapPinDataRef.current.slice().sort((a, b) => {
+      const rank = (datum: MapPinDatum) => (datum.kind === 'cluster' ? 1 : 0);
+      return rank(a) - rank(b);
+    });
     const pins = pinGroup
       .selectAll<SVGGElement, MapPinDatum>('g.map-pin')
-      .data(mapPinDataRef.current, (datum) => datum.pinKey);
+      .data(pinData, (datum) => datum.pinKey);
+
+    const setPinTitle = (
+      group: d3.Selection<SVGGElement, unknown, null, undefined>,
+      text: string,
+    ) => {
+      const titles = group.selectAll('title');
+      if (titles.size() === 1) {
+        titles.text(text);
+        return;
+      }
+      titles.remove();
+      group.append('title').text(text);
+    };
+
+    const syncPinGraphic = (node: SVGGElement, datum: MapPinDatum) => {
+      const group = d3.select(node);
+      const palette = mapPaletteRef.current;
+      const isCluster = datum.kind === 'cluster';
+      group
+        .classed('map-pin', true)
+        .classed('map-pin-cluster', isCluster)
+        .attr('role', isCluster ? 'button' : 'link');
+
+      if (isCluster) {
+        // A reused pin keeps the single-space dot/halo from enter. Those
+        // circles sit on the count and read as a bullseye while the <title>
+        // still says how many spaces share the point.
+        group.selectAll('circle.map-pin-halo, circle.map-pin-dot').remove();
+        if (group.select('circle.map-pin-hit').empty()) {
+          group
+            .insert('circle', ':first-child')
+            .attr('class', 'map-pin-hit')
+            .attr('fill', 'transparent')
+            .attr('pointer-events', 'all');
+        }
+        group.select('circle.map-pin-hit').attr('r', 15);
+        if (group.select('circle.map-pin-cluster-ring').empty()) {
+          group
+            .append('circle')
+            .attr('class', 'map-pin-cluster-ring')
+            .attr('r', 12)
+            .attr('fill', 'none')
+            .attr('stroke-width', 1.5)
+            .attr('opacity', 0.7)
+            .attr('pointer-events', 'none');
+        }
+        if (group.select('circle.map-pin-cluster-core').empty()) {
+          group
+            .append('circle')
+            .attr('class', 'map-pin-cluster-core')
+            .attr('r', 9)
+            .attr('stroke-width', 1.5)
+            .attr('pointer-events', 'none');
+        }
+        let countLabel = group.select<SVGTextElement>(
+          'text.map-pin-cluster-count',
+        );
+        if (countLabel.empty()) {
+          countLabel = group
+            .append('text')
+            .attr('class', 'map-pin-cluster-count')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.35em')
+            .attr('font-weight', 600)
+            .attr('font-family', 'var(--font-family-text, sans-serif)')
+            .attr('pointer-events', 'none');
+        }
+        countLabel
+          .attr('font-size', datum.count > 9 ? 9 : 10)
+          .attr('fill', palette.clusterCount)
+          .style('fill', palette.clusterCount)
+          .text(String(datum.count))
+          .raise();
+        group
+          .select('circle.map-pin-cluster-ring')
+          .attr('stroke', palette.clusterRing);
+        group
+          .select('circle.map-pin-cluster-core')
+          .attr('fill', palette.clusterFill)
+          .attr('stroke', palette.pinStroke);
+        setPinTitle(group, t('clusterExpandTitle', { count: datum.count }));
+        return;
+      }
+
+      group
+        .selectAll(
+          'circle.map-pin-cluster-ring, circle.map-pin-cluster-core, text.map-pin-cluster-count',
+        )
+        .remove();
+      const space = pinDatumSpace(datum);
+      if (!space) {
+        return;
+      }
+      if (group.select('circle.map-pin-hit').empty()) {
+        group
+          .insert('circle', ':first-child')
+          .attr('class', 'map-pin-hit')
+          .attr('fill', 'transparent')
+          .attr('pointer-events', 'all');
+      }
+      group.select('circle.map-pin-hit').attr('r', 12);
+      if (group.select('circle.map-pin-halo').empty()) {
+        group
+          .append('circle')
+          .attr('class', 'map-pin-halo')
+          .attr('r', 7)
+          .attr('opacity', 0)
+          .attr('pointer-events', 'none');
+      }
+      if (group.select('circle.map-pin-dot').empty()) {
+        group
+          .append('circle')
+          .attr('class', 'map-pin-dot')
+          .attr('r', 5)
+          .attr('stroke-width', 1.75)
+          .attr('pointer-events', 'none');
+      }
+      group.select('circle.map-pin-halo').attr('fill', palette.pinFill);
+      group
+        .select('circle.map-pin-dot')
+        .attr('fill', palette.pinFill)
+        .attr('stroke', palette.pinStroke);
+      setPinTitle(group, space.locationLabel ?? space.title);
+    };
 
     pins.exit().remove();
 
@@ -652,92 +971,9 @@ export function NetworkGlobeMap({
         clearHoveredPinRef.current();
       });
 
-    pinsEnter.each(function (datum) {
-      const group = d3.select(this);
-      const palette = mapPaletteRef.current;
-      if (datum.kind === 'cluster') {
-        group
-          .append('circle')
-          .attr('class', 'map-pin-hit')
-          .attr('r', 15)
-          .attr('fill', 'transparent')
-          .attr('pointer-events', 'all');
-        group
-          .append('circle')
-          .attr('class', 'map-pin-cluster-ring')
-          .attr('r', 12)
-          .attr('fill', 'none')
-          .attr('stroke', palette.clusterRing)
-          .attr('stroke-width', 1.5)
-          .attr('opacity', 0.55)
-          .attr('pointer-events', 'none');
-        group
-          .append('circle')
-          .attr('class', 'map-pin-cluster-core')
-          .attr('r', 9)
-          .attr('fill', palette.clusterFill)
-          .attr('stroke', palette.pinStroke)
-          .attr('stroke-width', 1.5)
-          .attr('pointer-events', 'none');
-        group
-          .append('text')
-          .attr('class', 'map-pin-cluster-count')
-          .attr('text-anchor', 'middle')
-          .attr('dy', '0.35em')
-          .attr('font-size', datum.count > 9 ? 9 : 10)
-          .attr('font-weight', 600)
-          .attr('font-family', 'var(--font-family-text, sans-serif)')
-          .attr('fill', 'var(--accent-contrast, white)')
-          .attr('pointer-events', 'none')
-          .text(String(datum.count));
-        group
-          .append('title')
-          .text(t('clusterExpandTitle', { count: datum.count }));
-        return;
-      }
-
-      const space = pinDatumSpace(datum);
-      if (!space) {
-        return;
-      }
-
-      group
-        .append('circle')
-        .attr('class', 'map-pin-hit')
-        .attr('r', 12)
-        .attr('fill', 'transparent')
-        .attr('pointer-events', 'all');
-      group
-        .append('circle')
-        .attr('class', 'map-pin-halo')
-        .attr('r', 7)
-        .attr('fill', pinColor(space.id))
-        .attr('opacity', 0)
-        .attr('pointer-events', 'none');
-      group
-        .append('circle')
-        .attr('class', 'map-pin-dot')
-        .attr('r', 5)
-        .attr('fill', pinColor(space.id))
-        .attr('stroke', palette.pinStroke)
-        .attr('stroke-width', 1.75)
-        .attr('pointer-events', 'none');
-      group.append('title').text(space.locationLabel ?? space.title);
-    });
-
-    pins.merge(pinsEnter).each(function (datum) {
-      const group = d3.select(this);
-      if (
-        datum.kind === 'cluster' &&
-        group.select('circle.map-pin-hit').empty()
-      ) {
-        group
-          .insert('circle', ':first-child')
-          .attr('class', 'map-pin-hit')
-          .attr('r', 14)
-          .attr('fill', 'transparent')
-          .attr('pointer-events', 'all');
-      }
+    const pinNodes = pins.merge(pinsEnter);
+    pinNodes.each(function (datum) {
+      syncPinGraphic(this, datum);
 
       const latitude =
         datum.kind === 'cluster' || datum.kind === 'spiderfy-space'
@@ -795,6 +1031,92 @@ export function NetworkGlobeMap({
         .attr('opacity', pinOpacity)
         .style('display', null);
     });
+    pinNodes.order();
+
+    const bounds = path.bounds({ type: 'Sphere' });
+    const [[x0, y0], [x1, y1]] = bounds;
+    if ([x0, y0, x1, y1].every((value) => Number.isFinite(value))) {
+      const drawsDisk = projectionDrawsDisk(projection);
+      const navSize = miniGlobeRef.current
+        ? { w: MINI_GLOBE_SIZE, h: MINI_GLOBE_SIZE }
+        : { w: MINI_MAP_WIDTH, h: MINI_MAP_HEIGHT };
+      const legendEl = container.querySelector<HTMLElement>(
+        '[data-network-map-inset="legend"]',
+      );
+      const legendSize =
+        legendEl && legendEl.offsetWidth > 0
+          ? { w: legendEl.offsetWidth, h: legendEl.offsetHeight }
+          : null;
+      const seatKey = [
+        width,
+        height,
+        drawsDisk ? 'disk' : 'rect',
+        x0.toFixed(1),
+        y0.toFixed(1),
+        x1.toFixed(1),
+        y1.toFixed(1),
+        navSize.w,
+        navSize.h,
+        legendSize ? `${legendSize.w}x${legendSize.h}` : '',
+      ].join('|');
+      let seat =
+        overlaySeatRef.current?.key === seatKey
+          ? overlaySeatRef.current.seat
+          : null;
+      if (!seat) {
+        if (drawsDisk) {
+          // The flat map seats on the stage rectangle. Use that same rectangle
+          // here so the legend and miniature do not move when the view
+          // switches. The disk keeps its scale; these controls are not walked
+          // down its rim or placed outside the stage.
+          const stageBounds: [[number, number], [number, number]] = [
+            [0, 0],
+            [width, height],
+          ];
+          seat = seatOnRectangle(
+            width,
+            height,
+            stageBounds,
+            legendSize,
+            navSize,
+          );
+          if (!legendEl || legendSize) {
+            overlaySeatRef.current = { key: seatKey, seat };
+          }
+        } else {
+          seat = seatOnRectangle(width, height, bounds, legendSize, navSize);
+          if (!legendEl || legendSize) {
+            overlaySeatRef.current = { key: seatKey, seat };
+          }
+        }
+      }
+      if (seat) {
+        // Variables survive React re-renders that reset the buttons' style prop.
+        container.style.setProperty('--map-nav-right', `${seat.navRight}px`);
+        container.style.setProperty('--map-nav-bottom', `${seat.navBottom}px`);
+        container.style.setProperty(
+          '--map-legend-left',
+          `${seat.legendLeft}px`,
+        );
+        container.style.setProperty(
+          '--map-legend-bottom',
+          `${seat.legendBottom}px`,
+        );
+        // Zoom out sits in the stage's bottom-right corner. When that corner
+        // is the miniature (zoomed disk fills the stage), lift the button so
+        // both stay visible. The miniature's seat is left alone.
+        const zoomOverlapsNav =
+          seat.navRight < OVERLAY_INSET + 160 &&
+          seat.navBottom < OVERLAY_INSET + 32;
+        const zoomBottom = zoomOverlapsNav
+          ? seat.navBottom + navSize.h + OVERLAY_GAP
+          : OVERLAY_INSET;
+        container.style.setProperty(
+          '--map-zoom-bottom',
+          `${Math.round(zoomBottom)}px`,
+        );
+      }
+    }
   }, [lang, router, t]);
 
   renderMapRef.current = renderMap;
@@ -860,6 +1182,56 @@ export function NetworkGlobeMap({
 
   renderMiniGlobeRef.current = renderMiniGlobe;
 
+  const renderMiniMap = React.useCallback(() => {
+    const svg = d3.select(miniMapRef.current);
+    const land = landRef.current;
+    if (!miniMapRef.current || !land) {
+      return;
+    }
+
+    const width = MINI_MAP_WIDTH;
+    const height = MINI_MAP_HEIGHT;
+    const palette = mapPaletteRef.current;
+    const projection = d3.geoEquirectangular().fitExtent(
+      [
+        [3, 3],
+        [width - 3, height - 3],
+      ],
+      { type: 'Sphere' },
+    );
+    const path = d3.geoPath(projection);
+
+    svg
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`);
+
+    let root = svg.select<SVGGElement>('g.mini-map-root');
+    if (root.empty()) {
+      root = svg.append('g').attr('class', 'mini-map-root');
+      root.append('path').attr('class', 'mini-map-ocean');
+      root.append('path').attr('class', 'mini-map-land');
+    }
+
+    root
+      .select<SVGPathElement>('path.mini-map-ocean')
+      .attr('d', path({ type: 'Sphere' }) ?? '')
+      .attr('fill', palette.ocean)
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', 0.6);
+
+    root
+      .select<SVGPathElement>('path.mini-map-land')
+      .attr('d', path(land) ?? '')
+      .attr('fill', palette.landFill)
+      .attr('stroke', palette.landStroke)
+      .attr('stroke-width', 0.35)
+      .attr('stroke-linejoin', 'round');
+  }, []);
+
+  const renderMiniMapRef = React.useRef(renderMiniMap);
+  renderMiniMapRef.current = renderMiniMap;
+
   const isActiveRef = React.useRef(isActive);
   isActiveRef.current = isActive;
 
@@ -874,6 +1246,7 @@ export function NetworkGlobeMap({
       renderFrameRef.current = null;
       renderMapRef.current();
       renderMiniGlobeRef.current();
+      renderMiniMapRef.current();
     });
   }, []);
 
@@ -892,9 +1265,15 @@ export function NetworkGlobeMap({
 
     const fromZoom = globeZoomRef.current;
     const fromSpread = clusterSpreadRef.current;
+    const flat = morphRef.current >= 1;
+    const fromFlatCenter: [number, number] = [
+      flatCenterRef.current[0],
+      flatCenterRef.current[1],
+    ];
 
     if (prefersReducedMotion()) {
       globeZoomRef.current = 1;
+      flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
       clusterSpreadRef.current = 0;
       focusedClusterIdRef.current = null;
       setFocusedClusterId(null);
@@ -919,12 +1298,20 @@ export function NetworkGlobeMap({
       clusterSpreadRef.current = fromSpread * spreadRemaining;
       setClusterSpread(fromSpread * spreadRemaining);
       globeZoomRef.current = 1 + (fromZoom - 1) * zoomRemaining;
+      if (flat) {
+        flatCenterRef.current = easeFlatCenter(
+          fromFlatCenter,
+          FLAT_GEOGRAPHIC_CENTER,
+          1 - zoomRemaining,
+        );
+      }
       requestRender();
 
       if (t < 1) {
         clusterAnimFrameRef.current = requestAnimationFrame(step);
       } else {
         globeZoomRef.current = 1;
+        flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
         clusterSpreadRef.current = 0;
         focusedClusterIdRef.current = null;
         setFocusedClusterId(null);
@@ -954,18 +1341,37 @@ export function NetworkGlobeMap({
 
       const fromZoom = globeZoomRef.current;
       const toZoom = CLUSTER_ZOOM_SCALE;
+      const flat = morphRef.current >= 1;
+      const fromFlatCenter: [number, number] = [
+        flatCenterRef.current[0],
+        flatCenterRef.current[1],
+      ];
+      const toFlatCenter: [number, number] = [
+        cluster.longitude,
+        cluster.latitude,
+      ];
       const centeredRotation = globeRotationForCenter(
         cluster.longitude,
         cluster.latitude,
+      );
+      const fromRotation = [...rotateRef.current] as Rotation;
+      const interpolateRotation = interpolateAngles(
+        fromRotation,
+        centeredRotation,
       );
 
       focusedClusterIdRef.current = cluster.clusterId;
       setFocusedClusterId(cluster.clusterId);
 
       if (prefersReducedMotion()) {
-        rotateRef.current = centeredRotation;
+        if (flat) {
+          flatCenterRef.current = toFlatCenter;
+        } else {
+          rotateRef.current = centeredRotation;
+          savedGlobeRotateRef.current = centeredRotation;
+          flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
+        }
         globeZoomRef.current = toZoom;
-        savedGlobeRotateRef.current = centeredRotation;
         clusterSpreadRef.current = 1;
         setClusterSpread(1);
         syncClusterAnimating(false);
@@ -977,15 +1383,25 @@ export function NetworkGlobeMap({
       clusterSpreadRef.current = 0;
       setClusterSpread(0);
       const start = performance.now();
-      savedGlobeRotateRef.current = centeredRotation;
 
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / CLUSTER_FOCUS_MS);
+        const eased = easeClusterZoomIn(t);
 
-        // Keep the cluster anchor pinned at the viewport center while zooming.
-        rotateRef.current = centeredRotation;
-        globeZoomRef.current =
-          fromZoom + (toZoom - fromZoom) * easeClusterZoomIn(t);
+        if (flat) {
+          // Same ease as the scale, so the coast arrives with the zoom.
+          flatCenterRef.current = easeFlatCenter(
+            fromFlatCenter,
+            toFlatCenter,
+            eased,
+          );
+        } else {
+          const rotation = interpolateRotation(eased);
+          rotateRef.current = rotation;
+          savedGlobeRotateRef.current = rotation;
+          flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
+        }
+        globeZoomRef.current = fromZoom + (toZoom - fromZoom) * eased;
 
         const spreadT =
           t <= SPIDERFY_START ? 0 : (t - SPIDERFY_START) / (1 - SPIDERFY_START);
@@ -997,6 +1413,14 @@ export function NetworkGlobeMap({
         if (t < 1) {
           clusterAnimFrameRef.current = requestAnimationFrame(step);
         } else {
+          if (flat) {
+            flatCenterRef.current = toFlatCenter;
+          } else {
+            rotateRef.current = centeredRotation;
+            savedGlobeRotateRef.current = centeredRotation;
+            flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
+          }
+          globeZoomRef.current = toZoom;
           clusterSpreadRef.current = 1;
           setClusterSpread(1);
           clusterAnimFrameRef.current = null;
@@ -1022,7 +1446,17 @@ export function NetworkGlobeMap({
   }, [requestRender]);
 
   React.useEffect(() => {
-    if (hasUserRotatedRef.current || morphRef.current >= 1) {
+    const tweening =
+      animatingTargetRef.current != null ||
+      animationFrameRef.current != null ||
+      (morphRef.current > 0.001 && morphRef.current < 0.999);
+    if (hasUserRotatedRef.current || morphRef.current >= 1 || tweening) {
+      if (!hasUserRotatedRef.current) {
+        savedGlobeRotateRef.current = globeRotationForCenter(
+          initialCenter.longitude,
+          initialCenter.latitude,
+        );
+      }
       return;
     }
 
@@ -1107,6 +1541,7 @@ export function NetworkGlobeMap({
   React.useEffect(() => {
     renderMap();
     renderMiniGlobe();
+    renderMiniMap();
   }, [
     layers,
     morphProgress,
@@ -1118,15 +1553,20 @@ export function NetworkGlobeMap({
     mapPalette,
     renderMap,
     renderMiniGlobe,
+    renderMiniMap,
   ]);
 
   React.useEffect(() => {
-    if (selectedProjection !== 'flat' || isLoadingGeo || loadError) {
+    if (isLoadingGeo || loadError) {
       return;
     }
-    // Mini-globe SVG mounts with flat mode — paint after commit.
+    // Inset SVG mounts with the other projection — paint after commit.
     const id = requestAnimationFrame(() => {
-      renderMiniGlobeRef.current();
+      if (selectedProjection === 'flat') {
+        renderMiniGlobeRef.current();
+      } else {
+        renderMiniMapRef.current();
+      }
     });
     return () => cancelAnimationFrame(id);
   }, [selectedProjection, isLoadingGeo, loadError, mapPalette]);
@@ -1148,8 +1588,7 @@ export function NetworkGlobeMap({
 
     function mapDimensions() {
       const width = container!.clientWidth;
-      const height = Math.max(360, Math.min(560, width * 0.62));
-      return { width, height };
+      return { width, height: mapStageHeight(width) };
     }
 
     function globeProjectionAtRotation(rotate: Rotation) {
@@ -1356,10 +1795,20 @@ export function NetworkGlobeMap({
     };
   }, [isActive, showStage, isLoadingGeo, loadError, requestRender]);
 
+  const onProjectionModeChangeRef = React.useRef(onProjectionModeChange);
+  onProjectionModeChangeRef.current = onProjectionModeChange;
+
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
+      if (
+        animationFrameRef.current != null &&
+        animatingTargetRef.current === target
+      ) {
+        return;
+      }
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
       if (clusterAnimFrameRef.current != null) {
         cancelAnimationFrame(clusterAnimFrameRef.current);
@@ -1373,13 +1822,18 @@ export function NetworkGlobeMap({
         syncClusterAnimating(false);
       }
       globeZoomRef.current = 1;
+      flatCenterRef.current = FLAT_GEOGRAPHIC_CENTER;
 
       const fromMorph = morphRef.current;
       const toMorph = target === 'flat' ? 1 : 0;
       if (Math.abs(fromMorph - toMorph) < 1e-6) {
+        noteAutoIntroSettled(target);
+        animatingTargetRef.current = null;
         return;
       }
 
+      animatingTargetRef.current = target;
+      onProjectionModeChangeRef.current?.(target);
       setSelectedProjection(target);
 
       const fromRotate = [...rotateRef.current] as Rotation;
@@ -1393,6 +1847,7 @@ export function NetworkGlobeMap({
       const interpolateRotation = interpolateAngles(fromRotate, toRotate);
 
       if (prefersReducedMotion()) {
+        noteAutoIntroSettled(target);
         morphRef.current = toMorph;
         rotateRef.current = toRotate;
         setMorphProgress(toMorph);
@@ -1412,7 +1867,10 @@ export function NetworkGlobeMap({
         if (t < 1) {
           animationFrameRef.current = requestAnimationFrame(step);
         } else {
+          // Leave animatingTargetRef set until the render sees the committed
+          // morph. Clearing it here lets the next render copy the stale 0.
           animationFrameRef.current = null;
+          noteAutoIntroSettled(target);
           morphRef.current = toMorph;
           rotateRef.current = toRotate;
           setMorphProgress(toMorph);
@@ -1426,20 +1884,66 @@ export function NetworkGlobeMap({
     [requestRender, syncClusterAnimating],
   );
 
+  const animateProjectionRef = React.useRef(animateProjection);
+  animateProjectionRef.current = animateProjection;
+
   React.useEffect(() => {
-    return () => {
+    if (!alignProjection) {
+      alignedProjectionRef.current = undefined;
+      return;
+    }
+    if (alignedProjectionRef.current === alignProjection) {
+      return;
+    }
+    const latch = autoIntroLatch();
+    alignedProjectionRef.current = alignProjection;
+    if (latch.finished && latch.target === alignProjection) {
+      const toMorph = alignProjection === 'flat' ? 1 : 0;
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
-      if (autoRotateFrameRef.current != null) {
-        cancelAnimationFrame(autoRotateFrameRef.current);
+      animatingTargetRef.current = null;
+      morphRef.current = toMorph;
+      if (alignProjection === 'flat') {
+        rotateRef.current = FLAT_ROTATION;
       }
-      if (clusterAnimFrameRef.current != null) {
-        cancelAnimationFrame(clusterAnimFrameRef.current);
-      }
-      if (renderFrameRef.current != null) {
-        cancelAnimationFrame(renderFrameRef.current);
-      }
+      setSelectedProjection(alignProjection);
+      setMorphProgress(toMorph);
+      setProjectionMode(alignProjection);
+      requestRender();
+      return;
+    }
+    latch.target = alignProjection;
+    animateProjectionRef.current(alignProjection);
+  }, [alignProjection, requestRender]);
+
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          return;
+        }
+        if (animationFrameRef.current != null) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+        if (autoRotateFrameRef.current != null) {
+          cancelAnimationFrame(autoRotateFrameRef.current);
+          autoRotateFrameRef.current = null;
+        }
+        if (clusterAnimFrameRef.current != null) {
+          cancelAnimationFrame(clusterAnimFrameRef.current);
+          clusterAnimFrameRef.current = null;
+        }
+        if (renderFrameRef.current != null) {
+          cancelAnimationFrame(renderFrameRef.current);
+          renderFrameRef.current = null;
+        }
+        animatingTargetRef.current = null;
+      }, 0);
     };
   }, []);
 
@@ -1498,35 +2002,25 @@ export function NetworkGlobeMap({
               activePin.x,
               activePin.y,
               containerRef.current?.clientWidth ?? 640,
-              containerRef.current?.clientHeight ?? 360,
+              containerRef.current?.clientHeight ??
+                mapStageHeight(containerRef.current?.clientWidth ?? 640),
             )
           : {})}
       />
     ) : null;
 
-  const layerControls = (
-    <NetworkMapLayerControls
-      projectionMode={selectedProjection}
-      onProjectionModeChange={animateProjection}
-    />
-  );
-
-  const toolbar = renderToolbar ? (
-    renderToolbar(layerControls)
-  ) : (
-    <div className="flex justify-center">{layerControls}</div>
-  );
+  const toolbar = renderToolbar ? renderToolbar(null) : null;
 
   const clusterControls = focusedClusterId ? (
     <div
       data-network-map-cluster-controls
-      className="absolute left-3 top-3 z-20"
+      className="absolute bottom-[var(--map-zoom-bottom)] right-3 z-30"
     >
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 border-border bg-background shadow-sm"
+        className="h-8 gap-1.5 rounded-none border-border bg-background shadow-none"
         onClick={clearClusterFocus}
       >
         <Minus className="size-3.5" aria-hidden />
@@ -1537,16 +2031,51 @@ export function NetworkGlobeMap({
 
   const showMiniGlobe =
     selectedProjection === 'flat' && !isLoadingGeo && !loadError;
+  const showMiniMap =
+    selectedProjection === 'globe' && !isLoadingGeo && !loadError;
+
+  const mapLegend =
+    !isLoadingGeo && !loadError && locatedSpaces.length > 0 ? (
+      <div
+        data-network-map-inset="legend"
+        className={cn(
+          'pointer-events-none absolute bottom-[var(--map-legend-bottom)] left-[var(--map-legend-left)] z-20',
+          'inline-flex max-w-[min(100%_-_1.5rem,20rem)] items-center gap-3',
+          'rounded-md border border-border bg-background/90 px-2.5 py-1.5',
+          'text-1 text-muted-foreground shadow-sm backdrop-blur-sm',
+        )}
+        aria-label={t('legendLabel')}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="size-2 shrink-0 rounded-full bg-foreground ring-1 ring-background"
+            aria-hidden
+          />
+          <span>{t('legendSpace')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="relative inline-flex size-3.5 shrink-0 items-center justify-center rounded-full bg-foreground text-[8px] font-semibold leading-none text-background ring-1 ring-foreground/35"
+            aria-hidden
+          >
+            n
+          </span>
+          <span>{t('legendCluster')}</span>
+        </span>
+        <span className="text-foreground/80">
+          {t('legendSpacesCount', { count: locatedSpaces.length })}
+        </span>
+      </div>
+    ) : null;
+
+  const miniatureInsetClassName =
+    'absolute bottom-[var(--map-nav-bottom)] right-[var(--map-nav-right)] z-20 border-0 bg-transparent p-0 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
   const miniGlobeInset = showMiniGlobe ? (
     <button
       type="button"
-      className={cn(
-        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
-        'transition-[border-color,background-color] duration-150',
-        'hover:border-border hover:bg-muted/15',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-      )}
+      data-network-map-inset="navigator"
+      className={miniatureInsetClassName}
       style={{ width: MINI_GLOBE_SIZE, height: MINI_GLOBE_SIZE }}
       aria-label={t('globeView')}
       title={t('globeView')}
@@ -1554,6 +2083,25 @@ export function NetworkGlobeMap({
     >
       <svg
         ref={miniGlobeRef}
+        className="block size-full"
+        role="img"
+        aria-hidden
+      />
+    </button>
+  ) : null;
+
+  const miniMapInset = showMiniMap ? (
+    <button
+      type="button"
+      data-network-map-inset="navigator"
+      className={miniatureInsetClassName}
+      style={{ width: MINI_MAP_WIDTH, height: MINI_MAP_HEIGHT }}
+      aria-label={t('flatView')}
+      title={t('flatView')}
+      onClick={() => animateProjection('flat')}
+    >
+      <svg
+        ref={miniMapRef}
         className="block size-full"
         role="img"
         aria-hidden
@@ -1593,7 +2141,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
+      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
@@ -1611,7 +2159,7 @@ export function NetworkGlobeMap({
       <svg
         ref={svgRef}
         className={cn(
-          'block w-full select-none',
+          'absolute inset-0 block h-full w-full select-none',
           projectionMode === 'globe'
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-default',
@@ -1620,7 +2168,9 @@ export function NetworkGlobeMap({
         role="img"
         aria-label={t('mapAriaLabel')}
       />
+      {mapLegend}
       {miniGlobeInset}
+      {miniMapInset}
       {hoverCard}
     </div>
   );

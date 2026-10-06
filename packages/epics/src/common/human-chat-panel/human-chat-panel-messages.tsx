@@ -204,7 +204,7 @@ export function HumanChatPanelMessages({
     role: 'member',
     isSynthetic: true,
     parts: [{ type: 'text', text: t('welcome') }],
-    senderName: t('systemSender'),
+    senderName: t('chatRoomTitle'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(0);
