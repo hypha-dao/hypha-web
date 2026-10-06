@@ -9,16 +9,18 @@ import {
 } from '../token-holdings-query';
 
 function withBrokenChecksum(address: `0x${string}`): string {
-  const chars = [...address];
-  for (let index = 2; index < chars.length; index += 1) {
-    const char = chars[index];
+  for (let index = 2; index < address.length; index += 1) {
+    const char = address[index];
+    if (char === undefined) continue;
     if (char >= 'a' && char <= 'f') {
-      chars[index] = char.toUpperCase();
-      return chars.join('');
+      return `${address.slice(0, index)}${char.toUpperCase()}${address.slice(
+        index + 1,
+      )}`;
     }
     if (char >= 'A' && char <= 'F') {
-      chars[index] = char.toLowerCase();
-      return chars.join('');
+      return `${address.slice(0, index)}${char.toLowerCase()}${address.slice(
+        index + 1,
+      )}`;
     }
   }
   throw new Error('address has no hex letters to flip');
@@ -33,17 +35,14 @@ describe('parseTokenAddressQuery', () => {
   });
 
   it('accepts a checksummed address and lowercases it', () => {
-    expect(
-      parseTokenAddressQuery('0x8b93862835c36e9689e9bb1ab21de3982e266cd3'),
-    ).toEqual({
+    const lowercase = '0x8b93862835c36e9689e9bb1ab21de3982e266cd3';
+    expect(parseTokenAddressQuery(lowercase)).toEqual({
       status: 'ok',
-      address: '0x8b93862835c36e9689e9bb1ab21de3982e266cd3',
+      address: lowercase,
     });
-    expect(
-      parseTokenAddressQuery('0x8B93862835C36E9689E9BB1AB21DE3982E266CD3'),
-    ).toEqual({
+    expect(parseTokenAddressQuery(getAddress(lowercase))).toEqual({
       status: 'ok',
-      address: '0x8b93862835c36e9689e9bb1ab21de3982e266cd3',
+      address: lowercase,
     });
   });
 
