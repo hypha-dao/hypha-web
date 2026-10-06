@@ -27,6 +27,9 @@
   "private": true,
   "nx": {},
   "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@faker-js/faker": "^9.4.0",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

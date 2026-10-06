@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
 import { and, eq } from 'drizzle-orm';
-import { memberships } from '@hypha-platform/storage-postgres';
+import { coherences, memberships } from '@hypha-platform/storage-postgres';
 import {
   createCoherence,
   deleteCoherenceBySlug,
@@ -37,6 +37,10 @@ import {
   applyCoherenceUpvoteRemoval,
 } from './apply-coherence-upvote';
 import type { CoherenceUpvoteSummary } from '../types';
+import {
+  getSignalAssignedNotifier,
+  type SignalAssignedNotifierInput,
+} from './signal-assigned-notifier';
 
 async function assertSignalWorkflowAccess({
   spaceId,
@@ -60,12 +64,46 @@ async function assertSignalWorkflowAccess({
   }
 }
 
+/**
+ * Server-fired signal-assignment notification (#2470); best-effort, never fails the mutation.
+ * Delegates to whatever `apps/web`'s `instrumentation.ts` registered via
+ * `setSignalAssignedNotifier` (see `./signal-assigned-notifier.ts` for why this is a registration
+ * slot rather than a direct import of `@hypha-platform/notifications`).
+ */
+async function notifySignalAssigned(input: SignalAssignedNotifierInput) {
+  if (input.assigneePersonIds.length === 0) return;
+  const notifier = getSignalAssignedNotifier();
+  if (!notifier) return;
+  try {
+    await notifier(input);
+  } catch (error) {
+    console.error('Failed to notify signal assignees:', error);
+  }
+}
+
 export async function createCoherenceAction(
   data: CreateCoherenceInput,
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to create coherence');
-  return createCoherence({ ...data }, { db });
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for create coherence',
+    );
+  }
+  const newSignal = await createCoherence({ ...data }, { db });
+  if (newSignal.spaceId != null) {
+    await notifySignalAssigned({
+      spaceId: newSignal.spaceId,
+      assigneePersonIds: newSignal.assigneeIds ?? [],
+      actorPersonId: self.id,
+      signalSlug: newSignal.slug ?? '',
+      signalTitle: newSignal.title ?? '',
+    });
+  }
+  return newSignal;
 }
 
 export async function updateCoherenceBySlugAction(
@@ -146,10 +184,32 @@ export async function updateCoherenceSignalBySlugAction(
     authToken,
     requesterPersonId: self.id,
   });
+
+  const [previousRow] = await db
+    .select({ assigneeIds: coherences.assigneeIds })
+    .from(coherences)
+    .where(eq(coherences.slug, validated.slug))
+    .limit(1);
+  const previousAssigneeIds = previousRow?.assigneeIds ?? [];
+
   const updated = await updateCoherenceSignalBySlug(
     { ...validated, requesterPersonId: self.id },
     { db },
   );
+
+  if (updated.spaceId != null && validated.assigneeIds !== undefined) {
+    const newlyAssignedIds = (updated.assigneeIds ?? []).filter(
+      (id) => !previousAssigneeIds.includes(id),
+    );
+    await notifySignalAssigned({
+      spaceId: updated.spaceId,
+      assigneePersonIds: newlyAssignedIds,
+      actorPersonId: self.id,
+      signalSlug: updated.slug ?? '',
+      signalTitle: updated.title ?? '',
+    });
+  }
+
   return normalizeCoherence(updated);
 }
 

@@ -10,17 +10,19 @@ import {
   isSpaceArchived,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
+  splitTokensByNetworkSpaces,
+  type NetworkGrowth,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
   NetworkControlStrip,
   NetworkGlobeMap,
   NetworkMapViewToggle,
-  useNetworkGlobeReady,
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
 import { CreateSpaceButton } from './create-space-button';
+import { NetworkCensus } from './network-census';
 import { NetworkLoadingGrid } from './network-loading-grid';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
@@ -29,7 +31,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
+import { Badge, Heading, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -45,6 +47,7 @@ interface ExploreSpacesProps {
   order?: SpaceOrder;
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
+  networkGrowth?: NetworkGrowth | null;
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -72,6 +75,24 @@ const CountValue = ({
   }
   return <>{value}</>;
 };
+
+function countUniqueMemberAddresses(spaces: Space[]): number {
+  const acc = new Set<Lowercase<`0x${string}`>>();
+  for (const space of spaces) {
+    if (!space.memberAddresses) continue;
+    for (const address of space.memberAddresses) {
+      acc.add(toLowerHex(address));
+    }
+  }
+  return acc.size;
+}
+
+function countAgreements(spaces: Space[]): number {
+  return spaces.reduce(
+    (accumulator, { documentCount }) => accumulator + (documentCount ?? 0),
+    0,
+  );
+}
 
 const CategoryLabel = ({
   selectedSpaces,
@@ -124,14 +145,13 @@ export function ExploreSpaces({
   order,
   uniqueCategoryGroups,
   enableNetworkMap = false,
+  networkGrowth = null,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
-  const tCommon = useTranslations('Common');
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
-  const globeReady = useNetworkGlobeReady();
 
   React.useEffect(() => {
     if (enableNetworkMap) {
@@ -154,12 +174,15 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categoryGroups],
   );
 
-  const { filteredSpaces: selectedSpaces, isLoading: isFilterLoading } =
-    useFilterSpacesListWithDiscoverability({
-      spaces: categoryFilteredSpaces,
-      useGeneralState: true,
-      excludeSpaceLevelFromNetwork: true,
-    });
+  const {
+    filteredSpaces: selectedSpaces,
+    privateSpaces,
+    isLoading: isFilterLoading,
+  } = useFilterSpacesListWithDiscoverability({
+    spaces: categoryFilteredSpaces,
+    useGeneralState: true,
+    excludeSpaceLevelFromNetwork: true,
+  });
 
   // Discoverability is resolved on-chain, so the filtered set (and therefore the
   // total count) starts as "all spaces" and shrinks as the batch resolves, which
@@ -175,24 +198,39 @@ export function ExploreSpaces({
   }, [isFilterLoading]);
   const showSpacesSkeleton = !hasSettledFilter;
 
-  const agreementCount = React.useMemo(() => {
-    return selectedSpaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
-    );
-  }, [selectedSpaces]);
+  const agreementCount = React.useMemo(
+    () => countAgreements(selectedSpaces),
+    [selectedSpaces],
+  );
+  const privateAgreementCount = React.useMemo(
+    () => countAgreements(privateSpaces),
+    [privateSpaces],
+  );
 
-  const uniqueMemberAddresses = React.useMemo(() => {
-    const acc = new Set<Lowercase<`0x${string}`>>();
-    for (const space of selectedSpaces) {
-      if (!space.memberAddresses) continue;
-      for (const address of space.memberAddresses) {
-        acc.add(toLowerHex(address));
-      }
-    }
-    return acc;
-  }, [selectedSpaces]);
+  const memberCount = React.useMemo(
+    () => countUniqueMemberAddresses(selectedSpaces),
+    [selectedSpaces],
+  );
+  const privateMemberCount = React.useMemo(
+    () => countUniqueMemberAddresses(privateSpaces),
+    [privateSpaces],
+  );
+
+  const tokenCensus = React.useMemo(() => {
+    if (!networkGrowth) return null;
+    const onNetwork = new Set(selectedSpaces.map((space) => space.id));
+    const offNetwork = new Set(privateSpaces.map((space) => space.id));
+    const splitCounts = splitTokensByNetworkSpaces(
+      networkGrowth.tokens.bySpace,
+      onNetwork,
+      offNetwork,
+    );
+    return {
+      total: networkGrowth.tokens.total,
+      publicCount: splitCounts.publicCount,
+      privateCount: splitCounts.privateCount,
+    };
+  }, [networkGrowth, selectedSpaces, privateSpaces]);
 
   const tags = React.useMemo(
     () =>
@@ -215,8 +253,13 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const viewFromUrl = (params: URLSearchParams): NetworkMapView =>
-    params.get('view') === 'map' ? 'map' : 'list';
+  const viewFromUrl = (params: URLSearchParams): NetworkMapView => {
+    const view = params.get('view');
+    if (view === 'list' || view === 'map') {
+      return view;
+    }
+    return 'overview';
+  };
 
   const [view, setViewState] = React.useState<NetworkMapView>(() =>
     enableNetworkMap ? viewFromUrl(searchParams) : 'list',
@@ -240,10 +283,10 @@ export function ExploreSpaces({
       setViewState(nextView);
 
       const params = new URLSearchParams(window.location.search);
-      if (nextView === 'list') {
-        params.set('view', 'list');
+      if (nextView === 'overview') {
+        params.delete('view');
       } else {
-        params.set('view', 'map');
+        params.set('view', nextView);
       }
       const queryString = params.toString();
       window.history.replaceState(
@@ -280,9 +323,8 @@ export function ExploreSpaces({
   const { isAuthenticated } = useAuthentication();
 
   const renderMapToolbar = React.useCallback(
-    (layerControls: React.ReactNode) => (
+    () => (
       <NetworkControlStrip
-        className="mb-1"
         viewToggle={
           <NetworkMapViewToggle
             value={view}
@@ -290,9 +332,8 @@ export function ExploreSpaces({
             className="w-fit max-w-full shrink-0"
           />
         }
-        mapChrome={view === 'map' ? layerControls : undefined}
         trailing={
-          view === 'map' ? (
+          view === 'map' || view === 'overview' ? (
             <NetworkAddLocationButton
               lang={lang}
               spaces={spaces}
@@ -333,9 +374,10 @@ export function ExploreSpaces({
     </div>
   );
 
-  const showSortControl = !enableNetworkMap || view === 'list';
-  const deferBelowMapContent =
-    enableNetworkMap && view === 'map' && !globeReady;
+  const showSortControl =
+    !enableNetworkMap || view === 'list' || view === 'overview';
+  const showMapStage = view === 'map' || view === 'overview';
+  const showSpacesList = view === 'list' || view === 'overview';
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-row items-center gap-3">
@@ -357,7 +399,7 @@ export function ExploreSpaces({
   );
 
   const listMetaRow = (
-    <div className="mb-4 flex w-full flex-row items-center justify-between gap-2">
+    <div className="mb-7 flex w-full flex-row items-center justify-between gap-2">
       <CategoryLabel
         selectedSpaces={selectedSpaces}
         categoryGroups={categoryGroups}
@@ -368,54 +410,28 @@ export function ExploreSpaces({
     </div>
   );
 
-  const metricsSection = (
-    <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={selectedSpaces.length}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Spaces')}
-        </div>
-      </div>
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={uniqueMemberAddresses.size}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Members')}
-        </div>
-      </div>
-      <Separator
-        orientation="vertical"
-        className="h-auto self-stretch bg-neutral-6"
-      />
-      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
-        <div className="flex justify-center text-7 font-medium">
-          <CountValue
-            value={agreementCount}
-            isLoading={showSpacesSkeleton}
-            width={40}
-          />
-        </div>
-        <div className="mt-2 flex justify-center text-1 text-neutral-500">
-          {tCommon('Agreements')}
-        </div>
-      </div>
-    </div>
-  );
+  const networkCensus = enableNetworkMap ? (
+    <NetworkCensus
+      lang={lang}
+      isLoading={showSpacesSkeleton}
+      spaces={{
+        total: selectedSpaces.length + privateSpaces.length,
+        publicCount: selectedSpaces.length,
+        privateCount: privateSpaces.length,
+      }}
+      members={{
+        total: memberCount + privateMemberCount,
+        publicCount: memberCount,
+        privateCount: privateMemberCount,
+      }}
+      agreements={{
+        total: agreementCount + privateAgreementCount,
+        publicCount: agreementCount,
+        privateCount: privateAgreementCount,
+      }}
+      tokens={tokenCensus}
+    />
+  ) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
@@ -435,20 +451,19 @@ export function ExploreSpaces({
 
         {enableNetworkMap ? (
           <>
+            {renderMapToolbar()}
+            <div className="my-6">{networkCensus}</div>
             <NetworkGlobeMap
               lang={lang}
               spaces={mapSpaces}
-              className="mb-4 w-full"
-              renderToolbar={renderMapToolbar}
-              isActive={view === 'map'}
-              showStage={view === 'map'}
+              className={cn('w-full', showMapStage && 'mb-7')}
+              isActive={showMapStage}
+              showStage={showMapStage}
+              alignProjection={view === 'overview' ? 'flat' : undefined}
             />
-            <div className={cn(view !== 'list' && 'hidden')}>
+            <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
               {spacesListContent}
-            </div>
-            <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
-              {metricsSection}
             </div>
           </>
         ) : (

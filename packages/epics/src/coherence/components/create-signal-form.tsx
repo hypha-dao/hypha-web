@@ -44,7 +44,6 @@ import {
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useCoherenceUpvoteMutations,
-  useHookRegistry,
   useJwt,
   useMatrix,
   useMe,
@@ -171,8 +170,6 @@ export const CreateSignalForm = ({
     isUpdatingCoherenceSignal,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
-  const { useSendNotifications } = useHookRegistry();
-  const { notifySignalAssigned } = useSendNotifications({ authToken });
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
   const [isTogglingArchiveState, setIsTogglingArchiveState] =
@@ -574,44 +571,9 @@ export const CreateSignalForm = ({
     [],
   );
 
-  /** Emails people who were just put on a signal. Self-assignment is dropped server-side. */
-  const notifyAssignees = React.useCallback(
-    ({
-      slug,
-      title,
-      assigneeIds,
-    }: {
-      slug?: string | null;
-      title: string;
-      assigneeIds: number[];
-    }) => {
-      const trimmedSlug = slug?.trim();
-      if (!trimmedSlug || !spaceSlug || assigneeIds.length === 0) return;
-      const origin =
-        typeof window === 'undefined' ? '' : window.location.origin;
-      void notifySignalAssigned({
-        assigneePersonIds: assigneeIds,
-        signalTitle: title,
-        spaceTitle: space?.title ?? undefined,
-        actorDisplayName:
-          [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
-          undefined,
-        url: `${origin}/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
-          trimmedSlug,
-        )}`,
-      }).catch((error) => {
-        console.warn('Could not notify signal assignees:', error);
-      });
-    },
-    [
-      lang,
-      notifySignalAssigned,
-      person?.name,
-      person?.surname,
-      space?.title,
-      spaceSlug,
-    ],
-  );
+  // Assignee notifications are server-fired (#2470) from `createCoherenceAction` /
+  // `updateCoherenceSignalBySlugAction` themselves, right after the assignee list is persisted —
+  // no client trigger needed here.
 
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
@@ -659,18 +621,10 @@ export const CreateSignalForm = ({
               data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
           });
-          // The signal is saved — close now and let the chat sync, the
-          // assignment email and the list refresh finish in the background.
+          // The signal is saved — close now and let the chat sync and the
+          // list refresh finish in the background.
           setIsClosingAfterPublish(true);
           router.push(successfulUrl);
-          const previousAssigneeIds = initialValues?.assigneeIds ?? [];
-          notifyAssignees({
-            slug: signalSlug,
-            title: data.title,
-            assigneeIds: (data.assigneeIds ?? []).filter(
-              (id) => !previousAssigneeIds.includes(id),
-            ),
-          });
           if (updatedSignal?.roomId) {
             void upsertSignalDescriptionMessage({
               roomId: updatedSignal.roomId,
@@ -732,11 +686,6 @@ export const CreateSignalForm = ({
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
         router.push(successfulUrl);
-        notifyAssignees({
-          slug: coherenceSlug,
-          title: coherence.title,
-          assigneeIds: data.assigneeIds ?? [],
-        });
         if (coherenceSlug) {
           // Best-effort creator upvote; ranking still works without it.
           void (async () => {
@@ -839,9 +788,7 @@ export const CreateSignalForm = ({
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
       upsertSignalDescriptionMessage,
-      initialValues?.assigneeIds,
       mode,
-      notifyAssignees,
       setSignalProvisioningNotice,
       signalSlug,
       spaceSlug,
@@ -961,10 +908,10 @@ export const CreateSignalForm = ({
                         <Input
                           rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
                           placeholder={t('signalTitle')}
-                          className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
+                          className="!h-auto min-h-10 w-full rounded-none border border-border bg-inherit py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 focus-visible:border-foreground sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
                           disabled={isMutating}
                           rightIcon={
-                            <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
+                            <RequirementMark className="h-4 w-4 !text-error-11 sm:h-4 sm:w-4" />
                           }
                           {...field}
                         />
@@ -1243,7 +1190,7 @@ export const CreateSignalForm = ({
                         {t('description')} <RequirementMark />
                       </FormLabel>
                       <FormControl>
-                        <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
                           <RichTextEditor
                             editorRef={null}
                             bordered={false}

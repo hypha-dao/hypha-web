@@ -1603,34 +1603,28 @@ export function HumanChatPanelChatBar({
     };
   }, []);
 
-  const iconButtonClass =
-    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+  // `--spacing-9` is 64px, so `size-9` must not size these controls.
+  // All six actions share one non-shrinking row. A separate `justify-between`
+  // slot let the waveform cluster overflow and paint Send on top of it.
+  const composerControlClass =
+    'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] max-h-[36px] max-w-[36px] flex-none shrink-0 basis-[36px] place-items-center rounded-none bg-transparent p-0 leading-none [&>svg]:pointer-events-none';
+  const iconButtonClass = `${composerControlClass} text-muted-foreground transition-colors duration-200 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`;
   const disabledIconButtonClass = `${iconButtonClass} cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground active:bg-transparent`;
 
   /** Recording / dictation “stop” — calm broadcast UI (no harsh outline-on-grey). */
-  const recordingStopButtonClass =
-    'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-600 transition-all duration-200 ease-out ' +
-    'border border-red-500/25 bg-gradient-to-b from-red-500/[0.14] via-red-500/[0.08] to-red-950/[0.06] ' +
-    'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_3px_rgba(220,38,38,0.14)] ' +
-    'hover:border-red-500/40 hover:from-red-500/[0.2] hover:via-red-500/[0.12] hover:to-red-950/[0.1] hover:text-red-700 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_2px_8px_rgba(220,38,38,0.18)] ' +
-    'active:scale-[0.96] active:from-red-500/[0.24] active:via-red-600/[0.14] ' +
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
-    'dark:border-red-400/22 dark:from-red-500/[0.16] dark:via-red-600/[0.1] dark:to-red-950/40 dark:text-red-400 ' +
-    'dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_1px_4px_rgba(0,0,0,0.35)] ' +
-    'dark:hover:border-red-400/38 dark:hover:text-red-300';
+  const recordingStopButtonClass = `${composerControlClass} text-error-11 transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring`;
 
   const fmtBtn =
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-3 pt-3">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-2 pt-2">
       <div
         ref={composerShellRef}
         onKeyDownCapture={handleComposerShellKeyDownCapture}
         className={cn(
-          'relative flex min-w-0 flex-col rounded-lg border border-border bg-background-2',
-          'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
-          isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
+          'relative flex min-w-0 flex-col bg-transparent shadow-none',
+          isComposerDropActive && 'bg-foreground/5',
         )}
         onDragEnter={(e) => {
           if (!e.dataTransfer?.types.includes('Files')) {
@@ -2115,207 +2109,203 @@ export function HumanChatPanelChatBar({
               {voiceError ?? attachError}
             </p>
           )}
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-0.5">
-              {canAttachDrafts ? (
-                <DropdownMenu
-                  modal={isMobile}
-                  open={attachMenuOpen}
-                  onOpenChange={(open) => {
-                    if (!canAttachDrafts) return;
-                    setAttachMenuOpen(open);
-                  }}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={iconButtonClass}
-                      aria-label={t('composerAttachMenu')}
-                      title={attachButtonTitle}
-                      aria-expanded={attachMenuOpen}
-                    >
-                      <Plus className="h-4 w-4" strokeWidth={2} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    side={isMobile ? 'top' : 'bottom'}
-                    className="z-[100] min-w-[200px]"
-                    onKeyDownCapture={handleAttachMenuContentEnter}
-                  >
-                    <DropdownMenuItem
-                      className="cursor-pointer gap-2"
-                      onSelect={() => {
-                        requestAnimationFrame(() => handleAttachImage());
-                      }}
-                    >
-                      <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>{t('composerAttachImage')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer gap-2"
-                      onSelect={() => {
-                        requestAnimationFrame(() => handleAttachVideo());
-                      }}
-                    >
-                      <Video className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>{t('composerAttachVideo')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer gap-2"
-                      onSelect={() => {
-                        requestAnimationFrame(() => handleAttachFile());
-                      }}
-                    >
-                      <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>{t('composerAttachFile')}</span>
-                    </DropdownMenuItem>
-                    <ComposerAttachGoogleDriveMenuItem
-                      disabled={!canAttachDrafts}
-                      onPickerOpen={() => {
-                        setAttachMenuOpen(false);
-                        setAttachError(null);
-                      }}
-                      onError={() =>
-                        setAttachError(t('composerAttachGoogleDriveError'))
-                      }
-                      onFilesPicked={(files) => {
-                        setAttachError(null);
-                        pushDrafts(files, 'file');
-                      }}
-                    />
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <button
-                  type="button"
-                  className={cn(
-                    iconButtonClass,
-                    'cursor-not-allowed opacity-50',
-                  )}
-                  aria-label={t('composerAttachMenu')}
-                  title={attachButtonTitle}
-                  aria-disabled="true"
-                  disabled
-                >
-                  <Plus className="h-4 w-4" strokeWidth={2} />
-                </button>
-              )}
-              <HumanChatPanelEmojiPicker
-                modal={false}
-                open={emojiPickerOpen}
-                onOpenChange={setEmojiPickerOpen}
-                onEmojiSelect={insertEmoji}
-                ariaLabel={t('emojiPickerComposer')}
-                align="end"
+          <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 overflow-visible">
+            {canAttachDrafts ? (
+              <DropdownMenu
+                modal={isMobile}
+                open={attachMenuOpen}
+                onOpenChange={(open) => {
+                  if (!canAttachDrafts) return;
+                  setAttachMenuOpen(open);
+                }}
               >
-                <button
-                  type="button"
-                  disabled={composerLocked}
-                  className={cn(
-                    iconButtonClass,
-                    composerLocked && 'cursor-not-allowed opacity-50',
-                  )}
-                  aria-label={t('emoji')}
-                  title={t('emoji')}
-                  aria-expanded={emojiPickerOpen}
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={iconButtonClass}
+                    aria-label={t('composerAttachMenu')}
+                    title={attachButtonTitle}
+                    aria-expanded={attachMenuOpen}
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  side={isMobile ? 'top' : 'bottom'}
+                  className="z-[100] min-w-[200px]"
+                  onKeyDownCapture={handleAttachMenuContentEnter}
                 >
-                  <Smile className="h-4 w-4" />
-                </button>
-              </HumanChatPanelEmojiPicker>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachImage());
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerAttachImage')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachVideo());
+                    }}
+                  >
+                    <Video className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerAttachVideo')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachFile());
+                    }}
+                  >
+                    <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerAttachFile')}</span>
+                  </DropdownMenuItem>
+                  <ComposerAttachGoogleDriveMenuItem
+                    disabled={!canAttachDrafts}
+                    onPickerOpen={() => {
+                      setAttachMenuOpen(false);
+                      setAttachError(null);
+                    }}
+                    onError={() =>
+                      setAttachError(t('composerAttachGoogleDriveError'))
+                    }
+                    onFilesPicked={(files) => {
+                      setAttachError(null);
+                      pushDrafts(files, 'file');
+                    }}
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
               <button
                 type="button"
-                disabled={!atMentionInteractable}
+                className={cn(iconButtonClass, 'cursor-not-allowed opacity-50')}
+                aria-label={t('composerAttachMenu')}
+                title={attachButtonTitle}
+                aria-disabled="true"
+                disabled
+              >
+                <Plus className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+            <HumanChatPanelEmojiPicker
+              modal={false}
+              open={emojiPickerOpen}
+              onOpenChange={setEmojiPickerOpen}
+              onEmojiSelect={insertEmoji}
+              ariaLabel={t('emojiPickerComposer')}
+              align="end"
+            >
+              <button
+                type="button"
+                disabled={composerLocked}
                 className={cn(
                   iconButtonClass,
-                  !atMentionInteractable && 'cursor-not-allowed opacity-50',
+                  composerLocked && 'cursor-not-allowed opacity-50',
                 )}
-                aria-label={t('mention')}
-                title={mentionButtonTitle}
-                onClick={() => openMentionPicker()}
+                aria-label={t('emoji')}
+                title={t('emoji')}
+                aria-expanded={emojiPickerOpen}
               >
-                <AtSign className="h-4 w-4" aria-hidden />
+                <Smile className="h-4 w-4" />
               </button>
-              {/* Order: audio message (waves) left, dictate (mic) right; stop replaces the slot used */}
-              {isVoiceRecording ? (
-                <button
-                  type="button"
-                  disabled={composerLocked}
-                  className={
-                    composerLocked
-                      ? disabledIconButtonClass
-                      : recordingStopButtonClass
-                  }
-                  aria-label={t('composerStopRecording')}
-                  title={t('composerStopRecording')}
-                  onClick={() => stopVoiceRecording()}
-                >
-                  <ComposerRecOnAirIndicator />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={
-                    composerLocked || isDictating || !onDraftAttachmentsChange
-                  }
-                  className={cn(
-                    iconButtonClass,
-                    (composerLocked ||
-                      !onDraftAttachmentsChange ||
-                      isDictating) &&
-                      'cursor-not-allowed opacity-50',
-                  )}
-                  aria-label={t('composerSendAudioMessage')}
-                  title={t('composerSendAudioMessage')}
-                  onClick={() =>
-                    requestAnimationFrame(
-                      () => void startVoiceRecordingAsAttachment(),
-                    )
-                  }
-                >
-                  <AudioLines className="h-4 w-4" strokeWidth={2} aria-hidden />
-                </button>
+            </HumanChatPanelEmojiPicker>
+            <button
+              type="button"
+              disabled={!atMentionInteractable}
+              className={cn(
+                iconButtonClass,
+                !atMentionInteractable && 'cursor-not-allowed opacity-50',
               )}
-              {isDictating ? (
-                <button
-                  type="button"
-                  disabled={composerLocked}
-                  className={
-                    composerLocked
-                      ? disabledIconButtonClass
-                      : recordingStopButtonClass
-                  }
-                  aria-label={t('composerStopDictation')}
-                  title={t('composerStopDictation')}
-                  onClick={() => stopDictation()}
-                >
-                  <ComposerRecOnAirIndicator />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={composerLocked || isVoiceRecording}
-                  className={cn(
-                    iconButtonClass,
-                    (composerLocked || isVoiceRecording) &&
-                      'cursor-not-allowed opacity-50',
-                  )}
-                  aria-label={t('composerDictateMessage')}
-                  title={t('composerDictateMessage')}
-                  onClick={() => requestAnimationFrame(() => startDictation())}
-                >
-                  <Mic className="h-4 w-4" strokeWidth={2} aria-hidden />
-                </button>
-              )}
-            </div>
+              aria-label={t('mention')}
+              title={mentionButtonTitle}
+              onClick={() => openMentionPicker()}
+            >
+              <AtSign className="h-4 w-4" aria-hidden />
+            </button>
+            {/* Order: audio message (waves) left, dictate (mic) right; stop replaces the slot used */}
+            {isVoiceRecording ? (
+              <button
+                type="button"
+                disabled={composerLocked}
+                className={
+                  composerLocked
+                    ? disabledIconButtonClass
+                    : recordingStopButtonClass
+                }
+                aria-label={t('composerStopRecording')}
+                title={t('composerStopRecording')}
+                onClick={() => stopVoiceRecording()}
+              >
+                <ComposerRecOnAirIndicator />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={
+                  composerLocked || isDictating || !onDraftAttachmentsChange
+                }
+                className={cn(
+                  iconButtonClass,
+                  (composerLocked ||
+                    !onDraftAttachmentsChange ||
+                    isDictating) &&
+                    'cursor-not-allowed opacity-50',
+                )}
+                aria-label={t('composerSendAudioMessage')}
+                title={t('composerSendAudioMessage')}
+                onClick={() =>
+                  requestAnimationFrame(
+                    () => void startVoiceRecordingAsAttachment(),
+                  )
+                }
+              >
+                <AudioLines className="h-4 w-4" strokeWidth={2} aria-hidden />
+              </button>
+            )}
+            {isDictating ? (
+              <button
+                type="button"
+                disabled={composerLocked}
+                className={
+                  composerLocked
+                    ? disabledIconButtonClass
+                    : recordingStopButtonClass
+                }
+                aria-label={t('composerStopDictation')}
+                title={t('composerStopDictation')}
+                onClick={() => stopDictation()}
+              >
+                <ComposerRecOnAirIndicator />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={composerLocked || isVoiceRecording}
+                className={cn(
+                  iconButtonClass,
+                  (composerLocked || isVoiceRecording) &&
+                    'cursor-not-allowed opacity-50',
+                )}
+                aria-label={t('composerDictateMessage')}
+                title={t('composerDictateMessage')}
+                onClick={() => requestAnimationFrame(() => startDictation())}
+              >
+                <Mic className="h-4 w-4" strokeWidth={2} aria-hidden />
+              </button>
+            )}
             <button
               type="button"
               onClick={sendMessage}
               disabled={!canSend}
               className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
+                composerControlClass,
+                'ml-auto transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 canSend
-                  ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
+                  ? 'text-foreground hover:bg-foreground/5'
                   : 'cursor-not-allowed text-muted-foreground/50',
               )}
               aria-label={t('sendButton')}

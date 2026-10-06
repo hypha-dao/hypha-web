@@ -15,16 +15,15 @@ import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
-import {
-  PRIORITY_LEFT_ACCENT_BAR_CLASS,
-  priorityLeftBorderClass,
-  statusColorDotClass,
-} from '../utils/signal-priority-styles';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -105,14 +104,7 @@ export function SignalTaskCard({
     metaParts.push({
       key: 'status',
       node: (
-        <span className="inline-flex min-w-0 items-center gap-1">
-          <span
-            className={cn(
-              'h-1.5 w-1.5 shrink-0 rounded-full',
-              statusColorDotClass(status.color),
-            )}
-            aria-hidden
-          />
+        <span className="inline-flex min-w-0 items-center">
           <span className="truncate">{status.name}</span>
         </span>
       ),
@@ -160,110 +152,131 @@ export function SignalTaskCard({
       }
       className={cn(
         'craft-card-interactive group relative flex flex-col',
+        !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
         className,
       )}
     >
-      <div
-        className={cn(
-          PRIORITY_LEFT_ACCENT_BAR_CLASS,
-          priorityLeftBorderClass(signal.priority),
-        )}
-        title={priorityLabel}
-        aria-label={priorityLabel}
-      />
-
-      <div className="relative flex flex-1 flex-col gap-2 pl-3.5 pr-3 py-3">
-        {/* Floats above the card so the title can use its full width. Each
-            control carries its own backdrop, keeping an empty cluster
-            invisible. */}
-        <div className="absolute right-1.5 top-1.5 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-          <SignalDescriptionButton
-            title={signal.title}
-            description={signal.description}
-            className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
-          />
-          {refresh ? (
+      <div className="flex flex-1 flex-col px-3 py-3">
+        {/* Own row above the title. Collapsed until hover, focus, or selection
+            so the buttons never paint over the type. */}
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-150 ease-out',
+            'group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr] [@media(hover:none)]:grid-rows-[1fr]',
+            isActive ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
             <div
-              className="flex shrink-0 items-center"
-              onClick={stopCardActivation}
-              onKeyDown={stopCardActivation}
+              className={cn(
+                'flex items-center justify-end gap-1 pb-2 transition-opacity duration-150',
+                'group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
+                isActive ? 'opacity-100' : 'opacity-0',
+              )}
             >
-              <SignalCardActions
-                signal={signal}
-                refresh={refresh}
-                className="shrink-0 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+              <SignalDescriptionButton
+                title={signal.title}
+                description={signal.description}
+                className="rounded-none border border-border/70 bg-background-2 shadow-none"
               />
+              {refresh ? (
+                <div
+                  className="flex shrink-0 items-center"
+                  onClick={stopCardActivation}
+                  onKeyDown={stopCardActivation}
+                >
+                  <SignalCardActions
+                    signal={signal}
+                    refresh={refresh}
+                    className="shrink-0 rounded-none border border-border/70 bg-background-2 shadow-none"
+                  />
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-1">
-          <p
-            className="line-clamp-3 text-2 font-medium leading-snug tracking-tight text-foreground [@media(hover:none)]:pr-14"
-            title={signal.title}
-          >
-            {signal.title}
-          </p>
-
-          {metaParts.length > 0 ? (
-            <p className="flex min-w-0 items-center text-1 text-muted-foreground">
-              {metaParts.map((part, index) => (
-                <React.Fragment key={part.key}>
-                  {index > 0 ? (
-                    <span className="mx-1.5 shrink-0 text-border" aria-hidden>
-                      ·
-                    </span>
-                  ) : null}
-                  {part.node}
-                </React.Fragment>
-              ))}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <SignalUpvoteControl
-              slug={signal.slug}
-              upvotes={signal.upvotes}
-              refresh={refresh}
-              disabled={Boolean(signal.archived)}
-            />
-            {hasValidDue ? (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-normal',
-                  isOverdue
-                    ? 'border-error-7/50 bg-transparent text-error-11'
-                    : 'border-border/60 bg-transparent text-muted-foreground',
-                )}
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <span
+            className={cn(
+              PRIORITY_DOT_MARK_CLASS,
+              'mt-1.5',
+              priorityDotClass(signal.priority),
+            )}
+            title={priorityLabel}
+            aria-label={priorityLabel}
+          />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 self-stretch">
+            <div className="flex min-w-0 flex-col gap-1">
+              <p
+                className="line-clamp-3 text-2 font-medium leading-snug tracking-tight text-foreground"
+                title={signal.title}
               >
-                <CalendarDays className="h-3 w-3 shrink-0" aria-hidden />
-                {intlFormat.dateTime(dueDate, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            ) : null}
-            {showBoard && board ? (
-              <Badge
-                colorVariant="neutral"
-                variant="outline"
-                className="max-w-[6.5rem] truncate border-border/60 bg-transparent text-[10px] font-normal text-muted-foreground shadow-none"
-              >
-                {board.name}
-              </Badge>
-            ) : null}
-            <SignalTagBadges tags={signal.tags} maxVisible={2} />
-            {messageCount > 0 ? (
-              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                <MessageSquare className="h-3 w-3" aria-hidden />
-                {messageCount}
-              </span>
-            ) : null}
+                {signal.title}
+              </p>
+
+              {metaParts.length > 0 ? (
+                <p className="flex min-w-0 items-center text-1 text-muted-foreground">
+                  {metaParts.map((part, index) => (
+                    <React.Fragment key={part.key}>
+                      {index > 0 ? (
+                        <span
+                          className="mx-1.5 shrink-0 text-border"
+                          aria-hidden
+                        >
+                          ·
+                        </span>
+                      ) : null}
+                      {part.node}
+                    </React.Fragment>
+                  ))}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <SignalUpvoteControl
+                  slug={signal.slug}
+                  upvotes={signal.upvotes}
+                  refresh={refresh}
+                  disabled={Boolean(signal.archived)}
+                />
+                {hasValidDue ? (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 text-[11px] font-normal',
+                      isOverdue ? 'text-error-11' : 'text-muted-foreground',
+                    )}
+                  >
+                    <CalendarDays className="h-3 w-3 shrink-0" aria-hidden />
+                    {intlFormat.dateTime(dueDate, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                ) : null}
+                {showBoard && board ? (
+                  <Badge
+                    colorVariant="neutral"
+                    variant="outline"
+                    className="max-w-[6.5rem] truncate rounded-none border-border/60 bg-transparent text-[10px] font-normal text-muted-foreground shadow-none"
+                  >
+                    {board.name}
+                  </Badge>
+                ) : null}
+                <SignalTagBadges tags={signal.tags} maxVisible={2} />
+                {messageCount > 0 ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <MessageSquare className="h-3 w-3" aria-hidden />
+                    {messageCount}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       </div>

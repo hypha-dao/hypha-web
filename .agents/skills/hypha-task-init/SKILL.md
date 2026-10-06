@@ -7,28 +7,37 @@ description: "Scaffold an SDD ticket workspace when starting a new unit of work.
 
 Scaffold a new SDD ticket workspace at the start of a unit of work. Creates the ticket folder and seed artifacts in hypha-context, logs it to the activity log.
 
+## Path resolution
+
+Resolve these once from `.hypha-context.local/pointers.md` (this developer's machine-specific paths).
+Never hardcode a person's folder or assume a directory layout.
+
+- `{hypha_context_root}` ← `hypha_context_root` (fallback: `../hypha-context`)
+- `{member_progress}` ← `member_progress` (fallback: `{hypha_context_root}/progress/members/<developer>`, where `<developer>` is `developer` in `{hypha_context_root}/AGENTS.local.md`; if it can't be determined, ask — never use another member's folder)
+- `{platform_progress}` ← `platform_progress` (fallback: `{hypha_context_root}/progress/platform`)
+
 ## Dual-repo context
 
 | Repo | Role |
 |------|------|
-| `../hypha-context` | Ticket artifacts are created here |
+| `{hypha_context_root}` | Ticket artifacts are created here |
 | `hypha-web` (this repo) | Code changes happen here |
 | `.hypha-context.local/` (this repo) | Satellite — activated at Phase B kickoff |
 
 ## Steps
 
 ### 1. Sync context
-Ensure `../hypha-context` is current. Offer to pull if behind origin.
+Ensure `{hypha_context_root}` is current. Offer to pull if behind origin.
 
 ### 2. Load developer config
-Read `../hypha-context/progress/members/gerroza/AGENTS.local.md`.
+Read `{member_progress}/AGENTS.local.md`.
 
 ### 3. Read the GitHub issue (board soft-step — gated)
 
 If the developer's general `AGENTS.local.md` has `github.enabled: true`, use the `hypha-board`
 skill: fetch the issue with `gh issue view <number> --repo hypha-dao/hypha-web` to ground the
 spec. If no issue exists yet and the work belongs on the board, *offer* to create one (correct
-`type(scope):` title, labels per `../hypha-context/planning/issue-guidelines.md`, add to project
+`type(scope):` title, labels per `{hypha_context_root}/planning/issue-guidelines.md`, add to project
 #14, set Priority/Target date) — state the proposed write and wait for a yes before creating.
 Skip this step silently if `github.enabled` is absent or false.
 
@@ -53,11 +62,11 @@ Skip this step silently if `github.enabled` is absent or false.
 | `.local/` | heavy/private working material (gitignored) |
 
 ### 6. Scaffold the folder
-Create `../hypha-context/progress/members/gerroza/tickets/<issue#>-<slug>/` with the triggered artifacts (spec.md always; others per above). Add a dated entry to the activity log.
+Create `{member_progress}/tickets/<issue#>-<slug>/` with the triggered artifacts (spec.md always; others per above). Add a dated entry to the activity log.
 
 ### 7. State mode and begin Phase A
 State the review mode and decision posture from the config. Draft `spec.md` and close with 3–5 targeted callouts (most debatable last).
 
 ---
 
-**Canonical procedure:** `../hypha-context/workflow/task-init.md`
+**Canonical procedure:** `{hypha_context_root}/workflow/task-init.md`

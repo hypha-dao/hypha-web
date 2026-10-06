@@ -16,6 +16,7 @@
   "exports": {
     "./client": "./src/client.ts",
     "./server": "./src/server.ts",
+    "./ingest": "./src/ingest/index.ts",
     "./template": "./src/template/index.ts"
   }
 }

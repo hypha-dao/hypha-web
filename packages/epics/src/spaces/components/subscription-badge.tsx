@@ -127,15 +127,15 @@ export function SubscriptionBadge({
   /** Hero plate (dark imagery): white/light text, transparent fill; renew uses space-accent border */
   const heroBannerClassByStatus: Record<NonNullable<typeof status>, string> = {
     active:
-      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-white hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-white',
+      '!rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !border-white/55 !text-white hover:!border-white/80 hover:!bg-transparent hover:!text-white',
     activeFreeTrial:
-      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-white hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-white',
+      '!rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !border-white/55 !text-white hover:!border-white/80 hover:!bg-transparent hover:!text-white',
     activeFreeTrialExpiring:
-      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-white hover:!bg-transparent hover:!text-white',
+      'space-accent-outline !rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !text-white hover:!bg-transparent hover:!text-white',
     activate:
-      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-white hover:!bg-transparent hover:!text-white',
+      'space-accent-outline !rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !text-white hover:!bg-transparent hover:!text-white',
     expired:
-      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-red-50 hover:!border-red-300/90 hover:!bg-transparent hover:!text-red-50',
+      '!rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !border-red-400/90 !text-red-50 hover:!border-red-300/90 hover:!bg-transparent hover:!text-red-50',
   };
 
   /** Sticky chrome / light surfaces: dark text, transparent fill, keep status outline */
@@ -144,15 +144,15 @@ export function SubscriptionBadge({
     string
   > = {
     active:
-      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-foreground hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-foreground',
+      '!rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !border-success-8/80 !text-foreground hover:!border-success-9 hover:!bg-transparent hover:!text-foreground',
     activeFreeTrial:
-      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-foreground hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-foreground',
+      '!rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !border-success-8/80 !text-foreground hover:!border-success-9 hover:!bg-transparent hover:!text-foreground',
     activeFreeTrialExpiring:
-      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-foreground hover:!bg-transparent hover:!text-foreground',
+      'space-accent-outline !rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !text-foreground hover:!bg-transparent hover:!text-foreground',
     activate:
-      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-foreground hover:!bg-transparent hover:!text-foreground',
+      'space-accent-outline !rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !text-foreground hover:!bg-transparent hover:!text-foreground',
     expired:
-      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-foreground hover:!border-red-300/90 hover:!bg-transparent hover:!text-foreground',
+      '!rounded-none !bg-transparent shadow-none !ring-0 hover:!ring-0 !border-error-8/80 !text-foreground hover:!border-error-9 hover:!bg-transparent hover:!text-foreground',
   };
 
   const { colorVariant } = variantMap[status];

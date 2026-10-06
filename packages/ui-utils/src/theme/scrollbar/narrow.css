@@ -1,71 +1,26 @@
-@import '../colors/neutral.css';
-
 /**
- * Lower-contrast thumb; stronger on hover / when `.narrow-scrollbar-scrolling` is toggled during scroll.
+ * Square hairline thumb: the quiet border, a thin mix of ink into the page.
+ * Dark mode uses the same token, which mixes light into the #040404 ground.
+ * Hover and active scroll stay on that token so the thumb does not become a gray pill.
  */
 .narrow-scrollbar::-webkit-scrollbar {
-  @apply w-1 h-1;
+  width: 1px;
+  height: 1px;
 }
 
 .narrow-scrollbar::-webkit-scrollbar-track {
-  @apply rounded-full bg-transparent;
+  background-color: transparent;
+  border-radius: 0;
 }
 
 .narrow-scrollbar::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background-color: color-mix(
-    in oklch,
-    var(--color-neutral-8) 28%,
-    transparent
-  );
-}
-
-.narrow-scrollbar:hover::-webkit-scrollbar-thumb,
-.narrow-scrollbar:focus-within::-webkit-scrollbar-thumb {
-  background-color: color-mix(
-    in oklch,
-    var(--color-neutral-9) 55%,
-    transparent
-  );
-}
-
-.narrow-scrollbar.narrow-scrollbar-scrolling::-webkit-scrollbar-thumb {
-  background-color: color-mix(
-    in oklch,
-    var(--color-neutral-9) 50%,
-    transparent
-  );
-}
-
-.narrow-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(
-    in oklch,
-    var(--color-neutral-10) 58%,
-    transparent
-  );
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .narrow-scrollbar::-webkit-scrollbar-thumb {
-    transition: background-color 0.2s ease-out;
-  }
+  border-radius: 0;
+  background-color: var(--border);
 }
 
 @-moz-document url-prefix() {
   .narrow-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklch, var(--color-neutral-8) 30%, transparent)
-      transparent;
-  }
-
-  .narrow-scrollbar:hover,
-  .narrow-scrollbar:focus-within {
-    scrollbar-color: color-mix(in oklch, var(--color-neutral-9) 55%, transparent)
-      transparent;
-  }
-
-  .narrow-scrollbar.narrow-scrollbar-scrolling {
-    scrollbar-color: color-mix(in oklch, var(--color-neutral-9) 50%, transparent)
-      transparent;
+    scrollbar-color: var(--border) transparent;
   }
 }

@@ -12,10 +12,6 @@ import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
 import { SignalDropPlaceholder } from './signal-drop-placeholder';
 import {
-  statusColorDotClass,
-  statusColumnTopBorderClass,
-} from '../utils/signal-priority-styles';
-import {
   getSignalDragSlug,
   handleColumnDragOver,
   isDragLeaveColumn,
@@ -139,7 +135,7 @@ export function SignalSwimlaneView({
   );
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col">
       {lanes.map((lane) => {
         const statusMap = byBoardAndStatus.get(lane.slug)!;
         const laneCount = [...statusMap.values()].reduce(
@@ -151,11 +147,8 @@ export function SignalSwimlaneView({
         const laneBodyId = `signal-swimlane-${lane.slug}`;
 
         return (
-          <section
-            key={lane.slug}
-            className="w-full overflow-hidden rounded-lg border border-border/50 bg-card"
-          >
-            <header className="flex shrink-0 items-stretch gap-3 border-b border-border/40 bg-gradient-to-r from-muted/35 via-muted/15 to-transparent">
+          <section key={lane.slug} className="w-full border-b border-border/50">
+            <header className="flex shrink-0 items-stretch">
               <button
                 type="button"
                 aria-expanded={!isCollapsed}
@@ -164,10 +157,9 @@ export function SignalSwimlaneView({
                   isCollapsed ? t('signalLaneExpand') : t('signalLaneCollapse')
                 }
                 onClick={() => toggleLane(lane.slug)}
-                className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-9/40"
+                className="flex min-w-0 flex-1 items-center justify-between gap-3 px-1 py-3 text-left transition-colors hover:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
               >
                 <span className="flex min-w-0 items-center gap-2.5">
-                  <span className="h-8 w-1 shrink-0 rounded-full bg-accent-9" />
                   <ChevronRight
                     className={cn(
                       'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150',
@@ -183,7 +175,7 @@ export function SignalSwimlaneView({
                     {lane.board.name}
                   </span>
                 </span>
-                <span className="shrink-0 rounded-md bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-[11px] font-medium tabular-nums text-muted-foreground">
                   {laneCount}
                 </span>
               </button>
@@ -193,7 +185,7 @@ export function SignalSwimlaneView({
               <div
                 id={laneBodyId}
                 className={cn(
-                  'flex w-full min-h-0 gap-3 overflow-x-auto p-3',
+                  'flex w-full min-h-0 overflow-x-auto',
                   SIGNAL_SWIMLANE_STATUS_ROW_CLASS,
                 )}
               >
@@ -213,27 +205,15 @@ export function SignalSwimlaneView({
                       key={dropKey}
                       className={cn(
                         SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
-                        'min-h-[6rem] rounded-lg border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
-                        statusColumnTopBorderClass(status.color),
-                        isDropTarget
-                          ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
-                          : 'border-border/40',
+                        'min-h-[6rem] border-r border-border/50 last:border-r-0',
+                        isDropTarget && 'bg-foreground/[0.03]',
                       )}
                       onWheel={handleSignalColumnShellWheel}
                     >
-                      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/30 px-2.5 py-2">
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <span
-                            className={cn(
-                              'h-1.5 w-1.5 shrink-0 rounded-full',
-                              statusColorDotClass(status.color),
-                            )}
-                            aria-hidden
-                          />
-                          <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            {status.name}
-                          </span>
-                        </div>
+                      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 px-2.5 py-2">
+                        <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {status.name}
+                        </span>
                         <span className="text-[11px] tabular-nums text-muted-foreground">
                           {columnSignals.length}
                         </span>
@@ -359,14 +339,7 @@ export function SignalSwimlaneView({
                         ) : null}
 
                         {columnSignals.length === 0 && !showPlaceholder ? (
-                          <div
-                            className={cn(
-                              'flex flex-1 items-center justify-center rounded-lg border border-dashed px-2 py-4 text-center text-[11px] text-muted-foreground',
-                              isDropTarget
-                                ? 'border-accent-8/50 bg-accent-2/20'
-                                : 'border-border/40',
-                            )}
-                          >
+                          <div className="flex flex-1 items-center justify-center px-2 py-4 text-center text-[11px] text-muted-foreground">
                             {t('signalColumnEmpty')}
                           </div>
                         ) : null}

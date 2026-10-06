@@ -726,16 +726,24 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     }
   });
 
-  it('call toolbar uses fixed 28px buttons so icons do not overlap on mobile', () => {
+  it('call toolbar keeps 36px buttons and the tab row shares width evenly', () => {
     const toolbar = readCommonSource(
       'human-chat-panel/human-chat-panel-call-toolbar.tsx',
     );
-    expect(toolbar).toContain('h-[28px] w-[28px]');
+    expect(toolbar).toContain('h-[36px] w-[36px]');
     expect(toolbar).toContain('flex-none');
+    expect(toolbar).toContain('className="contents"');
+    expect(toolbar).not.toContain('size-9');
     expect(toolbar).not.toMatch(/className=\{cn\([^)]*stroke-2/);
     const tabs = readCommonSource('human-chat-panel/human-chat-panel-tabs.tsx');
-    expect(tabs).toContain('min-w-max');
-    expect(tabs).toContain('z-10');
+    expect(tabs).toContain('justify-between');
+    expect(tabs).toContain('w-full');
+    expect(tabs).toContain('whitespace-nowrap');
+    expect(tabs).toContain('font-sans');
+    expect(tabs).toContain(
+      'h-[var(--secondary-chrome-actions-row-height,66px)]',
+    );
+    expect(tabs).not.toContain('size-9');
   });
 
   it('reaction i18n keys exist in all locales', () => {

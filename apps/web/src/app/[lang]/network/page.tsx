@@ -1,17 +1,19 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import {
-  extractUniqueCategoryGroups,
   getAllSpaces,
+  getNetworkGrowth,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
   SPACE_ORDERS,
   Space,
   SpaceOrder,
+  extractUniqueCategoryGroups,
+  type NetworkGrowth,
 } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
-import { redirect } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -22,25 +24,6 @@ type PageProps = {
     view?: string;
   }>;
 };
-
-function buildNetworkPageSearchParams({
-  query,
-  category,
-  order,
-  view,
-}: {
-  query?: string;
-  category?: string;
-  order?: string;
-  view?: string;
-}): URLSearchParams {
-  const params = new URLSearchParams();
-  if (query?.trim()) params.set('query', query.trim());
-  if (category) params.set('category', category);
-  if (order) params.set('order', order);
-  if (view) params.set('view', view);
-  return params;
-}
 
 export default async function Index(props: PageProps) {
   const params = await props.params;
@@ -55,29 +38,27 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
   const enableNetworkMap = await getEnableNetworkMapAsync();
-  const viewParam = searchParams?.view;
-
-  if (enableNetworkMap && viewParam !== 'list' && viewParam !== 'map') {
-    const nextParams = buildNetworkPageSearchParams({
-      query,
-      category: searchParams?.category,
-      order: orderRaw,
-      view: 'list',
-    });
-    const queryString = nextParams.toString();
-    redirect(`/${lang}/network${queryString ? `?${queryString}` : ''}`);
-  }
 
   let spaces: Space[] = [];
-  try {
-    spaces = await getAllSpaces({
+  let networkGrowth: NetworkGrowth | null = null;
+  const [spacesResult, growthResult] = await Promise.all([
+    getAllSpaces({
       search: query?.trim() || undefined,
       parentOnly: false,
       omitArchived: true,
-    });
-  } catch (err) {
-    console.error('Failed to fetch spaces:', err);
-  }
+    }).catch((error: unknown) => {
+      console.error('Failed to fetch spaces:', error);
+      return [] as Space[];
+    }),
+    enableNetworkMap
+      ? getNetworkGrowth({ db }).catch((error: unknown) => {
+          console.error('Failed to load network growth:', error);
+          return null;
+        })
+      : Promise.resolve(null),
+  ]);
+  spaces = spacesResult;
+  networkGrowth = growthResult;
 
   const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
@@ -96,6 +77,7 @@ export default async function Index(props: PageProps) {
         order={order}
         uniqueCategoryGroups={uniqueCategoryGroups}
         enableNetworkMap={enableNetworkMap}
+        networkGrowth={networkGrowth}
       />
     </Container>
   );

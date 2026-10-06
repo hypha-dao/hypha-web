@@ -31,6 +31,8 @@ interface IOSwaps {
   // Admin functions
   function init(address manager) external;
 
+  function setManager(address newManager) external;
+
   function freeze(uint64 tokenId, string calldata symbol) external;
 
   function unfreeze(uint64 tokenId, string calldata symbol) external;
@@ -49,9 +51,38 @@ interface IOSwaps {
     uint64[] calldata tokenIdList
   ) external view returns (PoolStatus[] memory);
 
-  function assets(uint64 tokenId) external view returns (AssetInfo memory);
+  /**
+   * @dev Use getAsset rather than the auto-generated `assets` mapping getter.
+   * The mapping getter returns AssetInfo's members as flat values, which is not
+   * ABI-compatible with a struct return once the struct contains dynamic types.
+   */
+  function getAsset(uint64 tokenId) external view returns (AssetInfo memory);
 
-  function config() external view returns (Config memory);
+  function getTokenIds() external view returns (uint64[] memory);
+
+  function getAssetCount() external view returns (uint256);
+
+  function liquidityTokens(uint64 tokenId) external view returns (address);
+
+  function tokenIdByAddress(address token) external view returns (uint64);
+
+  function config()
+    external
+    view
+    returns (address manager, bytes32 chainId, uint64 lastTokenId);
+
+  // Quotes
+  function quoteExactIn(
+    uint64 inTokenId,
+    uint64 outTokenId,
+    uint256 inAmount
+  ) external view returns (uint256 outAmount);
+
+  function quoteExactOut(
+    uint64 inTokenId,
+    uint64 outTokenId,
+    uint256 outAmount
+  ) external view returns (uint256 inAmount);
 
   // Liquidity
   function addLiquidity(
@@ -72,7 +103,8 @@ interface IOSwaps {
     address recipient,
     uint64 inTokenId,
     uint64 outTokenId,
-    uint256 inAmount
+    uint256 inAmount,
+    uint256 minOutAmount
   ) external returns (uint256 outAmount);
 
   function swapExactOut(
@@ -84,12 +116,23 @@ interface IOSwaps {
   ) external returns (uint256 inAmount);
 
   // Events
+  event ManagerUpdated(
+    address indexed previousManager,
+    address indexed newManager
+  );
   event AssetCreated(
     uint64 indexed tokenId,
     address indexed tokenContract,
     string symbol
   );
+  event AssetForgotten(uint64 indexed tokenId, address indexed tokenContract);
   event AssetFrozen(uint64 indexed tokenId, bool frozen);
+  event WeightUpdated(
+    uint64 indexed tokenId,
+    uint256 previousWeight,
+    uint256 newWeight,
+    bool priceChanged
+  );
   event LiquidityAdded(
     address indexed account,
     uint64 indexed tokenId,
@@ -105,7 +148,7 @@ interface IOSwaps {
   event TokenSwapped(
     address indexed sender,
     address indexed recipient,
-    uint64 inTokenId,
+    uint64 indexed inTokenId,
     uint64 outTokenId,
     uint256 inAmount,
     uint256 outAmount
