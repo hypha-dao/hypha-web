@@ -23,10 +23,24 @@ export const clientSummaryColumns = {
   createdAt: integrationClients.createdAt,
 };
 
+/** Built field by field so the digest can never leak into a response. */
 export function toClientSummary(
   row: Omit<IntegrationClientSummary, 'scopes'> & { scopes: string[] },
 ): IntegrationClientSummary {
-  return { ...row, scopes: row.scopes as IntegrationClientScope[] };
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    contactEmail: row.contactEmail,
+    description: row.description,
+    status: row.status,
+    scopes: row.scopes as IntegrationClientScope[],
+    allowedOrigins: row.allowedOrigins,
+    keyPrefix: row.keyPrefix,
+    approvedAt: row.approvedAt,
+    revokedAt: row.revokedAt,
+    createdAt: row.createdAt,
+  };
 }
 
 /**

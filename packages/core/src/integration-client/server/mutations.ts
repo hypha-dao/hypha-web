@@ -12,7 +12,7 @@ import {
   slugifyClientName,
   type RequestIntegrationClientInput,
 } from '../validation';
-import { clientSummaryColumns, toClientSummary } from './queries';
+import { toClientSummary } from './queries';
 
 export type IssuedClientKey = {
   client: IntegrationClientSummary;
@@ -41,7 +41,7 @@ export const requestIntegrationClient = async (
       scopes: data.scopes,
       allowedOrigins: data.allowedOrigins,
     })
-    .returning(clientSummaryColumns);
+    .returning();
 
   if (!row) throw new Error('Failed to persist integration client request');
   return toClientSummary(row);
@@ -75,7 +75,7 @@ export const approveIntegrationClient = async (
         eq(integrationClients.status, 'pending'),
       ),
     )
-    .returning(clientSummaryColumns);
+    .returning();
 
   return row ? { client: toClientSummary(row), plaintext } : null;
 };
@@ -99,7 +99,7 @@ export const rotateIntegrationClientKey = async (
         eq(integrationClients.status, 'approved'),
       ),
     )
-    .returning(clientSummaryColumns);
+    .returning();
 
   return row ? { client: toClientSummary(row), plaintext } : null;
 };
@@ -123,6 +123,6 @@ export const revokeIntegrationClient = async (
         inArray(integrationClients.status, ['pending', 'approved']),
       ),
     )
-    .returning({ id: integrationClients.id });
+    .returning();
   return rows.length > 0;
 };
