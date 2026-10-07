@@ -42,6 +42,8 @@ export {
 } from './coherence/validation';
 export * from './space-api-key/server';
 export * from './space-api-key';
+export * from './integration-client/server';
+export * from './integration-client';
 export * from './schedule/server';
 export * from './schedule';
 export * from './pipeline/server';
