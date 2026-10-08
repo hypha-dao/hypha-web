@@ -1,4 +1,5 @@
 import {
+  integer,
   jsonb,
   pgTable,
   serial,
@@ -9,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
+import { people } from './people';
 
 export const INTEGRATION_CLIENT_STATUSES = [
   'pending',
@@ -50,6 +52,11 @@ export const integrationClients = pgTable(
     /** Leading segment of the plaintext key; null until approved. */
     keyPrefix: varchar('key_prefix', { length: 16 }),
     keyHash: text('key_hash'),
+    /** Hypha person who filed the request (requests require a logged-in user). */
+    requestedByPersonId: integer('requested_by_person_id').references(
+      () => people.id,
+      { onDelete: 'set null' },
+    ),
     approvedAt: timestamp('approved_at', { withTimezone: true }),
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
     ...commonDateFields,

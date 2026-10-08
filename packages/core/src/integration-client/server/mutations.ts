@@ -1,5 +1,5 @@
 import { integrationClients } from '@hypha-platform/storage-postgres';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray } from 'drizzle-orm';
 
 import type { DbConfig } from '../../server';
 import { generateClientKey } from '../generate-client-key';
@@ -14,6 +14,16 @@ import {
 } from '../validation';
 import { toClientSummary } from './queries';
 
+/** Pending requests one person may have open at a time. */
+export const MAX_PENDING_REQUESTS_PER_PERSON = 3;
+
+export class TooManyPendingRequestsError extends Error {
+  constructor() {
+    super('Too many pending integration client requests for this person');
+    this.name = 'TooManyPendingRequestsError';
+  }
+}
+
 export type IssuedClientKey = {
   client: IntegrationClientSummary;
   /** Returned exactly once — it cannot be recovered from the database. */
@@ -22,14 +32,30 @@ export type IssuedClientKey = {
 
 /**
  * A new client starts `pending` with no key; ops approve it separately.
+ * Requests require a logged-in Hypha person, capped at
+ * `MAX_PENDING_REQUESTS_PER_PERSON` open requests.
  * Throws a unique violation on `integration_clients_slug_unique` when the
  * derived slug is taken — callers map that to a 409.
  */
 export const requestIntegrationClient = async (
   input: RequestIntegrationClientInput,
+  { requestedByPersonId }: { requestedByPersonId: number },
   { db }: DbConfig,
 ): Promise<IntegrationClientSummary> => {
   const data = schemaRequestIntegrationClient.parse(input);
+
+  const [pending] = await db
+    .select({ value: count() })
+    .from(integrationClients)
+    .where(
+      and(
+        eq(integrationClients.requestedByPersonId, requestedByPersonId),
+        eq(integrationClients.status, 'pending'),
+      ),
+    );
+  if ((pending?.value ?? 0) >= MAX_PENDING_REQUESTS_PER_PERSON) {
+    throw new TooManyPendingRequestsError();
+  }
 
   const [row] = await db
     .insert(integrationClients)
@@ -40,6 +66,7 @@ export const requestIntegrationClient = async (
       description: data.description ?? null,
       scopes: data.scopes,
       allowedOrigins: data.allowedOrigins,
+      requestedByPersonId,
     })
     .returning();
 

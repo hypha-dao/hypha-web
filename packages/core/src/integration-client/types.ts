@@ -15,6 +15,7 @@ export type IntegrationClientSummary = {
   scopes: IntegrationClientScope[];
   allowedOrigins: string[];
   keyPrefix: string | null;
+  requestedByPersonId: number | null;
   approvedAt: Date | null;
   revokedAt: Date | null;
   createdAt: Date;

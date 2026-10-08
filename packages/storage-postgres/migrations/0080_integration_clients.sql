@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "integration_clients" (
 	"allowed_origins" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"key_prefix" varchar(16),
 	"key_hash" text,
+	"requested_by_person_id" integer REFERENCES "people"("id") ON DELETE set null,
 	"approved_at" timestamp with time zone,
 	"revoked_at" timestamp with time zone,
 	"created_at" timestamp DEFAULT now() NOT NULL,
