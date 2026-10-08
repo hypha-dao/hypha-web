@@ -368,7 +368,7 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
               : null}
 
             {filteredOptions.length === 0 &&
-            filteredLeadingOptions.length === 0 ? (
+            (isMulti || filteredLeadingOptions.length === 0) ? (
               <p className="px-2 py-3 text-2 text-neutral-11">
                 {emptyListMessage}
               </p>

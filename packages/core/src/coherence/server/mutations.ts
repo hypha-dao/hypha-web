@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { DatabaseInstance } from '../../server';
+import { DatabaseInstance, TransactionalDatabase } from '../../server';
 import {
   CreateCoherenceInput,
   PatchCoherenceTaskInput,
@@ -394,7 +394,7 @@ export const mergeCoherenceTags = async (
     fromTag,
     toTag,
   }: { spaceId: number; fromTag: string; toTag: string },
-  { db }: { db: DatabaseInstance },
+  { db }: { db: TransactionalDatabase },
 ) => {
   const fromKey = normalizeTagKey(fromTag);
   const toKey = normalizeTagKey(toTag);

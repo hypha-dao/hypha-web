@@ -1167,11 +1167,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return result;
       });
       createRoomInFlightRef.current.set(slug, pending);
-      void pending.finally(() => {
+      const clearInFlight = () => {
         if (createRoomInFlightRef.current.get(slug) === pending) {
           createRoomInFlightRef.current.delete(slug);
         }
-      });
+      };
+      pending.then(clearInFlight, clearInFlight);
       return pending;
     },
     [],
