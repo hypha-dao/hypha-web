@@ -312,6 +312,7 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
             {!isMulti && unassignedLabel ? (
               <button
                 type="button"
+                aria-pressed={!props.value}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3"
                 onPointerDown={(event) =>
                   onOptionPointerDown(event, () => selectSingle(null))
@@ -340,6 +341,7 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
                     <button
                       key={option.value}
                       type="button"
+                      aria-pressed={isSelected}
                       className={cn(
                         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3',
                         isSelected && 'bg-accent-3/60',

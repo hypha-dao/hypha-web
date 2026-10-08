@@ -1151,6 +1151,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  const createRoomInFlightRef = useRef(
+    new Map<string, Promise<{ roomId: string }>>(),
+  );
+  const createdRoomBySlugRef = useRef(new Map<string, string>());
+
+  const getOrCreateCoherenceRoom = useCallback(
+    (slug: string, title: string) => {
+      const created = createdRoomBySlugRef.current.get(slug);
+      if (created) return Promise.resolve({ roomId: created });
+      const inFlight = createRoomInFlightRef.current.get(slug);
+      if (inFlight) return inFlight;
+      const pending = matrixRef.current.createRoom(title).then((result) => {
+        createdRoomBySlugRef.current.set(slug, result.roomId);
+        return result;
+      });
+      createRoomInFlightRef.current.set(slug, pending);
+      void pending.finally(() => {
+        if (createRoomInFlightRef.current.get(slug) === pending) {
+          createRoomInFlightRef.current.delete(slug);
+        }
+      });
+      return pending;
+    },
+    [],
+  );
 
   useEffect(() => {
     setMentionDisplayOverride({});
@@ -2991,7 +3016,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
           // only runs for the person actually submitting the create form.
           const { roomId: newRoomId } = await promiseWithTimeout(
-            matrixRef.current.createRoom(coherenceTitle || 'Conversation'),
+            getOrCreateCoherenceRoom(
+              coherenceSlug,
+              coherenceTitle || 'Conversation',
+            ),
             COHERENCE_ROOM_JOIN_TIMEOUT_MS,
             'Coherence room create timed out',
           );
@@ -3118,6 +3146,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAvailable,
     isMatrixAuthenticated,
     blockSpaceChatForMembership,
+    getOrCreateCoherenceRoom,
     syncRoomMessages,
   ]);
 
