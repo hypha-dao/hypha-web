@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildChatContent } from '../content';
 import type { ChatNotificationEvent, Recipient } from '../../../core/types';
@@ -69,5 +69,61 @@ describe('buildChatContent — chat.mention', () => {
     expect(push.headings.en).toContain('mentioned you');
     expect(email.subject).toContain('mentioned you');
     expect(email.body).toContain('Alice');
+  });
+});
+
+describe('buildChatContent — chat.mention email template', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('uses the OneSignal template when EMAIL_TEMPLATE_CHAT_MENTION is set', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', ' tpl-123 ');
+    const result = buildChatContent(makeEvent('chat.mention'), recipient);
+    expect(result.content.email).toEqual({
+      kind: 'template',
+      templateId: 'tpl-123',
+      customData: {
+        actor_name: 'Alice',
+        context_label: 'Hypha Energy',
+        message_preview: 'Hello team, standup in 5',
+        url: 'https://app.hypha.earth/en/dho/hypha-energy?msg=%24abc123',
+      },
+    });
+  });
+
+  it('sends raw (unescaped) text and falls back to "chat" without a space title', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      data: {
+        ...recipient.data,
+        messagePreview: '<b>hi</b> & bye',
+        spaceTitle: undefined,
+      },
+    });
+    const email = result.content.email as {
+      customData: Record<string, string>;
+    };
+    expect(email.customData.message_preview).toBe('<b>hi</b> & bye');
+    expect(email.customData.context_label).toBe('chat');
+  });
+
+  it('neutralises non-http(s) urls before they reach the template', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      data: { ...recipient.data, url: 'javascript:alert(1)' },
+    });
+    const email = result.content.email as {
+      customData: Record<string, string>;
+    };
+    expect(email.customData.url).toBe('#');
+  });
+
+  it('falls back to plain HTML when the env var is unset', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', '');
+    const result = buildChatContent(makeEvent('chat.mention'), recipient);
+    expect(result.content.email).toMatchObject({ kind: 'plain' });
   });
 });
