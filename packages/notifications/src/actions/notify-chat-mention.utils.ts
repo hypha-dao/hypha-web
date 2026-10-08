@@ -11,7 +11,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function getSafeMentionHref(url: string): string {
+export function getSafeMentionHref(url: string): string {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
