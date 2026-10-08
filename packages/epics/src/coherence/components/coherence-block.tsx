@@ -33,15 +33,15 @@ import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-m
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
-import useSWR from 'swr';
-import type { Person } from '@hypha-platform/core/client';
+import type { UseMembers } from '../../spaces/hooks/types';
 
-type CoherenceBlockProps = {
+export type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
   priorityFilter?: 'all' | 'critical' | 'high' | 'medium' | 'low';
   humanChatEnabled?: boolean;
+  useMembers: UseMembers;
 };
 
 type PriorityFilterTabItem = {
@@ -111,6 +111,7 @@ export function CoherenceBlock({
   order,
   priorityFilter = 'all',
   humanChatEnabled = false,
+  useMembers,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -160,17 +161,11 @@ export function CoherenceBlock({
   const { person } = useMe();
   const { jwt } = useJwt();
   const { acknowledgeCoherenceAssignment } = useCoherenceMutationsWeb2Rsc(jwt);
-  const { data: membersResponse } = useSWR<{ persons?: { data?: Person[] } }>(
-    spaceSlug
-      ? `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/members?pageSize=100`
-      : null,
-    async (url: string) => {
-      const response = await fetch(url);
-      if (!response.ok) return { persons: { data: [] } };
-      return response.json();
-    },
-  );
-  const spaceMembers = membersResponse?.persons?.data ?? [];
+  const { persons: spaceMembersResult } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
+  const spaceMembers = spaceMembersResult?.data ?? [];
   const boardFilters = React.useMemo(
     () => parseSignalBoardFilters(searchParams),
     [searchParams],

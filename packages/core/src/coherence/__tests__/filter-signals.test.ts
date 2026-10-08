@@ -99,6 +99,12 @@ describe('filterSignals', () => {
 });
 
 describe('signal filter query', () => {
+  it('round-trips a specific assignee id through the URL', () => {
+    const written = writeSignalBoardFilters('', { assignee: 42 });
+    expect(written.get('assignee')).toBe('42');
+    expect(parseSignalBoardFilters(written)).toEqual({ assignee: 42 });
+  });
+
   it('round-trips the design-case filters through the URL', () => {
     const written = writeSignalBoardFilters('', {
       assignee: 'me',

@@ -3772,6 +3772,8 @@
     "filterAssignee": "Ansvarlig",
     "filterAssigneeAny": "Hvem som helst",
     "filterAssignedToMe": "Tildelt meg",
+    "filterAssigneeSearch": "Søk etter medlemmer",
+    "filterAssigneeEmpty": "Ingen medlemmer funnet",
     "filterDeadline": "Frist",
     "filterDeadlineAny": "Alle frister",
     "filterDeadline_before": "Før",

@@ -3199,6 +3199,8 @@
     "filterAssignee": "Asignado",
     "filterAssigneeAny": "Cualquiera",
     "filterAssignedToMe": "Asignado a mí",
+    "filterAssigneeSearch": "Buscar miembros",
+    "filterAssigneeEmpty": "No se encontraron miembros",
     "filterDeadline": "Fecha límite",
     "filterDeadlineAny": "Cualquier fecha",
     "filterDeadline_before": "Antes de",

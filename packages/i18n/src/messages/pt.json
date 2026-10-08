@@ -3197,6 +3197,8 @@
     "filterAssignee": "Responsável",
     "filterAssigneeAny": "Qualquer pessoa",
     "filterAssignedToMe": "Atribuído a mim",
+    "filterAssigneeSearch": "Pesquisar membros",
+    "filterAssigneeEmpty": "Nenhum membro encontrado",
     "filterDeadline": "Prazo",
     "filterDeadlineAny": "Qualquer prazo",
     "filterDeadline_before": "Antes de",

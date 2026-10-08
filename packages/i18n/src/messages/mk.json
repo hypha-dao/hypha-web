@@ -3754,6 +3754,8 @@
     "filterAssignee": "Одговорен",
     "filterAssigneeAny": "Било кој",
     "filterAssignedToMe": "Доделено мене",
+    "filterAssigneeSearch": "Пребарај членови",
+    "filterAssigneeEmpty": "Нема пронајдени членови",
     "filterDeadline": "Рок",
     "filterDeadlineAny": "Било кој рок",
     "filterDeadline_before": "Пред",

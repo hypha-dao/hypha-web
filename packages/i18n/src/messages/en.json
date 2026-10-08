@@ -3775,6 +3775,8 @@
     "filterAssignee": "Assignee",
     "filterAssigneeAny": "Anyone",
     "filterAssignedToMe": "Assigned to me",
+    "filterAssigneeSearch": "Search members",
+    "filterAssigneeEmpty": "No members found",
     "filterDeadline": "Deadline",
     "filterDeadlineAny": "Any deadline",
     "filterDeadline_before": "Before",

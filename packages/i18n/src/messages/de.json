@@ -3771,6 +3771,8 @@
     "filterAssignee": "Zuständig",
     "filterAssigneeAny": "Alle",
     "filterAssignedToMe": "Mir zugewiesen",
+    "filterAssigneeSearch": "Mitglieder suchen",
+    "filterAssigneeEmpty": "Keine Mitglieder gefunden",
     "filterDeadline": "Frist",
     "filterDeadlineAny": "Jede Frist",
     "filterDeadline_before": "Vor",

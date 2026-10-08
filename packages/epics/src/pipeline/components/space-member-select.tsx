@@ -82,6 +82,12 @@ function MemberAvatar({
   );
 }
 
+export type SpaceMemberSelectLeadingOption = {
+  value: string;
+  label: string;
+  searchText?: string;
+};
+
 type SpaceMemberSelectBaseProps = {
   members: Person[];
   placeholder?: string;
@@ -92,6 +98,8 @@ type SpaceMemberSelectBaseProps = {
   className?: string;
   /** Use true outside dialogs; false inside modal dialogs. */
   popoverModal?: boolean;
+  /** Extra choices shown above the roster (e.g. "Assigned to me"). */
+  leadingOptions?: SpaceMemberSelectLeadingOption[];
 };
 
 type SpaceMemberSingleSelectProps = SpaceMemberSelectBaseProps & {
@@ -122,6 +130,7 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
     disabled = false,
     className,
     popoverModal = true,
+    leadingOptions = [],
   } = props;
 
   const isMulti = props.mode === 'multi';
@@ -133,6 +142,14 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
     [members, unknownLabel],
   );
 
+  const filteredLeadingOptions = React.useMemo(() => {
+    if (!searchTerm.trim()) return leadingOptions;
+    const term = searchTerm.toLowerCase();
+    return leadingOptions.filter((option) =>
+      (option.searchText ?? option.label).toLowerCase().includes(term),
+    );
+  }, [leadingOptions, searchTerm]);
+
   const filteredOptions = React.useMemo(() => {
     if (!searchTerm.trim()) return options;
     const term = searchTerm.toLowerCase();
@@ -140,6 +157,10 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
   }, [options, searchTerm]);
 
   const selectedIds = isMulti ? props.value : props.value ? [props.value] : [];
+
+  const selectedLeadingOption = !isMulti
+    ? leadingOptions.find((option) => option.value === props.value)
+    : undefined;
 
   const selectedOptions = options.filter((option) =>
     selectedIds.includes(option.value),
@@ -240,6 +261,8 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
               ) : (
                 <span className="truncate text-neutral-11">{placeholder}</span>
               )
+            ) : selectedLeadingOption ? (
+              <span className="truncate">{selectedLeadingOption.label}</span>
             ) : selectedOptions[0] ? (
               <div className="flex min-w-0 items-center gap-1.5">
                 <MemberAvatar
@@ -310,7 +333,40 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
               </button>
             ) : null}
 
-            {filteredOptions.length === 0 ? (
+            {!isMulti
+              ? filteredLeadingOptions.map((option) => {
+                  const isSelected = props.value === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3',
+                        isSelected && 'bg-accent-3/60',
+                      )}
+                      onPointerDown={(event) =>
+                        onOptionPointerDown(event, () =>
+                          selectSingle(option.value),
+                        )
+                      }
+                      onKeyDown={(event) =>
+                        onOptionKeyDown(event, () => selectSingle(option.value))
+                      }
+                    >
+                      <span className="flex-1 truncate">{option.label}</span>
+                      <Check
+                        className={cn(
+                          'ml-auto size-3.5',
+                          isSelected ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </button>
+                  );
+                })
+              : null}
+
+            {filteredOptions.length === 0 &&
+            filteredLeadingOptions.length === 0 ? (
               <p className="px-2 py-3 text-2 text-neutral-11">
                 {emptyListMessage}
               </p>

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@hypha-platform/ui';
 import { X } from 'lucide-react';
+import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 
 type SignalFilterBarProps = {
   filters: SignalBoardFilters;
@@ -61,7 +62,7 @@ export function SignalFilterBar({
 
   const assigneeValue =
     filters.assignee == null || filters.assignee === 'any'
-      ? 'any'
+      ? null
       : String(filters.assignee);
 
   return (
@@ -87,37 +88,36 @@ export function SignalFilterBar({
           <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             {t('filterAssignee')}
           </span>
-          <Select
+          <SpaceMemberSelect
+            className="h-10 w-[14rem]"
+            members={members}
             value={assigneeValue}
-            onValueChange={(value) =>
+            onChange={(id) => {
+              if (id == null) {
+                onChange({ ...filters, assignee: undefined });
+                return;
+              }
+              if (id === 'me') {
+                onChange({ ...filters, assignee: 'me' });
+                return;
+              }
+              const parsed = Number.parseInt(id, 10);
               onChange({
                 ...filters,
                 assignee:
-                  value === 'any'
-                    ? undefined
-                    : value === 'me'
-                    ? 'me'
-                    : Number.parseInt(value, 10),
-              })
+                  Number.isInteger(parsed) && parsed > 0 ? parsed : undefined,
+              });
+            }}
+            unassignedLabel={t('filterAssigneeAny')}
+            leadingOptions={
+              currentPersonId
+                ? [{ value: 'me', label: t('filterAssignedToMe') }]
+                : []
             }
-          >
-            <SelectTrigger className="w-[11rem]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">{t('filterAssigneeAny')}</SelectItem>
-              {currentPersonId ? (
-                <SelectItem value="me">{t('filterAssignedToMe')}</SelectItem>
-              ) : null}
-              {members.map((member) => (
-                <SelectItem key={member.id} value={String(member.id)}>
-                  {[member.name, member.surname].filter(Boolean).join(' ') ||
-                    member.nickname ||
-                    t('signalAssigneeUnknown')}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            searchPlaceholder={t('filterAssigneeSearch')}
+            emptyListMessage={t('filterAssigneeEmpty')}
+            unknownLabel={t('signalAssigneeUnknown')}
+          />
         </label>
         <label className="flex min-w-[10rem] flex-col gap-1">
           <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -255,22 +255,6 @@ export function SignalFilterBar({
             }
           />
         </div>
-        {currentPersonId ? (
-          <Button
-            type="button"
-            variant={filters.assignee === 'me' ? 'default' : 'outline'}
-            colorVariant={filters.assignee === 'me' ? 'accent' : 'neutral'}
-            size="sm"
-            onClick={() =>
-              onChange({
-                ...filters,
-                assignee: filters.assignee === 'me' ? undefined : 'me',
-              })
-            }
-          >
-            {t('filterAssignedToMe')}
-          </Button>
-        ) : null}
       </div>
       {active ? (
         <div className="flex items-center justify-between gap-2 rounded-none border border-border/70 bg-muted/30 px-3 py-1.5 text-sm">

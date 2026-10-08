@@ -3773,6 +3773,8 @@
     "filterAssignee": "Toegewezen",
     "filterAssigneeAny": "Iedereen",
     "filterAssignedToMe": "Aan mij toegewezen",
+    "filterAssigneeSearch": "Leden zoeken",
+    "filterAssigneeEmpty": "Geen leden gevonden",
     "filterDeadline": "Deadline",
     "filterDeadlineAny": "Elke deadline",
     "filterDeadline_before": "Voor",
