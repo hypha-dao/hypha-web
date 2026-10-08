@@ -27,7 +27,16 @@ function isDeadlineMode(value: string): value is SignalDeadlineFilterMode {
 }
 
 function isIsoDate(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number.parseInt(value.slice(0, 4), 10);
+  const month = Number.parseInt(value.slice(5, 7), 10);
+  const day = Number.parseInt(value.slice(8, 10), 10);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
 function parseAssignee(raw: string | null): SignalAssigneeFilter | undefined {
@@ -75,8 +84,8 @@ export function parseSignalBoardFilters(
   const title = params.get(SIGNAL_FILTER_QUERY_KEYS.title)?.trim() || undefined;
   const assignee = parseAssignee(params.get(SIGNAL_FILTER_QUERY_KEYS.assignee));
   const deadline = parseDeadline(params);
-  const tags = (params.get(SIGNAL_FILTER_QUERY_KEYS.tags) ?? '')
-    .split(',')
+  const tags = params
+    .getAll(SIGNAL_FILTER_QUERY_KEYS.tags)
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
 
@@ -125,8 +134,8 @@ export function writeSignalBoardFilters(
   const tags = (filters.tags ?? [])
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
-  if (tags.length > 0) {
-    next.set(SIGNAL_FILTER_QUERY_KEYS.tags, tags.join(','));
+  for (const tag of tags) {
+    next.append(SIGNAL_FILTER_QUERY_KEYS.tags, tag);
   }
 
   return next;

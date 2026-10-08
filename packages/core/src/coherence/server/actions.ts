@@ -9,7 +9,7 @@ import {
   UpdateCoherenceSignalBySlugInput,
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { coherences, memberships } from '@hypha-platform/storage-postgres';
 import {
   acknowledgeCoherenceAssignment,
@@ -147,9 +147,22 @@ async function notifyNewMentions({
   const slugs = newlyMentionedSlugs(previousDescription, nextDescription);
   if (slugs.length === 0) return;
   const people = await findPersonsBySlug({ slugs }, { db });
-  const recipientPersonIds = people
+  const candidateIds = people
     .map((person) => person.id)
     .filter((id) => id !== actorPersonId);
+  if (candidateIds.length === 0) return;
+  const memberRows = await db
+    .select({ personId: memberships.personId })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.spaceId, spaceId),
+        inArray(memberships.personId, candidateIds),
+      ),
+    );
+  const memberIds = new Set(memberRows.map((row) => row.personId));
+  const recipientPersonIds = candidateIds.filter((id) => memberIds.has(id));
+  if (recipientPersonIds.length === 0) return;
   await notifySignalKind('mentioned', {
     spaceId,
     recipientPersonIds,

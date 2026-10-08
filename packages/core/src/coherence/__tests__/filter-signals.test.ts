@@ -114,12 +114,31 @@ describe('signal filter query', () => {
     expect(written.get('assignee')).toBe('me');
     expect(written.get('deadline')).toBe('before');
     expect(written.get('deadlineTo')).toBe(friday);
-    expect(written.get('tags')).toBe('memorandum');
+    expect(written.getAll('tags')).toEqual(['memorandum']);
     expect(parseSignalBoardFilters(written)).toEqual({
       assignee: 'me',
       deadline: { mode: 'before', date: friday },
       tags: ['memorandum'],
     });
+  });
+
+  it('keeps commas inside a tag when the filter is in the URL', () => {
+    const written = writeSignalBoardFilters('', {
+      tags: ['Research, Policy', 'brief'],
+    });
+    expect(written.getAll('tags')).toEqual(['Research, Policy', 'brief']);
+    expect(parseSignalBoardFilters(written)).toEqual({
+      tags: ['Research, Policy', 'brief'],
+    });
+  });
+
+  it('rejects impossible calendar dates in deadline filters', () => {
+    expect(
+      parseSignalBoardFilters('deadline=before&deadlineTo=2026-02-30'),
+    ).toEqual({ deadline: { mode: 'before' } });
+    expect(
+      parseSignalBoardFilters('deadline=before&deadlineTo=2026-02-28'),
+    ).toEqual({ deadline: { mode: 'before', date: '2026-02-28' } });
   });
 
   it('reports when any filter is active', () => {

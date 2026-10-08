@@ -1237,21 +1237,23 @@ export const CreateSignalForm = ({
                             markdown={descriptionValue}
                             translation={translateEditor}
                             placeholder={t('descriptionPlaceholder')}
-                            mentionCandidates={spaceMembers.data.map(
-                              (member) => ({
-                                id: member.slug ?? String(member.id),
-                                label:
-                                  [member.name, member.surname]
-                                    .filter(Boolean)
-                                    .join(' ') ||
-                                  member.nickname ||
-                                  member.slug ||
-                                  String(member.id),
-                                href: personProfileHref(
-                                  member.slug ?? String(member.id),
-                                  lang,
-                                ),
-                              }),
+                            mentionCandidates={spaceMembers.data.flatMap(
+                              (member) => {
+                                const slug = member.slug?.trim();
+                                if (!slug) return [];
+                                return [
+                                  {
+                                    id: slug,
+                                    label:
+                                      [member.name, member.surname]
+                                        .filter(Boolean)
+                                        .join(' ') ||
+                                      member.nickname ||
+                                      slug,
+                                    href: personProfileHref(slug, lang),
+                                  },
+                                ];
+                              },
                             )}
                             onChange={(markdown) => field.onChange(markdown)}
                           />

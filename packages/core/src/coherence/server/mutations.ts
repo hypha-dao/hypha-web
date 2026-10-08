@@ -405,27 +405,29 @@ export const mergeCoherenceTags = async (
     return { updated: 0 };
   }
 
-  const rows = await db
-    .select({ id: coherences.id, tags: coherences.tags })
-    .from(coherences)
-    .where(eq(coherences.spaceId, spaceId));
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: coherences.id, tags: coherences.tags })
+      .from(coherences)
+      .where(eq(coherences.spaceId, spaceId));
 
-  let updated = 0;
-  for (const row of rows) {
-    const current = Array.isArray(row.tags) ? row.tags : [];
-    const next = mergeTagInList(current, fromTag, toTag);
-    const changed =
-      next.length !== current.length ||
-      next.some((tag, index) => tag !== current[index]);
-    if (!changed) continue;
-    await db
-      .update(coherences)
-      .set({ tags: next, updatedAt: new Date() })
-      .where(eq(coherences.id, row.id));
-    updated += 1;
-  }
+    let updated = 0;
+    for (const row of rows) {
+      const current = Array.isArray(row.tags) ? row.tags : [];
+      const next = mergeTagInList(current, fromTag, toTag);
+      const changed =
+        next.length !== current.length ||
+        next.some((tag, index) => tag !== current[index]);
+      if (!changed) continue;
+      await tx
+        .update(coherences)
+        .set({ tags: next, updatedAt: new Date() })
+        .where(eq(coherences.id, row.id));
+      updated += 1;
+    }
 
-  return { updated };
+    return { updated };
+  });
 };
 
 export const acknowledgeCoherenceAssignment = async (

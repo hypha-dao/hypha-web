@@ -17,6 +17,9 @@ export async function GET(request: Request) {
 
   try {
     const result = await processSignalDeadlineAlerts({}, { db });
+    if (result.failures > 0) {
+      return NextResponse.json({ ok: false, ...result }, { status: 500 });
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     console.error('[cron.signal-deadline-alerts] failed', { error });

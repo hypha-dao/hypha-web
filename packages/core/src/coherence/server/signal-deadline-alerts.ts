@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 import { coherences } from '@hypha-platform/storage-postgres';
 import { DatabaseInstance } from '../../server';
 import {
@@ -13,6 +13,7 @@ import { getSignalLifecycleNotifier } from './signal-assigned-notifier';
 export type SignalDeadlineAlertResult = {
   reminders: number;
   overdue: number;
+  failures: number;
 };
 
 export async function processSignalDeadlineAlerts(
@@ -21,7 +22,7 @@ export async function processSignalDeadlineAlerts(
 ): Promise<SignalDeadlineAlertResult> {
   const notifier = getSignalLifecycleNotifier();
   if (!notifier) {
-    return { reminders: 0, overdue: 0 };
+    return { reminders: 0, overdue: 0, failures: 0 };
   }
 
   const rows = await db
@@ -36,11 +37,24 @@ export async function processSignalDeadlineAlerts(
       archived: coherences.archived,
     })
     .from(coherences)
-    .where(and(eq(coherences.archived, false), isNotNull(coherences.dueAt)))
+    .where(
+      and(
+        eq(coherences.archived, false),
+        isNotNull(coherences.dueAt),
+        sql`jsonb_array_length(coalesce(${coherences.assigneeIds}, '[]'::jsonb)) > 0`,
+        sql`(
+          ${coherences.deadlineNotifyState}->>'dueAtIso' is null
+          or ${coherences.deadlineNotifyState}->>'reminderSentAt' is null
+          or ${coherences.deadlineNotifyState}->>'overdueSentAt' is null
+        )`,
+      ),
+    )
+    .orderBy(asc(coherences.id))
     .limit(Math.max(1, Math.min(limit, 5000)));
 
   let reminders = 0;
   let overdue = 0;
+  let failures = 0;
 
   for (const row of rows) {
     if (row.spaceId == null || !row.slug || !row.dueAt) continue;
@@ -75,6 +89,7 @@ export async function processSignalDeadlineAlerts(
       if (sendOverdue) overdue += 1;
       else reminders += 1;
     } catch (error) {
+      failures += 1;
       console.error('[signal-deadline-alerts] notify failed', {
         slug: row.slug,
         error,
@@ -82,5 +97,5 @@ export async function processSignalDeadlineAlerts(
     }
   }
 
-  return { reminders, overdue };
+  return { reminders, overdue, failures };
 }
