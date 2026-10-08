@@ -2,12 +2,10 @@
 
 import { FC } from 'react';
 import React from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Button, ErrorAlert } from '@hypha-platform/ui';
+import { ErrorAlert } from '@hypha-platform/ui';
 import {
   Coherence,
   DEFAULT_SIGNAL_WORKFLOW,
@@ -245,7 +243,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
+    <div className="relative flex w-full flex-col gap-4 pb-24">
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           {onBoardFiltersChange ? (
@@ -258,18 +256,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             />
           ) : null}
         </div>
-        {canMutate ? (
-          <div className="flex shrink-0 items-center pt-0 sm:pt-6">
-            <Button asChild colorVariant="accent" className="whitespace-nowrap">
-              <Link href={createSignalHref}>
-                <PlusIcon />
-                {t('newSignal')}
-              </Link>
-            </Button>
-          </div>
-        ) : null}
       </div>
-      {canMutate ? <SignalCreateFab href={createSignalHref} /> : null}
 
       {provisioningNoticeLines.length > 0 ? (
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
@@ -330,6 +317,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           )}
         </div>
       )}
+      {canMutate ? <SignalCreateFab href={createSignalHref} /> : null}
     </div>
   );
 };
