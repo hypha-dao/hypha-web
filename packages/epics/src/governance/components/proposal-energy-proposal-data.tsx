@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonByWeb3Address } from '../hooks/use-person-by-web3-address';
 
-const HIDDEN_KEYS = new Set(['contractMethod']);
+const HIDDEN_KEYS = new Set(['contractMethod', 'emsObjective', 'countryIso']);
 
 const ADDRESS_RE = /0x[a-fA-F0-9]{40}/;
 const ADDRESS_RE_G = /0x[a-fA-F0-9]{40}/g;
@@ -38,6 +38,18 @@ const PROPOSAL_DATA_KEY_MAP: Record<string, string> = {
   pricePerKwh: 'pricePerKwh',
   owners: 'owners',
   name: 'name',
+  communitySetup: 'communitySetup',
+  energyManagementObjective: 'energyManagementObjective',
+  emsObjectiveIndex: 'emsObjectiveIndex',
+  onChainPurposeIndex: 'onChainPurposeIndex',
+  address: 'address',
+  city: 'city',
+  region: 'region',
+  postalCode: 'postalCode',
+  country: 'country',
+  timeZone: 'timeZone',
+  latitude: 'latitude',
+  longitude: 'longitude',
 };
 
 const humanizeKey = (key: string): string =>

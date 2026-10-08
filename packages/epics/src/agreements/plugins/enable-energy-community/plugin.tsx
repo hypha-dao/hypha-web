@@ -24,6 +24,7 @@ import {
   ChevronRightIcon,
 } from '@radix-ui/react-icons';
 import { useFieldArray, useFormContext } from 'react-hook-form';
+import { EnergyCommunityProfileFields } from './community-profile-fields';
 import {
   EnergyOptimizationFields,
   EnergySocialAllocationFields,
@@ -84,6 +85,7 @@ export const EnableEnergyCommunityPlugin = ({
 
   return (
     <div className="flex flex-col gap-4">
+      <EnergyCommunityProfileFields />
       <EnergyOptimizationFields />
 
       {/* Section — Members */}

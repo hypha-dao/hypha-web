@@ -8,7 +8,12 @@ import { z } from 'zod';
 import {
   buildDeployCommunityTransaction,
   createAgreementFiles,
+  ENERGY_COMMUNITY_COUNTRIES,
+  ENERGY_COMMUNITY_TIME_ZONES,
   ENERGY_PPA_CHAIN_ID,
+  EMS_OBJECTIVE_INDEX,
+  isEmsObjective,
+  onChainPurposeIndex,
   percentageStringToBigInt,
   schemaCreateAgreementForm,
   type EnergyDeployCommunityInput,
@@ -156,8 +161,84 @@ const createEnableEnergyCommunitySchema = (t: (key: string) => string) => {
       }
     });
 
+  const optionalLocationText = (max: number) =>
+    z.string().trim().max(max, t('validation.locationFieldTooLong')).optional();
+
+  const energyCommunityProfile = z
+    .object({
+      emsObjective: z.string().trim(),
+      address: z
+        .string()
+        .trim()
+        .min(1, t('validation.addressRequired'))
+        .max(500, t('validation.addressTooLong')),
+      city: optionalLocationText(200),
+      region: optionalLocationText(200),
+      postalCode: optionalLocationText(20),
+      countryIso: z.string().trim().optional(),
+      timeZone: z.string().trim(),
+      latitude: z.number().nullable().optional(),
+      longitude: z.number().nullable().optional(),
+    })
+    .superRefine((value, ctx) => {
+      if (!isEmsObjective(value.emsObjective)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['emsObjective'],
+          message: t('validation.emsObjectiveRequired'),
+        });
+      }
+      if (
+        !(ENERGY_COMMUNITY_TIME_ZONES as readonly string[]).includes(
+          value.timeZone,
+        )
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['timeZone'],
+          message: t('validation.timeZoneRequired'),
+        });
+      }
+      const country = value.countryIso?.trim().toUpperCase() ?? '';
+      if (
+        country &&
+        country !== 'UNSET' &&
+        !ENERGY_COMMUNITY_COUNTRIES.some((entry) => entry.iso === country)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['countryIso'],
+          message: t('validation.countryInvalid'),
+        });
+      }
+      const latitude = value.latitude ?? null;
+      const longitude = value.longitude ?? null;
+      if ((latitude === null) !== (longitude === null)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['latitude'],
+          message: t('validation.coordinatesPair'),
+        });
+      }
+      if (latitude !== null && (latitude < -90 || latitude > 90)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['latitude'],
+          message: t('validation.latitudeRange'),
+        });
+      }
+      if (longitude !== null && (longitude < -180 || longitude > 180)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['longitude'],
+          message: t('validation.longitudeRange'),
+        });
+      }
+    });
+
   return schemaCreateAgreementForm.extend(createAgreementFiles).extend({
     energyOptimization: createEnergyOptimizationSchema(t),
+    energyCommunityProfile,
     energyCommunityActivation: z
       .object({
         admin: z
@@ -279,6 +360,7 @@ export const CreateEnableEnergyCommunityForm = ({
   backUrl,
   members = [],
   spaces = [],
+  initialLocation,
 }: {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
@@ -286,6 +368,11 @@ export const CreateEnableEnergyCommunityForm = ({
   backUrl?: string;
   members?: Person[];
   spaces?: Space[];
+  initialLocation?: {
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
@@ -350,6 +437,17 @@ export const CreateEnableEnergyCommunityForm = ({
       defaultValues={
         {
           energyOptimization: ENERGY_OPTIMIZATION_DEFAULTS,
+          energyCommunityProfile: {
+            emsObjective: 'MaximumSelfConsumption',
+            address: initialLocation?.address?.trim() ?? '',
+            city: '',
+            region: '',
+            postalCode: '',
+            countryIso: '',
+            timeZone: 'UTC',
+            latitude: initialLocation?.latitude ?? null,
+            longitude: initialLocation?.longitude ?? null,
+          },
           energyCommunityActivation: {
             admin: isValidExecutor ? (executorAddress as string) : '',
             stablecoin: BASE_USDC,
@@ -396,8 +494,51 @@ export const CreateEnableEnergyCommunityForm = ({
                 percent: (optimization.socialVariableBps / 100).toFixed(2),
               });
 
+        const profile = values.energyCommunityProfile;
+        const country = ENERGY_COMMUNITY_COUNTRIES.find(
+          (entry) => entry.iso === profile.countryIso?.trim().toUpperCase(),
+        );
+        const objectiveLabelKey =
+          profile.emsObjective === 'LowestPrice'
+            ? 'plugins.enableCommunity.emsLowestPrice'
+            : profile.emsObjective === 'BatteryFirst'
+            ? 'plugins.enableCommunity.emsBatteryFirst'
+            : 'plugins.enableCommunity.emsSelfConsumption';
+
         return {
           contractMethod: 'deployCommunity',
+          communitySetup: {
+            energyManagementObjective: t(objectiveLabelKey),
+            emsObjective: profile.emsObjective,
+            emsObjectiveIndex: isEmsObjective(profile.emsObjective)
+              ? EMS_OBJECTIVE_INDEX[profile.emsObjective]
+              : null,
+            onChainPurposeIndex: onChainPurposeIndex(
+              values.energyOptimization.purpose1,
+            ),
+            address: profile.address.trim(),
+            city: profile.city?.trim() || null,
+            region: profile.region?.trim() || null,
+            postalCode: profile.postalCode?.trim() || null,
+            country:
+              country?.iso === 'AT'
+                ? t('plugins.enableCommunity.countryAT')
+                : country?.iso === 'FR'
+                ? t('plugins.enableCommunity.countryFR')
+                : country?.iso === 'PT'
+                ? t('plugins.enableCommunity.countryPT')
+                : country?.iso === 'ES'
+                ? t('plugins.enableCommunity.countryES')
+                : country?.iso === 'NL'
+                ? t('plugins.enableCommunity.countryNL')
+                : country?.iso === 'NO'
+                ? t('plugins.enableCommunity.countryNO')
+                : null,
+            countryIso: country?.iso ?? null,
+            timeZone: profile.timeZone,
+            latitude: profile.latitude ?? null,
+            longitude: profile.longitude ?? null,
+          },
           optimization: {
             priorities: optimization.purposeRanking.map((purpose) =>
               basePurposeLabel(purpose, (key, values) => t(key, values)),
