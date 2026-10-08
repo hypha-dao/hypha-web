@@ -22,12 +22,16 @@ import { erc20Abi } from 'viem';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import z from 'zod';
+import {
+  assertOnChainSpaceRenewalSupported,
+  type SpaceActivationPaymentToken,
+} from '../../../people/client/web3/space-activation-payment';
 
 const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
 const USDC_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 const chainId = getGovernanceChainId();
 
-type PaymentToken = 'USDC' | 'HYPHA';
+type PaymentToken = SpaceActivationPaymentToken;
 
 interface ActivateInSpacesInput {
   spaceIds: number[];
@@ -55,6 +59,9 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
       if (!client) {
         throw new Error('Smart wallet client not available');
       }
+
+      // See useActivateSpacesMutation — do not encode payForSpaces for EURC.
+      assertOnChainSpaceRenewalSupported(arg.paymentToken);
 
       const duration = await publicClient.readContract(
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),

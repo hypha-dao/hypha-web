@@ -477,7 +477,7 @@
       },
       "activateSpaces": {
         "title": "Spaces aktivieren",
-        "description": "Tragen Sie HYPHA oder USDC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+        "description": "Tragen Sie HYPHA, USDC oder EURC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
       },
       "votingMethod": {
         "title": "Abstimmungsmethode",
@@ -625,7 +625,7 @@
       },
       "activateSpaces": {
         "title": "Spaces aktivieren",
-        "description": "Tragen Sie HYPHA oder USDC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+        "description": "Tragen Sie HYPHA, USDC oder EURC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
       }
     }
   },
@@ -1457,7 +1457,7 @@
       },
       "activateSpaces": {
         "title": "Spaces aktivieren",
-        "description": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen."
+        "description": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA, USDC oder EURC beitragen und so das Hypha-Netzwerk unterstützen."
       },
       "migrateHyphaTokens": {
         "title": "Hypha-Tokens migrieren (Telos → Base)",
@@ -1496,11 +1496,12 @@
     },
     "activateSpaces": {
       "title": "Spaces aktivieren",
-      "contentPrefix": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen. Weitere Details in",
+      "contentPrefix": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA, USDC oder EURC beitragen und so das Hypha-Netzwerk unterstützen. Weitere Details in",
       "contentSuffix": ".",
       "form": {
         "icons": {
           "usdcAlt": "USDC-Icon",
+          "eurcAlt": "EURC-Icon",
           "hyphaAlt": "Hypha-Token-Icon"
         },
         "actions": {
@@ -2079,7 +2080,9 @@
         "payWith": "Bezahlen mit:",
         "totalAmountIn": "Gesamtbetrag in {token}:",
         "paidBy": "Bezahlt von",
-        "paidTo": "Bezahlt an"
+        "paidTo": "Bezahlt an",
+        "eurcNotSupportedOnchain": "EURC kann eine Verlängerung noch nicht on-chain abschließen. Der Subscription-Vertrag akzeptiert nur USDC und HYPHA. Zahlen Sie mit USDC oder HYPHA, oder bitten Sie einen Hypha-Admin, das Abo nach einer EURC-Überweisung zu verlängern.",
+        "eurcRateUnavailable": "Der EUR/USD-Kurs ist nicht verfügbar. Wählen Sie USDC oder HYPHA, oder versuchen Sie es in Kürze erneut."
       },
       "buyHyphaTokens": {
         "purchaseAmount": "Kaufbetrag",

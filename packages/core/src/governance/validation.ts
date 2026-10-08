@@ -936,7 +936,7 @@ export const schemaActivateSpaces = z.object({
   ...createAgreementFiles,
   label: z.literal('Activate Spaces'),
   recipient: z.string(),
-  paymentToken: z.enum(['HYPHA', 'USDC']),
+  paymentToken: z.enum(['HYPHA', 'USDC', 'EURC']),
   spaces: z
     .array(
       z.object({
