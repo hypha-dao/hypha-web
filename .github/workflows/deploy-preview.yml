@@ -55,6 +55,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Assert UploadThing signed-URL patch
+        run: node scripts/assert-uploadthing-signed-url-patch.mjs
+
       - name: Type check
         env:
           NODE_OPTIONS: --max-old-space-size=6144
@@ -109,6 +112,9 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Assert UploadThing signed-URL patch
+        run: node scripts/assert-uploadthing-signed-url-patch.mjs
 
       - name: Get branch name
         if: needs.detect-changes.outputs.has_migrations == 'true'

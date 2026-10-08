@@ -67,6 +67,12 @@ export const fileRouter: FileRouter = {
     .onUploadComplete(({ file }) =>
       console.debug(`Attachment "${file.key}" was successfully uploaded`),
     ),
+  /**
+   * Space header / token icon / crop (`cropped.jpg`) all hit this route.
+   * Ingest PUTs 400 when `x-ut-file-type` is double-encoded (`image%252Fjpeg`).
+   * `@uploadthing/shared@7.1.7` `generateSignedURL` did that; keep the pnpm
+   * patch in `patches/@uploadthing__shared@7.1.7.patch`.
+   */
   imageUploader: f(
     {
       image: {

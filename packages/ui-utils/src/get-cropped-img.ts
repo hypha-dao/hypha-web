@@ -7,6 +7,15 @@ export async function getCroppedImg(
   /** JPEG only — preserve banner detail on upload (default 0.95). */
   outputQuality = 0.95,
 ): Promise<string> {
+  if (
+    !Number.isFinite(crop.width) ||
+    !Number.isFinite(crop.height) ||
+    crop.width < 1 ||
+    crop.height < 1
+  ) {
+    throw new Error('Cropped image area is empty.');
+  }
+
   const image: HTMLImageElement = await new Promise((resolve, reject) => {
     const img = new Image();
     img.src = imageSrc;
