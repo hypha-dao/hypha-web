@@ -13,12 +13,25 @@ import { cn } from '@hypha-platform/ui-utils';
 
 import {
   AiPanelChatBar,
+  OnboardingDiscoveryModeToggle,
+  OnboardingVoiceInterviewBar,
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
+import {
+  loadSpaceDiscoveryMode,
+  saveSpaceDiscoveryMode,
+} from '../../common/ai-panel-discovery-mode';
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import type { OnboardingDiscoveryMode } from '../../common/onboarding-discovery-mode';
+import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
+import { buildSpaceAdvisorVoiceSessionContext } from '../../common/space-voice-session-context';
+import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { celebrate } from './member-home-celebrate';
 import { MemberHomeVote } from './member-home-vote';
+
+/** Reserved discovery-mode key. Home must not share a space's voice preference. */
+const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
 
 type MemberHomeChatProps = {
   lang: Locale;
@@ -50,6 +63,9 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
   const [input, setInput] = useState('');
   const [drafts, setDrafts] = useState<AiPanelDraftAttachment[]>([]);
   const [dismissedError, setDismissedError] = useState(false);
+  const [discoveryMode, setDiscoveryMode] =
+    useState<OnboardingDiscoveryMode>('chat');
+  const [discoveryModeReady, setDiscoveryModeReady] = useState(false);
   const opened = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -78,9 +94,9 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
   const homeMessages = messages as HomeMessage[];
 
   const send = useCallback(
-    async (text: string, hidden = false) => {
+    async (text: string, hidden = false, includeDrafts = true) => {
       const trimmed = text.trim();
-      const files = drafts.map((item) => item.file);
+      const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
       setDismissedError(false);
       clearError();
@@ -115,10 +131,93 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
   );
 
   useEffect(() => {
-    if (opened.current || isAuthLoading || !isAuthenticated) return;
+    setDiscoveryMode(loadSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY));
+    setDiscoveryModeReady(true);
+  }, []);
+
+  const isVoiceInterview = discoveryMode === 'voice_interview';
+
+  const lastAssistantText = useMemo(() => {
+    for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
+      const message = homeMessages[i];
+      if (!message || message.role !== 'assistant') continue;
+      const text = messageText(message);
+      if (text) return text;
+    }
+    return '';
+  }, [homeMessages]);
+
+  const handleVoiceTranscriptSend = useCallback(
+    async (text: string) => {
+      const normalized = text.trim();
+      if (!normalized || isStreaming) return 'skipped' as const;
+      try {
+        await send(normalized, false, false);
+        return 'sent' as const;
+      } catch {
+        return 'failed' as const;
+      }
+    },
+    [isStreaming, send],
+  );
+
+  const recentTranscriptSummary = useMemo(
+    () =>
+      buildRecentTranscriptSummaryFromChatMessages(
+        homeMessages.filter((message) => !message.metadata?.homeArrival),
+      ),
+    [homeMessages],
+  );
+
+  const voiceSessionContext = useMemo(() => {
+    if (!isVoiceInterview) return undefined;
+    const spaceSlug = intelligence.chatSpaceSlug?.trim();
+    if (!spaceSlug) return undefined;
+    return buildSpaceAdvisorVoiceSessionContext({
+      spaceSlug,
+      locale: lang,
+    });
+  }, [intelligence.chatSpaceSlug, isVoiceInterview, lang]);
+
+  const voiceInterview = useOnboardingVoiceDiscovery({
+    enabled: isVoiceInterview && !isAuthLoading && isAuthenticated,
+    isStreaming,
+    lastAssistantText,
+    locale: lang,
+    activeSpaceSlug:
+      intelligence.chatSpaceSlug?.trim() || HOME_VOICE_PREFERENCE_KEY,
+    conversationContext: voiceSessionContext,
+    recentTranscriptSummary,
+    getAccessToken,
+    onStopChat: stop,
+    onSendTranscript: handleVoiceTranscriptSend,
+  });
+
+  const handleDiscoveryModeChange = useCallback(
+    (mode: OnboardingDiscoveryMode) => {
+      if (mode === discoveryMode) return;
+      if (mode === 'chat') {
+        voiceInterview.stopListening();
+        voiceInterview.stopSpeaking();
+      }
+      saveSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY, mode);
+      setDiscoveryMode(mode);
+    },
+    [discoveryMode, voiceInterview.stopListening, voiceInterview.stopSpeaking],
+  );
+
+  useEffect(() => {
+    if (
+      !discoveryModeReady ||
+      opened.current ||
+      isAuthLoading ||
+      !isAuthenticated
+    ) {
+      return;
+    }
     opened.current = true;
     void send(t('homeArrival'), true);
-  }, [isAuthenticated, isAuthLoading, send, t]);
+  }, [discoveryModeReady, isAuthenticated, isAuthLoading, send, t]);
 
   useEffect(() => {
     const node = scroller.current;
@@ -147,10 +246,10 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
   const visibleError = error && !dismissedError;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <div
         ref={scroller}
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6"
+        className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-4 md:px-6"
         aria-label={t('conversation')}
       >
         <div className="mx-auto grid w-full max-w-2xl gap-4">
@@ -246,14 +345,8 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
                   {t('validate')}
                 </Button>
                 <Button asChild variant="outline">
-                  <Link
-                    href={getSignalPath(
-                      lang,
-                      leadSignal.spaceSlug,
-                      leadSignal.targetSlug,
-                    )}
-                  >
-                    {t('viewSignal')}
+                  <Link href={`/${lang}/dho/${leadSignal.spaceSlug}/overview`}>
+                    {t('visitSpace')}
                   </Link>
                 </Button>
               </div>
@@ -297,8 +390,8 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
         </div>
       ) : null}
 
-      <div className="border-t border-border px-3 py-3 md:px-5">
-        <div className="mb-2 flex gap-2 overflow-x-auto">
+      <div className="w-full min-w-0 shrink-0 border-t border-border">
+        <div className="mb-2 flex min-w-0 flex-wrap gap-2 px-3 pt-3 md:px-5">
           {chips.map((chip) => (
             <Button
               key={chip.key}
@@ -306,7 +399,7 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
               variant="outline"
               colorVariant="neutral"
               disabled={isStreaming}
-              className="shrink-0"
+              className="h-auto max-w-full min-w-0 shrink-0 whitespace-normal"
               onClick={() => {
                 void send(chip.ask);
               }}
@@ -315,19 +408,41 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
             </Button>
           ))}
         </div>
-        <AiPanelChatBar
-          value={input}
-          onChange={setInput}
-          onSend={() => {
-            void send(input);
-          }}
-          onStop={() => stop()}
-          isStreaming={isStreaming}
-          draftAttachments={drafts}
-          onDraftAttachmentsChange={setDrafts}
-          placeholder={t('chatPlaceholder')}
-          variant="panel"
-        />
+        <div className="flex justify-center px-3 pb-1 pt-1">
+          <OnboardingDiscoveryModeToggle
+            mode={discoveryMode}
+            disabled={isStreaming}
+            onChange={handleDiscoveryModeChange}
+          />
+        </div>
+        {isVoiceInterview ? (
+          <OnboardingVoiceInterviewBar
+            phase={voiceInterview.phase}
+            liveTranscript={voiceInterview.liveTranscript}
+            voiceError={voiceInterview.voiceError}
+            disabled={isStreaming}
+            isConnecting={voiceInterview.isConnecting}
+            isRealtimeConnected={voiceInterview.isRealtimeConnected}
+            transport={voiceInterview.transport}
+            realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
+            usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
+            onToggleListening={voiceInterview.toggleListening}
+          />
+        ) : (
+          <AiPanelChatBar
+            value={input}
+            onChange={setInput}
+            onSend={() => {
+              void send(input);
+            }}
+            onStop={() => stop()}
+            isStreaming={isStreaming}
+            draftAttachments={drafts}
+            onDraftAttachmentsChange={setDrafts}
+            placeholder={t('chatPlaceholder')}
+            variant="panel"
+          />
+        )}
       </div>
     </div>
   );
