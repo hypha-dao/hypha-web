@@ -32,12 +32,14 @@ function buildMentionEmail({
   messagePreview,
   url,
   spaceTitle,
+  notificationSettingsUrl,
 }: {
   heading: string;
   actorDisplayName: string;
   messagePreview: string;
   url: string;
   spaceTitle?: string;
+  notificationSettingsUrl?: string;
 }): NotificationEmailContent {
   const templateId = process.env.EMAIL_TEMPLATE_CHAT_MENTION?.trim();
   if (templateId) {
@@ -49,6 +51,10 @@ function buildMentionEmail({
         context_label: spaceTitle?.trim() || 'chat',
         message_preview: messagePreview,
         url: getSafeMentionHref(url),
+        // Omitted when unset so the template's `| default:` fallback applies.
+        ...(notificationSettingsUrl
+          ? { notification_settings_url: notificationSettingsUrl }
+          : {}),
       },
     };
   }
@@ -61,6 +67,7 @@ function buildMentionEmail({
       messagePreview,
       url,
       contextLabel: spaceTitle,
+      notificationSettingsUrl,
     }),
   };
 }
@@ -75,6 +82,9 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
     (recipient.data?.messagePreview as string | undefined) ?? '';
   const url = recipient.data?.url as string;
   const spaceTitle = recipient.data?.spaceTitle as string | undefined;
+  const notificationSettingsUrl = recipient.data?.notificationSettingsUrl as
+    | string
+    | undefined;
 
   if (event.type === 'chat.mention') {
     const heading = `${actorDisplayName} mentioned you`;
@@ -96,6 +106,7 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
           messagePreview,
           url,
           spaceTitle,
+          notificationSettingsUrl,
         }),
       },
     };
