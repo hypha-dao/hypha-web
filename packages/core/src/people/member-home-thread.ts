@@ -19,6 +19,7 @@ export type MemberHomeThreadItem = {
    */
   documentKind: string;
   authoredByMember: boolean;
+  spaceLogo?: MemberIntelligence['proposals'][number]['spaceLogo'];
 };
 
 /** Label source for the card. A vote stays a proposal. Other states keep their kind. */
@@ -63,6 +64,40 @@ export function listMemberHomeThreadItems(
   );
   const items: MemberHomeThreadItem[] = [];
   const seen = new Set<string>();
+  const logosBySlug = new Map<
+    string,
+    NonNullable<MemberHomeThreadItem['spaceLogo']>
+  >();
+  const rememberLogo = (
+    slug: string,
+    logo: MemberHomeThreadItem['spaceLogo'],
+  ) => {
+    if (!slug || !logo) return;
+    if (
+      !logo.logoUrl &&
+      !logo.ecosystemLogoUrlLight &&
+      !logo.ecosystemLogoUrlDark
+    ) {
+      return;
+    }
+    logosBySlug.set(slug, logo);
+  };
+  for (const space of home.spaces) {
+    rememberLogo(space.slug, {
+      logoUrl: space.logoUrl,
+      ecosystemLogoUrlLight: space.ecosystemLogoUrlLight ?? null,
+      ecosystemLogoUrlDark: space.ecosystemLogoUrlDark ?? null,
+    });
+  }
+  for (const proposal of home.proposals) {
+    rememberLogo(proposal.spaceSlug, proposal.spaceLogo);
+  }
+  for (const signal of home.signals) {
+    rememberLogo(signal.spaceSlug, signal.spaceLogo);
+  }
+  for (const note of [...home.attention, ...home.notifications]) {
+    rememberLogo(note.spaceSlug, note.spaceLogo);
+  }
 
   const push = (item: MemberHomeThreadItem) => {
     const slug = item.slug.trim();
@@ -70,7 +105,11 @@ export function listMemberHomeThreadItems(
     const key = memberHomeThreadItemKey({ ...item, slug });
     if (seen.has(key)) return;
     seen.add(key);
-    items.push({ ...item, slug });
+    items.push({
+      ...item,
+      slug,
+      spaceLogo: item.spaceLogo ?? logosBySlug.get(item.spaceSlug) ?? null,
+    });
   };
 
   const notes = home.attention.length > 0 ? home.attention : home.notifications;
