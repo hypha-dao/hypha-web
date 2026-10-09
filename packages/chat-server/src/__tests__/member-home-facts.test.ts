@@ -65,6 +65,7 @@ const home: MemberIntelligence = {
   ],
   wallet: { address: null, preferredCurrency: 'EUR' },
   chatSpaceSlug: 'grove',
+  invites: [],
 };
 
 describe('formatMemberHomeFacts', () => {

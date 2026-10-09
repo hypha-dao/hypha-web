@@ -10,6 +10,7 @@ import type { DbConfig } from '../../server';
 import { personColumns } from './queries';
 import { readPrimaryOrientation } from './primary-orientation-column';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
+import { listPendingSpaceMemberInvites } from '../../space/server/space-member-invites';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 import {
   buildMemberGuidance,
@@ -574,6 +575,15 @@ export async function getMemberIntelligence(
       preferredCurrency: person.preferredCurrency,
     },
     chatSpaceSlug: spaceRows[0]?.slug ?? null,
+    invites: await readSlice(
+      'invites',
+      () =>
+        listPendingSpaceMemberInvites(
+          { personId, memberSpaceIds: spaceIds },
+          { db },
+        ),
+      [],
+    ),
   };
 }
 

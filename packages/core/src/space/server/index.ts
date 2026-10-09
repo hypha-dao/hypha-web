@@ -11,4 +11,5 @@ export { getNetworkGrowth } from './network-growth';
 export type { NetworkGrowth } from '../network-growth';
 export * from './organizational-guidance';
 export * from './mutations';
+export * from './space-member-invites';
 export * from './web3';
