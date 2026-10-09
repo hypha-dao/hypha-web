@@ -13,6 +13,7 @@ import {
 import { sql, eq, inArray, and, notLike, or, isNull } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
+import { readPrimaryOrientation } from './primary-orientation-column';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
@@ -25,9 +26,15 @@ const nullToUndefined = <T>(value: T | null): T | undefined =>
 const isHumanPerson = () =>
   or(isNull(people.sub), notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`));
 
-export const getDefaultFields = () => {
+/**
+ * Columns that exist before migration 0080. Selecting `primary_orientation`
+ * here makes every profile read fail when that column has not been added yet,
+ * and the menu then stays on "My Profile".
+ */
+export const personColumns = () => {
   return {
     id: people.id,
+    sub: people.sub,
     slug: people.slug,
     avatarUrl: people.avatarUrl,
     description: people.description,
@@ -41,10 +48,25 @@ export const getDefaultFields = () => {
     address: people.address,
     leadImageUrl: people.leadImageUrl,
     preferredCurrency: people.preferredCurrency,
-    primaryOrientation: people.primaryOrientation,
+    links: people.links,
+  };
+};
+
+export const getDefaultFields = () => {
+  return {
+    ...personColumns(),
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
+
+async function mapPersonRow(
+  db: DatabaseInstance,
+  dbPerson: { id: number } | undefined,
+) {
+  if (!dbPerson) return null;
+  const primaryOrientation = await readPrimaryOrientation(db, dbPerson.id);
+  return mapToDomainPerson({ ...dbPerson, primaryOrientation });
+}
 
 export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
   invariant(dbPerson.slug, 'Person must have a slug');
@@ -153,14 +175,14 @@ export const findPersonById = async (
   { db }: DbConfig,
 ) => {
   const [dbPerson] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.id, id))
     .limit(1);
 
   if (!dbPerson) return null;
 
-  return mapToDomainPerson(dbPerson);
+  return mapPersonRow(db, dbPerson);
 };
 
 export type FindPersonByWeb3AddressInput = {
@@ -171,13 +193,13 @@ export const findPersonByWeb3Address = async (
   { db }: DbConfig,
 ) => {
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
     .limit(1);
   if (!person) return null;
 
-  return mapToDomainPerson(person);
+  return mapPersonRow(db, person);
 };
 
 export type FindPeopleByWeb3AddressesInput = {
@@ -191,7 +213,7 @@ export const findPeopleByWeb3Addresses = async (
 
   const upperAddresses = addresses.map((addr) => addr.toUpperCase());
   const dbPeople = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(inArray(sql`upper(${people.address})`, upperAddresses));
 
@@ -209,13 +231,13 @@ export const findPersonByEmail = async (
   if (!normalized) return null;
 
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(sql`lower(${people.email})`, normalized))
     .limit(1);
   if (!person) return null;
 
-  return mapToDomainPerson(person);
+  return mapPersonRow(db, person);
 };
 
 export type FindPersonBySpaceIdInput = { spaceId: number };
@@ -323,7 +345,7 @@ export const findPersonsBySlug = async (
   if (slugs.length === 0) return [];
 
   const persons = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(inArray(people.slug, slugs));
 
@@ -338,20 +360,20 @@ export const findPersonBySlug = async (
   { db }: DbConfig,
 ) => {
   const [dbPerson] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.slug, slug))
     .limit(1);
 
   if (!dbPerson) return null;
 
-  return mapToDomainPerson(dbPerson);
+  return mapPersonRow(db, dbPerson);
 };
 
 export const findSelf = async ({ db }: DbConfig) => {
   try {
     const [dbPerson] = await db
-      .select()
+      .select(personColumns())
       .from(people)
       .where(sql`sub = auth.user_id()`)
       .limit(1);
@@ -360,7 +382,7 @@ export const findSelf = async ({ db }: DbConfig) => {
       return null;
     }
 
-    return mapToDomainPerson(dbPerson);
+    return mapPersonRow(db, dbPerson);
   } catch (error) {
     console.error('Error finding authenticated user:', error);
     throw error instanceof Error
@@ -472,11 +494,11 @@ export const findPersonBySub = async (
   { db }: DbConfig,
 ) => {
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.sub, sub))
     .limit(1);
   if (!person) return null;
 
-  return mapToDomainPerson(person);
+  return mapPersonRow(db, person);
 };
