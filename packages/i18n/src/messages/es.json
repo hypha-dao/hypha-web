@@ -48,7 +48,9 @@
     "validatedSignal": "Valido {title}.",
     "threadDropped": "El hilo se cortó un momento.",
     "tryAgain": "Reintentar",
-    "dismiss": "Cerrar"
+    "dismiss": "Cerrar",
+    "openMyWallet": "Abrir mi billetera",
+    "openMySpaces": "Abrir mis espacios"
   },
   "WelcomeFlow": {
     "errors": {
