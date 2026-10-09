@@ -1,6 +1,7 @@
 import {
   Alchemy,
   linkDeployedTokenForProposal,
+  syncEnergyCommunitySetupForProposal,
 } from '@hypha-platform/core/server';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
@@ -78,6 +79,36 @@ export const POST = proposalExecutedSigningKey
           .forEach(({ reason }) =>
             console.error(
               'Failed to link deployed token for proposal:',
+              reason,
+            ),
+          );
+      },
+      async (events) => {
+        const syncing = events.map(async (event) => {
+          const proposalId = toSafeProposalId(event.args.proposalId);
+          if (proposalId === undefined) return;
+
+          const result = await syncEnergyCommunitySetupForProposal(
+            { proposalId, transactionHash: event.transactionHash },
+            { db },
+          );
+
+          if (result.status === 'synced') {
+            console.info(
+              `Synced energy community ${result.vppCommunityId} (factory ${result.factoryCommunityId}) for proposal ${proposalId}.`,
+            );
+          } else if (result.reason !== 'not-energy-community-setup') {
+            console.warn(
+              `Skipped energy community sync for proposal ${proposalId}: ${result.reason}.`,
+            );
+          }
+        });
+
+        (await Promise.allSettled(syncing))
+          .filter((res) => res.status === 'rejected')
+          .forEach(({ reason }) =>
+            console.error(
+              'Failed to sync energy community setup for proposal:',
               reason,
             ),
           );

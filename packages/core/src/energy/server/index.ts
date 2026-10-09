@@ -4,3 +4,4 @@ export * from './telemetry-types';
 export * from './telemetry-queries';
 export * from './resolve-energy-participants';
 export * from './read-ownership-token-name';
+export * from './sync-ems-community';
