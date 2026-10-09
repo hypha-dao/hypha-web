@@ -15,7 +15,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
-import { getProposalPath } from '../../common/get-path-function';
+import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
 import { MemberHomeChat } from './member-home-chat';
 import { MemberHomePeople } from './member-home-people';
@@ -95,7 +95,7 @@ export function MemberHome({
   const leadHref = lead
     ? lead.kind === 'proposal'
       ? getProposalPath(lang, lead.spaceSlug, lead.targetSlug)
-      : `/${lang}/dho/${lead.spaceSlug}/coherence`
+      : getSignalPath(lang, lead.spaceSlug, lead.targetSlug)
     : null;
   const chatHref = home?.chatSpaceSlug
     ? `/${lang}/dho/${home.chatSpaceSlug}/coherence`
@@ -159,7 +159,11 @@ export function MemberHome({
                               item.spaceSlug,
                               item.targetSlug,
                             )
-                          : `/${lang}/dho/${item.spaceSlug}/coherence`,
+                          : getSignalPath(
+                              lang,
+                              item.spaceSlug,
+                              item.targetSlug,
+                            ),
                     }))
                   : []
               }
@@ -394,12 +398,22 @@ export function MemberHome({
               empty={t('noSignals')}
               items={
                 home
-                  ? home.signals.map((signal) => ({
-                      id: signal.id,
-                      title: signal.title,
-                      detail: signal.spaceTitle,
-                      href: `/${lang}/dho/${signal.spaceSlug}/coherence`,
-                    }))
+                  ? home.signals.flatMap((signal) =>
+                      signal.slug
+                        ? [
+                            {
+                              id: signal.id,
+                              title: signal.title,
+                              detail: signal.spaceTitle,
+                              href: getSignalPath(
+                                lang,
+                                signal.spaceSlug,
+                                signal.slug,
+                              ),
+                            },
+                          ]
+                        : [],
+                    )
                   : []
               }
             />
