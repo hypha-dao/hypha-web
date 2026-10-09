@@ -83,6 +83,10 @@ export async function getAllSpaces(
               .map((m) => m.toLowerCase()) as `0x{string}`[])
           : [],
         documentCount: spaceProposals?.accepted.length ?? 0,
+        creatorAddress:
+          typeof spaceDetails?.creator === 'string'
+            ? spaceDetails.creator
+            : null,
       };
     });
 
