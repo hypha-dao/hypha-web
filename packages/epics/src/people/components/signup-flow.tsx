@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button, Input } from '@hypha-platform/ui';
+import { Button, Input, Logo } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type SignupOrientation = 'member' | 'builder' | 'investor';
@@ -112,12 +112,7 @@ export function SignupFlow({
         className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/35"
       />
       <div className="relative mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center px-6 py-16 text-center">
-        <p
-          className="text-2 tracking-[0.18em] text-neutral-11 uppercase"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          Hypha
-        </p>
+        <Logo width={96} />
         <p className="mt-6 w-full text-1 text-neutral-11">
           {t('step', { current: index + 1, total: STEPS.length })}
         </p>
