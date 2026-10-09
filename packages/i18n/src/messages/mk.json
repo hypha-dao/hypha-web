@@ -150,6 +150,7 @@
   },
   "Navigation": {
     "network": "Мрежа",
+    "myDashboard": "Моја контролна табла",
     "mySpaces": "Мои простори",
     "myWallet": "Мој паричник",
     "openMenu": "Отвори мени",
