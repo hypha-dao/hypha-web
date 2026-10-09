@@ -1,10 +1,16 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
+import {
+  Badge,
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
@@ -21,6 +27,12 @@ type MemberHomeProps = {
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
+
+function orientationLabelKey(orientation: SignupOrientation) {
+  if (orientation === 'member') return 'orientationMember' as const;
+  if (orientation === 'builder') return 'orientationBuilder' as const;
+  return 'orientationInvestor' as const;
+}
 
 function greetingKey(date = new Date()) {
   const hour = date.getHours();
@@ -151,13 +163,7 @@ export function MemberHome({
                   disabled={isSavingOrientation}
                   onClick={() => onChooseOrientation(option)}
                 >
-                  {t(
-                    option === 'member'
-                      ? 'orientationMember'
-                      : option === 'builder'
-                      ? 'orientationBuilder'
-                      : 'orientationInvestor',
-                  )}
+                  {t(orientationLabelKey(option))}
                 </Button>
               ))}
             </div>
@@ -168,15 +174,12 @@ export function MemberHome({
             ) : null}
           </section>
         ) : (
-          <p className="mt-3 text-1 text-neutral-11">
-            {t(
-              orientation === 'member'
-                ? 'orientationMember'
-                : orientation === 'builder'
-                ? 'orientationBuilder'
-                : 'orientationInvestor',
-            )}
-          </p>
+          <OrientationBadge
+            orientation={orientation}
+            isSaving={isSavingOrientation}
+            error={orientationError}
+            onChoose={onChooseOrientation}
+          />
         )}
 
         <section className="mt-10 border border-border bg-background/85 p-5">
@@ -366,6 +369,97 @@ export function MemberHome({
       </div>
     </div>
   );
+}
+
+function OrientationBadge({
+  orientation,
+  isSaving,
+  error,
+  onChoose,
+}: {
+  orientation: SignupOrientation;
+  isSaving?: boolean;
+  error?: string | null;
+  onChoose: (orientation: SignupOrientation) => void;
+}) {
+  const t = useTranslations('MemberHome');
+  const tWelcome = useTranslations('WelcomeFlow');
+  const [open, setOpen] = useState(false);
+  const label = t(orientationLabelKey(orientation));
+
+  return (
+    <div className="mt-3">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={isSaving}
+            aria-label={t('changeOrientationLabel', { orientation: label })}
+            className="inline-flex items-center gap-2 rounded-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+          >
+            <Badge
+              size={1}
+              variant="outline"
+              colorVariant="neutral"
+              className="border-foreground/80 bg-background text-foreground hover:border-foreground hover:bg-neutral-3 hover:text-foreground"
+            >
+              {label}
+            </Badge>
+            <span className="text-1 font-medium tracking-[0.12em] text-neutral-11 uppercase">
+              {t('changeOrientation')}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-[min(22rem,calc(100vw-2.5rem))] rounded-none border-border bg-background p-2 text-foreground shadow-sm"
+        >
+          <p className="px-3 py-2 text-1 text-neutral-11">{t('chooseTitle')}</p>
+          <div className="grid gap-1">
+            {ORIENTATIONS.map((option) => {
+              const selected = option === orientation;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  disabled={isSaving}
+                  aria-pressed={selected}
+                  onClick={() => {
+                    setOpen(false);
+                    if (option !== orientation) onChoose(option);
+                  }}
+                  className={cn(
+                    'border px-3 py-3 text-left transition-colors disabled:opacity-60',
+                    selected
+                      ? 'border-foreground'
+                      : 'border-transparent hover:border-border',
+                  )}
+                >
+                  <span className="block text-2 font-medium text-foreground">
+                    {t(orientationLabelKey(option))}
+                  </span>
+                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
+                    {tWelcome(orientationBodyKey(option))}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {error ? (
+        <p className="mt-3 text-2 text-error-11" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function orientationBodyKey(orientation: SignupOrientation) {
+  if (orientation === 'member') return 'orientation.member.body' as const;
+  if (orientation === 'builder') return 'orientation.builder.body' as const;
+  return 'orientation.investor.body' as const;
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
