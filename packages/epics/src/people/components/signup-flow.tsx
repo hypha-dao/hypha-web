@@ -22,7 +22,7 @@ export type SignupFlowValues = {
   nickname: string;
   description: string;
   email?: string;
-  address: string;
+  address?: string;
   links: string[];
   location?: string;
   avatarUrl?: File;
@@ -33,6 +33,8 @@ export type SignupFlowValues = {
 type SignupFlowProps = {
   email?: string;
   walletAddress?: string;
+  /** True only while Privy is still starting. A signed-in account with no wallet is not loading. */
+  authLoading?: boolean;
   isCreating?: boolean;
   error?: string | null;
   onComplete: (values: SignupFlowValues) => Promise<void>;
@@ -58,6 +60,7 @@ const primaryActionClassName =
 export function SignupFlow({
   email,
   walletAddress,
+  authLoading = false,
   isCreating,
   error,
   onComplete,
@@ -90,7 +93,6 @@ export function SignupFlow({
   }, [email]);
 
   const index = STEPS.indexOf(step);
-  const walletReady = Boolean(walletAddress);
 
   const validatePlace = () => {
     const loc = location.trim();
@@ -152,7 +154,7 @@ export function SignupFlow({
   };
 
   const finish = async () => {
-    if (!orientation || !walletAddress) return;
+    if (!orientation || authLoading) return;
     if (!validatePlace()) {
       setStep('place');
       return;
@@ -167,7 +169,7 @@ export function SignupFlow({
         nickname: nickname.trim(),
         description: description.trim(),
         email: trimmedEmail || undefined,
-        address: walletAddress,
+        address: walletAddress || undefined,
         links: links.map((link) => link.trim()).filter(Boolean),
         location: trimmedLocation || undefined,
         avatarUrl: avatarUrl ?? undefined,
@@ -411,7 +413,7 @@ export function SignupFlow({
             {t('signedInAs', { email })}
           </p>
         ) : null}
-        {!walletReady ? (
+        {authLoading ? (
           <p className="mt-3 w-full text-1 text-neutral-11">
             {t('walletWait')}
           </p>
@@ -442,10 +444,10 @@ export function SignupFlow({
             <Button
               type="button"
               className={primaryActionClassName}
-              disabled={!walletReady}
+              disabled={authLoading}
               onClick={goNext}
             >
-              {walletReady ? t('begin') : t('walletWait')}
+              {authLoading ? t('walletWait') : t('begin')}
             </Button>
           ) : null}
           {step !== 'welcome' && step !== 'arrival' ? (
@@ -461,7 +463,7 @@ export function SignupFlow({
             <Button
               type="button"
               className={primaryActionClassName}
-              disabled={isCreating || !walletReady || !orientation}
+              disabled={isCreating || authLoading || !orientation}
               onClick={() => {
                 void finish();
               }}

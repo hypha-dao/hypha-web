@@ -18,7 +18,8 @@ export default function SignupPage() {
   const flow = (
     <SignupFlow
       email={user?.email}
-      walletAddress={isLoading ? undefined : user?.wallet?.address}
+      walletAddress={user?.wallet?.address}
+      authLoading={isLoading}
       isCreating={isCreating}
       error={error}
       onComplete={async (values: SignupFlowValues) => {
