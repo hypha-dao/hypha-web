@@ -13,6 +13,7 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import { loadMemberHomeFacts } from './load-member-home-facts';
 import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { resolveChatLocale } from './locale-ui-labels';
@@ -1048,6 +1049,8 @@ export type ChatStreamCallbacks = {
   locale?: ChatRequestPayload['locale'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
+  /** Personal home: same Hypha AI voice, plus this member's records. */
+  memberHome?: boolean;
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1372,8 +1375,12 @@ export async function createChatStreamResult(
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
     locale,
+    memberHome,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
+  const memberHomeRecord = memberHome
+    ? await loadMemberHomeFacts(authToken)
+    : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
@@ -1404,11 +1411,14 @@ export async function createChatStreamResult(
     authToken,
     debugRequestId,
   });
-  const spaceContextSnapshot = spaceSlug?.trim()
-    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
+  const requestedSpaceSlug = spaceSlug?.trim() || '';
+  const voiceSpaceSlug =
+    requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
+  const spaceContextSnapshot = requestedSpaceSlug
+    ? await buildSpaceContextSnapshot(requestedSpaceSlug, activeSpaceTitle)
     : null;
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
-    spaceSlug,
+    voiceSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
@@ -1578,7 +1588,9 @@ export async function createChatStreamResult(
 
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: systemPrompt,
+    system: memberHomeRecord?.facts
+      ? `${systemPrompt}\n\n${memberHomeRecord.facts}`
+      : systemPrompt,
     messages:
       modelMessages.length > 0
         ? modelMessages
