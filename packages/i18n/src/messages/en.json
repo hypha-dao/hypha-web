@@ -165,6 +165,21 @@
       "member": "Your home shows where you can be useful, the spaces you belong to, and what is asking for you.",
       "builder": "Your home is that same living view, plus a way to shape a space around your vision.",
       "investor": "Your home is that same living view, plus the network marketplace where spaces publish their asks."
+    },
+    "likeness": {
+      "eyebrow": "Your picture",
+      "title": "How should people see you?",
+      "body": "A profile icon, and a banner if you want one. You can change these later.",
+      "icon": "Profile icon",
+      "iconHint": "Shown next to your name. Optional.",
+      "banner": "Banner",
+      "bannerHint": "Wide image at the top of your profile. Optional."
+    },
+    "place": {
+      "eyebrow": "Where you are",
+      "title": "Where do you show up from?",
+      "body": "Your location, the email on your profile, and any links you want to share. Leave blank anything you would rather add later.",
+      "links": "Links"
     }
   },
   "MemberHome": {
