@@ -48,7 +48,9 @@
     "validatedSignal": "Го потврдувам {title}.",
     "threadDropped": "Нишката за миг се прекина.",
     "tryAgain": "Обиди се повторно",
-    "dismiss": "Затвори"
+    "dismiss": "Затвори",
+    "openMyWallet": "Отвори го мојот паричник",
+    "openMySpaces": "Отвори ги моите простори"
   },
   "WelcomeFlow": {
     "errors": {

@@ -48,7 +48,9 @@
     "validatedSignal": "Ich bestätige {title}.",
     "threadDropped": "Der Faden ist kurz abgerissen.",
     "tryAgain": "Erneut versuchen",
-    "dismiss": "Schließen"
+    "dismiss": "Schließen",
+    "openMyWallet": "Mein Wallet öffnen",
+    "openMySpaces": "Meine Spaces öffnen"
   },
   "WelcomeFlow": {
     "errors": {

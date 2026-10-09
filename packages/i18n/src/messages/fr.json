@@ -48,7 +48,9 @@
     "validatedSignal": "Je valide {title}.",
     "threadDropped": "Le fil a lâché un instant.",
     "tryAgain": "Réessayer",
-    "dismiss": "Fermer"
+    "dismiss": "Fermer",
+    "openMyWallet": "Ouvrir mon portefeuille",
+    "openMySpaces": "Ouvrir mes espaces"
   },
   "WelcomeFlow": {
     "errors": {

@@ -184,6 +184,8 @@
     "wallet": "Wallet",
     "walletEmpty": "Your wallet appears here once it is connected.",
     "openWallet": "Open wallet",
+    "openMyWallet": "Open my wallet",
+    "openMySpaces": "Open my spaces",
     "connections": "Connections",
     "sharedSpaces": "{count} shared",
     "noConnections": "People you share a space with show up here.",

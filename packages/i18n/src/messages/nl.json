@@ -48,7 +48,9 @@
     "validatedSignal": "Ik bevestig {title}.",
     "threadDropped": "De draad viel even weg.",
     "tryAgain": "Opnieuw proberen",
-    "dismiss": "Sluiten"
+    "dismiss": "Sluiten",
+    "openMyWallet": "Open mijn portemonnee",
+    "openMySpaces": "Open mijn ruimtes"
   },
   "WelcomeFlow": {
     "errors": {

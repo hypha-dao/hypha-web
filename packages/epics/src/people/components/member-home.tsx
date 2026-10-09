@@ -19,6 +19,11 @@ import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
 import { MemberHomeChat } from './member-home-chat';
 import { MemberHomePeople } from './member-home-people';
+import {
+  MemberHomeConnectionsWidget,
+  MemberHomeSpacesWidget,
+  MemberHomeWalletWidget,
+} from './member-home-side-widgets';
 
 type MemberHomeProps = {
   lang: Locale;
@@ -45,23 +50,6 @@ function greetingKey(date = new Date()) {
   if (hour < 12) return 'greetingMorning' as const;
   if (hour < 18) return 'greetingAfternoon' as const;
   return 'greetingEvening' as const;
-}
-
-function shortAddress(address: string) {
-  if (address.length < 12) return address;
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
-
-function personLabel(
-  person: {
-    name: string | null;
-    surname: string | null;
-    nickname: string | null;
-  },
-  fallback: string,
-) {
-  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  return full || person.nickname || fallback;
 }
 
 function isSignupOrientation(
@@ -97,9 +85,6 @@ export function MemberHome({
       ? getProposalPath(lang, lead.spaceSlug, lead.targetSlug)
       : getSignalPath(lang, lead.spaceSlug, lead.targetSlug)
     : null;
-  const chatHref = home?.chatSpaceSlug
-    ? `/${lang}/dho/${home.chatSpaceSlug}/coherence`
-    : `/${lang}/network`;
 
   return (
     <div className="flex w-full flex-col lg:grid lg:h-[calc(100dvh-4.5rem)] lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:overflow-hidden">
@@ -124,7 +109,7 @@ export function MemberHome({
             </Tile>
           </div>
         ) : null}
-        <Tile title={t('spaces')} busy={home == null}>
+        <MemberHomeSpacesWidget lang={lang} busy={home == null}>
           <ResourceList
             isLoading={home == null}
             empty={t('noSpaces')}
@@ -139,7 +124,7 @@ export function MemberHome({
                 : []
             }
           />
-        </Tile>
+        </MemberHomeSpacesWidget>
         <div className="mt-4">
           <Tile title={t('notifications')} busy={home == null}>
             <ResourceList
@@ -339,56 +324,19 @@ export function MemberHome({
           />
         </dl>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <Tile title={t('wallet')} busy={home == null}>
-            {home == null ? (
-              <CardSkeleton lines={2} />
-            ) : (
-              <>
-                {home.wallet.address ? (
-                  <p className="font-mono text-2">
-                    {shortAddress(home.wallet.address)}
-                  </p>
-                ) : (
-                  <p className="text-2 text-neutral-11">{t('walletEmpty')}</p>
-                )}
-                {home.wallet.preferredCurrency ? (
-                  <p className="mt-1 text-1 text-neutral-11">
-                    {home.wallet.preferredCurrency}
-                  </p>
-                ) : null}
-              </>
-            )}
-            <TileLink href={`/${lang}/my-wallet`}>{t('openWallet')}</TileLink>
-          </Tile>
-          <Tile title={t('connections')} busy={home == null}>
-            {home == null ? (
-              <CardSkeleton lines={3} />
-            ) : home.connections.length === 0 ? (
-              <p className="text-2 text-neutral-11">{t('noConnections')}</p>
-            ) : (
-              <ul className="grid gap-2">
-                {home.connections.slice(0, 4).map((person) => (
-                  <li key={person.id}>
-                    <Link
-                      href={
-                        person.slug
-                          ? `/${lang}/profile/${person.slug}`
-                          : chatHref
-                      }
-                      className="flex items-baseline justify-between gap-3 text-2 hover:underline"
-                    >
-                      <span>{personLabel(person, memberFallback)}</span>
-                      <span className="text-1 text-neutral-11">
-                        {t('sharedSpaces', { count: person.sharedSpaceCount })}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <TileLink href={chatHref}>{t('openChat')}</TileLink>
-          </Tile>
+        <div className="mt-8 grid gap-4">
+          <MemberHomeWalletWidget
+            lang={lang}
+            personSlug={home?.person.slug}
+            hasAddress={Boolean(home?.wallet.address)}
+            isHomeLoading={home == null}
+          />
+          <MemberHomeConnectionsWidget
+            lang={lang}
+            people={home?.connections ?? []}
+            isLoading={home == null}
+            fallbackName={memberFallback}
+          />
         </div>
 
         <div className="mt-4 grid gap-4">
