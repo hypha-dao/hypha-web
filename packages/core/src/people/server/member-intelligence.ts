@@ -19,6 +19,8 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import type { DbConfig } from '../../server';
+import { personColumns } from './queries';
+import { readPrimaryOrientation } from './primary-orientation-column';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 import {
@@ -62,11 +64,12 @@ export async function getMemberIntelligence(
   const listLimit = Math.min(Math.max(limit, 1), 24);
 
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.id, personId))
     .limit(1);
   if (!person?.slug) return null;
+  const primaryOrientation = await readPrimaryOrientation(db, person.id);
 
   const spaceRows = await db
     .select({
@@ -84,7 +87,7 @@ export async function getMemberIntelligence(
     .orderBy(desc(memberships.createdAt));
 
   const spaceIds = spaceRows.map((space) => space.id);
-  const orientation = parseMemberOrientation(person.primaryOrientation);
+  const orientation = parseMemberOrientation(primaryOrientation);
 
   const proposalRows =
     spaceIds.length === 0
