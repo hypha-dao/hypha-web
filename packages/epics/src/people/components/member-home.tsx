@@ -17,7 +17,8 @@ import type { MemberIntelligence } from '@hypha-platform/core/client';
 
 import { getProposalPath } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
-import './member-home-banner.css';
+import { MemberHomeChat } from './member-home-chat';
+import { MemberHomePeople } from './member-home-people';
 
 type MemberHomeProps = {
   lang: Locale;
@@ -101,69 +102,114 @@ export function MemberHome({
     : `/${lang}/network`;
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl px-5 py-8 md:py-14">
-      <div className="member-home-banner" aria-hidden>
-        <img
-          alt=""
-          className="member-home-banner-image"
-          src="/brand/strategy-mycelium.png"
-        />
-        <div className="member-home-banner-veil" />
-      </div>
-      <div className="relative">
-        <h1
-          className="text-balance text-8 leading-tight font-medium tracking-[-0.03em]"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {t(greetingKey(), { name: displayName })}
-        </h1>
-        {home == null ? (
-          <Skeleton loading height="16px" width="14rem" className="mt-4" />
-        ) : (
-          <p className="mt-4 text-1 tracking-[0.16em] text-neutral-11 uppercase">
-            {home.counts.connections > 0
-              ? t('peopleAround', { count: home.counts.connections })
-              : t('peopleAroundEmpty')}
-          </p>
-        )}
-        {home && home.connections.length > 0 ? (
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex">
-              {home.connections.slice(0, 5).map((person, index) => (
-                <Link
-                  key={person.id}
-                  href={
-                    person.slug
-                      ? `/${lang}/profile/${person.slug}`
-                      : `/${lang}/network`
-                  }
-                  title={personLabel(person, memberFallback)}
-                  className={cn(
-                    'relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-background bg-accent-3 text-1',
-                    index > 0 && '-ml-2',
-                  )}
-                >
-                  {person.avatarUrl ? (
-                    <img
-                      src={person.avatarUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    personLabel(person, memberFallback).slice(0, 1)
-                  )}
-                </Link>
-              ))}
+    <div className="flex w-full flex-col lg:grid lg:h-[calc(100dvh-4.5rem)] lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:overflow-hidden">
+      <aside
+        aria-label={t('panelSpaces')}
+        className="order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
+      >
+        <Tile title={t('spaces')} busy={home == null}>
+          <ResourceList
+            isLoading={home == null}
+            empty={t('noSpaces')}
+            items={
+              home
+                ? home.spaces.map((space) => ({
+                    id: space.id,
+                    title: space.title,
+                    detail: space.description,
+                    href: `/${lang}/dho/${space.slug}/overview`,
+                  }))
+                : []
+            }
+          />
+        </Tile>
+        <div className="mt-4">
+          <Tile title={t('notifications')} busy={home == null}>
+            <ResourceList
+              isLoading={home == null}
+              empty={t('noNotifications')}
+              maxItems={24}
+              items={
+                home
+                  ? home.notifications.map((item) => ({
+                      id: item.id,
+                      title: item.title,
+                      detail: item.detail,
+                      href:
+                        item.kind === 'proposal'
+                          ? getProposalPath(
+                              lang,
+                              item.spaceSlug,
+                              item.targetSlug,
+                            )
+                          : `/${lang}/dho/${item.spaceSlug}/coherence`,
+                    }))
+                  : []
+              }
+            />
+            <TileLink href={`/${lang}/my-spaces/notification-centre`}>
+              {t('seeAllNotifications')}
+            </TileLink>
+          </Tile>
+        </div>
+        <div className="mt-4">
+          {home ? (
+            <MemberHomePeople
+              people={home.connections}
+              chatSpaceSlug={home.chatSpaceSlug}
+              fallbackName={memberFallback}
+            />
+          ) : (
+            <Tile title={t('peopleTitle')} busy>
+              <CardSkeleton lines={4} />
+            </Tile>
+          )}
+        </div>
+      </aside>
+      <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
+        <div className="border-b border-border px-4 py-3 md:px-6">
+          <div className="flex items-center gap-3">
+            <img
+              src="/brand/strategy-mycelium.png"
+              alt=""
+              className="h-9 w-9 shrink-0 object-cover"
+            />
+            <div className="min-w-0">
+              <h1
+                className="truncate text-4 leading-tight font-medium tracking-[-0.03em]"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t(greetingKey(), { name: displayName })}
+              </h1>
+              {home == null ? (
+                <Skeleton
+                  loading
+                  height="16px"
+                  width="14rem"
+                  className="mt-1"
+                />
+              ) : (
+                <p className="mt-1 text-1 tracking-[0.16em] text-neutral-11 uppercase">
+                  {home.counts.connections > 0
+                    ? t('peopleAround', { count: home.counts.connections })
+                    : t('peopleAroundEmpty')}
+                </p>
+              )}
             </div>
-            <Link
-              href={chatHref}
-              className="text-2 text-accent-11 underline-offset-4 hover:underline"
-            >
-              {t('openChat')}
-            </Link>
           </div>
-        ) : null}
-
+        </div>
+        {home ? (
+          <MemberHomeChat lang={lang} intelligence={home} />
+        ) : (
+          <div className="flex-1 px-4 py-6">
+            <CardSkeleton lines={4} />
+          </div>
+        )}
+      </main>
+      <aside
+        aria-label={t('panelInsights')}
+        className="order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
+      >
         {home == null ? (
           <Skeleton loading height="22px" width="7.5rem" className="mt-3" />
         ) : orientation == null ? (
@@ -324,23 +370,7 @@ export function MemberHome({
           </Tile>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Tile title={t('spaces')} busy={home == null}>
-            <ResourceList
-              isLoading={home == null}
-              empty={t('noSpaces')}
-              items={
-                home
-                  ? home.spaces.map((space) => ({
-                      id: space.id,
-                      title: space.title,
-                      detail: space.description,
-                      href: `/${lang}/dho/${space.slug}/overview`,
-                    }))
-                  : []
-              }
-            />
-          </Tile>
+        <div className="mt-4 grid gap-4">
           <Tile title={t('signals')} busy={home == null}>
             <ResourceList
               isLoading={home == null}
@@ -356,33 +386,6 @@ export function MemberHome({
                   : []
               }
             />
-          </Tile>
-          <Tile title={t('notifications')} busy={home == null}>
-            <ResourceList
-              isLoading={home == null}
-              empty={t('noNotifications')}
-              maxItems={24}
-              items={
-                home
-                  ? home.notifications.map((item) => ({
-                      id: item.id,
-                      title: item.title,
-                      detail: item.detail,
-                      href:
-                        item.kind === 'proposal'
-                          ? getProposalPath(
-                              lang,
-                              item.spaceSlug,
-                              item.targetSlug,
-                            )
-                          : `/${lang}/dho/${item.spaceSlug}/coherence`,
-                    }))
-                  : []
-              }
-            />
-            <TileLink href={`/${lang}/my-spaces/notification-centre`}>
-              {t('seeAllNotifications')}
-            </TileLink>
           </Tile>
           <Tile title={t('proposals')} busy={home == null}>
             <ResourceList
@@ -439,7 +442,7 @@ export function MemberHome({
             })}
           />
         ) : null}
-      </div>
+      </aside>
     </div>
   );
 }
