@@ -1,6 +1,11 @@
 'use client';
 
-import { MemberHome, type SignupOrientation } from '@hypha-platform/epics';
+import {
+  MemberHome,
+  resolveMemberHomePhase,
+  type MemberHomeRecord,
+  type SignupOrientation,
+} from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useJwt,
@@ -74,39 +79,30 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     [jwt, mutate, t],
   );
 
-  // Privy `authenticated` (what the header uses) can be true before
-  // `getAccessToken()` returns a Bearer token. A null SWR key is not a load,
-  // so treating `!data` as signed-out stuck Home on "Sign in" while the menu
-  // still showed the wallet.
-  const authUnresolved = isAuthLoading || isLoadingJwt;
-  const profileSettled =
-    isAuthenticated && !authUnresolved && !isPersonLoading && !meError;
-  // GET /me 404, or intelligence 404 with no person row: signup is the welcome
-  // flow. A loaded profile must stay on Home (builders reach /onboarding from
-  // there), not get the signed-out screen.
-  const noProfile =
-    profileSettled &&
-    (person === null || (data === null && person === undefined));
+  const personRecord: MemberHomeRecord =
+    person === null ? 'none' : person ? 'present' : 'missing';
+  const homeRecord: MemberHomeRecord =
+    data === null ? 'none' : data ? 'present' : 'missing';
+  // Privy `authenticated` (what the header uses) can be true before a Bearer
+  // token exists. Only a GET /me 404 is "no profile". A 500 stays signed in.
+  const phase = resolveMemberHomePhase({
+    authLoading: isAuthLoading,
+    jwtLoading: isLoadingJwt,
+    authenticated: isAuthenticated,
+    personLoading: isPersonLoading,
+    person: personRecord,
+    meError: Boolean(meError),
+    homeLoading: isLoadingHome,
+    home: homeRecord,
+    homeError: Boolean(error),
+  });
 
   useEffect(() => {
-    if (!noProfile) return;
+    if (phase !== 'signup') return;
     router.replace(`/${lang}/profile/signup`);
-  }, [noProfile, lang, router]);
+  }, [phase, lang, router]);
 
-  const waitingForHome =
-    isAuthenticated &&
-    !meError &&
-    !error &&
-    person !== null &&
-    person !== undefined &&
-    (isLoadingHome || data === undefined);
-
-  if (
-    authUnresolved ||
-    noProfile ||
-    (isAuthenticated && isPersonLoading) ||
-    waitingForHome
-  ) {
+  if (phase === 'loading' || phase === 'signup') {
     return (
       <p className="px-5 py-16 text-center text-2 text-neutral-11">
         {t('loading')}
@@ -114,7 +110,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (phase === 'signed-out') {
     return (
       <div className="mx-auto max-w-lg px-5 py-20 text-center">
         <h1
@@ -131,7 +127,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (meError || error || (data === null && person)) {
+  if (phase === 'profile-unavailable' || phase === 'home-unavailable') {
     return (
       <div className="mx-auto max-w-lg px-5 py-20 text-center">
         <p className="text-2 text-neutral-11">{t('error')}</p>
