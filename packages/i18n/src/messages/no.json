@@ -149,6 +149,7 @@
   },
   "Navigation": {
     "network": "Nettverk",
+    "myDashboard": "Mitt dashbord",
     "mySpaces": "Mine rom",
     "myWallet": "Min lommebok",
     "openMenu": "Åpne meny",

@@ -22,7 +22,7 @@ import { cn } from '@hypha-platform/ui-utils';
 const HYPHA_TOKENOMICS_BRIEF_URL = 'https://hypha.earth/tokenomics';
 
 const profileMenuItemClass =
-  'gap-2 px-2 py-2 text-2 [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
+  'min-h-10 gap-2 rounded-none px-3 py-0 text-2 font-normal font-sans leading-5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
 
 const profileSheetItemClass =
   'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -219,7 +219,7 @@ export function HyphaNetworkFeedbackMenuItem({
       >
         {triggerIcon}
         <span className="flex-1">{t('triggerLabel')}</span>
-        <ChevronRight className="ml-auto size-4 opacity-60" aria-hidden />
+        <ChevronRight className="ml-auto craft-icon opacity-60" aria-hidden />
       </DropdownMenuItem>
     );
   }

@@ -921,6 +921,7 @@
   },
   "Navigation": {
     "network": "Red",
+    "myDashboard": "Mi panel",
     "mySpaces": "Mis espacios",
     "myWallet": "Mi billetera",
     "openMenu": "Abrir menú",

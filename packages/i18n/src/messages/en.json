@@ -90,7 +90,7 @@
   },
   "Navigation": {
     "network": "Network",
-    "home": "Home",
+    "myDashboard": "My dashboard",
     "mySpaces": "My Spaces",
     "myWallet": "My Wallet",
     "openMenu": "Open menu",
