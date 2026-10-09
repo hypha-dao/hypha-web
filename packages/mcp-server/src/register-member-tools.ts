@@ -1,10 +1,9 @@
 import 'server-only';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { db } from '@hypha-platform/storage-postgres';
 import {
   getMemberIntelligence,
-  resolvePersonFromAuthToken,
+  resolveMemberCaller,
   type MemberIntelligence,
 } from '@hypha-platform/core/server';
 import type { z } from 'zod';
@@ -37,18 +36,16 @@ async function loadMemberIntelligence(
   limit: number,
 ): Promise<{ intelligence: MemberIntelligence } | { error: string }> {
   try {
-    const person = await resolvePersonFromAuthToken(
-      process.env.HYPHA_MCP_AUTH_TOKEN,
-    );
-    if (!person) {
+    const caller = await resolveMemberCaller(process.env.HYPHA_MCP_AUTH_TOKEN);
+    if (!caller) {
       return {
         error:
           'No member for HYPHA_MCP_AUTH_TOKEN. Set a Privy JWT for the signed-in person.',
       };
     }
     const intelligence = await getMemberIntelligence(
-      { personId: person.id, limit },
-      { db },
+      { personId: caller.person.id, limit },
+      { db: caller.db },
     );
     if (!intelligence) {
       return { error: 'Member profile could not be loaded.' };

@@ -27,11 +27,17 @@ import {
   buildMemberGuidance,
   parseMemberOrientation,
 } from '../member-intelligence-guidance';
+import { type Hex } from 'viem';
+
+import { web3Client } from '../../common/server/web3-rpc/client';
+import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
 import type {
   MemberAttentionItem,
   MemberIntelligence,
+  MemberSpaceRow,
   NetworkCapitalAsk,
 } from '../member-intelligence';
+import { mergeMemberSpaces } from '../member-intelligence';
 
 export {
   MEMBER_ORIENTATIONS,
@@ -47,6 +53,41 @@ export type {
 
 const ATTENTION_LIMIT = 8;
 const LIST_LIMIT = 6;
+
+const memberSpaceColumns = {
+  id: spaces.id,
+  slug: spaces.slug,
+  title: spaces.title,
+  description: spaces.description,
+  logoUrl: spaces.logoUrl,
+};
+
+function walletAddress(address: string | null | undefined): Hex | null {
+  const value = address?.trim();
+  if (!value || !/^0x[0-9a-fA-F]{40}$/.test(value)) return null;
+  return value as Hex;
+}
+
+/**
+ * Postgres `memberships` is not the live roster (nothing in this repo writes
+ * it). The profile and My Spaces screens read `getMemberSpaces` for the
+ * wallet. A failed chain read must surface — an empty list would look like
+ * a member who has no spaces.
+ */
+async function chainWeb3SpaceIds(address: string | null | undefined) {
+  const wallet = walletAddress(address);
+  if (!wallet) return [];
+  const web3SpaceIds = (await web3Client.readContract(
+    getMemberSpaces({ memberAddress: wallet }),
+  )) as readonly bigint[];
+  return [
+    ...new Set(
+      web3SpaceIds
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0),
+    ),
+  ];
+}
 
 function excerpt(value: string | null | undefined, max = 180): string {
   const text = (value ?? '')
@@ -71,14 +112,8 @@ export async function getMemberIntelligence(
   if (!person?.slug) return null;
   const primaryOrientation = await readPrimaryOrientation(db, person.id);
 
-  const spaceRows = await db
-    .select({
-      id: spaces.id,
-      slug: spaces.slug,
-      title: spaces.title,
-      description: spaces.description,
-      logoUrl: spaces.logoUrl,
-    })
+  const databaseSpaceRows = await db
+    .select(memberSpaceColumns)
     .from(spaces)
     .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
     .where(
@@ -86,6 +121,34 @@ export async function getMemberIntelligence(
     )
     .orderBy(desc(memberships.createdAt));
 
+  const web3SpaceIds = await chainWeb3SpaceIds(person.address);
+  const chainOrder = new Map(web3SpaceIds.map((id, index) => [id, index]));
+  const chainSpaceRows: MemberSpaceRow[] =
+    web3SpaceIds.length === 0
+      ? []
+      : (
+          await db
+            .select({
+              ...memberSpaceColumns,
+              web3SpaceId: spaces.web3SpaceId,
+            })
+            .from(spaces)
+            .where(
+              and(
+                inArray(spaces.web3SpaceId, web3SpaceIds),
+                eq(spaces.isArchived, false),
+              ),
+            )
+        )
+          .slice()
+          .sort(
+            (left, right) =>
+              (chainOrder.get(left.web3SpaceId ?? 0) ?? web3SpaceIds.length) -
+              (chainOrder.get(right.web3SpaceId ?? 0) ?? web3SpaceIds.length),
+          )
+          .map(({ web3SpaceId: _web3SpaceId, ...space }) => space);
+
+  const spaceRows = mergeMemberSpaces(chainSpaceRows, databaseSpaceRows);
   const spaceIds = spaceRows.map((space) => space.id);
   const orientation = parseMemberOrientation(primaryOrientation);
 

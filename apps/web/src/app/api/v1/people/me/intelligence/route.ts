@@ -1,25 +1,8 @@
 import {
-  findSelf,
-  getDb,
   getMemberIntelligence,
+  resolveMemberCaller,
 } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
-
-function serviceDatabase() {
-  try {
-    // Touching the proxy initializes the pool. A missing URL throws here,
-    // not while the route module is imported.
-    if (typeof db.select !== 'function') return null;
-    return db;
-  } catch (error) {
-    console.error(
-      '[member-intelligence] service database is not configured',
-      error instanceof Error ? error.message : 'unknown',
-    );
-    return null;
-  }
-}
 
 export async function GET(request: NextRequest) {
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
@@ -28,16 +11,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Same lookup as GET /me. A failure here is a 500, not "no profile".
-    const person = await findSelf({ db: getDb({ authToken }) });
-    if (!person?.id) {
+    // Same caller as the member MCP: Privy user id → people.sub, then that
+    // row's own database. Do not reuse a numeric id from a different connection.
+    const caller = await resolveMemberCaller(authToken);
+    if (!caller?.person.id) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const database = serviceDatabase() ?? getDb({ authToken });
     const intelligence = await getMemberIntelligence(
-      { personId: person.id },
-      { db: database },
+      { personId: caller.person.id },
+      { db: caller.db },
     );
     if (!intelligence) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

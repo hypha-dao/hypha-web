@@ -1,9 +1,49 @@
 import { describe, expect, it } from 'vitest';
 
+import { mergeMemberSpaces } from '../../member-intelligence';
 import {
   buildMemberGuidance,
   parseMemberOrientation,
 } from '../../member-intelligence-guidance';
+
+describe('mergeMemberSpaces', () => {
+  it('keeps on-chain spaces when the memberships table has none', () => {
+    expect(
+      mergeMemberSpaces(
+        [
+          {
+            id: 4,
+            slug: 'hypha',
+            title: 'Hypha',
+            description: null,
+            logoUrl: null,
+          },
+        ],
+        [],
+      ).map((space) => space.slug),
+    ).toEqual(['hypha']);
+  });
+
+  it('appends database rows that are not already on chain', () => {
+    const chain = {
+      id: 4,
+      slug: 'hypha',
+      title: 'Hypha',
+      description: null,
+      logoUrl: null,
+    };
+    const onlyInDb = {
+      id: 9,
+      slug: 'local',
+      title: 'Local',
+      description: null,
+      logoUrl: null,
+    };
+    expect(
+      mergeMemberSpaces([chain], [chain, onlyInDb]).map((space) => space.id),
+    ).toEqual([4, 9]);
+  });
+});
 
 describe('parseMemberOrientation', () => {
   it('keeps the three orientations and treats anything else as unset', () => {
