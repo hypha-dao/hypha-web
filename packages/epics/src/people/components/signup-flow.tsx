@@ -215,8 +215,9 @@ export function SignupFlow({
                           : 'border-border hover:border-neutral-8',
                       )}
                     >
+                      <OrientationMark orientation={option} />
                       <span
-                        className="block text-3"
+                        className="mt-3 block text-3"
                         style={{ fontFamily: 'var(--font-family-heading)' }}
                       >
                         {t(`orientation.${option}.title`)}
@@ -330,6 +331,34 @@ function Screen({
         <div className="mt-8 grid w-full gap-5 text-left">{children}</div>
       ) : null}
     </div>
+  );
+}
+
+function OrientationMark({ orientation }: { orientation: SignupOrientation }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden
+      className="block size-8 text-foreground"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinejoin="miter"
+    >
+      {orientation === 'member' ? (
+        <>
+          <circle cx="16" cy="16" r="10" />
+          <circle cx="16" cy="16" r="3.75" />
+        </>
+      ) : null}
+      {orientation === 'builder' ? (
+        <>
+          <rect x="6" y="12" width="14" height="14" />
+          <path d="M12 12V6h14v14h-6" />
+        </>
+      ) : null}
+      {orientation === 'investor' ? <path d="M16 6 26 16 16 26 6 16Z" /> : null}
+    </svg>
   );
 }
 
