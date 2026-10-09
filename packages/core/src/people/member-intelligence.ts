@@ -103,6 +103,91 @@ export function mergeMemberSpaces(
   return merged;
 }
 
+export type SharedSpacePerson = {
+  id: number;
+  slug: string | null;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  avatarUrl: string | null;
+  address: string | null;
+  sub: string | null;
+};
+
+export type SharedSpaceConnection = {
+  id: number;
+  slug: string | null;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  avatarUrl: string | null;
+  sharedSpaceCount: number;
+};
+
+/**
+ * Distinct other people whose wallets appear in the caller's space member
+ * lists. The caller and space-actor profiles are left out. Each person is
+ * counted once; `sharedSpaceCount` is how many of those spaces include them.
+ */
+export function peopleSharingMemberSpaces({
+  callerPersonId,
+  membersBySpace,
+  people,
+  spaceActorSubPrefix,
+  limit,
+}: {
+  callerPersonId: number;
+  membersBySpace: ReadonlyArray<{
+    spaceId: number;
+    addresses: readonly string[];
+  }>;
+  people: readonly SharedSpacePerson[];
+  spaceActorSubPrefix: string;
+  limit: number;
+}): { count: number; connections: SharedSpaceConnection[] } {
+  const spaceIdsByAddress = new Map<string, Set<number>>();
+  for (const space of membersBySpace) {
+    const seenInSpace = new Set<string>();
+    for (const raw of space.addresses) {
+      const key = raw.trim().toLowerCase();
+      if (!key || seenInSpace.has(key)) continue;
+      seenInSpace.add(key);
+      const spaceIds = spaceIdsByAddress.get(key) ?? new Set<number>();
+      spaceIds.add(space.spaceId);
+      spaceIdsByAddress.set(key, spaceIds);
+    }
+  }
+
+  const byId = new Map<number, SharedSpaceConnection>();
+  for (const person of people) {
+    if (person.id === callerPersonId || byId.has(person.id)) continue;
+    if (person.sub?.startsWith(spaceActorSubPrefix)) continue;
+    const key = person.address?.trim().toLowerCase();
+    if (!key) continue;
+    const sharedSpaceIds = spaceIdsByAddress.get(key);
+    if (!sharedSpaceIds || sharedSpaceIds.size === 0) continue;
+    byId.set(person.id, {
+      id: person.id,
+      slug: person.slug,
+      name: person.name,
+      surname: person.surname,
+      nickname: person.nickname,
+      avatarUrl: person.avatarUrl,
+      sharedSpaceCount: sharedSpaceIds.size,
+    });
+  }
+
+  const ranked = [...byId.values()].sort(
+    (left, right) =>
+      right.sharedSpaceCount - left.sharedSpaceCount || left.id - right.id,
+  );
+
+  return {
+    count: ranked.length,
+    connections: ranked.slice(0, Math.max(limit, 0)),
+  };
+}
+
 export type NetworkCapitalAsk = {
   id: number;
   slug: string | null;
