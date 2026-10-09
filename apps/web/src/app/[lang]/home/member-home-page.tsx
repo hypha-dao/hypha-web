@@ -128,9 +128,16 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   }
 
   if (phase === 'profile-unavailable' || phase === 'home-unavailable') {
+    const name = person?.name?.trim() || person?.nickname?.trim();
     return (
       <div className="mx-auto max-w-lg px-5 py-20 text-center">
-        <p className="text-2 text-neutral-11">{t('error')}</p>
+        <p className="text-2 text-neutral-11">
+          {phase === 'profile-unavailable'
+            ? t('profileUnavailable')
+            : name
+            ? t('errorNamed', { name })
+            : t('error')}
+        </p>
         <Button
           className="mt-4"
           type="button"

@@ -222,6 +222,8 @@
     "fallbackMember": "Member",
     "orientationSaveError": "That choice could not be saved. Try again.",
     "error": "Your home could not be loaded.",
+    "errorNamed": "{name}, your home could not be loaded.",
+    "profileUnavailable": "You are still signed in. Your profile could not be loaded.",
     "retry": "Try again"
   },
   "Marketplace": {
