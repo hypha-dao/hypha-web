@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import useSWR from 'swr';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
@@ -26,6 +25,7 @@ import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
+import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -194,7 +194,7 @@ export function AiPanelHeader({
       asChild
       className="rounded-lg py-1.5 hover:bg-background-4/70"
     >
-      <Link
+      <SpaceSwitcherOption
         href={
           getDhoSpaceContextPath({
             pathname,
@@ -202,28 +202,9 @@ export function AiPanelHeader({
             spaceSlug: space.slug,
           }) ?? `/${lang}/dho/${space.slug}/agreements`
         }
-        className="flex min-w-0 items-center gap-2"
-      >
-        <span className="h-5 w-5 overflow-hidden rounded-full">
-          {getDisplayIcon(space, logoVariant) ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getDisplayIcon(space, logoVariant) ?? undefined}
-                alt={space.title}
-                className="h-full w-full object-cover"
-              />
-            </>
-          ) : (
-            <span className="flex h-full w-full items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-            </span>
-          )}
-        </span>
-        <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
-          {space.title}
-        </span>
-      </Link>
+        title={space.title}
+        iconUrl={getDisplayIcon(space, logoVariant)}
+      />
     </DropdownMenuItem>
   );
 
