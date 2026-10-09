@@ -211,8 +211,8 @@ export function SignupFlow({
                       className={cn(
                         'border px-4 py-4 text-left transition-colors',
                         selected
-                          ? 'border-foreground bg-accent-3'
-                          : 'border-border bg-background/80 hover:bg-accent-2',
+                          ? 'border-foreground'
+                          : 'border-border hover:border-neutral-8',
                       )}
                     >
                       <span
