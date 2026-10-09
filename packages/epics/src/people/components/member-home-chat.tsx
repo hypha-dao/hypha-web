@@ -29,6 +29,7 @@ import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboa
 import { buildSpaceAdvisorVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { celebrate } from './member-home-celebrate';
+import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeVote } from './member-home-vote';
 
 /** Reserved discovery-mode key. Home must not share a space's voice preference. */
@@ -264,13 +265,7 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
                 key={message.id}
                 className={cn('flex gap-3', mine && 'flex-row-reverse')}
               >
-                {mine ? null : (
-                  <img
-                    src="/brand/strategy-mycelium.png"
-                    alt=""
-                    className="mt-0.5 h-8 w-8 shrink-0 object-cover"
-                  />
-                )}
+                {mine ? null : <MemberHomeMark className="mt-0.5 h-8 w-8" />}
                 <p
                   className={cn(
                     'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
