@@ -74,6 +74,7 @@ export type MemberIntelligence = {
     priority: string | null;
     spaceSlug: string;
     spaceTitle: string;
+    spaceLogo?: MemberSpaceLogo | null;
     assignedToMember: boolean;
   }>;
   notifications: MemberAttentionItem[];

@@ -370,6 +370,9 @@ export async function getMemberIntelligence(
                 assigneeIds: coherences.assigneeIds,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
+                logoUrl: spaces.logoUrl,
+                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
               })
               .from(coherences)
               .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
@@ -412,6 +415,7 @@ export async function getMemberIntelligence(
           priority: row.priority,
           spaceSlug: row.spaceSlug,
           spaceTitle: row.spaceTitle,
+          spaceLogo: toSpaceLogo(row),
           assignedToMember: (row.assigneeIds ?? []).includes(personId),
         })),
         count: Number(signalCount) || 0,
