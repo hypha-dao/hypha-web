@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
@@ -345,8 +346,14 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
                   {t('validate')}
                 </Button>
                 <Button asChild variant="outline">
-                  <Link href={`/${lang}/dho/${leadSignal.spaceSlug}/overview`}>
-                    {t('visitSpace')}
+                  <Link
+                    href={getSignalPath(
+                      lang,
+                      leadSignal.spaceSlug,
+                      leadSignal.targetSlug,
+                    )}
+                  >
+                    {t('viewSignal')}
                   </Link>
                 </Button>
               </div>
