@@ -20,6 +20,16 @@ export const getProposalPath = (
   return `/${lang}/dho/${spaceSlug}/agreements/proposal/${proposalSlug}`;
 };
 
+export const getSignalPath = (
+  lang: Locale,
+  spaceSlug: string,
+  signalSlug: string,
+) => {
+  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+    signalSlug,
+  )}`;
+};
+
 export const getProposalUrl = (
   lang: Locale,
   spaceSlug: string,
