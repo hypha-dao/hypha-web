@@ -14,7 +14,10 @@ export const getDb = ({ authToken }: getDbConfig) => {
   // endpoint — preview BRANCH_DB_URL pooler URLs do not substitute for it.
   // Preview schema/data for migrations uses `db` from storage-postgres instead.
   const url = authToken ? AUTHENTICATED : ANONYMOUS;
-  console.debug('getDb', { url, hasAuthToken: Boolean(authToken) });
+  console.debug('getDb', {
+    hasUrl: Boolean(url),
+    hasAuthToken: Boolean(authToken),
+  });
 
   invariant(url, 'connection string is missing');
 
