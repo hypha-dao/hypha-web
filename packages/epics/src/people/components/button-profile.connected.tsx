@@ -177,8 +177,10 @@ export const ConnectedButtonProfile = ({
       onChangeThemeMode={handleThemeChange}
       resolvedTheme={resolvedTheme}
       profileUrl={
-        person?.slug
-          ? `/${lang}/profile/${person?.slug ?? ''}`
+        meError
+          ? undefined
+          : person?.slug
+          ? `/${lang}/profile/${person.slug}`
           : newUserRedirectPath
       }
       onboardingUrl={onboardingUrl}
