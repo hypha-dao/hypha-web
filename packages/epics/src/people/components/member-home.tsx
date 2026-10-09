@@ -10,6 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
@@ -20,13 +21,17 @@ import './member-home-banner.css';
 
 type MemberHomeProps = {
   lang: Locale;
-  intelligence: MemberIntelligence;
+  intelligence?: MemberIntelligence | null;
+  isLoading?: boolean;
+  greetingName?: string | null;
   isSavingOrientation?: boolean;
   orientationError?: string | null;
   onChooseOrientation: (orientation: SignupOrientation) => void;
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
+
+const CARD_SKELETON_WIDTHS = ['72%', '100%', '84%', '64%'];
 
 function orientationLabelKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientationMember' as const;
@@ -58,28 +63,41 @@ function personLabel(
   return full || person.nickname || fallback;
 }
 
+function isSignupOrientation(
+  value: string | null | undefined,
+): value is SignupOrientation {
+  return value === 'member' || value === 'builder' || value === 'investor';
+}
+
 export function MemberHome({
   lang,
   intelligence,
+  isLoading = false,
+  greetingName,
   isSavingOrientation,
   orientationError,
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
   const memberFallback = t('fallbackMember');
-  const orientation = intelligence.person.primaryOrientation;
+  const home = isLoading || !intelligence ? null : intelligence;
+  const rawOrientation = home?.person.primaryOrientation;
+  const orientation = isSignupOrientation(rawOrientation)
+    ? rawOrientation
+    : null;
   const displayName =
-    intelligence.person.name?.trim() ||
-    intelligence.person.nickname?.trim() ||
+    home?.person.name?.trim() ||
+    home?.person.nickname?.trim() ||
+    greetingName?.trim() ||
     t('fallbackName');
-  const lead = intelligence.attention[0];
+  const lead = home?.attention[0];
   const leadHref = lead
     ? lead.kind === 'proposal'
       ? getProposalPath(lang, lead.spaceSlug, lead.targetSlug)
       : `/${lang}/dho/${lead.spaceSlug}/coherence`
     : null;
-  const chatHref = intelligence.chatSpaceSlug
-    ? `/${lang}/dho/${intelligence.chatSpaceSlug}/coherence`
+  const chatHref = home?.chatSpaceSlug
+    ? `/${lang}/dho/${home.chatSpaceSlug}/coherence`
     : `/${lang}/network`;
 
   return (
@@ -99,15 +117,19 @@ export function MemberHome({
         >
           {t(greetingKey(), { name: displayName })}
         </h1>
-        <p className="mt-4 text-1 tracking-[0.16em] text-neutral-11 uppercase">
-          {intelligence.counts.connections > 0
-            ? t('peopleAround', { count: intelligence.counts.connections })
-            : t('peopleAroundEmpty')}
-        </p>
-        {intelligence.connections.length > 0 ? (
+        {home == null ? (
+          <Skeleton loading height="16px" width="14rem" className="mt-4" />
+        ) : (
+          <p className="mt-4 text-1 tracking-[0.16em] text-neutral-11 uppercase">
+            {home.counts.connections > 0
+              ? t('peopleAround', { count: home.counts.connections })
+              : t('peopleAroundEmpty')}
+          </p>
+        )}
+        {home && home.connections.length > 0 ? (
           <div className="mt-3 flex items-center gap-3">
             <div className="flex">
-              {intelligence.connections.slice(0, 5).map((person, index) => (
+              {home.connections.slice(0, 5).map((person, index) => (
                 <Link
                   key={person.id}
                   href={
@@ -142,7 +164,9 @@ export function MemberHome({
           </div>
         ) : null}
 
-        {orientation == null ? (
+        {home == null ? (
+          <Skeleton loading height="22px" width="7.5rem" className="mt-3" />
+        ) : orientation == null ? (
           <section className="mt-10 border border-border bg-background/80 p-5">
             <h2
               className="text-4"
@@ -182,7 +206,10 @@ export function MemberHome({
           />
         )}
 
-        <section className="mt-10 border border-border bg-background/85 p-5">
+        <section
+          className="mt-10 border border-border bg-background/85 p-5"
+          aria-busy={home == null || undefined}
+        >
           <div className="flex items-baseline justify-between gap-4">
             <h2
               className="text-4"
@@ -196,7 +223,11 @@ export function MemberHome({
               </p>
             ) : null}
           </div>
-          {lead ? (
+          {home == null ? (
+            <div className="mt-4">
+              <CardSkeleton lines={3} />
+            </div>
+          ) : lead ? (
             <div className="mt-4">
               <p className="text-3">{lead.title}</p>
               <p className="mt-1 text-2 text-neutral-11">{lead.detail}</p>
@@ -211,49 +242,66 @@ export function MemberHome({
           ) : (
             <p className="mt-4 text-2 text-neutral-11">{t('quiet')}</p>
           )}
-          <p className="mt-4 max-w-[52ch] text-2 leading-relaxed text-neutral-12">
-            {intelligence.guidance.narrative}
-          </p>
+          {home ? (
+            <p className="mt-4 max-w-[52ch] text-2 leading-relaxed text-neutral-12">
+              {home.guidance.narrative}
+            </p>
+          ) : null}
         </section>
 
         <dl className="mt-8 grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
-          <Stat label={t('counts.spaces')} value={intelligence.counts.spaces} />
+          <Stat
+            label={t('counts.spaces')}
+            value={home?.counts.spaces ?? 0}
+            isLoading={home == null}
+          />
           <Stat
             label={t('counts.proposals')}
-            value={intelligence.counts.openProposals}
+            value={home?.counts.openProposals ?? 0}
+            isLoading={home == null}
           />
           <Stat
             label={t('counts.signals')}
-            value={intelligence.counts.signals}
+            value={home?.counts.signals ?? 0}
+            isLoading={home == null}
           />
           <Stat
             label={t('counts.people')}
-            value={intelligence.counts.connections}
+            value={home?.counts.connections ?? 0}
+            isLoading={home == null}
           />
         </dl>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <Tile title={t('wallet')}>
-            {intelligence.wallet.address ? (
-              <p className="font-mono text-2">
-                {shortAddress(intelligence.wallet.address)}
-              </p>
+          <Tile title={t('wallet')} busy={home == null}>
+            {home == null ? (
+              <CardSkeleton lines={2} />
             ) : (
-              <p className="text-2 text-neutral-11">{t('walletEmpty')}</p>
+              <>
+                {home.wallet.address ? (
+                  <p className="font-mono text-2">
+                    {shortAddress(home.wallet.address)}
+                  </p>
+                ) : (
+                  <p className="text-2 text-neutral-11">{t('walletEmpty')}</p>
+                )}
+                {home.wallet.preferredCurrency ? (
+                  <p className="mt-1 text-1 text-neutral-11">
+                    {home.wallet.preferredCurrency}
+                  </p>
+                ) : null}
+              </>
             )}
-            {intelligence.wallet.preferredCurrency ? (
-              <p className="mt-1 text-1 text-neutral-11">
-                {intelligence.wallet.preferredCurrency}
-              </p>
-            ) : null}
             <TileLink href={`/${lang}/my-wallet`}>{t('openWallet')}</TileLink>
           </Tile>
-          <Tile title={t('connections')}>
-            {intelligence.connections.length === 0 ? (
+          <Tile title={t('connections')} busy={home == null}>
+            {home == null ? (
+              <CardSkeleton lines={3} />
+            ) : home.connections.length === 0 ? (
               <p className="text-2 text-neutral-11">{t('noConnections')}</p>
             ) : (
               <ul className="grid gap-2">
-                {intelligence.connections.slice(0, 4).map((person) => (
+                {home.connections.slice(0, 4).map((person) => (
                   <li key={person.id}>
                     <Link
                       href={
@@ -277,66 +325,90 @@ export function MemberHome({
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Tile title={t('spaces')}>
+          <Tile title={t('spaces')} busy={home == null}>
             <ResourceList
+              isLoading={home == null}
               empty={t('noSpaces')}
-              items={intelligence.spaces.map((space) => ({
-                id: space.id,
-                title: space.title,
-                detail: space.description,
-                href: `/${lang}/dho/${space.slug}/overview`,
-              }))}
+              items={
+                home
+                  ? home.spaces.map((space) => ({
+                      id: space.id,
+                      title: space.title,
+                      detail: space.description,
+                      href: `/${lang}/dho/${space.slug}/overview`,
+                    }))
+                  : []
+              }
             />
           </Tile>
-          <Tile title={t('signals')}>
+          <Tile title={t('signals')} busy={home == null}>
             <ResourceList
+              isLoading={home == null}
               empty={t('noSignals')}
-              items={intelligence.signals.map((signal) => ({
-                id: signal.id,
-                title: signal.title,
-                detail: signal.spaceTitle,
-                href: `/${lang}/dho/${signal.spaceSlug}/coherence`,
-              }))}
+              items={
+                home
+                  ? home.signals.map((signal) => ({
+                      id: signal.id,
+                      title: signal.title,
+                      detail: signal.spaceTitle,
+                      href: `/${lang}/dho/${signal.spaceSlug}/coherence`,
+                    }))
+                  : []
+              }
             />
           </Tile>
-          <Tile title={t('notifications')}>
+          <Tile title={t('notifications')} busy={home == null}>
             <ResourceList
+              isLoading={home == null}
               empty={t('noNotifications')}
-              items={intelligence.notifications.map((item) => ({
-                id: item.id,
-                title: item.title,
-                detail: item.detail,
-                href:
-                  item.kind === 'proposal'
-                    ? getProposalPath(lang, item.spaceSlug, item.targetSlug)
-                    : `/${lang}/dho/${item.spaceSlug}/coherence`,
-              }))}
+              items={
+                home
+                  ? home.notifications.map((item) => ({
+                      id: item.id,
+                      title: item.title,
+                      detail: item.detail,
+                      href:
+                        item.kind === 'proposal'
+                          ? getProposalPath(
+                              lang,
+                              item.spaceSlug,
+                              item.targetSlug,
+                            )
+                          : `/${lang}/dho/${item.spaceSlug}/coherence`,
+                    }))
+                  : []
+              }
             />
             <TileLink href={`/${lang}/my-spaces/notification-centre`}>
               {t('seeAllNotifications')}
             </TileLink>
           </Tile>
-          <Tile title={t('proposals')}>
+          <Tile title={t('proposals')} busy={home == null}>
             <ResourceList
+              isLoading={home == null}
               empty={t('noProposals')}
-              items={intelligence.proposals.flatMap((proposal) =>
-                proposal.slug
-                  ? [
-                      {
-                        id: proposal.id,
-                        title: proposal.title,
-                        detail: `${proposal.spaceTitle} · ${
-                          proposal.state ?? ''
-                        }`,
-                        href: getProposalPath(
-                          lang,
-                          proposal.spaceSlug,
-                          proposal.slug,
-                        ),
-                      },
-                    ]
-                  : [],
-              )}
+              items={
+                home
+                  ? home.proposals.flatMap((proposal) =>
+                      proposal.slug
+                        ? [
+                            {
+                              id: proposal.id,
+                              title: proposal.title,
+                              detail: `${proposal.spaceTitle} · ${
+                                proposal.state ?? ''
+                              }`,
+                              href: getProposalPath(
+                                lang,
+                                proposal.spaceSlug,
+                                proposal.slug,
+                              ),
+                            },
+                          ]
+                        : [],
+                    )
+                  : []
+              }
             />
           </Tile>
         </div>
@@ -355,14 +427,14 @@ export function MemberHome({
             href={`/${lang}/onboarding`}
           />
         ) : null}
-        {orientation === 'investor' ? (
+        {orientation === 'investor' && home ? (
           <PersonaCard
             title={t('investorTitle')}
             body={t('investorBody')}
             action={t('investorAction')}
             href={`/${lang}/network/marketplace`}
             meta={t('investorCount', {
-              count: intelligence.counts.capitalAsks,
+              count: home.counts.capitalAsks,
             })}
           />
         ) : null}
@@ -462,7 +534,30 @@ function orientationBodyKey(orientation: SignupOrientation) {
   return 'orientation.investor.body' as const;
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function CardSkeleton({ lines = 3 }: { lines?: number }) {
+  return (
+    <div className="grid gap-2">
+      {Array.from({ length: lines }, (_, index) => (
+        <Skeleton
+          key={index}
+          loading
+          height="16px"
+          width={CARD_SKELETON_WIDTHS[index] ?? '70%'}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  isLoading = false,
+}: {
+  label: string;
+  value: number;
+  isLoading?: boolean;
+}) {
   return (
     <div className="bg-background px-4 py-4">
       <dt className="text-1 tracking-[0.14em] text-neutral-11 uppercase">
@@ -472,15 +567,28 @@ function Stat({ label, value }: { label: string; value: number }) {
         className="mt-2 text-6 tabular-nums"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        {value.toLocaleString()}
+        <Skeleton loading={isLoading} width="2.75rem" height="30px">
+          {value.toLocaleString()}
+        </Skeleton>
       </dd>
     </div>
   );
 }
 
-function Tile({ title, children }: { title: string; children: ReactNode }) {
+function Tile({
+  title,
+  children,
+  busy = false,
+}: {
+  title: string;
+  children: ReactNode;
+  busy?: boolean;
+}) {
   return (
-    <section className="flex flex-col border border-border bg-background/80 p-4">
+    <section
+      aria-busy={busy || undefined}
+      className="flex flex-col border border-border bg-background/80 p-4"
+    >
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -506,6 +614,7 @@ function TileLink({ href, children }: { href: string; children: ReactNode }) {
 function ResourceList({
   items,
   empty,
+  isLoading = false,
 }: {
   items: Array<{
     id: string | number;
@@ -514,7 +623,9 @@ function ResourceList({
     href: string;
   }>;
   empty: string;
+  isLoading?: boolean;
 }) {
+  if (isLoading) return <CardSkeleton />;
   if (items.length === 0) {
     return <p className="text-2 text-neutral-11">{empty}</p>;
   }
