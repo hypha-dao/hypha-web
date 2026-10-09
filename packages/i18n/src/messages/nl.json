@@ -1,4 +1,11 @@
 {
+  "WelcomeFlow": {
+    "errors": {
+      "nicknameTaken": "Er bestaat al een profiel met deze bijnaam. Kies een andere.",
+      "emailTaken": "Er bestaat al een account met dit e-mailadres. Meld je aan of gebruik een ander adres.",
+      "createFailed": "Profiel aanmaken is mislukt"
+    }
+  },
   "Common": {
     "Assignments": "Opdrachten",
     "Members": "Leden",

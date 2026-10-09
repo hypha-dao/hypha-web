@@ -65,32 +65,16 @@ function errorChainMessages(error: unknown): string[] {
   return messages;
 }
 
-/** Drop connection strings so a database failure can be shown in the UI. */
-function sanitizeDatabaseMessage(message: string): string {
-  return message
-    .replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted]')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 500);
-}
-
 function profileCreateErrorMessage(error: unknown): string {
-  const messages = errorChainMessages(error);
-  const combined = messages.join('\n');
+  // Constraint names are matched server-side. Other cause text stays in the log.
+  const combined = errorChainMessages(error).join('\n');
 
   if (combined.includes('people_slug_unique')) {
-    return 'Profile with this nickname already exists. Please choose a different one.';
+    return 'nickname_taken';
   }
   if (combined.includes('people_email_unique')) {
-    return 'An account with this email already exists. Try signing in or use a different email.';
+    return 'email_taken';
   }
 
-  const databaseMessage = [...messages]
-    .reverse()
-    .find((message) => message && !message.startsWith('Failed query:'));
-  const sanitized = databaseMessage
-    ? sanitizeDatabaseMessage(databaseMessage)
-    : '';
-
-  return sanitized || 'Failed to create profile';
+  return 'profile_create_failed';
 }
