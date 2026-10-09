@@ -16,7 +16,7 @@ import {
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
-import { getProposalPath } from '../../common/get-path-function';
+import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import { celebrate } from './member-home-celebrate';
 import { MemberHomeVote } from './member-home-vote';
 
@@ -246,8 +246,14 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
                   {t('validate')}
                 </Button>
                 <Button asChild variant="outline">
-                  <Link href={`/${lang}/dho/${leadSignal.spaceSlug}/overview`}>
-                    {t('visitSpace')}
+                  <Link
+                    href={getSignalPath(
+                      lang,
+                      leadSignal.spaceSlug,
+                      leadSignal.targetSlug,
+                    )}
+                  >
+                    {t('viewSignal')}
                   </Link>
                 </Button>
               </div>
