@@ -1,6 +1,7 @@
 import { DbConfig } from '../../server';
 import { people } from '@hypha-platform/storage-postgres';
-import { mapToDomainPerson } from './queries';
+import { mapToDomainPerson, personColumns } from './queries';
+import { isMissingPrimaryOrientationColumn } from './primary-orientation-column';
 import { Person } from '../types';
 import { eq } from 'drizzle-orm';
 
@@ -11,17 +12,40 @@ export const createPerson = async (
   { db }: CreatePersonConfig,
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
+  const { primaryOrientation, ...profile } = person;
   const insertData = {
-    ...person,
+    ...profile,
     email: person.email || null,
     slug,
   };
-  const [dbPerson] = await db.insert(people).values(insertData).returning();
+  // Returning every schema column includes primary_orientation and fails
+  // before migration 0080, which is what blocked "Enter your home".
+  const [dbPerson] = await db
+    .insert(people)
+    .values(insertData)
+    .returning(personColumns());
   if (!dbPerson) {
     throw new Error('Failed to create person');
   }
 
-  return mapToDomainPerson(dbPerson);
+  const created = mapToDomainPerson(dbPerson);
+  if (
+    primaryOrientation !== 'member' &&
+    primaryOrientation !== 'builder' &&
+    primaryOrientation !== 'investor'
+  ) {
+    return created;
+  }
+
+  try {
+    return await updatePersonPrimaryOrientation(
+      { id: created.id, primaryOrientation },
+      { db },
+    );
+  } catch (error) {
+    if (isMissingPrimaryOrientationColumn(error)) return created;
+    throw error;
+  }
 };
 
 export const updatePerson = async (
@@ -29,8 +53,10 @@ export const updatePerson = async (
   { db }: CreatePersonConfig,
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
+  const { primaryOrientation, ...profile } = person;
+  void primaryOrientation;
   const updateData = {
-    ...person,
+    ...profile,
     email: person.email || null,
     slug,
   };
@@ -38,7 +64,7 @@ export const updatePerson = async (
     .update(people)
     .set(updateData)
     .where(eq(people.id, person.id))
-    .returning();
+    .returning(personColumns());
   if (!dbPerson) {
     throw new Error('Failed to update person');
   }
