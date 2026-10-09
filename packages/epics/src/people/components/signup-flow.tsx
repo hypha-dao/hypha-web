@@ -40,6 +40,22 @@ type SignupFlowProps = {
   onComplete: (values: SignupFlowValues) => Promise<void>;
 };
 
+function profileCreateErrorText(
+  message: string,
+  t: ReturnType<typeof useTranslations<'WelcomeFlow'>>,
+): string {
+  switch (message) {
+    case 'nickname_taken':
+      return t('errors.nicknameTaken');
+    case 'email_taken':
+      return t('errors.emailTaken');
+    case 'profile_create_failed':
+      return t('errors.createFailed');
+    default:
+      return message;
+  }
+}
+
 const STEPS = [
   'welcome',
   'name',
@@ -180,6 +196,8 @@ export function SignupFlow({
       setFieldError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  const shownError = fieldError || error;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background text-foreground">
@@ -418,9 +436,9 @@ export function SignupFlow({
             {t('walletWait')}
           </p>
         ) : null}
-        {fieldError || error ? (
+        {shownError ? (
           <p className="mt-4 w-full text-2 text-error-11" role="alert">
-            {fieldError || error}
+            {profileCreateErrorText(shownError, t)}
           </p>
         ) : null}
 
