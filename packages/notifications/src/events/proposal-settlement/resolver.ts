@@ -6,6 +6,8 @@ import {
   web3Client,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { buildNotificationSettingsUrl } from '../../core/notification-settings-url';
+import { buildProposalUrl } from '../../core/proposal-url';
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type {
   ProposalAcceptedEvent,
@@ -46,6 +48,11 @@ export const resolveProposalSettlementRecipients: RecipientResolver<
         proposalTitle: creatorRow.proposalTitle ?? undefined,
         proposalLabel: creatorRow.proposalLabel ?? undefined,
         proposalState: creatorRow.proposalState ?? undefined,
+        url: buildProposalUrl({
+          spaceSlug: creatorRow.spaceSlug,
+          proposalSlug: creatorRow.proposalSlug,
+        }),
+        notificationSettingsUrl: buildNotificationSettingsUrl(),
       },
     });
   } else {
@@ -99,6 +106,11 @@ export const resolveProposalSettlementRecipients: RecipientResolver<
     proposalTitle: document.title ?? undefined,
     proposalLabel: document.label ?? undefined,
     proposalState: document.state ?? undefined,
+    url: buildProposalUrl({
+      spaceSlug: space.slug,
+      proposalSlug: document.slug,
+    }),
+    notificationSettingsUrl: buildNotificationSettingsUrl(),
   };
 
   for (const member of members) {
