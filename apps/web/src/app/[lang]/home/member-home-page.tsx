@@ -142,7 +142,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     router.replace(`/${lang}/profile/signup`);
   }, [phase, lang, router]);
 
-  if (phase === 'loading' || phase === 'signup') {
+  if (phase === 'signup') {
     return (
       <p className="px-5 py-16 text-center text-2 text-neutral-11">
         {t('loading')}
@@ -192,11 +192,20 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (!data) {
+  if (phase === 'loading' || !data) {
+    const greetingName =
+      person?.name?.trim() || person?.nickname?.trim() || null;
     return (
-      <p className="px-5 py-16 text-center text-2 text-neutral-11">
-        {t('loading')}
-      </p>
+      <MemberHome
+        lang={lang}
+        isLoading
+        greetingName={greetingName}
+        isSavingOrientation={isSavingOrientation}
+        orientationError={orientationError}
+        onChooseOrientation={(orientation) => {
+          void chooseOrientation(orientation);
+        }}
+      />
     );
   }
 
