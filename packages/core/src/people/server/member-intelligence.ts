@@ -24,6 +24,7 @@ import { getSpaceMembers } from '../../space/client/web3/dao-space-factory/get-s
 import type {
   MemberAttentionItem,
   MemberIntelligence,
+  MemberSpaceLogo,
   MemberSpaceRow,
   NetworkCapitalAsk,
 } from '../member-intelligence';
@@ -53,7 +54,21 @@ const memberSpaceColumns = {
   title: spaces.title,
   description: spaces.description,
   logoUrl: spaces.logoUrl,
+  ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+  ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
 };
+
+function toSpaceLogo(row: {
+  logoUrl: string | null;
+  ecosystemLogoUrlLight: string | null;
+  ecosystemLogoUrlDark: string | null;
+}): MemberSpaceLogo {
+  return {
+    logoUrl: row.logoUrl,
+    ecosystemLogoUrlLight: row.ecosystemLogoUrlLight,
+    ecosystemLogoUrlDark: row.ecosystemLogoUrlDark,
+  };
+}
 
 function walletAddress(address: string | null | undefined): Hex | null {
   const value = address?.trim();
@@ -286,6 +301,9 @@ export async function getMemberIntelligence(
                 web3ProposalId: documents.web3ProposalId,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
+                logoUrl: spaces.logoUrl,
+                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
               })
               .from(documents)
               .innerJoin(spaces, eq(documents.spaceId, spaces.id))
@@ -322,6 +340,7 @@ export async function getMemberIntelligence(
           label: row.label,
           spaceSlug: row.spaceSlug,
           spaceTitle: row.spaceTitle,
+          spaceLogo: toSpaceLogo(row),
           createdAt: row.createdAt.toISOString(),
           authoredByMember: row.creatorId === personId,
           web3ProposalId: row.web3ProposalId,
@@ -440,6 +459,9 @@ export async function getMemberIntelligence(
                 createdAt: documents.createdAt,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
+                logoUrl: spaces.logoUrl,
+                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
               })
               .from(documents)
               .innerJoin(spaces, eq(documents.spaceId, spaces.id))
@@ -467,6 +489,9 @@ export async function getMemberIntelligence(
                 updatedAt: coherences.updatedAt,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
+                logoUrl: spaces.logoUrl,
+                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
               })
               .from(coherences)
               .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
@@ -496,6 +521,7 @@ export async function getMemberIntelligence(
                   detail: `${row.spaceTitle} · a decision`,
                   spaceSlug: row.spaceSlug,
                   spaceTitle: row.spaceTitle,
+                  spaceLogo: toSpaceLogo(row),
                   targetSlug: row.slug,
                   at: row.createdAt.toISOString(),
                 },
@@ -512,6 +538,7 @@ export async function getMemberIntelligence(
                   detail: `${row.spaceTitle} · a signal`,
                   spaceSlug: row.spaceSlug,
                   spaceTitle: row.spaceTitle,
+                  spaceLogo: toSpaceLogo(row),
                   targetSlug: row.slug,
                   at: row.updatedAt.toISOString(),
                 },

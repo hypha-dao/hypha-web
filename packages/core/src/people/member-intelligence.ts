@@ -1,5 +1,12 @@
 import type { MemberOrientation } from './member-intelligence-guidance';
 
+/** Same logo fields the space switcher resolves into an avatar. */
+export type MemberSpaceLogo = {
+  logoUrl: string | null;
+  ecosystemLogoUrlLight: string | null;
+  ecosystemLogoUrlDark: string | null;
+};
+
 export type MemberAttentionItem = {
   id: string;
   kind: 'proposal' | 'signal';
@@ -8,6 +15,7 @@ export type MemberAttentionItem = {
   spaceSlug: string;
   spaceTitle: string;
   targetSlug: string;
+  spaceLogo?: MemberSpaceLogo | null;
 };
 
 export type MemberIntelligence = {
@@ -41,6 +49,8 @@ export type MemberIntelligence = {
     title: string;
     description: string;
     logoUrl: string | null;
+    ecosystemLogoUrlLight?: string | null;
+    ecosystemLogoUrlDark?: string | null;
   }>;
   proposals: Array<{
     id: number;
@@ -50,6 +60,7 @@ export type MemberIntelligence = {
     label: string | null;
     spaceSlug: string;
     spaceTitle: string;
+    spaceLogo?: MemberSpaceLogo | null;
     createdAt: string;
     authoredByMember: boolean;
     /** On-chain proposal id used to vote without leaving home. Null for discussions. */
@@ -97,6 +108,8 @@ export type MemberSpaceRow = {
   title: string;
   description: string | null;
   logoUrl: string | null;
+  ecosystemLogoUrlLight?: string | null;
+  ecosystemLogoUrlDark?: string | null;
 };
 
 /** Chain memberships first, then any database rows not already included. */
