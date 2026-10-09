@@ -61,6 +61,7 @@ export const getMemberIntelligenceOutputSchema = z.object({
       spaceTitle: z.string(),
       createdAt: z.string(),
       authoredByMember: z.boolean(),
+      web3ProposalId: z.number().nullable(),
     }),
   ),
   signals: z.array(

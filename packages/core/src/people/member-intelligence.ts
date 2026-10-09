@@ -52,6 +52,8 @@ export type MemberIntelligence = {
     spaceTitle: string;
     createdAt: string;
     authoredByMember: boolean;
+    /** On-chain proposal id used to vote without leaving home. Null for discussions. */
+    web3ProposalId: number | null;
   }>;
   signals: Array<{
     id: number;

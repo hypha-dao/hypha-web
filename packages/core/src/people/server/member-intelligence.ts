@@ -282,6 +282,7 @@ export async function getMemberIntelligence(
                 description: documents.description,
                 creatorId: documents.creatorId,
                 createdAt: documents.createdAt,
+                web3ProposalId: documents.web3ProposalId,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
               })
@@ -322,6 +323,7 @@ export async function getMemberIntelligence(
           spaceTitle: row.spaceTitle,
           createdAt: row.createdAt.toISOString(),
           authoredByMember: row.creatorId === personId,
+          web3ProposalId: row.web3ProposalId,
         })),
         openProposals: Number(openProposalCount) || 0,
       };
