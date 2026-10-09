@@ -93,6 +93,14 @@ export const getMemberIntelligenceOutputSchema = z.object({
     preferredCurrency: z.string().nullable(),
   }),
   chatSpaceSlug: z.string().nullable(),
+  invites: z.array(
+    z.object({
+      id: z.number(),
+      token: z.string(),
+      spaceSlug: z.string(),
+      spaceTitle: z.string(),
+    }),
+  ),
 });
 
 export const getMemberSpacesOutputSchema = z.object({

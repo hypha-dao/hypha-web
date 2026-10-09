@@ -80,6 +80,15 @@ export type MemberIntelligence = {
     preferredCurrency: string | null;
   };
   chatSpaceSlug: string | null;
+  /** Space join links still waiting on the member. Hidden after they join. */
+  invites: MemberSpaceInvite[];
+};
+
+export type MemberSpaceInvite = {
+  id: number;
+  token: string;
+  spaceSlug: string;
+  spaceTitle: string;
 };
 
 export type MemberSpaceRow = {

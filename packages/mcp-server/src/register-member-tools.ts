@@ -112,7 +112,7 @@ export function registerMemberMcpTools(server: McpServer) {
   registerSlice(
     server,
     'get_member_intelligence',
-    'Personal intelligence for the authenticated member: orientation, counts, guidance narrative, attention, spaces, proposals, signals, notifications, connections, and wallet. Use this to walk a member through what needs them.',
+    'Personal intelligence for the authenticated member: orientation, counts, guidance narrative, attention, spaces, proposals, signals, notifications, connections, wallet, and pending space invites. Use this to walk a member through what needs them.',
     getMemberIntelligenceOutputSchema,
     (intelligence) => intelligence,
     (data) => data.guidance.narrative,
