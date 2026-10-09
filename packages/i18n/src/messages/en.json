@@ -117,7 +117,6 @@
     "back": "Back",
     "begin": "Begin",
     "thisIsMe": "This is me",
-    "enterHome": "Enter your home",
     "saving": "Opening your home…",
     "walletWait": "Connecting your wallet…",
     "signedInAs": "Signed in as {email}",
@@ -126,21 +125,21 @@
       "title": "You are joining a living network",
       "body": "Hypha brings people, purpose, decisions, resources, and AI into one system that can learn and act. This only takes a moment."
     },
-    "name": {
-      "eyebrow": "About you",
+    "you": {
+      "eyebrow": "You",
       "title": "What should we call you?",
-      "body": "Your name is how people in the network will greet you.",
+      "icon": "Profile icon",
       "firstName": "First name",
-      "lastName": "Last name"
-    },
-    "presence": {
-      "eyebrow": "Your presence",
-      "title": "How will the network know you?",
-      "body": "A short name, and one line about what you care for. You can change this later.",
+      "lastName": "Last name",
       "nickname": "Nickname",
-      "nicknameHint": "Up to 12 characters. This becomes your profile address.",
-      "purpose": "What you care for",
-      "purposePlaceholder": "A line about what you are here to do"
+      "nicknameHint": "Up to 12 characters. This becomes your profile address."
+    },
+    "description": {
+      "eyebrow": "Description",
+      "title": "Your passion and where you are",
+      "body": "Both can be empty. You can add them later.",
+      "passion": "Passion",
+      "passionPlaceholder": "A line about what you are here to do"
     },
     "orientation": {
       "eyebrow": "Your place",
@@ -158,28 +157,6 @@
         "title": "Investor",
         "body": "You read what the network is asking for and deploy capital."
       }
-    },
-    "arrival": {
-      "eyebrow": "You are in",
-      "title": "Welcome, {name}.",
-      "member": "Your home shows where you can be useful, the spaces you belong to, and what is asking for you.",
-      "builder": "Your home is that same living view, plus a way to shape a space around your vision.",
-      "investor": "Your home is that same living view, plus the network marketplace where spaces publish their asks."
-    },
-    "likeness": {
-      "eyebrow": "Your picture",
-      "title": "How should people see you?",
-      "body": "A profile icon, and a banner if you want one. You can change these later.",
-      "icon": "Profile icon",
-      "iconHint": "Shown next to your name. Optional.",
-      "banner": "Banner",
-      "bannerHint": "Wide image at the top of your profile. Optional."
-    },
-    "place": {
-      "eyebrow": "Where you are",
-      "title": "Where do you show up from?",
-      "body": "Your location, the email on your profile, and any links you want to share. Leave blank anything you would rather add later.",
-      "links": "Links"
     },
     "errors": {
       "nicknameTaken": "Profile with this nickname already exists. Please choose a different one.",
