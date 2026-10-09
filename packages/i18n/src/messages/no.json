@@ -48,7 +48,9 @@
     "validatedSignal": "Jeg bekrefter {title}.",
     "threadDropped": "Tråden falt ut et øyeblikk.",
     "tryAgain": "Prøv igjen",
-    "dismiss": "Lukk"
+    "dismiss": "Lukk",
+    "openMyWallet": "Åpne lommeboken min",
+    "openMySpaces": "Åpne mine rom"
   },
   "WelcomeFlow": {
     "errors": {

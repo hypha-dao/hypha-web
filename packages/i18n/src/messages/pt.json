@@ -48,7 +48,9 @@
     "validatedSignal": "Valido {title}.",
     "threadDropped": "O fio caiu por um momento.",
     "tryAgain": "Tentar de novo",
-    "dismiss": "Fechar"
+    "dismiss": "Fechar",
+    "openMyWallet": "Abrir a minha carteira",
+    "openMySpaces": "Abrir os meus espaços"
   },
   "WelcomeFlow": {
     "errors": {
