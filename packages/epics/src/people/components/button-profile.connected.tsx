@@ -14,6 +14,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { resolveAccountEntryPath } from '@hypha-platform/authentication';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 
@@ -28,6 +29,10 @@ type ConnectedButtonProfileProps = {
   showNetworkFeedback?: boolean;
   compact?: boolean;
 };
+
+function isSpaceOnboardingPath(path: string): boolean {
+  return /(^|\/)onboarding(\/|$)/.test(path);
+}
 
 export const ConnectedButtonProfile = ({
   useAuthentication,
@@ -55,10 +60,15 @@ export const ConnectedButtonProfile = ({
   const pathname = usePathname();
   const { lang, id } = useParams();
   const { resolvedTheme, setTheme } = useTheme();
-  const onboardingUrl =
-    typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
-  const localizedSignupPath =
-    typeof lang === 'string' ? `/${lang}/profile/signup` : newUserRedirectPath;
+  const locale = typeof lang === 'string' ? lang : undefined;
+  const onboardingUrl = locale ? `/${locale}/onboarding` : undefined;
+  const signupPath = resolveAccountEntryPath({
+    lang: locale,
+    hasProfile: false,
+  });
+  const homePath = baseRedirectPath.includes('/home')
+    ? baseRedirectPath
+    : resolveAccountEntryPath({ lang: locale, hasProfile: true });
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -93,10 +103,10 @@ export const ConnectedButtonProfile = ({
     if (person === null) {
       if (
         pathname !== newUserRedirectPath &&
-        pathname !== localizedSignupPath &&
+        pathname !== signupPath &&
         !pathname.includes('/profile/signup')
       ) {
-        router.push(localizedSignupPath);
+        router.replace(signupPath);
       }
       return;
     }
@@ -104,16 +114,17 @@ export const ConnectedButtonProfile = ({
       person &&
       isLoggingIn &&
       pathname !== newUserRedirectPath &&
-      pathname !== localizedSignupPath
+      pathname !== signupPath
     ) {
+      // Space AI onboarding is not the account entry. A profile goes Home
+      // (or back to the space they were already in).
       if (!pathname.includes('/onboarding')) {
-        router.push(
-          resolvePostAuthRedirectPathOrDefault({
-            pathname,
-            lang: typeof lang === 'string' ? lang : undefined,
-            baseRedirectPath,
-          }),
-        );
+        const nextPath = resolvePostAuthRedirectPathOrDefault({
+          pathname,
+          lang: locale,
+          baseRedirectPath: homePath,
+        });
+        router.replace(isSpaceOnboardingPath(nextPath) ? homePath : nextPath);
       }
       setLoggingIn(false);
     }
@@ -125,13 +136,13 @@ export const ConnectedButtonProfile = ({
     person,
     user,
     router,
-    baseRedirectPath,
+    homePath,
     newUserRedirectPath,
     isLoggingIn,
     setLoggingIn,
     pathname,
-    localizedSignupPath,
-    lang,
+    signupPath,
+    locale,
     resolvePostAuthRedirectPathOrDefault,
   ]);
 
@@ -181,7 +192,7 @@ export const ConnectedButtonProfile = ({
           ? undefined
           : person?.slug
           ? `/${lang}/profile/${person.slug}`
-          : newUserRedirectPath
+          : signupPath
       }
       onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
