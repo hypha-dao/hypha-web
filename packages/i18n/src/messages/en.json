@@ -232,6 +232,8 @@
     "orientationMember": "Member",
     "orientationBuilder": "Builder",
     "orientationInvestor": "Investor",
+    "changeOrientation": "Change",
+    "changeOrientationLabel": "Change how you show up. Currently {orientation}.",
     "signInTitle": "Your home is waiting",
     "signInBody": "Sign in to see where you can be useful.",
     "signIn": "Sign in",
