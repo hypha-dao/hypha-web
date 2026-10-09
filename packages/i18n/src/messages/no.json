@@ -1,4 +1,11 @@
 {
+  "WelcomeFlow": {
+    "errors": {
+      "nicknameTaken": "En profil med dette kallenavnet finnes allerede. Velg et annet.",
+      "emailTaken": "En konto med denne e-posten finnes allerede. Logg inn eller bruk en annen e-post.",
+      "createFailed": "Kunne ikke opprette profilen"
+    }
+  },
   "Common": {
     "Assignments": "Oppdrag",
     "Members": "Medlemmer",

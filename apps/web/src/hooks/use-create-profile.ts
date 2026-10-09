@@ -60,7 +60,7 @@ export const useCreateProfile = (
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create profile');
+          throw new Error(errorData.error || 'profile_create_failed');
         }
 
         const createdProfileResponse = (await response.json()) as

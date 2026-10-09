@@ -1,4 +1,11 @@
 {
+  "WelcomeFlow": {
+    "errors": {
+      "nicknameTaken": "Un profil avec ce surnom existe déjà. Choisis-en un autre.",
+      "emailTaken": "Un compte avec cet e-mail existe déjà. Connecte-toi ou utilise un autre e-mail.",
+      "createFailed": "Impossible de créer le profil"
+    }
+  },
   "Common": {
     "Assignments": "Affectations",
     "Members": "Membres",

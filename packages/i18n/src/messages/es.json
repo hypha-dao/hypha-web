@@ -1,4 +1,11 @@
 {
+  "WelcomeFlow": {
+    "errors": {
+      "nicknameTaken": "Ya existe un perfil con este apodo. Elige otro.",
+      "emailTaken": "Ya existe una cuenta con este correo. Inicia sesión o usa otro correo.",
+      "createFailed": "No se pudo crear el perfil"
+    }
+  },
   "Common": {
     "createdOn": "Creado el {date}",
     "spaceBannerDescriptionAria": "Descripción de {title}",

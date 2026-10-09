@@ -180,6 +180,11 @@
       "title": "Where do you show up from?",
       "body": "Your location, the email on your profile, and any links you want to share. Leave blank anything you would rather add later.",
       "links": "Links"
+    },
+    "errors": {
+      "nicknameTaken": "Profile with this nickname already exists. Please choose a different one.",
+      "emailTaken": "An account with this email already exists. Try signing in or use a different email.",
+      "createFailed": "Failed to create profile"
     }
   },
   "MemberHome": {

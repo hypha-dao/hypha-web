@@ -1,4 +1,11 @@
 {
+  "WelcomeFlow": {
+    "errors": {
+      "nicknameTaken": "Ein Profil mit diesem Spitznamen existiert bereits. Bitte wähle einen anderen.",
+      "emailTaken": "Ein Konto mit dieser E-Mail existiert bereits. Melde dich an oder verwende eine andere E-Mail.",
+      "createFailed": "Profil konnte nicht erstellt werden"
+    }
+  },
   "Common": {
     "Assignments": "Zuweisungen",
     "Members": "Mitglieder",
