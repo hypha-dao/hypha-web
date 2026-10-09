@@ -66,7 +66,7 @@ export const ConnectedButtonProfile = ({
     lang: locale,
     hasProfile: false,
   });
-  const homePath = baseRedirectPath.includes('/home')
+  const homePath = baseRedirectPath.includes('/my-dashboard')
     ? baseRedirectPath
     : resolveAccountEntryPath({ lang: locale, hasProfile: true });
 

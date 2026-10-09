@@ -296,11 +296,11 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath={`/${locale}/home`}
+                                  baseRedirectPath={`/${locale}/my-dashboard`}
                                   navItems={[
                                     {
                                       label: navHomeLabel,
-                                      href: `/${locale}/home`,
+                                      href: `/${locale}/my-dashboard`,
                                     },
                                     {
                                       label: navMySpacesLabel,
@@ -332,11 +332,11 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath={`/${locale}/home`}
+                                  baseRedirectPath={`/${locale}/my-dashboard`}
                                   navItems={[
                                     {
                                       label: navHomeLabel,
-                                      href: `/${locale}/home`,
+                                      href: `/${locale}/my-dashboard`,
                                     },
                                     {
                                       label: navMySpacesLabel,
