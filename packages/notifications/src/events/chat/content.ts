@@ -12,9 +12,65 @@ import type { ContentBuilder } from '../../core/content-builder';
 import type {
   ChatNotificationEvent,
   NotificationContent,
+  NotificationEmailContent,
 } from '../../core/types';
 import { TAG_MENTION_CONSENT } from '../../constants';
-import { buildMentionEmailBody } from '../../actions/notify-chat-mention.utils';
+import {
+  buildMentionEmailBody,
+  getSafeMentionHref,
+} from '../../actions/notify-chat-mention.utils';
+
+/**
+ * OneSignal dashboard template ("Chat - User Mentioned (email)") when `EMAIL_TEMPLATE_CHAT_MENTION`
+ * is set; otherwise the locally-rendered HTML, so an environment without the ID configured still
+ * sends the email. `customData` carries raw text — the template escapes it — and `url` is
+ * http(s)-validated here because the template can't.
+ */
+function buildMentionEmail({
+  heading,
+  actorDisplayName,
+  messagePreview,
+  url,
+  spaceTitle,
+  notificationSettingsUrl,
+}: {
+  heading: string;
+  actorDisplayName: string;
+  messagePreview: string;
+  url: string;
+  spaceTitle?: string;
+  notificationSettingsUrl?: string;
+}): NotificationEmailContent {
+  const templateId = process.env.EMAIL_TEMPLATE_CHAT_MENTION?.trim();
+  if (templateId) {
+    return {
+      kind: 'template',
+      templateId,
+      customData: {
+        actor_name: actorDisplayName,
+        context_label: spaceTitle?.trim() || 'chat',
+        message_preview: messagePreview,
+        url: getSafeMentionHref(url),
+        // Omitted when unset so the template's `| default:` fallback applies.
+        ...(notificationSettingsUrl
+          ? { notification_settings_url: notificationSettingsUrl }
+          : {}),
+      },
+    };
+  }
+
+  return {
+    kind: 'plain',
+    subject: heading,
+    body: buildMentionEmailBody({
+      actorDisplayName,
+      messagePreview,
+      url,
+      contextLabel: spaceTitle,
+      notificationSettingsUrl,
+    }),
+  };
+}
 
 export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
   event,
@@ -26,6 +82,9 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
     (recipient.data?.messagePreview as string | undefined) ?? '';
   const url = recipient.data?.url as string;
   const spaceTitle = recipient.data?.spaceTitle as string | undefined;
+  const notificationSettingsUrl = recipient.data?.notificationSettingsUrl as
+    | string
+    | undefined;
 
   if (event.type === 'chat.mention') {
     const heading = `${actorDisplayName} mentioned you`;
@@ -41,16 +100,14 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
           },
           url,
         },
-        email: {
-          kind: 'plain',
-          subject: heading,
-          body: buildMentionEmailBody({
-            actorDisplayName,
-            messagePreview,
-            url,
-            contextLabel: spaceTitle,
-          }),
-        },
+        email: buildMentionEmail({
+          heading,
+          actorDisplayName,
+          messagePreview,
+          url,
+          spaceTitle,
+          notificationSettingsUrl,
+        }),
       },
     };
   }
