@@ -10,7 +10,7 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import { sql, eq, inArray, and, notLike, or, isNull } from 'drizzle-orm';
+import { sql, eq, inArray, and, notLike, or, isNull, ne } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 import { readPrimaryOrientation } from './primary-orientation-column';
@@ -485,6 +485,49 @@ export const findDocumentsCreatorsForNotifications = async (
     .where(inArray(documents.web3ProposalId, proposalIds))
     .groupBy(documents.id, people.slug, spaces.slug, spaces.title);
 };
+
+export type NetworkPersonHit = {
+  id: number;
+  slug: string | null;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  avatarUrl: string | null;
+};
+
+/** People outside the caller's spaces, matched by name. Humans only. */
+export async function searchNetworkPeople(
+  {
+    query,
+    excludePersonId,
+    limit = 8,
+  }: { query: string; excludePersonId: number; limit?: number },
+  { db }: DbConfig,
+): Promise<NetworkPersonHit[]> {
+  const term = query.trim();
+  if (term.length < 2) return [];
+  const like = `%${term}%`;
+  const rows = await db
+    .select({
+      id: people.id,
+      slug: people.slug,
+      name: people.name,
+      surname: people.surname,
+      nickname: people.nickname,
+      avatarUrl: people.avatarUrl,
+    })
+    .from(people)
+    .where(
+      and(
+        isHumanPerson(),
+        ne(people.id, excludePersonId),
+        sql`(${people.name} ILIKE ${like} OR ${people.surname} ILIKE ${like} OR ${people.nickname} ILIKE ${like})`,
+      ),
+    )
+    .orderBy(people.id)
+    .limit(Math.min(Math.max(limit, 1), 12));
+  return rows;
+}
 
 export type FindPersonBySubInput = {
   sub: string;
