@@ -3,6 +3,8 @@
     "panelSpaces": "Spaces en mensen",
     "panelInsights": "Wat jou nodig heeft",
     "peopleTitle": "Mensen",
+    "invites": "Uitnodigingen",
+    "inviteDetail": "Een link om lid te worden",
     "peopleInSpaces": "In jouw spaces",
     "widerNetwork": "Breder netwerk",
     "searchPlaceholder": "Zoek op naam",
@@ -775,7 +777,17 @@
     },
     "aiAgents": "AI-agenten",
     "aiAgentsEmptyState": "Er zijn nog geen AI-agenten gemobiliseerd. Stel strategische vragen om ze te activeren.",
-    "aiAgentsMobilizedCount": "Gemobiliseerd {count, plural, one {# keer} other {# keer}}"
+    "aiAgentsMobilizedCount": "Gemobiliseerd {count, plural, one {# keer} other {# keer}}",
+    "inviteMember": "Uitnodigen",
+    "inviteClose": "Sluiten",
+    "inviteSearch": "Zoek op naam",
+    "inviteSend": "Uitnodiging versturen",
+    "inviteSent": "Uitnodiging verstuurd. Die blijft op het dashboard tot ze lid worden.",
+    "inviteError": "De uitnodiging kon niet worden verstuurd.",
+    "inviteAlreadyMember": "Die persoon zit al in deze space.",
+    "inviteSelf": "Je kunt jezelf niet uitnodigen.",
+    "inviteNotMember": "Alleen een lid van deze space kan een uitnodiging sturen.",
+    "invitePick": "Kies iemand om uit te nodigen."
   },
   "BankingTab": {
     "title": "Bankieren",

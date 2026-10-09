@@ -3,6 +3,8 @@
     "panelSpaces": "Espacios y personas",
     "panelInsights": "Lo que te necesita",
     "peopleTitle": "Personas",
+    "invites": "Invitaciones",
+    "inviteDetail": "Un enlace para unirse",
     "peopleInSpaces": "En tus espacios",
     "widerNetwork": "Red más amplia",
     "searchPlaceholder": "Buscar por nombre",
@@ -1547,7 +1549,17 @@
     },
     "aiAgents": "Agentes de IA",
     "aiAgentsEmptyState": "Aún no hay agentes de IA movilizados. Haz preguntas estratégicas para activarlos.",
-    "aiAgentsMobilizedCount": "Movilizado {count, plural, one {# vez} other {# veces}}"
+    "aiAgentsMobilizedCount": "Movilizado {count, plural, one {# vez} other {# veces}}",
+    "inviteMember": "Invitar",
+    "inviteClose": "Cerrar",
+    "inviteSearch": "Buscar por nombre",
+    "inviteSend": "Enviar invitación",
+    "inviteSent": "Invitación enviada. Aparece en su panel hasta que se una.",
+    "inviteError": "No se pudo enviar la invitación.",
+    "inviteAlreadyMember": "Esa persona ya está en este espacio.",
+    "inviteSelf": "No puedes invitarte a ti mismo.",
+    "inviteNotMember": "Solo un miembro de este espacio puede enviar una invitación.",
+    "invitePick": "Elige a alguien para invitar."
   },
   "TreasuryTab": {
     "bankingRoutes": "Banca",

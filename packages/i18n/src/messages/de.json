@@ -3,6 +3,8 @@
     "panelSpaces": "Spaces und Menschen",
     "panelInsights": "Was dich braucht",
     "peopleTitle": "Menschen",
+    "invites": "Einladungen",
+    "inviteDetail": "Ein Link zum Beitreten",
     "peopleInSpaces": "In deinen Spaces",
     "widerNetwork": "Weiteres Netzwerk",
     "searchPlaceholder": "Nach Namen suchen",
@@ -776,7 +778,17 @@
     },
     "aiAgents": "KI-Agenten",
     "aiAgentsEmptyState": "Noch keine KI-Agenten mobilisiert. Stelle strategische Fragen, um sie zu aktivieren.",
-    "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}"
+    "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}",
+    "inviteMember": "Einladen",
+    "inviteClose": "Schließen",
+    "inviteSearch": "Nach Namen suchen",
+    "inviteSend": "Einladung senden",
+    "inviteSent": "Einladung gesendet. Sie bleibt auf dem Dashboard, bis die Person beitritt.",
+    "inviteError": "Die Einladung konnte nicht gesendet werden.",
+    "inviteAlreadyMember": "Diese Person ist schon in diesem Space.",
+    "inviteSelf": "Du kannst dich nicht selbst einladen.",
+    "inviteNotMember": "Nur ein Mitglied dieses Space kann eine Einladung senden.",
+    "invitePick": "Wähle jemanden zum Einladen."
   },
   "BankingTab": {
     "title": "Bankdienste",

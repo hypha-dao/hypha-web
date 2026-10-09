@@ -3,6 +3,8 @@
     "panelSpaces": "Простори и луѓе",
     "panelInsights": "Што те чека",
     "peopleTitle": "Луѓе",
+    "invites": "Покани",
+    "inviteDetail": "Линк за приклучување",
     "peopleInSpaces": "Во твоите простори",
     "widerNetwork": "Поширока мрежа",
     "searchPlaceholder": "Барај по име",
@@ -755,7 +757,17 @@
     },
     "aiAgents": "AI агенти",
     "aiAgentsEmptyState": "Сè уште нема мобилизирани AI агенти. Поставувајте стратешки прашања за да ги активирате.",
-    "aiAgentsMobilizedCount": "Мобилизиран {count, plural, one {# пат} other {# пати}}"
+    "aiAgentsMobilizedCount": "Мобилизиран {count, plural, one {# пат} other {# пати}}",
+    "inviteMember": "Покани",
+    "inviteClose": "Затвори",
+    "inviteSearch": "Пребарај по име",
+    "inviteSend": "Испрати покана",
+    "inviteSent": "Поканата е испратена. Останува на контролната табла додека не се приклучат.",
+    "inviteError": "Поканата не можеше да се испрати.",
+    "inviteAlreadyMember": "Тоа лице веќе е во овој простор.",
+    "inviteSelf": "Не можете да се поканите себеси.",
+    "inviteNotMember": "Само член на овој простор може да испрати покана.",
+    "invitePick": "Изберете некого за покана."
   },
   "BankingTab": {
     "title": "Банкарство",

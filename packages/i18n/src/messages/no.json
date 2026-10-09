@@ -3,6 +3,8 @@
     "panelSpaces": "Rom og mennesker",
     "panelInsights": "Det som trenger deg",
     "peopleTitle": "Mennesker",
+    "invites": "Invitasjoner",
+    "inviteDetail": "En lenke for å bli med",
     "peopleInSpaces": "I rommene dine",
     "widerNetwork": "Videre nettverk",
     "searchPlaceholder": "Søk på navn",
@@ -774,7 +776,17 @@
     },
     "aiAgents": "AI-agenter",
     "aiAgentsEmptyState": "Ingen AI-agenter er mobilisert ennå. Still strategiske spørsmål for å aktivere dem.",
-    "aiAgentsMobilizedCount": "Mobilisert {count, plural, one {# gang} other {# ganger}}"
+    "aiAgentsMobilizedCount": "Mobilisert {count, plural, one {# gang} other {# ganger}}",
+    "inviteMember": "Inviter",
+    "inviteClose": "Lukk",
+    "inviteSearch": "Søk på navn",
+    "inviteSend": "Send invitasjon",
+    "inviteSent": "Invitasjon sendt. Den blir på dashbordet til personen blir med.",
+    "inviteError": "Invitasjonen kunne ikke sendes.",
+    "inviteAlreadyMember": "Personen er allerede i dette området.",
+    "inviteSelf": "Du kan ikke invitere deg selv.",
+    "inviteNotMember": "Bare et medlem av dette området kan sende en invitasjon.",
+    "invitePick": "Velg noen å invitere."
   },
   "BankingTab": {
     "title": "Bank",

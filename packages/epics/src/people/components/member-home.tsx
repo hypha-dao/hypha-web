@@ -107,6 +107,23 @@ export function MemberHome({
         aria-label={t('panelSpaces')}
         className="order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
       >
+        {home && home.invites.length > 0 ? (
+          <div className="mb-4">
+            <Tile title={t('invites')}>
+              <ResourceList
+                empty=""
+                items={home.invites.map((invite) => ({
+                  id: invite.id,
+                  title: invite.spaceTitle,
+                  detail: t('inviteDetail'),
+                  href: `/${lang}/dho/${
+                    invite.spaceSlug
+                  }/overview?invite=${encodeURIComponent(invite.token)}`,
+                }))}
+              />
+            </Tile>
+          </div>
+        ) : null}
         <Tile title={t('spaces')} busy={home == null}>
           <ResourceList
             isLoading={home == null}
