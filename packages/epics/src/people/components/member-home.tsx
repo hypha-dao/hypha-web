@@ -361,6 +361,7 @@ export function MemberHome({
             <ResourceList
               isLoading={home == null}
               empty={t('noNotifications')}
+              maxItems={24}
               items={
                 home
                   ? home.notifications.map((item) => ({
@@ -615,6 +616,7 @@ function ResourceList({
   items,
   empty,
   isLoading = false,
+  maxItems = 4,
 }: {
   items: Array<{
     id: string | number;
@@ -624,6 +626,7 @@ function ResourceList({
   }>;
   empty: string;
   isLoading?: boolean;
+  maxItems?: number;
 }) {
   if (isLoading) return <CardSkeleton />;
   if (items.length === 0) {
@@ -631,7 +634,7 @@ function ResourceList({
   }
   return (
     <ul className="grid gap-3">
-      {items.slice(0, 4).map((item) => (
+      {items.slice(0, maxItems).map((item) => (
         <li key={item.id}>
           <Link href={item.href} className="group block">
             <span className="block text-2 group-hover:underline">
