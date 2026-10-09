@@ -12,6 +12,7 @@ import {
   matrixGetJoinedRoomMembers,
   normalizeAssigneeIds,
 } from '@hypha-platform/core/server';
+import { buildNotificationSettingsUrl } from '../../core/notification-settings-url';
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type { ChatNotificationEvent, Recipient } from '../../core/types';
 import { buildChatDeepLink } from './deep-link';
@@ -171,7 +172,13 @@ export const resolveChatRecipients: RecipientResolver<
     signalSlug,
   });
 
-  const data = { actorDisplayName, messagePreview, url, spaceTitle };
+  const data = {
+    actorDisplayName,
+    messagePreview,
+    url,
+    spaceTitle,
+    notificationSettingsUrl: buildNotificationSettingsUrl(),
+  };
   return recipientSlugs.map(
     (personSlug): Recipient => ({ personSlug, role: event.type, data }),
   );

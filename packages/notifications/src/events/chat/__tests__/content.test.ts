@@ -121,6 +121,33 @@ describe('buildChatContent — chat.mention email template', () => {
     expect(email.customData.url).toBe('#');
   });
 
+  it('passes the notification settings url when the resolver provides it', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      data: {
+        ...recipient.data,
+        notificationSettingsUrl:
+          'https://app.hypha.earth/en/network/notification-centre',
+      },
+    });
+    const email = result.content.email as {
+      customData: Record<string, string>;
+    };
+    expect(email.customData.notification_settings_url).toBe(
+      'https://app.hypha.earth/en/network/notification-centre',
+    );
+  });
+
+  it('omits notification_settings_url when unset so the template default applies', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
+    const result = buildChatContent(makeEvent('chat.mention'), recipient);
+    const email = result.content.email as {
+      customData: Record<string, string>;
+    };
+    expect(email.customData).not.toHaveProperty('notification_settings_url');
+  });
+
   it('falls back to plain HTML when the env var is unset', () => {
     vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', '');
     const result = buildChatContent(makeEvent('chat.mention'), recipient);
