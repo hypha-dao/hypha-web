@@ -67,6 +67,7 @@ function buildMentionEmail({
       messagePreview,
       url,
       contextLabel: spaceTitle,
+      notificationSettingsUrl,
     }),
   };
 }

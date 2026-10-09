@@ -28,11 +28,13 @@ export function buildMentionEmailBody({
   messagePreview,
   url,
   contextLabel,
+  notificationSettingsUrl,
 }: {
   actorDisplayName: string;
   messagePreview: string;
   url: string;
   contextLabel?: string;
+  notificationSettingsUrl?: string;
 }): string {
   const escapedActor = escapeHtml(actorDisplayName);
   const escapedPreview = escapeHtml(messagePreview);
@@ -40,6 +42,11 @@ export function buildMentionEmailBody({
   const escapedContext = escapeHtml(contextLabel?.trim() || 'chat');
   const previewBlock = escapedPreview
     ? `<p style="margin:16px 0;padding:12px 16px;background:#f4f4f5;border-radius:8px;color:#3f3f46;font-size:15px;line-height:1.5;">${escapedPreview}</p>`
+    : '';
+  const settingsLink = notificationSettingsUrl
+    ? `<p style="margin:0 0 8px;"><a href="${escapeHtml(
+        getSafeMentionHref(notificationSettingsUrl),
+      )}" style="color:#2563eb;text-decoration:underline;">Manage notification settings</a></p>`
     : '';
   const year = new Date().getFullYear();
 
@@ -75,6 +82,7 @@ export function buildMentionEmailBody({
           <tr>
             <td style="background:#f4f4f5;padding:24px 28px;text-align:center;color:#71717a;font-size:13px;line-height:1.5;">
               <p style="margin:0 0 8px;">Questions? Contact us at <a href="mailto:support@hypha.earth" style="color:#2563eb;text-decoration:underline;">support@hypha.earth</a></p>
+              ${settingsLink}
               <p style="margin:0 0 12px;">&copy; ${year} Hypha. All rights reserved.</p>
             </td>
           </tr>
