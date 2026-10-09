@@ -8,7 +8,7 @@
   top: 0;
   right: 0;
   left: 0;
-  height: 12rem;
+  height: 11.25rem;
   overflow: hidden;
   isolation: isolate;
   pointer-events: none;
@@ -17,7 +17,7 @@
 
 @media (min-width: 768px) {
   .member-home-banner {
-    height: 14rem;
+    height: 12.75rem;
   }
 }
 
