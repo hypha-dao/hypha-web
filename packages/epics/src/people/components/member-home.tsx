@@ -10,6 +10,7 @@ import type { MemberIntelligence } from '@hypha-platform/core/client';
 
 import { getProposalPath } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
+import './member-home-banner.css';
 
 type MemberHomeProps = {
   lang: Locale;
@@ -71,14 +72,14 @@ export function MemberHome({
 
   return (
     <div className="relative mx-auto w-full max-w-3xl px-5 py-8 md:py-14">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-0 right-0 h-48 w-full max-w-xl bg-cover bg-right opacity-30 dark:opacity-20"
-        style={{
-          backgroundImage: 'url(/brand/mycelium.jpg)',
-          maskImage: 'linear-gradient(to left, black, transparent)',
-        }}
-      />
+      <div className="member-home-banner" aria-hidden>
+        <img
+          alt=""
+          className="member-home-banner-image"
+          src="/brand/strategy-mycelium.png"
+        />
+        <div className="member-home-banner-veil" />
+      </div>
       <div className="relative">
         <h1
           className="text-balance text-8 leading-tight font-medium tracking-[-0.03em]"
