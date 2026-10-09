@@ -1,19 +1,7 @@
-import {
-  and,
-  desc,
-  eq,
-  inArray,
-  isNull,
-  ne,
-  notLike,
-  or,
-  sql,
-} from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { and, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import {
   coherences,
   documents,
-  memberships,
   people,
   spaces,
 } from '@hypha-platform/storage-postgres';
@@ -31,13 +19,17 @@ import { type Hex } from 'viem';
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
+import { getSpaceMembers } from '../../space/client/web3/dao-space-factory/get-space-members';
 import type {
   MemberAttentionItem,
   MemberIntelligence,
   MemberSpaceRow,
   NetworkCapitalAsk,
 } from '../member-intelligence';
-import { mergeMemberSpaces } from '../member-intelligence';
+import {
+  peopleSharingMemberSpaces,
+  pickNotificationsAcrossSpaces,
+} from '../member-intelligence';
 
 export {
   MEMBER_ORIENTATIONS,
@@ -71,8 +63,9 @@ function walletAddress(address: string | null | undefined): Hex | null {
 /**
  * Postgres `memberships` is not the live roster (nothing in this repo writes
  * it). The profile and My Spaces screens read `getMemberSpaces` for the
- * wallet. A failed chain read must surface — an empty list would look like
- * a member who has no spaces.
+ * wallet. A failed chain read throws. The spaces slice catches that on its
+ * own, so the rest of the home still returns. An empty list means the wallet
+ * has no on-chain spaces.
  */
 async function chainWeb3SpaceIds(address: string | null | undefined) {
   const wallet = walletAddress(address);
@@ -87,6 +80,155 @@ async function chainWeb3SpaceIds(address: string | null | undefined) {
         .filter((id) => Number.isInteger(id) && id > 0),
     ),
   ];
+}
+
+/**
+ * People around the caller are other human profiles whose wallets are in
+ * `getSpaceMembers` for the caller's spaces. That is the same factory
+ * membership list `getMemberSpaces` reads. Postgres `memberships` is not
+ * written by this app, so joining it always reported zero.
+ * Archived spaces are already absent from `spaceIds`.
+ */
+async function loadSharedPeople(
+  {
+    personId,
+    spaceIds,
+    limit,
+  }: { personId: number; spaceIds: number[]; limit: number },
+  { db }: DbConfig,
+): Promise<{
+  count: number;
+  connections: MemberIntelligence['connections'];
+}> {
+  const empty = {
+    count: 0,
+    connections: [] as MemberIntelligence['connections'],
+  };
+  if (spaceIds.length === 0) return empty;
+
+  const rosterSpaces = await db
+    .select({
+      id: spaces.id,
+      web3SpaceId: spaces.web3SpaceId,
+    })
+    .from(spaces)
+    .where(and(inArray(spaces.id, spaceIds), eq(spaces.isArchived, false)));
+
+  const seenChainIds = new Set<number>();
+  const chainSpaces = rosterSpaces.filter((row) => {
+    const web3SpaceId = row.web3SpaceId;
+    if (
+      web3SpaceId == null ||
+      web3SpaceId <= 0 ||
+      seenChainIds.has(web3SpaceId)
+    ) {
+      return false;
+    }
+    seenChainIds.add(web3SpaceId);
+    return true;
+  });
+  if (chainSpaces.length === 0) return empty;
+
+  const membersBySpace = await Promise.all(
+    chainSpaces.map(async (row) => {
+      try {
+        const addresses = (await web3Client.readContract(
+          getSpaceMembers({ spaceId: BigInt(row.web3SpaceId as number) }),
+        )) as readonly `0x${string}`[];
+        return { spaceId: row.id, addresses };
+      } catch (error) {
+        console.error(
+          '[getMemberIntelligence] space members failed',
+          row.id,
+          error,
+        );
+        return {
+          spaceId: row.id,
+          addresses: [] as readonly `0x${string}`[],
+        };
+      }
+    }),
+  );
+
+  const addressKeys = new Set<string>();
+  for (const space of membersBySpace) {
+    for (const address of space.addresses) {
+      const key = address.trim().toLowerCase();
+      if (key) addressKeys.add(key);
+    }
+  }
+  if (addressKeys.size === 0) return empty;
+
+  const peopleRows = await db
+    .select({
+      id: people.id,
+      slug: people.slug,
+      name: people.name,
+      surname: people.surname,
+      nickname: people.nickname,
+      avatarUrl: people.avatarUrl,
+      address: people.address,
+      sub: people.sub,
+    })
+    .from(people)
+    .where(
+      inArray(
+        sql`upper(${people.address})`,
+        [...addressKeys].map((address) => address.toUpperCase()),
+      ),
+    );
+
+  return peopleSharingMemberSpaces({
+    callerPersonId: personId,
+    membersBySpace,
+    people: peopleRows,
+    spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
+    limit,
+  });
+}
+
+async function loadChainMemberSpaces(
+  address: string | null | undefined,
+  { db }: DbConfig,
+): Promise<MemberSpaceRow[]> {
+  const web3SpaceIds = await chainWeb3SpaceIds(address);
+  if (web3SpaceIds.length === 0) return [];
+  const chainOrder = new Map(web3SpaceIds.map((id, index) => [id, index]));
+  return (
+    await db
+      .select({
+        ...memberSpaceColumns,
+        web3SpaceId: spaces.web3SpaceId,
+      })
+      .from(spaces)
+      .where(
+        and(
+          inArray(spaces.web3SpaceId, web3SpaceIds),
+          eq(spaces.isArchived, false),
+        ),
+      )
+  )
+    .slice()
+    .sort(
+      (left, right) =>
+        (chainOrder.get(left.web3SpaceId ?? 0) ?? web3SpaceIds.length) -
+        (chainOrder.get(right.web3SpaceId ?? 0) ?? web3SpaceIds.length),
+    )
+    .map(({ web3SpaceId: _web3SpaceId, ...space }) => space);
+}
+
+/** One failed query returns its fallback. The other slices still load. */
+async function readSlice<T>(
+  label: string,
+  read: () => Promise<T>,
+  fallback: NoInfer<T>,
+): Promise<T> {
+  try {
+    return await read();
+  } catch (error) {
+    console.error(`[getMemberIntelligence] ${label} failed`, error);
+    return fallback;
+  }
 }
 
 function excerpt(value: string | null | undefined, max = 180): string {
@@ -110,273 +252,280 @@ export async function getMemberIntelligence(
     .where(eq(people.id, personId))
     .limit(1);
   if (!person?.slug) return null;
-  const primaryOrientation = await readPrimaryOrientation(db, person.id);
+  const primaryOrientation = await readSlice(
+    'orientation',
+    () => readPrimaryOrientation(db, person.id),
+    null,
+  );
 
-  const databaseSpaceRows = await db
-    .select(memberSpaceColumns)
-    .from(spaces)
-    .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
-    .where(
-      and(eq(memberships.personId, personId), eq(spaces.isArchived, false)),
-    )
-    .orderBy(desc(memberships.createdAt));
-
-  const web3SpaceIds = await chainWeb3SpaceIds(person.address);
-  const chainOrder = new Map(web3SpaceIds.map((id, index) => [id, index]));
-  const chainSpaceRows: MemberSpaceRow[] =
-    web3SpaceIds.length === 0
-      ? []
-      : (
-          await db
-            .select({
-              ...memberSpaceColumns,
-              web3SpaceId: spaces.web3SpaceId,
-            })
-            .from(spaces)
-            .where(
-              and(
-                inArray(spaces.web3SpaceId, web3SpaceIds),
-                eq(spaces.isArchived, false),
-              ),
-            )
-        )
-          .slice()
-          .sort(
-            (left, right) =>
-              (chainOrder.get(left.web3SpaceId ?? 0) ?? web3SpaceIds.length) -
-              (chainOrder.get(right.web3SpaceId ?? 0) ?? web3SpaceIds.length),
-          )
-          .map(({ web3SpaceId: _web3SpaceId, ...space }) => space);
-
-  const spaceRows = mergeMemberSpaces(chainSpaceRows, databaseSpaceRows);
+  const spaceRows = await readSlice(
+    'spaces',
+    () => loadChainMemberSpaces(person.address, { db }),
+    [],
+  );
   const spaceIds = spaceRows.map((space) => space.id);
   const orientation = parseMemberOrientation(primaryOrientation);
 
-  const proposalRows =
-    spaceIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: documents.id,
-            slug: documents.slug,
-            title: documents.title,
-            state: documents.state,
-            label: documents.label,
-            description: documents.description,
-            creatorId: documents.creatorId,
-            createdAt: documents.createdAt,
-            spaceSlug: spaces.slug,
-            spaceTitle: spaces.title,
-          })
+  const proposalSlice = await readSlice(
+    'proposals',
+    async () => {
+      const proposalRows =
+        spaceIds.length === 0
+          ? []
+          : await db
+              .select({
+                id: documents.id,
+                slug: documents.slug,
+                title: documents.title,
+                state: documents.state,
+                label: documents.label,
+                description: documents.description,
+                creatorId: documents.creatorId,
+                createdAt: documents.createdAt,
+                spaceSlug: spaces.slug,
+                spaceTitle: spaces.title,
+              })
+              .from(documents)
+              .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+              .where(
+                and(
+                  inArray(documents.spaceId, spaceIds),
+                  inArray(documents.state, ['proposal', 'discussion']),
+                ),
+              )
+              .orderBy(desc(documents.createdAt))
+              .limit(listLimit);
+      const openProposalCount =
+        spaceIds.length === 0
+          ? 0
+          : (
+              await db
+                .select({
+                  value: sql<number>`cast(count(*) as integer)`,
+                })
+                .from(documents)
+                .where(
+                  and(
+                    inArray(documents.spaceId, spaceIds),
+                    eq(documents.state, 'proposal'),
+                  ),
+                )
+            )[0]?.value ?? 0;
+      return {
+        proposals: proposalRows.map((row) => ({
+          id: row.id,
+          slug: row.slug,
+          title: row.title?.trim() || 'Untitled proposal',
+          state: row.state,
+          label: row.label,
+          spaceSlug: row.spaceSlug,
+          spaceTitle: row.spaceTitle,
+          createdAt: row.createdAt.toISOString(),
+          authoredByMember: row.creatorId === personId,
+        })),
+        openProposals: Number(openProposalCount) || 0,
+      };
+    },
+    {
+      proposals: [],
+      openProposals: 0,
+    },
+  );
+
+  const signalSlice = await readSlice(
+    'signals',
+    async () => {
+      const signalRows =
+        spaceIds.length === 0
+          ? []
+          : await db
+              .select({
+                id: coherences.id,
+                slug: coherences.slug,
+                title: coherences.title,
+                type: coherences.type,
+                priority: coherences.priority,
+                assigneeIds: coherences.assigneeIds,
+                spaceSlug: spaces.slug,
+                spaceTitle: spaces.title,
+              })
+              .from(coherences)
+              .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+              .where(
+                and(
+                  inArray(coherences.spaceId, spaceIds),
+                  or(
+                    eq(coherences.archived, false),
+                    isNull(coherences.archived),
+                  ),
+                ),
+              )
+              .orderBy(desc(coherences.updatedAt))
+              .limit(listLimit);
+      const signalCount =
+        spaceIds.length === 0
+          ? 0
+          : (
+              await db
+                .select({
+                  value: sql<number>`cast(count(*) as integer)`,
+                })
+                .from(coherences)
+                .where(
+                  and(
+                    inArray(coherences.spaceId, spaceIds),
+                    or(
+                      eq(coherences.archived, false),
+                      isNull(coherences.archived),
+                    ),
+                  ),
+                )
+            )[0]?.value ?? 0;
+      return {
+        signals: signalRows.map((row) => ({
+          id: row.id,
+          slug: row.slug,
+          title: row.title,
+          type: row.type,
+          priority: row.priority,
+          spaceSlug: row.spaceSlug,
+          spaceTitle: row.spaceTitle,
+          assignedToMember: (row.assigneeIds ?? []).includes(personId),
+        })),
+        count: Number(signalCount) || 0,
+      };
+    },
+    { signals: [], count: 0 },
+  );
+
+  const sharedPeople = await readSlice(
+    'connections',
+    () => loadSharedPeople({ personId, spaceIds, limit: listLimit }, { db }),
+    { count: 0, connections: [] },
+  );
+
+  const capitalAskCount = await readSlice(
+    'capitalAsks',
+    async () =>
+      (
+        await db
+          .select({ value: sql<number>`cast(count(*) as integer)` })
           .from(documents)
           .innerJoin(spaces, eq(documents.spaceId, spaces.id))
           .where(
             and(
-              inArray(documents.spaceId, spaceIds),
-              inArray(documents.state, ['proposal', 'discussion']),
+              eq(documents.label, 'Investment'),
+              inArray(documents.state, ['proposal', 'agreement']),
+              eq(spaces.isArchived, false),
             ),
           )
-          .orderBy(desc(documents.createdAt))
-          .limit(listLimit);
+      )[0]?.value ?? 0,
+    0,
+  );
 
-  const openProposalCount =
-    spaceIds.length === 0
-      ? 0
-      : (
-          await db
-            .select({
-              value: sql<number>`cast(count(*) as integer)`,
-            })
-            .from(documents)
-            .where(
-              and(
-                inArray(documents.spaceId, spaceIds),
-                eq(documents.state, 'proposal'),
-              ),
-            )
-        )[0]?.value ?? 0;
+  const notificationSlice = await readSlice(
+    'notifications',
+    async () => {
+      const notificationProposalRows =
+        spaceIds.length === 0
+          ? []
+          : await db
+              .selectDistinctOn([documents.spaceId], {
+                id: documents.id,
+                slug: documents.slug,
+                title: documents.title,
+                createdAt: documents.createdAt,
+                spaceSlug: spaces.slug,
+                spaceTitle: spaces.title,
+              })
+              .from(documents)
+              .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+              .where(
+                and(
+                  inArray(documents.spaceId, spaceIds),
+                  eq(documents.state, 'proposal'),
+                  eq(spaces.isArchived, false),
+                  or(
+                    isNull(documents.creatorId),
+                    ne(documents.creatorId, personId),
+                  ),
+                ),
+              )
+              .orderBy(documents.spaceId, desc(documents.createdAt));
 
-  const signalRows =
-    spaceIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: coherences.id,
-            slug: coherences.slug,
-            title: coherences.title,
-            type: coherences.type,
-            priority: coherences.priority,
-            assigneeIds: coherences.assigneeIds,
-            spaceSlug: spaces.slug,
-            spaceTitle: spaces.title,
-          })
-          .from(coherences)
-          .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
-          .where(
-            and(
-              inArray(coherences.spaceId, spaceIds),
-              or(eq(coherences.archived, false), isNull(coherences.archived)),
-            ),
-          )
-          .orderBy(desc(coherences.updatedAt))
-          .limit(listLimit);
+      const notificationSignalRows =
+        spaceIds.length === 0
+          ? []
+          : await db
+              .selectDistinctOn([coherences.spaceId], {
+                id: coherences.id,
+                slug: coherences.slug,
+                title: coherences.title,
+                updatedAt: coherences.updatedAt,
+                spaceSlug: spaces.slug,
+                spaceTitle: spaces.title,
+              })
+              .from(coherences)
+              .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+              .where(
+                and(
+                  inArray(coherences.spaceId, spaceIds),
+                  eq(spaces.isArchived, false),
+                  or(
+                    eq(coherences.archived, false),
+                    isNull(coherences.archived),
+                  ),
+                  sql`${coherences.assigneeIds} @> ${JSON.stringify([
+                    personId,
+                  ])}::jsonb`,
+                ),
+              )
+              .orderBy(coherences.spaceId, desc(coherences.updatedAt));
 
-  const signalCount =
-    spaceIds.length === 0
-      ? 0
-      : (
-          await db
-            .select({
-              value: sql<number>`cast(count(*) as integer)`,
-            })
-            .from(coherences)
-            .where(
-              and(
-                inArray(coherences.spaceId, spaceIds),
-                or(eq(coherences.archived, false), isNull(coherences.archived)),
-              ),
-            )
-        )[0]?.value ?? 0;
-
-  const others = alias(memberships, 'shared_memberships');
-  const connectionRows =
-    spaceIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: people.id,
-            slug: people.slug,
-            name: people.name,
-            surname: people.surname,
-            nickname: people.nickname,
-            avatarUrl: people.avatarUrl,
-            sharedSpaceCount: sql<number>`cast(count(*) as integer)`,
-          })
-          .from(memberships)
-          .innerJoin(
-            others,
-            and(
-              eq(others.spaceId, memberships.spaceId),
-              ne(others.personId, personId),
-            ),
-          )
-          .innerJoin(people, eq(people.id, others.personId))
-          .where(
-            and(
-              eq(memberships.personId, personId),
-              inArray(memberships.spaceId, spaceIds),
-              or(
-                isNull(people.sub),
-                notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
-              ),
-            ),
-          )
-          .groupBy(
-            people.id,
-            people.slug,
-            people.name,
-            people.surname,
-            people.nickname,
-            people.avatarUrl,
-          )
-          .orderBy(desc(sql`count(*)`))
-          .limit(listLimit);
-
-  const connectionCountRow =
-    spaceIds.length === 0
-      ? []
-      : await db
-          .select({
-            value: sql<number>`cast(count(distinct ${others.personId}) as integer)`,
-          })
-          .from(memberships)
-          .innerJoin(
-            others,
-            and(
-              eq(others.spaceId, memberships.spaceId),
-              ne(others.personId, personId),
-            ),
-          )
-          .innerJoin(people, eq(people.id, others.personId))
-          .where(
-            and(
-              eq(memberships.personId, personId),
-              inArray(memberships.spaceId, spaceIds),
-              or(
-                isNull(people.sub),
-                notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
-              ),
-            ),
-          );
-
-  const capitalAskCount =
-    (
-      await db
-        .select({ value: sql<number>`cast(count(*) as integer)` })
-        .from(documents)
-        .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-        .where(
-          and(
-            eq(documents.label, 'Investment'),
-            inArray(documents.state, ['proposal', 'agreement']),
-            eq(spaces.isArchived, false),
-          ),
-        )
-    )[0]?.value ?? 0;
-
-  const proposals = proposalRows.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    title: row.title?.trim() || 'Untitled proposal',
-    state: row.state,
-    label: row.label,
-    spaceSlug: row.spaceSlug,
-    spaceTitle: row.spaceTitle,
-    createdAt: row.createdAt.toISOString(),
-    authoredByMember: row.creatorId === personId,
-  }));
-
-  const signals = signalRows.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    type: row.type,
-    priority: row.priority,
-    spaceSlug: row.spaceSlug,
-    spaceTitle: row.spaceTitle,
-    assignedToMember: (row.assigneeIds ?? []).includes(personId),
-  }));
-
-  const attention: MemberAttentionItem[] = [];
-  for (const proposal of proposals) {
-    if (proposal.state !== 'proposal' || proposal.authoredByMember) continue;
-    if (!proposal.slug) continue;
-    attention.push({
-      id: `proposal-${proposal.id}`,
-      kind: 'proposal',
-      title: proposal.title,
-      detail: `${proposal.spaceTitle} · a decision`,
-      spaceSlug: proposal.spaceSlug,
-      spaceTitle: proposal.spaceTitle,
-      targetSlug: proposal.slug,
-    });
-    if (attention.length >= ATTENTION_LIMIT) break;
-  }
-  if (attention.length < ATTENTION_LIMIT) {
-    for (const signal of signals) {
-      if (!signal.assignedToMember || !signal.slug) continue;
-      attention.push({
-        id: `signal-${signal.id}`,
-        kind: 'signal',
-        title: signal.title,
-        detail: `${signal.spaceTitle} · a signal`,
-        spaceSlug: signal.spaceSlug,
-        spaceTitle: signal.spaceTitle,
-        targetSlug: signal.slug,
-      });
-      if (attention.length >= ATTENTION_LIMIT) break;
-    }
-  }
+      const notificationCandidates = [
+        ...notificationProposalRows.flatMap((row) =>
+          row.slug
+            ? [
+                {
+                  id: `proposal-${row.id}`,
+                  kind: 'proposal' as const,
+                  title: row.title?.trim() || 'Untitled proposal',
+                  detail: `${row.spaceTitle} · a decision`,
+                  spaceSlug: row.spaceSlug,
+                  spaceTitle: row.spaceTitle,
+                  targetSlug: row.slug,
+                  at: row.createdAt.toISOString(),
+                },
+              ]
+            : [],
+        ),
+        ...notificationSignalRows.flatMap((row) =>
+          row.slug
+            ? [
+                {
+                  id: `signal-${row.id}`,
+                  kind: 'signal' as const,
+                  title: row.title,
+                  detail: `${row.spaceTitle} · a signal`,
+                  spaceSlug: row.spaceSlug,
+                  spaceTitle: row.spaceTitle,
+                  targetSlug: row.slug,
+                  at: row.updatedAt.toISOString(),
+                },
+              ]
+            : [],
+        ),
+      ];
+      return {
+        items: pickNotificationsAcrossSpaces(
+          notificationCandidates,
+          Math.max(notificationCandidates.length, ATTENTION_LIMIT),
+        ),
+        count: notificationCandidates.length,
+      };
+    },
+    { items: [] as MemberAttentionItem[], count: 0 },
+  );
 
   const firstName = person.name?.trim() || person.nickname?.trim() || 'there';
 
@@ -395,38 +544,29 @@ export async function getMemberIntelligence(
     },
     counts: {
       spaces: spaceRows.length,
-      openProposals: Number(openProposalCount) || 0,
-      signals: Number(signalCount) || 0,
-      connections:
-        Number(connectionCountRow[0]?.value ?? connectionRows.length) || 0,
-      notifications: attention.length,
+      openProposals: proposalSlice.openProposals,
+      signals: signalSlice.count,
+      connections: sharedPeople.count,
+      notifications: notificationSlice.items.length,
       capitalAsks: Number(capitalAskCount) || 0,
     },
     guidance: {
       narrative: buildMemberGuidance({
         firstName,
         orientation,
-        attention: attention[0] ?? null,
+        attention: notificationSlice.items[0] ?? null,
         spaceCount: spaceRows.length,
       }),
     },
-    attention,
+    attention: notificationSlice.items,
     spaces: spaceRows.slice(0, listLimit).map((space) => ({
       ...space,
       description: excerpt(space.description, 120),
     })),
-    proposals,
-    signals,
-    notifications: attention,
-    connections: connectionRows.map((row) => ({
-      id: row.id,
-      slug: row.slug,
-      name: row.name,
-      surname: row.surname,
-      nickname: row.nickname,
-      avatarUrl: row.avatarUrl,
-      sharedSpaceCount: Number(row.sharedSpaceCount) || 0,
-    })),
+    proposals: proposalSlice.proposals,
+    signals: signalSlice.signals,
+    notifications: notificationSlice.items,
+    connections: sharedPeople.connections,
     wallet: {
       address: person.address,
       preferredCurrency: person.preferredCurrency,
