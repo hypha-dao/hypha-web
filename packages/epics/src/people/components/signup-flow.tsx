@@ -37,6 +37,10 @@ type Step = (typeof STEPS)[number];
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
 
+/** Ink on paper. Space accent remaps `bg-accent-9` to a hue; these actions stay achromatic. */
+const primaryActionClassName =
+  '!bg-foreground !text-background hover:!bg-foreground hover:!text-background';
+
 export function SignupFlow({
   email,
   walletAddress,
@@ -271,18 +275,28 @@ export function SignupFlow({
             </Button>
           ) : null}
           {step === 'welcome' ? (
-            <Button type="button" disabled={!walletReady} onClick={goNext}>
+            <Button
+              type="button"
+              className={primaryActionClassName}
+              disabled={!walletReady}
+              onClick={goNext}
+            >
               {walletReady ? t('begin') : t('walletWait')}
             </Button>
           ) : null}
           {step !== 'welcome' && step !== 'arrival' ? (
-            <Button type="button" onClick={goNext}>
+            <Button
+              type="button"
+              className={primaryActionClassName}
+              onClick={goNext}
+            >
               {step === 'orientation' ? t('thisIsMe') : t('continue')}
             </Button>
           ) : null}
           {step === 'arrival' ? (
             <Button
               type="button"
+              className={primaryActionClassName}
               disabled={isCreating || !walletReady || !orientation}
               onClick={() => {
                 void finish();
