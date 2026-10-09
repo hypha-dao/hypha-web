@@ -1,24 +1,17 @@
 /*
- * Greeting banner. Same asset and treatment as the hypha.earth home hero
- * (strategy-mycelium, object-fit cover, theme filters, paper veil).
+ * Member home ground. Same asset as the hypha.earth hero: full field,
+ * cover, centered. Light is a grayscale invert (pencil on paper). Dark
+ * is grayscale with a screen blend (ink field, light threads).
+ * The veil only softens the middle, where the greeting and thread sit.
  */
 
 .member-home-banner {
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 11.25rem;
+  inset: 0;
+  z-index: -1;
   overflow: hidden;
-  isolation: isolate;
   pointer-events: none;
   background: var(--hypha-paper);
-}
-
-@media (min-width: 768px) {
-  .member-home-banner {
-    height: 12.75rem;
-  }
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-banner {
@@ -33,9 +26,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transform: scale(1.04);
   pointer-events: none;
-  image-rendering: -webkit-optimize-contrast;
   filter: grayscale(1) invert(1) contrast(1.08) brightness(1.06);
   opacity: 0.78;
 }
@@ -52,12 +43,11 @@
   z-index: -1;
   pointer-events: none;
   background: radial-gradient(
-    ellipse 60% 50% at 50% 50%,
-    oklch(from var(--hypha-paper) l c h / 0.62),
-    oklch(from var(--hypha-paper) l c h / 0.2) 70%,
-    transparent
+    ellipse 62% 68% at 50% 42%,
+    oklch(from var(--hypha-paper) l c h / 0.55),
+    oklch(from var(--hypha-paper) l c h / 0.16) 58%,
+    transparent 80%
   );
-  mask-image: linear-gradient(transparent 0% 22%, #000 48%);
 }
 
 .member-home-banner-veil::after {
@@ -70,17 +60,10 @@
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-banner-veil {
-  mask-image: none;
   background: radial-gradient(
-    ellipse 48% 40% at 50% 52%,
-    oklch(from var(--hypha-ink) l c h / 0.7),
-    oklch(from var(--hypha-ink) l c h / 0.15) 75%,
-    transparent
+    ellipse 58% 64% at 50% 46%,
+    oklch(from var(--hypha-ink) l c h / 0.62),
+    oklch(from var(--hypha-ink) l c h / 0.14) 60%,
+    transparent 82%
   );
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .member-home-banner-image {
-    transform: none;
-  }
 }
