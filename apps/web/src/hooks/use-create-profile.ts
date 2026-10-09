@@ -81,9 +81,9 @@ export const useCreateProfile = (
           pathname:
             typeof window !== 'undefined' ? window.location.pathname : '',
           lang: typeof lang === 'string' ? lang : undefined,
-          baseRedirectPath: lang ? `/${lang}/home` : '/en/home',
+          baseRedirectPath: lang ? `/${lang}/my-dashboard` : '/en/my-dashboard',
         });
-        const homePath = lang ? `/${lang}/home` : '/en/home';
+        const homePath = lang ? `/${lang}/my-dashboard` : '/en/my-dashboard';
         const nextPath = spaceContextReturnPath ?? homePath;
 
         // Prevent post-signup redirect guards from briefly treating the user
