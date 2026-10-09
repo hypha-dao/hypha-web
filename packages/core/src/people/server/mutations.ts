@@ -99,6 +99,24 @@ async function insertPersonWithoutOrientation(
 
 export type CreatePersonConfig = DbConfig;
 
+type PersonColumnRow = Parameters<typeof mapToDomainPerson>[0];
+
+/**
+ * `DatabaseInstance` is a union of drivers. Drizzle drops the generic
+ * `.returning(fields)` overload on that union, so the column list is applied
+ * with a type assertion. `personColumns()` omits `primary_orientation`, which
+ * keeps the write valid before migration 0080.
+ */
+function returningWithoutOrientation(query: { returning(): unknown }) {
+  return (
+    query as unknown as {
+      returning(
+        fields: ReturnType<typeof personColumns>,
+      ): Promise<PersonColumnRow[]>;
+    }
+  ).returning(personColumns());
+}
+
 export const createPerson = async (
   person: Person,
   { db }: CreatePersonConfig,
@@ -112,13 +130,9 @@ export const createPerson = async (
   };
   let created: Person;
   try {
-    // `.returning()` lists every schema column, including primary_orientation.
-    // `personColumns()` leaves that column out, but Drizzle can still select it.
-    // Before migration 0080 that statement fails and no row is written.
-    const [dbPerson] = await db
-      .insert(people)
-      .values(insertData)
-      .returning(personColumns());
+    const [dbPerson] = await returningWithoutOrientation(
+      db.insert(people).values(insertData),
+    );
     if (!dbPerson) {
       throw new Error('Failed to create person');
     }
@@ -171,11 +185,9 @@ export const updatePerson = async (
     email: person.email || null,
     slug,
   };
-  const [dbPerson] = await db
-    .update(people)
-    .set(updateData)
-    .where(eq(people.id, person.id))
-    .returning(personColumns());
+  const [dbPerson] = await returningWithoutOrientation(
+    db.update(people).set(updateData).where(eq(people.id, person.id)),
+  );
   if (!dbPerson) {
     throw new Error('Failed to update person');
   }
