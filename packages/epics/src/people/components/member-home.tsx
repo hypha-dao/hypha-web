@@ -3,6 +3,7 @@
 import { type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Badge,
@@ -17,13 +18,17 @@ import type { MemberIntelligence } from '@hypha-platform/core/client';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
+import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
+import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { MemberHomeChat } from './member-home-chat';
+import { MemberHomeMark } from './member-home-mark';
 import { MemberHomePeople } from './member-home-people';
 import {
   MemberHomeConnectionsWidget,
   MemberHomeSpacesWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
+import './member-home-banner.css';
 
 type MemberHomeProps = {
   lang: Locale;
@@ -68,6 +73,8 @@ export function MemberHome({
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
+  const { resolvedTheme } = useTheme();
+  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
   const rawOrientation = home?.person.primaryOrientation;
@@ -87,7 +94,15 @@ export function MemberHome({
     : null;
 
   return (
-    <div className="flex w-full flex-col lg:grid lg:h-[calc(100dvh-4.5rem)] lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:overflow-hidden">
+    <div className="relative isolate flex min-h-[calc(100dvh-4.5rem)] w-full flex-col lg:grid lg:h-[calc(100dvh-4.5rem)] lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:overflow-hidden">
+      <div className="member-home-banner" aria-hidden>
+        <img
+          alt=""
+          className="member-home-banner-image"
+          src="/brand/strategy-mycelium.png"
+        />
+        <div className="member-home-banner-veil" />
+      </div>
       <aside
         aria-label={t('panelSpaces')}
         className="order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
@@ -110,20 +125,24 @@ export function MemberHome({
           </div>
         ) : null}
         <MemberHomeSpacesWidget lang={lang} busy={home == null}>
-          <ResourceList
-            isLoading={home == null}
-            empty={t('noSpaces')}
-            items={
-              home
-                ? home.spaces.map((space) => ({
-                    id: space.id,
-                    title: space.title,
-                    detail: space.description,
-                    href: `/${lang}/dho/${space.slug}/overview`,
-                  }))
-                : []
-            }
-          />
+          {home == null ? (
+            <CardSkeleton />
+          ) : home.spaces.length === 0 ? (
+            <p className="text-2 text-neutral-11">{t('noSpaces')}</p>
+          ) : (
+            <ul className="grid">
+              {home.spaces.map((space) => (
+                <li key={space.id}>
+                  <SpaceSwitcherOption
+                    href={`/${lang}/dho/${space.slug}/overview`}
+                    title={space.title}
+                    iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
+                    className="rounded-lg px-2 py-1.5 text-1 hover:bg-background-4/70"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </MemberHomeSpacesWidget>
         <div className="mt-4">
           <Tile title={t('notifications')} busy={home == null}>
@@ -175,11 +194,7 @@ export function MemberHome({
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
         <div className="border-b border-border px-4 py-3 md:px-6">
           <div className="flex items-center gap-3">
-            <img
-              src="/brand/strategy-mycelium.png"
-              alt=""
-              className="h-9 w-9 shrink-0 object-cover"
-            />
+            <MemberHomeMark className="h-9 w-9" />
             <div className="min-w-0">
               <h1
                 className="truncate text-4 leading-tight font-medium tracking-[-0.03em]"
