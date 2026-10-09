@@ -75,6 +75,8 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Ada Lovelace');
     expect(facts).toContain('Grove');
     expect(facts).toContain('Open the path');
+    expect(facts).toContain('kind=proposal slug=path document=proposal');
+    expect(facts).toContain('show_member_home_item');
     expect(facts).toContain('Noor');
     expect(facts).not.toContain('Circle');
     expect(facts).not.toContain('You are a personal');

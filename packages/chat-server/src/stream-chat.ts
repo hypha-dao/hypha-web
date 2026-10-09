@@ -13,7 +13,14 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import {
+  listMemberHomeThreadItems,
+  SHOW_MEMBER_HOME_ITEM_TOOL,
+  shownMemberHomeItemKeys,
+} from '@hypha-platform/core/client';
+import { formatMemberHomeFacts } from './member-home-facts';
 import { loadMemberHomeFacts } from './load-member-home-facts';
+import { createShowMemberHomeItemTool } from './tools/show-member-home-item';
 import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { resolveChatLocale } from './locale-ui-labels';
@@ -45,6 +52,7 @@ import { buildProposalFormStateDirective } from './tools/proposal-form-state';
 import { buildProposalAcceptanceDirective } from './tools/proposal-acceptance-directive';
 import {
   createChatTools,
+  safeChatTool,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
@@ -1381,6 +1389,14 @@ export async function createChatStreamResult(
   const memberHomeRecord = memberHome
     ? await loadMemberHomeFacts(authToken)
     : null;
+  const memberHomeItems = memberHomeRecord
+    ? listMemberHomeThreadItems(memberHomeRecord.home)
+    : [];
+  const memberHomeFacts = memberHomeRecord
+    ? formatMemberHomeFacts(memberHomeRecord.home, {
+        alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
+      })
+    : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
@@ -1405,6 +1421,12 @@ export async function createChatStreamResult(
     activeProposalFormSnapshot,
     chatLocale,
   );
+  if (memberHomeRecord) {
+    tools[SHOW_MEMBER_HOME_ITEM_TOOL] = safeChatTool(
+      SHOW_MEMBER_HOME_ITEM_TOOL,
+      createShowMemberHomeItemTool(memberHomeItems),
+    );
+  }
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
     spaceSlug,
@@ -1588,8 +1610,8 @@ export async function createChatStreamResult(
 
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: memberHomeRecord?.facts
-      ? `${systemPrompt}\n\n${memberHomeRecord.facts}`
+    system: memberHomeFacts
+      ? `${systemPrompt}\n\n${memberHomeFacts}`
       : systemPrompt,
     messages:
       modelMessages.length > 0

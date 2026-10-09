@@ -5,11 +5,10 @@ import {
   resolveMemberCaller,
 } from '@hypha-platform/core/server';
 
-import { formatMemberHomeFacts } from './member-home-facts';
-
-export async function loadMemberHomeFacts(
-  authToken: string,
-): Promise<{ chatSpaceSlug: string | null; facts: string } | null> {
+export async function loadMemberHomeFacts(authToken: string): Promise<{
+  chatSpaceSlug: string | null;
+  home: NonNullable<Awaited<ReturnType<typeof getMemberIntelligence>>>;
+} | null> {
   const caller = await resolveMemberCaller(authToken);
   if (!caller?.person.id) return null;
   const home = await getMemberIntelligence(
@@ -19,6 +18,6 @@ export async function loadMemberHomeFacts(
   if (!home) return null;
   return {
     chatSpaceSlug: home.chatSpaceSlug,
-    facts: formatMemberHomeFacts(home),
+    home,
   };
 }
