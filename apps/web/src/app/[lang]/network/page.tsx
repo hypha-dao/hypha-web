@@ -3,6 +3,7 @@ import { Container } from '@hypha-platform/ui';
 import {
   getAllSpaces,
   getNetworkGrowth,
+  resolveCreatorMapCoordinates,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
   SPACE_ORDERS,
@@ -60,6 +61,15 @@ export default async function Index(props: PageProps) {
   spaces = spacesResult;
   networkGrowth = growthResult;
 
+  const creatorMapPins = enableNetworkMap
+    ? await resolveCreatorMapCoordinates(spaces, { db }).catch(
+        (error: unknown) => {
+          console.error('Failed to resolve creator map pins:', error);
+          return {};
+        },
+      )
+    : {};
+
   const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
   // Pre-sort on the server so the first paint already matches the order the
@@ -78,6 +88,7 @@ export default async function Index(props: PageProps) {
         uniqueCategoryGroups={uniqueCategoryGroups}
         enableNetworkMap={enableNetworkMap}
         networkGrowth={networkGrowth}
+        creatorMapPins={creatorMapPins}
       />
     </Container>
   );
