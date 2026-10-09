@@ -4,8 +4,11 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-const ORIENTATIONS = ['member', 'builder', 'investor'] as const;
+const orientationBodySchema = z.object({
+  primaryOrientation: z.enum(['member', 'builder', 'investor']),
+});
 
 export async function POST(request: NextRequest) {
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
@@ -19,21 +22,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    let body: { primaryOrientation?: string };
+    let json: unknown;
     try {
-      body = (await request.json()) as { primaryOrientation?: string };
+      json = await request.json();
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    const primaryOrientation = ORIENTATIONS.find(
-      (orientation) => orientation === body.primaryOrientation,
-    );
-    if (!primaryOrientation) {
+
+    const parsed = orientationBodySchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
         { error: 'Choose member, builder, or investor' },
         { status: 400 },
       );
     }
+    const { primaryOrientation } = parsed.data;
 
     const updated = await updatePersonPrimaryOrientation(
       { id: person.id, primaryOrientation },
