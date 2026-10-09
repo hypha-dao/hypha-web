@@ -45,7 +45,6 @@ import { useFundWallet } from '../../treasury/hooks';
 import {
   HyphaNetworkFeedbackDialog,
   HyphaNetworkFeedbackMenuItem,
-  HyphaNetworkFeedbackTrigger,
 } from '../../common/hypha-network-feedback-dialog';
 
 export type ButtonProfileProps = {
@@ -65,7 +64,7 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
-  /** When true, show Shape Hypha after the main nav links. */
+  /** When true, show Shape Hypha inside the profile menu. */
   showNetworkFeedback?: boolean;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
@@ -681,7 +680,6 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
-            {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
             {navItems.map((item) => (
               <ButtonNavItem
                 key={item.href ?? item.label}
@@ -690,6 +688,12 @@ export const ButtonProfile = ({
                 icon={resolveNavItemIcon(item.href)}
               />
             ))}
+            {showNetworkFeedback ? (
+              <HyphaNetworkFeedbackMenuItem
+                variant="sheet"
+                onOpen={openNetworkFeedbackFromProfileMenu}
+              />
+            ) : null}
 
             {trailingBeforeProfile ? (
               <div className="flex w-full justify-center">
@@ -752,7 +756,6 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden items-center gap-2 md:flex">
             <div className="flex items-center gap-2">
-              {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
               {navItems.map((item) => (
                 <ButtonNavItem
                   key={item.href ?? item.label}
@@ -816,6 +819,20 @@ export const ButtonProfile = ({
                   <div className={profileMenuWalletClass}>
                     <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
+                ) : null}
+
+                {showNetworkFeedback ? (
+                  <>
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
+                    />
+                    <DropdownMenuGroup>
+                      <HyphaNetworkFeedbackMenuItem
+                        variant="menu"
+                        onOpen={openNetworkFeedbackFromProfileMenu}
+                      />
+                    </DropdownMenuGroup>
+                  </>
                 ) : null}
 
                 {(profileUrl || onboardingUrl || notificationCentrePath) && (
@@ -934,6 +951,10 @@ export const ButtonProfile = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <HyphaNetworkFeedbackDialog
+            open={networkFeedbackOpen}
+            onOpenChange={setNetworkFeedbackOpen}
+          />
         </>
       ) : (
         <div className="flex flex-col md:flex-row gap-8 md:gap-2">

@@ -150,6 +150,7 @@
   },
   "Navigation": {
     "network": "Netzwerk",
+    "myDashboard": "Mein Dashboard",
     "mySpaces": "Meine Spaces",
     "myWallet": "Mein Wallet",
     "openMenu": "Menü öffnen",
