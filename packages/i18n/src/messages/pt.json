@@ -3,6 +3,8 @@
     "panelSpaces": "Espaços e pessoas",
     "panelInsights": "O que precisa de ti",
     "peopleTitle": "Pessoas",
+    "invites": "Convites",
+    "inviteDetail": "Uma ligação para entrar",
     "peopleInSpaces": "Nos teus espaços",
     "widerNetwork": "Rede mais larga",
     "searchPlaceholder": "Procurar por nome",
@@ -1547,7 +1549,17 @@
     },
     "aiAgents": "Agentes de IA",
     "aiAgentsEmptyState": "Ainda não há agentes de IA mobilizados. Faça perguntas estratégicas para os ativar.",
-    "aiAgentsMobilizedCount": "Mobilizado {count, plural, one {# vez} other {# vezes}}"
+    "aiAgentsMobilizedCount": "Mobilizado {count, plural, one {# vez} other {# vezes}}",
+    "inviteMember": "Convidar",
+    "inviteClose": "Fechar",
+    "inviteSearch": "Pesquisar por nome",
+    "inviteSend": "Enviar convite",
+    "inviteSent": "Convite enviado. Fica no painel até a pessoa entrar.",
+    "inviteError": "Não foi possível enviar o convite.",
+    "inviteAlreadyMember": "Essa pessoa já está neste espaço.",
+    "inviteSelf": "Não podes convidar-te a ti mesmo.",
+    "inviteNotMember": "Só um membro deste espaço pode enviar um convite.",
+    "invitePick": "Escolhe alguém para convidar."
   },
   "TreasuryTab": {
     "bankingRoutes": "Banco",

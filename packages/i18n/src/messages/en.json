@@ -222,6 +222,8 @@
     "panelSpaces": "Spaces and people",
     "panelInsights": "What needs you",
     "peopleTitle": "People",
+    "invites": "Invites",
+    "inviteDetail": "A link to join",
     "peopleInSpaces": "In your spaces",
     "widerNetwork": "Wider network",
     "searchPlaceholder": "Search by name",
@@ -894,7 +896,17 @@
     },
     "aiAgents": "AI Agents",
     "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
-    "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}"
+    "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}",
+    "inviteMember": "Invite",
+    "inviteClose": "Close",
+    "inviteSearch": "Search by name",
+    "inviteSend": "Send invite",
+    "inviteSent": "Invite sent. It stays on their dashboard until they join.",
+    "inviteError": "That invite could not be sent.",
+    "inviteAlreadyMember": "They are already in this space.",
+    "inviteSelf": "You cannot invite yourself.",
+    "inviteNotMember": "Only a member of this space can send an invite.",
+    "invitePick": "Pick someone to invite."
   },
   "BankingTab": {
     "title": "Banking",

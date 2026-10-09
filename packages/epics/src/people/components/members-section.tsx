@@ -5,6 +5,7 @@ import { Text } from '@radix-ui/themes';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
+import { SpaceMemberInviteButton } from './space-member-invite-button';
 import { useMembersSection } from '../hooks/use-members-section';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
@@ -16,6 +17,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
 import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
@@ -62,6 +64,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const { isMember, isMemberLoading } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
   });
+  const params = useParams();
+  const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { person } = useMe();
   const { isAuthenticated } = useAuthentication();
   const { isDelegate } = useIsDelegate({
@@ -126,6 +130,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
           disabled={entityFilter === 'ai'}
         />
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+          {isMember && spaceSlug ? (
+            <SpaceMemberInviteButton spaceSlug={spaceSlug} lang={lang} />
+          ) : null}
           <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
           {!isDelegate ? (
             canDelegateLink ? (
