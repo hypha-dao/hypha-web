@@ -1,4 +1,7 @@
-import type { MemberIntelligence } from '@hypha-platform/core/client';
+import {
+  listMemberHomeThreadItems,
+  type MemberIntelligence,
+} from '@hypha-platform/core/client';
 
 function personName(person: {
   name: string | null;
@@ -13,26 +16,26 @@ function personName(person: {
  * Records for the signed-in member. Appended after `buildSystemPrompt` so the
  * home assistant keeps the existing Hypha AI voice and still knows this person.
  */
-export function formatMemberHomeFacts(home: MemberIntelligence): string {
+export function formatMemberHomeFacts(
+  home: MemberIntelligence,
+  options?: { alreadyShown?: readonly string[] },
+): string {
   const spaces = home.spaces.map((space) => space.title).join('; ') || 'none';
-  const proposals =
-    home.proposals
-      .map((proposal) => {
-        const decision =
-          proposal.web3ProposalId != null
-            ? 'open for a member decision'
-            : proposal.state ?? 'open';
-        return `${proposal.title} (${proposal.spaceTitle}, ${decision})`;
-      })
-      .join('; ') || 'none';
-  const signals =
-    home.signals
-      .map((signal) => `${signal.title} (${signal.spaceTitle})`)
-      .join('; ') || 'none';
-  const notifications =
-    home.notifications
-      .map((item) => `${item.title} (${item.spaceTitle})`)
-      .join('; ') || 'none';
+  const waiting = listMemberHomeThreadItems(home);
+  const waitingLines =
+    waiting.length === 0
+      ? 'Nothing is waiting. Do not call show_member_home_item.'
+      : waiting
+          .map(
+            (item, index) =>
+              `${index + 1}. kind=${item.kind} slug=${item.slug} document=${
+                item.documentKind
+              } title="${item.title}" space="${item.spaceTitle}"`,
+          )
+          .join('\n');
+  const alreadyShown = (options?.alreadyShown ?? [])
+    .map((key) => key.trim())
+    .filter(Boolean);
   const people =
     home.connections
       .map(
@@ -44,11 +47,16 @@ export function formatMemberHomeFacts(home: MemberIntelligence): string {
   return [
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above.',
     'The member is on their personal home, across every space they belong to, not on a single space screen.',
+    'Bring one waiting item into the conversation at a time, in the order below. In that same reply call show_member_home_item once with its kind and slug. The card is drawn inside that reply and labeled with its document kind. Your words must be about that same item. Do not list the other items. Do not call the tool for an item you are not talking about. You never vote or validate. The person taps the card.',
     `Person: ${personName(home.person)}.`,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
-    `Proposals: ${proposals}.`,
-    `Signals: ${signals}.`,
-    `Notifications: ${notifications}.`,
+    'Waiting items:',
+    waitingLines,
+    alreadyShown.length > 0
+      ? `Already placed in earlier replies. Do not call show_member_home_item for these again unless the person asks: ${alreadyShown.join(
+          ', ',
+        )}.`
+      : 'No card has been placed in this conversation yet.',
     `People who share a space, closest first: ${people}.`,
     home.wallet.preferredCurrency
       ? `Preferred currency: ${home.wallet.preferredCurrency}.`
