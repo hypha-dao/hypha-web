@@ -1,13 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import { useAuthentication } from '@hypha-platform/authentication';
-import type { MemberIntelligence } from '@hypha-platform/core/client';
+import {
+  listMemberHomeThreadItems,
+  memberHomeThreadItemForMessage,
+  type MemberIntelligence,
+} from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -23,14 +25,12 @@ import {
   loadSpaceDiscoveryMode,
   saveSpaceDiscoveryMode,
 } from '../../common/ai-panel-discovery-mode';
-import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import type { OnboardingDiscoveryMode } from '../../common/onboarding-discovery-mode';
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildSpaceAdvisorVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
-import { celebrate } from './member-home-celebrate';
 import { MemberHomeMark } from './member-home-mark';
-import { MemberHomeVote } from './member-home-vote';
+import { MemberHomeThreadCard } from './member-home-thread-card';
 
 /** Reserved discovery-mode key. Home must not share a space's voice preference. */
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
@@ -227,16 +227,10 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
     node.scrollTop = node.scrollHeight;
   }, [homeMessages, isStreaming]);
 
-  const lead = intelligence.attention[0] ?? null;
-  const leadProposal =
-    lead?.kind === 'proposal'
-      ? intelligence.proposals.find(
-          (proposal) => proposal.slug === lead.targetSlug,
-        ) ?? null
-      : intelligence.proposals.find(
-          (proposal) => proposal.state === 'proposal',
-        ) ?? null;
-  const leadSignal = lead?.kind === 'signal' ? lead : null;
+  const threadItems = useMemo(
+    () => listMemberHomeThreadItems(intelligence),
+    [intelligence],
+  );
 
   const chips = [
     { key: 'useful', ask: t('chipUseful') },
@@ -258,102 +252,49 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
           {homeMessages.map((message) => {
             if (message.metadata?.homeArrival) return null;
             const text = messageText(message);
-            if (!text && message.role !== 'assistant') return null;
+            const threadItem =
+              message.role === 'assistant'
+                ? memberHomeThreadItemForMessage(threadItems, message)
+                : null;
+            if (!text && !threadItem) return null;
             const mine = message.role === 'user';
+            const proposal =
+              threadItem?.kind === 'proposal'
+                ? intelligence.proposals.find(
+                    (item) => item.slug === threadItem.slug,
+                  ) ?? null
+                : null;
             return (
               <article
                 key={message.id}
                 className={cn('flex gap-3', mine && 'flex-row-reverse')}
               >
                 {mine ? null : <MemberHomeMark className="mt-0.5 h-8 w-8" />}
-                <p
-                  className={cn(
-                    'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
-                    mine ? 'text-foreground' : 'text-neutral-12',
-                  )}
-                >
-                  {text || (isStreaming ? t('thinking') : '')}
-                </p>
+                <div className="grid min-w-0 gap-3">
+                  {text || (isStreaming && !threadItem) ? (
+                    <p
+                      className={cn(
+                        'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
+                        mine ? 'text-foreground' : 'text-neutral-12',
+                      )}
+                    >
+                      {text || t('thinking')}
+                    </p>
+                  ) : null}
+                  {threadItem ? (
+                    <MemberHomeThreadCard
+                      lang={lang}
+                      item={threadItem}
+                      proposal={proposal}
+                      onValidate={(title) => {
+                        void send(t('validatedSignal', { title }));
+                      }}
+                    />
+                  ) : null}
+                </div>
               </article>
             );
           })}
-
-          {leadProposal ? (
-            <section className="border border-border bg-background-2 p-4">
-              <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
-                {leadProposal.spaceTitle}
-              </p>
-              <h2
-                className="mt-2 text-4"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {leadProposal.title}
-              </h2>
-              {leadProposal.web3ProposalId != null ? (
-                <MemberHomeVote
-                  proposalId={leadProposal.web3ProposalId}
-                  documentId={leadProposal.id}
-                />
-              ) : (
-                <p className="mt-3 text-2 text-neutral-11">
-                  {t('voteNeedsChain')}
-                </p>
-              )}
-              <Button asChild className="mt-3" variant="outline">
-                <Link
-                  href={
-                    leadProposal.slug
-                      ? getProposalPath(
-                          lang,
-                          leadProposal.spaceSlug,
-                          leadProposal.slug,
-                        )
-                      : `/${lang}/dho/${leadProposal.spaceSlug}/agreements`
-                  }
-                >
-                  {t('visitSpace')}
-                </Link>
-              </Button>
-            </section>
-          ) : null}
-
-          {leadSignal ? (
-            <section className="border border-border bg-background-2 p-4">
-              <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
-                {leadSignal.spaceTitle}
-              </p>
-              <h2
-                className="mt-2 text-4"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {leadSignal.title}
-              </h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    celebrate();
-                    void send(
-                      t('validatedSignal', { title: leadSignal.title }),
-                    );
-                  }}
-                >
-                  {t('validate')}
-                </Button>
-                <Button asChild variant="outline">
-                  <Link
-                    href={getSignalPath(
-                      lang,
-                      leadSignal.spaceSlug,
-                      leadSignal.targetSlug,
-                    )}
-                  >
-                    {t('viewSignal')}
-                  </Link>
-                </Button>
-              </div>
-            </section>
-          ) : null}
         </div>
       </div>
 
