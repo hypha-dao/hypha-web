@@ -8,6 +8,7 @@ import {
 } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  buildMemberGuidance,
   useJwt,
   useMe,
   type MemberIntelligence,
@@ -69,7 +70,46 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
           setOrientationError(t('orientationSaveError'));
           return;
         }
-        await mutate();
+        let nextOrientation = primaryOrientation;
+        try {
+          const saved = (await response.json()) as {
+            primaryOrientation?: string | null;
+          };
+          if (
+            saved.primaryOrientation === 'member' ||
+            saved.primaryOrientation === 'builder' ||
+            saved.primaryOrientation === 'investor'
+          ) {
+            nextOrientation = saved.primaryOrientation;
+          }
+        } catch {
+          // The choice is already stored. A missing body should not block the badge.
+        }
+        await mutate(
+          (current) => {
+            if (!current) return current;
+            const nextPerson = {
+              ...current.person,
+              primaryOrientation: nextOrientation,
+            };
+            return {
+              ...current,
+              person: nextPerson,
+              guidance: {
+                narrative: buildMemberGuidance({
+                  firstName:
+                    nextPerson.name?.trim() ||
+                    nextPerson.nickname?.trim() ||
+                    'there',
+                  orientation: nextOrientation,
+                  attention: current.attention[0] ?? null,
+                  spaceCount: current.counts.spaces,
+                }),
+              },
+            };
+          },
+          { revalidate: false },
+        );
       } catch {
         setOrientationError(t('orientationSaveError'));
       } finally {
