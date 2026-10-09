@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button, Input, Logo } from '@hypha-platform/ui';
+import type { FieldError } from 'react-hook-form';
+import { z } from 'zod';
+import {
+  Button,
+  Input,
+  Logo,
+  UploadAvatar,
+  UploadLeadImage,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { Links } from '../../common';
 
 export type SignupOrientation = 'member' | 'builder' | 'investor';
 
@@ -15,6 +24,9 @@ export type SignupFlowValues = {
   email?: string;
   address: string;
   links: string[];
+  location?: string;
+  avatarUrl?: File;
+  leadImageUrl?: File;
   primaryOrientation: SignupOrientation;
 };
 
@@ -30,6 +42,8 @@ const STEPS = [
   'welcome',
   'name',
   'presence',
+  'likeness',
+  'place',
   'orientation',
   'arrival',
 ] as const;
@@ -49,18 +63,69 @@ export function SignupFlow({
   onComplete,
 }: SignupFlowProps) {
   const t = useTranslations('WelcomeFlow');
+  const tProfile = useTranslations('Profile');
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
   const [step, setStep] = useState<Step>('welcome');
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [nickname, setNickname] = useState('');
   const [description, setDescription] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<File | null>(null);
+  const [leadImageUrl, setLeadImageUrl] = useState<File | null>(null);
+  const [location, setLocation] = useState('');
+  const [profileEmail, setProfileEmail] = useState(email?.trim() ?? '');
+  const [links, setLinks] = useState<string[]>([]);
+  const [linkErrors, setLinkErrors] = useState<
+    Partial<Record<number, FieldError>> | undefined
+  >(undefined);
   const [orientation, setOrientation] = useState<SignupOrientation | null>(
     null,
   );
   const [fieldError, setFieldError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!email) return;
+    setProfileEmail((current) => (current.trim() ? current : email.trim()));
+  }, [email]);
+
   const index = STEPS.indexOf(step);
   const walletReady = Boolean(walletAddress);
+
+  const validatePlace = () => {
+    const loc = location.trim();
+    if (loc.length > 100) {
+      setFieldError(tProfile('editForm.errors.locationMaxLength'));
+      return false;
+    }
+    const mail = profileEmail.trim();
+    if (mail.length > 100) {
+      setFieldError(tProfile('editForm.errors.emailMaxLength'));
+      return false;
+    }
+    if (mail && !z.string().email().safeParse(mail).success) {
+      setFieldError(tProfile('editForm.errors.emailInvalid'));
+      return false;
+    }
+    const nextLinkErrors: Partial<Record<number, FieldError>> = {};
+    links.forEach((link, linkIndex) => {
+      const value = link.trim();
+      if (!value) return;
+      if (!z.string().url().safeParse(value).success) {
+        nextLinkErrors[linkIndex] = {
+          type: 'validate',
+          message: tProfile('editForm.errors.urlInvalid'),
+        };
+      }
+    });
+    if (Object.keys(nextLinkErrors).length > 0) {
+      setLinkErrors(nextLinkErrors);
+      setFieldError(tProfile('editForm.errors.urlInvalid'));
+      return false;
+    }
+    setLinkErrors(undefined);
+    return true;
+  };
 
   const goNext = () => {
     setFieldError(null);
@@ -77,6 +142,7 @@ export function SignupFlow({
         return;
       }
     }
+    if (step === 'place' && !validatePlace()) return;
     if (step === 'orientation' && !orientation) {
       setFieldError(t('orientation.body'));
       return;
@@ -87,16 +153,25 @@ export function SignupFlow({
 
   const finish = async () => {
     if (!orientation || !walletAddress) return;
+    if (!validatePlace()) {
+      setStep('place');
+      return;
+    }
     setFieldError(null);
     try {
+      const trimmedLocation = location.trim();
+      const trimmedEmail = profileEmail.trim();
       await onComplete({
         name: name.trim(),
         surname: surname.trim(),
         nickname: nickname.trim(),
         description: description.trim(),
-        email: email?.trim() || undefined,
+        email: trimmedEmail || undefined,
         address: walletAddress,
-        links: [],
+        links: links.map((link) => link.trim()).filter(Boolean),
+        location: trimmedLocation || undefined,
+        avatarUrl: avatarUrl ?? undefined,
+        leadImageUrl: leadImageUrl ?? undefined,
         primaryOrientation: orientation,
       });
     } catch (err) {
@@ -187,6 +262,95 @@ export function SignupFlow({
                   maxLength={300}
                   placeholder={t('presence.purposePlaceholder')}
                   onChange={(event) => setDescription(event.target.value)}
+                />
+              </Field>
+            </Screen>
+          ) : null}
+
+          {step === 'likeness' ? (
+            <Screen
+              eyebrow={t('likeness.eyebrow')}
+              title={t('likeness.title')}
+              body={t('likeness.body')}
+            >
+              <div className="grid w-fit gap-2">
+                <span className="text-1 text-neutral-11">
+                  {t('likeness.icon')}
+                </span>
+                <UploadAvatar
+                  onChange={setAvatarUrl}
+                  className="!h-24 !min-w-24 !w-24"
+                />
+                <span className="text-1 text-neutral-10">
+                  {t('likeness.iconHint')}
+                </span>
+              </div>
+              <Field
+                composite
+                label={t('likeness.banner')}
+                hint={t('likeness.bannerHint')}
+              >
+                <UploadLeadImage
+                  onChange={setLeadImageUrl}
+                  enableImageResizer={true}
+                  uploadText={tCommon.rich(
+                    'uploadLeadImage.genericUploadFallback',
+                    {
+                      accent: (chunks) => (
+                        <span className="text-foreground">{chunks}</span>
+                      ),
+                    },
+                  )}
+                  cropDialogLabels={{
+                    title: tCommon('uploadLeadImage.cropTitle'),
+                    description: tCommon('uploadLeadImage.cropDescription'),
+                    cancel: tCommon('uploadLeadImage.cancel'),
+                    confirm: tCommon('uploadLeadImage.confirm'),
+                  }}
+                  messages={{
+                    dropHere: tCommon('uploadLeadImage.dropHere'),
+                    fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                    uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                  }}
+                />
+              </Field>
+            </Screen>
+          ) : null}
+
+          {step === 'place' ? (
+            <Screen
+              eyebrow={t('place.eyebrow')}
+              title={t('place.title')}
+              body={t('place.body')}
+            >
+              <Field label={tProfile('editForm.labels.location')}>
+                <Input
+                  value={location}
+                  maxLength={100}
+                  placeholder={tProfile('editForm.placeholders.location')}
+                  onChange={(event) => setLocation(event.target.value)}
+                />
+              </Field>
+              <Field label={tProfile('editForm.labels.email')}>
+                <Input
+                  value={profileEmail}
+                  maxLength={100}
+                  type="email"
+                  autoComplete="email"
+                  placeholder={tProfile('editForm.placeholders.email')}
+                  onChange={(event) => setProfileEmail(event.target.value)}
+                />
+              </Field>
+              <Field composite label={t('place.links')}>
+                <Links
+                  links={links}
+                  errors={linkErrors}
+                  placeholder={tSpaces('addYourUrl')}
+                  onChange={(next) => {
+                    setLinks(next);
+                    setLinkErrors(undefined);
+                    setFieldError(null);
+                  }}
                 />
               </Field>
             </Screen>
@@ -375,16 +539,19 @@ function Field({
   label,
   hint,
   children,
+  composite = false,
 }: {
   label: string;
   hint?: string;
   children: ReactNode;
+  composite?: boolean;
 }) {
+  const Tag = composite ? 'div' : 'label';
   return (
-    <label className="grid w-full gap-2 text-left">
+    <Tag className="grid w-full gap-2 text-left">
       <span className="text-1 text-neutral-11">{label}</span>
       {children}
       {hint ? <span className="text-1 text-neutral-10">{hint}</span> : null}
-    </label>
+    </Tag>
   );
 }
