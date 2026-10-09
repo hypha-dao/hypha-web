@@ -188,6 +188,45 @@ export function peopleSharingMemberSpaces({
   };
 }
 
+export type DatedAttentionItem = MemberAttentionItem & { at: string };
+
+/**
+ * Newest item from each space first, then any remaining newest items.
+ * A busy space cannot crowd out notifications from the caller's other spaces.
+ */
+export function pickNotificationsAcrossSpaces(
+  items: readonly DatedAttentionItem[],
+  limit: number,
+): MemberAttentionItem[] {
+  const cap = Math.max(limit, 0);
+  if (cap === 0 || items.length === 0) return [];
+
+  const sorted = [...items].sort((left, right) => {
+    if (left.at !== right.at) return left.at < right.at ? 1 : -1;
+    return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+  });
+
+  const picked: DatedAttentionItem[] = [];
+  const seenSpaces = new Set<string>();
+  for (const item of sorted) {
+    if (picked.length >= cap) break;
+    if (seenSpaces.has(item.spaceSlug)) continue;
+    seenSpaces.add(item.spaceSlug);
+    picked.push(item);
+  }
+
+  if (picked.length < cap) {
+    const pickedIds = new Set(picked.map((item) => item.id));
+    for (const item of sorted) {
+      if (picked.length >= cap) break;
+      if (pickedIds.has(item.id)) continue;
+      picked.push(item);
+    }
+  }
+
+  return picked.map(({ at: _at, ...item }) => item);
+}
+
 export type NetworkCapitalAsk = {
   id: number;
   slug: string | null;
