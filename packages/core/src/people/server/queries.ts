@@ -446,6 +446,7 @@ export const findDocumentsCreatorsForNotifications = async (
       slug: people.slug,
       spaceTitle: spaces.title,
       spaceSlug: spaces.slug,
+      proposalSlug: documents.slug,
       proposalTitle: documents.title,
       proposalLabel: documents.label,
       proposalState: documents.state,

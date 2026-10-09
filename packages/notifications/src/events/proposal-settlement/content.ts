@@ -1,9 +1,12 @@
 /**
  * Pure content-selection for `proposal.accepted` / `proposal.rejected` — no DB/web3 imports.
- * Plain (locally rendered) content, matching the webhook routes this replaced.
+ * Email uses the OneSignal dashboard template when
+ * `EMAIL_TEMPLATE_PROPOSAL_{ACCEPTED,REJECTED}_{CREATOR,MEMBERS}` is set, else the locally rendered
+ * plain content (the fallback); push is still plain.
  */
 import { TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
+import { resolveEmailTemplate } from '../../core/email-template';
 import type { Recipient } from '../../core/types';
 import {
   emailProposalExecutionForCreator,
@@ -48,6 +51,19 @@ export const buildProposalSettlementContent: ContentBuilder<
         ];
 
   const email = isCreator ? emailForCreator(props) : emailForMembers(props);
+  const outcome = event.type === 'proposal.accepted' ? 'ACCEPTED' : 'REJECTED';
+  const templateEmail = resolveEmailTemplate(
+    `EMAIL_TEMPLATE_PROPOSAL_${outcome}_${isCreator ? 'CREATOR' : 'MEMBERS'}`,
+    {
+      space_title: props.spaceTitle,
+      proposal_title: props.proposalTitle,
+      proposal_kind: props.proposalLabel,
+      url: recipient.data?.url as string | undefined,
+      notification_settings_url: recipient.data?.notificationSettingsUrl as
+        | string
+        | undefined,
+    },
+  );
   const push = isCreator ? pushForCreator(props) : pushForMembers(props);
 
   return {
@@ -55,7 +71,11 @@ export const buildProposalSettlementContent: ContentBuilder<
     requiredTags: { [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'true' },
     content: {
       push: { kind: 'plain', contents: push.contents, headings: push.headings },
-      email: { kind: 'plain', subject: email.subject, body: email.body },
+      email: templateEmail ?? {
+        kind: 'plain',
+        subject: email.subject,
+        body: email.body,
+      },
     },
   };
 };

@@ -1,10 +1,13 @@
 import { fetchSpaceDetails } from '@hypha-platform/core/client';
 import {
+  findDocumentWithSpaceByIdRaw,
   findPeopleByWeb3Addresses,
   findPersonByWeb3Address,
   findSpaceByWeb3Id,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { buildNotificationSettingsUrl } from '../../core/notification-settings-url';
+import { buildProposalUrl } from '../../core/proposal-url';
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type { ProposalCreatedEvent, Recipient } from '../../core/types';
 
@@ -45,12 +48,28 @@ export const resolveProposalCreatedRecipients: RecipientResolver<
   const spaceTitle = space?.title ?? '';
   const creatorName = creatorPerson?.name;
 
+  // The proposal's database row may not exist yet when this webhook fires (and join requests never
+  // have one) — title/slug are best-effort; the url then falls back to the agreements list.
+  const proposal = await findDocumentWithSpaceByIdRaw(
+    { id: Number(proposalWeb3Id) },
+    { db },
+  ).catch(() => null);
+  const proposalTitle = proposal?.document.title ?? undefined;
+  const linkData = {
+    proposalTitle,
+    url: buildProposalUrl({
+      spaceSlug: space?.slug,
+      proposalSlug: proposal?.document.slug,
+    }),
+    notificationSettingsUrl: buildNotificationSettingsUrl(),
+  };
+
   if (creatorPerson?.slug && space) {
     recipients.push({
       personSlug: creatorPerson.slug,
       displayName: creatorName,
       role: 'creator',
-      data: { spaceTitle },
+      data: { spaceTitle, ...linkData },
     });
   } else {
     console.warn(
@@ -99,7 +118,7 @@ export const resolveProposalCreatedRecipients: RecipientResolver<
     recipients.push({
       personSlug: member.slug,
       role: 'member',
-      data: { spaceTitle, creatorName },
+      data: { spaceTitle, creatorName, ...linkData },
     });
   }
 
