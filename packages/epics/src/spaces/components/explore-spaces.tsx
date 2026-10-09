@@ -6,8 +6,8 @@ import {
   SpaceOrder,
   CATEGORY_GROUPS,
   getCategoryGroupLabel,
-  hasSpaceMapLocation,
   isSpaceArchived,
+  resolveSpaceMapPin,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
   splitTokensByNetworkSpaces,
@@ -48,6 +48,13 @@ interface ExploreSpacesProps {
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
   networkGrowth?: NetworkGrowth | null;
+  /**
+   * Display-only pins from a geocoded creator location. Missing entries fall
+   * back to a deterministic pin. Neither is written onto the space.
+   */
+  creatorMapPins?: Readonly<
+    Record<number, { latitude: number; longitude: number }>
+  >;
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -146,6 +153,7 @@ export function ExploreSpaces({
   uniqueCategoryGroups,
   enableNetworkMap = false,
   networkGrowth = null,
+  creatorMapPins,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
 
@@ -304,8 +312,24 @@ export function ExploreSpaces({
   );
 
   const mapSpaces = React.useMemo(
-    () => selectedSpaces.filter(hasSpaceMapLocation),
-    [selectedSpaces],
+    () =>
+      selectedSpaces.map((space) => {
+        const pin = resolveSpaceMapPin({
+          spaceId: space.id,
+          latitude: space.latitude,
+          longitude: space.longitude,
+          creatorCoordinates: creatorMapPins?.[space.id] ?? null,
+        });
+        if (pin.source === 'space') {
+          return space;
+        }
+        return {
+          ...space,
+          latitude: pin.latitude,
+          longitude: pin.longitude,
+        };
+      }),
+    [creatorMapPins, selectedSpaces],
   );
 
   const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';

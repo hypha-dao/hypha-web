@@ -25,6 +25,11 @@ export interface Space {
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  /**
+   * On-chain deployer from space details. Not a database column — attached
+   * when spaces are loaded for the network map, then dropped from the pin.
+   */
+  creatorAddress?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   locationLabel?: string | null;
