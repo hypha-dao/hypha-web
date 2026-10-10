@@ -2,6 +2,9 @@
   "MemberHome": {
     "panelSpaces": "Spaces en mensen",
     "panelInsights": "Wat jou nodig heeft",
+    "sensingAround": "Wie er nu is",
+    "sensingAroundEmpty": "Niemand is nu ingelogd",
+    "sensingMore": "+{count}",
     "peopleTitle": "Mensen",
     "invites": "Uitnodigingen",
     "inviteDetail": "Een link om lid te worden",
