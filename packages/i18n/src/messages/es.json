@@ -96,6 +96,8 @@
     "horizonSaveError": "No se pudo guardar esa elección.",
     "soundMute": "Quitar el sonido",
     "soundUnmute": "Activar el sonido",
+    "micMute": "Quitar el micrófono",
+    "micUnmute": "Activar el micrófono",
     "soundNeedsMic": "La voz necesita el micrófono. Aún puedes escribir.",
     "quietHeading": "Desde aquí",
     "quietActivate": "Activar un espacio",
@@ -110,6 +112,11 @@
     "votedNo": "Dijiste que no",
     "voteFailed": "El voto no se registró. Puedes intentarlo de nuevo.",
     "voteNeedsChain": "Esta decisión todavía no se puede registrar.",
+    "onVoting": "En votación",
+    "closesIn": "Cierra en {time}",
+    "fromTreasury": "de la tesorería",
+    "yesCount": "{count} sí",
+    "noCount": "{count} no",
     "visitSpace": "Visitar el espacio",
     "kindProposal": "Propuesta",
     "kindSignal": "Señal",
@@ -147,7 +154,9 @@
     "closestTalk": "Personas con las que hablas",
     "morePeople": "+ {count, plural, one {# persona} other {# personas}}",
     "seeMoreNotifications": "Ver más",
-    "openPerson": "Abrir {name}"
+    "openPerson": "Abrir {name}",
+    "signals": "Señales que te necesitan",
+    "proposals": "Propuestas para opinar"
   },
   "WelcomeFlow": {
     "errors": {

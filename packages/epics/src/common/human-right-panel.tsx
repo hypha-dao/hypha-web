@@ -1081,7 +1081,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
+  // A person-to-person room from the member home has a title and no signal slug.
+  const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
   const blockSpaceChatForMembership =
+    !isDirectConversation &&
     (mode === 'space' || mode === 'coherence') &&
     (isUserSpaceStateLoading || !isSpaceMember);
   const showMembershipAccessGate =
@@ -1365,8 +1368,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
+      (isSpaceMember || isDirectConversation),
+    [
+      roomId,
+      isMatrixAvailable,
+      isMatrixAuthenticated,
       isSpaceMember,
-    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
+      isDirectConversation,
+    ],
   );
 
   /**
@@ -4697,7 +4706,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               spaceSlug={spaceSlug ?? undefined}
             />
           </div>
-        ) : !spaceSlug?.trim() ? (
+        ) : !spaceSlug?.trim() && !isDirectConversation ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
             <Empty>
               <p>{t('notInSpaceEmptyState')}</p>
@@ -5124,7 +5133,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' &&
-        Boolean(spaceSlug?.trim()) &&
+        (Boolean(spaceSlug?.trim()) || isDirectConversation) &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">

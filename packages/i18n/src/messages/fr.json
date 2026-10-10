@@ -96,6 +96,8 @@
     "horizonSaveError": "Ce choix n'a pas pu être enregistré.",
     "soundMute": "Couper le son",
     "soundUnmute": "Activer le son",
+    "micMute": "Couper le micro",
+    "micUnmute": "Activer le micro",
     "soundNeedsMic": "La voix a besoin du micro. Tu peux toujours écrire.",
     "quietHeading": "D'ici",
     "quietActivate": "Activer un espace",
@@ -110,6 +112,11 @@
     "votedNo": "Tu as dit non",
     "voteFailed": "Le vote n’est pas passé. Tu peux réessayer.",
     "voteNeedsChain": "Cette décision n’est pas encore prête à être enregistrée.",
+    "onVoting": "Au vote",
+    "closesIn": "Se termine dans {time}",
+    "fromTreasury": "de la trésorerie",
+    "yesCount": "{count} oui",
+    "noCount": "{count} non",
     "visitSpace": "Voir l’espace",
     "kindProposal": "Proposition",
     "kindSignal": "Signal",
@@ -147,7 +154,9 @@
     "closestTalk": "Les personnes à qui tu parles",
     "morePeople": "+ {count, plural, one {# personne} other {# personnes}}",
     "seeMoreNotifications": "Voir plus",
-    "openPerson": "Ouvrir {name}"
+    "openPerson": "Ouvrir {name}",
+    "signals": "Signaux qui ont besoin de toi",
+    "proposals": "Propositions pour ton avis"
   },
   "WelcomeFlow": {
     "errors": {

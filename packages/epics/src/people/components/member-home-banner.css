@@ -2,7 +2,7 @@
  * Member home ground. Same asset as the hypha.earth hero: full field,
  * cover, centered. Light is a grayscale invert (pencil on paper). Dark
  * is grayscale with a screen blend (ink field, light threads).
- * The veil only softens the middle, where the greeting and thread sit.
+ * The veil keeps the threads a whisper so type stays readable.
  */
 
 .member-home-banner {
@@ -27,13 +27,13 @@
   object-fit: cover;
   object-position: center;
   pointer-events: none;
-  filter: grayscale(1) invert(1) contrast(1.08) brightness(1.06);
-  opacity: 0.78;
+  filter: grayscale(1) invert(1) contrast(0.85) brightness(1.2);
+  opacity: 0.16;
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-banner-image {
-  filter: grayscale(1) contrast(1.6) brightness(0.9);
-  opacity: 0.72;
+  filter: grayscale(1) contrast(1.05) brightness(0.85);
+  opacity: 0.18;
   mix-blend-mode: screen;
 }
 
@@ -42,28 +42,39 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse 62% 68% at 50% 42%,
-    oklch(from var(--hypha-paper) l c h / 0.55),
-    oklch(from var(--hypha-paper) l c h / 0.16) 58%,
-    transparent 80%
-  );
+  background: oklch(from var(--hypha-paper) l c h / 0.82);
 }
 
 .member-home-banner-veil::after {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.08;
+  opacity: 0.03;
   mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-banner-veil {
-  background: radial-gradient(
-    ellipse 58% 64% at 50% 46%,
-    oklch(from var(--hypha-ink) l c h / 0.62),
-    oklch(from var(--hypha-ink) l c h / 0.14) 60%,
-    transparent 82%
-  );
+  background: oklch(from var(--hypha-ink) l c h / 0.78);
+}
+
+/* A paper pane over the marble. The threads stay visible through it. */
+.member-home-thread-card {
+  background: oklch(from var(--hypha-paper) l c h / 0.72);
+  border: 1px solid oklch(from var(--hypha-ink) l c h / 0.14);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.55);
+  backdrop-filter: blur(18px);
+}
+
+:is(.dark, .dark-theme, [data-theme='dark']) .member-home-thread-card {
+  background: oklch(from var(--hypha-ink) l c h / 0.62);
+  border-color: oklch(1 0 0 / 0.14);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+.member-home-thread-image {
+  display: block;
+  width: 100%;
+  height: 168px;
+  object-fit: cover;
 }

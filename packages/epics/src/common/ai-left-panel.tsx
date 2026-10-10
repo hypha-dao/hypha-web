@@ -189,6 +189,7 @@ import {
 } from './onboarding-voting-method-inference';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
+import { isInteractiveCreatePath } from './get-path-function';
 import {
   loadSpaceDiscoveryMode,
   saveSpaceDiscoveryMode,
@@ -325,7 +326,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
-  const isOnboardingPath = pathname.includes('/onboarding');
+  const isOnboardingPath = isInteractiveCreatePath(pathname);
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());

@@ -96,6 +96,8 @@
     "horizonSaveError": "Тој избор не можеше да се зачува.",
     "soundMute": "Исклучи го звукот",
     "soundUnmute": "Вклучи го звукот",
+    "micMute": "Исклучи го микрофонот",
+    "micUnmute": "Вклучи го микрофонот",
     "soundNeedsMic": "Гласот го бара микрофонот. Сè уште можеш да пишуваш.",
     "quietHeading": "Оттука",
     "quietActivate": "Активирај простор",
@@ -110,6 +112,11 @@
     "votedNo": "Рече не",
     "voteFailed": "Гласот не помина. Можеш да пробаш повторно.",
     "voteNeedsChain": "Оваа одлука сè уште не може да се запише.",
+    "onVoting": "На гласање",
+    "closesIn": "Затвора за {time}",
+    "fromTreasury": "од трезорот",
+    "yesCount": "{count} да",
+    "noCount": "{count} не",
     "visitSpace": "Посети го просторот",
     "kindProposal": "Предлог",
     "kindSignal": "Сигнал",
@@ -147,7 +154,9 @@
     "closestTalk": "Луѓе со кои зборуваш",
     "morePeople": "+ {count} луѓе",
     "seeMoreNotifications": "Види повеќе",
-    "openPerson": "Отвори {name}"
+    "openPerson": "Отвори {name}",
+    "signals": "Сигнали што те бараат",
+    "proposals": "Предлози за разгледување"
   },
   "WelcomeFlow": {
     "errors": {

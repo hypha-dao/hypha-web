@@ -26,7 +26,7 @@ function Widget({
   return (
     <section
       aria-busy={busy || undefined}
-      className="flex flex-col border border-border bg-background/80 p-4"
+      className="flex flex-col border border-border bg-background p-4"
     >
       <h2
         className="text-3"
