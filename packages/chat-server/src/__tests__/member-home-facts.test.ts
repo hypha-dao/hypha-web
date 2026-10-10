@@ -89,5 +89,17 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('focused on their own spaces');
     expect(facts).not.toContain('Circle');
     expect(facts).not.toContain('You are a personal');
+    expect(facts).toContain("don't want to decide");
+    expect(facts).toContain('if you need any assistance');
+  });
+
+  it('removes an item the member already refused from the queue', () => {
+    const facts = formatMemberHomeFacts(home, {
+      passed: ['proposal:path'],
+    });
+    expect(facts).toContain('Passed.');
+    expect(facts).toContain('proposal:path');
+    expect(facts).toContain('Nothing left in the queue');
+    expect(facts).not.toContain('1. kind=proposal slug=path');
   });
 });
