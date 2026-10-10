@@ -1552,7 +1552,7 @@ export async function createChatStreamResult(
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           voiceDiscoveryActive
-            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and move to the next step. On no, "All good", then the next offer. Never ask what they would like to focus on. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
           localizedEntryMethodGuidelines
