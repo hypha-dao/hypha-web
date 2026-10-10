@@ -29,8 +29,10 @@ import type { OnboardingDiscoveryMode } from '../../common/onboarding-discovery-
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildSpaceAdvisorVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
+import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
+import type { MemberHomeOpenChat } from './member-home-people';
 
 /** Reserved discovery-mode key. Home must not share a space's voice preference. */
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
@@ -38,6 +40,8 @@ const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
 type MemberHomeChatProps = {
   lang: Locale;
   intelligence: MemberIntelligence;
+  onChatPerson: MemberHomeOpenChat;
+  onCallPerson: MemberHomeOpenChat;
 };
 
 type HomeMessage = UIMessage & {
@@ -55,7 +59,12 @@ function messageText(message: HomeMessage) {
     .trim();
 }
 
-export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
+export function MemberHomeChat({
+  lang,
+  intelligence,
+  onChatPerson,
+  onCallPerson,
+}: MemberHomeChatProps) {
   const t = useTranslations('MemberHome');
   const {
     getAccessToken,
@@ -131,6 +140,16 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
     },
     [clearError, drafts, getAccessToken, lang, sendMessage],
   );
+
+  useEffect(() => {
+    const onAsk = (event: Event) => {
+      const text = (event as CustomEvent<{ text?: string }>).detail?.text;
+      if (!text?.trim()) return;
+      void send(text);
+    };
+    window.addEventListener(MEMBER_HOME_ASK_EVENT, onAsk);
+    return () => window.removeEventListener(MEMBER_HOME_ASK_EVENT, onAsk);
+  }, [send]);
 
   useEffect(() => {
     setDiscoveryMode(loadSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY));
@@ -286,9 +305,14 @@ export function MemberHomeChat({ lang, intelligence }: MemberHomeChatProps) {
                       lang={lang}
                       item={threadItem}
                       proposal={proposal}
-                      onValidate={(title) => {
-                        void send(t('validatedSignal', { title }));
+                      onAsk={(text) => {
+                        void send(text);
                       }}
+                      onReach={(person, mode) =>
+                        mode === 'call'
+                          ? onCallPerson(person)
+                          : onChatPerson(person)
+                      }
                     />
                   ) : null}
                 </div>
