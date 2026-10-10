@@ -340,7 +340,8 @@ function itemMentionedInText(
     const title = item.title.trim().toLowerCase();
     return title.length >= 3 && haystack.includes(title);
   });
-  return matches.length === 1 ? matches[0] : null;
+  const match = matches[0];
+  return matches.length === 1 && match ? match : null;
 }
 
 /**
