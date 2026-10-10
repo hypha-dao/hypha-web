@@ -1,5 +1,5 @@
 import { integrationClients } from '@hypha-platform/storage-postgres';
-import { and, count, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 
 import type { DbConfig } from '../../server';
 import { generateClientKey } from '../generate-client-key';
@@ -16,6 +16,9 @@ import { toClientSummary } from './queries';
 
 /** Pending requests one person may have open at a time. */
 export const MAX_PENDING_REQUESTS_PER_PERSON = 3;
+
+/** First key of the two-key advisory lock taken per requesting person. */
+const REQUEST_LOCK_NAMESPACE = 2515;
 
 export class TooManyPendingRequestsError extends Error {
   constructor() {
@@ -44,34 +47,43 @@ export const requestIntegrationClient = async (
 ): Promise<IntegrationClientSummary> => {
   const data = schemaRequestIntegrationClient.parse(input);
 
-  const [pending] = await db
-    .select({ value: count() })
-    .from(integrationClients)
-    .where(
-      and(
-        eq(integrationClients.requestedByPersonId, requestedByPersonId),
-        eq(integrationClients.status, 'pending'),
-      ),
+  return db.transaction(async (tx) => {
+    // Serialize requests per person so concurrent calls cannot all read the
+    // same count and slip past the cap. The two-key form keeps this lock
+    // space separate from other advisory locks keyed on a single id.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(${REQUEST_LOCK_NAMESPACE}, ${requestedByPersonId})`,
     );
-  if ((pending?.value ?? 0) >= MAX_PENDING_REQUESTS_PER_PERSON) {
-    throw new TooManyPendingRequestsError();
-  }
 
-  const [row] = await db
-    .insert(integrationClients)
-    .values({
-      name: data.name,
-      slug: slugifyClientName(data.name),
-      contactEmail: data.contactEmail,
-      description: data.description ?? null,
-      scopes: data.scopes,
-      allowedOrigins: data.allowedOrigins,
-      requestedByPersonId,
-    })
-    .returning();
+    const [pending] = await tx
+      .select({ value: count() })
+      .from(integrationClients)
+      .where(
+        and(
+          eq(integrationClients.requestedByPersonId, requestedByPersonId),
+          eq(integrationClients.status, 'pending'),
+        ),
+      );
+    if ((pending?.value ?? 0) >= MAX_PENDING_REQUESTS_PER_PERSON) {
+      throw new TooManyPendingRequestsError();
+    }
 
-  if (!row) throw new Error('Failed to persist integration client request');
-  return toClientSummary(row);
+    const [row] = await tx
+      .insert(integrationClients)
+      .values({
+        name: data.name,
+        slug: slugifyClientName(data.name),
+        contactEmail: data.contactEmail,
+        description: data.description ?? null,
+        scopes: data.scopes,
+        allowedOrigins: data.allowedOrigins,
+        requestedByPersonId,
+      })
+      .returning();
+
+    if (!row) throw new Error('Failed to persist integration client request');
+    return toClientSummary(row);
+  });
 };
 
 /**

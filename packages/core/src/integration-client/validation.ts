@@ -41,6 +41,8 @@ export function slugifyClientName(name: string): string {
     name
       .toLowerCase()
       .normalize('NFKD')
+      // Drop combining accents so "CaféLabs" does not gain a hyphen.
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 64) || 'client'

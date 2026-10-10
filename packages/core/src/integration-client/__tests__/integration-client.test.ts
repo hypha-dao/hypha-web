@@ -121,6 +121,9 @@ describe('request validation', () => {
   it('derives a slug', () => {
     expect(slugifyClientName('  The Argonauts! ')).toBe('the-argonauts');
     expect(slugifyClientName('!!!')).toBe('client');
+    // A combining accent must not turn into a separator.
+    expect(slugifyClientName('CaféLabs')).toBe('cafelabs');
+    expect(slugifyClientName('Café Labs')).toBe('cafe-labs');
   });
 });
 
