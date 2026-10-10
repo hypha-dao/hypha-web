@@ -12,7 +12,6 @@ import {
 type SignalGridProps = {
   isLoading: boolean;
   basePath: string;
-  leadImage?: string;
   signals: Coherence[];
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
@@ -22,7 +21,6 @@ type SignalGridProps = {
 export function SignalGrid({
   isLoading,
   basePath,
-  leadImage,
   signals,
   refresh,
   onSignalClick,
@@ -37,7 +35,6 @@ export function SignalGrid({
           <div key={signal.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
             <SignalCard
               {...signal}
-              leadImage={leadImage}
               className="h-full min-h-0 w-full"
               isLoading={isLoading}
               refresh={refresh}
@@ -64,7 +61,6 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
-              leadImage={leadImage}
               className="h-full min-h-0 w-full"
               isLoading={isLoading}
               refresh={refresh}
@@ -79,7 +75,6 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
-              leadImage={leadImage}
               className="h-full min-h-0 w-full"
               isLoading={isLoading}
               refresh={refresh}

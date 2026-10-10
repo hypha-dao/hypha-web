@@ -101,12 +101,12 @@ export function MyFilteredSpaces({
 
   return (
     <div className="space-y-6">
-      <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-3 overflow-x-auto">
-        <Text className="min-w-0 shrink text-4 capitalize text-nowrap">
+      <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:flex-nowrap md:items-center md:gap-x-3 md:overflow-x-auto">
+        <Text className="min-w-0 text-4 capitalize md:shrink md:text-nowrap">
           {tSpaces('mySpacesLabel')} |{' '}
           {isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         </Text>
-        <div className="ml-auto flex shrink-0 flex-nowrap items-center gap-x-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 md:ml-auto md:shrink-0 md:flex-nowrap">
           <label
             htmlFor="hide-archived-spaces"
             className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"

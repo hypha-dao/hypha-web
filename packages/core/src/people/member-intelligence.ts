@@ -1,4 +1,5 @@
 import type { MemberOrientation } from './member-intelligence-guidance';
+import type { NetworkHorizon, NetworkHorizonSignal } from './network-horizon';
 
 /** Same logo fields the space switcher resolves into an avatar. */
 export type MemberSpaceLogo = {
@@ -36,7 +37,20 @@ export type MemberIntelligence = {
     address: string | null;
     preferredCurrency: string | null;
     primaryOrientation: MemberOrientation | null;
+    /** Where the member lives. Used when they listen beyond their spaces. */
+    location?: string | null;
   };
+  /**
+   * `spaces` stays with the member's spaces. `network` also receives
+   * needs and opportunities other spaces chose to share.
+   * Absent on older payloads; treat that as `spaces`.
+   */
+  networkHorizon?: NetworkHorizon;
+  /**
+   * Shared needs and opportunities from other spaces, already ranked.
+   * Empty when the horizon is `spaces`.
+   */
+  networkSignals?: NetworkHorizonSignal[];
   counts: {
     spaces: number;
     openProposals: number;
@@ -57,6 +71,10 @@ export type MemberIntelligence = {
     logoUrl: string | null;
     ecosystemLogoUrlLight?: string | null;
     ecosystemLogoUrlDark?: string | null;
+    /** On-chain address a transfer can use. */
+    address?: string | null;
+    /** Chain id used to publish a proposal without leaving home. */
+    web3SpaceId?: number | null;
   }>;
   proposals: Array<{
     id: number;
@@ -100,6 +118,8 @@ export type MemberIntelligence = {
     nickname: string | null;
     avatarUrl: string | null;
     sharedSpaceCount: number;
+    /** Wallet a direct transfer can use. */
+    address?: string | null;
   }>;
   wallet: {
     address: string | null;
@@ -125,6 +145,8 @@ export type MemberSpaceRow = {
   logoUrl: string | null;
   ecosystemLogoUrlLight?: string | null;
   ecosystemLogoUrlDark?: string | null;
+  address?: string | null;
+  web3SpaceId?: number | null;
 };
 
 /** Chain memberships first, then any database rows not already included. */
@@ -161,6 +183,7 @@ export type SharedSpaceConnection = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount: number;
+  address?: string | null;
 };
 
 /**
@@ -212,6 +235,7 @@ export function peopleSharingMemberSpaces({
       surname: person.surname,
       nickname: person.nickname,
       avatarUrl: person.avatarUrl,
+      address: person.address,
       sharedSpaceCount: sharedSpaceIds.size,
     });
   }

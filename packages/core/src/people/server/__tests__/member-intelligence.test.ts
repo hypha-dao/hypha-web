@@ -89,7 +89,7 @@ describe('buildMemberGuidance', () => {
     ).toContain('shape a space');
   });
 
-  it('points an investor toward the marketplace when nothing is waiting', () => {
+  it('offers activation or the network when nothing needs the member', () => {
     expect(
       buildMemberGuidance({
         firstName: 'Alex',
@@ -97,7 +97,9 @@ describe('buildMemberGuidance', () => {
         spaceCount: 3,
         attention: null,
       }),
-    ).toContain('marketplace');
+    ).toBe(
+      'Hi Alex. Activate a space you are in, or open your horizon and listen to the network.',
+    );
   });
 });
 
@@ -160,7 +162,9 @@ describe('peopleSharingMemberSpaces', () => {
     expect(result.count).toBe(2);
     expect(result.connections.map((person) => person.id)).toEqual([2, 3]);
     expect(result.connections[0]?.sharedSpaceCount).toBe(2);
+    expect(result.connections[0]?.address).toBe('0xbbbb');
     expect(result.connections[1]?.sharedSpaceCount).toBe(1);
+    expect(result.connections[1]?.address).toBe('0xCCCC');
   });
 
   it('stays at zero when the caller is in no spaces', () => {

@@ -17,6 +17,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import {
   listMemberHomeThreadItems,
   type MemberIntelligence,
+  type NetworkHorizon,
 } from '@hypha-platform/core/client';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
@@ -27,6 +28,8 @@ import { requestMemberHomeAsk } from './member-home-ask';
 import { MemberHomeChat } from './member-home-chat';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
+import { MemberHomeQuickCreate } from './member-home-quick-create';
+import { MemberHomeHorizon } from './member-home-horizon';
 import { MemberHomeClosest } from './member-home-closest';
 import {
   MemberHomePeople,
@@ -47,6 +50,9 @@ type MemberHomeProps = {
   isSavingOrientation?: boolean;
   orientationError?: string | null;
   onChooseOrientation: (orientation: SignupOrientation) => void;
+  isSavingHorizon?: boolean;
+  horizonError?: string | null;
+  onChooseHorizon?: (horizon: NetworkHorizon) => void;
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
@@ -80,6 +86,9 @@ export function MemberHome({
   isSavingOrientation,
   orientationError,
   onChooseOrientation,
+  isSavingHorizon,
+  horizonError,
+  onChooseHorizon,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
@@ -289,6 +298,16 @@ export function MemberHome({
             )}
           </div>
         </div>
+        {home && onChooseHorizon ? (
+          <MemberHomeHorizon
+            lang={lang}
+            horizon={home.networkHorizon === 'network' ? 'network' : 'spaces'}
+            signals={home.networkSignals ?? []}
+            isSaving={isSavingHorizon}
+            error={horizonError}
+            onChoose={onChooseHorizon}
+          />
+        ) : null}
         {home ? (
           <MemberHomeChat
             lang={lang}
@@ -357,7 +376,7 @@ export function MemberHome({
               className="text-4"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
-              {t('useful')}
+              {home && !lead ? t('quietHeading') : t('useful')}
             </h2>
             {lead ? (
               <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
@@ -400,9 +419,67 @@ export function MemberHome({
               ) : null}
             </div>
           ) : (
-            <p className="mt-4 text-2 text-neutral-11">{t('quiet')}</p>
+            <div className="mt-4 grid gap-2">
+              {home.counts.spaces > 0 ? (
+                <Link
+                  href={`/${lang}/profile/${home.person.slug}/actions/activate-spaces`}
+                  className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
+                >
+                  <span className="block text-2 font-medium">
+                    {t('quietActivate')}
+                  </span>
+                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
+                    {t('quietActivateBody')}
+                  </span>
+                </Link>
+              ) : (
+                <Link
+                  href={`/${lang}/my-spaces/create`}
+                  className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
+                >
+                  <span className="block text-2 font-medium">
+                    {t('createSpace')}
+                  </span>
+                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
+                    {t('quietCreateBody')}
+                  </span>
+                </Link>
+              )}
+              <button
+                type="button"
+                aria-pressed={home.networkHorizon === 'network'}
+                disabled={!onChooseHorizon || isSavingHorizon}
+                onClick={() => {
+                  if (home.networkHorizon !== 'network') {
+                    onChooseHorizon?.('network');
+                  }
+                }}
+                className={cn(
+                  'border px-4 py-3 text-left disabled:opacity-60',
+                  home.networkHorizon === 'network'
+                    ? 'border-foreground bg-foreground text-background'
+                    : 'border-border bg-background text-foreground hover:border-foreground',
+                )}
+              >
+                <span className="block text-2 font-medium">
+                  {home.networkHorizon === 'network'
+                    ? t('quietExploreOn')
+                    : t('quietExplore')}
+                </span>
+                <span
+                  className={cn(
+                    'mt-1 block text-1 leading-relaxed',
+                    home.networkHorizon === 'network'
+                      ? 'text-background/80'
+                      : 'text-neutral-11',
+                  )}
+                >
+                  {t('quietExploreBody')}
+                </span>
+              </button>
+            </div>
           )}
-          {home ? (
+          {home && lead ? (
             <p className="mt-4 max-w-[52ch] text-2 leading-relaxed text-neutral-12">
               {home.guidance.narrative}
             </p>
@@ -448,6 +525,9 @@ export function MemberHome({
         </div>
 
         <div className="mt-4 grid gap-4">
+          {home ? (
+            <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
+          ) : null}
           <Tile title={t('signals')} busy={home == null}>
             <ResourceList
               isLoading={home == null}

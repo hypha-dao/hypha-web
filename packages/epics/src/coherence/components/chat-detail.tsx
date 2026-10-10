@@ -3,13 +3,16 @@
 import { CreatorType } from '../../proposals/components/proposal-head';
 import { ButtonClose } from '../../common';
 import React from 'react';
-import { MarkdownSuspense, Separator, Skeleton } from '@hypha-platform/ui';
+import { Separator, Skeleton } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { ChatTabs } from './chat-tabs';
 import { ChatMessageInput } from './chat-message-input';
 import { ChatRoom } from './chat-room';
 import { ChatMembers } from './chat-members';
 import { ChatPins } from './chat-pins';
+import { SignalTurnIntoProposalButton } from './signal-turn-into-proposal-button';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
 import {
   ChatMember,
   Coherence,
@@ -147,9 +150,12 @@ export const ChatDetail = ({
             <div className="flex flex-col grow">
               <div className="flex-1 min-w-0">
                 <Skeleton width="80px" height="24px" loading={isLoading}>
-                  <Text className="text-5 truncate">
-                    # {conversation?.title}
-                  </Text>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <SignalCategoryTag type={conversation?.type} />
+                    <Text className="text-5 truncate">
+                      # {conversation?.title}
+                    </Text>
+                  </div>
                 </Skeleton>
               </div>
               <div className="h-[calc(15vh-var(--spacing-7))] overflow-y-auto">
@@ -158,14 +164,24 @@ export const ChatDetail = ({
                   height="calc(15vh-var(--spacing-7))"
                   loading={isLoading}
                 >
-                  <MarkdownSuspense>
-                    {conversation?.description}
-                  </MarkdownSuspense>
+                  <SignalIndicativeAmounts
+                    payouts={conversation?.indicativePayouts}
+                    className="mt-2"
+                  />
                 </Skeleton>
               </div>
             </div>
-            <div className="flex flex-col">
+            <div className="flex shrink-0 flex-col items-end gap-2">
               <ButtonClose closeUrl={closeUrl} narrow />
+              {conversation?.slug ? (
+                <SignalTurnIntoProposalButton
+                  slug={conversation.slug}
+                  title={conversation.title}
+                  description={conversation.description}
+                  payouts={conversation.indicativePayouts}
+                  disabled={isLoading}
+                />
+              ) : null}
             </div>
           </div>
           <div className="flex flex-row w-full">
@@ -182,6 +198,9 @@ export const ChatDetail = ({
                 roomId={conversation?.roomId ?? ''}
                 slug={conversation?.slug ?? ''}
                 signalDescription={conversation?.description}
+                leadImage={conversation?.leadImage}
+                videoUrl={conversation?.videoUrl}
+                attachments={conversation?.attachments}
                 isLoading={isLoading || isMessagesLoading}
                 messages={messages}
                 toggleChatPinnedMessage={toggleChatPinnedMessage}

@@ -32,7 +32,21 @@ import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-d
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
+import {
+  MemberHomePeopleWidgetCard,
+  MemberHomeSendTokensWidget,
+  MemberHomeSpacesWidgetCard,
+} from './member-home-chat-widgets';
 import type { MemberHomeOpenChat } from './member-home-people';
+
+type HomeWidgetKind = 'spaces' | 'people' | 'tokens';
+
+type HomeWidget = {
+  id: string;
+  kind: HomeWidgetKind;
+  /** Render after the message at this 1-based index. */
+  after: number;
+};
 
 /** Reserved discovery-mode key. Home must not share a space's voice preference. */
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
@@ -77,6 +91,7 @@ export function MemberHomeChat({
   const [discoveryMode, setDiscoveryMode] =
     useState<OnboardingDiscoveryMode>('chat');
   const [discoveryModeReady, setDiscoveryModeReady] = useState(false);
+  const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -104,11 +119,37 @@ export function MemberHomeChat({
   const isStreaming = status === 'streaming' || status === 'submitted';
   const homeMessages = messages as HomeMessage[];
 
+  const widgetKindFor = useCallback(
+    (text: string): HomeWidgetKind | null => {
+      const value = text.trim().toLowerCase();
+      if (!value) return null;
+      if (value === t('chipSpace').trim().toLowerCase()) return 'spaces';
+      if (value === t('chipPeople').trim().toLowerCase()) return 'people';
+      if (value === t('chipTokens').trim().toLowerCase()) return 'tokens';
+      if (/\bsend\b/.test(value) && /\btoken/.test(value)) return 'tokens';
+      return null;
+    },
+    [t],
+  );
+
   const send = useCallback(
     async (text: string, hidden = false, includeDrafts = true) => {
       const trimmed = text.trim();
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
+      if (!hidden && trimmed) {
+        const kind = widgetKindFor(trimmed);
+        if (kind) {
+          setWidgets((current) => [
+            ...current,
+            {
+              id: `${kind}-${Date.now()}`,
+              kind,
+              after: homeMessages.length + 1,
+            },
+          ]);
+        }
+      }
       setDismissedError(false);
       clearError();
       let token: string | undefined;
@@ -138,7 +179,15 @@ export function MemberHomeChat({
       setInput('');
       setDrafts([]);
     },
-    [clearError, drafts, getAccessToken, lang, sendMessage],
+    [
+      clearError,
+      drafts,
+      getAccessToken,
+      homeMessages.length,
+      lang,
+      sendMessage,
+      widgetKindFor,
+    ],
   );
 
   useEffect(() => {
@@ -152,7 +201,9 @@ export function MemberHomeChat({
   }, [send]);
 
   useEffect(() => {
-    setDiscoveryMode(loadSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY));
+    setDiscoveryMode(
+      loadSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY, 'voice_interview'),
+    );
     setDiscoveryModeReady(true);
   }, []);
 
@@ -201,7 +252,11 @@ export function MemberHomeChat({
   }, [intelligence.chatSpaceSlug, isVoiceInterview, lang]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: isVoiceInterview && !isAuthLoading && isAuthenticated,
+    enabled:
+      discoveryModeReady &&
+      isVoiceInterview &&
+      !isAuthLoading &&
+      isAuthenticated,
     isStreaming,
     lastAssistantText,
     locale: lang,
@@ -244,7 +299,7 @@ export function MemberHomeChat({
     const node = scroller.current;
     if (!node) return;
     node.scrollTop = node.scrollHeight;
-  }, [homeMessages, isStreaming]);
+  }, [homeMessages, isStreaming, widgets]);
 
   const threadItems = useMemo(
     () => listMemberHomeThreadItems(intelligence),
@@ -267,7 +322,39 @@ export function MemberHomeChat({
     { key: 'space', ask: t('chipSpace') },
     { key: 'people', ask: t('chipPeople') },
     { key: 'decision', ask: t('chipDecision') },
+    { key: 'tokens', ask: t('chipTokens') },
   ] as const;
+
+  const renderWidget = (widget: HomeWidget) => {
+    if (widget.kind === 'spaces') {
+      return (
+        <MemberHomeSpacesWidgetCard lang={lang} spaces={intelligence.spaces} />
+      );
+    }
+    if (widget.kind === 'people') {
+      return (
+        <MemberHomePeopleWidgetCard
+          people={intelligence.connections}
+          fallbackName={t('fallbackMember')}
+          onChat={(person) => {
+            void onChatPerson(person);
+          }}
+          onCall={(person) => {
+            void onCallPerson(person);
+          }}
+        />
+      );
+    }
+    return (
+      <MemberHomeSendTokensWidget
+        personSlug={intelligence.person.slug}
+        hasWallet={Boolean(intelligence.wallet.address)}
+        people={intelligence.connections}
+        spaces={intelligence.spaces}
+        fallbackName={t('fallbackMember')}
+      />
+    );
+  };
 
   const visibleError = error && !dismissedError;
 
@@ -279,14 +366,21 @@ export function MemberHomeChat({
         aria-label={t('conversation')}
       >
         <div className="mx-auto grid w-full max-w-2xl gap-4">
-          {homeMessages.map((message) => {
-            if (message.metadata?.homeArrival) return null;
+          {homeMessages.map((message, index) => {
+            const attached = widgets.filter(
+              (widget) => widget.after === index + 1,
+            );
+            if (message.metadata?.homeArrival && attached.length === 0) {
+              return null;
+            }
             const text = messageText(message);
             const threadItem =
               message.role === 'assistant'
                 ? memberHomeThreadItemForMessage(threadItems, message)
                 : null;
-            if (!text && !threadItem) return null;
+            const showMessage =
+              !message.metadata?.homeArrival && Boolean(text || threadItem);
+            if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
             const proposal =
               threadItem?.kind === 'proposal'
@@ -295,41 +389,60 @@ export function MemberHomeChat({
                   ) ?? null
                 : null;
             return (
-              <article
-                key={message.id}
-                className={cn('flex gap-3', mine && 'flex-row-reverse')}
-              >
-                {mine ? null : <MemberHomeMark className="mt-0.5 h-8 w-8" />}
-                <div className="grid min-w-0 gap-3">
-                  {text ? (
-                    <p
-                      className={cn(
-                        'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
-                        mine ? 'text-foreground' : 'text-neutral-12',
-                      )}
-                    >
-                      {text}
-                    </p>
-                  ) : null}
-                  {threadItem ? (
-                    <MemberHomeThreadCard
-                      lang={lang}
-                      item={threadItem}
-                      proposal={proposal}
-                      onAsk={(text) => {
-                        void send(text);
-                      }}
-                      onReach={(person, mode) =>
-                        mode === 'call'
-                          ? onCallPerson(person)
-                          : onChatPerson(person)
-                      }
-                    />
-                  ) : null}
-                </div>
-              </article>
+              <div key={message.id} className="grid gap-4">
+                {showMessage ? (
+                  <article
+                    className={cn('flex gap-3', mine && 'flex-row-reverse')}
+                  >
+                    {mine ? null : (
+                      <MemberHomeMark className="mt-0.5 h-8 w-8" />
+                    )}
+                    <div className="grid min-w-0 gap-3">
+                      {text ? (
+                        <p
+                          className={cn(
+                            'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
+                            mine ? 'text-foreground' : 'text-neutral-12',
+                          )}
+                        >
+                          {text}
+                        </p>
+                      ) : null}
+                      {threadItem ? (
+                        <MemberHomeThreadCard
+                          lang={lang}
+                          item={threadItem}
+                          proposal={proposal}
+                          onAsk={(ask) => {
+                            void send(ask);
+                          }}
+                          onReach={(person, mode) =>
+                            mode === 'call'
+                              ? onCallPerson(person)
+                              : onChatPerson(person)
+                          }
+                        />
+                      ) : null}
+                    </div>
+                  </article>
+                ) : null}
+                {attached.map((widget) => (
+                  <article key={widget.id} className="flex gap-3">
+                    <MemberHomeMark className="mt-0.5 h-8 w-8" />
+                    {renderWidget(widget)}
+                  </article>
+                ))}
+              </div>
             );
           })}
+          {widgets
+            .filter((widget) => widget.after > homeMessages.length)
+            .map((widget) => (
+              <article key={widget.id} className="flex gap-3">
+                <MemberHomeMark className="mt-0.5 h-8 w-8" />
+                {renderWidget(widget)}
+              </article>
+            ))}
           {showSensing ? (
             <article className="flex gap-3" aria-live="polite">
               <MemberHomeMark className="mt-0.5 h-8 w-8" />
@@ -397,7 +510,6 @@ export function MemberHomeChat({
         <div className="flex justify-center px-3 pb-1 pt-1">
           <OnboardingDiscoveryModeToggle
             mode={discoveryMode}
-            disabled={isStreaming}
             onChange={handleDiscoveryModeChange}
           />
         </div>

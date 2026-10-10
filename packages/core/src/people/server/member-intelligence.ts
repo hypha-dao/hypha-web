@@ -1,4 +1,14 @@
-import { and, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  ne,
+  notInArray,
+  or,
+  sql,
+} from 'drizzle-orm';
 import {
   coherences,
   documents,
@@ -32,6 +42,15 @@ import {
   peopleSharingMemberSpaces,
   pickNotificationsAcrossSpaces,
 } from '../member-intelligence';
+import {
+  NETWORK_HORIZON_CANDIDATE_LIMIT,
+  NETWORK_SIGNAL_TYPES,
+  rankNetworkHorizonSignals,
+  type MemberHorizonProfile,
+  type NetworkHorizon,
+  type NetworkHorizonCandidate,
+  type NetworkHorizonSignal,
+} from '../network-horizon';
 
 export {
   MEMBER_ORIENTATIONS,
@@ -58,6 +77,7 @@ const memberSpaceColumns = {
   logoUrl: spaces.logoUrl,
   ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
   ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+  address: spaces.address,
 };
 
 function toSpaceLogo(row: {
@@ -231,8 +251,7 @@ async function loadChainMemberSpaces(
       (left, right) =>
         (chainOrder.get(left.web3SpaceId ?? 0) ?? web3SpaceIds.length) -
         (chainOrder.get(right.web3SpaceId ?? 0) ?? web3SpaceIds.length),
-    )
-    .map(({ web3SpaceId: _web3SpaceId, ...space }) => space);
+    );
 }
 
 /** One failed query returns its fallback. The other slices still load. */
@@ -247,6 +266,143 @@ async function readSlice<T>(
     console.error(`[getMemberIntelligence] ${label} failed`, error);
     return fallback;
   }
+}
+
+function isMissingColumn(error: unknown, column: string): boolean {
+  const parts: string[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    if (current instanceof Error && current.message)
+      parts.push(current.message);
+    else if (typeof current === 'string' && current) parts.push(current);
+    if (typeof current === 'object' && current && 'cause' in current) {
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+  const text = parts.join('\n');
+  return (
+    text.includes(column) &&
+    (text.includes('42703') || text.includes('does not exist'))
+  );
+}
+
+function firstSqlRow(result: unknown): Record<string, unknown> | undefined {
+  const row = Array.isArray(result)
+    ? result[0]
+    : result && typeof result === 'object' && 'rows' in result
+    ? (result as { rows?: unknown[] }).rows?.[0]
+    : undefined;
+  return row && typeof row === 'object'
+    ? (row as Record<string, unknown>)
+    : undefined;
+}
+
+/** Migration 0084 adds this column. Home still loads before it exists. */
+async function readNetworkHorizon(
+  db: DbConfig['db'],
+  personId: number,
+): Promise<NetworkHorizon> {
+  try {
+    const result = await db.execute(
+      sql`select network_horizon from people where id = ${personId} limit 1`,
+    );
+    const value = firstSqlRow(result)?.network_horizon;
+    return value === 'network' ? 'network' : 'spaces';
+  } catch (error) {
+    if (isMissingColumn(error, 'network_horizon')) return 'spaces';
+    throw error;
+  }
+}
+
+function stringTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((tag): tag is string => typeof tag === 'string');
+}
+
+async function loadNetworkHorizonSignals(
+  {
+    personId,
+    profile,
+    spaceIds,
+  }: {
+    personId: number;
+    profile: MemberHorizonProfile;
+    spaceIds: number[];
+  },
+  { db }: DbConfig,
+): Promise<NetworkHorizonSignal[]> {
+  const rows = await db
+    .select({
+      id: coherences.id,
+      slug: coherences.slug,
+      title: coherences.title,
+      type: coherences.type,
+      description: coherences.description,
+      tags: coherences.tags,
+      updatedAt: coherences.updatedAt,
+      creatorId: coherences.creatorId,
+      creatorName: people.name,
+      creatorSurname: people.surname,
+      creatorNickname: people.nickname,
+      creatorAvatarUrl: people.avatarUrl,
+      spaceSlug: spaces.slug,
+      spaceTitle: spaces.title,
+      spaceDescription: spaces.description,
+      spaceLocation: spaces.locationLabel,
+      logoUrl: spaces.logoUrl,
+      ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+      ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+    })
+    .from(coherences)
+    .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+    .leftJoin(people, eq(coherences.creatorId, people.id))
+    .where(
+      and(
+        eq(coherences.sharedWithNetwork, true),
+        or(eq(coherences.archived, false), isNull(coherences.archived)),
+        inArray(coherences.type, [...NETWORK_SIGNAL_TYPES]),
+        eq(spaces.isArchived, false),
+        or(isNull(coherences.creatorId), ne(coherences.creatorId, personId)),
+        spaceIds.length > 0
+          ? notInArray(coherences.spaceId, spaceIds)
+          : undefined,
+      ),
+    )
+    .orderBy(desc(coherences.updatedAt))
+    .limit(NETWORK_HORIZON_CANDIDATE_LIMIT);
+
+  const candidates: NetworkHorizonCandidate[] = rows.flatMap((row) => {
+    if (!row.spaceSlug) return [];
+    return [
+      {
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        type: row.type,
+        description: optionalExcerpt(row.description),
+        tags: stringTags(row.tags),
+        updatedAt: row.updatedAt.toISOString(),
+        spaceSlug: row.spaceSlug,
+        spaceTitle: row.spaceTitle,
+        spaceDescription: row.spaceDescription,
+        spaceLocation: row.spaceLocation,
+        spaceLogo: toSpaceLogo(row),
+        creatorId: row.creatorId,
+        creatorName: creatorLabel(
+          row.creatorName,
+          row.creatorSurname,
+          row.creatorNickname,
+        ),
+        creatorAvatarUrl: row.creatorAvatarUrl,
+      },
+    ];
+  });
+
+  return rankNetworkHorizonSignals(profile, candidates);
 }
 
 function excerpt(value: string | null | undefined, max = 180): string {
@@ -432,6 +588,7 @@ export async function getMemberIntelligence(
                 priority: coherences.priority,
                 assigneeIds: coherences.assigneeIds,
                 description: coherences.description,
+                tags: coherences.tags,
                 creatorId: coherences.creatorId,
                 creatorName: people.name,
                 creatorSurname: people.surname,
@@ -497,9 +654,10 @@ export async function getMemberIntelligence(
           creatorAvatarUrl: row.creatorAvatarUrl,
         })),
         count: Number(signalCount) || 0,
+        interestTags: signalRows.flatMap((row) => stringTags(row.tags)),
       };
     },
-    { signals: [], count: 0 },
+    { signals: [], count: 0, interestTags: [] as string[] },
   );
 
   const sharedPeople = await readSlice(
@@ -648,6 +806,36 @@ export async function getMemberIntelligence(
   );
 
   const firstName = person.name?.trim() || person.nickname?.trim() || 'there';
+  const networkHorizon = await readSlice(
+    'networkHorizon',
+    () => readNetworkHorizon(db, person.id),
+    'spaces' as const,
+  );
+  const interestTags = signalSlice.interestTags;
+  const networkSignals =
+    networkHorizon === 'network'
+      ? await readSlice(
+          'networkSignals',
+          () =>
+            loadNetworkHorizonSignals(
+              {
+                personId: person.id,
+                spaceIds,
+                profile: {
+                  location: person.location,
+                  description: person.description,
+                  spaceTitles: spaceRows.map((space) => space.title),
+                  spaceDescriptions: spaceRows.map(
+                    (space) => space.description ?? '',
+                  ),
+                  interestTags,
+                },
+              },
+              { db },
+            ),
+          [] as NetworkHorizonSignal[],
+        )
+      : [];
 
   return {
     person: {
@@ -661,7 +849,10 @@ export async function getMemberIntelligence(
       address: person.address,
       preferredCurrency: person.preferredCurrency,
       primaryOrientation: orientation,
+      location: person.location,
     },
+    networkHorizon,
+    networkSignals,
     counts: {
       spaces: spaceRows.length,
       openProposals: proposalSlice.openProposals,

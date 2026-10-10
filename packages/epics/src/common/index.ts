@@ -205,6 +205,7 @@ export {
   releaseMainColumnScrollHeightHold,
   getMainColumnNaturalMaxScroll,
   planBannerContentFit,
+  planShortPageScroll,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
 } from './main-column-scroll';

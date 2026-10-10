@@ -41,6 +41,9 @@ import {
 } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
 
 /**
  * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
@@ -54,7 +57,6 @@ type SignalCardProps = {
   refresh: () => Promise<void>;
   onOpenConversation?: () => void;
   className?: string;
-  leadImage?: string;
   isActive?: boolean;
 };
 
@@ -62,10 +64,12 @@ function SignalCardComponent({
   isLoading,
   title,
   description,
+  type,
   priority,
   slug,
   createdAt,
   tags,
+  indicativePayouts = [],
   archived,
   messages = 0,
   roomId,
@@ -76,7 +80,7 @@ function SignalCardComponent({
   refresh,
   onOpenConversation,
   className,
-  leadImage: _leadImage,
+  leadImage,
   isActive = false,
 }: SignalCardProps & Coherence) {
   const { jwt: authToken } = useJwt();
@@ -168,6 +172,20 @@ function SignalCardComponent({
       setIsArchiveMutating(false);
     }
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
+
+  const handleTurnIntoProposal = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!params.lang || !params.id) return;
+    stageSignalAsContributionProposal({
+      title,
+      description,
+      payouts: indicativePayouts,
+    });
+    router.push(
+      `/${params.lang}/dho/${params.id}/agreements/create/propose-contribution`,
+    );
+  };
 
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
   if (hasPersonSlot) {
@@ -325,6 +343,13 @@ function SignalCardComponent({
           </div>
 
           <div className="flex flex-col gap-2.5">
+            {leadImage ? (
+              <img
+                src={leadImage}
+                alt=""
+                className="max-h-24 w-full object-cover"
+              />
+            ) : null}
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex min-w-0 items-start gap-2">
                 <span
@@ -373,6 +398,11 @@ function SignalCardComponent({
               </div>
             </div>
 
+            <div className="flex flex-wrap items-center gap-1.5 pl-3.5">
+              <SignalCategoryTag type={type} />
+              <SignalIndicativeAmounts payouts={indicativePayouts} />
+            </div>
+
             {tags?.length > 0 ? (
               <SignalTagBadges
                 tags={tags}
@@ -396,6 +426,20 @@ function SignalCardComponent({
             refresh={refresh}
             disabled={isLoading || Boolean(archived)}
           />
+          {!archived ? (
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="h-7 min-w-0 shrink justify-start px-2 text-muted-foreground hover:text-foreground"
+              disabled={isLoading}
+              onClick={handleTurnIntoProposal}
+              onKeyDown={stopCardActivationKey}
+            >
+              <span className="truncate text-1">{t('turnIntoProposal')}</span>
+            </Button>
+          ) : null}
           {onOpenConversation && !archived ? (
             <Button
               variant="ghost"

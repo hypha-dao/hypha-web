@@ -71,11 +71,5 @@ export function buildMemberGuidance(input: {
     return `Hi ${name}. You are not in a space yet. Join one to take part in decisions, or create a space when you are ready to bring people together.`;
   }
 
-  if (input.orientation === 'builder') {
-    return `Hi ${name}. Nothing is waiting on a decision. Your spaces are quiet, which is a good moment to shape the next one around a vision.`;
-  }
-  if (input.orientation === 'investor') {
-    return `Hi ${name}. Nothing in your spaces is waiting on you. The network marketplace is where spaces publish their asks.`;
-  }
-  return `Hi ${name}. Nothing is waiting on a decision. Look through your spaces and the people around you.`;
+  return `Hi ${name}. Activate a space you are in, or open your horizon and listen to the network.`;
 }
