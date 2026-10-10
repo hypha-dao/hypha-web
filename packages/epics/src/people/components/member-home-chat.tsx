@@ -250,6 +250,17 @@ export function MemberHomeChat({
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
   );
+  const showSensing = useMemo(() => {
+    if (!isStreaming) return false;
+    for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
+      const message = homeMessages[i];
+      if (!message || message.metadata?.homeArrival) continue;
+      if (message.role !== 'assistant') return true;
+      if (messageText(message)) return false;
+      return memberHomeThreadItemForMessage(threadItems, message) == null;
+    }
+    return true;
+  }, [homeMessages, isStreaming, threadItems]);
 
   const chips = [
     { key: 'useful', ask: t('chipUseful') },
@@ -290,14 +301,14 @@ export function MemberHomeChat({
               >
                 {mine ? null : <MemberHomeMark className="mt-0.5 h-8 w-8" />}
                 <div className="grid min-w-0 gap-3">
-                  {text || (isStreaming && !threadItem) ? (
+                  {text ? (
                     <p
                       className={cn(
                         'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
                         mine ? 'text-foreground' : 'text-neutral-12',
                       )}
                     >
-                      {text || t('thinking')}
+                      {text}
                     </p>
                   ) : null}
                   {threadItem ? (
@@ -319,6 +330,14 @@ export function MemberHomeChat({
               </article>
             );
           })}
+          {showSensing ? (
+            <article className="flex gap-3" aria-live="polite">
+              <MemberHomeMark className="mt-0.5 h-8 w-8" />
+              <p className="max-w-[46ch] text-2 leading-relaxed text-neutral-11">
+                {t('thinking')}
+              </p>
+            </article>
+          ) : null}
         </div>
       </div>
 
