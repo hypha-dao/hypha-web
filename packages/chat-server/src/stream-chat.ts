@@ -16,6 +16,7 @@ import type { ChatRequestPayload } from './request-schema';
 import {
   listMemberHomeThreadItems,
   SHOW_MEMBER_HOME_ITEM_TOOL,
+  passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
 } from '@hypha-platform/core/client';
 import { formatMemberHomeFacts } from './member-home-facts';
@@ -1395,6 +1396,7 @@ export async function createChatStreamResult(
   const memberHomeFacts = memberHomeRecord
     ? formatMemberHomeFacts(memberHomeRecord.home, {
         alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
+        passed: passedMemberHomeItemKeys(memberHomeItems, messages),
       })
     : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);

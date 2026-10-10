@@ -361,6 +361,70 @@ export function memberHomeThreadItemForMessage(
   return itemMentionedInText(items, text);
 }
 
+/**
+ * A reply that drops the item just offered.
+ * "I don't want to decide on it" counts. A pause of the whole conversation does not.
+ */
+export function isMemberHomeItemDecline(text: string): boolean {
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, ' ');
+  if (!normalized) return false;
+  if (
+    /\b(pause for now|let's pause|lets pause|stop for now|enough for now)\b/.test(
+      normalized,
+    )
+  ) {
+    return false;
+  }
+  if (/^(no|nope|nah|skip|pass|later)[.!]?$/.test(normalized)) return true;
+  if (
+    /\b(not now|no thanks|no thank you|not interested|leave it|skip it|skip this|pass on this|not this one|not that one|already told you)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  return /\b(don't|do not|didn't|did not|won't|will not)\b.{0,60}\b(want|decide|decision|look|vote|weigh)\b/.test(
+    normalized,
+  );
+}
+
+/**
+ * Items the member already refused.
+ * The offer is the last assistant reply that named one item. The next user
+ * refusal drops it, so a later turn cannot put it back at the front.
+ */
+export function passedMemberHomeItemKeys(
+  items: readonly MemberHomeThreadItem[],
+  messages: ReadonlyArray<{
+    role?: string;
+    parts?: readonly unknown[];
+    content?: string;
+  }>,
+): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  let current: MemberHomeThreadItem | null = null;
+  for (const message of messages) {
+    if (message.role === 'assistant') {
+      const item = memberHomeThreadItemForMessage(items, message);
+      if (item) current = item;
+      continue;
+    }
+    if (message.role !== 'user' || !current) continue;
+    const text = textFromParts(message.parts) || message.content?.trim() || '';
+    if (!isMemberHomeItemDecline(text)) continue;
+    const key = memberHomeThreadItemKey(current);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    keys.push(key);
+  }
+  return keys;
+}
+
 /** Items already placed on earlier assistant replies. */
 export function shownMemberHomeItemKeys(
   items: readonly MemberHomeThreadItem[],
