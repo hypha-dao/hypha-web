@@ -1761,6 +1761,7 @@
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein Netzwerk",
+    "loading": "Das Netzwerk wird geladen",
     "findASpace": "Einen Space finden",
     "createSpace": "Space erstellen",
     "mostMembers": "Meiste Mitglieder",

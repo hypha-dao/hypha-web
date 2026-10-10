@@ -1760,6 +1760,7 @@
   "Network": {
     "manySpaces": "Veel ruimtes,",
     "oneVibrantNetwork": "Eén netwerk",
+    "loading": "Het netwerk wordt geladen",
     "findASpace": "Zoek een ruimte",
     "createSpace": "Creëer ruimte",
     "mostMembers": "De meeste leden",

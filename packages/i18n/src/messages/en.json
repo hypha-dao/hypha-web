@@ -1879,6 +1879,7 @@
   "Network": {
     "manySpaces": "Many Spaces,",
     "oneVibrantNetwork": "One Network",
+    "loading": "Loading the network",
     "findASpace": "Find a Space",
     "createSpace": "Create Space",
     "mostMembers": "Most Members",

@@ -13,6 +13,7 @@ export * from './entry-method-token-field';
 export * from './exit-space';
 export * from './space-order-combobox';
 export * from './explore-spaces';
+export * from './network-loading-grid';
 export * from './my-spaces-controls';
 export * from './my-filtered-spaces';
 export * from './inner-space-card.wrapper';

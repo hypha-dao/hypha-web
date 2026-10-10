@@ -1740,6 +1740,7 @@
   "Network": {
     "manySpaces": "Многу простори,",
     "oneVibrantNetwork": "една мрежа",
+    "loading": "Мрежата се вчитува",
     "findASpace": "Најди простор",
     "createSpace": "Создај простор",
     "mostMembers": "Најмногу членови",
