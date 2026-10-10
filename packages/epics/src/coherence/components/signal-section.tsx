@@ -2,16 +2,15 @@
 
 import { FC } from 'react';
 import React from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { PlusIcon } from '@radix-ui/react-icons';
-import { SearchIcon } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Button, ErrorAlert, Input } from '@hypha-platform/ui';
+import { ErrorAlert } from '@hypha-platform/ui';
 import {
   Coherence,
   DEFAULT_SIGNAL_WORKFLOW,
+  type Person,
+  type SignalBoardFilters,
   applyPendingCoherenceTaskPatch,
   clearPendingCoherenceTaskPatch,
   setPendingCoherenceTaskPatch,
@@ -21,7 +20,6 @@ import {
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Empty } from '../../common';
-import { useSignalsSection } from '../hooks';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
 import {
@@ -33,6 +31,8 @@ import { SignalSwimlaneView } from './signal-swimlane-view';
 import { SignalListView } from './signal-list-view';
 import { SignalGrid } from './signal-grid';
 import { SignalSectionSkeleton } from './signal-section-skeleton';
+import { SignalFilterBar } from './signal-filter-bar';
+import { SignalCreateFab } from './signal-create-fab';
 
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
@@ -49,6 +49,11 @@ type SignalSectionProps = {
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
   activeSignalSlug?: string | null;
+  boardFilters?: SignalBoardFilters;
+  onBoardFiltersChange?: (filters: SignalBoardFilters) => void;
+  existingTags?: string[];
+  members?: Person[];
+  currentPersonId?: number | null;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
@@ -61,6 +66,11 @@ export const SignalSection: FC<SignalSectionProps> = ({
   refresh,
   onSignalClick,
   activeSignalSlug,
+  boardFilters,
+  onBoardFiltersChange,
+  existingTags = [],
+  members = [],
+  currentPersonId,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
@@ -83,10 +93,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const createSignalHref = `/${lang}/dho/${spaceSlug}/coherence/new-signal`;
   const resolvedWorkflow = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
 
-  const { onUpdateSearch, searchTerm, filteredSignals } = useSignalsSection({
-    signals,
-    rowBatchSize: signals.length || 1,
-  });
+  const filteredSignals = signals;
 
   const readProvisioningNotice = React.useCallback(() => {
     const rawNotice = sessionStorage.getItem(
@@ -236,26 +243,19 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="flex w-full items-center gap-2 sm:gap-3">
-        <Input
-          type="search"
-          placeholder={t('searchSignals')}
-          onChange={(event) => onUpdateSearch(event.target.value)}
-          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          className="min-w-0 flex-1"
-          defaultValue={searchTerm}
-        />
-        {canMutate ? (
-          <div className="flex shrink-0 items-center">
-            <Button asChild colorVariant="accent" className="whitespace-nowrap">
-              <Link href={createSignalHref}>
-                <PlusIcon />
-                {t('newSignal')}
-              </Link>
-            </Button>
-          </div>
-        ) : null}
+    <div className="relative flex w-full flex-col gap-4 pb-24">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
+          {onBoardFiltersChange ? (
+            <SignalFilterBar
+              filters={boardFilters ?? {}}
+              onChange={onBoardFiltersChange}
+              existingTags={existingTags}
+              members={members}
+              currentPersonId={currentPersonId}
+            />
+          ) : null}
+        </div>
       </div>
 
       {provisioningNoticeLines.length > 0 ? (
@@ -317,6 +317,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           )}
         </div>
       )}
+      {canMutate ? <SignalCreateFab href={createSignalHref} /> : null}
     </div>
   );
 };

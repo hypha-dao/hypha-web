@@ -23,16 +23,29 @@ export function buildSignalAssignedEmailSubject(signalTitle: string): string {
   return `You have been assigned: ${signalTitle}`;
 }
 
+function formatDueAt(dueAt?: string | Date | null): string | null {
+  if (dueAt == null || dueAt === '') return null;
+  const date = dueAt instanceof Date ? dueAt : new Date(dueAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export function buildSignalAssignedEmailBody({
   signalTitle,
   spaceTitle,
   actorDisplayName,
   url,
+  dueAt,
 }: {
   signalTitle: string;
   spaceTitle?: string;
   actorDisplayName?: string;
   url: string;
+  dueAt?: string | Date | null;
 }): string {
   const escapedTitle = escapeHtml(signalTitle);
   const escapedUrl = escapeHtml(getSafeSignalHref(url));
@@ -66,6 +79,13 @@ export function buildSignalAssignedEmailBody({
               ${spaceLine}
               <p style="margin:0 0 16px;">Hey there,</p>
               <p style="margin:0 0 8px;"><strong>${escapedActor}</strong> assigned you to the signal <strong>${escapedTitle}</strong>.</p>
+              ${
+                formatDueAt(dueAt)
+                  ? `<p style="margin:0 0 8px;">Deadline: <strong>${escapeHtml(
+                      formatDueAt(dueAt)!,
+                    )}</strong></p>`
+                  : '<p style="margin:0 0 8px;">No deadline is set yet.</p>'
+              }
               <p style="margin:24px 0 8px;">Open the signal to see the details and pick it up.</p>
               <p style="margin:0 0 24px;">
                 <a href="${escapedUrl}" style="color:#2563eb;font-weight:600;text-decoration:underline;">View Signal</a>

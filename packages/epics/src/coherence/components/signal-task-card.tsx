@@ -16,6 +16,7 @@ import { SignalCardActions } from './signal-card-actions';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
@@ -269,6 +270,10 @@ export function SignalTaskCard({
                   </Badge>
                 ) : null}
                 <SignalTagBadges tags={signal.tags} maxVisible={2} />
+                <SignalOwnerSeen
+                  assigneeIds={signal.assigneeIds}
+                  acknowledgements={signal.assigneeAcknowledgedAt}
+                />
                 {messageCount > 0 ? (
                   <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                     <MessageSquare className="h-3 w-3" aria-hidden />

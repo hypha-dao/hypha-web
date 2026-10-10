@@ -14,7 +14,14 @@ export function buildSignalAssignedEvent(input: {
   actorPersonId: number | null;
   signalSlug: string;
   signalTitle: string;
+  dueAt?: Date | string | null;
 }): SignalAssignedEvent {
+  const dueAt =
+    input.dueAt == null
+      ? null
+      : input.dueAt instanceof Date
+      ? input.dueAt.toISOString()
+      : input.dueAt;
   return {
     type: 'signal.assigned',
     source: {
@@ -29,7 +36,11 @@ export function buildSignalAssignedEvent(input: {
       ),
       actorPersonId: input.actorPersonId,
     },
-    payload: { signalSlug: input.signalSlug, signalTitle: input.signalTitle },
+    payload: {
+      signalSlug: input.signalSlug,
+      signalTitle: input.signalTitle,
+      dueAt,
+    },
   };
 }
 
@@ -66,7 +77,12 @@ export const resolveSignalAssignedRecipients: RecipientResolver<
   );
   const actorDisplayName =
     [actor?.name, actor?.surname].filter(Boolean).join(' ').trim() || undefined;
-  const data = { spaceTitle: space.title, actorDisplayName, url };
+  const data = {
+    spaceTitle: space.title,
+    actorDisplayName,
+    url,
+    dueAt: event.payload.dueAt ?? null,
+  };
 
   const recipients: Recipient[] = [];
   for (const { slug } of assignees) {

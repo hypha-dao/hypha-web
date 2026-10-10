@@ -1,9 +1,9 @@
 import {
   COHERENCE_ORDERS,
-  CoherenceBlock,
   CoherenceOrder,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
+import { ConnectedCoherenceBlock } from '@web/components/connected-coherence-block';
 import {
   getEnableCoherence,
   getEnableHumanChat,
@@ -50,7 +50,7 @@ export default async function CoherencePage(props: PageProps) {
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
       <div className="flex flex-col gap-4 py-4">
-        <CoherenceBlock
+        <ConnectedCoherenceBlock
           lang={lang}
           spaceSlug={id}
           order={order}

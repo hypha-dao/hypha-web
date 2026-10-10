@@ -38,6 +38,17 @@ describe('buildSignalAssignedContent', () => {
     expect(body).toContain('Hypha Energy');
     expect(body).toContain('Alice');
     expect(body).toContain('coh-1');
+    expect(body).toContain('No deadline is set yet');
+  });
+
+  it('includes the deadline when the assignment has a due date', () => {
+    const withDue: SignalAssignedEvent = {
+      ...event,
+      payload: { ...event.payload, dueAt: '2026-10-09T12:00:00.000Z' },
+    };
+    const { body } = buildSignalAssignedContent(withDue, recipient).content
+      .email as { body: string };
+    expect(body).toContain('Deadline:');
   });
 
   it('falls back to "a signal" when the title is blank', () => {

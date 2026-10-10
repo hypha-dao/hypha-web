@@ -41,8 +41,13 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  collectExistingTags,
+  normalizeTagKey,
+  personProfileHref,
+  wouldCreateNearDuplicate,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
+  useFindCoherences,
   useCoherenceUpvoteMutations,
   useJwt,
   useMatrix,
@@ -72,6 +77,7 @@ import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import type { UseMembers } from '../../spaces/hooks/types';
+import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -168,7 +174,18 @@ export const CreateSignalForm = ({
     updateCoherenceBySlug,
     updateCoherenceSignalBySlug,
     isUpdatingCoherenceSignal,
+    mergeCoherenceTags,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { coherences: spaceSignals } = useFindCoherences({
+    spaceSlug,
+    includeArchived: true,
+  });
+  const existingBoardTags = React.useMemo(
+    () =>
+      collectExistingTags((spaceSignals ?? []).map((signal) => signal.tags)),
+    [spaceSignals],
+  );
+  const [mergeTagsOpen, setMergeTagsOpen] = React.useState(false);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
@@ -469,8 +486,31 @@ export const CreateSignalForm = ({
       return rows;
     });
 
-    return grouped;
-  }, [t]);
+    const usedOnBoard = existingBoardTags.filter(
+      (tag) => !canonicalTags.has(tag),
+    );
+    if (usedOnBoard.length === 0) return grouped;
+    return [
+      {
+        value: '__heading__board',
+        label: t.has('usedOnThisBoard')
+          ? t('usedOnThisBoard')
+          : 'Used on this board',
+        kind: 'heading' as const,
+      },
+      ...usedOnBoard.map((tag) => ({
+        value: tag,
+        label: tag,
+        kind: 'option' as const,
+      })),
+      {
+        value: '__separator__board',
+        label: '',
+        kind: 'separator' as const,
+      },
+      ...grouped,
+    ];
+  }, [existingBoardTags, t]);
 
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('creatorId');
@@ -1197,6 +1237,24 @@ export const CreateSignalForm = ({
                             markdown={descriptionValue}
                             translation={translateEditor}
                             placeholder={t('descriptionPlaceholder')}
+                            mentionCandidates={spaceMembers.data.flatMap(
+                              (member) => {
+                                const slug = member.slug?.trim();
+                                if (!slug) return [];
+                                return [
+                                  {
+                                    id: slug,
+                                    label:
+                                      [member.name, member.surname]
+                                        .filter(Boolean)
+                                        .join(' ') ||
+                                      member.nickname ||
+                                      slug,
+                                    href: personProfileHref(slug, lang),
+                                  },
+                                ];
+                              },
+                            )}
                             onChange={(markdown) => field.onChange(markdown)}
                           />
                         </div>
@@ -1229,6 +1287,22 @@ export const CreateSignalForm = ({
                         allowCreate={true}
                         maxCount={2}
                         uiStyle="tag-picker"
+                        getCreateWarning={(term) =>
+                          wouldCreateNearDuplicate(
+                            term,
+                            existingBoardTags,
+                            field.value ?? [],
+                          )
+                            ? t('tagNearDuplicateWarning', {
+                                tag:
+                                  existingBoardTags.find(
+                                    (tag) =>
+                                      normalizeTagKey(tag) ===
+                                      normalizeTagKey(term),
+                                  ) ?? term,
+                              })
+                            : null
+                        }
                         labels={{
                           more: (count) =>
                             t.has('tagsMore' as never)
@@ -1257,9 +1331,31 @@ export const CreateSignalForm = ({
                         onValueChange={field.onChange}
                       />
                     </FormControl>
+                    {canManageSignal && existingBoardTags.length > 1 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        size="sm"
+                        className="mt-2 h-8 px-2 text-muted-foreground"
+                        onClick={() => setMergeTagsOpen(true)}
+                      >
+                        {t('mergeTagsAction')}
+                      </Button>
+                    ) : null}
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+              <SignalTagMergeDialog
+                open={mergeTagsOpen}
+                onOpenChange={setMergeTagsOpen}
+                existingTags={existingBoardTags}
+                onMerge={async (fromTag, toTag) => {
+                  if (!spaceSlug) return;
+                  await mergeCoherenceTags({ spaceSlug, fromTag, toTag });
+                  await revalidateCoherences(spaceSlug);
+                }}
               />
             </section>
 

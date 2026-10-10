@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
+import { SignalMentionText } from './signal-mention-text';
 
 /** Card-ready plain text: markdown markers and lead-image syntax removed. */
 export function useSignalPlainDescription(description?: string | null): string {
@@ -115,7 +116,7 @@ export function SignalDescriptionButton({
             )}
           >
             <p className="whitespace-pre-wrap text-2 leading-relaxed text-foreground">
-              {plainDescription}
+              <SignalMentionText text={description ?? ''} />
             </p>
           </div>
           <DialogFooter className="shrink-0 border-t border-border/60 px-6 py-4">
