@@ -1192,6 +1192,7 @@
   "Network": {
     "manySpaces": "De nombreux espaces,",
     "oneVibrantNetwork": "Un réseau",
+    "loading": "Chargement du réseau",
     "findASpace": "Trouver un espace",
     "createSpace": "Créer un espace",
     "mostMembers": "Le plus de membres",
