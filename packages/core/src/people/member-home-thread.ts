@@ -349,8 +349,12 @@ function itemMentionedInText(
     const title = item.title.trim().toLowerCase();
     return title.length >= 3 && haystack.includes(title);
   });
-  const match = matches[0];
-  return matches.length === 1 && match ? match : null;
+  if (matches.length === 1 && matches[0]) return matches[0];
+  const byCreator = items.filter((item) => {
+    const name = item.creatorName?.trim().toLowerCase() ?? '';
+    return name.includes(' ') && haystack.includes(name);
+  });
+  return byCreator.length === 1 && byCreator[0] ? byCreator[0] : null;
 }
 
 /**

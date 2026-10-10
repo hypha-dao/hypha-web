@@ -15,6 +15,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import {
   listMemberHomeThreadItems,
+  type MemberHomeThreadItem,
   type MemberIntelligence,
   type NetworkHorizon,
 } from '@hypha-platform/core/client';
@@ -132,15 +133,24 @@ export function MemberHome({
     greetingName?.trim() ||
     t('fallbackName');
   const tTypes = useTranslations('CoherenceTab');
-  const lead = home?.attention[0];
-  const leadItem = useMemo(() => {
-    if (!home || !lead?.targetSlug) return null;
-    return (
-      listMemberHomeThreadItems(home).find(
-        (item) => item.kind === lead.kind && item.slug === lead.targetSlug,
-      ) ?? null
-    );
-  }, [home, lead]);
+  const queue = useMemo(
+    () => (home ? listMemberHomeThreadItems(home) : []),
+    [home],
+  );
+  const [spokenItem, setSpokenItem] = useState<MemberHomeThreadItem | null>(
+    null,
+  );
+  const onFocusItem = useCallback((item: MemberHomeThreadItem | null) => {
+    setSpokenItem(item);
+  }, []);
+  const leadItem =
+    (spokenItem &&
+      queue.find(
+        (item) =>
+          item.kind === spokenItem.kind && item.slug === spokenItem.slug,
+      )) ||
+    queue[0] ||
+    null;
   const reachIds = useMemo(() => {
     if (!home) return [];
     const ids = new Set<number>();
@@ -152,10 +162,10 @@ export function MemberHome({
     }
     return [...ids];
   }, [home]);
-  const leadHref = lead
-    ? lead.kind === 'proposal'
-      ? getProposalPath(lang, lead.spaceSlug, lead.targetSlug)
-      : getSignalPath(lang, lead.spaceSlug, lead.targetSlug)
+  const leadHref = leadItem
+    ? leadItem.kind === 'proposal'
+      ? getProposalPath(lang, leadItem.spaceSlug, leadItem.slug)
+      : getSignalPath(lang, leadItem.spaceSlug, leadItem.slug)
     : null;
 
   return (
@@ -302,6 +312,7 @@ export function MemberHome({
             intelligence={home}
             onChatPerson={openChat}
             onCallPerson={openCall}
+            onFocusItem={onFocusItem}
           />
         ) : (
           <div className="flex-1 px-4 py-6">
@@ -364,11 +375,11 @@ export function MemberHome({
               className="text-4"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
-              {home && !lead ? t('quietHeading') : t('useful')}
+              {home && !leadItem ? t('quietHeading') : t('useful')}
             </h2>
-            {lead ? (
+            {leadItem ? (
               <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
-                {lead.detail}
+                {leadItem.spaceTitle}
               </p>
             ) : null}
           </div>
@@ -394,14 +405,18 @@ export function MemberHome({
                 }
               />
             </div>
-          ) : lead ? (
+          ) : leadItem ? (
             <div className="mt-4">
-              <p className="text-3">{lead.title}</p>
-              <p className="mt-1 text-2 text-neutral-11">{lead.detail}</p>
+              <p className="text-3">{leadItem.title}</p>
+              <p className="mt-1 text-2 text-neutral-11">
+                {leadItem.spaceTitle}
+              </p>
               {leadHref ? (
                 <Button asChild className="mt-4">
                   <Link href={leadHref}>
-                    {lead.kind === 'proposal' ? t('weighIn') : t('viewSignal')}
+                    {leadItem.kind === 'proposal'
+                      ? t('weighIn')
+                      : t('viewSignal')}
                   </Link>
                 </Button>
               ) : null}
@@ -435,11 +450,6 @@ export function MemberHome({
               )}
             </div>
           )}
-          {home && lead ? (
-            <p className="mt-4 max-w-[52ch] text-2 leading-relaxed text-neutral-12">
-              {home.guidance.narrative}
-            </p>
-          ) : null}
         </section>
 
         <dl className="mt-8 grid grid-cols-2 gap-px bg-border sm:grid-cols-[repeat(4,minmax(0,1fr))]">
