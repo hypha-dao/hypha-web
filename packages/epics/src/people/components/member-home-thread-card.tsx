@@ -41,6 +41,7 @@ type ReachPerson = {
   surname: string | null;
   nickname: string | null;
   avatarUrl: string | null;
+  spaceSlug?: string | null;
 };
 
 type MemberHomeThreadCardProps = {
@@ -123,6 +124,7 @@ export function MemberHomeThreadCard({
           surname: null,
           nickname: null,
           avatarUrl: item.creatorAvatarUrl,
+          spaceSlug: item.spaceSlug,
         }
       : null;
   const ctas = isSignal
@@ -144,15 +146,8 @@ export function MemberHomeThreadCard({
     if (!creator || busy) return;
     setBusy(true);
     const opened = await onReach(creator, mode);
-    if (!opened) {
-      onAsk(
-        mode === 'call'
-          ? t('callFallback', { name: creator.name ?? '', title: item.title })
-          : t('askProposerChosen', {
-              name: creator.name ?? '',
-              title: item.title,
-            }),
-      );
+    if (!opened && mode === 'call') {
+      onAsk(t('callFallback', { name: creator.name ?? '', title: item.title }));
     }
     setBusy(false);
   }
