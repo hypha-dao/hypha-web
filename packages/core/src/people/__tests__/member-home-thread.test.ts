@@ -7,6 +7,7 @@ import {
   memberHomeSignalAction,
   memberHomeSignalCtas,
   memberHomeThreadItemForMessage,
+  passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
 } from '../member-home-thread';
 
@@ -258,5 +259,66 @@ describe('shownMemberHomeItemKeys', () => {
       },
     ]);
     expect(keys).toEqual(['signal:define-products']);
+  });
+});
+
+describe('passedMemberHomeItemKeys', () => {
+  const items = listMemberHomeThreadItems(home);
+
+  it('drops the offered item the first time the member refuses it', () => {
+    const keys = passedMemberHomeItemKeys(items, [
+      {
+        role: 'assistant',
+        parts: [
+          {
+            type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+            state: 'output-available',
+            input: { kind: 'proposal', slug: 'invite-member' },
+          },
+        ],
+      },
+      {
+        role: 'user',
+        content: "I don't want to decide on it",
+      },
+      {
+        role: 'assistant',
+        content:
+          "That's completely fine! If you need any assistance or want to explore something else, just let me know.",
+      },
+      {
+        role: 'user',
+        content: "I already told you I didn't want to decide on that",
+      },
+    ]);
+    expect(keys).toEqual(['proposal:invite-member']);
+  });
+
+  it('keeps a later item when the member only refused the previous one', () => {
+    const keys = passedMemberHomeItemKeys(items, [
+      {
+        role: 'assistant',
+        parts: [
+          {
+            type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+            state: 'output-available',
+            input: { kind: 'proposal', slug: 'invite-member' },
+          },
+        ],
+      },
+      { role: 'user', content: 'no' },
+      {
+        role: 'assistant',
+        parts: [
+          {
+            type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+            state: 'output-available',
+            input: { kind: 'signal', slug: 'define-products' },
+          },
+        ],
+      },
+      { role: 'user', content: 'yes' },
+    ]);
+    expect(keys).toEqual(['proposal:invite-member']);
   });
 });

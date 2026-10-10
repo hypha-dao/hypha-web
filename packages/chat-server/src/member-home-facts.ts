@@ -1,5 +1,6 @@
 import {
   listMemberHomeThreadItems,
+  memberHomeThreadItemKey,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 
@@ -18,7 +19,7 @@ function personName(person: {
  */
 export function formatMemberHomeFacts(
   home: MemberIntelligence,
-  options?: { alreadyShown?: readonly string[] },
+  options?: { alreadyShown?: readonly string[]; passed?: readonly string[] },
 ): string {
   const spaces = home.spaces.map((space) => space.title).join('; ') || 'none';
   const networkSlugs = new Set(
@@ -26,8 +27,17 @@ export function formatMemberHomeFacts(
       signal.slug ? [signal.slug] : [],
     ),
   );
+  const passed = new Set(
+    (options?.passed ?? []).map((key) => key.trim()).filter(Boolean),
+  );
   const waiting = listMemberHomeThreadItems(home).filter(
     (item) => !(item.kind === 'signal' && networkSlugs.has(item.slug)),
+  );
+  const stillWaiting = waiting.filter(
+    (item) => !passed.has(memberHomeThreadItemKey(item)),
+  );
+  const passedItems = waiting.filter((item) =>
+    passed.has(memberHomeThreadItemKey(item)),
   );
   const listening = home.networkHorizon === 'network';
   const networkLines =
@@ -47,11 +57,13 @@ export function formatMemberHomeFacts(
           })
           .join('\n');
   const waitingLines =
-    waiting.length === 0
-      ? listening
+    stillWaiting.length === 0
+      ? passedItems.length > 0
+        ? 'Nothing left in the queue. They already passed on the items below. Say that in one line. Do not ask what else they would like, and do not bring a passed item back.'
+        : listening
         ? 'Nothing in their spaces needs them. No judgement. Their horizon is already open. If a network signal is listed below, you may offer one. Otherwise invite them to activate a space. Do not imply the quiet is a problem. Do not call show_member_home_item unless you are offering that one network signal.'
         : 'Nothing in their spaces needs them. No judgement. Invite them to activate a space, or to open the horizon toggle so needs and opportunities from other spaces can reach them. Do not imply the quiet is a problem. Do not call show_member_home_item.'
-      : waiting
+      : stillWaiting
           .map((item, index) => {
             const quoted = (value: string | null) =>
               (value ?? '').replace(/"/g, "'");
@@ -80,14 +92,24 @@ export function formatMemberHomeFacts(
   return [
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above.',
     'The member is on their personal home, across every space they belong to, not on a single space screen.',
-    'Brief them like a friend who wants these people to help each other. Stay in motion until they ask to pause or the waiting list is done. One waiting item per reply, in the order below, and the next item is already the close of that reply once they answer: "The next proposal is…" or "Would you like to take a look at … now?" In the reply that introduces an item, call show_member_home_item once with its kind and slug. Use the member\'s name. Say who raised it and what they need, with one human detail if you have it, then ask if they want to pursue it: "Can you make it?" or "Ready to take a look?" Never "what would you like to focus on", never "if you want to do anything else, just let me know", and never a menu of the other items. If they say yes, be glad for the person they are helping, then name the next item the same way. If they pass, "All good", no guilt, and name the next item. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line and stop. Never vote, validate, accept, decline, or decide for them. Your words must be about the item you are offering. Do not call the tool for an item you are not talking about. The person taps the card.',
+    'Brief them like a friend who wants these people to help each other. One waiting item per reply, in the order below. In the reply that introduces it, call show_member_home_item once with its kind and slug. Use the member\'s name. Say who raised it and what they need, with one human detail if you have it, then ask if they want to pursue it: "Can you make it?" or "Ready to take a look?"',
+    'A no is final the first time. "I don\'t want to decide", "not now", "skip", or "no" drops that item. Do not ask again. Do not insist. Do not say you will not bring it up. The reply that hears the no names the next remaining waiting item in that same reply, and calls show_member_home_item for that next item: "The next proposal is…" or "Would you like to take a look at … now?"',
+    'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know".',
+    'If they say yes, be glad for the person they are helping, then name the next remaining item the same way. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item you are offering. Do not call the tool for an item you are not talking about. The person taps the card.',
     `Person: ${personName(home.person)}.`,
     listening
       ? 'Horizon: listening to the network. After their own waiting items, you may offer one network signal below. In that reply call show_member_home_item once with its kind and slug. Name the space and why it might fit (location, interest, or experience). Offer one, not the list.'
       : 'Horizon: focused on their own spaces. Do not propose needs or opportunities from other spaces.',
     networkLines ? `Network signals:\n${networkLines}` : null,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
-    'Waiting items:',
+    passedItems.length > 0
+      ? `Passed. They already said no. Do not mention these again: ${passedItems
+          .map(
+            (item) => `${memberHomeThreadItemKey(item)} "${item.title ?? ''}"`,
+          )
+          .join('; ')}.`
+      : null,
+    'Waiting items, only what they have not passed on. Item 1 is the one to name now:',
     waitingLines,
     alreadyShown.length > 0
       ? `Already placed in earlier replies. Do not call show_member_home_item for these again unless the person asks: ${alreadyShown.join(
