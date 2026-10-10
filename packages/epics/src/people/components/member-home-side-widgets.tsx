@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { MessageSquare, Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Skeleton } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
@@ -138,15 +139,19 @@ export function MemberHomeSpacesWidget({
 }
 
 export function MemberHomeConnectionsWidget({
-  lang,
   people,
   isLoading,
   fallbackName,
+  onChat,
+  onCall,
+  onVideo,
 }: {
-  lang: Locale;
   people: HomeConnection[];
   isLoading: boolean;
   fallbackName: string;
+  onChat?: (person: HomeConnection) => Promise<boolean>;
+  onCall?: (person: HomeConnection) => Promise<boolean>;
+  onVideo?: (person: HomeConnection) => Promise<boolean>;
 }) {
   const t = useTranslations('MemberHome');
 
@@ -170,42 +175,69 @@ export function MemberHomeConnectionsWidget({
         <ul className="flex flex-wrap gap-3">
           {people.map((person) => {
             const name = personLabel(person, fallbackName);
-            const href = person.slug ? `/${lang}/profile/${person.slug}` : null;
             const label = t('sharedSpaces', {
               count: person.sharedSpaceCount,
             });
-            const hoverLabel = `${name}. ${label}`;
-            const portrait = (
-              <>
-                <PersonAvatar
-                  avatarSrc={person.avatarUrl ?? undefined}
-                  userName={name}
-                  size="md"
-                  shape="circle"
-                />
-                <span className="min-w-0 truncate text-2">{name}</span>
-              </>
-            );
-
             return (
-              <li key={person.id} className="max-w-full min-w-[8.5rem] flex-1">
-                {href ? (
-                  <Link
-                    href={href}
-                    title={hoverLabel}
-                    aria-label={hoverLabel}
-                    className="flex min-w-0 items-center gap-2 hover:underline"
+              <li
+                key={person.id}
+                className="flex min-w-[11rem] max-w-full flex-1 items-center gap-2"
+              >
+                <button
+                  type="button"
+                  title={`${name}. ${label}`}
+                  aria-label={t('chatPerson', { name })}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left hover:underline"
+                  onClick={() => {
+                    void onChat?.(person);
+                  }}
+                >
+                  <PersonAvatar
+                    avatarSrc={person.avatarUrl ?? undefined}
+                    userName={name}
+                    size="md"
+                    shape="circle"
+                  />
+                  <span className="min-w-0 truncate text-2">{name}</span>
+                </button>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    colorVariant="neutral"
+                    aria-label={t('callPerson', { name })}
+                    onClick={() => {
+                      void onCall?.(person);
+                    }}
                   >
-                    {portrait}
-                  </Link>
-                ) : (
-                  <span
-                    title={hoverLabel}
-                    className="flex min-w-0 items-center gap-2"
+                    <Phone className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    colorVariant="neutral"
+                    aria-label={t('videoPerson', { name })}
+                    onClick={() => {
+                      void onVideo?.(person);
+                    }}
                   >
-                    {portrait}
-                  </span>
-                )}
+                    <Video className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    colorVariant="neutral"
+                    aria-label={t('chatPerson', { name })}
+                    onClick={() => {
+                      void onChat?.(person);
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             );
           })}

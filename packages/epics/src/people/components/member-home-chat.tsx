@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
+import { Volume2, VolumeX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -16,21 +17,15 @@ import { cn } from '@hypha-platform/ui-utils';
 
 import {
   AiPanelChatBar,
-  OnboardingDiscoveryModeToggle,
-  OnboardingVoiceInterviewBar,
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
-import {
-  loadSpaceDiscoveryMode,
-  saveSpaceDiscoveryMode,
-} from '../../common/ai-panel-discovery-mode';
-import type { OnboardingDiscoveryMode } from '../../common/onboarding-discovery-mode';
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildSpaceAdvisorVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
+import { PersonAvatar } from './person-avatar';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import {
   MemberHomePeopleWidgetCard,
@@ -48,8 +43,25 @@ type HomeWidget = {
   after: number;
 };
 
-/** Reserved discovery-mode key. Home must not share a space's voice preference. */
+/** Reserved key. Home must not share a space's voice session. */
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
+const HOME_SOUND_KEY = 'hypha-member-home-sound';
+
+function readHomeSoundOn() {
+  try {
+    return window.localStorage.getItem(HOME_SOUND_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function writeHomeSoundOn(on: boolean) {
+  try {
+    window.localStorage.setItem(HOME_SOUND_KEY, on ? 'on' : 'off');
+  } catch {
+    // The choice still applies for this visit.
+  }
+}
 
 type MemberHomeChatProps = {
   lang: Locale;
@@ -88,9 +100,8 @@ export function MemberHomeChat({
   const [input, setInput] = useState('');
   const [drafts, setDrafts] = useState<AiPanelDraftAttachment[]>([]);
   const [dismissedError, setDismissedError] = useState(false);
-  const [discoveryMode, setDiscoveryMode] =
-    useState<OnboardingDiscoveryMode>('chat');
-  const [discoveryModeReady, setDiscoveryModeReady] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const [soundReady, setSoundReady] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -201,13 +212,9 @@ export function MemberHomeChat({
   }, [send]);
 
   useEffect(() => {
-    setDiscoveryMode(
-      loadSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY, 'voice_interview'),
-    );
-    setDiscoveryModeReady(true);
+    setSoundOn(readHomeSoundOn());
+    setSoundReady(true);
   }, []);
-
-  const isVoiceInterview = discoveryMode === 'voice_interview';
 
   const lastAssistantText = useMemo(() => {
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
@@ -242,21 +249,17 @@ export function MemberHomeChat({
   );
 
   const voiceSessionContext = useMemo(() => {
-    if (!isVoiceInterview) return undefined;
+    if (!soundOn) return undefined;
     const spaceSlug = intelligence.chatSpaceSlug?.trim();
     if (!spaceSlug) return undefined;
     return buildSpaceAdvisorVoiceSessionContext({
       spaceSlug,
       locale: lang,
     });
-  }, [intelligence.chatSpaceSlug, isVoiceInterview, lang]);
+  }, [intelligence.chatSpaceSlug, lang, soundOn]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled:
-      discoveryModeReady &&
-      isVoiceInterview &&
-      !isAuthLoading &&
-      isAuthenticated,
+    enabled: soundReady && soundOn && !isAuthLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
     locale: lang,
@@ -269,31 +272,25 @@ export function MemberHomeChat({
     onSendTranscript: handleVoiceTranscriptSend,
   });
 
-  const handleDiscoveryModeChange = useCallback(
-    (mode: OnboardingDiscoveryMode) => {
-      if (mode === discoveryMode) return;
-      if (mode === 'chat') {
+  const toggleSound = useCallback(() => {
+    setSoundOn((current) => {
+      const next = !current;
+      if (!next) {
         voiceInterview.stopListening();
         voiceInterview.stopSpeaking();
       }
-      saveSpaceDiscoveryMode(HOME_VOICE_PREFERENCE_KEY, mode);
-      setDiscoveryMode(mode);
-    },
-    [discoveryMode, voiceInterview.stopListening, voiceInterview.stopSpeaking],
-  );
+      writeHomeSoundOn(next);
+      return next;
+    });
+  }, [voiceInterview.stopListening, voiceInterview.stopSpeaking]);
 
   useEffect(() => {
-    if (
-      !discoveryModeReady ||
-      opened.current ||
-      isAuthLoading ||
-      !isAuthenticated
-    ) {
+    if (!soundReady || opened.current || isAuthLoading || !isAuthenticated) {
       return;
     }
     opened.current = true;
     void send(t('homeArrival'), true);
-  }, [discoveryModeReady, isAuthenticated, isAuthLoading, send, t]);
+  }, [isAuthenticated, isAuthLoading, send, soundReady, t]);
 
   useEffect(() => {
     const node = scroller.current;
@@ -365,7 +362,7 @@ export function MemberHomeChat({
         className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-4 md:px-6"
         aria-label={t('conversation')}
       >
-        <div className="mx-auto grid w-full max-w-2xl gap-4">
+        <div className="grid w-full gap-4">
           {homeMessages.map((message, index) => {
             const attached = widgets.filter(
               (widget) => widget.after === index + 1,
@@ -382,6 +379,13 @@ export function MemberHomeChat({
               !message.metadata?.homeArrival && Boolean(text || threadItem);
             if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
+            const memberName =
+              [intelligence.person.name, intelligence.person.surname]
+                .filter(Boolean)
+                .join(' ')
+                .trim() ||
+              intelligence.person.nickname ||
+              t('fallbackMember');
             const proposal =
               threadItem?.kind === 'proposal'
                 ? intelligence.proposals.find(
@@ -394,14 +398,22 @@ export function MemberHomeChat({
                   <article
                     className={cn('flex gap-3', mine && 'flex-row-reverse')}
                   >
-                    {mine ? null : (
-                      <MemberHomeMark className="mt-0.5 h-8 w-8" />
+                    {mine ? (
+                      <PersonAvatar
+                        avatarSrc={intelligence.person.avatarUrl ?? undefined}
+                        userName={memberName}
+                        size="md"
+                        shape="circle"
+                        className="mt-0.5 shrink-0"
+                      />
+                    ) : (
+                      <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
                     )}
-                    <div className="grid min-w-0 gap-3">
+                    <div className="grid min-w-0 flex-1 gap-3">
                       {text ? (
                         <p
                           className={cn(
-                            'max-w-[46ch] whitespace-pre-wrap text-2 leading-relaxed',
+                            'whitespace-pre-wrap text-2 leading-relaxed',
                             mine ? 'text-foreground' : 'text-neutral-12',
                           )}
                         >
@@ -446,7 +458,7 @@ export function MemberHomeChat({
           {showSensing ? (
             <article className="flex gap-3" aria-live="polite">
               <MemberHomeMark className="mt-0.5 h-8 w-8" />
-              <p className="max-w-[46ch] text-2 leading-relaxed text-neutral-11">
+              <p className="text-2 leading-relaxed text-neutral-11">
                 {t('thinking')}
               </p>
             </article>
@@ -490,7 +502,7 @@ export function MemberHomeChat({
       ) : null}
 
       <div className="w-full min-w-0 shrink-0 border-t border-border">
-        <div className="mb-2 flex min-w-0 flex-wrap gap-2 px-3 pt-3 md:px-5">
+        <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 md:px-6">
           {chips.map((chip) => (
             <Button
               key={chip.key}
@@ -498,7 +510,7 @@ export function MemberHomeChat({
               variant="outline"
               colorVariant="neutral"
               disabled={isStreaming}
-              className="h-auto max-w-full min-w-0 shrink-0 whitespace-normal"
+              className="h-auto shrink-0 whitespace-nowrap"
               onClick={() => {
                 void send(chip.ask);
               }}
@@ -507,40 +519,50 @@ export function MemberHomeChat({
             </Button>
           ))}
         </div>
-        <div className="flex justify-center px-3 pb-1 pt-1">
-          <OnboardingDiscoveryModeToggle
-            mode={discoveryMode}
-            onChange={handleDiscoveryModeChange}
-          />
+        <div className="flex justify-end px-4 pt-1 md:px-6">
+          <button
+            type="button"
+            aria-pressed={soundOn}
+            aria-label={soundOn ? t('soundMute') : t('soundUnmute')}
+            title={soundOn ? t('soundMute') : t('soundUnmute')}
+            onClick={toggleSound}
+            className={cn(
+              'grid size-8 place-items-center border',
+              soundOn
+                ? 'border-foreground bg-foreground text-background'
+                : 'border-border bg-background text-neutral-11',
+            )}
+          >
+            {soundOn ? (
+              <Volume2 className="size-3.5" strokeWidth={1.25} aria-hidden />
+            ) : (
+              <VolumeX className="size-3.5" strokeWidth={1.25} aria-hidden />
+            )}
+          </button>
         </div>
-        {isVoiceInterview ? (
-          <OnboardingVoiceInterviewBar
-            phase={voiceInterview.phase}
-            liveTranscript={voiceInterview.liveTranscript}
-            voiceError={voiceInterview.voiceError}
-            disabled={isStreaming}
-            isConnecting={voiceInterview.isConnecting}
-            isRealtimeConnected={voiceInterview.isRealtimeConnected}
-            transport={voiceInterview.transport}
-            realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
-            usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
-            onToggleListening={voiceInterview.toggleListening}
-          />
-        ) : (
-          <AiPanelChatBar
-            value={input}
-            onChange={setInput}
-            onSend={() => {
-              void send(input);
-            }}
-            onStop={() => stop()}
-            isStreaming={isStreaming}
-            draftAttachments={drafts}
-            onDraftAttachmentsChange={setDrafts}
-            placeholder={t('chatPlaceholder')}
-            variant="panel"
-          />
-        )}
+        {soundOn && voiceInterview.liveTranscript ? (
+          <p className="px-4 pb-1 text-1 text-neutral-11 md:px-6">
+            “{voiceInterview.liveTranscript}”
+          </p>
+        ) : null}
+        {soundOn && voiceInterview.voiceError ? (
+          <p className="px-4 pb-1 text-1 text-neutral-11 md:px-6">
+            {t('soundNeedsMic')}
+          </p>
+        ) : null}
+        <AiPanelChatBar
+          value={input}
+          onChange={setInput}
+          onSend={() => {
+            void send(input);
+          }}
+          onStop={() => stop()}
+          isStreaming={isStreaming}
+          draftAttachments={drafts}
+          onDraftAttachmentsChange={setDrafts}
+          placeholder={t('chatPlaceholder')}
+          variant="panel"
+        />
       </div>
     </div>
   );

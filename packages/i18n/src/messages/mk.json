@@ -94,6 +94,9 @@
     "horizonReasonInterest": "Интерес",
     "horizonReasonExperience": "Искуство",
     "horizonSaveError": "Тој избор не можеше да се зачува.",
+    "soundMute": "Исклучи го звукот",
+    "soundUnmute": "Вклучи го звукот",
+    "soundNeedsMic": "Гласот го бара микрофонот. Сè уште можеш да пишуваш.",
     "quietHeading": "Оттука",
     "quietActivate": "Активирај простор",
     "quietActivateBody": "Донеси во мрежата простор на кој му припаѓаш.",
@@ -142,6 +145,8 @@
     "openMySpaces": "Отвори ги моите простори",
     "closestInSpaces": "Најблиски во твоите простори",
     "closestTalk": "Луѓе со кои зборуваш",
+    "morePeople": "+ {count} луѓе",
+    "seeMoreNotifications": "Види повеќе",
     "openPerson": "Отвори {name}"
   },
   "WelcomeFlow": {

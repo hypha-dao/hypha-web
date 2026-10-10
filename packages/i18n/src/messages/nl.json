@@ -94,6 +94,9 @@
     "horizonReasonInterest": "Interesse",
     "horizonReasonExperience": "Ervaring",
     "horizonSaveError": "Die keuze kon niet worden bewaard.",
+    "soundMute": "Geluid uitzetten",
+    "soundUnmute": "Geluid aanzetten",
+    "soundNeedsMic": "De stem heeft de microfoon nodig. Je kunt blijven typen.",
     "quietHeading": "Van hier",
     "quietActivate": "Een space activeren",
     "quietActivateBody": "Breng een space waar je bij hoort het netwerk in.",
@@ -142,6 +145,8 @@
     "openMySpaces": "Open mijn ruimtes",
     "closestInSpaces": "Dichtstbij in je ruimtes",
     "closestTalk": "Mensen met wie je praat",
+    "morePeople": "+ {count, plural, one {# persoon} other {# mensen}}",
+    "seeMoreNotifications": "Meer zien",
     "openPerson": "Open {name}"
   },
   "WelcomeFlow": {

@@ -94,6 +94,9 @@
     "horizonReasonInterest": "Interesse",
     "horizonReasonExperience": "Erfahrung",
     "horizonSaveError": "Diese Wahl konnte nicht gespeichert werden.",
+    "soundMute": "Ton ausschalten",
+    "soundUnmute": "Ton einschalten",
+    "soundNeedsMic": "Die Stimme braucht das Mikrofon. Du kannst weiter tippen.",
     "quietHeading": "Von hier",
     "quietActivate": "Einen Space aktivieren",
     "quietActivateBody": "Bring einen Space, zu dem du gehörst, ins Netzwerk.",
@@ -142,6 +145,8 @@
     "openMySpaces": "Meine Spaces öffnen",
     "closestInSpaces": "Am nächsten in deinen Spaces",
     "closestTalk": "Menschen, mit denen du sprichst",
+    "morePeople": "+ {count, plural, one {# Person} other {# Personen}}",
+    "seeMoreNotifications": "Mehr anzeigen",
     "openPerson": "{name} öffnen"
   },
   "WelcomeFlow": {

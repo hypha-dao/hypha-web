@@ -108,6 +108,14 @@ export function MemberHome({
     (person) => openCallRef.current(person),
     [],
   );
+  const openVideoRef = useRef<MemberHomeOpenChat>(async () => false);
+  const onOpenVideoReady = useCallback((openVideo: MemberHomeOpenChat) => {
+    openVideoRef.current = openVideo;
+  }, []);
+  const openVideo = useCallback<MemberHomeOpenChat>(
+    (person) => openVideoRef.current(person),
+    [],
+  );
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
@@ -199,11 +207,19 @@ export function MemberHome({
           )}
         </MemberHomeSpacesWidget>
         <div className="mt-4">
-          <Tile title={t('notifications')} busy={home == null}>
+          <Tile
+            title={t('notifications')}
+            count={
+              home && home.counts.notifications > 0
+                ? home.counts.notifications
+                : undefined
+            }
+            busy={home == null}
+          >
             <ResourceList
               isLoading={home == null}
               empty={t('noNotifications')}
-              maxItems={24}
+              maxItems={5}
               items={
                 home
                   ? home.notifications.map((item) => ({
@@ -211,13 +227,11 @@ export function MemberHome({
                       title: item.title,
                       detail: item.detail,
                       href:
-                        item.kind === 'proposal'
-                          ? getProposalPath(
-                              lang,
-                              item.spaceSlug,
-                              item.targetSlug,
-                            )
-                          : getSignalPath(
+                        item.kind === 'signal'
+                          ? `/${lang}/dho/${
+                              item.spaceSlug
+                            }?signal=${encodeURIComponent(item.targetSlug)}`
+                          : getProposalPath(
                               lang,
                               item.spaceSlug,
                               item.targetSlug,
@@ -226,26 +240,12 @@ export function MemberHome({
                   : []
               }
             />
-            <TileLink href={`/${lang}/my-spaces/notification-centre`}>
-              {t('seeAllNotifications')}
-            </TileLink>
+            {home && home.notifications.length > 5 ? (
+              <TileLink href={`/${lang}/my-spaces/notification-centre`}>
+                {t('seeMoreNotifications')}
+              </TileLink>
+            ) : null}
           </Tile>
-        </div>
-        <div className="mt-4" id="member-home-people">
-          {home ? (
-            <MemberHomePeople
-              people={home.connections}
-              chatSpaceSlug={home.chatSpaceSlug}
-              fallbackName={memberFallback}
-              extraPersonIds={reachIds}
-              onOpenChatReady={onOpenChatReady}
-              onOpenCallReady={onOpenCallReady}
-            />
-          ) : (
-            <Tile title={t('peopleTitle')} busy>
-              <CardSkeleton lines={4} />
-            </Tile>
-          )}
         </div>
       </aside>
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
@@ -268,11 +268,25 @@ export function MemberHome({
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-1 tracking-[0.16em] text-neutral-11 uppercase">
-                    {home.counts.connections > 0
-                      ? t('peopleAround', { count: home.counts.connections })
-                      : t('peopleAroundEmpty')}
-                  </p>
+                  <>
+                    <p className="mt-1 text-1 tracking-[0.16em] text-neutral-11 uppercase">
+                      {home.counts.connections > 0
+                        ? t('peopleAround', { count: home.counts.connections })
+                        : t('peopleAroundEmpty')}
+                    </p>
+                    {onChooseHorizon ? (
+                      <MemberHomeHorizon
+                        horizon={
+                          home.networkHorizon === 'network'
+                            ? 'network'
+                            : 'spaces'
+                        }
+                        isSaving={isSavingHorizon}
+                        error={horizonError}
+                        onChoose={onChooseHorizon}
+                      />
+                    ) : null}
+                  </>
                 )}
               </div>
             </div>
@@ -280,6 +294,7 @@ export function MemberHome({
               <MemberHomeClosest
                 lang={lang}
                 people={home.connections}
+                peopleCount={home.counts.connections}
                 fallbackName={memberFallback}
                 onOpenChat={openChat}
               />
@@ -298,16 +313,6 @@ export function MemberHome({
             )}
           </div>
         </div>
-        {home && onChooseHorizon ? (
-          <MemberHomeHorizon
-            lang={lang}
-            horizon={home.networkHorizon === 'network' ? 'network' : 'spaces'}
-            signals={home.networkSignals ?? []}
-            isSaving={isSavingHorizon}
-            error={horizonError}
-            onChoose={onChooseHorizon}
-          />
-        ) : null}
         {home ? (
           <MemberHomeChat
             lang={lang}
@@ -445,38 +450,6 @@ export function MemberHome({
                   </span>
                 </Link>
               )}
-              <button
-                type="button"
-                aria-pressed={home.networkHorizon === 'network'}
-                disabled={!onChooseHorizon || isSavingHorizon}
-                onClick={() => {
-                  if (home.networkHorizon !== 'network') {
-                    onChooseHorizon?.('network');
-                  }
-                }}
-                className={cn(
-                  'border px-4 py-3 text-left disabled:opacity-60',
-                  home.networkHorizon === 'network'
-                    ? 'border-foreground bg-foreground text-background'
-                    : 'border-border bg-background text-foreground hover:border-foreground',
-                )}
-              >
-                <span className="block text-2 font-medium">
-                  {home.networkHorizon === 'network'
-                    ? t('quietExploreOn')
-                    : t('quietExplore')}
-                </span>
-                <span
-                  className={cn(
-                    'mt-1 block text-1 leading-relaxed',
-                    home.networkHorizon === 'network'
-                      ? 'text-background/80'
-                      : 'text-neutral-11',
-                  )}
-                >
-                  {t('quietExploreBody')}
-                </span>
-              </button>
             </div>
           )}
           {home && lead ? (
@@ -486,7 +459,7 @@ export function MemberHome({
           ) : null}
         </section>
 
-        <dl className="mt-8 grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+        <dl className="mt-8 grid grid-cols-2 gap-px bg-border sm:grid-cols-[repeat(4,minmax(0,1fr))]">
           <Stat
             label={t('counts.spaces')}
             value={home?.counts.spaces ?? 0}
@@ -517,11 +490,24 @@ export function MemberHome({
             isHomeLoading={home == null}
           />
           <MemberHomeConnectionsWidget
-            lang={lang}
             people={home?.connections ?? []}
             isLoading={home == null}
             fallbackName={memberFallback}
+            onChat={home ? openChat : undefined}
+            onCall={home ? openCall : undefined}
+            onVideo={home ? openVideo : undefined}
           />
+          {home ? (
+            <MemberHomePeople
+              people={home.connections}
+              chatSpaceSlug={home.chatSpaceSlug}
+              fallbackName={memberFallback}
+              extraPersonIds={reachIds}
+              onOpenChatReady={onOpenChatReady}
+              onOpenCallReady={onOpenCallReady}
+              onOpenVideoReady={onOpenVideoReady}
+            />
+          ) : null}
         </div>
 
         <div className="mt-4 grid gap-4">
@@ -741,12 +727,12 @@ function Stat({
   isLoading?: boolean;
 }) {
   return (
-    <div className="bg-background px-4 py-4">
-      <dt className="text-1 tracking-[0.14em] text-neutral-11 uppercase">
+    <div className="min-w-0 overflow-hidden bg-background px-3 py-4">
+      <dt className="text-1 leading-tight tracking-[0.08em] text-neutral-11 uppercase">
         {label}
       </dt>
       <dd
-        className="mt-2 text-6 tabular-nums"
+        className="mt-2 text-4 leading-none tabular-nums"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         <Skeleton loading={isLoading} width="2.75rem" height="30px">
@@ -759,10 +745,12 @@ function Stat({
 
 function Tile({
   title,
+  count,
   children,
   busy = false,
 }: {
   title: string;
+  count?: number;
   children: ReactNode;
   busy?: boolean;
 }) {
@@ -771,12 +759,17 @@ function Tile({
       aria-busy={busy || undefined}
       className="flex flex-col border border-border bg-background/80 p-4"
     >
-      <h2
-        className="text-3"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
-        {title}
-      </h2>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2
+          className="text-3"
+          style={{ fontFamily: 'var(--font-family-heading)' }}
+        >
+          {title}
+        </h2>
+        {count != null ? (
+          <p className="text-2 tabular-nums text-neutral-11">{count}</p>
+        ) : null}
+      </div>
       <div className="mt-3 flex-1">{children}</div>
     </section>
   );

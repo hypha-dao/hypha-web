@@ -94,6 +94,9 @@
     "horizonReasonInterest": "Interesse",
     "horizonReasonExperience": "Erfaring",
     "horizonSaveError": "Valget kunne ikke lagres.",
+    "soundMute": "Slå av lyden",
+    "soundUnmute": "Slå på lyden",
+    "soundNeedsMic": "Stemmen trenger mikrofonen. Du kan fortsatt skrive.",
     "quietHeading": "Herfra",
     "quietActivate": "Aktiver et space",
     "quietActivateBody": "Ta et space du hører til inn i nettverket.",
@@ -142,6 +145,8 @@
     "openMySpaces": "Åpne mine rom",
     "closestInSpaces": "Nærmest i rommene dine",
     "closestTalk": "Folk du snakker med",
+    "morePeople": "+ {count, plural, one {# person} other {# personer}}",
+    "seeMoreNotifications": "Se mer",
     "openPerson": "Åpne {name}"
   },
   "WelcomeFlow": {
