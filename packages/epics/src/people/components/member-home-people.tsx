@@ -21,6 +21,8 @@ type HomePerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount?: number;
+  /** Space this conversation belongs to, when it was opened from one. */
+  spaceSlug?: string | null;
 };
 
 export type MemberHomeOpenChat = (person: HomePerson) => Promise<boolean>;
@@ -65,33 +67,70 @@ export function MemberHomePeople({
     for (const person of people) ids.add(person.id);
     return [...ids];
   }, [extraPersonIds, people]);
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds,
-  });
-  async function openRoom(title: string, ids: number[]) {
-    if (!matrix.isAuthenticated || !matrix.client) return null;
-    const { roomId } = await matrix.createRoom(title);
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds,
+    });
+  const matrixRef = useRef(matrix);
+  matrixRef.current = matrix;
+  const matrixIdsRef = useRef(personIdToMatrixUserId);
+  matrixIdsRef.current = personIdToMatrixUserId;
+  const matrixIdsLoadingRef = useRef(matrixIdsLoading);
+  matrixIdsLoadingRef.current = matrixIdsLoading;
+
+  function showRoom(
+    roomId: string | null,
+    title: string,
+    spaceSlug?: string | null,
+  ) {
+    openCoherenceChat(roomId, title, '', null, spaceSlug ?? chatSpaceSlug);
+  }
+
+  async function waitForMatrix() {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const current = matrixRef.current;
+      if (current.isAuthenticated && current.client) return current;
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+    }
+    return matrixRef.current;
+  }
+
+  async function waitForMatrixUserId(personId: number) {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const mxid = matrixIdsRef.current[personId];
+      if (mxid) return mxid;
+      if (!matrixIdsLoadingRef.current && attempt > 2) return null;
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+    }
+    return matrixIdsRef.current[personId] ?? null;
+  }
+
+  async function openRoom(
+    title: string,
+    ids: number[],
+    ready: Awaited<ReturnType<typeof waitForMatrix>>,
+  ) {
+    if (!ready.isAuthenticated || !ready.client) return null;
+    const { roomId } = await ready.createRoom(title);
     for (const id of ids) {
-      const mxid = personIdToMatrixUserId[id];
+      const mxid = await waitForMatrixUserId(id);
       if (!mxid) continue;
-      await matrix.client.invite(roomId, mxid).catch(() => undefined);
+      await ready.client.invite(roomId, mxid).catch(() => undefined);
     }
     return roomId;
   }
 
-  function showRoom(roomId: string | null, title: string) {
-    openCoherenceChat(roomId, title, '');
-  }
-
   async function resolvePersonRoom(person: HomePerson, title: string) {
-    showRoom(null, title);
-    const mxid = personIdToMatrixUserId[person.id];
-    const client = matrix.client;
+    const spaceSlug = person.spaceSlug ?? chatSpaceSlug;
+    showRoom(null, title, spaceSlug);
+    const ready = await waitForMatrix();
+    const client = ready.client;
     const selfId = client?.getUserId() ?? '';
-    if (!matrix.isAuthenticated || !client) {
+    if (!ready.isAuthenticated || !client) {
       setNotice(t('matrixUnavailable'));
       return null;
     }
+    const mxid = await waitForMatrixUserId(person.id);
     if (mxid && selfId) {
       const existing = findNamedDirectRoomId(
         readJoinedPeopleRooms(client).named,
@@ -101,7 +140,7 @@ export function MemberHomePeople({
       );
       if (existing) return existing;
     }
-    return openRoom(title, [person.id]);
+    return openRoom(title, [person.id], ready);
   }
 
   async function openPersonChat(person: HomePerson): Promise<boolean> {
@@ -113,7 +152,7 @@ export function MemberHomePeople({
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      showRoom(roomId, title);
+      showRoom(roomId, title, person.spaceSlug ?? chatSpaceSlug);
       return true;
     } catch {
       setNotice(t('matrixFailed'));
@@ -139,9 +178,10 @@ export function MemberHomePeople({
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      showRoom(roomId, title);
+      const spaceSlug = person.spaceSlug ?? chatSpaceSlug;
+      showRoom(roomId, title, spaceSlug);
       const start = video ? startVideoForRoom : startAudioForRoom;
-      await start(roomId, chatSpaceSlug, undefined, jwt, {
+      await start(roomId, spaceSlug, undefined, jwt, {
         roomTitle: title,
       });
       return true;
