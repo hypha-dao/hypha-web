@@ -445,7 +445,10 @@ export function MemberHomeChat({
               <div key={message.id} className="grid gap-4">
                 {showMessage ? (
                   <article
-                    className={cn('flex gap-3', mine && 'flex-row-reverse')}
+                    className={cn(
+                      'flex gap-3',
+                      mine ? 'justify-end' : 'justify-start',
+                    )}
                   >
                     {mine ? (
                       <PersonAvatar
@@ -458,10 +461,18 @@ export function MemberHomeChat({
                     ) : (
                       <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
                     )}
-                    <div className="grid min-w-0 flex-1 gap-3">
+                    <div
+                      className={cn(
+                        'grid min-w-0 gap-3',
+                        mine ? 'max-w-[85%] text-right' : 'flex-1',
+                      )}
+                    >
                       {text ? (
                         <p
-                          className="bg-background text-2 leading-relaxed whitespace-pre-wrap text-foreground"
+                          className={cn(
+                            'bg-background text-2 leading-relaxed whitespace-pre-wrap text-foreground',
+                            mine && 'text-right',
+                          )}
                           style={{
                             boxDecorationBreak: 'clone',
                             WebkitBoxDecorationBreak: 'clone',
