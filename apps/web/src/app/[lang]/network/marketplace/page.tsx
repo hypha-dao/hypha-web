@@ -20,10 +20,13 @@ type PageProps = {
 export default async function NetworkMarketplacePage(props: PageProps) {
   const { lang } = await props.params;
   const t = await getTranslations('Marketplace');
-  let asks: Awaited<ReturnType<typeof listNetworkCapitalAsks>> = [];
+  let asks: Awaited<ReturnType<typeof listNetworkCapitalAsks>>['asks'] = [];
+  let complete = true;
   let loadFailed = false;
   try {
-    asks = await listNetworkCapitalAsks({ limit: 24 }, { db });
+    const page = await listNetworkCapitalAsks({ limit: 24 }, { db });
+    asks = page.asks;
+    complete = page.complete;
   } catch (error) {
     loadFailed = true;
     console.error('[marketplace] Failed to load capital asks', error);
@@ -54,41 +57,52 @@ export default async function NetworkMarketplacePage(props: PageProps) {
         <p className="mt-10 border border-border p-5 text-2 text-error-11">
           {t('loadError')}
         </p>
-      ) : asks.length === 0 ? (
+      ) : asks.length === 0 && complete ? (
         <p className="mt-10 border border-border p-5 text-2 text-neutral-11">
           {t('empty')}
         </p>
       ) : (
-        <ul className="mt-10 grid gap-4">
-          {asks.map((ask) => {
-            const href = ask.slug
-              ? `/${lang}/dho/${ask.spaceSlug}/agreements/proposal/${ask.slug}`
-              : `/${lang}/dho/${ask.spaceSlug}/agreements`;
-            return (
-              <li key={ask.id} className="border border-border p-5">
-                <p className="text-1 tracking-[0.14em] text-neutral-11 uppercase">
-                  {ask.spaceTitle}
-                  {' · '}
-                  {ask.state === 'agreement' ? t('agreement') : t('proposal')}
-                </p>
-                <h2
-                  className="mt-2 text-4"
-                  style={{ fontFamily: 'var(--font-family-heading)' }}
-                >
-                  {ask.title}
-                </h2>
-                {ask.excerpt ? (
-                  <p className="mt-2 text-2 leading-relaxed text-neutral-11">
-                    {ask.excerpt}
-                  </p>
-                ) : null}
-                <Button asChild className="mt-4">
-                  <Link href={href}>{t('deploy')}</Link>
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {complete ? null : (
+            <p className="mt-10 border border-border p-5 text-2 text-neutral-11">
+              {t('incomplete')}
+            </p>
+          )}
+          {asks.length > 0 ? (
+            <ul className={complete ? 'mt-10 grid gap-4' : 'mt-4 grid gap-4'}>
+              {asks.map((ask) => {
+                const href = ask.slug
+                  ? `/${lang}/dho/${ask.spaceSlug}/agreements/proposal/${ask.slug}`
+                  : `/${lang}/dho/${ask.spaceSlug}/agreements`;
+                return (
+                  <li key={ask.id} className="border border-border p-5">
+                    <p className="text-1 tracking-[0.14em] text-neutral-11 uppercase">
+                      {ask.spaceTitle}
+                      {' · '}
+                      {ask.state === 'agreement'
+                        ? t('agreement')
+                        : t('proposal')}
+                    </p>
+                    <h2
+                      className="mt-2 text-4"
+                      style={{ fontFamily: 'var(--font-family-heading)' }}
+                    >
+                      {ask.title}
+                    </h2>
+                    {ask.excerpt ? (
+                      <p className="mt-2 text-2 leading-relaxed text-neutral-11">
+                        {ask.excerpt}
+                      </p>
+                    ) : null}
+                    <Button asChild className="mt-4">
+                      <Link href={href}>{t('deploy')}</Link>
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </>
       )}
     </div>
   );
