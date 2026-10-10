@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Hypha | My Wallet',
+  title: 'Hypha | Wallet',
   description: 'View your wallet, banking, transactions, and rewards.',
 };
 
