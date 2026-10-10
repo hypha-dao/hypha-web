@@ -2,6 +2,9 @@
   "MemberHome": {
     "panelSpaces": "Простори и луѓе",
     "panelInsights": "Што те чека",
+    "sensingAround": "Кој е тука сега",
+    "sensingAroundEmpty": "Никој не е најавен во моментов",
+    "sensingMore": "+{count}",
     "peopleTitle": "Луѓе",
     "invites": "Покани",
     "inviteDetail": "Линк за приклучување",

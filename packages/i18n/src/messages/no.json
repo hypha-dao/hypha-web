@@ -2,6 +2,9 @@
   "MemberHome": {
     "panelSpaces": "Rom og mennesker",
     "panelInsights": "Det som trenger deg",
+    "sensingAround": "Hvem som er her nå",
+    "sensingAroundEmpty": "Ingen er innlogget akkurat nå",
+    "sensingMore": "+{count}",
     "peopleTitle": "Mennesker",
     "invites": "Invitasjoner",
     "inviteDetail": "En lenke for å bli med",

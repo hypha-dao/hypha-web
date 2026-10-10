@@ -272,11 +272,12 @@ export function MemberHome({
                   />
                 ) : (
                   <>
-                    <p className="mt-1 text-1 tracking-[0.16em] text-neutral-11 uppercase">
-                      {home.counts.connections > 0
-                        ? t('peopleAround', { count: home.counts.connections })
-                        : t('peopleAroundEmpty')}
-                    </p>
+                    <MemberHomeClosest
+                      lang={lang}
+                      people={home.connections}
+                      fallbackName={memberFallback}
+                      onOpenChat={openChat}
+                    />
                     {onChooseHorizon ? (
                       <MemberHomeHorizon
                         horizon={
@@ -293,27 +294,6 @@ export function MemberHome({
                 )}
               </div>
             </div>
-            {home ? (
-              <MemberHomeClosest
-                lang={lang}
-                people={home.connections}
-                peopleCount={home.counts.connections}
-                fallbackName={memberFallback}
-                onOpenChat={openChat}
-              />
-            ) : (
-              <div className="flex gap-2" aria-hidden>
-                {Array.from({ length: 4 }, (_, index) => (
-                  <Skeleton
-                    key={index}
-                    loading
-                    height="32px"
-                    width="32px"
-                    className="rounded-full"
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </div>
         {home ? (

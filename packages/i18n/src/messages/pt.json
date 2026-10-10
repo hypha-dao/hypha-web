@@ -2,6 +2,9 @@
   "MemberHome": {
     "panelSpaces": "Espaços e pessoas",
     "panelInsights": "O que precisa de ti",
+    "sensingAround": "Quem está por perto",
+    "sensingAroundEmpty": "Ninguém está com sessão iniciada agora",
+    "sensingMore": "+{count}",
     "peopleTitle": "Pessoas",
     "invites": "Convites",
     "inviteDetail": "Uma ligação para entrar",
