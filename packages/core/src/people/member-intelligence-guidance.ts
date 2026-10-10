@@ -12,6 +12,23 @@ export function parseMemberOrientation(
   return null;
 }
 
+function invitation(category: string | null | undefined): string {
+  switch ((category ?? '').trim().toLowerCase()) {
+    case 'need':
+    case 'action':
+      return 'Can you make it?';
+    case 'tension':
+    case 'risk':
+      return 'Want to talk it through?';
+    case 'impact':
+      return 'Want to see what changed?';
+    case 'opportunity':
+      return 'Want to look at it together?';
+    default:
+      return 'Want a little more context?';
+  }
+}
+
 export function buildMemberGuidance(input: {
   firstName: string;
   orientation: MemberOrientation | null;
@@ -19,6 +36,9 @@ export function buildMemberGuidance(input: {
     title: string;
     spaceTitle: string;
     kind: MemberAttentionKind;
+    category?: string | null;
+    summary?: string | null;
+    creatorName?: string | null;
   } | null;
   spaceCount: number;
 }): string {
@@ -26,11 +46,17 @@ export function buildMemberGuidance(input: {
   const lead = input.attention;
 
   if (lead) {
-    const action =
-      lead.kind === 'proposal'
-        ? 'is open for a decision'
-        : 'is asking for attention';
-    return `Hi ${name}. ${lead.title} in ${lead.spaceTitle} ${action}. That is the most useful place to step in right now.`;
+    const summary = lead.summary?.trim();
+    const who = lead.creatorName?.trim();
+    if (lead.kind === 'signal' && who && summary) {
+      return `Hi ${name}. ${who} in ${
+        lead.spaceTitle
+      } shared this: ${summary} ${invitation(lead.category)}`;
+    }
+    if (lead.kind === 'proposal') {
+      return `Hi ${name}. ${lead.title} in ${lead.spaceTitle} is open for a vote. The choice stays with you.`;
+    }
+    return `Hi ${name}. ${lead.title} in ${lead.spaceTitle} is here if you want to look. The choice stays with you.`;
   }
 
   if (input.spaceCount === 0) {

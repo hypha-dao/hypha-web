@@ -32,7 +32,9 @@ type MemberHomePeopleProps = {
   people: HomePerson[];
   chatSpaceSlug: string | null;
   fallbackName: string;
+  extraPersonIds?: number[];
   onOpenChatReady?: (openChat: MemberHomeOpenChat) => void;
+  onOpenCallReady?: (openCall: MemberHomeOpenChat) => void;
 };
 
 function labelOf(person: HomePerson, fallback: string) {
@@ -52,7 +54,9 @@ export function MemberHomePeople({
   people,
   chatSpaceSlug,
   fallbackName,
+  extraPersonIds,
   onOpenChatReady,
+  onOpenCallReady,
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { jwt } = useJwt();
@@ -72,11 +76,13 @@ export function MemberHomePeople({
   const [notice, setNotice] = useState<string | null>(null);
   const pendingEnter = useRef<'audio' | 'video' | null>(null);
   const openPersonChatRef = useRef<MemberHomeOpenChat>(async () => false);
+  const openPersonCallRef = useRef<MemberHomeOpenChat>(async () => false);
 
-  const personIds = useMemo(
-    () => [...people, ...network].map((person) => person.id),
-    [people, network],
-  );
+  const personIds = useMemo(() => {
+    const ids = new Set<number>(extraPersonIds ?? []);
+    for (const person of [...people, ...network]) ids.add(person.id);
+    return [...ids];
+  }, [extraPersonIds, people, network]);
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds,
   });
@@ -184,6 +190,33 @@ export function MemberHomePeople({
   useEffect(() => {
     onOpenChatReady?.((person) => openPersonChatRef.current(person));
   }, [onOpenChatReady]);
+
+  async function openPersonCall(person: HomePerson): Promise<boolean> {
+    setNotice(null);
+    try {
+      const title = labelOf(person, fallbackName);
+      const roomId = await openRoom(title, [person.id]);
+      if (!roomId) {
+        setNotice(t('matrixUnavailable'));
+        return false;
+      }
+      pendingEnter.current = 'audio';
+      setLiveRoomId(roomId);
+      setThread({ roomId, title });
+      setGathering(false);
+      revealPeoplePanel();
+      return true;
+    } catch {
+      setNotice(t('callFailed'));
+      return false;
+    }
+  }
+
+  openPersonCallRef.current = openPersonCall;
+
+  useEffect(() => {
+    onOpenCallReady?.((person) => openPersonCallRef.current(person));
+  }, [onOpenCallReady]);
 
   async function startChat(person: HomePerson) {
     const opened = await openPersonChat(person);

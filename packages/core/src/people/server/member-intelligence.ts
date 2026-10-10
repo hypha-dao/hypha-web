@@ -258,6 +258,54 @@ function excerpt(value: string | null | undefined, max = 180): string {
   return `${text.slice(0, max - 1).trimEnd()}…`;
 }
 
+function optionalExcerpt(value: string | null | undefined): string | null {
+  const text = excerpt(value, 220);
+  return text || null;
+}
+
+function leadAttention(
+  note: MemberAttentionItem | undefined,
+  records: {
+    signals: MemberIntelligence['signals'];
+    proposals: MemberIntelligence['proposals'];
+  },
+) {
+  if (!note) return null;
+  if (note.kind === 'signal') {
+    const signal = records.signals.find(
+      (item) => item.slug === note.targetSlug,
+    );
+    return {
+      title: note.title,
+      spaceTitle: note.spaceTitle,
+      kind: note.kind,
+      category: signal?.type ?? note.category ?? null,
+      summary: signal?.description ?? note.summary ?? null,
+      creatorName: signal?.creatorName ?? note.creatorName ?? null,
+    };
+  }
+  const proposal = records.proposals.find(
+    (item) => item.slug === note.targetSlug,
+  );
+  return {
+    title: note.title,
+    spaceTitle: note.spaceTitle,
+    kind: note.kind,
+    category: proposal?.label ?? note.category ?? null,
+    summary: proposal?.description ?? note.summary ?? null,
+    creatorName: proposal?.creatorName ?? note.creatorName ?? null,
+  };
+}
+
+function creatorLabel(
+  name: string | null,
+  surname: string | null,
+  nickname: string | null,
+): string | null {
+  const full = [name, surname].filter(Boolean).join(' ').trim();
+  return full || nickname?.trim() || null;
+}
+
 export async function getMemberIntelligence(
   { personId, limit = LIST_LIMIT }: { personId: number; limit?: number },
   { db }: DbConfig,
@@ -301,6 +349,10 @@ export async function getMemberIntelligence(
                 creatorId: documents.creatorId,
                 createdAt: documents.createdAt,
                 web3ProposalId: documents.web3ProposalId,
+                creatorName: people.name,
+                creatorSurname: people.surname,
+                creatorNickname: people.nickname,
+                creatorAvatarUrl: people.avatarUrl,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
                 logoUrl: spaces.logoUrl,
@@ -309,6 +361,7 @@ export async function getMemberIntelligence(
               })
               .from(documents)
               .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+              .leftJoin(people, eq(documents.creatorId, people.id))
               .where(
                 and(
                   inArray(documents.spaceId, spaceIds),
@@ -346,6 +399,14 @@ export async function getMemberIntelligence(
           createdAt: row.createdAt.toISOString(),
           authoredByMember: row.creatorId === personId,
           web3ProposalId: row.web3ProposalId,
+          description: optionalExcerpt(row.description),
+          creatorId: row.creatorId,
+          creatorName: creatorLabel(
+            row.creatorName,
+            row.creatorSurname,
+            row.creatorNickname,
+          ),
+          creatorAvatarUrl: row.creatorAvatarUrl,
         })),
         openProposals: Number(openProposalCount) || 0,
       };
@@ -370,6 +431,12 @@ export async function getMemberIntelligence(
                 type: coherences.type,
                 priority: coherences.priority,
                 assigneeIds: coherences.assigneeIds,
+                description: coherences.description,
+                creatorId: coherences.creatorId,
+                creatorName: people.name,
+                creatorSurname: people.surname,
+                creatorNickname: people.nickname,
+                creatorAvatarUrl: people.avatarUrl,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
                 logoUrl: spaces.logoUrl,
@@ -378,6 +445,7 @@ export async function getMemberIntelligence(
               })
               .from(coherences)
               .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+              .leftJoin(people, eq(coherences.creatorId, people.id))
               .where(
                 and(
                   inArray(coherences.spaceId, spaceIds),
@@ -419,6 +487,14 @@ export async function getMemberIntelligence(
           spaceTitle: row.spaceTitle,
           spaceLogo: toSpaceLogo(row),
           assignedToMember: (row.assigneeIds ?? []).includes(personId),
+          description: optionalExcerpt(row.description),
+          creatorId: row.creatorId,
+          creatorName: creatorLabel(
+            row.creatorName,
+            row.creatorSurname,
+            row.creatorNickname,
+          ),
+          creatorAvatarUrl: row.creatorAvatarUrl,
         })),
         count: Number(signalCount) || 0,
       };
@@ -598,7 +674,10 @@ export async function getMemberIntelligence(
       narrative: buildMemberGuidance({
         firstName,
         orientation,
-        attention: notificationSlice.items[0] ?? null,
+        attention: leadAttention(notificationSlice.items[0], {
+          signals: signalSlice.signals,
+          proposals: proposalSlice.proposals,
+        }),
         spaceCount: spaceRows.length,
       }),
     },

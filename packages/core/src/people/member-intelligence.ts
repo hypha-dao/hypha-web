@@ -16,6 +16,12 @@ export type MemberAttentionItem = {
   spaceTitle: string;
   targetSlug: string;
   spaceLogo?: MemberSpaceLogo | null;
+  /** Signal type, or the proposal label when one is set. */
+  category?: string | null;
+  summary?: string | null;
+  creatorId?: number | null;
+  creatorName?: string | null;
+  creatorAvatarUrl?: string | null;
 };
 
 export type MemberIntelligence = {
@@ -65,6 +71,10 @@ export type MemberIntelligence = {
     authoredByMember: boolean;
     /** On-chain proposal id used to vote without leaving home. Null for discussions. */
     web3ProposalId: number | null;
+    description: string | null;
+    creatorId: number | null;
+    creatorName: string | null;
+    creatorAvatarUrl: string | null;
   }>;
   signals: Array<{
     id: number;
@@ -76,6 +86,10 @@ export type MemberIntelligence = {
     spaceTitle: string;
     spaceLogo?: MemberSpaceLogo | null;
     assignedToMember: boolean;
+    description: string | null;
+    creatorId: number | null;
+    creatorName: string | null;
+    creatorAvatarUrl: string | null;
   }>;
   notifications: MemberAttentionItem[];
   connections: Array<{

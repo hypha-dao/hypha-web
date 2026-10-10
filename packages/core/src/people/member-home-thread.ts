@@ -20,7 +20,60 @@ export type MemberHomeThreadItem = {
   documentKind: string;
   authoredByMember: boolean;
   spaceLogo?: MemberIntelligence['proposals'][number]['spaceLogo'];
+  /** Signal type, or a proposal label such as Governance. */
+  category: string | null;
+  summary: string | null;
+  creatorId: number | null;
+  creatorName: string | null;
+  creatorAvatarUrl: string | null;
 };
+
+export type MemberHomeSignalCta =
+  | 'help'
+  | 'take'
+  | 'impact'
+  | 'discuss'
+  | 'call'
+  | 'context'
+  | 'later';
+
+/** The action that fits this signal. Insight asks for context. A need asks for a hand. */
+export function memberHomeSignalAction(
+  category: string | null | undefined,
+): Exclude<MemberHomeSignalCta, 'later'> {
+  switch ((category ?? '').trim().toLowerCase()) {
+    case 'need':
+      return 'help';
+    case 'action':
+      return 'take';
+    case 'impact':
+      return 'impact';
+    case 'opportunity':
+      return 'discuss';
+    case 'risk':
+    case 'tension':
+      return 'call';
+    default:
+      return 'context';
+  }
+}
+
+/**
+ * Primary action first, then the next human steps for this category.
+ * A call is only offered when someone raised the signal.
+ */
+export function memberHomeSignalCtas(input: {
+  category: string | null | undefined;
+  hasCreator: boolean;
+}): MemberHomeSignalCta[] {
+  let primary = memberHomeSignalAction(input.category);
+  if (primary === 'call' && !input.hasCreator) primary = 'discuss';
+  const secondary: MemberHomeSignalCta[] = [];
+  if (input.hasCreator && primary !== 'call') secondary.push('call');
+  if (primary !== 'discuss') secondary.push('discuss');
+  if (primary !== 'context') secondary.push('context');
+  return [primary, ...secondary.slice(0, 2), 'later'];
+}
 
 /** Label source for the card. A vote stays a proposal. Other states keep their kind. */
 export function memberHomeDocumentKind(input: {
@@ -129,6 +182,12 @@ export function listMemberHomeThreadItems(
           label: proposal?.label,
         }),
         authoredByMember: proposal?.authoredByMember ?? false,
+        category: proposal?.label ?? note.category ?? null,
+        summary: proposal?.description ?? note.summary ?? null,
+        creatorId: proposal?.creatorId ?? note.creatorId ?? null,
+        creatorName: proposal?.creatorName ?? note.creatorName ?? null,
+        creatorAvatarUrl:
+          proposal?.creatorAvatarUrl ?? note.creatorAvatarUrl ?? null,
       });
       continue;
     }
@@ -142,6 +201,12 @@ export function listMemberHomeThreadItems(
       action: 'validate',
       documentKind: 'signal',
       authoredByMember: false,
+      category: signal?.type ?? note.category ?? null,
+      summary: signal?.description ?? note.summary ?? null,
+      creatorId: signal?.creatorId ?? note.creatorId ?? null,
+      creatorName: signal?.creatorName ?? note.creatorName ?? null,
+      creatorAvatarUrl:
+        signal?.creatorAvatarUrl ?? note.creatorAvatarUrl ?? null,
     });
   }
 
@@ -160,6 +225,11 @@ export function listMemberHomeThreadItems(
         label: proposal.label,
       }),
       authoredByMember: proposal.authoredByMember,
+      category: proposal.label,
+      summary: proposal.description,
+      creatorId: proposal.creatorId,
+      creatorName: proposal.creatorName,
+      creatorAvatarUrl: proposal.creatorAvatarUrl,
     });
   }
 
@@ -174,6 +244,11 @@ export function listMemberHomeThreadItems(
       action: 'validate',
       documentKind: 'signal',
       authoredByMember: false,
+      category: signal.type,
+      summary: signal.description,
+      creatorId: signal.creatorId,
+      creatorName: signal.creatorName,
+      creatorAvatarUrl: signal.creatorAvatarUrl,
     });
   }
 

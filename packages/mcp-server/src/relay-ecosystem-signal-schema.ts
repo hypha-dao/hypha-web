@@ -9,7 +9,17 @@ export const relayEcosystemSignalInputSchema = z
     recommended_action: z.string().trim().min(10).max(1500),
     relevance_rationale: z.string().trim().min(20).max(2000),
     type: z
-      .enum(['Opportunity', 'Risk', 'Tension', 'Insight', 'Trend', 'Proposal'])
+      .enum([
+        'Opportunity',
+        'Risk',
+        'Tension',
+        'Insight',
+        'Need',
+        'Action',
+        'Impact',
+        'Trend',
+        'Proposal',
+      ])
       .optional()
       .default('Opportunity'),
     priority: z

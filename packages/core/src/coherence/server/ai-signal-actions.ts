@@ -18,6 +18,9 @@ export type SignalType =
   | 'Risk'
   | 'Tension'
   | 'Insight'
+  | 'Need'
+  | 'Action'
+  | 'Impact'
   | 'Trend'
   | 'Proposal';
 export type SignalPriority = 'critical' | 'high' | 'medium' | 'low';

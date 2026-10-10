@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -14,13 +14,18 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import type { MemberIntelligence } from '@hypha-platform/core/client';
+import {
+  listMemberHomeThreadItems,
+  type MemberIntelligence,
+} from '@hypha-platform/core/client';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
 import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import { requestMemberHomeAsk } from './member-home-ask';
 import { MemberHomeChat } from './member-home-chat';
+import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeClosest } from './member-home-closest';
 import {
@@ -86,6 +91,14 @@ export function MemberHome({
     (person) => openChatRef.current(person),
     [],
   );
+  const openCallRef = useRef<MemberHomeOpenChat>(async () => false);
+  const onOpenCallReady = useCallback((openCall: MemberHomeOpenChat) => {
+    openCallRef.current = openCall;
+  }, []);
+  const openCall = useCallback<MemberHomeOpenChat>(
+    (person) => openCallRef.current(person),
+    [],
+  );
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
@@ -98,7 +111,27 @@ export function MemberHome({
     home?.person.nickname?.trim() ||
     greetingName?.trim() ||
     t('fallbackName');
+  const tTypes = useTranslations('CoherenceTab');
   const lead = home?.attention[0];
+  const leadItem = useMemo(() => {
+    if (!home || !lead?.targetSlug) return null;
+    return (
+      listMemberHomeThreadItems(home).find(
+        (item) => item.kind === lead.kind && item.slug === lead.targetSlug,
+      ) ?? null
+    );
+  }, [home, lead]);
+  const reachIds = useMemo(() => {
+    if (!home) return [];
+    const ids = new Set<number>();
+    for (const signal of home.signals) {
+      if (signal.creatorId) ids.add(signal.creatorId);
+    }
+    for (const proposal of home.proposals) {
+      if (proposal.creatorId) ids.add(proposal.creatorId);
+    }
+    return [...ids];
+  }, [home]);
   const leadHref = lead
     ? lead.kind === 'proposal'
       ? getProposalPath(lang, lead.spaceSlug, lead.targetSlug)
@@ -195,7 +228,9 @@ export function MemberHome({
               people={home.connections}
               chatSpaceSlug={home.chatSpaceSlug}
               fallbackName={memberFallback}
+              extraPersonIds={reachIds}
               onOpenChatReady={onOpenChatReady}
+              onOpenCallReady={onOpenCallReady}
             />
           ) : (
             <Tile title={t('peopleTitle')} busy>
@@ -255,7 +290,12 @@ export function MemberHome({
           </div>
         </div>
         {home ? (
-          <MemberHomeChat lang={lang} intelligence={home} />
+          <MemberHomeChat
+            lang={lang}
+            intelligence={home}
+            onChatPerson={openChat}
+            onCallPerson={openCall}
+          />
         ) : (
           <div className="flex-1 px-4 py-6">
             <CardSkeleton lines={4} />
@@ -328,6 +368,24 @@ export function MemberHome({
           {home == null ? (
             <div className="mt-4">
               <CardSkeleton lines={3} />
+            </div>
+          ) : leadItem && home ? (
+            <div className="mt-4">
+              <MemberHomeThreadCard
+                lang={lang}
+                item={leadItem}
+                proposal={
+                  leadItem.kind === 'proposal'
+                    ? home.proposals.find(
+                        (item) => item.slug === leadItem.slug,
+                      ) ?? null
+                    : null
+                }
+                onAsk={requestMemberHomeAsk}
+                onReach={(person, mode) =>
+                  mode === 'call' ? openCall(person) : openChat(person)
+                }
+              />
             </div>
           ) : lead ? (
             <div className="mt-4">
@@ -402,7 +460,18 @@ export function MemberHome({
                             {
                               id: signal.id,
                               title: signal.title,
-                              detail: signal.spaceTitle,
+                              detail: [
+                                tTypes.has(
+                                  `types.${signal.type}` as 'types.Need',
+                                )
+                                  ? tTypes(
+                                      `types.${signal.type}` as 'types.Need',
+                                    )
+                                  : signal.type,
+                                signal.spaceTitle,
+                              ]
+                                .filter(Boolean)
+                                .join(' · '),
                               href: getSignalPath(
                                 lang,
                                 signal.spaceSlug,
