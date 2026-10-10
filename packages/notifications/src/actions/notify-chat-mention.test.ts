@@ -35,6 +35,31 @@ describe('buildMentionEmailBody', () => {
     expect(html).not.toContain('<script>');
   });
 
+  it('renders the notification settings link in the footer when provided', () => {
+    const html = buildMentionEmailBody({
+      actorDisplayName: 'Alice',
+      messagePreview: 'hi',
+      url: 'https://app.hypha.earth/en/dho/test?msg=1',
+      notificationSettingsUrl:
+        'https://app.hypha.earth/en/network/notification-centre',
+    });
+
+    expect(html).toContain(
+      'href="https://app.hypha.earth/en/network/notification-centre"',
+    );
+    expect(html).toContain('Manage notification settings');
+  });
+
+  it('omits the settings link when no url is provided', () => {
+    const html = buildMentionEmailBody({
+      actorDisplayName: 'Alice',
+      messagePreview: 'hi',
+      url: 'https://app.hypha.earth/en/dho/test?msg=1',
+    });
+
+    expect(html).not.toContain('Manage notification settings');
+  });
+
   it('renders styled layout without preview block when preview is empty', () => {
     const html = buildMentionEmailBody({
       actorDisplayName: 'Alice',
