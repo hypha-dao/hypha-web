@@ -17,6 +17,8 @@ function invitation(category: string | null | undefined): string {
     case 'need':
     case 'action':
       return 'Can you make it?';
+    case 'resource':
+      return 'Want to draw on it?';
     case 'tension':
     case 'risk':
       return 'Want to talk it through?';
