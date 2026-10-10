@@ -1008,11 +1008,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceTitle,
     coherenceSlug,
     coherenceDescription,
+    coherenceSpaceSlug,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  const callSpaceSlug =
+    (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
+    coherenceSpaceSlug?.trim() ||
+    null;
   const { jwt: authToken } = useJwt();
   const { useSendNotifications } = useHookRegistry();
   const { notifyCallStarted } = useSendNotifications({
@@ -1616,7 +1621,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       refreshSpaceCall(
         'audio',
         roomId,
-        spaceSlug ?? null,
+        callSpaceSlug,
         undefined,
         authToken,
         launchContext,
@@ -1625,7 +1630,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     void startAudioForRoom(
       roomId,
-      spaceSlug ?? null,
+      callSpaceSlug,
       undefined,
       authToken,
       launchContext,
@@ -1638,7 +1643,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     resolveCallLaunchContext,
     roomId,
     spaceCallSelfStalePresence,
-    spaceSlug,
+    callSpaceSlug,
     startAudioForRoom,
   ]);
 
@@ -1650,7 +1655,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       refreshSpaceCall(
         'video',
         roomId,
-        spaceSlug ?? null,
+        callSpaceSlug,
         undefined,
         authToken,
         launchContext,
@@ -1659,7 +1664,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     void startVideoForRoom(
       roomId,
-      spaceSlug ?? null,
+      callSpaceSlug,
       undefined,
       authToken,
       launchContext,
@@ -1672,7 +1677,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     resolveCallLaunchContext,
     roomId,
     spaceCallSelfStalePresence,
-    spaceSlug,
+    callSpaceSlug,
     startVideoForRoom,
   ]);
 
@@ -2057,7 +2062,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (spaceCallState !== 'connected') return;
     if (!pendingCallStartNotifyRef.current) return;
-    if (!callUiEnabled || !roomId?.trim() || !spaceSlug?.trim() || !authToken) {
+    if (!callUiEnabled || !roomId?.trim() || !callSpaceSlug || !authToken) {
       return;
     }
 
@@ -2074,7 +2079,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ? buildCallJoinHref(target)
         : buildCallJoinHref({
             lang,
-            spaceSlug: spaceSlug.trim(),
+            spaceSlug: callSpaceSlug,
             roomId: stableRoomId,
             signalSlug:
               mode === 'coherence' ? coherenceSlug?.trim() || null : null,
@@ -2090,12 +2095,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const contextLabel =
       mode === 'coherence'
         ? coherenceTitle?.trim() || coherenceSlug?.trim() || space?.title
-        : space?.title?.trim() || spaceSlug.trim();
+        : space?.title?.trim() || callSpaceSlug;
 
     void notifyCallStarted({
       actorSlug: me?.slug,
       actorDisplayName,
-      spaceSlug: spaceSlug.trim(),
+      spaceSlug: callSpaceSlug,
       contextLabel,
       scope:
         isSignalThread && hasSignalTeamPolicy ? 'signal_team' : 'space_members',
@@ -2130,7 +2135,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     signalTeamMemberIds,
     space?.title,
     spaceCallState,
-    spaceSlug,
+    callSpaceSlug,
     t,
   ]);
 
@@ -4595,7 +4600,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   refreshSpaceCall(
                     spaceCallKind ?? 'video',
                     roomId,
-                    spaceSlug ?? null,
+                    callSpaceSlug,
                     undefined,
                     authToken,
                     resolveCallLaunchContext(),

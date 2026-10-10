@@ -61,11 +61,14 @@ export type HumanChatPanelContextValue = {
   coherenceTitle: string | null;
   coherenceSlug: string | null;
   coherenceDescription: string | null;
+  /** Space a direct conversation belongs to, so a call can start the way it does in that space. */
+  coherenceSpaceSlug: string | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
     slug: string,
     description?: string | null,
+    spaceSlug?: string | null,
   ) => void;
   closeCoherenceChat: () => void;
 };
@@ -82,6 +85,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceTitle: null,
   coherenceSlug: null,
   coherenceDescription: null,
+  coherenceSpaceSlug: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
 });
@@ -109,6 +113,9 @@ export function HumanChatPanelProvider({
   const [coherenceDescription, setCoherenceDescription] = useState<
     string | null
   >(null);
+  const [coherenceSpaceSlug, setCoherenceSpaceSlug] = useState<string | null>(
+    null,
+  );
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
 
   const setUnreadMentionCount = useCallback((count: number) => {
@@ -122,11 +129,13 @@ export function HumanChatPanelProvider({
       title: string,
       slug: string,
       description?: string | null,
+      spaceSlug?: string | null,
     ) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
       setCoherenceSlug(slug);
       setCoherenceDescription(description?.trim() ? description.trim() : null);
+      setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setMode('coherence');
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
@@ -140,6 +149,7 @@ export function HumanChatPanelProvider({
     setCoherenceTitle(null);
     setCoherenceSlug(null);
     setCoherenceDescription(null);
+    setCoherenceSpaceSlug(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -164,6 +174,7 @@ export function HumanChatPanelProvider({
         coherenceTitle,
         coherenceSlug,
         coherenceDescription,
+        coherenceSpaceSlug,
         openCoherenceChat,
         closeCoherenceChat,
       }}
