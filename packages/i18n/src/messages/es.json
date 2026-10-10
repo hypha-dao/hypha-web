@@ -1960,6 +1960,7 @@
   "Network": {
     "manySpaces": "Muchos espacios,",
     "oneVibrantNetwork": "Una red",
+    "loading": "Cargando la red",
     "findASpace": "Encuentra un espacio",
     "createSpace": "Crear espacio",
     "mostMembers": "La mayoría de los miembros",

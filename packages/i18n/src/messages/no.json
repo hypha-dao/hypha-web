@@ -1759,6 +1759,7 @@
   "Network": {
     "manySpaces": "Mange rom,",
     "oneVibrantNetwork": "Ett nettverk",
+    "loading": "Laster nettverket",
     "findASpace": "Finn et rom",
     "createSpace": "Opprett rom",
     "mostMembers": "Flest medlemmer",
