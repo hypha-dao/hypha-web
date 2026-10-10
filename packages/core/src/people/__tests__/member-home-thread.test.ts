@@ -244,6 +244,23 @@ describe('memberHomeThreadItemForMessage', () => {
     expect(item).toBeNull();
   });
 
+  it('uses the person named in the reply when the title is absent', () => {
+    const item = memberHomeThreadItemForMessage(
+      [
+        {
+          ...items[1],
+          creatorName: 'Gerardo Roza',
+        },
+        items[0],
+      ].filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)),
+      {
+        content:
+          'Hi Alex. The next item is a proposal to invite Gerardo Roza as a member. Want to take a look?',
+      },
+    );
+    expect(item?.slug).toBe('invite-member');
+  });
+
   it('leaves a greeting with no item empty', () => {
     const item = memberHomeThreadItemForMessage(items, {
       parts: [

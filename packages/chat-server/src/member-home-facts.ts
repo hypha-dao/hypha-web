@@ -111,6 +111,14 @@ export function formatMemberHomeFacts(
           )
           .join('; ')}.`
       : null,
+    stillWaiting[0]
+      ? `Card on screen: kind=${stillWaiting[0].kind} slug=${
+          stillWaiting[0].slug
+        } title="${(stillWaiting[0].title ?? '').replace(
+          /"/g,
+          "'",
+        )}". This reply is about that card only. Name that title. Do not name any other title.`
+      : null,
     'Waiting items, most recent discussions first, then everything else they have not passed on. The reply starts with item 1. Do not summarise the list:',
     waitingLines,
     alreadyShown.length > 0

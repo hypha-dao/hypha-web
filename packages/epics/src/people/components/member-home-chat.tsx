@@ -9,6 +9,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   listMemberHomeThreadItems,
   memberHomeThreadItemForMessage,
+  type MemberHomeThreadItem,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
@@ -88,6 +89,7 @@ type MemberHomeChatProps = {
   intelligence: MemberIntelligence;
   onChatPerson: MemberHomeOpenChat;
   onCallPerson: MemberHomeOpenChat;
+  onFocusItem?: (item: MemberHomeThreadItem | null) => void;
 };
 
 type HomeMessage = UIMessage & {
@@ -110,6 +112,7 @@ export function MemberHomeChat({
   intelligence,
   onChatPerson,
   onCallPerson,
+  onFocusItem,
 }: MemberHomeChatProps) {
   const t = useTranslations('MemberHome');
   const {
@@ -335,6 +338,19 @@ export function MemberHomeChat({
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
   );
+  const focusedItem = useMemo(() => {
+    for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
+      const message = homeMessages[index];
+      if (!message || message.role !== 'assistant') continue;
+      if (message.metadata?.homeArrival) continue;
+      const item = memberHomeThreadItemForMessage(threadItems, message);
+      if (item) return item;
+    }
+    return null;
+  }, [homeMessages, threadItems]);
+  useEffect(() => {
+    onFocusItem?.(focusedItem);
+  }, [focusedItem, onFocusItem]);
   const showSensing = useMemo(() => {
     if (!isStreaming) return false;
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
