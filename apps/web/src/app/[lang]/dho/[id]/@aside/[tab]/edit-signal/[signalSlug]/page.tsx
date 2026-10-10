@@ -67,7 +67,6 @@ export default async function EditSignalPage({ params }: PageProps) {
           videoUrl: signal.videoUrl,
           attachments: signal.attachments ?? [],
           sharedWithNetwork: signal.sharedWithNetwork ?? false,
-          sharedWithNetwork: signal.sharedWithNetwork ?? false,
         }}
         successfulUrl={successfulUrl}
         closeUrl={successfulUrl}
