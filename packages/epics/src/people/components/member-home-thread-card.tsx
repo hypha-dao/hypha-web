@@ -21,11 +21,12 @@ import { MemberHomeVote } from './member-home-vote';
 import { PersonAvatar } from './person-avatar';
 
 const SIGNAL_TYPES = [
-  'Opportunity',
-  'Risk',
-  'Tension',
-  'Insight',
   'Need',
+  'Resource',
+  'Opportunity',
+  'Insight',
+  'Tension',
+  'Risk',
   'Action',
   'Impact',
   'Trend',
@@ -154,6 +155,8 @@ export function MemberHomeThreadCard({
     switch (cta) {
       case 'help':
         return t('helpWithThis');
+      case 'share':
+        return t('shareThis');
       case 'take':
         return t('takeThis');
       case 'impact':
@@ -173,6 +176,9 @@ export function MemberHomeThreadCard({
     switch (cta) {
       case 'help':
         ask(t('helpChosen', { title: item.title }), true);
+        return;
+      case 'share':
+        ask(t('shareChosen', { title: item.title }), true);
         return;
       case 'take':
         ask(t('takeChosen', { title: item.title }), true);

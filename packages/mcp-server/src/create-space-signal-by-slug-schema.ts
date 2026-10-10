@@ -17,11 +17,12 @@ export const createSpaceSignalBySlugInputSchema = z.object({
   description: z.string().trim().min(20).max(5000),
   type: z
     .enum([
-      'Opportunity',
-      'Risk',
-      'Tension',
-      'Insight',
       'Need',
+      'Resource',
+      'Opportunity',
+      'Insight',
+      'Tension',
+      'Risk',
       'Action',
       'Impact',
       'Trend',

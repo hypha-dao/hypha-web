@@ -30,6 +30,7 @@ export type MemberHomeThreadItem = {
 
 export type MemberHomeSignalCta =
   | 'help'
+  | 'share'
   | 'take'
   | 'impact'
   | 'discuss'
@@ -44,6 +45,8 @@ export function memberHomeSignalAction(
   switch ((category ?? '').trim().toLowerCase()) {
     case 'need':
       return 'help';
+    case 'resource':
+      return 'share';
     case 'action':
       return 'take';
     case 'impact':

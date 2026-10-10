@@ -158,6 +158,7 @@ describe('listMemberHomeThreadItems', () => {
 describe('memberHomeSignalCtas', () => {
   it('offers a hand for a need and a conversation for tension', () => {
     expect(memberHomeSignalAction('Need')).toBe('help');
+    expect(memberHomeSignalAction('Resource')).toBe('share');
     expect(memberHomeSignalAction('Action')).toBe('take');
     expect(memberHomeSignalAction('Impact')).toBe('impact');
     expect(memberHomeSignalAction('Tension')).toBe('call');

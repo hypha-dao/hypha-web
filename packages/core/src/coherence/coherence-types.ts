@@ -1,28 +1,23 @@
-export const COHERENCE_TYPES = [
-  'Opportunity',
-  'Risk',
-  'Tension',
-  'Insight',
-  'Need',
-  'Action',
-  'Impact',
-  'Trend',
-  'Proposal',
-] as const;
-
-export type CoherenceType = (typeof COHERENCE_TYPES)[number];
-
 export const COHERENCE_SIGNAL_TYPES = [
-  'Opportunity',
-  'Risk',
-  'Tension',
-  'Insight',
   'Need',
+  'Resource',
+  'Opportunity',
+  'Insight',
+  'Tension',
+  'Risk',
   'Action',
   'Impact',
 ] as const;
 
 export type CoherenceSignalType = (typeof COHERENCE_SIGNAL_TYPES)[number];
+
+export const COHERENCE_TYPES = [
+  ...COHERENCE_SIGNAL_TYPES,
+  'Trend',
+  'Proposal',
+] as const;
+
+export type CoherenceType = (typeof COHERENCE_TYPES)[number];
 
 export const COHERENCE_TYPE_OPTIONS: {
   icon: string;
@@ -32,25 +27,25 @@ export const COHERENCE_TYPE_OPTIONS: {
   description: string;
 }[] = [
   {
+    icon: 'HandHelping',
+    colorVariant: 'success',
+    type: 'Need',
+    title: 'Need',
+    description: 'Someone is asking for a hand',
+  },
+  {
+    icon: 'Package',
+    colorVariant: 'neutral',
+    type: 'Resource',
+    title: 'Resource',
+    description: 'Something that can be shared or drawn on',
+  },
+  {
     icon: 'ArrowUpRight',
     colorVariant: 'success',
     type: 'Opportunity',
     title: 'Opportunity',
     description: 'Coordination window or positive opening',
-  },
-  {
-    icon: 'TriangleAlert',
-    colorVariant: 'error',
-    type: 'Risk',
-    title: 'Risk',
-    description: 'Threat, concern or danger ahead',
-  },
-  {
-    icon: 'Flame',
-    colorVariant: 'tension',
-    type: 'Tension',
-    title: 'Tension',
-    description: 'Conflict or disagreement needing resolution',
   },
   {
     icon: 'Lightbulb',
@@ -60,11 +55,18 @@ export const COHERENCE_TYPE_OPTIONS: {
     description: 'Data-driven observation or discovery',
   },
   {
-    icon: 'HandHelping',
-    colorVariant: 'success',
-    type: 'Need',
-    title: 'Need',
-    description: 'Someone is asking for a hand',
+    icon: 'Flame',
+    colorVariant: 'tension',
+    type: 'Tension',
+    title: 'Tension',
+    description: 'Conflict or disagreement needing resolution',
+  },
+  {
+    icon: 'TriangleAlert',
+    colorVariant: 'error',
+    type: 'Risk',
+    title: 'Risk',
+    description: 'Threat, concern or danger ahead',
   },
   {
     icon: 'ListChecks',

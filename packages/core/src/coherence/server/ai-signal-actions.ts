@@ -14,11 +14,12 @@ import {
 const PAYMENT_CHAIN_ID = 8453 as const;
 
 export type SignalType =
-  | 'Opportunity'
-  | 'Risk'
-  | 'Tension'
-  | 'Insight'
   | 'Need'
+  | 'Resource'
+  | 'Opportunity'
+  | 'Insight'
+  | 'Tension'
+  | 'Risk'
   | 'Action'
   | 'Impact'
   | 'Trend'
