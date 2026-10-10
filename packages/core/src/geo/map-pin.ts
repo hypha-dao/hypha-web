@@ -9,11 +9,40 @@ export type MapPinCoordinates = {
 };
 
 /**
- * Inhabited band of the world map. The globe does not sample land polygons
- * when placing a pin, so fallback pins spread across these bounds.
+ * Inland boxes on the continents. A uniform sample of the globe lands in
+ * the ocean most of the time, so a space with no real place is pinned
+ * inside one of these instead.
  */
-const FALLBACK_LATITUDE_MIN = -55;
-const FALLBACK_LATITUDE_MAX = 70;
+const CONTINENTAL_LAND = [
+  { latMin: 31, latMax: 49, lonMin: -114, lonMax: -90 },
+  { latMin: 32, latMax: 45, lonMin: -90, lonMax: -78 },
+  { latMin: 49, latMax: 60, lonMin: -120, lonMax: -97 },
+  { latMin: 20, latMax: 30, lonMin: -106, lonMax: -98 },
+  { latMin: -32, latMax: -12, lonMin: -64, lonMax: -48 },
+  { latMin: -10, latMax: 2, lonMin: -70, lonMax: -52 },
+  { latMin: 42, latMax: 54, lonMin: -4, lonMax: 18 },
+  { latMin: 48, latMax: 60, lonMin: 12, lonMax: 30 },
+  { latMin: -28, latMax: -12, lonMin: 18, lonMax: 30 },
+  { latMin: -6, latMax: 12, lonMin: 14, lonMax: 32 },
+  { latMin: 8, latMax: 28, lonMin: -5, lonMax: 24 },
+  { latMin: 22, latMax: 40, lonMin: 73, lonMax: 88 },
+  { latMin: 26, latMax: 42, lonMin: 102, lonMax: 120 },
+  { latMin: 45, latMax: 58, lonMin: 62, lonMax: 90 },
+  { latMin: -34, latMax: -22, lonMin: 124, lonMax: 145 },
+] as const;
+
+export function isContinentalLandPin(
+  latitude: number,
+  longitude: number,
+): boolean {
+  return CONTINENTAL_LAND.some(
+    (box) =>
+      latitude >= box.latMin &&
+      latitude <= box.latMax &&
+      longitude >= box.lonMin &&
+      longitude <= box.lonMax,
+  );
+}
 
 function mix32(value: number): number {
   let x = value >>> 0;
@@ -26,35 +55,28 @@ function unitInterval(spaceId: number, salt: number): number {
   return mix32(Math.imul(spaceId, 0x9e3779b1) ^ salt) / 4294967296;
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 /**
  * Stable map position for a space that has no saved coordinates and no
  * geocodable creator location. The same space id always yields the same
- * point. These coordinates are a pin only — never written onto the space.
+ * point, on continental land. These coordinates are a pin only — never
+ * written onto the space.
  */
 export function deterministicMapPin(spaceId: number): {
   latitude: number;
   longitude: number;
 } {
   const id = Number.isInteger(spaceId) && spaceId > 0 ? spaceId : 1;
-  let latitude = roundCoordinate(
-    FALLBACK_LATITUDE_MIN +
-      unitInterval(id, 0x85ebca6b) *
-        (FALLBACK_LATITUDE_MAX - FALLBACK_LATITUDE_MIN),
+  const boxIndex = Math.min(
+    CONTINENTAL_LAND.length - 1,
+    Math.floor(unitInterval(id, 0x85ebca6b) * CONTINENTAL_LAND.length),
   );
-  let longitude = roundCoordinate(-180 + unitInterval(id, 0xc2b2ae35) * 360);
-
-  latitude = clamp(latitude, FALLBACK_LATITUDE_MIN, FALLBACK_LATITUDE_MAX);
-  longitude = clamp(longitude, -180, 180);
-  if (longitude === 180) {
-    longitude = -180;
-  }
-  if (isNullIsland(latitude, longitude)) {
-    longitude = longitude >= 0 ? 1 : -1;
-  }
+  const box = CONTINENTAL_LAND[boxIndex] ?? CONTINENTAL_LAND[0];
+  const latitude = roundCoordinate(
+    box.latMin + unitInterval(id, 0xa5a5a5a5) * (box.latMax - box.latMin),
+  );
+  const longitude = roundCoordinate(
+    box.lonMin + unitInterval(id, 0xc2b2ae35) * (box.lonMax - box.lonMin),
+  );
 
   return { latitude, longitude };
 }

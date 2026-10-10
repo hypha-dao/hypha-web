@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { deterministicMapPin, resolveSpaceMapPin } from '../map-pin';
+import {
+  deterministicMapPin,
+  isContinentalLandPin,
+  resolveSpaceMapPin,
+} from '../map-pin';
 
 describe('deterministicMapPin', () => {
   it('returns the same point for the same space id', () => {
@@ -23,10 +27,19 @@ describe('deterministicMapPin', () => {
     ).toBe(40);
 
     for (const pin of pins) {
-      expect(pin.latitude).toBeGreaterThanOrEqual(-55);
-      expect(pin.latitude).toBeLessThanOrEqual(70);
-      expect(pin.longitude).toBeGreaterThanOrEqual(-180);
-      expect(pin.longitude).toBeLessThanOrEqual(180);
+      expect(isContinentalLandPin(pin.latitude, pin.longitude)).toBe(true);
+    }
+  });
+
+  it('does not place a fallback pin in open ocean', () => {
+    const ocean = [
+      { latitude: 0, longitude: -30 },
+      { latitude: 0, longitude: -160 },
+      { latitude: -50, longitude: 20 },
+      { latitude: 20, longitude: 70 },
+    ];
+    for (const point of ocean) {
+      expect(isContinentalLandPin(point.latitude, point.longitude)).toBe(false);
     }
   });
 });
