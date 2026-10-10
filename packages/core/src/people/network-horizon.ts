@@ -111,7 +111,25 @@ export type MemberHorizonProfile = {
 };
 
 function plain(value: string | null | undefined): string {
-  return (value ?? '').replace(/<[^>]+>/g, ' ');
+  const text = value ?? '';
+  let out = '';
+  let index = 0;
+  while (index < text.length) {
+    const start = text.indexOf('<', index);
+    if (start < 0) {
+      out += text.slice(index);
+      break;
+    }
+    out += text.slice(index, start);
+    const end = text.indexOf('>', start + 1);
+    if (end < 0) {
+      out += text.slice(start);
+      break;
+    }
+    out += ' ';
+    index = end + 1;
+  }
+  return out;
 }
 
 function tokens(

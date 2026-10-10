@@ -3,12 +3,17 @@ export type SignalVideoEmbed =
   | { kind: 'vimeo'; src: string }
   | { kind: 'file'; src: string };
 
+function hostIs(hostname: string, root: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === root || host.endsWith(`.${root}`);
+}
+
 function youtubeId(url: URL): string | null {
   if (url.hostname === 'youtu.be') {
     const id = url.pathname.split('/').filter(Boolean)[0];
     return id || null;
   }
-  if (!url.hostname.endsWith('youtube.com')) return null;
+  if (!hostIs(url.hostname, 'youtube.com')) return null;
   if (url.pathname === '/watch') return url.searchParams.get('v');
   const parts = url.pathname.split('/').filter(Boolean);
   if (parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') {
@@ -18,7 +23,7 @@ function youtubeId(url: URL): string | null {
 }
 
 function vimeoId(url: URL): string | null {
-  if (!url.hostname.endsWith('vimeo.com')) return null;
+  if (!hostIs(url.hostname, 'vimeo.com')) return null;
   const parts = url.pathname.split('/').filter(Boolean);
   const id = parts[0] === 'video' ? parts[1] : parts[0];
   return id && /^\d+$/.test(id) ? id : null;
