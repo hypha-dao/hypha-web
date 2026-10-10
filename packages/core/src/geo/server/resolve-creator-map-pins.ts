@@ -11,7 +11,8 @@ import { searchNominatim } from './nominatim';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const GEOCODE_CONCURRENCY = 4;
-const GEOCODE_BUDGET_MS = 8_000;
+/** Kept short so the network page can answer before the platform cuts it off. */
+const GEOCODE_BUDGET_MS = 3_000;
 
 export type CreatorMapSpace = {
   id: number;
@@ -161,28 +162,40 @@ export async function resolveCreatorMapCoordinates(
     string,
     { latitude: number; longitude: number }
   >();
+  const controller = new AbortController();
+  const budgetTimer = setTimeout(() => controller.abort(), GEOCODE_BUDGET_MS);
+  const lookup =
+    geocode === searchNominatim
+      ? (query: string, limit?: number) =>
+          searchNominatim(query, limit, controller.signal)
+      : geocode;
 
-  await mapPool(
-    uniqueLocations,
-    GEOCODE_CONCURRENCY,
-    Date.now() + GEOCODE_BUDGET_MS,
-    async (location) => {
-      try {
-        const [match] = await geocode(location, 1);
-        if (!match) {
-          return;
+  try {
+    await mapPool(
+      uniqueLocations,
+      GEOCODE_CONCURRENCY,
+      Date.now() + GEOCODE_BUDGET_MS,
+      async (location) => {
+        if (controller.signal.aborted) return;
+        try {
+          const [match] = await lookup(location, 1);
+          if (!match) {
+            return;
+          }
+          coordinatesByLocation.set(location, {
+            latitude: match.latitude,
+            longitude: match.longitude,
+          });
+        } catch (error) {
+          console.error('[resolveCreatorMapCoordinates] geocode failed', {
+            error,
+          });
         }
-        coordinatesByLocation.set(location, {
-          latitude: match.latitude,
-          longitude: match.longitude,
-        });
-      } catch (error) {
-        console.error('[resolveCreatorMapCoordinates] geocode failed', {
-          error,
-        });
-      }
-    },
-  );
+      },
+    );
+  } finally {
+    clearTimeout(budgetTimer);
+  }
 
   const pins: Record<number, { latitude: number; longitude: number }> = {};
   for (const [spaceId, location] of queries) {
