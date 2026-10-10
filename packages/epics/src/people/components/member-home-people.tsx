@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@hypha-platform/ui';
 import {
   findNamedDirectRoomId,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
-  useSpaceGroupCall,
 } from '@hypha-platform/core/client';
 
+import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { readJoinedPeopleRooms } from './member-home-closest';
 
@@ -53,11 +52,10 @@ export function MemberHomePeople({
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { openCoherenceChat } = useHumanChatPanel();
+  const { startAudioForRoom, startVideoForRoom } = useGlobalCallDock();
   const { jwt } = useJwt();
   const matrix = useMatrix();
-  const [liveRoomId, setLiveRoomId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const pendingEnter = useRef<'audio' | 'video' | null>(null);
   const openPersonChatRef = useRef<MemberHomeOpenChat>(async () => false);
   const openPersonCallRef = useRef<MemberHomeOpenChat>(async () => false);
   const openPersonVideoRef = useRef<MemberHomeOpenChat>(async () => false);
@@ -70,19 +68,6 @@ export function MemberHomePeople({
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds,
   });
-  const call = useSpaceGroupCall(liveRoomId, {
-    authToken: jwt,
-    spaceSlug: chatSpaceSlug,
-  });
-
-  useEffect(() => {
-    const mode = pendingEnter.current;
-    if (!mode || !liveRoomId) return;
-    pendingEnter.current = null;
-    const start = mode === 'video' ? call.enterVideo : call.enterAudio;
-    void start().catch(() => setNotice(t('callFailed')));
-  }, [call.enterAudio, call.enterVideo, liveRoomId, t]);
-
   async function openRoom(title: string, ids: number[]) {
     if (!matrix.isAuthenticated || !matrix.client) return null;
     const { roomId } = await matrix.createRoom(title);
@@ -94,37 +79,45 @@ export function MemberHomePeople({
     return roomId;
   }
 
-  function showRoom(roomId: string, title: string) {
+  function showRoom(roomId: string | null, title: string) {
     openCoherenceChat(roomId, title, '');
   }
 
-  async function openPersonChat(person: HomePerson): Promise<boolean> {
-    setNotice(null);
-    const title = labelOf(person, fallbackName);
+  async function resolvePersonRoom(person: HomePerson, title: string) {
+    showRoom(null, title);
     const mxid = personIdToMatrixUserId[person.id];
     const client = matrix.client;
     const selfId = client?.getUserId() ?? '';
-    if (matrix.isAuthenticated && client && mxid && selfId) {
+    if (!matrix.isAuthenticated || !client) {
+      setNotice(t('matrixUnavailable'));
+      return null;
+    }
+    if (mxid && selfId) {
       const existing = findNamedDirectRoomId(
         readJoinedPeopleRooms(client).named,
         selfId,
         mxid,
         title,
       );
-      if (existing) {
-        showRoom(existing, title);
-        return true;
-      }
+      if (existing) return existing;
     }
-    if (!matrix.isAuthenticated || !client || !mxid) return false;
+    return openRoom(title, [person.id]);
+  }
+
+  async function openPersonChat(person: HomePerson): Promise<boolean> {
+    setNotice(null);
+    const title = labelOf(person, fallbackName);
     try {
-      const roomId = await openRoom(title, [person.id]);
-      if (!roomId) return false;
+      const roomId = await resolvePersonRoom(person, title);
+      if (!roomId) {
+        setNotice(t('matrixUnavailable'));
+        return false;
+      }
       showRoom(roomId, title);
       return true;
     } catch {
       setNotice(t('matrixFailed'));
-      return true;
+      return false;
     }
   }
 
@@ -139,16 +132,18 @@ export function MemberHomePeople({
     video: boolean,
   ): Promise<boolean> {
     setNotice(null);
+    const title = labelOf(person, fallbackName);
     try {
-      const title = labelOf(person, fallbackName);
-      const roomId = await openRoom(title, [person.id]);
+      const roomId = await resolvePersonRoom(person, title);
       if (!roomId) {
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      pendingEnter.current = video ? 'video' : 'audio';
-      setLiveRoomId(roomId);
       showRoom(roomId, title);
+      const start = video ? startVideoForRoom : startAudioForRoom;
+      await start(roomId, chatSpaceSlug, undefined, jwt, {
+        roomTitle: title,
+      });
       return true;
     } catch {
       setNotice(t('callFailed'));
@@ -167,31 +162,11 @@ export function MemberHomePeople({
     onOpenVideoReady?.((person) => openPersonVideoRef.current(person));
   }, [onOpenVideoReady]);
 
-  if (!notice && call.callState === 'idle') return null;
+  if (!notice) return null;
 
   return (
-    <div className="grid gap-3">
-      {notice ? (
-        <p className="text-2 text-error-11" role="alert">
-          {notice}
-        </p>
-      ) : null}
-      {call.callState !== 'idle' ? (
-        <div className="flex items-center justify-between gap-2 border border-border bg-background-2 p-3">
-          <p className="text-2">{t('inCall')}</p>
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            onClick={() => {
-              void call.leave();
-              setLiveRoomId(null);
-            }}
-          >
-            {t('hangUp')}
-          </Button>
-        </div>
-      ) : null}
-    </div>
+    <p className="text-2 text-error-11" role="alert">
+      {notice}
+    </p>
   );
 }

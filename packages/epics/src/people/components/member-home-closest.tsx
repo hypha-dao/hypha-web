@@ -155,7 +155,7 @@ export function MemberHomeClosest({
   return (
     <nav
       aria-label={label}
-      className="flex min-w-0 max-w-full flex-col items-end gap-2 bg-background/80 px-2 py-1.5"
+      className="flex min-w-0 max-w-full flex-col items-end gap-2"
     >
       <p className="text-right text-1 font-medium tracking-[0.08em] text-foreground uppercase">
         {label}

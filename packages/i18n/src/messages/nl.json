@@ -96,6 +96,8 @@
     "horizonSaveError": "Die keuze kon niet worden bewaard.",
     "soundMute": "Geluid uitzetten",
     "soundUnmute": "Geluid aanzetten",
+    "micMute": "Microfoon uitzetten",
+    "micUnmute": "Microfoon aanzetten",
     "soundNeedsMic": "De stem heeft de microfoon nodig. Je kunt blijven typen.",
     "quietHeading": "Van hier",
     "quietActivate": "Een space activeren",
@@ -110,6 +112,11 @@
     "votedNo": "Je zei nee",
     "voteFailed": "De stem kwam niet door. Je kunt het opnieuw proberen.",
     "voteNeedsChain": "Dit besluit kan nog niet worden vastgelegd.",
+    "onVoting": "In stemming",
+    "closesIn": "Sluit over {time}",
+    "fromTreasury": "uit de treasury",
+    "yesCount": "{count} ja",
+    "noCount": "{count} nee",
     "visitSpace": "Space bezoeken",
     "kindProposal": "Voorstel",
     "kindSignal": "Signaal",
@@ -147,7 +154,9 @@
     "closestTalk": "Mensen met wie je praat",
     "morePeople": "+ {count, plural, one {# persoon} other {# mensen}}",
     "seeMoreNotifications": "Meer zien",
-    "openPerson": "Open {name}"
+    "openPerson": "Open {name}",
+    "signals": "Signalen die je nodig hebben",
+    "proposals": "Voorstellen om mee te wegen"
   },
   "WelcomeFlow": {
     "errors": {

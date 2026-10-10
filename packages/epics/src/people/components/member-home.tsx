@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { Locale } from '@hypha-platform/i18n';
 import {
-  Badge,
   Button,
   Popover,
   PopoverContent,
@@ -20,7 +19,11 @@ import {
   type NetworkHorizon,
 } from '@hypha-platform/core/client';
 
-import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import {
+  getOnboardingPath,
+  getProposalPath,
+  getSignalPath,
+} from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
 import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
@@ -167,7 +170,7 @@ export function MemberHome({
       </div>
       <aside
         aria-label={t('panelSpaces')}
-        className="order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
+        className="order-2 max-h-[36rem] overflow-y-auto border-t border-border bg-background px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
       >
         {home && home.invites.length > 0 ? (
           <div className="mb-4">
@@ -328,12 +331,12 @@ export function MemberHome({
       </main>
       <aside
         aria-label={t('panelInsights')}
-        className="order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
+        className="order-3 max-h-[36rem] overflow-y-auto border-t border-border bg-background px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
       >
         {home == null ? (
           <Skeleton loading height="22px" width="7.5rem" className="mt-3" />
         ) : orientation == null ? (
-          <section className="mt-10 border border-border bg-background/80 p-5">
+          <section className="mt-10 border border-border bg-background p-5">
             <h2
               className="text-4"
               style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -373,7 +376,7 @@ export function MemberHome({
         )}
 
         <section
-          className="mt-10 border border-border bg-background/85 p-5"
+          className="mt-10 border border-border bg-background p-5"
           aria-busy={home == null || undefined}
         >
           <div className="flex items-baseline justify-between gap-4">
@@ -439,7 +442,7 @@ export function MemberHome({
                 </Link>
               ) : (
                 <Link
-                  href={`/${lang}/my-spaces/create`}
+                  href={getOnboardingPath(lang)}
                   className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
                 >
                   <span className="block text-2 font-medium">
@@ -583,7 +586,7 @@ export function MemberHome({
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Button asChild>
-            <Link href={`/${lang}/my-spaces/create`}>{t('createSpace')}</Link>
+            <Link href={getOnboardingPath(lang)}>{t('createSpace')}</Link>
           </Button>
         </div>
 
@@ -592,7 +595,7 @@ export function MemberHome({
             title={t('builderTitle')}
             body={t('builderBody')}
             action={t('builderAction')}
-            href={`/${lang}/onboarding`}
+            href={getOnboardingPath(lang)}
           />
         ) : null}
         {orientation === 'investor' && home ? (
@@ -635,19 +638,10 @@ function OrientationBadge({
             type="button"
             disabled={isSaving}
             aria-label={t('changeOrientationLabel', { orientation: label })}
-            className="inline-flex items-center gap-2 rounded-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-none text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
           >
-            <Badge
-              size={1}
-              variant="outline"
-              colorVariant="neutral"
-              className="border-foreground/80 bg-background text-foreground hover:border-foreground hover:bg-neutral-3 hover:text-foreground"
-            >
-              {label}
-            </Badge>
-            <span className="text-1 font-medium tracking-[0.12em] text-neutral-11 uppercase">
-              {t('changeOrientation')}
-            </span>
+            <OrientationGlyph orientation={orientation} />
+            <span className="text-2 font-medium">{label}</span>
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -693,6 +687,35 @@ function OrientationBadge({
         </p>
       ) : null}
     </div>
+  );
+}
+
+function OrientationGlyph({ orientation }: { orientation: SignupOrientation }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden
+      className="block shrink-0 text-foreground"
+      style={{ width: 20, height: 20 }}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinejoin="miter"
+    >
+      {orientation === 'member' ? (
+        <>
+          <circle cx="16" cy="16" r="10" />
+          <circle cx="16" cy="16" r="3.75" />
+        </>
+      ) : null}
+      {orientation === 'builder' ? (
+        <>
+          <rect x="6" y="12" width="14" height="14" />
+          <path d="M12 12V6h14v14h-6" />
+        </>
+      ) : null}
+      {orientation === 'investor' ? <path d="M16 6 26 16 16 26 6 16Z" /> : null}
+    </svg>
   );
 }
 
@@ -757,7 +780,7 @@ function Tile({
   return (
     <section
       aria-busy={busy || undefined}
-      className="flex flex-col border border-border bg-background/80 p-4"
+      className="flex flex-col border border-border bg-background p-4"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2

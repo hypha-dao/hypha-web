@@ -19,6 +19,7 @@ import { Empty } from '@hypha-platform/epics';
 import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
+import { getOnboardingPath } from '../../common/get-path-function';
 
 export type MemberSpacesProps = {
   spaces?: Space[];
@@ -71,7 +72,7 @@ export const MemberSpaces = ({
               <Link
                 className={!isAuthenticated ? 'cursor-not-allowed' : ''}
                 title={!isAuthenticated ? tCommon('signIn') : ''}
-                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
+                href={isAuthenticated ? getOnboardingPath(lang as Locale) : {}}
                 scroll={false}
               >
                 <Button disabled={!isAuthenticated} className="gap-2">

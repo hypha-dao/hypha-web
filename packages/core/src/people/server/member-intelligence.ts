@@ -413,7 +413,10 @@ async function loadNetworkHorizonSignals(
 
 function excerpt(value: string | null | undefined, max = 180): string {
   const text = (value ?? '')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
     .replace(/<[^>]+>/g, ' ')
+    .replace(/[*_`>#]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= max) return text;
@@ -511,6 +514,8 @@ export async function getMemberIntelligence(
                 creatorId: documents.creatorId,
                 createdAt: documents.createdAt,
                 web3ProposalId: documents.web3ProposalId,
+                web3SpaceId: spaces.web3SpaceId,
+                leadImage: documents.leadImage,
                 creatorName: people.name,
                 creatorSurname: people.surname,
                 creatorNickname: people.nickname,
@@ -561,6 +566,8 @@ export async function getMemberIntelligence(
           createdAt: row.createdAt.toISOString(),
           authoredByMember: row.creatorId === personId,
           web3ProposalId: row.web3ProposalId,
+          web3SpaceId: row.web3SpaceId,
+          leadImage: row.leadImage,
           description: optionalExcerpt(row.description),
           creatorId: row.creatorId,
           creatorName: creatorLabel(
@@ -843,6 +850,75 @@ export async function getMemberIntelligence(
         )
       : [];
 
+  const listedProposalSlugs = new Set(
+    proposalSlice.proposals.flatMap((proposal) =>
+      proposal.slug ? [proposal.slug] : [],
+    ),
+  );
+  const missingProposalSlugs = notificationSlice.items.flatMap((item) =>
+    item.kind === 'proposal' &&
+    item.targetSlug &&
+    !listedProposalSlugs.has(item.targetSlug)
+      ? [item.targetSlug]
+      : [],
+  );
+  const missingProposals =
+    missingProposalSlugs.length === 0
+      ? []
+      : await db
+          .select({
+            id: documents.id,
+            slug: documents.slug,
+            title: documents.title,
+            state: documents.state,
+            label: documents.label,
+            description: documents.description,
+            creatorId: documents.creatorId,
+            createdAt: documents.createdAt,
+            web3ProposalId: documents.web3ProposalId,
+            web3SpaceId: spaces.web3SpaceId,
+            leadImage: documents.leadImage,
+            creatorName: people.name,
+            creatorSurname: people.surname,
+            creatorNickname: people.nickname,
+            creatorAvatarUrl: people.avatarUrl,
+            spaceSlug: spaces.slug,
+            spaceTitle: spaces.title,
+            logoUrl: spaces.logoUrl,
+            ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+            ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+          })
+          .from(documents)
+          .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+          .leftJoin(people, eq(documents.creatorId, people.id))
+          .where(inArray(documents.slug, missingProposalSlugs));
+  const proposals = [
+    ...proposalSlice.proposals,
+    ...missingProposals.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      title: row.title?.trim() || 'Untitled proposal',
+      state: row.state,
+      label: row.label,
+      spaceSlug: row.spaceSlug,
+      spaceTitle: row.spaceTitle,
+      spaceLogo: toSpaceLogo(row),
+      createdAt: row.createdAt.toISOString(),
+      authoredByMember: row.creatorId === personId,
+      web3ProposalId: row.web3ProposalId,
+      web3SpaceId: row.web3SpaceId,
+      leadImage: row.leadImage,
+      description: optionalExcerpt(row.description),
+      creatorId: row.creatorId,
+      creatorName: creatorLabel(
+        row.creatorName,
+        row.creatorSurname,
+        row.creatorNickname,
+      ),
+      creatorAvatarUrl: row.creatorAvatarUrl,
+    })),
+  ];
+
   return {
     person: {
       id: person.id,
@@ -873,7 +949,7 @@ export async function getMemberIntelligence(
         orientation,
         attention: leadAttention(notificationSlice.items[0], {
           signals: signalSlice.signals,
-          proposals: proposalSlice.proposals,
+          proposals,
         }),
         spaceCount: spaceRows.length,
       }),
@@ -883,7 +959,7 @@ export async function getMemberIntelligence(
       ...space,
       description: excerpt(space.description, 120),
     })),
-    proposals: proposalSlice.proposals,
+    proposals,
     signals: signalSlice.signals,
     notifications: notificationSlice.items,
     connections: sharedPeople.connections,

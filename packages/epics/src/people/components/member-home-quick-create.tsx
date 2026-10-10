@@ -19,7 +19,11 @@ import type { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import {
+  getOnboardingPath,
+  getProposalPath,
+  getSignalPath,
+} from '../../common/get-path-function';
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 type Kind = 'signal' | 'proposal' | 'space';
@@ -70,7 +74,7 @@ export function MemberHomeQuickCreate({
     [spaceId, spaces],
   );
   const spaceHref = space ? `/${lang}/dho/${space.slug}/overview` : null;
-  const createSpaceHref = `/${lang}/my-spaces/create`;
+  const createSpaceHref = getOnboardingPath(lang);
   const proposalNeedsChain =
     kind === 'proposal' && typeof space?.web3SpaceId !== 'number';
   const busy = isSaving || isPending;

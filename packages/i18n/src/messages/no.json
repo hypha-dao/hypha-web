@@ -96,6 +96,8 @@
     "horizonSaveError": "Valget kunne ikke lagres.",
     "soundMute": "Slå av lyden",
     "soundUnmute": "Slå på lyden",
+    "micMute": "Slå av mikrofonen",
+    "micUnmute": "Slå på mikrofonen",
     "soundNeedsMic": "Stemmen trenger mikrofonen. Du kan fortsatt skrive.",
     "quietHeading": "Herfra",
     "quietActivate": "Aktiver et space",
@@ -110,6 +112,11 @@
     "votedNo": "Du sa nei",
     "voteFailed": "Stemmen kom ikke gjennom. Du kan prøve igjen.",
     "voteNeedsChain": "Denne beslutningen er ikke klar til å bli registrert ennå.",
+    "onVoting": "Til avstemning",
+    "closesIn": "Stenger om {time}",
+    "fromTreasury": "fra kassen",
+    "yesCount": "{count} ja",
+    "noCount": "{count} nei",
     "visitSpace": "Besøk rommet",
     "kindProposal": "Forslag",
     "kindSignal": "Signal",
@@ -147,7 +154,9 @@
     "closestTalk": "Folk du snakker med",
     "morePeople": "+ {count, plural, one {# person} other {# personer}}",
     "seeMoreNotifications": "Se mer",
-    "openPerson": "Åpne {name}"
+    "openPerson": "Åpne {name}",
+    "signals": "Signaler som trenger deg",
+    "proposals": "Forslag å ta stilling til"
   },
   "WelcomeFlow": {
     "errors": {

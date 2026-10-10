@@ -2,8 +2,11 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 
-import { buildOnboardingRealtimeInstructions } from '../system-prompt';
-import { buildSpaceAdvisorRealtimeInstructions } from '../system-prompt';
+import {
+  buildMemberHomeRealtimeInstructions,
+  buildOnboardingRealtimeInstructions,
+  buildSpaceAdvisorRealtimeInstructions,
+} from '../system-prompt';
 import type { RealtimeVoiceSessionRequest } from './request-schema';
 import { assertVoiceDiscoverySessionContext } from './request-schema';
 import {
@@ -96,15 +99,21 @@ export async function createRealtimeVoiceSession(
     payload.conversationContext.locale?.trim() ||
     'en';
 
+  const context = payload.conversationContext;
   const instructions =
-    payload.conversationContext.mode === 'space_advisor'
+    context.mode === 'space_advisor'
       ? buildSpaceAdvisorRealtimeInstructions({
-          spaceSlug: payload.conversationContext.spaceSlug,
+          spaceSlug: context.spaceSlug,
+          locale,
+          recentTranscriptSummary: payload.recentTranscriptSummary,
+        })
+      : context.mode === 'member_home'
+      ? buildMemberHomeRealtimeInstructions({
           locale,
           recentTranscriptSummary: payload.recentTranscriptSummary,
         })
       : buildOnboardingRealtimeInstructions({
-          setupPhase: payload.conversationContext.setupPhase,
+          setupPhase: context.setupPhase,
           locale,
           recentTranscriptSummary: payload.recentTranscriptSummary,
         });
