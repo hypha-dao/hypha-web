@@ -27,5 +27,7 @@ describe('resolveSignalVideo', () => {
 
   it('ignores a page that is not a video', () => {
     expect(resolveSignalVideo('https://example.com/notes')).toBeNull();
+    expect(resolveSignalVideo('https://notyoutube.com/watch?v=abc')).toBeNull();
+    expect(resolveSignalVideo('https://notvimeo.com/123456789')).toBeNull();
   });
 });
