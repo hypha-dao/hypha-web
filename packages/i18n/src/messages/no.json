@@ -55,7 +55,10 @@
     "tryAgain": "Prøv igjen",
     "dismiss": "Lukk",
     "openMyWallet": "Åpne lommeboken min",
-    "openMySpaces": "Åpne mine rom"
+    "openMySpaces": "Åpne mine rom",
+    "closestInSpaces": "Nærmest i rommene dine",
+    "closestTalk": "Folk du snakker med",
+    "openPerson": "Åpne {name}"
   },
   "WelcomeFlow": {
     "errors": {

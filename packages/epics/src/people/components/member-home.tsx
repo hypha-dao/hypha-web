@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -22,7 +22,11 @@ import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-opti
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { MemberHomeChat } from './member-home-chat';
 import { MemberHomeMark } from './member-home-mark';
-import { MemberHomePeople } from './member-home-people';
+import { MemberHomeClosest } from './member-home-closest';
+import {
+  MemberHomePeople,
+  type MemberHomeOpenChat,
+} from './member-home-people';
 import {
   MemberHomeConnectionsWidget,
   MemberHomeSpacesWidget,
@@ -74,6 +78,14 @@ export function MemberHome({
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
+  const openChatRef = useRef<MemberHomeOpenChat>(async () => false);
+  const onOpenChatReady = useCallback((openChat: MemberHomeOpenChat) => {
+    openChatRef.current = openChat;
+  }, []);
+  const openChat = useCallback<MemberHomeOpenChat>(
+    (person) => openChatRef.current(person),
+    [],
+  );
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
@@ -177,12 +189,13 @@ export function MemberHome({
             </TileLink>
           </Tile>
         </div>
-        <div className="mt-4">
+        <div className="mt-4" id="member-home-people">
           {home ? (
             <MemberHomePeople
               people={home.connections}
               chatSpaceSlug={home.chatSpaceSlug}
               fallbackName={memberFallback}
+              onOpenChatReady={onOpenChatReady}
             />
           ) : (
             <Tile title={t('peopleTitle')} busy>
@@ -193,30 +206,52 @@ export function MemberHome({
       </aside>
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
         <div className="border-b border-border px-4 py-3 md:px-6">
-          <div className="flex items-center gap-3">
-            <MemberHomeMark className="h-9 w-9" />
-            <div className="min-w-0">
-              <h1
-                className="truncate text-4 leading-tight font-medium tracking-[-0.03em]"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {t(greetingKey(), { name: displayName })}
-              </h1>
-              {home == null ? (
-                <Skeleton
-                  loading
-                  height="16px"
-                  width="14rem"
-                  className="mt-1"
-                />
-              ) : (
-                <p className="mt-1 text-1 tracking-[0.16em] text-neutral-11 uppercase">
-                  {home.counts.connections > 0
-                    ? t('peopleAround', { count: home.counts.connections })
-                    : t('peopleAroundEmpty')}
-                </p>
-              )}
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <MemberHomeMark className="h-9 w-9" />
+              <div className="min-w-0">
+                <h1
+                  className="truncate text-4 leading-tight font-medium tracking-[-0.03em]"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t(greetingKey(), { name: displayName })}
+                </h1>
+                {home == null ? (
+                  <Skeleton
+                    loading
+                    height="16px"
+                    width="14rem"
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="mt-1 text-1 tracking-[0.16em] text-neutral-11 uppercase">
+                    {home.counts.connections > 0
+                      ? t('peopleAround', { count: home.counts.connections })
+                      : t('peopleAroundEmpty')}
+                  </p>
+                )}
+              </div>
             </div>
+            {home ? (
+              <MemberHomeClosest
+                lang={lang}
+                people={home.connections}
+                fallbackName={memberFallback}
+                onOpenChat={openChat}
+              />
+            ) : (
+              <div className="flex gap-2" aria-hidden>
+                {Array.from({ length: 4 }, (_, index) => (
+                  <Skeleton
+                    key={index}
+                    loading
+                    height="32px"
+                    width="32px"
+                    className="rounded-full"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
         {home ? (

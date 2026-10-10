@@ -55,7 +55,10 @@
     "tryAgain": "Обиди се повторно",
     "dismiss": "Затвори",
     "openMyWallet": "Отвори го мојот паричник",
-    "openMySpaces": "Отвори ги моите простори"
+    "openMySpaces": "Отвори ги моите простори",
+    "closestInSpaces": "Најблиски во твоите простори",
+    "closestTalk": "Луѓе со кои зборуваш",
+    "openPerson": "Отвори {name}"
   },
   "WelcomeFlow": {
     "errors": {

@@ -55,7 +55,10 @@
     "tryAgain": "Opnieuw proberen",
     "dismiss": "Sluiten",
     "openMyWallet": "Open mijn portemonnee",
-    "openMySpaces": "Open mijn ruimtes"
+    "openMySpaces": "Open mijn ruimtes",
+    "closestInSpaces": "Dichtstbij in je ruimtes",
+    "closestTalk": "Mensen met wie je praat",
+    "openPerson": "Open {name}"
   },
   "WelcomeFlow": {
     "errors": {

@@ -55,7 +55,10 @@
     "tryAgain": "Tentar de novo",
     "dismiss": "Fechar",
     "openMyWallet": "Abrir a minha carteira",
-    "openMySpaces": "Abrir os meus espaços"
+    "openMySpaces": "Abrir os meus espaços",
+    "closestInSpaces": "Mais próximos nos teus espaços",
+    "closestTalk": "Pessoas com quem falas",
+    "openPerson": "Abrir {name}"
   },
   "WelcomeFlow": {
     "errors": {

@@ -6,12 +6,15 @@ import { MessageSquare, Phone, Video } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  findNamedDirectRoomId,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
   useSpaceGroupCall,
   type Message,
 } from '@hypha-platform/core/client';
+
+import { readJoinedPeopleRooms } from './member-home-closest';
 
 type HomePerson = {
   id: number;
@@ -23,10 +26,13 @@ type HomePerson = {
   sharedSpaceCount?: number;
 };
 
+export type MemberHomeOpenChat = (person: HomePerson) => Promise<boolean>;
+
 type MemberHomePeopleProps = {
   people: HomePerson[];
   chatSpaceSlug: string | null;
   fallbackName: string;
+  onOpenChatReady?: (openChat: MemberHomeOpenChat) => void;
 };
 
 function labelOf(person: HomePerson, fallback: string) {
@@ -34,10 +40,19 @@ function labelOf(person: HomePerson, fallback: string) {
   return full || person.nickname || fallback;
 }
 
+function revealPeoplePanel() {
+  window.requestAnimationFrame(() => {
+    document.getElementById('member-home-people')?.scrollIntoView({
+      block: 'nearest',
+    });
+  });
+}
+
 export function MemberHomePeople({
   people,
   chatSpaceSlug,
   fallbackName,
+  onOpenChatReady,
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { jwt } = useJwt();
@@ -56,6 +71,7 @@ export function MemberHomePeople({
   const [liveRoomId, setLiveRoomId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const pendingEnter = useRef<'audio' | 'video' | null>(null);
+  const openPersonChatRef = useRef<MemberHomeOpenChat>(async () => false);
 
   const personIds = useMemo(
     () => [...people, ...network].map((person) => person.id),
@@ -121,10 +137,7 @@ export function MemberHomePeople({
   }, [jwt, people, query]);
 
   async function openRoom(title: string, ids: number[]) {
-    if (!matrix.isAuthenticated || !matrix.client) {
-      setNotice(t('matrixUnavailable'));
-      return null;
-    }
+    if (!matrix.isAuthenticated || !matrix.client) return null;
     const { roomId } = await matrix.createRoom(title);
     for (const id of ids) {
       const mxid = personIdToMatrixUserId[id];
@@ -134,23 +147,57 @@ export function MemberHomePeople({
     return roomId;
   }
 
-  async function startChat(person: HomePerson) {
+  async function openPersonChat(person: HomePerson): Promise<boolean> {
     setNotice(null);
+    const title = labelOf(person, fallbackName);
+    const mxid = personIdToMatrixUserId[person.id];
+    const client = matrix.client;
+    const selfId = client?.getUserId() ?? '';
+    if (matrix.isAuthenticated && client && mxid && selfId) {
+      const existing = findNamedDirectRoomId(
+        readJoinedPeopleRooms(client).named,
+        selfId,
+        mxid,
+        title,
+      );
+      if (existing) {
+        setThread({ roomId: existing, title });
+        revealPeoplePanel();
+        return true;
+      }
+    }
+    if (!matrix.isAuthenticated || !client || !mxid) return false;
     try {
-      const title = labelOf(person, fallbackName);
       const roomId = await openRoom(title, [person.id]);
-      if (!roomId) return;
+      if (!roomId) return false;
       setThread({ roomId, title });
+      revealPeoplePanel();
+      return true;
     } catch {
       setNotice(t('matrixFailed'));
+      return true;
     }
+  }
+
+  openPersonChatRef.current = openPersonChat;
+
+  useEffect(() => {
+    onOpenChatReady?.((person) => openPersonChatRef.current(person));
+  }, [onOpenChatReady]);
+
+  async function startChat(person: HomePerson) {
+    const opened = await openPersonChat(person);
+    if (!opened) setNotice(t('matrixUnavailable'));
   }
 
   async function startCall(ids: number[], video: boolean, title: string) {
     setNotice(null);
     try {
       const roomId = await openRoom(title, ids);
-      if (!roomId) return;
+      if (!roomId) {
+        setNotice(t('matrixUnavailable'));
+        return;
+      }
       pendingEnter.current = video ? 'video' : 'audio';
       setLiveRoomId(roomId);
       setThread({ roomId, title });
