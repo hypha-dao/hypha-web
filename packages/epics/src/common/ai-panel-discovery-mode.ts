@@ -13,14 +13,15 @@ function normalizeSpaceSlug(spaceSlug?: string): string | undefined {
 /** Per-space chat vs voice preference for the left AI panel (persists across sessions). */
 export function loadSpaceDiscoveryMode(
   spaceSlug?: string,
+  fallback: OnboardingDiscoveryMode = 'chat',
 ): OnboardingDiscoveryMode {
   const slug = normalizeSpaceSlug(spaceSlug);
-  if (!slug || typeof window === 'undefined') return 'chat';
+  if (!slug || typeof window === 'undefined') return fallback;
   try {
     const raw = window.localStorage.getItem(`${STORAGE_KEY_PREFIX}${slug}`);
-    return isOnboardingDiscoveryMode(raw) ? raw : 'chat';
+    return isOnboardingDiscoveryMode(raw) ? raw : fallback;
   } catch {
-    return 'chat';
+    return fallback;
   }
 }
 

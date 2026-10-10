@@ -591,10 +591,31 @@
       "breakpoints": true
     },
     {
-      "idx": 81,
+      "idx": 83,
       "version": "7",
-      "when": 1784000000012,
-      "tag": "0081_space_member_invites",
+      "when": 1784000000014,
+      "tag": "0083_space_member_invites",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1784000000015,
+      "tag": "0084_signal_indicative_payouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1784000000016,
+      "tag": "0085_signal_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1784000000017,
+      "tag": "0086_network_horizon",
       "breakpoints": true
     }
   ]

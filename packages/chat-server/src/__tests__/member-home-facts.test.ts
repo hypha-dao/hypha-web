@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The client barrel type-imports the upload router. Vitest evaluates that
+// module, and `server-only` throws outside the Next.js compiler.
+vi.mock('server-only', () => ({}));
 
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
@@ -78,6 +82,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('kind=proposal slug=path document=proposal');
     expect(facts).toContain('show_member_home_item');
     expect(facts).toContain('Noor');
+    expect(facts).toContain('focused on their own spaces');
     expect(facts).not.toContain('Circle');
     expect(facts).not.toContain('You are a personal');
   });

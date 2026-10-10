@@ -62,6 +62,12 @@ export default async function EditSignalPage({ params }: PageProps) {
           progressStatus: signal.progressStatus ?? undefined,
           board: signal.board ?? null,
           assigneeIds: signal.assigneeIds ?? [],
+          indicativePayouts: signal.indicativePayouts ?? [],
+          leadImage: signal.leadImage,
+          videoUrl: signal.videoUrl,
+          attachments: signal.attachments ?? [],
+          sharedWithNetwork: signal.sharedWithNetwork ?? false,
+          sharedWithNetwork: signal.sharedWithNetwork ?? false,
         }}
         successfulUrl={successfulUrl}
         closeUrl={successfulUrl}

@@ -458,13 +458,25 @@ export function OnboardingAdventurePage({
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-accent-muted)]">
               {t('heroEyebrow')}
             </p>
+            <style>{`
+              @media (max-width: 767px) {
+                h1.onboarding-hero-title {
+                  font-size: 1.75rem;
+                  line-height: 1.2;
+                }
+                h1.onboarding-hero-title > span {
+                  display: inline;
+                  margin-top: 0;
+                }
+              }
+            `}</style>
             <h1
-              className="landing-marketing-copy mx-auto max-w-4xl text-balance text-[clamp(2.5rem,5.5vw,4.5rem)] font-medium leading-[1.06] tracking-[-0.03em]"
+              className="onboarding-hero-title landing-marketing-copy mx-auto max-w-4xl text-balance text-[clamp(2.5rem,5.5vw,4.5rem)] font-medium leading-[1.06] tracking-[-0.03em]"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               <span className="landing-marketing-copy block">
                 {t('titleLine1')}
-              </span>
+              </span>{' '}
               <span className="landing-marketing-copy mt-1 block">
                 {t('titleLine2')}
               </span>
