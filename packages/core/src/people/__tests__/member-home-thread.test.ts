@@ -4,6 +4,8 @@ import type { MemberIntelligence } from '../member-intelligence';
 import {
   SHOW_MEMBER_HOME_ITEM_TOOL,
   listMemberHomeThreadItems,
+  memberHomeSignalAction,
+  memberHomeSignalCtas,
   memberHomeThreadItemForMessage,
   shownMemberHomeItemKeys,
 } from '../member-home-thread';
@@ -63,6 +65,10 @@ const home: MemberIntelligence = {
       createdAt: '2026-01-01T00:00:00.000Z',
       authoredByMember: false,
       web3ProposalId: null,
+      description: null,
+      creatorId: null,
+      creatorName: null,
+      creatorAvatarUrl: null,
     },
   ],
   signals: [
@@ -75,6 +81,10 @@ const home: MemberIntelligence = {
       spaceSlug: 'hypha-energy',
       spaceTitle: 'Hypha Energy',
       assignedToMember: true,
+      description: null,
+      creatorId: null,
+      creatorName: null,
+      creatorAvatarUrl: null,
     },
   ],
   notifications: [],
@@ -95,6 +105,29 @@ describe('listMemberHomeThreadItems', () => {
     expect(items[0]?.documentKind).toBe('signal');
     expect(items[1]?.action).toBe('decision');
     expect(items[1]?.documentKind).toBe('proposal');
+  });
+
+  it('keeps the signal category and the person who raised it', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      signals: [
+        {
+          ...home.signals[0],
+          type: 'Need',
+          description: 'Three rafts.',
+          creatorId: 4,
+          creatorName: 'Sara',
+          creatorAvatarUrl: null,
+        },
+      ],
+    });
+    expect(items[0]).toEqual(
+      expect.objectContaining({
+        category: 'Need',
+        creatorName: 'Sara',
+        summary: 'Three rafts.',
+      }),
+    );
   });
 
   it('keeps a discussion’s own kind instead of calling it a proposal', () => {
@@ -119,6 +152,21 @@ describe('listMemberHomeThreadItems', () => {
         documentKind: 'discussion',
       }),
     ]);
+  });
+});
+
+describe('memberHomeSignalCtas', () => {
+  it('offers a hand for a need and a conversation for tension', () => {
+    expect(memberHomeSignalAction('Need')).toBe('help');
+    expect(memberHomeSignalAction('Action')).toBe('take');
+    expect(memberHomeSignalAction('Impact')).toBe('impact');
+    expect(memberHomeSignalAction('Tension')).toBe('call');
+    expect(
+      memberHomeSignalCtas({ category: 'Insight', hasCreator: true })[0],
+    ).toBe('context');
+    expect(
+      memberHomeSignalCtas({ category: 'Risk', hasCreator: false })[0],
+    ).toBe('discuss');
   });
 });
 

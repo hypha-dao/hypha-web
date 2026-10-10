@@ -74,7 +74,7 @@ describe('buildMemberGuidance', () => {
         },
       }),
     ).toBe(
-      'Hi Alex. Fund the winter greenhouse in Noord Food Commons is open for a decision. That is the most useful place to step in right now.',
+      'Hi Alex. Fund the winter greenhouse in Noord Food Commons is open for a vote. The choice stays with you.',
     );
   });
 

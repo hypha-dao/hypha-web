@@ -3,6 +3,9 @@ export const COHERENCE_TYPES = [
   'Risk',
   'Tension',
   'Insight',
+  'Need',
+  'Action',
+  'Impact',
   'Trend',
   'Proposal',
 ] as const;
@@ -14,6 +17,9 @@ export const COHERENCE_SIGNAL_TYPES = [
   'Risk',
   'Tension',
   'Insight',
+  'Need',
+  'Action',
+  'Impact',
 ] as const;
 
 export type CoherenceSignalType = (typeof COHERENCE_SIGNAL_TYPES)[number];
@@ -52,6 +58,27 @@ export const COHERENCE_TYPE_OPTIONS: {
     type: 'Insight',
     title: 'Insight',
     description: 'Data-driven observation or discovery',
+  },
+  {
+    icon: 'HandHelping',
+    colorVariant: 'success',
+    type: 'Need',
+    title: 'Need',
+    description: 'Someone is asking for a hand',
+  },
+  {
+    icon: 'ListChecks',
+    colorVariant: 'neutral',
+    type: 'Action',
+    title: 'Action',
+    description: 'A concrete step someone can take',
+  },
+  {
+    icon: 'Sprout',
+    colorVariant: 'success',
+    type: 'Impact',
+    title: 'Impact',
+    description: 'What changed because people acted',
   },
   {
     icon: 'TrendingUp',

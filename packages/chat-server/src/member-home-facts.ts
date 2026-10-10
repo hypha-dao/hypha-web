@@ -26,12 +26,19 @@ export function formatMemberHomeFacts(
     waiting.length === 0
       ? 'Nothing is waiting. Do not call show_member_home_item.'
       : waiting
-          .map(
-            (item, index) =>
-              `${index + 1}. kind=${item.kind} slug=${item.slug} document=${
-                item.documentKind
-              } title="${item.title}" space="${item.spaceTitle}"`,
-          )
+          .map((item, index) => {
+            const quoted = (value: string | null) =>
+              (value ?? '').replace(/"/g, "'");
+            return `${index + 1}. kind=${item.kind} slug=${
+              item.slug
+            } document=${item.documentKind} category=${quoted(
+              item.category,
+            )} creator="${quoted(item.creatorName)}" title="${quoted(
+              item.title,
+            )}" summary="${quoted(item.summary)}" space="${quoted(
+              item.spaceTitle,
+            )}"`;
+          })
           .join('\n');
   const alreadyShown = (options?.alreadyShown ?? [])
     .map((key) => key.trim())
@@ -47,7 +54,7 @@ export function formatMemberHomeFacts(
   return [
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above.',
     'The member is on their personal home, across every space they belong to, not on a single space screen.',
-    'Bring one waiting item into the conversation at a time, in the order below. In that same reply call show_member_home_item once with its kind and slug. The card is drawn inside that reply and labeled with its document kind. Your words must be about that same item. Do not list the other items. Do not call the tool for an item you are not talking about. You never vote or validate. The person taps the card.',
+    'Bring one waiting item into the conversation at a time, in the order below. In that same reply call show_member_home_item once with its kind and slug. Summarise who raised it and what they need, or what the decision is, in one or two sentences. Ask whether the member wants to take part. Never vote, validate, accept, decline, or tell them what they should do. If they pass, no judgement. Warm, specific, brief. Your words must be about that same item. Do not list the other items. Do not call the tool for an item you are not talking about. The person taps the card.',
     `Person: ${personName(home.person)}.`,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
     'Waiting items:',
