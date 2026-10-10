@@ -47,6 +47,8 @@ export type {
 
 const ATTENTION_LIMIT = 8;
 const LIST_LIMIT = 6;
+/** Direct-access icons on the home. Other lists stay on LIST_LIMIT. */
+const CONNECTION_LIMIT = 8;
 
 const memberSpaceColumns = {
   id: spaces.id,
@@ -426,7 +428,15 @@ export async function getMemberIntelligence(
 
   const sharedPeople = await readSlice(
     'connections',
-    () => loadSharedPeople({ personId, spaceIds, limit: listLimit }, { db }),
+    () =>
+      loadSharedPeople(
+        {
+          personId,
+          spaceIds,
+          limit: Math.max(listLimit, CONNECTION_LIMIT),
+        },
+        { db },
+      ),
     { count: 0, connections: [] },
   );
 
