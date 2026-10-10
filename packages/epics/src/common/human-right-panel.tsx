@@ -132,6 +132,9 @@ import {
 import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-chat-panel-elsewhere-call-indicator';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
+import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
+import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
+import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   sanitizeMentionDisplayLabel,
@@ -4656,6 +4659,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
+                {isSignalThread && coherenceSlug ? (
+                  <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-3 py-2">
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <SignalThreadMedia slug={coherenceSlug} />
+                      <SignalIndicativeAmounts slug={coherenceSlug} />
+                    </div>
+                    <SignalTurnIntoProposalButton
+                      slug={coherenceSlug}
+                      title={coherenceTitle}
+                      description={coherenceDescription}
+                    />
+                  </div>
+                ) : null}
                 {showSidebarCallVideo && (
                   <div
                     className={

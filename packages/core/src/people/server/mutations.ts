@@ -215,6 +215,27 @@ export const updatePersonPrimaryOrientation = async (
   return mapToDomainPerson(dbPerson);
 };
 
+export const updatePersonNetworkHorizon = async (
+  {
+    id,
+    networkHorizon,
+  }: {
+    id: number;
+    networkHorizon: 'spaces' | 'network';
+  },
+  { db }: CreatePersonConfig,
+) => {
+  const [dbPerson] = await db
+    .update(people)
+    .set({ networkHorizon, updatedAt: new Date() })
+    .where(eq(people.id, id))
+    .returning();
+  if (!dbPerson) {
+    throw new Error('Failed to update network horizon');
+  }
+  return mapToDomainPerson(dbPerson);
+};
+
 export type DeletePersonInput = {
   id: number;
 };

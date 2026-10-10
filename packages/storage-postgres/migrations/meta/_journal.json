@@ -582,6 +582,27 @@
       "when": 1784000000012,
       "tag": "0081_space_member_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1784000000013,
+      "tag": "0082_signal_indicative_payouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1784000000014,
+      "tag": "0083_signal_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1784000000015,
+      "tag": "0084_network_horizon",
+      "breakpoints": true
     }
   ]
 }

@@ -255,6 +255,26 @@ export function listMemberHomeThreadItems(
     });
   }
 
+  for (const signal of home.networkSignals ?? []) {
+    if (!signal.slug) continue;
+    push({
+      kind: 'signal',
+      slug: signal.slug,
+      title: signal.title,
+      spaceSlug: signal.spaceSlug,
+      spaceTitle: signal.spaceTitle,
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      spaceLogo: signal.spaceLogo,
+      category: signal.type,
+      summary: signal.description,
+      creatorId: signal.creatorId,
+      creatorName: signal.creatorName,
+      creatorAvatarUrl: signal.creatorAvatarUrl,
+    });
+  }
+
   return items;
 }
 

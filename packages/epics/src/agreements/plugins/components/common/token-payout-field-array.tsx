@@ -41,6 +41,8 @@ interface TokenPayoutFieldArrayProps {
   selectedTokenPriceHint?: string;
   isLoadingTokens?: boolean;
   loadingTokensLabel?: string;
+  /** Proposal payouts are required. A signal amount is indicative, so the mark can be hidden. */
+  markRequired?: boolean;
 }
 
 function TokenPayoutFieldArrayInner({
@@ -54,6 +56,7 @@ function TokenPayoutFieldArrayInner({
   selectedTokenPriceHint,
   isLoadingTokens = false,
   loadingTokensLabel,
+  markRequired = true,
 }: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
@@ -144,12 +147,12 @@ function TokenPayoutFieldArrayInner({
             <>
               <span className="block">{labelLines![0]}</span>
               <span className="block">
-                {labelLines![1]} <RequirementMark />
+                {labelLines![1]} {markRequired ? <RequirementMark /> : null}
               </span>
             </>
           ) : (
             <>
-              {resolvedLabel} <RequirementMark />
+              {resolvedLabel} {markRequired ? <RequirementMark /> : null}
             </>
           )}
         </label>

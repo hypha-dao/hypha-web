@@ -23,7 +23,10 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  Skeleton,
   Slider,
+  UploadLeadImage,
+  AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
@@ -41,6 +44,9 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  ALLOWED_IMAGE_FILE_SIZE,
+  useImageUpload,
+  useAttachmentUpload,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useCoherenceUpvoteMutations,
@@ -72,6 +78,9 @@ import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import type { UseMembers } from '../../spaces/hooks/types';
+import { TokenPayoutFieldArray } from '../../agreements';
+import { useTokens } from '../../treasury/hooks/use-tokens';
+import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -122,6 +131,7 @@ export const CreateSignalForm = ({
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
+  const tCommon = useTranslations('Common');
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -143,6 +153,26 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
+  const { tokens, isLoading: isLoadingTokens } = useTokens({ spaceSlug });
+  const { upload: uploadImage } = useImageUpload({
+    authorizationToken: authToken ?? undefined,
+  });
+  const { upload: uploadAttachment } = useAttachmentUpload({
+    authorizationToken: authToken ?? undefined,
+  });
+  const [leadImageFile, setLeadImageFile] = React.useState<File | null>(null);
+  const [leadImageCleared, setLeadImageCleared] = React.useState(false);
+  const [attachmentFiles, setAttachmentFiles] = React.useState<File[]>([]);
+  const [keptAttachments, setKeptAttachments] = React.useState<
+    Array<{ name: string; url: string }>
+  >(initialValues?.attachments ?? []);
+
+  React.useEffect(() => {
+    setLeadImageFile(null);
+    setLeadImageCleared(false);
+    setAttachmentFiles([]);
+    setKeptAttachments(initialValues?.attachments ?? []);
+  }, [initialValues, mode, signalSlug]);
   const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
     useMembers({
       spaceSlug,
@@ -278,6 +308,15 @@ export const CreateSignalForm = ({
       assigneeIds:
         initialValues?.assigneeIds ??
         (mode === 'create' && person?.id ? [person.id] : []),
+      indicativePayouts:
+        initialValues?.indicativePayouts &&
+        initialValues.indicativePayouts.length > 0
+          ? initialValues.indicativePayouts
+          : [{ amount: '', token: '' }],
+      leadImage: initialValues?.leadImage ?? null,
+      videoUrl: initialValues?.videoUrl ?? '',
+      attachments: initialValues?.attachments ?? [],
+      sharedWithNetwork: initialValues?.sharedWithNetwork ?? false,
     }),
     [initialValues, mode, person?.id, spaceId, workflow],
   );
@@ -575,6 +614,55 @@ export const CreateSignalForm = ({
   // `updateCoherenceSignalBySlugAction` themselves, right after the assignee list is persisted —
   // no client trigger needed here.
 
+  const resolveSignalMedia = React.useCallback(
+    async (videoUrl: string | null) => {
+      let leadImage = leadImageCleared
+        ? null
+        : initialValues?.leadImage ?? null;
+      if (leadImageFile) {
+        const uploaded = await uploadImage([leadImageFile]);
+        const url = uploaded?.[0]?.ufsUrl;
+        if (!url) {
+          throw new Error(
+            t.has('signalFormUploadFailed')
+              ? t('signalFormUploadFailed')
+              : 'Could not upload the file. Try again.',
+          );
+        }
+        leadImage = url;
+      }
+      let attachments = keptAttachments;
+      if (attachmentFiles.length > 0) {
+        const uploaded = await uploadAttachment(attachmentFiles);
+        if (!uploaded?.length || uploaded.some((item) => !item.ufsUrl)) {
+          throw new Error(
+            t.has('signalFormUploadFailed')
+              ? t('signalFormUploadFailed')
+              : 'Could not upload the file. Try again.',
+          );
+        }
+        attachments = [
+          ...keptAttachments,
+          ...uploaded.map((item) => ({
+            name: item.name,
+            url: item.ufsUrl,
+          })),
+        ];
+      }
+      return { leadImage, videoUrl, attachments };
+    },
+    [
+      attachmentFiles,
+      initialValues?.leadImage,
+      keptAttachments,
+      leadImageCleared,
+      leadImageFile,
+      t,
+      uploadAttachment,
+      uploadImage,
+    ],
+  );
+
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       form.clearErrors('root');
@@ -607,6 +695,7 @@ export const CreateSignalForm = ({
           return;
         }
         try {
+          const media = await resolveSignalMedia(data.videoUrl ?? null);
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
             title: data.title,
@@ -620,6 +709,9 @@ export const CreateSignalForm = ({
             board:
               data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
+            indicativePayouts: data.indicativePayouts,
+            sharedWithNetwork: data.sharedWithNetwork ?? false,
+            ...media,
           });
           // The signal is saved — close now and let the chat sync and the
           // list refresh finish in the background.
@@ -679,7 +771,8 @@ export const CreateSignalForm = ({
         return;
       }
       try {
-        const coherence = await createCoherence({ ...data });
+        const media = await resolveSignalMedia(data.videoUrl ?? null);
+        const coherence = await createCoherence({ ...data, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         // Close the panel as soon as the signal exists — everything below is
@@ -796,8 +889,22 @@ export const CreateSignalForm = ({
       router,
       successfulUrl,
       revalidateCoherences,
+      resolveSignalMedia,
     ],
   );
+
+  const handleTurnIntoProposal = () => {
+    const values = form.getValues();
+    stageSignalAsContributionProposal({
+      title: values.title,
+      description: values.description,
+      payouts: values.indicativePayouts ?? [],
+    });
+    if (!lang || !spaceSlug) return;
+    router.push(
+      `/${lang}/dho/${spaceSlug}/agreements/create/propose-contribution`,
+    );
+  };
 
   const handleInvalid = async (err?: Record<string, unknown>) => {
     console.warn('form errors:', err);
@@ -1263,6 +1370,149 @@ export const CreateSignalForm = ({
               />
             </section>
 
+            <section className="flex flex-col gap-6 rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormImage')}
+                </p>
+                <UploadLeadImage
+                  onChange={(file) => {
+                    setLeadImageFile(file);
+                    setLeadImageCleared(file == null);
+                  }}
+                  maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                  enableImageResizer={true}
+                  cropDialogLabels={{
+                    title: tCommon('uploadLeadImage.cropTitle'),
+                    description: tCommon('uploadLeadImage.cropDescription'),
+                    cancel: tCommon('uploadLeadImage.cancel'),
+                    confirm: tCommon('uploadLeadImage.confirm'),
+                  }}
+                  messages={{
+                    dropHere: tCommon('uploadLeadImage.dropHere'),
+                    fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                    uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                  }}
+                  uploadText={t('signalFormImage')}
+                  defaultImage={
+                    leadImageCleared ? null : initialValues?.leadImage ?? null
+                  }
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="videoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      {t('signalFormVideo')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        disabled={isMutating}
+                        placeholder="https://"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('signalFormVideoHint')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormAttachments')}
+                </p>
+                <AddAttachment
+                  label={t('signalFormAttachmentsHint')}
+                  value={[...keptAttachments, ...attachmentFiles]}
+                  defaultAttachments={keptAttachments}
+                  onChange={setAttachmentFiles}
+                  onExistingAttachmentsChange={(updated) => {
+                    setKeptAttachments(
+                      updated.flatMap((item) => {
+                        if (typeof item === 'string') {
+                          const name = item.split('/').pop() || item;
+                          return [{ name, url: item }];
+                        }
+                        if (
+                          item &&
+                          typeof item === 'object' &&
+                          'url' in item &&
+                          typeof item.url === 'string'
+                        ) {
+                          return [
+                            {
+                              name:
+                                typeof item.name === 'string' && item.name
+                                  ? item.name
+                                  : item.url.split('/').pop() || item.url,
+                              url: item.url,
+                            },
+                          ];
+                        }
+                        return [];
+                      }),
+                    );
+                  }}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              <Skeleton loading={isLoadingTokens} width="100%" height={90}>
+                <TokenPayoutFieldArray
+                  tokens={tokens}
+                  name="indicativePayouts"
+                  label={t('indicativeTokens')}
+                  markRequired={false}
+                  isLoadingTokens={isLoadingTokens}
+                />
+              </Skeleton>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t('indicativeTokensHint')}
+              </p>
+            </section>
+
+            <FormField
+              control={form.control}
+              name="sharedWithNetwork"
+              render={({ field }) => {
+                const shared = field.value === true;
+                return (
+                  <FormItem>
+                    <button
+                      type="button"
+                      aria-pressed={shared}
+                      onClick={() => field.onChange(!shared)}
+                      className={`w-full border px-4 py-4 text-left ${
+                        shared
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border bg-background text-foreground'
+                      }`}
+                    >
+                      <span className="block text-sm font-medium">
+                        {t('shareWithNetwork')}
+                      </span>
+                      <span
+                        className={`mt-1 block text-sm leading-relaxed ${
+                          shared
+                            ? 'text-background/80'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {t('shareWithNetworkHint')}
+                      </span>
+                    </button>
+                  </FormItem>
+                );
+              }}
+            />
+
             <div className="flex w-full justify-end gap-2">
               {form.formState.errors.root?.message ? (
                 <p
@@ -1380,6 +1630,17 @@ export const CreateSignalForm = ({
                       : 'Archive'}
                   </Button>
                 </ConfirmDialog>
+              ) : null}
+              {mode === 'edit' ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  disabled={isMutating || !spaceSlug}
+                  onClick={handleTurnIntoProposal}
+                >
+                  {t('turnIntoProposal')}
+                </Button>
               ) : null}
               <Button type="submit" disabled={isMutating || !isEditAuthorized}>
                 {mode === 'edit'

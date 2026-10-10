@@ -464,7 +464,8 @@ export function ExploreSpaces({
         color="secondary"
         weight="medium"
         align="center"
-        className="flex flex-col"
+        className="flex flex-col overflow-visible py-1"
+        style={{ lineHeight: 1.15 }}
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>

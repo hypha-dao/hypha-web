@@ -10,6 +10,39 @@ import {
   DEFAULT_SIGNAL_PROGRESS_STATUS,
   normalizeAssigneeIds,
 } from '../../signal-workflow';
+import { IndicativePayout, SignalAttachment } from '../../types';
+
+function normalizeMediaUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeSignalAttachments(value: unknown): SignalAttachment[] {
+  if (!Array.isArray(value)) return [];
+  const rows: SignalAttachment[] = [];
+  for (const row of value) {
+    if (!row || typeof row !== 'object') continue;
+    const name = String((row as { name?: unknown }).name ?? '').trim();
+    const url = String((row as { url?: unknown }).url ?? '').trim();
+    if (!name || !url) continue;
+    rows.push({ name, url });
+  }
+  return rows;
+}
+
+function normalizeIndicativePayouts(value: unknown): IndicativePayout[] {
+  if (!Array.isArray(value)) return [];
+  const rows: IndicativePayout[] = [];
+  for (const row of value) {
+    if (!row || typeof row !== 'object') continue;
+    const amount = String((row as { amount?: unknown }).amount ?? '').trim();
+    const token = String((row as { token?: unknown }).token ?? '').trim();
+    if (!amount || !token) continue;
+    rows.push({ amount, token });
+  }
+  return rows;
+}
 
 export function normalizeCoherence({
   type,
@@ -24,6 +57,11 @@ export function normalizeCoherence({
   progressStatus,
   board,
   assigneeIds,
+  indicativePayouts,
+  leadImage,
+  videoUrl,
+  attachments,
+  sharedWithNetwork,
   source,
   externalId,
   ...rest
@@ -52,6 +90,11 @@ export function normalizeCoherence({
     progressStatus: progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS,
     board: board?.trim() || null,
     assigneeIds: normalizeAssigneeIds(assigneeIds),
+    indicativePayouts: normalizeIndicativePayouts(indicativePayouts),
+    leadImage: normalizeMediaUrl(leadImage),
+    videoUrl: normalizeMediaUrl(videoUrl),
+    attachments: normalizeSignalAttachments(attachments),
+    sharedWithNetwork: sharedWithNetwork === true,
     source: source?.trim() || null,
     externalId: externalId?.trim() || null,
     ...rest,

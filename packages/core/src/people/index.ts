@@ -1,5 +1,6 @@
 export * from './types';
 export * from './member-intelligence';
+export * from './network-horizon';
 export * from './closest-contributors';
 export * from './member-intelligence-guidance';
 export * from './member-home-thread';

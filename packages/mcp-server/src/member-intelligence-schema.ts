@@ -28,7 +28,33 @@ export const getMemberIntelligenceOutputSchema = z.object({
     address: z.string().nullable(),
     preferredCurrency: z.string().nullable(),
     primaryOrientation: orientationSchema,
+    location: z.string().nullable().optional(),
   }),
+  networkHorizon: z.enum(['spaces', 'network']).optional(),
+  networkSignals: z
+    .array(
+      z.object({
+        id: z.number(),
+        slug: z.string().nullable(),
+        title: z.string(),
+        type: z.string(),
+        description: z.string().nullable(),
+        tags: z.array(z.string()),
+        updatedAt: z.string(),
+        spaceSlug: z.string(),
+        spaceTitle: z.string(),
+        spaceDescription: z.string().nullable(),
+        spaceLocation: z.string().nullable(),
+        creatorId: z.number().nullable(),
+        creatorName: z.string().nullable(),
+        creatorAvatarUrl: z.string().nullable(),
+        relevance: z.object({
+          score: z.number(),
+          reasons: z.array(z.enum(['location', 'interest', 'experience'])),
+        }),
+      }),
+    )
+    .optional(),
   counts: z.object({
     spaces: z.number(),
     openProposals: z.number(),
@@ -48,6 +74,8 @@ export const getMemberIntelligenceOutputSchema = z.object({
       title: z.string(),
       description: z.string(),
       logoUrl: z.string().nullable(),
+      address: z.string().nullable().optional(),
+      web3SpaceId: z.number().nullable().optional(),
     }),
   ),
   proposals: z.array(
@@ -86,6 +114,7 @@ export const getMemberIntelligenceOutputSchema = z.object({
       nickname: z.string().nullable(),
       avatarUrl: z.string().nullable(),
       sharedSpaceCount: z.number(),
+      address: z.string().nullable().optional(),
     }),
   ),
   wallet: z.object({

@@ -37,6 +37,29 @@ export const coherences = pgTable(
     progressStatus: text('progress_status'),
     board: text('board'),
     assigneeIds: jsonb('assignee_ids').$type<number[]>().notNull().default([]),
+    /**
+     * Amounts that name the ask or resource. Same shape as a contribution
+     * proposal payout (`amount` + token address) so a signal can become a
+     * proposal, but nothing here moves funds.
+     */
+    indicativePayouts: jsonb('indicative_payouts')
+      .$type<Array<{ amount: string; token: string }>>()
+      .notNull()
+      .default([]),
+    /** Uploaded image for the signal. A URL, not a file blob. */
+    leadImage: text('lead_image'),
+    /** A link to a video hosted elsewhere. Nothing is uploaded. */
+    videoUrl: text('video_url'),
+    /**
+     * When true, this signal may be offered to members outside its space.
+     * Off by default. Nothing here is visible to the network until a member turns it on.
+     */
+    sharedWithNetwork: boolean('shared_with_network').notNull().default(false),
+    /** Documents linked the same way as a proposal attachment. */
+    attachments: jsonb('attachments')
+      .$type<Array<{ name: string; url: string }>>()
+      .notNull()
+      .default([]),
     /** `space_api_keys.source` when the signal arrived from a community app. */
     source: text('source'),
     /** The external app's own identifier for the record, used for idempotency. */

@@ -17,6 +17,7 @@ import {
   HYPHA_SPACE_SWITCH_LINK_ATTR,
   isMainColumnScrollFrozen,
   planBannerContentFit,
+  planShortPageScroll,
   reapplyMainColumnScrollFreeze,
   releaseMainColumnScrollHeightHold,
   scrollMainColumnBy,
@@ -556,17 +557,42 @@ export function DhoStickySpaceChrome({
   );
   landOnCollapsedBannerRef.current = landOnCollapsedBanner;
 
+  /** Drop a leftover offset so the next screen starts under the menu. */
+  const releaseColumnToTop = React.useCallback(() => {
+    cancelSettleMotion();
+    cancelActiveIntro?.();
+    freezeGenRef.current += 1;
+    spaceSwitchFreezeHeld = false;
+    clearMainColumnScrollFreeze();
+    releaseMainColumnScrollHeightHold();
+    scrollMainColumnTo(0, 'auto');
+  }, [cancelSettleMotion]);
+
   /**
-   * A loading skeleton keeps the banner offset so the hold can protect a
-   * long screen. Real content that cannot fill `top` is still the banner —
-   * the caller holds height instead of dropping to the open cover.
+   * A loading skeleton keeps the reserved offset. Real content that cannot
+   * hold it sits on the collapsed banner. A phone, or a banner we cannot
+   * measure, goes to the top instead of an empty hold.
    */
   const bannerTopOrHeader = React.useCallback(
-    (top: number): { short: boolean; top: number } => {
+    (top: number): { short: boolean; top: number; release: boolean } => {
       const safe = Math.max(0, top);
-      if (isSpaceTabLoading()) return { short: false, top: safe };
-      const fit = planBannerContentFit(safe, getMainColumnNaturalMaxScroll());
-      return { short: !fit.fillsBanner, top: fit.top };
+      const delta = bannerAlignDelta(
+        bannerBottomSentinelRef.current,
+        stickyBarRef.current,
+      );
+      const current = getMainColumnScrollY();
+      const plan = planShortPageScroll({
+        reservedTop: safe,
+        naturalMax: getMainColumnNaturalMaxScroll(),
+        bannerTop: delta == null ? null : Math.max(0, current + delta),
+        mobile: window.matchMedia('(max-width: 767px)').matches,
+        loading: isSpaceTabLoading(),
+      });
+      if (plan.kind === 'top') return { short: true, top: 0, release: true };
+      if (plan.kind === 'banner') {
+        return { short: true, top: plan.top, release: false };
+      }
+      return { short: false, top: plan.top, release: false };
     },
     [],
   );
@@ -577,6 +603,10 @@ export function DhoStickySpaceChrome({
       cancelSettleMotion();
       cancelActiveIntro?.();
       const next = bannerTopOrHeader(top);
+      if (next.release) {
+        releaseColumnToTop();
+        return;
+      }
       if (next.short) {
         landOnCollapsedBanner(next.top);
         return;
@@ -589,6 +619,7 @@ export function DhoStickySpaceChrome({
       cancelSettleMotion,
       landOnCollapsedBanner,
       pinMainColumnAt,
+      releaseColumnToTop,
       rememberBanner,
     ],
   );
@@ -602,6 +633,10 @@ export function DhoStickySpaceChrome({
       cancelSettleMotion();
       cancelActiveIntro?.();
       const next = bannerTopOrHeader(top);
+      if (next.release) {
+        releaseColumnToTop();
+        return;
+      }
       if (next.short) {
         landOnCollapsedBanner(next.top);
         return;
@@ -624,7 +659,12 @@ export function DhoStickySpaceChrome({
         // Short content cannot finish the ease. Jump to the banner now and
         // keep the hold. Do not correct back to the open cover.
         if (!isSpaceTabLoading() && !fit.fillsBanner) {
-          landOnCollapsedBanner(safe);
+          const settled = bannerTopOrHeader(safe);
+          if (settled.release) {
+            releaseColumnToTop();
+            return;
+          }
+          landOnCollapsedBanner(settled.short ? settled.top : safe);
           return;
         }
         reapplyMainColumnScrollFreeze();
@@ -652,6 +692,7 @@ export function DhoStickySpaceChrome({
       pinBanner,
       pinMainColumnAt,
       readBannerDelta,
+      releaseColumnToTop,
       rememberBanner,
     ],
   );
@@ -1006,17 +1047,35 @@ export function DhoStickySpaceChrome({
       reduceMotion,
     });
     if (plan.kind === 'keep-freeze') {
+      const reservedTop = Math.max(mem.scrollTop, getMainColumnScrollY());
+      const settled = bannerTopOrHeader(reservedTop);
+      // The reserved offset is past this screen. An empty hold is not a pin.
+      if (settled.release) {
+        releaseColumnToTop();
+        return;
+      }
+      if (settled.short) {
+        landOnCollapsedBanner(settled.top);
+        return;
+      }
       // A click already reserved height and started the pin or the short ease.
-      holdMainColumnScrollHeight(
-        Math.max(mem.scrollTop, getMainColumnScrollY()),
-      );
+      holdMainColumnScrollHeight(reservedTop);
       queueMicrotask(() => {
         reapplyMainColumnScrollFreeze();
       });
       return;
     }
     applyBannerPlan(plan);
-  }, [applyBannerPlan, bannerPinTop, cancelSettleMotion, pathname, spaceSlug]);
+  }, [
+    applyBannerPlan,
+    bannerPinTop,
+    bannerTopOrHeader,
+    cancelSettleMotion,
+    landOnCollapsedBanner,
+    pathname,
+    releaseColumnToTop,
+    spaceSlug,
+  ]);
 
   // Short pages have no scroll range, so the cover never collapses on its
   // own. Hold the column and write the banner offset before paint. A loading

@@ -213,6 +213,42 @@ export type BannerContentFit = {
   fillsBanner: boolean;
 };
 
+export type ShortPageScrollPlan =
+  | { kind: 'keep'; top: number }
+  | { kind: 'banner'; top: number }
+  | { kind: 'top' };
+
+/**
+ * A route change can keep an offset from the previous screen. When the next
+ * screen cannot hold it, a height hold paints an empty viewport. Sit on the
+ * collapsed banner, or at the top when that banner cannot be measured.
+ * A loading skeleton is not a short screen.
+ */
+export function planShortPageScroll(input: {
+  reservedTop: number;
+  naturalMax: number;
+  /** Collapsed-banner offset. Null when the banner cannot be measured. */
+  bannerTop: number | null;
+  mobile: boolean;
+  loading: boolean;
+}): ShortPageScrollPlan {
+  const reserved = Number.isFinite(input.reservedTop)
+    ? Math.max(0, input.reservedTop)
+    : 0;
+  if (input.loading) return { kind: 'keep', top: reserved };
+  if (planBannerContentFit(reserved, input.naturalMax).fillsBanner) {
+    return { kind: 'keep', top: reserved };
+  }
+  if (
+    input.mobile ||
+    input.bannerTop == null ||
+    !Number.isFinite(input.bannerTop)
+  ) {
+    return { kind: 'top' };
+  }
+  return { kind: 'banner', top: Math.max(0, input.bannerTop) };
+}
+
 /**
  * Banner settle for the main column.
  * `top` is always the collapsed-banner offset, including on a short page.
