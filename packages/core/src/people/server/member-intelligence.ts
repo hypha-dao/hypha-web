@@ -3,6 +3,7 @@ import {
   desc,
   eq,
   inArray,
+  lt,
   isNull,
   ne,
   notInArray,
@@ -21,6 +22,11 @@ import { personColumns } from './queries';
 import { readPrimaryOrientation } from './primary-orientation-column';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { listPendingSpaceMemberInvites } from '../../space/server/space-member-invites';
+import {
+  CAPITAL_ASK_PAGE_SIZE,
+  walkAccessibleCapitalAsks,
+  type CapitalAskCursor,
+} from './capital-ask-window';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 import {
   buildMemberGuidance,
@@ -901,47 +907,55 @@ export async function getMemberIntelligence(
 export async function listNetworkCapitalAsks(
   { limit = 24 }: { limit?: number },
   { db, authToken }: DbConfig & { authToken?: string },
-): Promise<NetworkCapitalAsk[]> {
-  const rows = await db
-    .select({
-      id: documents.id,
-      slug: documents.slug,
-      title: documents.title,
-      description: documents.description,
-      state: documents.state,
-      createdAt: documents.createdAt,
-      spaceId: spaces.id,
-      web3SpaceId: spaces.web3SpaceId,
-      spaceSlug: spaces.slug,
-      spaceTitle: spaces.title,
-    })
-    .from(documents)
-    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-    .where(
-      and(
+): Promise<{ asks: NetworkCapitalAsk[]; complete: boolean }> {
+  const { rows, complete } = await walkAccessibleCapitalAsks({
+    limit,
+    loadPage: async (cursor: CapitalAskCursor | null) => {
+      const visible = and(
         eq(documents.label, 'Investment'),
         inArray(documents.state, ['proposal', 'agreement']),
         eq(spaces.isArchived, false),
-      ),
-    )
-    .orderBy(desc(documents.createdAt))
-    .limit(50);
+        cursor
+          ? or(
+              lt(documents.createdAt, cursor.createdAt),
+              and(
+                eq(documents.createdAt, cursor.createdAt),
+                lt(documents.id, cursor.id),
+              ),
+            )
+          : undefined,
+      );
+      return db
+        .select({
+          id: documents.id,
+          slug: documents.slug,
+          title: documents.title,
+          description: documents.description,
+          state: documents.state,
+          createdAt: documents.createdAt,
+          spaceId: spaces.id,
+          web3SpaceId: spaces.web3SpaceId,
+          spaceSlug: spaces.slug,
+          spaceTitle: spaces.title,
+        })
+        .from(documents)
+        .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+        .where(visible)
+        .orderBy(desc(documents.createdAt), desc(documents.id))
+        .limit(CAPITAL_ASK_PAGE_SIZE);
+    },
+    canAccessSpace: async (row) => {
+      const gate = await checkSpaceAccessForSpace(
+        { id: row.spaceId, web3SpaceId: row.web3SpaceId },
+        authToken,
+      );
+      return gate.hasAccess;
+    },
+  });
 
-  const accessibleRows = (
-    await Promise.all(
-      rows.map(async (row) => {
-        const gate = await checkSpaceAccessForSpace(
-          { id: row.spaceId, web3SpaceId: row.web3SpaceId },
-          authToken,
-        );
-        return gate.hasAccess ? row : null;
-      }),
-    )
-  ).filter((row): row is (typeof rows)[number] => row !== null);
-
-  return accessibleRows
-    .slice(0, Math.min(Math.max(limit, 1), 50))
-    .map((row) => ({
+  return {
+    complete,
+    asks: rows.map((row) => ({
       id: row.id,
       slug: row.slug,
       title: row.title?.trim() || 'Untitled ask',
@@ -950,5 +964,6 @@ export async function listNetworkCapitalAsks(
       spaceSlug: row.spaceSlug,
       spaceTitle: row.spaceTitle,
       createdAt: row.createdAt.toISOString(),
-    }));
+    })),
+  };
 }

@@ -380,6 +380,7 @@
     "title": "What the network is asking for",
     "body": "Spaces publish an investment ask when they are ready for capital. Open one to read it, then deploy capital from the proposal.",
     "empty": "No open asks yet. When a space publishes an investment proposal, it will appear here.",
+    "incomplete": "More asks may exist. The newest ones could not all be checked in time.",
     "deploy": "Deploy capital",
     "proposal": "Proposal",
     "agreement": "Agreement",
