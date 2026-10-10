@@ -96,6 +96,8 @@
     "horizonSaveError": "Diese Wahl konnte nicht gespeichert werden.",
     "soundMute": "Ton ausschalten",
     "soundUnmute": "Ton einschalten",
+    "micMute": "Mikrofon ausschalten",
+    "micUnmute": "Mikrofon einschalten",
     "soundNeedsMic": "Die Stimme braucht das Mikrofon. Du kannst weiter tippen.",
     "quietHeading": "Von hier",
     "quietActivate": "Einen Space aktivieren",
@@ -110,6 +112,11 @@
     "votedNo": "Du hast nein gesagt",
     "voteFailed": "Die Stimme ist nicht angekommen. Du kannst es erneut versuchen.",
     "voteNeedsChain": "Diese Entscheidung kann noch nicht festgehalten werden.",
+    "onVoting": "In Abstimmung",
+    "closesIn": "Schließt in {time}",
+    "fromTreasury": "aus der Treasury",
+    "yesCount": "{count} ja",
+    "noCount": "{count} nein",
     "visitSpace": "Space besuchen",
     "kindProposal": "Vorschlag",
     "kindSignal": "Signal",
@@ -147,7 +154,9 @@
     "closestTalk": "Menschen, mit denen du sprichst",
     "morePeople": "+ {count, plural, one {# Person} other {# Personen}}",
     "seeMoreNotifications": "Mehr anzeigen",
-    "openPerson": "{name} öffnen"
+    "openPerson": "{name} öffnen",
+    "signals": "Signale, die dich brauchen",
+    "proposals": "Vorschläge zum Abwägen"
   },
   "WelcomeFlow": {
     "errors": {

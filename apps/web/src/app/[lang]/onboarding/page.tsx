@@ -1,21 +1,12 @@
-import { Suspense } from 'react';
-import { OnboardingAdventurePage } from './_components/onboarding-adventure-page';
-import {
-  getEnableAiChat,
-  getEnableOnboardingAiHero,
-} from '@hypha-platform/feature-flags';
+import { Locale } from '@hypha-platform/i18n';
+import { redirect } from 'next/navigation';
 
-export default async function OnboardingPage() {
-  const [aiChatEnabled, onboardingHeroEnabled] = await Promise.all([
-    getEnableAiChat(),
-    getEnableOnboardingAiHero(),
-  ]);
-  return (
-    <Suspense fallback={null}>
-      <OnboardingAdventurePage
-        aiChatEnabled={aiChatEnabled}
-        onboardingHeroEnabled={onboardingHeroEnabled}
-      />
-    </Suspense>
-  );
+type PageProps = {
+  params: Promise<{ lang: Locale }>;
+};
+
+/** Old address. The create-a-space screen lives at /interactive-create. */
+export default async function OnboardingRedirect({ params }: PageProps) {
+  const { lang } = await params;
+  redirect(`/${lang}/interactive-create`);
 }

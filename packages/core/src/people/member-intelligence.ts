@@ -89,6 +89,9 @@ export type MemberIntelligence = {
     authoredByMember: boolean;
     /** On-chain proposal id used to vote without leaving home. Null for discussions. */
     web3ProposalId: number | null;
+    /** On-chain space id for quorum and unity targets. */
+    web3SpaceId?: number | null;
+    leadImage?: string | null;
     description: string | null;
     creatorId: number | null;
     creatorName: string | null;

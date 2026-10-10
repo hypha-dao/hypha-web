@@ -17,8 +17,9 @@ import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { celebrate } from './member-home-celebrate';
-import { MemberHomeVote } from './member-home-vote';
+import { MemberHomeProposalBody } from './member-home-proposal-body';
 import { PersonAvatar } from './person-avatar';
+import './member-home-banner.css';
 
 const SIGNAL_TYPES = [
   'Need',
@@ -62,6 +63,15 @@ function kindLabel(
   return documentKind.trim();
 }
 
+function plainSummary(value: string) {
+  return value
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+    .replace(/[*_`>#]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function canonicalType(type: string | null) {
   if (!type) return null;
   const trimmed = type.trim();
@@ -88,10 +98,7 @@ export function MemberHomeThreadCard({
     logoVariant,
   );
   const isSignal = item.kind === 'signal' || item.documentKind === 'signal';
-  const canVote =
-    !isSignal &&
-    item.documentKind === 'proposal' &&
-    proposal?.web3ProposalId != null;
+  const isProposal = !isSignal && item.documentKind === 'proposal';
   const visitHref = isSignal
     ? `/${lang}/dho/${item.spaceSlug}/overview`
     : proposal?.slug
@@ -200,106 +207,132 @@ export function MemberHomeThreadCard({
     }
   }
 
+  const summary = item.summary ? plainSummary(item.summary) : '';
+  const leadImage = proposal?.leadImage?.trim() ?? '';
+
   return (
-    <section className="w-full border border-border bg-background-2 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
-          {eyebrow}
-        </p>
-        <p className="flex min-w-0 items-center gap-2 text-1 tracking-[0.12em] text-neutral-11 uppercase">
-          <SpaceSwitcherMark iconUrl={spaceIconUrl} />
-          <span className="min-w-0 truncate">{item.spaceTitle}</span>
-        </p>
-      </div>
-      {creator ? (
-        <div className="mt-3 flex items-center gap-2">
-          <PersonAvatar
-            avatarSrc={creator.avatarUrl ?? undefined}
-            userName={creator.name ?? undefined}
-            size="sm"
-            shape="circle"
-          />
-          <p className="min-w-0 truncate text-2">{creator.name}</p>
+    <section className="member-home-thread-card w-full overflow-hidden">
+      {leadImage ? (
+        <img src={leadImage} alt="" className="member-home-thread-image" />
+      ) : null}
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
+            {isProposal
+              ? [t('onVoting'), item.category?.trim()]
+                  .filter(Boolean)
+                  .join(' · ')
+              : eyebrow}
+          </p>
+          <p className="flex min-w-0 items-center gap-2 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+            <SpaceSwitcherMark iconUrl={spaceIconUrl} />
+            <span className="min-w-0 truncate">{item.spaceTitle}</span>
+          </p>
         </div>
-      ) : null}
-      <h2
-        className="mt-2 text-4"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
-        {item.title}
-      </h2>
-      {item.summary ? (
-        <p className="mt-2 text-2 leading-relaxed text-neutral-12">
-          {item.summary}
-        </p>
-      ) : null}
-      {item.authoredByMember ? (
-        <p className="mt-2 text-1 text-neutral-11">{t('proposedByYou')}</p>
-      ) : creator && !isSignal ? (
-        <p className="mt-2 text-1 text-neutral-11">
-          {t('proposedBy', { name: creator.name ?? '' })}
-        </p>
-      ) : null}
-      {canVote && proposal ? (
-        <MemberHomeVote
-          proposalId={proposal.web3ProposalId as number}
-          documentId={proposal.id}
-        />
-      ) : null}
-      {!isSignal && item.documentKind === 'proposal' && !canVote ? (
-        <p className="mt-3 text-2 text-neutral-11">{t('voteNeedsChain')}</p>
-      ) : null}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {ctas.map((cta, index) =>
-          cta === 'discuss' ? (
+        <h2
+          className="mt-3 text-4"
+          style={{ fontFamily: 'var(--font-family-heading)' }}
+        >
+          {item.title}
+        </h2>
+        {creator ? (
+          <div className="mt-3 flex items-center gap-2">
+            <PersonAvatar
+              avatarSrc={creator.avatarUrl ?? undefined}
+              userName={creator.name ?? undefined}
+              size="sm"
+              shape="circle"
+            />
+            <p className="min-w-0 truncate text-2">
+              {isProposal
+                ? t('proposedBy', { name: creator.name ?? '' })
+                : creator.name}
+            </p>
+          </div>
+        ) : item.authoredByMember ? (
+          <p className="mt-3 text-1 text-neutral-11">{t('proposedByYou')}</p>
+        ) : null}
+        {summary ? (
+          <p className="mt-3 text-2 leading-relaxed text-neutral-12">
+            {summary}
+          </p>
+        ) : null}
+        {isProposal ? (
+          <MemberHomeProposalBody
+            proposalId={proposal?.web3ProposalId ?? null}
+            spaceId={proposal?.web3SpaceId ?? null}
+            documentId={proposal?.id ?? null}
+            documentSlug={proposal?.slug ?? item.slug}
+          />
+        ) : null}
+        <div
+          className={
+            isProposal
+              ? 'mt-3 grid grid-cols-2 gap-2'
+              : 'mt-3 flex flex-wrap gap-2'
+          }
+        >
+          {ctas.map((cta, index) =>
+            cta === 'discuss' ? (
+              <Button
+                key={cta}
+                asChild
+                variant={index === 0 ? 'default' : 'outline'}
+                colorVariant={index === 0 ? 'accent' : 'neutral'}
+              >
+                <Link href={signalHref}>{labelFor(cta)}</Link>
+              </Button>
+            ) : (
+              <Button
+                key={cta}
+                type="button"
+                variant={index === 0 ? 'default' : 'outline'}
+                colorVariant={index === 0 ? 'accent' : 'neutral'}
+                disabled={busy}
+                onClick={() => onCta(cta)}
+              >
+                {labelFor(cta)}
+              </Button>
+            ),
+          )}
+          {!isSignal && creator ? (
             <Button
-              key={cta}
-              asChild
-              variant={index === 0 ? 'default' : 'outline'}
-              colorVariant={index === 0 ? 'accent' : 'neutral'}
-            >
-              <Link href={signalHref}>{labelFor(cta)}</Link>
-            </Button>
-          ) : (
-            <Button
-              key={cta}
               type="button"
-              variant={index === 0 ? 'default' : 'outline'}
-              colorVariant={index === 0 ? 'accent' : 'neutral'}
+              variant="outline"
+              colorVariant="neutral"
               disabled={busy}
-              onClick={() => onCta(cta)}
+              onClick={() => {
+                void reach('chat');
+              }}
             >
-              {labelFor(cta)}
+              {t('askProposer', { name: creator.name ?? '' })}
             </Button>
-          ),
-        )}
-        {!isSignal && creator ? (
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            disabled={busy}
-            onClick={() => {
-              void reach('chat');
-            }}
+          ) : null}
+          {!isSignal ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              disabled={busy}
+              onClick={() => ask(t('thinkChosen', { title: item.title }))}
+            >
+              {t('helpMeThink')}
+            </Button>
+          ) : null}
+          {!isProposal ? (
+            <Button asChild variant="outline" colorVariant="neutral">
+              <Link href={visitHref}>{t('visitSpace')}</Link>
+            </Button>
+          ) : null}
+        </div>
+        {isProposal ? (
+          <Link
+            href={visitHref}
+            className="mt-3 inline-block text-1 text-neutral-11 underline-offset-2 hover:underline"
           >
-            {t('askProposer', { name: creator.name ?? '' })}
-          </Button>
+            {t('visitSpace')}
+          </Link>
         ) : null}
-        {!isSignal ? (
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            disabled={busy}
-            onClick={() => ask(t('thinkChosen', { title: item.title }))}
-          >
-            {t('helpMeThink')}
-          </Button>
-        ) : null}
-        <Button asChild variant="outline" colorVariant="neutral">
-          <Link href={visitHref}>{t('visitSpace')}</Link>
-        </Button>
       </div>
     </section>
   );

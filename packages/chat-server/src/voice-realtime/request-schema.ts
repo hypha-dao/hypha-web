@@ -9,9 +9,16 @@ export const spaceAdvisorVoiceContextSchema = z.object({
   locale: z.string().trim().min(2).max(16).optional(),
 });
 
+export const memberHomeVoiceContextSchema = z.object({
+  mode: z.literal('member_home'),
+  discoveryMode: z.literal('voice_interview'),
+  locale: z.string().trim().min(2).max(16).optional(),
+});
+
 export const voiceSessionContextSchema = z.discriminatedUnion('mode', [
   onboardingConversationContextSchema,
   spaceAdvisorVoiceContextSchema,
+  memberHomeVoiceContextSchema,
 ]);
 
 export const realtimeVoiceSessionRequestSchema = z.object({
@@ -27,7 +34,7 @@ export type RealtimeVoiceSessionRequest = z.infer<
 export function assertVoiceDiscoverySessionContext(
   context: RealtimeVoiceSessionRequest['conversationContext'],
 ): void {
-  if (context.mode === 'space_advisor') {
+  if (context.mode === 'space_advisor' || context.mode === 'member_home') {
     if (context.discoveryMode !== 'voice_interview') {
       throw new RealtimeVoiceSessionContextError(
         'Voice Realtime requires discoveryMode voice_interview.',

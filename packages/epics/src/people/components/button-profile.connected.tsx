@@ -14,7 +14,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { Locale } from '@hypha-platform/i18n';
 import { resolveAccountEntryPath } from '@hypha-platform/authentication';
+import {
+  getOnboardingPath,
+  isInteractiveCreatePath,
+} from '../../common/get-path-function';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 
@@ -29,10 +34,6 @@ type ConnectedButtonProfileProps = {
   showNetworkFeedback?: boolean;
   compact?: boolean;
 };
-
-function isSpaceOnboardingPath(path: string): boolean {
-  return /(^|\/)onboarding(\/|$)/.test(path);
-}
 
 export const ConnectedButtonProfile = ({
   useAuthentication,
@@ -61,7 +62,9 @@ export const ConnectedButtonProfile = ({
   const { lang, id } = useParams();
   const { resolvedTheme, setTheme } = useTheme();
   const locale = typeof lang === 'string' ? lang : undefined;
-  const onboardingUrl = locale ? `/${locale}/onboarding` : undefined;
+  const onboardingUrl = locale
+    ? getOnboardingPath(locale as Locale)
+    : undefined;
   const signupPath = resolveAccountEntryPath({
     lang: locale,
     hasProfile: false,
@@ -118,13 +121,13 @@ export const ConnectedButtonProfile = ({
     ) {
       // Space AI onboarding is not the account entry. A profile goes Home
       // (or back to the space they were already in).
-      if (!pathname.includes('/onboarding')) {
+      if (!isInteractiveCreatePath(pathname)) {
         const nextPath = resolvePostAuthRedirectPathOrDefault({
           pathname,
           lang: locale,
           baseRedirectPath: homePath,
         });
-        router.replace(isSpaceOnboardingPath(nextPath) ? homePath : nextPath);
+        router.replace(isInteractiveCreatePath(nextPath) ? homePath : nextPath);
       }
       setLoggingIn(false);
     }

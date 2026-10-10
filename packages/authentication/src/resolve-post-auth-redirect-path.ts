@@ -97,7 +97,7 @@ export function resolvePostAuthRedirectPathOrDefault(
 /**
  * Authenticated entry. A Privy session with no `people` row opens the welcome
  * flow. A session that already has a profile opens My dashboard.
- * Never `/onboarding` (space AI) and never `/my-spaces`.
+ * Never `/interactive-create` (space AI) and never `/my-spaces`.
  */
 export function resolveAccountEntryPath({
   lang,

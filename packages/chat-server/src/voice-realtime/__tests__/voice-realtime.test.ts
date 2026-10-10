@@ -27,6 +27,17 @@ describe('realtimeVoiceSessionRequestSchema', () => {
     });
     expect(parsed.success).toBe(true);
   });
+  it('accepts member home voice discovery context', () => {
+    const parsed = realtimeVoiceSessionRequestSchema.safeParse({
+      conversationContext: {
+        mode: 'member_home',
+        discoveryMode: 'voice_interview',
+      },
+      locale: 'en',
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   it('accepts space advisor voice discovery context', () => {
     const parsed = realtimeVoiceSessionRequestSchema.safeParse({
       conversationContext: {

@@ -37,11 +37,10 @@ export function MemberHomeVote({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div className="grid grid-cols-2 gap-2">
       <Button
         type="button"
-        variant="outline"
-        colorVariant="neutral"
+        className="h-12 uppercase tracking-[0.12em]"
         disabled={isVoting || choice === 'yes'}
         onClick={() => {
           void cast('yes');
@@ -53,6 +52,7 @@ export function MemberHomeVote({
         type="button"
         variant="outline"
         colorVariant="neutral"
+        className="h-12 uppercase tracking-[0.12em]"
         disabled={isVoting || choice === 'no'}
         onClick={() => {
           void cast('no');
@@ -61,12 +61,12 @@ export function MemberHomeVote({
         {t('voteNo')}
       </Button>
       {choice ? (
-        <p className="text-1 text-neutral-11">
+        <p className="col-span-2 text-1 text-neutral-11">
           {choice === 'yes' ? t('votedYes') : t('votedNo')}
         </p>
       ) : null}
       {failed ? (
-        <p className="text-1 text-error-11" role="alert">
+        <p className="col-span-2 text-1 text-error-11" role="alert">
           {t('voteFailed')}
         </p>
       ) : null}

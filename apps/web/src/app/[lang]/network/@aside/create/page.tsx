@@ -7,5 +7,5 @@ type PageProps = {
 
 export default async function NetworkCreateSpacePage({ params }: PageProps) {
   const { lang } = await params;
-  redirect(`/${lang}/onboarding`);
+  redirect(`/${lang}/interactive-create`);
 }

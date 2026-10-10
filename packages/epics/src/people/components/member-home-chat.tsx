@@ -21,7 +21,10 @@ import {
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
-import { buildSpaceAdvisorVoiceSessionContext } from '../../common/space-voice-session-context';
+import {
+  buildMemberHomeVoiceSessionContext,
+  buildSpaceAdvisorVoiceSessionContext,
+} from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
@@ -46,6 +49,7 @@ type HomeWidget = {
 /** Reserved key. Home must not share a space's voice session. */
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
 const HOME_SOUND_KEY = 'hypha-member-home-sound';
+const HOME_MIC_KEY = 'hypha-member-home-mic';
 
 function readHomeSoundOn() {
   try {
@@ -58,6 +62,22 @@ function readHomeSoundOn() {
 function writeHomeSoundOn(on: boolean) {
   try {
     window.localStorage.setItem(HOME_SOUND_KEY, on ? 'on' : 'off');
+  } catch {
+    // The choice still applies for this visit.
+  }
+}
+
+function readHomeMicOn() {
+  try {
+    return window.localStorage.getItem(HOME_MIC_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function writeHomeMicOn(on: boolean) {
+  try {
+    window.localStorage.setItem(HOME_MIC_KEY, on ? 'on' : 'off');
   } catch {
     // The choice still applies for this visit.
   }
@@ -101,6 +121,7 @@ export function MemberHomeChat({
   const [drafts, setDrafts] = useState<AiPanelDraftAttachment[]>([]);
   const [dismissedError, setDismissedError] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+  const [micOn, setMicOn] = useState(true);
   const [soundReady, setSoundReady] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
@@ -213,6 +234,7 @@ export function MemberHomeChat({
 
   useEffect(() => {
     setSoundOn(readHomeSoundOn());
+    setMicOn(readHomeMicOn());
     setSoundReady(true);
   }, []);
 
@@ -248,18 +270,24 @@ export function MemberHomeChat({
     [homeMessages],
   );
 
+  const dialogue = micOn || soundOn;
+
   const voiceSessionContext = useMemo(() => {
-    if (!soundOn) return undefined;
+    if (!dialogue) return undefined;
     const spaceSlug = intelligence.chatSpaceSlug?.trim();
-    if (!spaceSlug) return undefined;
-    return buildSpaceAdvisorVoiceSessionContext({
-      spaceSlug,
-      locale: lang,
-    });
-  }, [intelligence.chatSpaceSlug, lang, soundOn]);
+    if (spaceSlug) {
+      return buildSpaceAdvisorVoiceSessionContext({
+        spaceSlug,
+        locale: lang,
+      });
+    }
+    return buildMemberHomeVoiceSessionContext({ locale: lang });
+  }, [dialogue, intelligence.chatSpaceSlug, lang]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: soundReady && soundOn && !isAuthLoading && isAuthenticated,
+    enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
+    captureMicrophone: micOn,
+    speakReplies: soundOn,
     isStreaming,
     lastAssistantText,
     locale: lang,
@@ -275,14 +303,19 @@ export function MemberHomeChat({
   const toggleSound = useCallback(() => {
     setSoundOn((current) => {
       const next = !current;
-      if (!next) {
-        voiceInterview.stopListening();
-        voiceInterview.stopSpeaking();
-      }
+      if (!next) voiceInterview.stopSpeaking();
       writeHomeSoundOn(next);
       return next;
     });
-  }, [voiceInterview.stopListening, voiceInterview.stopSpeaking]);
+  }, [voiceInterview.stopSpeaking]);
+
+  const toggleMic = useCallback(() => {
+    setMicOn((current) => {
+      const next = !current;
+      writeHomeMicOn(next);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!soundReady || opened.current || isAuthLoading || !isAuthenticated) {
@@ -412,10 +445,12 @@ export function MemberHomeChat({
                     <div className="grid min-w-0 flex-1 gap-3">
                       {text ? (
                         <p
-                          className={cn(
-                            'whitespace-pre-wrap text-2 leading-relaxed',
-                            mine ? 'text-foreground' : 'text-neutral-12',
-                          )}
+                          className="bg-background text-2 leading-relaxed whitespace-pre-wrap text-foreground"
+                          style={{
+                            boxDecorationBreak: 'clone',
+                            WebkitBoxDecorationBreak: 'clone',
+                            paddingInline: '0.2em',
+                          }}
                         >
                           {text}
                         </p>
@@ -519,33 +554,12 @@ export function MemberHomeChat({
             </Button>
           ))}
         </div>
-        <div className="flex justify-end px-4 pt-1 md:px-6">
-          <button
-            type="button"
-            aria-pressed={soundOn}
-            aria-label={soundOn ? t('soundMute') : t('soundUnmute')}
-            title={soundOn ? t('soundMute') : t('soundUnmute')}
-            onClick={toggleSound}
-            className={cn(
-              'grid size-8 place-items-center border',
-              soundOn
-                ? 'border-foreground bg-foreground text-background'
-                : 'border-border bg-background text-neutral-11',
-            )}
-          >
-            {soundOn ? (
-              <Volume2 className="size-3.5" strokeWidth={1.25} aria-hidden />
-            ) : (
-              <VolumeX className="size-3.5" strokeWidth={1.25} aria-hidden />
-            )}
-          </button>
-        </div>
-        {soundOn && voiceInterview.liveTranscript ? (
+        {micOn && voiceInterview.liveTranscript ? (
           <p className="px-4 pb-1 text-1 text-neutral-11 md:px-6">
             “{voiceInterview.liveTranscript}”
           </p>
         ) : null}
-        {soundOn && voiceInterview.voiceError ? (
+        {dialogue && voiceInterview.voiceError ? (
           <p className="px-4 pb-1 text-1 text-neutral-11 md:px-6">
             {t('soundNeedsMic')}
           </p>
@@ -562,6 +576,32 @@ export function MemberHomeChat({
           onDraftAttachmentsChange={setDrafts}
           placeholder={t('chatPlaceholder')}
           variant="panel"
+          conversationMicrophone={{
+            active: micOn,
+            hearing: micOn && voiceInterview.userSpeaking,
+            onToggle: toggleMic,
+            muteLabel: t('micMute'),
+            unmuteLabel: t('micUnmute'),
+          }}
+          accessory={
+            <button
+              type="button"
+              aria-pressed={soundOn}
+              aria-label={soundOn ? t('soundMute') : t('soundUnmute')}
+              title={soundOn ? t('soundMute') : t('soundUnmute')}
+              onClick={toggleSound}
+              className={cn(
+                'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] place-items-center bg-transparent p-0 text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                soundOn && 'text-foreground',
+              )}
+            >
+              {soundOn ? (
+                <Volume2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+              ) : (
+                <VolumeX className="h-4 w-4" strokeWidth={2} aria-hidden />
+              )}
+            </button>
+          }
         />
       </div>
     </div>
