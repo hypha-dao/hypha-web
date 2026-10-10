@@ -91,6 +91,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('You are a personal');
     expect(facts).toContain("don't want to decide");
     expect(facts).toContain('if you need any assistance');
+    expect(facts).toContain('Would you like to take part in one of them?');
   });
 
   it('removes an item the member already refused from the queue', () => {
