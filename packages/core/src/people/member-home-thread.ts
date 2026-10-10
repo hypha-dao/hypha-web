@@ -168,6 +168,34 @@ export function listMemberHomeThreadItems(
     });
   };
 
+  const pushProposal = (proposal: MemberIntelligence['proposals'][number]) => {
+    if (!proposal.slug) return;
+    push({
+      kind: 'proposal',
+      slug: proposal.slug,
+      title: proposal.title,
+      spaceSlug: proposal.spaceSlug,
+      spaceTitle: proposal.spaceTitle,
+      action: 'decision',
+      documentKind: memberHomeDocumentKind({
+        kind: 'proposal',
+        state: proposal.state,
+        label: proposal.label,
+      }),
+      authoredByMember: proposal.authoredByMember,
+      category: proposal.label,
+      summary: proposal.description,
+      creatorId: proposal.creatorId,
+      creatorName: proposal.creatorName,
+      creatorAvatarUrl: proposal.creatorAvatarUrl,
+    });
+  };
+
+  for (const proposal of home.proposals) {
+    if (proposal.state?.trim().toLowerCase() !== 'discussion') continue;
+    pushProposal(proposal);
+  }
+
   const notes = home.attention.length > 0 ? home.attention : home.notifications;
   for (const note of notes) {
     if (note.kind === 'proposal') {
@@ -214,26 +242,7 @@ export function listMemberHomeThreadItems(
   }
 
   for (const proposal of home.proposals) {
-    if (!proposal.slug) continue;
-    push({
-      kind: 'proposal',
-      slug: proposal.slug,
-      title: proposal.title,
-      spaceSlug: proposal.spaceSlug,
-      spaceTitle: proposal.spaceTitle,
-      action: 'decision',
-      documentKind: memberHomeDocumentKind({
-        kind: 'proposal',
-        state: proposal.state,
-        label: proposal.label,
-      }),
-      authoredByMember: proposal.authoredByMember,
-      category: proposal.label,
-      summary: proposal.description,
-      creatorId: proposal.creatorId,
-      creatorName: proposal.creatorName,
-      creatorAvatarUrl: proposal.creatorAvatarUrl,
-    });
+    pushProposal(proposal);
   }
 
   for (const signal of home.signals) {
@@ -372,6 +381,19 @@ export function isMemberHomeItemDecline(text: string): boolean {
     .replace(/[’‘]/g, "'")
     .replace(/\s+/g, ' ');
   if (!normalized) return false;
+  const asksForContext =
+    /\b(tell me more|more about|more context|give me the context|context on|help me think|most recent discussion)\b/.test(
+      normalized,
+    );
+  const hardNo =
+    /^(no|nope|nah|skip|pass|later)[.!]?$/.test(normalized) ||
+    /\b(not now|no thanks|no thank you|not interested|skip it|skip this|pass on this|not this one|not that one)\b/.test(
+      normalized,
+    ) ||
+    /\b(don't|do not|didn't|did not|won't|will not)\b.{0,60}\b(want|decide|decision|look|vote|weigh)\b/.test(
+      normalized,
+    );
+  if (asksForContext && !hardNo) return false;
   if (
     /\b(pause for now|let's pause|lets pause|stop for now|enough for now)\b/.test(
       normalized,

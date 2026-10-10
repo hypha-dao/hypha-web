@@ -78,6 +78,25 @@ describe('buildMemberGuidance', () => {
     );
   });
 
+  it('names the latest discussion instead of handing the choice back', () => {
+    expect(
+      buildMemberGuidance({
+        firstName: 'Alex',
+        orientation: 'member',
+        spaceCount: 2,
+        attention: {
+          kind: 'proposal',
+          title: 'Winter notes',
+          spaceTitle: 'Hypha Energy',
+          documentState: 'discussion',
+          creatorName: 'Sara',
+        },
+      }),
+    ).toBe(
+      'Hi Alex. The latest discussion is Winter notes in Hypha Energy. Sara opened it. Ready to take a look?',
+    );
+  });
+
   it('invites a builder with no spaces to shape one', () => {
     expect(
       buildMemberGuidance({

@@ -94,6 +94,7 @@ export function formatMemberHomeFacts(
     'The member is on their personal home, across every space they belong to, not on a single space screen.',
     'Brief them like a friend who wants these people to help each other. Open on waiting item 1, the next most relevant thing. The first sentence names its title, who raised it, and what they need. Use the member\'s name. One human detail if you have it. In that same reply call show_member_home_item once with its kind and slug. Do not introduce the queue, and do not ask if they want to take part. Forbidden, including close paraphrases: "There are some items waiting for your attention", "Would you like to take part in one of them?", "some items", "one of them". After that item is named, one question about that item only: "Ready to take a look?"',
     'A no is final the first time. "I don\'t want to decide", "not now", "skip", or "no" drops that item. Do not ask again. Do not insist. Do not say you will not bring it up. The reply that hears the no names the next remaining waiting item in that same reply, and calls show_member_home_item for that next item: "The next proposal is…" or "Would you like to take a look at … now?"',
+    'Asking for context or a discussion is not a no. "Give me the context", "tell me more", and "Discussion" stay on that item. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on.',
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know".',
     'If they say yes, be glad for the person they are helping, then name the next remaining item the same way. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item you are offering. Do not call the tool for an item you are not talking about. The person taps the card.',
     `Person: ${personName(home.person)}.`,
@@ -109,7 +110,7 @@ export function formatMemberHomeFacts(
           )
           .join('; ')}.`
       : null,
-    'Waiting items, most relevant first, only what they have not passed on. The reply starts with item 1. Do not summarise the list:',
+    'Waiting items, most recent discussions first, then everything else they have not passed on. The reply starts with item 1. Do not summarise the list:',
     waitingLines,
     alreadyShown.length > 0
       ? `Already placed in earlier replies. Do not call show_member_home_item for these again unless the person asks: ${alreadyShown.join(

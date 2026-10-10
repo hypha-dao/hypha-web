@@ -428,6 +428,31 @@ function optionalExcerpt(value: string | null | undefined): string | null {
   return text || null;
 }
 
+/** The newest discussion leads. A notification is the lead only when none is open. */
+function guidanceAttention(
+  note: MemberAttentionItem | undefined,
+  records: {
+    signals: MemberIntelligence['signals'];
+    proposals: MemberIntelligence['proposals'];
+  },
+) {
+  const discussion = records.proposals.find(
+    (item) => item.state?.trim().toLowerCase() === 'discussion',
+  );
+  if (discussion) {
+    return {
+      title: discussion.title,
+      spaceTitle: discussion.spaceTitle,
+      kind: 'proposal' as const,
+      category: discussion.label,
+      summary: discussion.description,
+      creatorName: discussion.creatorName,
+      documentState: 'discussion',
+    };
+  }
+  return leadAttention(note, records);
+}
+
 function leadAttention(
   note: MemberAttentionItem | undefined,
   records: {
@@ -947,7 +972,7 @@ export async function getMemberIntelligence(
       narrative: buildMemberGuidance({
         firstName,
         orientation,
-        attention: leadAttention(notificationSlice.items[0], {
+        attention: guidanceAttention(notificationSlice.items[0], {
           signals: signalSlice.signals,
           proposals,
         }),
