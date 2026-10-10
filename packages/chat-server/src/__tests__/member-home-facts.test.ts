@@ -97,6 +97,7 @@ describe('formatMemberHomeFacts', () => {
       'The winter greenhouse vote closes in an hour and needs one more yes to reach quorum.',
     );
     expect(facts).toContain('Want to take a look?');
+    expect(facts).toContain('Never make a recipe');
   });
 
   it('removes an item the member already refused from the queue', () => {
