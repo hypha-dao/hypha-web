@@ -8,7 +8,6 @@ import { ClientEvent, EventType, type MatrixClient } from 'matrix-js-sdk';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import {
-  CLOSEST_CONTRIBUTOR_LIMIT,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   messageCountsByMatrixUser,
@@ -25,9 +24,13 @@ import { PersonAvatar } from './person-avatar';
 
 type ClosestPerson = MemberIntelligence['connections'][number];
 
+const VISIBLE_PEOPLE = 12;
+
 type MemberHomeClosestProps = {
   lang: Locale;
   people: ClosestPerson[];
+  /** Everyone around the member, including people not drawn as icons. */
+  peopleCount: number;
   fallbackName: string;
   onOpenChat: (person: ClosestPerson) => Promise<boolean>;
 };
@@ -84,6 +87,7 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
 export function MemberHomeClosest({
   lang,
   people,
+  peopleCount,
   fallbackName,
   onOpenChat,
 }: MemberHomeClosestProps) {
@@ -137,8 +141,7 @@ export function MemberHomeClosest({
   ]);
 
   const ranked = useMemo(
-    () =>
-      rankClosestContributors(people, messageCounts, CLOSEST_CONTRIBUTOR_LIMIT),
+    () => rankClosestContributors(people, messageCounts, VISIBLE_PEOPLE),
     [messageCounts, people],
   );
 
@@ -147,12 +150,17 @@ export function MemberHomeClosest({
   const label =
     ranked.basis === 'messages' ? t('closestTalk') : t('closestInSpaces');
 
+  const rest = Math.max(0, peopleCount - ranked.people.length);
+
   return (
-    <nav aria-label={label} className="flex max-w-full flex-col gap-1">
-      <p className="text-1 tracking-[0.16em] text-neutral-11 uppercase">
+    <nav
+      aria-label={label}
+      className="flex min-w-0 max-w-full flex-col items-end gap-2 bg-background/80 px-2 py-1.5"
+    >
+      <p className="text-right text-1 font-medium tracking-[0.08em] text-foreground uppercase">
         {label}
       </p>
-      <ul className="flex max-w-full items-center gap-2 overflow-x-auto">
+      <ul className="flex max-w-full flex-wrap items-center justify-end gap-2">
         {ranked.people.map((person) => {
           const name = personLabel(person, fallbackName);
           const href = person.slug ? `/${lang}/profile/${person.slug}` : null;
@@ -167,8 +175,9 @@ export function MemberHomeClosest({
             <PersonAvatar
               avatarSrc={person.avatarUrl ?? undefined}
               userName={name}
-              size="md"
+              size="chat"
               shape="circle"
+              className="h-12 w-12"
             />
           );
 
@@ -218,6 +227,11 @@ export function MemberHomeClosest({
             </li>
           );
         })}
+        {rest > 0 ? (
+          <li className="text-2 font-medium whitespace-nowrap text-foreground">
+            {t('morePeople', { count: rest })}
+          </li>
+        ) : null}
       </ul>
     </nav>
   );

@@ -201,7 +201,7 @@ export function MemberHomeThreadCard({
   }
 
   return (
-    <section className="max-w-[46ch] border border-border bg-background-2 p-4">
+    <section className="w-full border border-border bg-background-2 p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
           {eyebrow}

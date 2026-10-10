@@ -73,7 +73,7 @@ export type {
 const ATTENTION_LIMIT = 8;
 const LIST_LIMIT = 6;
 /** Direct-access icons on the home. Other lists stay on LIST_LIMIT. */
-const CONNECTION_LIMIT = 8;
+const CONNECTION_LIMIT = 12;
 
 const memberSpaceColumns = {
   id: spaces.id,
