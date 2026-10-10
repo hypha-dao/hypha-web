@@ -131,6 +131,24 @@ describe('listMemberHomeThreadItems', () => {
     );
   });
 
+  it('leads with the most recent discussion', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [
+        {
+          ...home.proposals[0],
+          slug: 'winter-notes',
+          title: 'Winter notes',
+          state: 'discussion',
+          createdAt: '2026-06-01T00:00:00.000Z',
+        },
+        home.proposals[0],
+      ],
+    });
+    expect(items.map((item) => item.slug)[0]).toBe('winter-notes');
+    expect(items[0]?.documentKind).toBe('discussion');
+  });
+
   it('keeps a discussion’s own kind instead of calling it a proposal', () => {
     const items = listMemberHomeThreadItems({
       ...home,
@@ -320,5 +338,26 @@ describe('passedMemberHomeItemKeys', () => {
       { role: 'user', content: 'yes' },
     ]);
     expect(keys).toEqual(['proposal:invite-member']);
+  });
+
+  it('keeps an item when the member asks for context', () => {
+    const keys = passedMemberHomeItemKeys(items, [
+      {
+        role: 'assistant',
+        parts: [
+          {
+            type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+            state: 'output-available',
+            input: { kind: 'signal', slug: 'define-products' },
+          },
+        ],
+      },
+      {
+        role: 'user',
+        content:
+          'Give me the context on Define products to be sold soon. Stay with this one and use the most recent discussion.',
+      },
+    ]);
+    expect(keys).toEqual([]);
   });
 });

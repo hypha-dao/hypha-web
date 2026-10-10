@@ -41,6 +41,7 @@ export function buildMemberGuidance(input: {
     category?: string | null;
     summary?: string | null;
     creatorName?: string | null;
+    documentState?: string | null;
   } | null;
   spaceCount: number;
 }): string {
@@ -55,10 +56,20 @@ export function buildMemberGuidance(input: {
         lead.spaceTitle
       } shared this: ${summary} ${invitation(lead.category)}`;
     }
+    if (lead.documentState?.trim().toLowerCase() === 'discussion') {
+      const summary = lead.summary?.trim();
+      const who = lead.creatorName?.trim();
+      const detail = [who ? `${who} opened it.` : null, summary]
+        .filter(Boolean)
+        .join(' ');
+      return `Hi ${name}. The latest discussion is ${lead.title} in ${
+        lead.spaceTitle
+      }.${detail ? ` ${detail}` : ''} Ready to take a look?`;
+    }
     if (lead.kind === 'proposal') {
       return `Hi ${name}. ${lead.title} in ${lead.spaceTitle} is open for a vote. The choice stays with you.`;
     }
-    return `Hi ${name}. ${lead.title} in ${lead.spaceTitle} is here if you want to look. The choice stays with you.`;
+    return `Hi ${name}. ${lead.title} in ${lead.spaceTitle} is the next one. Ready to take a look?`;
   }
 
   if (input.spaceCount === 0) {
