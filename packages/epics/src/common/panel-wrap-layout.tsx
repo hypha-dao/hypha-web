@@ -32,7 +32,7 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { isInteractiveCreatePath } from './get-path-function';
-import { useIsSpaceContext } from './use-is-space-context';
+import { useIsNetworkContext, useIsSpaceContext } from './use-is-space-context';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
@@ -121,10 +121,11 @@ export function AiSidebarTrigger() {
     useAiPanel();
   const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace) return null;
+  if (!isSpace && !isNetwork) return null;
 
   const isMenuOpen = overlayVisible;
 
@@ -162,10 +163,11 @@ export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
   const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace) return null;
+  if (!isSpace && !isNetwork) return null;
 
   return (
     <button
@@ -197,6 +199,7 @@ export function HumanSidebarTrigger() {
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const { activeRoomId } = useGlobalCallDock();
   const { jwt } = useJwt();
@@ -208,9 +211,8 @@ export function HumanSidebarTrigger() {
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
-  // Chat is space-only. Hide the header trigger outside a space, and while the
-  // panel is open (the panel has its own chrome). Unread mentions only exist in-space.
-  if (!isSpace || open) return null;
+  // Hide the header trigger while the panel is open. Unread mentions only exist in a space.
+  if (!(isSpace || isNetwork) || open) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
@@ -351,15 +353,17 @@ export function PanelWrapLayout({
     closeHumanChatPanel,
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
   const isOnboarding = isInteractiveCreatePath(pathname);
   const isMemberHome = /\/home\/?$/.test(pathname);
-  const effectiveLeft = isSpace ? left : undefined;
-  // Human chat lives in a space, and on the member home so a connection can
-  // open a direct room. It stays unmounted on network, my spaces, and wallet.
-  const showHumanChat = isSpace || isMemberHome;
+  const showAiPanel = isSpace || isNetwork;
+  const effectiveLeft = showAiPanel ? left : undefined;
+  // Human chat lives in a space, on the member home, and on the network.
+  // It stays unmounted on my spaces and wallet.
+  const showHumanChat = isSpace || isMemberHome || isNetwork;
   const effectiveRight = showHumanChat ? right : undefined;
 
-  // Close when the route leaves a space or the member home. Does not run again
+  // Close when the route leaves a space, the member home, or the network. Does not run again
   // if something opens the panel while already outside a space and then
   // navigates into one (the call dock opens chat and pushes the space route
   // together).
@@ -390,7 +394,7 @@ export function PanelWrapLayout({
     ? 0
     : leftExpanded
     ? leftExpandedWidthPx
-    : isSpace
+    : showAiPanel
     ? LEFT_SIDEBAR_ICON_WIDTH_PX
     : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
@@ -421,7 +425,7 @@ export function PanelWrapLayout({
       ? '0px'
       : leftExpanded
       ? leftExpandedSidebarWidth
-      : isSpace
+      : showAiPanel
       ? LEFT_SIDEBAR_ICON_WIDTH
       : '0px'
     : '0px';

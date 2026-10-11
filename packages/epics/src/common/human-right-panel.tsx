@@ -1014,7 +1014,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
   const searchParams = useSearchParams();
-  const spaceSlug = params?.id;
+  const routeSpaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
 
   const matrix = useMatrix();
   const {
@@ -1045,6 +1045,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     openHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  // A pin on the network has no space in the route. The open room carries it.
+  const spaceSlug = routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
   const [dashboardRoom, setDashboardRoom] = useState<'network' | 'ecosystem'>(
     'network',
   );
