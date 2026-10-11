@@ -54,16 +54,6 @@ const HOME_SOUND_KEY = 'hypha-member-home-sound';
 const HOME_MIC_KEY = 'hypha-member-home-mic';
 const HOME_CHOICES_KEY = 'hypha-member-home-choices';
 
-function scrollParent(node: HTMLElement): HTMLElement | null {
-  let current = node.parentElement;
-  while (current) {
-    const overflow = getComputedStyle(current).overflowY;
-    if (overflow === 'auto' || overflow === 'scroll') return current;
-    current = current.parentElement;
-  }
-  return null;
-}
-
 function readMemberHomeChoices(): {
   passed: string[];
   deferred: string[];
@@ -197,9 +187,6 @@ export function MemberHomeChat({
   const [soundReady, setSoundReady] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
-  const scroller = useRef<HTMLDivElement>(null);
-  const threadEnd = useRef<HTMLDivElement>(null);
-  const followThread = useRef(false);
 
   const transport = useMemo(
     () =>
@@ -247,7 +234,6 @@ export function MemberHomeChat({
       const trimmed = text.trim();
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
-      if (!hidden) followThread.current = true;
       if (!hidden && trimmed) {
         const kind = widgetKindFor(trimmed);
         if (kind) {
@@ -418,24 +404,6 @@ export function MemberHomeChat({
     void send(t('homeArrival'), true);
   }, [isAuthenticated, isAuthLoading, send, soundReady, t]);
 
-  useEffect(() => {
-    const node = scroller.current;
-    const parent = node ? scrollParent(node) : null;
-    if (!parent) return;
-    const onScroll = () => {
-      const slack =
-        parent.scrollHeight - parent.scrollTop - parent.clientHeight;
-      followThread.current = slack < 160;
-    };
-    parent.addEventListener('scroll', onScroll, { passive: true });
-    return () => parent.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (!followThread.current) return;
-    threadEnd.current?.scrollIntoView({ block: 'end' });
-  }, [homeMessages, isStreaming, widgets]);
-
   const threadItems = useMemo(
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
@@ -538,7 +506,6 @@ export function MemberHomeChat({
   return (
     <div className="flex w-full min-w-0 flex-col">
       <div
-        ref={scroller}
         className="w-full min-w-0 px-4 py-4 md:px-6"
         aria-label={t('conversation')}
       >
@@ -667,10 +634,7 @@ export function MemberHomeChat({
         </div>
       ) : null}
 
-      <div
-        ref={threadEnd}
-        className="w-full min-w-0 shrink-0 border-t border-border pb-3"
-      >
+      <div className="w-full min-w-0 shrink-0 border-t border-border pb-3">
         <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 md:px-6">
           {chips.map((chip) => (
             <Button

@@ -8,11 +8,8 @@
 
 .member-home-banner {
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
+  inset: 0;
   z-index: -1;
-  height: 100dvh;
   overflow: hidden;
   pointer-events: none;
   background: var(--hypha-paper);
