@@ -187,6 +187,7 @@ export function MemberHomeChat({
   const [soundReady, setSoundReady] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
+  const scroller = useRef<HTMLDivElement>(null);
 
   const transport = useMemo(
     () =>
@@ -404,6 +405,12 @@ export function MemberHomeChat({
     void send(t('homeArrival'), true);
   }, [isAuthenticated, isAuthLoading, send, soundReady, t]);
 
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [homeMessages, isStreaming, widgets]);
+
   const threadItems = useMemo(
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
@@ -504,9 +511,10 @@ export function MemberHomeChat({
   const visibleError = error && !dismissedError;
 
   return (
-    <div className="flex w-full min-w-0 flex-col">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <div
-        className="w-full min-w-0 px-4 py-4 md:px-6"
+        ref={scroller}
+        className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-4"
         aria-label={t('conversation')}
       >
         <div className="grid w-full gap-4">
@@ -600,7 +608,7 @@ export function MemberHomeChat({
       </div>
 
       {visibleError ? (
-        <div className="mx-4 mb-2 border border-border bg-background-2 px-3 py-2 text-2 md:mx-6">
+        <div className="mx-4 mb-2 border border-border bg-background-2 px-3 py-2 text-2">
           <p>{t('threadDropped')}</p>
           <div className="mt-2 flex gap-2">
             <Button
@@ -634,8 +642,8 @@ export function MemberHomeChat({
         </div>
       ) : null}
 
-      <div className="w-full min-w-0 shrink-0 border-t border-border pb-3">
-        <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 md:px-6">
+      <div className="w-full min-w-0 shrink-0 pb-3">
+        <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3">
           {chips.map((chip) => (
             <Button
               key={chip.key}
@@ -653,7 +661,7 @@ export function MemberHomeChat({
           ))}
         </div>
         {micOn && voiceInterview.liveTranscript ? (
-          <p className="px-4 pb-1 text-1 text-neutral-11 md:px-6">
+          <p className="px-4 pb-1 text-1 text-neutral-11">
             “{voiceInterview.liveTranscript}”
           </p>
         ) : null}
@@ -663,7 +671,7 @@ export function MemberHomeChat({
             onClick={() => {
               void voiceInterview.startListening();
             }}
-            className="px-4 pb-1 text-left text-1 text-neutral-11 md:px-6"
+            className="px-4 pb-1 text-left text-1 text-neutral-11"
           >
             {t('soundNeedsMic')}
           </button>
