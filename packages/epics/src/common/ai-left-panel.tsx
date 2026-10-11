@@ -2890,13 +2890,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [spaceSlug, voiceInterview.startListening, voiceInterview.stopSpeaking]);
 
   const toggleMic = useCallback(() => {
+    const micNeedsGrant =
+      voiceInterview.voiceError === 'not-allowed' ||
+      voiceInterview.voiceError === 'audio-capture';
+    if (micOn && micNeedsGrant) {
+      void voiceInterview.startListening();
+      return;
+    }
     setMicOn((current) => {
       const next = !current;
       if (next) void voiceInterview.startListening();
       writeSpaceVoiceOn(spaceSlug, 'mic', next);
       return next;
     });
-  }, [spaceSlug, voiceInterview.startListening]);
+  }, [
+    micOn,
+    spaceSlug,
+    voiceInterview.startListening,
+    voiceInterview.voiceError,
+  ]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {

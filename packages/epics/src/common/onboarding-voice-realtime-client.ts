@@ -79,6 +79,37 @@ export function extractRealtimeErrorInfo(
 }
 
 /** OpenAI emits these when cancel races completion — safe to ignore. */
+/** Browser mic failures. These do not clear by retrying off a timer. */
+export function microphoneCaptureErrorCode(
+  error: unknown,
+): 'not-allowed' | 'audio-capture' | null {
+  if (!error || typeof error !== 'object') return null;
+  const name =
+    'name' in error && typeof (error as { name?: unknown }).name === 'string'
+      ? (error as { name: string }).name
+      : '';
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  if (
+    name === 'NotAllowedError' ||
+    name === 'PermissionDeniedError' ||
+    name === 'SecurityError' ||
+    message.includes('permission denied') ||
+    message.includes('not allowed')
+  ) {
+    return 'not-allowed';
+  }
+  if (
+    name === 'NotFoundError' ||
+    name === 'NotReadableError' ||
+    name === 'OverconstrainedError' ||
+    message.includes('requested device not found') ||
+    message.includes('could not start audio')
+  ) {
+    return 'audio-capture';
+  }
+  return null;
+}
+
 export function isIgnorableRealtimeError(error: RealtimeErrorInfo): boolean {
   if (error.code === 'response_cancel_not_active') return true;
   const message = error.message?.toLowerCase() ?? '';

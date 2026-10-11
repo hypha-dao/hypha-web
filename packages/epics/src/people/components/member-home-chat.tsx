@@ -393,14 +393,22 @@ export function MemberHomeChat({
     });
   }, [voiceInterview.startListening, voiceInterview.stopSpeaking]);
 
+  const micNeedsGrant =
+    voiceInterview.voiceError === 'not-allowed' ||
+    voiceInterview.voiceError === 'audio-capture';
+
   const toggleMic = useCallback(() => {
+    if (micOn && micNeedsGrant) {
+      void voiceInterview.startListening();
+      return;
+    }
     setMicOn((current) => {
       const next = !current;
       if (next) void voiceInterview.startListening();
       writeHomeMicOn(next);
       return next;
     });
-  }, [voiceInterview.startListening]);
+  }, [micNeedsGrant, micOn, voiceInterview.startListening]);
 
   useEffect(() => {
     if (!soundReady || opened.current || isAuthLoading || !isAuthenticated) {
@@ -685,10 +693,16 @@ export function MemberHomeChat({
             “{voiceInterview.liveTranscript}”
           </p>
         ) : null}
-        {dialogue && voiceInterview.voiceError ? (
-          <p className="px-4 pb-1 text-1 text-neutral-11 md:px-6">
+        {dialogue && micNeedsGrant ? (
+          <button
+            type="button"
+            onClick={() => {
+              void voiceInterview.startListening();
+            }}
+            className="px-4 pb-1 text-left text-1 text-neutral-11 md:px-6"
+          >
             {t('soundNeedsMic')}
-          </p>
+          </button>
         ) : null}
         <AiPanelChatBar
           value={input}
