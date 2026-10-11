@@ -6,6 +6,7 @@ import {
   streamText,
 } from 'ai';
 import type {
+  LanguageModel,
   StreamTextTransform,
   TextStreamPart,
   ToolSet,
@@ -307,7 +308,7 @@ function resolveOpenRouterChatModelId(): string {
 }
 
 /** The chat model used by the member home and by a mentioned agent in Matrix. */
-export function getHyphaChatModel() {
+export function getHyphaChatModel(): LanguageModel {
   return openrouterWithHyphaHeaders(resolveOpenRouterChatModelId());
 }
 
