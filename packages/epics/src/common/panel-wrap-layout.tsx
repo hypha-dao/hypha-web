@@ -598,7 +598,6 @@ export function PanelWrapLayout({
           }
           if (open !== rightOpen) toggleRight();
         }}
-        className="overflow-hidden"
         style={
           {
             '--sidebar-width': rightSidebarWidth,
@@ -638,7 +637,6 @@ export function PanelWrapLayout({
           }
           closeAiPanel();
         }}
-        className="overflow-hidden"
         style={
           {
             '--sidebar-width': leftExpandedSidebarWidth,
