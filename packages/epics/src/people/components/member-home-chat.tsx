@@ -653,7 +653,7 @@ export function MemberHomeChat({
         </div>
       ) : null}
 
-      <div className="w-full min-w-0 shrink-0 border-t border-border">
+      <div className="w-full min-w-0 shrink-0 border-t border-border pb-3">
         <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 md:px-6">
           {chips.map((chip) => (
             <Button
