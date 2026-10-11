@@ -882,15 +882,18 @@ export function useOnboardingVoiceRealtime({
       });
       // The greeting is often ready before the data channel opens. Speaking
       // then only queues the line, so flush it once the channel can send.
+      const channel = connection.dataChannel;
       const speakQueued = () => flushQueuedSpeech(connection);
-      if (connection.dataChannel.readyState === 'open') {
+      // Read through a function so a later check is not narrowed to "still closed".
+      const readReadyState = () => channel.readyState;
+      if (readReadyState() === 'open') {
         speakQueued();
       } else {
-        connection.dataChannel.addEventListener('open', speakQueued, {
+        channel.addEventListener('open', speakQueued, {
           once: true,
         });
-        if (connection.dataChannel.readyState === 'open') {
-          connection.dataChannel.removeEventListener('open', speakQueued);
+        if (readReadyState() === 'open') {
+          channel.removeEventListener('open', speakQueued);
           speakQueued();
         }
       }
