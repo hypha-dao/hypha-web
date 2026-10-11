@@ -26,12 +26,13 @@ export function MemberHomeVote({
 
   async function cast(next: 'yes' | 'no') {
     setFailed(false);
-    celebrate();
     try {
       if (next === 'yes') await handleAccept();
       else await handleReject();
       setChoice(next);
-    } catch {
+      celebrate();
+    } catch (error) {
+      console.error('Vote failed', error);
       setFailed(true);
     }
   }
