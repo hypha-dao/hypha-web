@@ -120,7 +120,7 @@ function EnergyCommunityCard({
     amount == null ? missing : t('euros', { amount });
 
   return (
-    <section className="mb-4 border border-border bg-background p-5">
+    <section className="border border-border bg-background p-4">
       <div className="flex items-baseline justify-between gap-4">
         <h2
           className="text-3"
@@ -132,7 +132,7 @@ function EnergyCommunityCard({
           {community.spaceTitle}
         </p>
       </div>
-      <p className="mt-4 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+      <p className="mt-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {t('thisMonth')}
       </p>
       <dl className="mt-2 grid gap-2">
