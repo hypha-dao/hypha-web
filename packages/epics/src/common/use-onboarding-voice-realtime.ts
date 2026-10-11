@@ -972,6 +972,7 @@ export function useOnboardingVoiceRealtime({
         }
       }
     } catch (error) {
+      if (generation !== connectGenerationRef.current) return;
       console.error('[VoiceRealtime] connect failed:', error);
       const status = resolveRealtimeConnectFailureStatus(error);
       const micCode = microphoneCaptureErrorCode(error);
