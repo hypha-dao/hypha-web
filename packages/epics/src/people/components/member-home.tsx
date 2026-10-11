@@ -416,7 +416,7 @@ export function MemberHome({
             }
           >
             {home == null || orientation ? (
-              <div className="flex items-start border-r border-border px-4 py-4">
+              <div className="flex items-center justify-center border-r border-border px-4 py-4">
                 {home == null || orientation == null ? (
                   <Skeleton loading height="22px" width="6.5rem" />
                 ) : (
@@ -776,7 +776,7 @@ function OrientationBadge({
             aria-label={t('changeOrientationLabel', { orientation: label })}
             className="inline-flex items-center gap-2 rounded-none text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
           >
-            <PersonRoleBadge role={orientation} />
+            <PersonRoleBadge role={orientation} stacked />
           </button>
         </PopoverTrigger>
         <PopoverContent

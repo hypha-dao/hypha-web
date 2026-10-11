@@ -21,13 +21,19 @@ export function roleBadge(role: PersonRole, label: string): PersonBadgeItem {
   return { id: `role:${role}`, label, role };
 }
 
-export function RoleGlyph({ role }: { role: PersonRole }) {
+export function RoleGlyph({
+  role,
+  size = 14,
+}: {
+  role: PersonRole;
+  size?: number;
+}) {
   return (
     <svg
       viewBox="0 0 32 32"
       aria-hidden
       className="block shrink-0"
-      style={{ width: 14, height: 14 }}
+      style={{ width: size, height: size }}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.5}
@@ -51,26 +57,55 @@ export function RoleGlyph({ role }: { role: PersonRole }) {
 }
 
 /** One or more badges. A role is the first kind; later badges use the same chip. */
-export function PersonBadges({ items }: { items: PersonBadgeItem[] }) {
+export function PersonBadges({
+  items,
+  stacked = false,
+}: {
+  items: PersonBadgeItem[];
+  stacked?: boolean;
+}) {
   if (items.length === 0) return null;
   return (
-    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
+    <span
+      className={
+        stacked
+          ? 'inline-flex max-w-full flex-col items-center gap-2'
+          : 'inline-flex max-w-full flex-wrap items-center gap-1'
+      }
+    >
       {items.map((item) => (
         <span
           key={item.id}
-          className="inline-flex max-w-full items-center gap-1.5 border border-foreground bg-background px-2 py-0.5 text-1 text-foreground"
+          className={
+            stacked
+              ? 'inline-flex min-w-[5.5rem] flex-col items-center gap-2 border border-foreground bg-background px-4 py-3 text-1 text-foreground'
+              : 'inline-flex max-w-full items-center gap-1.5 border border-foreground bg-background px-2 py-0.5 text-1 text-foreground'
+          }
         >
-          {item.role ? <RoleGlyph role={item.role} /> : null}
-          <span className="truncate">{item.label}</span>
+          {item.role ? (
+            <RoleGlyph role={item.role} size={stacked ? 28 : 14} />
+          ) : null}
+          <span className={stacked ? 'text-center' : 'truncate'}>
+            {item.label}
+          </span>
         </span>
       ))}
     </span>
   );
 }
 
-export function PersonRoleBadge({ role }: { role: PersonRole }) {
+export function PersonRoleBadge({
+  role,
+  stacked = false,
+}: {
+  role: PersonRole;
+  stacked?: boolean;
+}) {
   const t = useTranslations('WelcomeFlow');
   return (
-    <PersonBadges items={[roleBadge(role, t(`orientation.${role}.title`))]} />
+    <PersonBadges
+      stacked={stacked}
+      items={[roleBadge(role, t(`orientation.${role}.title`))]}
+    />
   );
 }
