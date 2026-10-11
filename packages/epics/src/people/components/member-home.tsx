@@ -707,6 +707,7 @@ export function MemberHome({
         </div>
       </aside>
       <Dialog
+        modal={false}
         open={recordItem != null}
         onOpenChange={(open) => {
           if (!open) setRecordItem(null);
