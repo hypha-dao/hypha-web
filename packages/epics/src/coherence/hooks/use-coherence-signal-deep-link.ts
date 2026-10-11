@@ -15,8 +15,10 @@ type UseCoherenceSignalDeepLinkOptions = {
   /** When human chat is enabled, skip scroll/actions after the user closed the panel. */
   humanChatOpen?: boolean;
   hideArchived: boolean;
-  priorityFilter: 'all' | 'critical' | 'high' | 'medium' | 'low';
-  typeFilter?: string;
+  /** Empty means every priority is visible. */
+  priorityFilters?: readonly string[];
+  /** Empty means every type is visible. */
+  typeFilters?: readonly string[];
   /** When set, skip re-opening chat / scroll if the user is already on this signal. */
   activeCoherenceSlug?: string | null;
   onOpenSignalChat?: (signal: Coherence) => void;
@@ -50,8 +52,8 @@ export function useCoherenceSignalDeepLink({
   humanChatEnabled,
   humanChatOpen = false,
   hideArchived,
-  priorityFilter,
-  typeFilter = 'all',
+  priorityFilters = [],
+  typeFilters = [],
   activeCoherenceSlug,
   onOpenSignalChat,
   onRevealArchivedSignal,
@@ -106,8 +108,9 @@ export function useCoherenceSignalDeepLink({
     }
 
     if (
-      (priorityFilter !== 'all' && signal.priority !== priorityFilter) ||
-      (typeFilter !== 'all' && signal.type !== typeFilter)
+      (priorityFilters.length > 0 &&
+        !priorityFilters.includes(signal.priority ?? '')) ||
+      (typeFilters.length > 0 && !typeFilters.includes(signal.type))
     ) {
       onClearPriorityFilter?.();
       return;
@@ -149,8 +152,8 @@ export function useCoherenceSignalDeepLink({
     onOpenSignalChat,
     onRefreshSignals,
     onRevealArchivedSignal,
-    priorityFilter,
-    typeFilter,
+    priorityFilters,
+    typeFilters,
     signals,
     targetSlug,
   ]);
