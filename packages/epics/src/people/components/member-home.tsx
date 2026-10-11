@@ -388,29 +388,31 @@ export function MemberHome({
       </aside>
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
         <div className="shrink-0 px-4 pt-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <span
-              className="inline-flex shrink-0"
-              style={{ width: 24, height: 24 }}
-            >
-              <MemberHomeMark className="h-full w-full" />
-            </span>
-            <div className="min-w-0 flex-1">
-              {greetingPending ? (
-                <Skeleton
-                  loading
-                  height="28px"
-                  width="14rem"
-                  className="rounded-none"
-                />
-              ) : (
-                <h1
-                  className="truncate text-3"
-                  style={{ fontFamily: 'var(--font-family-heading)' }}
-                >
-                  {t(greetingKey(), { name: displayName })}
-                </h1>
-              )}
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span
+                className="inline-flex shrink-0"
+                style={{ width: 24, height: 24 }}
+              >
+                <MemberHomeMark className="h-full w-full" />
+              </span>
+              <div className="min-w-0 flex-1">
+                {greetingPending ? (
+                  <Skeleton
+                    loading
+                    height="28px"
+                    width="14rem"
+                    className="rounded-none"
+                  />
+                ) : (
+                  <h1
+                    className="truncate text-3"
+                    style={{ fontFamily: 'var(--font-family-heading)' }}
+                  >
+                    {t(greetingKey(), { name: displayName })}
+                  </h1>
+                )}
+              </div>
             </div>
             <HomeViewSwitch
               view={homeView}
