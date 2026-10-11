@@ -179,7 +179,6 @@ export const updatePerson = async (
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
   const { primaryOrientation, ...profile } = person;
-  void primaryOrientation;
   const updateData = {
     ...profile,
     email: person.email || null,
@@ -191,7 +190,23 @@ export const updatePerson = async (
   if (!dbPerson) {
     throw new Error('Failed to update person');
   }
-  return mapToDomainPerson(dbPerson);
+  const updated = mapToDomainPerson(dbPerson);
+  if (
+    primaryOrientation !== 'member' &&
+    primaryOrientation !== 'builder' &&
+    primaryOrientation !== 'investor'
+  ) {
+    return updated;
+  }
+  try {
+    return await updatePersonPrimaryOrientation(
+      { id: person.id, primaryOrientation },
+      { db },
+    );
+  } catch (error) {
+    if (isMissingPrimaryOrientationColumn(error)) return updated;
+    throw error;
+  }
 };
 
 export const updatePersonPrimaryOrientation = async (

@@ -124,6 +124,7 @@ type MemberHomeChatProps = {
   intelligence: MemberIntelligence;
   onChatPerson: MemberHomeOpenChat;
   onCallPerson: MemberHomeOpenChat;
+  onVideoPerson: MemberHomeOpenChat;
   onFocusItem?: (item: MemberHomeThreadItem | null) => void;
 };
 
@@ -145,7 +146,7 @@ function messageText(message: HomeMessage) {
 /** A decision stays with the member. Drop narration and any ask for their choice. */
 function straightforwardHomeText(text: string) {
   const steers = (sentence: string) =>
-    /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|if you approve|your approval|can you review|do you approve|would you approve|how (?:will|would) you vote|let me know if you/i.test(
+    /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
       sentence,
     );
   return text
@@ -162,6 +163,7 @@ export function MemberHomeChat({
   intelligence,
   onChatPerson,
   onCallPerson,
+  onVideoPerson,
   onFocusItem,
 }: MemberHomeChatProps) {
   const t = useTranslations('MemberHome');
@@ -473,6 +475,9 @@ export function MemberHomeChat({
           }}
           onCall={(person) => {
             void onCallPerson(person);
+          }}
+          onVideo={(person) => {
+            void onVideoPerson(person);
           }}
         />
       );

@@ -96,6 +96,10 @@ export type MemberIntelligence = {
     creatorId: number | null;
     creatorName: string | null;
     creatorAvatarUrl: string | null;
+    /** Profile text, when the person record has one. */
+    creatorAbout?: string | null;
+    /** People they share a space with. Absent when the record has none. */
+    creatorWith?: string[];
   }>;
   signals: Array<{
     id: number;
@@ -103,6 +107,12 @@ export type MemberIntelligence = {
     title: string;
     type: string;
     priority: string | null;
+    /** When it is due. Absent on older payloads. */
+    dueAt?: string | null;
+    /** When it was raised. Absent on older payloads. */
+    createdAt?: string | null;
+    /** Workflow status. Done and cancelled are not waiting. */
+    progressStatus?: string | null;
     spaceSlug: string;
     spaceTitle: string;
     spaceLogo?: MemberSpaceLogo | null;
@@ -111,6 +121,10 @@ export type MemberIntelligence = {
     creatorId: number | null;
     creatorName: string | null;
     creatorAvatarUrl: string | null;
+    /** Profile text, when the person record has one. */
+    creatorAbout?: string | null;
+    /** People they share a space with. Absent when the record has none. */
+    creatorWith?: string[];
   }>;
   notifications: MemberAttentionItem[];
   connections: Array<{
@@ -133,6 +147,24 @@ export type MemberIntelligence = {
   chatSpaceSlug: string | null;
   /** Space join links still waiting on the member. Hidden after they join. */
   invites: MemberSpaceInvite[];
+  /**
+   * Recent movement inside their spaces: someone joined, the treasury
+   * moved, voice changed, or the space agreed. Capped. Not a second queue.
+   */
+  movement?: MemberMovement[];
+};
+
+export type MemberMovementKind = 'joined' | 'treasury' | 'voice' | 'agreed';
+
+export type MemberMovement = {
+  id: string;
+  kind: MemberMovementKind;
+  title: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  spaceLogo?: MemberSpaceLogo | null;
+  documentSlug: string | null;
+  at: string;
 };
 
 export type MemberSpaceInvite = {
@@ -256,6 +288,87 @@ export function peopleSharingMemberSpaces({
     count: ranked.length,
     connections: ranked.slice(0, Math.max(limit, 0)),
   };
+}
+
+/**
+ * For each focus person, the other people who share at least one of these
+ * spaces with them, closest overlap first. The caller and space actors are
+ * left out. A person with no overlap is omitted.
+ */
+export function peerNamesByPerson({
+  callerPersonId,
+  membersBySpace,
+  people,
+  spaceActorSubPrefix,
+  focusPersonIds,
+  limit,
+}: {
+  callerPersonId: number;
+  membersBySpace: ReadonlyArray<{
+    spaceId: number;
+    addresses: readonly string[];
+  }>;
+  people: readonly SharedSpacePerson[];
+  spaceActorSubPrefix: string;
+  focusPersonIds: readonly number[];
+  limit: number;
+}): Map<number, string[]> {
+  const cap = Math.max(limit, 0);
+  const focus = new Set(focusPersonIds);
+  const spaceIdsByAddress = new Map<string, Set<number>>();
+  for (const space of membersBySpace) {
+    const seenInSpace = new Set<string>();
+    for (const raw of space.addresses) {
+      const key = raw.trim().toLowerCase();
+      if (!key || seenInSpace.has(key)) continue;
+      seenInSpace.add(key);
+      const spaceIds = spaceIdsByAddress.get(key) ?? new Set<number>();
+      spaceIds.add(space.spaceId);
+      spaceIdsByAddress.set(key, spaceIds);
+    }
+  }
+
+  const roster: Array<{
+    id: number;
+    label: string;
+    spaceIds: Set<number>;
+  }> = [];
+  const seenIds = new Set<number>();
+  for (const person of people) {
+    if (person.id === callerPersonId || seenIds.has(person.id)) continue;
+    if (person.sub?.startsWith(spaceActorSubPrefix)) continue;
+    const key = person.address?.trim().toLowerCase();
+    if (!key) continue;
+    const spaceIds = spaceIdsByAddress.get(key);
+    if (!spaceIds || spaceIds.size === 0) continue;
+    const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
+    const label = full || person.nickname?.trim() || '';
+    if (!label) continue;
+    seenIds.add(person.id);
+    roster.push({ id: person.id, label, spaceIds });
+  }
+
+  const peers = new Map<number, string[]>();
+  if (cap === 0) return peers;
+  for (const person of roster) {
+    if (!focus.has(person.id)) continue;
+    const ranked = roster
+      .filter((other) => other.id !== person.id)
+      .map((other) => {
+        let overlap = 0;
+        for (const spaceId of person.spaceIds) {
+          if (other.spaceIds.has(spaceId)) overlap += 1;
+        }
+        return { label: other.label, overlap, id: other.id };
+      })
+      .filter((other) => other.overlap > 0)
+      .sort(
+        (left, right) => right.overlap - left.overlap || left.id - right.id,
+      );
+    const names = ranked.slice(0, cap).map((other) => other.label);
+    if (names.length > 0) peers.set(person.id, names);
+  }
+  return peers;
 }
 
 export type DatedAttentionItem = MemberAttentionItem & { at: string };

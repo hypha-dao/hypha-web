@@ -13,6 +13,20 @@ export const NETWORK_HORIZON_CANDIDATE_LIMIT = 48;
 /** Needs and opportunities are what the network offers. Other types stay in their space. */
 export const NETWORK_SIGNAL_TYPES = ['Need', 'Opportunity'] as const;
 
+/**
+ * One way of showing up, one set of signals. The sets do not overlap, so a
+ * builder feed never carries a member's needs and a funder's outcomes stay
+ * with the investor role.
+ */
+export function signalTypesForOrientation(
+  orientation: 'member' | 'builder' | 'investor' | null | undefined,
+): readonly string[] {
+  if (orientation === 'builder') return ['Opportunity', 'Insight'];
+  if (orientation === 'investor') return ['Impact'];
+  if (orientation === 'member') return ['Need', 'Resource', 'Action'];
+  return [];
+}
+
 const RELEVANCE_WEIGHT: Record<NetworkRelevanceReason, number> = {
   location: 3,
   interest: 2,
@@ -190,6 +204,7 @@ export function rankNetworkHorizonSignals(
   profile: MemberHorizonProfile,
   candidates: readonly NetworkHorizonCandidate[],
   limit = NETWORK_HORIZON_FEED_LIMIT,
+  allowedTypes: readonly string[] = NETWORK_SIGNAL_TYPES,
 ): NetworkHorizonSignal[] {
   const location = tokens(profile.location, 2);
   const interests = new Set<string>([
@@ -203,7 +218,7 @@ export function rankNetworkHorizonSignals(
 
   const ranked: NetworkHorizonSignal[] = [];
   for (const candidate of candidates) {
-    if (!(NETWORK_SIGNAL_TYPES as readonly string[]).includes(candidate.type)) {
+    if (!allowedTypes.includes(candidate.type)) {
       continue;
     }
     const reasons: NetworkRelevanceReason[] = [];

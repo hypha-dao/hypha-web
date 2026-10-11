@@ -13,8 +13,10 @@ import {
 import {
   coherences,
   documents,
+  events,
   people,
   spaces,
+  tokens,
 } from '@hypha-platform/storage-postgres';
 
 import type { DbConfig } from '../../server';
@@ -48,13 +50,20 @@ import type {
   NetworkCapitalAsk,
 } from '../member-intelligence';
 import {
+  peerNamesByPerson,
   peopleSharingMemberSpaces,
   pickNotificationsAcrossSpaces,
 } from '../member-intelligence';
 import {
+  movementKindForAgreement,
+  selectMemberMovement,
+} from '../member-situation';
+import { SpaceTransparencyLevel } from '../../space/transparency-policy';
+import { readSpaceOnChainTransparency } from '../../space/server/read-space-on-chain-transparency';
+import {
   NETWORK_HORIZON_CANDIDATE_LIMIT,
-  NETWORK_SIGNAL_TYPES,
   rankNetworkHorizonSignals,
+  signalTypesForOrientation,
   type MemberHorizonProfile,
   type NetworkHorizon,
   type NetworkHorizonCandidate,
@@ -136,20 +145,32 @@ async function chainWeb3SpaceIds(address: string | null | undefined) {
  * written by this app, so joining it always reported zero.
  * Archived spaces are already absent from `spaceIds`.
  */
+const CREATOR_PEER_LIMIT = 4;
+const OUTSIDE_CREATOR_LIMIT = 3;
+const OUTSIDE_SPACE_LIMIT = 2;
+
 async function loadSharedPeople(
   {
     personId,
     spaceIds,
     limit,
-  }: { personId: number; spaceIds: number[]; limit: number },
+    focusPersonIds,
+  }: {
+    personId: number;
+    spaceIds: number[];
+    limit: number;
+    focusPersonIds: readonly number[];
+  },
   { db }: DbConfig,
 ): Promise<{
   count: number;
   connections: MemberIntelligence['connections'];
+  peers: Record<number, string[]>;
 }> {
   const empty = {
     count: 0,
     connections: [] as MemberIntelligence['connections'],
+    peers: {} as Record<number, string[]>,
   };
   if (spaceIds.length === 0) return empty;
 
@@ -236,13 +257,88 @@ async function loadSharedPeople(
     db,
     shared.connections.map((person) => person.id),
   );
+  const peers = peerNamesByPerson({
+    callerPersonId: personId,
+    membersBySpace,
+    people: peopleRows,
+    spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
+    focusPersonIds,
+    limit: CREATOR_PEER_LIMIT,
+  });
   return {
     count: shared.count,
     connections: shared.connections.map((person) => ({
       ...person,
       primaryOrientation: orientations.get(person.id) ?? null,
     })),
+    peers: Object.fromEntries(peers),
   };
+}
+
+/**
+ * People a creator shares a space with, when they are not already in the
+ * caller's roster. Bounded chain reads. Postgres memberships are not the
+ * live roster, so this uses the same factory lists as the home.
+ */
+async function loadOutsideCreatorPeers(
+  creators: ReadonlyArray<{ id: number; address: string | null }>,
+  excludePersonId: number,
+  { db }: DbConfig,
+): Promise<Record<number, string[]>> {
+  const peers: Record<number, string[]> = {};
+  for (const creator of creators.slice(0, OUTSIDE_CREATOR_LIMIT)) {
+    const wallet = walletAddress(creator.address);
+    if (!wallet || creator.id === excludePersonId) continue;
+    const web3SpaceIds = (await chainWeb3SpaceIds(wallet)).slice(
+      0,
+      OUTSIDE_SPACE_LIMIT,
+    );
+    if (web3SpaceIds.length === 0) continue;
+    const membersBySpace = await Promise.all(
+      web3SpaceIds.map(async (web3SpaceId) => {
+        const addresses = (await web3Client.readContract(
+          getSpaceMembers({ spaceId: BigInt(web3SpaceId) }),
+        )) as readonly `0x${string}`[];
+        return { spaceId: web3SpaceId, addresses };
+      }),
+    );
+    const addressKeys = new Set<string>();
+    for (const space of membersBySpace) {
+      for (const address of space.addresses) {
+        const key = address.trim().toLowerCase();
+        if (key) addressKeys.add(key);
+      }
+    }
+    if (addressKeys.size === 0) continue;
+    const peopleRows = await db
+      .select({
+        id: people.id,
+        slug: people.slug,
+        name: people.name,
+        surname: people.surname,
+        nickname: people.nickname,
+        avatarUrl: people.avatarUrl,
+        address: people.address,
+        sub: people.sub,
+      })
+      .from(people)
+      .where(
+        inArray(
+          sql`upper(${people.address})`,
+          [...addressKeys].map((address) => address.toUpperCase()),
+        ),
+      );
+    const names = peerNamesByPerson({
+      callerPersonId: excludePersonId,
+      membersBySpace,
+      people: peopleRows,
+      spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
+      focusPersonIds: [creator.id],
+      limit: CREATOR_PEER_LIMIT,
+    }).get(creator.id);
+    if (names && names.length > 0) peers[creator.id] = names;
+  }
+  return peers;
 }
 
 async function loadChainMemberSpaces(
@@ -348,13 +444,16 @@ async function loadNetworkHorizonSignals(
     personId,
     profile,
     spaceIds,
+    allowedTypes,
   }: {
     personId: number;
     profile: MemberHorizonProfile;
     spaceIds: number[];
+    allowedTypes: readonly string[];
   },
   { db }: DbConfig,
 ): Promise<NetworkHorizonSignal[]> {
+  if (allowedTypes.length === 0) return [];
   const rows = await db
     .select({
       id: coherences.id,
@@ -384,7 +483,7 @@ async function loadNetworkHorizonSignals(
       and(
         eq(coherences.sharedWithNetwork, true),
         or(eq(coherences.archived, false), isNull(coherences.archived)),
-        inArray(coherences.type, [...NETWORK_SIGNAL_TYPES]),
+        inArray(coherences.type, [...allowedTypes]),
         eq(spaces.isArchived, false),
         or(isNull(coherences.creatorId), ne(coherences.creatorId, personId)),
         spaceIds.length > 0
@@ -422,7 +521,171 @@ async function loadNetworkHorizonSignals(
     ];
   });
 
-  return rankNetworkHorizonSignals(profile, candidates);
+  return rankNetworkHorizonSignals(
+    profile,
+    candidates,
+    undefined,
+    allowedTypes,
+  );
+}
+
+async function spaceActivityIsOpen(
+  spaceRows: Array<{ web3SpaceId?: number | null }>,
+  spaceIds: number[],
+  { db }: DbConfig,
+): Promise<boolean> {
+  if (spaceIds.length === 0) return false;
+  const shared = await db
+    .select({ value: sql<number>`cast(count(*) as integer)` })
+    .from(coherences)
+    .where(
+      and(
+        inArray(coherences.spaceId, spaceIds),
+        eq(coherences.sharedWithNetwork, true),
+        or(eq(coherences.archived, false), isNull(coherences.archived)),
+      ),
+    );
+  if (Number(shared[0]?.value) > 0) return true;
+  for (const space of spaceRows.slice(0, 4)) {
+    const web3SpaceId = space.web3SpaceId;
+    if (web3SpaceId == null || web3SpaceId <= 0) continue;
+    const transparency = await readSpaceOnChainTransparency(web3SpaceId);
+    if (transparency && transparency.access <= SpaceTransparencyLevel.NETWORK) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function loadMemberMovement(
+  spaceRows: MemberSpaceRow[],
+  { db }: DbConfig,
+): Promise<MemberIntelligence['movement']> {
+  const spaceIds = spaceRows.map((space) => space.id);
+  if (spaceIds.length === 0) return [];
+  const spacesById = new Map(spaceRows.map((space) => [space.id, space]));
+  const agreementRows = await db
+    .select({
+      id: documents.id,
+      slug: documents.slug,
+      title: documents.title,
+      label: documents.label,
+      createdAt: documents.createdAt,
+      spaceId: documents.spaceId,
+      spaceSlug: spaces.slug,
+      spaceTitle: spaces.title,
+      logoUrl: spaces.logoUrl,
+      ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+      ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+      voting: tokens.isVotingToken,
+      tokenType: tokens.type,
+    })
+    .from(documents)
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .leftJoin(tokens, eq(tokens.agreementId, documents.id))
+    .where(
+      and(
+        inArray(documents.spaceId, spaceIds),
+        eq(documents.state, 'agreement'),
+      ),
+    )
+    .orderBy(desc(documents.createdAt))
+    .limit(12);
+  const seenAgreements = new Set<number>();
+  const movement: NonNullable<MemberIntelligence['movement']> = [];
+  for (const row of agreementRows) {
+    if (seenAgreements.has(row.id) || !row.spaceSlug) continue;
+    seenAgreements.add(row.id);
+    movement.push({
+      id: `agreement-${row.id}`,
+      kind: movementKindForAgreement({
+        label: row.label,
+        voting: row.voting === true,
+        tokenType: row.tokenType,
+      }),
+      title: row.title?.trim() || 'An agreement',
+      spaceSlug: row.spaceSlug,
+      spaceTitle: row.spaceTitle,
+      spaceLogo: toSpaceLogo(row),
+      documentSlug: row.slug,
+      at: row.createdAt.toISOString(),
+    });
+  }
+
+  const joins = await db
+    .select({
+      id: events.id,
+      createdAt: events.createdAt,
+      referenceId: events.referenceId,
+      parameters: events.parameters,
+    })
+    .from(events)
+    .where(
+      and(
+        eq(events.type, 'joinSpace'),
+        eq(events.referenceEntity, 'space'),
+        inArray(events.referenceId, spaceIds),
+      ),
+    )
+    .orderBy(desc(events.createdAt))
+    .limit(4);
+  const addresses = joins.flatMap((row) => {
+    const parameters = row.parameters as { memberAddress?: unknown } | null;
+    const address =
+      typeof parameters?.memberAddress === 'string'
+        ? parameters.memberAddress.trim()
+        : '';
+    return address ? [address] : [];
+  });
+  const named =
+    addresses.length === 0
+      ? []
+      : await db
+          .select({
+            name: people.name,
+            surname: people.surname,
+            nickname: people.nickname,
+            address: people.address,
+          })
+          .from(people)
+          .where(
+            inArray(
+              sql`upper(${people.address})`,
+              addresses.map((address) => address.toUpperCase()),
+            ),
+          );
+  const nameByAddress = new Map(
+    named.flatMap((person) => {
+      const address = person.address?.trim().toLowerCase();
+      const label = creatorLabel(person.name, person.surname, person.nickname);
+      return address && label ? [[address, label] as const] : [];
+    }),
+  );
+  for (const row of joins) {
+    const space = spacesById.get(row.referenceId);
+    if (!space?.slug) continue;
+    const parameters = row.parameters as { memberAddress?: unknown } | null;
+    const address =
+      typeof parameters?.memberAddress === 'string'
+        ? parameters.memberAddress.trim().toLowerCase()
+        : '';
+    const who = (address && nameByAddress.get(address)) || 'Someone';
+    movement.push({
+      id: `join-${row.id}`,
+      kind: 'joined',
+      title: who,
+      spaceSlug: space.slug,
+      spaceTitle: space.title,
+      spaceLogo: {
+        logoUrl: space.logoUrl,
+        ecosystemLogoUrlLight: space.ecosystemLogoUrlLight ?? null,
+        ecosystemLogoUrlDark: space.ecosystemLogoUrlDark ?? null,
+      },
+      documentSlug: null,
+      at: row.createdAt.toISOString(),
+    });
+  }
+  return selectMemberMovement(movement);
 }
 
 function excerpt(value: string | null | undefined, max = 180): string {
@@ -559,6 +822,8 @@ export async function getMemberIntelligence(
                 creatorSurname: people.surname,
                 creatorNickname: people.nickname,
                 creatorAvatarUrl: people.avatarUrl,
+                creatorAddress: people.address,
+                creatorDescription: people.description,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
                 logoUrl: spaces.logoUrl,
@@ -615,12 +880,19 @@ export async function getMemberIntelligence(
             row.creatorNickname,
           ),
           creatorAvatarUrl: row.creatorAvatarUrl,
+          creatorAbout: optionalExcerpt(row.creatorDescription),
         })),
+        creators: proposalRows.flatMap((row) =>
+          row.creatorId == null
+            ? []
+            : [{ id: row.creatorId, address: row.creatorAddress }],
+        ),
         openProposals: Number(openProposalCount) || 0,
       };
     },
     {
       proposals: [],
+      creators: [] as Array<{ id: number; address: string | null }>,
       openProposals: 0,
     },
   );
@@ -638,6 +910,9 @@ export async function getMemberIntelligence(
                 title: coherences.title,
                 type: coherences.type,
                 priority: coherences.priority,
+                dueAt: coherences.dueAt,
+                createdAt: coherences.createdAt,
+                progressStatus: coherences.progressStatus,
                 assigneeIds: coherences.assigneeIds,
                 description: coherences.description,
                 tags: coherences.tags,
@@ -646,6 +921,8 @@ export async function getMemberIntelligence(
                 creatorSurname: people.surname,
                 creatorNickname: people.nickname,
                 creatorAvatarUrl: people.avatarUrl,
+                creatorAddress: people.address,
+                creatorDescription: people.description,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
                 logoUrl: spaces.logoUrl,
@@ -692,6 +969,9 @@ export async function getMemberIntelligence(
           title: row.title,
           type: row.type,
           priority: row.priority,
+          dueAt: row.dueAt?.toISOString() ?? null,
+          createdAt: row.createdAt?.toISOString() ?? null,
+          progressStatus: row.progressStatus,
           spaceSlug: row.spaceSlug,
           spaceTitle: row.spaceTitle,
           spaceLogo: toSpaceLogo(row),
@@ -704,12 +984,23 @@ export async function getMemberIntelligence(
             row.creatorNickname,
           ),
           creatorAvatarUrl: row.creatorAvatarUrl,
+          creatorAbout: optionalExcerpt(row.creatorDescription),
         })),
+        creators: signalRows.flatMap((row) =>
+          row.creatorId == null
+            ? []
+            : [{ id: row.creatorId, address: row.creatorAddress }],
+        ),
         count: Number(signalCount) || 0,
         interestTags: signalRows.flatMap((row) => stringTags(row.tags)),
       };
     },
-    { signals: [], count: 0, interestTags: [] as string[] },
+    {
+      signals: [],
+      creators: [] as Array<{ id: number; address: string | null }>,
+      count: 0,
+      interestTags: [] as string[],
+    },
   );
 
   const sharedPeople = await readSlice(
@@ -720,10 +1011,14 @@ export async function getMemberIntelligence(
           personId,
           spaceIds,
           limit: Math.max(listLimit, CONNECTION_LIMIT),
+          focusPersonIds: [
+            ...proposalSlice.creators.map((creator) => creator.id),
+            ...signalSlice.creators.map((creator) => creator.id),
+          ],
         },
         { db },
       ),
-    { count: 0, connections: [] },
+    { count: 0, connections: [], peers: {} },
   );
 
   const capitalAskCount = await readSlice(
@@ -864,30 +1159,39 @@ export async function getMemberIntelligence(
     'spaces' as const,
   );
   const interestTags = signalSlice.interestTags;
-  const networkSignals =
-    networkHorizon === 'network'
-      ? await readSlice(
-          'networkSignals',
-          () =>
-            loadNetworkHorizonSignals(
-              {
-                personId: person.id,
-                spaceIds,
-                profile: {
-                  location: person.location,
-                  description: person.description,
-                  spaceTitles: spaceRows.map((space) => space.title),
-                  spaceDescriptions: spaceRows.map(
-                    (space) => space.description ?? '',
-                  ),
-                  interestTags,
-                },
+  const networkTypes = signalTypesForOrientation(orientation);
+  const networkAllowed =
+    networkTypes.length === 0
+      ? false
+      : await readSlice(
+          'networkAccess',
+          () => spaceActivityIsOpen(spaceRows, spaceIds, { db }),
+          false,
+        );
+  const networkSignals = networkAllowed
+    ? await readSlice(
+        'networkSignals',
+        () =>
+          loadNetworkHorizonSignals(
+            {
+              personId: person.id,
+              spaceIds,
+              allowedTypes: networkTypes,
+              profile: {
+                location: person.location,
+                description: person.description,
+                spaceTitles: spaceRows.map((space) => space.title),
+                spaceDescriptions: spaceRows.map(
+                  (space) => space.description ?? '',
+                ),
+                interestTags,
               },
-              { db },
-            ),
-          [] as NetworkHorizonSignal[],
-        )
-      : [];
+            },
+            { db },
+          ),
+        [] as NetworkHorizonSignal[],
+      )
+    : [];
 
   const listedProposalSlugs = new Set(
     proposalSlice.proposals.flatMap((proposal) =>
@@ -921,6 +1225,8 @@ export async function getMemberIntelligence(
             creatorSurname: people.surname,
             creatorNickname: people.nickname,
             creatorAvatarUrl: people.avatarUrl,
+            creatorAddress: people.address,
+            creatorDescription: people.description,
             spaceSlug: spaces.slug,
             spaceTitle: spaces.title,
             logoUrl: spaces.logoUrl,
@@ -955,8 +1261,36 @@ export async function getMemberIntelligence(
         row.creatorNickname,
       ),
       creatorAvatarUrl: row.creatorAvatarUrl,
+      creatorAbout: optionalExcerpt(row.creatorDescription),
     })),
   ];
+  const creatorWallets = [
+    ...proposalSlice.creators,
+    ...signalSlice.creators,
+    ...missingProposals.flatMap((row) =>
+      row.creatorId == null
+        ? []
+        : [{ id: row.creatorId, address: row.creatorAddress }],
+    ),
+  ];
+  const seenCreators = new Set<number>();
+  const outsideCreators = creatorWallets.filter((creator) => {
+    if (seenCreators.has(creator.id) || sharedPeople.peers[creator.id]?.length)
+      return false;
+    seenCreators.add(creator.id);
+    return Boolean(creator.address);
+  });
+  const outsidePeers = await readSlice(
+    'creatorPeers',
+    () => loadOutsideCreatorPeers(outsideCreators, personId, { db }),
+    {} as Record<number, string[]>,
+  );
+  const creatorPeers = { ...sharedPeople.peers, ...outsidePeers };
+  const withPeers = <T extends { creatorId: number | null }>(item: T) => {
+    const names =
+      item.creatorId == null ? undefined : creatorPeers[item.creatorId];
+    return names && names.length > 0 ? { ...item, creatorWith: names } : item;
+  };
 
   return {
     person: {
@@ -998,8 +1332,8 @@ export async function getMemberIntelligence(
       ...space,
       description: excerpt(space.description, 120),
     })),
-    proposals,
-    signals: signalSlice.signals,
+    proposals: proposals.map(withPeers),
+    signals: signalSlice.signals.map(withPeers),
     notifications: notificationSlice.items,
     connections: sharedPeople.connections,
     wallet: {
@@ -1014,6 +1348,11 @@ export async function getMemberIntelligence(
           { personId, memberSpaceIds: spaceIds },
           { db },
         ),
+      [],
+    ),
+    movement: await readSlice(
+      'movement',
+      () => loadMemberMovement(spaceRows, { db }),
       [],
     ),
   };

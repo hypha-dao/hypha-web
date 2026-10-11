@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   mergeMemberSpaces,
+  peerNamesByPerson,
   peopleSharingMemberSpaces,
   pickNotificationsAcrossSpaces,
 } from '../../member-intelligence';
@@ -184,6 +185,24 @@ describe('peopleSharingMemberSpaces', () => {
     expect(result.connections[0]?.address).toBe('0xbbbb');
     expect(result.connections[1]?.sharedSpaceCount).toBe(1);
     expect(result.connections[1]?.address).toBe('0xCCCC');
+  });
+
+  it('names the people a creator shares a space with', () => {
+    const peers = peerNamesByPerson({
+      callerPersonId: 1,
+      membersBySpace: [
+        { spaceId: 10, addresses: ['0xaaaa', '0xBBBB', '0xcccc'] },
+        { spaceId: 11, addresses: ['0xAAAA', '0xbbbb'] },
+      ],
+      people,
+      spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
+      focusPersonIds: [2],
+      limit: 4,
+    });
+
+    expect(peers.get(2)).toEqual(['Noor']);
+    expect(peers.has(1)).toBe(false);
+    expect(peers.has(4)).toBe(false);
   });
 
   it('stays at zero when the caller is in no spaces', () => {

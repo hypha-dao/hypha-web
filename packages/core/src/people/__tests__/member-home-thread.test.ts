@@ -132,7 +132,7 @@ describe('listMemberHomeThreadItems', () => {
     );
   });
 
-  it('leads with the most recent discussion', () => {
+  it('puts a high-priority signal ahead of a discussion and a vote', () => {
     const items = listMemberHomeThreadItems({
       ...home,
       proposals: [
@@ -146,8 +146,12 @@ describe('listMemberHomeThreadItems', () => {
         home.proposals[0],
       ],
     });
-    expect(items.map((item) => item.slug)[0]).toBe('winter-notes');
-    expect(items[0]?.documentKind).toBe('discussion');
+    expect(items.map((item) => item.slug)).toEqual([
+      'define-products',
+      'invite-member',
+      'winter-notes',
+    ]);
+    expect(items[2]?.documentKind).toBe('discussion');
   });
 
   it('keeps a discussion’s own kind instead of calling it a proposal', () => {

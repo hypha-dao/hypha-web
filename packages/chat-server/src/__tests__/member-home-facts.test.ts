@@ -105,6 +105,38 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain("Glad you're helping Teo");
     expect(facts).toContain('40 NFC and a jar of plum jam');
     expect(facts).toContain('Never make a recipe');
+    expect(facts).toContain('Do not call it a chat');
+    expect(facts).toContain('think about it');
+  });
+
+  it('puts who they are and who they share a space with on the decision line', () => {
+    const facts = formatMemberHomeFacts({
+      ...home,
+      proposals: [
+        {
+          ...home.proposals[0]!,
+          creatorId: 8,
+          creatorName: 'Gerardo Roza',
+          creatorAbout: 'Grows food in Rotterdam',
+          creatorWith: ['Noor', 'Teo'],
+        },
+      ],
+      connections: [
+        {
+          id: 8,
+          slug: 'gerardo',
+          name: 'Gerardo',
+          surname: 'Roza',
+          nickname: null,
+          avatarUrl: null,
+          sharedSpaceCount: 3,
+        },
+      ],
+    });
+    expect(facts).toContain('creator="Gerardo Roza"');
+    expect(facts).toContain('about="Grows food in Rotterdam"');
+    expect(facts).toContain('shares=3');
+    expect(facts).toContain('with="Noor; Teo"');
   });
 
   it('removes an item the member already refused from the queue', () => {

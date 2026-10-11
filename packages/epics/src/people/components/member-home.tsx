@@ -33,7 +33,10 @@ import {
   getSignalPath,
 } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
-import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
+import {
+  SpaceSwitcherMark,
+  SpaceSwitcherOption,
+} from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import {
   MAX_VISIBLE_RECENT_SPACES,
@@ -352,6 +355,7 @@ export function MemberHome({
             intelligence={home}
             onChatPerson={openChat}
             onCallPerson={openCall}
+            onVideoPerson={openVideo}
             onFocusItem={onFocusItem}
           />
         ) : home && viewReady ? (
@@ -582,41 +586,70 @@ export function MemberHome({
               maxItems={6}
               items={
                 home
-                  ? queue.flatMap((item) => {
-                      if (
-                        leadItem &&
-                        item.kind === leadItem.kind &&
-                        item.slug === leadItem.slug
-                      ) {
-                        return [];
-                      }
-                      const typeName = item.category?.trim();
-                      const typeKey = typeName
-                        ? (`types.${typeName}` as 'types.Need')
-                        : null;
-                      const typeLabel =
-                        typeKey && tTypes.has(typeKey)
-                          ? tTypes(typeKey)
-                          : typeName;
-                      return [
-                        {
-                          id: `${item.kind}:${item.slug}`,
-                          title: item.title,
-                          detail:
-                            item.kind === 'signal'
-                              ? [typeLabel, item.spaceTitle]
-                                  .filter(Boolean)
-                                  .join(' · ')
-                              : [item.spaceTitle, item.documentKind]
-                                  .filter(Boolean)
-                                  .join(' · '),
-                          href:
-                            item.kind === 'proposal'
-                              ? getProposalPath(lang, item.spaceSlug, item.slug)
-                              : getSignalPath(lang, item.spaceSlug, item.slug),
-                        },
-                      ];
-                    })
+                  ? [
+                      ...queue.flatMap((item) => {
+                        if (
+                          leadItem &&
+                          item.kind === leadItem.kind &&
+                          item.slug === leadItem.slug
+                        ) {
+                          return [];
+                        }
+                        const typeName = item.category?.trim();
+                        const typeKey = typeName
+                          ? (`types.${typeName}` as 'types.Need')
+                          : null;
+                        const typeLabel =
+                          typeKey && tTypes.has(typeKey)
+                            ? tTypes(typeKey)
+                            : typeName;
+                        return [
+                          {
+                            id: `${item.kind}:${item.slug}`,
+                            title: item.title,
+                            detail:
+                              item.kind === 'signal'
+                                ? [typeLabel, item.spaceTitle]
+                                    .filter(Boolean)
+                                    .join(' · ')
+                                : [item.spaceTitle, item.documentKind]
+                                    .filter(Boolean)
+                                    .join(' · '),
+                            href:
+                              item.kind === 'proposal'
+                                ? getProposalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.slug,
+                                  )
+                                : getSignalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.slug,
+                                  ),
+                            icon: item.spaceLogo ?? null,
+                          },
+                        ];
+                      }),
+                      ...(home.movement ?? []).map((item) => ({
+                        id: item.id,
+                        title:
+                          item.kind === 'joined'
+                            ? t('movementJoined', { name: item.title })
+                            : item.title,
+                        detail: item.spaceTitle,
+                        href: item.documentSlug
+                          ? getProposalPath(
+                              lang,
+                              item.spaceSlug,
+                              item.documentSlug,
+                            )
+                          : `/${lang}/dho/${item.spaceSlug}/${
+                              item.kind === 'treasury' ? 'treasury' : 'members'
+                            }`,
+                        icon: item.spaceLogo ?? null,
+                      })),
+                    ]
                   : []
               }
             />
@@ -935,31 +968,53 @@ function ResourceList({
     title: string;
     detail: string;
     href: string;
+    icon?: {
+      logoUrl: string | null;
+      ecosystemLogoUrlLight?: string | null;
+      ecosystemLogoUrlDark?: string | null;
+    } | null;
   }>;
   empty: string;
   isLoading?: boolean;
   maxItems?: number;
 }) {
+  const { resolvedTheme } = useTheme();
+  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   if (isLoading) return <CardSkeleton />;
   if (items.length === 0) {
     return <p className="text-1 text-neutral-11">{empty}</p>;
   }
   return (
     <ul className="grid gap-3">
-      {items.slice(0, maxItems).map((item) => (
-        <li key={item.id}>
-          <Link href={item.href} className="group block">
-            <span className="block text-1 group-hover:underline">
-              {item.title}
-            </span>
-            {item.detail ? (
-              <span className="mt-0.5 block text-1 text-neutral-11 line-clamp-2">
-                {item.detail}
+      {items.slice(0, maxItems).map((item) => {
+        const iconUrl = resolveSpaceDisplayLogoUrl(
+          item.icon
+            ? {
+                logoUrl: item.icon.logoUrl,
+                ecosystemLogoUrlLight: item.icon.ecosystemLogoUrlLight ?? null,
+                ecosystemLogoUrlDark: item.icon.ecosystemLogoUrlDark ?? null,
+              }
+            : null,
+          logoVariant,
+        );
+        return (
+          <li key={item.id}>
+            <Link href={item.href} className="group flex items-start gap-2">
+              <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
+              <span className="min-w-0">
+                <span className="block text-1 group-hover:underline">
+                  {item.title}
+                </span>
+                {item.detail ? (
+                  <span className="mt-0.5 block text-1 text-neutral-11 line-clamp-2">
+                    {item.detail}
+                  </span>
+                ) : null}
               </span>
-            ) : null}
-          </Link>
-        </li>
-      ))}
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

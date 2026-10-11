@@ -176,7 +176,8 @@
     "signals": "Сигнали што те бараат",
     "proposals": "Предлози за разгледување",
     "waiting": "Сигнали и предлози",
-    "noWaiting": "Сигналите и предлозите од твоите простори се појавуваат тука."
+    "noWaiting": "Сигналите и предлозите од твоите простори се појавуваат тука.",
+    "movementJoined": "{name} се приклучи"
   },
   "WelcomeFlow": {
     "errors": {
@@ -1582,7 +1583,11 @@
       "labels": {
         "email": "Е-пошта",
         "location": "Локација",
-        "preferredCurrency": "Претпочитана валута"
+        "preferredCurrency": "Претпочитана валута",
+        "orientation": "Како се појавуваш",
+        "orientationMember": "Член",
+        "orientationBuilder": "Градител",
+        "orientationInvestor": "Инвеститор"
       },
       "placeholders": {
         "firstName": "Име",
@@ -1591,7 +1596,8 @@
         "lifePurpose": "Напиши ја твојата животна цел овде...",
         "email": "Е-пошта",
         "location": "Локација",
-        "preferredCurrency": "Изберете валута"
+        "preferredCurrency": "Изберете валута",
+        "orientation": "Избери како се појавуваш"
       },
       "actions": {
         "retry": "Обиди се повторно",
