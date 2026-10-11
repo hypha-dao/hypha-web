@@ -1,4 +1,5 @@
-import { MyFilteredSpaces, MySpacesControls } from '@hypha-platform/epics';
+import { MySpacesControls } from '@hypha-platform/epics';
+import { MySpacesBoard } from '@web/components/my-spaces-board';
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
@@ -61,7 +62,7 @@ export default async function Index(props: PageProps) {
             showCreateButton
           />
         </Suspense>
-        <MyFilteredSpaces
+        <MySpacesBoard
           lang={lang}
           spaces={mySpaces}
           order={order}
