@@ -192,7 +192,7 @@ export function MemberHomeQuickCreate({
       {kind === 'space' ? (
         <div className="mt-3 grid gap-3">
           <p className="text-1 text-neutral-11">{t('quickCreateSpaceBody')}</p>
-          <Button asChild>
+          <Button asChild className="text-sm">
             <Link href={createSpaceHref}>{t('quickCreateSubmitSpace')}</Link>
           </Button>
         </div>
@@ -305,6 +305,7 @@ export function MemberHomeQuickCreate({
           <div className="flex flex-wrap gap-2">
             <Button
               type="submit"
+              className="text-sm"
               disabled={busy || !person?.id || proposalNeedsChain}
             >
               {busy
