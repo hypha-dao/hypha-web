@@ -16,8 +16,6 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
     order?: string;
-    priority?: string;
-    type?: string;
   }>;
 };
 
@@ -38,15 +36,6 @@ export default async function CoherencePage(props: PageProps) {
     orderRaw && COHERENCE_ORDERS.includes(orderRaw as CoherenceOrder)
       ? (orderRaw as CoherenceOrder)
       : 'mostupvoted';
-  const priorityRaw = searchParams?.priority;
-  const priorityFilter =
-    priorityRaw === 'critical' ||
-    priorityRaw === 'high' ||
-    priorityRaw === 'medium' ||
-    priorityRaw === 'low'
-      ? priorityRaw
-      : 'all';
-
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
       <div className="flex flex-col gap-4 py-4">
@@ -54,8 +43,6 @@ export default async function CoherencePage(props: PageProps) {
           lang={lang}
           spaceSlug={id}
           order={order}
-          priorityFilter={priorityFilter}
-          typeFilter={searchParams?.type}
           humanChatEnabled={humanChatEnabled}
         />
       </div>

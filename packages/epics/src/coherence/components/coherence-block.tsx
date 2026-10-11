@@ -3,7 +3,6 @@
 import { ErrorAlert } from '@hypha-platform/ui';
 import {
   COHERENCE_SIGNAL_TYPES,
-  COHERENCE_TYPES,
   Coherence,
   collectExistingTags,
   filterSignals,
@@ -14,7 +13,6 @@ import {
   useMe,
   useSpaceBySlug,
   writeSignalBoardFilters,
-  type CoherenceType,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
@@ -31,7 +29,11 @@ import {
   writeStoredSignalViewMode,
 } from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
-import { SignalBoardFilters } from './signal-board-filters';
+import {
+  parseSignalPriorityFilters,
+  parseSignalTypeFilters,
+  SignalBoardFilters,
+} from './signal-board-filters';
 import { SignalViewControls } from './signal-view-controls';
 import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -43,24 +45,14 @@ export type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
-  priorityFilter?: 'all' | 'critical' | 'high' | 'medium' | 'low';
-  typeFilter?: string;
   humanChatEnabled?: boolean;
   useMembers: UseMembers;
 };
-
-function isCoherenceType(value: string | undefined): value is CoherenceType {
-  return (
-    value != null && (COHERENCE_TYPES as readonly string[]).includes(value)
-  );
-}
 
 export function CoherenceBlock({
   lang,
   spaceSlug,
   order,
-  priorityFilter = 'all',
-  typeFilter,
   humanChatEnabled = false,
   useMembers,
 }: CoherenceBlockProps) {
@@ -155,25 +147,30 @@ export function CoherenceBlock({
     includeArchived: !hideArchived,
     orderBy: order,
   });
-  const resolvedTypeFilter = isCoherenceType(typeFilter) ? typeFilter : 'all';
+  const typeFilters = React.useMemo(
+    () => parseSignalTypeFilters(searchParams.get('type')),
+    [searchParams],
+  );
+  const priorityFilters = React.useMemo(
+    () => parseSignalPriorityFilters(searchParams.get('priority')),
+    [searchParams],
+  );
   const filteredSignals = React.useMemo(() => {
-    const byPriorityAndType = (signals ?? []).filter((signal) => {
+    const byTypeAndPriority = (signals ?? []).filter((signal) => {
       const matchesPriority =
-        priorityFilter === 'all' || signal.priority === priorityFilter;
+        priorityFilters.length === 0 ||
+        priorityFilters.some((priority) => priority === signal.priority);
       const matchesType =
-        resolvedTypeFilter === 'all' || signal.type === resolvedTypeFilter;
+        typeFilters.length === 0 ||
+        typeFilters.includes(
+          signal.type as (typeof COHERENCE_SIGNAL_TYPES)[number],
+        );
       return matchesPriority && matchesType;
     });
-    return filterSignals(byPriorityAndType, deferredBoardFilters, {
+    return filterSignals(byTypeAndPriority, deferredBoardFilters, {
       currentPersonId: person?.id,
     });
-  }, [
-    deferredBoardFilters,
-    person?.id,
-    priorityFilter,
-    resolvedTypeFilter,
-    signals,
-  ]);
+  }, [deferredBoardFilters, person?.id, priorityFilters, signals, typeFilters]);
   const existingTags = React.useMemo(
     () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
     [signals],
@@ -326,8 +323,8 @@ export function CoherenceBlock({
     humanChatEnabled,
     humanChatOpen,
     hideArchived,
-    priorityFilter,
-    typeFilter: resolvedTypeFilter,
+    priorityFilters,
+    typeFilters,
     activeCoherenceSlug: coherenceSlug,
     onRevealArchivedSignal: handleRevealArchivedSignal,
     onClearPriorityFilter: handleClearPriorityFilter,
@@ -350,8 +347,8 @@ export function CoherenceBlock({
       </header>
       <div className="flex min-w-0 max-w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <SignalBoardFilters
-          typeFilter={resolvedTypeFilter}
-          priorityFilter={priorityFilter}
+          typeFilters={typeFilters}
+          priorityFilters={priorityFilters}
           typeCounts={typeCounts}
           priorityCounts={priorityCounts}
         />
