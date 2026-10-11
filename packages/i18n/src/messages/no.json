@@ -176,7 +176,8 @@
     "signals": "Signaler som trenger deg",
     "proposals": "Forslag å ta stilling til",
     "waiting": "Signaler og forslag",
-    "noWaiting": "Signaler og forslag fra rommene dine vises her."
+    "noWaiting": "Signaler og forslag fra rommene dine vises her.",
+    "movementJoined": "{name} ble med"
   },
   "WelcomeFlow": {
     "errors": {
@@ -1601,7 +1602,11 @@
       "labels": {
         "email": "E-post",
         "location": "Sted",
-        "preferredCurrency": "Foretrukket valuta"
+        "preferredCurrency": "Foretrukket valuta",
+        "orientation": "Hvordan du viser deg",
+        "orientationMember": "Medlem",
+        "orientationBuilder": "Bygger",
+        "orientationInvestor": "Investor"
       },
       "placeholders": {
         "firstName": "Fornavn",
@@ -1610,7 +1615,8 @@
         "lifePurpose": "Skriv livsformålet ditt her...",
         "email": "E-post",
         "location": "Sted",
-        "preferredCurrency": "Velg en valuta"
+        "preferredCurrency": "Velg en valuta",
+        "orientation": "Velg hvordan du viser deg"
       },
       "actions": {
         "retry": "Prøv igjen",

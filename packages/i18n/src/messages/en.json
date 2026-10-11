@@ -214,6 +214,7 @@
     "noProposals": "Proposals in your spaces show up here.",
     "waiting": "Signals and proposals",
     "noWaiting": "Signals and proposals from your spaces show up here.",
+    "movementJoined": "{name} joined",
     "createSpace": "Create a space",
     "builderTitle": "Shape a space on your vision",
     "builderBody": "Walk through the AI experience and bring a space into the network around what you want to build.",
@@ -1718,7 +1719,11 @@
       "labels": {
         "email": "Email",
         "location": "Location",
-        "preferredCurrency": "Preferred currency"
+        "preferredCurrency": "Preferred currency",
+        "orientation": "How you show up",
+        "orientationMember": "Member",
+        "orientationBuilder": "Builder",
+        "orientationInvestor": "Investor"
       },
       "placeholders": {
         "firstName": "First Name",
@@ -1727,7 +1732,8 @@
         "lifePurpose": "Type your life purpose here...",
         "email": "Email",
         "location": "Location",
-        "preferredCurrency": "Select a currency"
+        "preferredCurrency": "Select a currency",
+        "orientation": "Choose how you show up"
       },
       "actions": {
         "retry": "Retry",

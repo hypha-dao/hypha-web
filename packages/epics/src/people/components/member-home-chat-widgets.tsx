@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { MessageSquare, Phone } from 'lucide-react';
+import { MessageSquare, Phone, Video } from 'lucide-react';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
@@ -153,18 +153,25 @@ export function MemberHomeSpacesWidgetCard({
   );
 }
 
+const PEOPLE_PREVIEW = 5;
+
 export function MemberHomePeopleWidgetCard({
   people,
   fallbackName,
   onChat,
   onCall,
+  onVideo,
 }: {
   people: HomeConnection[];
   fallbackName: string;
   onChat: (person: HomeConnection) => void;
   onCall: (person: HomeConnection) => void;
+  onVideo: (person: HomeConnection) => void;
 }) {
   const t = useTranslations('MemberHome');
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? people : people.slice(0, PEOPLE_PREVIEW);
+  const remaining = people.length - visible.length;
 
   return (
     <WidgetFrame title={t('peopleWidgetTitle')}>
@@ -172,7 +179,7 @@ export function MemberHomePeopleWidgetCard({
         <p className="text-2 text-neutral-11">{t('peopleWidgetEmpty')}</p>
       ) : (
         <ul className="divide-y divide-border">
-          {people.map((person) => {
+          {visible.map((person) => {
             const name = personName(person, fallbackName);
             return (
               <li
@@ -214,14 +221,30 @@ export function MemberHomePeopleWidgetCard({
                   >
                     <Phone className="h-4 w-4" aria-hidden />
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    className="h-9 w-9 p-0"
+                    aria-label={t('videoPerson', { name })}
+                    onClick={() => onVideo(person)}
+                  >
+                    <Video className="h-4 w-4" aria-hidden />
+                  </Button>
                 </div>
               </li>
             );
           })}
         </ul>
       )}
-      {people.length > 0 ? (
-        <p className="mt-3 text-2 text-neutral-11">{t('peopleWidgetHint')}</p>
+      {remaining > 0 ? (
+        <button
+          type="button"
+          className="mt-3 text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          onClick={() => setExpanded(true)}
+        >
+          {t('seeMoreNotifications')}
+        </button>
       ) : null}
     </WidgetFrame>
   );

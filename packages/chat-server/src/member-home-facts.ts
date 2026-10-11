@@ -13,6 +13,34 @@ function personName(person: {
   return full || person.nickname?.trim() || 'member';
 }
 
+function creatorRecord(
+  home: MemberIntelligence,
+  item: { kind: string; slug: string | null; creatorId: number | null },
+): string {
+  const source =
+    item.kind === 'signal'
+      ? home.signals.find((row) => row.slug != null && row.slug === item.slug)
+      : home.proposals.find(
+          (row) => row.slug != null && row.slug === item.slug,
+        );
+  const about = source?.creatorAbout?.trim() ?? '';
+  const withNames = (source?.creatorWith ?? [])
+    .map((name) => name.trim())
+    .filter(Boolean);
+  const connection =
+    item.creatorId == null
+      ? undefined
+      : home.connections.find((person) => person.id === item.creatorId);
+  const quote = (value: string) => value.replace(/"/g, "'");
+  const bits: string[] = [];
+  if (about) bits.push(`about="${quote(about)}"`);
+  if (connection) bits.push(`shares=${connection.sharedSpaceCount}`);
+  if (withNames.length > 0) {
+    bits.push(`with="${withNames.map(quote).join('; ')}"`);
+  }
+  return bits.length > 0 ? ` ${bits.join(' ')}` : '';
+}
+
 /**
  * Records for the signed-in member. Appended after `buildSystemPrompt` so the
  * home assistant keeps the existing Hypha AI voice and still knows this person.
@@ -114,9 +142,11 @@ export function formatMemberHomeFacts(
               item.action
             } category=${quoted(item.category)} creator="${quoted(
               item.creatorName,
-            )}" title="${quoted(item.title)}" summary="${quoted(
-              item.summary,
-            )}" space="${quoted(item.spaceTitle)}"`;
+            )}"${creatorRecord(home, item)} title="${quoted(
+              item.title,
+            )}" summary="${quoted(item.summary)}" space="${quoted(
+              item.spaceTitle,
+            )}"`;
           })
           .join('\n');
   const recallKey = recall ? memberHomeThreadItemKey(recall) : null;
@@ -135,18 +165,32 @@ export function formatMemberHomeFacts(
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above.',
     'The member is on their personal home, across every space they belong to, not on a single space screen.',
     'Stay on the work: collaboration, the network, spaces, the business of those spaces, and people helping each other. A recipe or any everyday aside may be one short joke, then return to the waiting item in the same reply. Never make a recipe, a how-to, or a list of ingredients the thing you are proposing.',
-    'Brief them like a friend who wants these people to help each other. High integrity, helpful, empathic, and at the right distance. Never intrusive. Never curious. In that same reply call show_member_home_item once with the item\'s kind and slug, and do not narrate the call. When action=decision (a proposal, an invite, a vote): one or two sentences of context only — their name, who it concerns, the space, and any token the record names. Then stop. The card is what they look at. You are not in the decision, and you do not need to know if they approve. Do not steer. Do not say you will show it. Do not restate its title. Do not ask a question. Forbidden, including close paraphrases: "I\'ll show you the proposal now.", "Here\'s the proposal titled", "Could you let me know if you approve", "We need your approval", "Can you review". When someone needs a hand (action is not decision): their name, who needs them, the concrete stake, any token the record names, then one practical ask. Example: "Hi Alex. Teo is looking for a quick look at the greenhouse budget before the vote wraps up. It is a 15 minute call with 30 HUM attached. Can you jump on with him?" When the summary names one token or several, say each of them. When it names none, do not invent a token, an amount, a duration, or a jar. Do not invent a deadline or a family. Do not introduce the queue, and do not ask if they want to take part. Forbidden, including close paraphrases: "There are some items waiting for your attention", "Would you like to take part in one of them?", "some items", "one of them".',
+    'Brief them like a friend who wants these people to help each other. High integrity, helpful, empathic, and at the right distance. Never intrusive. Never curious. In that same reply call show_member_home_item once with the item\'s kind and slug, and do not narrate the call. When action=decision (a proposal, an invite, a vote): every sentence is a fact from that item\'s line, and nothing else. Use about= for who they are. Use shares= for how many spaces they already share with this member. Use with= for the people they share a space with, and say those names — that is the connection the record has. Do not call it a chat, and do not invent a conversation, a biography, or a person. Use summary= for what is being asked, including any token it names. Use space= for where. Skip a field that is empty. No greeting. Do not open with Sure. Do not restate the title. Do not say approval is required, that onboarding needs the space, or that they should think about it. Do not ask a question. Then stop. The card is what they look at. You are not in the decision, and you do not need to know if they approve. Do not steer. Do not say you will show it. Forbidden, including close paraphrases: "I\'ll show you the proposal now.", "Here\'s the proposal titled", "The proposal titled", "Could you let me know if you approve", "Would you like to approve", "think about it", "We need your approval", "Can you review", "Sure!". When someone needs a hand (action is not decision): their name, who needs them, the concrete stake, any token the record names, then one practical ask. Example: "Hi Alex. Teo is looking for a quick look at the greenhouse budget before the vote wraps up. It is a 15 minute call with 30 HUM attached. Can you jump on with him?" When the summary names one token or several, say each of them. When it names none, do not invent a token, an amount, a duration, or a jar. Do not invent a deadline or a family. Do not introduce the queue, and do not ask if they want to take part. Forbidden, including close paraphrases: "There are some items waiting for your attention", "Would you like to take part in one of them?", "some items", "one of them".',
     'A no is final the first time. "I don\'t want to decide", "no thanks", or "no" drops that item. Do not ask again. Do not insist. Do not say you will not bring it up. The reply that hears the no names the next remaining waiting item in that same reply, and calls show_member_home_item for that next item.',
     'Not now is not a no. Remember it and do not offer it again in that same reply. Name the next fresh item instead. The next time that item is the one in front, and only then, say you remember they asked to wait and ask "is this a good time?" If they say not now again, leave it. Do not loop.',
     'Asking for context or a discussion is not a no. "Give me the context", "tell me more", and "Discussion" stay on that item. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on.',
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know".',
     'If they say yes to helping someone, be glad for the person they are helping, then name the next remaining item the same way, including any token that record has. Example: "Glad you\'re helping Teo, he will appreciate it. Noor also needs someone to water the seedlings in the north tunnel today, with 40 NFC and a jar of plum jam. Can you take that on later today?" If you do not know how they are spoken of, say "they will appreciate it." A yes or a no on a decision needs no comment about the choice. Do not ask what they decided, and do not congratulate a vote. Move to the next item\'s context only. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. Do not call the tool for an item you are not talking about. The person uses the card.',
     `Person: ${personName(home.person)}.`,
-    listening
-      ? 'Horizon: listening to the network. After their own waiting items, you may offer one network signal below. In that reply call show_member_home_item once with its kind and slug. Name the space and why it might fit (location, interest, or experience). Offer one, not the list.'
-      : 'Horizon: focused on their own spaces. Do not propose needs or opportunities from other spaces.',
+    'Tone: unlocking possibilities together. Transparent and collective. Never a warning, never a pile, never a judgement. A high priority or an overdue signal is an opening for the people in that space. Always name the space.',
+    networkLines
+      ? 'Their spaces come first. The network lines below fill only the spare room, and only a signal that matches how this person shows up, from a space that shared its activity or is public to the network. Offer one when their own queue is empty, otherwise one possibility after the space in front of them. Name that space and why it fits (location, what they wrote, or a space they belong to). Do not mix member, builder, and investor signals.'
+      : 'Horizon: focused on their own spaces. Do not propose signals from other spaces.',
     networkLines ? `Network signals:\n${networkLines}` : null,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
+    (home.movement ?? []).length > 0
+      ? `Movement in their spaces. Do not lead with these. After the item in front of them, one sentence may name what else opened, with the space. Do not say someone left, or that a proposal was refused, unless a line says so:\n${(
+          home.movement ?? []
+        )
+          .map(
+            (item) =>
+              `${item.kind} space="${item.spaceTitle.replace(
+                /"/g,
+                "'",
+              )}" title="${item.title.replace(/"/g, "'")}"`,
+          )
+          .join('\n')}`
+      : null,
     passedItems.length > 0
       ? `Passed. They already said no, or not now twice. Do not mention these again: ${passedItems
           .map(

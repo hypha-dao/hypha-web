@@ -1,4 +1,5 @@
 import type { MemberIntelligence } from './member-intelligence';
+import { balanceMemberHomeThread } from './member-situation';
 
 /** Tool the home assistant calls so a card belongs to that reply. */
 export const SHOW_MEMBER_HOME_ITEM_TOOL = 'show_member_home_item';
@@ -258,7 +259,7 @@ export function listMemberHomeThreadItems(
   }
 
   for (const signal of home.signals) {
-    if (!signal.slug || !signal.assignedToMember) continue;
+    if (!signal.slug) continue;
     push({
       kind: 'signal',
       slug: signal.slug,
@@ -296,7 +297,7 @@ export function listMemberHomeThreadItems(
     });
   }
 
-  return items;
+  return balanceMemberHomeThread(items, home);
 }
 
 function textFromParts(parts: readonly unknown[] | undefined): string {

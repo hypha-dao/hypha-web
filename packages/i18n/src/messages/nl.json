@@ -176,7 +176,8 @@
     "signals": "Signalen die je nodig hebben",
     "proposals": "Voorstellen om mee te wegen",
     "waiting": "Signalen en voorstellen",
-    "noWaiting": "Signalen en voorstellen uit je ruimtes verschijnen hier."
+    "noWaiting": "Signalen en voorstellen uit je ruimtes verschijnen hier.",
+    "movementJoined": "{name} is erbij gekomen"
   },
   "WelcomeFlow": {
     "errors": {
@@ -1602,7 +1603,11 @@
       "labels": {
         "email": "E-mail",
         "location": "Locatie",
-        "preferredCurrency": "Voorkeursvaluta"
+        "preferredCurrency": "Voorkeursvaluta",
+        "orientation": "Hoe je verschijnt",
+        "orientationMember": "Lid",
+        "orientationBuilder": "Bouwer",
+        "orientationInvestor": "Investeerder"
       },
       "placeholders": {
         "firstName": "Voornaam",
@@ -1611,7 +1616,8 @@
         "lifePurpose": "Typ hier uw levensdoel...",
         "email": "E-mail",
         "location": "Locatie",
-        "preferredCurrency": "Selecteer een valuta"
+        "preferredCurrency": "Selecteer een valuta",
+        "orientation": "Kies hoe je verschijnt"
       },
       "actions": {
         "retry": "Opnieuw proberen",

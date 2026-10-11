@@ -176,7 +176,8 @@
     "signals": "Signaux qui ont besoin de toi",
     "proposals": "Propositions pour ton avis",
     "waiting": "Signaux et propositions",
-    "noWaiting": "Les signaux et propositions de tes espaces apparaissent ici."
+    "noWaiting": "Les signaux et propositions de tes espaces apparaissent ici.",
+    "movementJoined": "{name} a rejoint"
   },
   "WelcomeFlow": {
     "errors": {
@@ -1031,7 +1032,11 @@
       "labels": {
         "email": "E-mail",
         "location": "Localisation",
-        "preferredCurrency": "Devise préférée"
+        "preferredCurrency": "Devise préférée",
+        "orientation": "Comment tu te présentes",
+        "orientationMember": "Membre",
+        "orientationBuilder": "Bâtisseur",
+        "orientationInvestor": "Investisseur"
       },
       "placeholders": {
         "firstName": "Prénom",
@@ -1040,7 +1045,8 @@
         "lifePurpose": "Décrivez ici votre raison d’être...",
         "email": "E-mail",
         "location": "Localisation",
-        "preferredCurrency": "Sélectionnez une devise"
+        "preferredCurrency": "Sélectionnez une devise",
+        "orientation": "Choisis comment tu te présentes"
       },
       "actions": {
         "retry": "Réessayer",
