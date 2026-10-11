@@ -423,7 +423,7 @@ export function MemberHome({
               }}
             />
           </div>
-          <div className="min-w-0 pt-1 pl-9">
+          <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
             {home == null ? (
               <Skeleton loading height="16px" width="14rem" className="mt-1" />
             ) : (
