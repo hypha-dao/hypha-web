@@ -109,6 +109,8 @@ export type MemberIntelligence = {
   signals: Array<{
     id: number;
     slug: string | null;
+    /** Matrix room for this signal, when one already exists. */
+    roomId?: string | null;
     title: string;
     type: string;
     priority: string | null;

@@ -960,6 +960,7 @@ export async function getMemberIntelligence(
               .select({
                 id: coherences.id,
                 slug: coherences.slug,
+                roomId: coherences.roomId,
                 title: coherences.title,
                 type: coherences.type,
                 priority: coherences.priority,
@@ -1019,6 +1020,7 @@ export async function getMemberIntelligence(
         signals: signalRows.map((row) => ({
           id: row.id,
           slug: row.slug,
+          roomId: row.roomId,
           title: row.title,
           type: row.type,
           priority: row.priority,

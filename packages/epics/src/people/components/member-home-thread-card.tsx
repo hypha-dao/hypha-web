@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -14,6 +15,7 @@ import type { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { celebrate } from './member-home-celebrate';
@@ -102,6 +104,8 @@ export function MemberHomeThreadCard({
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
+  const router = useRouter();
+  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const { resolvedTheme } = useTheme();
   const [busy, setBusy] = useState(false);
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
@@ -209,8 +213,24 @@ export function MemberHomeThreadCard({
       case 'call':
         void reach('call');
         return;
-      case 'discuss':
+      case 'discuss': {
+        const slug = item.slug.trim();
+        if (!slug) return;
+        const roomId = item.roomId?.trim() || null;
+        if (roomId) {
+          openCoherenceChat(
+            roomId,
+            item.title,
+            slug,
+            item.summary,
+            item.spaceSlug,
+          );
+          return;
+        }
+        openHumanChatPanel();
+        router.push(signalHref);
         return;
+      }
     }
   }
 
@@ -292,29 +312,18 @@ export function MemberHomeThreadCard({
               : 'mt-3 flex flex-wrap gap-2'
           }
         >
-          {ctas.map((cta, index) =>
-            cta === 'discuss' ? (
-              <Button
-                key={cta}
-                asChild
-                variant={index === 0 ? 'default' : 'outline'}
-                colorVariant={index === 0 ? 'accent' : 'neutral'}
-              >
-                <Link href={signalHref}>{labelFor(cta)}</Link>
-              </Button>
-            ) : (
-              <Button
-                key={cta}
-                type="button"
-                variant={index === 0 ? 'default' : 'outline'}
-                colorVariant={index === 0 ? 'accent' : 'neutral'}
-                disabled={busy}
-                onClick={() => onCta(cta)}
-              >
-                {labelFor(cta)}
-              </Button>
-            ),
-          )}
+          {ctas.map((cta, index) => (
+            <Button
+              key={cta}
+              type="button"
+              variant={index === 0 ? 'default' : 'outline'}
+              colorVariant={index === 0 ? 'accent' : 'neutral'}
+              disabled={busy}
+              onClick={() => onCta(cta)}
+            >
+              {labelFor(cta)}
+            </Button>
+          ))}
           {assistant && !isSignal && creator ? (
             <Button
               type="button"

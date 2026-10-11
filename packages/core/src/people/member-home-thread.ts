@@ -33,6 +33,10 @@ export type MemberHomeThreadItem = {
   web3ProposalId?: number | null;
   /** On-chain space id for the quorum and unity targets. */
   web3SpaceId?: number | null;
+  /** Database id of the signal. Used to open its conversation. */
+  signalId?: number | null;
+  /** Existing Matrix room, so Discuss this does not create a second one. */
+  roomId?: string | null;
 };
 
 export type MemberHomeSignalCta =
@@ -252,6 +256,8 @@ export function listMemberHomeThreadItems(
       creatorName: signal?.creatorName ?? note.creatorName ?? null,
       creatorAvatarUrl:
         signal?.creatorAvatarUrl ?? note.creatorAvatarUrl ?? null,
+      ...(typeof signal?.id === 'number' ? { signalId: signal.id } : {}),
+      ...(signal?.roomId?.trim() ? { roomId: signal.roomId.trim() } : {}),
     });
   }
 
@@ -275,6 +281,8 @@ export function listMemberHomeThreadItems(
       creatorId: signal.creatorId,
       creatorName: signal.creatorName,
       creatorAvatarUrl: signal.creatorAvatarUrl,
+      signalId: signal.id,
+      ...(signal.roomId?.trim() ? { roomId: signal.roomId.trim() } : {}),
     });
   }
 
