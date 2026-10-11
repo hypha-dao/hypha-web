@@ -3661,6 +3661,8 @@
     "reset": "Ресетирај",
     "creatingNewSignal": "Се создава нов сигнал",
     "signalTitle": "Наслов на сигналот...",
+    "filter": "Филтер",
+    "removeFilter": "Отстрани {label}",
     "type": "Тип",
     "priority": "Приоритет",
     "tags": "Ознаки",
