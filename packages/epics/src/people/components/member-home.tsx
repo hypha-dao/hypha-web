@@ -15,9 +15,6 @@ import { Radio, Scale } from 'lucide-react';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -230,9 +227,7 @@ export function MemberHome({
   const [spokenItem, setSpokenItem] = useState<MemberHomeThreadItem | null>(
     null,
   );
-  const [recordItem, setRecordItem] = useState<MemberHomeThreadItem | null>(
-    null,
-  );
+  const [focusKey, setFocusKey] = useState<string | null>(null);
   const onFocusItem = useCallback((item: MemberHomeThreadItem | null) => {
     setSpokenItem(item);
   }, []);
@@ -465,6 +460,18 @@ export function MemberHome({
             )}
           </div>
         </div>
+        {home && focusKey && showAssistant ? (
+          <CenterFocus
+            lang={lang}
+            home={home}
+            item={
+              queue.find((item) => `${item.kind}:${item.slug}` === focusKey) ??
+              null
+            }
+            onChat={openChat}
+            onCall={openCall}
+          />
+        ) : null}
         {home && showAssistant ? (
           <MemberHomeChat
             lang={lang}
@@ -479,6 +486,7 @@ export function MemberHome({
             lang={lang}
             home={home}
             queue={queue}
+            focusKey={focusKey}
             onChat={openChat}
             onCall={openCall}
           />
@@ -684,7 +692,8 @@ export function MemberHome({
                                     item.spaceSlug,
                                     item.slug,
                                   ),
-                            onSelect: () => setRecordItem(item),
+                            onSelect: () =>
+                              setFocusKey(`${item.kind}:${item.slug}`),
                             icon: item.spaceLogo ?? null,
                           },
                         ];
@@ -736,41 +745,6 @@ export function MemberHome({
           ) : null}
         </div>
       </aside>
-      <Dialog
-        modal={false}
-        open={recordItem != null}
-        onOpenChange={(open) => {
-          if (!open) setRecordItem(null);
-        }}
-      >
-        <DialogContent className="gap-0 border-border bg-background p-4 pt-10 shadow-none sm:rounded-none">
-          <DialogTitle className="sr-only">
-            {recordItem?.title ?? t('useful')}
-          </DialogTitle>
-          {recordItem && home ? (
-            <MemberHomeThreadCard
-              lang={lang}
-              item={recordItem}
-              assistant={showAssistant}
-              proposal={
-                recordItem.kind === 'proposal'
-                  ? home.proposals.find(
-                      (proposal) => proposal.slug === recordItem.slug,
-                    ) ?? null
-                  : null
-              }
-              onAsk={(text) => {
-                setRecordItem(null);
-                requestMemberHomeAsk(text);
-              }}
-              onReach={(person, mode) => {
-                setRecordItem(null);
-                return mode === 'call' ? openCall(person) : openChat(person);
-              }}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -898,22 +872,41 @@ function HomeViewSwitch({
   );
 }
 
+function itemKey(item: MemberHomeThreadItem) {
+  return `${item.kind}:${item.slug}`;
+}
+
 function ClassicBoard({
   lang,
   home,
   queue,
+  focusKey,
   onChat,
   onCall,
 }: {
   lang: Locale;
   home: MemberIntelligence;
   queue: MemberHomeThreadItem[];
+  focusKey: string | null;
   onChat: MemberHomeOpenChat;
   onCall: MemberHomeOpenChat;
 }) {
   const t = useTranslations('MemberHome');
+  const boardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focusKey) return;
+    const node = boardRef.current?.querySelector(
+      `[data-home-focus="${CSS.escape(focusKey)}"]`,
+    );
+    if (node instanceof HTMLElement) {
+      node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [focusKey]);
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+    <div
+      ref={boardRef}
+      className="@container min-h-0 flex-1 overflow-y-auto px-4 py-6"
+    >
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -924,28 +917,77 @@ function ClassicBoard({
       {queue.length === 0 ? (
         <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
       ) : (
-        <div className="mt-4 grid gap-4">
-          {queue.map((item) => (
-            <MemberHomeThreadCard
-              key={`${item.kind}:${item.slug}`}
-              lang={lang}
-              item={item}
-              assistant={false}
-              proposal={
-                item.kind === 'proposal'
-                  ? home.proposals.find(
-                      (proposal) => proposal.slug === item.slug,
-                    ) ?? null
-                  : null
-              }
-              onAsk={() => undefined}
-              onReach={(person, mode) =>
-                mode === 'call' ? onCall(person) : onChat(person)
-              }
-            />
-          ))}
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 @min-[40rem]:grid-cols-2">
+          {queue.map((item) => {
+            const key = itemKey(item);
+            return (
+              <div
+                key={key}
+                data-home-focus={key}
+                className={cn(
+                  'min-w-0',
+                  focusKey === key && 'ring-1 ring-foreground',
+                )}
+              >
+                <MemberHomeThreadCard
+                  lang={lang}
+                  item={item}
+                  assistant={false}
+                  proposal={
+                    item.kind === 'proposal'
+                      ? home.proposals.find(
+                          (proposal) => proposal.slug === item.slug,
+                        ) ?? null
+                      : null
+                  }
+                  onAsk={() => undefined}
+                  onReach={(person, mode) =>
+                    mode === 'call' ? onCall(person) : onChat(person)
+                  }
+                />
+              </div>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+function CenterFocus({
+  lang,
+  home,
+  item,
+  onChat,
+  onCall,
+}: {
+  lang: Locale;
+  home: MemberIntelligence;
+  item: MemberHomeThreadItem | null;
+  onChat: MemberHomeOpenChat;
+  onCall: MemberHomeOpenChat;
+}) {
+  if (!item) return null;
+  return (
+    <div className="@container shrink-0 overflow-y-auto px-4 pt-4">
+      <div className="grid grid-cols-1 @min-[40rem]:grid-cols-2">
+        <MemberHomeThreadCard
+          lang={lang}
+          item={item}
+          assistant
+          proposal={
+            item.kind === 'proposal'
+              ? home.proposals.find(
+                  (proposal) => proposal.slug === item.slug,
+                ) ?? null
+              : null
+          }
+          onAsk={requestMemberHomeAsk}
+          onReach={(person, mode) =>
+            mode === 'call' ? onCall(person) : onChat(person)
+          }
+        />
+      </div>
     </div>
   );
 }
