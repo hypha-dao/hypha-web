@@ -52,6 +52,8 @@ type MemberHomeThreadCardProps = {
   onReach: (person: ReachPerson, mode: 'call' | 'chat') => Promise<boolean>;
   /** Side panel uses the spaces-tile scale. The conversation card stays larger. */
   compact?: boolean;
+  /** Classic home keeps the card and drops every line that would talk to the AI. */
+  assistant?: boolean;
 };
 
 function kindLabel(
@@ -91,6 +93,7 @@ export function MemberHomeThreadCard({
   onAsk,
   onReach,
   compact = false,
+  assistant = true,
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
@@ -130,12 +133,14 @@ export function MemberHomeThreadCard({
           spaceSlug: item.spaceSlug,
         }
       : null;
-  const ctas = isSignal
-    ? memberHomeSignalCtas({
-        category: item.category,
-        hasCreator: creator != null,
-      })
-    : [];
+  const ctas = (
+    isSignal
+      ? memberHomeSignalCtas({
+          category: item.category,
+          hasCreator: creator != null,
+        })
+      : []
+  ).filter((cta) => assistant || cta === 'discuss' || cta === 'call');
 
   function ask(text: string, sound = false) {
     if (busy) return;
@@ -149,7 +154,7 @@ export function MemberHomeThreadCard({
     if (!creator || busy) return;
     setBusy(true);
     const opened = await onReach(creator, mode);
-    if (!opened && mode === 'call') {
+    if (!opened && mode === 'call' && assistant) {
       onAsk(t('callFallback', { name: creator.name ?? '', title: item.title }));
     }
     setBusy(false);
@@ -304,7 +309,7 @@ export function MemberHomeThreadCard({
               </Button>
             ),
           )}
-          {!isSignal && creator ? (
+          {assistant && !isSignal && creator ? (
             <Button
               type="button"
               variant="outline"
@@ -317,7 +322,7 @@ export function MemberHomeThreadCard({
               {t('askProposer', { name: creator.name ?? '' })}
             </Button>
           ) : null}
-          {!isSignal ? (
+          {assistant && !isSignal ? (
             <Button
               type="button"
               variant="outline"
@@ -333,7 +338,7 @@ export function MemberHomeThreadCard({
               <Link href={visitHref}>{t('visitSpace')}</Link>
             </Button>
           ) : null}
-          {ctas.includes('later') ? null : (
+          {assistant && !ctas.includes('later') ? (
             <Button
               type="button"
               variant="outline"
@@ -343,16 +348,18 @@ export function MemberHomeThreadCard({
             >
               {t('notNow')}
             </Button>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            disabled={busy}
-            onClick={() => ask(t('noChosen', { title: item.title }))}
-          >
-            {t('noThanks')}
-          </Button>
+          ) : null}
+          {assistant ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              disabled={busy}
+              onClick={() => ask(t('noChosen', { title: item.title }))}
+            >
+              {t('noThanks')}
+            </Button>
+          ) : null}
         </div>
         {isProposal ? (
           <Link
