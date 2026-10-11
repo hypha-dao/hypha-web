@@ -23,6 +23,7 @@ import {
 import {
   acquireWarmMicStream,
   releaseWarmMicStream,
+  resumeSilentAudioStream,
 } from './onboarding-voice-mic';
 import {
   extractEarlySpeakableSentence,
@@ -215,6 +216,12 @@ export function useOnboardingVoiceRealtime({
   const earlySpokenPrefixRef = useRef('');
   const pendingRemainderSpeakRef = useRef<string | null>(null);
   const queuedSpeakableRef = useRef<string | null>(null);
+  /** Spoken into a paused element. Said again on the next click. */
+  const replayOnUnlockRef = useRef<string | null>(null);
+  const replayGenerationRef = useRef(0);
+  const replaySpokenAtRef = useRef(0);
+  /** The cancel event for the line we just replaced must not silence the new one. */
+  const replacingSpeechRef = useRef(false);
   const realtimeRespeakCountRef = useRef(0);
   const assistantTextAtStreamStartRef = useRef('');
   const speakAssistantReplyRef = useRef<(spoken: string) => void>(() => {});
@@ -318,9 +325,6 @@ export function useOnboardingVoiceRealtime({
     realtimeSpeakInFlightRef.current = false;
     activeRealtimeResponseIdRef.current = null;
     realtimeAudioHeardRef.current = false;
-    if (connectionRef.current) {
-      setRealtimeRemoteAudioMuted(connectionRef.current, true);
-    }
     flushPendingRemainderOrRestoreMic();
   }, [clearPlaybackFallbackTimer, flushPendingRemainderOrRestoreMic]);
 
@@ -364,9 +368,6 @@ export function useOnboardingVoiceRealtime({
     realtimeAudioHeardRef.current = false;
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
-    if (connectionRef.current) {
-      setRealtimeRemoteAudioMuted(connectionRef.current, true);
-    }
   }, [
     clearInterruptTimer,
     clearMicRestoreTimer,
@@ -387,27 +388,64 @@ export function useOnboardingVoiceRealtime({
     setPhase('listening');
   }, []);
 
+  const rememberUnheardSpeech = useCallback(
+    (connection: RealtimeVoiceConnection, speakable: string) => {
+      const generation = replayGenerationRef.current + 1;
+      replayGenerationRef.current = generation;
+      replayOnUnlockRef.current = speakable;
+      void connection.remoteAudio.play().then(
+        () => {
+          if (replayGenerationRef.current !== generation) return;
+          const audio = connection.remoteAudio;
+          if (audio.muted || audio.volume === 0) return;
+          const activation = navigator.userActivation;
+          if (activation && !activation.hasBeenActive) return;
+          if (replayOnUnlockRef.current === speakable) {
+            replayOnUnlockRef.current = null;
+          }
+        },
+        () => {
+          if (replayGenerationRef.current !== generation) return;
+          replayOnUnlockRef.current = speakable;
+        },
+      );
+    },
+    [],
+  );
+
   const speakViaRealtime = useCallback(
     (speakable: string): boolean => {
       if (!speakRepliesRef.current) return false;
       const connection = connectionRef.current;
+      if (!connection) {
+        queuedSpeakableRef.current = speakable;
+        replayGenerationRef.current += 1;
+        replayOnUnlockRef.current = speakable;
+        return false;
+      }
+      const replacing = Boolean(activeRealtimeResponseIdRef.current);
+      if (replacing) replacingSpeechRef.current = true;
       if (
-        !connection ||
         !speakAssistantTextViaRealtime(connection, speakable, {
           activeResponseId: activeRealtimeResponseIdRef.current,
           locale,
         })
       ) {
+        if (replacing) replacingSpeechRef.current = false;
         queuedSpeakableRef.current = speakable;
+        replayGenerationRef.current += 1;
+        replayOnUnlockRef.current = speakable;
         return false;
       }
       queuedSpeakableRef.current = null;
-      releaseMic(connection);
+      rememberUnheardSpeech(connection, speakable);
+      // Keep the mic closed while this line plays so the open mic cannot cut it off.
+      muteMicrophone(connection);
       realtimeSpeakInFlightRef.current = true;
       setPhase('speaking');
       return true;
     },
-    [locale],
+    [locale, rememberUnheardSpeech],
   );
   const speakViaRealtimeRef = useRef(speakViaRealtime);
   speakViaRealtimeRef.current = speakViaRealtime;
@@ -620,7 +658,6 @@ export function useOnboardingVoiceRealtime({
         event.type === 'output_audio_buffer.stopped' &&
         connectionRef.current
       ) {
-        setRealtimeRemoteAudioMuted(connectionRef.current, true);
         if (gracefulInterruptPendingRef.current) {
           completeUserBargeInInterrupt();
         } else if (realtimeSpeakInFlightRef.current) {
@@ -676,6 +713,7 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (event.type === 'response.created') {
+        replacingSpeechRef.current = false;
         const responseId =
           typeof event.response?.id === 'string'
             ? event.response.id.trim()
@@ -751,9 +789,6 @@ export function useOnboardingVoiceRealtime({
             activeRealtimeResponseIdRef.current = null;
             realtimeAudioHeardRef.current = false;
             pendingRemainderSpeakRef.current = null;
-            if (connectionRef.current) {
-              setRealtimeRemoteAudioMuted(connectionRef.current, true);
-            }
             const spoken = lastAssistantTextRef.current.trim();
             const speakable = prepareAssistantTextForSpeech(spoken);
             if (speakable && realtimeRespeakCountRef.current < 1) {
@@ -772,14 +807,25 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (event.type === 'response.cancelled') {
+        const cancelledId =
+          (typeof event.response_id === 'string' && event.response_id) ||
+          event.response?.id ||
+          '';
+        const activeId = activeRealtimeResponseIdRef.current;
+        if (
+          replacingSpeechRef.current ||
+          (cancelledId && activeId && cancelledId !== activeId)
+        ) {
+          if (!activeId || !cancelledId || cancelledId === activeId) {
+            replacingSpeechRef.current = false;
+          }
+          return;
+        }
         if (realtimeSpeakInFlightRef.current) {
           clearPlaybackFallbackTimer();
           realtimeSpeakInFlightRef.current = false;
           activeRealtimeResponseIdRef.current = null;
           realtimeAudioHeardRef.current = false;
-          if (connectionRef.current) {
-            setRealtimeRemoteAudioMuted(connectionRef.current, true);
-          }
           scheduleMicRestoreForUserTurn();
         }
       }
@@ -878,6 +924,11 @@ export function useOnboardingVoiceRealtime({
       setIsRealtimeConnected(true);
       setVoiceError(null);
       micNeedsGestureRef.current = false;
+      resumeSilentAudioStream(connection.localStream);
+      if (speakRepliesRef.current) {
+        setRealtimeRemoteAudioMuted(connection, false);
+      }
+      void connection.remoteAudio.play().catch(() => undefined);
       releaseMic(connection);
       setPhase('listening');
       connectRetryCountRef.current = 0;
@@ -951,6 +1002,8 @@ export function useOnboardingVoiceRealtime({
     clearPlaybackFallbackTimer();
     pendingRemainderSpeakRef.current = null;
     queuedSpeakableRef.current = null;
+    replayGenerationRef.current += 1;
+    replayOnUnlockRef.current = null;
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
     if (realtimeSpeakInFlightRef.current) {
@@ -998,8 +1051,20 @@ export function useOnboardingVoiceRealtime({
   const startListening = useCallback(async () => {
     const connection = connectionRef.current;
     if (connection) {
-      void connection.remoteAudio.play().catch(() => undefined);
+      resumeSilentAudioStream(connection.localStream);
+      if (speakRepliesRef.current) {
+        setRealtimeRemoteAudioMuted(connection, false);
+      }
+      if (Date.now() - replaySpokenAtRef.current < 400) return;
+      const replay = replayOnUnlockRef.current;
+      if (replay && queuedSpeakableRef.current !== replay) {
+        replayOnUnlockRef.current = null;
+        replaySpokenAtRef.current = Date.now();
+        speakViaRealtimeRef.current(replay);
+        return;
+      }
       releaseMic(connection);
+      void connection.remoteAudio.play().catch(() => undefined);
       setPhase('listening');
       flushQueuedSpeech(connection);
       return;
@@ -1047,8 +1112,19 @@ export function useOnboardingVoiceRealtime({
   useEffect(() => {
     if (!enabled) return;
     const unlock = () => {
-      const audio = connectionRef.current?.remoteAudio;
-      if (audio) void audio.play().catch(() => undefined);
+      const connection = connectionRef.current;
+      if (connection) resumeSilentAudioStream(connection.localStream);
+      if (connection && speakRepliesRef.current) {
+        setRealtimeRemoteAudioMuted(connection, false);
+      }
+      const replay = replayOnUnlockRef.current;
+      if (replay && connection && queuedSpeakableRef.current !== replay) {
+        replayOnUnlockRef.current = null;
+        replaySpokenAtRef.current = Date.now();
+        speakViaRealtimeRef.current(replay);
+      } else if (connection) {
+        void connection.remoteAudio.play().catch(() => undefined);
+      }
       if (!micNeedsGestureRef.current) return;
       if (connectionRef.current || connectInFlightRef.current) return;
       micNeedsGestureRef.current = false;
@@ -1099,9 +1175,6 @@ export function useOnboardingVoiceRealtime({
     activeRealtimeResponseIdRef.current = null;
     realtimeSpeakInFlightRef.current = false;
     realtimeAudioHeardRef.current = false;
-    if (connectionRef.current) {
-      setRealtimeRemoteAudioMuted(connectionRef.current, true);
-    }
     setPhase('processing');
   }, [enabled, isChatStreaming, stopBrowserSpeech]);
 
