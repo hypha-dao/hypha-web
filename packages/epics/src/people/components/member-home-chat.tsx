@@ -643,7 +643,7 @@ export function MemberHomeChat({
       ) : null}
 
       <div className="w-full min-w-0 shrink-0 pb-3">
-        <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3">
+        <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pb-0.5 pt-3">
           {chips.map((chip) => (
             <Button
               key={chip.key}
@@ -688,6 +688,7 @@ export function MemberHomeChat({
           onDraftAttachmentsChange={setDrafts}
           placeholder={t('chatPlaceholder')}
           variant="panel"
+          topRule={false}
           conversationMicrophone={{
             active: micOn,
             hearing: micOn && voiceInterview.userSpeaking,
