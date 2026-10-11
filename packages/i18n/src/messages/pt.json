@@ -4689,7 +4689,12 @@
     "statusAccepted": "Aceita",
     "statusRejected": "Rejeitada",
     "holdingsTitle": "Saldos",
-    "holdingsDescription": "Saldos de tokens e ativos do espaço."
+    "holdingsDescription": "Saldos de tokens e ativos do espaço.",
+    "open": "Abrir",
+    "signalsEmpty": "Nada em aberto.",
+    "calendarEmpty": "Nada a seguir.",
+    "membersEmpty": "Ainda sem membros.",
+    "ecosystemEmpty": "Ainda sem outros espaços."
   },
   "Landing": {
     "brand": "Hypha",

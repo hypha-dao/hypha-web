@@ -4687,7 +4687,12 @@
     "statusAccepted": "Acceptée",
     "statusRejected": "Rejetée",
     "holdingsTitle": "Avoirs",
-    "holdingsDescription": "Soldes de jetons et actifs de l’espace."
+    "holdingsDescription": "Soldes de jetons et actifs de l’espace.",
+    "open": "Ouvrir",
+    "signalsEmpty": "Rien d'ouvert.",
+    "calendarEmpty": "Rien à venir.",
+    "membersEmpty": "Pas encore de membres.",
+    "ecosystemEmpty": "Pas encore d'autres espaces."
   },
   "Landing": {
     "brand": "Hypha",

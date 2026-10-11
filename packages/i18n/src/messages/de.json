@@ -4691,7 +4691,12 @@
     "statusAccepted": "Angenommen",
     "statusRejected": "Abgelehnt",
     "holdingsTitle": "Bestände",
-    "holdingsDescription": "Token-Salden und Space-Assets."
+    "holdingsDescription": "Token-Salden und Space-Assets.",
+    "open": "Öffnen",
+    "signalsEmpty": "Nichts offen.",
+    "calendarEmpty": "Nichts steht an.",
+    "membersEmpty": "Noch keine Mitglieder.",
+    "ecosystemEmpty": "Noch keine weiteren Spaces."
   },
   "Landing": {
     "brand": "Hypha",

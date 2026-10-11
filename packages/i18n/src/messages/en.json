@@ -4815,7 +4815,12 @@
     "statusAccepted": "Accepted",
     "statusRejected": "Rejected",
     "holdingsTitle": "Holdings",
-    "holdingsDescription": "Token balances and space assets."
+    "holdingsDescription": "Token balances and space assets.",
+    "open": "Open",
+    "signalsEmpty": "Nothing open.",
+    "calendarEmpty": "Nothing coming up.",
+    "membersEmpty": "No members yet.",
+    "ecosystemEmpty": "No other spaces here yet."
   },
   "Landing": {
     "brand": "Hypha",

@@ -4678,7 +4678,12 @@
     "statusAccepted": "Прифатен",
     "statusRejected": "Одбиен",
     "holdingsTitle": "Средства",
-    "holdingsDescription": "Салда на токени и средства на просторот."
+    "holdingsDescription": "Салда на токени и средства на просторот.",
+    "open": "Отвори",
+    "signalsEmpty": "Нема ништо отворено.",
+    "calendarEmpty": "Нема ништо наскоро.",
+    "membersEmpty": "Сè уште нема членови.",
+    "ecosystemEmpty": "Сè уште нема други простори."
   },
   "Landing": {
     "brand": "Hypha",

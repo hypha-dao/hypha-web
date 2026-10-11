@@ -8,6 +8,7 @@ export * from './export-embedded-wallet-button';
 export * from './member-detail';
 export * from './member-spaces';
 export * from './members-section';
+export * from './person-avatar';
 export * from './person-head';
 export * from './person-label';
 export * from './signup-panel';

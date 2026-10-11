@@ -4697,7 +4697,12 @@
     "statusAccepted": "Geaccepteerd",
     "statusRejected": "Afgewezen",
     "holdingsTitle": "Saldi",
-    "holdingsDescription": "Tokensaldi en ruimte-assets."
+    "holdingsDescription": "Tokensaldi en ruimte-assets.",
+    "open": "Openen",
+    "signalsEmpty": "Niets open.",
+    "calendarEmpty": "Niets op komst.",
+    "membersEmpty": "Nog geen leden.",
+    "ecosystemEmpty": "Nog geen andere spaces."
   },
   "Landing": {
     "brand": "Hypha",
