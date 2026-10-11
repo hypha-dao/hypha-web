@@ -224,21 +224,11 @@ export function MemberHome({
     () => (home ? listMemberHomeThreadItems(home) : []),
     [home],
   );
-  const [spokenItem, setSpokenItem] = useState<MemberHomeThreadItem | null>(
-    null,
-  );
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const onFocusItem = useCallback((item: MemberHomeThreadItem | null) => {
-    setSpokenItem(item);
+    if (!item) return;
+    setFocusKey(`${item.kind}:${item.slug}`);
   }, []);
-  const leadItem =
-    (spokenItem &&
-      queue.find(
-        (item) =>
-          item.kind === spokenItem.kind && item.slug === spokenItem.slug,
-      )) ||
-    queue[0] ||
-    null;
   const reachIds = useMemo(() => {
     if (!home) return [];
     const ids = new Set<number>();
@@ -250,11 +240,6 @@ export function MemberHome({
     }
     return [...ids];
   }, [home]);
-  const leadHref = leadItem
-    ? leadItem.kind === 'proposal'
-      ? getProposalPath(lang, leadItem.spaceSlug, leadItem.slug)
-      : getSignalPath(lang, leadItem.spaceSlug, leadItem.slug)
-    : null;
 
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem))] w-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 lg:grid lg:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem)] lg:min-h-0 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden lg:pb-0">
@@ -561,90 +546,6 @@ export function MemberHome({
           </section>
         ) : null}
 
-        <section
-          className="border border-border bg-background p-4"
-          aria-busy={home == null || undefined}
-        >
-          <div className="flex items-baseline justify-between gap-4">
-            <h2
-              className="text-3"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {home && !leadItem ? t('quietHeading') : t('useful')}
-            </h2>
-            {leadItem ? (
-              <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
-                {leadItem.spaceTitle}
-              </p>
-            ) : null}
-          </div>
-          {home == null ? (
-            <div className="mt-3">
-              <CardSkeleton lines={3} plain />
-            </div>
-          ) : leadItem && home ? (
-            <div className="mt-3">
-              <MemberHomeThreadCard
-                lang={lang}
-                compact
-                assistant={showAssistant}
-                item={leadItem}
-                proposal={
-                  leadItem.kind === 'proposal'
-                    ? home.proposals.find(
-                        (item) => item.slug === leadItem.slug,
-                      ) ?? null
-                    : null
-                }
-                onAsk={requestMemberHomeAsk}
-                onReach={(person, mode) =>
-                  mode === 'call' ? openCall(person) : openChat(person)
-                }
-              />
-            </div>
-          ) : leadItem ? (
-            <div className="mt-3">
-              <p className="text-1">{leadItem.title}</p>
-              <p className="mt-1 text-1 text-neutral-11">
-                {leadItem.spaceTitle}
-              </p>
-              {leadHref ? (
-                <Button asChild className="mt-4 text-sm">
-                  <Link href={leadHref}>
-                    {leadItem.kind === 'proposal'
-                      ? t('weighIn')
-                      : t('viewSignal')}
-                  </Link>
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-3 grid gap-2">
-              {home.counts.spaces > 0 ? (
-                <Link
-                  href={`/${lang}/profile/${home.person.slug}/actions/activate-spaces`}
-                  className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
-                >
-                  <span className="block text-1">{t('quietActivate')}</span>
-                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
-                    {t('quietActivateBody')}
-                  </span>
-                </Link>
-              ) : (
-                <Link
-                  href={getOnboardingPath(lang)}
-                  className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
-                >
-                  <span className="block text-1">{t('createSpace')}</span>
-                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
-                    {t('quietCreateBody')}
-                  </span>
-                </Link>
-              )}
-            </div>
-          )}
-        </section>
-
         <div>
           <Tile title={t('waiting')} busy={home == null}>
             <ResourceList
@@ -655,13 +556,6 @@ export function MemberHome({
                 home
                   ? [
                       ...queue.flatMap((item) => {
-                        if (
-                          leadItem &&
-                          item.kind === leadItem.kind &&
-                          item.slug === leadItem.slug
-                        ) {
-                          return [];
-                        }
                         const typeName = item.category?.trim();
                         const typeKey = typeName
                           ? (`types.${typeName}` as 'types.Need')
