@@ -25,10 +25,10 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   agreements: 'primary',
   treasury: 'primary',
   memory: 'primary',
+  pipeline: 'primary',
   'ecosystem-navigation': 'more',
   calendar: 'more',
   members: 'more',
-  pipeline: 'more',
   energy: 'more',
   rewards: 'more',
 };
@@ -40,7 +40,6 @@ const HOME_DASHBOARD_TABS = new Set<string>([
   'rewards',
   'energy',
   'ecosystem-navigation',
-  'pipeline',
 ]);
 
 export type SpaceSectionNavItem = {
@@ -83,13 +82,14 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Menu: Home · Signals · Agreements · Treasury · Space memory
+ * Menu: Home · Signals · Deals (when on) · Agreements · Treasury · Space memory
  * Calendar, members, rewards, ecosystem, and energy stay on the home dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
   spaceSlug,
   pathname,
+  pipelineEnabled = false,
   coherenceEnabled = true,
   memoryEnabled = false,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
@@ -109,6 +109,10 @@ export function buildSpaceSectionNavItems({
 
   if (coherenceEnabled) {
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
+  }
+
+  if (pipelineEnabled) {
+    items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
   }
 
   items.push(

@@ -42,7 +42,23 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.map((item) => item.key)).not.toContain('coherence');
   });
 
-  it('keeps energy, calendar, members, rewards, ecosystem, and pipeline off the menu', () => {
+  it('places deals after signals when that screen is on', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pipelineEnabled: true,
+      memoryEnabled: true,
+    });
+    expect(items.map((item) => item.key)).toEqual([
+      'overview',
+      'coherence',
+      'pipeline',
+      'agreements',
+      'treasury',
+      'memory',
+    ]);
+  });
+
+  it('keeps energy, calendar, members, rewards, and ecosystem off the menu', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       pipelineEnabled: true,
@@ -50,7 +66,6 @@ describe('buildSpaceSectionNavItems', () => {
       memoryEnabled: true,
     });
     const keys = items.map((item) => item.key);
-    expect(keys).not.toContain('pipeline');
     expect(keys).not.toContain('energy');
     expect(keys).not.toContain('calendar');
     expect(keys).not.toContain('members');
@@ -85,7 +100,6 @@ describe('buildSpaceSectionNavItems', () => {
       'rewards',
       'energy',
       'ecosystem-navigation',
-      'pipeline',
     ]) {
       const items = buildSpaceSectionNavItems({
         ...base,
@@ -95,6 +109,15 @@ describe('buildSpaceSectionNavItems', () => {
       });
       expect(items.find((item) => item.active)?.key).toBe('overview');
     }
+  });
+
+  it('selects deals on the deal screen', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pathname: '/en/dho/hypha/pipeline',
+      pipelineEnabled: true,
+    });
+    expect(items.find((item) => item.active)?.key).toBe('pipeline');
   });
 
   it('treats /banking as treasury for active state', () => {
