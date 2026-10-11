@@ -68,6 +68,11 @@ function kindLabel(
   return documentKind.trim();
 }
 
+function givenName(name: string | null | undefined) {
+  const first = name?.trim().split(/\s+/)[0];
+  return first || '';
+}
+
 function plainSummary(value: string) {
   return value
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
@@ -320,7 +325,7 @@ export function MemberHomeThreadCard({
                 void reach('chat');
               }}
             >
-              {t('askProposer', { name: creator.name ?? '' })}
+              {t('askProposer', { name: givenName(creator.name) })}
             </Button>
           ) : null}
           {assistant && !isSignal ? (

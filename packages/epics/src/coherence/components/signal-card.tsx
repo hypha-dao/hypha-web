@@ -437,7 +437,7 @@ function SignalCardComponent({
               onClick={handleTurnIntoProposal}
               onKeyDown={stopCardActivationKey}
             >
-              <span className="truncate text-1">{t('turnIntoProposal')}</span>
+              <span className="truncate text-1">{t('proposal')}</span>
             </Button>
           ) : null}
           {onOpenConversation && !archived ? (
