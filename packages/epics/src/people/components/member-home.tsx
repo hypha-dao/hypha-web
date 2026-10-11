@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { Radio, ScrollText } from 'lucide-react';
+import { Radio, Scale } from 'lucide-react';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Button,
@@ -1052,13 +1052,19 @@ function ResourceMark({
   kind?: 'signal' | 'proposal';
   iconUrl?: string | null;
 }) {
-  const Icon =
-    kind === 'proposal' ? ScrollText : kind === 'signal' ? Radio : null;
+  const [logoFailed, setLogoFailed] = useState(false);
+  const Icon = kind === 'proposal' ? Scale : kind === 'signal' ? Radio : null;
+  const showLogo = Boolean(iconUrl) && !logoFailed;
   return (
-    <span className="craft-icon-box" aria-hidden>
-      {iconUrl ? (
+    <span className="craft-icon-box text-foreground" aria-hidden>
+      {showLogo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={iconUrl} alt="" className="size-full object-cover" />
+        <img
+          src={iconUrl ?? undefined}
+          alt=""
+          className="size-full object-cover"
+          onError={() => setLogoFailed(true)}
+        />
       ) : Icon ? (
         <Icon />
       ) : null}

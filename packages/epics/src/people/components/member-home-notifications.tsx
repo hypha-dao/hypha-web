@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { Radio, Scale } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
@@ -8,11 +10,37 @@ import { Skeleton } from '@hypha-platform/ui';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
-import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import './member-home-banner.css';
 
 type NotificationItem = MemberIntelligence['notifications'][number];
+
+function NotificationMark({
+  kind,
+  iconUrl,
+}: {
+  kind: NotificationItem['kind'];
+  iconUrl?: string | null;
+}) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const Icon = kind === 'proposal' ? Scale : Radio;
+  const showLogo = Boolean(iconUrl) && !logoFailed;
+  return (
+    <span className="craft-icon-box text-foreground" aria-hidden>
+      {showLogo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={iconUrl ?? undefined}
+          alt=""
+          className="size-full object-cover"
+          onError={() => setLogoFailed(true)}
+        />
+      ) : (
+        <Icon />
+      )}
+    </span>
+  );
+}
 
 function notificationHref(lang: Locale, item: NotificationItem) {
   if (item.kind === 'signal') {
@@ -85,12 +113,12 @@ export function MemberHomeNotifications({
                     href={notificationHref(lang, item)}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-background-4/70"
                   >
-                    <SpaceSwitcherMark
+                    <NotificationMark
+                      kind={item.kind}
                       iconUrl={resolveSpaceDisplayLogoUrl(
                         item.spaceLogo,
                         logoVariant,
                       )}
-                      alt={item.spaceTitle}
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-1 text-foreground">
