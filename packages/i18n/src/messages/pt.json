@@ -199,8 +199,8 @@
     "openPerson": "Abrir {name}",
     "signals": "Sinais que precisam de ti",
     "proposals": "Propostas para ponderar",
-    "waiting": "Sinais e propostas",
-    "noWaiting": "Os sinais e as propostas dos teus espaços aparecem aqui.",
+    "waiting": "Atenção necessária",
+    "noWaiting": "O que precisa da tua atenção nos teus espaços aparece aqui.",
     "movementJoined": "{name} entrou"
   },
   "WelcomeFlow": {
