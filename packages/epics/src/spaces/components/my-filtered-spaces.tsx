@@ -7,6 +7,8 @@ import {
   SpaceOrder,
   isSpaceArchived,
 } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
+import type { ReactNode } from 'react';
 import { SpaceCardList } from './space-card-list';
 import { SpaceCardContainer } from './space-card.container';
 import { resolveSpaceDisplayLogoUrl } from '../utils/resolve-space-display-logo-url';
@@ -134,11 +136,13 @@ export function MyFilteredSpaces({
   spaces,
   order,
   query = '',
+  renderDiagram,
 }: {
   lang: Locale;
   spaces: Space[];
   order?: SpaceOrder;
   query?: string;
+  renderDiagram?: (root: Space) => ReactNode;
 }) {
   const { person, isLoading: isLoadingPerson } = useMe();
   const { web3SpaceIds, isLoading: isLoadingMemberSpaceIds } =
@@ -146,6 +150,9 @@ export function MyFilteredSpaces({
       personAddress: person?.address as Address | undefined,
     });
   const [hideArchivedSpaces, setHideArchivedSpaces] = React.useState(true);
+  const [diagramRootIds, setDiagramRootIds] = React.useState<
+    ReadonlySet<number>
+  >(() => new Set());
   const tSpaces = useTranslations('Spaces');
   const tMyWallet = useTranslations('MyWallet');
 
@@ -218,27 +225,81 @@ export function MyFilteredSpaces({
           {ecosystemGroups.map((group) => {
             const logo = resolveSpaceDisplayLogoUrl(group.root);
             const initial = group.root.title.trim().charAt(0).toUpperCase();
+            const showDiagram =
+              Boolean(renderDiagram) &&
+              Boolean(group.root.slug) &&
+              diagramRootIds.has(group.root.id);
             return (
               <section key={group.root.id} className="flex flex-col gap-3">
-                <h2 className="flex min-w-0 items-center gap-2.5">
-                  <Avatar className="size-8 shrink-0 rounded-none">
-                    {logo ? (
-                      <AvatarImage src={logo} alt="" className="object-cover" />
-                    ) : null}
-                    <AvatarFallback className="rounded-none text-1">
-                      {initial}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="min-w-0 truncate text-4 font-medium">
-                    {group.root.title}
-                  </span>
-                </h2>
-                <SpaceCardContainer
-                  lang={lang}
-                  spaces={group.spaces}
-                  showExitButton={true}
-                  gridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-                />
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+                  <h2 className="flex min-w-0 items-center gap-2.5">
+                    <Avatar className="size-8 shrink-0 rounded-none">
+                      {logo ? (
+                        <AvatarImage
+                          src={logo}
+                          alt=""
+                          className="object-cover"
+                        />
+                      ) : null}
+                      <AvatarFallback className="rounded-none text-1">
+                        {initial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="min-w-0 truncate text-4 font-medium">
+                      {group.root.title}
+                    </span>
+                  </h2>
+                  {renderDiagram && group.root.slug ? (
+                    <div
+                      role="group"
+                      aria-label={tSpaces('viewToggleLabel')}
+                      className="inline-flex shrink-0 border border-foreground"
+                    >
+                      {(['spaces', 'diagram'] as const).map((option) => {
+                        const selected =
+                          option === 'diagram' ? showDiagram : !showDiagram;
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              setDiagramRootIds((current) => {
+                                const next = new Set(current);
+                                if (option === 'diagram') {
+                                  next.add(group.root.id);
+                                } else {
+                                  next.delete(group.root.id);
+                                }
+                                return next;
+                              });
+                            }}
+                            className={cn(
+                              'px-3 py-1 text-1 uppercase tracking-[0.12em]',
+                              selected
+                                ? 'bg-foreground text-background'
+                                : 'bg-background text-foreground',
+                            )}
+                          >
+                            {option === 'diagram'
+                              ? tSpaces('viewDiagram')
+                              : tSpaces('viewSpaces')}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+                {showDiagram && renderDiagram ? (
+                  renderDiagram(group.root)
+                ) : (
+                  <SpaceCardContainer
+                    lang={lang}
+                    spaces={group.spaces}
+                    showExitButton={true}
+                    gridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+                  />
+                )}
               </section>
             );
           })}
