@@ -388,30 +388,10 @@ export function useOnboardingVoiceRealtime({
     setPhase('listening');
   }, []);
 
-  const rememberUnheardSpeech = useCallback(
-    (connection: RealtimeVoiceConnection, speakable: string) => {
-      const generation = replayGenerationRef.current + 1;
-      replayGenerationRef.current = generation;
-      replayOnUnlockRef.current = speakable;
-      void connection.remoteAudio.play().then(
-        () => {
-          if (replayGenerationRef.current !== generation) return;
-          const audio = connection.remoteAudio;
-          if (audio.muted || audio.volume === 0) return;
-          const activation = navigator.userActivation;
-          if (activation && !activation.hasBeenActive) return;
-          if (replayOnUnlockRef.current === speakable) {
-            replayOnUnlockRef.current = null;
-          }
-        },
-        () => {
-          if (replayGenerationRef.current !== generation) return;
-          replayOnUnlockRef.current = speakable;
-        },
-      );
-    },
-    [],
-  );
+  const rememberUnheardSpeech = useCallback((speakable: string) => {
+    replayGenerationRef.current += 1;
+    replayOnUnlockRef.current = speakable;
+  }, []);
 
   const speakViaRealtime = useCallback(
     (speakable: string): boolean => {
@@ -425,6 +405,8 @@ export function useOnboardingVoiceRealtime({
       }
       const replacing = Boolean(activeRealtimeResponseIdRef.current);
       if (replacing) replacingSpeechRef.current = true;
+      // Close the mic before the line starts so the open microphone cannot cut it off.
+      muteMicrophone(connection);
       if (
         !speakAssistantTextViaRealtime(connection, speakable, {
           activeResponseId: activeRealtimeResponseIdRef.current,
@@ -432,20 +414,19 @@ export function useOnboardingVoiceRealtime({
         })
       ) {
         if (replacing) replacingSpeechRef.current = false;
+        releaseMic(connection);
         queuedSpeakableRef.current = speakable;
         replayGenerationRef.current += 1;
         replayOnUnlockRef.current = speakable;
         return false;
       }
       queuedSpeakableRef.current = null;
-      rememberUnheardSpeech(connection, speakable);
-      // Keep the mic closed while this line plays so the open mic cannot cut it off.
-      muteMicrophone(connection);
+      rememberUnheardSpeech(speakable);
       realtimeSpeakInFlightRef.current = true;
       setPhase('speaking');
       return true;
     },
-    [locale, rememberUnheardSpeech],
+    [locale, rememberUnheardSpeech, releaseMic],
   );
   const speakViaRealtimeRef = useRef(speakViaRealtime);
   speakViaRealtimeRef.current = speakViaRealtime;
@@ -649,8 +630,20 @@ export function useOnboardingVoiceRealtime({
         event.type === 'response.audio.delta'
       ) {
         realtimeAudioHeardRef.current = true;
-        if (connectionRef.current && speakRepliesRef.current) {
-          setRealtimeRemoteAudioMuted(connectionRef.current, false);
+        const audio = connectionRef.current?.remoteAudio;
+        if (audio && speakRepliesRef.current) {
+          audio.muted = false;
+          audio.volume = 1;
+          if (audio.paused) {
+            void audio.play().then(
+              () => {
+                if (!audio.paused) replayOnUnlockRef.current = null;
+              },
+              () => undefined,
+            );
+          } else {
+            replayOnUnlockRef.current = null;
+          }
         }
       }
 
@@ -889,14 +882,17 @@ export function useOnboardingVoiceRealtime({
       const connection = await connectOpenAiRealtimeCall({
         clientSecret: session.clientSecret,
         audioInput: session.audioInput,
+        voice: session.voice,
         onEvent: handleServerEvent,
         onConnectionStateChange: (state) => {
           const activeConnection = connectionRef.current;
           if (state === 'connected') {
             if (!activeConnection) return;
             setIsRealtimeConnected(true);
-            releaseMic(activeConnection);
-            setPhase('listening');
+            if (!realtimeSpeakInFlightRef.current) {
+              releaseMic(activeConnection);
+              setPhase('listening');
+            }
           }
           if (
             state === 'failed' ||
