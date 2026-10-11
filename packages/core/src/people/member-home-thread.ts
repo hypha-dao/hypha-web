@@ -323,6 +323,8 @@ function toolInputs(parts: readonly unknown[] | undefined): unknown[] {
       toolName?: unknown;
       state?: unknown;
       input?: unknown;
+      args?: unknown;
+      output?: unknown;
     };
     const type = typeof record.type === 'string' ? record.type : '';
     const named =
@@ -331,7 +333,9 @@ function toolInputs(parts: readonly unknown[] | undefined): unknown[] {
         record.toolName === SHOW_MEMBER_HOME_ITEM_TOOL);
     if (!named) continue;
     if (record.state === 'input-streaming') continue;
-    inputs.push(record.input);
+    const payload = record.input ?? record.args ?? record.output;
+    if (payload == null) continue;
+    inputs.push(payload);
   }
   return inputs;
 }
@@ -352,6 +356,56 @@ function itemFromToolInput(
   );
 }
 
+function itemsReferencedInText(
+  items: readonly MemberHomeThreadItem[],
+  text: string,
+): MemberHomeThreadItem[] {
+  const haystack = text.trim().toLowerCase();
+  if (!haystack) return [];
+  const hits: { index: number; item: MemberHomeThreadItem }[] = [];
+  for (const item of items) {
+    const title = item.title.trim().toLowerCase();
+    const space = item.spaceTitle.trim().toLowerCase();
+    const indexes = [title, space]
+      .filter((value) => value.length >= 3)
+      .map((value) => haystack.indexOf(value))
+      .filter((index) => index >= 0);
+    if (indexes.length === 0) continue;
+    hits.push({ index: Math.min(...indexes), item });
+  }
+  hits.sort((left, right) => left.index - right.index);
+  const seen = new Set<string>();
+  const ordered: MemberHomeThreadItem[] = [];
+  for (const hit of hits) {
+    const key = memberHomeThreadItemKey(hit.item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    ordered.push(hit.item);
+  }
+  return ordered;
+}
+
+function creatorTokens(name: string): string[] {
+  return name
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 3);
+}
+
+function creatorNamedInText(name: string | null, haystack: string): boolean {
+  const tokens = creatorTokens(name ?? '');
+  if (tokens.length === 0) return false;
+  const distinctive = tokens.filter((token) => token.length >= 4);
+  const required = distinctive.length > 0 ? distinctive : tokens;
+  return required.every((token) => haystack.includes(token));
+}
+
+function textOverlap(item: MemberHomeThreadItem, haystack: string): number {
+  return creatorTokens(`${item.title} ${item.summary ?? ''}`).filter((token) =>
+    haystack.includes(token),
+  ).length;
+}
+
 function itemMentionedInText(
   items: readonly MemberHomeThreadItem[],
   text: string,
@@ -363,11 +417,24 @@ function itemMentionedInText(
     return title.length >= 3 && haystack.includes(title);
   });
   if (matches.length === 1 && matches[0]) return matches[0];
-  const byCreator = items.filter((item) => {
-    const name = item.creatorName?.trim().toLowerCase() ?? '';
-    return name.includes(' ') && haystack.includes(name);
-  });
-  return byCreator.length === 1 && byCreator[0] ? byCreator[0] : null;
+  const talkingAboutProposal = /\b(proposal|invite|vote|contribution)\b/.test(
+    haystack,
+  );
+  const pool = talkingAboutProposal
+    ? items.filter((item) => item.kind === 'proposal')
+    : items;
+  const byCreator = pool.filter((item) =>
+    creatorNamedInText(item.creatorName, haystack),
+  );
+  if (byCreator.length === 1 && byCreator[0]) return byCreator[0];
+  if (byCreator.length > 1) {
+    const ranked = [...byCreator].sort(
+      (left, right) =>
+        textOverlap(right, haystack) - textOverlap(left, haystack),
+    );
+    return ranked[0] ?? null;
+  }
+  return null;
 }
 
 /**
@@ -478,10 +545,13 @@ export function memberHomeItemMemory(
   const settled = new Set<string>();
   const mentioned = new Set<string>();
   let currentKey: string | null = null;
+  let assistantText = '';
   let held: string | null = null;
 
   for (const message of messages) {
     if (message.role === 'assistant') {
+      assistantText =
+        textFromParts(message.parts) || message.content?.trim() || '';
       const item = memberHomeThreadItemForMessage(items, message);
       if (!item) continue;
       const key = memberHomeThreadItemKey(item);
@@ -505,7 +575,21 @@ export function memberHomeItemMemory(
       continue;
     }
     if (isMemberHomeItemDecline(text)) {
-      declines.set(currentKey, (declines.get(currentKey) ?? 0) + 1);
+      const named = itemsReferencedInText(items, text);
+      const offered = itemsReferencedInText(items, assistantText);
+      const targets =
+        named.length > 0
+          ? named
+          : offered.length > 0
+          ? [offered[offered.length - 1]!]
+          : [];
+      if (targets.length === 0) {
+        declines.set(currentKey, (declines.get(currentKey) ?? 0) + 1);
+      }
+      for (const target of targets) {
+        const key = memberHomeThreadItemKey(target);
+        declines.set(key, (declines.get(key) ?? 0) + 1);
+      }
       continue;
     }
     const deferredCount = defers.get(currentKey) ?? 0;
