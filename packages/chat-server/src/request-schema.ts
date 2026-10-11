@@ -82,6 +82,14 @@ export const chatRequestSchema = z.object({
    * member are loaded server-side from `getMemberIntelligence`.
    */
   memberHome: z.boolean().optional(),
+  /** Choices remembered on this browser from earlier home visits. */
+  memberHomeMemory: z
+    .object({
+      passed: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
+      deferred: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
+      settled: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
+    })
+    .optional(),
   /** Live proposal form snapshot from the open Agreements create overlay. */
   activeProposalFormSnapshot: z
     .object({
