@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { MessageSquare, Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -154,6 +154,9 @@ export function MemberHomeConnectionsWidget({
   onVideo?: (person: HomeConnection) => Promise<boolean>;
 }) {
   const t = useTranslations('MemberHome');
+  const [visibleCount, setVisibleCount] = useState(5);
+  const visiblePeople = people.slice(0, visibleCount);
+  const remaining = people.length - visiblePeople.length;
 
   return (
     <Widget title={t('connections')} busy={isLoading}>
@@ -173,7 +176,7 @@ export function MemberHomeConnectionsWidget({
         <p className="text-2 text-neutral-11">{t('noConnections')}</p>
       ) : (
         <ul className="flex flex-wrap gap-3">
-          {people.map((person) => {
+          {visiblePeople.map((person) => {
             const name = personLabel(person, fallbackName);
             const label = t('sharedSpaces', {
               count: person.sharedSpaceCount,
@@ -243,6 +246,15 @@ export function MemberHomeConnectionsWidget({
           })}
         </ul>
       )}
+      {!isLoading && remaining > 0 ? (
+        <button
+          type="button"
+          className="mt-3 text-2 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          onClick={() => setVisibleCount((count) => count + 5)}
+        >
+          {t('showMore')}
+        </button>
+      ) : null}
     </Widget>
   );
 }

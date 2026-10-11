@@ -94,9 +94,12 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Would you like to take part in one of them?');
     expect(facts).toContain('Asking for context or a discussion is not a no');
     expect(facts).toContain(
-      'The winter greenhouse vote closes in an hour and needs one more yes to reach quorum.',
+      'Teo is looking for a quick look at the greenhouse budget before the vote wraps up.',
     );
-    expect(facts).toContain('Want to take a look?');
+    expect(facts).toContain('30 HUM');
+    expect(facts).toContain('Can you jump on with him?');
+    expect(facts).toContain("Glad you're helping Teo");
+    expect(facts).toContain('40 NFC and a jar of plum jam');
     expect(facts).toContain('Never make a recipe');
   });
 
@@ -108,5 +111,23 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('proposal:path');
     expect(facts).toContain('Nothing left in the queue');
     expect(facts).not.toContain('1. kind=proposal slug=path');
+  });
+
+  it('brings a deferred item back only as a good time', () => {
+    const facts = formatMemberHomeFacts(home, {
+      deferred: ['proposal:path'],
+    });
+    expect(facts).toContain('is this a good time');
+    expect(facts).toContain('Deferred.');
+    expect(facts).not.toContain('1. kind=proposal slug=path');
+  });
+
+  it('does not ask if this is a good time a second time', () => {
+    const facts = formatMemberHomeFacts(home, {
+      recalled: ['proposal:path'],
+    });
+    expect(facts).toContain('Already asked once if this is a good time');
+    expect(facts).not.toContain('1. kind=proposal slug=path');
+    expect(facts).not.toContain('Bring back the deferred item once');
   });
 });

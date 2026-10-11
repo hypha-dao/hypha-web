@@ -8,6 +8,8 @@ import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   listMemberHomeThreadItems,
+  memberHomeItemMemory,
+  mergeMemberHomeMemory,
   memberHomeThreadItemForMessage,
   type MemberHomeThreadItem,
   type MemberIntelligence,
@@ -51,6 +53,39 @@ type HomeWidget = {
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
 const HOME_SOUND_KEY = 'hypha-member-home-sound';
 const HOME_MIC_KEY = 'hypha-member-home-mic';
+const HOME_CHOICES_KEY = 'hypha-member-home-choices';
+
+function readMemberHomeChoices(): {
+  passed: string[];
+  deferred: string[];
+  settled: string[];
+} {
+  if (typeof window === 'undefined') {
+    return { passed: [], deferred: [], settled: [] };
+  }
+  try {
+    const raw = window.localStorage.getItem(HOME_CHOICES_KEY);
+    if (!raw) return { passed: [], deferred: [], settled: [] };
+    const parsed = JSON.parse(raw) as {
+      passed?: unknown;
+      deferred?: unknown;
+      settled?: unknown;
+    };
+    const list = (value: unknown) =>
+      Array.isArray(value)
+        ? value
+            .filter((item): item is string => typeof item === 'string')
+            .slice(0, 80)
+        : [];
+    return {
+      passed: list(parsed.passed),
+      deferred: list(parsed.deferred),
+      settled: list(parsed.settled),
+    };
+  } catch {
+    return { passed: [], deferred: [], settled: [] };
+  }
+}
 
 function readHomeSoundOn() {
   try {
@@ -142,7 +177,11 @@ export function MemberHomeChat({
             return {};
           }
         },
-        body: { memberHome: true, locale: lang },
+        body: () => ({
+          memberHome: true,
+          locale: lang,
+          memberHomeMemory: readMemberHomeChoices(),
+        }),
       }),
     [getAccessToken, lang],
   );
@@ -208,7 +247,11 @@ export function MemberHomeChat({
         },
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          body: { memberHome: true, locale: lang },
+          body: {
+            memberHome: true,
+            locale: lang,
+            memberHomeMemory: readMemberHomeChoices(),
+          },
         },
       );
       setInput('');
@@ -338,6 +381,32 @@ export function MemberHomeChat({
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
   );
+  useEffect(() => {
+    const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
+    const merged = mergeMemberHomeMemory(fromMessages, readMemberHomeChoices());
+    const deferred = [...merged.deferred];
+    for (const key of fromMessages.recalled) {
+      if (
+        !merged.passed.includes(key) &&
+        !merged.settled.includes(key) &&
+        !deferred.includes(key)
+      ) {
+        deferred.push(key);
+      }
+    }
+    try {
+      window.localStorage.setItem(
+        HOME_CHOICES_KEY,
+        JSON.stringify({
+          passed: merged.passed,
+          deferred,
+          settled: merged.settled,
+        }),
+      );
+    } catch {
+      // The conversation still carries the choice when storage is blocked.
+    }
+  }, [homeMessages, threadItems]);
   const focusedItem = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];

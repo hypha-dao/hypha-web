@@ -7,6 +7,7 @@ import {
   memberHomeSignalAction,
   memberHomeSignalCtas,
   memberHomeThreadItemForMessage,
+  memberHomeItemMemory,
   passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
 } from '../member-home-thread';
@@ -376,5 +377,78 @@ describe('passedMemberHomeItemKeys', () => {
       },
     ]);
     expect(keys).toEqual([]);
+  });
+
+  it('remembers not now and leaves the item after a second one', () => {
+    const offer = {
+      role: 'assistant' as const,
+      parts: [
+        {
+          type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+          state: 'output-available',
+          input: { kind: 'proposal', slug: 'invite-member' },
+        },
+      ],
+    };
+    const once = memberHomeItemMemory(items, [
+      offer,
+      { role: 'user', content: 'Not now for Invite Member.' },
+    ]);
+    expect(once.passed).toEqual([]);
+    expect(once.deferred).toEqual(['proposal:invite-member']);
+    expect(once.held).toBe('proposal:invite-member');
+
+    const again = memberHomeItemMemory(items, [
+      offer,
+      { role: 'user', content: 'Not now for Invite Member.' },
+      offer,
+      { role: 'user', content: 'Not now for Invite Member.' },
+    ]);
+    expect(again.passed).toEqual(['proposal:invite-member']);
+    expect(again.deferred).toEqual([]);
+    expect(again.recalled).toEqual([]);
+  });
+
+  it('lets a later reply bring a not-now back once', () => {
+    const offer = (slug: string, kind: 'proposal' | 'signal') => ({
+      role: 'assistant' as const,
+      parts: [
+        {
+          type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+          state: 'output-available',
+          input: { kind, slug },
+        },
+      ],
+    });
+    const afterAnotherItem = memberHomeItemMemory(items, [
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Not now for Invite Member.' },
+      offer('define-products', 'signal'),
+      { role: 'user', content: "I'll help with Define products." },
+    ]);
+    expect(afterAnotherItem.held).toBeNull();
+    expect(afterAnotherItem.deferred).toEqual(['proposal:invite-member']);
+    expect(afterAnotherItem.passed).toEqual([]);
+
+    const asked = memberHomeItemMemory(items, [
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Not now for Invite Member.' },
+      offer('invite-member', 'proposal'),
+    ]);
+    expect(asked.deferred).toEqual([]);
+    expect(asked.recalled).toEqual(['proposal:invite-member']);
+    expect(asked.held).toBe('proposal:invite-member');
+
+    const agreed = memberHomeItemMemory(items, [
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Not now for Invite Member.' },
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: "I'll help with Invite Member." },
+    ]);
+    expect(agreed.settled).toEqual(['proposal:invite-member']);
+    expect(agreed.deferred).toEqual([]);
+    expect(agreed.recalled).toEqual([]);
+    expect(agreed.passed).toEqual([]);
+    expect(agreed.held).toBeNull();
   });
 });
