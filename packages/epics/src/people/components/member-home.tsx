@@ -244,7 +244,7 @@ export function MemberHome({
       </div>
       <aside
         aria-label={t('panelSpaces')}
-        className="member-home-pane order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
+        className="member-home-pane order-2 flex max-h-[36rem] flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
       >
         <section>
           <div
@@ -292,7 +292,7 @@ export function MemberHome({
             </dl>
           </div>
         </section>
-        <div className="mt-4">
+        <div>
           <MemberHomeSpacesWidget lang={lang} busy={home == null}>
             {home == null ? (
               <CardSkeleton />
@@ -314,7 +314,7 @@ export function MemberHome({
             )}
           </MemberHomeSpacesWidget>
         </div>
-        <div className="mt-4">
+        <div>
           <MemberHomeWalletWidget
             lang={lang}
             personSlug={home?.person.slug}
@@ -322,7 +322,7 @@ export function MemberHome({
             isHomeLoading={home == null}
           />
         </div>
-        <div className="mt-4">
+        <div>
           <Tile
             title={t('notifications')}
             count={
@@ -381,7 +381,7 @@ export function MemberHome({
           </Tile>
         </div>
         {home ? (
-          <div className="mt-4">
+          <div>
             <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
           </div>
         ) : null}
@@ -459,7 +459,7 @@ export function MemberHome({
       </main>
       <aside
         aria-label={t('panelInsights')}
-        className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0"
+        className="member-home-pane order-3 flex max-h-[36rem] flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0"
       >
         {orientation === 'builder' ? (
           <PersonaCard
@@ -473,9 +473,7 @@ export function MemberHome({
           <MemberHomeInviteBanners lang={lang} invites={home.invites} />
         ) : null}
         {home?.person.slug ? (
-          <div className="grid gap-4">
-            <MemberHomeEnergyPanel personSlug={home.person.slug} />
-          </div>
+          <MemberHomeEnergyPanel personSlug={home.person.slug} />
         ) : null}
         {orientation === 'investor' && home ? (
           <PersonaCard
@@ -489,14 +487,14 @@ export function MemberHome({
           />
         ) : null}
         {home != null && orientation == null ? (
-          <section className="mb-4 border border-border bg-background p-5">
+          <section className="border border-border bg-background p-4">
             <h2
               className="text-3"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {t('chooseTitle')}
             </h2>
-            <p className="mt-2 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
+            <p className="mt-3 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
               {t('chooseBody')}
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -522,7 +520,7 @@ export function MemberHome({
         ) : null}
 
         <section
-          className="border border-border bg-background p-5"
+          className="border border-border bg-background p-4"
           aria-busy={home == null || undefined}
         >
           <div className="flex items-baseline justify-between gap-4">
@@ -539,11 +537,11 @@ export function MemberHome({
             ) : null}
           </div>
           {home == null ? (
-            <div className="mt-4">
+            <div className="mt-3">
               <CardSkeleton lines={3} plain />
             </div>
           ) : leadItem && home ? (
-            <div className="mt-4">
+            <div className="mt-3">
               <MemberHomeThreadCard
                 lang={lang}
                 compact
@@ -563,7 +561,7 @@ export function MemberHome({
               />
             </div>
           ) : leadItem ? (
-            <div className="mt-4">
+            <div className="mt-3">
               <p className="text-1">{leadItem.title}</p>
               <p className="mt-1 text-1 text-neutral-11">
                 {leadItem.spaceTitle}
@@ -579,7 +577,7 @@ export function MemberHome({
               ) : null}
             </div>
           ) : (
-            <div className="mt-4 grid gap-2">
+            <div className="mt-3 grid gap-2">
               {home.counts.spaces > 0 ? (
                 <Link
                   href={`/${lang}/profile/${home.person.slug}/actions/activate-spaces`}
@@ -605,7 +603,7 @@ export function MemberHome({
           )}
         </section>
 
-        <div className="mt-4">
+        <div>
           <Tile title={t('waiting')} busy={home == null}>
             <ResourceList
               isLoading={home == null}
@@ -685,7 +683,7 @@ export function MemberHome({
           </Tile>
         </div>
 
-        <div className="mt-8 grid gap-4">
+        <div className="grid gap-4">
           <MemberHomeConnectionsWidget
             people={home?.connections ?? []}
             isLoading={home == null}
@@ -1163,14 +1161,14 @@ function PersonaCard({
   meta?: string;
 }) {
   return (
-    <section className="mb-4 border border-border bg-accent-2 p-5">
+    <section className="border border-border bg-accent-2 p-4">
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         {title}
       </h2>
-      <p className="mt-2 max-w-[52ch] text-1 leading-relaxed text-neutral-11">
+      <p className="mt-3 max-w-[52ch] text-1 leading-relaxed text-neutral-11">
         {body}
       </p>
       {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}

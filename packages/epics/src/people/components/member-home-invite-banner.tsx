@@ -226,7 +226,7 @@ export function MemberHomeInviteBanners({
 }) {
   if (invites.length === 0) return null;
   return (
-    <div className="mb-4 grid gap-3">
+    <div className="grid gap-3">
       {invites.map((invite) => (
         <MemberHomeInviteBanner key={invite.id} lang={lang} invite={invite} />
       ))}
