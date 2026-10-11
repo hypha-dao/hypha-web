@@ -149,6 +149,7 @@ describe('formatMemberHomeFacts', () => {
       ],
     });
     expect(facts).toContain('creator="Gerardo Roza"');
+    expect(facts).toContain('spoken=he');
     expect(facts).toContain('about="Grows food in Rotterdam"');
     expect(facts).toContain('shares=3');
     expect(facts).toContain('with="Noor; Teo"');
