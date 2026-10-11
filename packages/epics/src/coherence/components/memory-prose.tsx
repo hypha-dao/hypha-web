@@ -122,8 +122,14 @@ function listMarker(line: string): { ordered: boolean; text: string } | null {
     return { ordered: false, text: trimmed.slice(2).trim() };
   }
   let i = 0;
-  while (i < trimmed.length && trimmed[i] >= '0' && trimmed[i] <= '9') i += 1;
-  if (i > 0 && trimmed[i] === '.' && trimmed[i + 1] === ' ') {
+  while (i < trimmed.length) {
+    const digit = trimmed[i];
+    if (digit == null || digit < '0' || digit > '9') break;
+    i += 1;
+  }
+  const dot = trimmed[i];
+  const gap = trimmed[i + 1];
+  if (i > 0 && dot === '.' && gap === ' ') {
     return { ordered: true, text: trimmed.slice(i + 2).trim() };
   }
   return null;
