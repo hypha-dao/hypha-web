@@ -3172,6 +3172,8 @@
     "activeCallElsewhere": "Aktiver Anruf in {title}",
     "activeCallsElsewhereCount": "{count} aktive Anrufe an anderer Stelle",
     "notInSpaceEmptyState": "Du befindest dich gerade in keinem Space.",
+    "networkRoomTitle": "Netzwerk",
+    "networkWelcome": "Sag hallo. Dieser Raum ist für das ganze Netzwerk.",
     "welcome": "Starten Sie eine Unterhaltung mit anderen Mitgliedern dieses Spaces.",
     "placeholder": "Nachricht eingeben...",
     "placeholderChannel": "Nachricht #{channel}",

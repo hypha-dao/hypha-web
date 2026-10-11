@@ -3154,6 +3154,8 @@
     "activeCallElsewhere": "Активен повик во {title}",
     "activeCallsElsewhereCount": "{count} активни повици на друго место",
     "notInSpaceEmptyState": "Во моментов не сте во простор.",
+    "networkRoomTitle": "Мрежа",
+    "networkWelcome": "Кажи здраво. Оваа соба е за целата мрежа.",
     "welcome": "Започни разговор со другите членови на овој простор.",
     "placeholder": "Напиши порака...",
     "placeholderChannel": "Порака во #{channel}",

@@ -3290,6 +3290,8 @@
     "activeCallElsewhere": "Active call in {title}",
     "activeCallsElsewhereCount": "{count} active calls elsewhere",
     "notInSpaceEmptyState": "You're not in a space right now.",
+    "networkRoomTitle": "Network",
+    "networkWelcome": "Say hello. This room is for the whole network.",
     "welcome": "Start a conversation with other members of this space.",
     "placeholder": "Type a message...",
     "placeholderChannel": "Message #{channel}",

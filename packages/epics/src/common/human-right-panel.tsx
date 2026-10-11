@@ -337,6 +337,8 @@ type EditDraft = {
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
+/** Marks the dashboard network room in `joinedRef` without matching any space slug. */
+const NETWORK_JOINED_SENTINEL = '__hypha_network__';
 
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
@@ -1059,14 +1061,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const isSpaceMember = canInteractInSpace(userSpaceState);
   const blockSpaceChatForActivityAccess =
     mode === 'space' &&
+    Boolean(spaceSlug?.trim()) &&
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
   // A person-to-person room from the member home has a title and no signal slug.
   const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
+  // Dashboard chat has no space. Membership still gates every space and signal room.
   const blockSpaceChatForMembership =
     !isDirectConversation &&
     (mode === 'space' || mode === 'coherence') &&
+    Boolean(mode === 'coherence' || spaceSlug?.trim()) &&
     (isUserSpaceStateLoading || !isSpaceMember);
   const showMembershipAccessGate =
     blockSpaceChatForMembership && !isUserSpaceStateLoading;
@@ -2723,8 +2728,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     hasLoadedCoherenceMessagesRef.current = false;
   }, [coherenceSlug, mode]);
 
-  // Reset chat state when space changes
+  // Reset chat state when space changes. The dashboard network room has no slug,
+  // so this must not clear it — that loop would wipe the room on every message sync.
   useEffect(() => {
+    if (!spaceSlug?.trim()) return;
     if (joinedRef.current && joinedRef.current !== spaceSlug) {
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
@@ -2744,6 +2751,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (mode !== 'space') return;
+    if (!spaceSlug?.trim()) return;
     if (isUserSpaceStateLoading) return;
     if (hasSpaceActivityAccess) return;
     if (roomId) {
@@ -2756,7 +2764,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setEditDraft(null);
     setInput('');
     setError(null);
-  }, [mode, roomId, hasSpaceActivityAccess, isUserSpaceStateLoading]);
+  }, [
+    mode,
+    spaceSlug,
+    roomId,
+    hasSpaceActivityAccess,
+    isUserSpaceStateLoading,
+  ]);
 
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
@@ -2896,6 +2910,69 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     hasSpaceActivityAccess,
     space?.chatRoomId,
     blockSpaceChatForMembership,
+    syncRoomMessages,
+  ]);
+
+  // Dashboard has no space room. Back from a person chat lands in the one network room.
+  useEffect(() => {
+    if (mode !== 'space') return;
+    if (spaceSlug?.trim()) return;
+    if (!isMatrixAvailable || !isMatrixAuthenticated) return;
+    if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
+
+    let cancelled = false;
+    const { ensureNetworkRoom, loadRoomHistory } = matrixRef.current;
+
+    const initNetworkRoom = async () => {
+      setIsJoining(true);
+      setError(null);
+      try {
+        const { roomId: targetRoomId } = await ensureNetworkRoom();
+        if (cancelled) return;
+        joinedRef.current = NETWORK_JOINED_SENTINEL;
+        setRoomId(targetRoomId);
+        syncRoomMessages(targetRoomId);
+        setHasMoreOlderMessages(true);
+        setIsJoining(false);
+
+        void (async () => {
+          try {
+            const historyResult = await loadRoomHistory(targetRoomId, {
+              pageSize: 30,
+              maxBatches: 1,
+            });
+            if (cancelled) return;
+            setHasMoreOlderMessages(historyResult.hasMoreOlder);
+            syncRoomMessages(targetRoomId);
+          } catch (historyErr) {
+            if (!cancelled) {
+              console.warn(
+                '[HumanRightPanel] Background network chat history load failed:',
+                historyErr,
+              );
+            }
+          }
+        })();
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[HumanRightPanel] Failed to join network room:', err);
+          setError('Failed to join chat room');
+          setIsJoining(false);
+        }
+      }
+    };
+
+    void initNetworkRoom();
+
+    return () => {
+      cancelled = true;
+      setIsJoining(false);
+    };
+  }, [
+    mode,
+    spaceSlug,
+    isMatrixAvailable,
+    isMatrixAuthenticated,
     syncRoomMessages,
   ]);
 
@@ -4368,7 +4445,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
+          title={
+            mode === 'coherence'
+              ? coherenceTitle ?? undefined
+              : mode === 'space' && !spaceSlug?.trim()
+              ? t('networkRoomTitle')
+              : ''
+          }
           onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
@@ -4651,7 +4734,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               spaceSlug={spaceSlug ?? undefined}
             />
           </div>
-        ) : !spaceSlug?.trim() && !isDirectConversation ? (
+        ) : !spaceSlug?.trim() && !isDirectConversation && mode !== 'space' ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
             <Empty>
               <p>{t('notInSpaceEmptyState')}</p>
@@ -4980,6 +5063,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     roomId={roomId}
                     currentUserId={currentUserId}
                     currentUserAvatarUrl={currentUserAvatarUrl}
+                    welcomeText={
+                      mode === 'space' && !spaceSlug?.trim()
+                        ? t('networkWelcome')
+                        : undefined
+                    }
+                    welcomeSenderName={
+                      mode === 'space' && !spaceSlug?.trim()
+                        ? t('networkRoomTitle')
+                        : undefined
+                    }
                     onReply={
                       blockSpaceChatForMembership
                         ? undefined
@@ -5078,7 +5171,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' &&
-        (Boolean(spaceSlug?.trim()) || isDirectConversation) &&
+        (Boolean(spaceSlug?.trim()) ||
+          isDirectConversation ||
+          (mode === 'space' && !spaceSlug?.trim())) &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
