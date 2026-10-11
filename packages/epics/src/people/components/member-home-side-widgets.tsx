@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { MessageSquare, Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Skeleton } from '@hypha-platform/ui';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 import { useDisplayCurrency, useUserAssets } from '../../treasury/hooks';
+import type { AssetItem } from '../../treasury/hooks/use-user-assets';
 import { PersonAvatar } from './person-avatar';
 
 type HomeConnection = MemberIntelligence['connections'][number];
@@ -54,6 +56,47 @@ function WidgetAction({
   );
 }
 
+function AssetMark({ icon, symbol }: { icon: string; symbol: string }) {
+  const [failed, setFailed] = useState(false);
+  const letter = symbol.trim().slice(0, 1).toUpperCase();
+  if (!icon || failed) {
+    return (
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center bg-neutral-4 text-1 text-foreground">
+        {letter}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={icon}
+      alt=""
+      className="h-5 w-5 shrink-0 rounded-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function MainAssets({ assets, lang }: { assets: AssetItem[]; lang: Locale }) {
+  const main = assets.filter((asset) => asset.value > 0).slice(0, 3);
+  if (main.length === 0) return null;
+  return (
+    <ul className="mt-4 flex flex-col gap-2">
+      {main.map((asset) => (
+        <li
+          key={`${asset.slug}:${asset.symbol}:${asset.address ?? ''}`}
+          className="flex items-center gap-2"
+        >
+          <AssetMark icon={asset.icon} symbol={asset.symbol} />
+          <span className="min-w-0 flex-1 truncate text-2">{asset.symbol}</span>
+          <span className="shrink-0 text-2 tabular-nums">
+            {formatCurrencyValue(asset.value, lang)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function personLabel(
   person: {
     name: string | null;
@@ -78,7 +121,11 @@ export function MemberHomeWalletWidget({
   isHomeLoading: boolean;
 }) {
   const t = useTranslations('MemberHome');
-  const { balance, isLoading: isBalanceLoading } = useUserAssets({
+  const {
+    balance,
+    assets,
+    isLoading: isBalanceLoading,
+  } = useUserAssets({
     personSlug,
   });
   const { formatFromUsd } = useDisplayCurrency();
@@ -97,12 +144,15 @@ export function MemberHomeWalletWidget({
       {isHomeLoading ? (
         <Skeleton loading height="36px" width="9rem" />
       ) : showBalance ? (
-        <p
-          className="text-6 leading-none tracking-[-0.02em] tabular-nums"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {formatFromUsd(balance)}
-        </p>
+        <div>
+          <p
+            className="text-6 leading-none tracking-[-0.02em] tabular-nums"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {formatFromUsd(balance)}
+          </p>
+          <MainAssets assets={assets} lang={lang} />
+        </div>
       ) : hasAddress ? (
         <Skeleton loading height="36px" width="9rem" />
       ) : (
