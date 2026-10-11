@@ -1,13 +1,23 @@
 import { sql } from 'drizzle-orm';
 
 import type { DatabaseInstance } from '../../common/server/types';
+import { parseCapitalKeys } from '../../network/capitals';
+import { readSpaceCapitals } from '../../network/exchange-capitals';
 import type {
+  NetworkOpenNeed,
+  NetworkOpenNeedKind,
   NetworkSharedSignal,
   NetworkSignalKind,
   NetworkSpaceRank,
 } from '../../network/types';
 
-export type { NetworkSharedSignal, NetworkSignalKind, NetworkSpaceRank };
+export type {
+  NetworkOpenNeed,
+  NetworkOpenNeedKind,
+  NetworkSharedSignal,
+  NetworkSignalKind,
+  NetworkSpaceRank,
+};
 
 function rowsOf(result: unknown): unknown[] {
   if (Array.isArray(result)) return result;
@@ -22,6 +32,34 @@ function asKind(value: unknown): NetworkSignalKind | null {
   if (value === 'Need' || value === 'Action' || value === 'Impact')
     return value;
   return null;
+}
+
+function asOpenNeedKind(value: unknown): NetworkOpenNeedKind | null {
+  if (value === 'Need' || value === 'Risk' || value === 'Tension') return value;
+  return null;
+}
+
+function asCount(value: unknown): number {
+  const count = Number(value);
+  if (!Number.isFinite(count) || count <= 0) return 0;
+  return Math.floor(count);
+}
+
+function asIso(value: unknown): string | null {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+  if (typeof value === 'string' && value.trim()) return value;
+  return null;
+}
+
+function asTags(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return [];
+  }
 }
 
 export async function listNetworkSharedSignals(
@@ -107,4 +145,80 @@ export async function listNetworkSpaceRanks({
     });
   }
   return ranks;
+}
+
+export async function listNetworkOpenNeeds({
+  db,
+}: {
+  db: DatabaseInstance;
+}): Promise<NetworkOpenNeed[]> {
+  const result = await db.execute(sql`
+    select c.slug, c.title, c.description, c.type, c.lead_image, c.updated_at,
+           c.tags, s.id as space_id, s.slug as space_slug, s.title as space_title,
+           s.chat_room_id,
+           coalesce(counts.action_count, 0) as action_count,
+           coalesce(counts.impact_count, 0) as impact_count
+    from coherences c
+    inner join spaces s on s.id = c.space_id
+    left join (
+      select space_id,
+        count(*) filter (where type = 'Action')::int as action_count,
+        count(*) filter (where type = 'Impact')::int as impact_count
+      from coherences
+      where shared_with_network = true
+        and type in ('Action', 'Impact')
+        and coalesce(archived, false) = false
+      group by space_id
+    ) counts on counts.space_id = s.id
+    where c.shared_with_network = true
+      and c.type in ('Need', 'Risk', 'Tension')
+      and coalesce(c.archived, false) = false
+      and s.is_archived = false
+      and c.slug is not null
+    order by c.updated_at desc
+    limit 60
+  `);
+  const drafts: Array<
+    Omit<NetworkOpenNeed, 'capital'> & {
+      spaceId: number;
+      tagged: string | null;
+    }
+  > = [];
+  for (const row of rowsOf(result)) {
+    if (!row || typeof row !== 'object') continue;
+    const record = row as Record<string, unknown>;
+    const kind = asOpenNeedKind(record.type);
+    const slug = typeof record.slug === 'string' ? record.slug : '';
+    const spaceSlug =
+      typeof record.space_slug === 'string' ? record.space_slug : '';
+    const spaceId = Number(record.space_id);
+    if (!kind || !slug || !spaceSlug || !Number.isInteger(spaceId)) continue;
+    drafts.push({
+      spaceId,
+      tagged: parseCapitalKeys(asTags(record.tags))[0] ?? null,
+      slug,
+      title: typeof record.title === 'string' ? record.title : '',
+      description:
+        typeof record.description === 'string' ? record.description : '',
+      type: kind,
+      spaceSlug,
+      spaceTitle:
+        typeof record.space_title === 'string' ? record.space_title : spaceSlug,
+      spaceChatRoomId:
+        typeof record.chat_room_id === 'string' ? record.chat_room_id : null,
+      leadImage:
+        typeof record.lead_image === 'string' ? record.lead_image : null,
+      updatedAt: asIso(record.updated_at),
+      actionCount: asCount(record.action_count),
+      impactCount: asCount(record.impact_count),
+    });
+  }
+  const capitals = await readSpaceCapitals(
+    db,
+    drafts.map((draft) => draft.spaceId),
+  );
+  return drafts.map(({ spaceId, tagged, ...need }) => ({
+    ...need,
+    capital: tagged ?? capitals.get(spaceId)?.seeks[0] ?? null,
+  }));
 }

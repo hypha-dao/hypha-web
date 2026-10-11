@@ -1,17 +1,19 @@
 import { Locale } from '@hypha-platform/i18n';
-import { NetworkSignalPage } from '../_components/network-signal-page';
+import { Container } from '@hypha-platform/ui';
+import { getTranslations } from 'next-intl/server';
+import { listNetworkOpenNeeds } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
+import { NetworkNeedsBoard } from '@hypha-platform/epics';
 
 export default async function NeedsPage(props: {
   params: Promise<{ lang: Locale }>;
 }) {
-  const { lang } = await props.params;
+  await props.params;
+  const t = await getTranslations('NetworkExchange');
+  const needs = await listNetworkOpenNeeds({ db }).catch(() => []);
   return (
-    <NetworkSignalPage
-      lang={lang}
-      type="Need"
-      titleKey="needsTitle"
-      bodyKey="needsBody"
-      emptyKey="needsEmpty"
-    />
+    <Container className="flex flex-col py-8">
+      <NetworkNeedsBoard needs={needs} empty={t('needsEmpty')} />
+    </Container>
   );
 }
