@@ -1,0 +1,23 @@
+'use client';
+
+import { Heading } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
+
+/** Stays outside the network data fetch so the loading skeleton cannot paint a second copy. */
+export function NetworkPageTitle() {
+  const t = useTranslations('Network');
+
+  return (
+    <Heading
+      size="9"
+      color="secondary"
+      weight="medium"
+      align="center"
+      className="flex flex-col overflow-visible py-1"
+      style={{ lineHeight: 1.15 }}
+    >
+      <span>{t('manySpaces')}</span>
+      <span>{t('oneVibrantNetwork')}</span>
+    </Heading>
+  );
+}
