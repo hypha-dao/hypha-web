@@ -199,8 +199,8 @@
     "openPerson": "Åpne {name}",
     "signals": "Signaler som trenger deg",
     "proposals": "Forslag å ta stilling til",
-    "waiting": "Signaler og forslag",
-    "noWaiting": "Signaler og forslag fra rommene dine vises her.",
+    "waiting": "Oppmerksomhet trengs",
+    "noWaiting": "Det som trenger oppmerksomhet fra rommene dine vises her.",
     "movementJoined": "{name} ble med"
   },
   "WelcomeFlow": {
