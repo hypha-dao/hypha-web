@@ -2,7 +2,8 @@
  * Member home ground. Same asset as the hypha.earth hero: full field,
  * cover, centered. Light is a grayscale invert (pencil on paper). Dark
  * is grayscale with a screen blend (ink field, light threads).
- * The veil keeps the threads a whisper so type stays readable.
+ * The veil softens the middle, where the greeting sits, and leaves the
+ * threads visible at the edges.
  */
 
 .member-home-banner {
@@ -27,13 +28,13 @@
   object-fit: cover;
   object-position: center;
   pointer-events: none;
-  filter: grayscale(1) invert(1) contrast(0.85) brightness(1.2);
-  opacity: 0.16;
+  filter: grayscale(1) invert(1) contrast(1.04) brightness(1.08);
+  opacity: 0.42;
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-banner-image {
-  filter: grayscale(1) contrast(1.05) brightness(0.85);
-  opacity: 0.18;
+  filter: grayscale(1) contrast(1.15) brightness(0.9);
+  opacity: 0.36;
   mix-blend-mode: screen;
 }
 
@@ -42,7 +43,12 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: oklch(from var(--hypha-paper) l c h / 0.82);
+  background: radial-gradient(
+    ellipse 78% 72% at 50% 32%,
+    oklch(from var(--hypha-paper) l c h / 0.72),
+    oklch(from var(--hypha-paper) l c h / 0.38) 62%,
+    oklch(from var(--hypha-paper) l c h / 0.16)
+  );
 }
 
 .member-home-banner-veil::after {
@@ -55,6 +61,20 @@
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-banner-veil {
+  background: radial-gradient(
+    ellipse 74% 68% at 50% 36%,
+    oklch(from var(--hypha-ink) l c h / 0.7),
+    oklch(from var(--hypha-ink) l c h / 0.34) 64%,
+    oklch(from var(--hypha-ink) l c h / 0.14)
+  );
+}
+
+/* Side lists sit on paper, thin enough that the threads continue under them. */
+.member-home-pane {
+  background: oklch(from var(--hypha-paper) l c h / 0.86);
+}
+
+:is(.dark, .dark-theme, [data-theme='dark']) .member-home-pane {
   background: oklch(from var(--hypha-ink) l c h / 0.78);
 }
 
