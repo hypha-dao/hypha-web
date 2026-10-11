@@ -230,7 +230,7 @@ export function MemberHome({
     : null;
 
   return (
-    <div className="relative isolate flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem))] w-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 lg:grid lg:h-[calc(100dvh-var(--menu-top-height,4.5rem))] lg:min-h-0 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:overflow-hidden lg:pb-0">
+    <div className="relative isolate flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem))] w-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 lg:grid lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start lg:pb-0">
       <div className="member-home-banner" aria-hidden>
         <img
           alt=""
@@ -241,7 +241,7 @@ export function MemberHome({
       </div>
       <aside
         aria-label={t('panelSpaces')}
-        className="member-home-pane order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
+        className="member-home-pane order-2 border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:border-r lg:border-t-0"
       >
         <MemberHomeSpacesWidget lang={lang} busy={home == null}>
           {home == null ? (
@@ -305,7 +305,7 @@ export function MemberHome({
           </Tile>
         </div>
       </aside>
-      <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
+      <main className="order-1 flex min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1">
         <div className="px-4 pt-4 md:px-6">
           <div className="flex min-w-0 flex-wrap items-start gap-3 pt-4">
             <span
@@ -374,7 +374,7 @@ export function MemberHome({
       </main>
       <aside
         aria-label={t('panelInsights')}
-        className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0"
+        className="member-home-pane order-3 border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:border-l lg:border-t-0"
       >
         {home && home.invites.length > 0 ? (
           <MemberHomeInviteBanners lang={lang} invites={home.invites} />
@@ -826,7 +826,7 @@ function ClassicBoard({
 }) {
   const t = useTranslations('MemberHome');
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+    <div className="px-4 py-6 md:px-6">
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
