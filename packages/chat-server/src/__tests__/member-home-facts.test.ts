@@ -100,6 +100,12 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Can you jump on with him?');
     expect(facts).toContain("I'll show you the proposal now.");
     expect(facts).toContain('Could you let me know if you approve');
+    expect(facts).toContain(
+      'What would you like to decide regarding this proposal?',
+    );
+    expect(facts).toContain("I've approved");
+    expect(facts).toContain('You can now decide on the proposal card.');
+    expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
     expect(facts).toContain('action=decision');
     expect(facts).toContain("Glad you're helping Teo");
