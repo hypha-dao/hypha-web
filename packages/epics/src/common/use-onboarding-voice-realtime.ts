@@ -12,6 +12,7 @@ import {
   fetchRealtimeVoiceSession,
   isIgnorableRealtimeError,
   isSubstantiveUserTranscript,
+  microphoneCaptureErrorCode,
   RealtimeVoiceSessionRequestError,
   setLocalMicEnabled,
   setRealtimeRemoteAudioMuted,
@@ -87,7 +88,9 @@ function isPermanentRealtimeConnectFailure(
   status: number,
   error: unknown,
 ): boolean {
-  if (status === 401 || status === 403 || status === 404) return true;
+  if (status === 401 || status === 403 || status === 404 || status === 503) {
+    return true;
+  }
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
     if (
@@ -239,6 +242,7 @@ export function useOnboardingVoiceRealtime({
   isChatStreamingRef.current = isChatStreaming;
   const captureMicrophoneRef = useRef(captureMicrophone);
   const speakRepliesRef = useRef(speakReplies);
+  const micNeedsGestureRef = useRef(false);
   captureMicrophoneRef.current = captureMicrophone;
   speakRepliesRef.current = speakReplies;
   const [userSpeaking, setUserSpeaking] = useState(false);
@@ -812,7 +816,6 @@ export function useOnboardingVoiceRealtime({
     const generation = connectGenerationRef.current;
     connectInFlightRef.current = true;
     setIsConnecting(true);
-    setVoiceError(null);
     setPhase('idle');
     setLiveTranscript('');
 
@@ -824,17 +827,17 @@ export function useOnboardingVoiceRealtime({
         return;
       }
 
-      connectRetryCountRef.current = 0;
-
-      await acquireWarmMicStream();
-      if (generation !== connectGenerationRef.current) return;
-
       const session = await fetchRealtimeVoiceSession({
         authToken: token,
         conversationContext: conversationContext as Record<string, unknown>,
         locale,
         recentTranscriptSummary: recentTranscriptSummaryRef.current,
       });
+      if (generation !== connectGenerationRef.current) return;
+
+      if (captureMicrophoneRef.current) {
+        await acquireWarmMicStream();
+      }
       if (generation !== connectGenerationRef.current) return;
 
       const connection = await connectOpenAiRealtimeCall({
@@ -873,6 +876,8 @@ export function useOnboardingVoiceRealtime({
 
       connectionRef.current = connection;
       setIsRealtimeConnected(true);
+      setVoiceError(null);
+      micNeedsGestureRef.current = false;
       releaseMic(connection);
       setPhase('listening');
       connectRetryCountRef.current = 0;
@@ -900,7 +905,15 @@ export function useOnboardingVoiceRealtime({
     } catch (error) {
       console.error('[VoiceRealtime] connect failed:', error);
       const status = resolveRealtimeConnectFailureStatus(error);
+      const micCode = microphoneCaptureErrorCode(error);
       disconnect();
+      if (micCode) {
+        micNeedsGestureRef.current = true;
+        setVoiceError(micCode);
+        connectInFlightRef.current = false;
+        setIsConnecting(false);
+        return;
+      }
       if (
         isPermanentRealtimeConnectFailure(status, error) ||
         connectRetryCountRef.current >= MAX_REALTIME_CONNECT_RETRIES
@@ -911,7 +924,6 @@ export function useOnboardingVoiceRealtime({
         setIsConnecting(false);
         return;
       }
-      setVoiceError(status ? mapSessionErrorToVoiceCode(status) : 'network');
       scheduleConnectRetry();
       return;
     } finally {
@@ -992,6 +1004,12 @@ export function useOnboardingVoiceRealtime({
       flushQueuedSpeech(connection);
       return;
     }
+    // Must run before the first await so the browser still treats this as the click.
+    micNeedsGestureRef.current = false;
+    connectRetryCountRef.current = 0;
+    if (captureMicrophoneRef.current) {
+      void acquireWarmMicStream();
+    }
     await connect();
   }, [connect, flushQueuedSpeech, releaseMic]);
 
@@ -1030,8 +1048,13 @@ export function useOnboardingVoiceRealtime({
     if (!enabled) return;
     const unlock = () => {
       const audio = connectionRef.current?.remoteAudio;
-      if (!audio) return;
-      void audio.play().catch(() => undefined);
+      if (audio) void audio.play().catch(() => undefined);
+      if (!micNeedsGestureRef.current) return;
+      if (connectionRef.current || connectInFlightRef.current) return;
+      micNeedsGestureRef.current = false;
+      connectRetryCountRef.current = 0;
+      if (captureMicrophoneRef.current) void acquireWarmMicStream();
+      void connectRef.current();
     };
     window.addEventListener('pointerdown', unlock);
     return () => window.removeEventListener('pointerdown', unlock);
