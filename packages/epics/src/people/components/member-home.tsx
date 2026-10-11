@@ -388,6 +388,66 @@ export function MemberHome({
         aria-label={t('panelInsights')}
         className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
       >
+        <section className="border border-border bg-background">
+          <div
+            className={
+              home == null || orientation
+                ? 'grid grid-cols-[auto_minmax(0,1fr)]'
+                : 'grid'
+            }
+          >
+            {home == null || orientation ? (
+              <div className="flex items-start border-r border-border px-4 py-4">
+                {home == null || orientation == null ? (
+                  <Skeleton loading height="22px" width="6.5rem" />
+                ) : (
+                  <OrientationBadge
+                    orientation={orientation}
+                    isSaving={isSavingOrientation}
+                    error={orientationError}
+                    onChoose={onChooseOrientation}
+                  />
+                )}
+              </div>
+            ) : null}
+            <dl className="grid grid-cols-2">
+              <Stat
+                label={t('counts.spaces')}
+                value={home?.counts.spaces ?? 0}
+                isLoading={home == null}
+              />
+              <Stat
+                label={t('counts.proposals')}
+                value={home?.counts.openProposals ?? 0}
+                isLoading={home == null}
+                edge
+              />
+              <Stat
+                label={t('counts.signals')}
+                value={home?.counts.signals ?? 0}
+                isLoading={home == null}
+                rule
+              />
+              <Stat
+                label={t('counts.people')}
+                value={home?.counts.connections ?? 0}
+                isLoading={home == null}
+                edge
+                rule
+              />
+            </dl>
+          </div>
+        </section>
+
+        <div className="mt-4">
+          <MemberHomeWalletWidget
+            lang={lang}
+            personSlug={home?.person.slug}
+            hasAddress={Boolean(home?.wallet.address)}
+            isHomeLoading={home == null}
+          />
+        </div>
+
         {orientation === 'builder' ? (
           <PersonaCard
             title={t('builderTitle')}
@@ -439,57 +499,6 @@ export function MemberHome({
             ) : null}
           </section>
         ) : null}
-
-        <section className="border border-border bg-background">
-          <div
-            className={
-              home == null || orientation
-                ? 'grid grid-cols-[auto_minmax(0,1fr)]'
-                : 'grid'
-            }
-          >
-            {home == null || orientation ? (
-              <div className="flex items-start border-r border-border px-4 py-4">
-                {home == null || orientation == null ? (
-                  <Skeleton loading height="22px" width="6.5rem" />
-                ) : (
-                  <OrientationBadge
-                    orientation={orientation}
-                    isSaving={isSavingOrientation}
-                    error={orientationError}
-                    onChoose={onChooseOrientation}
-                  />
-                )}
-              </div>
-            ) : null}
-            <dl className="grid grid-cols-2">
-              <Stat
-                label={t('counts.spaces')}
-                value={home?.counts.spaces ?? 0}
-                isLoading={home == null}
-              />
-              <Stat
-                label={t('counts.proposals')}
-                value={home?.counts.openProposals ?? 0}
-                isLoading={home == null}
-                edge
-              />
-              <Stat
-                label={t('counts.signals')}
-                value={home?.counts.signals ?? 0}
-                isLoading={home == null}
-                rule
-              />
-              <Stat
-                label={t('counts.people')}
-                value={home?.counts.connections ?? 0}
-                isLoading={home == null}
-                edge
-                rule
-              />
-            </dl>
-          </div>
-        </section>
 
         <section
           className="mt-10 border border-border bg-background p-5"
@@ -625,12 +634,6 @@ export function MemberHome({
         </div>
 
         <div className="mt-8 grid gap-4">
-          <MemberHomeWalletWidget
-            lang={lang}
-            personSlug={home?.person.slug}
-            hasAddress={Boolean(home?.wallet.address)}
-            isHomeLoading={home == null}
-          />
           <MemberHomeConnectionsWidget
             people={home?.connections ?? []}
             isLoading={home == null}
