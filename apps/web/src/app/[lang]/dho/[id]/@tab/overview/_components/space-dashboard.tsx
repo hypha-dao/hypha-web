@@ -3,11 +3,7 @@
 import Link from 'next/link';
 import { useMemo, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import {
-  COHERENCE_TYPES,
-  useFindCoherences,
-  useSpaceBySlug,
-} from '@hypha-platform/core/client';
+import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
   SpaceCalendar,
@@ -17,32 +13,9 @@ import {
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
-import { cn } from '@hypha-platform/ui-utils';
-
 import { useMembers } from '@web/hooks/use-members';
 
-const PRIORITY_RANK: Record<string, number> = {
-  critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
-};
-
-const PRIORITY_DOT: Record<string, string> = {
-  critical: 'bg-error-9',
-  high: 'bg-warning-9',
-  medium: 'bg-accent-9',
-  low: 'bg-neutral-7',
-};
-
-function excerpt(value: string | null | undefined) {
-  const text = (value ?? '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (text.length <= 110) return text;
-  return `${text.slice(0, 109).trimEnd()}…`;
-}
+import { SignalHeatMaps } from './signal-heat-map';
 
 function personLabel(person: {
   name?: string | null;
@@ -102,7 +75,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const tCommon = useTranslations('Common');
   const tNav = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
-  const tSignals = useTranslations('CoherenceTab');
   const { space } = useSpaceBySlug(spaceSlug);
   const { data: energy } = useSpaceEnergy();
   const {
@@ -121,33 +93,10 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       spaceId: space?.web3SpaceId,
     });
 
-  const openSignals = useMemo(() => {
-    const rank = (priority: string) => PRIORITY_RANK[priority] ?? 4;
-    return (coherences ?? [])
-      .filter((signal) => !signal.archived)
-      .slice()
-      .sort((left, right) => {
-        const byPriority = rank(left.priority) - rank(right.priority);
-        if (byPriority !== 0) return byPriority;
-        return (
-          new Date(right.updatedAt).getTime() -
-          new Date(left.updatedAt).getTime()
-        );
-      });
-  }, [coherences]);
-
-  const signalCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const signal of openSignals) {
-      counts.set(signal.type, (counts.get(signal.type) ?? 0) + 1);
-    }
-    return COHERENCE_TYPES.flatMap((type) => {
-      const count = counts.get(type) ?? 0;
-      return count > 0 ? [{ type, count }] : [];
-    });
-  }, [openSignals]);
-
-  const leadSignals = openSignals.slice(0, 4);
+  const openSignals = useMemo(
+    () => (coherences ?? []).filter((signal) => !signal.archived),
+    [coherences],
+  );
 
   const updates = useMemo(() => {
     const rows = [
@@ -180,69 +129,14 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           href={`${home}/coherence`}
           openLabel={t('open')}
         >
-          {signalsLoading ? (
-            <RowsSkeleton />
-          ) : openSignals.length === 0 ? (
-            <Quiet>{t('signalsEmpty')}</Quiet>
-          ) : (
-            <>
-              {signalCounts.length > 0 ? (
-                <div className="flex flex-wrap border-b border-border">
-                  {signalCounts.map((item) => (
-                    <Link
-                      key={item.type}
-                      href={`${home}/coherence?type=${encodeURIComponent(
-                        item.type,
-                      )}`}
-                      className="flex flex-1 items-baseline justify-between gap-3 border-r border-border px-4 py-3 last:border-r-0 hover:bg-foreground/5"
-                      style={{ minWidth: 128 }}
-                    >
-                      <span className="truncate text-1 uppercase tracking-[0.12em] text-muted-foreground">
-                        {tSignals(`types.${item.type}` as 'types.Need')}
-                      </span>
-                      <span className="text-4 font-medium tabular-nums text-foreground">
-                        {item.count}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              ) : null}
-              <div className="flex flex-col border-t border-border">
-                {leadSignals.map((signal) => (
-                  <Link
-                    key={signal.id}
-                    href={
-                      signal.slug
-                        ? `${home}/coherence?signal=${encodeURIComponent(
-                            signal.slug,
-                          )}`
-                        : `${home}/coherence`
-                    }
-                    className="grid gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-foreground/5"
-                    style={{ gridTemplateColumns: 'auto minmax(0, 1fr)' }}
-                  >
-                    <span
-                      className={cn(
-                        'mt-2 size-1.5 rounded-full',
-                        PRIORITY_DOT[signal.priority] ?? PRIORITY_DOT.medium,
-                      )}
-                      aria-hidden
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate text-2 text-foreground">
-                        {signal.title}
-                      </span>
-                      {excerpt(signal.description) ? (
-                        <span className="mt-1 block text-1 text-neutral-11">
-                          {excerpt(signal.description)}
-                        </span>
-                      ) : null}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
+          <SignalHeatMaps
+            signals={openSignals}
+            isLoading={signalsLoading}
+            empty={t('signalsEmpty')}
+            hrefForType={(type) =>
+              `${home}/coherence?type=${encodeURIComponent(type)}`
+            }
+          />
         </Panel>
       )}
 
