@@ -6,6 +6,12 @@ import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import type { VisibleSpace } from './types';
+import {
+  CENTRE_CAPTION_RATIO,
+  ENCLOSURE_LOGO_RATIO,
+  layoutSpaceRings,
+  type RingLayoutNode,
+} from './space-visualization-layout';
 
 type SpaceNode = {
   id: number;
@@ -43,10 +49,6 @@ type Props = {
 };
 
 const VISUALIZATION_CONFIG = {
-  BASE_RADIUS: 420,
-  DEPTH_SCALE: 0.45,
-  /** Center mark inside an enclosure, small enough that child rings fit around it. */
-  ENCLOSURE_LOGO_RATIO: 0.22,
   /** Leaf mark inside its own ring: narrow gap inside the stroke, ring stays visible. */
   LEAF_LOGO_RATIO: 0.84,
   /**
@@ -150,51 +152,8 @@ type LabelMetrics = {
 
 function logoRatio(node: { children?: readonly unknown[] }): number {
   return node.children && node.children.length > 0
-    ? VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO
+    ? ENCLOSURE_LOGO_RATIO
     : VISUALIZATION_CONFIG.LEAF_LOGO_RATIO;
-}
-
-/**
- * Child rings rest inside the parent ring, on one shared orbit, clear of the
- * name under the center mark. They read as one cluster instead of discs
- * pasted onto a frame.
- */
-function placeChildRings(node: SpaceHierarchyNode): void {
-  const children = (node.children ?? []) as SpaceHierarchyNode[];
-  const n = children.length;
-  if (n === 0) return;
-
-  const parentR = Math.max(finiteOr(node.r, 1), 1);
-  const inner = parentR * 0.97;
-  const centerClear =
-    parentR * VISUALIZATION_CONFIG.ENCLOSURE_LOGO_RATIO + parentR * 0.16;
-
-  let childR = parentR * VISUALIZATION_CONFIG.DEPTH_SCALE;
-  if (n === 1) {
-    childR = Math.min(childR, (inner - centerClear) / 2);
-  } else {
-    const sin = Math.sin(Math.PI / n);
-    const insideParent = (inner - centerClear) / 2;
-    const separated = inner / (1 + 1.12 / sin);
-    childR = Math.min(childR, insideParent, separated);
-  }
-  childR = clampSvgLength(Math.max(childR, 1));
-
-  let orbit = inner - childR;
-  if (orbit < centerClear + childR) {
-    childR = clampSvgLength(Math.max((inner - centerClear) / 2, 1));
-    orbit = inner - childR;
-  }
-
-  const parentX = finiteOr(node.x, 0);
-  const parentY = finiteOr(node.y, 0);
-  const step = (2 * Math.PI) / n;
-  children.forEach((child, index) => {
-    child.r = childR;
-    const angle = -Math.PI / 2 + index * step;
-    child.x = parentX + Math.cos(angle) * orbit;
-    child.y = parentY + Math.sin(angle) * orbit;
-  });
 }
 
 function nodeShapeRadius(d: SpaceHierarchyNode, k: number): number {
@@ -205,42 +164,6 @@ function nodeShapeRadius(d: SpaceHierarchyNode, k: number): number {
 
 function nodeLabelTop(d: SpaceHierarchyNode, k: number): number {
   return nodeShapeRadius(d, k) + VISUALIZATION_CONFIG.LABEL_GAP;
-}
-
-/**
- * Size the filled disc to the cluster on its rim, once. Measuring again
- * after the fill grows treats the labels as larger and hollows out the disc.
- */
-function growRingAroundLabels(node: SpaceHierarchyNode, scale: number): void {
-  const children = (node.children ?? []) as SpaceHierarchyNode[];
-  for (const child of children) {
-    growRingAroundLabels(child, scale);
-  }
-  if (children.length === 0) return;
-
-  const safeScale = Math.max(scale, 0.0001);
-  const pad = 8 / safeScale;
-  const parentX = finiteOr(node.x, 0);
-  const parentY = finiteOr(node.y, 0);
-  let needed = 1;
-  for (const child of children) {
-    const dx = finiteOr(child.x, 0) - parentX;
-    const dy = finiteOr(child.y, 0) - parentY;
-    const childEdge = Math.hypot(dx, dy) + finiteOr(child.r, 0);
-    needed = Math.max(needed, childEdge + pad);
-    if (child.children && child.children.length > 0) continue;
-    const top = nodeLabelTop(child, safeScale);
-    const { labelFontSize } = labelMetrics(nodeShapeRadius(child, safeScale));
-    const bottom = (top + labelFontSize * 1.35) / safeScale;
-    const half =
-      estimateLabelHalfWidth(child.data.name, labelFontSize) / safeScale;
-    needed = Math.max(
-      needed,
-      Math.hypot(dx - half, dy + bottom) + pad,
-      Math.hypot(dx + half, dy + bottom) + pad,
-    );
-  }
-  node.r = needed;
 }
 
 function labelMetrics(screenShapeRadius: number): LabelMetrics {
@@ -324,14 +247,23 @@ function frameForFocus(
     }
     reach *= 1.04;
   } else if (children.length > 0) {
+    // The opened ring, the rings inside it, and the names under its leaves.
+    // Cropping the child radius hid the next level of nesting.
+    reach = Math.max(finiteOr(focus.r, 0), mark);
     for (const child of children) {
       const dist = Math.hypot(
         finiteOr(child.x, 0) - fx,
         finiteOr(child.y, 0) - fy,
       );
-      reach = Math.max(reach, dist + finiteOr(child.r, 0) * 0.9);
+      const edge = dist + finiteOr(child.r, 0);
+      const name =
+        showLabels && !(child.children && child.children.length > 0)
+          ? labelReach(child, scale)
+          : 0;
+      reach = Math.max(reach, edge, dist + name);
     }
     if (showLabels) reach = Math.max(reach, labelReach(focus, scale));
+    reach *= 1.06;
   } else {
     const nameReach = showLabels ? labelReach(focus, scale) : mark;
     reach = Math.max(mark * 1.35, nameReach);
@@ -518,7 +450,7 @@ function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
     const d = node as SpaceHierarchyNode;
     d.x = finiteOr(d.x, 0);
     d.y = finiteOr(d.y, 0);
-    d.r = Math.max(finiteOr(d.r, VISUALIZATION_CONFIG.BASE_RADIUS), 1);
+    d.r = Math.max(finiteOr(d.r, 1), 1);
   });
 }
 
@@ -640,13 +572,7 @@ export function SpaceVisualization({
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
-    root.r = VISUALIZATION_CONFIG.BASE_RADIUS;
-    root.x = 0;
-    root.y = 0;
-    root.eachBefore((d) => {
-      placeChildRings(d as SpaceHierarchyNode);
-    });
-
+    layoutSpaceRings(root as RingLayoutNode);
     sanitizeHierarchyLayout(root);
 
     const findNodeById = (
@@ -867,12 +793,41 @@ export function SpaceVisualization({
       return isVisible(d);
     }
 
-    // An intermediate ring's caption lands on the level below it. The focused
-    // node keeps its name; a second-level name stays off while N+2 is drawn.
+    // The name hangs straight down from the mark. It stays when the reserved
+    // centre band can hold it, or when no inner ring sits in that band.
+    function captionClearsInnerRing(d: SpaceHierarchyNode): boolean {
+      const children = (d.children ?? []) as SpaceHierarchyNode[];
+      if (children.length === 0) return true;
+      if (shown.ready) {
+        const band = finiteOr(d.r, 0) * shown.k * CENTRE_CAPTION_RATIO;
+        if (band >= 24) return true;
+      }
+      const px = finiteOr(d.x, 0);
+      const py = finiteOr(d.y, 0);
+      for (const child of children) {
+        const dx = finiteOr(child.x, 0) - px;
+        const dy = finiteOr(child.y, 0) - py;
+        if (dx * dx + dy * dy < 1) continue;
+        const angle = Math.atan2(dy, dx);
+        const fromDown = Math.atan2(
+          Math.sin(angle - Math.PI / 2),
+          Math.cos(angle - Math.PI / 2),
+        );
+        if (Math.abs(fromDown) < 0.55) return false;
+      }
+      return true;
+    }
+
+    // Names for the opened ring and the spaces on it. Deeper captions are
+    // an 11px line on a small circle, and they cover the rings around them.
+    // Zooming opens the next ring and brings its names with it.
     function isLabelShown(d: SpaceHierarchyNode): boolean {
       if (!isVisible(d)) return false;
-      if (d !== focus && d.children && d.children.length > 0) return false;
-      return true;
+      if (d === focus) return true;
+      if (d.parent === focus) return captionClearsInnerRing(d);
+      if (!shown.ready) return false;
+      if (d.children && d.children.length > 0) return false;
+      return finiteOr(d.r, 0) * shown.k >= 36;
     }
 
     function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
@@ -943,16 +898,6 @@ export function SpaceVisualization({
         .attr('fill', getDiagramFillColor())
         .attr('stroke', 'none');
     });
-
-    if (showNodeLabels) {
-      const stage = readStageSize();
-      // One measurement against the placed cluster. Repeating this with the
-      // grown disc shrinks the scale, inflates the fill, and leaves the
-      // logos in the middle.
-      const span = Math.max(finiteOr(root.r, 1) * 2, 1);
-      const scale = stage ? Math.min(stage.width, stage.height) / span : 1;
-      growRingAroundLabels(root, scale);
-    }
 
     const initialSize = readStageSize();
     let frame = initialSize

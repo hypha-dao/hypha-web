@@ -195,6 +195,15 @@ function stageOverlapUnderFooter(
   );
 }
 
+function hierarchyDepth(node: HierarchyNode): number {
+  const children = node.children ?? [];
+  let deepest = 1;
+  for (const child of children) {
+    deepest = Math.max(deepest, 1 + hierarchyDepth(child));
+  }
+  return deepest;
+}
+
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
   const spaces = Array.isArray(allSpaces) ? allSpaces : [];
@@ -467,10 +476,12 @@ export function EcosystemNavigationMainPanel({
         if (footerClearance != null) {
           room = Math.min(room, footerClearance);
         }
-        // A phone column is short once the membership row is in it, so the
-        // leftover slot shrinks the disc. Keep at least a square and let the
-        // page scroll instead of crushing the cluster.
-        if (stageWidth < 768) {
+        // A short leftover slot squashes every nested ring into the same
+        // band. From three levels down, keep at least a square and let the
+        // page scroll. Phones already do this — the membership row leaves
+        // them almost no height.
+        const depth = hierarchyData ? hierarchyDepth(hierarchyData) : 1;
+        if (stageWidth < 768 || depth >= 3) {
           room = Math.max(room, stageWidth);
         }
         const next = room >= 64 ? Math.round(room) : stageWidth;
