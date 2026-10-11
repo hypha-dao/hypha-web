@@ -676,46 +676,48 @@ export function MemberHomeChat({
             {t('soundNeedsMic')}
           </button>
         ) : null}
-        <AiPanelChatBar
-          value={input}
-          onChange={setInput}
-          onSend={() => {
-            void send(input);
-          }}
-          onStop={() => stop()}
-          isStreaming={isStreaming}
-          draftAttachments={drafts}
-          onDraftAttachmentsChange={setDrafts}
-          placeholder={t('chatPlaceholder')}
-          variant="panel"
-          topRule={false}
-          conversationMicrophone={{
-            active: micOn,
-            hearing: micOn && voiceInterview.userSpeaking,
-            onToggle: toggleMic,
-            muteLabel: t('micMute'),
-            unmuteLabel: t('micUnmute'),
-          }}
-          accessory={
-            <button
-              type="button"
-              aria-pressed={soundOn}
-              aria-label={soundOn ? t('soundMute') : t('soundUnmute')}
-              title={soundOn ? t('soundMute') : t('soundUnmute')}
-              onClick={toggleSound}
-              className={cn(
-                'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] place-items-center bg-transparent p-0 text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                soundOn && 'text-foreground',
-              )}
-            >
-              {soundOn ? (
-                <Volume2 className="h-4 w-4" strokeWidth={2} aria-hidden />
-              ) : (
-                <VolumeX className="h-4 w-4" strokeWidth={2} aria-hidden />
-              )}
-            </button>
-          }
-        />
+        <div className="mx-4 border border-border bg-background">
+          <AiPanelChatBar
+            value={input}
+            onChange={setInput}
+            onSend={() => {
+              void send(input);
+            }}
+            onStop={() => stop()}
+            isStreaming={isStreaming}
+            draftAttachments={drafts}
+            onDraftAttachmentsChange={setDrafts}
+            placeholder={t('chatPlaceholder')}
+            variant="panel"
+            topRule={false}
+            conversationMicrophone={{
+              active: micOn,
+              hearing: micOn && voiceInterview.userSpeaking,
+              onToggle: toggleMic,
+              muteLabel: t('micMute'),
+              unmuteLabel: t('micUnmute'),
+            }}
+            accessory={
+              <button
+                type="button"
+                aria-pressed={soundOn}
+                aria-label={soundOn ? t('soundMute') : t('soundUnmute')}
+                title={soundOn ? t('soundMute') : t('soundUnmute')}
+                onClick={toggleSound}
+                className={cn(
+                  'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] place-items-center bg-transparent p-0 text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  soundOn && 'text-foreground',
+                )}
+              >
+                {soundOn ? (
+                  <Volume2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                ) : (
+                  <VolumeX className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+              </button>
+            }
+          />
+        </div>
       </div>
     </div>
   );
