@@ -2,6 +2,10 @@
   "MemberHome": {
     "panelSpaces": "Espaces et personnes",
     "panelInsights": "Ce qui a besoin de toi",
+    "viewAi": "IA",
+    "viewClassic": "Classique",
+    "viewToggleLabel": "Passer de l'accueil IA au tableau de bord classique",
+    "classicOrder": "Classé selon ce qui a besoin de toi en premier.",
     "sensingAround": "Qui est là maintenant",
     "sensingAroundEmpty": "Personne n'est connecté en ce moment",
     "sensingMore": "+{count}",

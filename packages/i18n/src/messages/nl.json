@@ -2,6 +2,10 @@
   "MemberHome": {
     "panelSpaces": "Spaces en mensen",
     "panelInsights": "Wat jou nodig heeft",
+    "viewAi": "AI",
+    "viewClassic": "Klassiek",
+    "viewToggleLabel": "Wissel tussen het AI-startscherm en het klassieke dashboard",
+    "classicOrder": "Geordend op wat jou het eerst nodig heeft.",
     "sensingAround": "Wie er nu is",
     "sensingAroundEmpty": "Niemand is nu ingelogd",
     "sensingMore": "+{count}",

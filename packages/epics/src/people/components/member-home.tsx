@@ -72,6 +72,27 @@ type MemberHomeProps = {
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
+const HOME_VIEW_KEY = 'hypha-member-home-view';
+
+type HomeView = 'ai' | 'classic';
+
+function readHomeView(): HomeView {
+  try {
+    return window.localStorage.getItem(HOME_VIEW_KEY) === 'classic'
+      ? 'classic'
+      : 'ai';
+  } catch {
+    return 'ai';
+  }
+}
+
+function writeHomeView(view: HomeView) {
+  try {
+    window.localStorage.setItem(HOME_VIEW_KEY, view);
+  } catch {
+    // Private browsing can block storage. The choice still applies this visit.
+  }
+}
 
 const CARD_SKELETON_WIDTHS = ['72%', '100%', '84%', '64%'];
 
@@ -136,6 +157,18 @@ export function MemberHome({
     readRecentSpaceSlugs(),
   );
   useEffect(() => subscribeRecentSpaceSlugs(setRecentSpaceSlugs), []);
+  const [homeView, setHomeView] = useState<HomeView>('ai');
+  const [viewReady, setViewReady] = useState(false);
+  useEffect(() => {
+    setHomeView(readHomeView());
+    setViewReady(true);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === HOME_VIEW_KEY) setHomeView(readHomeView());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+  const showAssistant = viewReady && homeView === 'ai';
   const recentSpaces = useMemo(() => {
     const spaces = home?.spaces ?? [];
     if (recentSpaceSlugs.length === 0) return spaces;
@@ -287,14 +320,14 @@ export function MemberHome({
       </aside>
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
         <div className="px-4 pt-4 md:px-6">
-          <div className="flex min-w-0 items-start gap-3 pt-4">
+          <div className="flex min-w-0 flex-wrap items-start gap-3 pt-4">
             <span
               className="mt-px inline-flex shrink-0"
               style={{ width: 24, height: 24 }}
             >
               <MemberHomeMark className="h-full w-full" />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h1
                 className="truncate text-3"
                 style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -319,15 +352,31 @@ export function MemberHome({
                 </>
               )}
             </div>
+            <HomeViewSwitch
+              view={homeView}
+              ready={viewReady}
+              onChange={(next) => {
+                writeHomeView(next);
+                setHomeView(next);
+              }}
+            />
           </div>
         </div>
-        {home ? (
+        {home && showAssistant ? (
           <MemberHomeChat
             lang={lang}
             intelligence={home}
             onChatPerson={openChat}
             onCallPerson={openCall}
             onFocusItem={onFocusItem}
+          />
+        ) : home && viewReady ? (
+          <ClassicBoard
+            lang={lang}
+            home={home}
+            queue={queue}
+            onChat={openChat}
+            onCall={openCall}
           />
         ) : (
           <div className="flex-1 px-4 py-6">
@@ -339,6 +388,25 @@ export function MemberHome({
         aria-label={t('panelInsights')}
         className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
       >
+        {orientation === 'builder' ? (
+          <PersonaCard
+            title={t('builderTitle')}
+            body={t('builderBody')}
+            action={t('builderAction')}
+            href={getOnboardingPath(lang)}
+          />
+        ) : null}
+        {orientation === 'investor' && home ? (
+          <PersonaCard
+            title={t('investorTitle')}
+            body={t('investorBody')}
+            action={t('investorAction')}
+            href={`/${lang}/network/marketplace`}
+            meta={t('investorCount', {
+              count: home.counts.capitalAsks,
+            })}
+          />
+        ) : null}
         {home != null && orientation == null ? (
           <section className="mb-4 border border-border bg-background p-5">
             <h2
@@ -449,6 +517,7 @@ export function MemberHome({
               <MemberHomeThreadCard
                 lang={lang}
                 compact
+                assistant={showAssistant}
                 item={leadItem}
                 proposal={
                   leadItem.kind === 'proposal'
@@ -610,26 +679,6 @@ export function MemberHome({
             <Link href={getOnboardingPath(lang)}>{t('createSpace')}</Link>
           </Button>
         </div>
-
-        {orientation === 'builder' ? (
-          <PersonaCard
-            title={t('builderTitle')}
-            body={t('builderBody')}
-            action={t('builderAction')}
-            href={getOnboardingPath(lang)}
-          />
-        ) : null}
-        {orientation === 'investor' && home ? (
-          <PersonaCard
-            title={t('investorTitle')}
-            body={t('investorBody')}
-            action={t('investorAction')}
-            href={`/${lang}/network/marketplace`}
-            meta={t('investorCount', {
-              count: home.counts.capitalAsks,
-            })}
-          />
-        ) : null}
       </aside>
     </div>
   );
@@ -714,6 +763,100 @@ function orientationBodyKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientation.member.body' as const;
   if (orientation === 'builder') return 'orientation.builder.body' as const;
   return 'orientation.investor.body' as const;
+}
+
+function HomeViewSwitch({
+  view,
+  ready,
+  onChange,
+}: {
+  view: HomeView;
+  ready: boolean;
+  onChange: (view: HomeView) => void;
+}) {
+  const t = useTranslations('MemberHome');
+  return (
+    <div
+      role="group"
+      aria-label={t('viewToggleLabel')}
+      className="ml-auto inline-flex shrink-0 border border-foreground"
+    >
+      {(['ai', 'classic'] as const).map((option) => {
+        const selected = ready && view === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={selected}
+            disabled={!ready}
+            onClick={() => {
+              if (option !== view) onChange(option);
+            }}
+            className={cn(
+              'px-3 py-1 text-1 disabled:opacity-60',
+              selected
+                ? 'bg-foreground text-background'
+                : 'bg-background text-foreground',
+            )}
+          >
+            {option === 'ai' ? t('viewAi') : t('viewClassic')}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ClassicBoard({
+  lang,
+  home,
+  queue,
+  onChat,
+  onCall,
+}: {
+  lang: Locale;
+  home: MemberIntelligence;
+  queue: MemberHomeThreadItem[];
+  onChat: MemberHomeOpenChat;
+  onCall: MemberHomeOpenChat;
+}) {
+  const t = useTranslations('MemberHome');
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+      <h2
+        className="text-3"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {t('useful')}
+      </h2>
+      <p className="mt-1 text-1 text-neutral-11">{t('classicOrder')}</p>
+      {queue.length === 0 ? (
+        <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
+      ) : (
+        <div className="mt-4 grid gap-4">
+          {queue.map((item) => (
+            <MemberHomeThreadCard
+              key={`${item.kind}:${item.slug}`}
+              lang={lang}
+              item={item}
+              assistant={false}
+              proposal={
+                item.kind === 'proposal'
+                  ? home.proposals.find(
+                      (proposal) => proposal.slug === item.slug,
+                    ) ?? null
+                  : null
+              }
+              onAsk={() => undefined}
+              onReach={(person, mode) =>
+                mode === 'call' ? onCall(person) : onChat(person)
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function CardSkeleton({ lines = 3 }: { lines?: number }) {
@@ -864,7 +1007,7 @@ function PersonaCard({
   meta?: string;
 }) {
   return (
-    <section className="mt-4 border border-border bg-accent-2 p-5">
+    <section className="mb-4 border border-border bg-accent-2 p-5">
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}

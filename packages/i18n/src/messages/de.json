@@ -2,6 +2,10 @@
   "MemberHome": {
     "panelSpaces": "Spaces und Menschen",
     "panelInsights": "Was dich braucht",
+    "viewAi": "KI",
+    "viewClassic": "Klassisch",
+    "viewToggleLabel": "Zwischen der KI-Startseite und dem klassischen Dashboard wechseln",
+    "classicOrder": "Geordnet nach dem, was dich zuerst braucht.",
     "sensingAround": "Wer gerade da ist",
     "sensingAroundEmpty": "Niemand ist gerade angemeldet",
     "sensingMore": "+{count}",
