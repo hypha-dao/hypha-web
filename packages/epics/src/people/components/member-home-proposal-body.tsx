@@ -63,6 +63,14 @@ export function MemberHomeProposalBody({
   );
 
   const canVote = proposalId != null && documentId != null;
+  // The proposal screen hides Yes/No once the chain has closed the vote.
+  // Submitting anyway reverts ("Proposal has expired") and Privy shows that
+  // as a broken approve screen.
+  const voteOpen =
+    proposalDetails != null &&
+    !proposalDetails.executed &&
+    !proposalDetails.expired &&
+    !isPast(proposalDetails.endTime);
   const yesVoters = (voters ?? []).filter((voter) => voter.vote === 'yes');
   const noVoters = (voters ?? []).filter((voter) => voter.vote === 'no');
   const yesCount = yesVoters.length || proposalDetails?.yesVotes || 0;
@@ -161,13 +169,15 @@ export function MemberHomeProposalBody({
           indicatorColor="bg-accent-9"
         />
       </div>
-      {canVote ? (
+      {canVote && proposalDetails != null ? (
         <MemberHomeVote
+          open={voteOpen}
           proposalId={proposalId}
           documentId={documentId}
           documentSlug={documentSlug}
+          tokenSymbol={proposalDetails.tokens[0]?.symbol}
         />
-      ) : (
+      ) : canVote ? null : (
         <p
           className={
             compact ? 'text-1 text-neutral-11' : 'text-2 text-neutral-11'

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useMyVote, useVote } from '@hypha-platform/core/client';
+import { useJwt, useMyVote, useVote } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
 import { celebrate } from './member-home-celebrate';
@@ -11,17 +11,25 @@ type MemberHomeVoteProps = {
   proposalId: number;
   documentId: number;
   documentSlug: string;
+  tokenSymbol?: string | null;
+  /** Same window as the proposal screen: not executed, not expired, end still ahead. */
+  open: boolean;
 };
 
 export function MemberHomeVote({
   proposalId,
   documentId,
   documentSlug,
+  tokenSymbol,
+  open,
 }: MemberHomeVoteProps) {
   const t = useTranslations('MemberHome');
+  const { jwt: authToken } = useJwt();
   const { handleAccept, handleReject, isVoting } = useVote({
     proposalId,
     documentId,
+    authToken,
+    tokenSymbol,
   });
   const { myVote, isLoading: voteRecordLoading } = useMyVote(documentSlug);
   const [choice, setChoice] = useState<'yes' | 'no' | null>(null);
@@ -31,7 +39,8 @@ export function MemberHomeVote({
 
   if (!choice && voteRecordLoading) return null;
 
-  if (recorded && !choice) {
+  if (!open || (recorded && !choice)) {
+    if (!recorded) return null;
     return (
       <p className="text-1 text-neutral-11">
         {recorded === 'yes' ? t('votedYes') : t('votedNo')}
@@ -40,6 +49,7 @@ export function MemberHomeVote({
   }
 
   async function cast(next: 'yes' | 'no') {
+    if (!open) return;
     setFailed(false);
     try {
       if (next === 'yes') await handleAccept();
