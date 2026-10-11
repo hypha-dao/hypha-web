@@ -55,6 +55,7 @@ import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
 import {
   createBotOwnedRoomAction,
   ensureMemberJoinedRoomAction,
+  ensureNetworkChatRoomAction,
 } from '../../server/actions';
 import {
   parseSignalTeamNoticeFromWireContent,
@@ -549,6 +550,8 @@ interface MatrixContextType {
     title: string,
     options?: { grantCreatorPl100?: boolean },
   ) => Promise<{ roomId: string }>;
+  /** Join the single network-wide room, creating it on first use. */
+  ensureNetworkRoom: () => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
@@ -1096,6 +1099,30 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     },
     [client],
   );
+
+  const ensureNetworkRoom = React.useCallback(async () => {
+    if (!client) {
+      throw new Error('Client should be specified');
+    }
+    const userId = client.getUserId();
+    if (!userId) {
+      throw new Error('Matrix user id is not available');
+    }
+    const ensured = await ensureNetworkChatRoomAction({
+      matrixUserId: userId,
+    });
+    if (!ensured) {
+      throw new Error('Failed to open the network room');
+    }
+    const { roomId } = ensured;
+    for (let i = 0; i < 200; i++) {
+      if (client.getRoom(roomId)) {
+        return { roomId };
+      }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    throw new Error('Room not available in Matrix client after creation');
+  }, [client]);
 
   const toggleReaction = React.useCallback(
     async ({ roomId, targetEventId, key }: ToggleReactionInput) => {
@@ -2247,6 +2274,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     retryMatrixConnection,
     connectionRetryFailed,
     createRoom,
+    ensureNetworkRoom,
     sendMessage,
     editRoomMessage,
     redactRoomEvent,
@@ -2277,6 +2305,9 @@ const noopMatrixContext: MatrixContextType = {
   retryMatrixConnection: async () => {},
   connectionRetryFailed: false,
   createRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensureNetworkRoom: async () => {
     throw new Error('Matrix unavailable');
   },
   sendMessage: async () => {

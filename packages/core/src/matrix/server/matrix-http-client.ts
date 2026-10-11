@@ -298,6 +298,73 @@ export async function matrixCreateRoom(
   return roomId;
 }
 
+/** Stable alias localpart for the single network-wide room. */
+export const NETWORK_ROOM_ALIAS_LOCALPART = 'hypha-network';
+
+/** Server name from a Matrix user id (`@user:server` → `server`). */
+export function matrixServerNameFromUserId(userId: string): string | null {
+  const trimmed = userId.trim();
+  const colon = trimmed.lastIndexOf(':');
+  if (!trimmed.startsWith('@') || colon <= 1 || colon === trimmed.length - 1) {
+    return null;
+  }
+  return trimmed.slice(colon + 1);
+}
+
+/** Directory lookup. A missing alias returns null; other failures throw. */
+export async function matrixResolveRoomAlias(
+  roomAlias: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string | null> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      roomAlias,
+    )}`,
+    {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+  if (res.status === 404) {
+    await res.text().catch(() => '');
+    return null;
+  }
+  const data = await readMatrixJson<{ room_id?: string }>(res);
+  return data.room_id?.trim() || null;
+}
+
+/**
+ * Create a private room and publish a single alias (`#localpart:server`).
+ * Space rooms keep using `matrixCreateRoom`, which does not set an alias.
+ */
+export async function matrixCreateAliasedRoom(
+  name: string,
+  roomAliasName: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string> {
+  const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: name.trim().slice(0, 120) || 'Conversation',
+      preset: 'private_chat',
+      visibility: 'private',
+      room_alias_name: roomAliasName,
+    }),
+  });
+  const data = await readMatrixJson<{ room_id?: string }>(res);
+  const roomId = data.room_id?.trim();
+  if (!roomId) {
+    throw new Error('Matrix createRoom returned no room_id');
+  }
+  return roomId;
+}
+
 /**
  * Read a room's recent timeline backwards (`dir=b`). Used by the notification reconciler
  * (#2483) as a bounded backstop for events that bypassed the AS endpoint — walk the last
