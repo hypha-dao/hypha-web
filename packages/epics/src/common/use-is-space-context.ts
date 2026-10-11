@@ -16,3 +16,14 @@ export function useIsSpaceContext(): boolean {
   const pathname = usePathname();
   return Boolean(params?.id ?? getDhoSpaceSlugFromPathname(pathname));
 }
+
+/** `/{lang}/network` and its sections. A space slug of "network" does not match. */
+export function isNetworkPath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return /^\/[^/]+\/network(?:\/|$)/.test(pathname);
+}
+
+export function useIsNetworkContext(): boolean {
+  const pathname = usePathname();
+  return isNetworkPath(pathname);
+}
