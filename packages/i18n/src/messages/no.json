@@ -3682,6 +3682,8 @@
     "reset": "Tilbakestill",
     "creatingNewSignal": "Oppretter nytt signal",
     "signalTitle": "Signaltittel...",
+    "filter": "Filter",
+    "removeFilter": "Fjern {label}",
     "type": "Type",
     "priority": "Prioritet",
     "tags": "Emneknagger",

@@ -3681,6 +3681,8 @@
     "reset": "Zurücksetzen",
     "creatingNewSignal": "Neues Signal wird erstellt",
     "signalTitle": "Signaltitel...",
+    "filter": "Filter",
+    "removeFilter": "{label} entfernen",
     "type": "Typ",
     "priority": "Priorität",
     "tags": "Tags",

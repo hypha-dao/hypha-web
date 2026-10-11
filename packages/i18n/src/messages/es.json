@@ -3127,6 +3127,8 @@
     "reset": "Restablecer",
     "creatingNewSignal": "Creando nueva señal",
     "signalTitle": "Título de la señal...",
+    "filter": "Filtro",
+    "removeFilter": "Quitar {label}",
     "type": "Tipo",
     "priority": "Prioridad",
     "tags": "Etiquetas",

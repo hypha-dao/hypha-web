@@ -3825,6 +3825,8 @@
     "reset": "Reset",
     "creatingNewSignal": "Creating new signal",
     "signalTitle": "Signal title...",
+    "filter": "Filter",
+    "removeFilter": "Remove {label}",
     "type": "Type",
     "priority": "Priority",
     "tags": "Tags",

@@ -3683,6 +3683,8 @@
     "reset": "Opnieuw instellen",
     "creatingNewSignal": "Nieuw signaal creëren",
     "signalTitle": "Signaaltitel...",
+    "filter": "Filter",
+    "removeFilter": "{label} verwijderen",
     "type": "Type",
     "priority": "Prioriteit",
     "tags": "Labels",

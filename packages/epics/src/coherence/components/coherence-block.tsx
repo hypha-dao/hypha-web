@@ -1,12 +1,8 @@
 'use client';
 
+import { ErrorAlert } from '@hypha-platform/ui';
 import {
-  ErrorAlert,
-  Tabs,
-  ScrollableTabsList,
-  TabsTrigger,
-} from '@hypha-platform/ui';
-import {
+  COHERENCE_SIGNAL_TYPES,
   COHERENCE_TYPES,
   Coherence,
   collectExistingTags,
@@ -35,6 +31,7 @@ import {
   writeStoredSignalViewMode,
 } from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
+import { SignalBoardFilters } from './signal-board-filters';
 import { SignalViewControls } from './signal-view-controls';
 import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -52,70 +49,9 @@ export type CoherenceBlockProps = {
   useMembers: UseMembers;
 };
 
-type FilterTabItem = {
-  value: string;
-  label: string;
-  count?: number | null;
-};
-
 function isCoherenceType(value: string | undefined): value is CoherenceType {
   return (
     value != null && (COHERENCE_TYPES as readonly string[]).includes(value)
-  );
-}
-
-function FilterTabs({
-  items,
-  defaultValue,
-  queryKey,
-}: {
-  items: FilterTabItem[];
-  defaultValue: string;
-  queryKey: string;
-}) {
-  const format = useFormatter();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentValue = React.useMemo(() => {
-    const raw = searchParams.get(queryKey);
-    if (!raw) return defaultValue;
-    return items.some((item) => item.value === raw) ? raw : defaultValue;
-  }, [defaultValue, items, queryKey, searchParams]);
-
-  const handleValueChange = React.useCallback(
-    (nextValue: string) => {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      if (nextValue === defaultValue) {
-        nextParams.delete(queryKey);
-      } else {
-        nextParams.set(queryKey, nextValue);
-      }
-      const query = nextParams.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [defaultValue, pathname, queryKey, router, searchParams],
-  );
-
-  return (
-    <Tabs value={currentValue} onValueChange={handleValueChange}>
-      <ScrollableTabsList triggerVariant="switch">
-        {items.map((item) => (
-          <TabsTrigger key={item.value} value={item.value} variant="switch">
-            <span className="inline-flex items-center gap-1">
-              <span>{item.label}</span>
-              {typeof item.count === 'number' && Number.isFinite(item.count) ? (
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(item.count)})
-                </span>
-              ) : null}
-            </span>
-          </TabsTrigger>
-        ))}
-      </ScrollableTabsList>
-    </Tabs>
   );
 }
 
@@ -257,12 +193,15 @@ export function CoherenceBlock({
     return {
       all: items.length,
       ...Object.fromEntries(
-        COHERENCE_TYPES.map((type) => [
+        COHERENCE_SIGNAL_TYPES.map((type) => [
           type,
           items.filter((signal) => signal.type === type).length,
         ]),
       ),
-    } as { all: number } & Record<CoherenceType, number>;
+    } as { all: number } & Record<
+      (typeof COHERENCE_SIGNAL_TYPES)[number],
+      number
+    >;
   }, [signals]);
 
   const refresh = React.useCallback(async () => {
@@ -397,36 +336,6 @@ export function CoherenceBlock({
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
-  const priorityTabs = (
-    <FilterTabs
-      queryKey="priority"
-      defaultValue="all"
-      items={[
-        { value: 'all', label: t('all'), count: priorityCounts.all },
-        {
-          value: 'critical',
-          label: t('priorities.critical'),
-          count: priorityCounts.critical,
-        },
-        {
-          value: 'high',
-          label: t('priorities.high'),
-          count: priorityCounts.high,
-        },
-        {
-          value: 'medium',
-          label: t('priorities.medium'),
-          count: priorityCounts.medium,
-        },
-        {
-          value: 'low',
-          label: t('priorities.low'),
-          count: priorityCounts.low,
-        },
-      ]}
-    />
-  );
-
   return (
     <div className="flex flex-col gap-4">
       <header className="craft-page-header">
@@ -439,35 +348,24 @@ export function CoherenceBlock({
           ) : null}
         </h1>
       </header>
-      <div className="flex min-w-0 max-w-full flex-col gap-3">
-        <FilterTabs
-          queryKey="type"
-          defaultValue="all"
-          items={[
-            { value: 'all', label: t('all'), count: typeCounts.all },
-            ...COHERENCE_TYPES.map((type) => ({
-              value: type,
-              label: t(`types.${type}` as 'types.Need'),
-              count: typeCounts[type],
-            })),
-          ]}
+      <div className="flex min-w-0 max-w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <SignalBoardFilters
+          typeFilter={resolvedTypeFilter}
+          priorityFilter={priorityFilter}
+          typeCounts={typeCounts}
+          priorityCounts={priorityCounts}
         />
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 max-w-full">{priorityTabs}</div>
-          <SignalViewControls
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            hideArchived={hideArchived}
-            onHideArchivedChange={setHideArchived}
-            workflowSettingsHref={workflowSettingsHref}
-            createSignalHref={
-              canMutate
-                ? `/${lang}/dho/${spaceSlug}/coherence/new-signal`
-                : null
-            }
-            className="lg:shrink-0"
-          />
-        </div>
+        <SignalViewControls
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          hideArchived={hideArchived}
+          onHideArchivedChange={setHideArchived}
+          workflowSettingsHref={workflowSettingsHref}
+          createSignalHref={
+            canMutate ? `/${lang}/dho/${spaceSlug}/coherence/new-signal` : null
+          }
+          className="lg:shrink-0"
+        />
       </div>
       {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
       <SignalSection
