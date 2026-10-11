@@ -69,9 +69,11 @@ export const ConnectedButtonProfile = ({
     lang: locale,
     hasProfile: false,
   });
-  const homePath = baseRedirectPath.includes('/my-dashboard')
-    ? baseRedirectPath
-    : resolveAccountEntryPath({ lang: locale, hasProfile: true });
+  const homePath =
+    baseRedirectPath.includes('/home') ||
+    baseRedirectPath.includes('/my-dashboard')
+      ? baseRedirectPath
+      : resolveAccountEntryPath({ lang: locale, hasProfile: true });
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {

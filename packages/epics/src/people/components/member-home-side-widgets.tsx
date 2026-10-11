@@ -11,6 +11,7 @@ import type { MemberIntelligence } from '@hypha-platform/core/client';
 import { useDisplayCurrency, useUserAssets } from '../../treasury/hooks';
 import type { AssetItem } from '../../treasury/hooks/use-user-assets';
 import { PersonAvatar } from './person-avatar';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
 
 type HomeConnection = MemberIntelligence['connections'][number];
 
@@ -87,8 +88,8 @@ function MainAssets({ assets, lang }: { assets: AssetItem[]; lang: Locale }) {
           className="flex items-center gap-2"
         >
           <AssetMark icon={asset.icon} symbol={asset.symbol} />
-          <span className="min-w-0 flex-1 truncate text-2">{asset.symbol}</span>
-          <span className="shrink-0 text-2 tabular-nums">
+          <span className="min-w-0 flex-1 truncate text-1">{asset.symbol}</span>
+          <span className="shrink-0 text-1 tabular-nums">
             {formatCurrencyValue(asset.value, lang)}
           </span>
         </li>
@@ -146,7 +147,7 @@ export function MemberHomeWalletWidget({
       ) : showBalance ? (
         <div>
           <p
-            className="text-6 leading-none tracking-[-0.02em] tabular-nums"
+            className="text-3 leading-none tracking-[-0.02em] tabular-nums"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
             {formatFromUsd(balance)}
@@ -156,7 +157,7 @@ export function MemberHomeWalletWidget({
       ) : hasAddress ? (
         <Skeleton loading height="36px" width="9rem" />
       ) : (
-        <p className="text-2 text-neutral-11">{t('walletEmpty')}</p>
+        <p className="text-1 text-neutral-11">{t('walletEmpty')}</p>
       )}
     </Widget>
   );
@@ -175,7 +176,7 @@ export function MemberHomeSpacesWidget({
 
   return (
     <Widget
-      title={t('spaces')}
+      title={t('recentSpaces')}
       busy={busy}
       action={
         <WidgetAction href={`/${lang}/my-spaces`}>
@@ -223,7 +224,7 @@ export function MemberHomeConnectionsWidget({
           ))}
         </div>
       ) : people.length === 0 ? (
-        <p className="text-2 text-neutral-11">{t('noConnections')}</p>
+        <p className="text-1 text-neutral-11">{t('noConnections')}</p>
       ) : (
         <ul className="flex flex-wrap gap-3">
           {visiblePeople.map((person) => {
@@ -251,7 +252,12 @@ export function MemberHomeConnectionsWidget({
                     size="md"
                     shape="circle"
                   />
-                  <span className="min-w-0 truncate text-2">{name}</span>
+                  <span className="flex min-w-0 flex-col items-start gap-1">
+                    <span className="min-w-0 truncate text-1">{name}</span>
+                    {isPersonRole(person.primaryOrientation) ? (
+                      <PersonRoleBadge role={person.primaryOrientation} />
+                    ) : null}
+                  </span>
                 </button>
                 <div className="flex shrink-0 gap-1">
                   <Button
@@ -299,7 +305,7 @@ export function MemberHomeConnectionsWidget({
       {!isLoading && remaining > 0 ? (
         <button
           type="button"
-          className="mt-3 text-2 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          className="mt-3 text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
           onClick={() => setVisibleCount((count) => count + 5)}
         >
           {t('showMore')}

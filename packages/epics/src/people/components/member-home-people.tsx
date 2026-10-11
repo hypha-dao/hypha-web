@@ -205,7 +205,7 @@ export function MemberHomePeople({
   if (!notice) return null;
 
   return (
-    <p className="text-2 text-error-11" role="alert">
+    <p className="text-1 text-error-11" role="alert">
       {notice}
     </p>
   );

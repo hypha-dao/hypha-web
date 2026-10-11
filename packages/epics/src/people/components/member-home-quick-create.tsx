@@ -35,7 +35,7 @@ type Created = {
 };
 
 const FIELD_CLASS =
-  'w-full border border-border bg-background px-3 py-2 text-2 text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  'w-full border border-border bg-background px-3 py-2 text-1 text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : '';
@@ -171,7 +171,7 @@ export function MemberHomeQuickCreate({
             type="button"
             aria-pressed={kind === option}
             className={cn(
-              'border px-2 py-2 text-2',
+              'border px-2 py-2 text-1',
               kind === option
                 ? 'border-foreground bg-foreground text-background'
                 : 'border-border hover:bg-accent-2',
@@ -192,13 +192,13 @@ export function MemberHomeQuickCreate({
       </div>
       {kind === 'space' ? (
         <div className="mt-3 grid gap-3">
-          <p className="text-2 text-neutral-11">{t('quickCreateSpaceBody')}</p>
+          <p className="text-1 text-neutral-11">{t('quickCreateSpaceBody')}</p>
           <Button asChild>
             <Link href={createSpaceHref}>{t('quickCreateSubmitSpace')}</Link>
           </Button>
         </div>
       ) : spaces.length === 0 ? (
-        <p className="mt-3 text-2 text-neutral-11">{t('quickCreateEmpty')}</p>
+        <p className="mt-3 text-1 text-neutral-11">{t('quickCreateEmpty')}</p>
       ) : (
         <form
           className="mt-3 grid gap-3"
@@ -278,17 +278,17 @@ export function MemberHomeQuickCreate({
           </label>
 
           {proposalNeedsChain ? (
-            <p className="text-2 text-neutral-11">
+            <p className="text-1 text-neutral-11">
               {t('quickCreateProposalChain')}
             </p>
           ) : null}
           {error ? (
-            <p className="text-2 text-error-11" role="alert">
+            <p className="text-1 text-error-11" role="alert">
               {error}
             </p>
           ) : null}
           {created ? (
-            <p className="text-2 text-neutral-12">
+            <p className="text-1 text-neutral-12">
               {created.kind === 'signal'
                 ? t('quickCreateSuccessSignal', { space: created.spaceTitle })
                 : t('quickCreateSuccessProposal', {

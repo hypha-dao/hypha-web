@@ -112,7 +112,7 @@ export function MobileTabBar() {
     setCreateOpen(false);
   }, [pathname]);
 
-  const dashboardHref = `/${lang}/my-dashboard`;
+  const dashboardHref = `/${lang}/home`;
   const walletHref = `/${lang}/my-wallet`;
   const networkHref = `/${lang}/network`;
   const spacesHref = `/${lang}/my-spaces`;
@@ -121,7 +121,7 @@ export function MobileTabBar() {
     : `/${lang}/profile/signup`;
 
   const dashboardActive =
-    !spacesOpen && !createOpen && segmentActive(pathname, 'my-dashboard');
+    !spacesOpen && !createOpen && segmentActive(pathname, 'home');
   const spacesActive =
     spacesOpen ||
     segmentActive(pathname, 'my-spaces') ||

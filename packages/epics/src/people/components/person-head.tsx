@@ -19,7 +19,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
-import { useFormatter, useTranslations } from 'next-intl';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
 
 export type MemberType = {
   avatar: string;
@@ -38,6 +38,7 @@ interface PersonHeadProps {
   links: string[];
   location: string;
   email: string;
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
   onExportEmbeddedWallet?: () => void;
   exportEmbeddedWallet?: boolean;
 }
@@ -55,6 +56,7 @@ export const PersonHead = ({
   links,
   location,
   email,
+  primaryOrientation,
   onExportEmbeddedWallet,
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
@@ -135,6 +137,10 @@ export const PersonHead = ({
 
   const displayName =
     `${self.name} ${self.surname}`.trim() || tProfile('profilePage');
+  const roleSource = isSelfView
+    ? me?.primaryOrientation ?? primaryOrientation
+    : primaryOrientation;
+  const role = isPersonRole(roleSource) ? roleSource : null;
 
   const rawLead = self.background?.trim();
   const heroBannerHref =
@@ -202,6 +208,12 @@ export const PersonHead = ({
             footerLeading={footerMeta}
           />
         </Skeleton>
+
+        {isPersonRole(role) ? (
+          <div>
+            <PersonRoleBadge role={role} />
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap justify-end gap-2">
           {isOwnProfile && (

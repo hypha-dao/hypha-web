@@ -19,7 +19,10 @@ import {
 
 import type { DbConfig } from '../../server';
 import { personColumns } from './queries';
-import { readPrimaryOrientation } from './primary-orientation-column';
+import {
+  readPrimaryOrientation,
+  readPrimaryOrientations,
+} from './primary-orientation-column';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { listPendingSpaceMemberInvites } from '../../space/server/space-member-invites';
 import {
@@ -222,13 +225,24 @@ async function loadSharedPeople(
       ),
     );
 
-  return peopleSharingMemberSpaces({
+  const shared = peopleSharingMemberSpaces({
     callerPersonId: personId,
     membersBySpace,
     people: peopleRows,
     spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
     limit,
   });
+  const orientations = await readPrimaryOrientations(
+    db,
+    shared.connections.map((person) => person.id),
+  );
+  return {
+    count: shared.count,
+    connections: shared.connections.map((person) => ({
+      ...person,
+      primaryOrientation: orientations.get(person.id) ?? null,
+    })),
+  };
 }
 
 async function loadChainMemberSpaces(
