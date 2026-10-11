@@ -187,11 +187,13 @@ export function MemberHome({
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
     : null;
-  const displayName =
+  const knownName =
     home?.person.name?.trim() ||
     home?.person.nickname?.trim() ||
     greetingName?.trim() ||
-    t('fallbackName');
+    '';
+  const displayName = knownName || t('fallbackName');
+  const greetingPending = home == null && !knownName;
   const tTypes = useTranslations('CoherenceTab');
   const queue = useMemo(
     () => (home ? listMemberHomeThreadItems(home) : []),
@@ -331,12 +333,21 @@ export function MemberHome({
               <MemberHomeMark className="h-full w-full" />
             </span>
             <div className="min-w-0 flex-1">
-              <h1
-                className="truncate text-3"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {t(greetingKey(), { name: displayName })}
-              </h1>
+              {greetingPending ? (
+                <Skeleton
+                  loading
+                  height="28px"
+                  width="14rem"
+                  className="rounded-none"
+                />
+              ) : (
+                <h1
+                  className="truncate text-3"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t(greetingKey(), { name: displayName })}
+                </h1>
+              )}
               {home == null ? (
                 <Skeleton
                   loading
@@ -384,7 +395,7 @@ export function MemberHome({
           />
         ) : (
           <div className="flex-1 px-4 py-6">
-            <CardSkeleton lines={4} />
+            <CardSkeleton lines={4} plain />
           </div>
         )}
       </main>
@@ -529,7 +540,7 @@ export function MemberHome({
           </div>
           {home == null ? (
             <div className="mt-4">
-              <CardSkeleton lines={3} />
+              <CardSkeleton lines={3} plain />
             </div>
           ) : leadItem && home ? (
             <div className="mt-4">
@@ -908,17 +919,41 @@ function ClassicBoard({
   );
 }
 
-function CardSkeleton({ lines = 3 }: { lines?: number }) {
+function CardSkeleton({
+  lines = 3,
+  plain = false,
+}: {
+  lines?: number;
+  plain?: boolean;
+}) {
   return (
-    <div className="grid gap-2">
-      {Array.from({ length: lines }, (_, index) => (
-        <Skeleton
-          key={index}
-          loading
-          height="16px"
-          width={CARD_SKELETON_WIDTHS[index] ?? '70%'}
-        />
-      ))}
+    <div className="grid gap-3" aria-hidden>
+      {Array.from({ length: lines }, (_, index) =>
+        plain ? (
+          <Skeleton
+            key={index}
+            loading
+            className="rounded-none"
+            height="12px"
+            width={CARD_SKELETON_WIDTHS[index] ?? '70%'}
+          />
+        ) : (
+          <div key={index} className="flex items-center gap-2">
+            <Skeleton
+              loading
+              className="shrink-0 rounded-none"
+              height="16px"
+              width="16px"
+            />
+            <Skeleton
+              loading
+              className="rounded-none"
+              height="12px"
+              width={CARD_SKELETON_WIDTHS[index] ?? '70%'}
+            />
+          </div>
+        ),
+      )}
     </div>
   );
 }
