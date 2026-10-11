@@ -25,6 +25,7 @@ import {
   Separator,
   Skeleton,
   Slider,
+  Switch,
   UploadLeadImage,
   AddAttachment,
 } from '@hypha-platform/ui';
@@ -1036,8 +1037,8 @@ export const CreateSignalForm = ({
             <Separator className="bg-border" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-6 px-0 pt-5">
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pt-5 lg:px-7">
+            <section className="flex flex-col gap-6">
               <FormField
                 control={form.control}
                 name="type"
@@ -1075,13 +1076,38 @@ export const CreateSignalForm = ({
                   </FormItem>
                 )}
               />
-            </section>
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              <FormField
+                control={form.control}
+                name="sharedWithNetwork"
+                render={({ field }) => (
+                  <FormItem className="border-t border-border pt-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <FormLabel className="text-sm font-medium text-foreground">
+                          {t('shareWithNetwork')}
+                        </FormLabel>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {t('shareWithNetworkHint')}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === true}
+                          onCheckedChange={field.onChange}
+                          disabled={isMutating}
+                          aria-label={t('shareWithNetwork')}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="border-t border-border pt-6">
                     <div className="flex w-full flex-col gap-3">
                       <FormLabel className="text-foreground">
                         {t('priority')} <RequirementMark />
@@ -1113,10 +1139,92 @@ export const CreateSignalForm = ({
                 )}
               />
             </section>
-            {mode === 'create' ? (
-              <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
-                {/* creatorVotePercent is local state, not a form field, so
-                    avoid the FormField-context-bound components here. */}
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => {
+                  const descriptionValue = field.value || '';
+                  return (
+                    <FormItem>
+                      <FormLabel className="gap-1 text-foreground">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
+                          <RichTextEditor
+                            editorRef={null}
+                            bordered={false}
+                            markdown={descriptionValue}
+                            translation={translateEditor}
+                            placeholder={t('descriptionPlaceholder')}
+                            onChange={(markdown) => field.onChange(markdown)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        placeholder={t('selectOneOrMore')}
+                        searchPlaceholder={
+                          t.has('searchOrCreateTag')
+                            ? t('searchOrCreateTag')
+                            : 'Type to search or create a tag'
+                        }
+                        options={tagOptions}
+                        value={field.value}
+                        allowToggleAll={false}
+                        allowCreate={true}
+                        maxCount={2}
+                        uiStyle="tag-picker"
+                        labels={{
+                          more: (count) =>
+                            t.has('tagsMore' as never)
+                              ? `${t('tagsMore' as never)} ${count}`
+                              : `+ ${count} more`,
+                          noRecentTags: t.has('noRecentTags' as never)
+                            ? t('noRecentTags' as never)
+                            : 'No recent tags yet. Start typing to search tags.',
+                          noResults: t.has('noResults' as never)
+                            ? t('noResults' as never)
+                            : 'No results found.',
+                          mostUsed: t.has('mostUsedTagsHeading' as never)
+                            ? t('mostUsedTagsHeading' as never)
+                            : '--- Most used tags ---',
+                          create: (term) =>
+                            t.has('createTag' as never)
+                              ? `${t('createTag' as never)} "${term}"`
+                              : `Create "${term}"`,
+                          clear: t.has('clear' as never)
+                            ? t('clear' as never)
+                            : 'Clear',
+                          close: t.has('close' as never)
+                            ? t('close' as never)
+                            : 'Close',
+                        }}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </section>
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              {mode === 'create' ? (
                 <div className="flex w-full flex-col gap-3">
                   <Label className="text-foreground">
                     {t('signalFormVotingPower')}
@@ -1136,9 +1244,7 @@ export const CreateSignalForm = ({
                     {t('signalFormVotingPowerHint')}
                   </p>
                 </div>
-              </section>
-            ) : null}
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              ) : null}
               <div className="grid gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -1285,92 +1391,8 @@ export const CreateSignalForm = ({
                 scheduleFromSignalPath={scheduleFromSignalPath}
               />
             ) : null}
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => {
-                  const descriptionValue = field.value || '';
-                  return (
-                    <FormItem>
-                      <FormLabel className="gap-1 text-foreground">
-                        {t('description')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
-                          <RichTextEditor
-                            editorRef={null}
-                            bordered={false}
-                            markdown={descriptionValue}
-                            translation={translateEditor}
-                            placeholder={t('descriptionPlaceholder')}
-                            onChange={(markdown) => field.onChange(markdown)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription />
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem className="mt-6">
-                    <FormLabel className="text-foreground">
-                      {t('tags')}
-                    </FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        placeholder={t('selectOneOrMore')}
-                        searchPlaceholder={
-                          t.has('searchOrCreateTag')
-                            ? t('searchOrCreateTag')
-                            : 'Type to search or create a tag'
-                        }
-                        options={tagOptions}
-                        value={field.value}
-                        allowToggleAll={false}
-                        allowCreate={true}
-                        maxCount={2}
-                        uiStyle="tag-picker"
-                        labels={{
-                          more: (count) =>
-                            t.has('tagsMore' as never)
-                              ? `${t('tagsMore' as never)} ${count}`
-                              : `+ ${count} more`,
-                          noRecentTags: t.has('noRecentTags' as never)
-                            ? t('noRecentTags' as never)
-                            : 'No recent tags yet. Start typing to search tags.',
-                          noResults: t.has('noResults' as never)
-                            ? t('noResults' as never)
-                            : 'No results found.',
-                          mostUsed: t.has('mostUsedTagsHeading' as never)
-                            ? t('mostUsedTagsHeading' as never)
-                            : '--- Most used tags ---',
-                          create: (term) =>
-                            t.has('createTag' as never)
-                              ? `${t('createTag' as never)} "${term}"`
-                              : `Create "${term}"`,
-                          clear: t.has('clear' as never)
-                            ? t('clear' as never)
-                            : 'Clear',
-                          close: t.has('close' as never)
-                            ? t('close' as never)
-                            : 'Close',
-                        }}
-                        onValueChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </section>
 
-            <section className="flex flex-col gap-6 rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">
                   {t('signalFormImage')}
@@ -1463,7 +1485,7 @@ export const CreateSignalForm = ({
               </div>
             </section>
 
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
               <Skeleton loading={isLoadingTokens} width="100%" height={90}>
                 <TokenPayoutFieldArray
                   tokens={tokens}
@@ -1478,42 +1500,7 @@ export const CreateSignalForm = ({
               </p>
             </section>
 
-            <FormField
-              control={form.control}
-              name="sharedWithNetwork"
-              render={({ field }) => {
-                const shared = field.value === true;
-                return (
-                  <FormItem>
-                    <button
-                      type="button"
-                      aria-pressed={shared}
-                      onClick={() => field.onChange(!shared)}
-                      className={`w-full border px-4 py-4 text-left ${
-                        shared
-                          ? 'border-foreground bg-foreground text-background'
-                          : 'border-border bg-background text-foreground'
-                      }`}
-                    >
-                      <span className="block text-sm font-medium">
-                        {t('shareWithNetwork')}
-                      </span>
-                      <span
-                        className={`mt-1 block text-sm leading-relaxed ${
-                          shared
-                            ? 'text-background/80'
-                            : 'text-muted-foreground'
-                        }`}
-                      >
-                        {t('shareWithNetworkHint')}
-                      </span>
-                    </button>
-                  </FormItem>
-                );
-              }}
-            />
-
-            <div className="flex w-full justify-end gap-2">
+            <div className="flex w-full justify-end gap-2 pt-8">
               {form.formState.errors.root?.message ? (
                 <p
                   role="alert"
