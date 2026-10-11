@@ -106,7 +106,7 @@ export default async function RootLayout({
 
   let navHomeLabel = 'Home';
   let navMySpacesLabel = 'My Spaces';
-  let navMyWalletLabel = 'Wallet';
+  let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
