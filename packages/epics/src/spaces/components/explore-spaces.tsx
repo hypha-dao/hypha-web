@@ -12,6 +12,7 @@ import {
   spaceMatchesCategoryGroups,
   splitTokensByNetworkSpaces,
   type NetworkGrowth,
+  type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
@@ -21,6 +22,7 @@ import {
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
+import { NetworkRanking, NetworkSectionNav } from '../../network-exchange';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkCensus } from './network-census';
 import { NetworkLoadingGrid } from './network-loading-grid';
@@ -55,6 +57,7 @@ interface ExploreSpacesProps {
   creatorMapPins?: Readonly<
     Record<number, { latitude: number; longitude: number }>
   >;
+  networkRanks?: NetworkSpaceRank[];
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -154,6 +157,7 @@ export function ExploreSpaces({
   enableNetworkMap = false,
   networkGrowth = null,
   creatorMapPins,
+  networkRanks = [],
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
 
@@ -470,6 +474,7 @@ export function ExploreSpaces({
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
       </Heading>
+      <NetworkSectionNav lang={lang} />
 
       <div className="flex min-w-0 flex-col">
         {sharedHeader}
@@ -486,6 +491,9 @@ export function ExploreSpaces({
               showStage={showMapStage}
               alignProjection={view === 'overview' ? 'flat' : undefined}
             />
+            {view === 'overview' ? (
+              <NetworkRanking lang={lang} ranks={networkRanks} />
+            ) : null}
             <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
               {spacesListContent}
@@ -493,6 +501,7 @@ export function ExploreSpaces({
           </>
         ) : (
           <>
+            <NetworkRanking lang={lang} ranks={networkRanks} />
             {listMetaRow}
             {spacesListContent}
           </>

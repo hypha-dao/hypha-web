@@ -33,7 +33,7 @@ export default async function Index(props: PageProps) {
 
   let mySpaces: Space[] = [];
   try {
-    mySpaces = await getAllSpaces({ search: query, parentOnly: false });
+    mySpaces = await getAllSpaces({ parentOnly: false });
   } catch (reason) {
     console.error('[my-spaces/page] Failed to fetch filtered spaces', reason);
   }
@@ -65,7 +65,7 @@ export default async function Index(props: PageProps) {
           lang={lang}
           spaces={mySpaces}
           order={order}
-          showLoadMore={false}
+          query={query}
         />
       </Container>
     </div>
