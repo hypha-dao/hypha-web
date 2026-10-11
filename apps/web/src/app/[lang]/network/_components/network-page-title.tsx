@@ -13,8 +13,7 @@ export function NetworkPageTitle() {
       color="secondary"
       weight="medium"
       align="center"
-      className="flex flex-col overflow-visible py-1"
-      style={{ lineHeight: 1.15 }}
+      className="flex flex-col"
     >
       <span>{t('manySpaces')}</span>
       <span>{t('oneVibrantNetwork')}</span>
