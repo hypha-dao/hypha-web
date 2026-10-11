@@ -26,7 +26,11 @@ function NotificationMark({
   const Icon = kind === 'proposal' ? Scale : Radio;
   const showLogo = Boolean(iconUrl) && !logoFailed;
   return (
-    <span className="craft-icon-box text-foreground" aria-hidden>
+    <span
+      className="craft-icon-box text-foreground"
+      style={{ width: 24, height: 24 }}
+      aria-hidden
+    >
       {showLogo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
