@@ -6,17 +6,17 @@ import { useLocale, useTranslations } from 'next-intl';
 import {
   COHERENCE_TYPES,
   useFindCoherences,
-  useOrganisationSpacesBySingleSlug,
-  useScheduledItems,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
+  SpaceCalendar,
   SpaceEnergySection,
   SpacePendingRewardsSection,
   useSpaceDocumentsWithStatuses,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
+import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useMembers } from '@web/hooks/use-members';
@@ -110,25 +110,11 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     isLoading: signalsLoading,
     error: signalsError,
   } = useFindCoherences({ spaceSlug });
-  const range = useMemo(() => {
-    const from = new Date();
-    from.setHours(0, 0, 0, 0);
-    const to = new Date(from);
-    to.setDate(to.getDate() + 21);
-    return { from, to };
-  }, []);
-  const { scheduledItems, isLoading: calendarLoading } = useScheduledItems({
-    spaceSlug,
-    from: range.from,
-    to: range.to,
-  });
   const { persons, isLoading: membersLoading } = useMembers({
     spaceSlug,
     page: 1,
     pageSize: 8,
   });
-  const { spaces: ecosystemSpaces, isLoading: ecosystemLoading } =
-    useOrganisationSpacesBySingleSlug(spaceSlug);
   const { documents, isLoading: updatesLoading } =
     useSpaceDocumentsWithStatuses({
       spaceSlug,
@@ -179,31 +165,10 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       .slice(0, 5);
   }, [documents]);
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return (scheduledItems ?? [])
-      .filter((item) => item.endsAt.getTime() >= now)
-      .slice()
-      .sort((left, right) => left.startsAt.getTime() - right.startsAt.getTime())
-      .slice(0, 4);
-  }, [scheduledItems]);
-
   const people = persons.data ?? [];
   const memberTotal = persons.pagination?.total ?? people.length;
-  const relatedSpaces = (ecosystemSpaces ?? [])
-    .filter((item) => item.slug && item.slug !== spaceSlug)
-    .slice(0, 6);
 
   const home = `/${locale}/dho/${spaceSlug}`;
-  const when = new Intl.DateTimeFormat(locale, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-  const clock = new Intl.DateTimeFormat(locale, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -324,32 +289,14 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           href={`${home}/calendar`}
           openLabel={t('open')}
         >
-          {calendarLoading ? (
-            <RowsSkeleton />
-          ) : upcoming.length === 0 ? (
-            <Quiet>{t('calendarEmpty')}</Quiet>
-          ) : (
-            upcoming.map((item) => (
-              <Link
-                key={item.id}
-                href={`${home}/calendar`}
-                className="grid gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-foreground/5"
-                style={{ gridTemplateColumns: '7.5rem minmax(0, 1fr)' }}
-              >
-                <span className="text-1 text-neutral-11">
-                  {when.format(item.startsAt)}
-                  {item.allDay ? null : (
-                    <span className="mt-1 block">
-                      {clock.format(item.startsAt)}
-                    </span>
-                  )}
-                </span>
-                <span className="min-w-0 truncate text-2 text-foreground">
-                  {item.title}
-                </span>
-              </Link>
-            ))
-          )}
+          <div className="px-2 py-3">
+            <SpaceCalendar
+              spaceSlug={spaceSlug}
+              spaceId={space?.id ?? 0}
+              lang={locale}
+              embedded
+            />
+          </div>
         </Panel>
 
         <Panel
@@ -401,29 +348,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           href={`${home}/ecosystem-navigation`}
           openLabel={t('open')}
         >
-          {ecosystemLoading ? (
-            <RowsSkeleton />
-          ) : relatedSpaces.length === 0 ? (
-            <Quiet>{t('ecosystemEmpty')}</Quiet>
-          ) : (
-            relatedSpaces.map((item) => (
-              <Link
-                key={item.id}
-                href={`/${locale}/dho/${item.slug}/overview`}
-                className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-foreground/5"
-              >
-                <PersonAvatar
-                  avatarSrc={item.logoUrl ?? undefined}
-                  userName={item.title}
-                  size="sm"
-                  shape="circle"
-                />
-                <span className="min-w-0 truncate text-2 text-foreground">
-                  {item.title}
-                </span>
-              </Link>
-            ))
-          )}
+          <EcosystemDiagram spaceSlug={spaceSlug} />
         </Panel>
       </div>
 
