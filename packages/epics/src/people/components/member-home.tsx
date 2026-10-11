@@ -246,26 +246,86 @@ export function MemberHome({
         aria-label={t('panelSpaces')}
         className="member-home-pane order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
       >
-        <MemberHomeSpacesWidget lang={lang} busy={home == null}>
-          {home == null ? (
-            <CardSkeleton />
-          ) : recentSpaces.length === 0 ? (
-            <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
-          ) : (
-            <ul className="grid">
-              {recentSpaces.map((space) => (
-                <li key={space.id}>
-                  <SpaceSwitcherOption
-                    href={`/${lang}/dho/${space.slug}/overview`}
-                    title={space.title}
-                    iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
-                    className="rounded-lg px-2 py-1.5 text-1 hover:bg-background-4/70"
+        <section className="border border-border bg-background">
+          <div
+            className={
+              home == null || orientation
+                ? 'grid grid-cols-[auto_minmax(0,1fr)]'
+                : 'grid'
+            }
+          >
+            {home == null || orientation ? (
+              <div className="flex items-start justify-center border-r border-border px-4 py-4">
+                {home == null || orientation == null ? (
+                  <Skeleton loading height="22px" width="6.5rem" />
+                ) : (
+                  <OrientationBadge
+                    orientation={orientation}
+                    isSaving={isSavingOrientation}
+                    error={orientationError}
+                    onChoose={onChooseOrientation}
                   />
-                </li>
-              ))}
-            </ul>
-          )}
-        </MemberHomeSpacesWidget>
+                )}
+              </div>
+            ) : null}
+            <dl className="grid grid-cols-2">
+              <Stat
+                label={t('counts.spaces')}
+                value={home?.counts.spaces ?? 0}
+                isLoading={home == null}
+              />
+              <Stat
+                label={t('counts.proposals')}
+                value={home?.counts.openProposals ?? 0}
+                isLoading={home == null}
+                edge
+              />
+              <Stat
+                label={t('counts.signals')}
+                value={home?.counts.signals ?? 0}
+                isLoading={home == null}
+                rule
+              />
+              <Stat
+                label={t('counts.people')}
+                value={home?.counts.connections ?? 0}
+                isLoading={home == null}
+                edge
+                rule
+              />
+            </dl>
+          </div>
+        </section>
+        <div className="mt-4">
+          <MemberHomeSpacesWidget lang={lang} busy={home == null}>
+            {home == null ? (
+              <CardSkeleton />
+            ) : recentSpaces.length === 0 ? (
+              <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
+            ) : (
+              <ul className="grid">
+                {recentSpaces.map((space) => (
+                  <li key={space.id}>
+                    <SpaceSwitcherOption
+                      href={`/${lang}/dho/${space.slug}/overview`}
+                      title={space.title}
+                      iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
+                      className="rounded-lg px-2 py-1.5 text-1 hover:bg-background-4/70"
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </MemberHomeSpacesWidget>
+        </div>
+        <div className="mt-4">
+          <MemberHomeWalletWidget
+            lang={lang}
+            personSlug={home?.person.slug}
+            hasAddress={Boolean(home?.wallet.address)}
+            isHomeLoading={home == null}
+          />
+        </div>
         <div className="mt-4">
           <Tile
             title={t('notifications')}
@@ -324,6 +384,11 @@ export function MemberHome({
             ) : null}
           </Tile>
         </div>
+        {home ? (
+          <div className="mt-4">
+            <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
+          </div>
+        ) : null}
       </aside>
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
         <div className="shrink-0 px-4 pt-4">
@@ -400,75 +465,6 @@ export function MemberHome({
         aria-label={t('panelInsights')}
         className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0"
       >
-        {home && home.invites.length > 0 ? (
-          <MemberHomeInviteBanners lang={lang} invites={home.invites} />
-        ) : null}
-        <section className="border border-border bg-background">
-          <div
-            className={
-              home == null || orientation
-                ? 'grid grid-cols-[auto_minmax(0,1fr)]'
-                : 'grid'
-            }
-          >
-            {home == null || orientation ? (
-              <div className="flex items-start justify-center border-r border-border px-4 py-4">
-                {home == null || orientation == null ? (
-                  <Skeleton loading height="22px" width="6.5rem" />
-                ) : (
-                  <OrientationBadge
-                    orientation={orientation}
-                    isSaving={isSavingOrientation}
-                    error={orientationError}
-                    onChoose={onChooseOrientation}
-                  />
-                )}
-              </div>
-            ) : null}
-            <dl className="grid grid-cols-2">
-              <Stat
-                label={t('counts.spaces')}
-                value={home?.counts.spaces ?? 0}
-                isLoading={home == null}
-              />
-              <Stat
-                label={t('counts.proposals')}
-                value={home?.counts.openProposals ?? 0}
-                isLoading={home == null}
-                edge
-              />
-              <Stat
-                label={t('counts.signals')}
-                value={home?.counts.signals ?? 0}
-                isLoading={home == null}
-                rule
-              />
-              <Stat
-                label={t('counts.people')}
-                value={home?.counts.connections ?? 0}
-                isLoading={home == null}
-                edge
-                rule
-              />
-            </dl>
-          </div>
-        </section>
-
-        <div className="mt-4 grid gap-4">
-          {home?.person.slug ? (
-            <MemberHomeEnergyPanel personSlug={home.person.slug} />
-          ) : null}
-          <MemberHomeWalletWidget
-            lang={lang}
-            personSlug={home?.person.slug}
-            hasAddress={Boolean(home?.wallet.address)}
-            isHomeLoading={home == null}
-          />
-          {home ? (
-            <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
-          ) : null}
-        </div>
-
         {orientation === 'builder' ? (
           <PersonaCard
             title={t('builderTitle')}
@@ -476,6 +472,14 @@ export function MemberHome({
             action={t('builderAction')}
             href={getOnboardingPath(lang)}
           />
+        ) : null}
+        {home && home.invites.length > 0 ? (
+          <MemberHomeInviteBanners lang={lang} invites={home.invites} />
+        ) : null}
+        {home?.person.slug ? (
+          <div className="grid gap-4">
+            <MemberHomeEnergyPanel personSlug={home.person.slug} />
+          </div>
         ) : null}
         {orientation === 'investor' && home ? (
           <PersonaCard
