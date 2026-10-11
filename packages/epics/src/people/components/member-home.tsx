@@ -314,7 +314,7 @@ export function MemberHome({
                 isLoading={home == null}
               />
               <Stat
-                label={t('counts.people')}
+                label={t('connections')}
                 value={home?.counts.connections ?? 0}
                 isLoading={home == null}
               />
