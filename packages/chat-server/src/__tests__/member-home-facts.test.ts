@@ -86,7 +86,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('kind=proposal slug=path document=proposal');
     expect(facts).toContain('show_member_home_item');
     expect(facts).toContain('Noor');
-    expect(facts).toContain('focused on their own spaces');
+    expect(facts).toContain('No network signal is in this brief');
     expect(facts).not.toContain('Circle');
     expect(facts).not.toContain('You are a personal');
     expect(facts).toContain("don't want to decide");

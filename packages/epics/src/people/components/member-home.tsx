@@ -24,7 +24,6 @@ import {
   listMemberHomeThreadItems,
   type MemberHomeThreadItem,
   type MemberIntelligence,
-  type NetworkHorizon,
 } from '@hypha-platform/core/client';
 
 import {
@@ -70,9 +69,6 @@ type MemberHomeProps = {
   isSavingOrientation?: boolean;
   orientationError?: string | null;
   onChooseOrientation: (orientation: SignupOrientation) => void;
-  isSavingHorizon?: boolean;
-  horizonError?: string | null;
-  onChooseHorizon?: (horizon: NetworkHorizon) => void;
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];

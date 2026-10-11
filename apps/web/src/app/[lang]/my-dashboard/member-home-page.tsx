@@ -12,7 +12,6 @@ import {
   useJwt,
   useMe,
   type MemberIntelligence,
-  type NetworkHorizon,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
@@ -33,8 +32,6 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const { person, isLoading: isPersonLoading, meError, revalidate } = useMe();
   const [isSavingOrientation, setIsSavingOrientation] = useState(false);
   const [orientationError, setOrientationError] = useState<string | null>(null);
-  const [isSavingHorizon, setIsSavingHorizon] = useState(false);
-  const [horizonError, setHorizonError] = useState<string | null>(null);
 
   const {
     data,
@@ -120,58 +117,6 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       }
     },
     [jwt, mutate, t],
-  );
-
-  const chooseHorizon = useCallback(
-    async (networkHorizon: NetworkHorizon) => {
-      if (!jwt) return;
-      setIsSavingHorizon(true);
-      setHorizonError(null);
-      const previous =
-        data?.networkHorizon === 'network' ? 'network' : 'spaces';
-      await mutate(
-        (current) =>
-          current
-            ? {
-                ...current,
-                networkHorizon,
-                networkSignals:
-                  networkHorizon === 'spaces' ? [] : current.networkSignals,
-              }
-            : current,
-        { revalidate: false },
-      );
-      try {
-        const response = await fetch('/api/v1/people/me/horizon', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ networkHorizon }),
-        });
-        if (!response.ok) {
-          setHorizonError(t('horizonSaveError'));
-          await mutate(
-            (current) =>
-              current ? { ...current, networkHorizon: previous } : current,
-            { revalidate: false },
-          );
-          return;
-        }
-        await mutate();
-      } catch {
-        setHorizonError(t('horizonSaveError'));
-        await mutate(
-          (current) =>
-            current ? { ...current, networkHorizon: previous } : current,
-          { revalidate: false },
-        );
-      } finally {
-        setIsSavingHorizon(false);
-      }
-    },
-    [data?.networkHorizon, jwt, mutate, t],
   );
 
   const personRecord: MemberHomeRecord =
@@ -260,11 +205,6 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
         onChooseOrientation={(orientation) => {
           void chooseOrientation(orientation);
         }}
-        isSavingHorizon={isSavingHorizon}
-        horizonError={horizonError}
-        onChooseHorizon={(horizon) => {
-          void chooseHorizon(horizon);
-        }}
       />
     );
   }
@@ -277,11 +217,6 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       orientationError={orientationError}
       onChooseOrientation={(orientation) => {
         void chooseOrientation(orientation);
-      }}
-      isSavingHorizon={isSavingHorizon}
-      horizonError={horizonError}
-      onChooseHorizon={(horizon) => {
-        void chooseHorizon(horizon);
       }}
     />
   );
