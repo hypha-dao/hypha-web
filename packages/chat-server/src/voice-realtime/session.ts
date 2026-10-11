@@ -2,6 +2,9 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 
+import { formatMemberHomeFacts } from '../member-home-facts';
+import { loadMemberHomeFacts } from '../load-member-home-facts';
+import { buildSpaceContextSnapshot } from '../presence-brief';
 import {
   buildMemberHomeRealtimeInstructions,
   buildOnboardingRealtimeInstructions,
@@ -76,9 +79,30 @@ type OpenAiClientSecretResponse = {
   };
 };
 
+async function loadVoicePresence(
+  payload: RealtimeVoiceSessionRequest,
+  authToken: string | undefined,
+): Promise<string | null> {
+  const token = authToken?.trim();
+  if (!token) return null;
+  const context = payload.conversationContext;
+  try {
+    if (context.mode === 'space_advisor') {
+      return await buildSpaceContextSnapshot(context.spaceSlug, null, token);
+    }
+    if (context.mode === 'member_home') {
+      const record = await loadMemberHomeFacts(token);
+      return record ? formatMemberHomeFacts(record.home) : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export async function createRealtimeVoiceSession(
   payload: RealtimeVoiceSessionRequest,
-  options?: { safetyUserId?: string },
+  options?: { safetyUserId?: string; authToken?: string },
 ): Promise<RealtimeVoiceSessionResult> {
   assertVoiceDiscoverySessionContext(payload.conversationContext);
 
@@ -100,7 +124,7 @@ export async function createRealtimeVoiceSession(
     'en';
 
   const context = payload.conversationContext;
-  const instructions =
+  const voiceScript =
     context.mode === 'space_advisor'
       ? buildSpaceAdvisorRealtimeInstructions({
           spaceSlug: context.spaceSlug,
@@ -117,6 +141,8 @@ export async function createRealtimeVoiceSession(
           locale,
           recentTranscriptSummary: payload.recentTranscriptSummary,
         });
+  const presence = await loadVoicePresence(payload, options?.authToken);
+  const instructions = presence ? `${voiceScript}\n\n${presence}` : voiceScript;
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
