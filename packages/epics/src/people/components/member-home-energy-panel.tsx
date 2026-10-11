@@ -120,7 +120,7 @@ function EnergyCommunityCard({
     amount == null ? missing : t('euros', { amount });
 
   return (
-    <section className="border border-border bg-background p-5">
+    <section className="mb-4 border border-border bg-background p-5">
       <div className="flex items-baseline justify-between gap-4">
         <h2
           className="text-3"

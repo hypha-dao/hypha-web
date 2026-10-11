@@ -526,7 +526,7 @@ export function MemberHome({
         ) : null}
 
         <section
-          className="mt-10 border border-border bg-background p-5"
+          className="border border-border bg-background p-5"
           aria-busy={home == null || undefined}
         >
           <div className="flex items-baseline justify-between gap-4">
