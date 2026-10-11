@@ -37,3 +37,38 @@ export function saveSpaceDiscoveryMode(
     // ignore quota / private mode
   }
 }
+
+const VOICE_MIC_KEY_PREFIX = 'hypha:ai-panel-voice-mic:v1:';
+const VOICE_SOUND_KEY_PREFIX = 'hypha:ai-panel-voice-sound:v1:';
+
+/** Conversation starts on. A stored "off" is the only way it stays quiet. */
+export function readSpaceVoiceOn(
+  spaceSlug: string | undefined,
+  kind: 'mic' | 'sound',
+): boolean {
+  const slug = normalizeSpaceSlug(spaceSlug);
+  if (!slug || typeof window === 'undefined') return true;
+  try {
+    const prefix =
+      kind === 'mic' ? VOICE_MIC_KEY_PREFIX : VOICE_SOUND_KEY_PREFIX;
+    return window.localStorage.getItem(`${prefix}${slug}`) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+export function writeSpaceVoiceOn(
+  spaceSlug: string | undefined,
+  kind: 'mic' | 'sound',
+  on: boolean,
+): void {
+  const slug = normalizeSpaceSlug(spaceSlug);
+  if (!slug || typeof window === 'undefined') return;
+  try {
+    const prefix =
+      kind === 'mic' ? VOICE_MIC_KEY_PREFIX : VOICE_SOUND_KEY_PREFIX;
+    window.localStorage.setItem(`${prefix}${slug}`, on ? 'on' : 'off');
+  } catch {
+    // The choice still applies for this visit.
+  }
+}
