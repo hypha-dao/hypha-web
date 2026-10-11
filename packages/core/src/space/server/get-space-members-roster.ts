@@ -183,6 +183,12 @@ export async function computeSpaceMemberEntries(
       nickname: row.nickname ?? undefined,
       address: row.address ?? undefined,
       links: (row.links as string[]) ?? [],
+      primaryOrientation:
+        row.primaryOrientation === 'member' ||
+        row.primaryOrientation === 'builder' ||
+        row.primaryOrientation === 'investor'
+          ? row.primaryOrientation
+          : null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });

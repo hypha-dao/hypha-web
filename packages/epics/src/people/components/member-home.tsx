@@ -1,6 +1,13 @@
 'use client';
 
-import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -28,12 +35,17 @@ import {
 import type { SignupOrientation } from './signup-flow';
 import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import {
+  MAX_VISIBLE_RECENT_SPACES,
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+} from '../../common/recent-space-history';
 import { requestMemberHomeAsk } from './member-home-ask';
 import { MemberHomeChat } from './member-home-chat';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
+import { PersonRoleBadge } from './person-badges';
 import { MemberHomeQuickCreate } from './member-home-quick-create';
-import { MemberHomeHorizon } from './member-home-horizon';
 import { MemberHomeClosest } from './member-home-closest';
 import {
   MemberHomePeople,
@@ -90,9 +102,6 @@ export function MemberHome({
   isSavingOrientation,
   orientationError,
   onChooseOrientation,
-  isSavingHorizon,
-  horizonError,
-  onChooseHorizon,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
@@ -123,6 +132,21 @@ export function MemberHome({
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
+  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
+  );
+  useEffect(() => subscribeRecentSpaceSlugs(setRecentSpaceSlugs), []);
+  const recentSpaces = useMemo(() => {
+    const spaces = home?.spaces ?? [];
+    if (recentSpaceSlugs.length === 0) return spaces;
+    const bySlug = new Map(spaces.map((space) => [space.slug, space]));
+    const visited = recentSpaceSlugs.flatMap((slug) => {
+      const space = bySlug.get(slug);
+      return space ? [space] : [];
+    });
+    const visible = visited.slice(0, MAX_VISIBLE_RECENT_SPACES);
+    return visible.length > 0 ? visible : spaces;
+  }, [home?.spaces, recentSpaceSlugs]);
   const rawOrientation = home?.person.primaryOrientation;
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
@@ -202,11 +226,11 @@ export function MemberHome({
         <MemberHomeSpacesWidget lang={lang} busy={home == null}>
           {home == null ? (
             <CardSkeleton />
-          ) : home.spaces.length === 0 ? (
-            <p className="text-2 text-neutral-11">{t('noSpaces')}</p>
+          ) : recentSpaces.length === 0 ? (
+            <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
           ) : (
             <ul className="grid">
-              {home.spaces.map((space) => (
+              {recentSpaces.map((space) => (
                 <li key={space.id}>
                   <SpaceSwitcherOption
                     href={`/${lang}/dho/${space.slug}/overview`}
@@ -254,7 +278,7 @@ export function MemberHome({
               }
             />
             {home && home.notifications.length > 5 ? (
-              <TileLink href={`/${lang}/my-spaces/notification-centre`}>
+              <TileLink href={`/${lang}/home/notifications`}>
                 {t('seeMoreNotifications')}
               </TileLink>
             ) : null}
@@ -262,47 +286,38 @@ export function MemberHome({
         </div>
       </aside>
       <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
-        <div className="border-b border-border px-4 py-3 md:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <MemberHomeMark className="h-9 w-9" />
-              <div className="min-w-0">
-                <h1
-                  className="truncate text-4 leading-tight font-medium tracking-[-0.03em]"
-                  style={{ fontFamily: 'var(--font-family-heading)' }}
-                >
-                  {t(greetingKey(), { name: displayName })}
-                </h1>
-                {home == null ? (
-                  <Skeleton
-                    loading
-                    height="16px"
-                    width="14rem"
-                    className="mt-1"
+        <div className="px-4 pt-4 md:px-6">
+          <div className="flex min-w-0 items-start gap-3 pt-4">
+            <span
+              className="mt-px inline-flex shrink-0"
+              style={{ width: 24, height: 24 }}
+            >
+              <MemberHomeMark className="h-full w-full" />
+            </span>
+            <div className="min-w-0">
+              <h1
+                className="truncate text-3"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t(greetingKey(), { name: displayName })}
+              </h1>
+              {home == null ? (
+                <Skeleton
+                  loading
+                  height="16px"
+                  width="14rem"
+                  className="mt-1"
+                />
+              ) : (
+                <>
+                  <MemberHomeClosest
+                    lang={lang}
+                    people={home.connections}
+                    fallbackName={memberFallback}
+                    onOpenChat={openChat}
                   />
-                ) : (
-                  <>
-                    <MemberHomeClosest
-                      lang={lang}
-                      people={home.connections}
-                      fallbackName={memberFallback}
-                      onOpenChat={openChat}
-                    />
-                    {onChooseHorizon ? (
-                      <MemberHomeHorizon
-                        horizon={
-                          home.networkHorizon === 'network'
-                            ? 'network'
-                            : 'spaces'
-                        }
-                        isSaving={isSavingHorizon}
-                        error={horizonError}
-                        onChoose={onChooseHorizon}
-                      />
-                    ) : null}
-                  </>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -327,12 +342,12 @@ export function MemberHome({
         {home != null && orientation == null ? (
           <section className="mb-4 border border-border bg-background p-5">
             <h2
-              className="text-4"
+              className="text-3"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {t('chooseTitle')}
             </h2>
-            <p className="mt-2 max-w-[48ch] text-2 leading-relaxed text-neutral-11">
+            <p className="mt-2 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
               {t('chooseBody')}
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -350,7 +365,7 @@ export function MemberHome({
               ))}
             </div>
             {orientationError ? (
-              <p className="mt-3 text-2 text-error-11" role="alert">
+              <p className="mt-3 text-1 text-error-11" role="alert">
                 {orientationError}
               </p>
             ) : null}
@@ -366,7 +381,7 @@ export function MemberHome({
             }
           >
             {home == null || orientation ? (
-              <div className="flex items-center border-r border-border px-4 py-3">
+              <div className="flex items-start border-r border-border px-4 py-4">
                 {home == null || orientation == null ? (
                   <Skeleton loading height="22px" width="6.5rem" />
                 ) : (
@@ -414,7 +429,7 @@ export function MemberHome({
         >
           <div className="flex items-baseline justify-between gap-4">
             <h2
-              className="text-4"
+              className="text-3"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {home && !leadItem ? t('quietHeading') : t('useful')}
@@ -433,6 +448,7 @@ export function MemberHome({
             <div className="mt-4">
               <MemberHomeThreadCard
                 lang={lang}
+                compact
                 item={leadItem}
                 proposal={
                   leadItem.kind === 'proposal'
@@ -449,8 +465,8 @@ export function MemberHome({
             </div>
           ) : leadItem ? (
             <div className="mt-4">
-              <p className="text-3">{leadItem.title}</p>
-              <p className="mt-1 text-2 text-neutral-11">
+              <p className="text-1">{leadItem.title}</p>
+              <p className="mt-1 text-1 text-neutral-11">
                 {leadItem.spaceTitle}
               </p>
               {leadHref ? (
@@ -470,9 +486,7 @@ export function MemberHome({
                   href={`/${lang}/profile/${home.person.slug}/actions/activate-spaces`}
                   className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
                 >
-                  <span className="block text-2 font-medium">
-                    {t('quietActivate')}
-                  </span>
+                  <span className="block text-1">{t('quietActivate')}</span>
                   <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
                     {t('quietActivateBody')}
                   </span>
@@ -482,9 +496,7 @@ export function MemberHome({
                   href={getOnboardingPath(lang)}
                   className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
                 >
-                  <span className="block text-2 font-medium">
-                    {t('createSpace')}
-                  </span>
+                  <span className="block text-1">{t('createSpace')}</span>
                   <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
                     {t('quietCreateBody')}
                   </span>
@@ -649,8 +661,7 @@ function OrientationBadge({
             aria-label={t('changeOrientationLabel', { orientation: label })}
             className="inline-flex items-center gap-2 rounded-none text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
           >
-            <OrientationGlyph orientation={orientation} />
-            <span className="text-2 font-medium">{label}</span>
+            <PersonRoleBadge role={orientation} />
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -678,7 +689,7 @@ function OrientationBadge({
                       : 'border-transparent hover:border-border',
                   )}
                 >
-                  <span className="block text-2 font-medium text-foreground">
+                  <span className="block text-1 text-foreground">
                     {t(orientationLabelKey(option))}
                   </span>
                   <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
@@ -691,40 +702,11 @@ function OrientationBadge({
         </PopoverContent>
       </Popover>
       {error ? (
-        <p className="mt-3 text-2 text-error-11" role="alert">
+        <p className="mt-3 text-1 text-error-11" role="alert">
           {error}
         </p>
       ) : null}
     </div>
-  );
-}
-
-function OrientationGlyph({ orientation }: { orientation: SignupOrientation }) {
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      aria-hidden
-      className="block shrink-0 text-foreground"
-      style={{ width: 20, height: 20 }}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinejoin="miter"
-    >
-      {orientation === 'member' ? (
-        <>
-          <circle cx="16" cy="16" r="10" />
-          <circle cx="16" cy="16" r="3.75" />
-        </>
-      ) : null}
-      {orientation === 'builder' ? (
-        <>
-          <rect x="6" y="12" width="14" height="14" />
-          <path d="M12 12V6h14v14h-6" />
-        </>
-      ) : null}
-      {orientation === 'investor' ? <path d="M16 6 26 16 16 26 6 16Z" /> : null}
-    </svg>
   );
 }
 
@@ -765,7 +747,7 @@ function Stat({
   return (
     <div
       className={cn(
-        'min-w-0 overflow-hidden bg-background px-3 py-3',
+        'min-w-0 overflow-hidden bg-background px-3 py-4',
         edge && 'border-l border-border',
         rule && 'border-t border-border',
       )}
@@ -809,7 +791,7 @@ function Tile({
           {title}
         </h2>
         {count != null ? (
-          <p className="text-2 tabular-nums text-neutral-11">{count}</p>
+          <p className="text-1 tabular-nums text-neutral-11">{count}</p>
         ) : null}
       </div>
       <div className="mt-3 flex-1">{children}</div>
@@ -821,7 +803,7 @@ function TileLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="mt-4 inline-block text-2 text-accent-11 underline-offset-4 hover:underline"
+      className="mt-4 inline-block text-1 text-accent-11 underline-offset-4 hover:underline"
     >
       {children}
     </Link>
@@ -846,14 +828,14 @@ function ResourceList({
 }) {
   if (isLoading) return <CardSkeleton />;
   if (items.length === 0) {
-    return <p className="text-2 text-neutral-11">{empty}</p>;
+    return <p className="text-1 text-neutral-11">{empty}</p>;
   }
   return (
     <ul className="grid gap-3">
       {items.slice(0, maxItems).map((item) => (
         <li key={item.id}>
           <Link href={item.href} className="group block">
-            <span className="block text-2 group-hover:underline">
+            <span className="block text-1 group-hover:underline">
               {item.title}
             </span>
             {item.detail ? (
@@ -884,12 +866,12 @@ function PersonaCard({
   return (
     <section className="mt-4 border border-border bg-accent-2 p-5">
       <h2
-        className="text-4"
+        className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         {title}
       </h2>
-      <p className="mt-2 max-w-[52ch] text-2 leading-relaxed text-neutral-11">
+      <p className="mt-2 max-w-[52ch] text-1 leading-relaxed text-neutral-11">
         {body}
       </p>
       {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}

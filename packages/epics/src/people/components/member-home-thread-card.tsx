@@ -50,6 +50,8 @@ type MemberHomeThreadCardProps = {
   proposal: MemberIntelligence['proposals'][number] | null;
   onAsk: (text: string) => void;
   onReach: (person: ReachPerson, mode: 'call' | 'chat') => Promise<boolean>;
+  /** Side panel uses the spaces-tile scale. The conversation card stays larger. */
+  compact?: boolean;
 };
 
 function kindLabel(
@@ -88,6 +90,7 @@ export function MemberHomeThreadCard({
   proposal,
   onAsk,
   onReach,
+  compact = false,
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
@@ -225,7 +228,7 @@ export function MemberHomeThreadCard({
           </p>
         </div>
         <h2
-          className="mt-3 text-4"
+          className={compact ? 'mt-3 text-1' : 'mt-3 text-4'}
           style={{ fontFamily: 'var(--font-family-heading)' }}
         >
           {item.title}
@@ -238,7 +241,11 @@ export function MemberHomeThreadCard({
               size="sm"
               shape="circle"
             />
-            <p className="min-w-0 truncate text-2">
+            <p
+              className={
+                compact ? 'min-w-0 truncate text-1' : 'min-w-0 truncate text-2'
+              }
+            >
               {isProposal
                 ? t('proposedBy', { name: creator.name ?? '' })
                 : creator.name}
@@ -248,7 +255,13 @@ export function MemberHomeThreadCard({
           <p className="mt-3 text-1 text-neutral-11">{t('proposedByYou')}</p>
         ) : null}
         {summary ? (
-          <p className="mt-3 text-2 leading-relaxed text-neutral-12">
+          <p
+            className={
+              compact
+                ? 'mt-3 text-1 leading-relaxed text-neutral-12'
+                : 'mt-3 text-2 leading-relaxed text-neutral-12'
+            }
+          >
             {summary}
           </p>
         ) : null}
@@ -258,6 +271,7 @@ export function MemberHomeThreadCard({
             spaceId={proposal?.web3SpaceId ?? item.web3SpaceId ?? null}
             documentId={proposal?.id ?? item.documentId ?? null}
             documentSlug={proposal?.slug ?? item.slug}
+            compact={compact}
           />
         ) : null}
         <div

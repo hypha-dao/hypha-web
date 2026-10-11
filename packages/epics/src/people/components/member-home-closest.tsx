@@ -26,6 +26,7 @@ import {
 } from '@hypha-platform/core/client';
 
 import { PersonAvatar } from './person-avatar';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
 
 type ClosestPerson = MemberIntelligence['connections'][number];
 
@@ -227,9 +228,11 @@ export function MemberHomeClosest({
   const label = t('sensingAround');
   const rest = Math.max(0, onlinePeople.length - ranked.people.length);
 
+  if (onlineIds != null && ranked.people.length === 0) return null;
+
   return (
-    <nav aria-label={label} className="mt-3 min-w-0 max-w-full">
-      <p className="text-1 tracking-[0.18em] text-success-11 uppercase">
+    <nav aria-label={label} className="mt-1 min-w-0 max-w-full">
+      <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {label}
       </p>
       {onlineIds == null ? (
@@ -241,8 +244,6 @@ export function MemberHomeClosest({
             />
           ))}
         </div>
-      ) : ranked.people.length === 0 ? (
-        <p className="mt-2 text-1 text-neutral-11">{t('sensingAroundEmpty')}</p>
       ) : (
         <ul className="mt-3 flex max-w-full flex-wrap items-center gap-3">
           {ranked.people.map((person, index) => {
@@ -279,7 +280,10 @@ export function MemberHomeClosest({
             );
 
             return (
-              <li key={person.id} className="shrink-0">
+              <li
+                key={person.id}
+                className="flex shrink-0 flex-col items-center gap-1"
+              >
                 {href ? (
                   <Link
                     href={href}
@@ -321,6 +325,9 @@ export function MemberHomeClosest({
                     {portrait}
                   </span>
                 )}
+                {isPersonRole(person.primaryOrientation) ? (
+                  <PersonRoleBadge role={person.primaryOrientation} />
+                ) : null}
               </li>
             );
           })}

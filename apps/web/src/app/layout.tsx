@@ -104,7 +104,7 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
-  let navHomeLabel = 'Dashboard';
+  let navHomeLabel = 'Home';
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'Wallet';
   let navNetworkLabel = 'Network';
@@ -298,7 +298,7 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath={`/${locale}/my-dashboard`}
+                                  baseRedirectPath={`/${locale}/home`}
                                   navItems={[]}
                                   showNetworkFeedback
                                   trailingBeforeProfile={
@@ -317,11 +317,11 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath={`/${locale}/my-dashboard`}
+                                  baseRedirectPath={`/${locale}/home`}
                                   navItems={[
                                     {
                                       label: navHomeLabel,
-                                      href: `/${locale}/my-dashboard`,
+                                      href: `/${locale}/home`,
                                     },
                                     {
                                       label: navMySpacesLabel,

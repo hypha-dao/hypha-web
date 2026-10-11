@@ -54,6 +54,48 @@ function firstOrientation(result: unknown): string | null | undefined {
   return typeof value === 'string' || value === null ? value : undefined;
 }
 
+function rowsOf(result: unknown): unknown[] {
+  if (Array.isArray(result)) return result;
+  if (result && typeof result === 'object' && 'rows' in result) {
+    const rows = (result as { rows?: unknown }).rows;
+    return Array.isArray(rows) ? rows : [];
+  }
+  return [];
+}
+
+/** One query for a list of people. Missing column yields an empty map. */
+export async function readPrimaryOrientations(
+  db: DatabaseInstance,
+  personIds: number[],
+): Promise<Map<number, Orientation>> {
+  const ids = [...new Set(personIds.filter((id) => Number.isInteger(id)))];
+  const orientations = new Map<number, Orientation>();
+  if (ids.length === 0) return orientations;
+
+  try {
+    const result = await db.execute(
+      sql`select id, primary_orientation from people where id in (${sql.join(
+        ids.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    );
+    for (const row of rowsOf(result)) {
+      if (!row || typeof row !== 'object') continue;
+      const id = Number((row as { id?: unknown }).id);
+      const value = (row as { primary_orientation?: unknown })
+        .primary_orientation;
+      if (!Number.isInteger(id)) continue;
+      if (value === 'member' || value === 'builder' || value === 'investor') {
+        orientations.set(id, value);
+      }
+    }
+    return orientations;
+  } catch (error) {
+    if (isMissingPrimaryOrientationColumn(error)) return orientations;
+    throw error;
+  }
+}
+
 export async function readPrimaryOrientation(
   db: DatabaseInstance,
   personId: number,

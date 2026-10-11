@@ -14,6 +14,7 @@ export type RosterPerson = {
   nickname?: string;
   address?: string;
   links: string[];
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
   createdAt: Date;
   updatedAt: Date;
 };
