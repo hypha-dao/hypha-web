@@ -428,7 +428,6 @@
     "quickCreateBody": "Description",
     "quickCreateSubmitSignal": "Create signal",
     "quickCreateSubmitProposal": "Create proposal",
-    "quickCreateOpenSpace": "Open space",
     "quickCreateEmpty": "Join a space before you can create from here.",
     "quickCreateSuccessSignal": "The signal is in {space}.",
     "quickCreateSuccessProposal": "The proposal is in {space}.",

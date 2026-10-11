@@ -73,7 +73,6 @@ export function MemberHomeQuickCreate({
     () => spaces.find((item) => item.id === spaceId) ?? spaces[0] ?? null,
     [spaceId, spaces],
   );
-  const spaceHref = space ? `/${lang}/dho/${space.slug}/overview` : null;
   const createSpaceHref = getOnboardingPath(lang);
   const proposalNeedsChain =
     kind === 'proposal' && typeof space?.web3SpaceId !== 'number';
@@ -314,11 +313,6 @@ export function MemberHomeQuickCreate({
                 ? t('quickCreateSubmitSignal')
                 : t('quickCreateSubmitProposal')}
             </Button>
-            {spaceHref ? (
-              <Button asChild variant="outline" colorVariant="neutral">
-                <Link href={spaceHref}>{t('quickCreateOpenSpace')}</Link>
-              </Button>
-            ) : null}
           </div>
         </form>
       )}
