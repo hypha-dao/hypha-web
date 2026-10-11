@@ -38,7 +38,16 @@ function Widget({
         {title}
       </h2>
       <div className="mt-3">{children}</div>
-      {action}
+      {busy && action ? (
+        <Skeleton
+          loading
+          height="40px"
+          width="100%"
+          className="mt-4 rounded-none"
+        />
+      ) : (
+        action
+      )}
     </section>
   );
 }
