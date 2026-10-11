@@ -389,7 +389,10 @@ export function MemberHome({
                                   item.targetSlug,
                                 ),
                           ...(match
-                            ? { onSelect: () => setRecordItem(match) }
+                            ? {
+                                onSelect: () =>
+                                  setFocusKey(`${match.kind}:${match.slug}`),
+                              }
                             : {}),
                         },
                       ];
