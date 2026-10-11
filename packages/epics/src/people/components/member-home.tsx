@@ -598,7 +598,7 @@ export function MemberHome({
                 {leadItem.spaceTitle}
               </p>
               {leadHref ? (
-                <Button asChild className="mt-4">
+                <Button asChild className="mt-4 text-sm">
                   <Link href={leadHref}>
                     {leadItem.kind === 'proposal'
                       ? t('weighIn')
@@ -1203,7 +1203,7 @@ function PersonaCard({
         {body}
       </p>
       {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}
-      <Button asChild className="mt-4">
+      <Button asChild className="mt-4 text-sm">
         <Link href={href}>{action}</Link>
       </Button>
     </section>

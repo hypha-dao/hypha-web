@@ -60,7 +60,7 @@ function WidgetAction({
   children: ReactNode;
 }) {
   return (
-    <Button asChild className="mt-4 w-full">
+    <Button asChild className="mt-4 w-full text-sm">
       <Link href={href}>{children}</Link>
     </Button>
   );
