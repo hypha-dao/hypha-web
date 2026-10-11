@@ -3,6 +3,7 @@ import { Container } from '@hypha-platform/ui';
 import {
   getAllSpaces,
   getNetworkGrowth,
+  listNetworkSpaceRanks,
   resolveCreatorMapCoordinates,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
@@ -42,7 +43,7 @@ export default async function Index(props: PageProps) {
 
   let spaces: Space[] = [];
   let networkGrowth: NetworkGrowth | null = null;
-  const [spacesResult, growthResult] = await Promise.all([
+  const [spacesResult, growthResult, ranksResult] = await Promise.all([
     getAllSpaces({
       search: query?.trim() || undefined,
       parentOnly: false,
@@ -57,6 +58,10 @@ export default async function Index(props: PageProps) {
           return null;
         })
       : Promise.resolve(null),
+    listNetworkSpaceRanks({ db }).catch((error: unknown) => {
+      console.error('Failed to load network ranks:', error);
+      return [];
+    }),
   ]);
   spaces = spacesResult;
   networkGrowth = growthResult;
@@ -89,6 +94,7 @@ export default async function Index(props: PageProps) {
         enableNetworkMap={enableNetworkMap}
         networkGrowth={networkGrowth}
         creatorMapPins={creatorMapPins}
+        networkRanks={ranksResult}
       />
     </Container>
   );

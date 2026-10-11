@@ -64,6 +64,11 @@ const signupPersonWeb2Props = {
   primaryOrientation: z.enum(['member', 'builder', 'investor'], {
     message: 'Choose how you primarily show up',
   }),
+  networkOffer: z
+    .string()
+    .trim()
+    .max(500, { message: 'Keep it under 500 characters' })
+    .optional(),
 };
 
 const editPersonWeb2Props = {

@@ -5,6 +5,7 @@ export * from './apply-coherence-upvote';
 export * from './coherence-upvotes';
 export * from './mutations';
 export * from './queries';
+export * from './network-shared-signals';
 export * from './signal-orchestrator';
 export * from './signal-workflow';
 export * from './resolve-coherence-task-patch-context';

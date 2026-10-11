@@ -15,6 +15,11 @@ export interface Person {
   preferredCurrency?: string;
   /** How this person primarily shows up. Unset until they choose. */
   primaryOrientation?: 'member' | 'builder' | 'investor' | null;
+  /**
+   * The one line they wrote after choosing how they show up.
+   * Undefined when the column is not on this database yet.
+   */
+  networkOffer?: string | null;
   links?: string[];
   createdAt: Date;
   updatedAt: Date;
