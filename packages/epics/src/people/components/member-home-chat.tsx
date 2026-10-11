@@ -32,7 +32,6 @@ import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-d
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
-import { MemberHomeThreadCard } from './member-home-thread-card';
 import {
   MemberHomePeopleWidgetCard,
   MemberHomeSendTokensWidget,
@@ -160,6 +159,7 @@ function straightforwardHomeText(text: string) {
       sentence,
     );
   return text
+    .replace(/\*\*/g, '')
     .split(/\n+/)
     .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
     .map((sentence) => sentence.trim())
@@ -535,17 +535,12 @@ export function MemberHomeChat({
             if (message.metadata?.homeArrival && attached.length === 0) {
               return null;
             }
-            const rawText = messageText(message);
+            const rawText = messageText(message).replace(/\*\*/g, '');
             const text =
               message.role === 'assistant'
                 ? straightforwardHomeText(rawText)
                 : rawText;
-            const threadItem =
-              message.role === 'assistant'
-                ? memberHomeThreadItemForMessage(threadItems, message)
-                : null;
-            const showMessage =
-              !message.metadata?.homeArrival && Boolean(text || threadItem);
+            const showMessage = !message.metadata?.homeArrival && Boolean(text);
             if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
             const memberName =
@@ -555,12 +550,6 @@ export function MemberHomeChat({
                 .trim() ||
               intelligence.person.nickname ||
               t('fallbackMember');
-            const proposal =
-              threadItem?.kind === 'proposal'
-                ? intelligence.proposals.find(
-                    (item) => item.slug === threadItem.slug,
-                  ) ?? null
-                : null;
             return (
               <div key={message.id} className="grid gap-4">
                 {showMessage ? (
@@ -596,21 +585,6 @@ export function MemberHomeChat({
                         >
                           {text}
                         </p>
-                      ) : null}
-                      {threadItem ? (
-                        <MemberHomeThreadCard
-                          lang={lang}
-                          item={threadItem}
-                          proposal={proposal}
-                          onAsk={(ask) => {
-                            void send(ask);
-                          }}
-                          onReach={(person, mode) =>
-                            mode === 'call'
-                              ? onCallPerson(person)
-                              : onChatPerson(person)
-                          }
-                        />
                       ) : null}
                     </div>
                   </article>
