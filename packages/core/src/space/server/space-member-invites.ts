@@ -12,6 +12,8 @@ import { splitInvitesByMembership } from '../space-member-invite';
 export type SpaceMemberInviteLink = {
   id: number;
   token: string;
+  spaceId: number;
+  web3SpaceId: number | null;
   spaceSlug: string;
   spaceTitle: string;
 };
@@ -186,6 +188,8 @@ export async function createSpaceMemberInvite(
       invite: {
         id: created.id,
         token: created.token,
+        spaceId: space.id,
+        web3SpaceId: space.web3SpaceId ?? null,
         spaceSlug: space.slug,
         spaceTitle: space.title,
         inviteeSlug: invitee.slug ?? null,
@@ -204,6 +208,8 @@ export async function createSpaceMemberInvite(
       invite: {
         id: raced.id,
         token: raced.token,
+        spaceId: space.id,
+        web3SpaceId: space.web3SpaceId ?? null,
         spaceSlug: space.slug,
         spaceTitle: space.title,
         inviteeSlug: invitee.slug ?? null,
@@ -225,6 +231,7 @@ export async function listPendingSpaceMemberInvites(
       id: spaceMemberInvites.id,
       token: spaceMemberInvites.token,
       spaceId: spaces.id,
+      web3SpaceId: spaces.web3SpaceId,
       spaceSlug: spaces.slug,
       spaceTitle: spaces.title,
     })
@@ -254,6 +261,8 @@ export async function listPendingSpaceMemberInvites(
   return pending.map((row) => ({
     id: row.id,
     token: row.token,
+    spaceId: row.spaceId,
+    web3SpaceId: row.web3SpaceId ?? null,
     spaceSlug: row.spaceSlug,
     spaceTitle: row.spaceTitle,
   }));
