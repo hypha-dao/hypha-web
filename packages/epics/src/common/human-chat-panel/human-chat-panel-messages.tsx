@@ -134,6 +134,9 @@ type HumanChatPanelMessagesProps = {
   roomId?: string | null;
   currentUserId?: string | null;
   currentUserAvatarUrl?: string | null;
+  /** Replaces the default space welcome. Space chat leaves both unset. */
+  welcomeText?: string;
+  welcomeSenderName?: string;
   onReply?: (messageId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
@@ -175,6 +178,8 @@ export function HumanChatPanelMessages({
   roomId,
   currentUserId,
   currentUserAvatarUrl,
+  welcomeText,
+  welcomeSenderName,
   onReply,
   onEditMessage,
   onDeleteMessage,
@@ -203,8 +208,8 @@ export function HumanChatPanelMessages({
     id: 'welcome',
     role: 'member',
     isSynthetic: true,
-    parts: [{ type: 'text', text: t('welcome') }],
-    senderName: t('chatRoomTitle'),
+    parts: [{ type: 'text', text: welcomeText ?? t('welcome') }],
+    senderName: welcomeSenderName ?? t('chatRoomTitle'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(0);

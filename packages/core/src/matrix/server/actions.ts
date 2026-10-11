@@ -25,14 +25,19 @@ import {
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { Environment } from '../../coherence/types';
 import {
+  NETWORK_ROOM_ALIAS_LOCALPART,
   getMatrixAdditionalBotAsTokens,
   getMatrixBotAsToken,
+  getMatrixBotUserId,
   getMatrixHomeserverUrl,
   matrixApplyRoomPowerLevels,
+  matrixCreateAliasedRoom,
   matrixCreateRoom,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
+  matrixResolveRoomAlias,
+  matrixServerNameFromUserId,
   matrixWhoAmI,
 } from './matrix-http-client';
 
@@ -252,6 +257,111 @@ export async function createBotOwnedRoomAction({
  * this change) — on an open room the invite step harmlessly no-ops/fails and the puppet-join
  * succeeds anyway via public `join_rules`. Soft-fails: never throws.
  */
+/**
+ * Open the one network-wide room (`#hypha-network:server`). The alias is looked up first so every
+ * member lands in the same room. It is created only when the alias is missing. The caller is
+ * puppet-joined the same way as a space room. Soft-fails: returns null instead of throwing.
+ */
+export async function ensureNetworkChatRoomAction({
+  matrixUserId,
+}: {
+  matrixUserId: string;
+}): Promise<{ roomId: string } | null> {
+  const homeserver = getMatrixHomeserverUrl();
+  const botToken = getMatrixBotAsToken();
+  const trimmedUserId = matrixUserId?.trim();
+  if (!homeserver || !botToken || !trimmedUserId) return null;
+
+  let serverName = matrixServerNameFromUserId(getMatrixBotUserId() ?? '');
+  if (!serverName) {
+    try {
+      serverName = matrixServerNameFromUserId(
+        await matrixWhoAmI(botToken, homeserver),
+      );
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Failed to resolve homeserver name for the network room:',
+        error instanceof Error ? error.message : error,
+      );
+      return null;
+    }
+  }
+  if (!serverName) return null;
+
+  const alias = `#${NETWORK_ROOM_ALIAS_LOCALPART}:${serverName}`;
+  let roomId: string | null = null;
+  try {
+    roomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to look up the network room:',
+      alias,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+
+  if (!roomId) {
+    try {
+      roomId = await matrixCreateAliasedRoom(
+        'Network',
+        NETWORK_ROOM_ALIAS_LOCALPART,
+        botToken,
+        homeserver,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const aliasTaken =
+        message.includes('M_ROOM_IN_USE') ||
+        message.toLowerCase().includes('already in use');
+      if (!aliasTaken) {
+        console.warn(
+          '[MatrixBot] Failed to create the network room:',
+          alias,
+          message,
+        );
+        return null;
+      }
+      try {
+        roomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
+      } catch (lookupError) {
+        console.warn(
+          '[MatrixBot] Network room alias is taken but could not be resolved:',
+          alias,
+          lookupError instanceof Error ? lookupError.message : lookupError,
+        );
+        return null;
+      }
+    }
+  }
+
+  if (!roomId) return null;
+
+  const additionalBotUserIds = await joinAdditionalBotsToRoom(
+    roomId,
+    botToken,
+    homeserver,
+  );
+  try {
+    await matrixApplyRoomPowerLevels(roomId, botToken, homeserver, {
+      additionalPl100UserIds: additionalBotUserIds,
+    });
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Network room is open but power-level setup failed:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
+
+  const { joined } = await ensureMemberJoinedRoomAction({
+    roomId,
+    matrixUserId: trimmedUserId,
+  });
+  if (!joined) return null;
+  return { roomId };
+}
+
 export async function ensureMemberJoinedRoomAction({
   roomId,
   matrixUserId,

@@ -3174,6 +3174,8 @@
     "activeCallElsewhere": "Actief gesprek in {title}",
     "activeCallsElsewhereCount": "{count} actieve gesprekken elders",
     "notInSpaceEmptyState": "Je bevindt je momenteel niet in een ruimte.",
+    "networkRoomTitle": "Netwerk",
+    "networkWelcome": "Zeg hallo. Deze kamer is voor het hele netwerk.",
     "welcome": "Begin een gesprek met andere leden van deze ruimte.",
     "placeholder": "Typ een bericht...",
     "placeholderChannel": "Bericht #{channel}",
