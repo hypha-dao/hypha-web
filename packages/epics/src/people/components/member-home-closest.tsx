@@ -31,6 +31,7 @@ import { isPersonRole, PersonRoleBadge } from './person-badges';
 type ClosestPerson = MemberIntelligence['connections'][number];
 
 const VISIBLE_PEOPLE = 5;
+const PORTRAIT_PX = 32;
 
 type MemberHomeClosestProps = {
   lang: Locale;
@@ -236,16 +237,17 @@ export function MemberHomeClosest({
         {label}
       </p>
       {onlineIds == null ? (
-        <div className="mt-3 flex gap-3" aria-hidden>
+        <div className="mt-2 flex gap-2" aria-hidden>
           {Array.from({ length: VISIBLE_PEOPLE }, (_, index) => (
             <span
               key={index}
-              className="h-16 w-16 animate-pulse rounded-full bg-neutral-3"
+              className="animate-pulse rounded-full bg-neutral-3"
+              style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
             />
           ))}
         </div>
       ) : (
-        <ul className="mt-3 flex max-w-full flex-wrap items-center gap-3">
+        <ul className="mt-2 flex max-w-full flex-wrap items-center gap-2">
           {ranked.people.map((person, index) => {
             const name = personLabel(person, fallbackName);
             const href = person.slug ? `/${lang}/profile/${person.slug}` : null;
@@ -267,14 +269,14 @@ export function MemberHomeClosest({
                   <PersonAvatar
                     avatarSrc={person.avatarUrl ?? undefined}
                     userName={name}
-                    size="lg"
+                    size="md"
                     shape="circle"
-                    className="!h-16 !w-16"
                   />
                 </span>
                 <span
                   aria-hidden
-                  className="absolute bottom-0 left-1/2 h-2.5 w-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-success-9 ring-2 ring-background"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full bg-success-9 ring-2 ring-background"
+                  style={{ width: 8, height: 8 }}
                 />
               </span>
             );
@@ -333,7 +335,10 @@ export function MemberHomeClosest({
           })}
           {rest > 0 ? (
             <li>
-              <span className="flex h-16 w-16 items-center justify-center rounded-full border border-neutral-7 text-2 text-neutral-12">
+              <span
+                className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+              >
                 {t('sensingMore', { count: rest })}
               </span>
             </li>
