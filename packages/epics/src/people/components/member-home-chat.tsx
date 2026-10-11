@@ -560,14 +560,9 @@ export function MemberHomeChat({
                       {text ? (
                         <p
                           className={cn(
-                            'bg-background text-2 leading-relaxed whitespace-pre-wrap text-foreground',
+                            'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
                             mine && 'text-right',
                           )}
-                          style={{
-                            boxDecorationBreak: 'clone',
-                            WebkitBoxDecorationBreak: 'clone',
-                            paddingInline: '0.2em',
-                          }}
                         >
                           {text}
                         </p>
