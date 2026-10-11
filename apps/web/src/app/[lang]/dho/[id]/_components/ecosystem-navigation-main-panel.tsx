@@ -152,6 +152,9 @@ function columnContentHeight(scrollParent: HTMLElement): number {
  * Stage box that makes the column exactly fill the scrollport once the
  * banner is collapsed. Independent of the stage's current height.
  */
+/** The cluster used to fill the leftover window. Keep it to a panel, not the screen. */
+const DIAGRAM_STAGE_MAX_PX = 512;
+
 function stageHeightForCollapsedColumn(
   stageHeight: number,
   contentHeight: number,
@@ -484,7 +487,8 @@ export function EcosystemNavigationMainPanel({
         if (stageWidth < 768 || depth >= 3) {
           room = Math.max(room, stageWidth);
         }
-        const next = room >= 64 ? Math.round(room) : stageWidth;
+        const fitted = room >= 64 ? Math.round(room) : stageWidth;
+        const next = Math.min(fitted, DIAGRAM_STAGE_MAX_PX);
         const heightMatches =
           Math.abs(next - current.offsetHeight) <= 2 &&
           current.style.aspectRatio === 'auto';
