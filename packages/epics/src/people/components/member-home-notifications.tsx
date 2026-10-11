@@ -7,7 +7,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Skeleton } from '@hypha-platform/ui';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
-import { getProposalPath } from '../../common/get-path-function';
+import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import './member-home-banner.css';
@@ -16,9 +16,7 @@ type NotificationItem = MemberIntelligence['notifications'][number];
 
 function notificationHref(lang: Locale, item: NotificationItem) {
   if (item.kind === 'signal') {
-    return `/${lang}/dho/${item.spaceSlug}?signal=${encodeURIComponent(
-      item.targetSlug,
-    )}`;
+    return getSignalPath(lang, item.spaceSlug, item.targetSlug);
   }
   return getProposalPath(lang, item.spaceSlug, item.targetSlug);
 }
