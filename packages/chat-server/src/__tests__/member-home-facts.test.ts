@@ -107,6 +107,8 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain("I've approved");
     expect(facts).toContain('You can now decide on the proposal card.');
+    expect(facts).toContain('speak to them by name');
+    expect(facts).toContain('Never say they are on their home');
     expect(facts).toContain(
       'A proposal they have already voted on is absent from the waiting list.',
     );
