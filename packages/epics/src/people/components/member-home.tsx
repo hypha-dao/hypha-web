@@ -26,6 +26,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import {
   listMemberHomeThreadItems,
+  useSpacesBySlugs,
   type MemberHomeThreadItem,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
@@ -171,17 +172,45 @@ export function MemberHome({
     return () => window.removeEventListener('storage', onStorage);
   }, []);
   const showAssistant = viewReady && homeView === 'ai';
+  const recentLookupSlugs = useMemo(
+    () => recentSpaceSlugs.slice(0, MAX_VISIBLE_RECENT_SPACES),
+    [recentSpaceSlugs],
+  );
+  const { spaces: visitedSpaceRecords } = useSpacesBySlugs(
+    recentLookupSlugs,
+    false,
+  );
   const recentSpaces = useMemo(() => {
-    const spaces = home?.spaces ?? [];
-    if (recentSpaceSlugs.length === 0) return spaces;
-    const bySlug = new Map(spaces.map((space) => [space.slug, space]));
+    const membership = home?.spaces ?? [];
+    const bySlug = new Map(membership.map((space) => [space.slug, space]));
+    for (const space of visitedSpaceRecords) {
+      if (bySlug.has(space.slug)) continue;
+      bySlug.set(space.slug, {
+        id: space.id,
+        slug: space.slug,
+        title: space.title,
+        description: space.description ?? '',
+        logoUrl: space.logoUrl ?? null,
+        ecosystemLogoUrlLight: space.ecosystemLogoUrlLight ?? null,
+        ecosystemLogoUrlDark: space.ecosystemLogoUrlDark ?? null,
+        address: space.address ?? null,
+        web3SpaceId: space.web3SpaceId ?? null,
+      });
+    }
     const visited = recentSpaceSlugs.flatMap((slug) => {
       const space = bySlug.get(slug);
       return space ? [space] : [];
     });
-    const visible = visited.slice(0, MAX_VISIBLE_RECENT_SPACES);
-    return visible.length > 0 ? visible : spaces;
-  }, [home?.spaces, recentSpaceSlugs]);
+    const seen = new Set(visited.map((space) => space.slug));
+    const filled = visited.slice(0, MAX_VISIBLE_RECENT_SPACES);
+    for (const space of membership) {
+      if (filled.length >= MAX_VISIBLE_RECENT_SPACES) break;
+      if (seen.has(space.slug)) continue;
+      filled.push(space);
+      seen.add(space.slug);
+    }
+    return filled;
+  }, [home?.spaces, recentSpaceSlugs, visitedSpaceRecords]);
   const rawOrientation = home?.person.primaryOrientation;
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
