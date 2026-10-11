@@ -6,12 +6,14 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
+  SpaceAttention,
   SpaceCalendar,
   SpaceEnergySection,
   SpacePendingRewardsSection,
   useSpaceDocumentsWithStatuses,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
+import type { Locale } from '@hypha-platform/i18n';
 import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { useMembers } from '@web/hooks/use-members';
 
@@ -139,6 +141,8 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           />
         </Panel>
       )}
+
+      <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <Panel
