@@ -16,6 +16,10 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
+import { Suspense } from 'react';
+
+import { NetworkIndexFallback } from './_components/network-index-fallback';
+import { NetworkPageTitle } from './_components/network-page-title';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -27,7 +31,20 @@ type PageProps = {
   }>;
 };
 
-export default async function Index(props: PageProps) {
+export default function Index(props: PageProps) {
+  return (
+    <Container className="flex flex-col gap-9 py-9">
+      <div className="flex min-w-0 flex-col gap-9">
+        <NetworkPageTitle />
+        <Suspense fallback={<NetworkIndexFallback />}>
+          <NetworkSpaces {...props} />
+        </Suspense>
+      </div>
+    </Container>
+  );
+}
+
+async function NetworkSpaces(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
@@ -83,19 +100,17 @@ export default async function Index(props: PageProps) {
   const sortedSpaces = sortSpacesByOrder(spaces, order);
 
   return (
-    <Container className="flex flex-col gap-9 py-9">
-      <ExploreSpaces
-        lang={lang}
-        query={query}
-        spaces={sortedSpaces}
-        categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
-        order={order}
-        uniqueCategoryGroups={uniqueCategoryGroups}
-        enableNetworkMap={enableNetworkMap}
-        networkGrowth={networkGrowth}
-        creatorMapPins={creatorMapPins}
-        networkRanks={ranksResult}
-      />
-    </Container>
+    <ExploreSpaces
+      lang={lang}
+      query={query}
+      spaces={sortedSpaces}
+      categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
+      order={order}
+      uniqueCategoryGroups={uniqueCategoryGroups}
+      enableNetworkMap={enableNetworkMap}
+      networkGrowth={networkGrowth}
+      creatorMapPins={creatorMapPins}
+      networkRanks={ranksResult}
+    />
   );
 }

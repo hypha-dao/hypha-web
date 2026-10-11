@@ -34,7 +34,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Heading, Skeleton } from '@hypha-platform/ui';
+import { Badge, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -484,17 +484,6 @@ export function ExploreSpaces({
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex flex-col overflow-visible py-1"
-        style={{ lineHeight: 1.15 }}
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
       <NetworkSectionNav lang={lang} />
 
       <div
