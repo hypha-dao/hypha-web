@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, PanelRightClose, Settings } from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +18,11 @@ type HumanChatPanelHeaderProps = {
    * Same target as the former settings control on the tab row.
    */
   notificationSettingsHref?: string | null;
+  /** Dashboard only: the one network room and the one ecosystem room. */
+  roomChoice?: {
+    value: 'network' | 'ecosystem';
+    onChange: (next: 'network' | 'ecosystem') => void;
+  };
 };
 
 export function HumanChatPanelHeader({
@@ -25,6 +31,7 @@ export function HumanChatPanelHeader({
   onBack,
   trailingStart,
   notificationSettingsHref,
+  roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
   const router = useRouter();
@@ -82,7 +89,35 @@ export function HumanChatPanelHeader({
         {displayDescription && (
           <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
-        {displayTitle ? (
+        {roomChoice ? (
+          <div
+            role="group"
+            aria-label={t('dashboardRoomsLabel')}
+            className="inline-flex shrink-0 border border-foreground"
+          >
+            {(['network', 'ecosystem'] as const).map((option) => {
+              const selected = roomChoice.value === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => roomChoice.onChange(option)}
+                  className={cn(
+                    'px-3 py-1 text-1',
+                    selected
+                      ? 'bg-foreground text-background'
+                      : 'bg-background text-foreground',
+                  )}
+                >
+                  {option === 'network'
+                    ? t('networkRoomTitle')
+                    : t('ecosystemRoomTitle')}
+                </button>
+              );
+            })}
+          </div>
+        ) : displayTitle ? (
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
             {displayTitle}
           </span>

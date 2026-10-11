@@ -25,6 +25,7 @@ import {
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { Environment } from '../../coherence/types';
 import {
+  ECOSYSTEM_ROOM_ALIAS_LOCALPART,
   NETWORK_ROOM_ALIAS_LOCALPART,
   getMatrixAdditionalBotAsTokens,
   getMatrixBotAsToken,
@@ -258,14 +259,18 @@ export async function createBotOwnedRoomAction({
  * succeeds anyway via public `join_rules`. Soft-fails: never throws.
  */
 /**
- * Open the one network-wide room (`#hypha-network:server`). The alias is looked up first so every
- * member lands in the same room. It is created only when the alias is missing. The caller is
- * puppet-joined the same way as a space room. Soft-fails: returns null instead of throwing.
+ * Open one shared room (`#alias:server`). The alias is looked up first so every member lands in
+ * the same room. It is created only when the alias is missing. The caller is puppet-joined.
+ * Soft-fails: returns null instead of throwing.
  */
-export async function ensureNetworkChatRoomAction({
+async function ensureAliasedChatRoomAction({
   matrixUserId,
+  aliasLocalpart,
+  roomName,
 }: {
   matrixUserId: string;
+  aliasLocalpart: string;
+  roomName: string;
 }): Promise<{ roomId: string } | null> {
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
@@ -280,7 +285,8 @@ export async function ensureNetworkChatRoomAction({
       );
     } catch (error) {
       console.warn(
-        '[MatrixBot] Failed to resolve homeserver name for the network room:',
+        '[MatrixBot] Failed to resolve homeserver name for the shared room:',
+        roomName,
         error instanceof Error ? error.message : error,
       );
       return null;
@@ -288,13 +294,13 @@ export async function ensureNetworkChatRoomAction({
   }
   if (!serverName) return null;
 
-  const alias = `#${NETWORK_ROOM_ALIAS_LOCALPART}:${serverName}`;
+  const alias = `#${aliasLocalpart}:${serverName}`;
   let roomId: string | null = null;
   try {
     roomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
   } catch (error) {
     console.warn(
-      '[MatrixBot] Failed to look up the network room:',
+      '[MatrixBot] Failed to look up the shared room:',
       alias,
       error instanceof Error ? error.message : error,
     );
@@ -304,8 +310,8 @@ export async function ensureNetworkChatRoomAction({
   if (!roomId) {
     try {
       roomId = await matrixCreateAliasedRoom(
-        'Network',
-        NETWORK_ROOM_ALIAS_LOCALPART,
+        roomName,
+        aliasLocalpart,
         botToken,
         homeserver,
       );
@@ -316,7 +322,7 @@ export async function ensureNetworkChatRoomAction({
         message.toLowerCase().includes('already in use');
       if (!aliasTaken) {
         console.warn(
-          '[MatrixBot] Failed to create the network room:',
+          '[MatrixBot] Failed to create the shared room:',
           alias,
           message,
         );
@@ -326,7 +332,7 @@ export async function ensureNetworkChatRoomAction({
         roomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
       } catch (lookupError) {
         console.warn(
-          '[MatrixBot] Network room alias is taken but could not be resolved:',
+          '[MatrixBot] Shared room alias is taken but could not be resolved:',
           alias,
           lookupError instanceof Error ? lookupError.message : lookupError,
         );
@@ -348,7 +354,7 @@ export async function ensureNetworkChatRoomAction({
     });
   } catch (error) {
     console.warn(
-      '[MatrixBot] Network room is open but power-level setup failed:',
+      '[MatrixBot] Shared room is open but power-level setup failed:',
       roomId,
       error instanceof Error ? error.message : error,
     );
@@ -360,6 +366,32 @@ export async function ensureNetworkChatRoomAction({
   });
   if (!joined) return null;
   return { roomId };
+}
+
+/** The one network-wide room (`#hypha-network:server`). */
+export async function ensureNetworkChatRoomAction({
+  matrixUserId,
+}: {
+  matrixUserId: string;
+}): Promise<{ roomId: string } | null> {
+  return ensureAliasedChatRoomAction({
+    matrixUserId,
+    aliasLocalpart: NETWORK_ROOM_ALIAS_LOCALPART,
+    roomName: 'Network',
+  });
+}
+
+/** The one ecosystem-wide room (`#hypha-ecosystem:server`). */
+export async function ensureEcosystemChatRoomAction({
+  matrixUserId,
+}: {
+  matrixUserId: string;
+}): Promise<{ roomId: string } | null> {
+  return ensureAliasedChatRoomAction({
+    matrixUserId,
+    aliasLocalpart: ECOSYSTEM_ROOM_ALIAS_LOCALPART,
+    roomName: 'Ecosystem',
+  });
 }
 
 export async function ensureMemberJoinedRoomAction({
