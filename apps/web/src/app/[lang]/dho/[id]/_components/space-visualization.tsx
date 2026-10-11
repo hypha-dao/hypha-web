@@ -1259,7 +1259,7 @@ export function SpaceVisualization({
       className={cn(
         layout === 'fill'
           ? 'absolute inset-0 h-full w-full overflow-hidden'
-          : 'relative aspect-square w-full overflow-hidden',
+          : 'relative mx-auto aspect-square w-full max-w-[32rem] overflow-hidden',
         className,
       )}
     >
