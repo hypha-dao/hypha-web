@@ -24,10 +24,7 @@ import {
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
-import {
-  buildMemberHomeVoiceSessionContext,
-  buildSpaceAdvisorVoiceSessionContext,
-} from '../../common/space-voice-session-context';
+import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
@@ -342,17 +339,13 @@ export function MemberHomeChat({
 
   const dialogue = micOn || soundOn;
 
-  const voiceSessionContext = useMemo(() => {
-    if (!dialogue) return undefined;
-    const spaceSlug = intelligence.chatSpaceSlug?.trim();
-    if (spaceSlug) {
-      return buildSpaceAdvisorVoiceSessionContext({
-        spaceSlug,
-        locale: lang,
-      });
-    }
-    return buildMemberHomeVoiceSessionContext({ locale: lang });
-  }, [dialogue, intelligence.chatSpaceSlug, lang]);
+  const voiceSessionContext = useMemo(
+    () =>
+      dialogue
+        ? buildMemberHomeVoiceSessionContext({ locale: lang })
+        : undefined,
+    [dialogue, lang],
+  );
 
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
@@ -361,8 +354,7 @@ export function MemberHomeChat({
     isStreaming,
     lastAssistantText,
     locale: lang,
-    activeSpaceSlug:
-      intelligence.chatSpaceSlug?.trim() || HOME_VOICE_PREFERENCE_KEY,
+    activeSpaceSlug: HOME_VOICE_PREFERENCE_KEY,
     conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
@@ -385,7 +377,7 @@ export function MemberHomeChat({
     voiceInterview.voiceError === 'audio-capture';
 
   const toggleMic = useCallback(() => {
-    if (micOn && micNeedsGrant) {
+    if (micOn && (micNeedsGrant || Boolean(voiceInterview.voiceError))) {
       void voiceInterview.startListening();
       return;
     }
@@ -395,7 +387,12 @@ export function MemberHomeChat({
       writeHomeMicOn(next);
       return next;
     });
-  }, [micNeedsGrant, micOn, voiceInterview.startListening]);
+  }, [
+    micNeedsGrant,
+    micOn,
+    voiceInterview.startListening,
+    voiceInterview.voiceError,
+  ]);
 
   useEffect(() => {
     if (!soundReady || opened.current || isAuthLoading || !isAuthenticated) {
