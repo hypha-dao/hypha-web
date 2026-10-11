@@ -264,10 +264,7 @@ export function speakAssistantTextViaRealtime(
     },
   });
 
-  setRealtimeRemoteAudioMuted(connection, false);
-  void connection.remoteAudio.play().catch(() => {
-    // Autoplay may be blocked until user gesture; WebRTC track usually still plays.
-  });
+  playRemoteAudio(connection.remoteAudio);
 
   return true;
 }
@@ -325,9 +322,19 @@ export async function fetchRealtimeVoiceSession(params: {
   };
 }
 
+function playRemoteAudio(audio: HTMLAudioElement): void {
+  audio.muted = false;
+  audio.volume = 1;
+  void audio.play().catch(() => {
+    // Autoplay can wait for a click. The next pointerdown asks again.
+  });
+}
+
 export async function connectOpenAiRealtimeCall(params: {
   clientSecret: string;
   audioInput?: RealtimeAudioInputConfig;
+  /** Keep the speaker configured. A later update that only sets the mic drops it. */
+  voice?: string;
   onEvent: (event: RealtimeServerEvent) => void;
   onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
   /** Suppress Realtime model audio when assistant replies come from /api/chat. */
@@ -355,7 +362,10 @@ export async function connectOpenAiRealtimeCall(params: {
     const [stream] = event.streams;
     if (stream) {
       remoteAudio.srcObject = stream;
+    } else if (event.track) {
+      remoteAudio.srcObject = new MediaStream([event.track]);
     }
+    playRemoteAudio(remoteAudio);
   };
 
   if (params.onConnectionStateChange) {
@@ -422,12 +432,14 @@ export async function connectOpenAiRealtimeCall(params: {
     };
 
     const audioInput = params.audioInput ?? DEFAULT_REALTIME_AUDIO_INPUT;
+    const voice = params.voice?.trim();
 
     dataChannel.addEventListener('open', () => {
       sendEvent({
         type: 'session.update',
         session: {
           type: 'realtime',
+          output_modalities: ['audio'],
           audio: {
             input: {
               transcription: audioInput.transcription,
@@ -436,6 +448,7 @@ export async function connectOpenAiRealtimeCall(params: {
                 ? { noise_reduction: audioInput.noiseReduction }
                 : {}),
             },
+            ...(voice ? { output: { voice } } : {}),
           },
         },
       });
