@@ -109,7 +109,6 @@
     "quickCreateBody": "Beskrivelse",
     "quickCreateSubmitSignal": "Opprett signal",
     "quickCreateSubmitProposal": "Opprett forslag",
-    "quickCreateOpenSpace": "Åpne space",
     "quickCreateEmpty": "Bli med i et space før du oppretter herfra.",
     "quickCreateSuccessSignal": "Signalet ligger i {space}.",
     "quickCreateSuccessProposal": "Forslaget ligger i {space}.",

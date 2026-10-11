@@ -109,7 +109,6 @@
     "quickCreateBody": "Beschrijving",
     "quickCreateSubmitSignal": "Signaal maken",
     "quickCreateSubmitProposal": "Voorstel maken",
-    "quickCreateOpenSpace": "Space openen",
     "quickCreateEmpty": "Word eerst lid van een space voordat je vanaf hier iets maakt.",
     "quickCreateSuccessSignal": "Het signaal staat in {space}.",
     "quickCreateSuccessProposal": "Het voorstel staat in {space}.",

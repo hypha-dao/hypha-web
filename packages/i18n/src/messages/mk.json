@@ -109,7 +109,6 @@
     "quickCreateBody": "Опис",
     "quickCreateSubmitSignal": "Создај сигнал",
     "quickCreateSubmitProposal": "Создај предлог",
-    "quickCreateOpenSpace": "Отвори простор",
     "quickCreateEmpty": "Приклучи се во простор пред да создаваш од тука.",
     "quickCreateSuccessSignal": "Сигналот е во {space}.",
     "quickCreateSuccessProposal": "Предлогот е во {space}.",

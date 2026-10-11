@@ -109,7 +109,6 @@
     "quickCreateBody": "Descrição",
     "quickCreateSubmitSignal": "Criar sinal",
     "quickCreateSubmitProposal": "Criar proposta",
-    "quickCreateOpenSpace": "Abrir espaço",
     "quickCreateEmpty": "Entra num espaço antes de criares a partir daqui.",
     "quickCreateSuccessSignal": "O sinal está em {space}.",
     "quickCreateSuccessProposal": "A proposta está em {space}.",
