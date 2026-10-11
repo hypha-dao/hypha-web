@@ -138,6 +138,8 @@ export type MemberIntelligence = {
 export type MemberSpaceInvite = {
   id: number;
   token: string;
+  spaceId: number;
+  web3SpaceId: number | null;
   spaceSlug: string;
   spaceTitle: string;
 };

@@ -45,6 +45,7 @@ import { MemberHomeChat } from './member-home-chat';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonRoleBadge } from './person-badges';
+import { MemberHomeInviteBanners } from './member-home-invite-banner';
 import { MemberHomeQuickCreate } from './member-home-quick-create';
 import { MemberHomeClosest } from './member-home-closest';
 import {
@@ -239,23 +240,6 @@ export function MemberHome({
         aria-label={t('panelSpaces')}
         className="member-home-pane order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
       >
-        {home && home.invites.length > 0 ? (
-          <div className="mb-4">
-            <Tile title={t('invites')}>
-              <ResourceList
-                empty=""
-                items={home.invites.map((invite) => ({
-                  id: invite.id,
-                  title: invite.spaceTitle,
-                  detail: t('inviteDetail'),
-                  href: `/${lang}/dho/${
-                    invite.spaceSlug
-                  }/overview?invite=${encodeURIComponent(invite.token)}`,
-                }))}
-              />
-            </Tile>
-          </div>
-        ) : null}
         <MemberHomeSpacesWidget lang={lang} busy={home == null}>
           {home == null ? (
             <CardSkeleton />
@@ -388,6 +372,9 @@ export function MemberHome({
         aria-label={t('panelInsights')}
         className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0"
       >
+        {home && home.invites.length > 0 ? (
+          <MemberHomeInviteBanners lang={lang} invites={home.invites} />
+        ) : null}
         <section className="border border-border bg-background">
           <div
             className={
