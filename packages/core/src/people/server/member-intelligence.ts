@@ -37,7 +37,11 @@ import {
   buildMemberGuidance,
   parseMemberOrientation,
 } from '../member-intelligence-guidance';
-import { type Hex } from 'viem';
+import { isAddress, type Hex } from 'viem';
+import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
+
+import { createGovernancePublicClient } from '../../common/web3/governance-public-client';
+import { getGovernanceChainId } from '../../governance/client/governance-chain-id';
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
@@ -368,6 +372,55 @@ async function loadChainMemberSpaces(
         (chainOrder.get(left.web3SpaceId ?? 0) ?? web3SpaceIds.length) -
         (chainOrder.get(right.web3SpaceId ?? 0) ?? web3SpaceIds.length),
     );
+}
+
+const HAS_VOTED_ABI = [
+  {
+    type: 'function',
+    name: 'hasVoted',
+    stateMutability: 'view',
+    inputs: [
+      { name: '_proposalId', internalType: 'uint256', type: 'uint256' },
+      { name: '_voter', internalType: 'address', type: 'address' },
+    ],
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+  },
+] as const;
+
+/**
+ * On-chain votes this wallet has already cast. A failed read returns an empty
+ * set so a proposal stays visible. Absence is not a recorded vote.
+ */
+async function proposalIdsAlreadyVoted(
+  address: string | null | undefined,
+  proposalIds: number[],
+): Promise<Set<number>> {
+  const voter = address?.trim();
+  const ids = [...new Set(proposalIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  );
+  if (!voter || !isAddress(voter) || ids.length === 0) return new Set();
+  const chainId = getGovernanceChainId();
+  const contract = daoProposalsImplementationConfig.address[chainId];
+  if (!contract) return new Set();
+  const client = createGovernancePublicClient();
+  const results = await client.multicall({
+    allowFailure: true,
+    contracts: ids.map((id) => ({
+      address: contract,
+      abi: HAS_VOTED_ABI,
+      functionName: 'hasVoted',
+      args: [BigInt(id), voter],
+    })),
+  });
+  const voted = new Set<number>();
+  results.forEach((result, index) => {
+    if (result.status === 'success' && result.result === true) {
+      const id = ids[index];
+      if (id != null) voted.add(id);
+    }
+  });
+  return voted;
 }
 
 /** One failed query returns its fallback. The other slices still load. */
@@ -1264,6 +1317,39 @@ export async function getMemberIntelligence(
       creatorAbout: optionalExcerpt(row.creatorDescription),
     })),
   ];
+  const votedProposalIds = await readSlice(
+    'memberVotes',
+    () =>
+      proposalIdsAlreadyVoted(
+        person.address,
+        proposals.flatMap((proposal) =>
+          proposal.state?.trim().toLowerCase() === 'proposal' &&
+          proposal.web3ProposalId != null
+            ? [proposal.web3ProposalId]
+            : [],
+        ),
+      ),
+    new Set<number>(),
+  );
+  const proposalsWithVotes = proposals.map((proposal) => ({
+    ...proposal,
+    memberHasVoted:
+      proposal.web3ProposalId != null &&
+      votedProposalIds.has(proposal.web3ProposalId),
+  }));
+  const votedSlugs = new Set(
+    proposalsWithVotes.flatMap((proposal) =>
+      proposal.memberHasVoted && proposal.slug ? [proposal.slug] : [],
+    ),
+  );
+  const attention = notificationSlice.items.filter(
+    (item) =>
+      !(
+        item.kind === 'proposal' &&
+        Boolean(item.targetSlug) &&
+        votedSlugs.has(item.targetSlug)
+      ),
+  );
   const creatorWallets = [
     ...proposalSlice.creators,
     ...signalSlice.creators,
@@ -1313,28 +1399,28 @@ export async function getMemberIntelligence(
       openProposals: proposalSlice.openProposals,
       signals: signalSlice.count,
       connections: sharedPeople.count,
-      notifications: notificationSlice.items.length,
+      notifications: attention.length,
       capitalAsks: Number(capitalAskCount) || 0,
     },
     guidance: {
       narrative: buildMemberGuidance({
         firstName,
         orientation,
-        attention: guidanceAttention(notificationSlice.items[0], {
+        attention: guidanceAttention(attention[0], {
           signals: signalSlice.signals,
-          proposals,
+          proposals: proposalsWithVotes,
         }),
         spaceCount: spaceRows.length,
       }),
     },
-    attention: notificationSlice.items,
+    attention,
     spaces: spaceRows.slice(0, listLimit).map((space) => ({
       ...space,
       description: excerpt(space.description, 120),
     })),
-    proposals: proposals.map(withPeers),
+    proposals: proposalsWithVotes.map(withPeers),
     signals: signalSlice.signals.map(withPeers),
-    notifications: notificationSlice.items,
+    notifications: attention,
     connections: sharedPeople.connections,
     wallet: {
       address: person.address,

@@ -100,6 +100,11 @@ export type MemberIntelligence = {
     creatorAbout?: string | null;
     /** People they share a space with. Absent when the record has none. */
     creatorWith?: string[];
+    /**
+     * True when this member's wallet is already in the on-chain vote.
+     * Absent when the vote could not be read. Do not treat absence as a vote.
+     */
+    memberHasVoted?: boolean;
   }>;
   signals: Array<{
     id: number;

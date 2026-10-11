@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useVote } from '@hypha-platform/core/client';
+import { useMyVote, useVote } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
 import { celebrate } from './member-home-celebrate';
@@ -10,19 +10,34 @@ import { celebrate } from './member-home-celebrate';
 type MemberHomeVoteProps = {
   proposalId: number;
   documentId: number;
+  documentSlug: string;
 };
 
 export function MemberHomeVote({
   proposalId,
   documentId,
+  documentSlug,
 }: MemberHomeVoteProps) {
   const t = useTranslations('MemberHome');
   const { handleAccept, handleReject, isVoting } = useVote({
     proposalId,
     documentId,
   });
+  const { myVote, isLoading: voteRecordLoading } = useMyVote(documentSlug);
   const [choice, setChoice] = useState<'yes' | 'no' | null>(null);
   const [failed, setFailed] = useState(false);
+  const recorded =
+    choice ?? (myVote === 'yes' || myVote === 'no' ? myVote : null);
+
+  if (!choice && voteRecordLoading) return null;
+
+  if (recorded && !choice) {
+    return (
+      <p className="text-1 text-neutral-11">
+        {recorded === 'yes' ? t('votedYes') : t('votedNo')}
+      </p>
+    );
+  }
 
   async function cast(next: 'yes' | 'no') {
     setFailed(false);

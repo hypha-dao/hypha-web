@@ -176,7 +176,7 @@ export function listMemberHomeThreadItems(
   };
 
   const pushProposal = (proposal: MemberIntelligence['proposals'][number]) => {
-    if (!proposal.slug) return;
+    if (!proposal.slug || proposal.memberHasVoted) return;
     push({
       kind: 'proposal',
       slug: proposal.slug,
@@ -210,6 +210,7 @@ export function listMemberHomeThreadItems(
   for (const note of notes) {
     if (note.kind === 'proposal') {
       const proposal = proposalsBySlug.get(note.targetSlug);
+      if (proposal?.memberHasVoted) continue;
       push({
         kind: 'proposal',
         slug: note.targetSlug,

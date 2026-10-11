@@ -105,6 +105,9 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain("I've approved");
     expect(facts).toContain('You can now decide on the proposal card.');
+    expect(facts).toContain(
+      'A proposal they have already voted on is absent from the waiting list.',
+    );
     expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
     expect(facts).toContain('action=decision');
