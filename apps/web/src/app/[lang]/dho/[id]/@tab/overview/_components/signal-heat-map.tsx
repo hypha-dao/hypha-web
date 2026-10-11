@@ -67,7 +67,9 @@ function buildField(signals: HeatSignal[]) {
   if (heats.length === 0) return field;
   if (heats.length <= CELLS) {
     heats.forEach((heat, order) => {
-      field[CENTER_ORDER[order].index] = heat;
+      const cell = CENTER_ORDER[order];
+      if (!cell) return;
+      field[cell.index] = heat;
     });
     return field;
   }
@@ -80,7 +82,9 @@ function buildField(signals: HeatSignal[]) {
     const slice = heats.slice(start, end);
     const mean =
       slice.reduce((sum, value) => sum + value, 0) / Math.max(slice.length, 1);
-    field[CENTER_ORDER[order].index] = mean;
+    const cell = CENTER_ORDER[order];
+    if (!cell) continue;
+    field[cell.index] = mean;
   }
   return field;
 }
