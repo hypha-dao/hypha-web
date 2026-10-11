@@ -301,6 +301,9 @@ export async function matrixCreateRoom(
 /** Stable alias localpart for the single network-wide room. */
 export const NETWORK_ROOM_ALIAS_LOCALPART = 'hypha-network';
 
+/** Stable alias localpart for the single ecosystem-wide room. */
+export const ECOSYSTEM_ROOM_ALIAS_LOCALPART = 'hypha-ecosystem';
+
 /** Server name from a Matrix user id (`@user:server` → `server`). */
 export function matrixServerNameFromUserId(userId: string): string | null {
   const trimmed = userId.trim();

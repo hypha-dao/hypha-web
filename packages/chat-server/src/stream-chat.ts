@@ -302,6 +302,11 @@ function resolveOpenRouterChatModelId(): string {
   return fromEnv;
 }
 
+/** The chat model used by the member home and by a mentioned agent in Matrix. */
+export function getHyphaChatModel() {
+  return openrouterWithHyphaHeaders(resolveOpenRouterChatModelId());
+}
+
 function messageFromUnknownError(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;

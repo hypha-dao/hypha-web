@@ -145,6 +145,10 @@ import { readLiveSignalSlugFromUrl } from '../coherence/lib/signal-deep-link-dom
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
+  requestMatrixAgentReply,
+  withMatrixAgentMention,
+} from './human-chat-panel/matrix-agent-mention';
+import {
   buildSpaceRosterMentionCandidates,
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
@@ -339,6 +343,7 @@ type EditDraft = {
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 /** Marks the dashboard network room in `joinedRef` without matching any space slug. */
 const NETWORK_JOINED_SENTINEL = '__hypha_network__';
+const ECOSYSTEM_JOINED_SENTINEL = '__hypha_ecosystem__';
 
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
@@ -1016,6 +1021,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     openHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  const [dashboardRoom, setDashboardRoom] = useState<'network' | 'ecosystem'>(
+    'network',
+  );
   const callSpaceSlug =
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
     coherenceSpaceSlug?.trim() ||
@@ -2156,11 +2164,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [spaceCallState]);
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    if (!isSignalThread) return rawMentionCandidates;
-    return rawMentionCandidates.filter((candidate) =>
-      signalTeamMemberIdSet.has(candidate.userId),
-    );
-  }, [isSignalThread, rawMentionCandidates, signalTeamMemberIdSet]);
+    const roster = isSignalThread
+      ? rawMentionCandidates.filter((candidate) =>
+          signalTeamMemberIdSet.has(candidate.userId),
+        )
+      : rawMentionCandidates;
+    return withMatrixAgentMention(roster, t('agentMentionLabel'));
+  }, [isSignalThread, rawMentionCandidates, signalTeamMemberIdSet, t]);
 
   const mentionLabelByUserId = useMemo(
     () =>
@@ -2913,23 +2923,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     syncRoomMessages,
   ]);
 
-  // Dashboard has no space room. Back from a person chat lands in the one network room.
+  // Dashboard has no space room. Back from a person chat lands in the network
+  // or ecosystem room the member last had open.
   useEffect(() => {
     if (mode !== 'space') return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
-    if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
+    const sentinel =
+      dashboardRoom === 'ecosystem'
+        ? ECOSYSTEM_JOINED_SENTINEL
+        : NETWORK_JOINED_SENTINEL;
+    if (joinedRef.current === sentinel) return;
 
     let cancelled = false;
-    const { ensureNetworkRoom, loadRoomHistory } = matrixRef.current;
+    const { ensureNetworkRoom, ensureEcosystemRoom, loadRoomHistory } =
+      matrixRef.current;
 
-    const initNetworkRoom = async () => {
+    const initSharedRoom = async () => {
       setIsJoining(true);
       setError(null);
       try {
-        const { roomId: targetRoomId } = await ensureNetworkRoom();
+        const { roomId: targetRoomId } =
+          dashboardRoom === 'ecosystem'
+            ? await ensureEcosystemRoom()
+            : await ensureNetworkRoom();
         if (cancelled) return;
-        joinedRef.current = NETWORK_JOINED_SENTINEL;
+        joinedRef.current = sentinel;
         setRoomId(targetRoomId);
         syncRoomMessages(targetRoomId);
         setHasMoreOlderMessages(true);
@@ -2955,14 +2974,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         })();
       } catch (err) {
         if (!cancelled) {
-          console.error('[HumanRightPanel] Failed to join network room:', err);
+          console.error('[HumanRightPanel] Failed to join shared room:', err);
           setError('Failed to join chat room');
           setIsJoining(false);
         }
       }
     };
 
-    void initNetworkRoom();
+    void initSharedRoom();
 
     return () => {
       cancelled = true;
@@ -2971,6 +2990,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     spaceSlug,
+    dashboardRoom,
     isMatrixAvailable,
     isMatrixAuthenticated,
     syncRoomMessages,
@@ -4335,6 +4355,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         });
         // Mention notifications are server-fired (#2470) from the #2483 AS receiver watching
         // this same Matrix message — no client trigger needed here anymore.
+        requestMatrixAgentReply({
+          authToken: authTokenRef.current,
+          roomId,
+          mentionUserIds,
+          spaceSlug,
+        });
       }
       setSendingPending(null);
       disposeDraftAttachmentUrls(savedAttachments);
@@ -4430,6 +4456,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     draftAttachments,
     mentionSanitizedLabelToUserId,
     blockSpaceChatForMembership,
+    spaceSlug,
     tCommon,
     t,
   ]);
@@ -4449,8 +4476,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mode === 'coherence'
               ? coherenceTitle ?? undefined
               : mode === 'space' && !spaceSlug?.trim()
-              ? t('networkRoomTitle')
+              ? dashboardRoom === 'ecosystem'
+                ? t('ecosystemRoomTitle')
+                : t('networkRoomTitle')
               : ''
+          }
+          roomChoice={
+            mode === 'space' && !spaceSlug?.trim()
+              ? {
+                  value: dashboardRoom,
+                  onChange: (next) => {
+                    if (next === dashboardRoom) return;
+                    joinedRef.current = null;
+                    if (roomId) {
+                      matrixRef.current.unregisterRoomListener(roomId);
+                    }
+                    setRoomId(null);
+                    setMessages([]);
+                    setDashboardRoom(next);
+                  },
+                }
+              : undefined
           }
           onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
@@ -5065,12 +5111,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     currentUserAvatarUrl={currentUserAvatarUrl}
                     welcomeText={
                       mode === 'space' && !spaceSlug?.trim()
-                        ? t('networkWelcome')
+                        ? dashboardRoom === 'ecosystem'
+                          ? t('ecosystemWelcome')
+                          : t('networkWelcome')
                         : undefined
                     }
                     welcomeSenderName={
                       mode === 'space' && !spaceSlug?.trim()
-                        ? t('networkRoomTitle')
+                        ? dashboardRoom === 'ecosystem'
+                          ? t('ecosystemRoomTitle')
+                          : t('networkRoomTitle')
                         : undefined
                     }
                     onReply={

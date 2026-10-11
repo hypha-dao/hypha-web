@@ -69,3 +69,4 @@ export {
   PROPOSAL_CATALOG_KEYS,
   PREPARE_GOVERNANCE_PROPOSAL_TYPES,
 } from './tools/proposal-catalog';
+export { replyToMatrixAgentMention } from './matrix-agent-reply';

@@ -16,6 +16,10 @@ import { Button, ConfirmDialog } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  requestMatrixAgentReply,
+  withMatrixAgentMention,
+} from '../../common/human-chat-panel/matrix-agent-mention';
+import {
   HumanChatPanelChatBar,
   type ChatMentionCandidate,
 } from '../../common/human-chat-panel';
@@ -74,6 +78,7 @@ export const ChatMessageInput = ({
   closeUrl: string;
 }) => {
   const t = useTranslations('CoherenceTab');
+  const tChat = useTranslations('HumanChatPanel');
   const { client, sendMessage: sendMatrixMessage } = useMatrix();
   const [input, setInput] = React.useState('');
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
@@ -101,8 +106,8 @@ export const ChatMessageInput = ({
         sensitivity: 'base',
       }),
     );
-    return list;
-  }, [client, roomId, mentionMembershipEpoch]);
+    return withMatrixAgentMention(list, tChat('agentMentionLabel'));
+  }, [client, roomId, mentionMembershipEpoch, tChat]);
 
   const mentionLabelByUserId = React.useMemo(
     () =>
@@ -187,11 +192,22 @@ export const ChatMessageInput = ({
         message: wirePlain,
         mentionUserIds,
       });
+      requestMatrixAgentReply({
+        authToken,
+        roomId,
+        mentionUserIds,
+      });
       setInput('');
     } catch (error) {
       console.warn(error);
     }
-  }, [input, mentionSanitizedLabelToUserId, roomId, sendMatrixMessage]);
+  }, [
+    authToken,
+    input,
+    mentionSanitizedLabelToUserId,
+    roomId,
+    sendMatrixMessage,
+  ]);
 
   const handleArchive = React.useCallback(async () => {
     try {
