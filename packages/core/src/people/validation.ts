@@ -100,6 +100,7 @@ const editPersonWeb2Props = {
     .max(3)
     .default([])
     .optional(),
+  primaryOrientation: z.enum(['member', 'builder', 'investor']).optional(),
 };
 
 export const editPersonFiles = z.object({

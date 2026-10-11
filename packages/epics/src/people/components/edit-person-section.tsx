@@ -48,6 +48,7 @@ interface EditPersonSectionInput {
   email?: string;
   links?: string[];
   preferredCurrency?: string;
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
 }
 
 const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
@@ -223,6 +224,7 @@ export const EditPersonSection = ({
       preferredCurrency: TOKEN_PRICE_REFERENCE_CURRENCIES.find(
         (code) => code === person?.preferredCurrency,
       ),
+      primaryOrientation: person?.primaryOrientation ?? undefined,
     },
     mode: 'onChange',
   });
@@ -501,6 +503,50 @@ export const EditPersonSection = ({
                                   {currency.code} - {currency.label}
                                 </SelectItem>
                               ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <Text className={cn('text-2', 'text-neutral-11')}>
+                  {tProfile('editForm.labels.orientation')}
+                </Text>
+                <span className="flex items-center">
+                  <FormField
+                    control={form.control}
+                    name="primaryOrientation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger className="w-60">
+                              <SelectValue
+                                placeholder={tProfile(
+                                  'editForm.placeholders.orientation',
+                                )}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">
+                                {tProfile('editForm.labels.orientationMember')}
+                              </SelectItem>
+                              <SelectItem value="builder">
+                                {tProfile('editForm.labels.orientationBuilder')}
+                              </SelectItem>
+                              <SelectItem value="investor">
+                                {tProfile(
+                                  'editForm.labels.orientationInvestor',
+                                )}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
