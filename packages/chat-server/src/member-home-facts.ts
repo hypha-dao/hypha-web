@@ -102,9 +102,8 @@ export function formatMemberHomeFacts(
   const passedItems = waiting.filter((item) =>
     passed.has(memberHomeThreadItemKey(item)),
   );
-  const listening = home.networkHorizon === 'network';
   const networkLines =
-    !listening || (home.networkSignals ?? []).length === 0
+    (home.networkSignals ?? []).length === 0
       ? null
       : (home.networkSignals ?? [])
           .map((signal, index) => {
@@ -129,9 +128,7 @@ export function formatMemberHomeFacts(
         ? 'Already asked once if this is a good time. Do not ask again in this conversation. If they just agreed, be glad and name the next item. If nothing else is waiting, say so in one line. Do not present the item as new.'
         : passedItems.length > 0
         ? 'Nothing left in the queue. They already passed on the items below. Say that in one line. Do not ask what else they would like, and do not bring a passed item back.'
-        : listening
-        ? 'Nothing in their spaces needs them. No judgement. Their horizon is already open. If a network signal is listed below, you may offer one. Otherwise invite them to activate a space. Do not imply the quiet is a problem. Do not call show_member_home_item unless you are offering that one network signal.'
-        : 'Nothing in their spaces needs them. No judgement. Invite them to activate a space. Do not imply the quiet is a problem. Do not call show_member_home_item.'
+        : 'Nothing in their spaces needs them. No judgement. The network stays open. If a network signal is listed below, you may offer one. Otherwise invite them to activate a space. Do not imply the quiet is a problem. Do not call show_member_home_item unless you are offering that one network signal.'
       : stillWaiting
           .map((item, index) => {
             const quoted = (value: string | null) =>
@@ -175,7 +172,7 @@ export function formatMemberHomeFacts(
     'Tone: unlocking possibilities together. Transparent and collective. Never a warning, never a pile, never a judgement. A high priority or an overdue signal is an opening for the people in that space. Always name the space.',
     networkLines
       ? 'Their spaces come first. The network lines below fill only the spare room, and only a signal that matches how this person shows up, from a space that shared its activity or is public to the network. Offer one when their own queue is empty, otherwise one possibility after the space in front of them. Name that space and why it fits (location, what they wrote, or a space they belong to). Do not mix member, builder, and investor signals.'
-      : 'Horizon: focused on their own spaces. Do not propose signals from other spaces.',
+      : 'No network signal is in this brief. Do not invent one from another space.',
     networkLines ? `Network signals:\n${networkLines}` : null,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
     (home.movement ?? []).length > 0
