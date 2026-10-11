@@ -97,6 +97,14 @@ const home: MemberIntelligence = {
 };
 
 describe('listMemberHomeThreadItems', () => {
+  it('leaves out a proposal this member has already voted on', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [{ ...home.proposals[0]!, memberHasVoted: true }],
+    });
+    expect(items.map((item) => item.slug)).toEqual(['define-products']);
+  });
+
   it('leads with notifications and does not repeat a slug', () => {
     const items = listMemberHomeThreadItems(home);
     expect(items.map((item) => item.slug)).toEqual([

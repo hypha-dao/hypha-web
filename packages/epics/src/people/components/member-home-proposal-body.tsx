@@ -162,7 +162,11 @@ export function MemberHomeProposalBody({
         />
       </div>
       {canVote ? (
-        <MemberHomeVote proposalId={proposalId} documentId={documentId} />
+        <MemberHomeVote
+          proposalId={proposalId}
+          documentId={documentId}
+          documentSlug={documentSlug}
+        />
       ) : (
         <p
           className={
