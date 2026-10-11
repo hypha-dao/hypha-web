@@ -254,9 +254,9 @@ export function MemberHomeThreadCard({
         ) : null}
         {isProposal ? (
           <MemberHomeProposalBody
-            proposalId={proposal?.web3ProposalId ?? null}
-            spaceId={proposal?.web3SpaceId ?? null}
-            documentId={proposal?.id ?? null}
+            proposalId={proposal?.web3ProposalId ?? item.web3ProposalId ?? null}
+            spaceId={proposal?.web3SpaceId ?? item.web3SpaceId ?? null}
+            documentId={proposal?.id ?? item.documentId ?? null}
             documentSlug={proposal?.slug ?? item.slug}
           />
         ) : null}
@@ -319,6 +319,26 @@ export function MemberHomeThreadCard({
               <Link href={visitHref}>{t('visitSpace')}</Link>
             </Button>
           ) : null}
+          {ctas.includes('later') ? null : (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              disabled={busy}
+              onClick={() => ask(t('laterChosen', { title: item.title }))}
+            >
+              {t('notNow')}
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            disabled={busy}
+            onClick={() => ask(t('noChosen', { title: item.title }))}
+          >
+            {t('noThanks')}
+          </Button>
         </div>
         {isProposal ? (
           <Link

@@ -16,7 +16,8 @@ import type { ChatRequestPayload } from './request-schema';
 import {
   listMemberHomeThreadItems,
   SHOW_MEMBER_HOME_ITEM_TOOL,
-  passedMemberHomeItemKeys,
+  memberHomeItemMemory,
+  mergeMemberHomeMemory,
   shownMemberHomeItemKeys,
 } from '@hypha-platform/core/client';
 import { formatMemberHomeFacts } from './member-home-facts';
@@ -1060,6 +1061,11 @@ export type ChatStreamCallbacks = {
   ecosystemAutomationEnabled?: boolean;
   /** Personal home: same Hypha AI voice, plus this member's records. */
   memberHome?: boolean;
+  memberHomeMemory?: {
+    passed?: string[];
+    deferred?: string[];
+    settled?: string[];
+  };
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1385,6 +1391,7 @@ export async function createChatStreamResult(
     ecosystemAutomationEnabled,
     locale,
     memberHome,
+    memberHomeMemory,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
   const memberHomeRecord = memberHome
@@ -1393,10 +1400,20 @@ export async function createChatStreamResult(
   const memberHomeItems = memberHomeRecord
     ? listMemberHomeThreadItems(memberHomeRecord.home)
     : [];
+  const memberHomeMemoryFromMessages = memberHomeRecord
+    ? memberHomeItemMemory(memberHomeItems, messages)
+    : null;
+  const memberHomeChoices = memberHomeMemoryFromMessages
+    ? mergeMemberHomeMemory(memberHomeMemoryFromMessages, memberHomeMemory)
+    : null;
   const memberHomeFacts = memberHomeRecord
     ? formatMemberHomeFacts(memberHomeRecord.home, {
         alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
-        passed: passedMemberHomeItemKeys(memberHomeItems, messages),
+        passed: memberHomeChoices?.passed,
+        deferred: memberHomeChoices?.deferred,
+        recalled: memberHomeMemoryFromMessages?.recalled,
+        settled: memberHomeChoices?.settled,
+        held: memberHomeMemoryFromMessages?.held,
       })
     : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
