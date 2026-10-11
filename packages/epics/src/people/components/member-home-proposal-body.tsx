@@ -50,7 +50,7 @@ export function MemberHomeProposalBody({
 }: MemberHomeProposalBodyProps) {
   const t = useTranslations('MemberHome');
   const tVoting = useTranslations('ProposalDetails');
-  const { proposalDetails, isLoading } = useProposalDetailsWeb3Rpc({
+  const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId,
   });
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
@@ -60,10 +60,7 @@ export function MemberHomeProposalBody({
     proposalId != null ? documentSlug : undefined,
   );
 
-  if (proposalId == null || documentId == null) {
-    return <p className="mt-3 text-2 text-neutral-11">{t('voteNeedsChain')}</p>;
-  }
-
+  const canVote = proposalId != null && documentId != null;
   const yesVoters = (voters ?? []).filter((voter) => voter.vote === 'yes');
   const noVoters = (voters ?? []).filter((voter) => voter.vote === 'no');
   const yesCount = yesVoters.length || proposalDetails?.yesVotes || 0;
@@ -144,31 +141,29 @@ export function MemberHomeProposalBody({
           <span>{t('noCount', { count: noCount })}</span>
         </div>
       ) : null}
-      {!isLoading && proposalDetails ? (
-        <div className="grid gap-4">
-          <ProgressLine
-            label={tVoting('voting.quorumMinParticipation')}
-            value={proposalDetails.quorumPercentage}
-            target={
-              spaceDetails?.quorum != null
-                ? Number(spaceDetails.quorum)
-                : undefined
-            }
-            indicatorColor="bg-accent-12"
-          />
-          <ProgressLine
-            label={tVoting('voting.unityMinAlignment')}
-            value={proposalDetails.unityPercentage}
-            target={
-              spaceDetails?.unity != null
-                ? Number(spaceDetails.unity)
-                : undefined
-            }
-            indicatorColor="bg-accent-9"
-          />
-        </div>
-      ) : null}
-      <MemberHomeVote proposalId={proposalId} documentId={documentId} />
+      <div className="grid gap-4">
+        <ProgressLine
+          label={tVoting('voting.quorumMinParticipation')}
+          value={proposalDetails?.quorumPercentage ?? 0}
+          target={
+            spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : 0
+          }
+          hideTargets={spaceDetails?.quorum == null}
+          indicatorColor="bg-accent-12"
+        />
+        <ProgressLine
+          label={tVoting('voting.unityMinAlignment')}
+          value={proposalDetails?.unityPercentage ?? 0}
+          target={spaceDetails?.unity != null ? Number(spaceDetails.unity) : 0}
+          hideTargets={spaceDetails?.unity == null}
+          indicatorColor="bg-accent-9"
+        />
+      </div>
+      {canVote ? (
+        <MemberHomeVote proposalId={proposalId} documentId={documentId} />
+      ) : (
+        <p className="text-2 text-neutral-11">{t('voteNeedsChain')}</p>
+      )}
     </div>
   );
 }
