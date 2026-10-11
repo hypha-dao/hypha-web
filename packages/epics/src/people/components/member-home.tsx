@@ -255,7 +255,7 @@ export function MemberHome({
             }
           >
             {home == null || orientation ? (
-              <div className="flex items-start justify-center border-r border-border px-4 py-4">
+              <div className="flex items-center justify-center border-r border-border px-4 py-3">
                 {home == null || orientation == null ? (
                   <Skeleton loading height="22px" width="6.5rem" />
                 ) : (

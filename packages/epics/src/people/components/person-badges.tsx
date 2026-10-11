@@ -69,7 +69,7 @@ export function PersonBadges({
     <span
       className={
         stacked
-          ? 'inline-flex max-w-full flex-col items-center gap-2'
+          ? 'inline-flex max-w-full flex-col items-center gap-1.5'
           : 'inline-flex max-w-full flex-wrap items-center gap-1'
       }
     >
@@ -78,12 +78,12 @@ export function PersonBadges({
           key={item.id}
           className={
             stacked
-              ? 'inline-flex min-w-[5.5rem] flex-col items-center gap-2 border border-foreground bg-background px-4 py-3 text-1 text-foreground'
+              ? 'inline-flex flex-col items-center gap-1 text-1 text-foreground'
               : 'inline-flex max-w-full items-center gap-1.5 border border-foreground bg-background px-2 py-0.5 text-1 text-foreground'
           }
         >
           {item.role ? (
-            <RoleGlyph role={item.role} size={stacked ? 28 : 14} />
+            <RoleGlyph role={item.role} size={stacked ? 36 : 14} />
           ) : null}
           <span className={stacked ? 'text-center' : 'truncate'}>
             {item.label}
