@@ -397,6 +397,7 @@ export function NetworkGlobeMap({
   showStage = true,
   alignProjection,
   onProjectionModeChange,
+  onSpaceSelect,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -443,6 +444,8 @@ export function NetworkGlobeMap({
   setHoveredPinRef.current = setHoveredPin;
   const setSelectedPinRef = React.useRef(setSelectedPin);
   setSelectedPinRef.current = setSelectedPin;
+  const onSpaceSelectRef = React.useRef(onSpaceSelect);
+  onSpaceSelectRef.current = onSpaceSelect;
   const canHoverRef = React.useRef(canUseHover());
 
   const layers = DEFAULT_LAYER_VISIBILITY;
@@ -904,6 +907,10 @@ export function NetworkGlobeMap({
         if (!space) {
           return;
         }
+        if (onSpaceSelectRef.current) {
+          onSpaceSelectRef.current(space);
+          return;
+        }
         if (canHoverRef.current) {
           router.push(`/${lang}/dho/${space.slug}/agreements`);
           return;
@@ -933,6 +940,10 @@ export function NetworkGlobeMap({
         }
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
+          if (onSpaceSelectRef.current) {
+            onSpaceSelectRef.current(space);
+            return;
+          }
           router.push(`/${lang}/dho/${space.slug}/agreements`);
         }
       })

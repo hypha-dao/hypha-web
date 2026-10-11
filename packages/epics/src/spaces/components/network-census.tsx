@@ -23,6 +23,7 @@ function StatColumn({
   reserveSplit = false,
   lang,
   index,
+  compact = false,
 }: {
   value: number | null;
   label: string;
@@ -32,21 +33,41 @@ function StatColumn({
   reserveSplit?: boolean;
   lang: string;
   index: number;
+  compact?: boolean;
 }) {
   return (
     <div
       className={cn(
-        'flex min-w-0 flex-col items-start border-border py-3 text-left',
-        'md:items-center md:px-4 md:py-2 md:text-center',
-        // Phone is 2×2: a vertical hairline between the columns, a horizontal
-        // one between the rows. Left cells stay flush with the view switch.
-        index % 2 === 0 && 'max-md:pr-4',
-        index % 2 === 1 && 'max-md:border-l max-md:pl-4',
-        index >= 2 && 'max-md:border-t',
-        index > 0 && 'md:border-l',
+        'flex min-w-0 flex-col border-border text-left',
+        compact
+          ? cn(
+              'px-3 py-4',
+              index % 2 === 1 && 'border-l',
+              index >= 2 && 'border-t',
+            )
+          : cn(
+              'items-start py-3',
+              'md:items-center md:px-4 md:py-2 md:text-center',
+              index % 2 === 0 && 'max-md:pr-4',
+              index % 2 === 1 && 'max-md:border-l max-md:pl-4',
+              index >= 2 && 'max-md:border-t',
+              index > 0 && 'md:border-l',
+            ),
       )}
     >
-      <div className="[font-family:var(--font-family-heading)] text-7 font-medium tabular-nums tracking-[-0.03em] text-foreground md:text-8">
+      {compact ? (
+        <div className="text-1 uppercase tracking-[0.08em] text-neutral-11">
+          {label}
+        </div>
+      ) : null}
+      <div
+        className={cn(
+          '[font-family:var(--font-family-heading)] font-medium tabular-nums text-foreground',
+          compact
+            ? 'mt-1.5 text-3 leading-none'
+            : 'text-7 tracking-[-0.03em] md:text-8',
+        )}
+      >
         {isLoading ? (
           <Skeleton loading width={72} height={36} />
         ) : value == null ? (
@@ -55,7 +76,9 @@ function StatColumn({
           formatCount(value, lang)
         )}
       </div>
-      <div className="mt-1 text-2 text-muted-foreground">{label}</div>
+      {compact ? null : (
+        <div className="mt-1 text-2 text-muted-foreground">{label}</div>
+      )}
       {isLoading && reserveSplit ? (
         <Skeleton loading width={96} height={12} className="mt-1" />
       ) : split ? (
@@ -72,6 +95,7 @@ export function NetworkCensus({
   members,
   agreements,
   tokens,
+  compact = false,
 }: {
   lang: Locale;
   isLoading: boolean;
@@ -79,6 +103,8 @@ export function NetworkCensus({
   members: CensusFigures;
   agreements: CensusFigures;
   tokens: CensusFigures | null;
+  /** Two-by-two tile for the network side panel. */
+  compact?: boolean;
 }) {
   const t = useTranslations('Network');
   const tCommon = useTranslations('Common');
@@ -132,7 +158,9 @@ export function NetworkCensus({
   ];
 
   return (
-    <div className="grid w-full grid-cols-2 md:grid-cols-4">
+    <div
+      className={cn('grid w-full grid-cols-2', !compact && 'md:grid-cols-4')}
+    >
       {columns.map((column, index) => (
         <StatColumn
           key={column.label}
@@ -143,6 +171,7 @@ export function NetworkCensus({
           split={column.split}
           isLoading={column.isLoading}
           reserveSplit={column.reserveSplit}
+          compact={compact}
         />
       ))}
     </div>

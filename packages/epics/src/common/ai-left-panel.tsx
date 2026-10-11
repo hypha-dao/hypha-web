@@ -17,8 +17,13 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
+  ArrowLeftRight,
+  BadgeCheck,
+  Globe,
+  List,
   Menu,
   PanelLeftClose,
+  Plus,
   Settings,
   Sparkles,
   Volume2,
@@ -345,6 +350,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSelectNavigation = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
+  const tNetwork = useTranslations('NetworkExchange');
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -644,6 +650,64 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     tSelectNavigation,
     tTreasury,
   ]);
+
+  const networkNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !lang) return [];
+    const base = `/${lang}/network`;
+    const onNetwork = pathname === base || pathname.startsWith(`${base}/`);
+    if (!onNetwork) return [];
+    const links = [
+      {
+        key: 'network',
+        label: tNetwork('navNetwork'),
+        href: base,
+        icon: Globe,
+      },
+      {
+        key: 'exchange',
+        label: tNetwork('navExchange'),
+        href: `${base}/exchange`,
+        icon: ArrowLeftRight,
+      },
+      {
+        key: 'needs',
+        label: tNetwork('navNeeds'),
+        href: `${base}/needs`,
+        icon: List,
+      },
+      {
+        key: 'action',
+        label: tNetwork('navAction'),
+        href: `${base}/proof-of-action`,
+        icon: BadgeCheck,
+      },
+      {
+        key: 'impact',
+        label: tNetwork('navImpact'),
+        href: `${base}/proof-of-impact`,
+        icon: Sparkles,
+      },
+      {
+        key: 'create',
+        label: tNetwork('navCreate'),
+        href: `${base}/create`,
+        icon: Plus,
+      },
+    ] as const;
+    return links.map((link) => ({
+      key: link.key,
+      label: link.label,
+      icon: link.icon,
+      href: link.href,
+      active:
+        link.href === base
+          ? pathname === base || pathname === `${base}/`
+          : pathname === link.href || pathname.startsWith(`${link.href}/`),
+    }));
+  }, [lang, pathname, spaceSlug, tNetwork]);
+
+  const menuNavItems =
+    sectionNavItems.length > 0 ? sectionNavItems : networkNavItems;
 
   const isSpaceSettingsActive = useMemo(
     () =>
@@ -2959,7 +3023,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       <SidebarGroup className="p-2 pt-4">
         <SidebarGroupContent>
           <SidebarMenu className="gap-2">
-            {sectionNavItems.map((item) =>
+            {menuNavItems.map((item) =>
               renderSectionNavItem(item, 'collapsed', 'collapsed'),
             )}
           </SidebarMenu>
@@ -3053,7 +3117,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {sectionNavItems.map((item) =>
+                  {menuNavItems.map((item) =>
                     renderSectionNavItem(item, 'expanded', 'overlay'),
                   )}
                 </SidebarMenu>

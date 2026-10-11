@@ -2,14 +2,14 @@
 
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { LayoutList, Map } from 'lucide-react';
+import { LayoutList, ListOrdered, Map } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   segmentedListClass,
   segmentedTriggerClass,
 } from '../lib/segmented-control-styles';
 
-export type NetworkMapView = 'overview' | 'list' | 'map';
+export type NetworkMapView = 'overview' | 'list' | 'map' | 'ranking';
 
 /** Map rectangle sitting above list rules — not a panels glyph. */
 function MapOverListIcon({ className }: { className?: string }) {
@@ -75,6 +75,14 @@ export function NetworkMapViewToggle({
         >
           <Map className="size-3.5 shrink-0" aria-hidden />
           {t('mapView')}
+        </TabsTrigger>
+        <TabsTrigger
+          value="ranking"
+          variant="switch"
+          className={segmentedTriggerClass}
+        >
+          <ListOrdered className="size-3.5 shrink-0" aria-hidden />
+          {t('rankingView')}
         </TabsTrigger>
       </TabsList>
     </Tabs>

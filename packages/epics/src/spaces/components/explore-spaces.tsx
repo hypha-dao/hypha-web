@@ -24,7 +24,7 @@ import {
 } from '../../network-map';
 import { NetworkRanking, NetworkSectionNav } from '../../network-exchange';
 import { CreateSpaceButton } from './create-space-button';
-import { NetworkCensus } from './network-census';
+import { NetworkSidePanel } from './network-side-panel';
 import { NetworkLoadingGrid } from './network-loading-grid';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
@@ -267,7 +267,7 @@ export function ExploreSpaces({
 
   const viewFromUrl = (params: URLSearchParams): NetworkMapView => {
     const view = params.get('view');
-    if (view === 'list' || view === 'map') {
+    if (view === 'list' || view === 'map' || view === 'ranking') {
       return view;
     }
     return 'overview';
@@ -349,6 +349,16 @@ export function ExploreSpaces({
   );
 
   const { isAuthenticated } = useAuthentication();
+  const [selectedSpaceId, setSelectedSpaceId] = React.useState<number | null>(
+    null,
+  );
+  const selectedSpace = React.useMemo(
+    () => spaces.find((space) => space.id === selectedSpaceId) ?? null,
+    [spaces, selectedSpaceId],
+  );
+  const selectRank = React.useCallback((rank: { spaceId: number }) => {
+    setSelectedSpaceId(rank.spaceId);
+  }, []);
 
   const renderMapToolbar = React.useCallback(
     () => (
@@ -406,6 +416,7 @@ export function ExploreSpaces({
     !enableNetworkMap || view === 'list' || view === 'overview';
   const showMapStage = view === 'map' || view === 'overview';
   const showSpacesList = view === 'list' || view === 'overview';
+  const showRanking = !enableNetworkMap || view === 'ranking';
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-row items-center gap-3">
@@ -438,9 +449,11 @@ export function ExploreSpaces({
     </div>
   );
 
-  const networkCensus = enableNetworkMap ? (
-    <NetworkCensus
+  const sidePanel = (
+    <NetworkSidePanel
       lang={lang}
+      selectedSpace={selectedSpace}
+      onSelectRank={selectRank}
       isLoading={showSpacesSkeleton}
       spaces={{
         total: selectedSpaces.length + privateSpaces.length,
@@ -458,8 +471,9 @@ export function ExploreSpaces({
         privateCount: privateAgreementCount,
       }}
       tokens={tokenCensus}
+      ranks={showRanking ? [] : networkRanks}
     />
-  ) : null;
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
@@ -476,36 +490,51 @@ export function ExploreSpaces({
       </Heading>
       <NetworkSectionNav lang={lang} />
 
-      <div className="flex min-w-0 flex-col">
-        {sharedHeader}
+      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]">
+        <div className="flex min-w-0 flex-col">
+          {sharedHeader}
 
-        {enableNetworkMap ? (
-          <>
-            {renderMapToolbar()}
-            <div className="my-6">{networkCensus}</div>
-            <NetworkGlobeMap
-              lang={lang}
-              spaces={mapSpaces}
-              className={cn('w-full', showMapStage && 'mb-7')}
-              isActive={showMapStage}
-              showStage={showMapStage}
-              alignProjection={view === 'overview' ? 'flat' : undefined}
-            />
-            {view === 'overview' ? (
-              <NetworkRanking lang={lang} ranks={networkRanks} />
-            ) : null}
-            <div className={cn(!showSpacesList && 'hidden')}>
+          {enableNetworkMap ? (
+            <>
+              {renderMapToolbar()}
+              <NetworkGlobeMap
+                lang={lang}
+                spaces={mapSpaces}
+                className={cn('mt-6 w-full', showMapStage && 'mb-7')}
+                isActive={showMapStage}
+                showStage={showMapStage}
+                alignProjection={view === 'overview' ? 'flat' : undefined}
+                onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
+              />
+              {showRanking ? (
+                <div className="mt-6">
+                  <NetworkRanking
+                    lang={lang}
+                    ranks={networkRanks}
+                    onSelect={selectRank}
+                  />
+                </div>
+              ) : null}
+              <div className={cn(!showSpacesList && 'hidden')}>
+                {listMetaRow}
+                {spacesListContent}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-6">
+                <NetworkRanking
+                  lang={lang}
+                  ranks={networkRanks}
+                  onSelect={selectRank}
+                />
+              </div>
               {listMetaRow}
               {spacesListContent}
-            </div>
-          </>
-        ) : (
-          <>
-            <NetworkRanking lang={lang} ranks={networkRanks} />
-            {listMetaRow}
-            {spacesListContent}
-          </>
-        )}
+            </>
+          )}
+        </div>
+        {sidePanel}
       </div>
     </div>
   );
