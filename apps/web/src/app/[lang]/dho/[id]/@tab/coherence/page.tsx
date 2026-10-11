@@ -55,6 +55,7 @@ export default async function CoherencePage(props: PageProps) {
           spaceSlug={id}
           order={order}
           priorityFilter={priorityFilter}
+          typeFilter={searchParams?.type}
           humanChatEnabled={humanChatEnabled}
         />
       </div>
