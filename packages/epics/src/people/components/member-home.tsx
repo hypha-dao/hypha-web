@@ -677,12 +677,6 @@ export function MemberHome({
             />
           ) : null}
         </div>
-
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Button asChild>
-            <Link href={getOnboardingPath(lang)}>{t('createSpace')}</Link>
-          </Button>
-        </div>
       </aside>
     </div>
   );
