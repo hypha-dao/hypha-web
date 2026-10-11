@@ -35,7 +35,7 @@ function asKind(value: unknown): NetworkSignalKind | null {
 }
 
 function asOpenNeedKind(value: unknown): NetworkOpenNeedKind | null {
-  if (value === 'Need' || value === 'Risk' || value === 'Tension') return value;
+  if (value === 'Need') return value;
   return null;
 }
 
@@ -171,7 +171,7 @@ export async function listNetworkOpenNeeds({
       group by space_id
     ) counts on counts.space_id = s.id
     where c.shared_with_network = true
-      and c.type in ('Need', 'Risk', 'Tension')
+      and c.type = 'Need'
       and coalesce(c.archived, false) = false
       and s.is_archived = false
       and c.slug is not null

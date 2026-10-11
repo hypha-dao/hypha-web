@@ -1,6 +1,6 @@
 export type NetworkSignalKind = 'Need' | 'Action' | 'Impact';
 
-export type NetworkOpenNeedKind = 'Need' | 'Risk' | 'Tension';
+export type NetworkOpenNeedKind = 'Need';
 
 export const NETWORK_FIELD_KINDS = [
   'Need',
