@@ -106,14 +106,13 @@ export function MemberHomeThreadCard({
   );
   const isSignal = item.kind === 'signal' || item.documentKind === 'signal';
   const isProposal = !isSignal && item.documentKind === 'proposal';
-  const visitHref = isSignal
-    ? `/${lang}/dho/${item.spaceSlug}/overview`
-    : proposal?.slug
-    ? getProposalPath(lang, item.spaceSlug, proposal.slug)
-    : item.slug
-    ? getProposalPath(lang, item.spaceSlug, item.slug)
-    : `/${lang}/dho/${item.spaceSlug}/agreements`;
   const signalHref = getSignalPath(lang, item.spaceSlug, item.slug);
+  const proposalSlug = proposal?.slug || item.slug;
+  const visitHref = isSignal
+    ? signalHref
+    : proposalSlug
+    ? getProposalPath(lang, item.spaceSlug, proposalSlug)
+    : `/${lang}/dho/${item.spaceSlug}/agreements`;
   const typeName = canonicalType(item.category);
   const typeKey = typeName ? (`types.${typeName}` as never) : null;
   const categoryLabel =
