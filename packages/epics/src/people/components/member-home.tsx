@@ -280,6 +280,7 @@ export function MemberHome({
               isLoading={home == null}
               empty={t('noNotifications')}
               maxItems={5}
+              markSize={24}
               items={
                 home
                   ? home.notifications.flatMap((item) => {
@@ -1041,15 +1042,21 @@ function TileLink({ href, children }: { href: string; children: ReactNode }) {
 function ResourceMark({
   kind,
   iconUrl,
+  size = 32,
 }: {
   kind?: 'signal' | 'proposal';
   iconUrl?: string | null;
+  size?: 24 | 32;
 }) {
   const [logoFailed, setLogoFailed] = useState(false);
   const Icon = kind === 'proposal' ? Scale : kind === 'signal' ? Radio : null;
   const showLogo = Boolean(iconUrl) && !logoFailed;
   return (
-    <span className="craft-icon-box text-foreground" aria-hidden>
+    <span
+      className="craft-icon-box text-foreground"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
       {showLogo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -1070,6 +1077,7 @@ function ResourceList({
   empty,
   isLoading = false,
   maxItems = 4,
+  markSize = 32,
 }: {
   items: Array<{
     id: string | number;
@@ -1087,6 +1095,7 @@ function ResourceList({
   empty: string;
   isLoading?: boolean;
   maxItems?: number;
+  markSize?: 24 | 32;
 }) {
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
@@ -1127,7 +1136,11 @@ function ResourceList({
                 item.onSelect();
               }}
             >
-              <ResourceMark kind={item.kind} iconUrl={iconUrl} />
+              <ResourceMark
+                kind={item.kind}
+                iconUrl={iconUrl}
+                size={markSize}
+              />
               <span className="min-w-0">
                 <span className="block text-1 group-hover:underline">
                   {item.title}
