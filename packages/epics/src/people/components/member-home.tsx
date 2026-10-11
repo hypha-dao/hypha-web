@@ -326,9 +326,9 @@ export function MemberHome({
       </aside>
       <main className="order-1 flex min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1">
         <div className="px-4 pt-4 md:px-6">
-          <div className="flex min-w-0 flex-wrap items-start gap-3 pt-4">
+          <div className="flex min-w-0 items-center gap-3 pt-4">
             <span
-              className="mt-px inline-flex shrink-0"
+              className="inline-flex shrink-0"
               style={{ width: 24, height: 24 }}
             >
               <MemberHomeMark className="h-full w-full" />
@@ -349,23 +349,6 @@ export function MemberHome({
                   {t(greetingKey(), { name: displayName })}
                 </h1>
               )}
-              {home == null ? (
-                <Skeleton
-                  loading
-                  height="16px"
-                  width="14rem"
-                  className="mt-1"
-                />
-              ) : (
-                <>
-                  <MemberHomeClosest
-                    lang={lang}
-                    people={home.connections}
-                    fallbackName={memberFallback}
-                    onOpenChat={openChat}
-                  />
-                </>
-              )}
             </div>
             <HomeViewSwitch
               view={homeView}
@@ -375,6 +358,18 @@ export function MemberHome({
                 setHomeView(next);
               }}
             />
+          </div>
+          <div className="min-w-0 pt-1 pl-9">
+            {home == null ? (
+              <Skeleton loading height="16px" width="14rem" className="mt-1" />
+            ) : (
+              <MemberHomeClosest
+                lang={lang}
+                people={home.connections}
+                fallbackName={memberFallback}
+                onOpenChat={openChat}
+              />
+            )}
           </div>
         </div>
         {home && showAssistant ? (
@@ -416,7 +411,7 @@ export function MemberHome({
             }
           >
             {home == null || orientation ? (
-              <div className="flex items-center justify-center border-r border-border px-4 py-4">
+              <div className="flex items-start justify-center border-r border-border px-4 py-4">
                 {home == null || orientation == null ? (
                   <Skeleton loading height="22px" width="6.5rem" />
                 ) : (
