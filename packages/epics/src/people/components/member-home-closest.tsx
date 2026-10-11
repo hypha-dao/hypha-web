@@ -225,9 +225,20 @@ export function MemberHomeClosest({
     () => rankClosestContributors(onlinePeople, messageCounts, VISIBLE_PEOPLE),
     [messageCounts, onlinePeople],
   );
+  const visiblePeople = useMemo(() => {
+    const seen = new Set(ranked.people.map((person) => person.id));
+    const filled = [...ranked.people];
+    for (const person of onlinePeople) {
+      if (filled.length >= VISIBLE_PEOPLE) break;
+      if (seen.has(person.id)) continue;
+      filled.push(person);
+      seen.add(person.id);
+    }
+    return filled;
+  }, [onlinePeople, ranked.people]);
 
   const label = t('sensingAround');
-  const rest = Math.max(0, onlinePeople.length - ranked.people.length);
+  const rest = Math.max(0, onlinePeople.length - visiblePeople.length);
 
   if (onlineIds != null && ranked.people.length === 0) return null;
 
@@ -248,7 +259,7 @@ export function MemberHomeClosest({
         </div>
       ) : (
         <ul className="mt-2 flex max-w-full flex-wrap items-center gap-2">
-          {ranked.people.map((person, index) => {
+          {visiblePeople.map((person, index) => {
             const name = personLabel(person, fallbackName);
             const href = person.slug ? `/${lang}/profile/${person.slug}` : null;
             const hover =
