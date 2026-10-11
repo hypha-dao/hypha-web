@@ -11,9 +11,11 @@ type Metric = 'need' | 'action' | 'impact';
 export function NetworkRanking({
   lang,
   ranks,
+  onSelect,
 }: {
   lang: Locale;
   ranks: NetworkSpaceRank[];
+  onSelect?: (space: NetworkSpaceRank) => void;
 }) {
   const t = useTranslations('NetworkExchange');
   const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
@@ -91,7 +93,7 @@ export function NetworkRanking({
           <li key={space.spaceId}>
             <button
               type="button"
-              onClick={() => openRoom(space)}
+              onClick={() => (onSelect ? onSelect(space) : openRoom(space))}
               className="grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 py-3 text-left"
             >
               <span className="text-3 text-neutral-11">

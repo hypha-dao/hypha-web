@@ -26,6 +26,8 @@ export type NetworkGlobeMapProps = {
   alignProjection?: NetworkMapProjectionMode;
   /** Fired when the corner control changes globe or flat. */
   onProjectionModeChange?: (mode: NetworkMapProjectionMode) => void;
+  /** A single dot. The page shows that space on the right. */
+  onSpaceSelect?: (space: Space) => void;
 };
 
 export const NETWORK_MAP_LAYER_IDS = ['land', 'water', 'grid'] as const;
