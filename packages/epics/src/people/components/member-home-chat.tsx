@@ -155,10 +155,10 @@ function messageText(message: HomeMessage) {
 /** A decision stays with the member. Drop narration and any ask for their choice. */
 function straightforwardHomeText(text: string) {
   const steers = (sentence: string) =>
-    /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
+    /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|what would you like to decide|want to take a look|i(?:'’)?ve approved|\bi approved\b|\bi have approved\b|\bi accepted\b|i(?:'’)?ve accepted|\bi voted\b|you can now see the message|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
       sentence,
     );
-  return text
+  const cleaned = text
     .replace(/\*\*/g, '')
     .split(/\n+/)
     .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
@@ -166,6 +166,13 @@ function straightforwardHomeText(text: string) {
     .filter((sentence) => sentence.length > 0 && !steers(sentence))
     .join(' ')
     .trim();
+  if (
+    cleaned.length === 0 &&
+    /approv|what would you like to decide|want to take a look/i.test(text)
+  ) {
+    return 'You can now decide on the proposal card.';
+  }
+  return cleaned;
 }
 
 export function MemberHomeChat({

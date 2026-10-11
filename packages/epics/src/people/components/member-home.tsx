@@ -401,7 +401,7 @@ export function MemberHome({
       </main>
       <aside
         aria-label={t('panelInsights')}
-        className="member-home-pane order-3 border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:border-l lg:border-t-0"
+        className="member-home-pane order-3 border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:self-stretch lg:border-l lg:border-t-0"
       >
         {home && home.invites.length > 0 ? (
           <MemberHomeInviteBanners lang={lang} invites={home.invites} />
@@ -521,89 +521,91 @@ export function MemberHome({
           </section>
         ) : null}
 
-        <section
-          className="mt-10 border border-border bg-background p-5"
-          aria-busy={home == null || undefined}
-        >
-          <div className="flex items-baseline justify-between gap-4">
-            <h2
-              className="text-3"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {home && !leadItem ? t('quietHeading') : t('useful')}
-            </h2>
-            {leadItem ? (
-              <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
-                {leadItem.spaceTitle}
-              </p>
-            ) : null}
-          </div>
-          {home == null ? (
-            <div className="mt-4">
-              <CardSkeleton lines={3} plain />
-            </div>
-          ) : leadItem && home ? (
-            <div className="mt-4">
-              <MemberHomeThreadCard
-                lang={lang}
-                compact
-                assistant={showAssistant}
-                item={leadItem}
-                proposal={
-                  leadItem.kind === 'proposal'
-                    ? home.proposals.find(
-                        (item) => item.slug === leadItem.slug,
-                      ) ?? null
-                    : null
-                }
-                onAsk={requestMemberHomeAsk}
-                onReach={(person, mode) =>
-                  mode === 'call' ? openCall(person) : openChat(person)
-                }
-              />
-            </div>
-          ) : leadItem ? (
-            <div className="mt-4">
-              <p className="text-1">{leadItem.title}</p>
-              <p className="mt-1 text-1 text-neutral-11">
-                {leadItem.spaceTitle}
-              </p>
-              {leadHref ? (
-                <Button asChild className="mt-4">
-                  <Link href={leadHref}>
-                    {leadItem.kind === 'proposal'
-                      ? t('weighIn')
-                      : t('viewSignal')}
-                  </Link>
-                </Button>
+        <div className="lg:sticky lg:top-[var(--menu-top-height,4.5rem)] lg:z-[2]">
+          <section
+            className="mt-10 border border-border bg-background p-5"
+            aria-busy={home == null || undefined}
+          >
+            <div className="flex items-baseline justify-between gap-4">
+              <h2
+                className="text-3"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {home && !leadItem ? t('quietHeading') : t('useful')}
+              </h2>
+              {leadItem ? (
+                <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
+                  {leadItem.spaceTitle}
+                </p>
               ) : null}
             </div>
-          ) : (
-            <div className="mt-4 grid gap-2">
-              {home.counts.spaces > 0 ? (
-                <Link
-                  href={`/${lang}/profile/${home.person.slug}/actions/activate-spaces`}
-                  className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
-                >
-                  <span className="block text-1">{t('quietActivate')}</span>
-                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
-                    {t('quietActivateBody')}
-                  </span>
-                </Link>
-              ) : (
-                <Link
-                  href={getOnboardingPath(lang)}
-                  className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
-                >
-                  <span className="block text-1">{t('createSpace')}</span>
-                  <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
-                    {t('quietCreateBody')}
-                  </span>
-                </Link>
-              )}
-            </div>
-          )}
-        </section>
+            {home == null ? (
+              <div className="mt-4">
+                <CardSkeleton lines={3} plain />
+              </div>
+            ) : leadItem && home ? (
+              <div className="mt-4">
+                <MemberHomeThreadCard
+                  lang={lang}
+                  compact
+                  assistant={showAssistant}
+                  item={leadItem}
+                  proposal={
+                    leadItem.kind === 'proposal'
+                      ? home.proposals.find(
+                          (item) => item.slug === leadItem.slug,
+                        ) ?? null
+                      : null
+                  }
+                  onAsk={requestMemberHomeAsk}
+                  onReach={(person, mode) =>
+                    mode === 'call' ? openCall(person) : openChat(person)
+                  }
+                />
+              </div>
+            ) : leadItem ? (
+              <div className="mt-4">
+                <p className="text-1">{leadItem.title}</p>
+                <p className="mt-1 text-1 text-neutral-11">
+                  {leadItem.spaceTitle}
+                </p>
+                {leadHref ? (
+                  <Button asChild className="mt-4">
+                    <Link href={leadHref}>
+                      {leadItem.kind === 'proposal'
+                        ? t('weighIn')
+                        : t('viewSignal')}
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-2">
+                {home.counts.spaces > 0 ? (
+                  <Link
+                    href={`/${lang}/profile/${home.person.slug}/actions/activate-spaces`}
+                    className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
+                  >
+                    <span className="block text-1">{t('quietActivate')}</span>
+                    <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
+                      {t('quietActivateBody')}
+                    </span>
+                  </Link>
+                ) : (
+                  <Link
+                    href={getOnboardingPath(lang)}
+                    className="border border-border bg-background px-4 py-3 text-foreground hover:border-foreground"
+                  >
+                    <span className="block text-1">{t('createSpace')}</span>
+                    <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
+                      {t('quietCreateBody')}
+                    </span>
+                  </Link>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
 
         <div className="mt-4">
           <Tile title={t('waiting')} busy={home == null}>

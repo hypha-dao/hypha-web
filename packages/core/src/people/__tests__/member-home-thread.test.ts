@@ -383,6 +383,57 @@ describe('passedMemberHomeItemKeys', () => {
     expect(keys).toEqual([]);
   });
 
+  it('shows the proposal card when the reply names its author', () => {
+    const catalog = listMemberHomeThreadItems({
+      ...home,
+      proposals: [
+        {
+          ...home.proposals[0]!,
+          slug: 'april-contribution',
+          title: 'Contribution April to June',
+          creatorId: 4,
+          creatorName: 'Ronnie Potel',
+          description: 'Commitment level and compensation for April to June.',
+        },
+      ],
+    });
+    const item = memberHomeThreadItemForMessage(catalog, {
+      content:
+        "Here's the proposal from Ronnie Xerxes Potel regarding his contribution for the period from April to June. What would you like to decide about this proposal?",
+    });
+    expect(item?.slug).toBe('april-contribution');
+  });
+
+  it('drops the proposal they refused to look at, not the one already on the card', () => {
+    const two = listMemberHomeThreadItems({
+      ...home,
+      proposals: [
+        ...home.proposals,
+        {
+          ...home.proposals[0]!,
+          id: 10,
+          slug: 'join-services',
+          title: 'Join Hypha Services',
+          spaceSlug: 'hypha-services',
+          spaceTitle: 'Hypha Services',
+        },
+      ],
+    });
+    const memory = memberHomeItemMemory(two, [
+      {
+        role: 'assistant',
+        content:
+          "I've approved the request to join Hypha Services. The next proposal is an invite for Hypha Pollinate. Want to take a look at that now?",
+      },
+      {
+        role: 'user',
+        content: "I don't want to look at this proposal",
+      },
+    ]);
+    expect(memory.passed).toContain('proposal:invite-member');
+    expect(memory.passed).not.toContain('proposal:join-services');
+  });
+
   it('remembers not now and leaves the item after a second one', () => {
     const offer = {
       role: 'assistant' as const,
