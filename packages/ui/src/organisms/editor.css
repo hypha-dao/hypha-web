@@ -30,7 +30,8 @@
   /* 120px ≈ spacing-9 + spacing-8 + spacing-2 */
   min-height: calc(var(--spacing-9) + var(--spacing-8) + var(--spacing-2));
   line-height: var(--text-3--line-height);
-  color: var(--neutral-12);
+  color: var(--foreground);
+  caret-color: var(--foreground);
 }
 
 .richtext-editor-content-host .tiptap:focus,
@@ -39,7 +40,7 @@
 }
 
 .richtext-editor-content-host .tiptap p.is-editor-empty:first-child::before {
-  color: var(--neutral-9);
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -128,6 +129,15 @@
 
 .richtext-editor-content-host .tiptap a:hover {
   color: var(--accent-12);
+}
+
+.richtext-editor-content-host .tiptap p,
+.richtext-editor-content-host .tiptap li,
+.richtext-editor-content-host .tiptap h1,
+.richtext-editor-content-host .tiptap h2,
+.richtext-editor-content-host .tiptap h3,
+.richtext-editor-content-host .tiptap h4 {
+  color: var(--foreground);
 }
 
 .richtext-editor-content-host .tiptap p {
