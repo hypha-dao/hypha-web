@@ -600,7 +600,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         case 'calendar':
           return tCommon('Calendar');
         case 'coherence':
-          return tCoherence('signals');
+          return tCommon('Coherence');
         case 'pipeline':
           return tCommon('Pipeline');
         case 'energy':
