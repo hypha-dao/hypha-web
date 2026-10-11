@@ -71,7 +71,6 @@ export async function writeNetworkOffer(
   offer: string,
 ): Promise<boolean> {
   const trimmed = offer.trim();
-  if (!trimmed) return false;
   try {
     await db.execute(
       sql`update people set network_offer = ${trimmed}, updated_at = now() where id = ${personId}`,

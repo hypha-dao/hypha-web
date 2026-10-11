@@ -106,6 +106,11 @@ const editPersonWeb2Props = {
     .default([])
     .optional(),
   primaryOrientation: z.enum(['member', 'builder', 'investor']).optional(),
+  networkOffer: z
+    .string()
+    .trim()
+    .max(500, { message: 'Keep it under 500 characters' })
+    .optional(),
 };
 
 export const editPersonFiles = z.object({

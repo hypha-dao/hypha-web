@@ -196,23 +196,30 @@ export const updatePerson = async (
     throw new Error('Failed to update person');
   }
   const updated = mapToDomainPerson(dbPerson);
-  if (networkOffer?.trim()) {
+  const offer =
+    typeof networkOffer === 'string' ? networkOffer.trim() || null : undefined;
+  if (typeof networkOffer === 'string') {
     await writeNetworkOffer(db, person.id, networkOffer);
   }
+  const withOffer = <T extends { networkOffer?: string | null }>(
+    personRow: T,
+  ) =>
+    offer === undefined ? personRow : { ...personRow, networkOffer: offer };
   if (
     primaryOrientation !== 'member' &&
     primaryOrientation !== 'builder' &&
     primaryOrientation !== 'investor'
   ) {
-    return updated;
+    return withOffer(updated);
   }
   try {
-    return await updatePersonPrimaryOrientation(
+    const oriented = await updatePersonPrimaryOrientation(
       { id: person.id, primaryOrientation },
       { db },
     );
+    return withOffer(oriented);
   } catch (error) {
-    if (isMissingPrimaryOrientationColumn(error)) return updated;
+    if (isMissingPrimaryOrientationColumn(error)) return withOffer(updated);
     throw error;
   }
 };

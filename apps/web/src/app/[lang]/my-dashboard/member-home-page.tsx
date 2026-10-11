@@ -85,6 +85,12 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
         } catch {
           // The choice is already stored. A missing body should not block the badge.
         }
+        if (person?.id) {
+          await revalidate({
+            ...person,
+            primaryOrientation: nextOrientation,
+          });
+        }
         await mutate(
           (current) => {
             if (!current) return current;
@@ -116,7 +122,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
         setIsSavingOrientation(false);
       }
     },
-    [jwt, mutate, t],
+    [jwt, mutate, person, revalidate, t],
   );
 
   const personRecord: MemberHomeRecord =
