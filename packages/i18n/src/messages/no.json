@@ -2,6 +2,10 @@
   "MemberHome": {
     "panelSpaces": "Rom og mennesker",
     "panelInsights": "Det som trenger deg",
+    "viewAi": "KI",
+    "viewClassic": "Klassisk",
+    "viewToggleLabel": "Bytt mellom AI-hjemmet og det klassiske dashbordet",
+    "classicOrder": "Sortert etter det som trenger deg først.",
     "sensingAround": "Hvem som er her nå",
     "sensingAroundEmpty": "Ingen er innlogget akkurat nå",
     "sensingMore": "+{count}",

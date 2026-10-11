@@ -2,6 +2,10 @@
   "MemberHome": {
     "panelSpaces": "Простори и луѓе",
     "panelInsights": "Што те чека",
+    "viewAi": "AI",
+    "viewClassic": "Класично",
+    "viewToggleLabel": "Префрли се меѓу дома со AI и класичната табла",
+    "classicOrder": "Подредено според тоа што те чека прво.",
     "sensingAround": "Кој е тука сега",
     "sensingAroundEmpty": "Никој не е најавен во моментов",
     "sensingMore": "+{count}",
