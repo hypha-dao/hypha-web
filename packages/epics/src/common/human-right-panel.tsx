@@ -4024,9 +4024,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
 
+    openHumanChatPanel();
+    setActiveTab('chat');
+
     if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
-      openHumanChatPanel();
-      setActiveTab('chat');
       return;
     }
 
