@@ -450,33 +450,33 @@ export function ExploreSpaces({
     </div>
   );
 
-  const networkCensus = enableNetworkMap ? (
-    <NetworkCensus
-      lang={lang}
-      isLoading={showSpacesSkeleton}
-      spaces={{
-        total: selectedSpaces.length + privateSpaces.length,
-        publicCount: selectedSpaces.length,
-        privateCount: privateSpaces.length,
-      }}
-      members={{
-        total: memberCount + privateMemberCount,
-        publicCount: memberCount,
-        privateCount: privateMemberCount,
-      }}
-      agreements={{
-        total: agreementCount + privateAgreementCount,
-        publicCount: agreementCount,
-        privateCount: privateAgreementCount,
-      }}
-      tokens={tokenCensus}
-    />
-  ) : null;
-
-  const sidePanel = selectedSpace ? (
+  const sidePanel = enableNetworkMap ? (
     <NetworkSidePanel
       lang={lang}
       selectedSpace={selectedSpace}
+      census={
+        <NetworkCensus
+          lang={lang}
+          compact
+          isLoading={showSpacesSkeleton}
+          spaces={{
+            total: selectedSpaces.length + privateSpaces.length,
+            publicCount: selectedSpaces.length,
+            privateCount: privateSpaces.length,
+          }}
+          members={{
+            total: memberCount + privateMemberCount,
+            publicCount: memberCount,
+            privateCount: privateMemberCount,
+          }}
+          agreements={{
+            total: agreementCount + privateAgreementCount,
+            publicCount: agreementCount,
+            privateCount: privateAgreementCount,
+          }}
+          tokens={tokenCensus}
+        />
+      }
       onSelectRank={selectRank}
       ranks={showRanking ? [] : networkRanks}
     />
@@ -489,7 +489,8 @@ export function ExploreSpaces({
       <div
         className={cn(
           'grid min-w-0 items-start gap-6',
-          selectedSpace && 'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]',
+          enableNetworkMap &&
+            'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]',
         )}
       >
         <div className="flex min-w-0 flex-col">
@@ -498,7 +499,6 @@ export function ExploreSpaces({
           {enableNetworkMap ? (
             <>
               {renderMapToolbar()}
-              <div className="my-6">{networkCensus}</div>
               <NetworkGlobeMap
                 lang={lang}
                 spaces={mapSpaces}
