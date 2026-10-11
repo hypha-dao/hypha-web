@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
+import { Radio, ScrollText } from 'lucide-react';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Button,
@@ -35,10 +36,7 @@ import {
   getSignalPath,
 } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
-import {
-  SpaceSwitcherMark,
-  SpaceSwitcherOption,
-} from '../../spaces/components/space-switcher-option';
+import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import {
   MAX_VISIBLE_RECENT_SPACES,
@@ -62,6 +60,7 @@ import {
   MemberHomeSpacesWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
+import { MemberHomeEnergyPanel } from './member-home-energy-panel';
 import './member-home-banner.css';
 
 type MemberHomeProps = {
@@ -292,8 +291,10 @@ export function MemberHome({
                       return [
                         {
                           id: item.id,
+                          kind: item.kind,
                           title: item.title,
                           detail: item.detail,
+                          icon: item.spaceLogo ?? null,
                           href:
                             item.kind === 'signal'
                               ? getSignalPath(
@@ -458,6 +459,9 @@ export function MemberHome({
         </section>
 
         <div className="mt-4 grid gap-4">
+          {home?.person.slug ? (
+            <MemberHomeEnergyPanel personSlug={home.person.slug} />
+          ) : null}
           <MemberHomeWalletWidget
             lang={lang}
             personSlug={home?.person.slug}
@@ -482,7 +486,7 @@ export function MemberHome({
             title={t('investorTitle')}
             body={t('investorBody')}
             action={t('investorAction')}
-            href={`/${lang}/network/marketplace`}
+            href={`/${lang}/network/needs`}
             meta={t('investorCount', {
               count: home.counts.capitalAsks,
             })}
@@ -635,6 +639,7 @@ export function MemberHome({
                         return [
                           {
                             id: `${item.kind}:${item.slug}`,
+                            kind: item.kind,
                             title: item.title,
                             detail:
                               item.kind === 'signal'
@@ -1040,6 +1045,27 @@ function TileLink({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
+function ResourceMark({
+  kind,
+  iconUrl,
+}: {
+  kind?: 'signal' | 'proposal';
+  iconUrl?: string | null;
+}) {
+  const Icon =
+    kind === 'proposal' ? ScrollText : kind === 'signal' ? Radio : null;
+  return (
+    <span className="craft-icon-box" aria-hidden>
+      {iconUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={iconUrl} alt="" className="size-full object-cover" />
+      ) : Icon ? (
+        <Icon />
+      ) : null}
+    </span>
+  );
+}
+
 function ResourceList({
   items,
   empty,
@@ -1048,6 +1074,7 @@ function ResourceList({
 }: {
   items: Array<{
     id: string | number;
+    kind?: 'signal' | 'proposal';
     title: string;
     detail: string;
     href: string;
@@ -1085,7 +1112,7 @@ function ResourceList({
           <li key={item.id}>
             <Link
               href={item.href}
-              className="group flex items-start gap-2"
+              className="group flex items-center gap-3"
               onClick={(event) => {
                 if (!item.onSelect) return;
                 if (
@@ -1101,7 +1128,7 @@ function ResourceList({
                 item.onSelect();
               }}
             >
-              <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
+              <ResourceMark kind={item.kind} iconUrl={iconUrl} />
               <span className="min-w-0">
                 <span className="block text-1 group-hover:underline">
                   {item.title}
