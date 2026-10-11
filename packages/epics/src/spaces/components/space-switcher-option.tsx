@@ -14,7 +14,10 @@ export function SpaceSwitcherMark({
   alt?: string;
 }) {
   return (
-    <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full">
+    <span
+      className="shrink-0 overflow-hidden rounded-full"
+      style={{ width: 24, height: 24 }}
+    >
       {iconUrl ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,8 +45,9 @@ export const SpaceSwitcherOption = forwardRef<
   return (
     <Link
       ref={ref}
-      className={cn('flex min-w-0 items-center gap-2', className)}
       {...props}
+      className={cn('flex min-w-0 items-center gap-2', className)}
+      style={{ minHeight: 32 }}
     >
       <SpaceSwitcherMark iconUrl={iconUrl} alt={title} />
       <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">{title}</span>
