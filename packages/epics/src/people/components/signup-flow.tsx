@@ -27,6 +27,7 @@ export type SignupFlowValues = {
   avatarUrl?: File;
   leadImageUrl?: File;
   primaryOrientation: SignupOrientation;
+  networkOffer: string;
 };
 
 type SignupFlowProps = {
@@ -55,7 +56,13 @@ function profileCreateErrorText(
   }
 }
 
-const STEPS = ['welcome', 'you', 'description', 'orientation'] as const;
+const STEPS = [
+  'welcome',
+  'you',
+  'description',
+  'orientation',
+  'offer',
+] as const;
 type Step = (typeof STEPS)[number];
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
@@ -84,6 +91,7 @@ export function SignupFlow({
   const [orientation, setOrientation] = useState<SignupOrientation | null>(
     null,
   );
+  const [offer, setOffer] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const index = STEPS.indexOf(step);
@@ -123,12 +131,14 @@ export function SignupFlow({
         return;
       }
     }
+    if (step === 'orientation' && !orientation) return;
     const next = STEPS[index + 1];
     if (next) setStep(next);
   };
 
   const finish = async () => {
     if (!orientation || authLoading) return;
+    if (!offer.trim()) return;
     const identityError = youError();
     if (identityError) {
       setFieldError(identityError);
@@ -157,6 +167,7 @@ export function SignupFlow({
         location: trimmedLocation || undefined,
         avatarUrl: avatarUrl ?? undefined,
         primaryOrientation: orientation,
+        networkOffer: offer.trim(),
       });
     } catch (err) {
       setFieldError(err instanceof Error ? err.message : String(err));
@@ -313,6 +324,22 @@ export function SignupFlow({
                 </div>
               </Screen>
             ) : null}
+
+            {step === 'offer' && orientation ? (
+              <Screen
+                eyebrow={t('offer.eyebrow')}
+                title={t(`offer.${orientation}`)}
+              >
+                <Textarea
+                  value={offer}
+                  maxLength={500}
+                  rows={4}
+                  aria-label={t(`offer.${orientation}`)}
+                  placeholder={t('offer.placeholder')}
+                  onChange={(event) => setOffer(event.target.value)}
+                />
+              </Screen>
+            ) : null}
           </div>
 
           {email ? (
@@ -370,7 +397,17 @@ export function SignupFlow({
               <Button
                 type="button"
                 className={primaryActionClassName}
-                disabled={isCreating || authLoading || !orientation}
+                disabled={!orientation}
+                onClick={goNext}
+              >
+                {t('continue')}
+              </Button>
+            ) : null}
+            {step === 'offer' ? (
+              <Button
+                type="button"
+                className={primaryActionClassName}
+                disabled={isCreating || authLoading || !offer.trim()}
                 onClick={() => {
                   void finish();
                 }}

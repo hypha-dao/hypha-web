@@ -2,6 +2,7 @@ import { DbConfig } from '../../server';
 import { people } from '@hypha-platform/storage-postgres';
 import { mapToDomainPerson, personColumns } from './queries';
 import { isMissingPrimaryOrientationColumn } from './primary-orientation-column';
+import { writeNetworkOffer } from './network-offer';
 import { Person } from '../types';
 import { eq, sql } from 'drizzle-orm';
 import type { DatabaseInstance } from '../../common/server/types';
@@ -122,7 +123,7 @@ export const createPerson = async (
   { db }: CreatePersonConfig,
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
-  const { primaryOrientation, ...profile } = person;
+  const { primaryOrientation, networkOffer, ...profile } = person;
   const insertData = {
     ...profile,
     email: person.email || null,
@@ -163,10 +164,14 @@ export const createPerson = async (
   }
 
   try {
-    return await updatePersonPrimaryOrientation(
+    const updated = await updatePersonPrimaryOrientation(
       { id: created.id, primaryOrientation },
       { db },
     );
+    if (networkOffer?.trim()) {
+      await writeNetworkOffer(db, created.id, networkOffer);
+    }
+    return { ...updated, networkOffer: networkOffer?.trim() || null };
   } catch (error) {
     if (isMissingPrimaryOrientationColumn(error)) return created;
     throw error;
@@ -178,7 +183,7 @@ export const updatePerson = async (
   { db }: CreatePersonConfig,
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
-  const { primaryOrientation, ...profile } = person;
+  const { primaryOrientation, networkOffer, ...profile } = person;
   const updateData = {
     ...profile,
     email: person.email || null,
@@ -191,6 +196,9 @@ export const updatePerson = async (
     throw new Error('Failed to update person');
   }
   const updated = mapToDomainPerson(dbPerson);
+  if (networkOffer?.trim()) {
+    await writeNetworkOffer(db, person.id, networkOffer);
+  }
   if (
     primaryOrientation !== 'member' &&
     primaryOrientation !== 'builder' &&

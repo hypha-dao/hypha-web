@@ -14,6 +14,7 @@ import { sql, eq, inArray, and, notLike, or, isNull, ne } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 import { readPrimaryOrientation } from './primary-orientation-column';
+import { readNetworkOffer } from './network-offer';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
@@ -65,10 +66,13 @@ async function mapPersonRow(
 ) {
   if (!dbPerson) return null;
   const primaryOrientation = await readPrimaryOrientation(db, dbPerson.id);
-  return mapToDomainPerson({ ...dbPerson, primaryOrientation });
+  const networkOffer = await readNetworkOffer(db, dbPerson.id);
+  return mapToDomainPerson({ ...dbPerson, primaryOrientation, networkOffer });
 }
 
-export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
+export const mapToDomainPerson = (
+  dbPerson: Partial<DbPerson> & { networkOffer?: string | null },
+): Person => {
   invariant(dbPerson.slug, 'Person must have a slug');
   invariant(dbPerson.createdAt, 'Person must have createdAt');
   invariant(dbPerson.updatedAt, 'Person must have updatedAt');
@@ -93,6 +97,12 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
       dbPerson.primaryOrientation === 'investor'
         ? dbPerson.primaryOrientation
         : null,
+    networkOffer:
+      typeof dbPerson.networkOffer === 'string'
+        ? dbPerson.networkOffer
+        : dbPerson.networkOffer === null
+        ? null
+        : undefined,
     links: nullToUndefined(dbPerson.links ?? null),
     createdAt: dbPerson.createdAt!,
     updatedAt: dbPerson.updatedAt!,

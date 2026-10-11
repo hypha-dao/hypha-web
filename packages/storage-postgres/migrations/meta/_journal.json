@@ -617,6 +617,13 @@
       "when": 1784000000017,
       "tag": "0086_network_horizon",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1784000000017,
+      "tag": "0086_network_offer_and_capitals",
+      "breakpoints": true
     }
   ]
 }

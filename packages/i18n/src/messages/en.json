@@ -162,11 +162,61 @@
         "body": "You read what the network is asking for and deploy capital."
       }
     },
+    "offer": {
+      "eyebrow": "Your offer",
+      "placeholder": "A few sentences is enough",
+      "member": "What skills, knowledge or resource are you bringing to the network?",
+      "builder": "What is your powerful vision for the world?",
+      "investor": "What are you looking to support? What is your mandate?"
+    },
     "errors": {
       "nicknameTaken": "Profile with this nickname already exists. Please choose a different one.",
       "emailTaken": "An account with this email already exists. Try signing in or use a different email.",
       "createFailed": "Failed to create profile"
     }
+  },
+  "NetworkExchange": {
+    "navNetwork": "Network",
+    "navExchange": "Exchange",
+    "navNeeds": "Needs",
+    "navAction": "Proof of action",
+    "navImpact": "Proof of impact",
+    "navCreate": "Create",
+    "ranking": "Ranking",
+    "byNeeds": "Needs",
+    "byAction": "Action",
+    "byImpact": "Impact",
+    "emptyRank": "Nothing shared with the network yet.",
+    "openRoom": "Open room",
+    "visit": "Visit space",
+    "noRoom": "This space has no room yet.",
+    "seeks": "Seeks",
+    "offers": "Offers back",
+    "noneYet": "Not named yet",
+    "exchangeTitle": "Find a project, or the resources it needs",
+    "exchangeBody": "Spaces name what they seek and what they offer back. The match is the overlap.",
+    "bestMatch": "Closest match",
+    "noMatch": "No overlap yet. Ask the AI for one project.",
+    "needsTitle": "Needs list",
+    "needsBody": "Needs a space chose to share with the network.",
+    "needsEmpty": "No needs are shared with the network yet.",
+    "actionTitle": "Proof of action",
+    "actionBody": "Actions a space chose to share with the network.",
+    "actionEmpty": "No actions are shared with the network yet.",
+    "impactTitle": "Proof of impact",
+    "impactBody": "Impact a space chose to share with the network.",
+    "impactEmpty": "No impact is shared with the network yet.",
+    "createTitle": "Quick create",
+    "createBody": "Name what the space seeks and what it offers back. Then open the space creator.",
+    "spaceName": "Space name",
+    "purpose": "Purpose",
+    "place": "Place",
+    "attach": "Save onto a space you already belong to",
+    "continueCreate": "Open the space creator",
+    "saveCapitals": "Save on this space",
+    "saved": "Saved.",
+    "saveLater": "The creator still has these. They stay on the space once the network record is in place.",
+    "signals": "{count} shared"
   },
   "MemberHome": {
     "greetingMorning": "Good morning, {name}.",
@@ -3182,7 +3232,10 @@
       "blindSpot": "What's our biggest blind spot?",
       "summarizeDiscussion": "Summarize recent team discussion",
       "spaceMemory": "What does our space remember?",
-      "valueFlows": "How does value flow through our tokens?"
+      "valueFlows": "How does value flow through our tokens?",
+      "findProject": "Find one project I can resource",
+      "findResources": "Find resources for a space I am building",
+      "sharedNeeds": "Which needs are shared with the network?"
     },
     "suggestionTags": {
       "createSpace": "Create space",
@@ -3192,7 +3245,10 @@
       "blindSpot": "Blind spot",
       "summarizeDiscussion": "Summarize discussion",
       "spaceMemory": "Space memory",
-      "valueFlows": "Value flows"
+      "valueFlows": "Value flows",
+      "findProject": "Find a project",
+      "findResources": "Find resources",
+      "sharedNeeds": "Shared needs"
     },
     "welcome": "I'm your space AI for bringing coherence to strategy, motion to operations, and meaning to impact, with specialist agents gliding in whenever you call for them.",
     "specialistsResponding": "Specialists contributing",

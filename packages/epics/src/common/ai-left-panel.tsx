@@ -709,6 +709,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const suggestionItems = useMemo(
     () =>
       [
+        ...(pathname.includes('/network') && !spaceSlug
+          ? ([
+              {
+                id: 'findProject',
+                prompt: t('suggestions.findProject'),
+                tagLabel: t('suggestionTags.findProject'),
+              },
+              {
+                id: 'findResources',
+                prompt: t('suggestions.findResources'),
+                tagLabel: t('suggestionTags.findResources'),
+              },
+              {
+                id: 'sharedNeeds',
+                prompt: t('suggestions.sharedNeeds'),
+                tagLabel: t('suggestionTags.sharedNeeds'),
+              },
+            ] as const)
+          : []),
         ...(!spaceSlug
           ? ([
               {
@@ -754,7 +773,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           tagLabel: t('suggestionTags.valueFlows'),
         },
       ] as const,
-    [spaceSlug, t],
+    [pathname, spaceSlug, t],
   );
 
   const handleOverlayClose = useCallback(() => {
