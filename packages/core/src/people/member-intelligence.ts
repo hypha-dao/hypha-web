@@ -123,6 +123,8 @@ export type MemberIntelligence = {
     sharedSpaceCount: number;
     /** Wallet a direct transfer can use. */
     address?: string | null;
+    /** How they show up. Absent until they have chosen. */
+    primaryOrientation?: 'member' | 'builder' | 'investor' | null;
   }>;
   wallet: {
     address: string | null;

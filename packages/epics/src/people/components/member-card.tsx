@@ -3,6 +3,7 @@
 import { Card, StatusBadge, Skeleton, Button, Badge } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 import { PersonAvatar } from './person-avatar';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
@@ -30,6 +31,7 @@ export type MemberCardProps = {
   isLoading?: boolean;
   minimize?: boolean;
   address?: string;
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
@@ -43,6 +45,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   isLoading,
   minimize,
   address,
+  primaryOrientation,
 }) => {
   const tCommon = useTranslations('Common');
   const format = useFormatter();
@@ -111,14 +114,18 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
         <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <Badge
-              className="w-fit"
-              size={1}
-              variant="outline"
-              colorVariant="neutral"
-            >
-              {tCommon('memberRoleLabel')}
-            </Badge>
+            {isPersonRole(primaryOrientation) ? (
+              <PersonRoleBadge role={primaryOrientation} />
+            ) : (
+              <Badge
+                className="w-fit"
+                size={1}
+                variant="outline"
+                colorVariant="neutral"
+              >
+                {tCommon('memberRoleLabel')}
+              </Badge>
+            )}
             {!minimize ? (
               <StatusBadge isLoading={isLoading} status={status} />
             ) : null}

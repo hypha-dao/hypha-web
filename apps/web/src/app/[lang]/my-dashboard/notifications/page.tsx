@@ -5,7 +5,7 @@ type PageProps = {
   params: Promise<{ lang: Locale }>;
 };
 
-export default async function LegacyDashboardPage(props: PageProps) {
+export default async function LegacyNotificationsPage(props: PageProps) {
   const { lang } = await props.params;
-  redirect(`/${lang}/home`);
+  redirect(`/${lang}/home/notifications`);
 }

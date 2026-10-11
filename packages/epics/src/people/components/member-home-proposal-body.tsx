@@ -19,6 +19,7 @@ type MemberHomeProposalBodyProps = {
   spaceId: number | null;
   documentId: number | null;
   documentSlug: string;
+  compact?: boolean;
 };
 
 function tokenDecimals(address: string) {
@@ -47,6 +48,7 @@ export function MemberHomeProposalBody({
   spaceId,
   documentId,
   documentSlug,
+  compact = false,
 }: MemberHomeProposalBodyProps) {
   const t = useTranslations('MemberHome');
   const tVoting = useTranslations('ProposalDetails');
@@ -105,7 +107,7 @@ export function MemberHomeProposalBody({
             <span />
           )}
           {transfer && tokenSymbol ? (
-            <p className="text-2">
+            <p className={compact ? 'text-1' : 'text-2'}>
               <span className="font-medium text-foreground">
                 {formatAmount(
                   transfer.rawAmount,
@@ -162,7 +164,13 @@ export function MemberHomeProposalBody({
       {canVote ? (
         <MemberHomeVote proposalId={proposalId} documentId={documentId} />
       ) : (
-        <p className="text-2 text-neutral-11">{t('voteNeedsChain')}</p>
+        <p
+          className={
+            compact ? 'text-1 text-neutral-11' : 'text-2 text-neutral-11'
+          }
+        >
+          {t('voteNeedsChain')}
+        </p>
       )}
     </div>
   );

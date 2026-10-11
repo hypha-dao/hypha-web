@@ -352,7 +352,7 @@ export function PanelWrapLayout({
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isOnboarding = isInteractiveCreatePath(pathname);
-  const isMemberHome = /\/my-dashboard\/?$/.test(pathname);
+  const isMemberHome = /\/home\/?$/.test(pathname);
   const effectiveLeft = isSpace ? left : undefined;
   // Human chat lives in a space, and on the member home so a connection can
   // open a direct room. It stays unmounted on network, my spaces, and wallet.

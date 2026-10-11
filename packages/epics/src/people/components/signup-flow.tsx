@@ -11,6 +11,8 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { PersonRoleBadge } from './person-badges';
+
 export type SignupOrientation = 'member' | 'builder' | 'investor';
 
 export type SignupFlowValues = {
@@ -295,7 +297,7 @@ export function SignupFlow({
                             : 'border-border hover:border-neutral-8',
                         )}
                       >
-                        <OrientationMark orientation={option} />
+                        <PersonRoleBadge role={option} />
                         <span
                           className="mt-3 block text-3"
                           style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -430,34 +432,6 @@ function Screen({
         </div>
       ) : null}
     </div>
-  );
-}
-
-function OrientationMark({ orientation }: { orientation: SignupOrientation }) {
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      aria-hidden
-      className="block size-8 text-foreground"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinejoin="miter"
-    >
-      {orientation === 'member' ? (
-        <>
-          <circle cx="16" cy="16" r="10" />
-          <circle cx="16" cy="16" r="3.75" />
-        </>
-      ) : null}
-      {orientation === 'builder' ? (
-        <>
-          <rect x="6" y="12" width="14" height="14" />
-          <path d="M12 12V6h14v14h-6" />
-        </>
-      ) : null}
-      {orientation === 'investor' ? <path d="M16 6 26 16 16 26 6 16Z" /> : null}
-    </svg>
   );
 }
 
