@@ -96,10 +96,10 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Would you like to take part in one of them?');
     expect(facts).toContain('Asking for context or a discussion is not a no');
     expect(facts).toContain(
-      'Teo is looking for a quick look at the greenhouse budget before the vote wraps up.',
+      'Use only the person, the space, the task, and the token written on that item.',
     );
-    expect(facts).toContain('30 HUM');
-    expect(facts).toContain('Can you jump on with him?');
+    expect(facts).not.toContain('Teo');
+    expect(facts).not.toContain('plum jam');
     expect(facts).toContain("I'll show you the proposal now.");
     expect(facts).toContain('Could you let me know if you approve');
     expect(facts).toContain(
@@ -113,8 +113,10 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
     expect(facts).toContain('action=decision');
-    expect(facts).toContain("Glad you're helping Teo");
-    expect(facts).toContain('40 NFC and a jar of plum jam');
+    expect(facts).toContain("using that person's name from the record");
+    expect(facts).toContain(
+      'Do not invent the person, the task, or the token.',
+    );
     expect(facts).toContain('Never make a recipe');
     expect(facts).toContain('Do not call it a chat');
     expect(facts).toContain('think about it');
