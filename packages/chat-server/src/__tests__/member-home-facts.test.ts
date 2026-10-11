@@ -98,6 +98,10 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain('30 HUM');
     expect(facts).toContain('Can you jump on with him?');
+    expect(facts).toContain("I'll show you the proposal now.");
+    expect(facts).toContain('Could you let me know if you approve');
+    expect(facts).toContain('You are not in the decision');
+    expect(facts).toContain('action=decision');
     expect(facts).toContain("Glad you're helping Teo");
     expect(facts).toContain('40 NFC and a jar of plum jam');
     expect(facts).toContain('Never make a recipe');

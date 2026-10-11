@@ -17,7 +17,7 @@ export function createShowMemberHomeItemTool(
 
   return {
     description:
-      'Place one home card inside this reply. Call it once, and only for the waiting item this reply is about. kind and slug must match that item.',
+      'Place one home card inside this reply. Call it once, and only for the waiting item this reply is about. kind and slug must match that item. Do not say that you are showing it, and do not repeat its title.',
     inputSchema,
     execute: async (args: z.infer<typeof inputSchema>) => {
       const parsed = inputSchema.safeParse(args);
@@ -39,9 +39,6 @@ export function createShowMemberHomeItemTool(
         shown: true,
         kind: item.kind,
         slug: item.slug,
-        documentKind: item.documentKind,
-        title: item.title,
-        spaceTitle: item.spaceTitle,
       };
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

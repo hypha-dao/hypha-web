@@ -142,6 +142,21 @@ function messageText(message: HomeMessage) {
     .trim();
 }
 
+/** A decision stays with the member. Drop narration and any ask for their choice. */
+function straightforwardHomeText(text: string) {
+  const steers = (sentence: string) =>
+    /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|if you approve|your approval|can you review|do you approve|would you approve|how (?:will|would) you vote|let me know if you/i.test(
+      sentence,
+    );
+  return text
+    .split(/\n+/)
+    .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0 && !steers(sentence))
+    .join(' ')
+    .trim();
+}
+
 export function MemberHomeChat({
   lang,
   intelligence,
@@ -289,7 +304,7 @@ export function MemberHomeChat({
       const message = homeMessages[i];
       if (!message || message.role !== 'assistant') continue;
       const text = messageText(message);
-      if (text) return text;
+      if (text) return straightforwardHomeText(text);
     }
     return '';
   }, [homeMessages]);
@@ -349,19 +364,21 @@ export function MemberHomeChat({
   const toggleSound = useCallback(() => {
     setSoundOn((current) => {
       const next = !current;
-      if (!next) voiceInterview.stopSpeaking();
+      if (next) void voiceInterview.startListening();
+      else voiceInterview.stopSpeaking();
       writeHomeSoundOn(next);
       return next;
     });
-  }, [voiceInterview.stopSpeaking]);
+  }, [voiceInterview.startListening, voiceInterview.stopSpeaking]);
 
   const toggleMic = useCallback(() => {
     setMicOn((current) => {
       const next = !current;
+      if (next) void voiceInterview.startListening();
       writeHomeMicOn(next);
       return next;
     });
-  }, []);
+  }, [voiceInterview.startListening]);
 
   useEffect(() => {
     if (!soundReady || opened.current || isAuthLoading || !isAuthenticated) {
@@ -488,7 +505,11 @@ export function MemberHomeChat({
             if (message.metadata?.homeArrival && attached.length === 0) {
               return null;
             }
-            const text = messageText(message);
+            const rawText = messageText(message);
+            const text =
+              message.role === 'assistant'
+                ? straightforwardHomeText(rawText)
+                : rawText;
             const threadItem =
               message.role === 'assistant'
                 ? memberHomeThreadItemForMessage(threadItems, message)

@@ -184,6 +184,7 @@ export function useOnboardingVoiceRealtime({
 }: UseOnboardingVoiceRealtimeOptions) {
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
   const connectInFlightRef = useRef(false);
+  const connectGenerationRef = useRef(0);
   const connectRetryCountRef = useRef(0);
   const connectRetryTimerRef = useRef<number | null>(null);
   const enabledRef = useRef(enabled);
@@ -537,6 +538,7 @@ export function useOnboardingVoiceRealtime({
   );
 
   const disconnect = useCallback(() => {
+    connectGenerationRef.current += 1;
     clearConnectRetryTimer();
     connectInFlightRef.current = false;
     setIsConnecting(false);
@@ -790,6 +792,16 @@ export function useOnboardingVoiceRealtime({
     ],
   );
 
+  const flushQueuedSpeech = useCallback(
+    (connection: RealtimeVoiceConnection) => {
+      const queued = queuedSpeakableRef.current;
+      if (!queued) return;
+      void connection.remoteAudio.play().catch(() => undefined);
+      speakViaRealtimeRef.current(queued);
+    },
+    [],
+  );
+
   const connect = useCallback(async () => {
     if (connectInFlightRef.current || connectionRef.current) return;
     if (!conversationContext) {
@@ -797,6 +809,7 @@ export function useOnboardingVoiceRealtime({
       return;
     }
 
+    const generation = connectGenerationRef.current;
     connectInFlightRef.current = true;
     setIsConnecting(true);
     setVoiceError(null);
@@ -805,6 +818,7 @@ export function useOnboardingVoiceRealtime({
 
     try {
       const token = (await getAccessToken?.())?.trim();
+      if (generation !== connectGenerationRef.current) return;
       if (!token) {
         scheduleConnectRetry();
         return;
@@ -813,6 +827,7 @@ export function useOnboardingVoiceRealtime({
       connectRetryCountRef.current = 0;
 
       await acquireWarmMicStream();
+      if (generation !== connectGenerationRef.current) return;
 
       const session = await fetchRealtimeVoiceSession({
         authToken: token,
@@ -820,6 +835,7 @@ export function useOnboardingVoiceRealtime({
         locale,
         recentTranscriptSummary: recentTranscriptSummaryRef.current,
       });
+      if (generation !== connectGenerationRef.current) return;
 
       const connection = await connectOpenAiRealtimeCall({
         clientSecret: session.clientSecret,
@@ -850,6 +866,11 @@ export function useOnboardingVoiceRealtime({
         },
       });
 
+      if (generation !== connectGenerationRef.current) {
+        connection.close();
+        return;
+      }
+
       connectionRef.current = connection;
       setIsRealtimeConnected(true);
       releaseMic(connection);
@@ -859,9 +880,19 @@ export function useOnboardingVoiceRealtime({
         model: session.model,
         voice: session.voice,
       });
-      const queued = queuedSpeakableRef.current;
-      if (queued) {
-        speakViaRealtimeRef.current(queued);
+      // The greeting is often ready before the data channel opens. Speaking
+      // then only queues the line, so flush it once the channel can send.
+      const speakQueued = () => flushQueuedSpeech(connection);
+      if (connection.dataChannel.readyState === 'open') {
+        speakQueued();
+      } else {
+        connection.dataChannel.addEventListener('open', speakQueued, {
+          once: true,
+        });
+        if (connection.dataChannel.readyState === 'open') {
+          connection.dataChannel.removeEventListener('open', speakQueued);
+          speakQueued();
+        }
       }
     } catch (error) {
       console.error('[VoiceRealtime] connect failed:', error);
@@ -881,7 +912,10 @@ export function useOnboardingVoiceRealtime({
       scheduleConnectRetry();
       return;
     } finally {
-      if (!connectRetryTimerRef.current) {
+      if (
+        generation === connectGenerationRef.current &&
+        !connectRetryTimerRef.current
+      ) {
         connectInFlightRef.current = false;
         setIsConnecting(false);
       }
@@ -889,9 +923,11 @@ export function useOnboardingVoiceRealtime({
   }, [
     conversationContext,
     disconnect,
+    flushQueuedSpeech,
     getAccessToken,
     handleServerEvent,
     locale,
+    releaseMic,
     scheduleConnectRetry,
   ]);
 
@@ -945,8 +981,16 @@ export function useOnboardingVoiceRealtime({
   }, [disconnect]);
 
   const startListening = useCallback(async () => {
+    const connection = connectionRef.current;
+    if (connection) {
+      void connection.remoteAudio.play().catch(() => undefined);
+      releaseMic(connection);
+      setPhase('listening');
+      flushQueuedSpeech(connection);
+      return;
+    }
     await connect();
-  }, [connect]);
+  }, [connect, flushQueuedSpeech, releaseMic]);
 
   const toggleListening = useCallback(() => {
     if (connectionRef.current) {
@@ -980,11 +1024,25 @@ export function useOnboardingVoiceRealtime({
   }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
+    const unlock = () => {
+      const audio = connectionRef.current?.remoteAudio;
+      if (!audio) return;
+      void audio.play().catch(() => undefined);
+    };
+    window.addEventListener('pointerdown', unlock);
+    return () => window.removeEventListener('pointerdown', unlock);
+  }, [enabled]);
+
+  useEffect(() => {
     const next = activeSpaceSlug?.trim() || undefined;
     if (lastActiveSpaceSlugRef.current === next) return;
     lastActiveSpaceSlugRef.current = next;
     lastSpokenAssistantRef.current = '';
     stopListening();
+    if (enabledRef.current) {
+      void connectRef.current();
+    }
   }, [activeSpaceSlug, stopListening]);
 
   useEffect(() => {
@@ -998,6 +1056,7 @@ export function useOnboardingVoiceRealtime({
   useEffect(() => {
     if (!enabled || !isChatStreaming) return;
     wasStreamingRef.current = true;
+    awaitingAssistantSpeakRef.current = true;
     stopBrowserSpeech();
     interimAckSpokenRef.current = false;
     earlySpeechStartedRef.current = false;
@@ -1039,6 +1098,11 @@ export function useOnboardingVoiceRealtime({
     earlySpeechStartedRef.current = true;
     earlySpokenPrefixRef.current = earlySentence;
     speakAssistantReply(earlySentence);
+    if (!realtimeSpeakInFlightRef.current) {
+      earlySpeechStartedRef.current = false;
+      earlySpokenPrefixRef.current = '';
+      return;
+    }
     interimAckSpokenRef.current = true;
   }, [enabled, isChatStreaming, lastAssistantText, speakAssistantReply]);
 
@@ -1047,10 +1111,32 @@ export function useOnboardingVoiceRealtime({
     if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
 
     const spoken = lastAssistantText.trim();
+    const startedFrom = assistantTextAtStreamStartRef.current.trim();
+    // The reply often lands after the stream flag drops, and until it does
+    // lastAssistantText is still the previous turn. Keep this turn until the
+    // new text is here, or the opening greeting is never spoken.
+    if (!spoken || spoken === startedFrom) {
+      const timer = window.setTimeout(() => {
+        if (!enabledRef.current || isChatStreamingRef.current) return;
+        if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) {
+          return;
+        }
+        const latest = lastAssistantTextRef.current.trim();
+        const started = assistantTextAtStreamStartRef.current.trim();
+        if (latest && latest !== started) return;
+        awaitingAssistantSpeakRef.current = false;
+        wasStreamingRef.current = false;
+        if (!realtimeSpeakInFlightRef.current && connectionRef.current) {
+          setPhase('listening');
+        }
+      }, 1200);
+      return () => window.clearTimeout(timer);
+    }
+
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
 
-    if (!spoken || isAssistantFailureText(spoken)) {
+    if (isAssistantFailureText(spoken)) {
       earlySpeechStartedRef.current = false;
       earlySpokenPrefixRef.current = '';
       pendingRemainderSpeakRef.current = null;
