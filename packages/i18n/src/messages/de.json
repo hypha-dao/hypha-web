@@ -168,7 +168,9 @@
     "seeMoreNotifications": "Mehr anzeigen",
     "openPerson": "{name} öffnen",
     "signals": "Signale, die dich brauchen",
-    "proposals": "Vorschläge zum Abwägen"
+    "proposals": "Vorschläge zum Abwägen",
+    "waiting": "Signale und Vorschläge",
+    "noWaiting": "Signale und Vorschläge aus deinen Spaces erscheinen hier."
   },
   "WelcomeFlow": {
     "errors": {
