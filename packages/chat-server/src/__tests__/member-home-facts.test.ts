@@ -80,6 +80,8 @@ describe('formatMemberHomeFacts', () => {
   it('keeps Hypha AI voice and lists this member’s world', () => {
     const facts = formatMemberHomeFacts(home);
     expect(facts).toContain('Keep the Hypha AI voice');
+    expect(facts).toContain('The collective is the point');
+    expect(facts).toContain('No open question');
     expect(facts).toContain('Ada Lovelace');
     expect(facts).toContain('Grove');
     expect(facts).toContain('Open the path');

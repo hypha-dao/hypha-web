@@ -22,6 +22,10 @@ import {
 } from '@hypha-platform/core/client';
 import { formatMemberHomeFacts } from './member-home-facts';
 import { loadMemberHomeFacts } from './load-member-home-facts';
+import {
+  buildSpaceContextSnapshot,
+  loadSignedInMemberBrief,
+} from './presence-brief';
 import { createShowMemberHomeItemTool } from './tools/show-member-home-item';
 import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
@@ -1256,11 +1260,14 @@ function buildEffectiveSystemPrompt(
   lastUserText: string | null,
   conversationContext: ChatRequestPayload['conversationContext'],
   spaceContextSnapshot: string | null,
+  memberBrief: string | null,
 ): string {
   const basePrompt = buildSystemPrompt(spaceSlug);
   const parts = [basePrompt];
   if (spaceContextSnapshot) {
     parts.push(`\n\n${spaceContextSnapshot}`);
+  } else if (memberBrief) {
+    parts.push(`\n\n${memberBrief}`);
   }
   const inOnboarding = conversationContext?.mode === 'onboarding_setup';
   const postCreateOnboardingPhase =
@@ -1274,79 +1281,6 @@ function buildEffectiveSystemPrompt(
     parts.push(`\n\n${competencyDirective}`);
   }
   return parts.join('');
-}
-
-async function buildSpaceContextSnapshot(
-  spaceSlug: string,
-  clientTitle?: string | null,
-): Promise<string | null> {
-  const safe = sanitizeSlug(spaceSlug);
-  if (!safe) return null;
-
-  try {
-    const result = await getSpaceBySlugTool.execute({ slug: safe });
-    if (
-      !result ||
-      typeof result !== 'object' ||
-      !('found' in result) ||
-      result.found !== true ||
-      !('space' in result) ||
-      !result.space ||
-      typeof result.space !== 'object'
-    ) {
-      return null;
-    }
-
-    const space = result.space as {
-      title?: string;
-      description?: string | null;
-      memberCount?: number;
-      documentCount?: number;
-    };
-    const title = typeof space.title === 'string' ? space.title : safe;
-    const description =
-      typeof space.description === 'string' && space.description.trim()
-        ? space.description.trim()
-        : null;
-
-    return [
-      'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):',
-      `- Active space slug for tools: ${safe}`,
-      `- Display name: ${title}`,
-      ...(clientTitle && clientTitle !== title
-        ? [`- Client-reported title: ${clientTitle}`]
-        : []),
-      ...(description ? [`- Purpose: ${description}`] : []),
-      ...(typeof space.memberCount === 'number'
-        ? [`- Members: ${space.memberCount}`]
-        : []),
-      ...(typeof space.documentCount === 'number'
-        ? [`- Documents: ${space.documentCount}`]
-        : []),
-      ...(typeof (space as { activationMode?: string }).activationMode ===
-      'string'
-        ? [
-            `- Activation mode: ${
-              (space as { activationMode: string }).activationMode
-            }`,
-          ]
-        : []),
-      ...((
-        space as { privacy?: { isAlreadyPrivate?: boolean; summary?: string } }
-      ).privacy?.summary
-        ? [
-            `- Privacy: ${
-              (space as { privacy: { summary: string } }).privacy.summary
-            }`,
-          ]
-        : []),
-      `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
-      `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
-      `- Privacy/transparency changes on existing spaces require create_space_setup_proposal (proposal_type space_transparency) and member vote — never claim updates via update_space_settings.`,
-    ].join('\n');
-  } catch {
-    return null;
-  }
 }
 
 async function convertMessagesSafely(
@@ -1461,13 +1395,21 @@ export async function createChatStreamResult(
   const voiceSpaceSlug =
     requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
   const spaceContextSnapshot = requestedSpaceSlug
-    ? await buildSpaceContextSnapshot(requestedSpaceSlug, activeSpaceTitle)
+    ? await buildSpaceContextSnapshot(
+        requestedSpaceSlug,
+        activeSpaceTitle,
+        authToken,
+      )
     : null;
+  const memberBrief = spaceContextSnapshot
+    ? null
+    : await loadSignedInMemberBrief(authToken);
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     voiceSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
+    memberBrief,
   );
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
