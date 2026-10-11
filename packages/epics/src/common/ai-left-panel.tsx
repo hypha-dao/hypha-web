@@ -753,7 +753,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, []);
 
   useEffect(() => {
-    if (!spaceSlug) return;
     setRecentSpaceSlugs(syncRecentSpacesForActiveSlug(spaceSlug));
   }, [spaceSlug]);
 

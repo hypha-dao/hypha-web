@@ -1,8 +1,8 @@
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const RECENT_SPACE_HISTORY_EVENT = 'hypha:recent-space-slugs:changed';
 const LAST_ACTIVE_SPACE_STORAGE_KEY = 'hypha:last-active-space-slug';
-export const MAX_VISIBLE_RECENT_SPACES = 4;
-// Strict rolling queue of 4 visited (exited) spaces.
+export const MAX_VISIBLE_RECENT_SPACES = 5;
+// Rolling queue of the last 5 spaces the member left.
 export const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES;
 
 function normalizeSlug(slug?: string | null): string | null {
@@ -68,7 +68,7 @@ export function sanitizeRecentSpaceSlugs(activeSlug?: string | null): string[] {
  * Route transition queue update (from -> to):
  * - prepend exited space (`from`) to top
  * - remove active destination (`to`) from queue
- * - keep max 4 unique entries
+ * - keep the last 5 entries
  */
 export function recordRecentSpaceTransition(
   fromSlug?: string | null,
@@ -140,9 +140,17 @@ export function syncRecentSpacesForActiveSlug(
   activeSlug?: string | null,
 ): string[] {
   const active = normalizeSlug(activeSlug);
-  if (!active) return readRecentSpaceSlugs();
-
   const previousActive = readLastActiveSpaceSlug();
+
+  // Leaving a space for home has no destination slug. Record the space
+  // just left, or the list on home stays at whatever was stored earlier.
+  if (!active) {
+    if (!previousActive) return readRecentSpaceSlugs();
+    const next = recordRecentSpaceTransition(previousActive, null);
+    writeLastActiveSpaceSlug(null);
+    return next;
+  }
+
   const next =
     previousActive && previousActive !== active
       ? recordRecentSpaceTransition(previousActive, active)
