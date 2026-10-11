@@ -14,6 +14,9 @@ import { useTheme } from 'next-themes';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -197,6 +200,9 @@ export function MemberHome({
   const [spokenItem, setSpokenItem] = useState<MemberHomeThreadItem | null>(
     null,
   );
+  const [recordItem, setRecordItem] = useState<MemberHomeThreadItem | null>(
+    null,
+  );
   const onFocusItem = useCallback((item: MemberHomeThreadItem | null) => {
     setSpokenItem(item);
   }, []);
@@ -275,21 +281,35 @@ export function MemberHome({
               maxItems={5}
               items={
                 home
-                  ? home.notifications.map((item) => ({
-                      id: item.id,
-                      title: item.title,
-                      detail: item.detail,
-                      href:
-                        item.kind === 'signal'
-                          ? `/${lang}/dho/${
-                              item.spaceSlug
-                            }?signal=${encodeURIComponent(item.targetSlug)}`
-                          : getProposalPath(
-                              lang,
-                              item.spaceSlug,
-                              item.targetSlug,
-                            ),
-                    }))
+                  ? home.notifications.flatMap((item) => {
+                      const match = queue.find(
+                        (entry) =>
+                          entry.kind === item.kind &&
+                          entry.slug === item.targetSlug,
+                      );
+                      return [
+                        {
+                          id: item.id,
+                          title: item.title,
+                          detail: item.detail,
+                          href:
+                            item.kind === 'signal'
+                              ? getSignalPath(
+                                  lang,
+                                  item.spaceSlug,
+                                  item.targetSlug,
+                                )
+                              : getProposalPath(
+                                  lang,
+                                  item.spaceSlug,
+                                  item.targetSlug,
+                                ),
+                          ...(match
+                            ? { onSelect: () => setRecordItem(match) }
+                            : {}),
+                        },
+                      ];
+                    })
                   : []
               }
             />
@@ -623,6 +643,7 @@ export function MemberHome({
                                     item.spaceSlug,
                                     item.slug,
                                   ),
+                            onSelect: () => setRecordItem(item),
                             icon: item.spaceLogo ?? null,
                           },
                         ];
@@ -674,6 +695,40 @@ export function MemberHome({
           ) : null}
         </div>
       </aside>
+      <Dialog
+        open={recordItem != null}
+        onOpenChange={(open) => {
+          if (!open) setRecordItem(null);
+        }}
+      >
+        <DialogContent className="gap-0 border-border bg-background p-4 pt-10 shadow-none sm:rounded-none">
+          <DialogTitle className="sr-only">
+            {recordItem?.title ?? t('useful')}
+          </DialogTitle>
+          {recordItem && home ? (
+            <MemberHomeThreadCard
+              lang={lang}
+              item={recordItem}
+              assistant={showAssistant}
+              proposal={
+                recordItem.kind === 'proposal'
+                  ? home.proposals.find(
+                      (proposal) => proposal.slug === recordItem.slug,
+                    ) ?? null
+                  : null
+              }
+              onAsk={(text) => {
+                setRecordItem(null);
+                requestMemberHomeAsk(text);
+              }}
+              onReach={(person, mode) => {
+                setRecordItem(null);
+                return mode === 'call' ? openCall(person) : openChat(person);
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -958,6 +1013,7 @@ function ResourceList({
     title: string;
     detail: string;
     href: string;
+    onSelect?: () => void;
     icon?: {
       logoUrl: string | null;
       ecosystemLogoUrlLight?: string | null;
@@ -989,7 +1045,24 @@ function ResourceList({
         );
         return (
           <li key={item.id}>
-            <Link href={item.href} className="group flex items-start gap-2">
+            <Link
+              href={item.href}
+              className="group flex items-start gap-2"
+              onClick={(event) => {
+                if (!item.onSelect) return;
+                if (
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey ||
+                  event.button !== 0
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                item.onSelect();
+              }}
+            >
               <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
               <span className="min-w-0">
                 <span className="block text-1 group-hover:underline">
