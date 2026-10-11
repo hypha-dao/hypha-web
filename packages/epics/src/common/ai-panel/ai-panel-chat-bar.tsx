@@ -675,7 +675,6 @@ export function AiPanelChatBar({
         'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent',
         !isHero && 'px-3 pb-2 pt-2',
         variant === 'panel' && topRule && 'border-t border-border/70',
-        variant === 'panel' && !topRule && 'border-b border-border',
       )}
     >
       <div

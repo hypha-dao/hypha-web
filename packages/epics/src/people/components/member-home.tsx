@@ -246,16 +246,16 @@ export function MemberHome({
         aria-label={t('panelSpaces')}
         className="member-home-pane order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
       >
-        <section className="border border-border bg-background">
+        <section>
           <div
             className={
               home == null || orientation
-                ? 'grid grid-cols-[auto_minmax(0,1fr)]'
+                ? 'grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4'
                 : 'grid'
             }
           >
             {home == null || orientation ? (
-              <div className="flex items-center justify-center border-r border-border px-4 py-3">
+              <div className="flex items-center justify-center px-1 py-3">
                 {home == null || orientation == null ? (
                   <Skeleton loading height="22px" width="6.5rem" />
                 ) : (
@@ -268,7 +268,7 @@ export function MemberHome({
                 )}
               </div>
             ) : null}
-            <dl className="grid grid-cols-2">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
               <Stat
                 label={t('counts.spaces')}
                 value={home?.counts.spaces ?? 0}
@@ -278,20 +278,16 @@ export function MemberHome({
                 label={t('counts.proposals')}
                 value={home?.counts.openProposals ?? 0}
                 isLoading={home == null}
-                edge
               />
               <Stat
                 label={t('counts.signals')}
                 value={home?.counts.signals ?? 0}
                 isLoading={home == null}
-                rule
               />
               <Stat
                 label={t('counts.people')}
                 value={home?.counts.connections ?? 0}
                 isLoading={home == null}
-                edge
-                rule
               />
             </dl>
           </div>
@@ -968,23 +964,13 @@ function Stat({
   label,
   value,
   isLoading = false,
-  edge = false,
-  rule = false,
 }: {
   label: string;
   value: number;
   isLoading?: boolean;
-  edge?: boolean;
-  rule?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        'min-w-0 overflow-hidden bg-background px-3 py-4',
-        edge && 'border-l border-border',
-        rule && 'border-t border-border',
-      )}
-    >
+    <div className="min-w-0 overflow-hidden px-1 py-1">
       <dt className="text-1 leading-tight tracking-[0.08em] text-neutral-11 uppercase">
         {label}
       </dt>
