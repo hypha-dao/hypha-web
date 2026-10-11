@@ -67,7 +67,7 @@ export function NavigationTabs({
         case 'calendar':
           return t('Calendar');
         case 'coherence':
-          return t('Signals');
+          return t('Coherence');
         case 'pipeline':
           return t('Pipeline');
         case 'energy':
