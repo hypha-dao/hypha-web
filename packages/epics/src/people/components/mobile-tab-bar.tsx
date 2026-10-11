@@ -28,7 +28,11 @@ import { MemberHomeQuickCreate } from './member-home-quick-create';
 
 const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
 
-const iconClass = 'block size-5 shrink-0';
+const iconClass = 'block h-5 w-5 shrink-0';
+/** Bar is fixed. Glyphs use px so the spacing scale cannot make them taller than the row. */
+const TAB_BAR_PX = 64;
+const TAB_GLYPH_PX = 28;
+const TAB_CENTER_GLYPH_PX = 36;
 
 function segmentActive(pathname: string, segment: string) {
   return pathname.split('/').includes(segment);
@@ -144,7 +148,7 @@ export function MobileTabBar() {
         )}
         style={{
           top: 70,
-          bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))',
+          bottom: `calc(${TAB_BAR_PX}px + env(safe-area-inset-bottom, 0px))`,
           transform: spacesOpen ? 'translateX(0)' : 'translateX(100%)',
         }}
         aria-hidden={!spacesOpen}
@@ -183,10 +187,14 @@ export function MobileTabBar() {
                       <img
                         src={space.logoUrl}
                         alt=""
-                        className="size-9 object-cover"
+                        className="shrink-0 rounded-full object-cover"
+                        style={{ width: 36, height: 36 }}
                       />
                     ) : (
-                      <span className="grid size-9 place-items-center border border-border text-1 text-muted-foreground">
+                      <span
+                        className="grid shrink-0 place-items-center border border-border text-1 text-muted-foreground"
+                        style={{ width: 36, height: 36 }}
+                      >
                         {space.title.slice(0, 1)}
                       </span>
                     )}
@@ -208,7 +216,7 @@ export function MobileTabBar() {
         )}
         style={{
           top: 70,
-          bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))',
+          bottom: `calc(${TAB_BAR_PX}px + env(safe-area-inset-bottom, 0px))`,
           transform: createOpen ? 'translateY(0)' : 'translateY(100%)',
         }}
         aria-hidden={!createOpen}
@@ -261,7 +269,13 @@ export function MobileTabBar() {
         }}
         aria-label={t('openMenu')}
       >
-        <div className="mx-auto grid h-14 max-w-lg grid-cols-5 items-end px-1">
+        <div
+          className="mx-auto grid max-w-lg items-end px-1"
+          style={{
+            height: TAB_BAR_PX,
+            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+          }}
+        >
           <TabLink
             href={dashboardHref}
             label={t('myDashboard')}
@@ -291,10 +305,7 @@ export function MobileTabBar() {
               setCreateOpen(false);
             }}
             icon={
-              <Wallet
-                className="block size-[22px] shrink-0"
-                strokeWidth={1.25}
-              />
+              <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
             }
           />
           <TabLink
@@ -399,15 +410,19 @@ function TabGlyph({
   return (
     <span
       className={cn(
-        'grid place-items-center',
-        center
-          ? cn(
-              '-mt-3 size-11 border bg-page-background',
-              active ? 'border-foreground' : 'border-border',
-            )
-          : 'size-8',
+        'grid shrink-0 place-items-center',
+        center &&
+          cn(
+            'border bg-page-background',
+            active ? 'border-foreground' : 'border-border',
+          ),
         active && !center && 'border-t border-foreground',
       )}
+      style={{
+        width: center ? TAB_CENTER_GLYPH_PX : TAB_GLYPH_PX,
+        height: center ? TAB_CENTER_GLYPH_PX : TAB_GLYPH_PX,
+        marginTop: center ? -10 : undefined,
+      }}
     >
       {children}
     </span>
