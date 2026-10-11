@@ -643,7 +643,7 @@ export function MemberHomeChat({
       ) : null}
 
       <div className="w-full min-w-0 shrink-0 pb-3">
-        <div className="narrow-scrollbar mb-2 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pb-0.5 pt-3">
+        <div className="mb-6 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {chips.map((chip) => (
             <Button
               key={chip.key}
