@@ -25,6 +25,7 @@ import {
 import { NetworkRanking, NetworkSectionNav } from '../../network-exchange';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
+import { NetworkCensus } from './network-census';
 import { NetworkLoadingGrid } from './network-loading-grid';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
@@ -449,11 +450,9 @@ export function ExploreSpaces({
     </div>
   );
 
-  const sidePanel = (
-    <NetworkSidePanel
+  const networkCensus = enableNetworkMap ? (
+    <NetworkCensus
       lang={lang}
-      selectedSpace={selectedSpace}
-      onSelectRank={selectRank}
       isLoading={showSpacesSkeleton}
       spaces={{
         total: selectedSpaces.length + privateSpaces.length,
@@ -471,9 +470,17 @@ export function ExploreSpaces({
         privateCount: privateAgreementCount,
       }}
       tokens={tokenCensus}
+    />
+  ) : null;
+
+  const sidePanel = selectedSpace ? (
+    <NetworkSidePanel
+      lang={lang}
+      selectedSpace={selectedSpace}
+      onSelectRank={selectRank}
       ranks={showRanking ? [] : networkRanks}
     />
-  );
+  ) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
@@ -490,17 +497,23 @@ export function ExploreSpaces({
       </Heading>
       <NetworkSectionNav lang={lang} />
 
-      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]">
+      <div
+        className={cn(
+          'grid min-w-0 items-start gap-6',
+          selectedSpace && 'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]',
+        )}
+      >
         <div className="flex min-w-0 flex-col">
           {sharedHeader}
 
           {enableNetworkMap ? (
             <>
               {renderMapToolbar()}
+              <div className="my-6">{networkCensus}</div>
               <NetworkGlobeMap
                 lang={lang}
                 spaces={mapSpaces}
-                className={cn('mt-6 w-full', showMapStage && 'mb-7')}
+                className={cn('w-full', showMapStage && 'mb-7')}
                 isActive={showMapStage}
                 showStage={showMapStage}
                 alignProjection={view === 'overview' ? 'flat' : undefined}
