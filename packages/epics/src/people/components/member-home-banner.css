@@ -81,18 +81,18 @@
   background: oklch(from var(--hypha-ink) l c h / 0.78);
 }
 
-/* A paper pane over the marble. The threads stay visible through it. */
+/* A paper veil over the marble. The threads stay faintly visible. */
 .member-home-thread-card {
-  background: oklch(from var(--hypha-paper) l c h / 0.72);
-  border: 1px solid oklch(from var(--hypha-ink) l c h / 0.14);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.55);
+  background: color-mix(in srgb, var(--hypha-paper) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hypha-ink) 14%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
   backdrop-filter: blur(18px);
 }
 
 :is(.dark, .dark-theme, [data-theme='dark']) .member-home-thread-card {
-  background: oklch(from var(--hypha-ink) l c h / 0.62);
-  border-color: oklch(1 0 0 / 0.14);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+  background: color-mix(in srgb, var(--hypha-ink) 88%, transparent);
+  border-color: color-mix(in srgb, white 14%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
 }
 
 .member-home-thread-image {
