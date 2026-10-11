@@ -164,6 +164,9 @@ export async function createRealtimeVoiceSession(
           type: 'realtime',
           model,
           instructions,
+          // Set the speaker here. A later session.update that rewrites audio
+          // drops the WebRTC output track, and the reply stays silent.
+          output_modalities: ['audio'],
           audio: {
             input: {
               transcription: audioInput.transcription,

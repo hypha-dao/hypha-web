@@ -155,6 +155,8 @@ export type RealtimeVoiceConnection = {
   dataChannel: RTCDataChannel;
   localStream: MediaStream;
   remoteAudio: HTMLAudioElement;
+  /** Voice chosen when the session was created. Spoken replies reuse it. */
+  voice: string;
   sendEvent: (event: Record<string, unknown>) => void;
   close: () => void;
 };
@@ -251,15 +253,18 @@ export function speakAssistantTextViaRealtime(
   }
 
   const instructions = buildRealtimeSpeakInstructions(speakable);
+  const voice = connection.voice.trim();
 
   cancelActiveRealtimeResponse(connection, options?.activeResponseId);
 
+  // Out-of-band replies (conversation "none") never reach the WebRTC speaker.
+  // The default conversation is what the remote audio track plays.
   connection.sendEvent({
     type: 'response.create',
     response: {
-      conversation: 'none',
       output_modalities: ['audio'],
       instructions,
+      ...(voice ? { audio: { output: { voice } } } : {}),
       metadata: { purpose: 'hypha_assistant_speak' },
     },
   });
@@ -333,7 +338,7 @@ function playRemoteAudio(audio: HTMLAudioElement): void {
 export async function connectOpenAiRealtimeCall(params: {
   clientSecret: string;
   audioInput?: RealtimeAudioInputConfig;
-  /** Keep the speaker configured. A later update that only sets the mic drops it. */
+  /** Spoken back on each reply so the WebRTC track keeps this voice. */
   voice?: string;
   onEvent: (event: RealtimeServerEvent) => void;
   onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
@@ -431,28 +436,7 @@ export async function connectOpenAiRealtimeCall(params: {
       dataChannel.send(JSON.stringify(event));
     };
 
-    const audioInput = params.audioInput ?? DEFAULT_REALTIME_AUDIO_INPUT;
-    const voice = params.voice?.trim();
-
-    dataChannel.addEventListener('open', () => {
-      sendEvent({
-        type: 'session.update',
-        session: {
-          type: 'realtime',
-          output_modalities: ['audio'],
-          audio: {
-            input: {
-              transcription: audioInput.transcription,
-              turn_detection: audioInput.turnDetection,
-              ...(audioInput.noiseReduction
-                ? { noise_reduction: audioInput.noiseReduction }
-                : {}),
-            },
-            ...(voice ? { output: { voice } } : {}),
-          },
-        },
-      });
-    });
+    const voice = params.voice?.trim() ?? '';
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
@@ -502,6 +486,7 @@ export async function connectOpenAiRealtimeCall(params: {
       dataChannel,
       localStream,
       remoteAudio,
+      voice,
       sendEvent,
       close,
     };

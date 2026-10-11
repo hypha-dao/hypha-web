@@ -405,6 +405,9 @@ export function useOnboardingVoiceRealtime({
       }
       const replacing = Boolean(activeRealtimeResponseIdRef.current);
       if (replacing) replacingSpeechRef.current = true;
+      // A blip heard before this line must not cancel it.
+      clearInterruptTimer();
+      interruptSpeechStartedAtRef.current = null;
       // Close the mic before the line starts so the open microphone cannot cut it off.
       muteMicrophone(connection);
       if (
@@ -426,7 +429,7 @@ export function useOnboardingVoiceRealtime({
       setPhase('speaking');
       return true;
     },
-    [locale, rememberUnheardSpeech, releaseMic],
+    [clearInterruptTimer, locale, rememberUnheardSpeech, releaseMic],
   );
   const speakViaRealtimeRef = useRef(speakViaRealtime);
   speakViaRealtimeRef.current = speakViaRealtime;
@@ -634,14 +637,27 @@ export function useOnboardingVoiceRealtime({
         if (audio && speakRepliesRef.current) {
           audio.muted = false;
           audio.volume = 1;
+          const stream = audio.srcObject;
+          const track =
+            stream instanceof MediaStream
+              ? stream.getAudioTracks()[0]
+              : undefined;
+          const audible =
+            !audio.paused &&
+            !audio.muted &&
+            audio.volume > 0 &&
+            track?.readyState === 'live' &&
+            !track.muted;
           if (audio.paused) {
             void audio.play().then(
               () => {
-                if (!audio.paused) replayOnUnlockRef.current = null;
+                if (!audio.paused && !audio.muted) {
+                  replayOnUnlockRef.current = null;
+                }
               },
               () => undefined,
             );
-          } else {
+          } else if (audible) {
             replayOnUnlockRef.current = null;
           }
         }
@@ -925,8 +941,14 @@ export function useOnboardingVoiceRealtime({
         setRealtimeRemoteAudioMuted(connection, false);
       }
       void connection.remoteAudio.play().catch(() => undefined);
-      releaseMic(connection);
-      setPhase('listening');
+      // Leave the mic closed when a line is already waiting. Opening it now
+      // lets the room cut the reply off before the speaker starts.
+      if (queuedSpeakableRef.current) {
+        muteMicrophone(connection);
+      } else {
+        releaseMic(connection);
+        setPhase('listening');
+      }
       connectRetryCountRef.current = 0;
       console.info('[VoiceRealtime] connected', {
         model: session.model,
