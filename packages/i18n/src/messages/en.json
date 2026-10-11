@@ -212,6 +212,8 @@
     "seeMoreNotifications": "See more",
     "proposals": "Proposals to weigh in",
     "noProposals": "Proposals in your spaces show up here.",
+    "waiting": "Signals and proposals",
+    "noWaiting": "Signals and proposals from your spaces show up here.",
     "createSpace": "Create a space",
     "builderTitle": "Shape a space on your vision",
     "builderBody": "Walk through the AI experience and bring a space into the network around what you want to build.",

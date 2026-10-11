@@ -168,7 +168,9 @@
     "seeMoreNotifications": "Ver más",
     "openPerson": "Abrir {name}",
     "signals": "Señales que te necesitan",
-    "proposals": "Propuestas para opinar"
+    "proposals": "Propuestas para opinar",
+    "waiting": "Señales y propuestas",
+    "noWaiting": "Las señales y propuestas de tus espacios aparecen aquí."
   },
   "WelcomeFlow": {
     "errors": {

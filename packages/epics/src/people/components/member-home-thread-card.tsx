@@ -281,7 +281,9 @@ export function MemberHomeThreadCard({
         ) : null}
         <div
           className={
-            isProposal
+            compact
+              ? 'mt-3 grid grid-cols-2 gap-2 [&_a]:w-full [&_a]:px-2 [&_a]:tracking-normal [&_button]:w-full [&_button]:px-2 [&_button]:tracking-normal'
+              : isProposal
               ? 'mt-3 grid grid-cols-2 gap-2'
               : 'mt-3 flex flex-wrap gap-2'
           }

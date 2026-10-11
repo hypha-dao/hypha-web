@@ -168,7 +168,9 @@
     "seeMoreNotifications": "Meer zien",
     "openPerson": "Open {name}",
     "signals": "Signalen die je nodig hebben",
-    "proposals": "Voorstellen om mee te wegen"
+    "proposals": "Voorstellen om mee te wegen",
+    "waiting": "Signalen en voorstellen",
+    "noWaiting": "Signalen en voorstellen uit je ruimtes verschijnen hier."
   },
   "WelcomeFlow": {
     "errors": {

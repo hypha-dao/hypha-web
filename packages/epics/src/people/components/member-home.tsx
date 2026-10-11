@@ -575,6 +575,55 @@ export function MemberHome({
           )}
         </section>
 
+        <div className="mt-4">
+          <Tile title={t('waiting')} busy={home == null}>
+            <ResourceList
+              isLoading={home == null}
+              empty={t('noWaiting')}
+              maxItems={6}
+              items={
+                home
+                  ? queue.flatMap((item) => {
+                      if (
+                        leadItem &&
+                        item.kind === leadItem.kind &&
+                        item.slug === leadItem.slug
+                      ) {
+                        return [];
+                      }
+                      const typeName = item.category?.trim();
+                      const typeKey = typeName
+                        ? (`types.${typeName}` as 'types.Need')
+                        : null;
+                      const typeLabel =
+                        typeKey && tTypes.has(typeKey)
+                          ? tTypes(typeKey)
+                          : typeName;
+                      return [
+                        {
+                          id: `${item.kind}:${item.slug}`,
+                          title: item.title,
+                          detail:
+                            item.kind === 'signal'
+                              ? [typeLabel, item.spaceTitle]
+                                  .filter(Boolean)
+                                  .join(' · ')
+                              : [item.spaceTitle, item.documentKind]
+                                  .filter(Boolean)
+                                  .join(' · '),
+                          href:
+                            item.kind === 'proposal'
+                              ? getProposalPath(lang, item.spaceSlug, item.slug)
+                              : getSignalPath(lang, item.spaceSlug, item.slug),
+                        },
+                      ];
+                    })
+                  : []
+              }
+            />
+          </Tile>
+        </div>
+
         <div className="mt-8 grid gap-4">
           <MemberHomeWalletWidget
             lang={lang}
@@ -603,76 +652,11 @@ export function MemberHome({
           ) : null}
         </div>
 
-        <div className="mt-4 grid gap-4">
-          {home ? (
+        {home ? (
+          <div className="mt-4">
             <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
-          ) : null}
-          <Tile title={t('signals')} busy={home == null}>
-            <ResourceList
-              isLoading={home == null}
-              empty={t('noSignals')}
-              items={
-                home
-                  ? home.signals.flatMap((signal) =>
-                      signal.slug
-                        ? [
-                            {
-                              id: signal.id,
-                              title: signal.title,
-                              detail: [
-                                tTypes.has(
-                                  `types.${signal.type}` as 'types.Need',
-                                )
-                                  ? tTypes(
-                                      `types.${signal.type}` as 'types.Need',
-                                    )
-                                  : signal.type,
-                                signal.spaceTitle,
-                              ]
-                                .filter(Boolean)
-                                .join(' · '),
-                              href: getSignalPath(
-                                lang,
-                                signal.spaceSlug,
-                                signal.slug,
-                              ),
-                            },
-                          ]
-                        : [],
-                    )
-                  : []
-              }
-            />
-          </Tile>
-          <Tile title={t('proposals')} busy={home == null}>
-            <ResourceList
-              isLoading={home == null}
-              empty={t('noProposals')}
-              items={
-                home
-                  ? home.proposals.flatMap((proposal) =>
-                      proposal.slug
-                        ? [
-                            {
-                              id: proposal.id,
-                              title: proposal.title,
-                              detail: `${proposal.spaceTitle} · ${
-                                proposal.state ?? ''
-                              }`,
-                              href: getProposalPath(
-                                lang,
-                                proposal.spaceSlug,
-                                proposal.slug,
-                              ),
-                            },
-                          ]
-                        : [],
-                    )
-                  : []
-              }
-            />
-          </Tile>
-        </div>
+          </div>
+        ) : null}
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Button asChild>
