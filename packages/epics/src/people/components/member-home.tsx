@@ -180,7 +180,7 @@ export function MemberHome({
       </div>
       <aside
         aria-label={t('panelSpaces')}
-        className="order-2 max-h-[36rem] overflow-y-auto border-t border-border bg-background px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
+        className="member-home-pane order-2 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:border-r lg:border-t-0"
       >
         {home && home.invites.length > 0 ? (
           <div className="mb-4">
@@ -322,12 +322,10 @@ export function MemberHome({
       </main>
       <aside
         aria-label={t('panelInsights')}
-        className="order-3 max-h-[36rem] overflow-y-auto border-t border-border bg-background px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
+        className="member-home-pane order-3 max-h-[36rem] overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:border-l lg:border-t-0"
       >
-        {home == null ? (
-          <Skeleton loading height="22px" width="7.5rem" className="mt-3" />
-        ) : orientation == null ? (
-          <section className="mt-10 border border-border bg-background p-5">
+        {home != null && orientation == null ? (
+          <section className="mb-4 border border-border bg-background p-5">
             <h2
               className="text-4"
               style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -357,14 +355,58 @@ export function MemberHome({
               </p>
             ) : null}
           </section>
-        ) : (
-          <OrientationBadge
-            orientation={orientation}
-            isSaving={isSavingOrientation}
-            error={orientationError}
-            onChoose={onChooseOrientation}
-          />
-        )}
+        ) : null}
+
+        <section className="border border-border bg-background">
+          <div
+            className={
+              home == null || orientation
+                ? 'grid grid-cols-[auto_minmax(0,1fr)]'
+                : 'grid'
+            }
+          >
+            {home == null || orientation ? (
+              <div className="flex items-center border-r border-border px-4 py-3">
+                {home == null || orientation == null ? (
+                  <Skeleton loading height="22px" width="6.5rem" />
+                ) : (
+                  <OrientationBadge
+                    orientation={orientation}
+                    isSaving={isSavingOrientation}
+                    error={orientationError}
+                    onChoose={onChooseOrientation}
+                  />
+                )}
+              </div>
+            ) : null}
+            <dl className="grid grid-cols-2">
+              <Stat
+                label={t('counts.spaces')}
+                value={home?.counts.spaces ?? 0}
+                isLoading={home == null}
+              />
+              <Stat
+                label={t('counts.proposals')}
+                value={home?.counts.openProposals ?? 0}
+                isLoading={home == null}
+                edge
+              />
+              <Stat
+                label={t('counts.signals')}
+                value={home?.counts.signals ?? 0}
+                isLoading={home == null}
+                rule
+              />
+              <Stat
+                label={t('counts.people')}
+                value={home?.counts.connections ?? 0}
+                isLoading={home == null}
+                edge
+                rule
+              />
+            </dl>
+          </div>
+        </section>
 
         <section
           className="mt-10 border border-border bg-background p-5"
@@ -451,29 +493,6 @@ export function MemberHome({
             </div>
           )}
         </section>
-
-        <dl className="mt-8 grid grid-cols-2 gap-px bg-border sm:grid-cols-[repeat(4,minmax(0,1fr))]">
-          <Stat
-            label={t('counts.spaces')}
-            value={home?.counts.spaces ?? 0}
-            isLoading={home == null}
-          />
-          <Stat
-            label={t('counts.proposals')}
-            value={home?.counts.openProposals ?? 0}
-            isLoading={home == null}
-          />
-          <Stat
-            label={t('counts.signals')}
-            value={home?.counts.signals ?? 0}
-            isLoading={home == null}
-          />
-          <Stat
-            label={t('counts.people')}
-            value={home?.counts.connections ?? 0}
-            isLoading={home == null}
-          />
-        </dl>
 
         <div className="mt-8 grid gap-4">
           <MemberHomeWalletWidget
@@ -621,7 +640,7 @@ function OrientationBadge({
   const label = t(orientationLabelKey(orientation));
 
   return (
-    <div className="mt-3">
+    <div>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
@@ -734,18 +753,28 @@ function Stat({
   label,
   value,
   isLoading = false,
+  edge = false,
+  rule = false,
 }: {
   label: string;
   value: number;
   isLoading?: boolean;
+  edge?: boolean;
+  rule?: boolean;
 }) {
   return (
-    <div className="min-w-0 overflow-hidden bg-background px-3 py-4">
+    <div
+      className={cn(
+        'min-w-0 overflow-hidden bg-background px-3 py-3',
+        edge && 'border-l border-border',
+        rule && 'border-t border-border',
+      )}
+    >
       <dt className="text-1 leading-tight tracking-[0.08em] text-neutral-11 uppercase">
         {label}
       </dt>
       <dd
-        className="mt-2 text-4 leading-none tabular-nums"
+        className="mt-1.5 text-3 leading-none tabular-nums"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         <Skeleton loading={isLoading} width="2.75rem" height="30px">

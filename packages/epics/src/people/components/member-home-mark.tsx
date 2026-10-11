@@ -16,31 +16,27 @@ export function MemberHomeMark({ className }: { className?: string }) {
       <g
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.65"
+        strokeWidth="1.5"
         strokeLinecap="square"
         strokeLinejoin="miter"
       >
-        <path d="M16 3.6 15.1 9.4 16 16l-1.15 7.2L16.5 28.6" />
-        <path d="M15.1 9.4 10.2 5.2" />
-        <path d="M16 16 22.2 11.6 28.6 7.4" />
-        <path d="M22.2 11.6 26.6 15.4" />
-        <path d="M16 16 22.6 20.4 29 22" />
-        <path d="M16 16 10.4 11.8 4.2 6.6" />
-        <path d="M10.4 11.8 6.6 15.2" />
-        <path d="M16 16 10.8 21.8 4.6 27.4" />
+        <path d="M15.2 14.8 12.4 9.2" />
+        <path d="M12.4 9.2 7.2 5" />
+        <path d="M12.4 9.2 16.8 4.2" />
+        <path d="M17.1 16.2 23.2 14.6" />
+        <path d="M23.2 14.6 28.2 10.4" />
+        <path d="M23.2 14.6 29 18.2" />
+        <path d="M15.6 17.2 12.2 22.6" />
+        <path d="M12.2 22.6 7 27.6" />
+        <path d="M12.2 22.6 16.4 28.4" />
       </g>
-      <rect x="14.55" y="14.55" width="2.9" height="2.9" fill="currentColor" />
-      <rect x="15.15" y="2.2" width="1.55" height="1.55" fill="currentColor" />
-      <rect x="27.7" y="6.15" width="1.55" height="1.55" fill="currentColor" />
-      <rect x="3.15" y="5.4" width="1.55" height="1.55" fill="currentColor" />
-      <rect x="3.55" y="26.55" width="1.55" height="1.55" fill="currentColor" />
-      <rect
-        x="28.15"
-        y="21.05"
-        width="1.55"
-        height="1.55"
-        fill="currentColor"
-      />
+      <rect x="14.7" y="14.7" width="2.6" height="2.6" fill="currentColor" />
+      <rect x="6.3" y="4.1" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="16" y="3.3" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="27.4" y="9.5" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="28.2" y="17.4" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="6.1" y="26.8" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="15.6" y="27.6" width="1.5" height="1.5" fill="currentColor" />
     </svg>
   );
 }
