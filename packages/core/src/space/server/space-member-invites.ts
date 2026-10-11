@@ -161,6 +161,8 @@ export async function createSpaceMemberInvite(
       invite: {
         id: existing.id,
         token: existing.token,
+        spaceId: space.id,
+        web3SpaceId: space.web3SpaceId ?? null,
         spaceSlug: space.slug,
         spaceTitle: space.title,
         inviteeSlug: invitee.slug ?? null,
