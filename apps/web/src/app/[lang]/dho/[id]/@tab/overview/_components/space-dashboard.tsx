@@ -18,6 +18,7 @@ import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { useMembers } from '@web/hooks/use-members';
 
 import { SignalHeatMaps } from './signal-heat-map';
+import { SpaceActivityList } from './space-activity';
 
 function personLabel(person: {
   name?: string | null;
@@ -155,30 +156,24 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           ) : updates.length === 0 ? (
             <Quiet>{t('noRecentActivity')}</Quiet>
           ) : (
-            updates.map((item) => (
-              <Link
-                key={item.id}
-                href={
-                  item.slug
-                    ? `${home}/agreements/proposal/${item.slug}`
-                    : `${home}/agreements`
-                }
-                className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-foreground/5"
-              >
-                <span className="min-w-0 truncate text-2 text-foreground">
-                  {item.title?.trim() || t('untitledProposal')}
-                </span>
-                <span className="shrink-0 text-1 text-neutral-11">
-                  {item.status === 'onVoting'
-                    ? t('statusOnVoting')
-                    : item.status === 'accepted'
-                    ? t('statusAccepted')
-                    : item.status === 'rejected'
-                    ? t('statusRejected')
-                    : ''}
-                </span>
-              </Link>
-            ))
+            <SpaceActivityList
+              items={updates}
+              untitled={t('untitledProposal')}
+              hrefFor={(slug) =>
+                slug
+                  ? `${home}/agreements/proposal/${slug}`
+                  : `${home}/agreements`
+              }
+              statusLabel={(status) =>
+                status === 'onVoting'
+                  ? t('statusOnVoting')
+                  : status === 'accepted'
+                  ? t('statusAccepted')
+                  : status === 'rejected'
+                  ? t('statusRejected')
+                  : ''
+              }
+            />
           )}
         </Panel>
 
