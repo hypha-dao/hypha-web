@@ -4,6 +4,7 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
 import { ButtonCopyUserId } from './button-copy-user-id';
