@@ -129,6 +129,8 @@ type AiPanelChatBarProps = {
   composerDisabled?: boolean;
   /** `hero` is the landing composer. `quiet` sits on the onboarding ground, with no frame of its own. */
   variant?: AiPanelChatBarVariant;
+  /** Home keeps the suggestion row flush with the field, so the top rule stays off. */
+  topRule?: boolean;
   sendAriaLabel?: string;
   /** Sits in the toolbar immediately after the microphone. */
   accessory?: ReactNode;
@@ -303,6 +305,7 @@ export function AiPanelChatBar({
   placeholder,
   composerDisabled = false,
   variant = 'panel',
+  topRule = true,
   sendAriaLabel,
   accessory,
   conversationMicrophone,
@@ -671,8 +674,8 @@ export function AiPanelChatBar({
       className={cn(
         'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent',
         !isHero && 'px-3 pb-2 pt-2',
-        // Same hairline the chat composer uses above its field.
-        variant === 'panel' && 'border-t border-border/70',
+        variant === 'panel' && topRule && 'border-t border-border/70',
+        variant === 'panel' && !topRule && 'border-b border-border',
       )}
     >
       <div
