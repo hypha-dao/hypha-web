@@ -16,7 +16,14 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import { Menu, PanelLeftClose, Settings, Sparkles } from 'lucide-react';
+import {
+  Menu,
+  PanelLeftClose,
+  Settings,
+  Sparkles,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import {
   Category,
   Space,
@@ -43,14 +50,13 @@ import {
   SidebarMenuItem,
   Button,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   AiPanelHeader,
   AiPanelMessages,
   AiPanelSuggestions,
   AiPanelChatBar,
-  OnboardingDiscoveryModeToggle,
-  OnboardingVoiceInterviewBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
@@ -188,11 +194,8 @@ import {
   shouldOpenOnboardingVotingMethodProposal,
 } from './onboarding-voting-method-inference';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
-import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
-import {
-  loadSpaceDiscoveryMode,
-  saveSpaceDiscoveryMode,
-} from './ai-panel-discovery-mode';
+import { isInteractiveCreatePath } from './get-path-function';
+import { readSpaceVoiceOn, writeSpaceVoiceOn } from './ai-panel-discovery-mode';
 import {
   buildSpaceAdvisorVoiceSessionContext,
   type VoiceSessionContext,
@@ -325,7 +328,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
-  const isOnboardingPath = pathname.includes('/onboarding');
+  const isOnboardingPath = isInteractiveCreatePath(pathname);
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());
@@ -380,22 +383,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }),
     [isOnboardingPath, onboardingContext, spaceSlug],
   );
-  const [spaceDiscoveryMode, setSpaceDiscoveryMode] =
-    useState<OnboardingDiscoveryMode>('chat');
-
-  useEffect(() => {
-    setSpaceDiscoveryMode(loadSpaceDiscoveryMode(spaceSlug));
-  }, [spaceSlug]);
-
   const isOnboardingSetup = attachOnboardingForActiveSpace;
-  const discoveryMode: OnboardingDiscoveryMode =
-    isOnboardingSetup && onboardingContext?.discoveryMode
-      ? onboardingContext.discoveryMode
-      : spaceDiscoveryMode;
-  const showDiscoveryModeToggle =
-    Boolean(spaceSlug?.trim()) && !blockSpaceAiForActivityAccess;
-  const isVoiceInterview =
-    showDiscoveryModeToggle && discoveryMode === 'voice_interview';
   const bypassOnboardingMembership = useMemo(
     () =>
       shouldBypassSpaceMembershipForOnboarding(onboardingContext, {
@@ -431,6 +419,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
+  const [micOn, setMicOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(true);
+  const [voiceReady, setVoiceReady] = useState(false);
+
+  useEffect(() => {
+    setMicOn(readSpaceVoiceOn(spaceSlug, 'mic'));
+    setSoundOn(readSpaceVoiceOn(spaceSlug, 'sound'));
+    setVoiceReady(true);
+  }, [spaceSlug]);
+
+  const conversationOpen =
+    Boolean(spaceSlug?.trim()) &&
+    isAiOpen &&
+    !blockSpaceAiForActivityAccess &&
+    !blockSpaceAiForInteraction;
+  const dialogue = conversationOpen && voiceReady && (micOn || soundOn);
+  const isVoiceInterview = dialogue;
   const {
     open: rightOpen,
     closeHumanChatPanel,
@@ -1152,8 +1157,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
-        discoveryMode:
-          discoveryMode === 'voice_interview' ? discoveryMode : undefined,
+        discoveryMode: isVoiceInterview ? 'voice_interview' : undefined,
         activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
         locale: lang,
       });
@@ -1161,8 +1165,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
     [
       activeSpaceName,
-      discoveryMode,
       getAccessToken,
+      isVoiceInterview,
       isOnboardingPath,
       isOnboardingSetup,
       lang,
@@ -2832,7 +2836,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {
     if (!isVoiceInterview || !spaceSlug?.trim()) return undefined;
     if (isOnboardingSetup && onboardingContext) {
-      return onboardingContext;
+      return { ...onboardingContext, discoveryMode: 'voice_interview' };
     }
     return buildSpaceAdvisorVoiceSessionContext({
       spaceSlug,
@@ -2852,41 +2856,28 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     onStopChat: stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
+    captureMicrophone: micOn,
+    speakReplies: soundOn,
   });
 
-  const handleDiscoveryModeChange = useCallback(
-    (mode: OnboardingDiscoveryMode) => {
-      if (!showDiscoveryModeToggle || mode === discoveryMode) return;
-      if (mode === 'chat') {
-        voiceInterview.stopListening();
-        voiceInterview.stopSpeaking();
-        if (isOnboardingSetup && messages.length) {
-          saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
-        }
-      }
-      if (isOnboardingSetup) {
-        setOnboardingContext((prev) => {
-          const base = ensureSpaceSetupContext(prev, lang);
-          const next = { ...base, discoveryMode: mode };
-          saveOnboardingConversationContext(next);
-          return next;
-        });
-      } else if (spaceSlug?.trim()) {
-        saveSpaceDiscoveryMode(spaceSlug, mode);
-        setSpaceDiscoveryMode(mode);
-      }
-    },
-    [
-      discoveryMode,
-      isOnboardingSetup,
-      lang,
-      messages,
-      showDiscoveryModeToggle,
-      spaceSlug,
-      voiceInterview.stopListening,
-      voiceInterview.stopSpeaking,
-    ],
-  );
+  const toggleSound = useCallback(() => {
+    setSoundOn((current) => {
+      const next = !current;
+      if (next) void voiceInterview.startListening();
+      else voiceInterview.stopSpeaking();
+      writeSpaceVoiceOn(spaceSlug, 'sound', next);
+      return next;
+    });
+  }, [spaceSlug, voiceInterview.startListening, voiceInterview.stopSpeaking]);
+
+  const toggleMic = useCallback(() => {
+    setMicOn((current) => {
+      const next = !current;
+      if (next) void voiceInterview.startListening();
+      writeSpaceVoiceOn(spaceSlug, 'mic', next);
+      return next;
+    });
+  }, [spaceSlug, voiceInterview.startListening]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
@@ -3256,15 +3247,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarContent>
       <SidebarFooter className="relative z-20 overflow-visible bg-page-background p-0 dark:bg-background-2">
-        {showDiscoveryModeToggle ? (
-          <div className="flex justify-center px-3 pb-1 pt-3">
-            <OnboardingDiscoveryModeToggle
-              mode={discoveryMode}
-              disabled={blockSpaceAiForInteraction || isStreaming}
-              onChange={handleDiscoveryModeChange}
-            />
-          </div>
-        ) : null}
         {hasUserMessage && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
@@ -3272,31 +3254,74 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             variant="tags"
           />
         ) : null}
-        {isVoiceInterview ? (
-          <OnboardingVoiceInterviewBar
-            phase={voiceInterview.phase}
-            liveTranscript={voiceInterview.liveTranscript}
-            voiceError={voiceInterview.voiceError}
-            disabled={blockSpaceAiForInteraction || isStreaming}
-            isConnecting={voiceInterview.isConnecting}
-            isRealtimeConnected={voiceInterview.isRealtimeConnected}
-            transport={voiceInterview.transport}
-            realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
-            usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
-            onToggleListening={voiceInterview.toggleListening}
-          />
-        ) : (
-          <AiPanelChatBar
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            draftAttachments={draftAttachments}
-            onDraftAttachmentsChange={setDraftAttachments}
-            onStop={handleStop}
-            isStreaming={isStreaming}
-            composerDisabled={blockSpaceAiForInteraction}
-          />
-        )}
+        {conversationOpen && micOn && voiceInterview.liveTranscript ? (
+          <p className="px-4 pb-1 text-1 text-neutral-11">
+            “{voiceInterview.liveTranscript}”
+          </p>
+        ) : null}
+        {dialogue && voiceInterview.voiceError ? (
+          <p className="px-4 pb-1 text-1 text-neutral-11">
+            {voiceInterview.voiceError === 'unsupported'
+              ? t('onboardingVoiceUnsupported')
+              : voiceInterview.voiceError === 'not-allowed'
+              ? t('onboardingVoicePermissionDenied')
+              : voiceInterview.voiceError === 'audio-capture'
+              ? t('onboardingVoiceMicUnavailable')
+              : voiceInterview.voiceError === 'network'
+              ? t('onboardingVoiceNetworkError')
+              : t('onboardingVoiceSessionError')}
+          </p>
+        ) : null}
+        <AiPanelChatBar
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          draftAttachments={draftAttachments}
+          onDraftAttachmentsChange={setDraftAttachments}
+          onStop={handleStop}
+          isStreaming={isStreaming}
+          composerDisabled={blockSpaceAiForInteraction}
+          conversationMicrophone={
+            conversationOpen
+              ? {
+                  active: micOn,
+                  hearing: micOn && voiceInterview.userSpeaking,
+                  onToggle: toggleMic,
+                  muteLabel: t('conversationMicMute'),
+                  unmuteLabel: t('conversationMicUnmute'),
+                }
+              : undefined
+          }
+          accessory={
+            conversationOpen ? (
+              <button
+                type="button"
+                aria-pressed={soundOn}
+                aria-label={
+                  soundOn
+                    ? t('conversationSoundMute')
+                    : t('conversationSoundUnmute')
+                }
+                title={
+                  soundOn
+                    ? t('conversationSoundMute')
+                    : t('conversationSoundUnmute')
+                }
+                onClick={toggleSound}
+                className={cn(
+                  'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] place-items-center bg-transparent p-0 text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  soundOn && 'text-foreground',
+                )}
+              >
+                {soundOn ? (
+                  <Volume2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                ) : (
+                  <VolumeX className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+              </button>
+            ) : null
+          }
+        />
       </SidebarFooter>
     </>,
   );

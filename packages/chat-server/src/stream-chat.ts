@@ -13,6 +13,16 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import {
+  listMemberHomeThreadItems,
+  SHOW_MEMBER_HOME_ITEM_TOOL,
+  memberHomeItemMemory,
+  mergeMemberHomeMemory,
+  shownMemberHomeItemKeys,
+} from '@hypha-platform/core/client';
+import { formatMemberHomeFacts } from './member-home-facts';
+import { loadMemberHomeFacts } from './load-member-home-facts';
+import { createShowMemberHomeItemTool } from './tools/show-member-home-item';
 import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { resolveChatLocale } from './locale-ui-labels';
@@ -44,6 +54,7 @@ import { buildProposalFormStateDirective } from './tools/proposal-form-state';
 import { buildProposalAcceptanceDirective } from './tools/proposal-acceptance-directive';
 import {
   createChatTools,
+  safeChatTool,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
@@ -289,6 +300,11 @@ function resolveOpenRouterChatModelId(): string {
   }
 
   return fromEnv;
+}
+
+/** The chat model used by the member home and by a mentioned agent in Matrix. */
+export function getHyphaChatModel() {
+  return openrouterWithHyphaHeaders(resolveOpenRouterChatModelId());
 }
 
 function messageFromUnknownError(error: unknown): string {
@@ -1048,6 +1064,13 @@ export type ChatStreamCallbacks = {
   locale?: ChatRequestPayload['locale'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
+  /** Personal home: same Hypha AI voice, plus this member's records. */
+  memberHome?: boolean;
+  memberHomeMemory?: {
+    passed?: string[];
+    deferred?: string[];
+    settled?: string[];
+  };
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1372,8 +1395,32 @@ export async function createChatStreamResult(
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
     locale,
+    memberHome,
+    memberHomeMemory,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
+  const memberHomeRecord = memberHome
+    ? await loadMemberHomeFacts(authToken)
+    : null;
+  const memberHomeItems = memberHomeRecord
+    ? listMemberHomeThreadItems(memberHomeRecord.home)
+    : [];
+  const memberHomeMemoryFromMessages = memberHomeRecord
+    ? memberHomeItemMemory(memberHomeItems, messages)
+    : null;
+  const memberHomeChoices = memberHomeMemoryFromMessages
+    ? mergeMemberHomeMemory(memberHomeMemoryFromMessages, memberHomeMemory)
+    : null;
+  const memberHomeFacts = memberHomeRecord
+    ? formatMemberHomeFacts(memberHomeRecord.home, {
+        alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
+        passed: memberHomeChoices?.passed,
+        deferred: memberHomeChoices?.deferred,
+        recalled: memberHomeMemoryFromMessages?.recalled,
+        settled: memberHomeChoices?.settled,
+        held: memberHomeMemoryFromMessages?.held,
+      })
+    : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
@@ -1398,17 +1445,26 @@ export async function createChatStreamResult(
     activeProposalFormSnapshot,
     chatLocale,
   );
+  if (memberHomeRecord) {
+    tools[SHOW_MEMBER_HOME_ITEM_TOOL] = safeChatTool(
+      SHOW_MEMBER_HOME_ITEM_TOOL,
+      createShowMemberHomeItemTool(memberHomeItems),
+    );
+  }
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
     spaceSlug,
     authToken,
     debugRequestId,
   });
-  const spaceContextSnapshot = spaceSlug?.trim()
-    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
+  const requestedSpaceSlug = spaceSlug?.trim() || '';
+  const voiceSpaceSlug =
+    requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
+  const spaceContextSnapshot = requestedSpaceSlug
+    ? await buildSpaceContextSnapshot(requestedSpaceSlug, activeSpaceTitle)
     : null;
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
-    spaceSlug,
+    voiceSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
@@ -1520,7 +1576,7 @@ export async function createChatStreamResult(
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           voiceDiscoveryActive
-            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
           localizedEntryMethodGuidelines
@@ -1578,7 +1634,9 @@ export async function createChatStreamResult(
 
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: systemPrompt,
+    system: memberHomeFacts
+      ? `${systemPrompt}\n\n${memberHomeFacts}`
+      : systemPrompt,
     messages:
       modelMessages.length > 0
         ? modelMessages

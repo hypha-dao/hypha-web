@@ -20,6 +20,16 @@ export const getProposalPath = (
   return `/${lang}/dho/${spaceSlug}/agreements/proposal/${proposalSlug}`;
 };
 
+export const getSignalPath = (
+  lang: Locale,
+  spaceSlug: string,
+  signalSlug: string,
+) => {
+  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+    signalSlug,
+  )}`;
+};
+
 export const getProposalUrl = (
   lang: Locale,
   spaceSlug: string,
@@ -42,7 +52,12 @@ export const getDhoPathEnergy = (lang: Locale, id: string) => {
 export const getDhoPathDefaultLanding = getDhoPathOverview;
 
 export const getOnboardingPath = (lang: Locale) => {
-  return `/${lang}/onboarding`;
+  return `/${lang}/interactive-create`;
+};
+
+/** The create-a-space screen, including the old /onboarding address. */
+export const isInteractiveCreatePath = (pathname: string) => {
+  return /(^|\/)(interactive-create|onboarding)(\/|$)/.test(pathname);
 };
 
 export const getLegacyCreateSpacePath = (lang: Locale) => {

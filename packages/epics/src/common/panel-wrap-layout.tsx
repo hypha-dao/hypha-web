@@ -31,6 +31,7 @@ import {
   useAiPanel,
   useHumanChatPanel,
 } from './human-chat-panel-context';
+import { isInteractiveCreatePath } from './get-path-function';
 import { useIsSpaceContext } from './use-is-space-context';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
@@ -350,20 +351,23 @@ export function PanelWrapLayout({
     closeHumanChatPanel,
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isOnboarding = pathname.includes('/onboarding');
+  const isOnboarding = isInteractiveCreatePath(pathname);
+  const isMemberHome = /\/home\/?$/.test(pathname);
   const effectiveLeft = isSpace ? left : undefined;
-  // Human chat is space-only (`/[lang]/dho/[id]/…`). Outside a space the panel
-  // is not mounted, so it cannot stay open on network, my spaces, or wallet.
-  const effectiveRight = isSpace ? right : undefined;
+  // Human chat lives in a space, and on the member home so a connection can
+  // open a direct room. It stays unmounted on network, my spaces, and wallet.
+  const showHumanChat = isSpace || isMemberHome;
+  const effectiveRight = showHumanChat ? right : undefined;
 
-  // Close when the route leaves a space. Does not run again if something opens
-  // the panel while already outside a space and then navigates into one (the
-  // call dock opens chat and pushes the space route together).
+  // Close when the route leaves a space or the member home. Does not run again
+  // if something opens the panel while already outside a space and then
+  // navigates into one (the call dock opens chat and pushes the space route
+  // together).
   useEffect(() => {
-    if (!isSpace) {
+    if (!showHumanChat) {
       closeHumanChatPanel();
     }
-  }, [isSpace, closeHumanChatPanel]);
+  }, [showHumanChat, closeHumanChatPanel]);
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {

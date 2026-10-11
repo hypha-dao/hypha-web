@@ -49,7 +49,7 @@ export function assessSpacePrivacy({
         isAlreadyPrivate: true,
         activationMode,
         summary:
-          'This space is in Sandbox mode — configured for private testing on My Spaces, not public network discovery.',
+          'This space is in Sandbox mode — configured for private testing on Spaces, not public network discovery.',
       };
     }
     return {

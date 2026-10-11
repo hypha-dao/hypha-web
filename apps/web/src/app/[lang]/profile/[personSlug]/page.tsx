@@ -99,6 +99,7 @@ export default async function ProfilePage(props: PageProps) {
             email={person?.email ?? ''}
             slug={person?.slug ?? ''}
             createdAt={person?.createdAt}
+            primaryOrientation={person?.primaryOrientation}
             exportEmbeddedWallet={true}
           />
           <Separator />

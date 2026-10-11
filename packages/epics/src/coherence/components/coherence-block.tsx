@@ -2,9 +2,11 @@
 
 import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
+  COHERENCE_TYPES,
   Coherence,
   useFindCoherences,
   useSpaceBySlug,
+  type CoherenceType,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
@@ -32,21 +34,28 @@ type CoherenceBlockProps = {
   spaceSlug: string;
   order?: CoherenceOrder;
   priorityFilter?: 'all' | 'critical' | 'high' | 'medium' | 'low';
+  typeFilter?: string;
   humanChatEnabled?: boolean;
 };
 
-type PriorityFilterTabItem = {
+type FilterTabItem = {
   value: string;
   label: string;
   count?: number | null;
 };
 
-function PriorityFilterTabs({
+function isCoherenceType(value: string | undefined): value is CoherenceType {
+  return (
+    value != null && (COHERENCE_TYPES as readonly string[]).includes(value)
+  );
+}
+
+function FilterTabs({
   items,
   defaultValue,
   queryKey,
 }: {
-  items: PriorityFilterTabItem[];
+  items: FilterTabItem[];
   defaultValue: string;
   queryKey: string;
 }) {
@@ -101,6 +110,7 @@ export function CoherenceBlock({
   spaceSlug,
   order,
   priorityFilter = 'all',
+  typeFilter,
   humanChatEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
@@ -168,12 +178,17 @@ export function CoherenceBlock({
     includeArchived: !hideArchived,
     orderBy: order,
   });
+  const resolvedTypeFilter = isCoherenceType(typeFilter) ? typeFilter : 'all';
   const filteredSignals = React.useMemo(
     () =>
-      (signals ?? []).filter((signal) =>
-        priorityFilter === 'all' ? true : signal.priority === priorityFilter,
-      ),
-    [priorityFilter, signals],
+      (signals ?? []).filter((signal) => {
+        const matchesPriority =
+          priorityFilter === 'all' || signal.priority === priorityFilter;
+        const matchesType =
+          resolvedTypeFilter === 'all' || signal.type === resolvedTypeFilter;
+        return matchesPriority && matchesType;
+      }),
+    [priorityFilter, resolvedTypeFilter, signals],
   );
   const priorityCounts = React.useMemo(() => {
     const items = signals ?? [];
@@ -184,6 +199,18 @@ export function CoherenceBlock({
       medium: items.filter((signal) => signal.priority === 'medium').length,
       low: items.filter((signal) => signal.priority === 'low').length,
     };
+  }, [signals]);
+  const typeCounts = React.useMemo(() => {
+    const items = signals ?? [];
+    return {
+      all: items.length,
+      ...Object.fromEntries(
+        COHERENCE_TYPES.map((type) => [
+          type,
+          items.filter((signal) => signal.type === type).length,
+        ]),
+      ),
+    } as { all: number } & Record<CoherenceType, number>;
   }, [signals]);
 
   const refresh = React.useCallback(async () => {
@@ -240,6 +267,7 @@ export function CoherenceBlock({
   const handleClearPriorityFilter = React.useCallback(() => {
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete('priority');
+    nextParams.delete('type');
     const query = nextParams.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, {
       scroll: false,
@@ -253,6 +281,7 @@ export function CoherenceBlock({
     humanChatOpen,
     hideArchived,
     priorityFilter,
+    typeFilter: resolvedTypeFilter,
     activeCoherenceSlug: coherenceSlug,
     onRevealArchivedSignal: handleRevealArchivedSignal,
     onClearPriorityFilter: handleClearPriorityFilter,
@@ -262,7 +291,7 @@ export function CoherenceBlock({
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
   const priorityTabs = (
-    <PriorityFilterTabs
+    <FilterTabs
       queryKey="priority"
       defaultValue="all"
       items={[
@@ -303,22 +332,35 @@ export function CoherenceBlock({
           ) : null}
         </h1>
       </header>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 max-w-full">{priorityTabs}</div>
-        <SignalViewControls
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          hideArchived={hideArchived}
-          onHideArchivedChange={setHideArchived}
-          workflowSettingsHref={workflowSettingsHref}
-          className="lg:shrink-0"
+      <div className="flex min-w-0 max-w-full flex-col gap-3">
+        <FilterTabs
+          queryKey="type"
+          defaultValue="all"
+          items={[
+            { value: 'all', label: t('all'), count: typeCounts.all },
+            ...COHERENCE_TYPES.map((type) => ({
+              value: type,
+              label: t(`types.${type}` as 'types.Need'),
+              count: typeCounts[type],
+            })),
+          ]}
         />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 max-w-full">{priorityTabs}</div>
+          <SignalViewControls
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            hideArchived={hideArchived}
+            onHideArchivedChange={setHideArchived}
+            workflowSettingsHref={workflowSettingsHref}
+            className="lg:shrink-0"
+          />
+        </div>
       </div>
       <SignalSection
         basePath={chatBasePath}
         web3SpaceId={space?.web3SpaceId ?? 0}
         signals={filteredSignals}
-        leadImage={space?.leadImage ?? undefined}
         isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
         viewMode={viewMode}
         refresh={refresh}

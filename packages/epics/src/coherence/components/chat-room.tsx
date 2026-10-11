@@ -8,8 +8,8 @@ import {
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { ChatMessageContainer } from './chat-message.container';
-import { MarkdownSuspense, Separator } from '@hypha-platform/ui';
-import { useTranslations } from 'next-intl';
+import { Separator } from '@hypha-platform/ui';
+import { SignalDetailMedia } from './signal-detail-media';
 
 const scrollToSection = (id: string) => {
   const element = document.getElementById(id);
@@ -21,6 +21,9 @@ export const ChatRoom = ({
   isLoading,
   slug,
   signalDescription,
+  leadImage,
+  videoUrl,
+  attachments,
   messages,
   toggleChatPinnedMessage,
 }: {
@@ -28,10 +31,12 @@ export const ChatRoom = ({
   isLoading: boolean;
   slug: string;
   signalDescription?: string | null;
+  leadImage?: string | null;
+  videoUrl?: string | null;
+  attachments?: Array<{ name: string; url: string }> | null;
   messages: Message[];
   toggleChatPinnedMessage: (messageId: string) => Promise<void>;
 }) => {
-  const t = useTranslations('CoherenceTab');
   const { isMatrixAvailable } = useMatrix();
   const { jwt: authToken } = useJwt();
   const bottomId = React.useId();
@@ -69,17 +74,15 @@ export const ChatRoom = ({
 
   return (
     <div className="flex flex-col">
-      {descriptionText ? (
-        <div className="w-full">
-          <div className="my-3 rounded-lg border border-border/70 bg-background-3/60 px-3 py-2">
-            <p className="mb-1 text-1 font-medium text-neutral-10">
-              {t('description')}
-            </p>
-            <div className="text-1 text-neutral-11">
-              <MarkdownSuspense>{descriptionText}</MarkdownSuspense>
-            </div>
-          </div>
-          {messages.length > 0 ? <Separator /> : null}
+      {descriptionText || leadImage || videoUrl || attachments?.length ? (
+        <div className="my-3 w-full border border-border/70 bg-background-3/60 px-3 py-3">
+          <SignalDetailMedia
+            leadImage={leadImage}
+            videoUrl={videoUrl}
+            attachments={attachments}
+            description={descriptionText}
+          />
+          {messages.length > 0 ? <Separator className="mt-3" /> : null}
         </div>
       ) : null}
       <ChatMessageContainer

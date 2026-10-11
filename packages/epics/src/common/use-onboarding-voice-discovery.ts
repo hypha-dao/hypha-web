@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import type { VoiceSessionContext } from './space-voice-session-context';
 import { getClientEnableOnboardingVoiceRealtime } from './onboarding-voice-realtime-flag';
@@ -35,40 +35,24 @@ type UseOnboardingVoiceDiscoveryOptions = {
     role: 'user' | 'assistant';
     text: string;
   }) => void;
+  /** When false, the live session does not hear the member. */
+  captureMicrophone?: boolean;
+  /** When false, replies stay on the page and are not spoken. */
+  speakReplies?: boolean;
 };
 
 export function useOnboardingVoiceDiscovery(
   options: UseOnboardingVoiceDiscoveryOptions,
 ) {
   const realtimeFlagEnabled = getClientEnableOnboardingVoiceRealtime();
-  const [useWebSpeechFallback, setUseWebSpeechFallback] = useState(false);
-  const prevEnabledRef = useRef(options.enabled);
+  // Browser speech is the robotic voice. A live session is the only voice we use.
+  // A failed connection retries; it never drops onto speechSynthesis.
+  const handleFallback = useCallback(() => {}, []);
 
-  useEffect(() => {
-    if (prevEnabledRef.current !== options.enabled) {
-      // Switching back to Live Voice should retry Realtime instead of staying latched.
-      if (options.enabled) {
-        setUseWebSpeechFallback(false);
-      }
-      prevEnabledRef.current = options.enabled;
-    }
-  }, [options.enabled]);
-
-  useEffect(() => {
-    setUseWebSpeechFallback(false);
-  }, [options.activeSpaceSlug]);
-
-  const handleFallback = useCallback(() => {
-    setUseWebSpeechFallback(true);
-  }, []);
-
-  const useRealtime =
-    realtimeFlagEnabled &&
-    !useWebSpeechFallback &&
-    Boolean(options.conversationContext);
+  const useRealtime = Boolean(options.conversationContext);
 
   const webSpeech = useOnboardingVoiceInterview({
-    enabled: options.enabled && !useRealtime,
+    enabled: false,
     isStreaming: options.isStreaming,
     lastAssistantText: options.lastAssistantText,
     locale: options.locale,
@@ -88,6 +72,8 @@ export function useOnboardingVoiceDiscovery(
     onFallback: handleFallback,
     onStopChat: options.onStopChat,
     onSendTranscript: options.onSendTranscript,
+    captureMicrophone: options.captureMicrophone,
+    speakReplies: options.speakReplies,
   });
 
   const voice = useRealtime ? realtime : webSpeech;
@@ -99,6 +85,7 @@ export function useOnboardingVoiceDiscovery(
 
   return {
     ...voice,
+    userSpeaking: useRealtime ? realtime.userSpeaking : false,
     voiceError: voiceErrorMessage,
     transport: useRealtime ? ('realtime' as const) : ('web_speech' as const),
     realtimeFeatureEnabled: realtimeFlagEnabled,
@@ -108,6 +95,6 @@ export function useOnboardingVoiceDiscovery(
         : false,
     isConnecting:
       useRealtime && 'isConnecting' in realtime ? realtime.isConnecting : false,
-    usingWebSpeechFallback: useWebSpeechFallback && realtimeFlagEnabled,
+    usingWebSpeechFallback: false,
   };
 }

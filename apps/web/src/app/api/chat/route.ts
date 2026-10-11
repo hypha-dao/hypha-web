@@ -105,6 +105,8 @@ export async function POST(req: Request) {
   const discoveryMode = parsed.data.discoveryMode;
   const activeProposalFormSnapshot = parsed.data.activeProposalFormSnapshot;
   const locale = parsed.data.locale;
+  const memberHome = parsed.data.memberHome === true;
+  const memberHomeMemory = parsed.data.memberHomeMemory;
 
   if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -138,6 +140,8 @@ export async function POST(req: Request) {
       locale,
       onboardingWriteToolsEnabled,
       ecosystemAutomationEnabled,
+      memberHome,
+      memberHomeMemory,
     });
   } catch (error) {
     console.error('[chat][route][stream-init-error]', {

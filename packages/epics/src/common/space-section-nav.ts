@@ -24,14 +24,24 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   coherence: 'primary',
   agreements: 'primary',
   treasury: 'primary',
-  'ecosystem-navigation': 'primary',
+  memory: 'primary',
+  'ecosystem-navigation': 'more',
   calendar: 'more',
   members: 'more',
   pipeline: 'more',
   energy: 'more',
   rewards: 'more',
-  memory: 'more',
 };
+
+/** These screens live on the space home. The menu keeps Home selected there. */
+const HOME_DASHBOARD_TABS = new Set<string>([
+  'calendar',
+  'members',
+  'rewards',
+  'energy',
+  'ecosystem-navigation',
+  'pipeline',
+]);
 
 export type SpaceSectionNavItem = {
   key: SpaceSectionNavKey;
@@ -73,21 +83,24 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Primary order: Dashboard · Signals · Agreements · Treasury · Ecosystem
- * More: Calendar, Members + remaining gated/secondary sections
+ * Menu: Home · Signals · Agreements · Treasury · Space memory
+ * Calendar, members, rewards, ecosystem, and energy stay on the home dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
   spaceSlug,
   pathname,
-  pipelineEnabled = false,
-  energyEnabled = false,
   coherenceEnabled = true,
   memoryEnabled = false,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
   const rawActiveTab = getActiveTabFromPath(pathname);
-  // Banking lives under Treasury — keep Treasury highlighted on /banking routes.
-  const activeTab = rawActiveTab === 'banking' ? 'treasury' : rawActiveTab;
+  // Banking lives under Treasury. Dashboard sections keep Home selected.
+  const activeTab =
+    rawActiveTab === 'banking'
+      ? 'treasury'
+      : HOME_DASHBOARD_TABS.has(rawActiveTab)
+      ? 'overview'
+      : rawActiveTab;
   const isActive = (key: SpaceSectionNavKey) => activeTab === key;
 
   const items: SpaceSectionNavItem[] = [
@@ -101,24 +114,7 @@ export function buildSpaceSectionNavItems({
   items.push(
     navItem('agreements', lang, spaceSlug, isActive('agreements')),
     navItem('treasury', lang, spaceSlug, isActive('treasury')),
-    navItem(
-      'ecosystem-navigation',
-      lang,
-      spaceSlug,
-      isActive('ecosystem-navigation'),
-    ),
-    navItem('calendar', lang, spaceSlug, isActive('calendar')),
-    navItem('members', lang, spaceSlug, isActive('members')),
   );
-
-  if (pipelineEnabled) {
-    items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
-  }
-  if (energyEnabled) {
-    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
-  }
-
-  items.push(navItem('rewards', lang, spaceSlug, isActive('rewards')));
 
   if (memoryEnabled) {
     items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
@@ -131,8 +127,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Dashboard, Signals, Agreements, Treasury, Ecosystem.
- * An active More screen stays in the overflow menu and does not replace Ecosystem.
+ * Home, Signals, Agreements, Treasury, and Space memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];

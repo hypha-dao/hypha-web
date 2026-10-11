@@ -63,6 +63,64 @@ const signalTaskFields = {
   assigneeIds: assigneeIdsSchema.optional(),
 };
 
+const indicativePayoutRowSchema = z.object({
+  amount: z.preprocess(
+    (val) => (val === undefined || val === null ? '' : String(val)),
+    z
+      .string()
+      .min(1, { message: 'Please enter an amount.' })
+      .refine(
+        (value) => {
+          const n = parseFloat(value);
+          return !Number.isNaN(n) && n > 0;
+        },
+        { message: 'Amount must be greater than 0' },
+      ),
+  ),
+  token: z.preprocess(
+    (val) => (val === undefined || val === null ? '' : val),
+    z.string().min(1, { message: 'Please select a token' }),
+  ),
+});
+
+/**
+ * Same row shape as a contribution payout. A blank starter row is dropped so
+ * a signal can be saved without an amount. A half-filled row is rejected.
+ * These amounts are stored only; they never move funds.
+ */
+export const indicativePayoutsSchema = z.preprocess((value) => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((row) => {
+    if (!row || typeof row !== 'object') return false;
+    const amount = String((row as { amount?: unknown }).amount ?? '').trim();
+    const token = String((row as { token?: unknown }).token ?? '').trim();
+    return amount.length > 0 || token.length > 0;
+  });
+}, z.array(indicativePayoutRowSchema).max(20));
+
+const optionalMediaUrlSchema = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((value) => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  })
+  .refine((value) => value == null || /^https?:\/\//i.test(value), {
+    message: 'Enter a link that starts with http:// or https://',
+  });
+
+const signalAttachmentSchema = z.object({
+  name: z.string().trim().min(1).max(240),
+  url: z.string().trim().url().max(2000),
+});
+
+const signalAttachmentsSchema = z
+  .array(signalAttachmentSchema)
+  .max(12)
+  .optional()
+  .transform((value) => value ?? []);
+
 const coherenceSignalFields = {
   type: z.enum(COHERENCE_SIGNAL_TYPES),
   priority: z.enum(COHERENCE_PRIORITIES),
@@ -77,6 +135,11 @@ const coherenceSignalFields = {
     .min(1, { message: 'Please add content to your coherence' })
     .max(4000),
   tags: coherenceTagsSchema,
+  indicativePayouts: indicativePayoutsSchema,
+  leadImage: optionalMediaUrlSchema,
+  videoUrl: optionalMediaUrlSchema,
+  attachments: signalAttachmentsSchema,
+  sharedWithNetwork: z.boolean().optional(),
   ...signalTaskFields,
 };
 

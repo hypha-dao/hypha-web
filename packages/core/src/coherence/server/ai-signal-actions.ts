@@ -14,10 +14,14 @@ import {
 const PAYMENT_CHAIN_ID = 8453 as const;
 
 export type SignalType =
+  | 'Need'
+  | 'Resource'
   | 'Opportunity'
-  | 'Risk'
-  | 'Tension'
   | 'Insight'
+  | 'Tension'
+  | 'Risk'
+  | 'Action'
+  | 'Impact'
   | 'Trend'
   | 'Proposal';
 export type SignalPriority = 'critical' | 'high' | 'medium' | 'low';

@@ -8,6 +8,7 @@ import {
   saveAuthReturnPath,
 } from './auth-return-path';
 import {
+  resolveAccountEntryPath,
   resolvePostAuthRedirectPath,
   resolvePostAuthRedirectPathOrDefault,
 } from './resolve-post-auth-redirect-path';
@@ -105,5 +106,22 @@ describe('resolvePostAuthRedirectPath', () => {
         baseRedirectPath: '/my-spaces',
       }),
     ).toBe('/my-spaces');
+  });
+});
+
+describe('resolveAccountEntryPath', () => {
+  it('opens the welcome flow when there is no profile', () => {
+    expect(resolveAccountEntryPath({ lang: 'en', hasProfile: false })).toBe(
+      '/en/profile/signup',
+    );
+    expect(resolveAccountEntryPath({ lang: 'pt', hasProfile: false })).toBe(
+      '/pt/profile/signup',
+    );
+  });
+
+  it('opens home when a profile already exists', () => {
+    expect(resolveAccountEntryPath({ lang: 'en', hasProfile: true })).toBe(
+      '/en/home',
+    );
   });
 });

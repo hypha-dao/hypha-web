@@ -107,6 +107,7 @@ export const createCoherence = async (
     assigneeIds: inputAssigneeIds,
     board: inputBoard,
     dueAt: inputDueAt,
+    sharedWithNetwork,
     ...rest
   }: CreateCoherenceInput,
   { db }: { db: DatabaseInstance },
@@ -152,6 +153,7 @@ export const createCoherence = async (
       assigneeIds,
       board: inputBoard ?? defaultBoard,
       dueAt: inputDueAt ?? null,
+      sharedWithNetwork: sharedWithNetwork ?? false,
       ...rest,
     })
     .returning();
@@ -224,6 +226,11 @@ export const updateCoherenceSignalBySlug = async (
     progressStatus,
     board,
     assigneeIds,
+    indicativePayouts,
+    leadImage,
+    videoUrl,
+    attachments,
+    sharedWithNetwork,
     archived,
   } = rest;
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
@@ -260,6 +267,11 @@ export const updateCoherenceSignalBySlug = async (
       ...(assigneeIds !== undefined
         ? { assigneeIds: normalizeAssigneeIds(assigneeIds) }
         : {}),
+      ...(indicativePayouts !== undefined ? { indicativePayouts } : {}),
+      ...(leadImage !== undefined ? { leadImage } : {}),
+      ...(videoUrl !== undefined ? { videoUrl } : {}),
+      ...(attachments !== undefined ? { attachments } : {}),
+      ...(sharedWithNetwork !== undefined ? { sharedWithNetwork } : {}),
       ...(archived !== undefined ? { archived } : {}),
     })
     .where(eq(coherences.id, row.id))

@@ -19,6 +19,8 @@ import {
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
+  MobileContentFrame,
+  MobileTabBar,
 } from '@hypha-platform/epics';
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
@@ -102,6 +104,7 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
+  let navHomeLabel = 'Home';
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
@@ -163,6 +166,7 @@ export default async function RootLayout({
 
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
+    navHomeLabel = tNav('myDashboard');
     navMySpacesLabel = tNav('mySpaces');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
@@ -270,7 +274,7 @@ export default async function RootLayout({
                           }
                         >
                           {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                          <div className="sticky top-0 z-30 shrink-0">
+                          <div className="sticky top-0 z-40 shrink-0 bg-page-background">
                             <ConnectedMenuTop
                               aiChatEnabled={aiChatEnabled}
                               logoHref={ROOT_URL}
@@ -294,21 +298,8 @@ export default async function RootLayout({
                               mobileAction={
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
-                                  navItems={[
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
+                                  baseRedirectPath={`/${locale}/home`}
+                                  navItems={[]}
                                   showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
@@ -326,8 +317,12 @@ export default async function RootLayout({
                               <div className="hidden md:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={`/${locale}/home`}
                                   navItems={[
+                                    {
+                                      label: navHomeLabel,
+                                      href: `/${locale}/home`,
+                                    },
                                     {
                                       label: navMySpacesLabel,
                                       href: `/${locale}/my-spaces`,
@@ -359,25 +354,36 @@ export default async function RootLayout({
                           <NextSSRPlugin
                             routerConfig={extractRouterConfig(fileRouter)}
                           />
-                          <div className="mb-auto pb-8">
-                            <div className="flex h-full justify-normal pt-4 md:pt-5">
-                              <div className="w-full h-full">{children}</div>
+                          <div className="mb-auto max-md:pb-24">
+                            <div className="pb-8">
+                              <MobileContentFrame>
+                                <div className="flex h-full justify-normal pt-4 md:pt-5">
+                                  <div className="w-full h-full">
+                                    {children}
+                                  </div>
+                                </div>
+                              </MobileContentFrame>
                             </div>
+                            <Suspense fallback={null}>
+                              <DeferredFooter
+                                networkLabel={footerNetworkLabel}
+                                legalLabel={footerLegalLabel}
+                                hyphaServicesLabel={footerHyphaServicesLabel}
+                                hyphaTokenomicsLabel={
+                                  footerHyphaTokenomicsLabel
+                                }
+                                licensingPolicyLabel={
+                                  footerLicensingPolicyLabel
+                                }
+                                termsAndConditionsLabel={
+                                  footerTermsAndConditionsLabel
+                                }
+                                privacyPolicyLabel={footerPrivacyPolicyLabel}
+                                copyrightLabel={footerCopyrightLabel}
+                              />
+                            </Suspense>
                           </div>
-                          <Suspense fallback={null}>
-                            <DeferredFooter
-                              networkLabel={footerNetworkLabel}
-                              legalLabel={footerLegalLabel}
-                              hyphaServicesLabel={footerHyphaServicesLabel}
-                              hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                              licensingPolicyLabel={footerLicensingPolicyLabel}
-                              termsAndConditionsLabel={
-                                footerTermsAndConditionsLabel
-                              }
-                              privacyPolicyLabel={footerPrivacyPolicyLabel}
-                              copyrightLabel={footerCopyrightLabel}
-                            />
-                          </Suspense>
+                          <MobileTabBar />
                         </PanelWrapLayout>
                         {/* Outside capture root so tab screen share excludes the floating dock. */}
                         {humanChatEnabled && <ConnectedGlobalCallDock />}

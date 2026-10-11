@@ -16,6 +16,7 @@ type UseCoherenceSignalDeepLinkOptions = {
   humanChatOpen?: boolean;
   hideArchived: boolean;
   priorityFilter: 'all' | 'critical' | 'high' | 'medium' | 'low';
+  typeFilter?: string;
   /** When set, skip re-opening chat / scroll if the user is already on this signal. */
   activeCoherenceSlug?: string | null;
   onOpenSignalChat?: (signal: Coherence) => void;
@@ -50,6 +51,7 @@ export function useCoherenceSignalDeepLink({
   humanChatOpen = false,
   hideArchived,
   priorityFilter,
+  typeFilter = 'all',
   activeCoherenceSlug,
   onOpenSignalChat,
   onRevealArchivedSignal,
@@ -103,7 +105,10 @@ export function useCoherenceSignalDeepLink({
       return;
     }
 
-    if (priorityFilter !== 'all' && signal.priority !== priorityFilter) {
+    if (
+      (priorityFilter !== 'all' && signal.priority !== priorityFilter) ||
+      (typeFilter !== 'all' && signal.type !== typeFilter)
+    ) {
       onClearPriorityFilter?.();
       return;
     }
@@ -145,6 +150,7 @@ export function useCoherenceSignalDeepLink({
     onRefreshSignals,
     onRevealArchivedSignal,
     priorityFilter,
+    typeFilter,
     signals,
     targetSlug,
   ]);

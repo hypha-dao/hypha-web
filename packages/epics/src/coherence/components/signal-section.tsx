@@ -42,7 +42,6 @@ type SignalSectionProps = {
   basePath: string;
   web3SpaceId: number;
   signals: Coherence[];
-  leadImage?: string;
   isLoading: boolean;
   viewMode: SignalViewMode;
   order?: string;
@@ -55,7 +54,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   web3SpaceId,
   signals,
-  leadImage,
   isLoading,
   viewMode,
   refresh,
@@ -308,7 +306,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalGrid
               isLoading={false}
               basePath={basePath}
-              leadImage={leadImage}
               signals={visibleSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}

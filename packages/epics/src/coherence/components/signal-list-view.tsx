@@ -23,6 +23,8 @@ import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   isSignalDueOverdue,
@@ -224,17 +226,11 @@ export function SignalListView({
                     <span className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-foreground">
                       {signal.title}
                     </span>
-                    <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {t(
-                        `types.${signal.type}` as
-                          | 'types.Opportunity'
-                          | 'types.Risk'
-                          | 'types.Tension'
-                          | 'types.Insight'
-                          | 'types.Trend'
-                          | 'types.Proposal',
-                      )}
-                    </span>
+                    <SignalCategoryTag type={signal.type} className="mt-1" />
+                    <SignalIndicativeAmounts
+                      payouts={signal.indicativePayouts}
+                      className="mt-1"
+                    />
                     <SignalTagBadges
                       tags={signal.tags}
                       maxVisible={3}

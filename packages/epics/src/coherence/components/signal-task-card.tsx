@@ -16,6 +16,8 @@ import { SignalCardActions } from './signal-card-actions';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
@@ -160,6 +162,13 @@ export function SignalTaskCard({
       )}
     >
       <div className="flex flex-1 flex-col px-3 py-3">
+        {signal.leadImage ? (
+          <img
+            src={signal.leadImage}
+            alt=""
+            className="mb-2 max-h-24 w-full object-cover"
+          />
+        ) : null}
         {/* Own row above the title. Collapsed until hover, focus, or selection
             so the buttons never paint over the type. */}
         <div
@@ -218,6 +227,8 @@ export function SignalTaskCard({
                 {signal.title}
               </p>
 
+              <SignalIndicativeAmounts payouts={signal.indicativePayouts} />
+
               {metaParts.length > 0 ? (
                 <p className="flex min-w-0 items-center text-1 text-muted-foreground">
                   {metaParts.map((part, index) => (
@@ -239,6 +250,7 @@ export function SignalTaskCard({
 
             <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <SignalCategoryTag type={signal.type} />
                 <SignalUpvoteControl
                   slug={signal.slug}
                   upvotes={signal.upvotes}

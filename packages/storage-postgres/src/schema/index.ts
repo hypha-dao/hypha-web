@@ -40,6 +40,7 @@ import { pipelineUserSettings } from './pipeline-user-settings';
 import { spaceApiKeys } from './space-api-key';
 import { integrationClients } from './integration-client';
 import { notificationProcessedEvents } from './notification-processed-events';
+import { spaceMemberInvites } from './space-member-invite';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -68,6 +69,7 @@ export * from './pipeline-user-settings';
 export * from './space-api-key';
 export * from './integration-client';
 export * from './notification-processed-events';
+export * from './space-member-invite';
 
 export const schema = {
   documents,
@@ -106,4 +108,5 @@ export const schema = {
   spaceApiKeys,
   integrationClients,
   notificationProcessedEvents,
+  spaceMemberInvites,
 };
