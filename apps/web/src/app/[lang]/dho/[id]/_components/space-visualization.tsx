@@ -185,7 +185,7 @@ function includePoint(bounds: LayoutBounds, x: number, y: number) {
   if (y > bounds.maxY) bounds.maxY = y;
 }
 
-/** The mark that is actually drawn. An enclosure's ring is the grey ground. */
+/** The mark that is actually drawn. An enclosure's ring is the outer circle. */
 function drawnRadius(d: SpaceHierarchyNode): number {
   const ring = finiteOr(d.r, 0);
   return d.children && d.children.length > 0 ? ring * logoRatio(d) : ring;
@@ -219,8 +219,8 @@ function labelReach(node: SpaceHierarchyNode, scale: number): number {
 }
 
 /**
- * The full ecosystem is framed on its grey disc, so the rim stays on screen.
- * A zoomed space stays close; that view may crop the disc.
+ * The full ecosystem is framed on its outer circle, so the rim stays on screen.
+ * A zoomed space stays close; that view may crop the circle.
  */
 function frameForFocus(
   focus: SpaceHierarchyNode,
@@ -1120,9 +1120,12 @@ export function SpaceVisualization({
         return `translate(${tx}, ${ty})`;
       };
 
-      // The grey disc is the outer circle. A zoomed leaf keeps its hairline;
-      // the parent ring is the fill, not a second stroke around it.
-      const enclosureFill = dark ? 'var(--hypha-mid)' : 'var(--hypha-panel)';
+      // Outer circle stays in the paper and ink family. Light is a warm wash
+      // on paper; dark is a slight lift off ink. The edge is the same hairline
+      // as the rings inside.
+      const enclosureFill = dark
+        ? 'color-mix(in srgb, var(--hypha-text) 8%, var(--hypha-ink))'
+        : 'color-mix(in srgb, var(--hypha-wash) 6%, var(--hypha-paper))';
       const enclosure =
         focus.children && focus.children.length > 0
           ? focus
@@ -1138,14 +1141,11 @@ export function SpaceVisualization({
           isEnclosure(d) ? enclosureFill : 'none',
         )
         .attr('stroke', (d: SpaceHierarchyNode) => {
-          if (isEnclosure(d)) return 'none';
           const isCurrent =
             typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
-          return isCurrent ? spaceAccent : hairline;
+          return isCurrent && !isEnclosure(d) ? spaceAccent : hairline;
         })
-        .attr('stroke-width', (d: SpaceHierarchyNode) =>
-          isEnclosure(d) ? 0 : HAIRLINE,
-        )
+        .attr('stroke-width', HAIRLINE)
         .attr('stroke-linecap', 'butt')
         .attr('stroke-linejoin', 'round')
         .style('display', (d: SpaceHierarchyNode) =>
