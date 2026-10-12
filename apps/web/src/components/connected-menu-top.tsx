@@ -11,7 +11,6 @@ import {
   isSafeImageUrl,
   useAiPanel,
   AiPanelTrigger,
-  AiSidebarTrigger,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { Space } from '@hypha-platform/core/client';
@@ -139,11 +138,6 @@ export function ConnectedMenuTop({
 
   const resolvedLeadingAction = aiChatEnabled ? (
     <div className="flex items-center gap-1.5 sm:gap-2">
-      {!overlayVisible ? (
-        <div className="xl:hidden">
-          <AiSidebarTrigger />
-        </div>
-      ) : null}
       <AiPanelTrigger />
     </div>
   ) : (

@@ -14,7 +14,6 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   AiPanelTrigger,
-  AiSidebarTrigger,
   GlobalCallDockProvider,
   PanelProviders,
   PanelWrapLayout,
@@ -281,14 +280,7 @@ export default async function RootLayout({
                               openMenuLabel={navOpenMenuLabel}
                               closeMenuLabel={navCloseMenuLabel}
                               leadingAction={
-                                aiChatEnabled ? (
-                                  <div className="flex items-center gap-1.5 sm:gap-2">
-                                    <div className="xl:hidden">
-                                      <AiSidebarTrigger />
-                                    </div>
-                                    <AiPanelTrigger />
-                                  </div>
-                                ) : undefined
+                                aiChatEnabled ? <AiPanelTrigger /> : undefined
                               }
                               trailingAction={
                                 humanChatEnabled ? (
@@ -354,7 +346,7 @@ export default async function RootLayout({
                           <NextSSRPlugin
                             routerConfig={extractRouterConfig(fileRouter)}
                           />
-                          <div className="mb-auto max-xl:pb-24">
+                          <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
                             <div className="pb-8">
                               <MobileContentFrame>
                                 <div className="flex h-full justify-normal pt-4 md:pt-5">
@@ -383,7 +375,9 @@ export default async function RootLayout({
                               />
                             </Suspense>
                           </div>
-                          <MobileTabBar />
+                          <MobileTabBar
+                            spaceMemoryEnabled={spaceMemoryEnabled}
+                          />
                         </PanelWrapLayout>
                         {/* Outside capture root so tab screen share excludes the floating dock. */}
                         {humanChatEnabled && <ConnectedGlobalCallDock />}

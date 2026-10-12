@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -8,22 +8,33 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import useSWR from 'swr';
 import {
+  ArrowLeftRight,
+  ClipboardList,
+  Earth,
   Globe2,
   LayoutGrid,
   Plus,
   Settings,
   Sparkles,
+  Target,
   Wallet,
+  Waves,
 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useJwt,
   useMe,
+  useSpaceBySlug,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
+import type { SpaceSectionNavKey } from '../../common/space-section-nav';
+import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
+import { isNetworkPath } from '../../common/use-is-space-context';
 import { MemberHomeQuickCreate } from './member-home-quick-create';
 
 const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
@@ -31,6 +42,7 @@ const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
 const iconClass = 'block h-5 w-5 shrink-0';
 /** Bar is fixed. Glyphs use px so the spacing scale cannot make them taller than the row. */
 const TAB_BAR_PX = 64;
+const SUB_NAV_PX = 56;
 const TAB_GLYPH_PX = 28;
 const TAB_CENTER_GLYPH_PX = 36;
 
@@ -77,8 +89,16 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   );
 }
 
-export function MobileTabBar() {
+export function MobileTabBar({
+  spaceMemoryEnabled = false,
+}: {
+  spaceMemoryEnabled?: boolean;
+}) {
   const t = useTranslations('Navigation');
+  const tCommon = useTranslations('Common');
+  const tCoherence = useTranslations('CoherenceTab');
+  const tNetwork = useTranslations('NetworkExchange');
+  const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
@@ -111,6 +131,130 @@ export function MobileTabBar() {
     setSpacesOpen(false);
     setCreateOpen(false);
   }, [pathname]);
+
+  const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
+  const { space } = useSpaceBySlug(spaceSlug ?? '');
+  const networkRoute = isNetworkPath(pathname);
+  const secondLevel = useMemo(() => {
+    if (spaceSlug) {
+      const labelFor = (key: SpaceSectionNavKey): string => {
+        switch (key) {
+          case 'overview':
+            return tCommon('overview');
+          case 'agreements':
+            return tCommon('Agreements');
+          case 'members':
+            return tCommon('Members');
+          case 'treasury':
+            return tCommon('Treasury');
+          case 'calendar':
+            return tCommon('Calendar');
+          case 'coherence':
+            return tCommon('Coherence');
+          case 'pipeline':
+            return tCommon('Pipeline');
+          case 'energy':
+            return tCommon('Energy');
+          case 'rewards':
+            return tTreasury('rewardsSection.title');
+          case 'memory':
+            return tCoherence('spaceMemory');
+          default:
+            return key;
+        }
+      };
+      return buildSpaceSectionNavItems({
+        lang,
+        spaceSlug,
+        pathname,
+        pipelineEnabled: Boolean(space?.pipelineEnabled),
+        coherenceEnabled: true,
+        memoryEnabled: spaceMemoryEnabled,
+      }).map((item) => {
+        const Icon = SPACE_SECTION_NAV_ICONS[item.key];
+        return {
+          key: item.key,
+          href: item.href,
+          label: labelFor(item.key),
+          active: item.active,
+          icon: <Icon className={iconClass} strokeWidth={1.25} />,
+        };
+      });
+    }
+    if (!networkRoute) return [];
+    const base = `/${lang}/network`;
+    const links = [
+      {
+        key: 'network',
+        label: tNetwork('navNetwork'),
+        href: base,
+        icon: Earth,
+        exact: true,
+      },
+      {
+        key: 'exchange',
+        label: tNetwork('navExchange'),
+        href: `${base}/exchange`,
+        icon: ArrowLeftRight,
+      },
+      {
+        key: 'needs',
+        label: tNetwork('navNeeds'),
+        href: `${base}/needs`,
+        icon: ClipboardList,
+      },
+      {
+        key: 'action',
+        label: tNetwork('navAction'),
+        href: `${base}/proof-of-action`,
+        icon: Waves,
+      },
+      {
+        key: 'impact',
+        label: tNetwork('navImpact'),
+        href: `${base}/proof-of-impact`,
+        icon: Target,
+      },
+      {
+        key: 'create',
+        label: tNetwork('navCreate'),
+        href: `${base}/create`,
+        icon: Plus,
+      },
+    ] as const;
+    return links.map((link) => ({
+      key: link.key,
+      href: link.href,
+      label: link.label,
+      active:
+        'exact' in link && link.exact
+          ? pathname === base || pathname === `${base}/`
+          : pathname === link.href || pathname.startsWith(`${link.href}/`),
+      icon: <link.icon className={iconClass} strokeWidth={1.25} />,
+    }));
+  }, [
+    lang,
+    networkRoute,
+    pathname,
+    space?.pipelineEnabled,
+    spaceMemoryEnabled,
+    spaceSlug,
+    tCoherence,
+    tCommon,
+    tNetwork,
+    tTreasury,
+  ]);
+
+  useEffect(() => {
+    const px = TAB_BAR_PX + (secondLevel.length > 0 ? SUB_NAV_PX : 0);
+    document.documentElement.style.setProperty(
+      '--mobile-tab-offset',
+      `calc(${px}px + env(safe-area-inset-bottom, 0px))`,
+    );
+    return () => {
+      document.documentElement.style.removeProperty('--mobile-tab-offset');
+    };
+  }, [secondLevel.length]);
 
   const dashboardHref = `/${lang}/home`;
   const walletHref = `/${lang}/my-wallet`;
@@ -148,7 +292,8 @@ export function MobileTabBar() {
         )}
         style={{
           top: 70,
-          bottom: `calc(${TAB_BAR_PX}px + env(safe-area-inset-bottom, 0px))`,
+          bottom:
+            'var(--mobile-tab-offset, calc(64px + env(safe-area-inset-bottom, 0px)))',
           transform: spacesOpen ? 'translateX(0)' : 'translateX(100%)',
         }}
         aria-hidden={!spacesOpen}
@@ -216,7 +361,8 @@ export function MobileTabBar() {
         )}
         style={{
           top: 70,
-          bottom: `calc(${TAB_BAR_PX}px + env(safe-area-inset-bottom, 0px))`,
+          bottom:
+            'var(--mobile-tab-offset, calc(64px + env(safe-area-inset-bottom, 0px)))',
           transform: createOpen ? 'translateY(0)' : 'translateY(100%)',
         }}
         aria-hidden={!createOpen}
@@ -269,6 +415,38 @@ export function MobileTabBar() {
         }}
         aria-label={t('openMenu')}
       >
+        {secondLevel.length > 0 ? (
+          <div
+            className="flex overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ height: SUB_NAV_PX }}
+            aria-label={spaceSlug ? t('mySpaces') : t('network')}
+          >
+            {secondLevel.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                className={cn(
+                  'flex min-w-[4.5rem] flex-1 flex-col items-center justify-end gap-1 px-1 pb-1.5 text-muted-foreground',
+                  item.active && 'text-foreground',
+                )}
+              >
+                <span
+                  className={cn(
+                    'grid shrink-0 place-items-center',
+                    item.active && 'border-t border-foreground',
+                  )}
+                  style={{ width: TAB_GLYPH_PX, height: TAB_GLYPH_PX }}
+                >
+                  {item.icon}
+                </span>
+                <span className="max-w-full truncate text-[10px] leading-none tracking-tight">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
         <div
           className="mx-auto grid max-w-lg items-end px-1"
           style={{
