@@ -73,7 +73,8 @@ export async function listNetworkFieldSignals(
     select c.slug, c.title, c.description, c.type, c.lead_image, c.video_url,
            c.updated_at, c.tags, c.indicative_payouts,
            s.id as space_id, s.slug as space_slug, s.title as space_title,
-           s.location_label, s.chat_room_id,
+           s.location_label, s.chat_room_id, s.description as space_description,
+           s.lead_image as space_lead_image,
            coalesce(
              nullif(trim(concat_ws(' ', p.name, p.surname)), ''),
              nullif(trim(p.nickname), '')
@@ -93,7 +94,7 @@ export async function listNetworkFieldSignals(
     limit 60
   `);
   const drafts: Array<
-    Omit<NetworkFieldSignal, 'capital'> & {
+    Omit<NetworkFieldSignal, 'capital' | 'spaceSeeks' | 'spaceOffers'> & {
       spaceId: number;
       tagged: string | null;
     }
@@ -122,6 +123,8 @@ export async function listNetworkFieldSignals(
       videoUrl: asText(record.video_url) || null,
       updatedAt: asIso(record.updated_at),
       payouts: asPayouts(record.indicative_payouts),
+      spaceDescription: asText(record.space_description),
+      spaceLeadImage: asText(record.space_lead_image) || null,
     });
   }
   const capitals = await readSpaceCapitals(
@@ -131,5 +134,7 @@ export async function listNetworkFieldSignals(
   return drafts.map(({ spaceId, tagged, ...signal }) => ({
     ...signal,
     capital: tagged ?? capitals.get(spaceId)?.seeks[0] ?? null,
+    spaceSeeks: capitals.get(spaceId)?.seeks ?? [],
+    spaceOffers: capitals.get(spaceId)?.offers ?? [],
   }));
 }

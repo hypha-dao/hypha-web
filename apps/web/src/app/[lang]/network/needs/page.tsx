@@ -8,12 +8,12 @@ import { NetworkNeedsBoard } from '@hypha-platform/epics';
 export default async function NeedsPage(props: {
   params: Promise<{ lang: Locale }>;
 }) {
-  await props.params;
+  const { lang } = await props.params;
   const t = await getTranslations('NetworkExchange');
   const needs = await listNetworkOpenNeeds({ db }).catch(() => []);
   return (
     <Container className="flex flex-col py-8">
-      <NetworkNeedsBoard needs={needs} empty={t('needsEmpty')} />
+      <NetworkNeedsBoard lang={lang} needs={needs} empty={t('needsEmpty')} />
     </Container>
   );
 }

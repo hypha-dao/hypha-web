@@ -35,6 +35,10 @@ export type NetworkFieldSignal = {
   /** First capital named on the signal, or the first capital the space seeks. */
   capital: string | null;
   payouts: NetworkFieldPayout[];
+  spaceDescription: string;
+  spaceLeadImage: string | null;
+  spaceSeeks: string[];
+  spaceOffers: string[];
 };
 
 export type NetworkSharedSignal = {
@@ -73,6 +77,11 @@ export type NetworkOpenNeed = {
   capital: string | null;
   actionCount: number;
   impactCount: number;
+  spacePlace: string;
+  spaceDescription: string;
+  spaceLeadImage: string | null;
+  spaceSeeks: string[];
+  spaceOffers: string[];
 };
 
 export type NetworkExchangeSpace = {
@@ -82,6 +91,7 @@ export type NetworkExchangeSpace = {
   description: string;
   place: string;
   chatRoomId: string | null;
+  leadImage: string | null;
   seeks: string[];
   offers: string[];
 };

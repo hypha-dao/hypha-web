@@ -4,4 +4,5 @@ export * from './network-signal-list';
 export * from './network-needs-board';
 export * from './network-field-board';
 export * from './network-exchange-view';
+export * from './network-right-cards';
 export * from './network-quick-create';
