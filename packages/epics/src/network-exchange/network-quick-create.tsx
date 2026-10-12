@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
-import { CAPITALS, type CapitalKey } from '@hypha-platform/core/client';
+import {
+  CAPITALS,
+  EXCHANGE_CAPITALS_DRAFT_KEY,
+  type CapitalKey,
+} from '@hypha-platform/core/client';
 import { useJwt } from '@hypha-platform/core/client';
 import { Input, Textarea } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-const DRAFT_KEY = 'hypha:exchange-capitals';
+const DRAFT_KEY = EXCHANGE_CAPITALS_DRAFT_KEY;
 
 function toggle(list: CapitalKey[], key: CapitalKey): CapitalKey[] {
   return list.includes(key)

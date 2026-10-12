@@ -7,6 +7,7 @@ export * from './category-search';
 export * from './category-spaces';
 export * from './create-space-button';
 export * from './create-space-form';
+export * from './space-capitals-fields';
 export * from './create-subspace-form';
 export * from './entry-method-field';
 export * from './entry-method-token-field';
