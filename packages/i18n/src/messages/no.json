@@ -160,6 +160,7 @@
     "kindSignal": "Signal",
     "kindDiscussion": "Diskusjon",
     "kindAgreement": "Avtale",
+    "kindTransaction": "Transaksjon",
     "proposedByYou": "Du foreslo dette",
     "validate": "Bekreft",
     "validatedSignal": "Jeg bekrefter {title}.",

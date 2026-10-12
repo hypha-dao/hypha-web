@@ -160,6 +160,7 @@
     "kindSignal": "Signal",
     "kindDiscussion": "Discussion",
     "kindAgreement": "Accord",
+    "kindTransaction": "Transaction",
     "proposedByYou": "C’est toi qui l’as proposé",
     "validate": "Valider",
     "validatedSignal": "Je valide {title}.",

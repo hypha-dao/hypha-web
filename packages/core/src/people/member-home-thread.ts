@@ -49,6 +49,18 @@ export type MemberHomeSignalCta =
   | 'context'
   | 'later';
 
+/** A stored "signal" is the record kind, not a category such as Need or Opportunity. */
+export function memberHomeSignalCategory(
+  ...values: Array<string | null | undefined>
+): string | null {
+  for (const value of values) {
+    const trimmed = value?.trim() ?? '';
+    if (!trimmed || trimmed.toLowerCase() === 'signal') continue;
+    return trimmed;
+  }
+  return null;
+}
+
 /** The action that fits this signal. Insight asks for context. A need asks for a hand. */
 export function memberHomeSignalAction(
   category: string | null | undefined,
@@ -250,7 +262,7 @@ export function listMemberHomeThreadItems(
       action: 'validate',
       documentKind: 'signal',
       authoredByMember: false,
-      category: signal?.type ?? note.category ?? null,
+      category: memberHomeSignalCategory(signal?.type, note.category),
       summary: signal?.description ?? note.summary ?? null,
       creatorId: signal?.creatorId ?? note.creatorId ?? null,
       creatorName: signal?.creatorName ?? note.creatorName ?? null,
@@ -276,7 +288,7 @@ export function listMemberHomeThreadItems(
       action: 'validate',
       documentKind: 'signal',
       authoredByMember: false,
-      category: signal.type,
+      category: memberHomeSignalCategory(signal.type),
       summary: signal.description,
       creatorId: signal.creatorId,
       creatorName: signal.creatorName,
@@ -298,7 +310,7 @@ export function listMemberHomeThreadItems(
       documentKind: 'signal',
       authoredByMember: false,
       spaceLogo: signal.spaceLogo,
-      category: signal.type,
+      category: memberHomeSignalCategory(signal.type),
       summary: signal.description,
       creatorId: signal.creatorId,
       creatorName: signal.creatorName,

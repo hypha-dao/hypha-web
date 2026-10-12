@@ -160,6 +160,7 @@
     "kindSignal": "Сигнал",
     "kindDiscussion": "Дискусија",
     "kindAgreement": "Договор",
+    "kindTransaction": "Трансакција",
     "proposedByYou": "Ти го предложи ова",
     "validate": "Потврди",
     "validatedSignal": "Го потврдувам {title}.",
