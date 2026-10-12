@@ -476,6 +476,15 @@ export function MemberHome({
           aria-label={t('panelInsights')}
           className="member-home-pane narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
         >
+          {orientation === 'member' && home ? (
+            <PersonaCard
+              title={t('memberTitle')}
+              body={t('memberBody')}
+              action={t('memberAction')}
+              href={`/${lang}/my-spaces`}
+              meta={t('memberCount', { count: home.counts.spaces })}
+            />
+          ) : null}
           {orientation === 'builder' ? (
             <PersonaCard
               title={t('builderTitle')}
