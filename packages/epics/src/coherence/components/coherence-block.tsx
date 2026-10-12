@@ -280,6 +280,9 @@ export function CoherenceBlock({
       void acknowledgeCoherenceAssignment({ slug })
         .then((updated) => {
           setAcknowledgeError(null);
+          if (!updated && acknowledgingSlugRef.current === slug) {
+            acknowledgingSlugRef.current = null;
+          }
           return updated ? refreshSignals() : undefined;
         })
         .catch((error: unknown) => {
