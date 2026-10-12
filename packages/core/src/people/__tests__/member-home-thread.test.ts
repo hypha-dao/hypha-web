@@ -113,6 +113,27 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
+  it('leaves out the signed-in member joining a space', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      person: { ...home.person, name: 'Alex', surname: 'Prate' },
+      attention: [
+        ...home.attention,
+        {
+          id: 'signal-join',
+          kind: 'signal',
+          title: 'Alex Prate joined',
+          detail: 'tesesseer',
+          spaceSlug: 'tesesseer',
+          spaceTitle: 'tesesseer',
+          targetSlug: 'alex-joined',
+        },
+      ],
+    });
+    expect(items.map((item) => item.title)).not.toContain('Alex Prate joined');
+    expect(items.map((item) => item.slug)).toContain('invite-member');
+  });
+
   it('leads with notifications and does not repeat a slug', () => {
     const items = listMemberHomeThreadItems(home);
     expect(items.map((item) => item.slug)).toEqual([

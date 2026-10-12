@@ -191,10 +191,15 @@ export function formatMemberHomeFacts(
       : 'No network signal is in this brief. Do not invent one from another space.',
     networkLines ? `Network signals:\n${networkLines}` : null,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
-    (home.movement ?? []).length > 0
+    (home.movement ?? []).some(
+      (item) => item.kind !== 'joined' || !isThisMember(home, item.title),
+    )
       ? `Movement in their spaces. Do not lead with these. After the item in front of them, one sentence may name what else opened, with the space. Do not say someone left, or that a proposal was refused, unless a line says so:\n${(
           home.movement ?? []
         )
+          .filter(
+            (item) => item.kind !== 'joined' || !isThisMember(home, item.title),
+          )
           .map(
             (item) =>
               `${item.kind} space="${item.spaceTitle.replace(

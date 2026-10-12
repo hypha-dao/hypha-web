@@ -123,6 +123,18 @@ export function memberHomeThreadItemKey(item: {
   return `${item.kind}:${item.slug}`;
 }
 
+/** "{Alex Prate} joined" is the member arriving, not something that needs them. */
+export function isMemberOwnJoinTitle(
+  person: MemberIntelligence['person'],
+  title: string,
+): boolean {
+  const value = title.trim().toLowerCase();
+  if (!value) return false;
+  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
+  const labels = [full, person.nickname?.trim() ?? ''].filter(Boolean);
+  return labels.some((label) => value === `${label.toLowerCase()} joined`);
+}
+
 /**
  * What the home assistant should bring into the conversation.
  * Notifications lead, then any other open decision or assigned signal.
@@ -180,7 +192,7 @@ export function listMemberHomeThreadItems(
 
   const push = (item: MemberHomeThreadItem) => {
     const slug = item.slug.trim();
-    if (!slug) return;
+    if (!slug || isMemberOwnJoinTitle(home.person, item.title)) return;
     const key = memberHomeThreadItemKey({ ...item, slug });
     if (seen.has(key)) return;
     seen.add(key);
