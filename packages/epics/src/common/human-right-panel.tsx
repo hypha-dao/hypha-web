@@ -37,6 +37,7 @@ import {
   useMatrixUserIdsByPrivySubs,
   useMatrixUserIdsByPersonIds,
   useMe,
+  useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
   useSpacesBySlugs,
@@ -76,6 +77,7 @@ import {
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { Empty } from './empty';
+import { getRootSpace } from './get-root-space';
 
 import {
   HumanChatPanelHeader,
@@ -343,7 +345,6 @@ type EditDraft = {
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 /** Marks the dashboard network room in `joinedRef` without matching any space slug. */
 const NETWORK_JOINED_SENTINEL = '__hypha_network__';
-const ECOSYSTEM_JOINED_SENTINEL = '__hypha_ecosystem__';
 
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
@@ -1047,9 +1048,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useHumanChatPanel();
   // A pin on the network has no space in the route. The open room carries it.
   const spaceSlug = routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
-  const [dashboardRoom, setDashboardRoom] = useState<'network' | 'ecosystem'>(
-    'network',
-  );
+  const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem'>('space');
   const callSpaceSlug =
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
     coherenceSpaceSlug?.trim() ||
@@ -1061,6 +1060,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   });
   const { person: me } = useMe();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
+  const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
+    useOrganisationSpacesBySingleSlug(spaceSlug ?? '');
+  const rootSpace = useMemo(() => {
+    if (!space) return undefined;
+    if (space.parentId == null) return space;
+    if (isOrganisationLoading) return undefined;
+    const root = getRootSpace(space, organisationSpaces ?? []);
+    if (!root || (root.id === space.id && space.parentId != null)) {
+      return undefined;
+    }
+    return root;
+  }, [isOrganisationLoading, organisationSpaces, space]);
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
   const {
     persons: spaceMembersResult,
@@ -2782,6 +2793,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     lastHumanChatSpaceSlugRef.current = nextSlug;
     if (!prevSlug) return;
 
+    setSpaceRoom('space');
     exitCoherenceChat();
     resetChatStateOnAuthDrop();
   }, [spaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
@@ -2794,7 +2806,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // so this must not clear it — that loop would wipe the room on every message sync.
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
-    if (joinedRef.current && joinedRef.current !== spaceSlug) {
+    const joinedKey = joinedRef.current;
+    const staysForThisSpace =
+      joinedKey === spaceSlug || joinedKey === `ecosystem:${spaceSlug}`;
+    if (joinedKey && !staysForThisSpace) {
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
@@ -2837,16 +2852,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
     if (mode !== 'space') return;
-    if (
-      !isMatrixAvailable ||
-      !isMatrixAuthenticated ||
-      joinedRef.current === spaceSlug
-    )
-      return;
+    if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (!spaceSlug) return;
     if (isSpaceLoading) return;
     if (isUserSpaceStateLoading) return;
     if (!hasSpaceActivityAccess) return;
+    const openingEcosystem = spaceRoom === 'ecosystem';
+    if (
+      openingEcosystem &&
+      space?.parentId != null &&
+      !rootSpace &&
+      isOrganisationLoading
+    ) {
+      return;
+    }
+    const targetSlug =
+      openingEcosystem && rootSpace?.slug?.trim()
+        ? rootSpace.slug.trim()
+        : spaceSlug;
+    const joinedKey = openingEcosystem ? `ecosystem:${spaceSlug}` : spaceSlug;
+    if (joinedRef.current === joinedKey) return;
 
     let cancelled = false;
     const { joinRoom, createRoom, loadRoomHistory, client } = matrixRef.current;
@@ -2855,15 +2880,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setIsJoining(true);
       setError(null);
       try {
-        const canonicalRoomId = space?.chatRoomId?.trim() || null;
-        const storedRoomId = getStoredRoomId(spaceSlug);
+        const canonicalRoomId =
+          (openingEcosystem
+            ? rootSpace?.chatRoomId
+            : space?.chatRoomId
+          )?.trim() || null;
+        const storedRoomId = getStoredRoomId(targetSlug);
 
         if (
           canonicalRoomId &&
           storedRoomId &&
           canonicalRoomId !== storedRoomId
         ) {
-          clearStoredRoomId(spaceSlug);
+          clearStoredRoomId(targetSlug);
         }
 
         let targetRoomId: string | null = canonicalRoomId || storedRoomId;
@@ -2880,12 +2909,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (targetRoomId) {
           try {
             targetRoomId = await ensureJoined(targetRoomId);
-            storeRoomId(spaceSlug, targetRoomId);
+            storeRoomId(targetSlug, targetRoomId);
           } catch (joinErr) {
             if (canonicalRoomId && targetRoomId === canonicalRoomId) {
               throw joinErr;
             }
-            clearStoredRoomId(spaceSlug);
+            clearStoredRoomId(targetSlug);
             targetRoomId = null;
           }
         }
@@ -2898,16 +2927,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             if (!cancelled) setIsJoining(false);
             return;
           }
-          const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
+          const { roomId: newRoomId } = await createRoom(`space-${targetSlug}`);
           if (!newRoomId) {
             throw new Error('Failed to create room: empty roomId returned');
           }
           targetRoomId = newRoomId;
-          storeRoomId(spaceSlug, newRoomId);
+          storeRoomId(targetSlug, newRoomId);
           if (authTokenRef.current) {
             try {
               await updateSpaceBySlugRef.current({
-                slug: spaceSlug,
+                slug: targetSlug,
                 chatRoomId: newRoomId,
               });
             } catch (persistErr) {
@@ -2920,7 +2949,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         if (cancelled) return;
-        joinedRef.current = spaceSlug;
+        joinedRef.current = joinedKey;
         setRoomId(targetRoomId);
 
         // Paint immediately from the live timeline — don't block the UI on
@@ -2971,36 +3000,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isUserSpaceStateLoading,
     hasSpaceActivityAccess,
     space?.chatRoomId,
+    space?.parentId,
+    spaceRoom,
+    rootSpace?.slug,
+    rootSpace?.chatRoomId,
+    isOrganisationLoading,
     blockSpaceChatForMembership,
     syncRoomMessages,
   ]);
 
-  // Dashboard has no space room. Back from a person chat lands in the network
-  // or ecosystem room the member last had open.
+  // The network page has one room. An ecosystem is a root space, so that
+  // room sits beside the space chat, not beside the network.
   useEffect(() => {
     if (mode !== 'space') return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
-    const sentinel =
-      dashboardRoom === 'ecosystem'
-        ? ECOSYSTEM_JOINED_SENTINEL
-        : NETWORK_JOINED_SENTINEL;
-    if (joinedRef.current === sentinel) return;
+    if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
 
     let cancelled = false;
-    const { ensureNetworkRoom, ensureEcosystemRoom, loadRoomHistory } =
-      matrixRef.current;
+    const { ensureNetworkRoom, loadRoomHistory } = matrixRef.current;
 
     const initSharedRoom = async () => {
       setIsJoining(true);
       setError(null);
       try {
-        const { roomId: targetRoomId } =
-          dashboardRoom === 'ecosystem'
-            ? await ensureEcosystemRoom()
-            : await ensureNetworkRoom();
+        const { roomId: targetRoomId } = await ensureNetworkRoom();
         if (cancelled) return;
-        joinedRef.current = sentinel;
+        joinedRef.current = NETWORK_JOINED_SENTINEL;
         setRoomId(targetRoomId);
         syncRoomMessages(targetRoomId);
         setHasMoreOlderMessages(true);
@@ -3042,7 +3068,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     spaceSlug,
-    dashboardRoom,
     isMatrixAvailable,
     isMatrixAuthenticated,
     syncRoomMessages,
@@ -4539,24 +4564,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mode === 'coherence'
               ? coherenceTitle ?? undefined
               : mode === 'space' && !spaceSlug?.trim()
-              ? dashboardRoom === 'ecosystem'
-                ? t('ecosystemRoomTitle')
-                : t('networkRoomTitle')
+              ? t('networkRoomTitle')
               : ''
           }
           roomChoice={
-            mode === 'space' && !spaceSlug?.trim()
+            mode === 'space' && spaceSlug?.trim()
               ? {
-                  value: dashboardRoom,
+                  value: spaceRoom,
+                  ariaLabel: t('spaceRoomsLabel'),
+                  options: [
+                    { value: 'space', label: t('spaceRoomTitle') },
+                    { value: 'ecosystem', label: t('ecosystemRoomTitle') },
+                  ],
                   onChange: (next) => {
-                    if (next === dashboardRoom) return;
+                    if (next !== 'space' && next !== 'ecosystem') return;
+                    if (next === spaceRoom) return;
+                    const nextRoomId =
+                      next === 'ecosystem'
+                        ? rootSpace?.chatRoomId?.trim() || null
+                        : space?.chatRoomId?.trim() || null;
+                    if (nextRoomId && nextRoomId === roomId) {
+                      setSpaceRoom(next);
+                      joinedRef.current =
+                        next === 'ecosystem'
+                          ? `ecosystem:${spaceSlug}`
+                          : spaceSlug;
+                      return;
+                    }
                     joinedRef.current = null;
                     if (roomId) {
                       matrixRef.current.unregisterRoomListener(roomId);
                     }
                     setRoomId(null);
                     setMessages([]);
-                    setDashboardRoom(next);
+                    setSpaceRoom(next);
                   },
                 }
               : undefined
@@ -5174,16 +5215,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     currentUserAvatarUrl={currentUserAvatarUrl}
                     welcomeText={
                       mode === 'space' && !spaceSlug?.trim()
-                        ? dashboardRoom === 'ecosystem'
-                          ? t('ecosystemWelcome')
-                          : t('networkWelcome')
+                        ? t('networkWelcome')
+                        : mode === 'space' && spaceRoom === 'ecosystem'
+                        ? t('ecosystemWelcome')
                         : undefined
                     }
                     welcomeSenderName={
                       mode === 'space' && !spaceSlug?.trim()
-                        ? dashboardRoom === 'ecosystem'
-                          ? t('ecosystemRoomTitle')
-                          : t('networkRoomTitle')
+                        ? t('networkRoomTitle')
+                        : mode === 'space' && spaceRoom === 'ecosystem'
+                        ? t('ecosystemRoomTitle')
                         : undefined
                     }
                     onReply={

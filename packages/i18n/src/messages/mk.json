@@ -3416,6 +3416,8 @@
     "activeCallsElsewhereCount": "{count} активни повици на друго место",
     "notInSpaceEmptyState": "Во моментов не сте во простор.",
     "networkRoomTitle": "Мрежа",
+    "spaceRoomTitle": "Простор",
+    "spaceRoomsLabel": "Простор или екосистем",
     "networkWelcome": "Кажи здраво. Оваа соба е за целата мрежа.",
     "ecosystemRoomTitle": "Екосистем",
     "ecosystemWelcome": "Оваа соба е за целиот екосистем. Спомни го Hypha кога сакаш помош со работата.",

@@ -3436,6 +3436,8 @@
     "activeCallsElsewhereCount": "{count} actieve gesprekken elders",
     "notInSpaceEmptyState": "Je bevindt je momenteel niet in een ruimte.",
     "networkRoomTitle": "Netwerk",
+    "spaceRoomTitle": "Ruimte",
+    "spaceRoomsLabel": "Ruimte of ecosysteem",
     "networkWelcome": "Zeg hallo. Deze kamer is voor het hele netwerk.",
     "ecosystemRoomTitle": "Ecosysteem",
     "ecosystemWelcome": "Deze kamer is voor het hele ecosysteem. Noem Hypha als je hulp wilt bij het werk.",
