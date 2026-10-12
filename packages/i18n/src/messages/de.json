@@ -3437,6 +3437,8 @@
     "activeCallsElsewhereCount": "{count} aktive Anrufe an anderer Stelle",
     "notInSpaceEmptyState": "Du befindest dich gerade in keinem Space.",
     "networkRoomTitle": "Netzwerk",
+    "spaceRoomTitle": "Space",
+    "spaceRoomsLabel": "Space oder Ökosystem",
     "networkWelcome": "Sag hallo. Dieser Raum ist für das ganze Netzwerk.",
     "ecosystemRoomTitle": "Ökosystem",
     "ecosystemWelcome": "Dieser Raum ist für das ganze Ökosystem. Erwähne Hypha, wenn du Hilfe bei der Arbeit brauchst.",

@@ -2865,6 +2865,8 @@
     "activeCallsElsewhereCount": "{count} chamadas ativas em outros lugares",
     "notInSpaceEmptyState": "Você não está em um espaço no momento.",
     "networkRoomTitle": "Rede",
+    "spaceRoomTitle": "Espaço",
+    "spaceRoomsLabel": "Espaço ou ecossistema",
     "networkWelcome": "Diga olá. Esta sala é para toda a rede.",
     "ecosystemRoomTitle": "Ecossistema",
     "ecosystemWelcome": "Esta sala é para todo o ecossistema. Mencione Hypha quando quiser uma mão no trabalho.",

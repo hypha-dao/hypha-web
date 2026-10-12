@@ -18,10 +18,12 @@ type HumanChatPanelHeaderProps = {
    * Same target as the former settings control on the tab row.
    */
   notificationSettingsHref?: string | null;
-  /** Dashboard only: the one network room and the one ecosystem room. */
+  /** Two rooms that sit side by side, such as a space and its ecosystem. */
   roomChoice?: {
-    value: 'network' | 'ecosystem';
-    onChange: (next: 'network' | 'ecosystem') => void;
+    value: string;
+    options: { value: string; label: string }[];
+    ariaLabel: string;
+    onChange: (next: string) => void;
   };
 };
 
@@ -92,17 +94,17 @@ export function HumanChatPanelHeader({
         {roomChoice ? (
           <div
             role="group"
-            aria-label={t('dashboardRoomsLabel')}
+            aria-label={roomChoice.ariaLabel}
             className="inline-flex shrink-0 border border-foreground"
           >
-            {(['network', 'ecosystem'] as const).map((option) => {
-              const selected = roomChoice.value === option;
+            {roomChoice.options.map((option) => {
+              const selected = roomChoice.value === option.value;
               return (
                 <button
-                  key={option}
+                  key={option.value}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => roomChoice.onChange(option)}
+                  onClick={() => roomChoice.onChange(option.value)}
                   className={cn(
                     'px-3 py-1 text-1',
                     selected
@@ -110,9 +112,7 @@ export function HumanChatPanelHeader({
                       : 'bg-background text-foreground',
                   )}
                 >
-                  {option === 'network'
-                    ? t('networkRoomTitle')
-                    : t('ecosystemRoomTitle')}
+                  {option.label}
                 </button>
               );
             })}

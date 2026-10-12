@@ -3438,6 +3438,8 @@
     "activeCallsElsewhereCount": "{count} aktive samtaler andre steder",
     "notInSpaceEmptyState": "Du er ikke i et rom akkurat nå.",
     "networkRoomTitle": "Nettverk",
+    "spaceRoomTitle": "Rom",
+    "spaceRoomsLabel": "Rom eller økosystem",
     "networkWelcome": "Si hei. Dette rommet er for hele nettverket.",
     "ecosystemRoomTitle": "Økosystem",
     "ecosystemWelcome": "Dette rommet er for hele økosystemet. Nevn Hypha når du vil ha hjelp med arbeidet.",
