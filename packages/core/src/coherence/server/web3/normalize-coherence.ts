@@ -24,6 +24,8 @@ export function normalizeCoherence({
   progressStatus,
   board,
   assigneeIds,
+  assigneeAcknowledgedAt,
+  deadlineNotifyState,
   source,
   externalId,
   ...rest
@@ -52,6 +54,14 @@ export function normalizeCoherence({
     progressStatus: progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS,
     board: board?.trim() || null,
     assigneeIds: normalizeAssigneeIds(assigneeIds),
+    assigneeAcknowledgedAt:
+      assigneeAcknowledgedAt && typeof assigneeAcknowledgedAt === 'object'
+        ? assigneeAcknowledgedAt
+        : {},
+    deadlineNotifyState:
+      deadlineNotifyState && typeof deadlineNotifyState === 'object'
+        ? deadlineNotifyState
+        : {},
     source: source?.trim() || null,
     externalId: externalId?.trim() || null,
     ...rest,

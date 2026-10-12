@@ -8,6 +8,7 @@ export * from './delivery';
 export * from './events/proposal-created';
 export * from './events/proposal-settlement';
 export * from './events/signal-assigned';
+export * from './events/signal-notice';
 export * from './events/scheduled-item-invited';
 export * from './events/chat';
 export * from './actions';

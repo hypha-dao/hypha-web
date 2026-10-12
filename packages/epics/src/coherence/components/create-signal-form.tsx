@@ -28,7 +28,8 @@ import {
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormState, useWatch } from 'react-hook-form';
+import type { Control, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import {
   COHERENCE_PRIORITY_OPTIONS,
@@ -41,8 +42,14 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  collectExistingTags,
+  mergeTagInList,
+  normalizeTagKey,
+  personProfileHref,
+  wouldCreateNearDuplicate,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
+  useFindCoherences,
   useCoherenceUpvoteMutations,
   useJwt,
   useMatrix,
@@ -72,6 +79,8 @@ import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import type { UseMembers } from '../../spaces/hooks/types';
+import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
+import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -87,6 +96,82 @@ export interface CreateSignalFormProps {
   initialValues?: Partial<FormValues>;
   /** Supplies the space roster for the assignee picker. */
   useMembers: UseMembers;
+}
+
+function SignalFormDirtyResetButton({
+  control,
+  onReset,
+  disabled,
+  label,
+}: {
+  control: Control<FormValues>;
+  onReset: () => void;
+  disabled: boolean;
+  label: string;
+}) {
+  const { isDirty } = useFormState({ control });
+  if (!isDirty) return null;
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      colorVariant="neutral"
+      className="gap-1.5 px-2 md:px-3"
+      onClick={onReset}
+      disabled={disabled}
+    >
+      <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>{label}</span>
+    </Button>
+  );
+}
+
+function SignalFormRootError({ control }: { control: Control<FormValues> }) {
+  const { errors } = useFormState({ control });
+  if (!errors.root?.message) return null;
+  return (
+    <p
+      role="alert"
+      className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
+    >
+      {errors.root.message}
+    </p>
+  );
+}
+
+function SignalLinkedCalendarFromForm({
+  form,
+  spaceSlug,
+  signalId,
+  lang,
+  initialTitle,
+}: {
+  form: UseFormReturn<FormValues>;
+  spaceSlug: string;
+  signalId: number;
+  lang: string;
+  initialTitle?: string;
+}) {
+  const watchedTitle = useWatch({ control: form.control, name: 'title' });
+  const watchedDueAt = useWatch({ control: form.control, name: 'dueAt' });
+  const scheduleFromSignalPath = React.useMemo(() => {
+    const paramsQuery = buildScheduleFromSignalSearchParams({
+      coherenceId: signalId,
+      title: watchedTitle?.trim() || initialTitle?.trim() || 'Signal call',
+      dueAt: watchedDueAt,
+    });
+    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
+  }, [initialTitle, lang, signalId, spaceSlug, watchedDueAt, watchedTitle]);
+
+  return (
+    <SignalLinkedCalendarEvents
+      spaceSlug={spaceSlug}
+      coherenceId={signalId}
+      lang={lang}
+      calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
+      scheduleFromSignalPath={scheduleFromSignalPath}
+    />
+  );
 }
 
 function dueDateFromInputValue(value: string): Date | null {
@@ -168,7 +253,18 @@ export const CreateSignalForm = ({
     updateCoherenceBySlug,
     updateCoherenceSignalBySlug,
     isUpdatingCoherenceSignal,
+    mergeCoherenceTags,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { coherences: spaceSignals } = useFindCoherences({
+    spaceSlug,
+    includeArchived: true,
+  });
+  const existingBoardTags = React.useMemo(
+    () =>
+      collectExistingTags((spaceSignals ?? []).map((signal) => signal.tags)),
+    [spaceSignals],
+  );
+  const [mergeTagsOpen, setMergeTagsOpen] = React.useState(false);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
@@ -284,7 +380,10 @@ export const CreateSignalForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateCoherenceForm),
+    // Keep typed title/description as-is while editing. Zod `.trim()` still
+    // applies on submit via the resolver; `raw: true` stops it from writing
+    // the trimmed value back into the field on validate.
+    resolver: zodResolver(schemaCreateCoherenceForm, undefined, { raw: true }),
     defaultValues: formDefaults,
   });
   React.useEffect(() => {
@@ -293,26 +392,6 @@ export const CreateSignalForm = ({
   }, [form, formDefaults, mode, signalSlug]);
 
   useScrollToErrors(form, formRef);
-
-  const watchedTitle = form.watch('title');
-  const watchedDueAt = form.watch('dueAt');
-  const scheduleFromSignalPath = React.useMemo(() => {
-    if (!spaceSlug || !signalId) return '';
-    const paramsQuery = buildScheduleFromSignalSearchParams({
-      coherenceId: signalId,
-      title:
-        watchedTitle?.trim() || initialValues?.title?.trim() || 'Signal call',
-      dueAt: watchedDueAt,
-    });
-    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
-  }, [
-    initialValues?.title,
-    lang,
-    signalId,
-    spaceSlug,
-    watchedDueAt,
-    watchedTitle,
-  ]);
 
   const typeOptions = React.useMemo(() => {
     return COHERENCE_TYPE_OPTIONS.filter((option) =>
@@ -469,8 +548,29 @@ export const CreateSignalForm = ({
       return rows;
     });
 
-    return grouped;
-  }, [t]);
+    const usedOnBoard = existingBoardTags.filter(
+      (tag) => !canonicalTags.has(tag),
+    );
+    if (usedOnBoard.length === 0) return grouped;
+    return [
+      {
+        value: '__heading__board',
+        label: t('usedOnThisBoard'),
+        kind: 'heading' as const,
+      },
+      ...usedOnBoard.map((tag) => ({
+        value: tag,
+        label: tag,
+        kind: 'option' as const,
+      })),
+      {
+        value: '__separator__board',
+        label: '',
+        kind: 'separator' as const,
+      },
+      ...grouped,
+    ];
+  }, [existingBoardTags, t]);
 
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('creatorId');
@@ -577,6 +677,7 @@ export const CreateSignalForm = ({
 
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
+      const parsed = schemaCreateCoherenceForm.parse(data);
       form.clearErrors('root');
       if (mode === 'edit') {
         if (!authToken?.trim()) {
@@ -609,17 +710,17 @@ export const CreateSignalForm = ({
         try {
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
-            title: data.title,
-            description: data.description,
-            type: data.type,
-            priority: data.priority,
-            tags: data.tags,
-            dueAt: data.dueAt ?? null,
+            title: parsed.title,
+            description: parsed.description,
+            type: parsed.type,
+            priority: parsed.priority,
+            tags: parsed.tags,
+            dueAt: parsed.dueAt ?? null,
             progressStatus:
-              data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
+              parsed.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
             board:
-              data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
-            assigneeIds: data.assigneeIds,
+              parsed.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
+            assigneeIds: parsed.assigneeIds,
           });
           // The signal is saved — close now and let the chat sync and the
           // list refresh finish in the background.
@@ -628,7 +729,7 @@ export const CreateSignalForm = ({
           if (updatedSignal?.roomId) {
             void upsertSignalDescriptionMessage({
               roomId: updatedSignal.roomId,
-              description: data.description,
+              description: parsed.description,
             }).catch((matrixSyncError) => {
               console.warn(
                 'Signal saved but failed to sync description to chat room:',
@@ -679,7 +780,7 @@ export const CreateSignalForm = ({
         return;
       }
       try {
-        const coherence = await createCoherence({ ...data });
+        const coherence = await createCoherence({ ...parsed });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         // Close the panel as soon as the signal exists — everything below is
@@ -804,7 +905,6 @@ export const CreateSignalForm = ({
   };
 
   const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
-  const isDirty = form.formState.isDirty;
 
   return (
     <SpaceLoadingBackdrop
@@ -868,19 +968,12 @@ export const CreateSignalForm = ({
                     className="px-0 md:px-3 align-top"
                   />
                 ) : null}
-                {isDirty ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    className="gap-1.5 px-2 md:px-3"
-                    onClick={handleResetForm}
-                    disabled={isMutating}
-                  >
-                    <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span>{t('reset')}</span>
-                  </Button>
-                ) : null}
+                <SignalFormDirtyResetButton
+                  control={form.control}
+                  onReset={handleResetForm}
+                  disabled={isMutating}
+                  label={t('reset')}
+                />
                 <ButtonClose
                   closeUrl={closeUrl}
                   className="px-0 md:px-3 align-top"
@@ -1170,12 +1263,12 @@ export const CreateSignalForm = ({
               </div>
             </section>
             {mode === 'edit' && signalId && spaceSlug ? (
-              <SignalLinkedCalendarEvents
+              <SignalLinkedCalendarFromForm
+                form={form}
                 spaceSlug={spaceSlug}
-                coherenceId={signalId}
+                signalId={signalId}
                 lang={lang}
-                calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
-                scheduleFromSignalPath={scheduleFromSignalPath}
+                initialTitle={initialValues?.title}
               />
             ) : null}
             <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
@@ -1197,6 +1290,24 @@ export const CreateSignalForm = ({
                             markdown={descriptionValue}
                             translation={translateEditor}
                             placeholder={t('descriptionPlaceholder')}
+                            mentionCandidates={spaceMembers.data.flatMap(
+                              (member) => {
+                                const slug = member.slug?.trim();
+                                if (!slug) return [];
+                                return [
+                                  {
+                                    id: slug,
+                                    label:
+                                      [member.name, member.surname]
+                                        .filter(Boolean)
+                                        .join(' ') ||
+                                      member.nickname ||
+                                      slug,
+                                    href: personProfileHref(slug, lang),
+                                  },
+                                ];
+                              },
+                            )}
                             onChange={(markdown) => field.onChange(markdown)}
                           />
                         </div>
@@ -1229,6 +1340,24 @@ export const CreateSignalForm = ({
                         allowCreate={true}
                         maxCount={2}
                         uiStyle="tag-picker"
+                        textClassName={SIGNAL_BOARD_META_TEXT_CLASS}
+                        headingClassName={SIGNAL_BOARD_META_TEXT_CLASS}
+                        getCreateWarning={(term) =>
+                          wouldCreateNearDuplicate(
+                            term,
+                            existingBoardTags,
+                            field.value ?? [],
+                          )
+                            ? t('tagNearDuplicateWarning', {
+                                tag:
+                                  existingBoardTags.find(
+                                    (tag) =>
+                                      normalizeTagKey(tag) ===
+                                      normalizeTagKey(term),
+                                  ) ?? term,
+                              })
+                            : null
+                        }
                         labels={{
                           more: (count) =>
                             t.has('tagsMore' as never)
@@ -1257,21 +1386,45 @@ export const CreateSignalForm = ({
                         onValueChange={field.onChange}
                       />
                     </FormControl>
+                    {canManageSignal && existingBoardTags.length > 1 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        size="sm"
+                        className="mt-2 h-8 px-2 text-muted-foreground"
+                        onClick={() => setMergeTagsOpen(true)}
+                      >
+                        {t('mergeTagsAction')}
+                      </Button>
+                    ) : null}
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <SignalTagMergeDialog
+                open={mergeTagsOpen}
+                onOpenChange={setMergeTagsOpen}
+                existingTags={existingBoardTags}
+                onMerge={async (fromTag, toTag) => {
+                  if (!spaceSlug) return;
+                  await mergeCoherenceTags({ spaceSlug, fromTag, toTag });
+                  const mergedTags = mergeTagInList(
+                    form.getValues('tags') ?? [],
+                    fromTag,
+                    toTag,
+                  );
+                  form.resetField('tags', {
+                    defaultValue: mergedTags,
+                    keepDirty: true,
+                  });
+                  await revalidateCoherences(spaceSlug);
+                }}
+              />
             </section>
 
             <div className="flex w-full justify-end gap-2">
-              {form.formState.errors.root?.message ? (
-                <p
-                  role="alert"
-                  className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
-                >
-                  {form.formState.errors.root.message}
-                </p>
-              ) : null}
+              <SignalFormRootError control={form.control} />
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
                   title={

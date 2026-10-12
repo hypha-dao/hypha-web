@@ -568,6 +568,13 @@
       "when": 1784000000011,
       "tag": "0080_integration_clients",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1784000000012,
+      "tag": "0081_signal_owner_notifications",
+      "breakpoints": true
     }
   ]
 }
