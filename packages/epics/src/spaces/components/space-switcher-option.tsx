@@ -46,11 +46,11 @@ export const SpaceSwitcherOption = forwardRef<
     <Link
       ref={ref}
       {...props}
-      className={cn('flex min-w-0 items-center gap-2', className)}
+      className={cn('flex w-full min-w-0 items-center gap-2', className)}
       style={{ minHeight: 32 }}
     >
       <SpaceSwitcherMark iconUrl={iconUrl} alt={title} />
-      <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">{title}</span>
+      <span className="min-w-0 flex-1 truncate">{title}</span>
     </Link>
   );
 });

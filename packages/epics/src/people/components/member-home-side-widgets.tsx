@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { MessageSquare, Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Skeleton } from '@hypha-platform/ui';
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 import { useDisplayCurrency, useUserAssets } from '../../treasury/hooks';
@@ -20,16 +20,21 @@ function Widget({
   busy = false,
   children,
   action,
+  className,
 }: {
   title: string;
   busy?: boolean;
   children: ReactNode;
   action?: ReactNode;
+  className?: string;
 }) {
   return (
     <section
       aria-busy={busy || undefined}
-      className="flex flex-col border border-border bg-background p-4"
+      className={cn(
+        'flex w-full min-w-0 flex-col border border-border bg-background p-4',
+        className,
+      )}
     >
       <h2
         className="text-3"
@@ -187,6 +192,7 @@ export function MemberHomeSpacesWidget({
     <Widget
       title={t('recentSpaces')}
       busy={busy}
+      className="border-foreground/40"
       action={
         <WidgetAction href={`/${lang}/my-spaces`}>
           {t('openMySpaces')}
