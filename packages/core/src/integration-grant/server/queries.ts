@@ -2,7 +2,7 @@ import {
   integrationClients,
   integrationGrants,
 } from '@hypha-platform/storage-postgres';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 
 import type { DbConfig } from '../../server';
 import type { IntegrationClientScope } from '../../integration-client/types';
@@ -72,7 +72,10 @@ export const listIntegrationGrantsForPerson = async (
       eq(integrationClients.id, integrationGrants.clientId),
     )
     .where(eq(integrationGrants.personId, personId))
-    .orderBy(desc(integrationGrants.grantedAt));
+    .orderBy(
+      sql`case when ${integrationGrants.status} = 'active' then 0 else 1 end`,
+      desc(integrationGrants.grantedAt),
+    );
 
   return rows.map((row) => ({
     ...toGrantSummary(row.grant),
