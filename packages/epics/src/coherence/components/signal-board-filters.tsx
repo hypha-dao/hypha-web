@@ -180,13 +180,20 @@ export function SignalBoardFilters({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-72 rounded-none border-border bg-background p-0 text-foreground shadow-none"
+          collisionPadding={16}
+          className="narrow-scrollbar max-h-[var(--radix-popover-content-available-height,70dvh)] w-72 overflow-y-auto overscroll-contain rounded-none border-border bg-background p-0 text-foreground shadow-none"
         >
           <section className="border-b border-border py-2">
             <p className="px-3 py-1 text-1 uppercase tracking-[0.12em] text-neutral-11">
               {t('type')}
             </p>
             <div className="grid">
+              <FilterOption
+                label={t('all')}
+                count={typeCounts.all}
+                selected={typeFilters.length === 0}
+                onSelect={() => writeParam('type', [])}
+              />
               {COHERENCE_SIGNAL_TYPES.map((type) => (
                 <FilterOption
                   key={type}
@@ -208,6 +215,12 @@ export function SignalBoardFilters({
               {t('priority')}
             </p>
             <div className="grid">
+              <FilterOption
+                label={t('all')}
+                count={priorityCounts.all}
+                selected={priorityFilters.length === 0}
+                onSelect={() => writeParam('priority', [])}
+              />
               {SIGNAL_PRIORITIES.map((priority) => (
                 <FilterOption
                   key={priority}
