@@ -378,7 +378,10 @@ export const CreateSignalForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateCoherenceForm),
+    // Keep typed title/description as-is while editing. Zod `.trim()` still
+    // applies on submit via the resolver; `raw: true` stops it from writing
+    // the trimmed value back into the field on validate.
+    resolver: zodResolver(schemaCreateCoherenceForm, undefined, { raw: true }),
     defaultValues: formDefaults,
   });
   React.useEffect(() => {

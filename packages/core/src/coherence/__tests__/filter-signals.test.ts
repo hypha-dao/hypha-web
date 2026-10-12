@@ -60,6 +60,12 @@ describe('filterSignals', () => {
     ).toEqual(['Draft the memorandum', 'Overdue memo']);
   });
 
+  it('trims the title query when filtering, not in the typed value', () => {
+    expect(
+      filterSignals(cards, { title: 'MEMO ' }).map((card) => card.title),
+    ).toEqual(['Draft the memorandum', 'Overdue memo']);
+  });
+
   it('filters by a specific assignee id', () => {
     expect(filterSignals(cards, { assignee: 3 })).toEqual([cards[3]]);
   });
@@ -99,6 +105,12 @@ describe('filterSignals', () => {
 });
 
 describe('signal filter query', () => {
+  it('stores a trimmed title in the URL without requiring the input to match', () => {
+    const written = writeSignalBoardFilters('', { title: 'foo ' });
+    expect(written.get('title')).toBe('foo');
+    expect(parseSignalBoardFilters(written)).toEqual({ title: 'foo' });
+  });
+
   it('round-trips a specific assignee id through the URL', () => {
     const written = writeSignalBoardFilters('', { assignee: 42 });
     expect(written.get('assignee')).toBe('42');

@@ -12,10 +12,16 @@ type UseDebouncedBoardTitleArgs = {
   delayMs?: number;
 };
 
+function normalizeTitleForUrl(value: string): string {
+  return value.trim();
+}
+
 /**
  * Keep the title filter input instant while writing `title=` to the URL
- * after a short pause. External URL changes (shared links, Clear) still
- * overwrite the local value.
+ * after a short pause. The URL stores the trimmed query; the input keeps
+ * the raw typed string, including trailing spaces. URL → input sync happens
+ * only for the initial prefill and for changes this hook did not write
+ * (Clear, back/forward, a shared link).
  */
 export function useDebouncedBoardTitle({
   filters,
@@ -26,16 +32,21 @@ export function useDebouncedBoardTitle({
   const [titleInput, setTitleInput] = React.useState(committedTitle);
   const filtersRef = React.useRef(filters);
   filtersRef.current = filters;
-  const lastCommittedRef = React.useRef(committedTitle);
+  const lastWroteNormalizedRef = React.useRef(
+    normalizeTitleForUrl(committedTitle),
+  );
   const onChangeRef = React.useRef(onChange);
   onChangeRef.current = onChange;
 
   const commitTitle = useDebouncedCallback((value: string) => {
-    const nextTitle = value || undefined;
-    lastCommittedRef.current = nextTitle ?? '';
+    const normalized = normalizeTitleForUrl(value);
+    lastWroteNormalizedRef.current = normalized;
     const current = filtersRef.current;
-    if ((current.title ?? '') === (nextTitle ?? '')) return;
-    onChangeRef.current({ ...current, title: nextTitle });
+    if ((current.title ?? '') === normalized) return;
+    onChangeRef.current({
+      ...current,
+      title: normalized || undefined,
+    });
   }, delayMs);
 
   React.useEffect(() => {
@@ -45,8 +56,9 @@ export function useDebouncedBoardTitle({
   }, [commitTitle]);
 
   React.useEffect(() => {
-    if (committedTitle === lastCommittedRef.current) return;
-    lastCommittedRef.current = committedTitle;
+    const incoming = normalizeTitleForUrl(committedTitle);
+    if (incoming === lastWroteNormalizedRef.current) return;
+    lastWroteNormalizedRef.current = incoming;
     setTitleInput(committedTitle);
     commitTitle.cancel();
   }, [committedTitle, commitTitle]);
@@ -61,7 +73,7 @@ export function useDebouncedBoardTitle({
 
   const resetTitle = React.useCallback(() => {
     commitTitle.cancel();
-    lastCommittedRef.current = '';
+    lastWroteNormalizedRef.current = '';
     setTitleInput('');
   }, [commitTitle]);
 

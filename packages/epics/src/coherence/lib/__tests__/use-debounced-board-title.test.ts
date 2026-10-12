@@ -94,4 +94,48 @@ describe('useDebouncedBoardTitle', () => {
     rerender({ filters: { title: 'ab' } });
     expect(result.current.titleInput).toBe('abc');
   });
+
+  it('keeps a trailing space after debounce, then continues as foo bar', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ filters }: { filters: SignalBoardFilters }) =>
+        useDebouncedBoardTitle({ filters, onChange, delayMs: 300 }),
+      { initialProps: { filters: {} as SignalBoardFilters } },
+    );
+
+    act(() => {
+      result.current.onTitleChange('foo ');
+    });
+    expect(result.current.titleInput).toBe('foo ');
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith({ title: 'foo' });
+
+    rerender({ filters: { title: 'foo' } as SignalBoardFilters });
+    expect(result.current.titleInput).toBe('foo ');
+
+    act(() => {
+      result.current.onTitleChange('foo bar');
+    });
+    expect(result.current.titleInput).toBe('foo bar');
+  });
+
+  it('syncs the input when the URL changes from outside the hook', () => {
+    const onChange = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ filters }: { filters: SignalBoardFilters }) =>
+        useDebouncedBoardTitle({ filters, onChange, delayMs: 300 }),
+      {
+        initialProps: { filters: { title: 'memo' } as SignalBoardFilters },
+      },
+    );
+
+    expect(result.current.titleInput).toBe('memo');
+    rerender({ filters: { title: 'hello' } as SignalBoardFilters });
+    expect(result.current.titleInput).toBe('hello');
+  });
 });
