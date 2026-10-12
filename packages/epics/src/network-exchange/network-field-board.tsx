@@ -7,7 +7,6 @@ import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   CAPITALS,
-  capitalLabel,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkFieldSignal,
@@ -247,13 +246,13 @@ export function NetworkFieldBoard({
         <Chip selected={capital === 'all'} onClick={() => setCapital('all')}>
           {t('allSpaces')}
         </Chip>
-        {CAPITALS.map((item) => (
+        {CAPITALS.map((key) => (
           <Chip
-            key={item.key}
-            selected={capital === item.key}
-            onClick={() => setCapital(item.key)}
+            key={key}
+            selected={capital === key}
+            onClick={() => setCapital(key)}
           >
-            {capitalLabel(item.key)}
+            {t(`capitals.${key}`)}
           </Chip>
         ))}
       </div>

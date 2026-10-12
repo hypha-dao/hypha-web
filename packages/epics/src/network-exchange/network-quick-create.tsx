@@ -63,13 +63,13 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
     setSelected: (next: CapitalKey[]) => void,
   ) => (
     <div className="flex flex-wrap gap-1">
-      {CAPITALS.map((capital) => {
-        const on = selected.includes(capital.key);
+      {CAPITALS.map((key) => {
+        const on = selected.includes(key);
         return (
           <button
-            key={capital.key}
+            key={key}
             type="button"
-            onClick={() => setSelected(toggle(selected, capital.key))}
+            onClick={() => setSelected(toggle(selected, key))}
             className={cn(
               'border px-2 py-1 text-1',
               on
@@ -77,7 +77,7 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
                 : 'border-border text-neutral-11',
             )}
           >
-            {capital.label}
+            {t(`capitals.${key}`)}
           </button>
         );
       })}

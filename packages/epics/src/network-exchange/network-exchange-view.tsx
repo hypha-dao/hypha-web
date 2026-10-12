@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
 import {
-  capitalLabel,
-  type CapitalKey,
+  parseCapitalKeys,
   type NetworkExchangeSpace,
 } from '@hypha-platform/core/client';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
@@ -84,17 +83,17 @@ export function NetworkExchangeView({
                   </p>
                   <p className="mt-3 text-1 text-neutral-11">
                     {t('seeks')}:{' '}
-                    {space.seeks.length
-                      ? space.seeks
-                          .map((key) => capitalLabel(key as CapitalKey))
+                    {parseCapitalKeys(space.seeks).length
+                      ? parseCapitalKeys(space.seeks)
+                          .map((key) => t(`capitals.${key}`))
                           .join(', ')
                       : t('noneYet')}
                   </p>
                   <p className="text-1 text-neutral-11">
                     {t('offers')}:{' '}
-                    {space.offers.length
-                      ? space.offers
-                          .map((key) => capitalLabel(key as CapitalKey))
+                    {parseCapitalKeys(space.offers).length
+                      ? parseCapitalKeys(space.offers)
+                          .map((key) => t(`capitals.${key}`))
                           .join(', ')
                       : t('noneYet')}
                   </p>

@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  capitalLabel,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkOpenNeed,
@@ -115,7 +114,7 @@ export function NetworkNeedsBoard({
                         {capital ? <CapitalMark capital={capital} /> : null}
                         {capital
                           ? t('capitalStatus', {
-                              capital: capitalLabel(capital),
+                              capital: t(`capitals.${capital}`),
                               status: when,
                             })
                           : when}
