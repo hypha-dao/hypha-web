@@ -619,10 +619,10 @@
       "breakpoints": true
     },
     {
-      "idx": 86,
+      "idx": 87,
       "version": "7",
-      "when": 1784000000017,
-      "tag": "0086_network_offer_and_capitals",
+      "when": 1784000000018,
+      "tag": "0087_network_offer_and_capitals",
       "breakpoints": true
     }
   ]
