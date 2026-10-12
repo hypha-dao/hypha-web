@@ -218,7 +218,6 @@ export function MemberHome({
     '';
   const displayName = knownName || t('fallbackName');
   const greetingPending = home == null && !knownName;
-  const tTypes = useTranslations('CoherenceTab');
   const queue = useMemo(
     () => (home ? listMemberHomeThreadItems(home) : []),
     [home],
@@ -474,7 +473,7 @@ export function MemberHome({
         </main>
         <aside
           aria-label={t('panelInsights')}
-          className="member-home-pane narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
+          className="narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
         >
           {orientation === 'member' && home ? (
             <PersonaCard
@@ -544,76 +543,12 @@ export function MemberHome({
           ) : null}
 
           <div>
-            <Tile title={t('waiting')} busy={home == null}>
-              <ResourceList
-                isLoading={home == null}
-                empty={t('noWaiting')}
-                maxItems={6}
-                items={
-                  home
-                    ? [
-                        ...queue.flatMap((item) => {
-                          const typeName = item.category?.trim();
-                          const typeKey = typeName
-                            ? (`types.${typeName}` as 'types.Need')
-                            : null;
-                          const typeLabel =
-                            typeKey && tTypes.has(typeKey)
-                              ? tTypes(typeKey)
-                              : typeName;
-                          return [
-                            {
-                              id: `${item.kind}:${item.slug}`,
-                              kind: item.kind,
-                              title: item.title,
-                              detail:
-                                item.kind === 'signal'
-                                  ? [typeLabel, item.spaceTitle]
-                                      .filter(Boolean)
-                                      .join(' · ')
-                                  : [item.spaceTitle, item.documentKind]
-                                      .filter(Boolean)
-                                      .join(' · '),
-                              href:
-                                item.kind === 'proposal'
-                                  ? getProposalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.slug,
-                                    )
-                                  : getSignalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.slug,
-                                    ),
-                              onSelect: () =>
-                                setFocusKey(`${item.kind}:${item.slug}`),
-                              icon: item.spaceLogo ?? null,
-                            },
-                          ];
-                        }),
-                        ...(home.movement ?? [])
-                          .filter((item) => item.kind === 'treasury')
-                          .map((item) => ({
-                            id: item.id,
-                            title: item.title,
-                            detail: [t('kindTransaction'), item.spaceTitle]
-                              .filter(Boolean)
-                              .join(' · '),
-                            href: item.documentSlug
-                              ? getProposalPath(
-                                  lang,
-                                  item.spaceSlug,
-                                  item.documentSlug,
-                                )
-                              : `/${lang}/dho/${item.spaceSlug}/treasury`,
-                            icon: item.spaceLogo ?? null,
-                          })),
-                      ]
-                    : []
-                }
-              />
-            </Tile>
+            <AttentionNeeded
+              lang={lang}
+              home={home}
+              queue={queue}
+              onSelect={setFocusKey}
+            />
           </div>
 
           <div className="grid gap-4">
@@ -945,6 +880,88 @@ function Tile({
   );
 }
 
+const ATTENTION_PAGE = 5;
+
+function AttentionNeeded({
+  lang,
+  home,
+  queue,
+  onSelect,
+}: {
+  lang: Locale;
+  home: MemberIntelligence | null;
+  queue: MemberHomeThreadItem[];
+  onSelect: (key: string) => void;
+}) {
+  const t = useTranslations('MemberHome');
+  const tTypes = useTranslations('CoherenceTab');
+  const [visibleCount, setVisibleCount] = useState(ATTENTION_PAGE);
+  const items = home
+    ? [
+        ...queue.flatMap((item) => {
+          const typeName = item.category?.trim();
+          const typeKey = typeName
+            ? (`types.${typeName}` as 'types.Need')
+            : null;
+          const typeLabel =
+            typeKey && tTypes.has(typeKey) ? tTypes(typeKey) : typeName;
+          return [
+            {
+              id: `${item.kind}:${item.slug}`,
+              kind: item.kind,
+              title: item.title,
+              detail:
+                item.kind === 'signal'
+                  ? [typeLabel, item.spaceTitle].filter(Boolean).join(' · ')
+                  : [item.spaceTitle, item.documentKind]
+                      .filter(Boolean)
+                      .join(' · '),
+              href:
+                item.kind === 'proposal'
+                  ? getProposalPath(lang, item.spaceSlug, item.slug)
+                  : getSignalPath(lang, item.spaceSlug, item.slug),
+              onSelect: () => onSelect(`${item.kind}:${item.slug}`),
+              icon: item.spaceLogo ?? null,
+            },
+          ];
+        }),
+        ...(home.movement ?? [])
+          .filter((item) => item.kind === 'treasury')
+          .map((item) => ({
+            id: item.id,
+            title: item.title,
+            detail: [t('kindTransaction'), item.spaceTitle]
+              .filter(Boolean)
+              .join(' · '),
+            href: item.documentSlug
+              ? getProposalPath(lang, item.spaceSlug, item.documentSlug)
+              : `/${lang}/dho/${item.spaceSlug}/treasury`,
+            icon: item.spaceLogo ?? null,
+          })),
+      ]
+    : [];
+
+  return (
+    <Tile title={t('waiting')} busy={home == null}>
+      <ResourceList
+        isLoading={home == null}
+        empty={t('noWaiting')}
+        maxItems={visibleCount}
+        items={items}
+      />
+      {items.length > visibleCount ? (
+        <button
+          type="button"
+          className="mt-3 text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          onClick={() => setVisibleCount((count) => count + ATTENTION_PAGE)}
+        >
+          {t('seeMore')}
+        </button>
+      ) : null}
+    </Tile>
+  );
+}
+
 function TileLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
@@ -1090,7 +1107,7 @@ function PersonaCard({
   meta?: string;
 }) {
   return (
-    <section className="border border-border bg-accent-2 p-4">
+    <section className="border border-border bg-background p-4">
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
