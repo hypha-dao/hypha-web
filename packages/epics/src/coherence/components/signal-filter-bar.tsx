@@ -20,6 +20,7 @@ import {
 } from '@hypha-platform/ui';
 import { X } from 'lucide-react';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
+import { useDebouncedBoardTitle } from '../lib/use-debounced-board-title';
 
 type SignalFilterBarProps = {
   filters: SignalBoardFilters;
@@ -37,7 +38,7 @@ const DEADLINE_MODES: SignalDeadlineFilterMode[] = [
   'none',
 ];
 
-export function SignalFilterBar({
+export const SignalFilterBar = React.memo(function SignalFilterBar({
   filters,
   onChange,
   existingTags,
@@ -45,7 +46,14 @@ export function SignalFilterBar({
   currentPersonId,
 }: SignalFilterBarProps) {
   const t = useTranslations('CoherenceTab');
-  const active = hasActiveSignalFilters(filters);
+  const { titleInput, onTitleChange, resetTitle } = useDebouncedBoardTitle({
+    filters,
+    onChange,
+  });
+  const active = hasActiveSignalFilters({
+    ...filters,
+    title: titleInput || undefined,
+  });
   const deadlineMode = filters.deadline?.mode;
   const from =
     filters.deadline && 'from' in filters.deadline
@@ -74,14 +82,9 @@ export function SignalFilterBar({
           </span>
           <Input
             type="search"
-            value={filters.title ?? ''}
+            value={titleInput}
             placeholder={t('filterTitlePlaceholder')}
-            onChange={(event) =>
-              onChange({
-                ...filters,
-                title: event.target.value || undefined,
-              })
-            }
+            onChange={(event) => onTitleChange(event.target.value)}
           />
         </label>
         <label className="flex min-w-[11rem] flex-col gap-1">
@@ -265,7 +268,10 @@ export function SignalFilterBar({
             colorVariant="neutral"
             size="sm"
             className="h-7 px-2"
-            onClick={() => onChange({})}
+            onClick={() => {
+              resetTitle();
+              onChange({});
+            }}
           >
             <X className="mr-1 h-3.5 w-3.5" />
             {t('filtersClear')}
@@ -274,4 +280,4 @@ export function SignalFilterBar({
       ) : null}
     </div>
   );
-}
+});

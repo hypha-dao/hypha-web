@@ -58,7 +58,7 @@ type SignalCardProps = {
   isActive?: boolean;
 };
 
-export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
+function SignalCardComponent({
   isLoading,
   title,
   description,
@@ -78,7 +78,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   className,
   leadImage: _leadImage,
   isActive = false,
-}) => {
+}: SignalCardProps & Coherence) {
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
@@ -478,4 +478,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       </CardContent>
     </Card>
   );
-};
+}
+
+export const SignalCard = React.memo(SignalCardComponent);

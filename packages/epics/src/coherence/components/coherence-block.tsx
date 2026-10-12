@@ -170,6 +170,7 @@ export function CoherenceBlock({
     () => parseSignalBoardFilters(searchParams),
     [searchParams],
   );
+  const deferredBoardFilters = React.useDeferredValue(boardFilters);
   const handleBoardFiltersChange = React.useCallback(
     (nextFilters: ReturnType<typeof parseSignalBoardFilters>) => {
       const nextParams = writeSignalBoardFilters(searchParams, nextFilters);
@@ -204,10 +205,10 @@ export function CoherenceBlock({
     const byPriority = (signals ?? []).filter((signal) =>
       priorityFilter === 'all' ? true : signal.priority === priorityFilter,
     );
-    return filterSignals(byPriority, boardFilters, {
+    return filterSignals(byPriority, deferredBoardFilters, {
       currentPersonId: person?.id,
     });
-  }, [boardFilters, person?.id, priorityFilter, signals]);
+  }, [deferredBoardFilters, person?.id, priorityFilter, signals]);
   const existingTags = React.useMemo(
     () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
     [signals],

@@ -28,7 +28,8 @@ import {
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormState, useWatch } from 'react-hook-form';
+import type { Control, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import {
   COHERENCE_PRIORITY_OPTIONS,
@@ -93,6 +94,82 @@ export interface CreateSignalFormProps {
   initialValues?: Partial<FormValues>;
   /** Supplies the space roster for the assignee picker. */
   useMembers: UseMembers;
+}
+
+function SignalFormDirtyResetButton({
+  control,
+  onReset,
+  disabled,
+  label,
+}: {
+  control: Control<FormValues>;
+  onReset: () => void;
+  disabled: boolean;
+  label: string;
+}) {
+  const { isDirty } = useFormState({ control });
+  if (!isDirty) return null;
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      colorVariant="neutral"
+      className="gap-1.5 px-2 md:px-3"
+      onClick={onReset}
+      disabled={disabled}
+    >
+      <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>{label}</span>
+    </Button>
+  );
+}
+
+function SignalFormRootError({ control }: { control: Control<FormValues> }) {
+  const { errors } = useFormState({ control });
+  if (!errors.root?.message) return null;
+  return (
+    <p
+      role="alert"
+      className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
+    >
+      {errors.root.message}
+    </p>
+  );
+}
+
+function SignalLinkedCalendarFromForm({
+  form,
+  spaceSlug,
+  signalId,
+  lang,
+  initialTitle,
+}: {
+  form: UseFormReturn<FormValues>;
+  spaceSlug: string;
+  signalId: number;
+  lang: string;
+  initialTitle?: string;
+}) {
+  const watchedTitle = useWatch({ control: form.control, name: 'title' });
+  const watchedDueAt = useWatch({ control: form.control, name: 'dueAt' });
+  const scheduleFromSignalPath = React.useMemo(() => {
+    const paramsQuery = buildScheduleFromSignalSearchParams({
+      coherenceId: signalId,
+      title: watchedTitle?.trim() || initialTitle?.trim() || 'Signal call',
+      dueAt: watchedDueAt,
+    });
+    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
+  }, [initialTitle, lang, signalId, spaceSlug, watchedDueAt, watchedTitle]);
+
+  return (
+    <SignalLinkedCalendarEvents
+      spaceSlug={spaceSlug}
+      coherenceId={signalId}
+      lang={lang}
+      calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
+      scheduleFromSignalPath={scheduleFromSignalPath}
+    />
+  );
 }
 
 function dueDateFromInputValue(value: string): Date | null {
@@ -310,26 +387,6 @@ export const CreateSignalForm = ({
   }, [form, formDefaults, mode, signalSlug]);
 
   useScrollToErrors(form, formRef);
-
-  const watchedTitle = form.watch('title');
-  const watchedDueAt = form.watch('dueAt');
-  const scheduleFromSignalPath = React.useMemo(() => {
-    if (!spaceSlug || !signalId) return '';
-    const paramsQuery = buildScheduleFromSignalSearchParams({
-      coherenceId: signalId,
-      title:
-        watchedTitle?.trim() || initialValues?.title?.trim() || 'Signal call',
-      dueAt: watchedDueAt,
-    });
-    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
-  }, [
-    initialValues?.title,
-    lang,
-    signalId,
-    spaceSlug,
-    watchedDueAt,
-    watchedTitle,
-  ]);
 
   const typeOptions = React.useMemo(() => {
     return COHERENCE_TYPE_OPTIONS.filter((option) =>
@@ -844,7 +901,6 @@ export const CreateSignalForm = ({
   };
 
   const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
-  const isDirty = form.formState.isDirty;
 
   return (
     <SpaceLoadingBackdrop
@@ -908,19 +964,12 @@ export const CreateSignalForm = ({
                     className="px-0 md:px-3 align-top"
                   />
                 ) : null}
-                {isDirty ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    className="gap-1.5 px-2 md:px-3"
-                    onClick={handleResetForm}
-                    disabled={isMutating}
-                  >
-                    <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span>{t('reset')}</span>
-                  </Button>
-                ) : null}
+                <SignalFormDirtyResetButton
+                  control={form.control}
+                  onReset={handleResetForm}
+                  disabled={isMutating}
+                  label={t('reset')}
+                />
                 <ButtonClose
                   closeUrl={closeUrl}
                   className="px-0 md:px-3 align-top"
@@ -1210,12 +1259,12 @@ export const CreateSignalForm = ({
               </div>
             </section>
             {mode === 'edit' && signalId && spaceSlug ? (
-              <SignalLinkedCalendarEvents
+              <SignalLinkedCalendarFromForm
+                form={form}
                 spaceSlug={spaceSlug}
-                coherenceId={signalId}
+                signalId={signalId}
                 lang={lang}
-                calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
-                scheduleFromSignalPath={scheduleFromSignalPath}
+                initialTitle={initialValues?.title}
               />
             ) : null}
             <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
@@ -1360,14 +1409,7 @@ export const CreateSignalForm = ({
             </section>
 
             <div className="flex w-full justify-end gap-2">
-              {form.formState.errors.root?.message ? (
-                <p
-                  role="alert"
-                  className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
-                >
-                  {form.formState.errors.root.message}
-                </p>
-              ) : null}
+              <SignalFormRootError control={form.control} />
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
                   title={

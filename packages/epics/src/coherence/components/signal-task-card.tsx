@@ -42,7 +42,7 @@ type SignalTaskCardProps = {
   className?: string;
 };
 
-export function SignalTaskCard({
+export const SignalTaskCard = React.memo(function SignalTaskCard({
   signal,
   status,
   board,
@@ -287,4 +287,4 @@ export function SignalTaskCard({
       </div>
     </div>
   );
-}
+});
