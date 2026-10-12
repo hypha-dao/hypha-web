@@ -1,21 +1,21 @@
-/** Eleven forms of capital, in canonical order. Labels stay these words. */
+/** Eleven forms of capital, in canonical order. Names are translated in the UI. */
 export const CAPITALS = [
-  { key: 'financial', label: 'Financial' },
-  { key: 'material', label: 'Material' },
-  { key: 'living', label: 'Living' },
-  { key: 'wellbeing', label: 'Wellbeing' },
-  { key: 'ecological', label: 'Ecological' },
-  { key: 'experiential', label: 'Experiential' },
-  { key: 'wisdom', label: 'Wisdom' },
-  { key: 'social', label: 'Social' },
-  { key: 'creative', label: 'Creative' },
-  { key: 'cultural', label: 'Cultural' },
-  { key: 'intellectual', label: 'Intellectual' },
+  'financial',
+  'material',
+  'living',
+  'wellbeing',
+  'ecological',
+  'experiential',
+  'wisdom',
+  'social',
+  'creative',
+  'cultural',
+  'intellectual',
 ] as const;
 
-export type CapitalKey = (typeof CAPITALS)[number]['key'];
+export type CapitalKey = (typeof CAPITALS)[number];
 
-const CAPITAL_KEY_SET = new Set<string>(CAPITALS.map((capital) => capital.key));
+const CAPITAL_KEY_SET = new Set<string>(CAPITALS);
 
 export function parseCapitalKeys(value: unknown): CapitalKey[] {
   if (!Array.isArray(value)) return [];
@@ -26,8 +26,4 @@ export function parseCapitalKeys(value: unknown): CapitalKey[] {
     if (!keys.includes(key)) keys.push(key);
   }
   return keys;
-}
-
-export function capitalLabel(key: CapitalKey): string {
-  return CAPITALS.find((capital) => capital.key === key)?.label ?? key;
 }
