@@ -197,6 +197,7 @@
     "closestTalk": "Les personnes à qui tu parles",
     "morePeople": "+ {count, plural, one {# personne} other {# personnes}}",
     "seeMoreNotifications": "Voir plus",
+    "seeMore": "Voir plus",
     "openPerson": "Ouvrir {name}",
     "signals": "Signaux qui ont besoin de toi",
     "proposals": "Propositions pour ton avis",
