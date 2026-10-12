@@ -182,7 +182,7 @@ export function MemberHomeThreadCard({
       case 'discuss':
         return t('discussThis');
       case 'call':
-        return t('callCreator', { name });
+        return t('callCreator', { name: givenName(name) || name });
       case 'context':
         return t('askContext');
       case 'later':
@@ -237,6 +237,7 @@ export function MemberHomeThreadCard({
   const summary = item.summary ? plainSummary(item.summary) : '';
   const leadImage = proposal?.leadImage?.trim() ?? '';
   const actionClass = compact ? 'w-full' : 'w-fit';
+  const primaryCtas = ctas.filter((cta) => cta !== 'later');
 
   return (
     <section className="member-home-thread-card w-full overflow-hidden">
@@ -308,10 +309,10 @@ export function MemberHomeThreadCard({
           className={
             compact
               ? 'mt-3 grid w-full grid-cols-1 gap-2'
-              : 'mt-3 flex flex-col items-start gap-2'
+              : 'mt-3 flex flex-wrap items-center gap-2'
           }
         >
-          {ctas.map((cta, index) => (
+          {primaryCtas.map((cta, index) => (
             <Button
               key={cta}
               type="button"
@@ -350,6 +351,36 @@ export function MemberHomeThreadCard({
               {t('helpMeThink')}
             </Button>
           ) : null}
+          {assistant ? (
+            <div
+              className={
+                compact
+                  ? 'contents'
+                  : 'flex max-w-full flex-wrap items-center gap-2'
+              }
+            >
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                className={actionClass}
+                disabled={busy}
+                onClick={() => ask(t('laterChosen', { title: item.title }))}
+              >
+                {t('notNow')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                className={actionClass}
+                disabled={busy}
+                onClick={() => ask(t('noChosen', { title: item.title }))}
+              >
+                {t('noThanks')}
+              </Button>
+            </div>
+          ) : null}
           {!isProposal ? (
             <Button
               asChild
@@ -358,30 +389,6 @@ export function MemberHomeThreadCard({
               className={actionClass}
             >
               <Link href={visitHref}>{t('visitSpace')}</Link>
-            </Button>
-          ) : null}
-          {assistant && !ctas.includes('later') ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className={actionClass}
-              disabled={busy}
-              onClick={() => ask(t('laterChosen', { title: item.title }))}
-            >
-              {t('notNow')}
-            </Button>
-          ) : null}
-          {assistant ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className={actionClass}
-              disabled={busy}
-              onClick={() => ask(t('noChosen', { title: item.title }))}
-            >
-              {t('noThanks')}
             </Button>
           ) : null}
         </div>

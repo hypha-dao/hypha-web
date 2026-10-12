@@ -559,7 +559,7 @@
     "callCreator": "Call {name}",
     "askContext": "Ask for more context",
     "notNow": "Not now",
-    "noThanks": "No thanks",
+    "noThanks": "Don't show again",
     "helpChosen": "I can help with {title}.",
     "shareChosen": "I can share something for {title}.",
     "takeChosen": "I'll take {title}.",
