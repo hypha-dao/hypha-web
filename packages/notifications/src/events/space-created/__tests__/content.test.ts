@@ -51,10 +51,15 @@ describe('buildSpaceCreatedContent', () => {
 
   it('pluralises the plain copy for several spaces', () => {
     vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
+    vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
     const result = buildSpaceCreatedContent(event(3), recipient);
     expect((result.content.email as { body: string }).body).toBe(
       "You've successfully created 3 spaces.",
     );
+    expect(result.content.push).toMatchObject({
+      kind: 'plain',
+      contents: { en: "You've successfully created 3 spaces." },
+    });
   });
 
   it('uses the email and push templates when their vars are set', () => {
