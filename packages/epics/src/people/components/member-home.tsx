@@ -1092,7 +1092,7 @@ function PersonaCard({
         {body}
       </p>
       {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}
-      <Button asChild className="mt-4 text-sm">
+      <Button asChild className="mt-4 w-full text-sm">
         <Link href={href}>{action}</Link>
       </Button>
     </section>
