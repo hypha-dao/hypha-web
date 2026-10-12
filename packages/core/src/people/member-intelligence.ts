@@ -105,6 +105,12 @@ export type MemberIntelligence = {
      * Absent when the vote could not be read. Do not treat absence as a vote.
      */
     memberHasVoted?: boolean;
+    /**
+     * True when the chain says this proposal is expired, executed, or past
+     * its end time. False when it is still open, or when the chain could
+     * not be read. A failed read is not expiry.
+     */
+    expired?: boolean;
   }>;
   signals: Array<{
     id: number;

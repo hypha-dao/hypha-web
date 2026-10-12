@@ -192,7 +192,7 @@ export function listMemberHomeThreadItems(
   };
 
   const pushProposal = (proposal: MemberIntelligence['proposals'][number]) => {
-    if (!proposal.slug || proposal.memberHasVoted) return;
+    if (!proposal.slug || proposal.memberHasVoted || proposal.expired) return;
     push({
       kind: 'proposal',
       slug: proposal.slug,
@@ -226,7 +226,7 @@ export function listMemberHomeThreadItems(
   for (const note of notes) {
     if (note.kind === 'proposal') {
       const proposal = proposalsBySlug.get(note.targetSlug);
-      if (proposal?.memberHasVoted) continue;
+      if (proposal?.memberHasVoted || proposal?.expired) continue;
       push({
         kind: 'proposal',
         slug: note.targetSlug,
