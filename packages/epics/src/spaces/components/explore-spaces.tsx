@@ -59,6 +59,7 @@ interface ExploreSpacesProps {
     Record<number, { latitude: number; longitude: number }>
   >;
   networkRanks?: NetworkSpaceRank[];
+  spaceCapitals?: Record<string, { seeks: string[]; offers: string[] }>;
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -159,6 +160,7 @@ export function ExploreSpaces({
   networkGrowth = null,
   creatorMapPins,
   networkRanks = [],
+  spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
 
@@ -450,32 +452,47 @@ export function ExploreSpaces({
     </div>
   );
 
+  const networkCensus = enableNetworkMap ? (
+    <NetworkCensus
+      lang={lang}
+      isLoading={showSpacesSkeleton}
+      spaces={{
+        total: selectedSpaces.length + privateSpaces.length,
+        publicCount: selectedSpaces.length,
+        privateCount: privateSpaces.length,
+      }}
+      members={{
+        total: memberCount + privateMemberCount,
+        publicCount: memberCount,
+        privateCount: privateMemberCount,
+      }}
+      agreements={{
+        total: agreementCount + privateAgreementCount,
+        publicCount: agreementCount,
+        privateCount: privateAgreementCount,
+      }}
+      tokens={tokenCensus}
+    />
+  ) : null;
+
   const sidePanel = enableNetworkMap ? (
     <NetworkSidePanel
       lang={lang}
       selectedSpace={selectedSpace}
-      census={
-        <NetworkCensus
-          lang={lang}
-          compact
-          isLoading={showSpacesSkeleton}
-          spaces={{
-            total: selectedSpaces.length + privateSpaces.length,
-            publicCount: selectedSpaces.length,
-            privateCount: privateSpaces.length,
-          }}
-          members={{
-            total: memberCount + privateMemberCount,
-            publicCount: memberCount,
-            privateCount: privateMemberCount,
-          }}
-          agreements={{
-            total: agreementCount + privateAgreementCount,
-            publicCount: agreementCount,
-            privateCount: privateAgreementCount,
-          }}
-          tokens={tokenCensus}
-        />
+      circles={
+        selectedSpace
+          ? nonArchivedSpaces.filter(
+              (space) => space.parentId === selectedSpace.id,
+            )
+          : []
+      }
+      capitals={
+        selectedSpace
+          ? spaceCapitals?.[String(selectedSpace.id)] ?? {
+              seeks: [],
+              offers: [],
+            }
+          : null
       }
       onSelectRank={selectRank}
       ranks={showRanking ? [] : networkRanks}
@@ -488,9 +505,8 @@ export function ExploreSpaces({
 
       <div
         className={cn(
-          'grid min-w-0 items-start gap-6',
-          enableNetworkMap &&
-            'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]',
+          'grid min-w-0 items-start',
+          enableNetworkMap ? 'network-side-grid gap-6' : 'gap-6',
         )}
       >
         <div className="flex min-w-0 flex-col">
@@ -499,6 +515,7 @@ export function ExploreSpaces({
           {enableNetworkMap ? (
             <>
               {renderMapToolbar()}
+              <div className="my-6">{networkCensus}</div>
               <NetworkGlobeMap
                 lang={lang}
                 spaces={mapSpaces}

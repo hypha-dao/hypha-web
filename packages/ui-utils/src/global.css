@@ -448,6 +448,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Network map: the side column meets the right edge of the page. */
+@media (min-width: 64rem) {
+  .network-side-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+  }
+}
+
 /* Call feeds — hide Chrome's native video PiP control (Hypha uses Document PiP). */
 [data-hypha-call-feed-video]::-webkit-media-controls-picture-in-picture-button {
   display: none !important;
