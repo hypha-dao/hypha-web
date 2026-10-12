@@ -554,9 +554,7 @@ export const CreateSignalForm = ({
     return [
       {
         value: '__heading__board',
-        label: t.has('usedOnThisBoard')
-          ? t('usedOnThisBoard')
-          : 'Used on this board',
+        label: t('usedOnThisBoard'),
         kind: 'heading' as const,
       },
       ...usedOnBoard.map((tag) => ({
@@ -678,6 +676,7 @@ export const CreateSignalForm = ({
 
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
+      const parsed = schemaCreateCoherenceForm.parse(data);
       form.clearErrors('root');
       if (mode === 'edit') {
         if (!authToken?.trim()) {
@@ -710,17 +709,17 @@ export const CreateSignalForm = ({
         try {
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
-            title: data.title,
-            description: data.description,
-            type: data.type,
-            priority: data.priority,
-            tags: data.tags,
-            dueAt: data.dueAt ?? null,
+            title: parsed.title,
+            description: parsed.description,
+            type: parsed.type,
+            priority: parsed.priority,
+            tags: parsed.tags,
+            dueAt: parsed.dueAt ?? null,
             progressStatus:
-              data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
+              parsed.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
             board:
-              data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
-            assigneeIds: data.assigneeIds,
+              parsed.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
+            assigneeIds: parsed.assigneeIds,
           });
           // The signal is saved — close now and let the chat sync and the
           // list refresh finish in the background.
@@ -729,7 +728,7 @@ export const CreateSignalForm = ({
           if (updatedSignal?.roomId) {
             void upsertSignalDescriptionMessage({
               roomId: updatedSignal.roomId,
-              description: data.description,
+              description: parsed.description,
             }).catch((matrixSyncError) => {
               console.warn(
                 'Signal saved but failed to sync description to chat room:',
@@ -780,7 +779,7 @@ export const CreateSignalForm = ({
         return;
       }
       try {
-        const coherence = await createCoherence({ ...data });
+        const coherence = await createCoherence({ ...parsed });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         // Close the panel as soon as the signal exists — everything below is

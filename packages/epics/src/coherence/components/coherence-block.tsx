@@ -259,24 +259,58 @@ export function CoherenceBlock({
     return null;
   }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
 
-  const handleSignalClick = React.useCallback(
+  const acknowledgingSlugRef = React.useRef<string | null>(null);
+  const acknowledgeAssignmentIfNeeded = React.useCallback(
     (signal: Coherence) => {
       const slug = signal.slug?.trim() ?? '';
       if (
-        slug &&
-        person?.id &&
-        (signal.assigneeIds ?? []).includes(person.id)
+        !slug ||
+        !person?.id ||
+        !(signal.assigneeIds ?? []).includes(person.id)
       ) {
-        void acknowledgeCoherenceAssignment({ slug })
-          .then(() => {
-            setAcknowledgeError(null);
-            void refreshSignals();
-          })
-          .catch((error: unknown) => {
-            console.error('Could not acknowledge assignment:', error);
-            setAcknowledgeError(t('errorOhSnap'));
-          });
+        return;
       }
+      if (acknowledgingSlugRef.current === slug) {
+        return;
+      }
+      acknowledgingSlugRef.current = slug;
+      void acknowledgeCoherenceAssignment({ slug })
+        .then(() => {
+          setAcknowledgeError(null);
+          return refreshSignals();
+        })
+        .catch((error: unknown) => {
+          if (acknowledgingSlugRef.current === slug) {
+            acknowledgingSlugRef.current = null;
+          }
+          console.error(
+            'Could not acknowledge assignment or refresh signals:',
+            error,
+          );
+          setAcknowledgeError(t('errorOhSnap'));
+        });
+    },
+    [acknowledgeCoherenceAssignment, person?.id, refreshSignals, t],
+  );
+
+  React.useEffect(() => {
+    if (!humanChatEnabled) return;
+    const slug = activeSignalSlug?.trim();
+    if (!slug) return;
+    const signal = (signals ?? []).find((item) => item.slug?.trim() === slug);
+    if (!signal) return;
+    acknowledgeAssignmentIfNeeded(signal);
+  }, [
+    acknowledgeAssignmentIfNeeded,
+    activeSignalSlug,
+    humanChatEnabled,
+    signals,
+  ]);
+
+  const handleSignalClick = React.useCallback(
+    (signal: Coherence) => {
+      acknowledgeAssignmentIfNeeded(signal);
+      const slug = signal.slug?.trim() ?? '';
       openCoherenceChat(
         signal.roomId ?? null,
         signal.title ?? '',
@@ -291,15 +325,7 @@ export function CoherenceBlock({
         router.replace(href, { scroll: false });
       }
     },
-    [
-      acknowledgeCoherenceAssignment,
-      openCoherenceChat,
-      pathname,
-      person?.id,
-      refreshSignals,
-      router,
-      t,
-    ],
+    [acknowledgeAssignmentIfNeeded, openCoherenceChat, pathname, router],
   );
 
   const handleRevealArchivedSignal = React.useCallback(() => {
