@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   deriveSpaceMemoryDisplayTitle,
+  humanizeMemoryExcerpt,
   looksLikeTechnicalSpaceMemoryName,
   stripTechnicalSpeakerFromExcerpt,
 } from '../space-memory-display';
@@ -48,6 +49,23 @@ describe('stripTechnicalSpeakerFromExcerpt', () => {
         '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud: ok recording with voice only',
       ),
     ).toBe('ok recording with voice only');
+  });
+});
+
+describe('humanizeMemoryExcerpt', () => {
+  it('keeps the sentences from a Matrix reply dump', () => {
+    expect(
+      humanizeMemoryExcerpt(
+        '> <@prod_privy_did_privy_cmjzf9wf03qyjp0cx3x2u2ob:srv1294735.hstgr.cloud> How was the call yesterday @prod_privy_did_privy_cmcj7opiz01vjju0mixu3rotw:srv1294735.hstgr.cloud> Did you notice any improvement, or still had issues during the call? > > The changes I made were mainly to be able to recover correctly when ther...',
+      ),
+    ).toBe(
+      'How was the call yesterday Did you notice any improvement, or still had issues during the call? The changes I made were mainly to be able to recover correctly when ther...',
+    );
+  });
+
+  it('leaves ordinary markdown alone', () => {
+    const markdown = '## Notes\n\n- Keep the budget';
+    expect(humanizeMemoryExcerpt(markdown)).toBe(markdown);
   });
 });
 
