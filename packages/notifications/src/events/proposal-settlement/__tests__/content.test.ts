@@ -135,4 +135,51 @@ describe('buildProposalSettlementContent — email template', () => {
     const result = buildProposalSettlementContent(accepted, creatorRecipient);
     expect(result.content.email).toMatchObject({ kind: 'plain' });
   });
+
+  it.each([
+    [
+      'accepted',
+      accepted,
+      'creator',
+      'PUSH_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR',
+    ],
+    ['accepted', accepted, 'member', 'PUSH_TEMPLATE_PROPOSAL_ACCEPTED_MEMBERS'],
+    [
+      'rejected',
+      rejected,
+      'creator',
+      'PUSH_TEMPLATE_PROPOSAL_REJECTED_CREATOR',
+    ],
+    ['rejected', rejected, 'member', 'PUSH_TEMPLATE_PROPOSAL_REJECTED_MEMBERS'],
+  ] as const)('push: %s / %s uses %s', (_name, evt, role, envVar) => {
+    vi.stubEnv(envVar, 'push-x');
+    const result = buildProposalSettlementContent(evt, {
+      personSlug: 'p',
+      role,
+      data: linkData,
+    });
+    expect(result.content.push).toEqual({
+      kind: 'template',
+      templateId: 'push-x',
+      customData: {
+        space_title: 'Hypha Energy',
+        proposal_title: 'Fund the thing',
+        url: linkData.url,
+      },
+      url: linkData.url,
+    });
+  });
+
+  it('push: plain fallback carries the launch url', () => {
+    vi.stubEnv('PUSH_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR', '');
+    const result = buildProposalSettlementContent(accepted, {
+      personSlug: 'alice',
+      role: 'creator',
+      data: linkData,
+    });
+    expect(result.content.push).toMatchObject({
+      kind: 'plain',
+      url: linkData.url,
+    });
+  });
 });

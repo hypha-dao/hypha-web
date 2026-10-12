@@ -2,11 +2,13 @@
  * Pure content-selection for `proposal.accepted` / `proposal.rejected` — no DB/web3 imports.
  * Email uses the OneSignal dashboard template when
  * `EMAIL_TEMPLATE_PROPOSAL_{ACCEPTED,REJECTED}_{CREATOR,MEMBERS}` is set, else the locally rendered
- * plain content (the fallback); push is still plain.
+ * plain content (the fallback); push likewise uses
+ * `PUSH_TEMPLATE_PROPOSAL_{ACCEPTED,REJECTED}_{CREATOR,MEMBERS}` when set, else plain.
  */
 import { TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
+import { resolvePushTemplate } from '../../core/push-template';
 import type { Recipient } from '../../core/types';
 import {
   emailProposalExecutionForCreator,
@@ -52,13 +54,25 @@ export const buildProposalSettlementContent: ContentBuilder<
 
   const email = isCreator ? emailForCreator(props) : emailForMembers(props);
   const outcome = event.type === 'proposal.accepted' ? 'ACCEPTED' : 'REJECTED';
-  const templateEmail = resolveEmailTemplate(
-    `EMAIL_TEMPLATE_PROPOSAL_${outcome}_${isCreator ? 'CREATOR' : 'MEMBERS'}`,
+  const url = recipient.data?.url as string | undefined;
+  const audience = isCreator ? 'CREATOR' : 'MEMBERS';
+  const templatePush = resolvePushTemplate(
+    `PUSH_TEMPLATE_PROPOSAL_${outcome}_${audience}`,
     {
       space_title: props.spaceTitle,
       proposal_title: props.proposalTitle,
       proposal_kind: props.proposalLabel,
-      url: recipient.data?.url as string | undefined,
+      url,
+    },
+    url,
+  );
+  const templateEmail = resolveEmailTemplate(
+    `EMAIL_TEMPLATE_PROPOSAL_${outcome}_${audience}`,
+    {
+      space_title: props.spaceTitle,
+      proposal_title: props.proposalTitle,
+      proposal_kind: props.proposalLabel,
+      url,
       notification_settings_url: recipient.data?.notificationSettingsUrl as
         | string
         | undefined,
@@ -70,7 +84,12 @@ export const buildProposalSettlementContent: ContentBuilder<
     channels: ['push', 'email'],
     requiredTags: { [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'true' },
     content: {
-      push: { kind: 'plain', contents: push.contents, headings: push.headings },
+      push: templatePush ?? {
+        kind: 'plain',
+        contents: push.contents,
+        headings: push.headings,
+        url,
+      },
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,

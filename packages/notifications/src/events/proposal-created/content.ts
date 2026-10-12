@@ -2,11 +2,13 @@
  * Pure content-selection for `proposal.created` — no DB/web3 imports, so it's cheap to unit test
  * in isolation from `resolver.ts` (which does the actual DB/web3 lookups). Email uses the OneSignal
  * dashboard template when `EMAIL_TEMPLATE_PROPOSAL_CREATED_{CREATOR,MEMBERS}` is set, else the
- * locally rendered plain content (the fallback); push is still plain.
+ * locally rendered plain content (the fallback); push likewise uses
+ * `PUSH_TEMPLATE_PROPOSAL_CREATED_{CREATOR,MEMBERS}` when set, else plain.
  */
 import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
+import { resolvePushTemplate } from '../../core/push-template';
 import type { ProposalCreatedEvent } from '../../core/types';
 import {
   emailProposalCreationForCreator,
@@ -28,6 +30,20 @@ export const buildProposalCreatedContent: ContentBuilder<
     : (recipient.data?.creatorName as string | undefined);
 
   const props = { creatorName, proposalLabel, spaceTitle };
+  const url = recipient.data?.url as string | undefined;
+  const templatePush = resolvePushTemplate(
+    isCreator
+      ? 'PUSH_TEMPLATE_PROPOSAL_CREATED_CREATOR'
+      : 'PUSH_TEMPLATE_PROPOSAL_CREATED_MEMBERS',
+    {
+      ...(isCreator ? {} : { creator_name: creatorName }),
+      space_title: spaceTitle,
+      proposal_title: recipient.data?.proposalTitle as string | undefined,
+      proposal_kind: proposalLabel,
+      url,
+    },
+    url,
+  );
   const templateEmail = resolveEmailTemplate(
     isCreator
       ? 'EMAIL_TEMPLATE_PROPOSAL_CREATED_CREATOR'
@@ -40,7 +56,7 @@ export const buildProposalCreatedContent: ContentBuilder<
       space_title: spaceTitle,
       proposal_title: recipient.data?.proposalTitle as string | undefined,
       proposal_kind: proposalLabel,
-      url: recipient.data?.url as string | undefined,
+      url,
       notification_settings_url: recipient.data?.notificationSettingsUrl as
         | string
         | undefined,
@@ -57,7 +73,12 @@ export const buildProposalCreatedContent: ContentBuilder<
     channels: ['push', 'email'],
     requiredTags: { [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true' },
     content: {
-      push: { kind: 'plain', contents: push.contents, headings: push.headings },
+      push: templatePush ?? {
+        kind: 'plain',
+        contents: push.contents,
+        headings: push.headings,
+        url,
+      },
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
