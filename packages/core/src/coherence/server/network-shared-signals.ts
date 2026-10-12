@@ -155,7 +155,8 @@ export async function listNetworkOpenNeeds({
   const result = await db.execute(sql`
     select c.slug, c.title, c.description, c.type, c.lead_image, c.updated_at,
            c.tags, s.id as space_id, s.slug as space_slug, s.title as space_title,
-           s.chat_room_id,
+           s.chat_room_id, s.location_label, s.description as space_description,
+           s.lead_image as space_lead_image,
            coalesce(counts.action_count, 0) as action_count,
            coalesce(counts.impact_count, 0) as impact_count
     from coherences c
@@ -179,7 +180,7 @@ export async function listNetworkOpenNeeds({
     limit 60
   `);
   const drafts: Array<
-    Omit<NetworkOpenNeed, 'capital'> & {
+    Omit<NetworkOpenNeed, 'capital' | 'spaceSeeks' | 'spaceOffers'> & {
       spaceId: number;
       tagged: string | null;
     }
@@ -211,6 +212,16 @@ export async function listNetworkOpenNeeds({
       updatedAt: asIso(record.updated_at),
       actionCount: asCount(record.action_count),
       impactCount: asCount(record.impact_count),
+      spacePlace:
+        typeof record.location_label === 'string' ? record.location_label : '',
+      spaceDescription:
+        typeof record.space_description === 'string'
+          ? record.space_description
+          : '',
+      spaceLeadImage:
+        typeof record.space_lead_image === 'string'
+          ? record.space_lead_image
+          : null,
     });
   }
   const capitals = await readSpaceCapitals(
@@ -220,5 +231,7 @@ export async function listNetworkOpenNeeds({
   return drafts.map(({ spaceId, tagged, ...need }) => ({
     ...need,
     capital: tagged ?? capitals.get(spaceId)?.seeks[0] ?? null,
+    spaceSeeks: capitals.get(spaceId)?.seeks ?? [],
+    spaceOffers: capitals.get(spaceId)?.offers ?? [],
   }));
 }

@@ -26,6 +26,7 @@ export default async function ExchangePage(props: {
       description: space.description ?? '',
       place: space.locationLabel ?? '',
       chatRoomId: space.chatRoomId ?? null,
+      leadImage: space.leadImage ?? null,
       seeks: forms?.seeks ?? [],
       offers: forms?.offers ?? [],
     };
