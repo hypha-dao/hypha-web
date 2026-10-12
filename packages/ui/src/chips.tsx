@@ -151,6 +151,17 @@ interface MultiSelectProps
   className?: string;
 
   /**
+   * Typography for trigger, placeholder, selected chips, and option labels.
+   * Use to override Button uppercase / tracking / semibold on the default trigger.
+   */
+  textClassName?: string;
+
+  /**
+   * Typography for grouped option headings (tag-picker categories).
+   */
+  headingClassName?: string;
+
+  /**
    * Optional copy overrides for UI text.
    */
   labels?: {
@@ -226,6 +237,8 @@ export const MultiSelect = React.forwardRef<
       allowCreate = false,
       uiStyle = 'default',
       className,
+      textClassName,
+      headingClassName,
       labels,
       getCreateWarning,
       ...props
@@ -591,11 +604,12 @@ export const MultiSelect = React.forwardRef<
                 (props['aria-labelledby'] ? undefined : placeholder)
               }
               className={cn(
-                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-border/70 bg-background px-2 py-0 text-sm transition-colors',
+                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-border/70 bg-background px-2 py-0 transition-colors',
                 'focus-within:border-accent-8/60 focus-within:ring-1 focus-within:ring-accent-8/45',
                 isPopoverOpen
                   ? 'rounded-t-none border-t border-t-border/55 shadow-[inset_0_1px_0_0_color-mix(in_srgb,var(--color-foreground)_7%,transparent)]'
                   : '',
+                textClassName ?? 'text-sm',
                 className,
               )}
               onClick={() => {
@@ -610,7 +624,10 @@ export const MultiSelect = React.forwardRef<
                     variant="outline"
                     colorVariant="neutral"
                     size={1}
-                    className={cn(multiSelectVariants({ variant }))}
+                    className={cn(
+                      multiSelectVariants({ variant }),
+                      textClassName,
+                    )}
                     style={{ animationDuration: `${animation}s` }}
                   >
                     <span className="shrink-0 text-muted-foreground">#</span>
@@ -639,6 +656,7 @@ export const MultiSelect = React.forwardRef<
                   className={cn(
                     multiSelectVariants({ variant }),
                     'max-w-none px-1.5 py-0.5 text-muted-foreground',
+                    textClassName,
                   )}
                   style={{ animationDuration: `${animation}s` }}
                 >
@@ -688,7 +706,10 @@ export const MultiSelect = React.forwardRef<
                 }}
                 onKeyDown={handleInputKeyDown}
                 placeholder={searchPlaceholder}
-                className="h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                className={cn(
+                  'h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-foreground outline-none placeholder:text-muted-foreground',
+                  textClassName ?? 'text-sm',
+                )}
                 disabled={props.disabled}
               />
             </div>
@@ -702,7 +723,8 @@ export const MultiSelect = React.forwardRef<
               {...props}
               onClick={handleTogglePopover}
               className={cn(
-                'flex w-full p-1 rounded-md border min-h-11 h-auto items-center justify-between [&_svg]:pointer-events-auto',
+                'flex h-auto min-h-11 w-full items-center justify-between rounded-md border p-1 [&_svg]:pointer-events-auto',
+                textClassName,
                 className,
               )}
             >
@@ -718,7 +740,10 @@ export const MultiSelect = React.forwardRef<
                           variant="outline"
                           colorVariant="neutral"
                           size={1}
-                          className={cn(multiSelectVariants({ variant }))}
+                          className={cn(
+                            multiSelectVariants({ variant }),
+                            textClassName,
+                          )}
                           style={{ animationDuration: `${animation}s` }}
                         >
                           {IconComponent && (
@@ -749,6 +774,7 @@ export const MultiSelect = React.forwardRef<
                         className={cn(
                           multiSelectVariants({ variant }),
                           'max-w-none text-muted-foreground',
+                          textClassName,
                         )}
                         style={{ animationDuration: `${animation}s` }}
                       >
@@ -788,7 +814,12 @@ export const MultiSelect = React.forwardRef<
                 </div>
               ) : (
                 <div className="flex items-center justify-between w-full mx-auto">
-                  <span className="text-sm text-muted-foreground mx-3">
+                  <span
+                    className={cn(
+                      'mx-3 text-muted-foreground',
+                      textClassName ?? 'text-sm',
+                    )}
+                  >
                     {placeholder}
                   </span>
                   <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
@@ -866,7 +897,11 @@ export const MultiSelect = React.forwardRef<
                     return (
                       <div
                         key={`typed-group-heading-${index}`}
-                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                        className={cn(
+                          'px-2 pb-1 pt-2 text-muted-foreground/55',
+                          headingClassName ??
+                            'text-1 font-normal leading-[calc(16/12)] tracking-normal normal-case',
+                        )}
                       >
                         <span className="text-muted-foreground/35">• </span>
                         <span>{option.label}</span>
@@ -877,7 +912,11 @@ export const MultiSelect = React.forwardRef<
                     return (
                       <div
                         key={`group-heading-${index}`}
-                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                        className={cn(
+                          'px-2 pb-1 pt-2 text-muted-foreground/55',
+                          headingClassName ??
+                            'text-1 font-normal leading-[calc(16/12)] tracking-normal normal-case',
+                        )}
                       >
                         <span className="text-muted-foreground/35">• </span>
                         <span>{option.label}</span>
@@ -913,7 +952,9 @@ export const MultiSelect = React.forwardRef<
                       {option.icon && (
                         <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                       )}
-                      <span className="flex-1 truncate">{option.label}</span>
+                      <span className={cn('flex-1 truncate', textClassName)}>
+                        {option.label}
+                      </span>
                       {uiStyle === 'tag-picker' ? (
                         <CheckIcon
                           className={cn(

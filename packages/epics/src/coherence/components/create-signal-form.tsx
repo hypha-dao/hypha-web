@@ -80,6 +80,7 @@ import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
+import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -1339,6 +1340,8 @@ export const CreateSignalForm = ({
                         allowCreate={true}
                         maxCount={2}
                         uiStyle="tag-picker"
+                        textClassName={SIGNAL_BOARD_META_TEXT_CLASS}
+                        headingClassName={SIGNAL_BOARD_META_TEXT_CLASS}
                         getCreateWarning={(term) =>
                           wouldCreateNearDuplicate(
                             term,

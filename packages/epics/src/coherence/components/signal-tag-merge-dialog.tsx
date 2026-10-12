@@ -20,6 +20,7 @@ import {
   findNearDuplicateTags,
   normalizeTagKey,
 } from '@hypha-platform/core/client';
+import { SIGNAL_BOARD_SELECT_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 
 type SignalTagMergeDialogProps = {
   open: boolean;
@@ -70,12 +71,16 @@ export function SignalTagMergeDialog({
           <label className="flex flex-col gap-1 text-sm">
             <span>{t('mergeTagsFrom')}</span>
             <Select value={fromTag} onValueChange={setFromTag}>
-              <SelectTrigger>
+              <SelectTrigger className={SIGNAL_BOARD_SELECT_TEXT_CLASS}>
                 <SelectValue placeholder={t('mergeTagsFromPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {existingTags.map((tag) => (
-                  <SelectItem key={tag} value={tag}>
+                  <SelectItem
+                    key={tag}
+                    value={tag}
+                    className={SIGNAL_BOARD_SELECT_TEXT_CLASS}
+                  >
                     {tag}
                   </SelectItem>
                 ))}
@@ -85,7 +90,7 @@ export function SignalTagMergeDialog({
           <label className="flex flex-col gap-1 text-sm">
             <span>{t('mergeTagsTo')}</span>
             <Select value={toTag} onValueChange={setToTag}>
-              <SelectTrigger>
+              <SelectTrigger className={SIGNAL_BOARD_SELECT_TEXT_CLASS}>
                 <SelectValue placeholder={t('mergeTagsToPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -94,7 +99,11 @@ export function SignalTagMergeDialog({
                     (tag) => normalizeTagKey(tag) !== normalizeTagKey(fromTag),
                   )
                   .map((tag) => (
-                    <SelectItem key={tag} value={tag}>
+                    <SelectItem
+                      key={tag}
+                      value={tag}
+                      className={SIGNAL_BOARD_SELECT_TEXT_CLASS}
+                    >
                       {tag}
                     </SelectItem>
                   ))}

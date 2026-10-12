@@ -18,9 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { X } from 'lucide-react';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import { useDebouncedBoardTitle } from '../lib/use-debounced-board-title';
+import { SIGNAL_BOARD_SELECT_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 
 type SignalFilterBarProps = {
   filters: SignalBoardFilters;
@@ -250,6 +252,11 @@ export const SignalFilterBar = React.memo(function SignalFilterBar({
             maxCount={2}
             placeholder={t('filterTagsPlaceholder')}
             searchPlaceholder={t('searchOrCreateTag')}
+            textClassName={SIGNAL_BOARD_SELECT_TEXT_CLASS}
+            className={cn(
+              SIGNAL_BOARD_SELECT_TEXT_CLASS,
+              'h-10 min-h-10 rounded-none border-border bg-neutral-1 px-3 py-2',
+            )}
             onValueChange={(tags) =>
               onChange({
                 ...filters,
