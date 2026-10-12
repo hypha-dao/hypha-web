@@ -1,33 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, Scale, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useProposalDetailsWeb3Rpc,
   useProposalVoters,
 } from '@hypha-platform/core/client';
 
-function plainSummary(value: string | null | undefined) {
-  const text = (value ?? '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
-    .replace(/[*_`>#]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (text.length <= 160) return text;
-  return `${text.slice(0, 159).trimEnd()}…`;
-}
-
 function ActivityVoteLine({
   status,
   proposalId,
   slug,
+  fallback,
 }: {
   status: 'accepted' | 'rejected' | 'onVoting';
   proposalId: number | null;
   slug?: string;
+  fallback: string;
 }) {
   const t = useTranslations('OverviewOps');
   const { proposalDetails, isLoading: detailsLoading } =
@@ -35,9 +24,12 @@ function ActivityVoteLine({
       proposalId,
     });
   const { voters, isLoading: votersLoading } = useProposalVoters(slug);
-  if (proposalId == null && !slug) return null;
-  if (detailsLoading && votersLoading) return null;
-  if (proposalDetails == null && voters == null) return null;
+  if ((proposalId == null && !slug) || (detailsLoading && votersLoading)) {
+    return <span className="text-1 text-neutral-11">{fallback}</span>;
+  }
+  if (proposalDetails == null && voters == null) {
+    return <span className="text-1 text-neutral-11">{fallback}</span>;
+  }
 
   const yesVoters = (voters ?? []).filter((voter) => voter.vote === 'yes');
   const noVoters = (voters ?? []).filter((voter) => voter.vote === 'no');
@@ -57,7 +49,7 @@ function ActivityVoteLine({
       ? t('activityOpenCount', { yes, no })
       : t('activityOpen');
 
-  return <span className="mt-1 block text-1 text-neutral-12">{sentence}</span>;
+  return <span className="text-1 text-neutral-11">{sentence}</span>;
 }
 
 export function SpaceActivityList({
@@ -81,46 +73,29 @@ export function SpaceActivityList({
   ) => string;
 }) {
   return (
-    <>
+    <div className="flex flex-col">
       {items.map((item) => {
         const status = item.status;
-        const Icon =
-          status === 'accepted' ? Check : status === 'rejected' ? X : Scale;
-        const summary = plainSummary(item.description);
         return (
           <Link
             key={item.id}
             href={hrefFor(item.slug)}
-            className="flex items-start gap-3 px-4 py-3 hover:bg-foreground/5"
+            className="flex flex-col gap-1 border-b border-border/50 px-4 py-3.5 last:border-b-0 hover:bg-foreground/5"
           >
-            <span className="craft-icon-box mt-0.5 text-foreground" aria-hidden>
-              <Icon />
+            <span className="truncate text-2 text-foreground">
+              {item.title?.trim() || untitled}
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate text-2 text-foreground">
-                  {item.title?.trim() || untitled}
-                </span>
-                <span className="shrink-0 text-1 text-neutral-11">
-                  {statusLabel(status)}
-                </span>
-              </span>
-              {summary ? (
-                <span className="mt-1 block text-1 leading-relaxed text-neutral-11">
-                  {summary}
-                </span>
-              ) : null}
-              {status ? (
-                <ActivityVoteLine
-                  status={status}
-                  proposalId={item.web3ProposalId}
-                  slug={item.slug ?? undefined}
-                />
-              ) : null}
-            </span>
+            {status ? (
+              <ActivityVoteLine
+                status={status}
+                proposalId={item.web3ProposalId}
+                slug={item.slug ?? undefined}
+                fallback={statusLabel(status)}
+              />
+            ) : null}
           </Link>
         );
       })}
-    </>
+    </div>
   );
 }
