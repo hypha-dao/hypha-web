@@ -540,6 +540,7 @@
     "network": "Nettverk",
     "myDashboard": "Hjem",
     "mySpaces": "Mine rom",
+    "myConnections": "Mine forbindelser",
     "myWallet": "Min lommebok",
     "openMenu": "Åpne meny",
     "openProfileMenu": "Åpne profilmeny",
@@ -562,6 +563,24 @@
     "settings": "Innstillinger",
     "mobileSpacesEmpty": "Du har ingen spaces ennå.",
     "mobileSpacesAll": "Alle spaces"
+  },
+  "Connections": {
+    "titleLineOne": "Forbindelsene dine,",
+    "titleLineTwo": "på ett sted",
+    "reachOut": "Hypha foreslår",
+    "longTimeNoSee": "Lenge siden sist",
+    "longTimeSentence": "Det er lenge siden dere hadde kontakt.",
+    "people": "Personer",
+    "groups": "Grupper",
+    "search": "Søk i samtaler",
+    "empty": "Samtalene dine vises her.",
+    "noMatches": "Ingen samtaler samsvarer.",
+    "noMessage": "Ingen meldinger ennå",
+    "someone": "Noen",
+    "justNow": "Akkurat nå",
+    "youWrote": "Du: {message}",
+    "unread": "{count} nye",
+    "members": "{count} medlemmer"
   },
   "NetworkFeedback": {
     "triggerLabel": "Bidra til Hypha",

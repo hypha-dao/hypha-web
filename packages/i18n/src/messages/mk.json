@@ -541,6 +541,7 @@
     "network": "Мрежа",
     "myDashboard": "Дома",
     "mySpaces": "Мои простори",
+    "myConnections": "Мои врски",
     "myWallet": "Мој паричник",
     "openMenu": "Отвори мени",
     "openProfileMenu": "Отвори мени на профилот",
@@ -563,6 +564,24 @@
     "settings": "Поставки",
     "mobileSpacesEmpty": "Сè уште немаш простори.",
     "mobileSpacesAll": "Сите простори"
+  },
+  "Connections": {
+    "titleLineOne": "Твоите врски,",
+    "titleLineTwo": "на едно место",
+    "reachOut": "Хифа предлага",
+    "longTimeNoSee": "Одамна не сме се чуле",
+    "longTimeSentence": "Помина долго време откако не сте се поврзале.",
+    "people": "Луѓе",
+    "groups": "Групи",
+    "search": "Пребарај разговори",
+    "empty": "Разговорите ќе се појават тука.",
+    "noMatches": "Нема разговори што одговараат.",
+    "noMessage": "Сè уште нема порака",
+    "someone": "Некој",
+    "justNow": "Токму сега",
+    "youWrote": "Ти: {message}",
+    "unread": "{count} нови",
+    "members": "{count} членови"
   },
   "OnboardingAdventure": {
     "heroEyebrow": "ИНТЕЛИГЕНТНАТА ОРГАНИЗАЦИЈА",

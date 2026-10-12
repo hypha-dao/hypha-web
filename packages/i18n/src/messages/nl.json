@@ -541,6 +541,7 @@
     "network": "Netwerk",
     "myDashboard": "Home",
     "mySpaces": "Mijn ruimtes",
+    "myConnections": "Mijn connecties",
     "myWallet": "Mijn portemonnee",
     "openMenu": "Menu openen",
     "openProfileMenu": "Profielmenu openen",
@@ -563,6 +564,24 @@
     "settings": "Instellingen",
     "mobileSpacesEmpty": "Je hebt nog geen spaces.",
     "mobileSpacesAll": "Alle spaces"
+  },
+  "Connections": {
+    "titleLineOne": "Jouw connecties,",
+    "titleLineTwo": "op één plek",
+    "reachOut": "Hypha stelt voor",
+    "longTimeNoSee": "Lang niet gesproken",
+    "longTimeSentence": "Het is lang geleden dat jullie contact hadden.",
+    "people": "Mensen",
+    "groups": "Groepen",
+    "search": "Gesprekken zoeken",
+    "empty": "Je gesprekken verschijnen hier.",
+    "noMatches": "Geen gesprek komt overeen.",
+    "noMessage": "Nog geen bericht",
+    "someone": "Iemand",
+    "justNow": "Zojuist",
+    "youWrote": "Jij: {message}",
+    "unread": "{count} nieuw",
+    "members": "{count} leden"
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",

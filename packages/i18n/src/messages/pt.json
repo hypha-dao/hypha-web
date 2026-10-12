@@ -1312,6 +1312,7 @@
     "network": "Rede",
     "myDashboard": "Início",
     "mySpaces": "Meus espaços",
+    "myConnections": "Minhas conexões",
     "myWallet": "Minha carteira",
     "openMenu": "Abrir menu",
     "openProfileMenu": "Abrir menu do perfil",
@@ -1334,6 +1335,24 @@
     "settings": "Definições",
     "mobileSpacesEmpty": "Você ainda não tem espaços.",
     "mobileSpacesAll": "Todos os espaços"
+  },
+  "Connections": {
+    "titleLineOne": "As tuas conexões,",
+    "titleLineTwo": "num só lugar",
+    "reachOut": "A Hypha sugere",
+    "longTimeNoSee": "Há quanto tempo",
+    "longTimeSentence": "Já passou muito tempo desde que se falaram.",
+    "people": "Pessoas",
+    "groups": "Grupos",
+    "search": "Procurar conversas",
+    "empty": "As tuas conversas aparecem aqui.",
+    "noMatches": "Nenhuma conversa corresponde.",
+    "noMessage": "Ainda sem mensagens",
+    "someone": "Alguém",
+    "justNow": "Agora",
+    "youWrote": "Tu: {message}",
+    "unread": "{count} novas",
+    "members": "{count} membros"
   },
   "NetworkFeedback": {
     "triggerLabel": "Moldar a Hypha",

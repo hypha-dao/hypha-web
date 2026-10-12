@@ -17,6 +17,14 @@ export function useIsSpaceContext(): boolean {
   return Boolean(params?.id ?? getDhoSpaceSlugFromPathname(pathname));
 }
 
+/** `/{lang}/connections`. A space slug of "connections" does not match. */
+export function isConnectionsPath(
+  pathname: string | null | undefined,
+): boolean {
+  if (!pathname) return false;
+  return /^\/[^/]+\/connections(?:\/|$)/.test(pathname);
+}
+
 /** `/{lang}/network` and its sections. A space slug of "network" does not match. */
 export function isNetworkPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;

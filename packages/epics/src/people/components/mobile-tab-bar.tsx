@@ -13,6 +13,7 @@ import {
   Earth,
   Globe2,
   LayoutGrid,
+  MessagesSquare,
   Plus,
   Settings,
   Sparkles,
@@ -36,6 +37,9 @@ import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
 import { MemberHomeQuickCreate } from './member-home-quick-create';
+import { useConversationUnreadCount } from './my-connections';
+
+const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 
 const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
 
@@ -110,6 +114,7 @@ export function MobileTabBar({
   const [spacesOpen, setSpacesOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const unreadCount = useConversationUnreadCount();
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -125,6 +130,15 @@ export function MobileTabBar({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const openCreate = () => {
+      setSpacesOpen(false);
+      setCreateOpen(true);
+    };
+    window.addEventListener(OPEN_MOBILE_CREATE, openCreate);
+    return () => window.removeEventListener(OPEN_MOBILE_CREATE, openCreate);
   }, []);
 
   useEffect(() => {
@@ -257,6 +271,7 @@ export function MobileTabBar({
   }, [secondLevel.length]);
 
   const dashboardHref = `/${lang}/home`;
+  const connectionsHref = `/${lang}/connections`;
   const walletHref = `/${lang}/my-wallet`;
   const networkHref = `/${lang}/network`;
   const spacesHref = `/${lang}/my-spaces`;
@@ -266,6 +281,8 @@ export function MobileTabBar({
 
   const dashboardActive =
     !spacesOpen && !createOpen && segmentActive(pathname, 'home');
+  const connectionsActive =
+    !spacesOpen && !createOpen && segmentActive(pathname, 'connections');
   const spacesActive =
     spacesOpen ||
     segmentActive(pathname, 'my-spaces') ||
@@ -464,14 +481,16 @@ export function MobileTabBar({
             }}
             icon={<Sparkles className={iconClass} strokeWidth={1.25} />}
           />
-          <TabButton
-            label={t('mySpaces')}
-            active={spacesActive}
+          <TabLink
+            href={connectionsHref}
+            label={t('myConnections')}
+            active={connectionsActive}
+            badge={unreadCount}
             onClick={() => {
+              setSpacesOpen(false);
               setCreateOpen(false);
-              setSpacesOpen((open) => !open);
             }}
-            icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
+            icon={<MessagesSquare className={iconClass} strokeWidth={1.25} />}
           />
           <TabLink
             href={walletHref}
@@ -486,6 +505,15 @@ export function MobileTabBar({
               <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
             }
           />
+          <TabButton
+            label={t('mySpaces')}
+            active={spacesActive}
+            onClick={() => {
+              setCreateOpen(false);
+              setSpacesOpen((open) => !open);
+            }}
+            icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
+          />
           <TabLink
             href={networkHref}
             label={t('network')}
@@ -495,15 +523,6 @@ export function MobileTabBar({
               setCreateOpen(false);
             }}
             icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
-          />
-          <TabButton
-            label={t('create')}
-            active={createOpen}
-            onClick={() => {
-              setSpacesOpen(false);
-              setCreateOpen((open) => !open);
-            }}
-            icon={<Plus className={iconClass} strokeWidth={1.25} />}
           />
         </div>
       </nav>
@@ -517,6 +536,7 @@ function TabLink({
   label,
   active,
   center,
+  badge = 0,
   onClick,
   icon,
 }: {
@@ -524,6 +544,7 @@ function TabLink({
   label: string;
   active: boolean;
   center?: boolean;
+  badge?: number;
   onClick: () => void;
   icon: ReactNode;
 }) {
@@ -537,9 +558,16 @@ function TabLink({
         active && 'text-foreground',
       )}
     >
-      <TabGlyph active={active} center={center}>
-        {icon}
-      </TabGlyph>
+      <span className="relative">
+        <TabGlyph active={active} center={center}>
+          {icon}
+        </TabGlyph>
+        {badge > 0 ? (
+          <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center bg-foreground px-0.5 text-[9px] leading-none text-background">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        ) : null}
+      </span>
       <span className="max-w-full truncate px-0.5 text-[10px] leading-none tracking-tight">
         {label}
       </span>
@@ -572,6 +600,20 @@ function TabButton({
       <span className="max-w-full truncate px-0.5 text-[10px] leading-none tracking-tight">
         {label}
       </span>
+    </button>
+  );
+}
+
+export function MobileCreateButton() {
+  const t = useTranslations('Navigation');
+  return (
+    <button
+      type="button"
+      className="grid h-[36px] w-[36px] place-items-center text-foreground xl:hidden"
+      aria-label={t('create')}
+      onClick={() => window.dispatchEvent(new Event(OPEN_MOBILE_CREATE))}
+    >
+      <Plus className="h-5 w-5" strokeWidth={1.25} aria-hidden />
     </button>
   );
 }

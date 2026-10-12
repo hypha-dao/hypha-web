@@ -93,6 +93,7 @@
     "network": "Network",
     "myDashboard": "Home",
     "mySpaces": "My Spaces",
+    "myConnections": "My Connections",
     "myWallet": "My Wallet",
     "openMenu": "Open menu",
     "openProfileMenu": "Open profile menu",
@@ -115,6 +116,24 @@
     "settings": "Settings",
     "mobileSpacesEmpty": "You have no spaces yet.",
     "mobileSpacesAll": "All spaces"
+  },
+  "Connections": {
+    "titleLineOne": "Your connections,",
+    "titleLineTwo": "in one place",
+    "reachOut": "Hypha suggests",
+    "longTimeNoSee": "Long time no see",
+    "longTimeSentence": "It has been a long time since you connected.",
+    "people": "People",
+    "groups": "Groups",
+    "search": "Search conversations",
+    "empty": "Your conversations will show up here.",
+    "noMatches": "No conversations match.",
+    "noMessage": "No messages yet",
+    "someone": "Someone",
+    "justNow": "Just now",
+    "youWrote": "You: {message}",
+    "unread": "{count} new",
+    "members": "{count} members"
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",

@@ -24,6 +24,7 @@ import {
   Globe2,
   LayoutGrid,
   Loader2,
+  MessagesSquare,
   LogOutIcon,
   Repeat,
   Shield,
@@ -98,6 +99,11 @@ const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 function resolveNavItemIcon(href?: string) {
   if (!href) {
     return null;
+  }
+  if (href.includes('/connections')) {
+    return (
+      <MessagesSquare className="craft-icon" strokeWidth={1.25} aria-hidden />
+    );
   }
   if (href.includes('/my-spaces')) {
     return <LayoutGrid className="craft-icon" strokeWidth={1.25} aria-hidden />;
