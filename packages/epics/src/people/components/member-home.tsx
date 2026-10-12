@@ -466,7 +466,7 @@ export function MemberHome({
               onCall={openCall}
             />
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+            <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6">
               <CardSkeleton lines={4} plain />
             </div>
           )}
@@ -734,7 +734,7 @@ function ClassicBoard({
   return (
     <div
       ref={boardRef}
-      className="@container min-h-0 flex-1 overflow-y-auto px-4 py-6"
+      className="narrow-scrollbar @container min-h-0 flex-1 overflow-y-auto px-4 py-6"
     >
       <h2
         className="text-3"
