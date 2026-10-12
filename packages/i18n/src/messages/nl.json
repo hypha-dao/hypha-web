@@ -3283,7 +3283,16 @@
       "valueFlows": "Hoe stroomt waarde door onze tokens?",
       "findProject": "Vind één project dat ik kan ondersteunen met middelen",
       "findResources": "Vind middelen voor een ruimte die ik bouw",
-      "sharedNeeds": "Welke behoeften zijn gedeeld met het netwerk?"
+      "sharedNeeds": "Welke behoeften zijn gedeeld met het netwerk?",
+      "networkMemberUseful": "Waar kan ik van nut zijn?",
+      "networkMemberDecisions": "Welke besluiten hebben mij nodig?",
+      "networkMemberPeople": "Met wie zou ik moeten verbinden?",
+      "networkMemberSpaces": "Wat gebeurt er in mijn ruimtes?",
+      "networkBuilderNeeds": "Welke behoeften passen bij wat ik bouw?",
+      "networkBuilderPeople": "Wie zou kunnen meedoen met wat ik vorm?",
+      "networkInvestorAsks": "Wat vraagt het netwerk?",
+      "networkInvestorCapital": "Welke behoeften zijn klaar voor kapitaal?",
+      "networkInvestorOpen": "Laat me de open investeringsvragen zien."
     },
     "suggestionTags": {
       "createSpace": "Creëer ruimte",
@@ -3296,7 +3305,16 @@
       "valueFlows": "Waardestromen",
       "findProject": "Een project vinden",
       "findResources": "Middelen vinden",
-      "sharedNeeds": "Gedeelde behoeften"
+      "sharedNeeds": "Gedeelde behoeften",
+      "networkMemberUseful": "Van nut zijn",
+      "networkMemberDecisions": "Besluiten",
+      "networkMemberPeople": "Verbinden",
+      "networkMemberSpaces": "Mijn ruimtes",
+      "networkBuilderNeeds": "Passende behoeften",
+      "networkBuilderPeople": "Wie kan meedoen",
+      "networkInvestorAsks": "Open vragen",
+      "networkInvestorCapital": "Klaar voor kapitaal",
+      "networkInvestorOpen": "Investeringsvragen"
     },
     "welcome": "Ik ben jouw ruimte-AI om samenhang te brengen in de strategie, beweging in operaties en betekenis aan impact, waarbij gespecialiseerde agenten binnenkomen wanneer je daarom vraagt.",
     "specialistsResponding": "Specialisten die bijdragen",

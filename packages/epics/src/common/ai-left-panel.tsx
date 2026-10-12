@@ -769,75 +769,50 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       .slice(0, MAX_VISIBLE_RECENT_SPACES);
   }, [recentSpaceSlugs, recentSpacesData, spaceSlug]);
 
-  const suggestionItems = useMemo(
-    () =>
-      [
-        ...(pathname.includes('/network') && !spaceSlug
-          ? ([
-              {
-                id: 'findProject',
-                prompt: t('suggestions.findProject'),
-                tagLabel: t('suggestionTags.findProject'),
-              },
-              {
-                id: 'findResources',
-                prompt: t('suggestions.findResources'),
-                tagLabel: t('suggestionTags.findResources'),
-              },
-              {
-                id: 'sharedNeeds',
-                prompt: t('suggestions.sharedNeeds'),
-                tagLabel: t('suggestionTags.sharedNeeds'),
-              },
-            ] as const)
-          : []),
-        ...(!spaceSlug
-          ? ([
-              {
-                id: 'createSpace',
-                prompt: t('suggestions.createSpace'),
-                tagLabel: t('suggestionTags.createSpace'),
-              },
-              {
-                id: 'createEcosystem',
-                prompt: t('suggestions.createEcosystem'),
-                tagLabel: t('suggestionTags.createEcosystem'),
-              },
-            ] as const)
-          : []),
-        {
-          id: 'spaceHealth',
-          prompt: t('suggestions.spaceHealth'),
-          tagLabel: t('suggestionTags.spaceHealth'),
-        },
-        {
-          id: 'nextSignal',
-          prompt: t('suggestions.nextSignal'),
-          tagLabel: t('suggestionTags.nextSignal'),
-        },
-        {
-          id: 'blindSpot',
-          prompt: t('suggestions.blindSpot'),
-          tagLabel: t('suggestionTags.blindSpot'),
-        },
-        {
-          id: 'summarizeDiscussion',
-          prompt: t('suggestions.summarizeDiscussion'),
-          tagLabel: t('suggestionTags.summarizeDiscussion'),
-        },
-        {
-          id: 'spaceMemory',
-          prompt: t('suggestions.spaceMemory'),
-          tagLabel: t('suggestionTags.spaceMemory'),
-        },
-        {
-          id: 'valueFlows',
-          prompt: t('suggestions.valueFlows'),
-          tagLabel: t('suggestionTags.valueFlows'),
-        },
-      ] as const,
-    [pathname, spaceSlug, t],
-  );
+  const suggestionItems = useMemo(() => {
+    const card = (id: string) => ({
+      id,
+      prompt: t(`suggestions.${id}`),
+      tagLabel: t(`suggestionTags.${id}`),
+    });
+    if (pathname.includes('/network') && !spaceSlug) {
+      const orientation = me?.primaryOrientation;
+      const ids =
+        orientation === 'builder'
+          ? [
+              'findResources',
+              'createSpace',
+              'networkBuilderNeeds',
+              'networkBuilderPeople',
+              'createEcosystem',
+            ]
+          : orientation === 'investor'
+          ? [
+              'findProject',
+              'networkInvestorAsks',
+              'networkInvestorCapital',
+              'networkInvestorOpen',
+              'sharedNeeds',
+            ]
+          : [
+              'networkMemberUseful',
+              'networkMemberDecisions',
+              'networkMemberPeople',
+              'sharedNeeds',
+              'networkMemberSpaces',
+            ];
+      return ids.map(card);
+    }
+    return [
+      ...(!spaceSlug ? [card('createSpace'), card('createEcosystem')] : []),
+      card('spaceHealth'),
+      card('nextSignal'),
+      card('blindSpot'),
+      card('summarizeDiscussion'),
+      card('spaceMemory'),
+      card('valueFlows'),
+    ];
+  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
 
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();

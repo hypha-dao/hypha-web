@@ -2709,7 +2709,16 @@
       "valueFlows": "Comment la valeur circule-t-elle via nos tokens ?",
       "findProject": "Trouve un projet que je peux ressourcer",
       "findResources": "Trouve des ressources pour un espace que je construis",
-      "sharedNeeds": "Quels besoins sont partagés avec le réseau ?"
+      "sharedNeeds": "Quels besoins sont partagés avec le réseau ?",
+      "networkMemberUseful": "Où puis-je être utile ?",
+      "networkMemberDecisions": "Quelles décisions ont besoin de moi ?",
+      "networkMemberPeople": "Avec qui devrais-je me relier ?",
+      "networkMemberSpaces": "Que se passe-t-il dans mes espaces ?",
+      "networkBuilderNeeds": "Quels besoins correspondent à ce que je construis ?",
+      "networkBuilderPeople": "Qui pourrait rejoindre ce que je forme ?",
+      "networkInvestorAsks": "Que demande le réseau ?",
+      "networkInvestorCapital": "Quels besoins sont prêts pour du capital ?",
+      "networkInvestorOpen": "Montre-moi les demandes d'investissement ouvertes."
     },
     "suggestionTags": {
       "createSpace": "Créer un espace",
@@ -2722,7 +2731,16 @@
       "valueFlows": "Flux de valeur",
       "findProject": "Trouver un projet",
       "findResources": "Trouver des ressources",
-      "sharedNeeds": "Besoins partagés"
+      "sharedNeeds": "Besoins partagés",
+      "networkMemberUseful": "Être utile",
+      "networkMemberDecisions": "Décisions",
+      "networkMemberPeople": "Relier",
+      "networkMemberSpaces": "Mes espaces",
+      "networkBuilderNeeds": "Besoins qui correspondent",
+      "networkBuilderPeople": "Qui peut rejoindre",
+      "networkInvestorAsks": "Demandes ouvertes",
+      "networkInvestorCapital": "Prêts pour du capital",
+      "networkInvestorOpen": "Demandes d'investissement"
     },
     "welcome": "Je suis l'IA de votre espace pour apporter de la cohérence à la stratégie, du mouvement aux opérations et du sens à l'impact—des agents spécialistes glissent à l'appel quand vous en avez besoin.",
     "specialistsResponding": "Spécialistes contributeurs",

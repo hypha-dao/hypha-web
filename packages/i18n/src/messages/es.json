@@ -2727,7 +2727,16 @@
       "valueFlows": "¿Cómo fluye el valor a través de nuestros tokens?",
       "findProject": "Encuentra un proyecto al que pueda aportar recursos",
       "findResources": "Encuentra recursos para un espacio que estoy construyendo",
-      "sharedNeeds": "¿Qué necesidades se comparten con la red?"
+      "sharedNeeds": "¿Qué necesidades se comparten con la red?",
+      "networkMemberUseful": "¿Dónde puedo ser útil?",
+      "networkMemberDecisions": "¿Qué decisiones me necesitan?",
+      "networkMemberPeople": "¿Con quién debería conectar?",
+      "networkMemberSpaces": "¿Qué pasa en mis espacios?",
+      "networkBuilderNeeds": "¿Qué necesidades encajan con lo que estoy construyendo?",
+      "networkBuilderPeople": "¿Quién podría unirse a lo que estoy dando forma?",
+      "networkInvestorAsks": "¿Qué está pidiendo la red?",
+      "networkInvestorCapital": "¿Qué necesidades están listas para capital?",
+      "networkInvestorOpen": "Muéstrame las peticiones de inversión abiertas."
     },
     "suggestionTags": {
       "createSpace": "Crear espacio",
@@ -2740,7 +2749,16 @@
       "valueFlows": "Flujos de valor",
       "findProject": "Encontrar un proyecto",
       "findResources": "Encontrar recursos",
-      "sharedNeeds": "Necesidades compartidas"
+      "sharedNeeds": "Necesidades compartidas",
+      "networkMemberUseful": "Ser útil",
+      "networkMemberDecisions": "Decisiones",
+      "networkMemberPeople": "Conectar",
+      "networkMemberSpaces": "Mis espacios",
+      "networkBuilderNeeds": "Necesidades que encajan",
+      "networkBuilderPeople": "Quién puede unirse",
+      "networkInvestorAsks": "Peticiones abiertas",
+      "networkInvestorCapital": "Listas para capital",
+      "networkInvestorOpen": "Peticiones de inversión"
     },
     "welcome": "Soy la IA de tu espacio para aportar coherencia a la estrategia, impulso a las operaciones y sentido al impacto—agentes especialistas entran cuando los llamas.",
     "specialistsResponding": "Especialistas contribuyendo",

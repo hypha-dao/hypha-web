@@ -3315,7 +3315,16 @@
       "valueFlows": "How does value flow through our tokens?",
       "findProject": "Find one project I can resource",
       "findResources": "Find resources for a space I am building",
-      "sharedNeeds": "Which needs are shared with the network?"
+      "sharedNeeds": "Which needs are shared with the network?",
+      "networkMemberUseful": "Where can I be useful?",
+      "networkMemberDecisions": "Which decisions need me?",
+      "networkMemberPeople": "Who should I connect with?",
+      "networkMemberSpaces": "What is happening in my spaces?",
+      "networkBuilderNeeds": "Which needs match what I am building?",
+      "networkBuilderPeople": "Who could join what I am shaping?",
+      "networkInvestorAsks": "What is the network asking for?",
+      "networkInvestorCapital": "Which needs are ready for capital?",
+      "networkInvestorOpen": "Show me the open investment asks."
     },
     "suggestionTags": {
       "createSpace": "Create space",
@@ -3328,7 +3337,16 @@
       "valueFlows": "Value flows",
       "findProject": "Find a project",
       "findResources": "Find resources",
-      "sharedNeeds": "Shared needs"
+      "sharedNeeds": "Shared needs",
+      "networkMemberUseful": "Be useful",
+      "networkMemberDecisions": "Decisions",
+      "networkMemberPeople": "Connect",
+      "networkMemberSpaces": "My spaces",
+      "networkBuilderNeeds": "Matching needs",
+      "networkBuilderPeople": "Who can join",
+      "networkInvestorAsks": "Open asks",
+      "networkInvestorCapital": "Ready for capital",
+      "networkInvestorOpen": "Investment asks"
     },
     "welcome": "I'm your space AI for bringing coherence to strategy, motion to operations, and meaning to impact, with specialist agents gliding in whenever you call for them.",
     "specialistsResponding": "Specialists contributing",

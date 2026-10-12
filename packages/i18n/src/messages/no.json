@@ -3282,7 +3282,16 @@
       "valueFlows": "Hvordan flyter verdi gjennom tokenene våre?",
       "findProject": "Finn ett prosjekt jeg kan støtte med ressurser",
       "findResources": "Finn ressurser til et rom jeg bygger",
-      "sharedNeeds": "Hvilke behov er delt med nettverket?"
+      "sharedNeeds": "Hvilke behov er delt med nettverket?",
+      "networkMemberUseful": "Hvor kan jeg være til nytte?",
+      "networkMemberDecisions": "Hvilke beslutninger trenger meg?",
+      "networkMemberPeople": "Hvem bør jeg koble meg til?",
+      "networkMemberSpaces": "Hva skjer i rommene mine?",
+      "networkBuilderNeeds": "Hvilke behov passer med det jeg bygger?",
+      "networkBuilderPeople": "Hvem kan bli med på det jeg former?",
+      "networkInvestorAsks": "Hva ber nettverket om?",
+      "networkInvestorCapital": "Hvilke behov er klare for kapital?",
+      "networkInvestorOpen": "Vis meg de åpne investeringsforespørslene."
     },
     "suggestionTags": {
       "createSpace": "Opprett rom",
@@ -3295,7 +3304,16 @@
       "valueFlows": "Verdistrømmer",
       "findProject": "Finn et prosjekt",
       "findResources": "Finn ressurser",
-      "sharedNeeds": "Delte behov"
+      "sharedNeeds": "Delte behov",
+      "networkMemberUseful": "Være til nytte",
+      "networkMemberDecisions": "Beslutninger",
+      "networkMemberPeople": "Koble",
+      "networkMemberSpaces": "Rommene mine",
+      "networkBuilderNeeds": "Passende behov",
+      "networkBuilderPeople": "Hvem kan bli med",
+      "networkInvestorAsks": "Åpne forespørsler",
+      "networkInvestorCapital": "Klare for kapital",
+      "networkInvestorOpen": "Investeringsforespørsler"
     },
     "welcome": "Jeg er rommets AI som skaper sammenheng i strategien, bevegelse i driften og mening i påvirkningen, med spesialistagenter som glir inn når du kaller på dem.",
     "specialistsResponding": "Spesialister bidrar",
