@@ -38,6 +38,7 @@ import { deals } from './deal';
 import { pipelineSavedViews } from './pipeline-saved-view';
 import { pipelineUserSettings } from './pipeline-user-settings';
 import { spaceApiKeys } from './space-api-key';
+import { integrationClients } from './integration-client';
 import { notificationProcessedEvents } from './notification-processed-events';
 
 export { SPACE_FLAGS } from './flags';
@@ -65,6 +66,7 @@ export * from './deal';
 export * from './pipeline-saved-view';
 export * from './pipeline-user-settings';
 export * from './space-api-key';
+export * from './integration-client';
 export * from './notification-processed-events';
 
 export const schema = {
@@ -102,5 +104,6 @@ export const schema = {
   pipelineSavedViews,
   pipelineUserSettings,
   spaceApiKeys,
+  integrationClients,
   notificationProcessedEvents,
 };
