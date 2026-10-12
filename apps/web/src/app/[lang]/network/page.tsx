@@ -47,9 +47,11 @@ export default async function Index(props: PageProps) {
     return <Container className="flex flex-col gap-9 py-9">{body}</Container>;
   }
 
-  // A centered max-width leaves a gutter on the right of the side column.
-  // Padding stays on the left so the column meets the edge of the page.
-  return <div className="w-full min-w-0 py-9 pl-4 sm:pl-5">{body}</div>;
+  return (
+    <div className="flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem))] w-full min-w-0 flex-col px-4 py-9 sm:px-5">
+      {body}
+    </div>
+  );
 }
 
 async function NetworkSpaces(props: PageProps) {
