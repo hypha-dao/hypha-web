@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
 import { Volume2, VolumeX } from 'lucide-react';
@@ -161,6 +168,35 @@ function straightforwardHomeText(text: string) {
     return 'You can now decide on the proposal card.';
   }
   return cleaned;
+}
+
+const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
+
+function homeMessageNodes(text: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(HOME_LINK)) {
+    const index = match.index ?? 0;
+    if (index > last) nodes.push(text.slice(last, index));
+    const href = match[2] ?? match[3];
+    const label = match[1] ?? href;
+    if (href && label) {
+      nodes.push(
+        <a
+          key={`${index}-${href}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent-11 underline underline-offset-4"
+        >
+          {label}
+        </a>,
+      );
+    }
+    last = index + match[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
 }
 
 export function MemberHomeChat({
@@ -576,7 +612,7 @@ export function MemberHomeChat({
                             mine && 'text-right',
                           )}
                         >
-                          {text}
+                          {homeMessageNodes(text)}
                         </p>
                       ) : null}
                       {!mine && message.id === cardMessageId && focusedItem ? (
