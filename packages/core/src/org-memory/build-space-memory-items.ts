@@ -2,7 +2,10 @@ import type { Attachment, Document } from '../governance/types';
 import { DocumentState } from '../governance/types';
 import { isMemoryDocument } from '../governance/space-memory-document-label';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import { deriveSpaceMemoryDisplayTitle } from './space-memory-display';
+import {
+  deriveSpaceMemoryDisplayTitle,
+  humanizeMemoryExcerpt,
+} from './space-memory-display';
 
 export type SpaceMemorySource =
   | 'proposal_upload'
@@ -451,7 +454,11 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const contextTitle = a.context_title?.trim() || undefined;
       const signalTitle = a.signal_title?.trim() || undefined;
       const roomTitle = a.room_title?.trim() || undefined;
-      const excerpt = a.text_excerpt?.trim() || undefined;
+      const rawExcerpt = a.text_excerpt?.trim() || undefined;
+      const excerpt =
+        a.source === 'discussion_summary' && rawExcerpt
+          ? humanizeMemoryExcerpt(rawExcerpt) || undefined
+          : rawExcerpt;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: a.source,
         name:
