@@ -79,13 +79,13 @@ describe('getDhoSpaceContextPath', () => {
     ).toBeUndefined();
   });
 
-  it('returns non-DHO paths unchanged', () => {
+  it('opens the space when the current page is not a space', () => {
     expect(
       getDhoSpaceContextPath({
-        pathname: '/en/other/path',
+        pathname: '/en/my-spaces',
         lang: 'en',
         spaceSlug: 'next-space',
       }),
-    ).toBe('/en/other/path');
+    ).toBe('/en/dho/next-space/overview');
   });
 });

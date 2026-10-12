@@ -38,7 +38,7 @@ export function getDhoSpaceContextPath({
 
   const match = pathname.match(/^\/[^/]+\/dho\/[^/]+(?:\/([^/]+))?/);
   if (!match) {
-    return pathname;
+    return `/${lang}/dho/${spaceSlug}/overview`;
   }
 
   const nextSegment = match?.[1];
