@@ -290,6 +290,14 @@ describe('memberHomeThreadItemForMessage', () => {
     expect(item?.slug).toBe('invite-member');
   });
 
+  it('attaches the proposal in front of you when the reply points at the card', () => {
+    const item = memberHomeThreadItemForMessage(items, {
+      content:
+        'I see that you have a proposal in front of you. You can now decide on the proposal card.',
+    });
+    expect(item?.slug).toBe('invite-member');
+  });
+
   it('leaves a greeting with no item empty', () => {
     const item = memberHomeThreadItemForMessage(items, {
       parts: [

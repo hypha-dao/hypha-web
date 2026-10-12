@@ -455,6 +455,25 @@ function itemMentionedInText(
     );
     return ranked[0] ?? null;
   }
+  const referenced = itemsReferencedInText(items, text);
+  const referencedProposals = referenced.filter(
+    (item) => item.kind === 'proposal',
+  );
+  if (
+    talkingAboutProposal &&
+    referenced.length === 1 &&
+    referencedProposals.length === 1 &&
+    referencedProposals[0]
+  ) {
+    return referencedProposals[0];
+  }
+  if (
+    talkingAboutProposal &&
+    /\b(proposal card|in front of you)\b/.test(haystack) &&
+    pool[0]
+  ) {
+    return pool[0];
+  }
   return null;
 }
 
