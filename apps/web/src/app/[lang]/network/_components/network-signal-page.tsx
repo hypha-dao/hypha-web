@@ -3,7 +3,7 @@ import { Container } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 import { listNetworkSharedSignals } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { NetworkSectionNav, NetworkSignalList } from '@hypha-platform/epics';
+import { NetworkSignalList } from '@hypha-platform/epics';
 import type { NetworkSignalKind } from '@hypha-platform/core/client';
 
 export async function NetworkSignalPage({
@@ -25,7 +25,6 @@ export async function NetworkSignalPage({
   );
   return (
     <Container className="flex flex-col gap-6 py-8">
-      <NetworkSectionNav lang={lang} />
       <header>
         <h1
           className="text-5"

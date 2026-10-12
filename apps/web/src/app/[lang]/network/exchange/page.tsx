@@ -2,7 +2,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { findAllSpaces, readSpaceCapitals } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { NetworkExchangeView, NetworkSectionNav } from '@hypha-platform/epics';
+import { NetworkExchangeView } from '@hypha-platform/epics';
 
 export default async function ExchangePage(props: {
   params: Promise<{ lang: Locale }>;
@@ -34,7 +34,6 @@ export default async function ExchangePage(props: {
 
   return (
     <Container className="flex flex-col gap-6 py-8">
-      <NetworkSectionNav lang={lang} />
       <NetworkExchangeView lang={lang} spaces={spaces} />
     </Container>
   );

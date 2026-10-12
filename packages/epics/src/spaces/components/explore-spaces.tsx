@@ -22,7 +22,7 @@ import {
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
-import { NetworkRanking, NetworkSectionNav } from '../../network-exchange';
+import { NetworkRanking } from '../../network-exchange';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
@@ -496,8 +496,6 @@ export function ExploreSpaces({
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
-      <NetworkSectionNav lang={lang} />
-
       <div
         className={cn(
           'grid min-w-0 items-start',
