@@ -1,16 +1,26 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {
   Space,
   isSpaceArchived,
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
-import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import {
+  APP_CHROME_ICON_TRIGGER,
+  useCanMutateInSpace,
+  useFilterSpacesListWithDiscoverability,
+} from '@hypha-platform/epics';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
+import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 
+import { EcosystemMembershipModules } from '@web/app/[lang]/dho/[id]/_components/ecosystem-membership-modules';
 import { SpaceVisualization } from '@web/app/[lang]/dho/[id]/_components/space-visualization';
+import type { VisibleSpace } from '@web/app/[lang]/dho/[id]/_components/types';
 
 type HierarchyNode = {
   name: string;
@@ -62,6 +72,11 @@ function buildHierarchy(
 
 export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('SelectNavigationAction');
+  const { lang } = useParams<{ lang: string }>();
+  const [focus, setFocus] = useState<{
+    slug: string;
+    name: string;
+  } | null>(null);
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(spaceSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -92,6 +107,28 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
     return buildHierarchy(rootSpace, spacesWithCurrent, accessibleSpaceIds);
   }, [currentSpace, filteredSpaces, nonArchivedSpaces]);
 
+  const selectedSlug = focus?.slug ?? spaceSlug;
+  const selectedTitle = focus?.name ?? currentSpace?.title ?? '';
+  const selectedSpace =
+    selectedSlug === currentSpace?.slug ? currentSpace : undefined;
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug: selectedSlug,
+    space: selectedSpace,
+    spaceId: selectedSpace?.web3SpaceId ?? undefined,
+  });
+  const visitHref = selectedSlug
+    ? `/${lang}/dho/${selectedSlug}/ecosystem-navigation`
+    : null;
+  const addHref =
+    canMutate && !isMutateLoading && visitHref
+      ? `${visitHref}/space/create`
+      : null;
+  const onVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
+    const next = spaces.find((space) => space.root) ?? spaces[0];
+    if (!next?.slug) return;
+    setFocus({ slug: next.slug, name: next.name });
+  }, []);
+
   if (isLoading && !hierarchy) {
     return <div className="aspect-square w-full bg-muted" aria-hidden />;
   }
@@ -106,12 +143,51 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
   }
 
   return (
-    <SpaceVisualization
-      data={hierarchy}
-      currentSpaceId={currentSpace?.id}
-      enableHoverActions={false}
-      showNodeLabels
-      ariaLabel={t('diagram.ariaLabel')}
-    />
+    <div className="flex min-w-0 flex-col gap-3">
+      <EcosystemMembershipModules
+        spaceSlug={selectedSlug}
+        spaceTitle={selectedTitle}
+        trailing={
+          <div className="flex shrink-0 items-center gap-1">
+            {visitHref ? (
+              <Tooltip delayDuration={80}>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={visitHref}
+                    className={APP_CHROME_ICON_TRIGGER}
+                    aria-label={t('visibleSpaces.visitSpace')}
+                  >
+                    <ArrowTopRightIcon />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>{t('visibleSpaces.visitSpace')}</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {addHref ? (
+              <Tooltip delayDuration={80}>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={addHref}
+                    className={APP_CHROME_ICON_TRIGGER}
+                    aria-label={t('visibleSpaces.addSpace')}
+                  >
+                    <PlusIcon />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>{t('visibleSpaces.addSpace')}</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
+        }
+      />
+      <SpaceVisualization
+        data={hierarchy}
+        currentSpaceId={currentSpace?.id}
+        enableHoverActions={false}
+        showNodeLabels
+        ariaLabel={t('diagram.ariaLabel')}
+        onVisibleSpacesChange={onVisibleSpacesChange}
+      />
+    </div>
   );
 }
