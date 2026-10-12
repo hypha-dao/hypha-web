@@ -18,16 +18,16 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   ArrowLeftRight,
-  BadgeCheck,
-  Globe,
-  List,
+  ClipboardList,
+  Earth,
   Menu,
   PanelLeftClose,
   Plus,
   Settings,
-  Sparkles,
+  Target,
   Volume2,
   VolumeX,
+  Waves,
 } from 'lucide-react';
 import {
   Category,
@@ -661,7 +661,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         key: 'network',
         label: tNetwork('navNetwork'),
         href: base,
-        icon: Globe,
+        icon: Earth,
       },
       {
         key: 'exchange',
@@ -673,19 +673,19 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         key: 'needs',
         label: tNetwork('navNeeds'),
         href: `${base}/needs`,
-        icon: List,
+        icon: ClipboardList,
       },
       {
         key: 'action',
         label: tNetwork('navAction'),
         href: `${base}/proof-of-action`,
-        icon: BadgeCheck,
+        icon: Waves,
       },
       {
         key: 'impact',
         label: tNetwork('navImpact'),
         href: `${base}/proof-of-impact`,
-        icon: Sparkles,
+        icon: Target,
       },
       {
         key: 'create',
