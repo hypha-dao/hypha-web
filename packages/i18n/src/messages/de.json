@@ -257,7 +257,8 @@
     "error": "Dein Zuhause konnte nicht geladen werden.",
     "errorNamed": "{name}, dein Zuhause konnte nicht geladen werden.",
     "profileUnavailable": "Du bist noch angemeldet. Dein Profil konnte nicht geladen werden.",
-    "retry": "Nochmal versuchen"
+    "retry": "Nochmal versuchen",
+    "sendTokensChoose": "Wähle einen Token. Aktuell {symbol}."
   },
   "WelcomeFlow": {
     "offer": {

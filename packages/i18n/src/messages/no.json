@@ -257,7 +257,8 @@
     "error": "Hjemmet ditt kunne ikke lastes.",
     "errorNamed": "{name}, hjemmet ditt kunne ikke lastes.",
     "profileUnavailable": "Du er fortsatt innlogget. Profilen din kunne ikke lastes.",
-    "retry": "Prøv igjen"
+    "retry": "Prøv igjen",
+    "sendTokensChoose": "Velg et token. Nå {symbol}."
   },
   "WelcomeFlow": {
     "offer": {

@@ -257,7 +257,8 @@
     "error": "Je startpagina kon niet worden geladen.",
     "errorNamed": "{name}, je startpagina kon niet worden geladen.",
     "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
-    "retry": "Opnieuw proberen"
+    "retry": "Opnieuw proberen",
+    "sendTokensChoose": "Kies een token. Nu {symbol}."
   },
   "WelcomeFlow": {
     "offer": {

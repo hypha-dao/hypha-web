@@ -257,7 +257,8 @@
     "error": "Ton accueil n'a pas pu être chargé.",
     "errorNamed": "{name}, ton accueil n'a pas pu être chargé.",
     "profileUnavailable": "Tu es toujours connecté. Ton profil n'a pas pu être chargé.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "sendTokensChoose": "Choisis un token. Actuellement {symbol}."
   },
   "WelcomeFlow": {
     "offer": {

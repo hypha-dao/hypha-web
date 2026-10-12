@@ -257,7 +257,8 @@
     "error": "Não foi possível carregar a tua página inicial.",
     "errorNamed": "{name}, não foi possível carregar a tua página inicial.",
     "profileUnavailable": "Continuas com sessão iniciada. Não foi possível carregar o teu perfil.",
-    "retry": "Tentar outra vez"
+    "retry": "Tentar outra vez",
+    "sendTokensChoose": "Escolhe um token. Agora: {symbol}."
   },
   "WelcomeFlow": {
     "offer": {
