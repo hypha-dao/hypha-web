@@ -1,12 +1,55 @@
 import { parseCapitalKeys } from '@hypha-platform/core/client';
 import {
   findAllSpacesByMemberId,
+  readSpaceCapitals,
   resolvePersonFromAuthToken,
   writeSpaceCapitals,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+async function memberSpace(request: NextRequest, spaceSlug: string) {
+  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+  const person = await resolvePersonFromAuthToken(authToken);
+  if (!person) {
+    return {
+      error: NextResponse.json({ error: 'User not found' }, { status: 404 }),
+    };
+  }
+  const spaces = await findAllSpacesByMemberId(
+    { memberId: person.id, parentOnly: false },
+    { db },
+  );
+  const space = spaces.find((row) => row.slug === spaceSlug);
+  if (!space) {
+    return {
+      error: NextResponse.json({ error: 'Space not found' }, { status: 404 }),
+    };
+  }
+  return { space };
+}
+
+export async function GET(request: NextRequest) {
+  const spaceSlug = request.nextUrl.searchParams.get('spaceSlug')?.trim() ?? '';
+  if (!spaceSlug) {
+    return NextResponse.json({ error: 'Missing space' }, { status: 400 });
+  }
+  const found = await memberSpace(request, spaceSlug);
+  if ('error' in found && found.error) return found.error;
+  if (!('space' in found) || !found.space) {
+    return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+  }
+  const stored = await readSpaceCapitals(db, [found.space.id]);
+  return NextResponse.json(
+    stored.get(found.space.id) ?? { seeks: [], offers: [] },
+  );
+}
 
 const bodySchema = z.object({
   spaceSlug: z.string().trim().min(1),

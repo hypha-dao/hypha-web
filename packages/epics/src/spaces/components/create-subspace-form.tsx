@@ -2,6 +2,8 @@
 
 import { useConfig } from 'wagmi';
 import { SpaceForm } from './create-space-form';
+import type { SpaceCapitalSelection } from './space-capitals-fields';
+import { readExchangeCapitalsDraft } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
 import {
   type Space,
@@ -45,6 +47,15 @@ export const CreateSubspaceForm = ({
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [capitals, setCapitals] = React.useState<SpaceCapitalSelection>({
+    seeks: [],
+    offers: [],
+  });
+  const capitalsTouchedRef = React.useRef(false);
+  React.useEffect(() => {
+    const draft = readExchangeCapitalsDraft();
+    if (!capitalsTouchedRef.current && draft) setCapitals(draft);
+  }, []);
   const [submitBlockError, setSubmitBlockError] = React.useState<string | null>(
     null,
   );
@@ -279,12 +290,20 @@ export const CreateSubspaceForm = ({
               organisationSpaces: organisationSpaces ?? [],
             };
 
-            return createSpace(normalizedCreateValues);
+            return createSpace({
+              ...normalizedCreateValues,
+              exchangeCapitals: capitals,
+            });
           }}
           initialParentSpaceId={parentSpaceId as number}
           parentSpaceSlug={parentSpaceSlug}
           label="add"
           slugIncorrectMessage={t('slugAlreadyExistsLong')}
+          capitals={capitals}
+          onCapitalsChange={(next) => {
+            capitalsTouchedRef.current = true;
+            setCapitals(next);
+          }}
         />
         {submitBlockError ? (
           <div className="text-sm text-error-11">{submitBlockError}</div>

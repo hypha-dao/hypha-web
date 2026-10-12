@@ -62,6 +62,11 @@ export interface CreateSpaceInput {
   longitude?: number | null;
   locationLabel?: string | null;
   locationSource?: SpaceLocationSource | null;
+  /** Forms of capital this space seeks and offers. Omitted leaves them unchanged. */
+  exchangeCapitals?: {
+    seeks: string[];
+    offers: string[];
+  };
 }
 
 export interface UpdateSpaceInput {
@@ -82,6 +87,11 @@ export interface UpdateSpaceInput {
   chatRoomId?: string | null;
   flags?: SpaceFlags[];
   pipelineEnabled?: boolean;
+  /** Forms of capital this space seeks and offers. Omitted leaves them unchanged. */
+  exchangeCapitals?: {
+    seeks: string[];
+    offers: string[];
+  };
 }
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;
