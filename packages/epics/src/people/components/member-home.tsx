@@ -250,7 +250,7 @@ export function MemberHome({
           aria-label={t('panelSpaces')}
           className="member-home-pane narrow-scrollbar order-2 col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 border-t border-border px-4 py-4 @max-[47.99rem]/home:flex @min-[68rem]/home:order-none @min-[68rem]/home:flex @min-[68rem]/home:overflow-y-auto @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
         >
-          <section>
+          <section className="border border-border bg-background p-4">
             <div
               className={
                 home == null || orientation
