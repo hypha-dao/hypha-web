@@ -31,7 +31,7 @@ type SignalTagBadgesProps = {
 export function SignalTagBadges({
   tags,
   maxVisible = 2,
-  sizeClassName = 'text-[10px]',
+  sizeClassName,
   showHashPrefix = false,
   className,
 }: SignalTagBadgesProps) {

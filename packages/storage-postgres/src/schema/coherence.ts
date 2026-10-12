@@ -37,6 +37,20 @@ export const coherences = pgTable(
     progressStatus: text('progress_status'),
     board: text('board'),
     assigneeIds: jsonb('assignee_ids').$type<number[]>().notNull().default([]),
+    /** ISO timestamps keyed by person id — set when that assignee opens the card. */
+    assigneeAcknowledgedAt: jsonb('assignee_acknowledged_at')
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
+    /** Reminder/overdue send ledger for the current due date. */
+    deadlineNotifyState: jsonb('deadline_notify_state')
+      .$type<{
+        dueAtIso?: string | null;
+        reminderSentAt?: string | null;
+        overdueSentAt?: string | null;
+      }>()
+      .notNull()
+      .default({}),
     /** `space_api_keys.source` when the signal arrived from a community app. */
     source: text('source'),
     /** The external app's own identifier for the record, used for idempotency. */

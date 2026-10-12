@@ -16,8 +16,10 @@ import { SignalCardActions } from './signal-card-actions';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
+import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import {
@@ -41,7 +43,7 @@ type SignalTaskCardProps = {
   className?: string;
 };
 
-export function SignalTaskCard({
+export const SignalTaskCard = React.memo(function SignalTaskCard({
   signal,
   status,
   board,
@@ -263,12 +265,19 @@ export function SignalTaskCard({
                   <Badge
                     colorVariant="neutral"
                     variant="outline"
-                    className="max-w-[6.5rem] truncate rounded-none border-border/60 bg-transparent text-[10px] font-normal text-muted-foreground shadow-none"
+                    className={cn(
+                      SIGNAL_BOARD_META_TEXT_CLASS,
+                      'max-w-[6.5rem] truncate rounded-none border-border/60 bg-transparent text-muted-foreground shadow-none',
+                    )}
                   >
                     {board.name}
                   </Badge>
                 ) : null}
                 <SignalTagBadges tags={signal.tags} maxVisible={2} />
+                <SignalOwnerSeen
+                  assigneeIds={signal.assigneeIds}
+                  acknowledgements={signal.assigneeAcknowledgedAt}
+                />
                 {messageCount > 0 ? (
                   <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                     <MessageSquare className="h-3 w-3" aria-hidden />
@@ -282,4 +291,4 @@ export function SignalTaskCard({
       </div>
     </div>
   );
-}
+});

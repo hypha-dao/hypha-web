@@ -32,6 +32,7 @@ import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import {
@@ -57,7 +58,7 @@ type SignalCardProps = {
   isActive?: boolean;
 };
 
-export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
+function SignalCardComponent({
   isLoading,
   title,
   description,
@@ -70,13 +71,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   roomId,
   creatorId,
   assigneeIds,
+  assigneeAcknowledgedAt,
   upvotes,
   refresh,
   onOpenConversation,
   className,
   leadImage: _leadImage,
   isActive = false,
-}) => {
+}: SignalCardProps & Coherence) {
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
@@ -379,6 +381,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 className="content-start gap-1 pl-3.5"
               />
             ) : null}
+            <SignalOwnerSeen
+              assigneeIds={assigneeIds}
+              acknowledgements={assigneeAcknowledgedAt}
+              className="pl-3.5"
+            />
           </div>
         </div>
 
@@ -471,4 +478,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       </CardContent>
     </Card>
   );
-};
+}
+
+export const SignalCard = React.memo(SignalCardComponent);

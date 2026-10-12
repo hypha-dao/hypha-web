@@ -1,10 +1,22 @@
 'use client';
 
-import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  ErrorAlert,
+  Tabs,
+  ScrollableTabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import {
   Coherence,
+  collectExistingTags,
+  filterSignals,
+  parseSignalBoardFilters,
+  useCoherenceMutationsWeb2Rsc,
   useFindCoherences,
+  useJwt,
+  useMe,
   useSpaceBySlug,
+  writeSignalBoardFilters,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
@@ -26,13 +38,15 @@ import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-m
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
+import type { UseMembers } from '../../spaces/hooks/types';
 
-type CoherenceBlockProps = {
+export type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
   priorityFilter?: 'all' | 'critical' | 'high' | 'medium' | 'low';
   humanChatEnabled?: boolean;
+  useMembers: UseMembers;
 };
 
 type PriorityFilterTabItem = {
@@ -102,6 +116,7 @@ export function CoherenceBlock({
   order,
   priorityFilter = 'all',
   humanChatEnabled = false,
+  useMembers,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -110,6 +125,9 @@ export function CoherenceBlock({
   const searchParams = useSearchParams();
   const viewParamFromUrl = searchParams.get(SIGNAL_VIEW_QUERY_KEY);
   const [hideArchived, setHideArchived] = React.useState(true);
+  const [acknowledgeError, setAcknowledgeError] = React.useState<string | null>(
+    null,
+  );
   const viewMode = React.useMemo(() => {
     const fromUrl = parseSignalViewMode(viewParamFromUrl);
     if (fromUrl) {
@@ -148,6 +166,29 @@ export function CoherenceBlock({
     [pathname, router, searchParams, spaceSlug],
   );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
+  const { person } = useMe();
+  const { jwt } = useJwt();
+  const { acknowledgeCoherenceAssignment } = useCoherenceMutationsWeb2Rsc(jwt);
+  const { persons: spaceMembersResult } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
+  const spaceMembers = spaceMembersResult?.data ?? [];
+  const boardFilters = React.useMemo(
+    () => parseSignalBoardFilters(searchParams),
+    [searchParams],
+  );
+  const deferredBoardFilters = React.useDeferredValue(boardFilters);
+  const handleBoardFiltersChange = React.useCallback(
+    (nextFilters: ReturnType<typeof parseSignalBoardFilters>) => {
+      const nextParams = writeSignalBoardFilters(searchParams, nextFilters);
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
   const { canMutate } = useCanMutateInSpace({
     spaceSlug,
     spaceId: space?.web3SpaceId ?? undefined,
@@ -168,12 +209,17 @@ export function CoherenceBlock({
     includeArchived: !hideArchived,
     orderBy: order,
   });
-  const filteredSignals = React.useMemo(
-    () =>
-      (signals ?? []).filter((signal) =>
-        priorityFilter === 'all' ? true : signal.priority === priorityFilter,
-      ),
-    [priorityFilter, signals],
+  const filteredSignals = React.useMemo(() => {
+    const byPriority = (signals ?? []).filter((signal) =>
+      priorityFilter === 'all' ? true : signal.priority === priorityFilter,
+    );
+    return filterSignals(byPriority, deferredBoardFilters, {
+      currentPersonId: person?.id,
+    });
+  }, [deferredBoardFilters, person?.id, priorityFilter, signals]);
+  const existingTags = React.useMemo(
+    () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
+    [signals],
   );
   const priorityCounts = React.useMemo(() => {
     const items = signals ?? [];
@@ -213,8 +259,63 @@ export function CoherenceBlock({
     return null;
   }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
 
+  const acknowledgingSlugRef = React.useRef<string | null>(null);
+  const acknowledgeAssignmentIfNeeded = React.useCallback(
+    (signal: Coherence) => {
+      const slug = signal.slug?.trim() ?? '';
+      if (
+        !slug ||
+        !person?.id ||
+        !(signal.assigneeIds ?? []).includes(person.id)
+      ) {
+        return;
+      }
+      if (signal.assigneeAcknowledgedAt?.[String(person.id)]) {
+        return;
+      }
+      if (acknowledgingSlugRef.current === slug) {
+        return;
+      }
+      acknowledgingSlugRef.current = slug;
+      void acknowledgeCoherenceAssignment({ slug })
+        .then((updated) => {
+          setAcknowledgeError(null);
+          if (!updated && acknowledgingSlugRef.current === slug) {
+            acknowledgingSlugRef.current = null;
+          }
+          return updated ? refreshSignals() : undefined;
+        })
+        .catch((error: unknown) => {
+          if (acknowledgingSlugRef.current === slug) {
+            acknowledgingSlugRef.current = null;
+          }
+          console.error(
+            'Could not acknowledge assignment or refresh signals:',
+            error,
+          );
+          setAcknowledgeError(t('errorOhSnap'));
+        });
+    },
+    [acknowledgeCoherenceAssignment, person?.id, refreshSignals, t],
+  );
+
+  React.useEffect(() => {
+    if (!humanChatEnabled) return;
+    const slug = activeSignalSlug?.trim();
+    if (!slug) return;
+    const signal = (signals ?? []).find((item) => item.slug?.trim() === slug);
+    if (!signal) return;
+    acknowledgeAssignmentIfNeeded(signal);
+  }, [
+    acknowledgeAssignmentIfNeeded,
+    activeSignalSlug,
+    humanChatEnabled,
+    signals,
+  ]);
+
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
+      acknowledgeAssignmentIfNeeded(signal);
       const slug = signal.slug?.trim() ?? '';
       openCoherenceChat(
         signal.roomId ?? null,
@@ -230,7 +331,7 @@ export function CoherenceBlock({
         router.replace(href, { scroll: false });
       }
     },
-    [openCoherenceChat, pathname, router],
+    [acknowledgeAssignmentIfNeeded, openCoherenceChat, pathname, router],
   );
 
   const handleRevealArchivedSignal = React.useCallback(() => {
@@ -311,9 +412,13 @@ export function CoherenceBlock({
           hideArchived={hideArchived}
           onHideArchivedChange={setHideArchived}
           workflowSettingsHref={workflowSettingsHref}
+          createSignalHref={
+            canMutate ? `/${lang}/dho/${spaceSlug}/coherence/new-signal` : null
+          }
           className="lg:shrink-0"
         />
       </div>
+      {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
       <SignalSection
         basePath={chatBasePath}
         web3SpaceId={space?.web3SpaceId ?? 0}
@@ -324,6 +429,11 @@ export function CoherenceBlock({
         refresh={refresh}
         onSignalClick={onSignalClick}
         activeSignalSlug={activeSignalSlug}
+        boardFilters={boardFilters}
+        onBoardFiltersChange={handleBoardFiltersChange}
+        existingTags={existingTags}
+        members={spaceMembers}
+        currentPersonId={person?.id}
       />
     </div>
   );

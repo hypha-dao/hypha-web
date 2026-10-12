@@ -549,6 +549,12 @@ function EditorToolbar({ editor, translation }: EditorToolbarProps) {
   );
 }
 
+export type RichTextMentionCandidate = {
+  id: string;
+  label: string;
+  href: string;
+};
+
 export interface RichTextEditorProps {
   /** Controlled markdown value stored in forms / API. */
   markdown?: string;
@@ -573,6 +579,7 @@ export interface RichTextEditorProps {
    * a key is missing from the consumer dictionary.
    */
   translation?: EditorTranslationFn;
+  mentionCandidates?: RichTextMentionCandidate[];
 }
 
 export function RichTextEditor({
@@ -586,10 +593,13 @@ export function RichTextEditor({
   'aria-labelledby': ariaLabelledBy,
   editorRef,
   translation,
+  mentionCandidates,
 }: RichTextEditorProps) {
   const lastEmittedMarkdown = useRef(markdown);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
 
   const resolvedAriaLabel =
     ariaLabel ??
@@ -635,6 +645,16 @@ export function RichTextEditor({
       const next = ed.getMarkdown();
       lastEmittedMarkdown.current = next;
       onChangeRef.current?.(next);
+      const { from } = ed.state.selection;
+      const textBefore = ed.state.doc.textBetween(
+        Math.max(0, from - 40),
+        from,
+        '\n',
+        '\n',
+      );
+      const match = /(?:^|[\s(])@([^\s@]*)$/.exec(textBefore);
+      setMentionQuery(match?.[1] ?? null);
+      setMentionIndex(0);
     },
   });
 
@@ -690,6 +710,42 @@ export function RichTextEditor({
     lastEmittedMarkdown.current = markdown;
   }, [editor, markdown]);
 
+  const mentionMatches = (mentionCandidates ?? [])
+    .filter((candidate) => {
+      if (mentionQuery == null) return false;
+      const q = mentionQuery.toLowerCase();
+      return (
+        candidate.label.toLowerCase().includes(q) ||
+        candidate.id.toLowerCase().includes(q)
+      );
+    })
+    .slice(0, 8);
+
+  const insertMention = (candidate: RichTextMentionCandidate) => {
+    if (!editor) return;
+    const { from } = editor.state.selection;
+    const textBefore = editor.state.doc.textBetween(
+      Math.max(0, from - 40),
+      from,
+      '\n',
+      '\n',
+    );
+    const match = /@([^\s@]*)$/.exec(textBefore);
+    const deleteFrom = match ? from - match[0].length : from;
+    editor
+      .chain()
+      .focus()
+      .deleteRange({ from: deleteFrom, to: from })
+      .insertContent({
+        type: 'text',
+        text: `@${candidate.label}`,
+        marks: [{ type: 'link', attrs: { href: candidate.href } }],
+      })
+      .insertContent(' ')
+      .run();
+    setMentionQuery(null);
+  };
+
   return (
     <div
       className={cn(
@@ -702,7 +758,63 @@ export function RichTextEditor({
       {editor && editable ? (
         <EditorToolbar editor={editor} translation={translation} />
       ) : null}
-      <EditorContent editor={editor} className="richtext-editor-content-host" />
+      <EditorContent
+        editor={editor}
+        className="richtext-editor-content-host"
+        onKeyDown={(event) => {
+          if (mentionQuery == null || mentionMatches.length === 0) return;
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setMentionIndex((index) => (index + 1) % mentionMatches.length);
+            return;
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setMentionIndex(
+              (index) =>
+                (index - 1 + mentionMatches.length) % mentionMatches.length,
+            );
+            return;
+          }
+          if (event.key === 'Enter' || event.key === 'Tab') {
+            event.preventDefault();
+            const selected = mentionMatches[mentionIndex] ?? mentionMatches[0];
+            if (selected) insertMention(selected);
+            return;
+          }
+          if (event.key === 'Escape') {
+            setMentionQuery(null);
+          }
+        }}
+      />
+      {mentionQuery != null && mentionMatches.length > 0 ? (
+        <ul
+          role="listbox"
+          className="absolute bottom-2 left-2 z-20 max-h-48 w-[min(20rem,calc(100%-1rem))] overflow-auto rounded-md border border-border bg-popover p-1 text-sm shadow-md"
+        >
+          {mentionMatches.map((candidate, index) => (
+            <li key={candidate.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={index === mentionIndex}
+                className={cn(
+                  'flex w-full rounded-sm px-2 py-1.5 text-left',
+                  index === mentionIndex
+                    ? 'bg-muted text-foreground'
+                    : 'text-foreground',
+                )}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  insertMention(candidate);
+                }}
+              >
+                @{candidate.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

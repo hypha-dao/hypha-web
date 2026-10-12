@@ -151,6 +151,17 @@ interface MultiSelectProps
   className?: string;
 
   /**
+   * Typography for trigger, placeholder, selected chips, and option labels.
+   * Use to override Button uppercase / tracking / semibold on the default trigger.
+   */
+  textClassName?: string;
+
+  /**
+   * Typography for grouped option headings (tag-picker categories).
+   */
+  headingClassName?: string;
+
+  /**
    * Optional copy overrides for UI text.
    */
   labels?: {
@@ -160,9 +171,15 @@ interface MultiSelectProps
     mostUsed?: string;
     allTags?: string;
     create?: (term: string) => string;
+    createWarning?: string;
     clear?: string;
     close?: string;
   };
+
+  /**
+   * When creating a tag, return a warning (near-duplicate) to show above create.
+   */
+  getCreateWarning?: (term: string) => string | null;
 }
 
 const DEFAULT_MULTISELECT_LABELS = {
@@ -220,7 +237,10 @@ export const MultiSelect = React.forwardRef<
       allowCreate = false,
       uiStyle = 'default',
       className,
+      textClassName,
+      headingClassName,
       labels,
+      getCreateWarning,
       ...props
     },
     ref,
@@ -394,13 +414,12 @@ export const MultiSelect = React.forwardRef<
               option,
               usage: tagUsageMap[option.value.toLowerCase()] ?? 0,
             }))
-            .filter(({ usage }) => usage > 0)
             .sort((a, b) => {
               if (a.usage !== b.usage) return b.usage - a.usage;
               return a.option.label.localeCompare(b.option.label);
             })
             .map(({ option }) => option);
-          return rankedByUsage.slice(0, MAX_TAG_PICKER_RESULTS);
+          return rankedByUsage.slice(0, 24);
         }
 
         const startsWithMatches: typeof selectableOptions = [];
@@ -489,11 +508,14 @@ export const MultiSelect = React.forwardRef<
     const renderedOptions =
       uiStyle === 'tag-picker'
         ? trimmedSearchValue.length === 0
-          ? []
+          ? filteredOptions
           : groupedFilteredTagPickerOptions.length > 0
           ? groupedFilteredTagPickerOptions
           : filteredOptions
         : filteredOptions;
+    const createWarning = canCreateOption
+      ? getCreateWarning?.(trimmedSearchValue) ?? null
+      : null;
 
     const focusCommandItem = React.useCallback(
       (direction: 'first' | 'last') => {
@@ -539,7 +561,6 @@ export const MultiSelect = React.forwardRef<
       if (event.key === 'ArrowDown' && uiStyle === 'tag-picker') {
         event.preventDefault();
         if (!isPopoverOpen) {
-          if (trimmedSearchValue.length === 0) return;
           setIsPopoverOpen(true);
           requestAnimationFrame(() => focusCommandItem('first'));
           return;
@@ -550,7 +571,6 @@ export const MultiSelect = React.forwardRef<
       if (event.key === 'ArrowUp' && uiStyle === 'tag-picker') {
         event.preventDefault();
         if (!isPopoverOpen) {
-          if (trimmedSearchValue.length === 0) return;
           setIsPopoverOpen(true);
           requestAnimationFrame(() => focusCommandItem('last'));
           return;
@@ -570,14 +590,6 @@ export const MultiSelect = React.forwardRef<
       <Popover
         open={isPopoverOpen}
         onOpenChange={(open) => {
-          if (
-            uiStyle === 'tag-picker' &&
-            open &&
-            searchValue.trim().length === 0
-          ) {
-            setIsPopoverOpen(false);
-            return;
-          }
           setIsPopoverOpen(open);
         }}
         modal={modalPopover}
@@ -592,11 +604,12 @@ export const MultiSelect = React.forwardRef<
                 (props['aria-labelledby'] ? undefined : placeholder)
               }
               className={cn(
-                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-border/70 bg-background px-2 py-0 text-sm transition-colors',
+                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-border/70 bg-background px-2 py-0 transition-colors',
                 'focus-within:border-accent-8/60 focus-within:ring-1 focus-within:ring-accent-8/45',
                 isPopoverOpen
                   ? 'rounded-t-none border-t border-t-border/55 shadow-[inset_0_1px_0_0_color-mix(in_srgb,var(--color-foreground)_7%,transparent)]'
                   : '',
+                textClassName ?? 'text-sm',
                 className,
               )}
               onClick={() => {
@@ -611,7 +624,10 @@ export const MultiSelect = React.forwardRef<
                     variant="outline"
                     colorVariant="neutral"
                     size={1}
-                    className={cn(multiSelectVariants({ variant }))}
+                    className={cn(
+                      multiSelectVariants({ variant }),
+                      textClassName,
+                    )}
                     style={{ animationDuration: `${animation}s` }}
                   >
                     <span className="shrink-0 text-muted-foreground">#</span>
@@ -640,6 +656,7 @@ export const MultiSelect = React.forwardRef<
                   className={cn(
                     multiSelectVariants({ variant }),
                     'max-w-none px-1.5 py-0.5 text-muted-foreground',
+                    textClassName,
                   )}
                   style={{ animationDuration: `${animation}s` }}
                 >
@@ -678,22 +695,21 @@ export const MultiSelect = React.forwardRef<
                 value={searchValue}
                 onChange={(event) => {
                   const nextValue = event.currentTarget.value;
-                  const nextTrimmedValue = nextValue.trim();
                   setSearchValue(nextValue);
-                  if (nextTrimmedValue.length === 0) {
-                    setIsPopoverOpen(false);
-                    return;
-                  }
                   setIsPopoverOpen(true);
                 }}
-                onKeyDown={handleInputKeyDown}
                 onFocus={(event) => {
                   props.onFocus?.(
                     event as unknown as React.FocusEvent<HTMLButtonElement>,
                   );
+                  setIsPopoverOpen(true);
                 }}
+                onKeyDown={handleInputKeyDown}
                 placeholder={searchPlaceholder}
-                className="h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                className={cn(
+                  'h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-foreground outline-none placeholder:text-muted-foreground',
+                  textClassName ?? 'text-sm',
+                )}
                 disabled={props.disabled}
               />
             </div>
@@ -707,7 +723,8 @@ export const MultiSelect = React.forwardRef<
               {...props}
               onClick={handleTogglePopover}
               className={cn(
-                'flex w-full p-1 rounded-md border min-h-11 h-auto items-center justify-between [&_svg]:pointer-events-auto',
+                'flex h-auto min-h-11 w-full items-center justify-between rounded-md border p-1 [&_svg]:pointer-events-auto',
+                textClassName,
                 className,
               )}
             >
@@ -723,7 +740,10 @@ export const MultiSelect = React.forwardRef<
                           variant="outline"
                           colorVariant="neutral"
                           size={1}
-                          className={cn(multiSelectVariants({ variant }))}
+                          className={cn(
+                            multiSelectVariants({ variant }),
+                            textClassName,
+                          )}
                           style={{ animationDuration: `${animation}s` }}
                         >
                           {IconComponent && (
@@ -754,6 +774,7 @@ export const MultiSelect = React.forwardRef<
                         className={cn(
                           multiSelectVariants({ variant }),
                           'max-w-none text-muted-foreground',
+                          textClassName,
                         )}
                         style={{ animationDuration: `${animation}s` }}
                       >
@@ -793,7 +814,12 @@ export const MultiSelect = React.forwardRef<
                 </div>
               ) : (
                 <div className="flex items-center justify-between w-full mx-auto">
-                  <span className="text-sm text-muted-foreground mx-3">
+                  <span
+                    className={cn(
+                      'mx-3 text-muted-foreground',
+                      textClassName ?? 'text-sm',
+                    )}
+                  >
                     {placeholder}
                   </span>
                   <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
@@ -841,19 +867,6 @@ export const MultiSelect = React.forwardRef<
                   : resolvedLabels.noResults}
               </CommandEmpty>
               <CommandGroup>
-                {canCreateOption ? (
-                  <>
-                    <CommandItem
-                      key={`create-${searchValue}`}
-                      value={`create-${searchValue.trim().toLowerCase()}`}
-                      onSelect={() => toggleOption(searchValue.trim())}
-                      className="cursor-pointer"
-                    >
-                      <span>{resolvedLabels.create(searchValue.trim())}</span>
-                    </CommandItem>
-                    <CommandSeparator />
-                  </>
-                ) : null}
                 {allowToggleAll && uiStyle !== 'tag-picker' && (
                   <>
                     <CommandItem
@@ -884,7 +897,11 @@ export const MultiSelect = React.forwardRef<
                     return (
                       <div
                         key={`typed-group-heading-${index}`}
-                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                        className={cn(
+                          'px-2 pb-1 pt-2 text-muted-foreground/55',
+                          headingClassName ??
+                            'text-1 font-normal leading-[calc(16/12)] tracking-normal normal-case',
+                        )}
                       >
                         <span className="text-muted-foreground/35">• </span>
                         <span>{option.label}</span>
@@ -895,7 +912,11 @@ export const MultiSelect = React.forwardRef<
                     return (
                       <div
                         key={`group-heading-${index}`}
-                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                        className={cn(
+                          'px-2 pb-1 pt-2 text-muted-foreground/55',
+                          headingClassName ??
+                            'text-1 font-normal leading-[calc(16/12)] tracking-normal normal-case',
+                        )}
                       >
                         <span className="text-muted-foreground/35">• </span>
                         <span>{option.label}</span>
@@ -931,7 +952,9 @@ export const MultiSelect = React.forwardRef<
                       {option.icon && (
                         <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                       )}
-                      <span className="flex-1 truncate">{option.label}</span>
+                      <span className={cn('flex-1 truncate', textClassName)}>
+                        {option.label}
+                      </span>
                       {uiStyle === 'tag-picker' ? (
                         <CheckIcon
                           className={cn(
@@ -943,6 +966,24 @@ export const MultiSelect = React.forwardRef<
                     </CommandItem>
                   );
                 })}
+                {canCreateOption ? (
+                  <>
+                    {renderedOptions.length > 0 ? <CommandSeparator /> : null}
+                    {createWarning ? (
+                      <div className="px-2 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+                        {createWarning}
+                      </div>
+                    ) : null}
+                    <CommandItem
+                      key={`create-${searchValue}`}
+                      value={`create-${searchValue.trim().toLowerCase()}`}
+                      onSelect={() => toggleOption(searchValue.trim())}
+                      className="cursor-pointer"
+                    >
+                      <span>{resolvedLabels.create(searchValue.trim())}</span>
+                    </CommandItem>
+                  </>
+                ) : null}
               </CommandGroup>
               {uiStyle === 'default' ? (
                 <>
