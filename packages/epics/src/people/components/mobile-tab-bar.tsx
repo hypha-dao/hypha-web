@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import useSWR from 'swr';
@@ -36,6 +36,7 @@ import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
+import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher-menu';
 import { MemberHomeQuickCreate } from './member-home-quick-create';
 import { useConversationUnreadCount } from './my-connections';
 
@@ -106,7 +107,6 @@ export function MobileTabBar({
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
-  const router = useRouter();
   const { jwt } = useJwt();
   const { person } = useMe();
   const { isAuthenticated, logout } = useAuthentication();
@@ -274,7 +274,6 @@ export function MobileTabBar({
   const connectionsHref = `/${lang}/connections`;
   const walletHref = `/${lang}/my-wallet`;
   const networkHref = `/${lang}/network`;
-  const spacesHref = `/${lang}/my-spaces`;
   const profileHref = person?.slug
     ? `/${lang}/profile/${person.slug}`
     : `/${lang}/profile/signup`;
@@ -291,12 +290,6 @@ export function MobileTabBar({
     !spacesOpen && !createOpen && segmentActive(pathname, 'my-wallet');
   const networkActive =
     !spacesOpen && !createOpen && segmentActive(pathname, 'network');
-
-  function openSpace(slug: string) {
-    sessionStorage.setItem(SPACE_SLIDE_KEY, '1');
-    setSpacesOpen(false);
-    router.push(`/${lang}/dho/${slug}/overview`);
-  }
 
   if (!mounted) return null;
 
@@ -316,59 +309,11 @@ export function MobileTabBar({
         aria-hidden={!spacesOpen}
         inert={!spacesOpen}
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <p
-            className="text-3 text-foreground"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {t('mySpaces')}
-          </p>
-          <Link
-            href={spacesHref}
-            className="text-1 text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            onClick={() => setSpacesOpen(false)}
-          >
-            {t('mobileSpacesAll')}
-          </Link>
-        </div>
-        <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto">
-          {(home?.spaces ?? []).length === 0 ? (
-            <p className="px-4 py-6 text-2 text-muted-foreground">
-              {t('mobileSpacesEmpty')}
-            </p>
-          ) : (
-            <ul>
-              {(home?.spaces ?? []).map((space) => (
-                <li key={space.id} className="border-b border-border">
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-accent-2"
-                    onClick={() => openSpace(space.slug)}
-                  >
-                    {space.logoUrl ? (
-                      <img
-                        src={space.logoUrl}
-                        alt=""
-                        className="shrink-0 rounded-full object-cover"
-                        style={{ width: 36, height: 36 }}
-                      />
-                    ) : (
-                      <span
-                        className="grid shrink-0 place-items-center border border-border text-1 text-muted-foreground"
-                        style={{ width: 36, height: 36 }}
-                      >
-                        {space.title.slice(0, 1)}
-                      </span>
-                    )}
-                    <span className="min-w-0 flex-1 truncate text-2 text-foreground">
-                      {space.title}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <MySpacesSwitcherMenu
+          open={spacesOpen}
+          onSelect={() => setSpacesOpen(false)}
+          className="min-h-0 flex-1"
+        />
       </div>
 
       <div
@@ -434,7 +379,7 @@ export function MobileTabBar({
       >
         {secondLevel.length > 0 ? (
           <div
-            className="flex overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex overflow-x-auto border-b border-border bg-background-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ height: SUB_NAV_PX }}
             aria-label={spaceSlug ? t('mySpaces') : t('network')}
           >
