@@ -4,6 +4,7 @@ import {
   getAllSpaces,
   getNetworkGrowth,
   listNetworkSpaceRanks,
+  readSpaceCapitals,
   resolveCreatorMapCoordinates,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
@@ -31,17 +32,24 @@ type PageProps = {
   }>;
 };
 
-export default function Index(props: PageProps) {
-  return (
-    <Container className="flex flex-col gap-9 py-9">
-      <div className="flex min-w-0 flex-col gap-9">
-        <NetworkPageTitle />
-        <Suspense fallback={<NetworkIndexFallback />}>
-          <NetworkSpaces {...props} />
-        </Suspense>
-      </div>
-    </Container>
+export default async function Index(props: PageProps) {
+  const enableNetworkMap = await getEnableNetworkMapAsync();
+  const body = (
+    <div className="flex min-w-0 flex-col gap-9">
+      <NetworkPageTitle />
+      <Suspense fallback={<NetworkIndexFallback />}>
+        <NetworkSpaces {...props} />
+      </Suspense>
+    </div>
   );
+
+  if (!enableNetworkMap) {
+    return <Container className="flex flex-col gap-9 py-9">{body}</Container>;
+  }
+
+  // A centered max-width leaves a gutter on the right of the side column.
+  // Padding stays on the left so the column meets the edge of the page.
+  return <div className="w-full min-w-0 py-9 pl-4 sm:pl-5">{body}</div>;
 }
 
 async function NetworkSpaces(props: PageProps) {
@@ -92,6 +100,22 @@ async function NetworkSpaces(props: PageProps) {
       )
     : {};
 
+  const spaceCapitals = enableNetworkMap
+    ? Object.fromEntries(
+        [
+          ...(
+            await readSpaceCapitals(
+              db,
+              spaces.map((space) => space.id),
+            ).catch((error: unknown) => {
+              console.error('Failed to load space capitals:', error);
+              return new Map();
+            })
+          ).entries(),
+        ].map(([id, value]) => [String(id), value]),
+      )
+    : {};
+
   const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
   // Pre-sort on the server so the first paint already matches the order the
@@ -111,6 +135,7 @@ async function NetworkSpaces(props: PageProps) {
       networkGrowth={networkGrowth}
       creatorMapPins={creatorMapPins}
       networkRanks={ranksResult}
+      spaceCapitals={spaceCapitals}
     />
   );
 }
