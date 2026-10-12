@@ -475,29 +475,24 @@ export function ExploreSpaces({
     />
   ) : null;
 
-  const sidePanel = enableNetworkMap ? (
-    <NetworkSidePanel
-      lang={lang}
-      selectedSpace={selectedSpace}
-      circles={
-        selectedSpace
-          ? nonArchivedSpaces.filter(
-              (space) => space.parentId === selectedSpace.id,
-            )
-          : []
-      }
-      capitals={
-        selectedSpace
-          ? spaceCapitals?.[String(selectedSpace.id)] ?? {
-              seeks: [],
-              offers: [],
-            }
-          : null
-      }
-      onSelectRank={selectRank}
-      ranks={showRanking ? [] : networkRanks}
-    />
-  ) : null;
+  const sidePanel =
+    enableNetworkMap && selectedSpace ? (
+      <NetworkSidePanel
+        lang={lang}
+        selectedSpace={selectedSpace}
+        circles={nonArchivedSpaces.filter(
+          (space) => space.parentId === selectedSpace.id,
+        )}
+        capitals={
+          spaceCapitals?.[String(selectedSpace.id)] ?? {
+            seeks: [],
+            offers: [],
+          }
+        }
+        onSelectRank={selectRank}
+        ranks={showRanking ? [] : networkRanks}
+      />
+    ) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
@@ -506,7 +501,7 @@ export function ExploreSpaces({
       <div
         className={cn(
           'grid min-w-0 items-start',
-          enableNetworkMap ? 'network-side-grid gap-6' : 'gap-6',
+          sidePanel ? 'network-side-grid gap-6' : 'gap-6',
         )}
       >
         <div className="flex min-w-0 flex-col">
