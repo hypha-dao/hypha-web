@@ -172,7 +172,7 @@
     "callCreator": "Appeler {name}",
     "askContext": "Demander plus de contexte",
     "notNow": "Pas maintenant",
-    "noThanks": "Non merci",
+    "noThanks": "Ne plus afficher",
     "showMore": "Voir plus",
     "helpChosen": "Je peux aider pour {title}.",
     "shareChosen": "Je peux partager quelque chose pour {title}.",
