@@ -110,7 +110,8 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
   const selectedSlug = focus?.slug ?? spaceSlug;
   const selectedTitle = focus?.name ?? currentSpace?.title ?? '';
   const selectedSpace =
-    selectedSlug === currentSpace?.slug ? currentSpace : undefined;
+    nonArchivedSpaces.find((space) => space.slug === selectedSlug) ??
+    (selectedSlug === currentSpace?.slug ? currentSpace : undefined);
   const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
     spaceSlug: selectedSlug,
     space: selectedSpace,
@@ -180,14 +181,17 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
           </div>
         }
       />
-      <SpaceVisualization
-        data={hierarchy}
-        currentSpaceId={currentSpace?.id}
-        enableHoverActions={false}
-        showNodeLabels
-        ariaLabel={t('diagram.ariaLabel')}
-        onVisibleSpacesChange={onVisibleSpacesChange}
-      />
+      <div className="relative h-[32rem] w-full">
+        <SpaceVisualization
+          layout="fill"
+          data={hierarchy}
+          currentSpaceId={currentSpace?.id}
+          enableHoverActions={false}
+          showNodeLabels
+          ariaLabel={t('diagram.ariaLabel')}
+          onVisibleSpacesChange={onVisibleSpacesChange}
+        />
+      </div>
     </div>
   );
 }

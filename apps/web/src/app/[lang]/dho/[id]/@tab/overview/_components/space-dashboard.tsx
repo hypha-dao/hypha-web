@@ -1,14 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, type ReactNode } from 'react';
+import { Children, useMemo, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
   SpaceAttention,
   SpaceEnergySection,
-  SpacePendingRewardsSection,
+  getAgentAvatarInitials,
+  tagGroupAccentClass,
+  useMobilizedAiAgents,
   useSpaceDocumentsWithStatuses,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
@@ -34,14 +36,20 @@ function Panel({
   href,
   openLabel,
   children,
+  className,
 }: {
   title: string;
   href: string;
   openLabel: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="flex min-w-0 flex-col border border-border bg-background">
+    <section
+      className={`flex min-w-0 flex-col border border-border bg-background ${
+        className ?? ''
+      }`}
+    >
       <div className="flex items-baseline justify-between gap-4 px-4 pt-4">
         <h2
           className="text-3 text-foreground"
@@ -58,6 +66,28 @@ function Panel({
       </div>
       <div className="mt-3 min-w-0">{children}</div>
     </section>
+  );
+}
+
+function MembershipPreview({
+  title,
+  empty,
+  children,
+}: {
+  title: string;
+  empty: string;
+  children: ReactNode;
+}) {
+  const items = Children.toArray(children).filter(Boolean);
+  return (
+    <div>
+      <p className="text-1 text-neutral-11">{title}</p>
+      {items.length === 0 ? (
+        <p className="mt-2 text-1 text-neutral-11">{empty}</p>
+      ) : (
+        <div className="mt-2 flex flex-wrap gap-3">{items}</div>
+      )}
+    </div>
   );
 }
 
@@ -80,7 +110,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('OverviewOps');
   const tCommon = useTranslations('Common');
   const tNav = useTranslations('SelectNavigationAction');
-  const tTreasury = useTranslations('TreasuryTab');
+  const tCoherence = useTranslations('CoherenceTab');
   const { space } = useSpaceBySlug(spaceSlug);
   const { data: energy } = useSpaceEnergy();
   const {
@@ -88,11 +118,15 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     isLoading: signalsLoading,
     error: signalsError,
   } = useFindCoherences({ spaceSlug });
-  const { persons, isLoading: membersLoading } = useMembers({
+  const {
+    persons,
+    spaces: memberSpaces,
+    isLoading: membersLoading,
+  } = useMembers({
     spaceSlug,
-    page: 1,
-    pageSize: 8,
+    paginationDisabled: true,
   });
+  const agents = useMobilizedAiAgents(spaceSlug);
   const { documents, isLoading: updatesLoading } =
     useSpaceDocumentsWithStatuses({
       spaceSlug,
@@ -121,7 +155,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   }, [documents]);
 
   const people = persons.data ?? [];
-  const memberTotal = persons.pagination?.total ?? people.length;
+  const spaces = memberSpaces.data ?? [];
 
   const home = `/${locale}/dho/${spaceSlug}`;
 
@@ -195,15 +229,13 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         >
           {membersLoading ? (
             <RowsSkeleton />
-          ) : people.length === 0 ? (
-            <Quiet>{t('membersEmpty')}</Quiet>
           ) : (
-            <div className="flex flex-col gap-4 px-4 py-4">
-              <p className="text-4 font-medium tabular-nums text-foreground">
-                {memberTotal}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {people.map((person) => {
+            <div className="flex flex-col gap-5 px-4 pb-4">
+              <MembershipPreview
+                title={tCommon('Members')}
+                empty={tNav('navigation.noIndividuals')}
+              >
+                {people.slice(0, 8).map((person) => {
                   const name = personLabel(person);
                   return (
                     <Link
@@ -227,12 +259,64 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
                     </Link>
                   );
                 })}
-              </div>
+              </MembershipPreview>
+              <MembershipPreview
+                title={tCommon('Spaces')}
+                empty={tNav('navigation.noMemberSpaces')}
+              >
+                {spaces.slice(0, 8).map((memberSpace) => (
+                  <Link
+                    key={memberSpace.id}
+                    href={
+                      memberSpace.slug
+                        ? `/${locale}/dho/${memberSpace.slug}/overview`
+                        : `${home}/members`
+                    }
+                    className="flex min-w-0 items-center gap-2"
+                  >
+                    <PersonAvatar
+                      avatarSrc={memberSpace.logoUrl ?? undefined}
+                      userName={memberSpace.title}
+                      size="sm"
+                      shape="circle"
+                    />
+                    <span className="max-w-[9rem] truncate text-1 text-foreground">
+                      {memberSpace.title}
+                    </span>
+                  </Link>
+                ))}
+              </MembershipPreview>
+              <MembershipPreview
+                title={tNav('navigation.agents')}
+                empty={tNav('navigation.noAgents')}
+              >
+                {agents.slice(0, 8).map((agent) => {
+                  const name = tCoherence(agent.role);
+                  return (
+                    <span
+                      key={agent.id}
+                      className="flex min-w-0 items-center gap-2"
+                    >
+                      <span
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-full ${tagGroupAccentClass(
+                          agent.tagGroup,
+                        )}`}
+                      >
+                        {getAgentAvatarInitials(name)}
+                      </span>
+                      <span className="max-w-[9rem] truncate text-1 text-foreground">
+                        {name}
+                      </span>
+                    </span>
+                  );
+                })}
+              </MembershipPreview>
             </div>
           )}
         </Panel>
 
         <Panel
+          className="lg:col-span-2"
           title={tNav('ecosystem')}
           href={`${home}/ecosystem-navigation`}
           openLabel={t('open')}
@@ -240,21 +324,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           <EcosystemDiagram spaceSlug={spaceSlug} />
         </Panel>
       </div>
-
-      {space?.web3SpaceId != null ? (
-        <Panel
-          title={tTreasury('rewardsSection.title')}
-          href={`${home}/rewards`}
-          openLabel={t('open')}
-        >
-          <div className="px-4 py-4">
-            <SpacePendingRewardsSection
-              web3SpaceId={space.web3SpaceId}
-              compactHeader
-            />
-          </div>
-        </Panel>
-      ) : null}
     </div>
   );
 }
