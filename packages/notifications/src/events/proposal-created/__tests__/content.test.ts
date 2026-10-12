@@ -129,18 +129,22 @@ describe('buildProposalCreatedContent — email template', () => {
 
   it('push: uses the push template (creator) and sets the launch url', () => {
     vi.stubEnv('PUSH_TEMPLATE_PROPOSAL_CREATED_CREATOR', 'push-creator');
-    const result = buildProposalCreatedContent(event, {
-      personSlug: 'alice',
-      displayName: 'Alice',
-      role: 'creator',
-      data,
-    });
+    const result = buildProposalCreatedContent(
+      { ...event, payload: { proposalLabel: 'Invite' } },
+      {
+        personSlug: 'alice',
+        displayName: 'Alice',
+        role: 'creator',
+        data,
+      },
+    );
     expect(result.content.push).toEqual({
       kind: 'template',
       templateId: 'push-creator',
       customData: {
         space_title: 'Hypha Energy',
         proposal_title: 'Fund the thing',
+        proposal_kind: 'Invite',
         url: data.url,
       },
       url: data.url,

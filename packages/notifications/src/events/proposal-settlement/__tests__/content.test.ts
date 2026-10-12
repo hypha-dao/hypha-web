@@ -156,7 +156,7 @@ describe('buildProposalSettlementContent — email template', () => {
     const result = buildProposalSettlementContent(evt, {
       personSlug: 'p',
       role,
-      data: linkData,
+      data: { ...linkData, proposalLabel: 'Invite' },
     });
     expect(result.content.push).toEqual({
       kind: 'template',
@@ -164,6 +164,7 @@ describe('buildProposalSettlementContent — email template', () => {
       customData: {
         space_title: 'Hypha Energy',
         proposal_title: 'Fund the thing',
+        proposal_kind: 'Invite',
         url: linkData.url,
       },
       url: linkData.url,
