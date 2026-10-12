@@ -18,11 +18,31 @@ import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import { MemberHomeThreadCard } from '../../people/components/member-home-thread-card';
 import { resolveSpaceDisplayLogoUrl } from '../utils/resolve-space-display-logo-url';
 
+function stripTags(value: string) {
+  let out = '';
+  let index = 0;
+  while (index < value.length) {
+    const open = value.indexOf('<', index);
+    if (open === -1) {
+      out += value.slice(index);
+      break;
+    }
+    out += value.slice(index, open);
+    const close = value.indexOf('>', open + 1);
+    if (close === -1) {
+      out += value.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out;
+}
+
 function plainSummary(value: string | null | undefined) {
-  return (value ?? '')
+  return stripTags(value ?? '')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
-    .replace(/<[^>]+>/g, ' ')
     .replace(/[*_`>#]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

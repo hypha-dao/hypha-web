@@ -34,9 +34,29 @@ export type NetworkRailSpace = {
 
 type TreasuryAsset = { symbol: string; value: number };
 
+function stripTags(value: string) {
+  let out = '';
+  let index = 0;
+  while (index < value.length) {
+    const open = value.indexOf('<', index);
+    if (open === -1) {
+      out += value.slice(index);
+      break;
+    }
+    out += value.slice(index, open);
+    const close = value.indexOf('>', open + 1);
+    if (close === -1) {
+      out += value.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out;
+}
+
 function excerpt(value: string | null | undefined) {
-  const text = (value ?? '')
-    .replace(/<[^>]+>/g, ' ')
+  const text = stripTags(value ?? '')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= 220) return text;
@@ -133,7 +153,12 @@ function SpaceSelect({
   return (
     <select
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => {
+        const match = options.find(
+          (space) => space.slug === event.target.value,
+        );
+        if (match) onChange(match.slug);
+      }}
       className="h-10 w-full border border-border bg-background px-2 text-2 text-foreground"
     >
       {options.map((space) => (
@@ -544,12 +569,11 @@ function WeaveCard({
         <select
           value=""
           onChange={(event) => {
-            const slug = event.target.value;
-            const space = bySlug(slug);
+            const space = bySlug(event.target.value);
             if (!space) return;
             setMore((current) => [
               ...current,
-              { slug, gives: parseCapitalKeys(space.offers) },
+              { slug: space.slug, gives: parseCapitalKeys(space.offers) },
             ]);
           }}
           className="h-10 w-full border border-border bg-background px-2 text-2 text-foreground"
@@ -568,13 +592,15 @@ function WeaveCard({
         </p>
         <p className="mt-2 text-1 leading-relaxed text-neutral-11">{advice}</p>
       </div>
-      <Button asChild className="w-full">
-        <Link
-          href={`/${lang}/dho/${first}/agreements/create/space-to-space-membership`}
-        >
-          {t('proposeAgreement')}
-        </Link>
-      </Button>
+      {/^[a-z0-9_-]{1,80}$/i.test(first) ? (
+        <Button asChild className="w-full">
+          <Link
+            href={`/${lang}/dho/${first}/agreements/create/space-to-space-membership`}
+          >
+            {t('proposeAgreement')}
+          </Link>
+        </Button>
+      ) : null}
     </Shell>
   );
 }
@@ -620,7 +646,7 @@ function ShareCard({
       : t('shareSignalBody');
 
   const submit = () => {
-    if (!slug || !text.trim()) return;
+    if (!slug || !/^[a-z0-9_-]{1,80}$/i.test(slug) || !text.trim()) return;
     const params = new URLSearchParams();
     params.set(
       'type',

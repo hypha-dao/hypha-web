@@ -24,9 +24,29 @@ type TreasuryAsset = {
   value: number;
 };
 
+function stripTags(value: string) {
+  let out = '';
+  let index = 0;
+  while (index < value.length) {
+    const open = value.indexOf('<', index);
+    if (open === -1) {
+      out += value.slice(index);
+      break;
+    }
+    out += value.slice(index, open);
+    const close = value.indexOf('>', open + 1);
+    if (close === -1) {
+      out += value.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out;
+}
+
 function excerpt(value: string | null | undefined) {
-  const text = (value ?? '')
-    .replace(/<[^>]+>/g, ' ')
+  const text = stripTags(value ?? '')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= 220) return text;
