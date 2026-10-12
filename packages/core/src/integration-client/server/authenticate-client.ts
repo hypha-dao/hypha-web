@@ -37,7 +37,8 @@ export function readClientKeyFromRequest(request: Request): string | undefined {
 }
 
 /**
- * Verify an inbound client key and the scope the operation requires. Lookup is
+ * Verify an inbound client key and, when given, the scope the operation
+ * requires (omit it for calls that only need an approved client). Lookup is
  * by SHA-256 digest (no secret in a SQL comparison), then re-compared in
  * constant time.
  */
@@ -45,7 +46,7 @@ export async function authenticateIntegrationClient(
   {
     request,
     requiredScope,
-  }: { request: Request; requiredScope: IntegrationClientScope },
+  }: { request: Request; requiredScope?: IntegrationClientScope },
   { db }: DbConfig,
 ): Promise<ClientAuthResult> {
   const presented = readClientKeyFromRequest(request);
@@ -86,7 +87,7 @@ export async function authenticateIntegrationClient(
   }
 
   const scopes = (row.scopes ?? []) as IntegrationClientScope[];
-  if (!scopes.includes(requiredScope)) {
+  if (requiredScope && !scopes.includes(requiredScope)) {
     return {
       ok: false,
       status: 403,
