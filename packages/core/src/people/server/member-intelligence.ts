@@ -659,6 +659,12 @@ async function spaceActivityIsOpen(
 
 async function loadMemberMovement(
   spaceRows: MemberSpaceRow[],
+  member: {
+    address: string | null;
+    name: string | null;
+    surname: string | null;
+    nickname: string | null;
+  },
   { db }: DbConfig,
 ): Promise<MemberIntelligence['movement']> {
   const spaceIds = spaceRows.map((space) => space.id);
@@ -770,6 +776,19 @@ async function loadMemberMovement(
         ? parameters.memberAddress.trim().toLowerCase()
         : '';
     const who = (address && nameByAddress.get(address)) || 'Someone';
+    const memberAddress = member.address?.trim().toLowerCase() ?? '';
+    const memberName = creatorLabel(
+      member.name,
+      member.surname,
+      member.nickname,
+    );
+    if (memberAddress && address === memberAddress) continue;
+    if (
+      memberName &&
+      who.trim().toLowerCase() === memberName.trim().toLowerCase()
+    ) {
+      continue;
+    }
     movement.push({
       id: `join-${row.id}`,
       kind: 'joined',
@@ -1583,7 +1602,17 @@ export async function getMemberIntelligence(
     ),
     movement: await readSlice(
       'movement',
-      () => loadMemberMovement(spaceRows, { db }),
+      () =>
+        loadMemberMovement(
+          spaceRows,
+          {
+            address: person.address,
+            name: person.name,
+            surname: person.surname,
+            nickname: person.nickname,
+          },
+          { db },
+        ),
       [],
     ),
   };
