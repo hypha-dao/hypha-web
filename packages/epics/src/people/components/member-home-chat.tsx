@@ -553,7 +553,7 @@ export function MemberHomeChat({
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <div
         ref={scroller}
-        className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-4"
+        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-4"
         aria-label={t('conversation')}
       >
         <div className="grid w-full gap-4">
