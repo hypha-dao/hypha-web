@@ -236,6 +236,7 @@ export function MemberHomeThreadCard({
 
   const summary = item.summary ? plainSummary(item.summary) : '';
   const leadImage = proposal?.leadImage?.trim() ?? '';
+  const actionClass = compact ? 'w-full' : 'w-fit';
 
   return (
     <section className="member-home-thread-card w-full overflow-hidden">
@@ -303,14 +304,20 @@ export function MemberHomeThreadCard({
             compact={compact}
           />
         ) : null}
-        <div className="mt-3 grid w-full grid-cols-1 gap-2">
+        <div
+          className={
+            compact
+              ? 'mt-3 grid w-full grid-cols-1 gap-2'
+              : 'mt-3 flex flex-col items-start gap-2'
+          }
+        >
           {ctas.map((cta, index) => (
             <Button
               key={cta}
               type="button"
               variant={index === 0 ? 'default' : 'outline'}
               colorVariant={index === 0 ? 'accent' : 'neutral'}
-              className="w-full"
+              className={actionClass}
               disabled={busy}
               onClick={() => onCta(cta)}
             >
@@ -322,7 +329,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="w-full"
+              className={actionClass}
               disabled={busy}
               onClick={() => {
                 void reach('chat');
@@ -336,7 +343,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="w-full"
+              className={actionClass}
               disabled={busy}
               onClick={() => ask(t('thinkChosen', { title: item.title }))}
             >
@@ -348,7 +355,7 @@ export function MemberHomeThreadCard({
               asChild
               variant="outline"
               colorVariant="neutral"
-              className="w-full"
+              className={actionClass}
             >
               <Link href={visitHref}>{t('visitSpace')}</Link>
             </Button>
@@ -358,7 +365,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="w-full"
+              className={actionClass}
               disabled={busy}
               onClick={() => ask(t('laterChosen', { title: item.title }))}
             >
@@ -370,7 +377,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="w-full"
+              className={actionClass}
               disabled={busy}
               onClick={() => ask(t('noChosen', { title: item.title }))}
             >
