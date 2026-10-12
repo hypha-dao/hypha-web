@@ -296,21 +296,21 @@ export function MemberHome({
             </dl>
           </div>
         </section>
-        <div>
+        <div className="w-full min-w-0">
           <MemberHomeSpacesWidget lang={lang} busy={home == null}>
             {home == null ? (
               <CardSkeleton />
             ) : recentSpaces.length === 0 ? (
               <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
             ) : (
-              <ul className="grid">
+              <ul className="grid w-full grid-cols-1">
                 {recentSpaces.map((space) => (
-                  <li key={space.id}>
+                  <li key={space.id} className="min-w-0">
                     <SpaceSwitcherOption
                       href={`/${lang}/dho/${space.slug}/overview`}
                       title={space.title}
                       iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
-                      className="rounded-lg px-2 py-1.5 text-1 hover:bg-background-4/70"
+                      className="rounded-none px-2 py-1.5 text-1 hover:bg-background-4/70"
                     />
                   </li>
                 ))}
@@ -912,7 +912,7 @@ function Tile({
   return (
     <section
       aria-busy={busy || undefined}
-      className="flex flex-col border border-border bg-background p-4"
+      className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2
