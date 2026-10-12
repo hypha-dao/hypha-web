@@ -4173,6 +4173,7 @@
         "postalCodePlaceholder": "bijv. 9360-529",
         "country": "Land",
         "selectCountry": "Kies een land",
+        "noCountryFound": "Geen land gevonden",
         "countryUnset": "Niet in de lijst",
         "countryAT": "Oostenrijk",
         "countryFR": "Frankrijk",

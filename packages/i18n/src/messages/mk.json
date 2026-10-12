@@ -4154,6 +4154,7 @@
         "postalCodePlaceholder": "на пр. 9360-529",
         "country": "Држава",
         "selectCountry": "Изберете држава",
+        "noCountryFound": "Не е пронајдена земја",
         "countryUnset": "Не е на списокот",
         "countryAT": "Австрија",
         "countryFR": "Франција",

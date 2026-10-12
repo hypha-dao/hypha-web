@@ -4167,6 +4167,7 @@
         "postalCodePlaceholder": "z. B. 9360-529",
         "country": "Land",
         "selectCountry": "Land auswählen",
+        "noCountryFound": "Kein Land gefunden",
         "countryUnset": "Nicht aufgeführt",
         "countryAT": "Österreich",
         "countryFR": "Frankreich",

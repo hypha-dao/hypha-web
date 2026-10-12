@@ -4172,6 +4172,7 @@
         "postalCodePlaceholder": "f.eks. 9360-529",
         "country": "Land",
         "selectCountry": "Velg et land",
+        "noCountryFound": "Ingen land funnet",
         "countryUnset": "Ikke oppført",
         "countryAT": "Østerrike",
         "countryFR": "Frankrike",

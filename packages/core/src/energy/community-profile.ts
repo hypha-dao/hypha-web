@@ -2,6 +2,9 @@ import {
   ENERGY_BASE_PURPOSES,
   type EnergyBasePurpose,
 } from './client/contracts';
+import { ENERGY_COMMUNITY_COUNTRIES } from './countries';
+
+export { ENERGY_COMMUNITY_COUNTRIES };
 
 /**
  * What Hypha can write onto Zek's `mgmt.communities` when an Enable Energy
@@ -26,30 +29,19 @@ export const EMS_OBJECTIVE_INDEX: Record<EmsObjective, number> = {
   BatteryFirst: 2,
 };
 
-export const ENERGY_COMMUNITY_COUNTRIES = [
-  { iso: 'AT', timeZone: 'Europe/Vienna', name: 'Austria' },
-  { iso: 'FR', timeZone: 'Europe/Paris', name: 'France' },
-  { iso: 'PT', timeZone: 'Europe/Lisbon', name: 'Portugal' },
-  { iso: 'ES', timeZone: 'Europe/Madrid', name: 'Spain' },
-  { iso: 'NL', timeZone: 'Europe/Amsterdam', name: 'Netherlands' },
-  { iso: 'NO', timeZone: 'Europe/Oslo', name: 'Norway' },
-] as const;
-
 export type EnergyCommunityCountryIso =
   (typeof ENERGY_COMMUNITY_COUNTRIES)[number]['iso'];
 
-export const ENERGY_COMMUNITY_TIME_ZONES = [
-  'Europe/Vienna',
-  'Europe/Lisbon',
-  'Europe/Paris',
-  'Europe/Madrid',
-  'Europe/Amsterdam',
-  'Europe/Oslo',
-  'UTC',
-] as const;
-
 export type EnergyCommunityTimeZone =
-  (typeof ENERGY_COMMUNITY_TIME_ZONES)[number];
+  | (typeof ENERGY_COMMUNITY_COUNTRIES)[number]['timeZone']
+  | 'UTC';
+
+export const ENERGY_COMMUNITY_TIME_ZONES: readonly EnergyCommunityTimeZone[] = [
+  ...new Set<EnergyCommunityTimeZone>([
+    ...ENERGY_COMMUNITY_COUNTRIES.map((country) => country.timeZone),
+    'UTC',
+  ]),
+];
 
 const COUNTRY_TIME_ZONE = new Map<string, EnergyCommunityTimeZone>(
   ENERGY_COMMUNITY_COUNTRIES.map((country) => [country.iso, country.timeZone]),

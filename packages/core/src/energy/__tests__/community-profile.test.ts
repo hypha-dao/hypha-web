@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ENERGY_COMMUNITY_COUNTRIES,
   EMS_OBJECTIVE_INDEX,
   emsObjectiveFromBasePurpose,
   normalizeCommunitySetup,
@@ -39,6 +40,26 @@ describe('normalizeCommunitySetup', () => {
       LowestPrice: 0,
       MaximumSelfConsumption: 1,
       BatteryFirst: 2,
+    });
+  });
+
+  it('lists every ISO country and uses that country’s primary time zone', () => {
+    expect(ENERGY_COMMUNITY_COUNTRIES.length).toBeGreaterThanOrEqual(249);
+    expect(
+      new Set(ENERGY_COMMUNITY_COUNTRIES.map((country) => country.iso)).size,
+    ).toBe(ENERGY_COMMUNITY_COUNTRIES.length);
+    expect(
+      normalizeCommunitySetup({ countryIso: 'DE', emsObjective: '' }),
+    ).toMatchObject({
+      address: 'Germany',
+      countryIso: 'DE',
+      timeZone: 'Europe/Berlin',
+    });
+    expect(
+      normalizeCommunitySetup({ countryIso: 'US', emsObjective: '' }),
+    ).toMatchObject({
+      address: 'United States',
+      timeZone: 'America/New_York',
     });
   });
 

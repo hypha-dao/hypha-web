@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
 import { useReadContract } from 'wagmi';
 import { z } from 'zod';
@@ -331,6 +331,11 @@ export const CreateEnableEnergyCommunityForm = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
+  const locale = useLocale();
+  const regionNames = React.useMemo(
+    () => new Intl.DisplayNames([locale, 'en'], { type: 'region' }),
+    [locale],
+  );
   const schema = React.useMemo(
     () => createEnableEnergyCommunitySchema((key) => t(key)),
     [t],
@@ -455,21 +460,6 @@ export const CreateEnableEnergyCommunityForm = ({
             : profile.emsObjective === 'MaximumSelfConsumption'
             ? 'plugins.enableCommunity.emsSelfConsumption'
             : 'optimization.minCo2';
-        const countryLabelKey =
-          country?.iso === 'AT'
-            ? 'plugins.enableCommunity.countryAT'
-            : country?.iso === 'FR'
-            ? 'plugins.enableCommunity.countryFR'
-            : country?.iso === 'PT'
-            ? 'plugins.enableCommunity.countryPT'
-            : country?.iso === 'ES'
-            ? 'plugins.enableCommunity.countryES'
-            : country?.iso === 'NL'
-            ? 'plugins.enableCommunity.countryNL'
-            : country?.iso === 'NO'
-            ? 'plugins.enableCommunity.countryNO'
-            : null;
-
         return {
           contractMethod: 'deployCommunity',
           communitySetup: {
@@ -483,7 +473,9 @@ export const CreateEnableEnergyCommunityForm = ({
             onChainPurposeIndex: onChainPurposeIndex(
               values.energyOptimization.purpose1,
             ),
-            country: countryLabelKey ? t(countryLabelKey) : null,
+            country: country
+              ? regionNames.of(country.iso) ?? country.name
+              : null,
             countryIso: country?.iso ?? null,
             timeZone: timeZoneForCountry(country?.iso) ?? profile.timeZone,
           },

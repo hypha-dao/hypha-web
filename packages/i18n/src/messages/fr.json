@@ -4163,6 +4163,7 @@
         "postalCodePlaceholder": "p. ex. 9360-529",
         "country": "Pays",
         "selectCountry": "Choisir un pays",
+        "noCountryFound": "Aucun pays trouvé",
         "countryUnset": "Non listé",
         "countryAT": "Autriche",
         "countryFR": "France",
