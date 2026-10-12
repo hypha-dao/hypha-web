@@ -7,7 +7,6 @@ import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
   SpaceAttention,
-  SpaceCalendar,
   SpaceEnergySection,
   SpacePendingRewardsSection,
   useSpaceDocumentsWithStatuses,
@@ -17,6 +16,7 @@ import type { Locale } from '@hypha-platform/i18n';
 import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { useMembers } from '@web/hooks/use-members';
 
+import { OverviewMonth } from './overview-month';
 import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
 
@@ -42,18 +42,21 @@ function Panel({
 }) {
   return (
     <section className="flex min-w-0 flex-col border border-border bg-background">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <h2 className="text-1 font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      <div className="flex items-baseline justify-between gap-4 px-4 pt-4">
+        <h2
+          className="text-3 text-foreground"
+          style={{ fontFamily: 'var(--font-family-heading)' }}
+        >
           {title}
         </h2>
         <Link
           href={href}
-          className="text-1 text-foreground underline-offset-4 hover:underline"
+          className="shrink-0 text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
         >
           {openLabel}
         </Link>
       </div>
-      {children}
+      <div className="mt-3 min-w-0">{children}</div>
     </section>
   );
 }
@@ -123,7 +126,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const home = `/${locale}/dho/${spaceSlug}`;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       {energy?.enabled ? <SpaceEnergySection /> : null}
 
       {signalsError ? null : (
@@ -182,14 +185,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           href={`${home}/calendar`}
           openLabel={t('open')}
         >
-          <div className="px-2 py-3">
-            <SpaceCalendar
-              spaceSlug={spaceSlug}
-              spaceId={space?.id ?? 0}
-              lang={locale}
-              embedded
-            />
-          </div>
+          <OverviewMonth spaceSlug={spaceSlug} />
         </Panel>
 
         <Panel
