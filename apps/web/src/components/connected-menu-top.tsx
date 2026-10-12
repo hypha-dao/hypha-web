@@ -140,7 +140,7 @@ export function ConnectedMenuTop({
   const resolvedLeadingAction = aiChatEnabled ? (
     <div className="flex items-center gap-1.5 sm:gap-2">
       {!overlayVisible ? (
-        <div className="md:hidden">
+        <div className="xl:hidden">
           <AiSidebarTrigger />
         </div>
       ) : null}

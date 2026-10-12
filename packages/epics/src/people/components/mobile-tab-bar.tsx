@@ -44,7 +44,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      if (!window.matchMedia('(max-width: 767px)').matches) return;
+      if (!window.matchMedia('(max-width: 1279px)').matches) return;
       const anchor = (event.target as Element | null)?.closest?.('a');
       if (!(anchor instanceof HTMLAnchorElement)) return;
       const href = anchor.getAttribute('href') ?? '';
@@ -56,7 +56,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!window.matchMedia('(max-width: 767px)').matches) return;
+    if (!window.matchMedia('(max-width: 1279px)').matches) return;
     if (!pathname.includes('/dho/')) return;
     if (sessionStorage.getItem(SPACE_SLIDE_KEY) !== '1') return;
     sessionStorage.removeItem(SPACE_SLIDE_KEY);
@@ -143,7 +143,7 @@ export function MobileTabBar() {
     <>
       <div
         className={cn(
-          'fixed inset-x-0 z-[35] flex flex-col border-l border-border bg-page-background transition-transform duration-300 ease-out md:hidden',
+          'fixed inset-x-0 z-[35] flex flex-col border-l border-border bg-page-background transition-transform duration-300 ease-out xl:hidden',
           !spacesOpen && 'pointer-events-none',
         )}
         style={{
@@ -211,7 +211,7 @@ export function MobileTabBar() {
 
       <div
         className={cn(
-          'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out md:hidden',
+          'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out xl:hidden',
           !createOpen && 'pointer-events-none',
         )}
         style={{
@@ -263,7 +263,7 @@ export function MobileTabBar() {
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-page-background md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-page-background xl:hidden"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}

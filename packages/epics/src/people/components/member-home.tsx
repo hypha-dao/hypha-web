@@ -237,7 +237,7 @@ export function MemberHome({
   }, [home]);
 
   return (
-    <div className="relative isolate flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem))] w-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 lg:grid lg:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem)] lg:min-h-0 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden lg:pb-0">
+    <div className="@container/home relative isolate flex h-[calc(100dvh-var(--menu-top-height,4.5rem)-4.5rem-env(safe-area-inset-bottom))] min-h-0 w-full min-w-0 flex-col overflow-hidden xl:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem)]">
       <div className="member-home-banner" aria-hidden>
         <img
           alt=""
@@ -246,384 +246,390 @@ export function MemberHome({
         />
         <div className="member-home-banner-veil" />
       </div>
-      <aside
-        aria-label={t('panelSpaces')}
-        className="member-home-pane order-2 flex max-h-[36rem] flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-t-0"
-      >
-        <section>
-          <div
-            className={
-              home == null || orientation
-                ? 'grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4'
-                : 'grid'
-            }
-          >
-            {home == null || orientation ? (
-              <div className="flex items-center justify-center px-1 py-3">
-                {home == null || orientation == null ? (
-                  <Skeleton loading height="22px" width="6.5rem" />
-                ) : (
-                  <OrientationBadge
-                    orientation={orientation}
-                    isSaving={isSavingOrientation}
-                    error={orientationError}
-                    onChoose={onChooseOrientation}
-                  />
-                )}
-              </div>
-            ) : null}
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-              <Stat
-                label={t('counts.spaces')}
-                value={home?.counts.spaces ?? 0}
-                isLoading={home == null}
-              />
-              <Stat
-                label={t('counts.proposals')}
-                value={home?.counts.openProposals ?? 0}
-                isLoading={home == null}
-              />
-              <Stat
-                label={t('counts.signals')}
-                value={home?.counts.signals ?? 0}
-                isLoading={home == null}
-              />
-              <Stat
-                label={t('connections')}
-                value={home?.counts.connections ?? 0}
-                isLoading={home == null}
-              />
-            </dl>
-          </div>
-        </section>
-        <div className="w-full min-w-0">
-          <MemberHomeSpacesWidget lang={lang} busy={home == null}>
-            {home == null ? (
-              <CardSkeleton />
-            ) : recentSpaces.length === 0 ? (
-              <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
-            ) : (
-              <ul className="grid w-full grid-cols-1">
-                {recentSpaces.map((space) => (
-                  <li key={space.id} className="min-w-0">
-                    <SpaceSwitcherOption
-                      href={`/${lang}/dho/${space.slug}/overview`}
-                      title={space.title}
-                      iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
-                      className="rounded-none px-2 py-1.5 text-1 hover:bg-background-4/70"
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </MemberHomeSpacesWidget>
-        </div>
-        <div>
-          <MemberHomeWalletWidget
-            lang={lang}
-            personSlug={home?.person.slug}
-            hasAddress={Boolean(home?.wallet.address)}
-            isHomeLoading={home == null}
-          />
-        </div>
-        <div>
-          <Tile
-            title={t('notifications')}
-            count={
-              home && home.counts.notifications > 0
-                ? home.counts.notifications
-                : undefined
-            }
-            busy={home == null}
-          >
-            <ResourceList
-              isLoading={home == null}
-              empty={t('noNotifications')}
-              maxItems={5}
-              markSize={24}
-              items={
-                home
-                  ? home.notifications.flatMap((item) => {
-                      const match = queue.find(
-                        (entry) =>
-                          entry.kind === item.kind &&
-                          entry.slug === item.targetSlug,
-                      );
-                      return [
-                        {
-                          id: item.id,
-                          kind: item.kind,
-                          title: item.title,
-                          detail: item.detail,
-                          icon: item.spaceLogo ?? null,
-                          href:
-                            item.kind === 'signal'
-                              ? getSignalPath(
-                                  lang,
-                                  item.spaceSlug,
-                                  item.targetSlug,
-                                )
-                              : getProposalPath(
-                                  lang,
-                                  item.spaceSlug,
-                                  item.targetSlug,
-                                ),
-                          ...(match
-                            ? {
-                                onSelect: () =>
-                                  setFocusKey(`${match.kind}:${match.slug}`),
-                              }
-                            : {}),
-                        },
-                      ];
-                    })
-                  : []
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col @min-[48rem]/home:grid @min-[48rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[48rem]/home:grid-rows-[minmax(0,1fr)] @min-[48rem]/home:overflow-hidden @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
+        <aside
+          aria-label={t('panelSpaces')}
+          className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-r border-border px-4 py-4 @min-[68rem]/home:flex"
+        >
+          <section>
+            <div
+              className={
+                home == null || orientation
+                  ? 'grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4'
+                  : 'grid'
               }
-            />
-            {home && home.notifications.length > 5 ? (
-              <TileLink href={`/${lang}/home/notifications`}>
-                {t('seeMoreNotifications')}
-              </TileLink>
-            ) : null}
-          </Tile>
-        </div>
-        {home ? (
-          <div>
-            <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
-          </div>
-        ) : null}
-      </aside>
-      <main className="order-1 flex min-h-[70vh] min-w-0 flex-col lg:order-none lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:overflow-hidden">
-        <div className="shrink-0 px-4 pt-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span
-                className="inline-flex shrink-0"
-                style={{ width: 24, height: 24 }}
-              >
-                <MemberHomeMark className="h-full w-full" />
-              </span>
-              <div className="min-w-0 flex-1">
-                {greetingPending ? (
-                  <Skeleton
-                    loading
-                    height="28px"
-                    width="14rem"
-                    className="rounded-none"
-                  />
-                ) : (
-                  <h1
-                    className="truncate text-3"
-                    style={{ fontFamily: 'var(--font-family-heading)' }}
-                  >
-                    {t(greetingKey(), { name: displayName })}
-                  </h1>
-                )}
-              </div>
-            </div>
-            <HomeViewSwitch
-              view={homeView}
-              ready={viewReady}
-              onChange={(next) => {
-                writeHomeView(next);
-                setHomeView(next);
-              }}
-            />
-          </div>
-          <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
-            {home == null ? (
-              <Skeleton loading height="16px" width="14rem" className="mt-1" />
-            ) : (
-              <MemberHomeClosest
-                lang={lang}
-                people={home.connections}
-                fallbackName={memberFallback}
-                onOpenChat={openChat}
-              />
-            )}
-          </div>
-        </div>
-        {home && showAssistant ? (
-          <MemberHomeChat
-            lang={lang}
-            intelligence={home}
-            onChatPerson={openChat}
-            onCallPerson={openCall}
-            onVideoPerson={openVideo}
-          />
-        ) : home && viewReady ? (
-          <ClassicBoard
-            lang={lang}
-            home={home}
-            queue={queue}
-            focusKey={focusKey}
-            onChat={openChat}
-            onCall={openCall}
-          />
-        ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
-            <CardSkeleton lines={4} plain />
-          </div>
-        )}
-      </main>
-      <aside
-        aria-label={t('panelInsights')}
-        className="member-home-pane order-3 flex max-h-[36rem] flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 lg:order-none lg:col-start-3 lg:row-start-1 lg:max-h-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0"
-      >
-        {orientation === 'builder' ? (
-          <PersonaCard
-            title={t('builderTitle')}
-            body={t('builderBody')}
-            action={t('builderAction')}
-            href={getOnboardingPath(lang)}
-          />
-        ) : null}
-        {home && home.invites.length > 0 ? (
-          <MemberHomeInviteBanners lang={lang} invites={home.invites} />
-        ) : null}
-        {home?.person.slug ? (
-          <MemberHomeEnergyPanel personSlug={home.person.slug} />
-        ) : null}
-        {orientation === 'investor' && home ? (
-          <PersonaCard
-            title={t('investorTitle')}
-            body={t('investorBody')}
-            action={t('investorAction')}
-            href={`/${lang}/network/needs`}
-            meta={t('investorCount', {
-              count: home.counts.capitalAsks,
-            })}
-          />
-        ) : null}
-        {home != null && orientation == null ? (
-          <section className="border border-border bg-background p-4">
-            <h2
-              className="text-3"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
             >
-              {t('chooseTitle')}
-            </h2>
-            <p className="mt-3 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
-              {t('chooseBody')}
-            </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              {ORIENTATIONS.map((option) => (
-                <Button
-                  key={option}
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  disabled={isSavingOrientation}
-                  onClick={() => onChooseOrientation(option)}
-                >
-                  {t(orientationLabelKey(option))}
-                </Button>
-              ))}
+              {home == null || orientation ? (
+                <div className="flex items-center justify-center px-1 py-3">
+                  {home == null || orientation == null ? (
+                    <Skeleton loading height="22px" width="6.5rem" />
+                  ) : (
+                    <OrientationBadge
+                      orientation={orientation}
+                      isSaving={isSavingOrientation}
+                      error={orientationError}
+                      onChoose={onChooseOrientation}
+                    />
+                  )}
+                </div>
+              ) : null}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <Stat
+                  label={t('counts.spaces')}
+                  value={home?.counts.spaces ?? 0}
+                  isLoading={home == null}
+                />
+                <Stat
+                  label={t('counts.proposals')}
+                  value={home?.counts.openProposals ?? 0}
+                  isLoading={home == null}
+                />
+                <Stat
+                  label={t('counts.signals')}
+                  value={home?.counts.signals ?? 0}
+                  isLoading={home == null}
+                />
+                <Stat
+                  label={t('connections')}
+                  value={home?.counts.connections ?? 0}
+                  isLoading={home == null}
+                />
+              </dl>
             </div>
-            {orientationError ? (
-              <p className="mt-3 text-1 text-error-11" role="alert">
-                {orientationError}
-              </p>
-            ) : null}
           </section>
-        ) : null}
-
-        <div>
-          <Tile title={t('waiting')} busy={home == null}>
-            <ResourceList
-              isLoading={home == null}
-              empty={t('noWaiting')}
-              maxItems={6}
-              items={
-                home
-                  ? [
-                      ...queue.flatMap((item) => {
-                        const typeName = item.category?.trim();
-                        const typeKey = typeName
-                          ? (`types.${typeName}` as 'types.Need')
-                          : null;
-                        const typeLabel =
-                          typeKey && tTypes.has(typeKey)
-                            ? tTypes(typeKey)
-                            : typeName;
+          <div className="w-full min-w-0">
+            <MemberHomeSpacesWidget lang={lang} busy={home == null}>
+              {home == null ? (
+                <CardSkeleton />
+              ) : recentSpaces.length === 0 ? (
+                <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
+              ) : (
+                <ul className="grid w-full grid-cols-1">
+                  {recentSpaces.map((space) => (
+                    <li key={space.id} className="min-w-0">
+                      <SpaceSwitcherOption
+                        href={`/${lang}/dho/${space.slug}/overview`}
+                        title={space.title}
+                        iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
+                        className="rounded-none px-2 py-1.5 text-1 hover:bg-background-4/70"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </MemberHomeSpacesWidget>
+          </div>
+          <div>
+            <MemberHomeWalletWidget
+              lang={lang}
+              personSlug={home?.person.slug}
+              hasAddress={Boolean(home?.wallet.address)}
+              isHomeLoading={home == null}
+            />
+          </div>
+          <div>
+            <Tile
+              title={t('notifications')}
+              count={
+                home && home.counts.notifications > 0
+                  ? home.counts.notifications
+                  : undefined
+              }
+              busy={home == null}
+            >
+              <ResourceList
+                isLoading={home == null}
+                empty={t('noNotifications')}
+                maxItems={5}
+                markSize={24}
+                items={
+                  home
+                    ? home.notifications.flatMap((item) => {
+                        const match = queue.find(
+                          (entry) =>
+                            entry.kind === item.kind &&
+                            entry.slug === item.targetSlug,
+                        );
                         return [
                           {
-                            id: `${item.kind}:${item.slug}`,
+                            id: item.id,
                             kind: item.kind,
                             title: item.title,
-                            detail:
-                              item.kind === 'signal'
-                                ? [typeLabel, item.spaceTitle]
-                                    .filter(Boolean)
-                                    .join(' · ')
-                                : [item.spaceTitle, item.documentKind]
-                                    .filter(Boolean)
-                                    .join(' · '),
-                            href:
-                              item.kind === 'proposal'
-                                ? getProposalPath(
-                                    lang,
-                                    item.spaceSlug,
-                                    item.slug,
-                                  )
-                                : getSignalPath(
-                                    lang,
-                                    item.spaceSlug,
-                                    item.slug,
-                                  ),
-                            onSelect: () =>
-                              setFocusKey(`${item.kind}:${item.slug}`),
+                            detail: item.detail,
                             icon: item.spaceLogo ?? null,
+                            href:
+                              item.kind === 'signal'
+                                ? getSignalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.targetSlug,
+                                  )
+                                : getProposalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.targetSlug,
+                                  ),
+                            ...(match
+                              ? {
+                                  onSelect: () =>
+                                    setFocusKey(`${match.kind}:${match.slug}`),
+                                }
+                              : {}),
                           },
                         ];
-                      }),
-                      ...(home.movement ?? []).map((item) => ({
-                        id: item.id,
-                        title:
-                          item.kind === 'joined'
-                            ? t('movementJoined', { name: item.title })
-                            : item.title,
-                        detail: item.spaceTitle,
-                        href: item.documentSlug
-                          ? getProposalPath(
-                              lang,
-                              item.spaceSlug,
-                              item.documentSlug,
-                            )
-                          : `/${lang}/dho/${item.spaceSlug}/${
-                              item.kind === 'treasury' ? 'treasury' : 'members'
-                            }`,
-                        icon: item.spaceLogo ?? null,
-                      })),
-                    ]
-                  : []
-              }
-            />
-          </Tile>
-        </div>
-
-        <div className="grid gap-4">
-          <MemberHomeConnectionsWidget
-            people={home?.connections ?? []}
-            isLoading={home == null}
-            fallbackName={memberFallback}
-            onChat={home ? openChat : undefined}
-            onCall={home ? openCall : undefined}
-            onVideo={home ? openVideo : undefined}
-          />
+                      })
+                    : []
+                }
+              />
+              {home && home.notifications.length > 5 ? (
+                <TileLink href={`/${lang}/home/notifications`}>
+                  {t('seeMoreNotifications')}
+                </TileLink>
+              ) : null}
+            </Tile>
+          </div>
           {home ? (
-            <MemberHomePeople
-              people={home.connections}
-              chatSpaceSlug={home.chatSpaceSlug}
-              fallbackName={memberFallback}
-              extraPersonIds={reachIds}
-              onOpenChatReady={onOpenChatReady}
-              onOpenCallReady={onOpenCallReady}
-              onOpenVideoReady={onOpenVideoReady}
+            <div>
+              <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
+            </div>
+          ) : null}
+        </aside>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col @min-[48rem]/home:col-start-1 @min-[48rem]/home:row-start-1 @min-[48rem]/home:overflow-hidden @min-[68rem]/home:col-start-2">
+          <div className="shrink-0 px-4 pt-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span
+                  className="inline-flex shrink-0"
+                  style={{ width: 24, height: 24 }}
+                >
+                  <MemberHomeMark className="h-full w-full" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  {greetingPending ? (
+                    <Skeleton
+                      loading
+                      height="36px"
+                      width="14rem"
+                      className="rounded-none"
+                    />
+                  ) : (
+                    <h1
+                      className="truncate text-7"
+                      style={{ fontFamily: 'var(--font-family-heading)' }}
+                    >
+                      {t(greetingKey(), { name: displayName })}
+                    </h1>
+                  )}
+                </div>
+              </div>
+              <HomeViewSwitch
+                view={homeView}
+                ready={viewReady}
+                onChange={(next) => {
+                  writeHomeView(next);
+                  setHomeView(next);
+                }}
+              />
+            </div>
+            <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
+              {home == null ? (
+                <Skeleton
+                  loading
+                  height="16px"
+                  width="14rem"
+                  className="mt-1"
+                />
+              ) : (
+                <MemberHomeClosest
+                  lang={lang}
+                  people={home.connections}
+                  fallbackName={memberFallback}
+                  onOpenChat={openChat}
+                />
+              )}
+            </div>
+          </div>
+          {home && showAssistant ? (
+            <MemberHomeChat
+              lang={lang}
+              intelligence={home}
+              onChatPerson={openChat}
+              onCallPerson={openCall}
+              onVideoPerson={openVideo}
+            />
+          ) : home && viewReady ? (
+            <ClassicBoard
+              lang={lang}
+              home={home}
+              queue={queue}
+              focusKey={focusKey}
+              onChat={openChat}
+              onCall={openCall}
+            />
+          ) : (
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+              <CardSkeleton lines={4} plain />
+            </div>
+          )}
+        </main>
+        <aside
+          aria-label={t('panelInsights')}
+          className="member-home-pane narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
+        >
+          {orientation === 'builder' ? (
+            <PersonaCard
+              title={t('builderTitle')}
+              body={t('builderBody')}
+              action={t('builderAction')}
+              href={getOnboardingPath(lang)}
             />
           ) : null}
-        </div>
-      </aside>
+          {home && home.invites.length > 0 ? (
+            <MemberHomeInviteBanners lang={lang} invites={home.invites} />
+          ) : null}
+          {home?.person.slug ? (
+            <MemberHomeEnergyPanel personSlug={home.person.slug} />
+          ) : null}
+          {orientation === 'investor' && home ? (
+            <PersonaCard
+              title={t('investorTitle')}
+              body={t('investorBody')}
+              action={t('investorAction')}
+              href={`/${lang}/network/needs`}
+              meta={t('investorCount', {
+                count: home.counts.capitalAsks,
+              })}
+            />
+          ) : null}
+          {home != null && orientation == null ? (
+            <section className="border border-border bg-background p-4">
+              <h2
+                className="text-3"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t('chooseTitle')}
+              </h2>
+              <p className="mt-3 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
+                {t('chooseBody')}
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                {ORIENTATIONS.map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    disabled={isSavingOrientation}
+                    onClick={() => onChooseOrientation(option)}
+                  >
+                    {t(orientationLabelKey(option))}
+                  </Button>
+                ))}
+              </div>
+              {orientationError ? (
+                <p className="mt-3 text-1 text-error-11" role="alert">
+                  {orientationError}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
+          <div>
+            <Tile title={t('waiting')} busy={home == null}>
+              <ResourceList
+                isLoading={home == null}
+                empty={t('noWaiting')}
+                maxItems={6}
+                items={
+                  home
+                    ? [
+                        ...queue.flatMap((item) => {
+                          const typeName = item.category?.trim();
+                          const typeKey = typeName
+                            ? (`types.${typeName}` as 'types.Need')
+                            : null;
+                          const typeLabel =
+                            typeKey && tTypes.has(typeKey)
+                              ? tTypes(typeKey)
+                              : typeName;
+                          return [
+                            {
+                              id: `${item.kind}:${item.slug}`,
+                              kind: item.kind,
+                              title: item.title,
+                              detail:
+                                item.kind === 'signal'
+                                  ? [typeLabel, item.spaceTitle]
+                                      .filter(Boolean)
+                                      .join(' · ')
+                                  : [item.spaceTitle, item.documentKind]
+                                      .filter(Boolean)
+                                      .join(' · '),
+                              href:
+                                item.kind === 'proposal'
+                                  ? getProposalPath(
+                                      lang,
+                                      item.spaceSlug,
+                                      item.slug,
+                                    )
+                                  : getSignalPath(
+                                      lang,
+                                      item.spaceSlug,
+                                      item.slug,
+                                    ),
+                              onSelect: () =>
+                                setFocusKey(`${item.kind}:${item.slug}`),
+                              icon: item.spaceLogo ?? null,
+                            },
+                          ];
+                        }),
+                        ...(home.movement ?? [])
+                          .filter((item) => item.kind === 'treasury')
+                          .map((item) => ({
+                            id: item.id,
+                            title: item.title,
+                            detail: [t('kindTransaction'), item.spaceTitle]
+                              .filter(Boolean)
+                              .join(' · '),
+                            href: item.documentSlug
+                              ? getProposalPath(
+                                  lang,
+                                  item.spaceSlug,
+                                  item.documentSlug,
+                                )
+                              : `/${lang}/dho/${item.spaceSlug}/treasury`,
+                            icon: item.spaceLogo ?? null,
+                          })),
+                      ]
+                    : []
+                }
+              />
+            </Tile>
+          </div>
+
+          <div className="grid gap-4">
+            <MemberHomeConnectionsWidget
+              people={home?.connections ?? []}
+              isLoading={home == null}
+              fallbackName={memberFallback}
+              onChat={home ? openChat : undefined}
+              onCall={home ? openCall : undefined}
+              onVideo={home ? openVideo : undefined}
+            />
+            {home ? (
+              <MemberHomePeople
+                people={home.connections}
+                chatSpaceSlug={home.chatSpaceSlug}
+                fallbackName={memberFallback}
+                extraPersonIds={reachIds}
+                onOpenChatReady={onOpenChatReady}
+                onOpenCallReady={onOpenCallReady}
+                onOpenVideoReady={onOpenVideoReady}
+              />
+            ) : null}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
