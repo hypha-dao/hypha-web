@@ -44,6 +44,8 @@ export * from './space-api-key/server';
 export * from './space-api-key';
 export * from './integration-client/server';
 export * from './integration-client';
+export * from './integration-grant/server';
+export * from './integration-grant';
 export * from './schedule/server';
 export * from './schedule';
 export * from './pipeline/server';
