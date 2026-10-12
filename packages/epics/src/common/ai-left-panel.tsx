@@ -596,7 +596,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const labelFor = (key: SpaceSectionNavKey): string => {
       switch (key) {
         case 'overview':
-          return tCommon('home');
+          return tCommon('overview');
         case 'agreements':
           return tCommon('Agreements');
         case 'members':
