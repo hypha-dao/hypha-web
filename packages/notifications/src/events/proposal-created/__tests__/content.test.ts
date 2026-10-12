@@ -153,15 +153,18 @@ describe('buildProposalCreatedContent — email template', () => {
 
   it('push: members template names who created it', () => {
     vi.stubEnv('PUSH_TEMPLATE_PROPOSAL_CREATED_MEMBERS', 'push-members');
-    const result = buildProposalCreatedContent(event, {
-      personSlug: 'bob',
-      role: 'member',
-      data: { ...data, creatorName: 'Alice' },
-    });
+    const result = buildProposalCreatedContent(
+      { ...event, payload: { proposalLabel: 'Invite' } },
+      {
+        personSlug: 'bob',
+        role: 'member',
+        data: { ...data, creatorName: 'Alice' },
+      },
+    );
     expect(result.content.push).toMatchObject({
       kind: 'template',
       templateId: 'push-members',
-      customData: { creator_name: 'Alice' },
+      customData: { creator_name: 'Alice', proposal_kind: 'Invite' },
     });
   });
 
