@@ -270,14 +270,17 @@ export function CoherenceBlock({
       ) {
         return;
       }
+      if (signal.assigneeAcknowledgedAt?.[String(person.id)]) {
+        return;
+      }
       if (acknowledgingSlugRef.current === slug) {
         return;
       }
       acknowledgingSlugRef.current = slug;
       void acknowledgeCoherenceAssignment({ slug })
-        .then(() => {
+        .then((updated) => {
           setAcknowledgeError(null);
-          return refreshSignals();
+          return updated ? refreshSignals() : undefined;
         })
         .catch((error: unknown) => {
           if (acknowledgingSlugRef.current === slug) {
