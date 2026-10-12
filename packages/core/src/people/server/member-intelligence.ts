@@ -37,6 +37,7 @@ import {
   buildMemberGuidance,
   parseMemberOrientation,
 } from '../member-intelligence-guidance';
+import { memberHomeSignalCategory } from '../member-home-thread';
 import { isAddress, type Hex } from 'viem';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
 
@@ -1022,7 +1023,9 @@ export async function getMemberIntelligence(
           slug: row.slug,
           roomId: row.roomId,
           title: row.title,
-          type: row.type,
+          type:
+            memberHomeSignalCategory(row.type, ...stringTags(row.tags)) ??
+            row.type,
           priority: row.priority,
           dueAt: row.dueAt?.toISOString() ?? null,
           createdAt: row.createdAt?.toISOString() ?? null,
@@ -1136,6 +1139,7 @@ export async function getMemberIntelligence(
                 id: coherences.id,
                 slug: coherences.slug,
                 title: coherences.title,
+                type: coherences.type,
                 updatedAt: coherences.updatedAt,
                 spaceSlug: spaces.slug,
                 spaceTitle: spaces.title,
@@ -1185,7 +1189,10 @@ export async function getMemberIntelligence(
                   id: `signal-${row.id}`,
                   kind: 'signal' as const,
                   title: row.title,
-                  detail: `${row.spaceTitle} · a signal`,
+                  detail: [row.type, row.spaceTitle]
+                    .filter(Boolean)
+                    .join(' · '),
+                  category: row.type,
                   spaceSlug: row.spaceSlug,
                   spaceTitle: row.spaceTitle,
                   spaceLogo: toSpaceLogo(row),
@@ -1352,9 +1359,90 @@ export async function getMemberIntelligence(
         votedSlugs.has(item.targetSlug)
       ),
   );
+  const listedSignalSlugs = new Set(
+    signalSlice.signals.flatMap((signal) => (signal.slug ? [signal.slug] : [])),
+  );
+  const missingSignalSlugs = attention.flatMap((item) =>
+    item.kind === 'signal' &&
+    item.targetSlug &&
+    !listedSignalSlugs.has(item.targetSlug)
+      ? [item.targetSlug]
+      : [],
+  );
+  const missingSignalRows =
+    missingSignalSlugs.length === 0
+      ? []
+      : await db
+          .select({
+            id: coherences.id,
+            slug: coherences.slug,
+            roomId: coherences.roomId,
+            title: coherences.title,
+            type: coherences.type,
+            priority: coherences.priority,
+            dueAt: coherences.dueAt,
+            createdAt: coherences.createdAt,
+            progressStatus: coherences.progressStatus,
+            assigneeIds: coherences.assigneeIds,
+            description: coherences.description,
+            tags: coherences.tags,
+            creatorId: coherences.creatorId,
+            creatorName: people.name,
+            creatorSurname: people.surname,
+            creatorNickname: people.nickname,
+            creatorAvatarUrl: people.avatarUrl,
+            creatorAddress: people.address,
+            creatorDescription: people.description,
+            spaceSlug: spaces.slug,
+            spaceTitle: spaces.title,
+            logoUrl: spaces.logoUrl,
+            ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+            ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+          })
+          .from(coherences)
+          .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+          .leftJoin(people, eq(coherences.creatorId, people.id))
+          .where(inArray(coherences.slug, missingSignalSlugs));
+  const missingSignals = missingSignalRows.flatMap((row) => {
+    if (!row.spaceSlug) return [];
+    return [
+      {
+        id: row.id,
+        slug: row.slug,
+        roomId: row.roomId,
+        title: row.title,
+        type:
+          memberHomeSignalCategory(row.type, ...stringTags(row.tags)) ??
+          row.type,
+        priority: row.priority,
+        dueAt: row.dueAt?.toISOString() ?? null,
+        createdAt: row.createdAt?.toISOString() ?? null,
+        progressStatus: row.progressStatus,
+        spaceSlug: row.spaceSlug,
+        spaceTitle: row.spaceTitle,
+        spaceLogo: toSpaceLogo(row),
+        assignedToMember: (row.assigneeIds ?? []).includes(personId),
+        description: optionalExcerpt(row.description),
+        creatorId: row.creatorId,
+        creatorName: creatorLabel(
+          row.creatorName,
+          row.creatorSurname,
+          row.creatorNickname,
+        ),
+        creatorAvatarUrl: row.creatorAvatarUrl,
+        creatorAbout: optionalExcerpt(row.creatorDescription),
+      },
+    ];
+  });
+  const signals = [...signalSlice.signals, ...missingSignals];
   const creatorWallets = [
     ...proposalSlice.creators,
     ...signalSlice.creators,
+    ...missingSignalRows.flatMap((row) =>
+      row.creatorId == null
+        ? []
+        : [{ id: row.creatorId, address: row.creatorAddress }],
+    ),
     ...missingProposals.flatMap((row) =>
       row.creatorId == null
         ? []
@@ -1409,7 +1497,7 @@ export async function getMemberIntelligence(
         firstName,
         orientation,
         attention: guidanceAttention(attention[0], {
-          signals: signalSlice.signals,
+          signals,
           proposals: proposalsWithVotes,
         }),
         spaceCount: spaceRows.length,
@@ -1421,7 +1509,7 @@ export async function getMemberIntelligence(
       description: excerpt(space.description, 120),
     })),
     proposals: proposalsWithVotes.map(withPeers),
-    signals: signalSlice.signals.map(withPeers),
+    signals: signals.map(withPeers),
     notifications: attention,
     connections: sharedPeople.connections,
     wallet: {

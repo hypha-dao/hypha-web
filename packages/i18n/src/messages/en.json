@@ -496,6 +496,7 @@
     "kindSignal": "Signal",
     "kindDiscussion": "Discussion",
     "kindAgreement": "Agreement",
+    "kindTransaction": "Transaction",
     "proposedByYou": "You proposed this",
     "validate": "Validate",
     "validatedSignal": "I validate {title}.",

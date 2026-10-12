@@ -160,6 +160,7 @@
     "kindSignal": "Signal",
     "kindDiscussion": "Diskussion",
     "kindAgreement": "Vereinbarung",
+    "kindTransaction": "Transaktion",
     "proposedByYou": "Du hast das vorgeschlagen",
     "validate": "Bestätigen",
     "validatedSignal": "Ich bestätige {title}.",

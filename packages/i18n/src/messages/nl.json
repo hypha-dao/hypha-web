@@ -160,6 +160,7 @@
     "kindSignal": "Signaal",
     "kindDiscussion": "Discussie",
     "kindAgreement": "Overeenkomst",
+    "kindTransaction": "Transactie",
     "proposedByYou": "Jij stelde dit voor",
     "validate": "Bevestigen",
     "validatedSignal": "Ik bevestig {title}.",

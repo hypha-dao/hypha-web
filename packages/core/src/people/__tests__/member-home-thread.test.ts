@@ -140,6 +140,22 @@ describe('listMemberHomeThreadItems', () => {
     );
   });
 
+  it('keeps a real category when the record is only marked signal', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      signals: [],
+      attention: [
+        {
+          ...home.attention[0]!,
+          category: 'Action',
+        },
+      ],
+    });
+    expect(
+      items.find((item) => item.slug === 'define-products')?.category,
+    ).toBe('Action');
+  });
+
   it('puts a high-priority signal ahead of a discussion and a vote', () => {
     const items = listMemberHomeThreadItems({
       ...home,
