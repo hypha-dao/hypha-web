@@ -105,6 +105,14 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
+  it('leaves out a proposal that has expired', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [{ ...home.proposals[0]!, expired: true }],
+    });
+    expect(items.map((item) => item.slug)).toEqual(['define-products']);
+  });
+
   it('leads with notifications and does not repeat a slug', () => {
     const items = listMemberHomeThreadItems(home);
     expect(items.map((item) => item.slug)).toEqual([

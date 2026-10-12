@@ -424,6 +424,52 @@ async function proposalIdsAlreadyVoted(
   return voted;
 }
 
+/**
+ * On-chain proposals that are no longer a decision: expired, already
+ * executed, or past their end time. A failed read is left out, so the
+ * proposal stays visible. Absence is not expiry.
+ */
+async function proposalIdsNoLongerOpen(
+  proposalIds: number[],
+): Promise<Set<number>> {
+  const ids = [...new Set(proposalIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  );
+  if (ids.length === 0) return new Set();
+  const chainId = getGovernanceChainId();
+  const contract = daoProposalsImplementationConfig.address[chainId];
+  if (!contract) return new Set();
+  const client = createGovernancePublicClient();
+  const results = await client.multicall({
+    allowFailure: true,
+    contracts: ids.map((id) => ({
+      address: contract,
+      abi: daoProposalsImplementationConfig.abi,
+      functionName: 'getProposalCore' as const,
+      args: [BigInt(id)] as const,
+    })),
+  });
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  const closed = new Set<number>();
+  results.forEach((result, index) => {
+    if (result.status !== 'success') return;
+    const core = result.result;
+    const endTime = core[2];
+    const executed = core[3];
+    const expired = core[4];
+    const id = ids[index];
+    if (id == null) return;
+    if (
+      expired === true ||
+      executed === true ||
+      (typeof endTime === 'bigint' && endTime > 0n && endTime < now)
+    ) {
+      closed.add(id);
+    }
+  });
+  return closed;
+}
+
 /** One failed query returns its fallback. The other slices still load. */
 async function readSlice<T>(
   label: string,
@@ -1326,29 +1372,38 @@ export async function getMemberIntelligence(
       creatorAbout: optionalExcerpt(row.creatorDescription),
     })),
   ];
-  const votedProposalIds = await readSlice(
-    'memberVotes',
-    () =>
-      proposalIdsAlreadyVoted(
-        person.address,
-        proposals.flatMap((proposal) =>
-          proposal.state?.trim().toLowerCase() === 'proposal' &&
-          proposal.web3ProposalId != null
-            ? [proposal.web3ProposalId]
-            : [],
-        ),
-      ),
-    new Set<number>(),
+  const chainProposalIds = proposals.flatMap((proposal) =>
+    proposal.state?.trim().toLowerCase() === 'proposal' &&
+    proposal.web3ProposalId != null
+      ? [proposal.web3ProposalId]
+      : [],
   );
+  const [votedProposalIds, closedProposalIds] = await Promise.all([
+    readSlice(
+      'memberVotes',
+      () => proposalIdsAlreadyVoted(person.address, chainProposalIds),
+      new Set<number>(),
+    ),
+    readSlice(
+      'proposalExpiry',
+      () => proposalIdsNoLongerOpen(chainProposalIds),
+      new Set<number>(),
+    ),
+  ]);
   const proposalsWithVotes = proposals.map((proposal) => ({
     ...proposal,
     memberHasVoted:
       proposal.web3ProposalId != null &&
       votedProposalIds.has(proposal.web3ProposalId),
+    expired:
+      proposal.web3ProposalId != null &&
+      closedProposalIds.has(proposal.web3ProposalId),
   }));
-  const votedSlugs = new Set(
+  const settledSlugs = new Set(
     proposalsWithVotes.flatMap((proposal) =>
-      proposal.memberHasVoted && proposal.slug ? [proposal.slug] : [],
+      (proposal.memberHasVoted || proposal.expired) && proposal.slug
+        ? [proposal.slug]
+        : [],
     ),
   );
   const attention = notificationSlice.items.filter(
@@ -1356,7 +1411,7 @@ export async function getMemberIntelligence(
       !(
         item.kind === 'proposal' &&
         Boolean(item.targetSlug) &&
-        votedSlugs.has(item.targetSlug)
+        settledSlugs.has(item.targetSlug)
       ),
   );
   const listedSignalSlugs = new Set(
