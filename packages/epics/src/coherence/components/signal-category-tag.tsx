@@ -51,7 +51,6 @@ export function SignalCategoryTag({ type, className }: SignalCategoryTagProps) {
     <Badge
       variant="soft"
       colorVariant={mapped === 'accent' ? 'neutral' : mapped}
-      size={0}
       className={cn(
         'max-w-[8.5rem] shrink-0 truncate text-[10px] font-medium shadow-none',
         CATEGORY_TONE_CLASS[mapped],
