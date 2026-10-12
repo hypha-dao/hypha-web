@@ -236,7 +236,7 @@ export function MemberHome({
   }, [home]);
 
   return (
-    <div className="@container/home relative isolate flex w-full min-w-0 flex-col xl:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem)] xl:min-h-0 xl:overflow-hidden">
+    <div className="@container/home relative isolate -mt-4 flex w-full min-w-0 flex-col pt-4 md:-mt-5 md:pt-5 xl:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem+var(--spacing-5))] xl:min-h-0 xl:overflow-hidden">
       <div className="member-home-banner" aria-hidden>
         <img
           alt=""
