@@ -3278,7 +3278,16 @@
       "valueFlows": "Wie fließen Werte durch unsere Tokens?",
       "findProject": "Finde ein Projekt, das ich mit Ressourcen unterstützen kann",
       "findResources": "Finde Ressourcen für einen Space, den ich baue",
-      "sharedNeeds": "Welche Bedürfnisse sind mit dem Netzwerk geteilt?"
+      "sharedNeeds": "Welche Bedürfnisse sind mit dem Netzwerk geteilt?",
+      "networkMemberUseful": "Wo kann ich nützlich sein?",
+      "networkMemberDecisions": "Welche Entscheidungen brauchen mich?",
+      "networkMemberPeople": "Mit wem sollte ich mich verbinden?",
+      "networkMemberSpaces": "Was passiert in meinen Spaces?",
+      "networkBuilderNeeds": "Welche Bedürfnisse passen zu dem, was ich baue?",
+      "networkBuilderPeople": "Wer könnte zu dem stoßen, was ich forme?",
+      "networkInvestorAsks": "Worum bittet das Netzwerk?",
+      "networkInvestorCapital": "Welche Bedürfnisse sind bereit für Kapital?",
+      "networkInvestorOpen": "Zeig mir die offenen Investitionsanfragen."
     },
     "suggestionTags": {
       "createSpace": "Space erstellen",
@@ -3291,7 +3300,16 @@
       "valueFlows": "Werteströme",
       "findProject": "Projekt finden",
       "findResources": "Ressourcen finden",
-      "sharedNeeds": "Geteilte Bedürfnisse"
+      "sharedNeeds": "Geteilte Bedürfnisse",
+      "networkMemberUseful": "Nützlich sein",
+      "networkMemberDecisions": "Entscheidungen",
+      "networkMemberPeople": "Verbinden",
+      "networkMemberSpaces": "Meine Spaces",
+      "networkBuilderNeeds": "Passende Bedürfnisse",
+      "networkBuilderPeople": "Wer kann mitmachen",
+      "networkInvestorAsks": "Offene Anfragen",
+      "networkInvestorCapital": "Bereit für Kapital",
+      "networkInvestorOpen": "Investitionsanfragen"
     },
     "welcome": "Ich bin deine Space-KI für Kohärenz in der Strategie, Bewegung in den Operations und Sinn im Impact—Spezialist:innen gleiten herein, sobald du sie rufst.",
     "specialistsResponding": "Beitragende Spezialisten",

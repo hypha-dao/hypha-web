@@ -3260,7 +3260,16 @@
       "valueFlows": "Како тече вредноста низ нашите токени?",
       "findProject": "Најди еден проект што можам да го поддржам со ресурси",
       "findResources": "Најди ресурси за простор што го градам",
-      "sharedNeeds": "Кои потреби се споделени со мрежата?"
+      "sharedNeeds": "Кои потреби се споделени со мрежата?",
+      "networkMemberUseful": "Каде можам да бидам корисен?",
+      "networkMemberDecisions": "Кои одлуки ме бараат?",
+      "networkMemberPeople": "Со кого треба да се поврзам?",
+      "networkMemberSpaces": "Што се случува во моите простори?",
+      "networkBuilderNeeds": "Кои потреби одговараат на она што го градам?",
+      "networkBuilderPeople": "Кој би можел да се приклучи на она што го обликувам?",
+      "networkInvestorAsks": "Што бара мрежата?",
+      "networkInvestorCapital": "Кои потреби се подготвени за капитал?",
+      "networkInvestorOpen": "Покажи ми ги отворените инвестициски барања."
     },
     "suggestionTags": {
       "createSpace": "Создај простор",
@@ -3273,7 +3282,16 @@
       "valueFlows": "Текови на вредност",
       "findProject": "Најди проект",
       "findResources": "Најди ресурси",
-      "sharedNeeds": "Споделени потреби"
+      "sharedNeeds": "Споделени потреби",
+      "networkMemberUseful": "Корисен",
+      "networkMemberDecisions": "Одлуки",
+      "networkMemberPeople": "Поврзи се",
+      "networkMemberSpaces": "Моите простори",
+      "networkBuilderNeeds": "Потреби што одговараат",
+      "networkBuilderPeople": "Кој може да се приклучи",
+      "networkInvestorAsks": "Отворени барања",
+      "networkInvestorCapital": "Подготвени за капитал",
+      "networkInvestorOpen": "Инвестициски барања"
     },
     "welcome": "Јас сум AI на вашиот простор — внесувам кохерентност во стратегијата, движење во операциите и смисла во влијанието, со специјализирани агенти што се вклучуваат секогаш кога ќе ги повикате.",
     "specialistsResponding": "Специјалисти придонесуваат",

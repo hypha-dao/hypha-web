@@ -2706,7 +2706,16 @@
       "valueFlows": "Como flui o valor através dos nossos tokens?",
       "findProject": "Encontra um projeto a que eu possa dar recursos",
       "findResources": "Encontra recursos para um espaço que estou a construir",
-      "sharedNeeds": "Que necessidades estão partilhadas com a rede?"
+      "sharedNeeds": "Que necessidades estão partilhadas com a rede?",
+      "networkMemberUseful": "Onde posso ser útil?",
+      "networkMemberDecisions": "Que decisões precisam de mim?",
+      "networkMemberPeople": "Com quem devo ligar?",
+      "networkMemberSpaces": "O que se passa nos meus espaços?",
+      "networkBuilderNeeds": "Que necessidades encaixam no que estou a construir?",
+      "networkBuilderPeople": "Quem poderia juntar-se ao que estou a formar?",
+      "networkInvestorAsks": "O que está a rede a pedir?",
+      "networkInvestorCapital": "Que necessidades estão prontas para capital?",
+      "networkInvestorOpen": "Mostra-me os pedidos de investimento abertos."
     },
     "suggestionTags": {
       "createSpace": "Criar espaço",
@@ -2719,7 +2728,16 @@
       "valueFlows": "Fluxos de valor",
       "findProject": "Encontrar um projeto",
       "findResources": "Encontrar recursos",
-      "sharedNeeds": "Necessidades partilhadas"
+      "sharedNeeds": "Necessidades partilhadas",
+      "networkMemberUseful": "Ser útil",
+      "networkMemberDecisions": "Decisões",
+      "networkMemberPeople": "Ligar",
+      "networkMemberSpaces": "Os meus espaços",
+      "networkBuilderNeeds": "Necessidades que encaixam",
+      "networkBuilderPeople": "Quem pode juntar-se",
+      "networkInvestorAsks": "Pedidos abertos",
+      "networkInvestorCapital": "Prontas para capital",
+      "networkInvestorOpen": "Pedidos de investimento"
     },
     "welcome": "Sou a IA do teu espaço para trazer coerência à estratégia, movimento às operações e significado ao impacto—agentes especialistas entram suavemente sempre que os chamas.",
     "specialistsResponding": "Especialistas contribuindo",
