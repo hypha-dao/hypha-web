@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Check, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useConfig } from 'wagmi';
 import { useSWRConfig } from 'swr';
@@ -16,7 +17,13 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import {
@@ -39,6 +46,65 @@ const FIELD_CLASS =
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : '';
+}
+
+function FieldMenu({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  const label = options.find((option) => option.value === value)?.label ?? '';
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            FIELD_CLASS,
+            'flex items-center justify-between gap-2 text-left data-[state=open]:border-foreground data-[state=open]:[&_svg]:rotate-180',
+          )}
+        >
+          <span className="min-w-0 truncate">{label}</span>
+          <ChevronDown
+            className="size-3.5 shrink-0 transition-transform"
+            aria-hidden
+          />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="max-h-64 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-none border border-border bg-background p-0 shadow-none"
+      >
+        {options.map((option) => {
+          const selected = option.value === value;
+          return (
+            <DropdownMenuItem
+              key={option.value}
+              className={cn(
+                'gap-2 rounded-none px-3 py-2 text-1',
+                selected
+                  ? 'bg-foreground text-background focus:bg-foreground focus:text-background data-[highlighted]:bg-foreground data-[highlighted]:text-background [&_svg]:text-background data-[highlighted]:[&_svg]:text-background'
+                  : 'text-foreground focus:bg-accent-2 data-[highlighted]:bg-accent-2 data-[highlighted]:text-foreground',
+              )}
+              onSelect={() => onChange(option.value)}
+            >
+              {selected ? (
+                <Check className="size-3.5 shrink-0" aria-hidden />
+              ) : (
+                <span className="size-3.5 shrink-0" aria-hidden />
+              )}
+              <span className="min-w-0 truncate">{option.label}</span>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function MemberHomeQuickCreate({
@@ -210,20 +276,17 @@ export function MemberHomeQuickCreate({
             <span className="text-[11px] tracking-[0.14em] text-neutral-11 uppercase">
               {t('quickCreateSpace')}
             </span>
-            <select
-              className={FIELD_CLASS}
-              value={space?.id ?? ''}
-              onChange={(event) => {
-                setSpaceId(Number(event.target.value));
+            <FieldMenu
+              value={String(space?.id ?? '')}
+              options={spaces.map((item) => ({
+                value: String(item.id),
+                label: item.title,
+              }))}
+              onChange={(next) => {
+                setSpaceId(Number(next));
                 setError(null);
               }}
-            >
-              {spaces.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
+            />
           </label>
 
           {kind === 'signal' ? (
@@ -231,22 +294,17 @@ export function MemberHomeQuickCreate({
               <span className="text-[11px] tracking-[0.14em] text-neutral-11 uppercase">
                 {t('quickCreateType')}
               </span>
-              <select
-                className={FIELD_CLASS}
+              <FieldMenu
                 value={type}
-                onChange={(event) =>
-                  setType(event.target.value as CoherenceSignalType)
-                }
-              >
-                {COHERENCE_SIGNAL_TYPES.map((signalType) => {
+                options={COHERENCE_SIGNAL_TYPES.map((signalType) => {
                   const key = `types.${signalType}` as 'types.Need';
-                  return (
-                    <option key={signalType} value={signalType}>
-                      {tTypes.has(key) ? tTypes(key) : signalType}
-                    </option>
-                  );
+                  return {
+                    value: signalType,
+                    label: tTypes.has(key) ? tTypes(key) : signalType,
+                  };
                 })}
-              </select>
+                onChange={(next) => setType(next as CoherenceSignalType)}
+              />
             </label>
           ) : null}
 
