@@ -45,11 +45,6 @@ export default async function CreateEnableEnergyCommunityProposalPage({
         web3SpaceId={spaceFromDb.web3SpaceId}
         members={members}
         spaces={spaces}
-        initialLocation={{
-          address: spaceFromDb.locationLabel,
-          latitude: spaceFromDb.latitude,
-          longitude: spaceFromDb.longitude,
-        }}
       />
     </ProposalOverlayShell>
   );

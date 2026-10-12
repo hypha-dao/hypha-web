@@ -86,7 +86,7 @@ export const EnableEnergyCommunityPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <EnergyCommunityProfileFields />
-      <EnergyOptimizationFields />
+      <EnergyOptimizationFields linkCommunityObjective />
 
       {/* Section — Members */}
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">

@@ -27,12 +27,12 @@ export const EMS_OBJECTIVE_INDEX: Record<EmsObjective, number> = {
 };
 
 export const ENERGY_COMMUNITY_COUNTRIES = [
-  { iso: 'AT', timeZone: 'Europe/Vienna' },
-  { iso: 'FR', timeZone: 'Europe/Paris' },
-  { iso: 'PT', timeZone: 'Europe/Lisbon' },
-  { iso: 'ES', timeZone: 'Europe/Madrid' },
-  { iso: 'NL', timeZone: 'Europe/Amsterdam' },
-  { iso: 'NO', timeZone: 'Europe/Oslo' },
+  { iso: 'AT', timeZone: 'Europe/Vienna', name: 'Austria' },
+  { iso: 'FR', timeZone: 'Europe/Paris', name: 'France' },
+  { iso: 'PT', timeZone: 'Europe/Lisbon', name: 'Portugal' },
+  { iso: 'ES', timeZone: 'Europe/Madrid', name: 'Spain' },
+  { iso: 'NL', timeZone: 'Europe/Amsterdam', name: 'Netherlands' },
+  { iso: 'NO', timeZone: 'Europe/Oslo', name: 'Norway' },
 ] as const;
 
 export type EnergyCommunityCountryIso =
@@ -89,19 +89,16 @@ export const onChainPurposeIndex = (
 };
 
 export type EnergyCommunitySetup = {
-  emsObjective: EmsObjective;
+  /** Null when the chosen on-chain objective has no EMS equivalent (minimum CO₂). */
+  emsObjective: EmsObjective | null;
   /** Integer code for `emsObjective`. Written to the proposal, not the varchar column. */
-  emsObjectiveIndex: number;
+  emsObjectiveIndex: number | null;
   /** On-chain `EnergyPPAv2.BasePurpose` integer for the primary objective. */
   onChainPurposeIndex: number | null;
-  address: string;
-  city: string | null;
-  region: string | null;
-  postalCode: string | null;
+  /** Country name when the form only collected a country. */
+  address: string | null;
   countryIso: EnergyCommunityCountryIso | null;
   timeZone: EnergyCommunityTimeZone;
-  latitude: number | null;
-  longitude: number | null;
 };
 
 const MARKER_START = '__hypha_energy_proposal__';
@@ -112,17 +109,6 @@ const asTrimmed = (value: unknown, max: number): string | null => {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed.slice(0, max);
-};
-
-const asCoordinate = (
-  value: unknown,
-  min: number,
-  max: number,
-): number | null => {
-  if (value === null || value === undefined || value === '') return null;
-  const numeric = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numeric) || numeric < min || numeric > max) return null;
-  return numeric;
 };
 
 const asCountry = (value: unknown): EnergyCommunityCountryIso | null => {
@@ -149,30 +135,31 @@ const asPurposeIndex = (value: unknown): number | null => {
   return null;
 };
 
+const countryName = (iso: EnergyCommunityCountryIso | null): string | null =>
+  ENERGY_COMMUNITY_COUNTRIES.find((country) => country.iso === iso)?.name ??
+  null;
+
 export const normalizeCommunitySetup = (
   setup: Record<string, unknown>,
 ): EnergyCommunitySetup | null => {
-  if (!isEmsObjective(setup.emsObjective)) return null;
-  const address = asTrimmed(setup.address, 500);
-  const timeZone = asTimeZone(setup.timeZone);
-  if (!address || !timeZone) return null;
+  const countryIso = asCountry(setup.countryIso);
+  const explicitAddress = asTrimmed(setup.address, 500);
+  const address = explicitAddress ?? countryName(countryIso);
+  const timeZone =
+    asTimeZone(setup.timeZone) ?? timeZoneForCountry(countryIso) ?? 'UTC';
+  const emsObjective = isEmsObjective(setup.emsObjective)
+    ? setup.emsObjective
+    : null;
 
-  const latitude = asCoordinate(setup.latitude, -90, 90);
-  const longitude = asCoordinate(setup.longitude, -180, 180);
-  if ((latitude === null) !== (longitude === null)) return null;
+  if (!emsObjective && !countryIso && !explicitAddress) return null;
 
   return {
-    emsObjective: setup.emsObjective,
-    emsObjectiveIndex: EMS_OBJECTIVE_INDEX[setup.emsObjective],
+    emsObjective,
+    emsObjectiveIndex: emsObjective ? EMS_OBJECTIVE_INDEX[emsObjective] : null,
     onChainPurposeIndex: asPurposeIndex(setup.onChainPurposeIndex),
     address,
-    city: asTrimmed(setup.city, 200),
-    region: asTrimmed(setup.region, 200),
-    postalCode: asTrimmed(setup.postalCode, 20),
-    countryIso: asCountry(setup.countryIso),
+    countryIso,
     timeZone,
-    latitude,
-    longitude,
   };
 };
 

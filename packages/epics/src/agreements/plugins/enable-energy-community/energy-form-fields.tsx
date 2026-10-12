@@ -23,6 +23,7 @@ import {
 } from '@hypha-platform/ui';
 import {
   ENERGY_BASE_PURPOSES,
+  emsObjectiveFromBasePurpose,
   percentageStringToBigInt,
   type EnergyBasePurpose,
   type EnergyPurposeRanking,
@@ -31,7 +32,7 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
-import { Coins, Leaf, Zap } from 'lucide-react';
+import { Battery, Coins, Leaf, Zap } from 'lucide-react';
 import { RecipientField } from '../components/common/recipient-field';
 import { ConversionPercentageInput } from '../components/common/token-percentage-field';
 
@@ -380,12 +381,23 @@ export const PercentageSplitFieldArray = ({
 //  Optimization section (Level 1 + Level 2) — shared by both energy forms
 // ─────────────────────────────────────────────────────────────────────────
 
-const PrimaryObjectiveField = () => {
+const PrimaryObjectiveField = ({
+  linkCommunityObjective,
+}: {
+  linkCommunityObjective: boolean;
+}) => {
   const t = useTranslations('Energy');
   const { control, setValue } = useFormContext();
   const basePurposeOptions = getBasePurposeOptions((key, values) =>
     t(key, values),
   );
+  const emsObjective = useWatch({
+    control,
+    name: 'energyCommunityProfile.emsObjective',
+  });
+  const batterySelected =
+    linkCommunityObjective && emsObjective === 'BatteryFirst';
+
   return (
     <FormField
       control={control}
@@ -400,15 +412,27 @@ const PrimaryObjectiveField = () => {
           setValue('energyOptimization.purpose3', third, {
             shouldValidate: true,
           });
+          if (!linkCommunityObjective) return;
+          setValue(
+            'energyCommunityProfile.emsObjective',
+            emsObjectiveFromBasePurpose(value) ?? '',
+            { shouldValidate: true, shouldDirty: true },
+          );
+        };
+        const selectBatteryFirst = () => {
+          selectPurpose('SELF_CONSUMPTION');
+          setValue('energyCommunityProfile.emsObjective', 'BatteryFirst', {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
         };
         return (
           <FormItem>
-            <FormLabel>{t('optimization.primaryObjective')}</FormLabel>
             <FormControl>
               <div className="flex flex-col gap-3">
                 {basePurposeOptions.map(
                   ({ value, label, description, icon }) => {
-                    const selected = field.value === value;
+                    const selected = !batterySelected && field.value === value;
                     return (
                       <Card
                         key={value}
@@ -441,6 +465,43 @@ const PrimaryObjectiveField = () => {
                     );
                   },
                 )}
+                {linkCommunityObjective ? (
+                  <Card
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={batterySelected}
+                    className={clsx(
+                      'flex cursor-pointer items-center space-x-4 border-2 p-5',
+                      {
+                        'border-accent-9': batterySelected,
+                        'hover:border-accent-5': !batterySelected,
+                      },
+                    )}
+                    onClick={selectBatteryFirst}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        selectBatteryFirst();
+                      }
+                    }}
+                  >
+                    <Battery
+                      className="size-5 shrink-0"
+                      strokeWidth={1.75}
+                      aria-hidden
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-3 font-medium">
+                        {t('plugins.enableCommunity.emsBatteryFirst')}
+                      </span>
+                      <span className="text-1 text-neutral-11">
+                        {t(
+                          'plugins.enableCommunity.emsBatteryFirstDescription',
+                        )}
+                      </span>
+                    </div>
+                  </Card>
+                ) : null}
               </div>
             </FormControl>
             <FormMessage />
@@ -451,7 +512,12 @@ const PrimaryObjectiveField = () => {
   );
 };
 
-export const EnergyOptimizationFields = () => {
+export const EnergyOptimizationFields = ({
+  linkCommunityObjective = false,
+}: {
+  /** One choice sets both the on-chain ranking and the energy-system objective. */
+  linkCommunityObjective?: boolean;
+}) => {
   const t = useTranslations('Energy');
 
   return (
@@ -464,7 +530,7 @@ export const EnergyOptimizationFields = () => {
           {t('optimization.optimizeDescription')}
         </p>
       </div>
-      <PrimaryObjectiveField />
+      <PrimaryObjectiveField linkCommunityObjective={linkCommunityObjective} />
     </div>
   );
 };

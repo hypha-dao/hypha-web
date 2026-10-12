@@ -11,13 +11,8 @@ const setup = {
   emsObjective: 'MaximumSelfConsumption',
   onChainPurposeIndex: 0,
   address: 'Ponta do Sol, Madeira, Portugal',
-  city: 'Ponta do Sol',
-  region: 'Madeira',
-  postalCode: '9360-529',
   countryIso: 'PT',
   timeZone: 'Europe/Lisbon',
-  latitude: 32.681,
-  longitude: -17.104,
 };
 
 describe('emsObjectiveFromBasePurpose', () => {
@@ -37,8 +32,8 @@ describe('normalizeCommunitySetup', () => {
       emsObjectiveIndex: EMS_OBJECTIVE_INDEX.MaximumSelfConsumption,
       onChainPurposeIndex: 0,
       countryIso: 'PT',
-      latitude: 32.681,
-      longitude: -17.104,
+      address: 'Ponta do Sol, Madeira, Portugal',
+      timeZone: 'Europe/Lisbon',
     });
     expect(EMS_OBJECTIVE_INDEX).toEqual({
       LowestPrice: 0,
@@ -47,14 +42,30 @@ describe('normalizeCommunitySetup', () => {
     });
   });
 
-  it('rejects a coordinate pair that is only half set', () => {
-    expect(normalizeCommunitySetup({ ...setup, longitude: null })).toBeNull();
+  it('uses the country name and time zone when only a country is set', () => {
+    expect(
+      normalizeCommunitySetup({
+        countryIso: 'PT',
+        emsObjective: '',
+      }),
+    ).toMatchObject({
+      address: 'Portugal',
+      countryIso: 'PT',
+      timeZone: 'Europe/Lisbon',
+      emsObjective: null,
+      emsObjectiveIndex: null,
+    });
   });
 
-  it('rejects an objective outside Zek’s accepted strings', () => {
+  it('keeps the country when the objective has no energy-system equivalent', () => {
     expect(
       normalizeCommunitySetup({ ...setup, emsObjective: 'MIN_CO2' }),
-    ).toBeNull();
+    ).toMatchObject({
+      emsObjective: null,
+      emsObjectiveIndex: null,
+      countryIso: 'PT',
+      address: 'Ponta do Sol, Madeira, Portugal',
+    });
   });
 });
 

@@ -67,15 +67,13 @@ const COMMUNITY_WRITE_SQL = {
     UPDATE mgmt.communities
     SET
       name = $2,
-      address = $3,
+      address = CASE WHEN $3 = '' THEN address ELSE $3 END,
       time_zone = $4,
-      default_ems_objective = $5,
-      latitude = $6,
-      longitude = $7,
-      city = $8,
-      region = $9,
-      postal_code = $10,
-      country_id = (SELECT id FROM mgmt.countries WHERE iso_code = $11),
+      default_ems_objective = COALESCE($5, default_ems_objective),
+      country_id = COALESCE(
+        (SELECT id FROM mgmt.countries WHERE iso_code = $6),
+        country_id
+      ),
       updated_at = now()
     WHERE factory_community_id = $1
     RETURNING id
@@ -89,11 +87,6 @@ const COMMUNITY_WRITE_SQL = {
       pricing_currency,
       default_ems_objective,
       factory_community_id,
-      latitude,
-      longitude,
-      city,
-      region,
-      postal_code,
       country_id
     )
     VALUES (
@@ -102,17 +95,12 @@ const COMMUNITY_WRITE_SQL = {
       $3,
       $4,
       COALESCE(
-        (SELECT currency FROM mgmt.countries WHERE iso_code = $11),
+        (SELECT currency FROM mgmt.countries WHERE iso_code = $6),
         'EUR'
       ),
-      $5,
+      COALESCE($5, 'LowestPrice'),
       $1,
-      $6,
-      $7,
-      $8,
-      $9,
-      $10,
-      (SELECT id FROM mgmt.countries WHERE iso_code = $11)
+      (SELECT id FROM mgmt.countries WHERE iso_code = $6)
     )
     RETURNING id
   `,
@@ -129,14 +117,9 @@ const upsertCommunity = async (
   const values = [
     input.factoryCommunityId,
     input.name,
-    input.setup.address,
+    input.setup.address ?? '',
     input.setup.timeZone,
     input.setup.emsObjective,
-    input.setup.latitude,
-    input.setup.longitude,
-    input.setup.city,
-    input.setup.region,
-    input.setup.postalCode,
     input.setup.countryIso,
   ];
 
