@@ -65,6 +65,10 @@ export function formatMemberHomeFacts(
     settled?: readonly string[];
     /** Deferred by the message this reply is answering. Do not bring it back yet. */
     held?: string | null;
+    /** They left and did the recommended action. Do not open these again this visit. */
+    acted?: readonly string[];
+    /** They just came back from that action. Continue with the next item. */
+    resumed?: boolean;
   },
 ): string {
   const spaces = home.spaces.map((space) => space.title).join('; ') || 'none';
@@ -86,6 +90,9 @@ export function formatMemberHomeFacts(
     (options?.settled ?? []).map((key) => key.trim()).filter(Boolean),
   );
   const held = options?.held?.trim() || null;
+  const actedKeys = new Set(
+    (options?.acted ?? []).map((key) => key.trim()).filter(Boolean),
+  );
   const waiting = listMemberHomeThreadItems(home).filter(
     (item) => !(item.kind === 'signal' && networkSlugs.has(item.slug)),
   );
@@ -95,7 +102,8 @@ export function formatMemberHomeFacts(
       !passed.has(key) &&
       !deferredKeys.has(key) &&
       !recalledKeys.has(key) &&
-      !settledKeys.has(key)
+      !settledKeys.has(key) &&
+      !actedKeys.has(key)
     );
   });
   const deferredItems = waiting.filter((item) =>
@@ -247,6 +255,14 @@ export function formatMemberHomeFacts(
           ', ',
         )}.`
       : 'No card has been placed in this conversation yet.',
+    actedKeys.size > 0
+      ? `Carried out this visit. Do not open these again unless they ask: ${[
+          ...actedKeys,
+        ].join(', ')}.`
+      : null,
+    options?.resumed
+      ? 'They just carried out the recommended action and came back. One short glad line, then the next waiting item in the same reply. Call show_member_home_item for that next item. Do not greet. Do not restart. The flow continues. Stop only if they ask to pause or to stop.'
+      : null,
     `People who share a space, closest first: ${people}.`,
     home.wallet.preferredCurrency
       ? `Preferred currency: ${home.wallet.preferredCurrency}.`

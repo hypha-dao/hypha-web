@@ -1075,6 +1075,7 @@ export type ChatStreamCallbacks = {
     passed?: string[];
     deferred?: string[];
     settled?: string[];
+    acted?: string[];
   };
 };
 
@@ -1354,6 +1355,10 @@ export async function createChatStreamResult(
         recalled: memberHomeMemoryFromMessages?.recalled,
         settled: memberHomeChoices?.settled,
         held: memberHomeMemoryFromMessages?.held,
+        acted: memberHomeMemory?.acted,
+        resumed: /carried out the recommended action/i.test(
+          extractLastUserText(messages) ?? '',
+        ),
       })
     : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);

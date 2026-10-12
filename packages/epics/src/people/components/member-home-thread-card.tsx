@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   memberHomeSignalCtas,
+  memberHomeThreadItemKey,
   type MemberHomeSignalCta,
   type MemberHomeThreadItem,
 } from '@hypha-platform/core/client';
@@ -19,6 +20,7 @@ import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { celebrate } from './member-home-celebrate';
+import { rememberHomeAction } from './member-home-resume';
 import { MemberHomeProposalBody } from './member-home-proposal-body';
 import { PersonAvatar } from './person-avatar';
 import './member-home-banner.css';
@@ -158,8 +160,13 @@ export function MemberHomeThreadCard({
     window.setTimeout(() => setBusy(false), 400);
   }
 
+  function noteAction() {
+    rememberHomeAction(memberHomeThreadItemKey(item), item.title);
+  }
+
   async function reach(mode: 'call' | 'chat') {
     if (!creator || busy) return;
+    noteAction();
     setBusy(true);
     const opened = await onReach(creator, mode);
     if (!opened && mode === 'call' && assistant) {
@@ -216,6 +223,7 @@ export function MemberHomeThreadCard({
       case 'discuss': {
         const slug = item.slug.trim();
         if (!slug) return;
+        noteAction();
         const roomId = item.roomId?.trim() || null;
         if (roomId) {
           openCoherenceChat(
@@ -388,13 +396,16 @@ export function MemberHomeThreadCard({
               colorVariant="neutral"
               className={actionClass}
             >
-              <Link href={visitHref}>{t('visitSpace')}</Link>
+              <Link href={visitHref} onClick={noteAction}>
+                {t('visitSpace')}
+              </Link>
             </Button>
           ) : null}
         </div>
         {isProposal ? (
           <Link
             href={visitHref}
+            onClick={noteAction}
             className="mt-3 inline-block text-1 text-neutral-11 underline-offset-2 hover:underline"
           >
             {t('visitSpace')}
