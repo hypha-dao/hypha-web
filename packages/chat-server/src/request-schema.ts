@@ -88,6 +88,7 @@ export const chatRequestSchema = z.object({
       passed: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
       deferred: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
       settled: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
+      acted: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
     })
     .optional(),
   /** Live proposal form snapshot from the open Agreements create overlay. */

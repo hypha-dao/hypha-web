@@ -207,4 +207,28 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('1. kind=proposal slug=path');
     expect(facts).not.toContain('Bring back the deferred item once');
   });
+
+  it('continues with the next item after they come back', () => {
+    const facts = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+          },
+        ],
+      },
+      { acted: ['proposal:path'], resumed: true },
+    );
+    expect(facts).toContain('One short glad line, then the next waiting item');
+    expect(facts).toContain('The flow continues');
+    expect(facts).toContain('slug=bridge');
+    expect(facts).toContain('Build the bridge');
+    expect(facts).not.toContain('slug=path');
+    expect(facts).toContain('proposal:path');
+  });
 });

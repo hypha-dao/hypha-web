@@ -34,6 +34,13 @@ import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboa
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
+import {
+  consumeHomeReturn,
+  homeReturnText,
+  readHomeActed,
+  readHomeThread,
+  writeHomeThread,
+} from './member-home-resume';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
@@ -238,13 +245,24 @@ export function MemberHomeChat({
         body: () => ({
           memberHome: true,
           locale: lang,
-          memberHomeMemory: readMemberHomeChoices(),
+          memberHomeMemory: {
+            ...readMemberHomeChoices(),
+            acted: readHomeActed(),
+          },
         }),
       }),
     [getAccessToken, lang],
   );
 
-  const { messages, sendMessage, stop, status, error, clearError } = useChat({
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    stop,
+    status,
+    error,
+    clearError,
+  } = useChat({
     id: 'member-home',
     transport,
   });
@@ -308,7 +326,10 @@ export function MemberHomeChat({
           body: {
             memberHome: true,
             locale: lang,
-            memberHomeMemory: readMemberHomeChoices(),
+            memberHomeMemory: {
+              ...readMemberHomeChoices(),
+              acted: readHomeActed(),
+            },
           },
         },
       );
@@ -436,8 +457,21 @@ export function MemberHomeChat({
       return;
     }
     opened.current = true;
+    const stored = readHomeThread();
+    const returned = consumeHomeReturn();
+    if (stored.length > 0) setMessages(stored);
+    if (returned != null) {
+      void send(homeReturnText(returned), true);
+      return;
+    }
+    if (stored.length > 0) return;
     void send(t('homeArrival'), true);
-  }, [isAuthenticated, isAuthLoading, send, soundReady, t]);
+  }, [isAuthenticated, isAuthLoading, send, setMessages, soundReady, t]);
+
+  useEffect(() => {
+    if (!opened.current) return;
+    writeHomeThread(homeMessages);
+  }, [homeMessages]);
 
   const threadItems = useMemo(
     () => listMemberHomeThreadItems(intelligence),
