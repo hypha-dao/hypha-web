@@ -98,9 +98,9 @@ export function SpaceAttention({
       : null;
 
   return (
-    <section className="border border-border bg-background p-5">
+    <section className="border border-border bg-background p-4">
       <h2
-        className="text-3"
+        className="text-3 text-foreground"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         {t('useful')}

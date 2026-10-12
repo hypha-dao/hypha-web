@@ -91,7 +91,7 @@ export function SpaceActivityList({
           <Link
             key={item.id}
             href={hrefFor(item.slug)}
-            className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-foreground/5"
+            className="flex items-start gap-3 px-4 py-3 hover:bg-foreground/5"
           >
             <span className="craft-icon-box mt-0.5 text-foreground" aria-hidden>
               <Icon />
