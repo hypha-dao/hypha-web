@@ -28,6 +28,7 @@ import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-ses
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import { MemberHomeMark } from './member-home-mark';
+import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
 import {
   MemberHomePeopleWidgetCard,
@@ -402,12 +403,6 @@ export function MemberHomeChat({
     void send(t('homeArrival'), true);
   }, [isAuthenticated, isAuthLoading, send, soundReady, t]);
 
-  useEffect(() => {
-    const node = scroller.current;
-    if (!node) return;
-    node.scrollTop = node.scrollHeight;
-  }, [homeMessages, isStreaming, widgets]);
-
   const threadItems = useMemo(
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
@@ -438,16 +433,27 @@ export function MemberHomeChat({
       // The conversation still carries the choice when storage is blocked.
     }
   }, [homeMessages, threadItems]);
-  const focusedItem = useMemo(() => {
+  const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
-      const item = memberHomeThreadItemForMessage(threadItems, message);
-      if (item) return item;
+      if (memberHomeThreadItemForMessage(threadItems, message))
+        return message.id;
     }
     return null;
   }, [homeMessages, threadItems]);
+  const focusedItem = useMemo(() => {
+    const message = homeMessages.find((item) => item.id === cardMessageId);
+    return message
+      ? memberHomeThreadItemForMessage(threadItems, message)
+      : null;
+  }, [cardMessageId, homeMessages, threadItems]);
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [focusedItem, homeMessages, isStreaming, widgets]);
   useEffect(() => {
     onFocusItem?.(focusedItem);
   }, [focusedItem, onFocusItem]);
@@ -572,6 +578,28 @@ export function MemberHomeChat({
                         >
                           {text}
                         </p>
+                      ) : null}
+                      {!mine && message.id === cardMessageId && focusedItem ? (
+                        <MemberHomeThreadCard
+                          lang={lang}
+                          item={focusedItem}
+                          proposal={
+                            focusedItem.kind === 'proposal'
+                              ? intelligence.proposals.find(
+                                  (proposal) =>
+                                    proposal.slug === focusedItem.slug,
+                                ) ?? null
+                              : null
+                          }
+                          onAsk={(ask) => {
+                            void send(ask);
+                          }}
+                          onReach={(person, mode) =>
+                            mode === 'call'
+                              ? onCallPerson(person)
+                              : onChatPerson(person)
+                          }
+                        />
                       ) : null}
                     </div>
                   </article>
