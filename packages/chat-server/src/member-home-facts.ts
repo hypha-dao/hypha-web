@@ -15,6 +15,12 @@ function personName(person: {
   return full || person.nickname?.trim() || 'member';
 }
 
+function isThisMember(home: MemberIntelligence, name: string): boolean {
+  const candidate = name.trim().toLowerCase();
+  const member = personName(home.person).trim().toLowerCase();
+  return Boolean(candidate) && candidate === member;
+}
+
 function creatorRecord(
   home: MemberIntelligence,
   item: { kind: string; slug: string | null; creatorId: number | null },
@@ -28,7 +34,7 @@ function creatorRecord(
   const about = source?.creatorAbout?.trim() ?? '';
   const withNames = (source?.creatorWith ?? [])
     .map((name) => name.trim())
-    .filter(Boolean);
+    .filter((name) => Boolean(name) && !isThisMember(home, name));
   const connection =
     item.creatorId == null
       ? undefined
@@ -154,8 +160,14 @@ export function formatMemberHomeFacts(
   const alreadyShown = (options?.alreadyShown ?? [])
     .map((key) => key.trim())
     .filter((key) => Boolean(key) && key !== recallKey);
+  const member = personName(home.person);
   const people =
     home.connections
+      .filter(
+        (person) =>
+          person.id !== home.person.id &&
+          !isThisMember(home, personName(person)),
+      )
       .map(
         (person) =>
           `${personName(person)} (shared spaces: ${person.sharedSpaceCount})`,
@@ -172,7 +184,7 @@ export function formatMemberHomeFacts(
     'Asking for context or a discussion is not a no. "Give me the context", "tell me more", and "Discussion" stay on that item. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on.',
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know".',
     'If they say yes to helping someone, be glad for the person they are helping, using that person\'s name from the record, then name the next remaining item from that record the same way, including any token that record has. If spoken=he, say "he will appreciate it." If spoken=she, say "she will appreciate it." If the given name does not show he or she, say "they will appreciate it." Do not invent the person, the task, or the token. A yes or a no on a decision is not you acting. Do not approve it, do not say you approved it, and do not ask what they would like to decide. Say "You can now decide on the proposal card." and stop. Do not open the next proposal in that reply. A proposal they have already voted on is absent from the waiting list. Do not ask them to vote on it, even if an earlier message did. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. Do not call the tool for an item you are not talking about. The person uses the card.',
-    `Person: ${personName(home.person)}.`,
+    `Person: ${member}. You are speaking to ${member}. Never suggest they connect with themselves. Never introduce them as someone to meet, and never link their profile. If a roster or a tool result includes ${member}, skip that person.`,
     'Tone: unlocking possibilities together. Transparent and collective. Never a warning, never a pile, never a judgement. A high priority or an overdue signal is an opening for the people in that space. Always name the space.',
     networkLines
       ? 'Their spaces come first. The network lines below fill only the spare room, and only a signal that matches how this person shows up, from a space that shared its activity or is public to the network. Offer one when their own queue is empty, otherwise one possibility after the space in front of them. Name that space and why it fits (location, what they wrote, or a space they belong to). Do not mix member, builder, and investor signals.'

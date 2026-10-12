@@ -88,6 +88,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('kind=proposal slug=path document=proposal');
     expect(facts).toContain('show_member_home_item');
     expect(facts).toContain('Noor');
+    expect(facts).toContain('Never suggest they connect with themselves');
     expect(facts).toContain('No network signal is in this brief');
     expect(facts).not.toContain('Circle');
     expect(facts).not.toContain('You are a personal');
@@ -133,7 +134,7 @@ describe('formatMemberHomeFacts', () => {
           creatorId: 8,
           creatorName: 'Gerardo Roza',
           creatorAbout: 'Grows food in Rotterdam',
-          creatorWith: ['Noor', 'Teo'],
+          creatorWith: ['Ada Lovelace', 'Noor', 'Teo'],
         },
       ],
       connections: [
@@ -153,6 +154,27 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('about="Grows food in Rotterdam"');
     expect(facts).toContain('shares=3');
     expect(facts).toContain('with="Noor; Teo"');
+    expect(facts).not.toContain('with="Ada Lovelace');
+  });
+
+  it('does not offer the signed-in member as someone to meet', () => {
+    const facts = formatMemberHomeFacts({
+      ...home,
+      connections: [
+        ...home.connections,
+        {
+          id: home.person.id,
+          slug: home.person.slug,
+          name: home.person.name,
+          surname: home.person.surname,
+          nickname: null,
+          avatarUrl: null,
+          sharedSpaceCount: 4,
+        },
+      ],
+    });
+    expect(facts).toContain('People who share a space, closest first: Noor');
+    expect(facts).not.toContain('Ada Lovelace (shared spaces:');
   });
 
   it('removes an item the member already refused from the queue', () => {
