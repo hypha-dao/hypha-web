@@ -1,6 +1,11 @@
 'use client';
 
-import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  ErrorAlert,
+  Tabs,
+  ScrollableTabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import {
   Coherence,
   collectExistingTags,
@@ -120,6 +125,9 @@ export function CoherenceBlock({
   const searchParams = useSearchParams();
   const viewParamFromUrl = searchParams.get(SIGNAL_VIEW_QUERY_KEY);
   const [hideArchived, setHideArchived] = React.useState(true);
+  const [acknowledgeError, setAcknowledgeError] = React.useState<string | null>(
+    null,
+  );
   const viewMode = React.useMemo(() => {
     const fromUrl = parseSignalViewMode(viewParamFromUrl);
     if (fromUrl) {
@@ -259,9 +267,15 @@ export function CoherenceBlock({
         person?.id &&
         (signal.assigneeIds ?? []).includes(person.id)
       ) {
-        void acknowledgeCoherenceAssignment({ slug }).then(() => {
-          void refreshSignals();
-        });
+        void acknowledgeCoherenceAssignment({ slug })
+          .then(() => {
+            setAcknowledgeError(null);
+            void refreshSignals();
+          })
+          .catch((error: unknown) => {
+            console.error('Could not acknowledge assignment:', error);
+            setAcknowledgeError(t('errorOhSnap'));
+          });
       }
       openCoherenceChat(
         signal.roomId ?? null,
@@ -284,6 +298,7 @@ export function CoherenceBlock({
       person?.id,
       refreshSignals,
       router,
+      t,
     ],
   );
 
@@ -371,6 +386,7 @@ export function CoherenceBlock({
           className="lg:shrink-0"
         />
       </div>
+      {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
       <SignalSection
         basePath={chatBasePath}
         web3SpaceId={space?.web3SpaceId ?? 0}

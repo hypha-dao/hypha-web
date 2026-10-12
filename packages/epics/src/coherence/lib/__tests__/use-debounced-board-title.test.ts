@@ -124,6 +124,32 @@ describe('useDebouncedBoardTitle', () => {
     expect(result.current.titleInput).toBe('foo bar');
   });
 
+  it('cancels a pending URL write when the board unmounts', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useDebouncedBoardTitle({
+        filters: {},
+        onChange,
+        delayMs: 300,
+      }),
+    );
+
+    act(() => {
+      result.current.onTitleChange('half');
+    });
+    expect(result.current.titleInput).toBe('half');
+    expect(onChange).not.toHaveBeenCalled();
+
+    unmount();
+    expect(onChange).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('syncs the input when the URL changes from outside the hook', () => {
     const onChange = vi.fn();
     const { result, rerender } = renderHook(

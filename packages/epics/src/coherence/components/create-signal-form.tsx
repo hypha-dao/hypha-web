@@ -43,6 +43,7 @@ import {
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
   collectExistingTags,
+  mergeTagInList,
   normalizeTagKey,
   personProfileHref,
   wouldCreateNearDuplicate,
@@ -1406,6 +1407,15 @@ export const CreateSignalForm = ({
                 onMerge={async (fromTag, toTag) => {
                   if (!spaceSlug) return;
                   await mergeCoherenceTags({ spaceSlug, fromTag, toTag });
+                  const mergedTags = mergeTagInList(
+                    form.getValues('tags') ?? [],
+                    fromTag,
+                    toTag,
+                  );
+                  form.resetField('tags', {
+                    defaultValue: mergedTags,
+                    keepDirty: true,
+                  });
                   await revalidateCoherences(spaceSlug);
                 }}
               />

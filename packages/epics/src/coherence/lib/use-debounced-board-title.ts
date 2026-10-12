@@ -51,7 +51,7 @@ export function useDebouncedBoardTitle({
 
   React.useEffect(() => {
     return () => {
-      commitTitle.flush();
+      commitTitle.cancel();
     };
   }, [commitTitle]);
 
