@@ -624,6 +624,13 @@
       "when": 1784000000018,
       "tag": "0087_network_offer_and_capitals",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1784000000019,
+      "tag": "0088_signal_assignee_ack",
+      "breakpoints": true
     }
   ]
 }
