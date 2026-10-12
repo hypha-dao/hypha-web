@@ -19,6 +19,7 @@ import { SignalTagBadges } from './signal-tag-badges';
 import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
+import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import {
@@ -264,7 +265,10 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
                   <Badge
                     colorVariant="neutral"
                     variant="outline"
-                    className="max-w-[6.5rem] truncate rounded-none border-border/60 bg-transparent text-[10px] font-normal text-muted-foreground shadow-none"
+                    className={cn(
+                      SIGNAL_BOARD_META_TEXT_CLASS,
+                      'max-w-[6.5rem] truncate rounded-none border-border/60 bg-transparent text-muted-foreground shadow-none',
+                    )}
                   >
                     {board.name}
                   </Badge>
