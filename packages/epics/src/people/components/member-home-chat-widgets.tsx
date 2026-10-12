@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { MessageSquare, Phone, Video } from 'lucide-react';
+import { ChevronDown, MessageSquare, Phone, Video } from 'lucide-react';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
@@ -12,7 +12,12 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useUserAssets } from '../../treasury/hooks';
@@ -277,6 +282,7 @@ export function MemberHomeSendTokensWidget({
     authToken,
   });
   const [tokenAddress, setTokenAddress] = useState<string | null>(null);
+  const [tokenMenuOpen, setTokenMenuOpen] = useState(false);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(25);
   const [noteIndex, setNoteIndex] = useState(0);
@@ -432,45 +438,6 @@ export function MemberHomeSendTokensWidget({
         </p>
       ) : (
         <div className="flex flex-col gap-4">
-          <ul className="grid gap-1">
-            {tokens.map((token) => {
-              const active = token.address === selected?.address;
-              return (
-                <li key={token.address}>
-                  <button
-                    type="button"
-                    className={cn(
-                      'flex w-full items-center justify-between gap-3 border px-3 py-2 text-left',
-                      active
-                        ? 'border-foreground bg-accent-2'
-                        : 'border-border hover:bg-accent-2',
-                    )}
-                    onClick={() => {
-                      setTokenAddress(token.address ?? null);
-                      setSent(null);
-                    }}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      {token.icon ? (
-                        <img
-                          src={token.icon}
-                          alt=""
-                          className="h-5 w-5 shrink-0"
-                        />
-                      ) : null}
-                      <span className="truncate text-2 font-medium">
-                        {token.symbol}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-2 tabular-nums">
-                      {formatAmount(token.value)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
           <div>
             <p className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
               {t('sendTokensTo')}
@@ -535,25 +502,83 @@ export function MemberHomeSendTokensWidget({
 
           {selected ? (
             <div className="text-center">
-              <p
+              <div
                 className="text-8 leading-none tabular-nums tracking-[-0.04em]"
                 style={{ fontFamily: 'var(--font-family-heading)' }}
               >
                 {formatAmount(activeAmount)}
-                <button
-                  type="button"
-                  className="ml-2 align-middle text-2 tracking-[0.14em] uppercase underline decoration-border underline-offset-4"
-                  onClick={() => {
-                    const index = tokens.findIndex(
-                      (token) => token.address === selected.address,
-                    );
-                    const next = tokens[(index + 1) % tokens.length];
-                    if (next?.address) setTokenAddress(next.address);
-                  }}
-                >
-                  {selected.symbol}
-                </button>
-              </p>
+                {tokens.length > 1 ? (
+                  <Popover open={tokenMenuOpen} onOpenChange={setTokenMenuOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t('sendTokensChoose', {
+                          symbol: selected.symbol,
+                        })}
+                        className="ml-2 inline-flex items-center gap-1 align-middle text-2 tracking-[0.14em] uppercase"
+                      >
+                        {selected.symbol}
+                        <ChevronDown
+                          aria-hidden
+                          strokeWidth={1.5}
+                          className={cn(
+                            'size-3.5 text-neutral-10 transition-transform',
+                            tokenMenuOpen && 'rotate-180',
+                          )}
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="center"
+                      className="w-64 rounded-none border-border bg-background p-1 text-foreground shadow-md"
+                    >
+                      <ul className="max-h-64 overflow-y-auto">
+                        {tokens.map((token) => {
+                          const active = token.address === selected.address;
+                          return (
+                            <li key={token.address}>
+                              <button
+                                type="button"
+                                className={cn(
+                                  'flex w-full items-center gap-3 px-3 py-2 text-left',
+                                  active ? 'bg-accent-2' : 'hover:bg-accent-2',
+                                )}
+                                onClick={() => {
+                                  setTokenAddress(token.address ?? null);
+                                  setSent(null);
+                                  setTokenMenuOpen(false);
+                                }}
+                              >
+                                {token.icon ? (
+                                  <img
+                                    src={token.icon}
+                                    alt=""
+                                    className="h-5 w-5 shrink-0"
+                                  />
+                                ) : (
+                                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-border text-[10px]">
+                                    {token.symbol.trim().charAt(0)}
+                                  </span>
+                                )}
+                                <span className="min-w-0 truncate text-2 font-medium tracking-[0.08em] uppercase">
+                                  {token.symbol}
+                                </span>
+                                <span className="ml-auto shrink-0 text-2 tabular-nums text-neutral-11">
+                                  {formatAmount(token.value)}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <span className="ml-2 align-middle text-2 tracking-[0.14em] uppercase">
+                    {selected.symbol}
+                  </span>
+                )}
+              </div>
               <p className="mt-2 text-1 text-neutral-11">
                 {t('sendTokensYouHave', {
                   amount: formatAmount(balance),

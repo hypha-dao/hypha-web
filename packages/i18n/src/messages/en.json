@@ -528,7 +528,8 @@
     "error": "Your home could not be loaded.",
     "errorNamed": "{name}, your home could not be loaded.",
     "profileUnavailable": "You are still signed in. Your profile could not be loaded.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "sendTokensChoose": "Choose a token. Currently {symbol}."
   },
   "Marketplace": {
     "metaTitle": "Network marketplace | Hypha",
