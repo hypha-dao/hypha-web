@@ -25,7 +25,13 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  CalendarDays,
+  FilePlus,
+  Pencil,
+} from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -431,13 +437,14 @@ function SignalCardComponent({
               type="button"
               variant="ghost"
               colorVariant="neutral"
-              size="sm"
-              className="h-7 min-w-0 shrink justify-start px-2 text-muted-foreground hover:text-foreground"
+              className={SIGNAL_CARD_ICON_BUTTON_CLASS}
               disabled={isLoading}
+              aria-label={t('turnIntoProposal')}
+              title={t('turnIntoProposal')}
               onClick={handleTurnIntoProposal}
               onKeyDown={stopCardActivationKey}
             >
-              <span className="truncate text-1">{t('proposal')}</span>
+              <FilePlus className="h-4 w-4" strokeWidth={1.25} aria-hidden />
             </Button>
           ) : null}
           {onOpenConversation && !archived ? (
