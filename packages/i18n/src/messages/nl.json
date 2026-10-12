@@ -866,7 +866,7 @@
     },
     "signals": {
       "title": "Signalen",
-      "subtitle": "Hittekaart op prioriteit en recentheid (recent links, ouder rechts)",
+      "subtitle": "Hittekaart op prioriteit en recentheid (ouder links, recent rechts)",
       "count": "Signalen",
       "peakCell": "Piekcel",
       "recent": "Recent",

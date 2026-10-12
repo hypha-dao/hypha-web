@@ -867,7 +867,7 @@
     },
     "signals": {
       "title": "Signaux",
-      "subtitle": "Carte de chaleur par priorité et récence (récent à gauche, plus ancien à droite)",
+      "subtitle": "Carte de chaleur par priorité et récence (plus ancien à gauche, récent à droite)",
       "count": "Signaux",
       "peakCell": "Cellule maximale",
       "recent": "Récent",

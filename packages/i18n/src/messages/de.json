@@ -867,7 +867,7 @@
     },
     "signals": {
       "title": "Signale",
-      "subtitle": "Heatmap nach Priorität und Aktualität (neu links, älter rechts)",
+      "subtitle": "Heatmap nach Priorität und Aktualität (älter links, neu rechts)",
       "count": "Signale",
       "peakCell": "Maximale Zelle",
       "recent": "Neu",

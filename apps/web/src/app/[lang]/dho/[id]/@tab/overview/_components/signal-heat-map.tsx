@@ -39,7 +39,6 @@ function HeatField({
   priorityLabel,
   recent,
   older,
-  recency,
   cellTitle,
 }: {
   signals: HeatSignal[];
@@ -47,7 +46,6 @@ function HeatField({
   priorityLabel: (priority: (typeof PRIORITIES)[number]) => string;
   recent: string;
   older: string;
-  recency: string;
   cellTitle: (
     priority: string,
     count: number,
@@ -90,7 +88,8 @@ function HeatField({
             <span className="pr-2 text-1 text-neutral-11">
               {priorityLabel(priority)}
             </span>
-            {Array.from({ length: BUCKETS }, (_, bucket) => {
+            {Array.from({ length: BUCKETS }, (_, column) => {
+              const bucket = BUCKETS - 1 - column;
               const count = matrix.counts.get(`${priority}|${bucket}`) ?? 0;
               const start = Math.round((bucket / BUCKETS) * 100);
               const end = Math.round(((bucket + 1) / BUCKETS) * 100);
@@ -119,9 +118,9 @@ function HeatField({
         style={{ gridTemplateColumns: 'auto repeat(4, minmax(0, 1fr))' }}
       >
         <span />
-        <span>{recent}</span>
-        <span className="col-span-2 text-center">{recency}</span>
-        <span className="text-right">{older}</span>
+        <span>{older}</span>
+        <span className="col-span-2" />
+        <span className="text-right">{recent}</span>
       </div>
     </div>
   );
@@ -208,7 +207,6 @@ export function SignalHeatMaps({
                 priorityLabel={(priority) => tSignals(`priorities.${priority}`)}
                 recent={tHeat('signals.recent')}
                 older={tHeat('signals.older')}
-                recency={tHeat('signals.recency')}
                 cellTitle={(priority, count, start, end) =>
                   tHeat('signals.cellTitle', { priority, count, start, end })
                 }

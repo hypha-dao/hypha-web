@@ -898,7 +898,7 @@
     },
     "signals": {
       "title": "Signals",
-      "subtitle": "Heat map by priority and recency (recent left, older right)",
+      "subtitle": "Heat map by priority and recency (older left, recent right)",
       "count": "Signals",
       "peakCell": "Peak cell",
       "recent": "Recent",
