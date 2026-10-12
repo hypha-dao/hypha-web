@@ -41,7 +41,6 @@ import {
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
-import { requestMemberHomeAsk } from './member-home-ask';
 import { MemberHomeChat } from './member-home-chat';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
@@ -225,10 +224,6 @@ export function MemberHome({
     [home],
   );
   const [focusKey, setFocusKey] = useState<string | null>(null);
-  const onFocusItem = useCallback((item: MemberHomeThreadItem | null) => {
-    if (!item) return;
-    setFocusKey(`${item.kind}:${item.slug}`);
-  }, []);
   const reachIds = useMemo(() => {
     if (!home) return [];
     const ids = new Set<number>();
@@ -448,18 +443,6 @@ export function MemberHome({
             )}
           </div>
         </div>
-        {home && focusKey && showAssistant ? (
-          <CenterFocus
-            lang={lang}
-            home={home}
-            item={
-              queue.find((item) => `${item.kind}:${item.slug}` === focusKey) ??
-              null
-            }
-            onChat={openChat}
-            onCall={openCall}
-          />
-        ) : null}
         {home && showAssistant ? (
           <MemberHomeChat
             lang={lang}
@@ -467,7 +450,6 @@ export function MemberHome({
             onChatPerson={openChat}
             onCallPerson={openCall}
             onVideoPerson={openVideo}
-            onFocusItem={onFocusItem}
           />
         ) : home && viewReady ? (
           <ClassicBoard
@@ -847,44 +829,6 @@ function ClassicBoard({
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-function CenterFocus({
-  lang,
-  home,
-  item,
-  onChat,
-  onCall,
-}: {
-  lang: Locale;
-  home: MemberIntelligence;
-  item: MemberHomeThreadItem | null;
-  onChat: MemberHomeOpenChat;
-  onCall: MemberHomeOpenChat;
-}) {
-  if (!item) return null;
-  return (
-    <div className="@container shrink-0 overflow-y-auto px-4 pt-4">
-      <div className="grid grid-cols-1 @min-[40rem]:grid-cols-2">
-        <MemberHomeThreadCard
-          lang={lang}
-          item={item}
-          assistant
-          proposal={
-            item.kind === 'proposal'
-              ? home.proposals.find(
-                  (proposal) => proposal.slug === item.slug,
-                ) ?? null
-              : null
-          }
-          onAsk={requestMemberHomeAsk}
-          onReach={(person, mode) =>
-            mode === 'call' ? onCall(person) : onChat(person)
-          }
-        />
-      </div>
     </div>
   );
 }
