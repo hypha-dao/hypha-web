@@ -7,6 +7,7 @@ export * from './delivery';
 // second import path.
 export * from './events/proposal-created';
 export * from './events/proposal-settlement';
+export * from './events/space-created';
 export * from './events/signal-assigned';
 export * from './events/signal-notice';
 export * from './events/scheduled-item-invited';
