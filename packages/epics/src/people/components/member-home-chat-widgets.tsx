@@ -178,64 +178,85 @@ export function MemberHomePeopleWidgetCard({
   const visible = expanded ? people : people.slice(0, PEOPLE_PREVIEW);
   const remaining = people.length - visible.length;
 
+  const actions = [
+    {
+      key: 'chat',
+      label: (name: string) => t('chatPerson', { name }),
+      icon: MessageSquare,
+      run: onChat,
+    },
+    {
+      key: 'call',
+      label: (name: string) => t('callPerson', { name }),
+      icon: Phone,
+      run: onCall,
+    },
+    {
+      key: 'video',
+      label: (name: string) => t('videoPerson', { name }),
+      icon: Video,
+      run: onVideo,
+    },
+  ] as const;
+
   return (
-    <WidgetFrame title={t('peopleWidgetTitle')}>
+    <WidgetFrame
+      title={t('peopleWidgetTitle')}
+      aside={people.length > 0 ? String(people.length) : undefined}
+    >
       {people.length === 0 ? (
         <p className="text-2 text-neutral-11">{t('peopleWidgetEmpty')}</p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul>
           {visible.map((person) => {
             const name = personName(person, fallbackName);
             return (
               <li
                 key={person.id}
-                className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
               >
-                <PersonAvatar
-                  avatarSrc={person.avatarUrl ?? undefined}
-                  userName={name}
-                  size="md"
-                  shape="circle"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-2 font-medium">{name}</p>
-                  <p className="truncate text-1 text-neutral-11">
-                    {t('peopleWidgetShared', {
-                      count: person.sharedSpaceCount,
-                    })}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="h-9 w-9 p-0"
-                    aria-label={t('chatPerson', { name })}
-                    onClick={() => onChat(person)}
-                  >
-                    <MessageSquare className="h-4 w-4" aria-hidden />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="h-9 w-9 p-0"
-                    aria-label={t('callPerson', { name })}
-                    onClick={() => onCall(person)}
-                  >
-                    <Phone className="h-4 w-4" aria-hidden />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="h-9 w-9 p-0"
-                    aria-label={t('videoPerson', { name })}
-                    onClick={() => onVideo(person)}
-                  >
-                    <Video className="h-4 w-4" aria-hidden />
-                  </Button>
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  aria-label={t('chatPerson', { name })}
+                  onClick={() => onChat(person)}
+                >
+                  <PersonAvatar
+                    avatarSrc={person.avatarUrl ?? undefined}
+                    userName={name}
+                    size="md"
+                    shape="circle"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-2 hover:underline">
+                      {name}
+                    </span>
+                    <span className="mt-0.5 block truncate text-1 text-neutral-11">
+                      {t('peopleWidgetShared', {
+                        count: person.sharedSpaceCount,
+                      })}
+                    </span>
+                  </span>
+                </button>
+                <div className="flex shrink-0 border border-border">
+                  {actions.map((action) => {
+                    const Icon = action.icon;
+                    return (
+                      <button
+                        key={action.key}
+                        type="button"
+                        className="grid h-8 w-8 place-items-center border-r border-border text-foreground last:border-r-0 hover:bg-accent-2"
+                        aria-label={action.label(name)}
+                        onClick={() => action.run(person)}
+                      >
+                        <Icon
+                          className="size-3.5"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               </li>
             );
@@ -245,10 +266,10 @@ export function MemberHomePeopleWidgetCard({
       {remaining > 0 ? (
         <button
           type="button"
-          className="mt-3 text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          className="mt-1 w-full border-t border-border py-3 text-left text-1 text-neutral-11 hover:text-foreground"
           onClick={() => setExpanded(true)}
         >
-          {t('seeMoreNotifications')}
+          {t('seeMore')}
         </button>
       ) : null}
     </WidgetFrame>
