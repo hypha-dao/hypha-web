@@ -32,7 +32,11 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { isInteractiveCreatePath } from './get-path-function';
-import { useIsNetworkContext, useIsSpaceContext } from './use-is-space-context';
+import {
+  isConnectionsPath,
+  useIsNetworkContext,
+  useIsSpaceContext,
+} from './use-is-space-context';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
@@ -358,12 +362,13 @@ export function PanelWrapLayout({
   const isMemberHome = /\/home\/?$/.test(pathname);
   const showAiPanel = isSpace || isNetwork;
   const effectiveLeft = showAiPanel ? left : undefined;
-  // Human chat lives in a space, on the member home, and on the network.
+  // Human chat lives in a space, on the member home, on connections, and on the network.
   // It stays unmounted on my spaces and wallet.
-  const showHumanChat = isSpace || isMemberHome || isNetwork;
+  const showHumanChat =
+    isSpace || isMemberHome || isNetwork || isConnectionsPath(pathname);
   const effectiveRight = showHumanChat ? right : undefined;
 
-  // Close when the route leaves a space, the member home, or the network. Does not run again
+  // Close when the route leaves a space, the member home, connections, or the network. Does not run again
   // if something opens the panel while already outside a space and then
   // navigates into one (the call dock opens chat and pushes the space route
   // together).

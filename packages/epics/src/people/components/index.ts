@@ -16,6 +16,7 @@ export * from './signup-flow';
 export * from './member-home';
 export * from './member-home-notifications';
 export * from './mobile-tab-bar';
+export * from './my-connections';
 export * from './member-home-phase';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';

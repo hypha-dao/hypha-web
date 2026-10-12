@@ -19,6 +19,7 @@ import {
   PanelWrapLayout,
   HumanSidebarTrigger,
   MobileContentFrame,
+  MobileCreateButton,
   MobileTabBar,
 } from '@hypha-platform/epics';
 import { DeferredFooter } from '@web/components/deferred-footer';
@@ -104,6 +105,7 @@ export default async function RootLayout({
   let humanChatEnabled = false;
 
   let navHomeLabel = 'Home';
+  let navMyConnectionsLabel = 'My Connections';
   let navMySpacesLabel = 'My Spaces';
   let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
@@ -166,6 +168,7 @@ export default async function RootLayout({
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
     navHomeLabel = tNav('myDashboard');
+    navMyConnectionsLabel = tNav('myConnections');
     navMySpacesLabel = tNav('mySpaces');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
@@ -288,22 +291,25 @@ export default async function RootLayout({
                                 ) : undefined
                               }
                               mobileAction={
-                                <ConnectedButtonProfile
-                                  newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath={`/${locale}/home`}
-                                  navItems={[]}
-                                  showNetworkFeedback
-                                  trailingBeforeProfile={
-                                    isLanguageSelectVisible ? (
-                                      <ConnectedLanguageSelect
-                                        selectLanguageLabel={
-                                          navSelectLanguageLabel
-                                        }
-                                      />
-                                    ) : undefined
-                                  }
-                                  compact
-                                />
+                                <>
+                                  <MobileCreateButton />
+                                  <ConnectedButtonProfile
+                                    newUserRedirectPath="/profile/signup"
+                                    baseRedirectPath={`/${locale}/home`}
+                                    navItems={[]}
+                                    showNetworkFeedback
+                                    trailingBeforeProfile={
+                                      isLanguageSelectVisible ? (
+                                        <ConnectedLanguageSelect
+                                          selectLanguageLabel={
+                                            navSelectLanguageLabel
+                                          }
+                                        />
+                                      ) : undefined
+                                    }
+                                    compact
+                                  />
+                                </>
                               }
                             >
                               <div className="hidden xl:flex">
@@ -314,6 +320,10 @@ export default async function RootLayout({
                                     {
                                       label: navHomeLabel,
                                       href: `/${locale}/home`,
+                                    },
+                                    {
+                                      label: navMyConnectionsLabel,
+                                      href: `/${locale}/connections`,
                                     },
                                     {
                                       label: navMySpacesLabel,
