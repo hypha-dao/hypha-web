@@ -201,7 +201,63 @@
     "proposals": "Propuestas para opinar",
     "waiting": "Atención necesaria",
     "noWaiting": "Lo que necesita tu atención en tus espacios aparece aquí.",
-    "movementJoined": "{name} se unió"
+    "movementJoined": "{name} se unió",
+    "greetingMorning": "Buenos días, {name}.",
+    "greetingAfternoon": "Buenas tardes, {name}.",
+    "greetingEvening": "Buenas noches, {name}.",
+    "peopleAround": "{count} de tu gente cerca",
+    "peopleAroundEmpty": "Tu gente se reunirá aquí",
+    "openChat": "Abrir chat",
+    "weighIn": "Entrar",
+    "viewSignal": "Abrir señal",
+    "quiet": "Nada está esperando",
+    "counts": {
+      "spaces": "Espacios",
+      "proposals": "Propuestas",
+      "signals": "Señales",
+      "people": "Personas"
+    },
+    "wallet": "Cartera",
+    "walletEmpty": "Tu cartera aparece aquí cuando esté conectada.",
+    "openWallet": "Abrir cartera",
+    "connections": "Conexiones",
+    "sharedSpaces": "{count} en común",
+    "noConnections": "Las personas con las que compartes un espacio aparecen aquí.",
+    "spaces": "Espacios",
+    "noSpaces": "Todavía no estás en un espacio.",
+    "noSignals": "Las señales de tus espacios aparecen aquí.",
+    "notifications": "Notificaciones",
+    "noNotifications": "Ahora mismo nada te necesita.",
+    "seeAllNotifications": "Centro de notificaciones",
+    "noProposals": "Las propuestas de tus espacios aparecen aquí.",
+    "createSpace": "Crear un espacio",
+    "builderTitle": "Da forma a un espacio con tu visión",
+    "builderBody": "Recorre la experiencia con IA y trae un espacio a la red alrededor de lo que quieres construir.",
+    "builderAction": "Empezar la experiencia",
+    "investorTitle": "Mercado de la red",
+    "investorBody": "Los espacios publican lo que piden. Lee una petición y despliega capital en ella.",
+    "investorAction": "Ver las peticiones",
+    "investorCount": "{count} peticiones abiertas",
+    "chooseTitle": "¿Cómo te presentas principalmente?",
+    "chooseBody": "Miembro, constructor o inversor. Esto ajusta tu inicio. Puedes cambiarlo cuando quieras.",
+    "orientationMember": "Miembro",
+    "orientationBuilder": "Constructor",
+    "orientationInvestor": "Inversor",
+    "changeOrientation": "Cambiar",
+    "changeOrientationLabel": "Cambia cómo te presentas. Ahora: {orientation}.",
+    "signInTitle": "Tu inicio te espera",
+    "signInBody": "Inicia sesión para ver dónde puedes ser útil.",
+    "signIn": "Iniciar sesión",
+    "loading": "Reuniendo tu inicio…",
+    "metaTitle": "Inicio | Hypha",
+    "metaDescription": "Dónde puedes ser útil: tus espacios, personas, propuestas y cartera.",
+    "fallbackName": "tú",
+    "fallbackMember": "Miembro",
+    "orientationSaveError": "No se pudo guardar esa elección. Inténtalo de nuevo.",
+    "error": "No se pudo cargar tu inicio.",
+    "errorNamed": "{name}, no se pudo cargar tu inicio.",
+    "profileUnavailable": "Sigues con la sesión iniciada. No se pudo cargar tu perfil.",
+    "retry": "Intentar de nuevo"
   },
   "WelcomeFlow": {
     "offer": {
@@ -215,6 +271,52 @@
       "nicknameTaken": "Ya existe un perfil con este apodo. Elige otro.",
       "emailTaken": "Ya existe una cuenta con este correo. Inicia sesión o usa otro correo.",
       "createFailed": "No se pudo crear el perfil"
+    },
+    "step": "Paso {current} de {total}",
+    "continue": "Continuar",
+    "back": "Atrás",
+    "begin": "Empezar",
+    "thisIsMe": "Así soy",
+    "saving": "Abriendo tu inicio…",
+    "walletWait": "Conectando tu cartera…",
+    "signedInAs": "Sesión iniciada como {email}",
+    "welcome": {
+      "eyebrow": "Bienvenida",
+      "title": "Te unes a una red viva",
+      "body": "Hypha reúne personas, propósito, decisiones, recursos e IA en un sistema que puede aprender y actuar. Esto solo lleva un momento."
+    },
+    "you": {
+      "eyebrow": "Tú",
+      "title": "¿Cómo te llamamos?",
+      "icon": "Icono de perfil",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "nickname": "Apodo",
+      "nicknameHint": "Hasta 12 caracteres. Esto se convierte en la dirección de tu perfil."
+    },
+    "description": {
+      "eyebrow": "Descripción",
+      "title": "Tu pasión y dónde estás",
+      "body": "Ambos pueden quedar vacíos. Puedes añadirlos después.",
+      "passion": "Pasión",
+      "passionPlaceholder": "Una línea sobre lo que vienes a hacer"
+    },
+    "orientation": {
+      "eyebrow": "Tu lugar",
+      "title": "¿Quién eres aquí, principalmente?",
+      "body": "Esto define el inicio que te recibe. Puedes cambiarlo después.",
+      "member": {
+        "title": "Miembro",
+        "body": "Participas en espacios, decisiones y en la gente a tu alrededor."
+      },
+      "builder": {
+        "title": "Constructor",
+        "body": "Das forma a espacios alrededor de una visión y traes a otras personas."
+      },
+      "investor": {
+        "title": "Inversor",
+        "body": "Lees lo que la red está pidiendo y despliegas capital."
+      }
     }
   },
   "NetworkExchange": {
@@ -233,10 +335,28 @@
     "emptyRank": "Todavía no hay nada compartido con la red.",
     "openRoom": "Abrir sala",
     "visit": "Visitar el espacio",
+    "projectSpace": "Espacio de proyecto",
+    "treasuryLive": "Tesorería · en vivo",
+    "showMoreCount": "Mostrar {count} más",
+    "governanceCircles": "Círculos de gobernanza",
+    "circleMembers": "{count, plural, one {# miembro} other {# miembros}}",
     "noRoom": "Este espacio aún no tiene sala.",
     "seeks": "Busca",
     "offers": "Ofrece de vuelta",
     "noneYet": "Aún sin nombrar",
+    "capitals": {
+      "financial": "Financiero",
+      "material": "Material",
+      "living": "Vivo",
+      "wellbeing": "Bienestar",
+      "ecological": "Ecológico",
+      "experiential": "Experiencial",
+      "wisdom": "Sabiduría",
+      "social": "Social",
+      "creative": "Creativo",
+      "cultural": "Cultural",
+      "intellectual": "Intelectual"
+    },
     "exchangeTitle": "Encontrar un proyecto, o los recursos que necesita",
     "exchangeBody": "Los espacios nombran lo que buscan y lo que ofrecen de vuelta. El encaje es la superposición.",
     "bestMatch": "Encaje más cercano",
@@ -2603,7 +2723,10 @@
       "blindSpot": "¿Cuál es nuestro mayor punto ciego?",
       "summarizeDiscussion": "Resume la discusión reciente del equipo",
       "spaceMemory": "¿Qué recuerda nuestro espacio?",
-      "valueFlows": "¿Cómo fluye el valor a través de nuestros tokens?"
+      "valueFlows": "¿Cómo fluye el valor a través de nuestros tokens?",
+      "findProject": "Encuentra un proyecto al que pueda aportar recursos",
+      "findResources": "Encuentra recursos para un espacio que estoy construyendo",
+      "sharedNeeds": "¿Qué necesidades se comparten con la red?"
     },
     "suggestionTags": {
       "createSpace": "Crear espacio",
@@ -2613,7 +2736,10 @@
       "blindSpot": "Punto ciego",
       "summarizeDiscussion": "Resumir discusión",
       "spaceMemory": "Memoria del espacio",
-      "valueFlows": "Flujos de valor"
+      "valueFlows": "Flujos de valor",
+      "findProject": "Encontrar un proyecto",
+      "findResources": "Encontrar recursos",
+      "sharedNeeds": "Necesidades compartidas"
     },
     "welcome": "Soy la IA de tu espacio para aportar coherencia a la estrategia, impulso a las operaciones y sentido al impacto—agentes especialistas entran cuando los llamas.",
     "specialistsResponding": "Especialistas contribuyendo",
@@ -4906,5 +5032,19 @@
     "errorAlreadyConfirmedDescription": "Este correo ya ha sido confirmado.",
     "errorGenericTitle": "Algo salió mal",
     "errorGenericDescription": "No pudimos confirmar este correo. Inténtelo de nuevo más tarde."
+  },
+  "Marketplace": {
+    "metaTitle": "Mercado de la red | Hypha",
+    "metaDescription": "Peticiones de inversión publicadas por espacios de la red.",
+    "loadError": "No se pudo cargar el mercado. Inténtalo en un momento.",
+    "eyebrow": "Mercado de la red",
+    "title": "Lo que la red está pidiendo",
+    "body": "Los espacios publican una petición de inversión cuando están listos para recibir capital. Abre una para leerla y despliega capital desde la propuesta.",
+    "empty": "Aún no hay peticiones abiertas. Cuando un espacio publique una propuesta de inversión, aparecerá aquí.",
+    "incomplete": "Puede haber más peticiones. No se pudieron comprobar a tiempo todas las más recientes.",
+    "deploy": "Desplegar capital",
+    "proposal": "Propuesta",
+    "agreement": "Acuerdo",
+    "backHome": "Volver al inicio"
   }
 }

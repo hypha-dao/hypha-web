@@ -201,7 +201,63 @@
     "proposals": "Propostas para ponderar",
     "waiting": "Atenção necessária",
     "noWaiting": "O que precisa da tua atenção nos teus espaços aparece aqui.",
-    "movementJoined": "{name} entrou"
+    "movementJoined": "{name} entrou",
+    "greetingMorning": "Bom dia, {name}.",
+    "greetingAfternoon": "Boa tarde, {name}.",
+    "greetingEvening": "Boa noite, {name}.",
+    "peopleAround": "{count} das tuas pessoas por perto",
+    "peopleAroundEmpty": "As tuas pessoas vão reunir-se aqui",
+    "openChat": "Abrir conversa",
+    "weighIn": "Entrar",
+    "viewSignal": "Abrir sinal",
+    "quiet": "Nada está à espera",
+    "counts": {
+      "spaces": "Espaços",
+      "proposals": "Propostas",
+      "signals": "Sinais",
+      "people": "Pessoas"
+    },
+    "wallet": "Carteira",
+    "walletEmpty": "A tua carteira aparece aqui quando estiver ligada.",
+    "openWallet": "Abrir carteira",
+    "connections": "Ligações",
+    "sharedSpaces": "{count} em comum",
+    "noConnections": "As pessoas com quem partilhas um espaço aparecem aqui.",
+    "spaces": "Espaços",
+    "noSpaces": "Ainda não estás num espaço.",
+    "noSignals": "Os sinais dos teus espaços aparecem aqui.",
+    "notifications": "Notificações",
+    "noNotifications": "Nada precisa de ti agora.",
+    "seeAllNotifications": "Centro de notificações",
+    "noProposals": "As propostas dos teus espaços aparecem aqui.",
+    "createSpace": "Criar um espaço",
+    "builderTitle": "Dá forma a um espaço com a tua visão",
+    "builderBody": "Percorre a experiência com IA e traz um espaço para a rede em torno do que queres construir.",
+    "builderAction": "Começar a experiência",
+    "investorTitle": "Mercado da rede",
+    "investorBody": "Os espaços publicam o que estão a pedir. Lê um pedido e aplica capital nele.",
+    "investorAction": "Ver os pedidos",
+    "investorCount": "{count} pedidos abertos",
+    "chooseTitle": "Como te apresentas principalmente?",
+    "chooseBody": "Membro, construtor ou investidor. Isto ajusta a tua página inicial. Podes mudar quando quiseres.",
+    "orientationMember": "Membro",
+    "orientationBuilder": "Construtor",
+    "orientationInvestor": "Investidor",
+    "changeOrientation": "Mudar",
+    "changeOrientationLabel": "Muda como te apresentas. Agora: {orientation}.",
+    "signInTitle": "A tua página inicial está à espera",
+    "signInBody": "Inicia sessão para ver onde podes ser útil.",
+    "signIn": "Iniciar sessão",
+    "loading": "A reunir a tua página inicial…",
+    "metaTitle": "Início | Hypha",
+    "metaDescription": "Onde podes ser útil: os teus espaços, pessoas, propostas e carteira.",
+    "fallbackName": "tu",
+    "fallbackMember": "Membro",
+    "orientationSaveError": "Não foi possível guardar essa escolha. Tenta outra vez.",
+    "error": "Não foi possível carregar a tua página inicial.",
+    "errorNamed": "{name}, não foi possível carregar a tua página inicial.",
+    "profileUnavailable": "Continuas com sessão iniciada. Não foi possível carregar o teu perfil.",
+    "retry": "Tentar outra vez"
   },
   "WelcomeFlow": {
     "offer": {
@@ -215,6 +271,52 @@
       "nicknameTaken": "Já existe um perfil com esta alcunha. Escolhe outra.",
       "emailTaken": "Já existe uma conta com este e-mail. Entra ou usa outro e-mail.",
       "createFailed": "Não foi possível criar o perfil"
+    },
+    "step": "Passo {current} de {total}",
+    "continue": "Continuar",
+    "back": "Voltar",
+    "begin": "Começar",
+    "thisIsMe": "Sou eu",
+    "saving": "A abrir a tua página inicial…",
+    "walletWait": "A ligar a tua carteira…",
+    "signedInAs": "Sessão iniciada como {email}",
+    "welcome": {
+      "eyebrow": "Boas-vindas",
+      "title": "Estás a entrar numa rede viva",
+      "body": "A Hypha junta pessoas, propósito, decisões, recursos e IA num sistema que pode aprender e agir. Isto leva só um momento."
+    },
+    "you": {
+      "eyebrow": "Tu",
+      "title": "Como te devemos chamar?",
+      "icon": "Ícone do perfil",
+      "firstName": "Nome",
+      "lastName": "Apelido",
+      "nickname": "Alcunha",
+      "nicknameHint": "Até 12 caracteres. Isto passa a ser o endereço do teu perfil."
+    },
+    "description": {
+      "eyebrow": "Descrição",
+      "title": "A tua paixão e onde estás",
+      "body": "Ambos podem ficar vazios. Podes acrescentá-los mais tarde.",
+      "passion": "Paixão",
+      "passionPlaceholder": "Uma linha sobre o que vens fazer"
+    },
+    "orientation": {
+      "eyebrow": "O teu lugar",
+      "title": "Quem és aqui, principalmente?",
+      "body": "Isto define a página inicial que te recebe. Podes mudá-la mais tarde.",
+      "member": {
+        "title": "Membro",
+        "body": "Participas em espaços, decisões e nas pessoas à tua volta."
+      },
+      "builder": {
+        "title": "Construtor",
+        "body": "Dás forma a espaços em torno de uma visão e trazes outras pessoas."
+      },
+      "investor": {
+        "title": "Investidor",
+        "body": "Lês o que a rede está a pedir e aplicas capital."
+      }
     }
   },
   "NetworkExchange": {
@@ -233,10 +335,28 @@
     "emptyRank": "Ainda nada partilhado com a rede.",
     "openRoom": "Abrir sala",
     "visit": "Visitar o espaço",
+    "projectSpace": "Espaço de projeto",
+    "treasuryLive": "Tesouraria · ao vivo",
+    "showMoreCount": "Mostrar mais {count}",
+    "governanceCircles": "Círculos de governação",
+    "circleMembers": "{count, plural, one {# membro} other {# membros}}",
     "noRoom": "Este espaço ainda não tem sala.",
     "seeks": "Procura",
     "offers": "Oferece de volta",
     "noneYet": "Ainda sem nome",
+    "capitals": {
+      "financial": "Financeiro",
+      "material": "Material",
+      "living": "Vivo",
+      "wellbeing": "Bem-estar",
+      "ecological": "Ecológico",
+      "experiential": "Experiencial",
+      "wisdom": "Sabedoria",
+      "social": "Social",
+      "creative": "Criativo",
+      "cultural": "Cultural",
+      "intellectual": "Intelectual"
+    },
     "exchangeTitle": "Encontrar um projeto, ou os recursos de que precisa",
     "exchangeBody": "Os espaços nomeiam o que procuram e o que oferecem de volta. O encaixe é a sobreposição.",
     "bestMatch": "Encaixe mais próximo",
@@ -2585,7 +2705,10 @@
       "blindSpot": "Qual é o nosso maior ponto cego?",
       "summarizeDiscussion": "Resuma a discussão recente da equipa",
       "spaceMemory": "O que é que o nosso espaço recorda?",
-      "valueFlows": "Como flui o valor através dos nossos tokens?"
+      "valueFlows": "Como flui o valor através dos nossos tokens?",
+      "findProject": "Encontra um projeto a que eu possa dar recursos",
+      "findResources": "Encontra recursos para um espaço que estou a construir",
+      "sharedNeeds": "Que necessidades estão partilhadas com a rede?"
     },
     "suggestionTags": {
       "createSpace": "Criar espaço",
@@ -2595,7 +2718,10 @@
       "blindSpot": "Ponto cego",
       "summarizeDiscussion": "Resumir discussão",
       "spaceMemory": "Memória do espaço",
-      "valueFlows": "Fluxos de valor"
+      "valueFlows": "Fluxos de valor",
+      "findProject": "Encontrar um projeto",
+      "findResources": "Encontrar recursos",
+      "sharedNeeds": "Necessidades partilhadas"
     },
     "welcome": "Sou a IA do teu espaço para trazer coerência à estratégia, movimento às operações e significado ao impacto—agentes especialistas entram suavemente sempre que os chamas.",
     "specialistsResponding": "Especialistas contribuindo",
@@ -4886,5 +5012,19 @@
     "errorAlreadyConfirmedDescription": "Este e-mail já foi confirmado.",
     "errorGenericTitle": "Algo deu errado",
     "errorGenericDescription": "Não foi possível confirmar este e-mail. Tente novamente mais tarde."
+  },
+  "Marketplace": {
+    "metaTitle": "Mercado da rede | Hypha",
+    "metaDescription": "Pedidos de investimento publicados por espaços da rede.",
+    "loadError": "Não foi possível carregar o mercado. Tenta daqui a pouco.",
+    "eyebrow": "Mercado da rede",
+    "title": "O que a rede está a pedir",
+    "body": "Os espaços publicam um pedido de investimento quando estão prontos para capital. Abre um para o ler e aplica capital a partir da proposta.",
+    "empty": "Ainda não há pedidos abertos. Quando um espaço publicar uma proposta de investimento, aparece aqui.",
+    "incomplete": "Podem existir mais pedidos. Não foi possível verificar a tempo todos os mais recentes.",
+    "deploy": "Aplicar capital",
+    "proposal": "Proposta",
+    "agreement": "Acordo",
+    "backHome": "Voltar ao início"
   }
 }

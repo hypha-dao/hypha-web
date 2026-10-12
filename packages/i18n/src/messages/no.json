@@ -201,7 +201,63 @@
     "proposals": "Forslag å ta stilling til",
     "waiting": "Oppmerksomhet trengs",
     "noWaiting": "Det som trenger oppmerksomhet fra rommene dine vises her.",
-    "movementJoined": "{name} ble med"
+    "movementJoined": "{name} ble med",
+    "greetingMorning": "God morgen, {name}.",
+    "greetingAfternoon": "God ettermiddag, {name}.",
+    "greetingEvening": "God kveld, {name}.",
+    "peopleAround": "{count} av folka dine i nærheten",
+    "peopleAroundEmpty": "Folka dine samles her",
+    "openChat": "Åpne chat",
+    "weighIn": "Gå inn",
+    "viewSignal": "Åpne signal",
+    "quiet": "Ingenting venter",
+    "counts": {
+      "spaces": "Rom",
+      "proposals": "Forslag",
+      "signals": "Signaler",
+      "people": "Folk"
+    },
+    "wallet": "Lommebok",
+    "walletEmpty": "Lommeboken din vises her når den er koblet til.",
+    "openWallet": "Åpne lommebok",
+    "connections": "Forbindelser",
+    "sharedSpaces": "{count} felles",
+    "noConnections": "Folk du deler et rom med vises her.",
+    "spaces": "Rom",
+    "noSpaces": "Du er ikke i et rom ennå.",
+    "noSignals": "Signaler fra rommene dine vises her.",
+    "notifications": "Varsler",
+    "noNotifications": "Ingenting trenger deg akkurat nå.",
+    "seeAllNotifications": "Varselsenter",
+    "noProposals": "Forslag i rommene dine vises her.",
+    "createSpace": "Opprett et rom",
+    "builderTitle": "Form et rom rundt visjonen din",
+    "builderBody": "Gå gjennom KI-opplevelsen og ta et rom inn i nettverket rundt det du vil bygge.",
+    "builderAction": "Start opplevelsen",
+    "investorTitle": "Nettverksmarked",
+    "investorBody": "Rom publiserer det de ber om. Les en forespørsel, og sett inn kapital i den.",
+    "investorAction": "Se forespørslene",
+    "investorCount": "{count} åpne forespørsler",
+    "chooseTitle": "Hvordan viser du deg mest?",
+    "chooseBody": "Medlem, bygger eller investor. Dette stemmer hjemmet ditt. Du kan endre det når som helst.",
+    "orientationMember": "Medlem",
+    "orientationBuilder": "Bygger",
+    "orientationInvestor": "Investor",
+    "changeOrientation": "Endre",
+    "changeOrientationLabel": "Endre hvordan du viser deg. Nå {orientation}.",
+    "signInTitle": "Hjemmet ditt venter",
+    "signInBody": "Logg inn for å se hvor du kan være til nytte.",
+    "signIn": "Logg inn",
+    "loading": "Samler hjemmet ditt…",
+    "metaTitle": "Hjem | Hypha",
+    "metaDescription": "Hvor du kan være til nytte: rommene dine, folk, forslag og lommebok.",
+    "fallbackName": "du",
+    "fallbackMember": "Medlem",
+    "orientationSaveError": "Valget kunne ikke lagres. Prøv igjen.",
+    "error": "Hjemmet ditt kunne ikke lastes.",
+    "errorNamed": "{name}, hjemmet ditt kunne ikke lastes.",
+    "profileUnavailable": "Du er fortsatt innlogget. Profilen din kunne ikke lastes.",
+    "retry": "Prøv igjen"
   },
   "WelcomeFlow": {
     "offer": {
@@ -215,6 +271,52 @@
       "nicknameTaken": "En profil med dette kallenavnet finnes allerede. Velg et annet.",
       "emailTaken": "En konto med denne e-posten finnes allerede. Logg inn eller bruk en annen e-post.",
       "createFailed": "Kunne ikke opprette profilen"
+    },
+    "step": "Steg {current} av {total}",
+    "continue": "Fortsett",
+    "back": "Tilbake",
+    "begin": "Begynn",
+    "thisIsMe": "Dette er meg",
+    "saving": "Åpner hjemmet ditt…",
+    "walletWait": "Kobler til lommeboken din…",
+    "signedInAs": "Logget inn som {email}",
+    "welcome": {
+      "eyebrow": "Velkommen",
+      "title": "Du blir med i et levende nettverk",
+      "body": "Hypha samler mennesker, formål, beslutninger, ressurser og KI i ett system som kan lære og handle. Dette tar bare et øyeblikk."
+    },
+    "you": {
+      "eyebrow": "Deg",
+      "title": "Hva skal vi kalle deg?",
+      "icon": "Profilikon",
+      "firstName": "Fornavn",
+      "lastName": "Etternavn",
+      "nickname": "Kallenavn",
+      "nicknameHint": "Opptil 12 tegn. Dette blir adressen til profilen din."
+    },
+    "description": {
+      "eyebrow": "Beskrivelse",
+      "title": "Lidenskapen din og hvor du er",
+      "body": "Begge kan stå tomme. Du kan legge dem til senere.",
+      "passion": "Lidenskap",
+      "passionPlaceholder": "En linje om hva du er her for å gjøre"
+    },
+    "orientation": {
+      "eyebrow": "Din plass",
+      "title": "Hvem er du her som, først og fremst?",
+      "body": "Dette setter hjemmet som møter deg. Du kan endre det senere.",
+      "member": {
+        "title": "Medlem",
+        "body": "Du tar del i rom, beslutninger og menneskene rundt deg."
+      },
+      "builder": {
+        "title": "Bygger",
+        "body": "Du former rom rundt en visjon og tar andre med."
+      },
+      "investor": {
+        "title": "Investor",
+        "body": "Du leser hva nettverket ber om, og setter inn kapital."
+      }
     }
   },
   "NetworkExchange": {
@@ -233,10 +335,28 @@
     "emptyRank": "Ingenting er delt med nettverket ennå.",
     "openRoom": "Åpne rommet",
     "visit": "Åpne rommet i nettverket",
+    "projectSpace": "Prosjektrom",
+    "treasuryLive": "Treasury · live",
+    "showMoreCount": "Vis {count} til",
+    "governanceCircles": "Styringskretser",
+    "circleMembers": "{count, plural, one {# medlem} other {# medlemmer}}",
     "noRoom": "Dette rommet har ingen samtalerom ennå.",
     "seeks": "Søker",
     "offers": "Gir tilbake",
     "noneYet": "Ikke navngitt ennå",
+    "capitals": {
+      "financial": "Finansiell",
+      "material": "Materiell",
+      "living": "Levende",
+      "wellbeing": "Velvære",
+      "ecological": "Økologisk",
+      "experiential": "Opplevelse",
+      "wisdom": "Visdom",
+      "social": "Sosial",
+      "creative": "Kreativ",
+      "cultural": "Kulturell",
+      "intellectual": "Intellektuell"
+    },
     "exchangeTitle": "Finn et prosjekt, eller ressursene det trenger",
     "exchangeBody": "Rom navngir hva de søker og hva de gir tilbake. Treffet er overlappen.",
     "bestMatch": "Nærmeste treff",
@@ -3158,7 +3278,10 @@
       "blindSpot": "Hva er vår største blindsone?",
       "summarizeDiscussion": "Oppsummer nylig teamdiskusjon",
       "spaceMemory": "Hva husker rommet vårt?",
-      "valueFlows": "Hvordan flyter verdi gjennom tokenene våre?"
+      "valueFlows": "Hvordan flyter verdi gjennom tokenene våre?",
+      "findProject": "Finn ett prosjekt jeg kan støtte med ressurser",
+      "findResources": "Finn ressurser til et rom jeg bygger",
+      "sharedNeeds": "Hvilke behov er delt med nettverket?"
     },
     "suggestionTags": {
       "createSpace": "Opprett rom",
@@ -3168,7 +3291,10 @@
       "blindSpot": "Blindsone",
       "summarizeDiscussion": "Oppsummer diskusjon",
       "spaceMemory": "Rommets minne",
-      "valueFlows": "Verdistrømmer"
+      "valueFlows": "Verdistrømmer",
+      "findProject": "Finn et prosjekt",
+      "findResources": "Finn ressurser",
+      "sharedNeeds": "Delte behov"
     },
     "welcome": "Jeg er rommets AI som skaper sammenheng i strategien, bevegelse i driften og mening i påvirkningen, med spesialistagenter som glir inn når du kaller på dem.",
     "specialistsResponding": "Spesialister bidrar",
@@ -4893,5 +5019,19 @@
     "errorAlreadyConfirmedDescription": "Denne e-posten er allerede bekreftet.",
     "errorGenericTitle": "Noe gikk galt",
     "errorGenericDescription": "Vi kunne ikke bekrefte denne e-posten. Prøv igjen senere."
+  },
+  "Marketplace": {
+    "metaTitle": "Nettverksmarked | Hypha",
+    "metaDescription": "Investeringsforespørsler publisert av rom i nettverket.",
+    "loadError": "Markedet kunne ikke lastes. Prøv igjen om et øyeblikk.",
+    "eyebrow": "Nettverksmarked",
+    "title": "Det nettverket ber om",
+    "body": "Rom publiserer en investeringsforespørsel når de er klare for kapital. Åpne en for å lese den, og sett inn kapital fra forslaget.",
+    "empty": "Ingen åpne forespørsler ennå. Når et rom publiserer et investeringsforslag, vises det her.",
+    "incomplete": "Det kan finnes flere forespørsler. De nyeste kunne ikke alle sjekkes i tide.",
+    "deploy": "Sett inn kapital",
+    "proposal": "Forslag",
+    "agreement": "Avtale",
+    "backHome": "Tilbake til hjem"
   }
 }

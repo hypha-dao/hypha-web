@@ -201,7 +201,63 @@
     "proposals": "Vorschläge zum Abwägen",
     "waiting": "Aufmerksamkeit nötig",
     "noWaiting": "Was in deinen Spaces Aufmerksamkeit braucht, erscheint hier.",
-    "movementJoined": "{name} ist dazugekommen"
+    "movementJoined": "{name} ist dazugekommen",
+    "greetingMorning": "Guten Morgen, {name}.",
+    "greetingAfternoon": "Guten Tag, {name}.",
+    "greetingEvening": "Guten Abend, {name}.",
+    "peopleAround": "{count} deiner Menschen in der Nähe",
+    "peopleAroundEmpty": "Deine Menschen treffen sich hier",
+    "openChat": "Chat öffnen",
+    "weighIn": "Eintreten",
+    "viewSignal": "Signal öffnen",
+    "quiet": "Nichts wartet",
+    "counts": {
+      "spaces": "Spaces",
+      "proposals": "Vorschläge",
+      "signals": "Signale",
+      "people": "Menschen"
+    },
+    "wallet": "Wallet",
+    "walletEmpty": "Deine Wallet erscheint hier, sobald sie verbunden ist.",
+    "openWallet": "Wallet öffnen",
+    "connections": "Verbindungen",
+    "sharedSpaces": "{count} gemeinsam",
+    "noConnections": "Menschen, mit denen du einen Space teilst, erscheinen hier.",
+    "spaces": "Spaces",
+    "noSpaces": "Du bist noch in keinem Space.",
+    "noSignals": "Signale aus deinen Spaces erscheinen hier.",
+    "notifications": "Benachrichtigungen",
+    "noNotifications": "Gerade braucht dich nichts.",
+    "seeAllNotifications": "Benachrichtigungszentrum",
+    "noProposals": "Vorschläge in deinen Spaces erscheinen hier.",
+    "createSpace": "Einen Space erstellen",
+    "builderTitle": "Forme einen Space um deine Vision",
+    "builderBody": "Geh die KI-Erfahrung durch und bring einen Space ins Netzwerk um das, was du bauen willst.",
+    "builderAction": "Erfahrung beginnen",
+    "investorTitle": "Netzwerk-Marktplatz",
+    "investorBody": "Spaces veröffentlichen, worum sie bitten. Lies eine Anfrage und setze Kapital darin ein.",
+    "investorAction": "Anfragen ansehen",
+    "investorCount": "{count} offene Anfragen",
+    "chooseTitle": "Wie zeigst du dich vor allem?",
+    "chooseBody": "Mitglied, Gestalter oder Investor. Das stimmt dein Zuhause ab. Du kannst es jederzeit ändern.",
+    "orientationMember": "Mitglied",
+    "orientationBuilder": "Gestalter",
+    "orientationInvestor": "Investor",
+    "changeOrientation": "Ändern",
+    "changeOrientationLabel": "Ändere, wie du dich zeigst. Aktuell {orientation}.",
+    "signInTitle": "Dein Zuhause wartet",
+    "signInBody": "Melde dich an, um zu sehen, wo du nützlich sein kannst.",
+    "signIn": "Anmelden",
+    "loading": "Dein Zuhause wird zusammengestellt…",
+    "metaTitle": "Zuhause | Hypha",
+    "metaDescription": "Wo du nützlich sein kannst: deine Spaces, Menschen, Vorschläge und deine Wallet.",
+    "fallbackName": "du",
+    "fallbackMember": "Mitglied",
+    "orientationSaveError": "Diese Wahl konnte nicht gespeichert werden. Versuch es noch einmal.",
+    "error": "Dein Zuhause konnte nicht geladen werden.",
+    "errorNamed": "{name}, dein Zuhause konnte nicht geladen werden.",
+    "profileUnavailable": "Du bist noch angemeldet. Dein Profil konnte nicht geladen werden.",
+    "retry": "Nochmal versuchen"
   },
   "WelcomeFlow": {
     "offer": {
@@ -215,6 +271,52 @@
       "nicknameTaken": "Ein Profil mit diesem Spitznamen existiert bereits. Bitte wähle einen anderen.",
       "emailTaken": "Ein Konto mit dieser E-Mail existiert bereits. Melde dich an oder verwende eine andere E-Mail.",
       "createFailed": "Profil konnte nicht erstellt werden"
+    },
+    "step": "Schritt {current} von {total}",
+    "continue": "Weiter",
+    "back": "Zurück",
+    "begin": "Beginnen",
+    "thisIsMe": "Das bin ich",
+    "saving": "Dein Zuhause wird geöffnet…",
+    "walletWait": "Deine Wallet wird verbunden…",
+    "signedInAs": "Angemeldet als {email}",
+    "welcome": {
+      "eyebrow": "Willkommen",
+      "title": "Du trittst einem lebendigen Netzwerk bei",
+      "body": "Hypha bringt Menschen, Zweck, Entscheidungen, Ressourcen und KI in ein System, das lernen und handeln kann. Das dauert nur einen Moment."
+    },
+    "you": {
+      "eyebrow": "Du",
+      "title": "Wie sollen wir dich nennen?",
+      "icon": "Profilsymbol",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "nickname": "Spitzname",
+      "nicknameHint": "Bis zu 12 Zeichen. Daraus wird deine Profiladresse."
+    },
+    "description": {
+      "eyebrow": "Beschreibung",
+      "title": "Deine Leidenschaft und wo du bist",
+      "body": "Beides kann leer bleiben. Du kannst es später ergänzen.",
+      "passion": "Leidenschaft",
+      "passionPlaceholder": "Eine Zeile darüber, wofür du hier bist"
+    },
+    "orientation": {
+      "eyebrow": "Dein Platz",
+      "title": "Als wer bist du hier vor allem?",
+      "body": "Das bestimmt das Zuhause, das dich begrüßt. Du kannst es später ändern.",
+      "member": {
+        "title": "Mitglied",
+        "body": "Du nimmst an Spaces, Entscheidungen und den Menschen um dich herum teil."
+      },
+      "builder": {
+        "title": "Gestalter",
+        "body": "Du formst Spaces um eine Vision und holst andere dazu."
+      },
+      "investor": {
+        "title": "Investor",
+        "body": "Du liest, worum das Netzwerk bittet, und setzt Kapital ein."
+      }
     }
   },
   "NetworkExchange": {
@@ -233,10 +335,28 @@
     "emptyRank": "Noch nichts mit dem Netzwerk geteilt.",
     "openRoom": "Raum öffnen",
     "visit": "Space öffnen",
+    "projectSpace": "Projektraum",
+    "treasuryLive": "Treasury · live",
+    "showMoreCount": "{count} weitere anzeigen",
+    "governanceCircles": "Governance-Kreise",
+    "circleMembers": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
     "noRoom": "Dieser Space hat noch keinen Raum.",
     "seeks": "Sucht",
     "offers": "Gibt zurück",
     "noneYet": "Noch nicht genannt",
+    "capitals": {
+      "financial": "Finanziell",
+      "material": "Materiell",
+      "living": "Lebendig",
+      "wellbeing": "Wohlbefinden",
+      "ecological": "Ökologisch",
+      "experiential": "Erlebnis",
+      "wisdom": "Weisheit",
+      "social": "Sozial",
+      "creative": "Kreativ",
+      "cultural": "Kulturell",
+      "intellectual": "Intellektuell"
+    },
     "exchangeTitle": "Ein Projekt finden, oder die Ressourcen, die es braucht",
     "exchangeBody": "Spaces nennen, was sie suchen und was sie zurückgeben. Die Übereinstimmung ist die Überlappung.",
     "bestMatch": "Nächste Übereinstimmung",
@@ -3157,7 +3277,10 @@
       "blindSpot": "Was ist unser größter blinder Fleck?",
       "summarizeDiscussion": "Fasse die letzte Teamdiskussion zusammen",
       "spaceMemory": "Was erinnert sich unser Space?",
-      "valueFlows": "Wie fließen Werte durch unsere Tokens?"
+      "valueFlows": "Wie fließen Werte durch unsere Tokens?",
+      "findProject": "Finde ein Projekt, das ich mit Ressourcen unterstützen kann",
+      "findResources": "Finde Ressourcen für einen Space, den ich baue",
+      "sharedNeeds": "Welche Bedürfnisse sind mit dem Netzwerk geteilt?"
     },
     "suggestionTags": {
       "createSpace": "Space erstellen",
@@ -3167,7 +3290,10 @@
       "blindSpot": "Blinder Fleck",
       "summarizeDiscussion": "Diskussion zusammenfassen",
       "spaceMemory": "Space-Memory",
-      "valueFlows": "Werteströme"
+      "valueFlows": "Werteströme",
+      "findProject": "Projekt finden",
+      "findResources": "Ressourcen finden",
+      "sharedNeeds": "Geteilte Bedürfnisse"
     },
     "welcome": "Ich bin deine Space-KI für Kohärenz in der Strategie, Bewegung in den Operations und Sinn im Impact—Spezialist:innen gleiten herein, sobald du sie rufst.",
     "specialistsResponding": "Beitragende Spezialisten",
@@ -4888,5 +5014,19 @@
     "errorAlreadyConfirmedDescription": "Diese E-Mail-Adresse wurde bereits bestätigt.",
     "errorGenericTitle": "Etwas ist schiefgelaufen",
     "errorGenericDescription": "Wir konnten diese E-Mail-Adresse nicht bestätigen. Bitte versuchen Sie es später erneut."
+  },
+  "Marketplace": {
+    "metaTitle": "Netzwerk-Marktplatz | Hypha",
+    "metaDescription": "Investitionsanfragen, die Spaces im Netzwerk veröffentlichen.",
+    "loadError": "Der Marktplatz konnte nicht geladen werden. Versuch es gleich noch einmal.",
+    "eyebrow": "Netzwerk-Marktplatz",
+    "title": "Worum das Netzwerk bittet",
+    "body": "Spaces veröffentlichen eine Investitionsanfrage, wenn sie bereit für Kapital sind. Öffne eine, lies sie, und setze Kapital aus dem Vorschlag ein.",
+    "empty": "Noch keine offenen Anfragen. Wenn ein Space einen Investitionsvorschlag veröffentlicht, erscheint er hier.",
+    "incomplete": "Es kann weitere Anfragen geben. Die neuesten konnten nicht alle rechtzeitig geprüft werden.",
+    "deploy": "Kapital einsetzen",
+    "proposal": "Vorschlag",
+    "agreement": "Vereinbarung",
+    "backHome": "Zurück nach Hause"
   }
 }
