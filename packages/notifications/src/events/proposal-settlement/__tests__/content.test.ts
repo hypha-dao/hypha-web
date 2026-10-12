@@ -131,6 +131,7 @@ describe('buildProposalSettlementContent — email template', () => {
   });
 
   it('falls back to plain email without the env var', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR', '');
     const result = buildProposalSettlementContent(accepted, creatorRecipient);
     expect(result.content.email).toMatchObject({ kind: 'plain' });
   });

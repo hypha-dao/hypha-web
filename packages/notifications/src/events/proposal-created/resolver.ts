@@ -53,7 +53,13 @@ export const resolveProposalCreatedRecipients: RecipientResolver<
   const proposal = await findDocumentWithSpaceByIdRaw(
     { id: Number(proposalWeb3Id) },
     { db },
-  ).catch(() => null);
+  ).catch((error) => {
+    console.error(
+      '[notifications] proposal.created: proposal lookup failed, using the fallback link',
+      { proposalWeb3Id, error },
+    );
+    return null;
+  });
   const proposalTitle = proposal?.document.title ?? undefined;
   const linkData = {
     proposalTitle,
