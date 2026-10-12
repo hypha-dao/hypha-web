@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { COHERENCE_TYPES } from '@hypha-platform/core/client';
 
 const BUCKETS = 4;
-const PRIORITIES = ['critical', 'high', 'medium', 'low'] as const;
 
 const TYPE_INK: Record<string, string> = {
   Need: 'var(--success-9)',
@@ -33,113 +32,18 @@ function timeOf(value: string | Date | null | undefined) {
   return Number.isFinite(time) ? time : null;
 }
 
-function HeatField({
-  signals,
-  ink,
-  priorityLabel,
-  recent,
-  older,
-  cellTitle,
-}: {
-  signals: HeatSignal[];
-  ink: string;
-  priorityLabel: (priority: (typeof PRIORITIES)[number]) => string;
-  recent: string;
-  older: string;
-  cellTitle: (
-    priority: string,
-    count: number,
-    start: number,
-    end: number,
-  ) => string;
-}) {
-  const matrix = useMemo(() => {
-    const times = signals
-      .map((signal) => timeOf(signal.createdAt))
-      .filter((time): time is number => time != null);
-    const newest = times.length > 0 ? Math.max(...times) : 0;
-    const oldest = times.length > 0 ? Math.min(...times) : 0;
-    const span = Math.max(newest - oldest, 1);
-    const counts = new Map<string, number>();
-    for (const signal of signals) {
-      const time = timeOf(signal.createdAt);
-      const age = time == null ? 0 : (newest - time) / span;
-      const bucket = Math.min(BUCKETS - 1, Math.floor(age * BUCKETS));
-      const priority = PRIORITIES.includes(
-        signal.priority as (typeof PRIORITIES)[number],
-      )
-        ? signal.priority
-        : 'medium';
-      const key = `${priority}|${bucket}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    const peak = Math.max(1, ...counts.values());
-    return { counts, peak };
-  }, [signals]);
-
-  return (
-    <div className="mt-4">
-      <div
-        className="grid items-center gap-1"
-        style={{ gridTemplateColumns: 'auto repeat(4, minmax(0, 1fr))' }}
-      >
-        {PRIORITIES.map((priority) => (
-          <div key={priority} className="contents">
-            <span className="pr-2 text-1 text-neutral-11">
-              {priorityLabel(priority)}
-            </span>
-            {Array.from({ length: BUCKETS }, (_, column) => {
-              const bucket = BUCKETS - 1 - column;
-              const count = matrix.counts.get(`${priority}|${bucket}`) ?? 0;
-              const start = Math.round((bucket / BUCKETS) * 100);
-              const end = Math.round(((bucket + 1) / BUCKETS) * 100);
-              return (
-                <span
-                  key={bucket}
-                  title={cellTitle(priorityLabel(priority), count, start, end)}
-                  className="aspect-square bg-neutral-3"
-                  style={
-                    count > 0
-                      ? {
-                          backgroundColor: `color-mix(in srgb, ${ink} ${Math.round(
-                            28 + (count / matrix.peak) * 72,
-                          )}%, transparent)`,
-                        }
-                      : undefined
-                  }
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      <div
-        className="mt-2 grid text-1 text-neutral-11"
-        style={{ gridTemplateColumns: 'auto repeat(4, minmax(0, 1fr))' }}
-      >
-        <span />
-        <span>{older}</span>
-        <span className="col-span-2" />
-        <span className="text-right">{recent}</span>
-      </div>
-    </div>
-  );
-}
-
 function HeatSkeleton() {
   return (
-    <div
-      className="grid gap-px bg-border"
-      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))' }}
-    >
-      {Array.from({ length: 2 }, (_, map) => (
-        <div key={map} className="bg-background px-4 py-4">
-          <div className="h-3 w-20 bg-muted" />
-          <div className="mt-4 grid grid-cols-4 gap-1">
-            {Array.from({ length: PRIORITIES.length * BUCKETS }, (_, cell) => (
-              <span key={cell} className="aspect-square bg-neutral-3" />
-            ))}
-          </div>
+    <div className="grid gap-2 px-4 py-4">
+      {Array.from({ length: 4 }, (_, row) => (
+        <div
+          key={row}
+          className="grid grid-cols-[7rem_repeat(4,minmax(0,1fr))] gap-1"
+        >
+          <span className="h-8 bg-neutral-3" />
+          {Array.from({ length: BUCKETS }, (_, cell) => (
+            <span key={cell} className="h-8 bg-neutral-3" />
+          ))}
         </div>
       ))}
     </div>
@@ -160,62 +64,107 @@ export function SignalHeatMaps({
   const tSignals = useTranslations('CoherenceTab');
   const tHeat = useTranslations('TokenHoldingsDashboard');
   const groups = useMemo(() => {
-    const byType = new Map<string, HeatSignal[]>();
+    const times = signals
+      .map((signal) => timeOf(signal.createdAt))
+      .filter((time): time is number => time != null);
+    const newest = times.length > 0 ? Math.max(...times) : 0;
+    const oldest = times.length > 0 ? Math.min(...times) : 0;
+    const span = Math.max(newest - oldest, 1);
+    const counts = new Map<string, number>();
+    const totals = new Map<string, number>();
     for (const signal of signals) {
-      const list = byType.get(signal.type) ?? [];
-      list.push(signal);
-      byType.set(signal.type, list);
+      const time = timeOf(signal.createdAt);
+      const age = time == null ? 0 : (newest - time) / span;
+      const bucket = Math.min(BUCKETS - 1, Math.floor(age * BUCKETS));
+      const key = `${signal.type}|${bucket}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+      totals.set(signal.type, (totals.get(signal.type) ?? 0) + 1);
     }
-    return COHERENCE_TYPES.flatMap((type) => {
-      const items = byType.get(type);
-      return items && items.length > 0 ? [{ type, items }] : [];
+    const peak = Math.max(1, ...counts.values());
+    const rows = COHERENCE_TYPES.flatMap((type) => {
+      const total = totals.get(type) ?? 0;
+      return total > 0 ? [{ type, total }] : [];
     });
+    return { counts, peak, rows };
   }, [signals]);
 
   if (isLoading) return <HeatSkeleton />;
-  if (groups.length === 0) {
+  if (groups.rows.length === 0) {
     return <p className="px-4 py-4 text-2 text-neutral-11">{empty}</p>;
   }
 
   return (
-    <div>
+    <div className="px-4 pb-4">
       <div
-        className="grid gap-px bg-border"
-        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))' }}
+        className="grid items-center gap-1"
+        style={{
+          gridTemplateColumns: 'minmax(7rem, 10rem) repeat(4, minmax(0, 1fr))',
+        }}
       >
-        {groups.map((group) => {
-          const label = tSignals.has(`types.${group.type}` as 'types.Need')
-            ? tSignals(`types.${group.type}` as 'types.Need')
-            : group.type;
+        {groups.rows.map((row) => {
+          const label = tSignals.has(`types.${row.type}` as 'types.Need')
+            ? tSignals(`types.${row.type}` as 'types.Need')
+            : row.type;
+          const ink = TYPE_INK[row.type] ?? 'var(--accent-11)';
           return (
             <Link
-              key={group.type}
-              href={hrefForType(group.type)}
-              className="bg-background px-4 py-4 hover:bg-foreground/5"
+              key={row.type}
+              href={hrefForType(row.type)}
+              className="col-span-5 grid grid-cols-subgrid items-center gap-1 hover:bg-foreground/5"
             >
-              <span className="flex items-baseline justify-between gap-3">
-                <span className="truncate text-1 uppercase tracking-[0.12em] text-muted-foreground">
-                  {label}
-                </span>
-                <span className="text-3 tabular-nums text-foreground">
-                  {group.items.length}
+              <span className="flex min-w-0 items-baseline justify-between gap-2 pr-3">
+                <span className="truncate text-1 text-foreground">{label}</span>
+                <span className="shrink-0 text-1 tabular-nums text-neutral-11">
+                  {row.total}
                 </span>
               </span>
-              <HeatField
-                signals={group.items}
-                ink={TYPE_INK[group.type] ?? 'var(--accent-11)'}
-                priorityLabel={(priority) => tSignals(`priorities.${priority}`)}
-                recent={tHeat('signals.recent')}
-                older={tHeat('signals.older')}
-                cellTitle={(priority, count, start, end) =>
-                  tHeat('signals.cellTitle', { priority, count, start, end })
-                }
-              />
+              {Array.from({ length: BUCKETS }, (_, column) => {
+                const bucket = BUCKETS - 1 - column;
+                const count = groups.counts.get(`${row.type}|${bucket}`) ?? 0;
+                const start = Math.round((bucket / BUCKETS) * 100);
+                const end = Math.round(((bucket + 1) / BUCKETS) * 100);
+                return (
+                  <span
+                    key={bucket}
+                    title={tHeat('signals.cellTitle', {
+                      priority: label,
+                      count,
+                      start,
+                      end,
+                    })}
+                    className={
+                      count > 0
+                        ? 'h-8 bg-neutral-3 motion-safe:animate-pulse [animation-duration:2.8s]'
+                        : 'h-8 bg-neutral-3'
+                    }
+                    style={
+                      count > 0
+                        ? {
+                            backgroundColor: `color-mix(in srgb, ${ink} ${Math.round(
+                              28 + (count / groups.peak) * 72,
+                            )}%, transparent)`,
+                          }
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </Link>
           );
         })}
       </div>
-      <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3 text-1 text-neutral-11">
+      <div
+        className="mt-2 grid text-1 text-neutral-11"
+        style={{
+          gridTemplateColumns: 'minmax(7rem, 10rem) repeat(4, minmax(0, 1fr))',
+        }}
+      >
+        <span />
+        <span>{tHeat('signals.older')}</span>
+        <span className="col-span-2" />
+        <span className="text-right">{tHeat('signals.recent')}</span>
+      </div>
+      <div className="mt-3 flex items-center justify-end gap-2 border-t border-border pt-3 text-1 text-neutral-11">
         <span>{tHeat('signals.lowActivity')}</span>
         <span className="h-2 w-10 bg-neutral-4" />
         <span className="h-2 w-10 bg-foreground" />
