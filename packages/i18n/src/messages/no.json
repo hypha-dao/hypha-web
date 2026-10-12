@@ -862,7 +862,7 @@
     },
     "signals": {
       "title": "Signaler",
-      "subtitle": "Varmekart etter prioritet og aktualitet (nylige til venstre, eldre til høyre)",
+      "subtitle": "Varmekart etter prioritet og aktualitet (eldre til venstre, nylige til høyre)",
       "count": "Signaler",
       "peakCell": "Toppcelle",
       "recent": "Nylig",

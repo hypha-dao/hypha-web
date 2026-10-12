@@ -1196,7 +1196,7 @@ function SignalsPulseMapWidget({
   const x = d3
     .scaleBand<number>()
     .domain(d3.range(bucketCount))
-    .range([0, innerWidth])
+    .range([innerWidth, 0])
     .paddingInner(0.14)
     .paddingOuter(0.02);
   const y = d3
@@ -1375,15 +1375,6 @@ function SignalsPulseMapWidget({
                   </g>
                 );
               })}
-
-              <text
-                x={innerWidth / 2}
-                y={innerHeight + 38}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[11px]"
-              >
-                {tTokenHoldings('signals.recency')}
-              </text>
             </g>
           </svg>
         </div>

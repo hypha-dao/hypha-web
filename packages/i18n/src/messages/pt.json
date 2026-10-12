@@ -1635,7 +1635,7 @@
     },
     "signals": {
       "title": "Sinais",
-      "subtitle": "Mapa de calor por prioridade e recência (mais recente à esquerda, mais antigo à direita)",
+      "subtitle": "Mapa de calor por prioridade e recência (mais antigo à esquerda, mais recente à direita)",
       "count": "Sinais",
       "peakCell": "Pico de célula",
       "recent": "Recente",

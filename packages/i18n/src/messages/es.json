@@ -1635,7 +1635,7 @@
     },
     "signals": {
       "title": "Señales",
-      "subtitle": "Mapa de calor por prioridad y recencia (reciente a la izquierda, más antiguo a la derecha)",
+      "subtitle": "Mapa de calor por prioridad y recencia (más antiguo a la izquierda, reciente a la derecha)",
       "count": "Señales",
       "peakCell": "Celda máxima",
       "recent": "Reciente",
