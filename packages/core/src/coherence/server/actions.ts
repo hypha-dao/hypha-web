@@ -9,11 +9,13 @@ import {
   UpdateCoherenceSignalBySlugInput,
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { coherences, memberships } from '@hypha-platform/storage-postgres';
 import {
+  acknowledgeCoherenceAssignment,
   createCoherence,
   deleteCoherenceBySlug,
+  mergeCoherenceTags,
   patchCoherenceTaskBySlug,
   updateCoherenceBySlug,
   updateCoherenceSignalBySlug,
@@ -37,9 +39,19 @@ import {
   applyCoherenceUpvoteRemoval,
 } from './apply-coherence-upvote';
 import type { CoherenceUpvoteSummary } from '../types';
+import { findPersonsBySlug } from '../../people/server/queries';
+import { findSpaceBySlug } from '../../space/server/queries';
+import { newlyMentionedSlugs } from '../signal-mentions';
+import {
+  dueAtHasChanged,
+  newlyAssignedPersonIds,
+} from '../signal-notification-triggers';
 import {
   getSignalAssignedNotifier,
+  getSignalLifecycleNotifier,
   type SignalAssignedNotifierInput,
+  type SignalLifecycleKind,
+  type SignalLifecycleNotifierInput,
 } from './signal-assigned-notifier';
 
 async function assertSignalWorkflowAccess({
@@ -70,15 +82,95 @@ async function assertSignalWorkflowAccess({
  * `setSignalAssignedNotifier` (see `./signal-assigned-notifier.ts` for why this is a registration
  * slot rather than a direct import of `@hypha-platform/notifications`).
  */
-async function notifySignalAssigned(input: SignalAssignedNotifierInput) {
-  if (input.assigneePersonIds.length === 0) return;
-  const notifier = getSignalAssignedNotifier();
-  if (!notifier) return;
+async function notifySignalLifecycle(input: SignalLifecycleNotifierInput) {
+  if (input.recipientPersonIds.length === 0) return;
+  const lifecycle = getSignalLifecycleNotifier();
+  if (lifecycle) {
+    try {
+      await lifecycle(input);
+    } catch (error) {
+      console.error(`Failed to notify signal ${input.kind}:`, error);
+    }
+    return;
+  }
+  if (input.kind !== 'assigned') return;
+  const assigned = getSignalAssignedNotifier();
+  if (!assigned) return;
   try {
-    await notifier(input);
+    await assigned({
+      spaceId: input.spaceId,
+      assigneePersonIds: input.recipientPersonIds,
+      actorPersonId: input.actorPersonId,
+      signalSlug: input.signalSlug,
+      signalTitle: input.signalTitle,
+      dueAt: input.dueAt,
+    });
   } catch (error) {
     console.error('Failed to notify signal assignees:', error);
   }
+}
+
+async function notifySignalAssigned(input: SignalAssignedNotifierInput) {
+  await notifySignalLifecycle({
+    kind: 'assigned',
+    spaceId: input.spaceId,
+    recipientPersonIds: input.assigneePersonIds,
+    actorPersonId: input.actorPersonId,
+    signalSlug: input.signalSlug,
+    signalTitle: input.signalTitle,
+    dueAt: input.dueAt,
+  });
+}
+
+async function notifySignalKind(
+  kind: SignalLifecycleKind,
+  input: Omit<SignalLifecycleNotifierInput, 'kind'>,
+) {
+  await notifySignalLifecycle({ kind, ...input });
+}
+
+async function notifyNewMentions({
+  spaceId,
+  actorPersonId,
+  signalSlug,
+  signalTitle,
+  previousDescription,
+  nextDescription,
+}: {
+  spaceId: number;
+  actorPersonId: number | null;
+  signalSlug: string;
+  signalTitle: string;
+  previousDescription?: string | null;
+  nextDescription?: string | null;
+}) {
+  const slugs = newlyMentionedSlugs(previousDescription, nextDescription);
+  if (slugs.length === 0) return;
+  const people = await findPersonsBySlug({ slugs }, { db });
+  const candidateIds = people
+    .map((person) => person.id)
+    .filter((id) => id !== actorPersonId);
+  if (candidateIds.length === 0) return;
+  const memberRows = await db
+    .select({ personId: memberships.personId })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.spaceId, spaceId),
+        inArray(memberships.personId, candidateIds),
+      ),
+    );
+  const memberIds = new Set(memberRows.map((row) => row.personId));
+  const recipientPersonIds = candidateIds.filter((id) => memberIds.has(id));
+  if (recipientPersonIds.length === 0) return;
+  await notifySignalKind('mentioned', {
+    spaceId,
+    recipientPersonIds,
+    actorPersonId,
+    signalSlug,
+    signalTitle,
+    mentionExcerpt: (nextDescription ?? '').slice(0, 280),
+  });
 }
 
 export async function createCoherenceAction(
@@ -101,6 +193,15 @@ export async function createCoherenceAction(
       actorPersonId: self.id,
       signalSlug: newSignal.slug ?? '',
       signalTitle: newSignal.title ?? '',
+      dueAt: newSignal.dueAt,
+    });
+    await notifyNewMentions({
+      spaceId: newSignal.spaceId,
+      actorPersonId: self.id,
+      signalSlug: newSignal.slug ?? '',
+      signalTitle: newSignal.title ?? '',
+      previousDescription: '',
+      nextDescription: newSignal.description,
     });
   }
   return newSignal;
@@ -186,7 +287,11 @@ export async function updateCoherenceSignalBySlugAction(
   });
 
   const [previousRow] = await db
-    .select({ assigneeIds: coherences.assigneeIds })
+    .select({
+      assigneeIds: coherences.assigneeIds,
+      dueAt: coherences.dueAt,
+      description: coherences.description,
+    })
     .from(coherences)
     .where(eq(coherences.slug, validated.slug))
     .limit(1);
@@ -197,16 +302,39 @@ export async function updateCoherenceSignalBySlugAction(
     { db },
   );
 
-  if (updated.spaceId != null && validated.assigneeIds !== undefined) {
-    const newlyAssignedIds = (updated.assigneeIds ?? []).filter(
-      (id) => !previousAssigneeIds.includes(id),
-    );
-    await notifySignalAssigned({
+  if (updated.spaceId != null) {
+    if (validated.assigneeIds !== undefined) {
+      await notifySignalAssigned({
+        spaceId: updated.spaceId,
+        assigneePersonIds: newlyAssignedPersonIds(
+          previousAssigneeIds,
+          updated.assigneeIds,
+        ),
+        actorPersonId: self.id,
+        signalSlug: updated.slug ?? '',
+        signalTitle: updated.title ?? '',
+        dueAt: updated.dueAt,
+      });
+    }
+    if (dueAtHasChanged(previousRow?.dueAt, updated.dueAt)) {
+      await notifySignalKind('deadline_changed', {
+        spaceId: updated.spaceId,
+        recipientPersonIds: (updated.assigneeIds ?? []).filter(
+          (id) => id !== self.id,
+        ),
+        actorPersonId: self.id,
+        signalSlug: updated.slug ?? '',
+        signalTitle: updated.title ?? '',
+        dueAt: updated.dueAt,
+      });
+    }
+    await notifyNewMentions({
       spaceId: updated.spaceId,
-      assigneePersonIds: newlyAssignedIds,
       actorPersonId: self.id,
       signalSlug: updated.slug ?? '',
       signalTitle: updated.title ?? '',
+      previousDescription: previousRow?.description,
+      nextDescription: updated.description,
     });
   }
 
@@ -232,10 +360,100 @@ export async function patchCoherenceTaskBySlugAction(
     authToken,
     requesterPersonId: self.id,
   });
-  return patchCoherenceTaskBySlug(
+  const [previousRow] = await db
+    .select({
+      assigneeIds: coherences.assigneeIds,
+      dueAt: coherences.dueAt,
+    })
+    .from(coherences)
+    .where(eq(coherences.slug, validated.slug))
+    .limit(1);
+  const updated = await patchCoherenceTaskBySlug(
     { ...validated, requesterPersonId: self.id },
     { db },
   );
+  if (updated.spaceId != null) {
+    if (validated.assigneeIds !== undefined) {
+      await notifySignalAssigned({
+        spaceId: updated.spaceId,
+        assigneePersonIds: newlyAssignedPersonIds(
+          previousRow?.assigneeIds,
+          updated.assigneeIds,
+        ),
+        actorPersonId: self.id,
+        signalSlug: updated.slug ?? '',
+        signalTitle: updated.title ?? '',
+        dueAt: updated.dueAt,
+      });
+    }
+    if (
+      validated.dueAt !== undefined &&
+      dueAtHasChanged(previousRow?.dueAt, updated.dueAt)
+    ) {
+      await notifySignalKind('deadline_changed', {
+        spaceId: updated.spaceId,
+        recipientPersonIds: (updated.assigneeIds ?? []).filter(
+          (id) => id !== self.id,
+        ),
+        actorPersonId: self.id,
+        signalSlug: updated.slug ?? '',
+        signalTitle: updated.title ?? '',
+        dueAt: updated.dueAt,
+      });
+    }
+  }
+  return updated;
+}
+
+export async function mergeCoherenceTagsAction(
+  {
+    spaceSlug,
+    fromTag,
+    toTag,
+  }: { spaceSlug: string; fromTag: string; toTag: string },
+  { authToken }: { authToken?: string },
+) {
+  if (!authToken) throw new Error('authToken is required to merge tags');
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error('Could not resolve authenticated user for merge tags');
+  }
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (!space) {
+    throw new Error('Space not found');
+  }
+  await assertSignalWorkflowAccess({
+    spaceId: space.id,
+    requesterPersonId: self.id,
+  });
+  return mergeCoherenceTags({ spaceId: space.id, fromTag, toTag }, { db });
+}
+
+export async function acknowledgeCoherenceAssignmentAction(
+  { slug }: { slug: string },
+  { authToken }: { authToken?: string },
+) {
+  if (!authToken) {
+    throw new Error('authToken is required to acknowledge a signal');
+  }
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for acknowledge signal',
+    );
+  }
+  await assertCoherenceSpacePanelAuth({
+    slug,
+    authToken,
+    requesterPersonId: self.id,
+  });
+  const updated = await acknowledgeCoherenceAssignment(
+    { slug, personId: self.id },
+    { db },
+  );
+  return updated ? normalizeCoherence(updated) : null;
 }
 
 async function resolveCoherenceUpvoteContext({

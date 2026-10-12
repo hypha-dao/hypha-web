@@ -2,8 +2,10 @@
 
 import useSWRMutation from 'swr/mutation';
 import {
+  acknowledgeCoherenceAssignmentAction,
   createCoherenceAction,
   deleteCoherenceBySlugAction,
+  mergeCoherenceTagsAction,
   updateCoherenceSignalBySlugAction,
   updateCoherenceBySlugAction,
 } from '../../server/actions';
@@ -80,6 +82,19 @@ export const useCoherenceMutationsWeb2Rsc = (authToken?: string | null) => {
     isUpdatingCoherenceSignal,
     errorUpdateCoherenceSignalBySlugMutation,
     updatedCoherenceSignal,
+
+    mergeCoherenceTags: (arg: {
+      spaceSlug: string;
+      fromTag: string;
+      toTag: string;
+    }) =>
+      authToken
+        ? mergeCoherenceTagsAction(arg, { authToken })
+        : Promise.reject(new Error('Authentication required to merge tags')),
+    acknowledgeCoherenceAssignment: (arg: { slug: string }) =>
+      authToken
+        ? acknowledgeCoherenceAssignmentAction(arg, { authToken })
+        : Promise.resolve(null),
 
     deleteCoherenceBySlug: deleteCoherenceBySlugMutation,
     resetDeleteCoherenceBySlugMutation,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  schemaCreateCoherenceForm,
   schemaIngestSignal,
   schemaIngestedSignalUpvote,
   schemaPatchIngestedSignal,
@@ -138,5 +139,14 @@ describe('schemaIngestedSignalUpvote', () => {
         votingPowerPercent: 150,
       }),
     ).toThrow();
+  });
+});
+
+describe('schemaCreateCoherenceForm title', () => {
+  it('trims the title on parse (submit), not while the field is being typed', () => {
+    expect(schemaCreateCoherenceForm.shape.title.parse('foo ')).toBe('foo');
+    expect(schemaCreateCoherenceForm.shape.title.parse(' foo bar')).toBe(
+      'foo bar',
+    );
   });
 });

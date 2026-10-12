@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildProposalCreatedContent } from '../content';
 import type { ProposalCreatedEvent, Recipient } from '../../../core/types';
@@ -62,5 +62,68 @@ describe('buildProposalCreatedContent', () => {
     expect(
       (result.content.email as { subject: string }).subject.toLowerCase(),
     ).toContain('invite');
+  });
+});
+
+describe('buildProposalCreatedContent — email template', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const data = {
+    spaceTitle: 'Hypha Energy',
+    proposalTitle: 'Fund the thing',
+    url: 'https://app.hypha.earth/en/dho/hypha-energy/agreements/proposal/fund',
+    notificationSettingsUrl:
+      'https://app.hypha.earth/en/network/notification-centre',
+  };
+
+  it('creator: uses the creator template and greets the recipient by name', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_PROPOSAL_CREATED_CREATOR', 'tpl-creator');
+    const result = buildProposalCreatedContent(event, {
+      personSlug: 'alice',
+      displayName: 'Alice',
+      role: 'creator',
+      data,
+    });
+    expect(result.content.email).toEqual({
+      kind: 'template',
+      templateId: 'tpl-creator',
+      customData: {
+        user_name: 'Alice',
+        space_title: 'Hypha Energy',
+        proposal_title: 'Fund the thing',
+        url: data.url,
+        notification_settings_url: data.notificationSettingsUrl,
+      },
+    });
+  });
+
+  it('members: uses the members template and names who created it', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_PROPOSAL_CREATED_MEMBERS', 'tpl-members');
+    const result = buildProposalCreatedContent(
+      { ...event, payload: { proposalLabel: 'Invite' } },
+      {
+        personSlug: 'bob',
+        role: 'member',
+        data: { ...data, creatorName: 'Alice' },
+      },
+    );
+    expect(result.content.email).toMatchObject({
+      kind: 'template',
+      templateId: 'tpl-members',
+      customData: { creator_name: 'Alice', proposal_kind: 'Invite' },
+    });
+  });
+
+  it('keeps push plain and falls back to plain email without the env var', () => {
+    vi.stubEnv('EMAIL_TEMPLATE_PROPOSAL_CREATED_CREATOR', '');
+    const result = buildProposalCreatedContent(event, {
+      personSlug: 'alice',
+      role: 'creator',
+      data,
+    });
+    expect(result.content.email).toMatchObject({ kind: 'plain' });
+    expect(result.content.push).toMatchObject({ kind: 'plain' });
   });
 });

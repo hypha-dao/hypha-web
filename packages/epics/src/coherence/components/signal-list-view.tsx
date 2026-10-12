@@ -23,6 +23,7 @@ import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalOwnerSeen } from './signal-owner-seen';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   isSignalDueOverdue,
@@ -241,6 +242,11 @@ export function SignalListView({
                       className="mt-1"
                     />
                     <SignalListAssigneeMeta signal={signal} />
+                    <SignalOwnerSeen
+                      assigneeIds={signal.assigneeIds}
+                      acknowledgements={signal.assigneeAcknowledgedAt}
+                      className="mt-1"
+                    />
                   </button>
                 </div>
 

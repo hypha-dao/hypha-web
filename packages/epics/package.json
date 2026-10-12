@@ -50,6 +50,7 @@
     "pdfjs-dist": "^5.7.284",
     "rrule": "^2.8.1",
     "topojson-client": "^3.1.0",
+    "use-debounce": "^10.0.4",
     "xlsx": "^0.18.5"
   },
   "exports": {

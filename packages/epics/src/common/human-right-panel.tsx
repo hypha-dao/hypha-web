@@ -965,6 +965,30 @@ function getMessagePlainText(m: UIMessage): string {
   return '';
 }
 
+const COHERENCE_ROOM_JOIN_TIMEOUT_MS = 20_000;
+
+function promiseWithTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  message: string,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(message));
+    }, ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
@@ -1127,6 +1151,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  const createRoomInFlightRef = useRef(
+    new Map<string, Promise<{ roomId: string }>>(),
+  );
+  const createdRoomBySlugRef = useRef(new Map<string, string>());
+
+  const getOrCreateCoherenceRoom = useCallback(
+    (slug: string, title: string) => {
+      const created = createdRoomBySlugRef.current.get(slug);
+      if (created) return Promise.resolve({ roomId: created });
+      const inFlight = createRoomInFlightRef.current.get(slug);
+      if (inFlight) return inFlight;
+      const pending = matrixRef.current.createRoom(title).then((result) => {
+        createdRoomBySlugRef.current.set(slug, result.roomId);
+        return result;
+      });
+      createRoomInFlightRef.current.set(slug, pending);
+      const clearInFlight = () => {
+        if (createRoomInFlightRef.current.get(slug) === pending) {
+          createRoomInFlightRef.current.delete(slug);
+        }
+      };
+      pending.then(clearInFlight, clearInFlight);
+      return pending;
+    },
+    [],
+  );
 
   useEffect(() => {
     setMentionDisplayOverride({});
@@ -2966,8 +3016,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           // open it first — not necessarily the signal's actual creator (#2428 review). The
           // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
           // only runs for the person actually submitting the create form.
-          const { roomId: newRoomId } = await matrixRef.current.createRoom(
-            coherenceTitle || 'Conversation',
+          const { roomId: newRoomId } = await promiseWithTimeout(
+            getOrCreateCoherenceRoom(
+              coherenceSlug,
+              coherenceTitle || 'Conversation',
+            ),
+            COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+            'Coherence room create timed out',
           );
           if (cancelled) return;
           targetRoomId = newRoomId;
@@ -2986,7 +3041,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             );
           }
         } else {
-          targetRoomId = await matrixRef.current.joinRoom(targetRoomId);
+          targetRoomId = await promiseWithTimeout(
+            matrixRef.current.joinRoom(targetRoomId),
+            COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+            'Coherence room join timed out',
+          );
         }
 
         if (cancelled) return;
@@ -3088,6 +3147,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAvailable,
     isMatrixAuthenticated,
     blockSpaceChatForMembership,
+    getOrCreateCoherenceRoom,
     syncRoomMessages,
   ]);
 

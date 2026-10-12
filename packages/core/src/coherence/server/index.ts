@@ -9,4 +9,5 @@ export * from './signal-orchestrator';
 export * from './signal-workflow';
 export * from './resolve-coherence-task-patch-context';
 export * from './signal-assigned-notifier';
+export * from './signal-deadline-alerts';
 export * from './web3';
