@@ -283,7 +283,7 @@ export default async function RootLayout({
                               leadingAction={
                                 aiChatEnabled ? (
                                   <div className="flex items-center gap-1.5 sm:gap-2">
-                                    <div className="md:hidden">
+                                    <div className="xl:hidden">
                                       <AiSidebarTrigger />
                                     </div>
                                     <AiPanelTrigger />
@@ -314,7 +314,7 @@ export default async function RootLayout({
                                 />
                               }
                             >
-                              <div className="hidden md:flex">
+                              <div className="hidden xl:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
                                   baseRedirectPath={`/${locale}/home`}
@@ -354,7 +354,7 @@ export default async function RootLayout({
                           <NextSSRPlugin
                             routerConfig={extractRouterConfig(fileRouter)}
                           />
-                          <div className="mb-auto max-md:pb-24">
+                          <div className="mb-auto max-xl:pb-24">
                             <div className="pb-8">
                               <MobileContentFrame>
                                 <div className="flex h-full justify-normal pt-4 md:pt-5">
