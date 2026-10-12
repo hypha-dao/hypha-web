@@ -105,8 +105,12 @@ export const EnergyCommunityProfileFields = () => {
                               fold(country.label) === typed ||
                               fold(country.name) === typed,
                           );
-                          if (exact.length === 1) choose(exact[0].iso);
-                          else setOpen(false);
+                          const exactMatch = exact[0];
+                          if (exact.length === 1 && exactMatch) {
+                            choose(exactMatch.iso);
+                          } else {
+                            setOpen(false);
+                          }
                         }}
                         onChange={(event) => {
                           const next = event.target.value;
