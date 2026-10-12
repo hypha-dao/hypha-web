@@ -303,21 +303,14 @@ export function MemberHomeThreadCard({
             compact={compact}
           />
         ) : null}
-        <div
-          className={
-            compact
-              ? 'mt-3 grid grid-cols-2 gap-2 [&_a]:w-full [&_a]:px-2 [&_a]:tracking-normal [&_button]:w-full [&_button]:px-2 [&_button]:tracking-normal'
-              : isProposal
-              ? 'mt-3 grid grid-cols-2 gap-2'
-              : 'mt-3 flex flex-wrap gap-2'
-          }
-        >
+        <div className="mt-3 grid w-full grid-cols-1 gap-2">
           {ctas.map((cta, index) => (
             <Button
               key={cta}
               type="button"
               variant={index === 0 ? 'default' : 'outline'}
               colorVariant={index === 0 ? 'accent' : 'neutral'}
+              className="w-full"
               disabled={busy}
               onClick={() => onCta(cta)}
             >
@@ -329,6 +322,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
+              className="w-full"
               disabled={busy}
               onClick={() => {
                 void reach('chat');
@@ -342,6 +336,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
+              className="w-full"
               disabled={busy}
               onClick={() => ask(t('thinkChosen', { title: item.title }))}
             >
@@ -349,7 +344,12 @@ export function MemberHomeThreadCard({
             </Button>
           ) : null}
           {!isProposal ? (
-            <Button asChild variant="outline" colorVariant="neutral">
+            <Button
+              asChild
+              variant="outline"
+              colorVariant="neutral"
+              className="w-full"
+            >
               <Link href={visitHref}>{t('visitSpace')}</Link>
             </Button>
           ) : null}
@@ -358,6 +358,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
+              className="w-full"
               disabled={busy}
               onClick={() => ask(t('laterChosen', { title: item.title }))}
             >
@@ -369,6 +370,7 @@ export function MemberHomeThreadCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
+              className="w-full"
               disabled={busy}
               onClick={() => ask(t('noChosen', { title: item.title }))}
             >

@@ -156,7 +156,7 @@ export function MemberHomeQuickCreate({
   }
 
   return (
-    <section className="flex flex-col border border-border bg-background/80 p-4">
+    <section className="flex w-full min-w-0 flex-col border border-border bg-background/80 p-4">
       <h2
         className="text-3"
         style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -190,7 +190,7 @@ export function MemberHomeQuickCreate({
         ))}
       </div>
       {kind === 'space' ? (
-        <div className="mt-3 grid gap-3">
+        <div className="mt-3 grid w-full grid-cols-1 gap-3">
           <p className="text-1 text-neutral-11">{t('quickCreateSpaceBody')}</p>
           <Button asChild className="w-full text-sm">
             <Link href={createSpaceHref}>{t('quickCreateSubmitSpace')}</Link>
@@ -200,7 +200,7 @@ export function MemberHomeQuickCreate({
         <p className="mt-3 text-1 text-neutral-11">{t('quickCreateEmpty')}</p>
       ) : (
         <form
-          className="mt-3 grid gap-3"
+          className="mt-3 grid w-full grid-cols-1 gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             void submit();
