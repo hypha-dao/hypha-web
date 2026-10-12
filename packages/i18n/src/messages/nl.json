@@ -201,7 +201,63 @@
     "proposals": "Voorstellen om mee te wegen",
     "waiting": "Aandacht nodig",
     "noWaiting": "Wat je aandacht nodig heeft uit je ruimtes verschijnt hier.",
-    "movementJoined": "{name} is erbij gekomen"
+    "movementJoined": "{name} is erbij gekomen",
+    "greetingMorning": "Goedemorgen, {name}.",
+    "greetingAfternoon": "Goedemiddag, {name}.",
+    "greetingEvening": "Goedenavond, {name}.",
+    "peopleAround": "{count} van jouw mensen in de buurt",
+    "peopleAroundEmpty": "Jouw mensen komen hier samen",
+    "openChat": "Chat openen",
+    "weighIn": "Instappen",
+    "viewSignal": "Signaal openen",
+    "quiet": "Er wacht niets",
+    "counts": {
+      "spaces": "Ruimtes",
+      "proposals": "Voorstellen",
+      "signals": "Signalen",
+      "people": "Mensen"
+    },
+    "wallet": "Wallet",
+    "walletEmpty": "Je wallet verschijnt hier zodra die verbonden is.",
+    "openWallet": "Wallet openen",
+    "connections": "Connecties",
+    "sharedSpaces": "{count} gedeeld",
+    "noConnections": "Mensen met wie je een ruimte deelt verschijnen hier.",
+    "spaces": "Ruimtes",
+    "noSpaces": "Je zit nog niet in een ruimte.",
+    "noSignals": "Signalen uit je ruimtes verschijnen hier.",
+    "notifications": "Meldingen",
+    "noNotifications": "Er is nu niets dat je nodig heeft.",
+    "seeAllNotifications": "Meldingscentrum",
+    "noProposals": "Voorstellen in je ruimtes verschijnen hier.",
+    "createSpace": "Een ruimte maken",
+    "builderTitle": "Vorm een ruimte rond je visie",
+    "builderBody": "Loop de AI-ervaring door en breng een ruimte in het netwerk rond wat je wilt bouwen.",
+    "builderAction": "De ervaring beginnen",
+    "investorTitle": "Netwerkmarktplaats",
+    "investorBody": "Ruimtes publiceren wat ze vragen. Lees een vraag en zet er kapitaal in.",
+    "investorAction": "De vragen bekijken",
+    "investorCount": "{count} open vragen",
+    "chooseTitle": "Hoe laat je je vooral zien?",
+    "chooseBody": "Lid, bouwer of investeerder. Dit stemt je startpagina af. Je kunt het altijd wijzigen.",
+    "orientationMember": "Lid",
+    "orientationBuilder": "Bouwer",
+    "orientationInvestor": "Investeerder",
+    "changeOrientation": "Wijzigen",
+    "changeOrientationLabel": "Wijzig hoe je je laat zien. Nu {orientation}.",
+    "signInTitle": "Je startpagina wacht",
+    "signInBody": "Meld je aan om te zien waar je van nut kunt zijn.",
+    "signIn": "Aanmelden",
+    "loading": "Je startpagina wordt verzameld…",
+    "metaTitle": "Start | Hypha",
+    "metaDescription": "Waar je van nut kunt zijn: je ruimtes, mensen, voorstellen en wallet.",
+    "fallbackName": "jij",
+    "fallbackMember": "Lid",
+    "orientationSaveError": "Die keuze kon niet worden opgeslagen. Probeer het opnieuw.",
+    "error": "Je startpagina kon niet worden geladen.",
+    "errorNamed": "{name}, je startpagina kon niet worden geladen.",
+    "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
+    "retry": "Opnieuw proberen"
   },
   "WelcomeFlow": {
     "offer": {
@@ -215,6 +271,52 @@
       "nicknameTaken": "Er bestaat al een profiel met deze bijnaam. Kies een andere.",
       "emailTaken": "Er bestaat al een account met dit e-mailadres. Meld je aan of gebruik een ander adres.",
       "createFailed": "Profiel aanmaken is mislukt"
+    },
+    "step": "Stap {current} van {total}",
+    "continue": "Verder",
+    "back": "Terug",
+    "begin": "Beginnen",
+    "thisIsMe": "Dit ben ik",
+    "saving": "Je startpagina wordt geopend…",
+    "walletWait": "Je wallet wordt verbonden…",
+    "signedInAs": "Aangemeld als {email}",
+    "welcome": {
+      "eyebrow": "Welkom",
+      "title": "Je stapt in een levend netwerk",
+      "body": "Hypha brengt mensen, doel, besluiten, middelen en AI samen in één systeem dat kan leren en handelen. Dit duurt maar even."
+    },
+    "you": {
+      "eyebrow": "Jij",
+      "title": "Hoe mogen we je noemen?",
+      "icon": "Profielpictogram",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "nickname": "Bijnaam",
+      "nicknameHint": "Maximaal 12 tekens. Dit wordt het adres van je profiel."
+    },
+    "description": {
+      "eyebrow": "Beschrijving",
+      "title": "Je passie en waar je bent",
+      "body": "Beide mogen leeg blijven. Je kunt ze later toevoegen.",
+      "passion": "Passie",
+      "passionPlaceholder": "Een regel over wat je hier komt doen"
+    },
+    "orientation": {
+      "eyebrow": "Jouw plek",
+      "title": "Als wie ben je hier vooral?",
+      "body": "Dit bepaalt de startpagina die je begroet. Je kunt het later wijzigen.",
+      "member": {
+        "title": "Lid",
+        "body": "Je doet mee in ruimtes, besluiten en de mensen om je heen."
+      },
+      "builder": {
+        "title": "Bouwer",
+        "body": "Je vormt ruimtes rond een visie en haalt anderen erbij."
+      },
+      "investor": {
+        "title": "Investeerder",
+        "body": "Je leest wat het netwerk vraagt en zet kapitaal in."
+      }
     }
   },
   "NetworkExchange": {
@@ -233,10 +335,28 @@
     "emptyRank": "Nog niets gedeeld met het netwerk.",
     "openRoom": "Ruimte openen",
     "visit": "Space openen",
+    "projectSpace": "Projectruimte",
+    "treasuryLive": "Treasury · live",
+    "showMoreCount": "Toon nog {count}",
+    "governanceCircles": "Governancekringen",
+    "circleMembers": "{count, plural, one {# lid} other {# leden}}",
     "noRoom": "Deze space heeft nog geen ruimte.",
     "seeks": "Zoekt",
     "offers": "Geeft terug",
     "noneYet": "Nog niet genoemd",
+    "capitals": {
+      "financial": "Financieel",
+      "material": "Materieel",
+      "living": "Levend",
+      "wellbeing": "Welzijn",
+      "ecological": "Ecologisch",
+      "experiential": "Ervaring",
+      "wisdom": "Wijsheid",
+      "social": "Sociaal",
+      "creative": "Creatief",
+      "cultural": "Cultureel",
+      "intellectual": "Intellectueel"
+    },
     "exchangeTitle": "Een project vinden, of de middelen die het nodig heeft",
     "exchangeBody": "Spaces noemen wat ze zoeken en wat ze teruggeven. De match is de overlap.",
     "bestMatch": "Dichtstbijzijnde match",
@@ -3156,7 +3276,10 @@
       "blindSpot": "Wat is onze grootste blinde vlek?",
       "summarizeDiscussion": "Vat de recente teambespreking samen",
       "spaceMemory": "Wat herinnert onze ruimte zich?",
-      "valueFlows": "Hoe stroomt waarde door onze tokens?"
+      "valueFlows": "Hoe stroomt waarde door onze tokens?",
+      "findProject": "Vind één project dat ik kan ondersteunen met middelen",
+      "findResources": "Vind middelen voor een ruimte die ik bouw",
+      "sharedNeeds": "Welke behoeften zijn gedeeld met het netwerk?"
     },
     "suggestionTags": {
       "createSpace": "Creëer ruimte",
@@ -3166,7 +3289,10 @@
       "blindSpot": "Blinde vlek",
       "summarizeDiscussion": "Discussie samenvatten",
       "spaceMemory": "Ruimtegeheugen",
-      "valueFlows": "Waardestromen"
+      "valueFlows": "Waardestromen",
+      "findProject": "Een project vinden",
+      "findResources": "Middelen vinden",
+      "sharedNeeds": "Gedeelde behoeften"
     },
     "welcome": "Ik ben jouw ruimte-AI om samenhang te brengen in de strategie, beweging in operaties en betekenis aan impact, waarbij gespecialiseerde agenten binnenkomen wanneer je daarom vraagt.",
     "specialistsResponding": "Specialisten die bijdragen",
@@ -4890,5 +5016,19 @@
     "errorAlreadyConfirmedDescription": "Dit e-mailadres is al bevestigd.",
     "errorGenericTitle": "Er is iets misgegaan",
     "errorGenericDescription": "We konden dit e-mailadres niet bevestigen. Probeer het later opnieuw."
+  },
+  "Marketplace": {
+    "metaTitle": "Netwerkmarktplaats | Hypha",
+    "metaDescription": "Investeringsvragen die ruimtes in het netwerk publiceren.",
+    "loadError": "De marktplaats kon niet worden geladen. Probeer het zo opnieuw.",
+    "eyebrow": "Netwerkmarktplaats",
+    "title": "Wat het netwerk vraagt",
+    "body": "Ruimtes publiceren een investeringsvraag wanneer ze klaar zijn voor kapitaal. Open er een om hem te lezen en zet kapitaal in vanuit het voorstel.",
+    "empty": "Nog geen open vragen. Wanneer een ruimte een investeringsvoorstel publiceert, verschijnt het hier.",
+    "incomplete": "Er kunnen meer vragen zijn. De nieuwste konden niet allemaal op tijd worden gecontroleerd.",
+    "deploy": "Kapitaal inzetten",
+    "proposal": "Voorstel",
+    "agreement": "Overeenkomst",
+    "backHome": "Terug naar start"
   }
 }
