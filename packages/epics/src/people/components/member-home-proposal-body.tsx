@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { intervalToDuration, isPast } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
@@ -20,6 +21,12 @@ type MemberHomeProposalBodyProps = {
   documentId: number | null;
   documentSlug: string;
   compact?: boolean;
+  /** The chain vote is over. Participation and unity are whole percents. */
+  onClosed?: (outcome: {
+    passed: boolean;
+    participation: number;
+    unity: number;
+  }) => void;
 };
 
 function tokenDecimals(address: string) {
@@ -49,6 +56,7 @@ export function MemberHomeProposalBody({
   documentId,
   documentSlug,
   compact = false,
+  onClosed,
 }: MemberHomeProposalBodyProps) {
   const t = useTranslations('MemberHome');
   const tVoting = useTranslations('ProposalDetails');
@@ -71,6 +79,37 @@ export function MemberHomeProposalBody({
     !proposalDetails.executed &&
     !proposalDetails.expired &&
     !isPast(proposalDetails.endTime);
+  const reportedOutcome = useRef<string | null>(null);
+  useEffect(() => {
+    if (!onClosed || proposalDetails == null || voteOpen) return;
+    const quorumTarget =
+      spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : null;
+    const unityTarget =
+      spaceDetails?.unity != null ? Number(spaceDetails.unity) : null;
+    // Wait for the space thresholds before saying it failed. Executed is
+    // already a pass. Reporting early flashes "did not pass", then "passed".
+    if (
+      !proposalDetails.executed &&
+      (quorumTarget == null || unityTarget == null)
+    ) {
+      return;
+    }
+    const passed =
+      proposalDetails.executed ||
+      (quorumTarget != null &&
+        unityTarget != null &&
+        proposalDetails.quorumPercentage >= quorumTarget &&
+        proposalDetails.unityPercentage >= unityTarget);
+    const next = {
+      passed,
+      participation: Math.round(proposalDetails.quorumPercentage),
+      unity: Math.round(proposalDetails.unityPercentage),
+    };
+    const key = `${next.passed}:${next.participation}:${next.unity}`;
+    if (reportedOutcome.current === key) return;
+    reportedOutcome.current = key;
+    onClosed(next);
+  }, [onClosed, proposalDetails, spaceDetails, voteOpen]);
   const yesVoters = (voters ?? []).filter((voter) => voter.vote === 'yes');
   const noVoters = (voters ?? []).filter((voter) => voter.vote === 'no');
   const yesCount = yesVoters.length || proposalDetails?.yesVotes || 0;

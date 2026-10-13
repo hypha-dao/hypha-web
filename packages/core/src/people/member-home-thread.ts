@@ -13,7 +13,7 @@ export type MemberHomeThreadItem = {
   title: string;
   spaceSlug: string;
   spaceTitle: string;
-  action: 'decision' | 'validate';
+  action: 'decision' | 'validate' | 'outcome';
   /**
    * What the card says it is. `proposal` and `signal` are the two actions.
    * Anything else is the document's own kind (a discussion, an agreement, a label).
@@ -33,6 +33,12 @@ export type MemberHomeThreadItem = {
   web3ProposalId?: number | null;
   /** On-chain space id for the quorum and unity targets. */
   web3SpaceId?: number | null;
+  /** Closed vote. Participation is the share of voting power that voted. */
+  participation?: number | null;
+  /** Closed vote. Unity is the yes share of the votes cast. */
+  unity?: number | null;
+  /** Closed vote. True when the proposal passed. */
+  passed?: boolean;
   /** Database id of the signal. Used to open its conversation. */
   signalId?: number | null;
   /** Existing Matrix room, so Discuss this does not create a second one. */
@@ -138,6 +144,58 @@ export function memberHomeThreadItemKey(item: {
   return `${item.kind}:${item.slug}`;
 }
 
+/**
+ * The queue the home chat is still walking. Cleared items leave.
+ * A recalled item is back in front, so it stays.
+ */
+export function memberHomeItemsStillWaiting(
+  items: readonly MemberHomeThreadItem[],
+  closed: {
+    passed?: readonly string[];
+    deferred?: readonly string[];
+    settled?: readonly string[];
+    acted?: readonly string[];
+    recalled?: readonly string[];
+  },
+): MemberHomeThreadItem[] {
+  const hidden = new Set<string>();
+  for (const key of [
+    ...(closed.passed ?? []),
+    ...(closed.deferred ?? []),
+    ...(closed.settled ?? []),
+    ...(closed.acted ?? []),
+  ]) {
+    const trimmed = key.trim();
+    if (trimmed) hidden.add(trimmed);
+  }
+  for (const key of closed.recalled ?? []) {
+    const trimmed = key.trim();
+    if (trimmed) hidden.delete(trimmed);
+  }
+  return items.filter((item) => !hidden.has(memberHomeThreadItemKey(item)));
+}
+
+/**
+ * Keep the rows the member is already looking at.
+ * Finished items leave. New items arrive at the top, in the order given.
+ */
+export function mergeMemberHomeAttention(
+  previous: readonly MemberHomeThreadItem[],
+  next: readonly MemberHomeThreadItem[],
+): MemberHomeThreadItem[] {
+  const incoming = new Map(
+    next.map((item) => [memberHomeThreadItemKey(item), item] as const),
+  );
+  const kept = previous.flatMap((item) => {
+    const key = memberHomeThreadItemKey(item);
+    const fresh = incoming.get(key);
+    if (!fresh) return [];
+    incoming.delete(key);
+    return [fresh];
+  });
+  return [...incoming.values(), ...kept];
+}
+
 /** "{Alex Prate} joined" is the member arriving, not something that needs them. */
 export function isMemberOwnJoinTitle(
   person: MemberIntelligence['person'],
@@ -155,7 +213,7 @@ export function isMemberOwnJoinTitle(
  * Notifications lead, then any other open decision or assigned signal.
  * The same slug is never listed twice.
  */
-export function listMemberHomeThreadItems(
+function collectMemberHomeThreadItems(
   home: MemberIntelligence,
 ): MemberHomeThreadItem[] {
   const proposalsBySlug = new Map(
@@ -218,8 +276,41 @@ export function listMemberHomeThreadItems(
     });
   };
 
+  const pushOutcome = (
+    proposal: MemberIntelligence['proposals'][number] | null | undefined,
+  ) => {
+    if (!proposal?.slug || !proposal.expired || !proposal.outcome) return false;
+    push({
+      kind: 'proposal',
+      slug: proposal.slug,
+      title: proposal.title,
+      spaceSlug: proposal.spaceSlug,
+      spaceTitle: proposal.spaceTitle,
+      action: 'outcome',
+      documentKind: memberHomeDocumentKind({
+        kind: 'proposal',
+        state: proposal.state,
+        label: proposal.label,
+      }),
+      authoredByMember: proposal.authoredByMember,
+      category: proposal.label,
+      summary: proposal.description,
+      creatorId: proposal.creatorId,
+      creatorName: proposal.creatorName,
+      creatorAvatarUrl: proposal.creatorAvatarUrl,
+      documentId: proposal.id,
+      web3ProposalId: proposal.web3ProposalId,
+      web3SpaceId: proposal.web3SpaceId ?? null,
+      participation: proposal.outcome.participation,
+      unity: proposal.outcome.unity,
+      passed: proposal.outcome.passed,
+    });
+    return true;
+  };
+
   const pushProposal = (proposal: MemberIntelligence['proposals'][number]) => {
-    if (!proposal.slug || proposal.memberHasVoted || proposal.expired) return;
+    if (pushOutcome(proposal)) return;
+    if (!proposal.slug || !proposalStillOpen(proposal)) return;
     push({
       kind: 'proposal',
       slug: proposal.slug,
@@ -253,7 +344,8 @@ export function listMemberHomeThreadItems(
   for (const note of notes) {
     if (note.kind === 'proposal') {
       const proposal = proposalsBySlug.get(note.targetSlug);
-      if (proposal?.memberHasVoted || proposal?.expired) continue;
+      if (pushOutcome(proposal)) continue;
+      if (!proposalStillOpen(proposal)) continue;
       push({
         kind: 'proposal',
         slug: note.targetSlug,
@@ -359,7 +451,74 @@ export function listMemberHomeThreadItems(
     });
   }
 
-  return balanceMemberHomeThread(items, home);
+  return items;
+}
+
+/** What the home assistant walks. One kind cannot fill the conversation. */
+export function listMemberHomeThreadItems(
+  home: MemberIntelligence,
+): MemberHomeThreadItem[] {
+  return balanceMemberHomeThread(collectMemberHomeThreadItems(home), home);
+}
+
+/** Every open item, including ones the balanced walk has not reached yet. */
+export function listMemberHomeThreadCatalog(
+  home: MemberIntelligence,
+): MemberHomeThreadItem[] {
+  return collectMemberHomeThreadItems(home);
+}
+
+function attentionAt(home: MemberIntelligence, item: MemberHomeThreadItem) {
+  if (item.kind === 'proposal') {
+    return (
+      home.proposals.find((proposal) => proposal.slug === item.slug)
+        ?.createdAt ?? ''
+    );
+  }
+  return (
+    home.signals.find((signal) => signal.slug === item.slug)?.createdAt ??
+    item.dueAt ??
+    ''
+  );
+}
+
+/**
+ * Everything still needing the member, newest first.
+ * The chat keeps a shorter walk. This list is the Attention needed tile.
+ */
+export function listMemberHomeAttentionItems(
+  home: MemberIntelligence,
+): MemberHomeThreadItem[] {
+  const network = new Set(
+    (home.networkSignals ?? []).flatMap((signal) =>
+      signal.slug ? [signal.slug] : [],
+    ),
+  );
+  return collectMemberHomeThreadItems(home)
+    .filter((item) => !(item.kind === 'signal' && network.has(item.slug)))
+    .sort((left, right) => {
+      const leftAt = attentionAt(home, left);
+      const rightAt = attentionAt(home, right);
+      if (leftAt !== rightAt) return leftAt < rightAt ? 1 : -1;
+      return left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0;
+    });
+}
+
+/**
+ * A discussion is still a conversation. A proposal is a decision only while
+ * it has a chain vote that has not closed and this member has not voted.
+ * An agreement, or a proposal row with no chain id, has nothing left to decide.
+ */
+function proposalStillOpen(
+  proposal: MemberIntelligence['proposals'][number] | null | undefined,
+): proposal is MemberIntelligence['proposals'][number] {
+  if (!proposal?.slug || proposal.memberHasVoted || proposal.expired) {
+    return false;
+  }
+  const state = proposal.state?.trim().toLowerCase();
+  if (state === 'discussion') return true;
+  if (state !== 'proposal') return false;
+  return proposal.web3ProposalId != null;
 }
 
 function raisedByMember(
@@ -475,6 +634,101 @@ function textOverlap(item: MemberHomeThreadItem, haystack: string): number {
   ).length;
 }
 
+const HOME_BOARD_YES =
+  /^(yes|yeah|yep|yup|sure|ok|okay|please|go ahead|open it|take me there|yes please|do it)[.!]?$/i;
+
+const HOME_BOARD_OFFER =
+  /\b(signals board|signal board|navigate(?: you)? to|check in with|open the)\b/i;
+
+function homeBoardSpace(
+  text: string,
+  spaces: readonly { slug: string; title: string }[],
+) {
+  const haystack = text.toLowerCase();
+  const hits = spaces.flatMap((space) => {
+    const title = space.title.trim().toLowerCase();
+    if (title.length < 3) return [];
+    const index = haystack.indexOf(title);
+    if (index < 0) return [];
+    return [{ space, index, length: title.length }];
+  });
+  hits.sort(
+    (left, right) => right.length - left.length || right.index - left.index,
+  );
+  return hits[0]?.space ?? null;
+}
+
+function homeBoardHref(lang: string, slug: string) {
+  const locale = lang.trim().split('-')[0]?.toLowerCase() || 'en';
+  return `/${locale}/dho/${slug}/coherence`;
+}
+
+/**
+ * A yes to visiting a space opens its signals board.
+ * A yes on a proposal stays on the card.
+ */
+export function memberHomeBoardDestination(args: {
+  text: string;
+  previousAssistantText: string;
+  spaces: readonly { slug: string; title: string }[];
+  lang: string;
+}): { href: string; title: string } | null {
+  const asked = args.text.trim();
+  const direct = homeBoardSpace(asked, args.spaces);
+  if (
+    direct &&
+    asked.length <= 180 &&
+    /\b(signals board|signal board|signals|navigate|open|take me|go to)\b/i.test(
+      asked,
+    )
+  ) {
+    return { href: homeBoardHref(args.lang, direct.slug), title: direct.title };
+  }
+  if (!HOME_BOARD_YES.test(asked)) return null;
+  const prior = args.previousAssistantText.trim();
+  if (!HOME_BOARD_OFFER.test(prior)) return null;
+  const offered = homeBoardSpace(prior, args.spaces);
+  if (!offered) return null;
+  return {
+    href: homeBoardHref(args.lang, offered.slug),
+    title: offered.title,
+  };
+}
+
+/** A reply that recites a space's signals instead of opening the board. */
+export function memberHomeSignalCatalogue(
+  text: string,
+  spaces: readonly { slug: string; title: string }[],
+  lang: string,
+): { href: string; title: string } | null {
+  const catalogue =
+    /\b(i['’]ve opened|i have opened|here are some recent signals|recent signals)\b/i.test(
+      text,
+    ) || (text.match(/\d+\.\s/g) ?? []).length >= 3;
+  if (!catalogue) return null;
+  const space = homeBoardSpace(text, spaces);
+  if (!space) return null;
+  return { href: homeBoardHref(lang, space.slug), title: space.title };
+}
+
+function spaceNamedInText(item: MemberHomeThreadItem, haystack: string) {
+  const space = item.spaceTitle.trim().toLowerCase();
+  return space.length >= 3 && haystack.includes(space);
+}
+
+/** The words name this proposal, not another one that shares its title. */
+function textBelongsTo(item: MemberHomeThreadItem, text: string): boolean {
+  const haystack = text.trim().toLowerCase();
+  if (!haystack) return false;
+  if (creatorNamedInText(item.creatorName, haystack)) return true;
+  const title = item.title.trim().toLowerCase();
+  return (
+    title.length >= 3 &&
+    haystack.includes(title) &&
+    spaceNamedInText(item, haystack)
+  );
+}
+
 function itemMentionedInText(
   items: readonly MemberHomeThreadItem[],
   text: string,
@@ -485,6 +739,22 @@ function itemMentionedInText(
     const title = item.title.trim().toLowerCase();
     return title.length >= 3 && haystack.includes(title);
   });
+  if (matches.length > 1) {
+    const narrowed = matches.filter(
+      (item) =>
+        creatorNamedInText(item.creatorName, haystack) ||
+        spaceNamedInText(item, haystack),
+    );
+    const byPersonAndSpace = narrowed.filter(
+      (item) =>
+        creatorNamedInText(item.creatorName, haystack) &&
+        spaceNamedInText(item, haystack),
+    );
+    if (byPersonAndSpace.length === 1 && byPersonAndSpace[0]) {
+      return byPersonAndSpace[0];
+    }
+    if (narrowed.length === 1 && narrowed[0]) return narrowed[0];
+  }
   if (matches.length === 1 && matches[0]) return matches[0];
   const talkingAboutProposal = /\b(proposal|invite|vote|contribution)\b/.test(
     haystack,
@@ -527,19 +797,33 @@ function itemMentionedInText(
 
 /**
  * The card for this assistant reply.
- * A `show_member_home_item` call wins. Otherwise the reply must name exactly
- * one waiting title, so a greeting never draws the whole set.
+ * A `show_member_home_item` call wins, unless the words name a different
+ * person and space. Two proposals can share a title. A greeting names none.
  */
 export function memberHomeThreadItemForMessage(
   items: readonly MemberHomeThreadItem[],
   message: { parts?: readonly unknown[]; content?: string },
 ): MemberHomeThreadItem | null {
+  const text = textFromParts(message.parts) || message.content?.trim() || '';
+  const mentioned = itemMentionedInText(items, text);
+  let toolItem: MemberHomeThreadItem | null = null;
   for (const input of toolInputs(message.parts)) {
     const item = itemFromToolInput(items, input);
-    if (item) return item;
+    if (!item) continue;
+    toolItem = item;
+    break;
   }
-  const text = textFromParts(message.parts) || message.content?.trim() || '';
-  return itemMentionedInText(items, text);
+  if (
+    mentioned &&
+    toolItem &&
+    memberHomeThreadItemKey(mentioned) !== memberHomeThreadItemKey(toolItem) &&
+    textBelongsTo(mentioned, text) &&
+    !textBelongsTo(toolItem, text)
+  ) {
+    return mentioned;
+  }
+  if (toolItem) return toolItem;
+  return mentioned;
 }
 
 function memberHomeChoiceText(text: string) {

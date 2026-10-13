@@ -16,6 +16,8 @@ export type MemberAttentionItem = {
   spaceSlug: string;
   spaceTitle: string;
   targetSlug: string;
+  /** When the proposal was created, or the signal last changed. Newest first. */
+  at?: string;
   spaceLogo?: MemberSpaceLogo | null;
   /** Signal type, or the proposal label when one is set. */
   category?: string | null;
@@ -111,6 +113,15 @@ export type MemberIntelligence = {
      * not be read. A failed read is not expiry.
      */
     expired?: boolean;
+    /**
+     * Set when the chain vote has closed. Participation is the share of
+     * voting power that voted. Unity is the yes share of the votes cast.
+     */
+    outcome?: {
+      passed: boolean;
+      participation: number;
+      unity: number;
+    } | null;
   }>;
   signals: Array<{
     id: number;
@@ -420,7 +431,23 @@ export function pickNotificationsAcrossSpaces(
     }
   }
 
-  return picked.map(({ at: _at, ...item }) => item);
+  return picked.map(({ at, ...item }) => ({ ...item, at }));
+}
+
+/** Every recent item, newest first. A new proposal is not hidden behind an older one. */
+export function recentNotifications(
+  items: readonly DatedAttentionItem[],
+  limit: number,
+): MemberAttentionItem[] {
+  const cap = Math.max(limit, 0);
+  if (cap === 0 || items.length === 0) return [];
+  return [...items]
+    .sort((left, right) => {
+      if (left.at !== right.at) return left.at < right.at ? 1 : -1;
+      return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+    })
+    .slice(0, cap)
+    .map(({ at, ...item }) => ({ ...item, at }));
 }
 
 export type NetworkCapitalAsk = {

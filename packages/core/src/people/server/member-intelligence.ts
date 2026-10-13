@@ -40,6 +40,7 @@ import {
 import { memberHomeSignalCategory } from '../member-home-thread';
 import { isAddress, type Hex } from 'viem';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
+import { getSpaceDetails } from '../../space/shared/web3/get-space-details';
 
 import { createGovernancePublicClient } from '../../common/web3/governance-public-client';
 import { getGovernanceChainId } from '../../governance/client/governance-chain-id';
@@ -57,7 +58,7 @@ import type {
 import {
   peerNamesByPerson,
   peopleSharingMemberSpaces,
-  pickNotificationsAcrossSpaces,
+  recentNotifications,
 } from '../member-intelligence';
 import {
   movementKindForAgreement,
@@ -87,7 +88,8 @@ export type {
   NetworkCapitalAsk,
 } from '../member-intelligence';
 
-const ATTENTION_LIMIT = 8;
+/** Recent proposals and signals the notifications tile can page through. */
+const NOTIFICATION_FEED_LIMIT = 40;
 const LIST_LIMIT = 6;
 /** Direct-access icons on the home. Other lists stay on LIST_LIMIT. */
 const CONNECTION_LIMIT = 12;
@@ -424,21 +426,36 @@ async function proposalIdsAlreadyVoted(
   return voted;
 }
 
+type ClosedProposalOutcome = {
+  passed: boolean;
+  participation: number;
+  unity: number;
+  spaceId: number | null;
+  executed: boolean;
+};
+
+/** Share of `whole`, as a whole percent. A zero whole is 0, not a pass. */
+function sharePercent(part: bigint, whole: bigint): number {
+  if (part <= 0n || whole <= 0n) return 0;
+  return Math.round(Number((part * 10000n) / whole) / 100);
+}
+
 /**
  * On-chain proposals that are no longer a decision: expired, already
- * executed, or past their end time. A failed read is left out, so the
- * proposal stays visible. Absence is not expiry.
+ * executed, or past their end time. The value is the outcome. A failed
+ * read is left out, so the proposal stays a decision. Absence is not expiry.
  */
-async function proposalIdsNoLongerOpen(
+async function readClosedProposals(
   proposalIds: number[],
-): Promise<Set<number>> {
+): Promise<Map<number, ClosedProposalOutcome>> {
   const ids = [...new Set(proposalIds)].filter(
     (id) => Number.isInteger(id) && id > 0,
   );
-  if (ids.length === 0) return new Set();
+  const closed = new Map<number, ClosedProposalOutcome>();
+  if (ids.length === 0) return closed;
   const chainId = getGovernanceChainId();
   const contract = daoProposalsImplementationConfig.address[chainId];
-  if (!contract) return new Set();
+  if (!contract) return closed;
   const client = createGovernancePublicClient();
   const results = await client.multicall({
     allowFailure: true,
@@ -450,24 +467,82 @@ async function proposalIdsNoLongerOpen(
     })),
   });
   const now = BigInt(Math.floor(Date.now() / 1000));
-  const closed = new Set<number>();
   results.forEach((result, index) => {
     if (result.status !== 'success') return;
     const core = result.result;
-    const endTime = core[2];
-    const executed = core[3];
-    const expired = core[4];
+    const spaceIdRaw = proposalCoreValue(core, 0, 'spaceId');
+    const endTime = proposalCoreValue(core, 2, 'endTime');
+    const executed = proposalCoreValue(core, 3, 'executed') === true;
+    const expired = proposalCoreValue(core, 4, 'expired') === true;
+    const yesVotes = proposalCoreValue(core, 5, 'yesVotes');
+    const noVotes = proposalCoreValue(core, 6, 'noVotes');
+    const totalVotes = proposalCoreValue(core, 7, 'totalVotingPowerAtSnapshot');
     const id = ids[index];
     if (id == null) return;
-    if (
-      expired === true ||
-      executed === true ||
-      (typeof endTime === 'bigint' && endTime > 0n && endTime < now)
-    ) {
-      closed.add(id);
-    }
+    const ended =
+      expired ||
+      executed ||
+      (typeof endTime === 'bigint' && endTime > 0n && endTime < now);
+    if (!ended) return;
+    const yes = typeof yesVotes === 'bigint' ? yesVotes : 0n;
+    const no = typeof noVotes === 'bigint' ? noVotes : 0n;
+    const total = typeof totalVotes === 'bigint' ? totalVotes : 0n;
+    const spaceId = typeof spaceIdRaw === 'bigint' ? Number(spaceIdRaw) : null;
+    closed.set(id, {
+      passed: executed,
+      participation: sharePercent(yes + no, total),
+      unity: sharePercent(yes, yes + no),
+      spaceId: spaceId != null && Number.isFinite(spaceId) ? spaceId : null,
+      executed,
+    });
   });
+
+  const spaceIds = [
+    ...new Set(
+      [...closed.values()].flatMap((outcome) =>
+        outcome.spaceId != null && outcome.spaceId > 0 ? [outcome.spaceId] : [],
+      ),
+    ),
+  ];
+  if (spaceIds.length > 0) {
+    const thresholds = await client.multicall({
+      allowFailure: true,
+      contracts: spaceIds.map((spaceId) =>
+        getSpaceDetails({
+          spaceId: BigInt(spaceId),
+          chain: chainId,
+        }),
+      ),
+    });
+    const required = new Map<number, { quorum: number; unity: number }>();
+    thresholds.forEach((result, index) => {
+      if (result.status !== 'success') return;
+      const spaceId = spaceIds[index];
+      if (spaceId == null) return;
+      const unity = proposalCoreValue(result.result, 0, 'unity');
+      const quorum = proposalCoreValue(result.result, 1, 'quorum');
+      if (typeof unity !== 'bigint' || typeof quorum !== 'bigint') return;
+      required.set(spaceId, { quorum: Number(quorum), unity: Number(unity) });
+    });
+    for (const outcome of closed.values()) {
+      if (outcome.executed || outcome.spaceId == null) continue;
+      const target = required.get(outcome.spaceId);
+      if (!target) continue;
+      outcome.passed =
+        outcome.participation >= target.quorum && outcome.unity >= target.unity;
+    }
+  }
   return closed;
+}
+
+function proposalCoreValue(
+  core: unknown,
+  index: number,
+  name: string,
+): unknown {
+  if (!core || typeof core !== 'object') return undefined;
+  const record = core as Record<string | number, unknown>;
+  return record[index] ?? record[name];
 }
 
 /** One failed query returns its fallback. The other slices still load. */
@@ -1170,7 +1245,7 @@ export async function getMemberIntelligence(
         spaceIds.length === 0
           ? []
           : await db
-              .selectDistinctOn([documents.spaceId], {
+              .select({
                 id: documents.id,
                 slug: documents.slug,
                 title: documents.title,
@@ -1194,13 +1269,14 @@ export async function getMemberIntelligence(
                   ),
                 ),
               )
-              .orderBy(documents.spaceId, desc(documents.createdAt));
+              .orderBy(desc(documents.createdAt))
+              .limit(NOTIFICATION_FEED_LIMIT);
 
       const notificationSignalRows =
         spaceIds.length === 0
           ? []
           : await db
-              .selectDistinctOn([coherences.spaceId], {
+              .select({
                 id: coherences.id,
                 slug: coherences.slug,
                 title: coherences.title,
@@ -1227,7 +1303,8 @@ export async function getMemberIntelligence(
                   ])}::jsonb`,
                 ),
               )
-              .orderBy(coherences.spaceId, desc(coherences.updatedAt));
+              .orderBy(desc(coherences.updatedAt))
+              .limit(NOTIFICATION_FEED_LIMIT);
 
       const notificationCandidates = [
         ...notificationProposalRows.flatMap((row) =>
@@ -1269,9 +1346,9 @@ export async function getMemberIntelligence(
         ),
       ];
       return {
-        items: pickNotificationsAcrossSpaces(
+        items: recentNotifications(
           notificationCandidates,
-          Math.max(notificationCandidates.length, ATTENTION_LIMIT),
+          NOTIFICATION_FEED_LIMIT,
         ),
         count: notificationCandidates.length,
       };
@@ -1397,7 +1474,7 @@ export async function getMemberIntelligence(
       ? [proposal.web3ProposalId]
       : [],
   );
-  const [votedProposalIds, closedProposalIds] = await Promise.all([
+  const [votedProposalIds, closedProposals] = await Promise.all([
     readSlice(
       'memberVotes',
       () => proposalIdsAlreadyVoted(person.address, chainProposalIds),
@@ -1405,22 +1482,33 @@ export async function getMemberIntelligence(
     ),
     readSlice(
       'proposalExpiry',
-      () => proposalIdsNoLongerOpen(chainProposalIds),
-      new Set<number>(),
+      () => readClosedProposals(chainProposalIds),
+      new Map<number, ClosedProposalOutcome>(),
     ),
   ]);
-  const proposalsWithVotes = proposals.map((proposal) => ({
-    ...proposal,
-    memberHasVoted:
-      proposal.web3ProposalId != null &&
-      votedProposalIds.has(proposal.web3ProposalId),
-    expired:
-      proposal.web3ProposalId != null &&
-      closedProposalIds.has(proposal.web3ProposalId),
-  }));
+  const proposalsWithVotes = proposals.map((proposal) => {
+    const closed =
+      proposal.web3ProposalId != null
+        ? closedProposals.get(proposal.web3ProposalId)
+        : undefined;
+    return {
+      ...proposal,
+      memberHasVoted:
+        proposal.web3ProposalId != null &&
+        votedProposalIds.has(proposal.web3ProposalId),
+      expired: closed != null,
+      outcome: closed
+        ? {
+            passed: closed.passed,
+            participation: closed.participation,
+            unity: closed.unity,
+          }
+        : null,
+    };
+  });
   const settledSlugs = new Set(
     proposalsWithVotes.flatMap((proposal) =>
-      (proposal.memberHasVoted || proposal.expired) && proposal.slug
+      proposal.memberHasVoted && !proposal.expired && proposal.slug
         ? [proposal.slug]
         : [],
     ),

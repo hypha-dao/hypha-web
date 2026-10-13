@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -22,7 +23,10 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  listMemberHomeAttentionItems,
   listMemberHomeThreadItems,
+  memberHomeItemsStillWaiting,
+  mergeMemberHomeAttention,
   useSpacesBySlugs,
   type MemberHomeThreadItem,
   type MemberIntelligence,
@@ -42,6 +46,13 @@ import {
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
 import { MemberHomeChat } from './member-home-chat';
+import {
+  HOME_QUEUE_EVENT,
+  readHomeActed,
+  readHomeChoices,
+} from './member-home-resume';
+
+export { HOME_REFRESH_EVENT } from './member-home-resume';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonRoleBadge } from './person-badges';
@@ -112,6 +123,61 @@ function isSignupOrientation(
   value: string | null | undefined,
 ): value is SignupOrientation {
   return value === 'member' || value === 'builder' || value === 'investor';
+}
+
+type HomeQueueMemory = {
+  passed: string[];
+  deferred: string[];
+  settled: string[];
+  recalled: string[];
+};
+
+type HomeQueueSnapshot = {
+  passed: string[];
+  deferred: string[];
+  settled: string[];
+  acted: string[];
+};
+
+const EMPTY_HOME_QUEUE_SNAPSHOT = JSON.stringify({
+  passed: [],
+  deferred: [],
+  settled: [],
+  acted: [],
+} satisfies HomeQueueSnapshot);
+
+function subscribeHomeQueue(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => undefined;
+  window.addEventListener(HOME_QUEUE_EVENT, onStoreChange);
+  window.addEventListener('storage', onStoreChange);
+  return () => {
+    window.removeEventListener(HOME_QUEUE_EVENT, onStoreChange);
+    window.removeEventListener('storage', onStoreChange);
+  };
+}
+
+function readHomeQueueSnapshot() {
+  const choices = readHomeChoices();
+  return JSON.stringify({
+    passed: choices.passed,
+    deferred: choices.deferred,
+    settled: choices.settled,
+    acted: readHomeActed(),
+  } satisfies HomeQueueSnapshot);
+}
+
+function sameHomeQueueMemory(
+  current: HomeQueueMemory | null,
+  next: HomeQueueMemory,
+) {
+  if (!current) return false;
+  const list = (keys: string[]) => keys.join('\n');
+  return (
+    list(current.passed) === list(next.passed) &&
+    list(current.deferred) === list(next.deferred) &&
+    list(current.settled) === list(next.settled) &&
+    list(current.recalled) === list(next.recalled)
+  );
 }
 
 export function MemberHome({
@@ -222,6 +288,34 @@ export function MemberHome({
     () => (home ? listMemberHomeThreadItems(home) : []),
     [home],
   );
+  const queueSnapshot = useSyncExternalStore(
+    subscribeHomeQueue,
+    readHomeQueueSnapshot,
+    () => EMPTY_HOME_QUEUE_SNAPSHOT,
+  );
+  const [chatMemory, setChatMemory] = useState<HomeQueueMemory | null>(null);
+  const onQueueMemory = useCallback((memory: HomeQueueMemory) => {
+    setChatMemory((current) =>
+      sameHomeQueueMemory(current, memory) ? current : memory,
+    );
+  }, []);
+  const attentionSource = useMemo(
+    () => (home ? listMemberHomeAttentionItems(home) : []),
+    [home],
+  );
+  const attentionOrder = useRef<MemberHomeThreadItem[]>([]);
+  const attentionQueue = useMemo(() => {
+    const stored = JSON.parse(queueSnapshot) as HomeQueueSnapshot;
+    const waiting = memberHomeItemsStillWaiting(attentionSource, {
+      passed: chatMemory?.passed ?? stored.passed,
+      deferred: chatMemory?.deferred ?? stored.deferred,
+      settled: chatMemory?.settled ?? stored.settled,
+      acted: stored.acted,
+      recalled: chatMemory?.recalled ?? [],
+    });
+    return mergeMemberHomeAttention(attentionOrder.current, waiting);
+  }, [attentionSource, chatMemory, queueSnapshot]);
+  attentionOrder.current = attentionQueue;
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const reachIds = useMemo(() => {
     if (!home) return [];
@@ -250,16 +344,10 @@ export function MemberHome({
           aria-label={t('panelSpaces')}
           className="member-home-pane narrow-scrollbar order-2 col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 border-t border-border px-4 py-4 @max-[47.99rem]/home:flex @min-[68rem]/home:order-none @min-[68rem]/home:flex @min-[68rem]/home:overflow-y-auto @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
         >
-          <section className="border border-foreground/40 bg-background-2 p-4">
-            <div
-              className={
-                home == null || orientation
-                  ? 'grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4'
-                  : 'grid'
-              }
-            >
+          <section className="border border-foreground/40 bg-background p-4">
+            <div className="grid gap-4">
               {home == null || orientation ? (
-                <div className="flex items-center justify-center px-1 py-3">
+                <div className="flex items-center">
                   {home == null || orientation == null ? (
                     <Skeleton loading height="22px" width="6.5rem" />
                   ) : (
@@ -343,40 +431,51 @@ export function MemberHome({
                 markSize={24}
                 items={
                   home
-                    ? home.notifications.flatMap((item) => {
-                        const match = queue.find(
-                          (entry) =>
-                            entry.kind === item.kind &&
-                            entry.slug === item.targetSlug,
-                        );
-                        return [
-                          {
-                            id: item.id,
-                            kind: item.kind,
-                            title: item.title,
-                            detail: item.detail,
-                            icon: item.spaceLogo ?? null,
-                            href:
-                              item.kind === 'signal'
-                                ? getSignalPath(
-                                    lang,
-                                    item.spaceSlug,
-                                    item.targetSlug,
-                                  )
-                                : getProposalPath(
-                                    lang,
-                                    item.spaceSlug,
-                                    item.targetSlug,
-                                  ),
-                            ...(match
-                              ? {
-                                  onSelect: () =>
-                                    setFocusKey(`${match.kind}:${match.slug}`),
-                                }
-                              : {}),
-                          },
-                        ];
-                      })
+                    ? [...home.notifications]
+                        .sort((left, right) => {
+                          const leftAt = left.at ?? '';
+                          const rightAt = right.at ?? '';
+                          if (leftAt !== rightAt) {
+                            return leftAt < rightAt ? 1 : -1;
+                          }
+                          return left.id < right.id ? -1 : 1;
+                        })
+                        .flatMap((item) => {
+                          const match = queue.find(
+                            (entry) =>
+                              entry.kind === item.kind &&
+                              entry.slug === item.targetSlug,
+                          );
+                          return [
+                            {
+                              id: item.id,
+                              kind: item.kind,
+                              title: item.title,
+                              detail: item.detail,
+                              icon: item.spaceLogo ?? null,
+                              href:
+                                item.kind === 'signal'
+                                  ? getSignalPath(
+                                      lang,
+                                      item.spaceSlug,
+                                      item.targetSlug,
+                                    )
+                                  : getProposalPath(
+                                      lang,
+                                      item.spaceSlug,
+                                      item.targetSlug,
+                                    ),
+                              ...(match
+                                ? {
+                                    onSelect: () =>
+                                      setFocusKey(
+                                        `${match.kind}:${match.slug}`,
+                                      ),
+                                  }
+                                : {}),
+                            },
+                          ];
+                        })
                     : []
                 }
               />
@@ -455,6 +554,7 @@ export function MemberHome({
               onChatPerson={openChat}
               onCallPerson={openCall}
               onVideoPerson={openVideo}
+              onQueueMemory={onQueueMemory}
             />
           ) : home && viewReady ? (
             <ClassicBoard
@@ -546,7 +646,7 @@ export function MemberHome({
             <AttentionNeeded
               lang={lang}
               home={home}
-              queue={queue}
+              queue={attentionQueue}
               onSelect={setFocusKey}
             />
           </div>
@@ -832,8 +932,8 @@ function Stat({
   isLoading?: boolean;
 }) {
   return (
-    <div className="min-w-0 overflow-hidden px-1 py-1">
-      <dt className="text-1 leading-tight tracking-[0.08em] text-neutral-11 uppercase">
+    <div className="min-w-0">
+      <dt className="text-1 leading-tight tracking-[0.04em] break-words text-neutral-11 uppercase">
         {label}
       </dt>
       <dd
@@ -896,53 +996,36 @@ function AttentionNeeded({
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
   const [visibleCount, setVisibleCount] = useState(ATTENTION_PAGE);
-  const items = home
-    ? [
-        ...queue.flatMap((item) => {
-          const typeName = item.category?.trim();
-          const typeKey = typeName
-            ? (`types.${typeName}` as 'types.Need')
-            : null;
-          const typeLabel =
-            typeKey && tTypes.has(typeKey) ? tTypes(typeKey) : typeName;
-          return [
-            {
-              id: `${item.kind}:${item.slug}`,
-              kind: item.kind,
-              title: item.title,
-              detail:
-                item.kind === 'signal'
-                  ? [typeLabel, item.spaceTitle].filter(Boolean).join(' · ')
-                  : [item.spaceTitle, item.documentKind]
-                      .filter(Boolean)
-                      .join(' · '),
-              href:
-                item.kind === 'proposal'
-                  ? getProposalPath(lang, item.spaceSlug, item.slug)
-                  : getSignalPath(lang, item.spaceSlug, item.slug),
-              onSelect: () => onSelect(`${item.kind}:${item.slug}`),
-              icon: item.spaceLogo ?? null,
-            },
-          ];
-        }),
-        ...(home.movement ?? [])
-          .filter((item) => item.kind === 'treasury')
-          .map((item) => ({
-            id: item.id,
-            title: item.title,
-            detail: [t('kindTransaction'), item.spaceTitle]
-              .filter(Boolean)
-              .join(' · '),
-            href: item.documentSlug
-              ? getProposalPath(lang, item.spaceSlug, item.documentSlug)
-              : `/${lang}/dho/${item.spaceSlug}/treasury`,
-            icon: item.spaceLogo ?? null,
-          })),
-      ]
-    : [];
+  const items = queue.flatMap((item) => {
+    const typeName = item.category?.trim();
+    const typeKey = typeName ? (`types.${typeName}` as 'types.Need') : null;
+    const typeLabel =
+      typeKey && tTypes.has(typeKey) ? tTypes(typeKey) : typeName;
+    return [
+      {
+        id: `${item.kind}:${item.slug}`,
+        kind: item.kind,
+        title: item.title,
+        detail:
+          item.kind === 'signal'
+            ? [typeLabel, item.spaceTitle].filter(Boolean).join(' · ')
+            : [item.spaceTitle, item.documentKind].filter(Boolean).join(' · '),
+        href:
+          item.kind === 'proposal'
+            ? getProposalPath(lang, item.spaceSlug, item.slug)
+            : getSignalPath(lang, item.spaceSlug, item.slug),
+        onSelect: () => onSelect(`${item.kind}:${item.slug}`),
+        icon: item.spaceLogo ?? null,
+      },
+    ];
+  });
 
   return (
-    <Tile title={t('waiting')} busy={home == null}>
+    <Tile
+      title={t('waiting')}
+      count={items.length > 0 ? items.length : undefined}
+      busy={home == null}
+    >
       <ResourceList
         isLoading={home == null}
         empty={t('noWaiting')}
@@ -952,7 +1035,7 @@ function AttentionNeeded({
       {items.length > visibleCount ? (
         <button
           type="button"
-          className="mt-3 text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          className="mt-4 inline-block text-1 text-accent-11 underline-offset-4 hover:underline"
           onClick={() => setVisibleCount((count) => count + ATTENTION_PAGE)}
         >
           {t('seeMore')}

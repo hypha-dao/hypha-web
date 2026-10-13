@@ -3,8 +3,13 @@ import { describe, expect, it } from 'vitest';
 import type { MemberIntelligence } from '../member-intelligence';
 import {
   SHOW_MEMBER_HOME_ITEM_TOOL,
+  listMemberHomeAttentionItems,
   listMemberHomeThreadItems,
+  mergeMemberHomeAttention,
+  memberHomeBoardDestination,
+  memberHomeItemsStillWaiting,
   memberHomeSignalAction,
+  memberHomeSignalCatalogue,
   memberHomeSignalCtas,
   memberHomeThreadItemForMessage,
   memberHomeItemMemory,
@@ -66,7 +71,7 @@ const home: MemberIntelligence = {
       spaceTitle: 'Hypha Pollinate',
       createdAt: '2026-01-01T00:00:00.000Z',
       authoredByMember: false,
-      web3ProposalId: null,
+      web3ProposalId: 41,
       description: null,
       creatorId: null,
       creatorName: null,
@@ -105,10 +110,119 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
-  it('leaves out a proposal that has expired', () => {
+  it('leaves out a closed vote that has no recorded outcome', () => {
     const items = listMemberHomeThreadItems({
       ...home,
       proposals: [{ ...home.proposals[0]!, expired: true }],
+    });
+    expect(items.map((item) => item.slug)).toEqual(['define-products']);
+  });
+
+  it('drops an item from the waiting list once the member clears it', () => {
+    const items = listMemberHomeThreadItems(home);
+    const open = memberHomeItemsStillWaiting(items, {
+      passed: ['proposal:invite-member'],
+      acted: ['signal:define-products'],
+    });
+    expect(open).toEqual([]);
+  });
+
+  it('keeps a deferred item when the chat brings it back', () => {
+    const items = listMemberHomeThreadItems(home);
+    const open = memberHomeItemsStillWaiting(items, {
+      deferred: ['proposal:invite-member'],
+      recalled: ['proposal:invite-member'],
+    });
+    expect(open.map((item) => item.slug)).toEqual([
+      'define-products',
+      'invite-member',
+    ]);
+  });
+
+  it('tells a closed vote as the outcome, not a decision', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [
+        {
+          ...home.proposals[0]!,
+          expired: true,
+          outcome: { passed: true, participation: 62, unity: 91 },
+        },
+      ],
+    });
+    const proposal = items.find((item) => item.slug === 'invite-member');
+    expect(proposal).toMatchObject({
+      action: 'outcome',
+      passed: true,
+      participation: 62,
+      unity: 91,
+    });
+  });
+
+  it('keeps every open proposal in attention, newest first', () => {
+    const items = listMemberHomeAttentionItems({
+      ...home,
+      proposals: [
+        home.proposals[0]!,
+        {
+          ...home.proposals[0]!,
+          id: 10,
+          slug: 'invite-edgar',
+          title: 'Invite Edgar',
+          spaceSlug: 'localscale',
+          spaceTitle: 'Localscale',
+          createdAt: '2026-10-13T12:00:00.000Z',
+          web3ProposalId: 88,
+        },
+        {
+          ...home.proposals[0]!,
+          id: 11,
+          slug: 'invite-older',
+          title: 'Older invite',
+          createdAt: '2025-06-01T00:00:00.000Z',
+          web3ProposalId: 12,
+        },
+      ],
+    });
+    expect(items.map((item) => item.slug)).toEqual([
+      'invite-edgar',
+      'invite-member',
+      'invite-older',
+      'define-products',
+    ]);
+  });
+
+  it('keeps attention still while new items arrive and finished ones leave', () => {
+    const source = listMemberHomeAttentionItems(home);
+    const invite = source.find((item) => item.slug === 'invite-member');
+    const signal = source.find((item) => item.slug === 'define-products');
+    if (!invite || !signal) throw new Error('fixture items missing');
+    const fresh = {
+      ...invite,
+      slug: 'invite-edgar',
+      title: 'Invite Edgar',
+    };
+    const merged = mergeMemberHomeAttention([signal, invite], [fresh, signal]);
+    expect(merged.map((item) => item.slug)).toEqual([
+      'invite-edgar',
+      'define-products',
+    ]);
+  });
+
+  it('leaves out a proposal that has no chain vote left', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [{ ...home.proposals[0]!, web3ProposalId: null }],
+    });
+    expect(items.map((item) => item.slug)).toEqual(['define-products']);
+  });
+
+  it('leaves out a proposal that has already become an agreement', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [
+        { ...home.proposals[0]!, state: 'agreement', web3ProposalId: 41 },
+      ],
     });
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
@@ -387,6 +501,41 @@ describe('memberHomeThreadItemForMessage', () => {
     expect(item?.slug).toBe('invite-member');
   });
 
+  it('follows the person and the space when two proposals share a title', () => {
+    const catalog = listMemberHomeThreadItems({
+      ...home,
+      proposals: [
+        {
+          ...home.proposals[0]!,
+          creatorName: 'Gerardo Roza',
+        },
+        {
+          ...home.proposals[0]!,
+          id: 11,
+          slug: 'invite-energy',
+          spaceSlug: 'hypha-energy',
+          spaceTitle: 'Hypha Energy',
+          creatorName: 'Welime Haitsma',
+          web3ProposalId: 42,
+        },
+      ],
+    });
+    const item = memberHomeThreadItemForMessage(catalog, {
+      parts: [
+        {
+          type: 'text',
+          text: 'The "Invite Member" proposal pertains to Welime Haitsma\'s request to join the Hypha Energy space. Welime is seeking to contribute to the collaborative efforts within the community.',
+        },
+        {
+          type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+          state: 'output-available',
+          input: { kind: 'proposal', slug: 'invite-member' },
+        },
+      ],
+    });
+    expect(item?.slug).toBe('invite-energy');
+  });
+
   it('leaves a greeting with no item empty', () => {
     const item = memberHomeThreadItemForMessage(items, {
       parts: [
@@ -626,5 +775,46 @@ describe('passedMemberHomeItemKeys', () => {
     expect(agreed.recalled).toEqual([]);
     expect(agreed.passed).toEqual([]);
     expect(agreed.held).toBeNull();
+  });
+});
+
+describe('memberHomeBoardDestination', () => {
+  const spaces = [
+    { slug: 'hypha-energy', title: 'Hypha Energy' },
+    { slug: 'hypha-pollinate', title: 'Hypha Pollinate' },
+  ];
+
+  it('opens the signals board when they agree to look', () => {
+    const destination = memberHomeBoardDestination({
+      text: 'yes',
+      previousAssistantText:
+        'Would you like me to navigate you to the Hypha Energy space or the signals board?',
+      spaces,
+      lang: 'en',
+    });
+    expect(destination).toEqual({
+      href: '/en/dho/hypha-energy/coherence',
+      title: 'Hypha Energy',
+    });
+  });
+
+  it('leaves a yes on a proposal on the card', () => {
+    const destination = memberHomeBoardDestination({
+      text: 'yes',
+      previousAssistantText:
+        'Gerardo Roza has asked to join Hypha Pollinate. You can now decide on the proposal card.',
+      spaces,
+      lang: 'en',
+    });
+    expect(destination).toBeNull();
+  });
+
+  it('replaces a recited signal list with the board', () => {
+    const destination = memberHomeSignalCatalogue(
+      "I've opened the Hypha Energy space for you! Here are some recent signals: 1. RoadMap page. 2. Social media. 3. Demo scenario.",
+      spaces,
+      'en',
+    );
+    expect(destination?.href).toBe('/en/dho/hypha-energy/coherence');
   });
 });

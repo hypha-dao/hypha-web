@@ -10,14 +10,18 @@ import {
 } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
+import { useRouter } from 'next/navigation';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   listMemberHomeThreadItems,
+  memberHomeBoardDestination,
   memberHomeItemMemory,
+  memberHomeSignalCatalogue,
   mergeMemberHomeMemory,
   memberHomeThreadItemForMessage,
+  memberHomeThreadItemKey,
   type MemberHomeThreadItem,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
@@ -38,7 +42,9 @@ import {
   consumeHomeReturn,
   homeReturnText,
   readHomeActed,
+  readHomeChoices,
   readHomeThread,
+  writeHomeChoices,
   writeHomeThread,
 } from './member-home-resume';
 import { MemberHomeMark } from './member-home-mark';
@@ -64,40 +70,6 @@ type HomeWidget = {
 const HOME_VOICE_PREFERENCE_KEY = '__member-home__';
 const HOME_SOUND_KEY = 'hypha-member-home-sound';
 const HOME_MIC_KEY = 'hypha-member-home-mic';
-const HOME_CHOICES_KEY = 'hypha-member-home-choices';
-
-function readMemberHomeChoices(): {
-  passed: string[];
-  deferred: string[];
-  settled: string[];
-} {
-  if (typeof window === 'undefined') {
-    return { passed: [], deferred: [], settled: [] };
-  }
-  try {
-    const raw = window.localStorage.getItem(HOME_CHOICES_KEY);
-    if (!raw) return { passed: [], deferred: [], settled: [] };
-    const parsed = JSON.parse(raw) as {
-      passed?: unknown;
-      deferred?: unknown;
-      settled?: unknown;
-    };
-    const list = (value: unknown) =>
-      Array.isArray(value)
-        ? value
-            .filter((item): item is string => typeof item === 'string')
-            .slice(0, 80)
-        : [];
-    return {
-      passed: list(parsed.passed),
-      deferred: list(parsed.deferred),
-      settled: list(parsed.settled),
-    };
-  } catch {
-    return { passed: [], deferred: [], settled: [] };
-  }
-}
-
 function readHomeSoundOn() {
   try {
     return window.localStorage.getItem(HOME_SOUND_KEY) !== 'off';
@@ -137,11 +109,81 @@ type MemberHomeChatProps = {
   onCallPerson: MemberHomeOpenChat;
   onVideoPerson: MemberHomeOpenChat;
   onFocusItem?: (item: MemberHomeThreadItem | null) => void;
+  /** Remaining queue, the same one the assistant is clearing. */
+  onQueueMemory?: (memory: {
+    passed: string[];
+    deferred: string[];
+    settled: string[];
+    recalled: string[];
+  }) => void;
 };
 
 type HomeMessage = UIMessage & {
   metadata?: { homeArrival?: boolean };
 };
+
+/**
+ * A new home turn must append. If the stream reuses an earlier assistant id,
+ * the client writes the new words into that bubble.
+ */
+function continueHomeChatResponse(response: Response): Response {
+  const stream = response.headers.get('x-vercel-ai-ui-message-stream');
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!response.ok || !response.body) return response;
+  if (stream !== 'v1' && !contentType.includes('text/event-stream')) {
+    return response;
+  }
+  const freshId = `msg-${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = '';
+  const rewritten = response.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        buffer += decoder.decode(chunk, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        if (lines.length === 0) return;
+        controller.enqueue(
+          encoder.encode(
+            `${lines
+              .map((line) => rewriteHomeStartLine(line, freshId))
+              .join('\n')}\n`,
+          ),
+        );
+      },
+      flush(controller) {
+        buffer += decoder.decode();
+        if (!buffer) return;
+        controller.enqueue(
+          encoder.encode(rewriteHomeStartLine(buffer, freshId)),
+        );
+      },
+    }),
+  );
+  return new Response(rewritten, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
+
+function rewriteHomeStartLine(line: string, freshId: string) {
+  const prefix = 'data: ';
+  if (!line.startsWith(prefix)) return line;
+  const payload = line.slice(prefix.length).trim();
+  if (!payload || payload === '[DONE]') return line;
+  try {
+    const chunk = JSON.parse(payload) as {
+      type?: unknown;
+      messageId?: unknown;
+    };
+    if (chunk.type !== 'start') return line;
+    return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+  } catch {
+    return line;
+  }
+}
 
 function messageText(message: HomeMessage) {
   return (message.parts ?? [])
@@ -213,8 +255,11 @@ export function MemberHomeChat({
   onCallPerson,
   onVideoPerson,
   onFocusItem,
+  onQueueMemory,
 }: MemberHomeChatProps) {
   const t = useTranslations('MemberHome');
+  const router = useRouter();
+  const messagesRef = useRef<HomeMessage[]>([]);
   const {
     getAccessToken,
     isAuthenticated,
@@ -246,10 +291,12 @@ export function MemberHomeChat({
           memberHome: true,
           locale: lang,
           memberHomeMemory: {
-            ...readMemberHomeChoices(),
+            ...readHomeChoices(),
             acted: readHomeActed(),
           },
         }),
+        fetch: async (input, init) =>
+          continueHomeChatResponse(await fetch(input, init)),
       }),
     [getAccessToken, lang],
   );
@@ -268,6 +315,7 @@ export function MemberHomeChat({
   });
   const isStreaming = status === 'streaming' || status === 'submitted';
   const homeMessages = messages as HomeMessage[];
+  messagesRef.current = homeMessages;
 
   const widgetKindFor = useCallback(
     (text: string): HomeWidgetKind | null => {
@@ -287,6 +335,47 @@ export function MemberHomeChat({
       const trimmed = text.trim();
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
+      await stop();
+      if (!hidden && files.length === 0) {
+        const previousAssistant = [...messagesRef.current]
+          .reverse()
+          .find(
+            (message) => message.role === 'assistant' && messageText(message),
+          );
+        const board = memberHomeBoardDestination({
+          text: trimmed,
+          previousAssistantText: previousAssistant
+            ? messageText(previousAssistant)
+            : '',
+          spaces: intelligence.spaces,
+          lang,
+        });
+        if (board) {
+          const next: HomeMessage[] = [
+            ...messagesRef.current,
+            {
+              id: `home-user-${crypto.randomUUID()}`,
+              role: 'user',
+              parts: [{ type: 'text', text: trimmed }],
+            },
+            {
+              id: `home-assistant-${crypto.randomUUID()}`,
+              role: 'assistant',
+              parts: [
+                {
+                  type: 'text',
+                  text: t('boardInstead', { space: board.title }),
+                },
+              ],
+            },
+          ];
+          setMessages(next);
+          writeHomeThread(next);
+          setInput('');
+          router.push(board.href);
+          return;
+        }
+      }
       if (!hidden && trimmed) {
         const kind = widgetKindFor(trimmed);
         if (kind) {
@@ -327,7 +416,7 @@ export function MemberHomeChat({
             memberHome: true,
             locale: lang,
             memberHomeMemory: {
-              ...readMemberHomeChoices(),
+              ...readHomeChoices(),
               acted: readHomeActed(),
             },
           },
@@ -341,11 +430,40 @@ export function MemberHomeChat({
       drafts,
       getAccessToken,
       homeMessages.length,
+      intelligence.spaces,
       lang,
+      router,
       sendMessage,
+      setMessages,
+      stop,
+      t,
       widgetKindFor,
     ],
   );
+
+  const openedBoard = useRef<string | null>(null);
+  useEffect(() => {
+    if (isStreaming) return;
+    const latest = [...homeMessages]
+      .reverse()
+      .find((message) => message.role === 'assistant' && messageText(message));
+    if (!latest) return;
+    const board = memberHomeSignalCatalogue(
+      messageText(latest),
+      intelligence.spaces,
+      lang,
+    );
+    if (!board || openedBoard.current === latest.id) return;
+    openedBoard.current = latest.id;
+    try {
+      const key = `hypha-member-home-board:${latest.id}`;
+      if (window.sessionStorage.getItem(key)) return;
+      window.sessionStorage.setItem(key, '1');
+    } catch {
+      // Still open the board for this visit.
+    }
+    router.push(board.href);
+  }, [homeMessages, intelligence.spaces, isStreaming, lang, router]);
 
   useEffect(() => {
     const onAsk = (event: Event) => {
@@ -479,7 +597,7 @@ export function MemberHomeChat({
   );
   useEffect(() => {
     const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
-    const merged = mergeMemberHomeMemory(fromMessages, readMemberHomeChoices());
+    const merged = mergeMemberHomeMemory(fromMessages, readHomeChoices());
     const deferred = [...merged.deferred];
     for (const key of fromMessages.recalled) {
       if (
@@ -490,18 +608,33 @@ export function MemberHomeChat({
         deferred.push(key);
       }
     }
-    try {
-      window.localStorage.setItem(
-        HOME_CHOICES_KEY,
-        JSON.stringify({
-          passed: merged.passed,
-          deferred,
-          settled: merged.settled,
-        }),
-      );
-    } catch {
-      // The conversation still carries the choice when storage is blocked.
+    writeHomeChoices({
+      passed: merged.passed,
+      deferred,
+      settled: merged.settled,
+    });
+    onQueueMemory?.({
+      passed: merged.passed,
+      deferred: merged.deferred,
+      settled: merged.settled,
+      recalled: fromMessages.recalled,
+    });
+  }, [homeMessages, onQueueMemory, threadItems]);
+  const cardsByMessageId = useMemo(() => {
+    const seen = new Set<string>();
+    const map = new Map<string, MemberHomeThreadItem>();
+    for (const message of homeMessages) {
+      if (message.role !== 'assistant' || message.metadata?.homeArrival) {
+        continue;
+      }
+      const item = memberHomeThreadItemForMessage(threadItems, message);
+      if (!item) continue;
+      const key = memberHomeThreadItemKey(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      map.set(message.id, item);
     }
+    return map;
   }, [homeMessages, threadItems]);
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
@@ -599,12 +732,21 @@ export function MemberHomeChat({
               return null;
             }
             const rawText = messageText(message).replace(/\*\*/g, '');
+            const board =
+              message.role === 'assistant'
+                ? memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
+                : null;
             const spokenItem =
               message.role === 'assistant'
                 ? memberHomeThreadItemForMessage(threadItems, message)
                 : null;
             const text = (
-              message.role === 'assistant'
+              board
+                ? t('boardInstead', { space: board.title }).replace(
+                    board.title,
+                    `[${board.title}](${board.href})`,
+                  )
+                : message.role === 'assistant'
                 ? straightforwardHomeText(rawText)
                 : rawText
             )
@@ -615,8 +757,11 @@ export function MemberHomeChat({
                 '',
               )
               .trim();
-            const keepsCard =
-              message.id === cardMessageId && focusedItem != null;
+            const pinnedItem =
+              message.role === 'assistant'
+                ? cardsByMessageId.get(message.id) ?? null
+                : null;
+            const keepsCard = pinnedItem != null;
             const showMessage =
               (!message.metadata?.homeArrival && Boolean(text)) || keepsCard;
             if (!showMessage && attached.length === 0) return null;
@@ -664,15 +809,15 @@ export function MemberHomeChat({
                           {homeMessageNodes(text)}
                         </p>
                       ) : null}
-                      {!mine && message.id === cardMessageId && focusedItem ? (
+                      {!mine && pinnedItem ? (
                         <MemberHomeThreadCard
                           lang={lang}
-                          item={focusedItem}
+                          item={pinnedItem}
                           proposal={
-                            focusedItem.kind === 'proposal'
+                            pinnedItem.kind === 'proposal'
                               ? intelligence.proposals.find(
                                   (proposal) =>
-                                    proposal.slug === focusedItem.slug,
+                                    proposal.slug === pinnedItem.slug,
                                 ) ?? null
                               : null
                           }

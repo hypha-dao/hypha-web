@@ -4,7 +4,11 @@ const SOUND_KEY = 'humai-sound';
 
 function soundPreference(): boolean {
   try {
-    return window.localStorage.getItem(SOUND_KEY) !== 'off';
+    if (window.localStorage.getItem(SOUND_KEY) === 'off') return false;
+    if (window.localStorage.getItem('hypha-member-home-sound') === 'off') {
+      return false;
+    }
+    return true;
   } catch {
     return true;
   }
@@ -12,15 +16,15 @@ function soundPreference(): boolean {
 
 let shared: AudioContext | null = null;
 
-/** One context for the HUMAI signature. Call from a user gesture. */
-async function audioContext(): Promise<AudioContext | null> {
+/** One context for the HUMAI signature. Resume inside the click, before any await. */
+function audioContext(): AudioContext | null {
   const Ctor =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext })
       .webkitAudioContext;
   if (!Ctor) return null;
   shared ??= new Ctor();
-  if (shared.state === 'suspended') await shared.resume().catch(() => {});
+  if (shared.state === 'suspended') void shared.resume().catch(() => {});
   return shared;
 }
 
@@ -46,18 +50,21 @@ export function celebrate() {
     if (motionShouldStaySilent()) return;
     if (!soundPreference()) return;
     const now = Date.now();
-    if (now - lastCelebration < 3000) return;
+    if (now - lastCelebration < 700) return;
     lastCelebration = now;
-    void playSignature({ level: 0.55 }).catch(() => {});
+    const ctx = audioContext();
+    if (!ctx) return;
+    void playSignature(ctx, { level: 0.55 }).catch(() => {});
   } catch {
     // Sound never blocks the vote or the validation.
   }
 }
 
 /** The HUMAI+ signature: ~2.4 s. Resolves when the tail has faded. */
-async function playSignature(opts?: { level?: number }): Promise<void> {
-  const ctx = await audioContext();
-  if (!ctx) return;
+async function playSignature(
+  ctx: AudioContext,
+  opts?: { level?: number },
+): Promise<void> {
   const t0 = ctx.currentTime + 0.05;
 
   const master = ctx.createGain();

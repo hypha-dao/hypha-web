@@ -5,6 +5,7 @@ import {
   peerNamesByPerson,
   peopleSharingMemberSpaces,
   pickNotificationsAcrossSpaces,
+  recentNotifications,
 } from '../../member-intelligence';
 import { SPACE_ACTOR_SUB_PREFIX } from '../space-actor-person';
 import {
@@ -270,5 +271,41 @@ describe('pickNotificationsAcrossSpaces', () => {
     );
 
     expect(picked.map((item) => item.id)).toEqual(['proposal-1', 'signal-3']);
+  });
+});
+
+describe('recentNotifications', () => {
+  it('lists the newest item first, including a second one from the same space', () => {
+    const picked = recentNotifications(
+      [
+        {
+          id: 'proposal-old',
+          kind: 'proposal',
+          title: 'Older invite',
+          detail: 'Localscale',
+          spaceSlug: 'localscale',
+          spaceTitle: 'Localscale',
+          targetSlug: 'older',
+          at: '2026-10-08T12:00:00.000Z',
+        },
+        {
+          id: 'proposal-new',
+          kind: 'proposal',
+          title: 'Invite request',
+          detail: 'Localscale',
+          spaceSlug: 'localscale',
+          spaceTitle: 'Localscale',
+          targetSlug: 'newer',
+          at: '2026-10-13T12:00:00.000Z',
+        },
+      ],
+      40,
+    );
+
+    expect(picked.map((item) => item.id)).toEqual([
+      'proposal-new',
+      'proposal-old',
+    ]);
+    expect(picked[0]?.at).toBe('2026-10-13T12:00:00.000Z');
   });
 });

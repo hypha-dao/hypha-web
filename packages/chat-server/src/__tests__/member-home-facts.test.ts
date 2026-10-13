@@ -97,6 +97,8 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Would you like to take part in one of them?');
     expect(facts).toContain('Asking for context or a discussion is not a no');
     expect(facts).toContain('On a signal, action is not decision');
+    expect(facts).toContain('Discuss it or upvote it');
+    expect(facts).toContain('Never say validate');
     expect(facts).toContain('Do not tell them to call themselves');
     expect(facts).toContain('Any button on a signal means they acted');
     expect(facts).toContain(
@@ -117,7 +119,7 @@ describe('formatMemberHomeFacts', () => {
       'A proposal they have already voted on is absent from the waiting list.',
     );
     expect(facts).toContain(
-      'An expired proposal is absent from the waiting list.',
+      'When action=outcome the vote is closed. Say the say= sentence and stop.',
     );
     expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
@@ -129,6 +131,8 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Never make a recipe');
     expect(facts).toContain('Do not call it a chat');
     expect(facts).toContain('think about it');
+    expect(facts).toContain('Do not list signals');
+    expect(facts).toContain('Do not say you opened the space');
   });
 
   it('puts who they are and who they share a space with on the decision line', () => {
@@ -233,6 +237,81 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Build the bridge');
     expect(facts).not.toContain('slug=path');
     expect(facts).toContain('proposal:path');
+  });
+
+  it('speaks a closed vote as the outcome', () => {
+    const facts = formatMemberHomeFacts({
+      ...home,
+      attention: [
+        {
+          id: 'proposal-9',
+          kind: 'proposal',
+          title: 'Open the path',
+          detail: 'Grove',
+          spaceSlug: 'grove',
+          spaceTitle: 'Grove',
+          targetSlug: 'path',
+        },
+      ],
+      proposals: [
+        {
+          ...home.proposals[0]!,
+          expired: true,
+          outcome: { passed: true, participation: 62, unity: 91 },
+        },
+      ],
+    });
+    expect(facts).toContain(
+      'Card on screen: kind=proposal slug=path action=outcome',
+    );
+    expect(facts).toContain(
+      'say="The proposal passed with a participation of 62% and unity of 91%."',
+    );
+    expect(facts).not.toContain('slug=path document=proposal action=decision');
+  });
+
+  it('stays on the proposal they just asked about when titles collide', () => {
+    const facts = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            creatorName: 'Gerardo Roza',
+          },
+          {
+            ...home.proposals[0]!,
+            id: 11,
+            slug: 'invite-energy',
+            title: 'Invite Member',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Welime Haitsma',
+            web3ProposalId: 42,
+          },
+          {
+            ...home.proposals[0]!,
+            id: 12,
+            slug: 'invite-pollinate',
+            title: 'Invite Member',
+            spaceSlug: 'hypha-pollinate',
+            spaceTitle: 'Hypha Pollinate',
+            creatorName: 'Gerardo Roza',
+            web3ProposalId: 43,
+          },
+        ],
+      },
+      {
+        asked:
+          'Help me think about Invite Member in Hypha Pollinate, proposed by Gerardo Roza. Summarise it, and leave the decision with me.',
+      },
+    );
+    expect(facts).toContain('slug=invite-pollinate');
+    expect(facts).toContain('This is a new reply under their message');
+    expect(facts).toContain('Do not rewrite an earlier reply');
+    expect(facts).not.toContain(
+      'This reply is about that card only. The card already shows the title',
+    );
   });
 
   it('moves on when they say the card is not a proposal', () => {

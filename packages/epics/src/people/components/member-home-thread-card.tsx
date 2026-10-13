@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -14,6 +14,7 @@ import {
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -114,6 +115,8 @@ export function MemberHomeThreadCard({
   const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const { resolvedTheme } = useTheme();
   const [busy, setBusy] = useState(false);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const held = useRef(false);
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const spaceIconUrl = resolveSpaceDisplayLogoUrl(
     item.spaceLogo ?? proposal?.spaceLogo,
@@ -147,6 +150,33 @@ export function MemberHomeThreadCard({
           spaceSlug: item.spaceSlug,
         }
       : null;
+  const seededOutcome =
+    item.action === 'outcome' &&
+    typeof item.participation === 'number' &&
+    typeof item.unity === 'number'
+      ? {
+          passed: item.passed === true,
+          participation: item.participation,
+          unity: item.unity,
+        }
+      : null;
+  const [liveOutcome, setLiveOutcome] = useState(seededOutcome);
+  const rememberOutcome = useCallback(
+    (next: { passed: boolean; participation: number; unity: number }) => {
+      setLiveOutcome((current) => {
+        if (
+          current?.passed === next.passed &&
+          current.participation === next.participation &&
+          current.unity === next.unity
+        ) {
+          return current;
+        }
+        return next;
+      });
+    },
+    [],
+  );
+  const outcome = liveOutcome ?? seededOutcome;
   const ownDeadline = isSignal && item.authoredByMember;
   const ctas = (
     ownDeadline
@@ -159,12 +189,21 @@ export function MemberHomeThreadCard({
       : []
   ).filter((cta) => assistant || cta === 'discuss' || cta === 'call');
 
-  function ask(text: string, sound = false) {
-    if (busy) return;
+  function confirm(id: string) {
+    if (held.current) return false;
+    held.current = true;
+    setChosen(id);
     setBusy(true);
-    if (sound) celebrate();
+    celebrate();
+    window.setTimeout(() => {
+      held.current = false;
+      setBusy(false);
+    }, 400);
+    return true;
+  }
+
+  function ask(text: string) {
     onAsk(text);
-    window.setTimeout(() => setBusy(false), 400);
   }
 
   function noteAction() {
@@ -227,7 +266,7 @@ export function MemberHomeThreadCard({
           moveOn(false);
           return;
         }
-        ask(t('helpChosen', { title: item.title }), cta === 'help');
+        ask(t('helpChosen', { title: item.title }));
         return;
       case 'later':
         ask(t('laterChosen', { title: item.title }));
@@ -264,6 +303,18 @@ export function MemberHomeThreadCard({
   const actionClass = compact ? 'w-full' : 'w-fit';
   const primaryCtas = ctas.filter((cta) => cta !== 'later');
 
+  function choiceProps(id: string, primary = false) {
+    const picked = chosen === id;
+    const filled = picked || (chosen == null && primary);
+    const variant: 'default' | 'outline' = filled ? 'default' : 'outline';
+    const colorVariant: 'accent' | 'neutral' = filled ? 'accent' : 'neutral';
+    return {
+      variant,
+      colorVariant,
+      className: cn(actionClass, picked && 'ring-1 ring-foreground'),
+    };
+  }
+
   return (
     <section className="member-home-thread-card w-full overflow-hidden">
       {leadImage ? (
@@ -273,7 +324,10 @@ export function MemberHomeThreadCard({
         <div className="flex items-center justify-between gap-3">
           <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
             {isProposal
-              ? [t('onVoting'), item.category?.trim()]
+              ? [
+                  outcome ? t('voteClosed') : t('onVoting'),
+                  item.category?.trim(),
+                ]
                   .filter(Boolean)
                   .join(' · ')
               : eyebrow}
@@ -333,7 +387,22 @@ export function MemberHomeThreadCard({
             documentId={proposal?.id ?? item.documentId ?? null}
             documentSlug={proposal?.slug ?? item.slug}
             compact={compact}
+            onClosed={rememberOutcome}
           />
+        ) : null}
+        {outcome ? (
+          <p
+            className={
+              compact
+                ? 'mt-3 text-1 leading-relaxed text-foreground'
+                : 'mt-3 text-2 leading-relaxed text-foreground'
+            }
+          >
+            {t(outcome.passed ? 'outcomePassed' : 'outcomeClosed', {
+              participation: outcome.participation,
+              unity: outcome.unity,
+            })}
+          </p>
         ) : null}
         <div
           className={
@@ -342,11 +411,29 @@ export function MemberHomeThreadCard({
               : 'mt-3 flex flex-wrap items-center gap-2'
           }
         >
-          {ownDeadline ? (
-            <Button asChild className={actionClass}>
+          {outcome ? (
+            <Button
+              type="button"
+              {...choiceProps('got-it', true)}
+              onClick={() => {
+                if (!confirm('got-it')) return;
+                markHomeActed(memberHomeThreadItemKey(item));
+                if (!assistant) return;
+                onAsk(
+                  `I have the outcome on "${item.title}". Continue with the next.`,
+                  true,
+                );
+              }}
+            >
+              {t('gotIt')}
+            </Button>
+          ) : null}
+          {!outcome && ownDeadline ? (
+            <Button asChild {...choiceProps('update', true)}>
               <Link
                 href={signalHref}
                 onClick={() => {
+                  if (!confirm('update')) return;
                   moveOn(true);
                 }}
               >
@@ -354,46 +441,56 @@ export function MemberHomeThreadCard({
               </Link>
             </Button>
           ) : null}
-          {primaryCtas.map((cta, index) => (
+          {!outcome &&
+            primaryCtas.map((cta, index) => (
+              <Button
+                key={cta}
+                type="button"
+                {...choiceProps(cta, index === 0)}
+                onClick={() => {
+                  if (!confirm(cta)) return;
+                  onCta(cta);
+                }}
+              >
+                {labelFor(cta)}
+              </Button>
+            ))}
+          {!outcome && assistant && !isSignal && creator ? (
             <Button
-              key={cta}
               type="button"
-              variant={index === 0 ? 'default' : 'outline'}
-              colorVariant={index === 0 ? 'accent' : 'neutral'}
-              className={actionClass}
-              disabled={busy}
-              onClick={() => onCta(cta)}
-            >
-              {labelFor(cta)}
-            </Button>
-          ))}
-          {assistant && !isSignal && creator ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className={actionClass}
-              disabled={busy}
+              {...choiceProps('ask')}
               onClick={() => {
+                if (!confirm('ask')) return;
                 void reach('chat');
               }}
             >
               {t('askProposer', { name: givenName(creator.name) })}
             </Button>
           ) : null}
-          {assistant && !isSignal ? (
+          {!outcome && assistant && !isSignal ? (
             <Button
               type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className={actionClass}
-              disabled={busy}
-              onClick={() => ask(t('thinkChosen', { title: item.title }))}
+              {...choiceProps('think')}
+              onClick={() => {
+                if (!confirm('think')) return;
+                ask(
+                  item.creatorName
+                    ? t('thinkChosenBy', {
+                        title: item.title,
+                        space: item.spaceTitle,
+                        name: item.creatorName,
+                      })
+                    : t('thinkChosen', {
+                        title: item.title,
+                        space: item.spaceTitle,
+                      }),
+                );
+              }}
             >
               {t('helpMeThink')}
             </Button>
           ) : null}
-          {assistant ? (
+          {!outcome && assistant ? (
             <div
               className={
                 compact
@@ -403,36 +500,32 @@ export function MemberHomeThreadCard({
             >
               <Button
                 type="button"
-                variant="outline"
-                colorVariant="neutral"
-                className={actionClass}
-                disabled={busy}
-                onClick={() => ask(t('laterChosen', { title: item.title }))}
+                {...choiceProps('later')}
+                onClick={() => {
+                  if (!confirm('later')) return;
+                  ask(t('laterChosen', { title: item.title }));
+                }}
               >
                 {t('notNow')}
               </Button>
               <Button
                 type="button"
-                variant="outline"
-                colorVariant="neutral"
-                className={actionClass}
-                disabled={busy}
-                onClick={() => ask(t('noChosen', { title: item.title }))}
+                {...choiceProps('no')}
+                onClick={() => {
+                  if (!confirm('no')) return;
+                  ask(t('noChosen', { title: item.title }));
+                }}
               >
                 {t('noThanks')}
               </Button>
             </div>
           ) : null}
           {!isProposal ? (
-            <Button
-              asChild
-              variant="outline"
-              colorVariant="neutral"
-              className={actionClass}
-            >
+            <Button asChild {...choiceProps('visit')}>
               <Link
                 href={visitHref}
                 onClick={() => {
+                  if (!confirm('visit')) return;
                   if (isSignal) moveOn(true);
                   else noteAction();
                 }}
