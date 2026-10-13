@@ -84,6 +84,18 @@ export const energyPpaV2FactoryAbi = [
       { name: 'proxy', type: 'address' },
     ],
   },
+  {
+    type: 'event',
+    name: 'CommunityDeployed',
+    inputs: [
+      { name: 'communityId', type: 'uint256', indexed: true },
+      { name: 'proxy', type: 'address', indexed: false },
+      { name: 'energyToken', type: 'address', indexed: false },
+      { name: 'admin', type: 'address', indexed: false },
+      { name: 'sourceIds', type: 'bytes32[]', indexed: false },
+      { name: 'sourceTokens', type: 'address[]', indexed: false },
+    ],
+  },
 ] as const satisfies Abi;
 
 /**

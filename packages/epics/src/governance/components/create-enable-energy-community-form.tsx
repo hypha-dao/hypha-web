@@ -1,15 +1,21 @@
 'use client';
 
 import React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
 import { useReadContract } from 'wagmi';
 import { z } from 'zod';
 import {
   buildDeployCommunityTransaction,
   createAgreementFiles,
+  ENERGY_COMMUNITY_COUNTRIES,
+  ENERGY_COMMUNITY_TIME_ZONES,
   ENERGY_PPA_CHAIN_ID,
+  EMS_OBJECTIVE_INDEX,
+  isEmsObjective,
+  onChainPurposeIndex,
   percentageStringToBigInt,
+  timeZoneForCountry,
   schemaCreateAgreementForm,
   type EnergyDeployCommunityInput,
   type Person,
@@ -156,8 +162,44 @@ const createEnableEnergyCommunitySchema = (t: (key: string) => string) => {
       }
     });
 
+  const energyCommunityProfile = z
+    .object({
+      emsObjective: z.string().trim(),
+      countryIso: z.string().trim().min(1, t('validation.countryInvalid')),
+      timeZone: z.string().trim(),
+    })
+    .superRefine((value, ctx) => {
+      if (value.emsObjective && !isEmsObjective(value.emsObjective)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['emsObjective'],
+          message: t('validation.emsObjectiveRequired'),
+        });
+      }
+      const country = value.countryIso.trim().toUpperCase();
+      if (!ENERGY_COMMUNITY_COUNTRIES.some((entry) => entry.iso === country)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['countryIso'],
+          message: t('validation.countryInvalid'),
+        });
+      }
+      if (
+        !(ENERGY_COMMUNITY_TIME_ZONES as readonly string[]).includes(
+          value.timeZone,
+        )
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['timeZone'],
+          message: t('validation.timeZoneRequired'),
+        });
+      }
+    });
+
   return schemaCreateAgreementForm.extend(createAgreementFiles).extend({
     energyOptimization: createEnergyOptimizationSchema(t),
+    energyCommunityProfile,
     energyCommunityActivation: z
       .object({
         admin: z
@@ -289,6 +331,11 @@ export const CreateEnableEnergyCommunityForm = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
+  const locale = useLocale();
+  const regionNames = React.useMemo(
+    () => new Intl.DisplayNames([locale, 'en'], { type: 'region' }),
+    [locale],
+  );
   const schema = React.useMemo(
     () => createEnableEnergyCommunitySchema((key) => t(key)),
     [t],
@@ -350,6 +397,11 @@ export const CreateEnableEnergyCommunityForm = ({
       defaultValues={
         {
           energyOptimization: ENERGY_OPTIMIZATION_DEFAULTS,
+          energyCommunityProfile: {
+            emsObjective: 'MaximumSelfConsumption',
+            countryIso: '',
+            timeZone: 'UTC',
+          },
           energyCommunityActivation: {
             admin: isValidExecutor ? (executorAddress as string) : '',
             stablecoin: BASE_USDC,
@@ -396,8 +448,37 @@ export const CreateEnableEnergyCommunityForm = ({
                 percent: (optimization.socialVariableBps / 100).toFixed(2),
               });
 
+        const profile = values.energyCommunityProfile;
+        const country = ENERGY_COMMUNITY_COUNTRIES.find(
+          (entry) => entry.iso === profile.countryIso.trim().toUpperCase(),
+        );
+        const objectiveLabelKey =
+          profile.emsObjective === 'LowestPrice'
+            ? 'plugins.enableCommunity.emsLowestPrice'
+            : profile.emsObjective === 'BatteryFirst'
+            ? 'plugins.enableCommunity.emsBatteryFirst'
+            : profile.emsObjective === 'MaximumSelfConsumption'
+            ? 'plugins.enableCommunity.emsSelfConsumption'
+            : 'optimization.minCo2';
         return {
           contractMethod: 'deployCommunity',
+          communitySetup: {
+            energyManagementObjective: t(objectiveLabelKey),
+            emsObjective: isEmsObjective(profile.emsObjective)
+              ? profile.emsObjective
+              : null,
+            emsObjectiveIndex: isEmsObjective(profile.emsObjective)
+              ? EMS_OBJECTIVE_INDEX[profile.emsObjective]
+              : null,
+            onChainPurposeIndex: onChainPurposeIndex(
+              values.energyOptimization.purpose1,
+            ),
+            country: country
+              ? regionNames.of(country.iso) ?? country.name
+              : null,
+            countryIso: country?.iso ?? null,
+            timeZone: timeZoneForCountry(country?.iso) ?? profile.timeZone,
+          },
           optimization: {
             priorities: optimization.purposeRanking.map((purpose) =>
               basePurposeLabel(purpose, (key, values) => t(key, values)),
