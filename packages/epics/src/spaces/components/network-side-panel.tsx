@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import useSWR from 'swr';
-import { ArrowUpRight, ChevronDown, Users, Wallet } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, Users, Wallet, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Skeleton } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -59,6 +59,19 @@ function leadImageSrc(value: string | null | undefined) {
   return DEFAULT_SPACE_LEAD_IMAGE;
 }
 
+function readablePlace(label: string) {
+  const match = /^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(label);
+  if (!match) return label;
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return label;
+  const north = latitude >= 0 ? 'N' : 'S';
+  const east = longitude >= 0 ? 'E' : 'W';
+  return `${Math.abs(latitude).toFixed(2)}° ${north}, ${Math.abs(
+    longitude,
+  ).toFixed(2)}° ${east}`;
+}
+
 function formatAmount(value: number, lang: string) {
   return new Intl.NumberFormat(lang, {
     maximumFractionDigits: value >= 100 ? 0 : 2,
@@ -100,7 +113,7 @@ function CapitalList({
 }) {
   const t = useTranslations('NetworkExchange');
   if (keys.length === 0) {
-    return <p className="mt-2 text-1 text-neutral-11">{empty}</p>;
+    return <p className="mt-2 text-2 text-neutral-11">{empty}</p>;
   }
   return (
     <ul className="mt-2 grid gap-1.5">
@@ -119,6 +132,7 @@ export function NetworkSidePanel({
   selectedSpace,
   circles = [],
   capitals,
+  onClose,
   onSelectRank,
   ranks,
 }: {
@@ -126,16 +140,18 @@ export function NetworkSidePanel({
   selectedSpace: Space | null;
   circles?: Space[];
   capitals?: { seeks: string[]; offers: string[] } | null;
+  onClose: () => void;
   onSelectRank: (rank: NetworkSpaceRank) => void;
   ranks: NetworkSpaceRank[];
 }) {
   const t = useTranslations('NetworkExchange');
+  const tCommon = useTranslations('Common');
   const { assets, isLoading } = useSpaceTreasury(selectedSpace?.slug ?? null);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const seeks = parseCapitalKeys(capitals?.seeks);
   const offers = parseCapitalKeys(capitals?.offers);
   const summary = excerpt(selectedSpace?.description);
-  const place = selectedSpace?.locationLabel?.trim() ?? '';
+  const place = readablePlace(selectedSpace?.locationLabel?.trim() ?? '');
   const groups = collapseCategoriesToGroups(selectedSpace?.categories ?? []);
   const eyebrow = groups.length
     ? `${t('projectSpace')} · ${groups
@@ -152,42 +168,53 @@ export function NetworkSidePanel({
   return (
     <aside
       aria-label={t('navNetwork')}
-      className="flex min-w-0 flex-col bg-background lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto lg:border-l lg:border-border"
+      className="narrow-scrollbar flex min-w-0 flex-col bg-background lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto lg:border-l lg:border-border"
     >
       {selectedSpace ? (
         <section>
-          <div className="relative h-44 overflow-hidden bg-neutral-3">
+          <div className="relative h-40 overflow-hidden bg-neutral-3">
             <img
               src={leadImageSrc(selectedSpace.leadImage)}
               alt=""
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 px-4 pb-4 text-white">
-              <p className="text-1 uppercase tracking-[0.12em] text-white/80">
-                {eyebrow}
-              </p>
-              <h2
-                className="mt-1 text-4 leading-tight"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {selectedSpace.title}
-              </h2>
-              {place ? (
-                <p className="mt-1 text-1 text-white/80">{place}</p>
-              ) : null}
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={tCommon('close')}
+              className="absolute right-3 top-3 grid size-8 place-items-center border border-border bg-background-2 text-foreground hover:bg-background-3"
+            >
+              <X className="size-4" strokeWidth={1.5} aria-hidden />
+            </button>
+          </div>
+          <div className="px-4 pt-4">
+            <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+              {eyebrow}
+            </p>
+            <h2
+              className="mt-1 text-4 leading-tight tracking-[-0.02em] text-foreground"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {selectedSpace.title}
+            </h2>
+            {place ? (
+              <p className="mt-1 text-1 text-neutral-11">{place}</p>
+            ) : null}
           </div>
           {summary ? (
-            <p className="px-4 pt-4 text-1 leading-relaxed text-neutral-11">
+            <p className="px-4 pt-3 text-2 leading-relaxed text-neutral-11">
               {summary}
             </p>
           ) : null}
-          <div className="px-4 pt-4">
-            <p className="flex items-center gap-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
-              <Wallet className="size-3.5" aria-hidden />
-              {t('treasuryLive')}
-            </p>
+          <div className="mt-4 border-t border-border px-4 py-4">
+            {isLoading || visibleAssets.length > 0 ? (
+              <p className="flex items-center gap-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
+                <Wallet className="size-3.5" aria-hidden />
+                {t('treasuryLive')}
+              </p>
+            ) : (
+              <p className="text-2 text-neutral-11">{t('noTreasuryLink')}</p>
+            )}
             {isLoading ? (
               <div className="mt-3 grid grid-cols-2 border border-border">
                 {Array.from({ length: 4 }, (_, index) => (
@@ -238,14 +265,10 @@ export function NetworkSidePanel({
                   </button>
                 ) : null}
               </>
-            ) : (
-              <p className="mt-3 text-1 text-neutral-11">
-                {t('noTreasuryLink')}
-              </p>
-            )}
+            ) : null}
           </div>
           {circles.length > 0 ? (
-            <div className="px-4 pt-5">
+            <div className="border-t border-border px-4 py-4">
               <p className="flex items-center gap-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
                 <Users className="size-3.5" aria-hidden />
                 {t('governanceCircles')}
@@ -254,7 +277,7 @@ export function NetworkSidePanel({
                 {circles.map((circle) => (
                   <li
                     key={circle.id}
-                    className="flex items-baseline justify-between gap-3 border-b border-border py-2"
+                    className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-b-0"
                   >
                     <span className="min-w-0 truncate text-2">
                       {circle.title}
@@ -271,41 +294,40 @@ export function NetworkSidePanel({
               </ul>
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-2 px-4 py-4">
-            <div className="bg-neutral-2 p-3">
-              <p className="text-1 uppercase tracking-[0.12em]">{t('seeks')}</p>
+          <div className="grid grid-cols-2 border-t border-border">
+            <div className="px-4 py-4">
+              <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                {t('seeks')}
+              </p>
               <CapitalList keys={seeks} empty={t('noneYet')} />
             </div>
-            <div className="bg-neutral-2 p-3">
+            <div className="border-l border-border px-4 py-4">
               <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
                 {t('offers')}
               </p>
               <CapitalList keys={offers} empty={t('noneYet')} />
             </div>
           </div>
-          <div className="grid grid-cols-2 border-t border-border">
-            <Button
-              type="button"
-              disabled
-              title={t('resourceLater')}
-              aria-label={`${t('resource')}. ${t('resourceLater')}`}
-              className="h-11"
-            >
-              {t('resource')}
-            </Button>
+          <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4">
             {spaceHref ? (
-              <Button
-                asChild
-                variant="outline"
-                colorVariant="neutral"
-                className="h-11 border-y-0 border-r-0"
-              >
+              <Button asChild className="h-10 w-fit">
                 <Link href={spaceHref}>
                   {t('visit')}
                   <ArrowUpRight className="size-3.5" aria-hidden />
                 </Link>
               </Button>
             ) : null}
+            <Button
+              type="button"
+              disabled
+              variant="outline"
+              colorVariant="neutral"
+              title={t('resourceLater')}
+              aria-label={`${t('resource')}. ${t('resourceLater')}`}
+              className="h-10 w-fit"
+            >
+              {t('resource')}
+            </Button>
           </div>
         </section>
       ) : null}

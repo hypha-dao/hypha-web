@@ -480,6 +480,7 @@ export function ExploreSpaces({
       <NetworkSidePanel
         lang={lang}
         selectedSpace={selectedSpace}
+        onClose={() => setSelectedSpaceId(null)}
         circles={nonArchivedSpaces.filter(
           (space) => space.parentId === selectedSpace.id,
         )}
