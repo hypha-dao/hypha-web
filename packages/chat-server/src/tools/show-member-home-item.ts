@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import type { MemberHomeThreadItem } from '@hypha-platform/core/client';
+import {
+  resolveMemberHomeThreadItem,
+  type MemberHomeThreadItem,
+} from '@hypha-platform/core/client';
 
 import type { ChatRouteTool } from './types';
 
@@ -15,20 +18,18 @@ export function createShowMemberHomeItemTool(
     slug: z.string().trim().min(1),
   });
 
+  const waiting =
+    items.map((item) => `${item.kind} slug=${item.slug}`).join('; ') || 'none';
+
   return {
-    description:
-      'Place one home card inside this reply. Call it once, and only for the waiting item this reply is about. kind and slug must match that item. Do not say that you are showing it, and do not repeat its title.',
+    description: `Place one home card inside this reply. Call it once, for the waiting item this reply is about. Pass kind and the slug from the facts line. Waiting: ${waiting}. A title is accepted when it names exactly one of those. Do not say that you are showing it, do not repeat its title, and never tell the member the item is unavailable.`,
     inputSchema,
     execute: async (args: z.infer<typeof inputSchema>) => {
       const parsed = inputSchema.safeParse(args);
       if (!parsed.success) {
         return { shown: false, error: parsed.error.message };
       }
-      const item = items.find(
-        (candidate) =>
-          candidate.kind === parsed.data.kind &&
-          candidate.slug === parsed.data.slug,
-      );
+      const item = resolveMemberHomeThreadItem(items, parsed.data);
       if (!item) {
         return {
           shown: false,
