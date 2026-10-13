@@ -154,6 +154,7 @@ import {
   buildSpaceRosterMentionCandidates,
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
+import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -1087,6 +1088,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [spaceMembersResult],
   );
   const welcomePartner = useMemo(() => {
+    if (mode === 'coherence') {
+      return directConversationWelcomeName({
+        mode,
+        coherenceSlug,
+        coherenceTitle,
+      });
+    }
     const names = spaceMembers
       .filter((person) => person.id !== me?.id)
       .map((person) => personRosterLabel(person, ''))
@@ -1094,7 +1102,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       .sort((left, right) => left.localeCompare(right));
     const named = names.find((name) => name.includes(' '));
     return named ?? names[0] ?? null;
-  }, [me?.id, spaceMembers]);
+  }, [coherenceSlug, coherenceTitle, me?.id, mode, spaceMembers]);
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
     useSpaceDiscoverability({
       spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
