@@ -48,7 +48,7 @@ function Widget({
           loading
           height="40px"
           width="100%"
-          className="mt-4 rounded-none"
+          className="mt-4 rounded-none bg-foreground/10"
         />
       ) : (
         action
@@ -157,7 +157,12 @@ export function MemberHomeWalletWidget({
       }
     >
       {isHomeLoading ? (
-        <Skeleton loading height="36px" width="9rem" />
+        <Skeleton
+          loading
+          height="36px"
+          width="9rem"
+          className="rounded-none bg-foreground/10"
+        />
       ) : showBalance ? (
         <div>
           <p
@@ -169,7 +174,12 @@ export function MemberHomeWalletWidget({
           <MainAssets assets={assets} lang={lang} />
         </div>
       ) : hasAddress ? (
-        <Skeleton loading height="36px" width="9rem" />
+        <Skeleton
+          loading
+          height="36px"
+          width="9rem"
+          className="rounded-none bg-foreground/10"
+        />
       ) : (
         <p className="text-1 text-neutral-11">{t('walletEmpty')}</p>
       )}
@@ -192,7 +202,6 @@ export function MemberHomeSpacesWidget({
     <Widget
       title={t('recentSpaces')}
       busy={busy}
-      className="border-foreground/40"
       action={
         <WidgetAction href={`/${lang}/my-spaces`}>
           {t('openMySpaces')}
@@ -204,7 +213,10 @@ export function MemberHomeSpacesWidget({
   );
 }
 
+const CONNECTIONS_PREVIEW = 5;
+
 export function MemberHomeConnectionsWidget({
+  lang,
   people,
   isLoading,
   fallbackName,
@@ -212,6 +224,7 @@ export function MemberHomeConnectionsWidget({
   onCall,
   onVideo,
 }: {
+  lang: Locale;
   people: HomeConnection[];
   isLoading: boolean;
   fallbackName: string;
@@ -220,9 +233,7 @@ export function MemberHomeConnectionsWidget({
   onVideo?: (person: HomeConnection) => Promise<boolean>;
 }) {
   const t = useTranslations('MemberHome');
-  const [visibleCount, setVisibleCount] = useState(5);
-  const visiblePeople = people.slice(0, visibleCount);
-  const remaining = people.length - visiblePeople.length;
+  const visiblePeople = people.slice(0, CONNECTIONS_PREVIEW);
 
   return (
     <Widget title={t('connections')} busy={isLoading}>
@@ -234,7 +245,7 @@ export function MemberHomeConnectionsWidget({
               loading
               height="32px"
               width="32px"
-              className="rounded-full"
+              className="rounded-full bg-foreground/10"
             />
           ))}
         </div>
@@ -317,14 +328,10 @@ export function MemberHomeConnectionsWidget({
           })}
         </ul>
       )}
-      {!isLoading && remaining > 0 ? (
-        <button
-          type="button"
-          className="mt-3 text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
-          onClick={() => setVisibleCount((count) => count + 5)}
-        >
-          {t('showMore')}
-        </button>
+      {!isLoading && people.length > CONNECTIONS_PREVIEW ? (
+        <WidgetAction href={`/${lang}/connections`}>
+          {t('seeMore')}
+        </WidgetAction>
       ) : null}
     </Widget>
   );

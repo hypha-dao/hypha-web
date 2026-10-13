@@ -105,8 +105,6 @@ function writeHomeView(view: HomeView) {
   }
 }
 
-const CARD_SKELETON_WIDTHS = ['72%', '100%', '84%', '64%'];
-
 function orientationLabelKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientationMember' as const;
   if (orientation === 'builder') return 'orientationBuilder' as const;
@@ -346,7 +344,7 @@ export function MemberHome({
           aria-label={t('panelSpaces')}
           className="member-home-pane narrow-scrollbar order-2 col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 border-t border-border px-4 py-4 @max-[47.99rem]/home:flex @min-[68rem]/home:order-none @min-[68rem]/home:flex @min-[68rem]/home:overflow-y-auto @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
         >
-          <section className="border border-foreground/40 bg-background p-4">
+          <section className="border border-border bg-background p-4">
             <div className="grid gap-4">
               {home == null || orientation ? (
                 <div className="flex items-center">
@@ -389,7 +387,7 @@ export function MemberHome({
           <div className="w-full min-w-0">
             <MemberHomeSpacesWidget lang={lang} busy={home == null}>
               {home == null ? (
-                <CardSkeleton />
+                <CardSkeleton lines={4} detail={false} round />
               ) : recentSpaces.length === 0 ? (
                 <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
               ) : (
@@ -482,9 +480,11 @@ export function MemberHome({
                 }
               />
               {home && home.notifications.length > 5 ? (
-                <TileLink href={`/${lang}/home/notifications`}>
-                  {t('seeMoreNotifications')}
-                </TileLink>
+                <Button asChild className="mt-4 w-full text-sm">
+                  <Link href={`/${lang}/home/notifications`}>
+                    {t('seeMoreNotifications')}
+                  </Link>
+                </Button>
               ) : null}
             </Tile>
           </div>
@@ -506,12 +506,7 @@ export function MemberHome({
                 </span>
                 <div className="min-w-0 flex-1">
                   {greetingPending ? (
-                    <Skeleton
-                      loading
-                      height="36px"
-                      width="14rem"
-                      className="rounded-none"
-                    />
+                    <HomePulse className="h-9 w-56 max-w-full" />
                   ) : (
                     <h1
                       className="truncate text-7"
@@ -533,12 +528,15 @@ export function MemberHome({
             </div>
             <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
               {home == null ? (
-                <Skeleton
-                  loading
-                  height="16px"
-                  width="14rem"
-                  className="mt-1"
-                />
+                <div className="mt-2 flex gap-2" aria-hidden>
+                  {Array.from({ length: 4 }, (_, index) => (
+                    <HomePulse
+                      key={index}
+                      className="h-8 w-8 rounded-full"
+                      delayMs={index * 70}
+                    />
+                  ))}
+                </div>
               ) : (
                 <MemberHomeClosest
                   lang={lang}
@@ -569,7 +567,7 @@ export function MemberHome({
             />
           ) : (
             <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6">
-              <CardSkeleton lines={4} plain />
+              <ChatSkeleton />
             </div>
           )}
         </main>
@@ -655,6 +653,7 @@ export function MemberHome({
 
           <div className="grid gap-4">
             <MemberHomeConnectionsWidget
+              lang={lang}
               people={home?.connections ?? []}
               isLoading={home == null}
               fallbackName={memberFallback}
@@ -885,41 +884,82 @@ function ClassicBoard({
   );
 }
 
+/** Same pulse as the signals board: square, a tenth of the ink, staggered. */
+function HomePulse({
+  className,
+  delayMs = 0,
+}: {
+  className?: string;
+  delayMs?: number;
+}) {
+  return (
+    <div
+      className={cn('animate-pulse rounded-none bg-foreground/10', className)}
+      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
+      aria-hidden
+    />
+  );
+}
+
 function CardSkeleton({
   lines = 3,
-  plain = false,
+  detail = true,
+  round = false,
 }: {
   lines?: number;
-  plain?: boolean;
+  detail?: boolean;
+  round?: boolean;
 }) {
   return (
     <div className="grid gap-3" aria-hidden>
-      {Array.from({ length: lines }, (_, index) =>
-        plain ? (
-          <Skeleton
-            key={index}
-            loading
-            className="rounded-none"
-            height="12px"
-            width={CARD_SKELETON_WIDTHS[index] ?? '70%'}
+      {Array.from({ length: lines }, (_, index) => (
+        <div key={index} className="flex items-center gap-3">
+          <HomePulse
+            className={cn(
+              'shrink-0',
+              round ? 'h-8 w-8 rounded-full' : 'h-6 w-6',
+            )}
+            delayMs={index * 80}
           />
-        ) : (
-          <div key={index} className="flex items-center gap-2">
-            <Skeleton
-              loading
-              className="shrink-0 rounded-none"
-              height="16px"
-              width="16px"
+          <div className="grid min-w-0 flex-1 gap-1.5">
+            <HomePulse
+              className="h-3 w-3/5 max-w-48"
+              delayMs={index * 80 + 40}
             />
-            <Skeleton
-              loading
-              className="rounded-none"
-              height="12px"
-              width={CARD_SKELETON_WIDTHS[index] ?? '70%'}
+            {detail ? (
+              <HomePulse
+                className="h-3 w-2/5 max-w-32"
+                delayMs={index * 80 + 80}
+              />
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChatSkeleton() {
+  return (
+    <div className="grid gap-6" aria-hidden>
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="flex gap-3">
+          <HomePulse
+            className="mt-0.5 h-8 w-8 shrink-0"
+            delayMs={index * 120}
+          />
+          <div className="grid min-w-0 flex-1 gap-2 pt-1">
+            <HomePulse
+              className="h-3 w-2/3 max-w-md"
+              delayMs={index * 120 + 40}
+            />
+            <HomePulse
+              className="h-3 w-1/2 max-w-sm"
+              delayMs={index * 120 + 80}
             />
           </div>
-        ),
-      )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -942,7 +982,12 @@ function Stat({
         className="mt-1.5 text-3 leading-none tabular-nums"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        <Skeleton loading={isLoading} width="2.75rem" height="30px">
+        <Skeleton
+          loading={isLoading}
+          width="2.75rem"
+          height="30px"
+          className="rounded-none bg-foreground/10"
+        >
           {value.toLocaleString()}
         </Skeleton>
       </dd>
@@ -997,7 +1042,6 @@ function AttentionNeeded({
 }) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
-  const [visibleCount, setVisibleCount] = useState(ATTENTION_PAGE);
   const items = queue.flatMap((item) => {
     const typeName = item.category?.trim();
     const typeKey = typeName ? (`types.${typeName}` as 'types.Need') : null;
@@ -1031,30 +1075,15 @@ function AttentionNeeded({
       <ResourceList
         isLoading={home == null}
         empty={t('noWaiting')}
-        maxItems={visibleCount}
+        maxItems={ATTENTION_PAGE}
         items={items}
       />
-      {items.length > visibleCount ? (
-        <button
-          type="button"
-          className="mt-4 inline-block text-1 text-accent-11 underline-offset-4 hover:underline"
-          onClick={() => setVisibleCount((count) => count + ATTENTION_PAGE)}
-        >
-          {t('seeMore')}
-        </button>
+      {items.length > ATTENTION_PAGE ? (
+        <Button asChild className="mt-4 w-full text-sm">
+          <Link href={`/${lang}/home/attention`}>{t('seeMore')}</Link>
+        </Button>
       ) : null}
     </Tile>
-  );
-}
-
-function TileLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="mt-4 inline-block text-1 text-accent-11 underline-offset-4 hover:underline"
-    >
-      {children}
-    </Link>
   );
 }
 
