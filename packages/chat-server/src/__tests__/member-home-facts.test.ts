@@ -106,6 +106,8 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('You are a personal');
     expect(facts).toContain("don't want to decide");
     expect(facts).toContain('if you need any assistance');
+    expect(facts).toContain("another matter you'd like to address");
+    expect(facts).toContain('name that next item');
     expect(facts).toContain('Would you like to take part in one of them?');
     expect(facts).toContain('Asking for context or a discussion is not a no');
     expect(facts).toContain('On a signal, action is not decision');
