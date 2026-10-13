@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useJwt, useMyVote, useVote } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import { celebrate } from './member-home-celebrate';
+import { markHomeActed } from './member-home-resume';
 
 type MemberHomeVoteProps = {
   proposalId: number;
@@ -49,13 +51,14 @@ export function MemberHomeVote({
   }
 
   async function cast(next: 'yes' | 'no') {
-    if (!open) return;
+    if (!open || choice) return;
+    celebrate();
     setFailed(false);
     try {
       if (next === 'yes') await handleAccept();
       else await handleReject();
       setChoice(next);
-      celebrate();
+      markHomeActed(`proposal:${documentSlug}`);
     } catch (error) {
       console.error('Vote failed', error);
       setFailed(true);
@@ -66,8 +69,13 @@ export function MemberHomeVote({
     <div className="grid grid-cols-2 gap-2">
       <Button
         type="button"
-        className="h-12 uppercase tracking-[0.12em]"
-        disabled={isVoting || choice === 'yes'}
+        variant={choice === 'no' ? 'outline' : 'default'}
+        colorVariant={choice === 'no' ? 'neutral' : 'accent'}
+        className={cn(
+          'h-12 uppercase tracking-[0.12em]',
+          choice === 'yes' && 'ring-1 ring-foreground',
+        )}
+        disabled={isVoting || (choice != null && choice !== 'yes')}
         onClick={() => {
           void cast('yes');
         }}
@@ -76,10 +84,13 @@ export function MemberHomeVote({
       </Button>
       <Button
         type="button"
-        variant="outline"
-        colorVariant="neutral"
-        className="h-12 uppercase tracking-[0.12em]"
-        disabled={isVoting || choice === 'no'}
+        variant={choice === 'no' ? 'default' : 'outline'}
+        colorVariant={choice === 'no' ? 'accent' : 'neutral'}
+        className={cn(
+          'h-12 uppercase tracking-[0.12em]',
+          choice === 'no' && 'ring-1 ring-foreground',
+        )}
+        disabled={isVoting || (choice != null && choice !== 'no')}
         onClick={() => {
           void cast('no');
         }}

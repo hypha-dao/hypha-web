@@ -4,6 +4,8 @@ import {
 } from '@hypha-platform/core/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
@@ -26,7 +28,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(intelligence);
+    return NextResponse.json(intelligence, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (error) {
     console.error('Error loading member intelligence:', error);
     return NextResponse.json(

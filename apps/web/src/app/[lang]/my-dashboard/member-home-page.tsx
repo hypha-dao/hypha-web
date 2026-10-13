@@ -17,8 +17,18 @@ import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { HOME_REFRESH_EVENT } from '@hypha-platform/epics';
 import { useCallback, useEffect, useState } from 'react';
 import useSWR from 'swr';
+
+function sameMemberHome(
+  left: MemberIntelligence | null | undefined,
+  right: MemberIntelligence | null | undefined,
+) {
+  if (left === right) return true;
+  if (left == null || right == null) return left == null && right == null;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 export function MemberHomePage({ lang }: { lang: Locale }) {
   const t = useTranslations('MemberHome');
@@ -43,6 +53,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     async ([url, token]) => {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
       });
       if (response.status === 404) return null;
       if (!response.ok) {
@@ -50,7 +61,27 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       }
       return (await response.json()) as MemberIntelligence;
     },
+    {
+      refreshInterval: 10_000,
+      revalidateOnFocus: true,
+      compare: sameMemberHome,
+    },
   );
+
+  useEffect(() => {
+    let timer = 0;
+    const refresh = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        void mutate();
+      }, 300);
+    };
+    window.addEventListener(HOME_REFRESH_EVENT, refresh);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(HOME_REFRESH_EVENT, refresh);
+    };
+  }, [mutate]);
 
   const chooseOrientation = useCallback(
     async (primaryOrientation: SignupOrientation) => {

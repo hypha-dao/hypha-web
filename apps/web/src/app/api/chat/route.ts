@@ -163,11 +163,19 @@ export async function POST(req: Request) {
   }
 
   try {
+    const uiMessages = messages as UIMessage[];
+    const lastUiMessage = uiMessages[uiMessages.length - 1];
+    // Home turns append. Ending on an assistant message makes the SDK reuse
+    // that message id, so the new words replace the previous reply.
+    const originalMessages =
+      memberHome && lastUiMessage?.role === 'assistant'
+        ? uiMessages.slice(0, -1)
+        : uiMessages;
     return result.toUIMessageStreamResponse({
       headers: {
         'x-hypha-chat-debug-id': debugRequestId,
       },
-      originalMessages: messages as UIMessage[],
+      originalMessages,
       generateMessageId: createIdGenerator({ prefix: 'msg', size: 12 }),
     });
   } catch (error) {

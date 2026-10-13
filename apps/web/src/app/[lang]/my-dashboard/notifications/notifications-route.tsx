@@ -21,11 +21,13 @@ export function MemberHomeNotificationsRoute({ lang }: { lang: Locale }) {
     async ([url, token]) => {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
       });
       if (response.status === 404) return null;
       if (!response.ok) throw new Error('Failed to load home');
       return (await response.json()) as MemberIntelligence;
     },
+    { refreshInterval: 20_000, revalidateOnFocus: true },
   );
 
   if (isAuthLoading || isLoadingJwt) {

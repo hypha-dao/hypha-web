@@ -1347,6 +1347,9 @@ export async function createChatStreamResult(
   const memberHomeChoices = memberHomeMemoryFromMessages
     ? mergeMemberHomeMemory(memberHomeMemoryFromMessages, memberHomeMemory)
     : null;
+  const memberHomeLastUserText = memberHomeRecord
+    ? extractLastUserText(messages)
+    : null;
   const memberHomeFacts = memberHomeRecord
     ? formatMemberHomeFacts(memberHomeRecord.home, {
         alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
@@ -1357,11 +1360,12 @@ export async function createChatStreamResult(
         held: memberHomeMemoryFromMessages?.held,
         acted: memberHomeMemory?.acted,
         resumed: /carried out the recommended action/i.test(
-          extractLastUserText(messages) ?? '',
+          memberHomeLastUserText ?? '',
         ),
         notADecision: /not a proposal|nothing to decide/i.test(
-          extractLastUserText(messages) ?? '',
+          memberHomeLastUserText ?? '',
         ),
+        asked: memberHomeLastUserText,
       })
     : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);

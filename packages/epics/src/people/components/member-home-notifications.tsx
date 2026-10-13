@@ -66,6 +66,12 @@ export function MemberHomeNotifications({
   const tCommon = useTranslations('Common');
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const ordered = [...items].sort((left, right) => {
+    const leftAt = left.at ?? '';
+    const rightAt = right.at ?? '';
+    if (leftAt !== rightAt) return leftAt < rightAt ? 1 : -1;
+    return left.id < right.id ? -1 : 1;
+  });
 
   return (
     <div className="relative min-h-[calc(100dvh-4.5rem)]">
@@ -91,9 +97,9 @@ export function MemberHomeNotifications({
           >
             {t('notifications')}
           </h1>
-          {!isLoading && items.length > 0 ? (
+          {!isLoading && ordered.length > 0 ? (
             <p className="text-1 tabular-nums text-neutral-11">
-              {items.length}
+              {ordered.length}
             </p>
           ) : null}
         </div>
@@ -104,11 +110,11 @@ export function MemberHomeNotifications({
               <Skeleton loading height="16px" width="46%" />
               <Skeleton loading height="16px" width="62%" />
             </div>
-          ) : items.length === 0 ? (
+          ) : ordered.length === 0 ? (
             <p className="p-4 text-1 text-neutral-11">{t('noNotifications')}</p>
           ) : (
             <ul>
-              {items.map((item) => (
+              {ordered.map((item) => (
                 <li
                   key={item.id}
                   className="border-b border-border last:border-b-0"
