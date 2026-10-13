@@ -33,7 +33,7 @@ import {
 } from './human-chat-panel-context';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
-  isConnectionsPath,
+  showsHumanChatIcon,
   useIsNetworkContext,
   useIsSpaceContext,
 } from './use-is-space-context';
@@ -202,6 +202,7 @@ export function HumanSidebarTrigger() {
     useHumanChatPanel();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
+  const pathname = usePathname();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
@@ -216,7 +217,7 @@ export function HumanSidebarTrigger() {
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
   // Hide the header trigger while the panel is open. Unread mentions only exist in a space.
-  if (!(isSpace || isNetwork) || open) return null;
+  if (!showsHumanChatIcon(pathname, isSpace, isNetwork) || open) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
@@ -359,16 +360,13 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const isOnboarding = isInteractiveCreatePath(pathname);
-  const isMemberHome = /\/home\/?$/.test(pathname);
   const showAiPanel = isSpace || isNetwork;
   const effectiveLeft = showAiPanel ? left : undefined;
-  // Human chat lives in a space, on the member home, on connections, and on the network.
-  // It stays unmounted on my spaces and wallet.
-  const showHumanChat =
-    isSpace || isMemberHome || isNetwork || isConnectionsPath(pathname);
+  // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
+  const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);
   const effectiveRight = showHumanChat ? right : undefined;
 
-  // Close when the route leaves a space, the member home, connections, or the network. Does not run again
+  // Close when the route leaves home, connections, my spaces, my wallet, a space, or the network. Does not run again
   // if something opens the panel while already outside a space and then
   // navigates into one (the call dock opens chat and pushes the space route
   // together).
