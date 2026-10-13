@@ -38,6 +38,7 @@ import {
   parseMemberOrientation,
 } from '../member-intelligence-guidance';
 import { memberHomeSignalCategory } from '../member-home-thread';
+import { loadMemberSpacesAboutToExpire } from './member-home-space-payments';
 import { isAddress, type Hex } from 'viem';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
 import { getSpaceDetails } from '../../space/shared/web3/get-space-details';
@@ -1679,6 +1680,11 @@ export async function getMemberIntelligence(
       preferredCurrency: person.preferredCurrency,
     },
     chatSpaceSlug: spaceRows[0]?.slug ?? null,
+    expiringSpaces: await readSlice(
+      'expiring-spaces',
+      () => loadMemberSpacesAboutToExpire(spaceRows),
+      [],
+    ),
     invites: await readSlice(
       'invites',
       () =>

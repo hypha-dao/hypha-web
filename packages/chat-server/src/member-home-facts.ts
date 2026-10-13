@@ -1,4 +1,5 @@
 import {
+  HYPHA_ACTIVATION_PER_MONTH,
   listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
   memberHomeThreadItemForMessage,
@@ -222,6 +223,7 @@ export function formatMemberHomeFacts(
     'A signal this member raised is left out unless its deadline is close. When raisedByMember=yes, they created it and the deadline is close. Do not tell them to call themselves. Do not ask them to discuss it or to give context as if someone else raised it. One line: they raised it, and the deadline is close. The card lets them update it.',
     'Asking for context or a discussion is not a no when action=decision. "Give me the context", "tell me more", and "Discussion" stay on a proposal, an invite, or a vote. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on. On a signal, action is not decision. There is nothing to decide and nothing to validate. Discuss it or upvote it. Never say validate. Never say "You can now decide on the proposal card." That sentence is only for action=decision. If they say this is not a proposal, or there is nothing to decide, agree in one short line and move to the next waiting item. Call show_member_home_item for that next item. Do not explain the signal. Any button on a signal means they acted. One short line, then the next waiting item in the same reply. Do not stay on the signal.',
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know".',
+    "The proposal is the card. Call show_member_home_item with the slug on that item's line. Never say a waiting proposal is not available, and never offer a different proposal instead. Do not ask what they think.",
     'If they say yes to helping someone, be glad for the person they are helping, using that person\'s name from the record, then name the next remaining item from that record the same way, including any token that record has. If spoken=he, say "he will appreciate it." If spoken=she, say "she will appreciate it." If the given name does not show he or she, say "they will appreciate it." Do not invent the person, the task, or the token. A yes or a no on a decision is not you acting. Do not approve it, do not say you approved it, and do not ask what they would like to decide. Say "You can now decide on the proposal card." and stop. Do not open the next proposal in that reply. A proposal they have already voted on is absent from the waiting list. Do not ask them to vote on it, even if an earlier message did. When action=outcome the vote is closed. Say the say= sentence and stop. Do not say "You can now decide on the proposal card." Do not ask them to vote, approve, or look. The card says Got it, thank you. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. Do not call the tool for an item you are not talking about. The person uses the card.',
     `Person: ${member}. You are speaking to ${member}. Never suggest they connect with themselves. Never introduce them as someone to meet, and never link their profile. If a roster or a tool result includes ${member}, skip that person.`,
     'Tone: unlocking possibilities together. Transparent and collective. Never a warning, never a pile, never a judgement. A high priority or an overdue signal is an opening for the people in that space. Always name the space.',
@@ -230,6 +232,16 @@ export function formatMemberHomeFacts(
       : 'No network signal is in this brief. Do not invent one from another space.',
     networkLines ? `Network signals:\n${networkLines}` : null,
     `Spaces (${home.counts.spaces}): ${spaces}.`,
+    (home.expiringSpaces ?? []).length > 0
+      ? `Spaces about to expire. Name the soonest one, the space, and the days left. They can activate it with their Hypha tokens. The form charges ${HYPHA_ACTIVATION_PER_MONTH} Hypha for each month. Do not invent another price. Do not send them to the page. The card button does that.\n${(
+          home.expiringSpaces ?? []
+        )
+          .map(
+            (space) =>
+              `${space.title} slug=${space.slug} daysLeft=${space.daysLeft}`,
+          )
+          .join('\n')}`
+      : null,
     (home.movement ?? []).some(
       (item) => item.kind !== 'joined' || !isThisMember(home, item.title),
     )

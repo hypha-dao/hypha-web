@@ -77,6 +77,18 @@ const home: MemberIntelligence = {
 };
 
 describe('formatMemberHomeFacts', () => {
+  it('offers activation when a space is about to expire', () => {
+    const facts = formatMemberHomeFacts({
+      ...home,
+      expiringSpaces: [
+        { slug: 'grove', title: 'Grove', web3SpaceId: 4, daysLeft: 6 },
+      ],
+    });
+
+    expect(facts).toContain('Grove slug=grove daysLeft=6');
+    expect(facts).toContain('44 Hypha for each month');
+  });
+
   it('keeps Hypha AI voice and lists this member’s world', () => {
     const facts = formatMemberHomeFacts(home);
     expect(facts).toContain('Keep the Hypha AI voice');

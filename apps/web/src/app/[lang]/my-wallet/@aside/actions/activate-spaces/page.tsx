@@ -10,10 +10,15 @@ import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<{ space?: string }>;
 };
 
 export default async function MyWalletActivateSpacesPage(props: PageProps) {
   const { lang } = await props.params;
+  const { space } = await props.searchParams;
+  const initialWeb3SpaceId = /^\d+$/.test(space ?? '')
+    ? Number(space)
+    : undefined;
   const tActions = await getTranslations('ProfileActions');
   const tModalAside = await getTranslations('ModalAside');
   const tFooter = await getTranslations('Footer');
@@ -65,7 +70,10 @@ export default async function MyWalletActivateSpacesPage(props: PageProps) {
           </div>
         ) : null}
         <Separator />
-        <ActivateSpacesForm spaces={filteredSpaces} />
+        <ActivateSpacesForm
+          spaces={filteredSpaces}
+          initialWeb3SpaceId={initialWeb3SpaceId}
+        />
       </div>
     </ProposalOverlayShell>
   );

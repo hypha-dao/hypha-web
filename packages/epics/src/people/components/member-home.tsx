@@ -48,6 +48,7 @@ import {
 import { MemberHomeChat } from './member-home-chat';
 import {
   HOME_QUEUE_EVENT,
+  bindHomePerson,
   readHomeActed,
   readHomeChoices,
 } from './member-home-resume';
@@ -288,6 +289,7 @@ export function MemberHome({
     () => (home ? listMemberHomeThreadItems(home) : []),
     [home],
   );
+  if (home?.person.slug) bindHomePerson(home.person.slug);
   const queueSnapshot = useSyncExternalStore(
     subscribeHomeQueue,
     readHomeQueueSnapshot,
