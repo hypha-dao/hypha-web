@@ -174,6 +174,9 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             hrefForPriority={(priority) =>
               `${home}/coherence?priority=${encodeURIComponent(priority)}`
             }
+            hrefForType={(type) =>
+              `${home}/coherence?type=${encodeURIComponent(type)}`
+            }
           />
         </Panel>
 
