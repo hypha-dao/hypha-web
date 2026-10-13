@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import useSWR from 'swr';
 import {
   ArrowLeftRight,
   ClipboardList,
@@ -22,12 +21,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import {
-  useJwt,
-  useMe,
-  useSpaceBySlug,
-  type MemberIntelligence,
-} from '@hypha-platform/core/client';
+import { useMe, useSpaceBySlug } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -37,7 +31,7 @@ import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
 import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher-menu';
-import { MemberHomeQuickCreate } from './member-home-quick-create';
+import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
 import { useConversationUnreadCount } from './my-connections';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
@@ -107,7 +101,6 @@ export function MobileTabBar({
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
-  const { jwt } = useJwt();
   const { person } = useMe();
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
@@ -115,18 +108,6 @@ export function MobileTabBar({
   const [createOpen, setCreateOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const unreadCount = useConversationUnreadCount();
-
-  const { data: home } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 404) return null;
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
 
   useEffect(() => {
     setMounted(true);
@@ -331,7 +312,7 @@ export function MobileTabBar({
         inert={!createOpen}
       >
         <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <MemberHomeQuickCreate lang={lang} spaces={home?.spaces ?? []} />
+          <NetworkQuickCreate lang={lang} />
           <div className="mt-6 border border-border">
             <p className="border-b border-border px-3 py-2 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               {t('settings')}

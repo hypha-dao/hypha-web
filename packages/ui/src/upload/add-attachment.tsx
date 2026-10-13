@@ -18,6 +18,25 @@ interface AddAttachmentProps {
   value?: (File | AttachmentInput)[];
   defaultAttachments?: AttachmentInput[];
   label?: React.ReactNode;
+  /** Comma-separated input accept list, for example `image/png,.pdf`. */
+  accept?: string;
+  maxFiles?: number;
+  maxBytes?: number;
+}
+
+function fileMatchesAccept(file: File, accept: string) {
+  const rules = accept
+    .split(',')
+    .map((rule) => rule.trim().toLowerCase())
+    .filter(Boolean);
+  if (rules.length === 0) return true;
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  return rules.some((rule) => {
+    if (rule.startsWith('.')) return name.endsWith(rule);
+    if (rule.endsWith('/*')) return type.startsWith(rule.slice(0, -1));
+    return type === rule;
+  });
 }
 
 export const AddAttachment: React.FC<AddAttachmentProps> = ({
@@ -26,6 +45,9 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   value,
   defaultAttachments,
   label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)',
+  accept,
+  maxFiles,
+  maxBytes,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -53,8 +75,16 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   }, [value, defaultAttachments]);
 
   const handleUpload = (files: FileList) => {
-    const newFiles = Array.from(files);
-    const updated = [...attachments, ...newFiles];
+    const incoming = Array.from(files).filter((file) => {
+      if (accept && !fileMatchesAccept(file, accept)) return false;
+      if (maxBytes != null && file.size > maxBytes) return false;
+      return true;
+    });
+    const room =
+      maxFiles == null
+        ? incoming
+        : incoming.slice(0, Math.max(0, maxFiles - attachments.length));
+    const updated = [...attachments, ...room];
     setAttachments(updated);
     onChange?.(updated);
     if (inputRef.current) {
@@ -139,6 +169,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
           ref={inputRef}
           type="file"
           className="hidden"
+          accept={accept}
           multiple
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
             if (e.target.files) {

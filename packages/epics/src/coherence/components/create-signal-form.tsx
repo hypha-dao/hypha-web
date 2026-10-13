@@ -26,7 +26,6 @@ import {
   Skeleton,
   Slider,
   Switch,
-  UploadLeadImage,
   AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
@@ -51,8 +50,6 @@ import {
   normalizeTagKey,
   personProfileHref,
   wouldCreateNearDuplicate,
-  ALLOWED_IMAGE_FILE_SIZE,
-  useImageUpload,
   useAttachmentUpload,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
@@ -66,6 +63,20 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import React from 'react';
+import {
+  asMediaItems,
+  mergeMedia,
+  SIGNAL_DOCUMENT_ACCEPT,
+  SIGNAL_DOCUMENT_LIMIT,
+  SIGNAL_IMAGE_ACCEPT,
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_MEDIA_MAX_BYTES,
+  splitSignalMedia,
+  takeSignalCreateMedia,
+  uploadSignalFiles,
+  type SignalMediaDraft,
+  type SignalMediaItem,
+} from '../utils/signal-media';
 import { useScrollToErrors } from '../../hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -217,7 +228,6 @@ export const CreateSignalForm = ({
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
-  const tCommon = useTranslations('Common');
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -240,24 +250,42 @@ export const CreateSignalForm = ({
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
   const { tokens, isLoading: isLoadingTokens } = useTokens({ spaceSlug });
-  const { upload: uploadImage } = useImageUpload({
-    authorizationToken: authToken ?? undefined,
-  });
   const { upload: uploadAttachment } = useAttachmentUpload({
     authorizationToken: authToken ?? undefined,
   });
-  const [leadImageFile, setLeadImageFile] = React.useState<File | null>(null);
-  const [leadImageCleared, setLeadImageCleared] = React.useState(false);
-  const [attachmentFiles, setAttachmentFiles] = React.useState<File[]>([]);
-  const [keptAttachments, setKeptAttachments] = React.useState<
-    Array<{ name: string; url: string }>
-  >(initialValues?.attachments ?? []);
+  const openingMedia = splitSignalMedia(initialValues);
+  const [imageFiles, setImageFiles] = React.useState<File[]>([]);
+  const [keptImages, setKeptImages] = React.useState<SignalMediaItem[]>(
+    openingMedia.images,
+  );
+  const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
+  const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
+    openingMedia.documents,
+  );
+
+  const createMediaDraft = React.useRef<SignalMediaDraft | null>(null);
+  const createMediaLoaded = React.useRef(false);
 
   React.useEffect(() => {
-    setLeadImageFile(null);
-    setLeadImageCleared(false);
-    setAttachmentFiles([]);
-    setKeptAttachments(initialValues?.attachments ?? []);
+    if (!createMediaLoaded.current) {
+      createMediaLoaded.current = true;
+      createMediaDraft.current =
+        mode === 'create' ? takeSignalCreateMedia() : null;
+    }
+    const split = splitSignalMedia(initialValues);
+    const draft = createMediaDraft.current;
+    setImageFiles([]);
+    setDocumentFiles([]);
+    setKeptImages(
+      mergeMedia(split.images, draft?.images ?? [], SIGNAL_IMAGE_LIMIT),
+    );
+    setKeptDocuments(
+      mergeMedia(
+        split.documents,
+        draft?.documents ?? [],
+        SIGNAL_DOCUMENT_LIMIT,
+      ),
+    );
   }, [initialValues, mode, signalSlug]);
   const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
     useMembers({
@@ -717,51 +745,38 @@ export const CreateSignalForm = ({
 
   const resolveSignalMedia = React.useCallback(
     async (videoUrl: string | null) => {
-      let leadImage = leadImageCleared
-        ? null
-        : initialValues?.leadImage ?? null;
-      if (leadImageFile) {
-        const uploaded = await uploadImage([leadImageFile]);
-        const url = uploaded?.[0]?.ufsUrl;
-        if (!url) {
-          throw new Error(
-            t.has('signalFormUploadFailed')
-              ? t('signalFormUploadFailed')
-              : 'Could not upload the file. Try again.',
-          );
+      const fail = () => {
+        throw new Error(
+          t.has('signalFormUploadFailed')
+            ? t('signalFormUploadFailed')
+            : 'Could not upload the file. Try again.',
+        );
+      };
+      let images = keptImages;
+      let documents = keptDocuments;
+      try {
+        if (imageFiles.length > 0) {
+          images = [
+            ...keptImages,
+            ...(await uploadSignalFiles(imageFiles, uploadAttachment)),
+          ].slice(0, SIGNAL_IMAGE_LIMIT);
         }
-        leadImage = url;
-      }
-      let attachments = keptAttachments;
-      if (attachmentFiles.length > 0) {
-        const uploaded = await uploadAttachment(attachmentFiles);
-        if (!uploaded?.length || uploaded.some((item) => !item.ufsUrl)) {
-          throw new Error(
-            t.has('signalFormUploadFailed')
-              ? t('signalFormUploadFailed')
-              : 'Could not upload the file. Try again.',
-          );
+        if (documentFiles.length > 0) {
+          documents = [
+            ...keptDocuments,
+            ...(await uploadSignalFiles(documentFiles, uploadAttachment)),
+          ].slice(0, SIGNAL_DOCUMENT_LIMIT);
         }
-        attachments = [
-          ...keptAttachments,
-          ...uploaded.map((item) => ({
-            name: item.name,
-            url: item.ufsUrl,
-          })),
-        ];
+      } catch {
+        fail();
       }
-      return { leadImage, videoUrl, attachments };
+      return {
+        leadImage: images[0]?.url ?? null,
+        videoUrl,
+        attachments: [...images, ...documents],
+      };
     },
-    [
-      attachmentFiles,
-      initialValues?.leadImage,
-      keptAttachments,
-      leadImageCleared,
-      leadImageFile,
-      t,
-      uploadAttachment,
-      uploadImage,
-    ],
+    [documentFiles, imageFiles, keptDocuments, keptImages, t, uploadAttachment],
   );
 
   const handleSubmitSignal = React.useCallback(
@@ -1490,27 +1505,16 @@ export const CreateSignalForm = ({
                 <p className="text-sm font-medium text-foreground">
                   {t('signalFormImage')}
                 </p>
-                <UploadLeadImage
-                  onChange={(file) => {
-                    setLeadImageFile(file);
-                    setLeadImageCleared(file == null);
-                  }}
-                  maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                  enableImageResizer={true}
-                  cropDialogLabels={{
-                    title: tCommon('uploadLeadImage.cropTitle'),
-                    description: tCommon('uploadLeadImage.cropDescription'),
-                    cancel: tCommon('uploadLeadImage.cancel'),
-                    confirm: tCommon('uploadLeadImage.confirm'),
-                  }}
-                  messages={{
-                    dropHere: tCommon('uploadLeadImage.dropHere'),
-                    fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
-                    uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
-                  }}
-                  uploadText={t('signalFormImage')}
-                  defaultImage={
-                    leadImageCleared ? null : initialValues?.leadImage ?? null
+                <AddAttachment
+                  accept={SIGNAL_IMAGE_ACCEPT}
+                  maxFiles={Math.max(0, SIGNAL_IMAGE_LIMIT - keptImages.length)}
+                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                  label={t('signalFormImageHint')}
+                  value={[...keptImages, ...imageFiles]}
+                  defaultAttachments={keptImages}
+                  onChange={setImageFiles}
+                  onExistingAttachmentsChange={(updated) =>
+                    setKeptImages(asMediaItems(updated))
                   }
                 />
               </div>
@@ -1543,37 +1547,19 @@ export const CreateSignalForm = ({
                   {t('signalFormAttachments')}
                 </p>
                 <AddAttachment
+                  accept={SIGNAL_DOCUMENT_ACCEPT}
+                  maxFiles={Math.max(
+                    0,
+                    SIGNAL_DOCUMENT_LIMIT - keptDocuments.length,
+                  )}
+                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
                   label={t('signalFormAttachmentsHint')}
-                  value={[...keptAttachments, ...attachmentFiles]}
-                  defaultAttachments={keptAttachments}
-                  onChange={setAttachmentFiles}
-                  onExistingAttachmentsChange={(updated) => {
-                    setKeptAttachments(
-                      updated.flatMap((item) => {
-                        if (typeof item === 'string') {
-                          const name = item.split('/').pop() || item;
-                          return [{ name, url: item }];
-                        }
-                        if (
-                          item &&
-                          typeof item === 'object' &&
-                          'url' in item &&
-                          typeof item.url === 'string'
-                        ) {
-                          return [
-                            {
-                              name:
-                                typeof item.name === 'string' && item.name
-                                  ? item.name
-                                  : item.url.split('/').pop() || item.url,
-                              url: item.url,
-                            },
-                          ];
-                        }
-                        return [];
-                      }),
-                    );
-                  }}
+                  value={[...keptDocuments, ...documentFiles]}
+                  defaultAttachments={keptDocuments}
+                  onChange={setDocumentFiles}
+                  onExistingAttachmentsChange={(updated) =>
+                    setKeptDocuments(asMediaItems(updated))
+                  }
                 />
               </div>
             </section>

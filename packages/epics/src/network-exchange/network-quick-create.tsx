@@ -12,9 +12,19 @@ import {
   type CapitalKey,
   type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
-import { useJwt } from '@hypha-platform/core/client';
-import { Input } from '@hypha-platform/ui';
+import { useAttachmentUpload, useJwt } from '@hypha-platform/core/client';
+import { AddAttachment, Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { getLegacyCreateSpacePath } from '../common/get-path-function';
+import {
+  SIGNAL_DOCUMENT_ACCEPT,
+  SIGNAL_DOCUMENT_LIMIT,
+  SIGNAL_IMAGE_ACCEPT,
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_MEDIA_MAX_BYTES,
+  uploadSignalFiles,
+  writeSignalCreateMedia,
+} from '../coherence/utils/signal-media';
 
 const DRAFT_KEY = EXCHANGE_CAPITALS_DRAFT_KEY;
 
@@ -58,8 +68,12 @@ function signalKindLabel(
 
 export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const t = useTranslations('NetworkExchange');
+  const tSignals = useTranslations('CoherenceTab');
   const router = useRouter();
   const { jwt } = useJwt();
+  const { upload: uploadSignalMedia } = useAttachmentUpload({
+    authorizationToken: jwt ?? undefined,
+  });
   const [kind, setKind] = useState<Kind>('project');
   const [spaces, setSpaces] = useState<MemberSpace[]>([]);
   const [name, setName] = useState('');
@@ -70,6 +84,8 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const [signalType, setSignalType] =
     useState<NetworkFieldSignalKind>('Insight');
   const [signalText, setSignalText] = useState('');
+  const [signalImages, setSignalImages] = useState<File[]>([]);
+  const [signalDocuments, setSignalDocuments] = useState<File[]>([]);
   const [linkedAmount, setLinkedAmount] = useState('');
   const [storyMedia, setStoryMedia] = useState<StoryMedia>('photo');
   const [storyTitle, setStoryTitle] = useState('');
@@ -256,8 +272,8 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
     /^[a-z0-9_-]{1,80}$/i.test(firstParty?.slug ?? '');
 
   return (
-    <div className="mx-auto grid w-full max-w-4xl gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <div className="@container mx-auto grid w-full max-w-4xl gap-4">
+      <div className="grid gap-3 @min-[36rem]:grid-cols-2">
         {cards.slice(0, 2).map((card) => (
           <CreateCard
             key={card.id}
@@ -267,7 +283,7 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
           />
         ))}
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 @min-[36rem]:grid-cols-3">
         {cards.slice(2).map((card) => (
           <CreateCard
             key={card.id}
@@ -371,7 +387,12 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
                 const params = new URLSearchParams();
                 if (name.trim()) params.set('name', name.trim());
                 if (place.trim()) params.set('place', place.trim());
-                router.push(`/${lang}/interactive-create?${params.toString()}`);
+                const query = params.toString();
+                router.push(
+                  `${getLegacyCreateSpacePath(lang)}${
+                    query ? `?${query}` : ''
+                  }`,
+                );
               }}
               className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
             >
@@ -431,6 +452,32 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
               onChange={(event) => setSignalText(event.target.value)}
               className="w-full resize-none border border-border bg-neutral-2 p-3 text-2 outline-none"
             />
+            <div>
+              <p className="text-1 text-neutral-11">
+                {tSignals('signalFormImage')}
+              </p>
+              <AddAttachment
+                accept={SIGNAL_IMAGE_ACCEPT}
+                maxFiles={SIGNAL_IMAGE_LIMIT}
+                maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                label={tSignals('signalFormImageHint')}
+                value={signalImages}
+                onChange={setSignalImages}
+              />
+            </div>
+            <div>
+              <p className="text-1 text-neutral-11">
+                {tSignals('signalFormAttachments')}
+              </p>
+              <AddAttachment
+                accept={SIGNAL_DOCUMENT_ACCEPT}
+                maxFiles={SIGNAL_DOCUMENT_LIMIT}
+                maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                label={tSignals('signalFormAttachmentsHint')}
+                value={signalDocuments}
+                onChange={setSignalDocuments}
+              />
+            </div>
             <label className="grid gap-1 text-1 text-neutral-11">
               {t('linkedAmount')}
               <Input
@@ -440,10 +487,36 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
                 onChange={(event) => setLinkedAmount(event.target.value)}
               />
             </label>
+            {note ? (
+              <p className="text-2 text-neutral-11" role="alert">
+                {note}
+              </p>
+            ) : null}
             <button
               type="button"
-              disabled={!spaceSlug || !signalText.trim()}
-              onClick={() => openSignal(signalType, signalText, linkedAmount)}
+              disabled={!spaceSlug || !signalText.trim() || saving}
+              onClick={() => {
+                void (async () => {
+                  setSaving(true);
+                  setNote(null);
+                  try {
+                    const images = await uploadSignalFiles(
+                      signalImages,
+                      uploadSignalMedia,
+                    );
+                    const documents = await uploadSignalFiles(
+                      signalDocuments,
+                      uploadSignalMedia,
+                    );
+                    writeSignalCreateMedia({ images, documents });
+                    openSignal(signalType, signalText, linkedAmount);
+                  } catch {
+                    setNote(tSignals('signalFormUploadFailed'));
+                  } finally {
+                    setSaving(false);
+                  }
+                })();
+              }}
               className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
             >
               {t('share')}
