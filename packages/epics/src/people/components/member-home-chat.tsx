@@ -740,7 +740,7 @@ export function MemberHomeChat({
               message.role === 'assistant'
                 ? memberHomeThreadItemForMessage(threadItems, message)
                 : null;
-            const text = (
+            const spoken = (
               board
                 ? t('boardInstead', { space: board.title }).replace(
                     board.title,
@@ -749,14 +749,13 @@ export function MemberHomeChat({
                 : message.role === 'assistant'
                 ? straightforwardHomeText(rawText)
                 : rawText
-            )
-              .replace(
-                spokenItem && spokenItem.action !== 'decision'
-                  ? /You can now decide on the proposal card\.?/gi
-                  : /$^/,
-                '',
-              )
-              .trim();
+            ).trim();
+            const text =
+              spokenItem && spokenItem.action !== 'decision'
+                ? spoken
+                    .replace(/You can now decide on the proposal card\.?/gi, '')
+                    .trim()
+                : spoken;
             const pinnedItem =
               message.role === 'assistant'
                 ? cardsByMessageId.get(message.id) ?? null

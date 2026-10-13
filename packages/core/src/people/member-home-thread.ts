@@ -695,6 +695,31 @@ export function memberHomeBoardDestination(args: {
   };
 }
 
+/** Three "1. " style items, scanned without a backtracking pattern. */
+function hasNumberedCatalogue(text: string) {
+  let count = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    if (code < 48 || code > 57) continue;
+    if (index > 0) {
+      const previous = text.charCodeAt(index - 1);
+      if (previous >= 48 && previous <= 57) continue;
+    }
+    let end = index;
+    while (end < text.length && end - index < 6) {
+      const digit = text.charCodeAt(end);
+      if (digit < 48 || digit > 57) break;
+      end += 1;
+    }
+    if (text[end] === '.' && text[end + 1] === ' ') {
+      count += 1;
+      if (count >= 3) return true;
+      index = end;
+    }
+  }
+  return false;
+}
+
 /** A reply that recites a space's signals instead of opening the board. */
 export function memberHomeSignalCatalogue(
   text: string,
@@ -704,7 +729,7 @@ export function memberHomeSignalCatalogue(
   const catalogue =
     /\b(i['’]ve opened|i have opened|here are some recent signals|recent signals)\b/i.test(
       text,
-    ) || (text.match(/\d+\.\s/g) ?? []).length >= 3;
+    ) || hasNumberedCatalogue(text);
   if (!catalogue) return null;
   const space = homeBoardSpace(text, spaces);
   if (!space) return null;
