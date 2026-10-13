@@ -92,6 +92,8 @@ export type NetworkExchangeSpace = {
   place: string;
   chatRoomId: string | null;
   leadImage: string | null;
+  latitude: number | null;
+  longitude: number | null;
   seeks: string[];
   offers: string[];
 };

@@ -2,18 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Camera, FileText, Landmark, Radio, Sprout } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   CAPITALS,
   EXCHANGE_CAPITALS_DRAFT_KEY,
+  NETWORK_FIELD_KINDS,
   type CapitalKey,
+  type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
 import { useJwt } from '@hypha-platform/core/client';
-import { Input, Textarea } from '@hypha-platform/ui';
+import { Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 const DRAFT_KEY = EXCHANGE_CAPITALS_DRAFT_KEY;
+
+const CAPITAL_MARK: Record<CapitalKey, string> = {
+  financial: '◈',
+  material: '▣',
+  living: '✿',
+  wellbeing: '♡',
+  ecological: '❋',
+  experiential: '◎',
+  wisdom: '☼',
+  social: '❀',
+  creative: '✧',
+  cultural: '❖',
+  intellectual: '✦',
+};
+
+type Kind = 'project' | 'funder' | 'signal' | 'agreement' | 'story';
+type StoryMedia = 'photo' | 'video' | 'voice';
+type MemberSpace = { slug: string; title: string };
+type Party = { slug: string; offers: CapitalKey[] };
 
 function toggle(list: CapitalKey[], key: CapitalKey): CapitalKey[] {
   return list.includes(key)
@@ -21,17 +43,41 @@ function toggle(list: CapitalKey[], key: CapitalKey): CapitalKey[] {
     : [...list, key];
 }
 
+function signalKindLabel(
+  t: (key: string) => string,
+  option: NetworkFieldSignalKind,
+) {
+  if (option === 'Need') return t('filterNeed');
+  if (option === 'Opportunity') return t('filterOpportunity');
+  if (option === 'Risk') return t('filterRisk');
+  if (option === 'Tension') return t('filterTension');
+  if (option === 'Insight') return t('filterInsight');
+  if (option === 'Action') return t('filterAction');
+  return t('filterImpact');
+}
+
 export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const t = useTranslations('NetworkExchange');
   const router = useRouter();
   const { jwt } = useJwt();
-  const [spaces, setSpaces] = useState<{ slug: string; title: string }[]>([]);
+  const [kind, setKind] = useState<Kind>('project');
+  const [spaces, setSpaces] = useState<MemberSpace[]>([]);
   const [name, setName] = useState('');
-  const [purpose, setPurpose] = useState('');
   const [place, setPlace] = useState('');
-  const [spaceSlug, setSpaceSlug] = useState(spaces[0]?.slug ?? '');
+  const [spaceSlug, setSpaceSlug] = useState('');
   const [seeks, setSeeks] = useState<CapitalKey[]>(['financial']);
   const [offers, setOffers] = useState<CapitalKey[]>(['social']);
+  const [signalType, setSignalType] =
+    useState<NetworkFieldSignalKind>('Insight');
+  const [signalText, setSignalText] = useState('');
+  const [linkedAmount, setLinkedAmount] = useState('');
+  const [storyMedia, setStoryMedia] = useState<StoryMedia>('photo');
+  const [storyTitle, setStoryTitle] = useState('');
+  const [parties, setParties] = useState<Party[]>([
+    { slug: '', offers: ['financial'] },
+    { slug: '', offers: ['social'] },
+  ]);
+  const [agreementNote, setAgreementNote] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -56,6 +102,13 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
       );
       setSpaces(next);
       setSpaceSlug((current) => current || next[0]?.slug || '');
+      setParties((current) =>
+        current.map((party, index) =>
+          party.slug
+            ? party
+            : { ...party, slug: next[index]?.slug ?? next[0]?.slug ?? '' },
+        ),
+      );
     })();
     return () => {
       cancelled = true;
@@ -73,6 +126,7 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
           <button
             key={key}
             type="button"
+            aria-pressed={on}
             onClick={() => setSelected(toggle(selected, key))}
             className={cn(
               'border px-2 py-1 text-1',
@@ -81,6 +135,7 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
                 : 'border-border text-neutral-11',
             )}
           >
+            <span aria-hidden>{CAPITAL_MARK[key]} </span>
             {t(`capitals.${key}`)}
           </button>
         );
@@ -89,8 +144,10 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   );
 
   const remember = () => {
-    const draft = { name, purpose, place, seeks, offers };
-    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    window.sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ name, place, seeks, offers, kind }),
+    );
   };
 
   const saveOnSpace = async () => {
@@ -115,101 +172,498 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
     }
   };
 
+  const openSignal = (type: string, title: string, amount?: string) => {
+    if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !title.trim()) {
+      return;
+    }
+    const params = new URLSearchParams();
+    params.set('type', type);
+    params.set('title', title.trim().slice(0, 120));
+    if (amount && /^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
+      params.set('amount', amount);
+    }
+    router.push(
+      `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
+    );
+  };
+
+  const spaceSelect = (
+    value: string,
+    onChange: (slug: string) => void,
+    exclude: string[] = [],
+  ) => (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-10 w-full border border-border bg-neutral-2 px-2 text-2 text-foreground"
+    >
+      {spaces
+        .filter(
+          (space) => space.slug === value || !exclude.includes(space.slug),
+        )
+        .map((space) => (
+          <option key={space.slug} value={space.slug}>
+            {space.title}
+          </option>
+        ))}
+    </select>
+  );
+
+  const cards: {
+    id: Kind;
+    title: string;
+    body: string;
+    badge?: string;
+    icon: typeof Sprout;
+  }[] = [
+    {
+      id: 'project',
+      title: t('shareProject'),
+      body: t('shareProjectBody'),
+      badge: t('projectKind'),
+      icon: Sprout,
+    },
+    {
+      id: 'funder',
+      title: t('fundingSpace'),
+      body: t('fundingSpaceBody'),
+      badge: t('funderKind'),
+      icon: Landmark,
+    },
+    {
+      id: 'signal',
+      title: t('createSignal'),
+      body: t('createSignalBody'),
+      icon: Radio,
+    },
+    {
+      id: 'agreement',
+      title: t('createAgreement'),
+      body: t('createAgreementBody'),
+      icon: FileText,
+    },
+    {
+      id: 'story',
+      title: t('shareStoryTitle'),
+      body: t('shareStoryBody'),
+      icon: Camera,
+    },
+  ];
+
+  const firstParty = parties[0];
+  const canPropose =
+    Boolean(firstParty?.slug) &&
+    /^[a-z0-9_-]{1,80}$/i.test(firstParty?.slug ?? '');
+
   return (
-    <div className="mx-auto grid w-full max-w-xl gap-5">
-      <div>
-        <h1
-          className="text-5"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {t('createTitle')}
-        </h1>
-        <p className="mt-2 text-2 leading-relaxed text-neutral-11">
-          {t('createBody')}
-        </p>
+    <div className="mx-auto grid w-full max-w-4xl gap-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {cards.slice(0, 2).map((card) => (
+          <CreateCard
+            key={card.id}
+            card={card}
+            selected={kind === card.id}
+            onSelect={() => setKind(card.id)}
+          />
+        ))}
       </div>
-      <label className="grid gap-1 text-1 text-neutral-11">
-        {t('spaceName')}
-        <Input
-          value={name}
-          maxLength={80}
-          onChange={(event) => setName(event.target.value)}
-        />
-      </label>
-      <label className="grid gap-1 text-1 text-neutral-11">
-        {t('purpose')}
-        <Textarea
-          value={purpose}
-          maxLength={300}
-          rows={3}
-          onChange={(event) => setPurpose(event.target.value)}
-        />
-      </label>
-      <label className="grid gap-1 text-1 text-neutral-11">
-        {t('place')}
-        <Input
-          value={place}
-          maxLength={80}
-          onChange={(event) => setPlace(event.target.value)}
-        />
-      </label>
-      <div>
-        <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-          {t('seeks')}
-        </p>
-        <div className="mt-2">{chips(seeks, setSeeks)}</div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {cards.slice(2).map((card) => (
+          <CreateCard
+            key={card.id}
+            card={card}
+            selected={kind === card.id}
+            onSelect={() => setKind(card.id)}
+          />
+        ))}
       </div>
-      <div>
-        <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-          {t('offers')}
-        </p>
-        <div className="mt-2">{chips(offers, setOffers)}</div>
-      </div>
-      {spaces.length > 0 ? (
-        <label className="grid gap-1 text-1 text-neutral-11">
-          {t('attach')}
-          <select
-            value={spaceSlug}
-            onChange={(event) => setSpaceSlug(event.target.value)}
-            className="h-10 border border-border bg-background px-2 text-2 text-foreground"
-          >
-            {spaces.map((space) => (
-              <option key={space.slug} value={space.slug}>
-                {space.title}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-      {note ? <p className="text-2 text-neutral-11">{note}</p> : null}
-      <div className="flex flex-wrap gap-2">
-        {spaces.length > 0 ? (
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => {
-              void saveOnSpace();
-            }}
-            className="border border-border px-3 py-2 text-1 uppercase tracking-[0.12em]"
-          >
-            {t('saveCapitals')}
-          </button>
+
+      <section className="grid gap-4 border border-border p-4">
+        {kind === 'project' || kind === 'funder' ? (
+          <>
+            <div>
+              <h2
+                className="text-4"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {kind === 'funder' ? t('fundingSpace') : t('shareProject')}
+              </h2>
+              <p className="mt-2 text-2 leading-relaxed text-neutral-11">
+                {kind === 'funder'
+                  ? t('fundingSpaceForm')
+                  : t('shareProjectForm')}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {(['project', 'funder'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={kind === option}
+                  onClick={() => setKind(option)}
+                  className={cn(
+                    'border px-2 py-1 text-1',
+                    kind === option
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border text-neutral-11',
+                  )}
+                >
+                  {option === 'project' ? t('projectKind') : t('funderKind')}
+                </button>
+              ))}
+            </div>
+            <Input
+              value={name}
+              maxLength={80}
+              placeholder={t('spaceName')}
+              aria-label={t('spaceName')}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <Input
+              value={place}
+              maxLength={80}
+              placeholder={t('place')}
+              aria-label={t('place')}
+              onChange={(event) => setPlace(event.target.value)}
+            />
+            <div>
+              <p className="text-2 text-foreground">{t('seeks')}</p>
+              <div className="mt-2">{chips(seeks, setSeeks)}</div>
+            </div>
+            <div>
+              <p className="text-2 text-foreground">{t('offers')}</p>
+              <div className="mt-2">{chips(offers, setOffers)}</div>
+            </div>
+            {spaces.length > 0 ? (
+              <label className="grid gap-1 text-1 text-neutral-11">
+                {t('attach')}
+                <select
+                  value={spaceSlug}
+                  onChange={(event) => setSpaceSlug(event.target.value)}
+                  className="h-10 border border-border bg-background px-2 text-2 text-foreground"
+                >
+                  {spaces.map((space) => (
+                    <option key={space.slug} value={space.slug}>
+                      {space.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {note ? <p className="text-2 text-neutral-11">{note}</p> : null}
+            {spaces.length > 0 ? (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  void saveOnSpace();
+                }}
+                className="h-10 border border-border text-1 uppercase tracking-[0.12em] disabled:opacity-40"
+              >
+                {t('saveCapitals')}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              disabled={!name.trim()}
+              onClick={() => {
+                remember();
+                const params = new URLSearchParams();
+                if (name.trim()) params.set('name', name.trim());
+                if (place.trim()) params.set('place', place.trim());
+                router.push(`/${lang}/interactive-create?${params.toString()}`);
+              }}
+              className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
+            >
+              {t('createSpace')}
+            </button>
+          </>
         ) : null}
-        <button
-          type="button"
-          disabled={!name.trim()}
-          onClick={() => {
-            remember();
-            const params = new URLSearchParams();
-            if (name.trim()) params.set('name', name.trim());
-            if (purpose.trim()) params.set('purpose', purpose.trim());
-            router.push(`/${lang}/interactive-create?${params.toString()}`);
-          }}
-          className="border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
-        >
-          {t('continueCreate')}
-        </button>
-      </div>
+
+        {kind === 'signal' ? (
+          <>
+            <div>
+              <h2
+                className="text-4"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t('createSignal')}
+              </h2>
+              <p className="mt-2 text-2 leading-relaxed text-neutral-11">
+                {t('createSignalBody')}
+              </p>
+            </div>
+            <label className="grid gap-1 text-1 text-neutral-11">
+              {t('chooseSpace')}
+              {spaces.length === 0 ? (
+                <p className="text-2">{t('noneYet')}</p>
+              ) : (
+                spaceSelect(spaceSlug, setSpaceSlug)
+              )}
+            </label>
+            <div>
+              <p className="text-1 text-neutral-11">{t('signalType')}</p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {NETWORK_FIELD_KINDS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={signalType === option}
+                    onClick={() => setSignalType(option)}
+                    className={cn(
+                      'border px-2 py-1 text-1',
+                      signalType === option
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border text-neutral-11',
+                    )}
+                  >
+                    {signalKindLabel(t, option)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              value={signalText}
+              maxLength={200}
+              rows={3}
+              placeholder={t('whatHappened')}
+              aria-label={t('whatHappened')}
+              onChange={(event) => setSignalText(event.target.value)}
+              className="w-full resize-none border border-border bg-neutral-2 p-3 text-2 outline-none"
+            />
+            <label className="grid gap-1 text-1 text-neutral-11">
+              {t('linkedAmount')}
+              <Input
+                value={linkedAmount}
+                inputMode="decimal"
+                maxLength={12}
+                onChange={(event) => setLinkedAmount(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={!spaceSlug || !signalText.trim()}
+              onClick={() => openSignal(signalType, signalText, linkedAmount)}
+              className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
+            >
+              {t('share')}
+            </button>
+          </>
+        ) : null}
+
+        {kind === 'agreement' ? (
+          <>
+            <div>
+              <h2
+                className="text-4"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t('createAgreement')}
+              </h2>
+              <p className="mt-2 text-2 leading-relaxed text-neutral-11">
+                {t('createAgreementBody')}
+              </p>
+            </div>
+            {spaces.length < 2 ? (
+              <p className="text-2 text-neutral-11">{t('needTwoSpaces')}</p>
+            ) : (
+              parties.map((party, index) => (
+                <div key={`${party.slug}-${index}`} className="grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    {spaceSelect(
+                      party.slug,
+                      (slug) =>
+                        setParties((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, slug } : item,
+                          ),
+                        ),
+                      parties
+                        .filter((_, itemIndex) => itemIndex !== index)
+                        .map((item) => item.slug),
+                    )}
+                    {index > 1 ? (
+                      <button
+                        type="button"
+                        className="shrink-0 text-1 uppercase tracking-[0.12em] text-neutral-11"
+                        onClick={() =>
+                          setParties((current) =>
+                            current.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          )
+                        }
+                      >
+                        {t('removeParty')}
+                      </button>
+                    ) : null}
+                  </div>
+                  <p className="text-2 text-foreground">{t('offers')}</p>
+                  {chips(party.offers, (next) =>
+                    setParties((current) =>
+                      current.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, offers: next } : item,
+                      ),
+                    ),
+                  )}
+                </div>
+              ))
+            )}
+            {spaces.length > parties.length ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const taken = new Set(parties.map((party) => party.slug));
+                  const next = spaces.find((space) => !taken.has(space.slug));
+                  if (!next) return;
+                  setParties((current) => [
+                    ...current,
+                    { slug: next.slug, offers: [] },
+                  ]);
+                }}
+                className="h-10 border border-dashed border-border text-1 uppercase tracking-[0.12em] text-neutral-11"
+              >
+                {t('addAnotherParty')}
+              </button>
+            ) : null}
+            <textarea
+              value={agreementNote}
+              maxLength={300}
+              rows={2}
+              placeholder={t('agreementNote')}
+              aria-label={t('agreementNote')}
+              onChange={(event) => setAgreementNote(event.target.value)}
+              className="w-full resize-none border border-border bg-neutral-2 p-3 text-2 outline-none"
+            />
+            <button
+              type="button"
+              disabled={!canPropose}
+              onClick={() => {
+                if (!canPropose || !firstParty) return;
+                const params = new URLSearchParams();
+                if (agreementNote.trim()) {
+                  params.set('note', agreementNote.trim().slice(0, 300));
+                }
+                const query = params.toString();
+                router.push(
+                  `/${lang}/dho/${
+                    firstParty.slug
+                  }/agreements/create/space-to-space-membership${
+                    query ? `?${query}` : ''
+                  }`,
+                );
+              }}
+              className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
+            >
+              {t('proposeAgreement')}
+            </button>
+          </>
+        ) : null}
+
+        {kind === 'story' ? (
+          <>
+            <div>
+              <h2
+                className="text-4"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t('shareStoryTitle')}
+              </h2>
+              <p className="mt-2 text-2 leading-relaxed text-neutral-11">
+                {t('shareStoryBody')}
+              </p>
+            </div>
+            <label className="grid gap-1 text-1 text-neutral-11">
+              {t('chooseSpace')}
+              {spaces.length === 0 ? (
+                <p className="text-2">{t('noneYet')}</p>
+              ) : (
+                spaceSelect(spaceSlug, setSpaceSlug)
+              )}
+            </label>
+            <div className="flex flex-wrap gap-1">
+              {(
+                [
+                  ['photo', t('storyPhoto')],
+                  ['video', t('storyVideo')],
+                  ['voice', t('storyVoice')],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={storyMedia === value}
+                  onClick={() => setStoryMedia(value)}
+                  className={cn(
+                    'border px-2 py-1 text-1',
+                    storyMedia === value
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border text-neutral-11',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <Input
+              value={storyTitle}
+              maxLength={120}
+              placeholder={t('storyTitle')}
+              aria-label={t('storyTitle')}
+              onChange={(event) => setStoryTitle(event.target.value)}
+            />
+            <button
+              type="button"
+              disabled={!spaceSlug || !storyTitle.trim()}
+              onClick={() => openSignal('Impact', storyTitle)}
+              className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
+            >
+              {t('post')}
+            </button>
+          </>
+        ) : null}
+      </section>
     </div>
+  );
+}
+
+function CreateCard({
+  card,
+  selected,
+  onSelect,
+}: {
+  card: {
+    title: string;
+    body: string;
+    badge?: string;
+    icon: typeof Sprout;
+  };
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const Icon = card.icon;
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      className={cn(
+        'flex min-h-28 flex-col gap-2 border p-3 text-left',
+        selected ? 'border-foreground' : 'border-border',
+      )}
+    >
+      <span className="flex items-start justify-between gap-2">
+        <Icon className="size-4" aria-hidden />
+        {card.badge ? (
+          <span className="border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-neutral-11">
+            {card.badge}
+          </span>
+        ) : null}
+      </span>
+      <span className="text-2 text-foreground">{card.title}</span>
+      <span className="text-1 leading-relaxed text-neutral-11">
+        {card.body}
+      </span>
+    </button>
   );
 }
