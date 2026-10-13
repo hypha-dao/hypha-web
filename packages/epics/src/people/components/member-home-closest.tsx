@@ -243,7 +243,7 @@ export function MemberHomeClosest({
   if (onlineIds != null && ranked.people.length === 0) return null;
 
   return (
-    <nav aria-label={label} className="mt-1 min-w-0 max-w-full">
+    <nav aria-label={label} className="mt-1 min-w-0 max-w-full pb-3">
       <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {label}
       </p>
