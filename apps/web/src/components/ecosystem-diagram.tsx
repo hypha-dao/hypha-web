@@ -126,12 +126,15 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
       : null;
   const onVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
     const next = spaces.find((space) => space.root) ?? spaces[0];
-    if (!next?.slug) return;
-    setFocus((current) =>
-      current?.slug === next.slug && current.name === next.name
-        ? current
-        : { slug: next.slug, name: next.name },
-    );
+    const slug = next?.slug;
+    if (!slug) return;
+    const name = next.name;
+    setFocus((current) => {
+      if (current && current.slug === slug && current.name === name) {
+        return current;
+      }
+      return { slug, name };
+    });
   }, []);
 
   if (isLoading && !hierarchy) {
