@@ -20,30 +20,26 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   MemberHomePeople,
   type MemberHomeOpenChat,
 } from './member-home-people';
+import {
+  isHyphaBot,
+  looksLikeHyphaBot,
+  memberRowsForConnections,
+  type ConversationRow,
+  type MemberRow,
+} from './member-connections';
 import { PersonAvatar } from './person-avatar';
 
 const STALE_MS = 14 * 24 * 60 * 60 * 1000;
 const REACH_OUT_LIMIT = 6;
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
-
-type ConversationRow = {
-  roomId: string;
-  name: string;
-  avatarUrl?: string;
-  preview: string;
-  mine: boolean;
-  lastTs: number | null;
-  unread: number;
-  memberCount: number;
-  otherUserId: string | null;
-  kind: 'person' | 'group';
-};
+type ConnectionMemberRow = MemberRow<ConnectionPerson>;
 
 type ReachOutCard = {
   key: string;
@@ -56,22 +52,6 @@ type ReachOutCard = {
 
 function botUserId() {
   return process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
-}
-
-function looksLikeHyphaBot(value: string | null | undefined) {
-  return Boolean(value && /hypha[_-]bot/i.test(value));
-}
-
-function isHyphaBot(userId: string | undefined, name?: string | null) {
-  const configured = botUserId();
-  if (configured && userId === configured) return true;
-  const local = userId?.replace(/^@/, '').split(':')[0] ?? '';
-  return looksLikeHyphaBot(local) || looksLikeHyphaBot(name);
-}
-
-function personName(person: ConnectionPerson, fallback: string) {
-  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  return full || person.nickname || fallback;
 }
 
 function messagePreview(body: string) {
@@ -225,13 +205,16 @@ export function MyConnections() {
   const tChat = useTranslations('MemberHome');
   const locale = useLocale();
   const { jwt } = useJwt();
-  const { client, isMatrixAvailable } = useMatrix();
+  const { client, isMatrixAvailable, createRoom } = useMatrix();
+  const { startAudioForRoom } = useGlobalCallDock();
   const { openCoherenceChat } = useHumanChatPanel();
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [synced, setSynced] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [calling, setCalling] = useState(false);
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -279,119 +262,108 @@ export function MyConnections() {
     };
   }, [client]);
 
-  const personByMatrixId = useMemo(() => {
-    const map = new Map<string, ConnectionPerson>();
-    for (const person of connections) {
-      const mxid = personIdToMatrixUserId[person.id];
-      if (mxid) map.set(mxid, person);
-    }
-    return map;
-  }, [connections, personIdToMatrixUserId]);
+  const members = useMemo(
+    () =>
+      memberRowsForConnections(
+        connections,
+        rows,
+        personIdToMatrixUserId,
+        home?.person.id ?? null,
+        t('someone'),
+      ),
+    [connections, home?.person.id, personIdToMatrixUserId, rows, t],
+  );
 
   const reachOut = useMemo(() => {
     if (!synced) return [];
     const now = Date.now();
-    const people = rows.filter((row) => row.kind === 'person');
-    const recent = new Set(
-      people
-        .filter((row) => row.lastTs != null && now - row.lastTs <= STALE_MS)
-        .map((row) => row.otherUserId)
-        .filter((id): id is string => Boolean(id)),
-    );
-    const seenPeople = new Set<string>();
-    const cards: ReachOutCard[] = people
+    return members
       .filter((row) => row.lastTs == null || now - row.lastTs > STALE_MS)
-      .filter((row) => !isHyphaBot(row.otherUserId ?? undefined, row.name))
-      .filter((row) => {
-        const id = row.otherUserId ?? row.roomId;
-        if (seenPeople.has(id)) return false;
-        seenPeople.add(id);
-        return true;
-      })
-      .map((row) => {
-        const person = row.otherUserId
-          ? personByMatrixId.get(row.otherUserId)
-          : undefined;
-        return {
-          key: row.roomId,
-          name: person
-            ? personName(person, t('someone'))
-            : row.name || t('someone'),
-          avatarUrl: person?.avatarUrl || row.avatarUrl,
-          roomId: row.roomId,
-          lastTs: row.lastTs,
-          person: person ?? null,
-        };
-      });
-    const covered = new Set(
-      people
-        .map((row) => row.otherUserId)
-        .filter((id): id is string => Boolean(id)),
-    );
-
-    for (const person of connections) {
-      if (cards.length >= REACH_OUT_LIMIT) break;
-      const mxid = personIdToMatrixUserId[person.id];
-      const name = personName(person, t('someone'));
-      if (isHyphaBot(mxid, name)) continue;
-      if (mxid && (recent.has(mxid) || covered.has(mxid))) continue;
-      cards.push({
-        key: `person-${person.id}`,
-        name,
-        avatarUrl: person.avatarUrl ?? undefined,
-        roomId: null,
-        lastTs: null,
-        person,
-      });
-    }
-
-    return cards
       .sort((left, right) => {
         if (left.lastTs == null && right.lastTs == null) return 0;
         if (left.lastTs == null) return 1;
         if (right.lastTs == null) return -1;
         return left.lastTs - right.lastTs;
       })
-      .slice(0, REACH_OUT_LIMIT);
-  }, [connections, personByMatrixId, personIdToMatrixUserId, rows, synced, t]);
+      .slice(0, REACH_OUT_LIMIT)
+      .map(
+        (row): ReachOutCard => ({
+          key: `person-${row.person.id}`,
+          name: row.name,
+          avatarUrl: row.avatarUrl,
+          roomId: row.roomId,
+          lastTs: row.lastTs,
+          person: row.person,
+        }),
+      );
+  }, [members, synced]);
 
   const needle = query.trim().toLowerCase();
-  const visible = needle
-    ? rows.filter((row) => {
-        const haystack = `${row.name} ${row.preview}`.toLowerCase();
-        return haystack.includes(needle);
-      })
-    : rows;
-  const people = visible
-    .filter(
-      (row) =>
-        row.kind === 'person' &&
-        !isHyphaBot(row.otherUserId ?? undefined, row.name),
-    )
-    .map((row) => {
-      const person = row.otherUserId
-        ? personByMatrixId.get(row.otherUserId)
-        : undefined;
-      if (!person) return row;
-      return {
-        ...row,
-        name: personName(person, row.name || t('someone')),
-        avatarUrl: person.avatarUrl || row.avatarUrl,
-      };
-    });
-  const groups = visible.filter(
-    (row) => row.kind === 'group' && !looksLikeHyphaBot(row.name),
-  );
+  const people = needle
+    ? members.filter((row) => row.name.toLowerCase().includes(needle))
+    : members;
+  const selectedPeople = members.filter((row) => selected.has(row.person.id));
 
-  function openRow(row: ConversationRow) {
+  function toggleSelected(id: number) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function openMember(row: ConnectionMemberRow) {
     setNotice(null);
-    openCoherenceChat(
-      row.roomId,
-      row.name || t('someone'),
-      '',
-      null,
-      home?.chatSpaceSlug ?? null,
-    );
+    if (row.roomId) {
+      openCoherenceChat(
+        row.roomId,
+        row.name,
+        '',
+        null,
+        home?.chatSpaceSlug ?? null,
+      );
+      return;
+    }
+    const opened = await openChatRef.current?.({
+      id: row.person.id,
+      slug: row.person.slug,
+      name: row.person.name,
+      surname: row.person.surname,
+      nickname: row.person.nickname,
+      avatarUrl: row.person.avatarUrl,
+    });
+    if (!opened) setNotice(tChat('matrixUnavailable'));
+  }
+
+  async function startGroupCall() {
+    if (selectedPeople.length < 2 || calling) return;
+    setCalling(true);
+    setNotice(null);
+    const title = selectedPeople.map((row) => row.name).join(', ');
+    try {
+      const { roomId } = await createRoom(title);
+      if (client) {
+        for (const row of selectedPeople) {
+          const mxid = personIdToMatrixUserId[row.person.id];
+          if (!mxid) continue;
+          await client.invite(roomId, mxid).catch(() => undefined);
+        }
+      }
+      openCoherenceChat(roomId, title, '', null, home?.chatSpaceSlug ?? null);
+      await startAudioForRoom(
+        roomId,
+        home?.chatSpaceSlug ?? null,
+        undefined,
+        jwt,
+        { roomTitle: title },
+      );
+      setSelected(new Set());
+    } catch {
+      setNotice(tChat('callFailed'));
+    } finally {
+      setCalling(false);
+    }
   }
 
   async function openReachOut(card: ReachOutCard) {
@@ -495,46 +467,43 @@ export function MyConnections() {
         </p>
       ) : null}
 
-      {isMatrixAvailable &&
-      synced &&
-      people.length === 0 &&
-      groups.length === 0 ? (
+      {selectedPeople.length >= 2 ? (
+        <button
+          type="button"
+          disabled={calling}
+          onClick={() => void startGroupCall()}
+          className="h-10 self-start border border-foreground bg-foreground px-3 text-2 text-background disabled:opacity-50"
+        >
+          {t('groupCall')}
+        </button>
+      ) : null}
+
+      {home != null && people.length === 0 ? (
         <p className="text-2 text-muted-foreground">
           {needle ? t('noMatches') : t('empty')}
         </p>
       ) : null}
 
-      {people.length > 0 || groups.length > 0 ? (
-        <div className="border border-border">
-          <ConversationSection
-            title={t('people')}
-            rows={people}
-            locale={locale}
-            justNow={t('justNow')}
-            noMessage={t('noMessage')}
-            youLabel={(message) => t('youWrote', { message })}
-            unreadLabel={(count) => t('unread', { count })}
-            membersLabel={() => ''}
-            onOpen={openRow}
-          />
-          <ConversationSection
-            title={t('groups')}
-            rows={groups}
-            locale={locale}
-            justNow={t('justNow')}
-            noMessage={t('noMessage')}
-            youLabel={(message) => t('youWrote', { message })}
-            unreadLabel={(count) => t('unread', { count })}
-            membersLabel={(count) => t('members', { count })}
-            onOpen={openRow}
-          />
-        </div>
+      {people.length > 0 ? (
+        <MemberList
+          title={t('people')}
+          rows={people}
+          locale={locale}
+          justNow={t('justNow')}
+          noMessage={t('noMessage')}
+          youLabel={(message) => t('youWrote', { message })}
+          unreadLabel={(count) => t('unread', { count })}
+          selectLabel={(name) => t('selectMember', { name })}
+          selected={selected}
+          onToggle={toggleSelected}
+          onOpen={(row) => void openMember(row)}
+        />
       ) : null}
     </div>
   );
 }
 
-function ConversationSection({
+function MemberList({
   title,
   rows,
   locale,
@@ -542,22 +511,25 @@ function ConversationSection({
   noMessage,
   youLabel,
   unreadLabel,
-  membersLabel,
+  selectLabel,
+  selected,
+  onToggle,
   onOpen,
 }: {
   title: string;
-  rows: ConversationRow[];
+  rows: ConnectionMemberRow[];
   locale: string;
   justNow: string;
   noMessage: string;
   youLabel: (message: string) => string;
   unreadLabel: (count: number) => string;
-  membersLabel: (count: number) => string;
-  onOpen: (row: ConversationRow) => void;
+  selectLabel: (name: string) => string;
+  selected: Set<number>;
+  onToggle: (id: number) => void;
+  onOpen: (row: ConnectionMemberRow) => void;
 }) {
-  if (rows.length === 0) return null;
   return (
-    <section>
+    <section className="border border-border">
       <h2
         className="border-b border-border px-3 py-2 text-2 text-foreground"
         style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -574,21 +546,35 @@ function ConversationSection({
           const when = row.lastTs
             ? formatWhen(row.lastTs, locale, justNow)
             : '';
-          const members =
-            row.kind === 'group' ? membersLabel(row.memberCount) : '';
+          const checked = selected.has(row.person.id);
           return (
             <li
-              key={row.roomId}
-              className="border-b border-border last:border-b-0"
+              key={row.person.id}
+              className="flex items-stretch border-b border-border last:border-b-0"
             >
               <button
                 type="button"
+                role="checkbox"
+                aria-checked={checked}
+                aria-label={selectLabel(row.name)}
+                onClick={() => onToggle(row.person.id)}
+                className={cn(
+                  'm-3 grid size-4 shrink-0 place-items-center self-center border border-foreground',
+                  checked && 'bg-foreground',
+                )}
+              >
+                {checked ? (
+                  <span className="size-2 bg-background" aria-hidden />
+                ) : null}
+              </button>
+              <button
+                type="button"
                 onClick={() => onOpen(row)}
-                className="flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-accent-2"
+                className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left hover:bg-accent-2"
               >
                 <PersonAvatar
                   size="chat"
-                  shape={row.kind === 'group' ? 'square' : 'circle'}
+                  shape="circle"
                   avatarSrc={row.avatarUrl}
                   userName={row.name}
                 />
@@ -610,7 +596,7 @@ function ConversationSection({
                   </span>
                   <span className="mt-0.5 flex items-center justify-between gap-3">
                     <span className="truncate text-1 text-muted-foreground">
-                      {members ? `${members} · ${preview}` : preview}
+                      {preview}
                     </span>
                     {row.unread > 0 ? (
                       <span
