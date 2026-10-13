@@ -59,6 +59,17 @@ export interface ProposalRejectedEvent {
   context: { proposalWeb3Id: number };
 }
 
+/**
+ * One creator's `SpaceCreated` logs from a webhook batch — the route groups a batch by creator, so
+ * `spacesCount` is how many spaces that creator created in it.
+ */
+export interface SpaceCreatedEvent {
+  type: 'space.created';
+  source: { kind: 'domain'; entityType: 'space'; entityId: string };
+  context: { creatorWeb3Address: `0x${string}` };
+  payload: { spacesCount: number };
+}
+
 export interface SignalAssignedEvent {
   type: 'signal.assigned';
   source: { kind: 'domain'; entityType: 'coherence'; entityId: string };
@@ -122,6 +133,7 @@ export type NotificationEvent =
   | ProposalCreatedEvent
   | ProposalAcceptedEvent
   | ProposalRejectedEvent
+  | SpaceCreatedEvent
   | SignalAssignedEvent
   | SignalBoardNoticeEvent
   | ScheduledItemInvitedEvent
