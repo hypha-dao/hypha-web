@@ -591,45 +591,45 @@
       "breakpoints": true
     },
     {
-      "idx": 83,
-      "version": "7",
-      "when": 1784000000014,
-      "tag": "0083_space_member_invites",
-      "breakpoints": true
-    },
-    {
       "idx": 84,
       "version": "7",
       "when": 1784000000015,
-      "tag": "0084_signal_indicative_payouts",
+      "tag": "0084_space_member_invites",
       "breakpoints": true
     },
     {
       "idx": 85,
       "version": "7",
       "when": 1784000000016,
-      "tag": "0085_signal_media",
+      "tag": "0085_signal_indicative_payouts",
       "breakpoints": true
     },
     {
       "idx": 86,
       "version": "7",
       "when": 1784000000017,
-      "tag": "0086_network_horizon",
+      "tag": "0086_signal_media",
       "breakpoints": true
     },
     {
       "idx": 87,
       "version": "7",
       "when": 1784000000018,
-      "tag": "0087_network_offer_and_capitals",
+      "tag": "0087_network_horizon",
       "breakpoints": true
     },
     {
       "idx": 88,
       "version": "7",
       "when": 1784000000019,
-      "tag": "0088_signal_assignee_ack",
+      "tag": "0088_network_offer_and_capitals",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1784000000020,
+      "tag": "0089_signal_assignee_ack",
       "breakpoints": true
     }
   ]
