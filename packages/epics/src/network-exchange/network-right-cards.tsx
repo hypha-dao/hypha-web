@@ -774,6 +774,7 @@ export function NetworkRightColumn({
   payouts?: NetworkFieldPayout[];
   impactCount?: number;
 }) {
+  const tExchange = useTranslations('NetworkExchange');
   const { open } = useHumanChatPanel();
   const selected = useMemo(
     () => spaces.find((space) => space.slug === selectedSlug) ?? spaces[0],
@@ -784,7 +785,26 @@ export function NetworkRightColumn({
     <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto">
       <SpaceCard lang={lang} space={selected} />
       {variant === 'exchange' ? (
-        <WeaveCard lang={lang} spaces={spaces} initialSlug={selected.slug} />
+        <>
+          <WeaveCard lang={lang} spaces={spaces} initialSlug={selected.slug} />
+          <section className="border border-border p-4">
+            <h3
+              className="text-3"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {tExchange('shareProject')}
+            </h3>
+            <p className="mt-2 text-1 leading-relaxed text-neutral-11">
+              {tExchange('shareProjectForm')}
+            </p>
+            <Link
+              href={`/${lang}/network/create`}
+              className="mt-3 inline-flex h-10 items-center border border-foreground bg-foreground px-3 text-1 uppercase tracking-[0.12em] text-background"
+            >
+              {tExchange('createSpace')}
+            </Link>
+          </section>
+        </>
       ) : null}
       {variant === 'needs' ? (
         <ShareCard

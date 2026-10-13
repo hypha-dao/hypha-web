@@ -17,6 +17,7 @@ type PageProps = {
     boardTag?: string | string[];
     type?: string;
     title?: string;
+    amount?: string;
   }>;
 };
 
@@ -25,7 +26,7 @@ export default async function NewSignalPage({
   searchParams,
 }: PageProps) {
   const { lang, id } = await params;
-  const { boardTag, type, title } = await searchParams;
+  const { boardTag, type, title, amount } = await searchParams;
 
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
@@ -47,6 +48,12 @@ export default async function NewSignalPage({
     : undefined;
   const signalTitle =
     typeof title === 'string' ? title.trim().slice(0, 120) : '';
+  const payoutAmount =
+    typeof amount === 'string' &&
+    /^\d+(\.\d{1,2})?$/.test(amount.trim()) &&
+    Number(amount) > 0
+      ? amount.trim()
+      : '';
 
   const successfulUrl = getDhoPathCoherence(lang, id);
   return (
@@ -61,13 +68,23 @@ export default async function NewSignalPage({
           backUrl={successfulUrl}
           spaceId={spaceFromDb.id}
           initialValues={
-            inheritedBoardTags.length > 0 || signalType || signalTitle
+            inheritedBoardTags.length > 0 ||
+            signalType ||
+            signalTitle ||
+            payoutAmount
               ? {
                   ...(inheritedBoardTags.length > 0
                     ? { tags: inheritedBoardTags }
                     : {}),
                   ...(signalType ? { type: signalType } : {}),
                   ...(signalTitle ? { title: signalTitle } : {}),
+                  ...(payoutAmount
+                    ? {
+                        indicativePayouts: [
+                          { amount: payoutAmount, token: '' },
+                        ],
+                      }
+                    : {}),
                 }
               : undefined
           }
