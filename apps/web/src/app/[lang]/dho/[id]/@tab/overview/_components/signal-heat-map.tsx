@@ -25,7 +25,7 @@ const TYPE_INK: Record<string, string> = {
 
 type HeatSignal = {
   type: string;
-  priority: string;
+  priority?: string | null;
   createdAt?: string | Date | null;
 };
 
@@ -35,7 +35,10 @@ function timeOf(value: string | Date | null | undefined) {
   return Number.isFinite(time) ? time : null;
 }
 
-function priorityOf(value: string): (typeof PRIORITIES)[number] | null {
+function priorityOf(
+  value: string | null | undefined,
+): (typeof PRIORITIES)[number] | null {
+  if (!value) return null;
   return (
     PRIORITIES.find((priority) => priority === value.toLowerCase()) ?? null
   );
