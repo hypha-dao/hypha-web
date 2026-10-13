@@ -117,7 +117,7 @@ const signalAttachmentSchema = z.object({
 
 const signalAttachmentsSchema = z
   .array(signalAttachmentSchema)
-  .max(12)
+  .max(16)
   .optional()
   .transform((value) => value ?? []);
 

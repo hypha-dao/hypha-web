@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { ChevronDown, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -12,11 +11,9 @@ import type { Locale } from '@hypha-platform/i18n';
 import {
   CAPITALS,
   DEFAULT_SPACE_LEAD_IMAGE,
-  NETWORK_FIELD_KINDS,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkFieldPayout,
-  type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
@@ -607,31 +604,12 @@ function WeaveCard({
 
 function ShareCard({
   lang,
-  spaces,
-  initialSlug,
   kind,
 }: {
   lang: Locale;
-  spaces: NetworkRailSpace[];
-  initialSlug: string;
   kind: 'need' | 'signal' | 'story';
 }) {
   const t = useTranslations('NetworkExchange');
-  const router = useRouter();
-  const [slug, setSlug] = useState(
-    spaces.find((space) => space.slug === initialSlug)?.slug ??
-      spaces[0]?.slug ??
-      '',
-  );
-  const [type, setType] = useState<NetworkFieldSignalKind>(
-    kind === 'need' ? 'Need' : kind === 'story' ? 'Impact' : 'Action',
-  );
-  const [text, setText] = useState('');
-  useEffect(() => {
-    if (spaces.some((space) => space.slug === initialSlug))
-      setSlug(initialSlug);
-  }, [initialSlug, spaces]);
-
   const title =
     kind === 'need'
       ? t('shareNeedTitle')
@@ -645,74 +623,12 @@ function ShareCard({
       ? t('shareStoryBody')
       : t('shareSignalBody');
 
-  const submit = () => {
-    if (!slug || !/^[a-z0-9_-]{1,80}$/i.test(slug) || !text.trim()) return;
-    const params = new URLSearchParams();
-    params.set(
-      'type',
-      kind === 'need' ? 'Need' : kind === 'story' ? 'Impact' : type,
-    );
-    params.set('title', text.trim().slice(0, 120));
-    router.push(
-      `/${lang}/dho/${slug}/coherence/new-signal?${params.toString()}`,
-    );
-  };
-
   return (
     <Shell title={title} body={body}>
-      {spaces.length === 0 ? (
-        <p className="text-1 text-neutral-11">{t('noneYet')}</p>
-      ) : (
-        <SpaceSelect spaces={spaces} value={slug} onChange={setSlug} />
-      )}
-      {kind === 'signal' ? (
-        <div className="flex flex-wrap gap-1">
-          {NETWORK_FIELD_KINDS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setType(option)}
-              className={cn(
-                'border px-2 py-1 text-1',
-                type === option
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'border-border text-neutral-11',
-              )}
-            >
-              {t(
-                option === 'Need'
-                  ? 'filterNeed'
-                  : option === 'Opportunity'
-                  ? 'filterOpportunity'
-                  : option === 'Risk'
-                  ? 'filterRisk'
-                  : option === 'Tension'
-                  ? 'filterTension'
-                  : option === 'Insight'
-                  ? 'filterInsight'
-                  : option === 'Action'
-                  ? 'filterAction'
-                  : 'filterImpact',
-              )}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      <textarea
-        value={text}
-        maxLength={200}
-        rows={3}
-        placeholder={kind === 'story' ? t('storyTitle') : t('whatHappened')}
-        onChange={(event) => setText(event.target.value)}
-        className="w-full resize-none border border-border bg-background p-3 text-2 outline-none"
-      />
-      <Button
-        type="button"
-        className="w-full"
-        disabled={!slug || !text.trim()}
-        onClick={submit}
-      >
-        {kind === 'story' ? t('post') : t('share')}
+      <Button asChild className="w-full">
+        <Link href={`/${lang}/network/create`}>
+          {kind === 'story' ? t('post') : t('share')}
+        </Link>
       </Button>
     </Shell>
   );
@@ -806,33 +722,16 @@ export function NetworkRightColumn({
           </section>
         </>
       ) : null}
-      {variant === 'needs' ? (
-        <ShareCard
-          lang={lang}
-          spaces={spaces}
-          initialSlug={selected.slug}
-          kind="need"
-        />
-      ) : null}
+      {variant === 'needs' ? <ShareCard lang={lang} kind="need" /> : null}
       {variant === 'action' ? (
         <>
-          <ShareCard
-            lang={lang}
-            spaces={spaces}
-            initialSlug={selected.slug}
-            kind="signal"
-          />
+          <ShareCard lang={lang} kind="signal" />
           <AllocatedCard payouts={payouts} />
         </>
       ) : null}
       {variant === 'impact' ? (
         <>
-          <ShareCard
-            lang={lang}
-            spaces={spaces}
-            initialSlug={selected.slug}
-            kind="story"
-          />
+          <ShareCard lang={lang} kind="story" />
           <ImpactSharedCard count={impactCount} />
         </>
       ) : null}

@@ -33,26 +33,41 @@ export function SignalDetailMedia({
   const image = leadImage?.trim() ?? '';
   const video = resolveSignalVideo(videoUrl);
   const files = attachments ?? [];
-  const previewPdf = files.find((file) => isPdfAttachment(file.url, file.name));
-  const previewImage =
-    !image && files.find((file) => isImageAttachment(file.url, file.name));
-  const descriptionText = description?.trim() ?? '';
-  const hasMedia = Boolean(
-    image || video || previewPdf || previewImage || files.length,
+  const pictures = files.filter((file) =>
+    isImageAttachment(file.url, file.name),
   );
+  const documents = files.filter(
+    (file) => !isImageAttachment(file.url, file.name),
+  );
+  const gallery = [
+    ...(image && !pictures.some((file) => file.url === image)
+      ? [{ name: '', url: image }]
+      : []),
+    ...pictures,
+  ];
+  const previewPdf = documents.find((file) =>
+    isPdfAttachment(file.url, file.name),
+  );
+  const descriptionText = description?.trim() ?? '';
+  const hasMedia = Boolean(gallery.length || video || files.length);
   const hasBody = hasMedia || (showDescription && descriptionText.length > 0);
   if (!hasBody) return null;
 
   return (
     <div className="flex flex-col gap-3">
-      {image ? (
-        <img src={image} alt="" className="max-h-56 w-full object-cover" />
-      ) : previewImage ? (
-        <img
-          src={previewImage.url}
-          alt={previewImage.name}
-          className="max-h-56 w-full object-cover"
-        />
+      {gallery.length > 0 ? (
+        <div
+          className={gallery.length === 1 ? 'grid' : 'grid grid-cols-2 gap-2'}
+        >
+          {gallery.map((item) => (
+            <img
+              key={item.url}
+              src={item.url}
+              alt={item.name}
+              className="max-h-56 w-full object-cover"
+            />
+          ))}
+        </div>
       ) : null}
       {video?.kind === 'file' ? (
         <video src={video.src} controls className="max-h-72 w-full bg-black" />
@@ -79,8 +94,11 @@ export function SignalDetailMedia({
           <MarkdownSuspense>{descriptionText}</MarkdownSuspense>
         </div>
       ) : null}
-      {files.length > 0 ? (
-        <AttachmentList attachments={files} label={t('signalAttachments')} />
+      {documents.length > 0 ? (
+        <AttachmentList
+          attachments={documents}
+          label={t('signalAttachments')}
+        />
       ) : null}
     </div>
   );

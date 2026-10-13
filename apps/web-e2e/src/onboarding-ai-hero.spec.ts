@@ -16,7 +16,7 @@ test.describe('Onboarding AI Hero', () => {
       page.getByRole('heading', { name: 'Explore the Network' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Create your Space' }),
+      page.getByRole('heading', { name: 'Share a project' }),
     ).toBeVisible();
   });
 });

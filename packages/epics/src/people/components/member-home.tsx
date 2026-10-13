@@ -58,7 +58,7 @@ import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonRoleBadge } from './person-badges';
 import { MemberHomeInviteBanners } from './member-home-invite-banner';
-import { MemberHomeQuickCreate } from './member-home-quick-create';
+import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
 import { MemberHomeClosest } from './member-home-closest';
 import {
   MemberHomePeople,
@@ -344,10 +344,16 @@ export function MemberHome({
           aria-label={t('panelSpaces')}
           className="member-home-pane narrow-scrollbar order-2 col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 border-t border-border px-4 py-4 @max-[47.99rem]/home:flex @min-[68rem]/home:order-none @min-[68rem]/home:flex @min-[68rem]/home:overflow-y-auto @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
         >
-          <section className="border border-border bg-background p-4">
-            <div className="grid gap-4">
+          <section className="border border-border bg-background">
+            <div
+              className={
+                home == null || orientation
+                  ? 'grid grid-cols-[auto_minmax(0,1fr)] items-center'
+                  : 'grid'
+              }
+            >
               {home == null || orientation ? (
-                <div className="flex items-center">
+                <div className="flex items-center justify-center px-3 py-3">
                   {home == null || orientation == null ? (
                     <Skeleton loading height="22px" width="6.5rem" />
                   ) : (
@@ -360,7 +366,7 @@ export function MemberHome({
                   )}
                 </div>
               ) : null}
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 px-3 py-3">
                 <Stat
                   label={t('counts.spaces')}
                   value={home?.counts.spaces ?? 0}
@@ -490,7 +496,7 @@ export function MemberHome({
           </div>
           {home ? (
             <div>
-              <MemberHomeQuickCreate lang={lang} spaces={home.spaces} />
+              <NetworkQuickCreate lang={lang} />
             </div>
           ) : null}
         </aside>
@@ -979,13 +985,13 @@ function Stat({
         {label}
       </dt>
       <dd
-        className="mt-1.5 text-3 leading-none tabular-nums"
+        className="mt-1 text-2 leading-none tabular-nums"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         <Skeleton
           loading={isLoading}
-          width="2.75rem"
-          height="30px"
+          width="2.25rem"
+          height="18px"
           className="rounded-none bg-foreground/10"
         >
           {value.toLocaleString()}
