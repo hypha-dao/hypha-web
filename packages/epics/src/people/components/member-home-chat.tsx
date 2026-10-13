@@ -353,6 +353,10 @@ export function MemberHomeChat({
       const trimmed = text.trim();
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
+      if (!hidden) {
+        setInput('');
+        if (includeDrafts) setDrafts([]);
+      }
       await stop();
       if (!hidden && files.length === 0) {
         const previousAssistant = [...messagesRef.current]
@@ -392,7 +396,6 @@ export function MemberHomeChat({
           ];
           setMessages(next);
           writeHomeThread(next);
-          setInput('');
           return;
         }
       }
@@ -442,8 +445,6 @@ export function MemberHomeChat({
           },
         },
       );
-      setInput('');
-      setDrafts([]);
     },
     [
       clearError,
