@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -39,6 +39,7 @@ import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-ses
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import {
+  bindHomePerson,
   consumeHomeReturn,
   homeReturnText,
   readHomeActed,
@@ -47,6 +48,7 @@ import {
   writeHomeChoices,
   writeHomeThread,
 } from './member-home-resume';
+import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
@@ -119,8 +121,24 @@ type MemberHomeChatProps = {
 };
 
 type HomeMessage = UIMessage & {
-  metadata?: { homeArrival?: boolean };
+  metadata?: {
+    homeArrival?: boolean;
+    homeBoard?: { href: string; title: string };
+  };
 };
+
+function homeBoardFromMessage(message: HomeMessage) {
+  const board = message.metadata?.homeBoard;
+  if (
+    !board ||
+    typeof board.href !== 'string' ||
+    typeof board.title !== 'string' ||
+    !board.href.startsWith('/')
+  ) {
+    return null;
+  }
+  return { href: board.href, title: board.title };
+}
 
 /**
  * A new home turn must append. If the stream reuses an earlier assistant id,
@@ -257,8 +275,8 @@ export function MemberHomeChat({
   onFocusItem,
   onQueueMemory,
 }: MemberHomeChatProps) {
+  bindHomePerson(intelligence.person.slug);
   const t = useTranslations('MemberHome');
-  const router = useRouter();
   const messagesRef = useRef<HomeMessage[]>([]);
   const {
     getAccessToken,
@@ -361,6 +379,9 @@ export function MemberHomeChat({
             {
               id: `home-assistant-${crypto.randomUUID()}`,
               role: 'assistant',
+              metadata: {
+                homeBoard: { href: board.href, title: board.title },
+              },
               parts: [
                 {
                   type: 'text',
@@ -372,7 +393,6 @@ export function MemberHomeChat({
           setMessages(next);
           writeHomeThread(next);
           setInput('');
-          router.push(board.href);
           return;
         }
       }
@@ -432,7 +452,6 @@ export function MemberHomeChat({
       homeMessages.length,
       intelligence.spaces,
       lang,
-      router,
       sendMessage,
       setMessages,
       stop,
@@ -440,30 +459,6 @@ export function MemberHomeChat({
       widgetKindFor,
     ],
   );
-
-  const openedBoard = useRef<string | null>(null);
-  useEffect(() => {
-    if (isStreaming) return;
-    const latest = [...homeMessages]
-      .reverse()
-      .find((message) => message.role === 'assistant' && messageText(message));
-    if (!latest) return;
-    const board = memberHomeSignalCatalogue(
-      messageText(latest),
-      intelligence.spaces,
-      lang,
-    );
-    if (!board || openedBoard.current === latest.id) return;
-    openedBoard.current = latest.id;
-    try {
-      const key = `hypha-member-home-board:${latest.id}`;
-      if (window.sessionStorage.getItem(key)) return;
-      window.sessionStorage.setItem(key, '1');
-    } catch {
-      // Still open the board for this visit.
-    }
-    router.push(board.href);
-  }, [homeMessages, intelligence.spaces, isStreaming, lang, router]);
 
   useEffect(() => {
     const onAsk = (event: Event) => {
@@ -575,6 +570,7 @@ export function MemberHomeChat({
       return;
     }
     opened.current = true;
+    bindHomePerson(intelligence.person.slug);
     const stored = readHomeThread();
     const returned = consumeHomeReturn();
     if (stored.length > 0) setMessages(stored);
@@ -584,7 +580,15 @@ export function MemberHomeChat({
     }
     if (stored.length > 0) return;
     void send(t('homeArrival'), true);
-  }, [isAuthenticated, isAuthLoading, send, setMessages, soundReady, t]);
+  }, [
+    intelligence.person.slug,
+    isAuthenticated,
+    isAuthLoading,
+    send,
+    setMessages,
+    soundReady,
+    t,
+  ]);
 
   useEffect(() => {
     if (!opened.current) return;
@@ -724,6 +728,10 @@ export function MemberHomeChat({
         aria-label={t('conversation')}
       >
         <div className="grid w-full gap-4">
+          <MemberHomeActivationCard
+            lang={lang}
+            spaces={intelligence.expiringSpaces ?? []}
+          />
           {homeMessages.map((message, index) => {
             const attached = widgets.filter(
               (widget) => widget.after === index + 1,
@@ -734,7 +742,8 @@ export function MemberHomeChat({
             const rawText = messageText(message).replace(/\*\*/g, '');
             const board =
               message.role === 'assistant'
-                ? memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
+                ? homeBoardFromMessage(message) ??
+                  memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
                 : null;
             const spokenItem =
               message.role === 'assistant'
@@ -742,10 +751,7 @@ export function MemberHomeChat({
                 : null;
             const spoken = (
               board
-                ? t('boardInstead', { space: board.title }).replace(
-                    board.title,
-                    `[${board.title}](${board.href})`,
-                  )
+                ? t('boardInstead', { space: board.title })
                 : message.role === 'assistant'
                 ? straightforwardHomeText(rawText)
                 : rawText
@@ -807,6 +813,14 @@ export function MemberHomeChat({
                         >
                           {homeMessageNodes(text)}
                         </p>
+                      ) : null}
+                      {!mine && board ? (
+                        <Link
+                          href={board.href}
+                          className="inline-flex h-10 w-fit items-center border border-foreground bg-foreground px-3 text-1 tracking-[0.12em] text-background uppercase"
+                        >
+                          {t('openSignalsBoard')}
+                        </Link>
                       ) : null}
                       {!mine && pinnedItem ? (
                         <MemberHomeThreadCard

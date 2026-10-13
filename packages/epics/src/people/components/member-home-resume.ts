@@ -5,6 +5,49 @@ const RETURN_KEY = 'hypha-member-home-return';
 const ACTED_KEY = 'hypha-member-home-acted';
 const CHOICES_KEY = 'hypha-member-home-choices';
 
+/** The signed-in member. Storage is per person so a shared browser does not mix threads. */
+let boundPerson = '';
+
+export function bindHomePerson(slug: string) {
+  boundPerson = slug.trim();
+}
+
+function scoped(base: string) {
+  return boundPerson ? `${base}:${boundPerson}` : '';
+}
+
+function readStored(base: string): string | null {
+  const key = scoped(base);
+  if (!key || typeof window === 'undefined') return null;
+  try {
+    const current = window.localStorage.getItem(key);
+    if (current) return current;
+    const fromSession = window.sessionStorage.getItem(base);
+    const fromLegacy = window.localStorage.getItem(base);
+    const raw = fromSession || fromLegacy;
+    if (!raw) return null;
+    window.localStorage.setItem(key, raw);
+    window.sessionStorage.removeItem(base);
+    if (fromLegacy) window.localStorage.removeItem(base);
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(base: string, value: string) {
+  const key = scoped(base);
+  if (!key || typeof window === 'undefined') return;
+  window.localStorage.setItem(key, value);
+}
+
+function removeStored(base: string) {
+  const key = scoped(base);
+  if (!key || typeof window === 'undefined') return;
+  window.localStorage.removeItem(key);
+  window.sessionStorage.removeItem(base);
+}
+
 /** Same-tab signal. Storage events do not fire in the tab that wrote them. */
 export const HOME_QUEUE_EVENT = 'hypha-member-home-queue';
 /** Ask the home to load again after the member acts. */
@@ -29,7 +72,7 @@ export function homeReturnText(title: string) {
 function readList(key: string) {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = window.sessionStorage.getItem(key);
+    const raw = readStored(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     return Array.isArray(parsed)
@@ -50,7 +93,7 @@ export function markHomeActed(key: string) {
   try {
     const acted = readList(ACTED_KEY);
     if (!acted.includes(itemKey)) acted.push(itemKey);
-    window.sessionStorage.setItem(ACTED_KEY, JSON.stringify(acted.slice(-80)));
+    writeStored(ACTED_KEY, JSON.stringify(acted.slice(-80)));
     notifyHomeQueue();
     requestHomeRefresh();
   } catch {
@@ -66,11 +109,8 @@ export function rememberHomeAction(key: string, title: string) {
   try {
     const acted = readList(ACTED_KEY);
     if (!acted.includes(itemKey)) acted.push(itemKey);
-    window.sessionStorage.setItem(ACTED_KEY, JSON.stringify(acted.slice(-80)));
-    window.sessionStorage.setItem(
-      RETURN_KEY,
-      JSON.stringify({ title: title.trim() }),
-    );
+    writeStored(ACTED_KEY, JSON.stringify(acted.slice(-80)));
+    writeStored(RETURN_KEY, JSON.stringify({ title: title.trim() }));
     notifyHomeQueue();
     requestHomeRefresh();
   } catch {
@@ -91,7 +131,7 @@ export function readHomeChoices(): {
     return { passed: [], deferred: [], settled: [] };
   }
   try {
-    const raw = window.localStorage.getItem(CHOICES_KEY);
+    const raw = readStored(CHOICES_KEY);
     if (!raw) return { passed: [], deferred: [], settled: [] };
     const parsed = JSON.parse(raw) as {
       passed?: unknown;
@@ -121,7 +161,7 @@ export function writeHomeChoices(choices: {
 }) {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(CHOICES_KEY, JSON.stringify(choices));
+    writeStored(CHOICES_KEY, JSON.stringify(choices));
     notifyHomeQueue();
   } catch {
     // The conversation still carries the choice when storage is blocked.
@@ -132,8 +172,8 @@ export function writeHomeChoices(choices: {
 export function consumeHomeReturn() {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = window.sessionStorage.getItem(RETURN_KEY);
-    window.sessionStorage.removeItem(RETURN_KEY);
+    const raw = readStored(RETURN_KEY);
+    removeStored(RETURN_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { title?: unknown };
     return typeof parsed.title === 'string' ? parsed.title : '';
@@ -145,7 +185,7 @@ export function consumeHomeReturn() {
 export function readHomeThread(): UIMessage[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = window.sessionStorage.getItem(THREAD_KEY);
+    const raw = readStored(THREAD_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -201,7 +241,7 @@ export function writeHomeThread(messages: readonly UIMessage[]) {
           : [],
       ),
     }));
-    window.sessionStorage.setItem(THREAD_KEY, JSON.stringify(stored));
+    writeStored(THREAD_KEY, JSON.stringify(stored));
   } catch {
     // The live thread still shows for this visit.
   }

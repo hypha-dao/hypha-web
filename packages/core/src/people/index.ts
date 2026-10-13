@@ -4,6 +4,7 @@ export * from './network-horizon';
 export * from './closest-contributors';
 export * from './member-intelligence-guidance';
 export * from './member-home-thread';
+export * from './member-home-activation';
 export * from './validation';
 export * from './client/hooks';
 export * from './client';

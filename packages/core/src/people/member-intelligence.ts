@@ -1,3 +1,4 @@
+import type { MemberExpiringSpace } from './member-home-activation';
 import type { MemberOrientation } from './member-intelligence-guidance';
 import type { NetworkHorizon, NetworkHorizonSignal } from './network-horizon';
 
@@ -78,6 +79,11 @@ export type MemberIntelligence = {
     /** Chain id used to publish a proposal without leaving home. */
     web3SpaceId?: number | null;
   }>;
+  /**
+   * Spaces whose payment ends within two weeks. The home chat offers
+   * activation with Hypha. Absent on older payloads.
+   */
+  expiringSpaces?: MemberExpiringSpace[];
   proposals: Array<{
     id: number;
     slug: string | null;

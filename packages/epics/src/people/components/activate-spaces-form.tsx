@@ -33,6 +33,8 @@ import { useTranslations } from 'next-intl';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
+  /** On-chain space id, when the member arrived from a space that is about to expire. */
+  initialWeb3SpaceId?: number;
 }
 
 const schema = activateSpacesSchema.extend({
@@ -42,7 +44,10 @@ type FormValues = z.infer<typeof schema>;
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 
-export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
+export const ActivateSpacesForm = ({
+  spaces,
+  initialWeb3SpaceId,
+}: ActivateSpacesFormProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { person, isLoading: isPersonLoading } = useMe();
@@ -132,6 +137,11 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const closePanelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const preselected =
+    initialWeb3SpaceId != null &&
+    spaces.some((space) => space.web3SpaceId === initialWeb3SpaceId)
+      ? initialWeb3SpaceId
+      : 0;
   const form = useForm<FormValues>({
     resolver,
     mode: 'onChange',
@@ -139,8 +149,8 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       paymentToken: 'HYPHA',
       spaces: [
         {
-          spaceId: 0,
-          months: 0,
+          spaceId: preselected,
+          months: preselected > 0 ? 1 : 0,
         },
       ],
       recipient: RECIPIENT_SPACE_ADDRESS,
