@@ -1359,6 +1359,9 @@ export async function createChatStreamResult(
         resumed: /carried out the recommended action/i.test(
           extractLastUserText(messages) ?? '',
         ),
+        notADecision: /not a proposal|nothing to decide/i.test(
+          extractLastUserText(messages) ?? '',
+        ),
       })
     : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);

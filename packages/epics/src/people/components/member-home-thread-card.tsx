@@ -20,7 +20,11 @@ import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { celebrate } from './member-home-celebrate';
-import { rememberHomeAction } from './member-home-resume';
+import {
+  homeReturnText,
+  markHomeActed,
+  rememberHomeAction,
+} from './member-home-resume';
 import { MemberHomeProposalBody } from './member-home-proposal-body';
 import { PersonAvatar } from './person-avatar';
 import './member-home-banner.css';
@@ -52,7 +56,7 @@ type MemberHomeThreadCardProps = {
   lang: Locale;
   item: MemberHomeThreadItem;
   proposal: MemberIntelligence['proposals'][number] | null;
-  onAsk: (text: string) => void;
+  onAsk: (text: string, hidden?: boolean) => void;
   onReach: (person: ReachPerson, mode: 'call' | 'chat') => Promise<boolean>;
   /** Side panel uses the spaces-tile scale. The conversation card stays larger. */
   compact?: boolean;
@@ -143,8 +147,11 @@ export function MemberHomeThreadCard({
           spaceSlug: item.spaceSlug,
         }
       : null;
+  const ownDeadline = isSignal && item.authoredByMember;
   const ctas = (
-    isSignal
+    ownDeadline
+      ? []
+      : isSignal
       ? memberHomeSignalCtas({
           category: item.category,
           hasCreator: creator != null,
@@ -164,12 +171,24 @@ export function MemberHomeThreadCard({
     rememberHomeAction(memberHomeThreadItemKey(item), item.title);
   }
 
+  /** A signal has nothing to decide. The click moves the thread to the next item. */
+  function moveOn(leaves: boolean) {
+    if (!assistant || !isSignal) return;
+    const key = memberHomeThreadItemKey(item);
+    if (leaves) {
+      rememberHomeAction(key, item.title);
+      return;
+    }
+    markHomeActed(key);
+    onAsk(homeReturnText(item.title), true);
+  }
+
   async function reach(mode: 'call' | 'chat') {
     if (!creator || busy) return;
-    noteAction();
+    if (!(assistant && isSignal)) noteAction();
     setBusy(true);
     const opened = await onReach(creator, mode);
-    if (!opened && mode === 'call' && assistant) {
+    if (!opened && mode === 'call' && assistant && !isSignal) {
       onAsk(t('callFallback', { name: creator.name ?? '', title: item.title }));
     }
     setBusy(false);
@@ -200,31 +219,29 @@ export function MemberHomeThreadCard({
   function onCta(cta: MemberHomeSignalCta) {
     switch (cta) {
       case 'help':
-        ask(t('helpChosen', { title: item.title }), true);
-        return;
       case 'share':
-        ask(t('shareChosen', { title: item.title }), true);
-        return;
       case 'take':
-        ask(t('takeChosen', { title: item.title }), true);
-        return;
       case 'impact':
-        ask(t('impactChosen', { title: item.title }));
-        return;
       case 'context':
-        ask(t('contextChosen', { title: item.title }));
+        if (isSignal) {
+          moveOn(false);
+          return;
+        }
+        ask(t('helpChosen', { title: item.title }), cta === 'help');
         return;
       case 'later':
         ask(t('laterChosen', { title: item.title }));
         return;
       case 'call':
+        if (isSignal) moveOn(false);
         void reach('call');
         return;
       case 'discuss': {
         const slug = item.slug.trim();
         if (!slug) return;
-        noteAction();
         const roomId = item.roomId?.trim() || null;
+        if (isSignal) moveOn(!roomId);
+        else noteAction();
         if (roomId) {
           openCoherenceChat(
             roomId,
@@ -290,8 +307,13 @@ export function MemberHomeThreadCard({
                 : creator.name}
             </p>
           </div>
-        ) : item.authoredByMember ? (
+        ) : item.authoredByMember && !isSignal ? (
           <p className="mt-3 text-1 text-neutral-11">{t('proposedByYou')}</p>
+        ) : null}
+        {ownDeadline ? (
+          <p className="mt-3 text-2 leading-relaxed text-foreground">
+            {t('ownDeadline')}
+          </p>
         ) : null}
         {summary ? (
           <p
@@ -320,6 +342,18 @@ export function MemberHomeThreadCard({
               : 'mt-3 flex flex-wrap items-center gap-2'
           }
         >
+          {ownDeadline ? (
+            <Button asChild className={actionClass}>
+              <Link
+                href={signalHref}
+                onClick={() => {
+                  moveOn(true);
+                }}
+              >
+                {t('updateThis')}
+              </Link>
+            </Button>
+          ) : null}
           {primaryCtas.map((cta, index) => (
             <Button
               key={cta}
@@ -396,7 +430,13 @@ export function MemberHomeThreadCard({
               colorVariant="neutral"
               className={actionClass}
             >
-              <Link href={visitHref} onClick={noteAction}>
+              <Link
+                href={visitHref}
+                onClick={() => {
+                  if (isSignal) moveOn(true);
+                  else noteAction();
+                }}
+              >
                 {t('visitSpace')}
               </Link>
             </Button>

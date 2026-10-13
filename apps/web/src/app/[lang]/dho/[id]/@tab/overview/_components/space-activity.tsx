@@ -80,8 +80,13 @@ export function SpaceActivityList({
           <Link
             key={item.id}
             href={hrefFor(item.slug)}
-            className="flex flex-col gap-1 border-b border-border/50 px-4 py-3.5 last:border-b-0 hover:bg-foreground/5"
+            className="flex flex-col gap-1 border-b border-border/50 px-5 py-3.5 last:border-b-0 hover:bg-foreground/5"
           >
+            {status ? (
+              <span className="text-1 text-neutral-11">
+                {statusLabel(status)}
+              </span>
+            ) : null}
             <span className="truncate text-2 text-foreground">
               {item.title?.trim() || untitled}
             </span>

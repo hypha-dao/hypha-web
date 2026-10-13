@@ -1,9 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
-import { Radio, Scale } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import {
@@ -15,8 +13,6 @@ import {
 import type { Locale } from '@hypha-platform/i18n';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
-import { MemberHomeThreadCard } from '../../people/components/member-home-thread-card';
-import { resolveSpaceDisplayLogoUrl } from '../utils/resolve-space-display-logo-url';
 
 function stripTags(value: string) {
   let out = '';
@@ -48,30 +44,10 @@ function plainSummary(value: string | null | undefined) {
     .trim();
 }
 
-function AttentionMark({
-  kind,
-  iconUrl,
-}: {
-  kind: MemberHomeThreadItem['kind'];
-  iconUrl?: string | null;
-}) {
-  const [logoFailed, setLogoFailed] = useState(false);
-  const Icon = kind === 'proposal' ? Scale : Radio;
-  const showLogo = Boolean(iconUrl) && !logoFailed;
-  return (
-    <span className="craft-icon-box text-foreground" aria-hidden>
-      {showLogo ? (
-        <img
-          src={iconUrl ?? undefined}
-          alt=""
-          className="size-full object-cover"
-          onError={() => setLogoFailed(true)}
-        />
-      ) : (
-        <Icon />
-      )}
-    </span>
-  );
+function itemHref(lang: Locale, item: MemberHomeThreadItem) {
+  return item.kind === 'signal'
+    ? getSignalPath(lang, item.spaceSlug, item.slug)
+    : getProposalPath(lang, item.spaceSlug, item.slug);
 }
 
 export function SpaceAttention({
@@ -82,9 +58,8 @@ export function SpaceAttention({
   spaceSlug: string;
 }) {
   const t = useTranslations('MemberHome');
-  const { resolvedTheme } = useTheme();
+  const tCoherence = useTranslations('CoherenceTab');
   const { jwt } = useJwt();
-  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const { data, isLoading } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
     async ([url, token]) => {
@@ -112,13 +87,20 @@ export function SpaceAttention({
 
   const lead = queue[0] ?? null;
   const rest = queue.slice(1, 5);
-  const proposal =
-    lead?.kind === 'proposal'
-      ? data?.proposals.find((item) => item.slug === lead.slug) ?? null
-      : null;
+
+  const eyebrow = (item: MemberHomeThreadItem) => {
+    if (item.category) {
+      const typeKey = `types.${item.category}` as 'types.Need';
+      if (tCoherence.has(typeKey)) return tCoherence(typeKey);
+      return item.category;
+    }
+    return item.kind === 'proposal'
+      ? tCoherence('documentStates.proposal')
+      : tCoherence('signals');
+  };
 
   return (
-    <section className="border border-border bg-background p-4">
+    <section className="border border-border bg-background-2 p-5">
       <h2
         className="text-3 text-foreground"
         style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -127,58 +109,59 @@ export function SpaceAttention({
       </h2>
       {isLoading ? (
         <div className="mt-4 grid gap-3">
-          <div className="h-4 w-2/3 bg-muted" />
-          <div className="h-4 w-1/2 bg-muted" />
-          <div className="h-4 w-3/5 bg-muted" />
+          <div className="h-3 w-16 bg-neutral-3" />
+          <div className="h-5 w-2/3 bg-neutral-3" />
+          <div className="h-4 w-full bg-neutral-3" />
         </div>
       ) : lead == null ? (
-        <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
+        <p className="mt-4 text-2 text-neutral-11">{t('quiet')}</p>
       ) : (
-        <div className="mt-4">
-          <MemberHomeThreadCard
-            lang={lang}
-            item={lead}
-            proposal={proposal}
-            compact
-            assistant={false}
-            onAsk={() => undefined}
-            onReach={async () => false}
-          />
-        </div>
+        <Link href={itemHref(lang, lead)} className="group mt-4 block">
+          <span className="text-1 text-neutral-11">{eyebrow(lead)}</span>
+          <span
+            className="mt-1 block text-5 text-foreground group-hover:underline"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {lead.title}
+          </span>
+          {plainSummary(lead.summary) ? (
+            <span className="mt-2 block line-clamp-3 text-2 text-neutral-11">
+              {plainSummary(lead.summary)}
+            </span>
+          ) : null}
+        </Link>
       )}
       {rest.length > 0 ? (
-        <div className="mt-6 border-t border-border pt-4">
+        <div className="mt-5 border-t border-border pt-4">
           <h3
-            className="text-3"
+            className="text-2 text-foreground"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
             {t('waiting')}
           </h3>
-          <ul className="mt-3 grid gap-3">
+          <ul className="mt-3">
             {rest.map((item) => {
-              const iconUrl = resolveSpaceDisplayLogoUrl(
-                item.spaceLogo ?? null,
-                logoVariant,
-              );
-              const href =
-                item.kind === 'signal'
-                  ? getSignalPath(lang, item.spaceSlug, item.slug)
-                  : getProposalPath(lang, item.spaceSlug, item.slug);
               const summary = plainSummary(item.summary);
               return (
-                <li key={`${item.kind}:${item.slug}`}>
-                  <Link href={href} className="group flex items-center gap-3">
-                    <AttentionMark kind={item.kind} iconUrl={iconUrl} />
-                    <span className="min-w-0">
-                      <span className="block text-1 group-hover:underline">
-                        {item.title}
-                      </span>
-                      {summary ? (
-                        <span className="mt-0.5 block line-clamp-2 text-1 text-neutral-11">
-                          {summary}
-                        </span>
-                      ) : null}
+                <li
+                  key={`${item.kind}:${item.slug}`}
+                  className="border-b border-border/50 py-3 last:border-b-0"
+                >
+                  <Link
+                    href={itemHref(lang, item)}
+                    className="group block min-w-0"
+                  >
+                    <span className="text-1 text-neutral-11">
+                      {eyebrow(item)}
                     </span>
+                    <span className="mt-0.5 block truncate text-2 text-foreground group-hover:underline">
+                      {item.title}
+                    </span>
+                    {summary ? (
+                      <span className="mt-1 block line-clamp-2 text-1 text-neutral-11">
+                        {summary}
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               );

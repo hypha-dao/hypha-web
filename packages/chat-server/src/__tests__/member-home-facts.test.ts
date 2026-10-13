@@ -96,6 +96,9 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('if you need any assistance');
     expect(facts).toContain('Would you like to take part in one of them?');
     expect(facts).toContain('Asking for context or a discussion is not a no');
+    expect(facts).toContain('On a signal, action is not decision');
+    expect(facts).toContain('Do not tell them to call themselves');
+    expect(facts).toContain('Any button on a signal means they acted');
     expect(facts).toContain(
       'Use only the person, the space, the task, and the token written on that item.',
     );
@@ -230,5 +233,14 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Build the bridge');
     expect(facts).not.toContain('slug=path');
     expect(facts).toContain('proposal:path');
+  });
+
+  it('moves on when they say the card is not a proposal', () => {
+    const facts = formatMemberHomeFacts(home, { notADecision: true });
+    expect(facts).toContain('nothing to decide');
+    expect(facts).toContain(
+      'Do not say "You can now decide on the proposal card."',
+    );
+    expect(facts).toContain('next waiting item');
   });
 });

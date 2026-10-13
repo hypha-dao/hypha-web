@@ -37,7 +37,22 @@ export type MemberHomeThreadItem = {
   signalId?: number | null;
   /** Existing Matrix room, so Discuss this does not create a second one. */
   roomId?: string | null;
+  /** When the signal is due. Set only for a signal the member raised. */
+  dueAt?: string | null;
 };
+
+/** A deadline inside this window, or already past, is close enough to surface. */
+const DEADLINE_NEAR_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function memberHomeDeadlineNear(
+  dueAt: string | null | undefined,
+  now = Date.now(),
+): boolean {
+  if (!dueAt) return false;
+  const due = Date.parse(dueAt);
+  if (!Number.isFinite(due)) return false;
+  return due - now <= DEADLINE_NEAR_MS;
+}
 
 export type MemberHomeSignalCta =
   | 'help'
@@ -265,6 +280,11 @@ export function listMemberHomeThreadItems(
       continue;
     }
     const signal = signalsBySlug.get(note.targetSlug);
+    const creatorId = signal?.creatorId ?? note.creatorId ?? null;
+    const dueAt = signal?.dueAt ?? null;
+    if (raisedByMember(home, creatorId) && !memberHomeDeadlineNear(dueAt)) {
+      continue;
+    }
     push({
       kind: 'signal',
       slug: note.targetSlug,
@@ -273,10 +293,11 @@ export function listMemberHomeThreadItems(
       spaceTitle: signal?.spaceTitle ?? note.spaceTitle,
       action: 'validate',
       documentKind: 'signal',
-      authoredByMember: false,
+      authoredByMember: raisedByMember(home, creatorId),
       category: memberHomeSignalCategory(signal?.type, note.category),
       summary: signal?.description ?? note.summary ?? null,
-      creatorId: signal?.creatorId ?? note.creatorId ?? null,
+      dueAt,
+      creatorId,
       creatorName: signal?.creatorName ?? note.creatorName ?? null,
       creatorAvatarUrl:
         signal?.creatorAvatarUrl ?? note.creatorAvatarUrl ?? null,
@@ -291,6 +312,12 @@ export function listMemberHomeThreadItems(
 
   for (const signal of home.signals) {
     if (!signal.slug) continue;
+    if (
+      raisedByMember(home, signal.creatorId) &&
+      !memberHomeDeadlineNear(signal.dueAt)
+    ) {
+      continue;
+    }
     push({
       kind: 'signal',
       slug: signal.slug,
@@ -299,9 +326,10 @@ export function listMemberHomeThreadItems(
       spaceTitle: signal.spaceTitle,
       action: 'validate',
       documentKind: 'signal',
-      authoredByMember: false,
+      authoredByMember: raisedByMember(home, signal.creatorId),
       category: memberHomeSignalCategory(signal.type),
       summary: signal.description,
+      dueAt: signal.dueAt ?? null,
       creatorId: signal.creatorId,
       creatorName: signal.creatorName,
       creatorAvatarUrl: signal.creatorAvatarUrl,
@@ -312,6 +340,7 @@ export function listMemberHomeThreadItems(
 
   for (const signal of home.networkSignals ?? []) {
     if (!signal.slug) continue;
+    if (raisedByMember(home, signal.creatorId)) continue;
     push({
       kind: 'signal',
       slug: signal.slug,
@@ -331,6 +360,13 @@ export function listMemberHomeThreadItems(
   }
 
   return balanceMemberHomeThread(items, home);
+}
+
+function raisedByMember(
+  home: MemberIntelligence,
+  creatorId: number | null | undefined,
+) {
+  return creatorId != null && creatorId === home.person.id;
 }
 
 function textFromParts(parts: readonly unknown[] | undefined): string {

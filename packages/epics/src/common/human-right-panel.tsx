@@ -1086,6 +1086,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     () => spaceMembersResult ?? [],
     [spaceMembersResult],
   );
+  const welcomePartner = useMemo(() => {
+    const names = spaceMembers
+      .filter((person) => person.id !== me?.id)
+      .map((person) => personRosterLabel(person, ''))
+      .filter((name) => name.length > 0)
+      .sort((left, right) => left.localeCompare(right));
+    const named = names.find((name) => name.includes(' '));
+    return named ?? names[0] ?? null;
+  }, [me?.id, spaceMembers]);
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
     useSpaceDiscoverability({
       spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
@@ -5218,6 +5227,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         ? t('networkWelcome')
                         : mode === 'space' && spaceRoom === 'ecosystem'
                         ? t('ecosystemWelcome')
+                        : welcomePartner
+                        ? t('welcomeWith', { name: welcomePartner })
                         : undefined
                     }
                     welcomeSenderName={
