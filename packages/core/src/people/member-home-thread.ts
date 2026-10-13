@@ -561,11 +561,39 @@ function toolInputs(parts: readonly unknown[] | undefined): unknown[] {
         record.toolName === SHOW_MEMBER_HOME_ITEM_TOOL);
     if (!named) continue;
     if (record.state === 'input-streaming') continue;
-    const payload = record.input ?? record.args ?? record.output;
-    if (payload == null) continue;
-    inputs.push(payload);
+    for (const payload of [record.output, record.input, record.args]) {
+      if (payload != null) inputs.push(payload);
+    }
   }
   return inputs;
+}
+
+/**
+ * The waiting item this tool call means.
+ * The model often passes the title instead of the slug. One match is enough.
+ */
+export function resolveMemberHomeThreadItem(
+  items: readonly MemberHomeThreadItem[],
+  input: { kind?: unknown; slug?: unknown },
+): MemberHomeThreadItem | null {
+  if (input.kind !== 'proposal' && input.kind !== 'signal') return null;
+  if (typeof input.slug !== 'string') return null;
+  const slug = input.slug.trim();
+  if (!slug) return null;
+  const sameKind = items.filter((item) => item.kind === input.kind);
+  const exact = sameKind.find((item) => item.slug === slug);
+  if (exact) return exact;
+  const folded = foldHomeText(slug);
+  const byFoldedSlug = sameKind.find(
+    (item) => foldHomeText(item.slug) === folded,
+  );
+  if (byFoldedSlug) return byFoldedSlug;
+  const byTitle = sameKind.filter(
+    (item) =>
+      foldHomeText(item.title) === folded || titleNamedInText(item.title, slug),
+  );
+  if (byTitle.length === 1) return byTitle[0] ?? null;
+  return null;
 }
 
 function itemFromToolInput(
@@ -574,26 +602,19 @@ function itemFromToolInput(
 ): MemberHomeThreadItem | null {
   if (!input || typeof input !== 'object') return null;
   const record = input as { kind?: unknown; slug?: unknown };
-  if (record.kind !== 'proposal' && record.kind !== 'signal') return null;
-  if (typeof record.slug !== 'string') return null;
-  const slug = record.slug.trim();
-  if (!slug) return null;
-  return (
-    items.find((item) => item.kind === record.kind && item.slug === slug) ??
-    null
-  );
+  return resolveMemberHomeThreadItem(items, record);
 }
 
 function itemsReferencedInText(
   items: readonly MemberHomeThreadItem[],
   text: string,
 ): MemberHomeThreadItem[] {
-  const haystack = text.trim().toLowerCase();
+  const haystack = foldHomeText(text);
   if (!haystack) return [];
   const hits: { index: number; item: MemberHomeThreadItem }[] = [];
   for (const item of items) {
-    const title = item.title.trim().toLowerCase();
-    const space = item.spaceTitle.trim().toLowerCase();
+    const title = foldHomeText(item.title);
+    const space = foldHomeText(item.spaceTitle);
     const indexes = [title, space]
       .filter((value) => value.length >= 3)
       .map((value) => haystack.indexOf(value))
@@ -613,9 +634,39 @@ function itemsReferencedInText(
   return ordered;
 }
 
-function creatorTokens(name: string): string[] {
-  return name
+/** Dashes, accents, and Turkish dotless i fold so a title still matches the reply. */
+function foldHomeText(value: string): string {
+  return value
+    .replace(/ı/g, 'i')
+    .replace(/İ/g, 'I')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function significantTitleTokens(title: string): string[] {
+  return foldHomeText(title)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 || /^\d{4}$/.test(token));
+}
+
+function titleNamedInText(title: string, haystack: string): boolean {
+  const foldedTitle = foldHomeText(title);
+  const foldedHaystack = foldHomeText(haystack);
+  if (foldedTitle.length >= 3 && foldedHaystack.includes(foldedTitle)) {
+    return true;
+  }
+  const tokens = significantTitleTokens(title);
+  if (tokens.length < 2) return false;
+  return tokens.every((token) => foldedHaystack.includes(token));
+}
+
+function creatorTokens(name: string): string[] {
+  return foldHomeText(name)
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length >= 3);
 }
@@ -737,20 +788,17 @@ export function memberHomeSignalCatalogue(
 }
 
 function spaceNamedInText(item: MemberHomeThreadItem, haystack: string) {
-  const space = item.spaceTitle.trim().toLowerCase();
-  return space.length >= 3 && haystack.includes(space);
+  const space = foldHomeText(item.spaceTitle);
+  return space.length >= 3 && foldHomeText(haystack).includes(space);
 }
 
 /** The words name this proposal, not another one that shares its title. */
 function textBelongsTo(item: MemberHomeThreadItem, text: string): boolean {
-  const haystack = text.trim().toLowerCase();
+  const haystack = foldHomeText(text);
   if (!haystack) return false;
   if (creatorNamedInText(item.creatorName, haystack)) return true;
-  const title = item.title.trim().toLowerCase();
   return (
-    title.length >= 3 &&
-    haystack.includes(title) &&
-    spaceNamedInText(item, haystack)
+    titleNamedInText(item.title, haystack) && spaceNamedInText(item, haystack)
   );
 }
 
@@ -758,12 +806,11 @@ function itemMentionedInText(
   items: readonly MemberHomeThreadItem[],
   text: string,
 ): MemberHomeThreadItem | null {
-  const haystack = text.trim().toLowerCase();
+  const haystack = foldHomeText(text);
   if (!haystack) return null;
-  const matches = items.filter((item) => {
-    const title = item.title.trim().toLowerCase();
-    return title.length >= 3 && haystack.includes(title);
-  });
+  const matches = items.filter((item) =>
+    titleNamedInText(item.title, haystack),
+  );
   if (matches.length > 1) {
     const narrowed = matches.filter(
       (item) =>

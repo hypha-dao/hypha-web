@@ -12,6 +12,7 @@ import {
   memberHomeSignalCatalogue,
   memberHomeSignalCtas,
   memberHomeThreadItemForMessage,
+  resolveMemberHomeThreadItem,
   memberHomeItemMemory,
   passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
@@ -534,6 +535,36 @@ describe('memberHomeThreadItemForMessage', () => {
       ],
     });
     expect(item?.slug).toBe('invite-energy');
+  });
+
+  it('places the card when the reply uses a dash and an accent the record does not', () => {
+    const compensation = {
+      ...home.proposals[0]!,
+      id: 21,
+      slug: 'aug-sep-compensation',
+      title: 'August-September 2026 Compensation',
+      creatorName: 'Zekeriya Aydın',
+      spaceTitle: 'Hypha',
+      spaceSlug: 'hypha',
+    };
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [compensation],
+    });
+    const item = memberHomeThreadItemForMessage(items, {
+      content:
+        'Understood! The first proposal to consider is the Proposal — August–September 2026 Compensation by Zekeriya Aydin. You can now decide on this proposal. What do you think?',
+    });
+    expect(item?.slug).toBe('aug-sep-compensation');
+  });
+
+  it('accepts the title when the tool was given that instead of the slug', () => {
+    const items = listMemberHomeThreadItems(home);
+    const item = resolveMemberHomeThreadItem(items, {
+      kind: 'proposal',
+      slug: 'Invite Member',
+    });
+    expect(item?.slug).toBe('invite-member');
   });
 
   it('leaves a greeting with no item empty', () => {
