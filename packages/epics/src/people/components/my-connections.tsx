@@ -58,6 +58,17 @@ function botUserId() {
   return process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
 }
 
+function looksLikeHyphaBot(value: string | null | undefined) {
+  return Boolean(value && /hypha[_-]bot/i.test(value));
+}
+
+function isHyphaBot(userId: string | undefined, name?: string | null) {
+  const configured = botUserId();
+  if (configured && userId === configured) return true;
+  const local = userId?.replace(/^@/, '').split(':')[0] ?? '';
+  return looksLikeHyphaBot(local) || looksLikeHyphaBot(name);
+}
+
 function personName(person: ConnectionPerson, fallback: string) {
   const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
   return full || person.nickname || fallback;
@@ -110,9 +121,11 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
 
   for (const room of client.getRooms()) {
     if (room.getMyMembership() !== 'join') continue;
-    const members = room
-      .getJoinedMembers()
-      .filter((member) => member.userId && member.userId !== botId);
+    const members = room.getJoinedMembers().filter((member) => {
+      if (!member.userId) return false;
+      if (member.userId === botId) return false;
+      return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
+    });
     const others = members.filter((member) => member.userId !== selfId);
     if (others.length === 0) continue;
 
@@ -122,6 +135,13 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
       (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
       room.name ||
       '';
+    if (
+      isHyphaBot(other?.userId, name) ||
+      looksLikeHyphaBot(room.name) ||
+      looksLikeHyphaBot(name)
+    ) {
+      continue;
+    }
     const mxc =
       kind === 'person'
         ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
@@ -278,8 +298,16 @@ export function MyConnections() {
         .map((row) => row.otherUserId)
         .filter((id): id is string => Boolean(id)),
     );
+    const seenPeople = new Set<string>();
     const cards: ReachOutCard[] = people
       .filter((row) => row.lastTs == null || now - row.lastTs > STALE_MS)
+      .filter((row) => !isHyphaBot(row.otherUserId ?? undefined, row.name))
+      .filter((row) => {
+        const id = row.otherUserId ?? row.roomId;
+        if (seenPeople.has(id)) return false;
+        seenPeople.add(id);
+        return true;
+      })
       .map((row) => {
         const person = row.otherUserId
           ? personByMatrixId.get(row.otherUserId)
@@ -304,10 +332,12 @@ export function MyConnections() {
     for (const person of connections) {
       if (cards.length >= REACH_OUT_LIMIT) break;
       const mxid = personIdToMatrixUserId[person.id];
+      const name = personName(person, t('someone'));
+      if (isHyphaBot(mxid, name)) continue;
       if (mxid && (recent.has(mxid) || covered.has(mxid))) continue;
       cards.push({
         key: `person-${person.id}`,
-        name: personName(person, t('someone')),
+        name,
         avatarUrl: person.avatarUrl ?? undefined,
         roomId: null,
         lastTs: null,
@@ -333,7 +363,11 @@ export function MyConnections() {
       })
     : rows;
   const people = visible
-    .filter((row) => row.kind === 'person')
+    .filter(
+      (row) =>
+        row.kind === 'person' &&
+        !isHyphaBot(row.otherUserId ?? undefined, row.name),
+    )
     .map((row) => {
       const person = row.otherUserId
         ? personByMatrixId.get(row.otherUserId)
@@ -345,7 +379,9 @@ export function MyConnections() {
         avatarUrl: person.avatarUrl || row.avatarUrl,
       };
     });
-  const groups = visible.filter((row) => row.kind === 'group');
+  const groups = visible.filter(
+    (row) => row.kind === 'group' && !looksLikeHyphaBot(row.name),
+  );
 
   function openRow(row: ConversationRow) {
     setNotice(null);
