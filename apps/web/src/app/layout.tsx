@@ -105,9 +105,9 @@ export default async function RootLayout({
   let humanChatEnabled = false;
 
   let navHomeLabel = 'Home';
-  let navMyConnectionsLabel = 'My Connections';
-  let navMySpacesLabel = 'My Spaces';
-  let navMyWalletLabel = 'My Wallet';
+  let navMyConnectionsLabel = 'Connections';
+  let navMySpacesLabel = 'Spaces';
+  let navMyWalletLabel = 'Wallet';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
