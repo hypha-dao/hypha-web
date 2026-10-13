@@ -817,4 +817,13 @@ describe('memberHomeBoardDestination', () => {
     );
     expect(destination?.href).toBe('/en/dho/hypha-energy/coherence');
   });
+
+  it('treats a numbered signal list as a catalogue', () => {
+    const destination = memberHomeSignalCatalogue(
+      'Hypha Energy\n1. RoadMap page\n2. Social media\n3. Demo scenario',
+      spaces,
+      'en',
+    );
+    expect(destination?.href).toBe('/en/dho/hypha-energy/coherence');
+  });
 });
