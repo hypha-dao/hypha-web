@@ -599,11 +599,26 @@ export function MemberHomeChat({
               return null;
             }
             const rawText = messageText(message).replace(/\*\*/g, '');
-            const text =
+            const spokenItem =
+              message.role === 'assistant'
+                ? memberHomeThreadItemForMessage(threadItems, message)
+                : null;
+            const text = (
               message.role === 'assistant'
                 ? straightforwardHomeText(rawText)
-                : rawText;
-            const showMessage = !message.metadata?.homeArrival && Boolean(text);
+                : rawText
+            )
+              .replace(
+                spokenItem && spokenItem.action !== 'decision'
+                  ? /You can now decide on the proposal card\.?/gi
+                  : /$^/,
+                '',
+              )
+              .trim();
+            const keepsCard =
+              message.id === cardMessageId && focusedItem != null;
+            const showMessage =
+              (!message.metadata?.homeArrival && Boolean(text)) || keepsCard;
             if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
             const memberName =
@@ -661,8 +676,8 @@ export function MemberHomeChat({
                                 ) ?? null
                               : null
                           }
-                          onAsk={(ask) => {
-                            void send(ask);
+                          onAsk={(ask, hidden) => {
+                            void send(ask, Boolean(hidden));
                           }}
                           onReach={(person, mode) =>
                             mode === 'call'

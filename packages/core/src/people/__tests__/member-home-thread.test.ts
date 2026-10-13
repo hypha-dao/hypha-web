@@ -169,6 +169,66 @@ describe('listMemberHomeThreadItems', () => {
     );
   });
 
+  it('leaves out a signal this member raised unless the deadline is close', () => {
+    const own = {
+      ...home.signals[0]!,
+      slug: 'estate-planning',
+      title: 'Estate Planning',
+      creatorId: home.person.id,
+      creatorName: 'Ada',
+    };
+    const hidden = listMemberHomeThreadItems({
+      ...home,
+      signals: [own],
+    });
+    expect(hidden.map((item) => item.slug)).not.toContain('estate-planning');
+
+    const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const shown = listMemberHomeThreadItems({
+      ...home,
+      signals: [{ ...own, dueAt: soon }],
+    });
+    expect(shown.find((item) => item.slug === 'estate-planning')).toEqual(
+      expect.objectContaining({ authoredByMember: true, dueAt: soon }),
+    );
+  });
+
+  it('keeps a signal someone else raised ahead of the member’s own', () => {
+    const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const items = listMemberHomeThreadItems({
+      ...home,
+      attention: [],
+      proposals: [],
+      signals: [
+        {
+          ...home.signals[0]!,
+          slug: 'estate-planning',
+          title: 'Estate Planning',
+          priority: 'high',
+          creatorId: home.person.id,
+          creatorName: 'Ada',
+          dueAt: soon,
+        },
+        {
+          ...home.signals[0]!,
+          id: 8,
+          slug: 'budgeting',
+          title: 'Budgeting',
+          priority: 'low',
+          creatorId: 4,
+          creatorName: 'Sara',
+        },
+      ],
+    });
+    expect(items.map((item) => item.slug)).toEqual([
+      'estate-planning',
+      'budgeting',
+    ]);
+    expect(
+      items.find((item) => item.slug === 'budgeting')?.authoredByMember,
+    ).toBe(false);
+  });
+
   it('keeps a real category when the record is only marked signal', () => {
     const items = listMemberHomeThreadItems({
       ...home,

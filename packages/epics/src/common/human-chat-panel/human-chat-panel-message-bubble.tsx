@@ -39,6 +39,7 @@ import {
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -1846,13 +1847,17 @@ export function HumanChatPanelMessageBubble({
           data-testid="chat-message-avatar"
         >
           <div ref={mainAvatarMeasureRef} className="relative">
-            <PersonAvatar
-              size="chat"
-              className="rounded-full"
-              avatarSrc={mainAvatarSrc}
-              userName={senderName}
-              isLoading={senderProfileLoading}
-            />
+            {message.id === 'welcome' ? (
+              <MemberHomeMark className="h-10 w-10" />
+            ) : (
+              <PersonAvatar
+                size="chat"
+                className="rounded-full"
+                avatarSrc={mainAvatarSrc}
+                userName={senderName}
+                isLoading={senderProfileLoading}
+              />
+            )}
           </div>
         </div>
 

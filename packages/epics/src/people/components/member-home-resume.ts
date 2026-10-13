@@ -26,6 +26,20 @@ function readList(key: string) {
   }
 }
 
+/** They acted on this item and stayed. Coming back should not continue twice. */
+export function markHomeActed(key: string) {
+  if (typeof window === 'undefined') return;
+  const itemKey = key.trim();
+  if (!itemKey) return;
+  try {
+    const acted = readList(ACTED_KEY);
+    if (!acted.includes(itemKey)) acted.push(itemKey);
+    window.sessionStorage.setItem(ACTED_KEY, JSON.stringify(acted.slice(-80)));
+  } catch {
+    // The next message still has the transcript when storage is blocked.
+  }
+}
+
 /** The member left to do this item. Coming back continues the thread. */
 export function rememberHomeAction(key: string, title: string) {
   if (typeof window === 'undefined') return;
