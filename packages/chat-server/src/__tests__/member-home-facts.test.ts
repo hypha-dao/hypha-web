@@ -122,6 +122,10 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('plum jam');
     expect(facts).toContain("I'll show you the proposal now.");
     expect(facts).toContain('Could you let me know if you approve');
+    expect(facts).toContain("Recipient's Name");
+    expect(facts).toContain(
+      'Once I have this information, we can move forward',
+    );
     expect(facts).toContain(
       'What would you like to decide regarding this proposal?',
     );
@@ -326,6 +330,50 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain(
       'This reply is about that card only. The card already shows the title',
     );
+  });
+
+  it('names one decision and withholds the rest', () => {
+    const facts = formatMemberHomeFacts(
+      {
+        ...home,
+        signals: [
+          {
+            id: 3,
+            slug: 'seed',
+            title: 'Plant the seed',
+            type: 'task',
+            priority: 'critical',
+            createdAt: '2026-10-01T00:00:00.000Z',
+            spaceSlug: 'grove',
+            spaceTitle: 'Grove',
+            assignedToMember: true,
+            description: 'A signal that is not a decision.',
+            creatorId: 2,
+            creatorName: 'Noor',
+            creatorAvatarUrl: null,
+          },
+        ],
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            web3ProposalId: 20,
+          },
+        ],
+      },
+      { asked: 'What needs a decision?' },
+    );
+
+    expect(facts).toContain('One decision at a time');
+    expect(facts).toContain('Do any of these proposals stand out');
+    expect(facts).toContain('slug=path');
+    expect(facts).toContain('Open the path');
+    expect(facts).not.toContain('Build the bridge');
+    expect(facts).not.toContain('Plant the seed');
+    expect(facts).toContain('2 more are waiting');
   });
 
   it('moves on when they say the card is not a proposal', () => {
