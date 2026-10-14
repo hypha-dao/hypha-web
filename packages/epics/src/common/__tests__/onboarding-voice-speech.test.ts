@@ -59,12 +59,24 @@ I've drafted "Issue New Token" — work for you?`;
     expect(spoken).toContain('Issue New Token');
   });
 
-  it('caps spoken output at four sentences', () => {
-    const input = 'One. Two. Three. Four. Five should be dropped. Six gone.';
+  it('reads a five-sentence reply including the closing ask', () => {
+    const input =
+      'Edgar is the best place for you to help. He needs projects that will pay. One warm introduction would make a difference. Philipp and Joachim are in that circle too. Could you get on a call with Edgar and bring him one project?';
 
     const spoken = prepareAssistantTextForSpeech(input);
 
-    expect(spoken).toBe('One. Two. Three. Four.');
+    expect(spoken).toContain(
+      'Could you get on a call with Edgar and bring him one project?',
+    );
+    expect(spoken).toContain('Philipp and Joachim are in that circle too.');
+  });
+
+  it('keeps the closing sentence when a reply runs past the cap', () => {
+    const input = 'One. Two. Three. Four. Five. Could you get on a call?';
+
+    const spoken = prepareAssistantTextForSpeech(input);
+
+    expect(spoken).toBe('One. Two. Three. Four. Could you get on a call?');
   });
 });
 
