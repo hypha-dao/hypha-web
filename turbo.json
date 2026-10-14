@@ -1,11 +1,16 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalDependencies": [".env", "apps/web/.env*"],
+  "globalDependencies": [".env", "apps/web/.env*", "apps/regen-sydney/.env*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*", "apps/web/.env*"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "apps/web/.env*",
+        "apps/regen-sydney/.env*"
+      ],
       "env": [
         "NEON_DATABASE_USERNAME",
         "NEON_DATABASE_NAME",
@@ -13,12 +18,37 @@
         "NEON_PROJECT_ID",
         "VERCEL_TOKEN",
         "DEFAULT_DB_URL",
+        "BRANCH_DB_URL",
         "PRIVATE_KEY",
         "DEFAULT_DB_AUTHENTICATED_URL",
         "DEFAULT_DB_ANONYMOUS_URL",
         "NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID",
         "NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY",
-        "NEXT_PUBLIC_GOOGLE_DRIVE_APP_ID"
+        "NEXT_PUBLIC_GOOGLE_DRIVE_APP_ID",
+        "NEXT_PUBLIC_PRIVY_APP_ID",
+        "NEXT_PUBLIC_APP_URL",
+        "NEXT_PUBLIC_PADDLE_ENVIRONMENT",
+        "PRIVY_APP_SECRET",
+        "HYPHA_BASE_URL",
+        "CAMPAIGN_DB_URL",
+        "CAMPAIGN_DB_DATABASE_URL",
+        "CAMPAIGN_DB_DATABASE_URL_UNPOOLED",
+        "CAMPAIGN_ADMIN_EMAILS",
+        "CAMPAIGN_JOIN_BONUS_RSUT",
+        "CAMPAIGN_RSUT_PER_AUD",
+        "CAMPAIGN_MIN_CONTRIBUTION_AUD",
+        "CAMPAIGN_MAX_CONTRIBUTION_AUD",
+        "CAMPAIGN_PAYMENTS_PROVIDER",
+        "CAMPAIGN_MOCK_PAYMENT_SECRET",
+        "RSUT_TOKEN_ADDRESS",
+        "RSUT_RELAYER_PRIVATE_KEY",
+        "RSUT_CHAIN_ID",
+        "RPC_URL",
+        "PADDLE_API_KEY",
+        "PADDLE_WEBHOOK_SECRET",
+        "PADDLE_PRICE_ID",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },

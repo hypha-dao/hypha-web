@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@source '../**/*.{ts,tsx}';
+
+@import './theme.css';
+
+html,
+body {
+  height: 100%;
+}
