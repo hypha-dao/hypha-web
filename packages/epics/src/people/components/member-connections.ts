@@ -157,9 +157,26 @@ function fillSlots<T>(primary: T[], spare: T[], limit: number): T[] {
   return picked;
 }
 
+function suggestionForMember(
+  row: SuggestionMember,
+  kind: ConnectionSuggestion['kind'],
+): ConnectionSuggestion {
+  return {
+    key: `person-${row.person.id}`,
+    kind,
+    name: row.name,
+    avatarUrl: row.avatarUrl,
+    roomId: row.roomId,
+    lastTs: row.lastTs,
+    person: row.person,
+    sharedSpaceCount: row.person.sharedSpaceCount ?? 0,
+    spaceTitle: null,
+  };
+}
+
 /**
- * A few people to meet, then people it has been a while since you spoke with.
- * Someone already in the member list is not suggested again as a newcomer.
+ * Long time no see stays people you already connect with.
+ * Worth meeting is only someone who is not in that list.
  */
 export function suggestConnections(
   members: readonly SuggestionMember[],
@@ -169,37 +186,17 @@ export function suggestConnections(
   limit = REACH_OUT_LIMIT,
 ): ConnectionSuggestion[] {
   const known = new Set(members.map((row) => row.person.id));
-  const meetMembers = members
-    .filter((row) => row.lastTs == null)
-    .sort(bySharedThenId);
   const fresh = newcomers
     .filter((person) => person.name.trim() && !known.has(person.id))
     .sort((left, right) => right.score - left.score || left.id - right.id);
   const seenNew = new Set<number>();
-  const meetFromNetwork = fresh.filter((person) => {
-    if (seenNew.has(person.id)) return false;
-    seenNew.add(person.id);
-    return true;
-  });
-  const reconnect = members
-    .filter((row) => row.lastTs != null && now - row.lastTs > staleMs)
-    .sort((left, right) => (left.lastTs ?? 0) - (right.lastTs ?? 0));
-
-  const meet: ConnectionSuggestion[] = [
-    ...meetMembers.map(
-      (row): ConnectionSuggestion => ({
-        key: `person-${row.person.id}`,
-        kind: 'meet',
-        name: row.name,
-        avatarUrl: row.avatarUrl,
-        roomId: row.roomId,
-        lastTs: null,
-        person: row.person,
-        sharedSpaceCount: row.person.sharedSpaceCount ?? 0,
-        spaceTitle: null,
-      }),
-    ),
-    ...meetFromNetwork.map(
+  const meet = fresh
+    .filter((person) => {
+      if (seenNew.has(person.id)) return false;
+      seenNew.add(person.id);
+      return true;
+    })
+    .map(
       (person): ConnectionSuggestion => ({
         key: `newcomer-${person.id}`,
         kind: 'meet',
@@ -218,25 +215,23 @@ export function suggestConnections(
         sharedSpaceCount: 0,
         spaceTitle: person.spaceTitle,
       }),
-    ),
-  ];
-  const reconnectCards: ConnectionSuggestion[] = reconnect.map((row) => ({
-    key: `person-${row.person.id}`,
-    kind: 'reconnect',
-    name: row.name,
-    avatarUrl: row.avatarUrl,
-    roomId: row.roomId,
-    lastTs: row.lastTs,
-    person: row.person,
-    sharedSpaceCount: row.person.sharedSpaceCount ?? 0,
-    spaceTitle: null,
-  }));
+    );
+  const reconnect = members
+    .filter((row) => row.lastTs != null && now - row.lastTs > staleMs)
+    .sort((left, right) => (left.lastTs ?? 0) - (right.lastTs ?? 0))
+    .map((row) => suggestionForMember(row, 'reconnect'));
+  const neverWrote = members
+    .filter((row) => row.lastTs == null)
+    .sort(bySharedThenId)
+    .map((row) => suggestionForMember(row, 'reconnect'));
 
-  const meetKept = meet.slice(0, MEET_SLOTS);
-  const reconnectKept = reconnectCards.slice(0, RECONNECT_SLOTS);
   return fillSlots(
-    [...meetKept, ...reconnectKept],
-    [...meet.slice(MEET_SLOTS), ...reconnectCards.slice(RECONNECT_SLOTS)],
+    [...meet.slice(0, MEET_SLOTS), ...reconnect.slice(0, RECONNECT_SLOTS)],
+    [
+      ...reconnect.slice(RECONNECT_SLOTS),
+      ...neverWrote,
+      ...meet.slice(MEET_SLOTS),
+    ],
     limit,
   );
 }

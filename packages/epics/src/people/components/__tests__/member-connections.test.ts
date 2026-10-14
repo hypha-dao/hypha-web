@@ -151,12 +151,14 @@ describe('suggestConnections', () => {
     );
 
     expect(picked.map((card) => [card.name, card.kind])).toEqual([
-      ['Dmitry Ermolenko', 'meet'],
       ['Ada', 'meet'],
       ['Edgar Kampers', 'reconnect'],
+      ['Dmitry Ermolenko', 'reconnect'],
     ]);
-    expect(picked[1]?.spaceTitle).toBe('River school');
-    expect(picked[0]?.sharedSpaceCount).toBe(4);
+    expect(picked[0]?.spaceTitle).toBe('River school');
+    expect(picked.find((card) => card.name === 'Dmitry Ermolenko')?.kind).toBe(
+      'reconnect',
+    );
   });
 
   it('does not suggest someone who is already a connection', () => {
@@ -174,16 +176,20 @@ describe('suggestConnections', () => {
     );
 
     expect(picked).toHaveLength(1);
+    expect(picked[0]?.kind).toBe('reconnect');
     expect(picked[0]?.key).toBe('person-2');
   });
 
-  it('prefers the closer new connection when several have never written', () => {
+  it('keeps people you already share a space with out of worth meeting', () => {
     const picked = suggestConnections(
       [member(1, 'Near', null, 3), member(2, 'Far', null, 1)],
       [],
       now,
     );
 
-    expect(picked.map((card) => card.name)).toEqual(['Near', 'Far']);
+    expect(picked.map((card) => [card.name, card.kind])).toEqual([
+      ['Near', 'reconnect'],
+      ['Far', 'reconnect'],
+    ]);
   });
 });
