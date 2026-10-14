@@ -3,13 +3,19 @@ import {
   getDestinationCurrenciesForSourceRail,
   BANK_PAYOUT_RAILS,
   BANK_VIRTUAL_ACCOUNT_CURRENCIES,
+  BANK_ONBOARDING_CURRENCIES,
+  bankProviderManifest,
+  type BankProvider,
+  type BankOnboardingFieldDescriptor,
 } from '@hypha-platform/core/client';
 
 import {
   BANK_CURRENCY_METAS,
+  BANK_ONBOARDING_CURRENCY_METAS,
   BANK_TRANSFER_CORRIDOR_KEYS,
   getTransferCorridorMeta,
   type BankCurrencyCode,
+  type BankOnboardingCurrencyCode,
   type BankTransferCorridorKey,
 } from './bank-currency-display';
 import type {
@@ -370,6 +376,133 @@ export function getEnabledDepositCurrencies(): readonly string[] {
   return BANK_VIRTUAL_ACCOUNT_CURRENCIES.filter((c) =>
     allowed.has(c.toLowerCase()),
   );
+}
+
+/**
+ * Returns the subset of onboarding currencies (Bridge's rail-shaped set plus identity-only
+ * currencies like `aud`) enabled via NEXT_PUBLIC_BANKING_SUPPORTED_ONBOARDING_CURRENCIES. When the
+ * env var is unset or empty all onboarding currencies are considered enabled (open-world default,
+ * same pattern as `getEnabledDepositCurrencies`).
+ */
+export function getEnabledOnboardingCurrencies(): readonly string[] {
+  const raw =
+    process.env.NEXT_PUBLIC_BANKING_SUPPORTED_ONBOARDING_CURRENCIES?.trim();
+  if (!raw) return BANK_ONBOARDING_CURRENCIES;
+  const allowed = new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return BANK_ONBOARDING_CURRENCIES.filter((c) => allowed.has(c));
+}
+
+/** Providers whose adapter declares support for at least one of the given currencies (D1/D10). */
+export function resolveOnboardingCurrencyProviders(
+  currencies: readonly string[],
+): BankProvider[] {
+  const normalized = new Set(currencies.map((c) => c.toLowerCase()));
+  const providers: BankProvider[] = [];
+  for (const provider of Object.keys(bankProviderManifest) as BankProvider[]) {
+    if (
+      bankProviderManifest[provider].supportedCurrencies.some((c) =>
+        normalized.has(c),
+      )
+    ) {
+      providers.push(provider);
+    }
+  }
+  return providers;
+}
+
+/**
+ * Deduped union of onboarding fields (D10) every provider resolved for `currencies` needs to
+ * create a customer — the dynamic onboarding form renders exactly this list. A field required by
+ * any resolved provider is treated as required.
+ */
+export function getDedupedOnboardingFields(
+  currencies: readonly string[],
+): BankOnboardingFieldDescriptor[] {
+  const providers = resolveOnboardingCurrencyProviders(currencies);
+  const byKey = new Map<string, BankOnboardingFieldDescriptor>();
+  for (const provider of providers) {
+    for (const field of bankProviderManifest[provider]
+      .requiredOnboardingFields) {
+      const existing = byKey.get(field.key);
+      if (!existing || (field.required && !existing.required)) {
+        byKey.set(field.key, field);
+      }
+    }
+  }
+  return [...byKey.values()];
+}
+
+/**
+ * The onboarding fields the dynamic section asks for *in addition to* the two fixed inputs every
+ * onboarding form already renders (`contactEmail`, `legalName`) — so those aren't asked twice.
+ */
+export function getDynamicOnboardingFields(
+  currencies: readonly string[],
+): BankOnboardingFieldDescriptor[] {
+  return getDedupedOnboardingFields(currencies).filter(
+    (field) => field.key !== 'contactEmail' && field.key !== 'legalName',
+  );
+}
+
+/**
+ * Enabled onboarding currencies whose provider the owner has no `bank_customers` row for yet —
+ * what "add another currency" can offer. Currencies of a provider the owner already has (extra
+ * Bridge endorsements) are requested through that provider's own flow, not listed here; a row
+ * that's still pending email confirmation counts as onboarded, so it isn't offered twice.
+ */
+export function getRequestableOnboardingCurrencies(
+  onboardedProviders: readonly (BankProvider | undefined)[],
+): BankOnboardingCurrencyCode[] {
+  const onboarded = new Set(onboardedProviders);
+  const enabled = new Set(getEnabledOnboardingCurrencies());
+  const providers = Object.keys(bankProviderManifest) as BankProvider[];
+  return BANK_ONBOARDING_CURRENCY_METAS.map((meta) => meta.currency).filter(
+    (currency) =>
+      enabled.has(currency) &&
+      providers.some(
+        (provider) =>
+          !onboarded.has(provider) &&
+          bankProviderManifest[provider].supportedCurrencies.includes(currency),
+      ),
+  );
+}
+
+/** Whether a conditionally-required field (`requiredIf`) is required given the values collected so far. */
+export function isOnboardingFieldRequired(
+  field: BankOnboardingFieldDescriptor,
+  values: Record<string, string>,
+): boolean {
+  if (!field.requiredIf) {
+    return field.required;
+  }
+  const dependencyValue = (values[field.requiredIf.key] ?? '').trim();
+  if (field.requiredIf.equals) {
+    return field.requiredIf.equals.includes(dependencyValue);
+  }
+  if (field.requiredIf.notEquals) {
+    return dependencyValue.length > 0
+      ? !field.requiredIf.notEquals.includes(dependencyValue)
+      : field.required;
+  }
+  return field.required;
+}
+
+/** Whether every currently-required onboarding field has a non-empty value. */
+export function areOnboardingFieldsComplete(
+  fields: readonly BankOnboardingFieldDescriptor[],
+  values: Record<string, string>,
+): boolean {
+  return fields.every((field) => {
+    if (!isOnboardingFieldRequired(field, values)) {
+      return true;
+    }
+    return Boolean(values[field.key]?.trim());
+  });
 }
 
 export function isBankRailSelectable(

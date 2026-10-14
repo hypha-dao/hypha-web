@@ -57,17 +57,22 @@ import {
 import { BRIDGE_DEFAULT_DESTINATION_CURRENCY } from '../../../bridge-destination-currencies';
 import type {
   BankKycProvider,
+  BankOnboardingStepDescriptor,
   CreateKycLinkInput,
   CreateKycLinkResult,
   CreateLiquidationAddressInput,
   CreateLiquidationAddressResult,
   CreateTransferInput,
   CreateTransferResult,
+  GetKycStatusInput,
+  KycStatusResult,
   ProvisionVirtualAccountInput,
   ProvisionVirtualAccountResult,
   RegisterExternalAccountInput,
   RegisterExternalAccountResult,
 } from '../types';
+import { fetchBridgeKycLinkLive } from '../../fetch-bridge-kyc-link-live';
+import { BRIDGE_REQUIRED_ONBOARDING_FIELDS } from '../manifest';
 import { resolveBridgeKycEndorsements } from './endorsements';
 import { mapBridgeKycLinkUrls } from './kyc-link-urls';
 
@@ -203,9 +208,16 @@ function toBridgeExternalAccountBody(
   return body;
 }
 
+const BRIDGE_ONBOARDING_STEP_I18N_KEYS: BankOnboardingStepDescriptor['i18nKeys'] =
+  {
+    title: 'BankingTab.onboardingSteps.kyc.title',
+    body: 'BankingTab.onboardingSteps.kyc.body',
+  };
+
 export function createBridgeKycProvider(): BankKycProvider {
   return {
     provider: 'bridge',
+    requiredOnboardingFields: BRIDGE_REQUIRED_ONBOARDING_FIELDS,
     async createKycLink(
       input: CreateKycLinkInput,
     ): Promise<CreateKycLinkResult> {
@@ -222,6 +234,35 @@ export function createBridgeKycProvider(): BankKycProvider {
         tosStatus: response.tos_status ?? null,
         kycLink,
         tosLink,
+      };
+    },
+    async getKycStatus(
+      input: GetKycStatusInput,
+    ): Promise<KycStatusResult | null> {
+      // Thin wrapper over Bridge's existing status path (D6) — no refactor of
+      // `banking-provider-state` / `fetch-bridge-kyc-link-live`. `null` mirrors
+      // `fetchBridgeKycLinkLive`: the row has no confirmed Bridge KYC link yet.
+      const live = await fetchBridgeKycLinkLive(input.customer);
+      if (!live) {
+        return null;
+      }
+      return {
+        kycStatus: live.kycStatus,
+        // Bridge "identity cleared" = KYC approved AND ToS approved (cf. resolveCustomerApproved).
+        isApproved: live.isKycApproved && live.isTosApproved,
+        tosStatus: live.tosStatus,
+        // The hosted KYC URL is not part of this live snapshot; Bridge surfaces it via
+        // `buildCustomerValidations` on the status path. Left null in the thin wrapper.
+        kycLink: null,
+      };
+    },
+    getOnboardingStepDescriptor(
+      result: Pick<CreateKycLinkResult, 'kycLink'>,
+    ): BankOnboardingStepDescriptor {
+      return {
+        kind: 'external_kyc_link',
+        url: result.kycLink ?? null,
+        i18nKeys: BRIDGE_ONBOARDING_STEP_I18N_KEYS,
       };
     },
     async provisionVirtualAccount(

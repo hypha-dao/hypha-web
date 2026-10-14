@@ -1,3 +1,5 @@
+import { BANK_ONBOARDING_CURRENCIES } from '@hypha-platform/core/client';
+
 import type { BankVirtualAccountCurrency } from './hooks/types';
 
 export type BankCurrencyCode = BankVirtualAccountCurrency;
@@ -49,6 +51,43 @@ export function currenciesToEndorsements(
     }
   }
   return result;
+}
+
+export type BankOnboardingCurrencyCode =
+  (typeof BANK_ONBOARDING_CURRENCIES)[number];
+
+export type BankOnboardingCurrencyMeta = {
+  currency: BankOnboardingCurrencyCode;
+  flagEmoji: string;
+  /** i18n key under BankingTab.currencies */
+  nameKey: BankOnboardingCurrencyCode;
+};
+
+/** Identity-only currencies (no Bridge rail/endorsement) — display metas only. */
+const IDENTITY_ONLY_CURRENCY_METAS: readonly BankOnboardingCurrencyMeta[] = [
+  { currency: 'aud', flagEmoji: '🇦🇺', nameKey: 'aud' },
+];
+
+/**
+ * Currency-picker gate for onboarding (D10/WS7) — Bridge's rail-shaped currencies plus
+ * identity-only currencies (AUDD's `aud`). Deliberately separate from `BANK_CURRENCY_METAS`,
+ * which stays Bridge-rail-shaped (virtual accounts, payout rails, transfer corridors) — mirrors
+ * `BANK_ONBOARDING_CURRENCIES` on the API side (validation.ts).
+ */
+export const BANK_ONBOARDING_CURRENCY_METAS: readonly BankOnboardingCurrencyMeta[] =
+  [
+    ...BANK_CURRENCY_METAS.map(({ currency, flagEmoji, nameKey }) => ({
+      currency,
+      flagEmoji,
+      nameKey,
+    })),
+    ...IDENTITY_ONLY_CURRENCY_METAS,
+  ];
+
+export function getOnboardingCurrencyMeta(
+  currency: BankOnboardingCurrencyCode,
+): BankOnboardingCurrencyMeta | undefined {
+  return BANK_ONBOARDING_CURRENCY_METAS.find((m) => m.currency === currency);
 }
 
 export function endorsementToCurrency(

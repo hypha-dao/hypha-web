@@ -53,6 +53,28 @@ export const findBankCustomerByPersonAndProvider = async (
   return row ?? null;
 };
 
+/** All of a space's `bank_customers` rows, one per provider (D3) — for the multi-provider status read. */
+export const findBankCustomersBySpace = async (
+  spaceId: number,
+  { db }: DbConfig,
+): Promise<BankCustomer[]> => {
+  return db
+    .select()
+    .from(bankCustomers)
+    .where(eq(bankCustomers.spaceId, spaceId));
+};
+
+/** All of a person's `bank_customers` rows, one per provider (D3) — for the multi-provider status read. */
+export const findBankCustomersByPerson = async (
+  personId: number,
+  { db }: DbConfig,
+): Promise<BankCustomer[]> => {
+  return db
+    .select()
+    .from(bankCustomers)
+    .where(eq(bankCustomers.personId, personId));
+};
+
 /** Looks up the pending confirmation row a confirmation-JWT `jti` correlates to (#2288). */
 export const findBankCustomerByNonce = async (
   jwtNonce: string,
