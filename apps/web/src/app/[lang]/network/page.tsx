@@ -1,5 +1,4 @@
 import { Locale } from '@hypha-platform/i18n';
-import { Container } from '@hypha-platform/ui';
 import {
   getAllSpaces,
   getNetworkGrowth,
@@ -20,6 +19,7 @@ import { ExploreSpaces } from '@hypha-platform/epics';
 import { Suspense } from 'react';
 
 import { NetworkIndexFallback } from './_components/network-index-fallback';
+import { NetworkPageShell } from './_components/network-page-shell';
 import { NetworkPageTitle } from './_components/network-page-title';
 
 type PageProps = {
@@ -32,25 +32,14 @@ type PageProps = {
   }>;
 };
 
-export default async function Index(props: PageProps) {
-  const enableNetworkMap = await getEnableNetworkMapAsync();
-  const body = (
-    <div className="flex min-w-0 flex-col gap-9">
+export default function Index(props: PageProps) {
+  return (
+    <NetworkPageShell>
       <NetworkPageTitle />
       <Suspense fallback={<NetworkIndexFallback />}>
         <NetworkSpaces {...props} />
       </Suspense>
-    </div>
-  );
-
-  if (!enableNetworkMap) {
-    return <Container className="flex flex-col gap-9 py-9">{body}</Container>;
-  }
-
-  return (
-    <div className="flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem))] w-full min-w-0 flex-col px-4 py-9 sm:px-5">
-      {body}
-    </div>
+    </NetworkPageShell>
   );
 }
 

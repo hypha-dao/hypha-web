@@ -13,7 +13,7 @@ export function NetworkPageTitle() {
       color="secondary"
       weight="medium"
       align="center"
-      className="flex flex-col"
+      className="flex w-full flex-col items-center"
     >
       <span>{t('manySpaces')}</span>
       <span>{t('oneVibrantNetwork')}</span>
