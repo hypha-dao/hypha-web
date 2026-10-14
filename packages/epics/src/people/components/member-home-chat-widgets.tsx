@@ -10,7 +10,10 @@ import {
   useJwt,
   useTransferTokensMutation,
   type MemberIntelligence,
+  type Person,
+  type Space,
 } from '@hypha-platform/core/client';
+import { listTransferRecipientPeople } from '@hypha-platform/core/people/server/actions';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   Button,
@@ -20,6 +23,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { Recipient } from '../../agreements/plugins/components/common/recipient';
 import { useUserAssets } from '../../treasury/hooks';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { PersonAvatar } from './person-avatar';
@@ -308,6 +312,11 @@ export function MemberHomeSendTokensWidget({
   const [amount, setAmount] = useState<number>(25);
   const [noteIndex, setNoteIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [directoryPeople, setDirectoryPeople] = useState<Person[] | null>(null);
+  const [directorySpaces, setDirectorySpaces] = useState<Space[] | null>(null);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
+  const [picked, setPicked] = useState<TokenTarget | null>(null);
   const [sent, setSent] = useState<{
     amount: number;
     symbol: string;
@@ -380,7 +389,20 @@ export function MemberHomeSendTokensWidget({
     });
     return [...peopleTargets, ...spaceTargets];
   }, [fallbackName, people, spaces]);
-  const target = targets.find((item) => item.id === targetId) ?? null;
+  const visibleTargets = useMemo(() => {
+    if (
+      picked &&
+      !targets.some(
+        (item) => item.address.toLowerCase() === picked.address.toLowerCase(),
+      )
+    ) {
+      return [picked, ...targets];
+    }
+    return targets;
+  }, [picked, targets]);
+  const target =
+    targets.find((item) => item.id === targetId) ??
+    (picked?.id === targetId ? picked : null);
   const noteKey: NoteKey = NOTES[noteIndex] ?? 'sendTokensThanks';
 
   async function send() {
@@ -414,10 +436,84 @@ export function MemberHomeSendTokensWidget({
       const message = cause instanceof Error ? cause.message : '';
       if (message.includes('Smart wallet client not available')) {
         setError(t('sendTokensNoWallet'));
+      } else if (message.toLowerCase().includes('user rejected')) {
+        setError(t('sendTokensRejected'));
       } else {
         setError(t('sendTokensFailed'));
       }
     }
+  }
+
+  async function openDirectory() {
+    if (directoryOpen) {
+      setDirectoryOpen(false);
+      return;
+    }
+    setDirectoryOpen(true);
+    setError(null);
+    if (directoryPeople && directorySpaces) return;
+    setDirectoryLoading(true);
+    try {
+      const [peopleRows, spaceResponse] = await Promise.all([
+        listTransferRecipientPeople(),
+        fetch('/api/v1/spaces?parentOnly=false'),
+      ]);
+      if (!spaceResponse.ok) {
+        throw new Error('spaces');
+      }
+      const spaceRows = (await spaceResponse.json()) as Space[];
+      if (!Array.isArray(spaceRows)) {
+        throw new Error('spaces');
+      }
+      setDirectoryPeople(
+        peopleRows.map((person) => ({
+          id: person.id,
+          name: person.name,
+          surname: person.surname,
+          avatarUrl: person.avatarUrl ?? undefined,
+          address: person.address,
+          slug: person.slug,
+          createdAt: new Date(0),
+          updatedAt: new Date(0),
+        })),
+      );
+      setDirectorySpaces(
+        spaceRows.filter((space) => Boolean(space.address?.trim())),
+      );
+    } catch {
+      setDirectoryOpen(false);
+      setError(t('sendTokensDirectoryFailed'));
+    } finally {
+      setDirectoryLoading(false);
+    }
+  }
+
+  function chooseFromDirectory(choice: Person | Space | { address: string }) {
+    const address = choice.address?.trim() ?? '';
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return;
+    const known = targets.find(
+      (item) => item.address.toLowerCase() === address.toLowerCase(),
+    );
+    if (known) {
+      setTargetId(known.id);
+      setPicked(null);
+    } else {
+      const isSpace = 'title' in choice && typeof choice.title === 'string';
+      const name = isSpace
+        ? choice.title
+        : `${'name' in choice ? choice.name ?? '' : ''} ${
+            'surname' in choice ? choice.surname ?? '' : ''
+          }`.trim() || address;
+      const next: TokenTarget = {
+        kind: isSpace ? 'space' : 'person',
+        id: `directory-${address.toLowerCase()}`,
+        name,
+        address,
+      };
+      setPicked(next);
+      setTargetId(next.id);
+    }
+    setDirectoryOpen(false);
   }
 
   if (sent && selected) {
@@ -463,13 +559,13 @@ export function MemberHomeSendTokensWidget({
             <p className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
               {t('sendTokensTo')}
             </p>
-            {targets.length === 0 ? (
+            {visibleTargets.length === 0 ? (
               <p className="mt-2 text-2 text-neutral-11">
                 {t('sendTokensNoOne')}
               </p>
             ) : (
               <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {targets.map((item) => {
+                {visibleTargets.map((item) => {
                   const active = item.id === target?.id;
                   const person = people.find(
                     (entry) => `person-${entry.id}` === item.id,
@@ -519,6 +615,27 @@ export function MemberHomeSendTokensWidget({
                 })}
               </ul>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full"
+              disabled={directoryLoading || isTransferring}
+              onClick={() => {
+                void openDirectory();
+              }}
+            >
+              {t('sendTokensSeeMore')}
+            </Button>
+            {directoryOpen && directoryPeople && directorySpaces ? (
+              <div className="mt-3 border border-border p-3">
+                <Recipient
+                  members={directoryPeople}
+                  spaces={directorySpaces}
+                  value={target?.address}
+                  onChange={chooseFromDirectory}
+                />
+              </div>
+            ) : null}
           </div>
 
           {selected ? (
@@ -644,7 +761,7 @@ export function MemberHomeSendTokensWidget({
             }}
           >
             {isTransferring
-              ? t('loading')
+              ? t('sendTokensSigning')
               : target
               ? t('sendTokensSend', {
                   amount: formatAmount(activeAmount),
