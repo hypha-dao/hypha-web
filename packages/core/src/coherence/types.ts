@@ -4,6 +4,7 @@ import {
 } from './coherence-priorities';
 import { CoherenceTag } from './coherence-tags';
 import { CoherenceType } from './coherence-types';
+import type { CapitalKey } from '../network/capitals';
 
 /** Indicative amount on a signal. `token` is the token address, same as a proposal payout. */
 export type IndicativePayout = {
@@ -49,6 +50,8 @@ export interface CreateCoherenceInput {
   source?: string | null;
   /** The integration's own identifier for the record, used for idempotency. */
   externalId?: string | null;
+  /** Forms of capital this signal carries. Omitted means none. */
+  capitals?: CapitalKey[];
 }
 
 export interface UpdateCoherenceInput {
@@ -80,6 +83,8 @@ export interface UpdateCoherenceSignalInput {
   sharedWithNetwork?: boolean;
   /** Omit to leave the archived state alone; set it to change it in the same write. */
   archived?: boolean;
+  /** Omit to leave the named forms of capital alone. */
+  capitals?: CapitalKey[];
 }
 
 export type UpdateCoherenceSignalBySlugInput = {
@@ -155,6 +160,8 @@ export type Coherence = {
   source: string | null;
   /** The integration's own identifier for the record. */
   externalId: string | null;
+  /** Forms of capital named on this signal. Empty when none are named. */
+  capitals: CapitalKey[];
   /** Present on list/detail API responses; not stored on the row itself. */
   upvotes?: CoherenceUpvoteSummary;
 };

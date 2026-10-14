@@ -15,6 +15,7 @@ import {
   TOKEN_PRICE_REFERENCE_CURRENCIES,
 } from './types';
 import { getAddress, isAddress } from 'ethers';
+import { parseCapitalKey } from '../network/capitals';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -598,6 +599,15 @@ export const baseSchemaIssueNewToken = z.object({
     .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
       message: 'Token symbol cannot contain emojis or links',
     }),
+
+  capital: z
+    .union([z.literal(''), z.string().trim().max(32)])
+    .optional()
+    .refine(
+      (value) =>
+        value === undefined || value === '' || parseCapitalKey(value) !== null,
+      { message: 'Choose a form of capital' },
+    ),
 
   iconUrl: z
     .union([

@@ -31,6 +31,7 @@ function makeSignal(
     videoUrl: null,
     attachments: [],
     sharedWithNetwork: false,
+    capitals: [],
     source: null,
     externalId: null,
     createdAt: new Date('2026-07-01T10:00:00.000Z'),

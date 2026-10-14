@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import type { DatabaseInstance } from '../../common/server/types';
 import { parseCapitalKeys } from '../../network/capitals';
 import { readSpaceCapitals } from '../../network/exchange-capitals';
+import { readCoherenceCapitalsBySlugs } from '../../network/capital-columns';
 import type {
   NetworkOpenNeed,
   NetworkOpenNeedKind,
@@ -224,13 +225,23 @@ export async function listNetworkOpenNeeds({
           : null,
     });
   }
-  const capitals = await readSpaceCapitals(
-    db,
-    drafts.map((draft) => draft.spaceId),
-  );
+  const [capitals, named] = await Promise.all([
+    readSpaceCapitals(
+      db,
+      drafts.map((draft) => draft.spaceId),
+    ),
+    readCoherenceCapitalsBySlugs(
+      db,
+      drafts.map((draft) => draft.slug),
+    ),
+  ]);
   return drafts.map(({ spaceId, tagged, ...need }) => ({
     ...need,
-    capital: tagged ?? capitals.get(spaceId)?.seeks[0] ?? null,
+    capital:
+      named.get(need.slug)?.[0] ??
+      tagged ??
+      capitals.get(spaceId)?.seeks[0] ??
+      null,
     spaceSeeks: capitals.get(spaceId)?.seeks ?? [],
     spaceOffers: capitals.get(spaceId)?.offers ?? [],
   }));

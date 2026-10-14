@@ -32,7 +32,7 @@ export type NetworkFieldSignal = {
   leadImage: string | null;
   videoUrl: string | null;
   updatedAt: string | null;
-  /** First capital named on the signal, or the first capital the space seeks. */
+  /** Stored form of capital, else the first capital in tags, else the first capital the space seeks. */
   capital: string | null;
   payouts: NetworkFieldPayout[];
   spaceDescription: string;
@@ -73,7 +73,7 @@ export type NetworkOpenNeed = {
   spaceChatRoomId: string | null;
   leadImage: string | null;
   updatedAt: string | null;
-  /** First capital named on the signal, or the first capital the space seeks. */
+  /** Stored form of capital, else the first capital in tags, else the first capital the space seeks. */
   capital: string | null;
   actionCount: number;
   impactCount: number;

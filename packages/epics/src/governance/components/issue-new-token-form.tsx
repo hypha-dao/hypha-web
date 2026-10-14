@@ -362,6 +362,7 @@ export const IssueNewTokenForm = ({
       symbol: '',
       iconUrl: undefined,
       type: undefined,
+      capital: '',
       maxSupply: 0,
       decaySettings: {
         decayInterval: 2592000,

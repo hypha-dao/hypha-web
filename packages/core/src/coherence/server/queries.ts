@@ -17,6 +17,7 @@ import {
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 import { CoherencePriority } from '../coherence-priorities';
+import { attachCoherenceCapitals } from '../../network/capital-columns';
 
 /** Columns present on both main and the long-lived preview branch. */
 const coreCoherenceColumns = {
@@ -167,7 +168,8 @@ export const findAllCoherences = async (
   );
 
   try {
-    return await db.select().from(coherences).where(where).orderBy(order);
+    const rows = await db.select().from(coherences).where(where).orderBy(order);
+    return attachCoherenceCapitals(db, rows);
   } catch (error) {
     // A full select asks for columns this database may not have yet, which
     // fails the whole list and leaves every filter count at 0.
@@ -177,7 +179,7 @@ export const findAllCoherences = async (
       .from(coherences)
       .where(where)
       .orderBy(order);
-    return rows.map(completeCoherenceRow);
+    return attachCoherenceCapitals(db, rows.map(completeCoherenceRow));
   }
 };
 
@@ -208,9 +210,8 @@ export const findCoherenceBySlug = async (
     return null;
   }
 
-  return {
-    ...response,
-  };
+  const [row] = await attachCoherenceCapitals(db, [response]);
+  return row ?? null;
 };
 
 /**
