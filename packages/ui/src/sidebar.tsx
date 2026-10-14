@@ -255,6 +255,13 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       );
     }
 
+    const offcanvasCollapsed =
+      collapsible === 'offcanvas' && state === 'collapsed';
+    // Icon rail (network, spaces): the group-data width does not beat
+    // `w-(--sidebar-width) !important`, so the track painted at 320px and
+    // then eased to 72px. A centered page title rode that slide.
+    const iconCollapsed = collapsible === 'icon' && state === 'collapsed';
+
     return (
       <div
         className="group peer hidden text-sidebar-foreground md:block"
@@ -269,15 +276,16 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           className={cn(
             'relative min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[side=right]:rotate-180',
-            // Offcanvas collapsed: `!w-0` beats `w-(--sidebar-width) !important` in Tailwind v4 so
-            // the flex track cannot stay 320px with the panel visually closed. `group-data-[…]`
-            // is redundant with the same collapsed state — width is controlled here only.
-            collapsible === 'offcanvas' && state === 'collapsed'
+            // Collapsed width is set here only. `!` beats `w-(--sidebar-width)`
+            // in Tailwind v4 so the flex track cannot start at the expanded
+            // width and animate closed.
+            offcanvasCollapsed
               ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 overflow-hidden'
+              : iconCollapsed && (variant === 'floating' || variant === 'inset')
+              ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] grow-0'
+              : iconCollapsed
+              ? '!w-(--sidebar-width-icon) grow-0'
               : 'w-(--sidebar-width) grow-0',
-            variant === 'floating' || variant === 'inset'
-              ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]'
-              : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
           )}
         />
         <div
@@ -290,8 +298,12 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
             // Adjust the padding for floating and inset variants.
             variant === 'floating' || variant === 'inset'
-              ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]'
-              : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+              ? 'p-2'
+              : 'group-data-[side=left]:border-r group-data-[side=right]:border-l',
+            iconCollapsed &&
+              (variant === 'floating' || variant === 'inset'
+                ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]'
+                : '!w-(--sidebar-width-icon)'),
             className,
           )}
           {...props}
