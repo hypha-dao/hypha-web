@@ -8,12 +8,13 @@ import './storage/SignalsStorage.sol';
 
 /**
  * @title Signals
- * @dev On-chain event log for signal (coherence) upvotes.
+ * @dev On-chain event log for signal (coherence) upvotes and downvotes.
  *
- * Signals themselves live off-chain; this contract only mirrors upvote
+ * Signals themselves live off-chain; this contract only mirrors vote
  * activity as events so it is publicly auditable. Platform relayers call
- * `recordUpvote` / `recordUpvoteRemoval` in the background after the
- * off-chain vote is stored.
+ * `recordUpvote` / `recordUpvoteRemoval` and `recordDownvote` /
+ * `recordDownvoteRemoval` in the background after the off-chain vote is
+ * stored.
  */
 contract SignalsImplementation is
   Initializable,
@@ -39,6 +40,25 @@ contract SignalsImplementation is
    * @dev Emitted when a member removes their upvote from a signal.
    */
   event SignalUpvoteRemoved(
+    uint256 indexed spaceId,
+    uint256 indexed signalId,
+    address indexed voter
+  );
+
+  /**
+   * @dev Emitted when a member downvotes a signal.
+   */
+  event SignalDownvoted(
+    uint256 indexed spaceId,
+    uint256 indexed signalId,
+    address indexed voter,
+    uint256 amount
+  );
+
+  /**
+   * @dev Emitted when a member removes their downvote from a signal.
+   */
+  event SignalDownvoteRemoved(
     uint256 indexed spaceId,
     uint256 indexed signalId,
     address indexed voter
@@ -103,5 +123,33 @@ contract SignalsImplementation is
     require(_spaceId > 0, 'Invalid space ID');
     require(_voter != address(0), 'Voter cannot be zero address');
     emit SignalUpvoteRemoved(_spaceId, _signalId, _voter);
+  }
+
+  /**
+   * @dev Record a downvote (or an updated downvote amount) for a signal.
+   */
+  function recordDownvote(
+    uint256 _spaceId,
+    uint256 _signalId,
+    address _voter,
+    uint256 _amount
+  ) external onlyRelayerOrOwner {
+    require(_spaceId > 0, 'Invalid space ID');
+    require(_voter != address(0), 'Voter cannot be zero address');
+    require(_amount > 0, 'Amount must be greater than zero');
+    emit SignalDownvoted(_spaceId, _signalId, _voter, _amount);
+  }
+
+  /**
+   * @dev Record the removal of a voter's downvote from a signal.
+   */
+  function recordDownvoteRemoval(
+    uint256 _spaceId,
+    uint256 _signalId,
+    address _voter
+  ) external onlyRelayerOrOwner {
+    require(_spaceId > 0, 'Invalid space ID');
+    require(_voter != address(0), 'Voter cannot be zero address');
+    emit SignalDownvoteRemoved(_spaceId, _signalId, _voter);
   }
 }
