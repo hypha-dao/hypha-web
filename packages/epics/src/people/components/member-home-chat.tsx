@@ -725,10 +725,10 @@ export function MemberHomeChat({
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <div
         ref={scroller}
-        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-4"
+        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto"
         aria-label={t('conversation')}
       >
-        <div className="grid w-full gap-4">
+        <div className="mx-auto grid w-full max-w-3xl gap-4 px-4 py-4">
           <MemberHomeActivationCard
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
@@ -878,41 +878,44 @@ export function MemberHomeChat({
       </div>
 
       {visibleError ? (
-        <div className="mx-4 mb-2 border border-border bg-background-2 px-3 py-2 text-2">
-          <p>{t('threadDropped')}</p>
-          <div className="mt-2 flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              onClick={() => {
-                const last = [...homeMessages]
-                  .reverse()
-                  .find(
-                    (message) =>
-                      message.role === 'user' && !message.metadata?.homeArrival,
-                  );
-                if (last) void send(messageText(last));
-              }}
-            >
-              {t('tryAgain')}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              onClick={() => {
-                setDismissedError(true);
-                clearError();
-              }}
-            >
-              {t('dismiss')}
-            </Button>
+        <div className="mx-auto mb-2 w-full max-w-3xl px-4">
+          <div className="border border-border bg-background-2 px-3 py-2 text-2">
+            <p>{t('threadDropped')}</p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                onClick={() => {
+                  const last = [...homeMessages]
+                    .reverse()
+                    .find(
+                      (message) =>
+                        message.role === 'user' &&
+                        !message.metadata?.homeArrival,
+                    );
+                  if (last) void send(messageText(last));
+                }}
+              >
+                {t('tryAgain')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                colorVariant="neutral"
+                onClick={() => {
+                  setDismissedError(true);
+                  clearError();
+                }}
+              >
+                {t('dismiss')}
+              </Button>
+            </div>
           </div>
         </div>
       ) : null}
 
-      <div className="w-full min-w-0 shrink-0 pb-3">
+      <div className="mx-auto w-full min-w-0 max-w-3xl shrink-0 pb-3">
         <div className="mb-6 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {chips.map((chip) => (
             <Button
