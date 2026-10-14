@@ -61,6 +61,8 @@ type MemberHomeThreadCardProps = {
   onReach: (person: ReachPerson, mode: 'call' | 'chat') => Promise<boolean>;
   /** Side panel uses the spaces-tile scale. The conversation card stays larger. */
   compact?: boolean;
+  /** The AI chat card. Shorter banner, tighter type, one glance at the vote. */
+  chat?: boolean;
   /** Classic home keeps the card and drops every line that would talk to the AI. */
   assistant?: boolean;
 };
@@ -107,6 +109,7 @@ export function MemberHomeThreadCard({
   onAsk,
   onReach,
   compact = false,
+  chat = false,
   assistant = true,
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
@@ -316,11 +319,16 @@ export function MemberHomeThreadCard({
   }
 
   return (
-    <section className="member-home-thread-card w-full overflow-hidden">
+    <section
+      className={cn(
+        'member-home-thread-card w-full overflow-hidden',
+        chat && 'member-home-thread-card--chat',
+      )}
+    >
       {leadImage ? (
         <img src={leadImage} alt="" className="member-home-thread-image" />
       ) : null}
-      <div className="p-4">
+      <div className={chat ? 'p-3' : 'p-4'}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
             {isProposal
@@ -338,13 +346,17 @@ export function MemberHomeThreadCard({
           </p>
         </div>
         <h2
-          className={compact ? 'mt-3 text-1' : 'mt-3 text-4'}
+          className={
+            chat ? 'mt-2 text-2' : compact ? 'mt-3 text-1' : 'mt-3 text-4'
+          }
           style={{ fontFamily: 'var(--font-family-heading)' }}
         >
           {item.title}
         </h2>
         {creator ? (
-          <div className="mt-3 flex items-center gap-2">
+          <div
+            className={cn('flex items-center gap-2', chat ? 'mt-2' : 'mt-3')}
+          >
             <PersonAvatar
               avatarSrc={creator.avatarUrl ?? undefined}
               userName={creator.name ?? undefined}
@@ -372,7 +384,9 @@ export function MemberHomeThreadCard({
         {summary ? (
           <p
             className={
-              compact
+              chat
+                ? 'mt-2 line-clamp-2 text-1 leading-relaxed text-neutral-12'
+                : compact
                 ? 'mt-3 text-1 leading-relaxed text-neutral-12'
                 : 'mt-3 text-2 leading-relaxed text-neutral-12'
             }
@@ -387,13 +401,16 @@ export function MemberHomeThreadCard({
             documentId={proposal?.id ?? item.documentId ?? null}
             documentSlug={proposal?.slug ?? item.slug}
             compact={compact}
+            chat={chat}
             onClosed={rememberOutcome}
           />
         ) : null}
         {outcome ? (
           <p
             className={
-              compact
+              chat
+                ? 'mt-2 text-1 leading-relaxed text-foreground'
+                : compact
                 ? 'mt-3 text-1 leading-relaxed text-foreground'
                 : 'mt-3 text-2 leading-relaxed text-foreground'
             }
@@ -406,7 +423,9 @@ export function MemberHomeThreadCard({
         ) : null}
         <div
           className={
-            compact
+            chat
+              ? 'mt-2 flex flex-wrap items-center gap-2'
+              : compact
               ? 'mt-3 grid w-full grid-cols-1 gap-2'
               : 'mt-3 flex flex-wrap items-center gap-2'
           }

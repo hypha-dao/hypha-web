@@ -825,6 +825,7 @@ export function MemberHomeChat({
                       ) : null}
                       {!mine && pinnedItem ? (
                         <MemberHomeThreadCard
+                          chat
                           lang={lang}
                           item={pinnedItem}
                           proposal={

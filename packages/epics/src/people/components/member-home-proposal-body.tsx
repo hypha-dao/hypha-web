@@ -21,6 +21,8 @@ type MemberHomeProposalBodyProps = {
   documentId: number | null;
   documentSlug: string;
   compact?: boolean;
+  /** Inside the AI chat. Drop the repeated closed label and tighten the meters. */
+  chat?: boolean;
   /** The chain vote is over. Participation and unity are whole percents. */
   onClosed?: (outcome: {
     passed: boolean;
@@ -56,6 +58,7 @@ export function MemberHomeProposalBody({
   documentId,
   documentSlug,
   compact = false,
+  chat = false,
   onClosed,
 }: MemberHomeProposalBodyProps) {
   const t = useTranslations('MemberHome');
@@ -142,11 +145,13 @@ export function MemberHomeProposalBody({
     }
   }
 
+  const showCloses = Boolean(closes) && (!chat || voteOpen);
+
   return (
-    <div className="mt-3 grid gap-3">
-      {closes || (transfer && tokenSymbol) ? (
+    <div className={chat ? 'mt-2 grid gap-2' : 'mt-3 grid gap-3'}>
+      {showCloses || (transfer && tokenSymbol) ? (
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          {closes ? (
+          {showCloses ? (
             <p className="text-1 tracking-[0.08em] text-neutral-11 uppercase">
               {closes}
             </p>
@@ -190,7 +195,7 @@ export function MemberHomeProposalBody({
           <span>{t('noCount', { count: noCount })}</span>
         </div>
       ) : null}
-      <div className="grid gap-4">
+      <div className={chat ? 'grid gap-2' : 'grid gap-4'}>
         <ProgressLine
           label={tVoting('voting.quorumMinParticipation')}
           value={proposalDetails?.quorumPercentage ?? 0}
@@ -199,6 +204,7 @@ export function MemberHomeProposalBody({
           }
           hideTargets={spaceDetails?.quorum == null}
           indicatorColor="bg-accent-12"
+          dense={chat}
         />
         <ProgressLine
           label={tVoting('voting.unityMinAlignment')}
@@ -206,6 +212,7 @@ export function MemberHomeProposalBody({
           target={spaceDetails?.unity != null ? Number(spaceDetails.unity) : 0}
           hideTargets={spaceDetails?.unity == null}
           indicatorColor="bg-accent-9"
+          dense={chat}
         />
       </div>
       {canVote && proposalDetails != null ? (
