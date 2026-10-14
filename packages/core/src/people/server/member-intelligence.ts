@@ -60,6 +60,7 @@ import {
   peerNamesByPerson,
   peopleSharingMemberSpaces,
   recentNotifications,
+  resolveMemberConnectionLimit,
 } from '../member-intelligence';
 import {
   movementKindForAgreement,
@@ -92,8 +93,6 @@ export type {
 /** Recent proposals and signals the notifications tile can page through. */
 const NOTIFICATION_FEED_LIMIT = 40;
 const LIST_LIMIT = 6;
-/** Direct-access icons on the home. Other lists stay on LIST_LIMIT. */
-const CONNECTION_LIMIT = 12;
 
 const memberSpaceColumns = {
   id: spaces.id,
@@ -969,7 +968,11 @@ function creatorLabel(
 }
 
 export async function getMemberIntelligence(
-  { personId, limit = LIST_LIMIT }: { personId: number; limit?: number },
+  {
+    personId,
+    limit = LIST_LIMIT,
+    connectionLimit,
+  }: { personId: number; limit?: number; connectionLimit?: number },
   { db }: DbConfig,
 ): Promise<MemberIntelligence | null> {
   const listLimit = Math.min(Math.max(limit, 1), 24);
@@ -1209,7 +1212,7 @@ export async function getMemberIntelligence(
         {
           personId,
           spaceIds,
-          limit: Math.max(listLimit, CONNECTION_LIMIT),
+          limit: resolveMemberConnectionLimit(listLimit, connectionLimit),
           focusPersonIds: [
             ...proposalSlice.creators.map((creator) => creator.id),
             ...signalSlice.creators.map((creator) => creator.id),

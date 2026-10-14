@@ -123,6 +123,9 @@
     "reachOut": "Hypha suggests",
     "longTimeNoSee": "Long time no see",
     "longTimeSentence": "It has been a long time since you connected.",
+    "suggestSentence": "People to reconnect with, and people worth meeting.",
+    "worthMeeting": "Worth meeting",
+    "sharedCount": "{count} shared",
     "people": "People",
     "groups": "Groups",
     "search": "Search members",
@@ -135,7 +138,8 @@
     "justNow": "Just now",
     "youWrote": "You: {message}",
     "unread": "{count} new",
-    "members": "{count} members"
+    "members": "{count} members",
+    "loadMoreFailed": "The rest of the list did not load. You can try again."
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",

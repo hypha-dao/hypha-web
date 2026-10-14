@@ -1,17 +1,34 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  MEMBER_CONNECTION_LIMIT,
+  MEMBER_CONNECTION_MAX,
   mergeMemberSpaces,
   peerNamesByPerson,
   peopleSharingMemberSpaces,
   pickNotificationsAcrossSpaces,
   recentNotifications,
+  resolveMemberConnectionLimit,
 } from '../../member-intelligence';
 import { SPACE_ACTOR_SUB_PREFIX } from '../space-actor-person';
 import {
   buildMemberGuidance,
   parseMemberOrientation,
 } from '../../member-intelligence-guidance';
+
+describe('resolveMemberConnectionLimit', () => {
+  it('keeps the home on the first page', () => {
+    expect(resolveMemberConnectionLimit(6)).toBe(MEMBER_CONNECTION_LIMIT);
+  });
+
+  it('returns the next page the connections screen asks for', () => {
+    expect(resolveMemberConnectionLimit(6, 24)).toBe(24);
+  });
+
+  it('stops at the maximum', () => {
+    expect(resolveMemberConnectionLimit(6, 500)).toBe(MEMBER_CONNECTION_MAX);
+  });
+});
 
 describe('mergeMemberSpaces', () => {
   it('keeps on-chain spaces when the memberships table has none', () => {

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { memberRowsForConnections } from '../member-connections';
+import {
+  STALE_CONNECTION_MS,
+  memberRowsForConnections,
+  suggestConnections,
+  type NewcomerCandidate,
+} from '../member-connections';
 
 type Person = Parameters<typeof memberRowsForConnections>[0][number];
 type Room = Parameters<typeof memberRowsForConnections>[1][number];
@@ -97,5 +102,88 @@ describe('memberRowsForConnections', () => {
     );
 
     expect(rows.map((row) => row.person.id)).toEqual([9]);
+  });
+});
+
+function member(
+  id: number,
+  name: string,
+  lastTs: number | null,
+  sharedSpaceCount: number,
+) {
+  return {
+    person: {
+      id,
+      slug: null,
+      name,
+      surname: null,
+      nickname: null,
+      avatarUrl: null,
+      sharedSpaceCount,
+    },
+    name,
+    avatarUrl: undefined,
+    roomId: lastTs == null ? null : `!${id}`,
+    lastTs,
+  };
+}
+
+describe('suggestConnections', () => {
+  const now = Date.UTC(2026, 9, 14);
+
+  it('keeps a stale conversation and adds people never met', () => {
+    const picked = suggestConnections(
+      [
+        member(1, 'Edgar Kampers', now - STALE_CONNECTION_MS - 1, 1),
+        member(2, 'Dmitry Ermolenko', null, 4),
+        member(3, 'Kate Bennett', now - 60_000, 2),
+      ],
+      [
+        {
+          id: 9,
+          name: 'Ada',
+          spaceTitle: 'River school',
+          spaceSlug: 'river-school',
+          score: 5,
+        },
+      ],
+      now,
+    );
+
+    expect(picked.map((card) => [card.name, card.kind])).toEqual([
+      ['Dmitry Ermolenko', 'meet'],
+      ['Ada', 'meet'],
+      ['Edgar Kampers', 'reconnect'],
+    ]);
+    expect(picked[1]?.spaceTitle).toBe('River school');
+    expect(picked[0]?.sharedSpaceCount).toBe(4);
+  });
+
+  it('does not suggest someone who is already a connection', () => {
+    const newcomer: NewcomerCandidate = {
+      id: 2,
+      name: 'Dmitry Ermolenko',
+      spaceTitle: 'River school',
+      spaceSlug: 'river-school',
+      score: 9,
+    };
+    const picked = suggestConnections(
+      [member(2, 'Dmitry Ermolenko', null, 1)],
+      [newcomer, newcomer],
+      now,
+    );
+
+    expect(picked).toHaveLength(1);
+    expect(picked[0]?.key).toBe('person-2');
+  });
+
+  it('prefers the closer new connection when several have never written', () => {
+    const picked = suggestConnections(
+      [member(1, 'Near', null, 3), member(2, 'Far', null, 1)],
+      [],
+      now,
+    );
+
+    expect(picked.map((card) => card.name)).toEqual(['Near', 'Far']);
   });
 });
