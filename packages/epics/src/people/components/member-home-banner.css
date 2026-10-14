@@ -98,3 +98,7 @@
   height: 168px;
   object-fit: cover;
 }
+
+.member-home-thread-card--chat .member-home-thread-image {
+  height: 72px;
+}
