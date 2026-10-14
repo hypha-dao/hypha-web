@@ -2,7 +2,7 @@
 
 import { NotifyCallStartedInput } from '@hypha-platform/core/client';
 import { PrivyClient } from '@privy-io/node';
-import { TAG_MENTION_CONSENT } from '../constants';
+import { TAG_MEETING_CONSENT } from '../constants';
 import { sendEmailNotifications, sendPushNotifications } from '../mutations';
 import { buildCallStartedEmailBody } from './notify-call-started.utils';
 import { resolveCallStartedRecipientSlugs } from './notify-call-started.recipients';
@@ -72,9 +72,7 @@ export async function notifyCallStartedAction(
   const headings = {
     en: subject,
   };
-  const requiredTags = {
-    [TAG_MENTION_CONSENT]: 'true',
-  };
+  const requiredTags = [TAG_MEETING_CONSENT];
 
   const results = await Promise.allSettled([
     sendPushNotifications({

@@ -30,7 +30,7 @@ describe('buildSpaceCreatedContent', () => {
   it('requests push + email gated on base tags only', () => {
     const result = buildSpaceCreatedContent(event(1), recipient);
     expect(result.channels).toEqual(['push', 'email']);
-    expect(result.requiredTags).toEqual({});
+    expect(result.requiredTags).toEqual(['sub_ownActions']);
   });
 
   it('falls back to plain copy (singular) without the env vars, push carries the url', () => {

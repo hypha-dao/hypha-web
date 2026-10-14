@@ -1,18 +1,27 @@
 import { sdkClient } from '../sdk';
-import { TAG_EMAIL, TAG_PUSH, TAG_SUBSCRIBED } from '../constants';
+import {
+  isTagDisabled,
+  TAG_EMAIL,
+  TAG_PUSH,
+  TAG_SUBSCRIBED,
+} from '../constants';
 import type { NotificationChannel, Recipient } from './types';
 
-export interface ConsentTags {
-  [tag: string]: string;
-}
+/** Names of the OneSignal tags a recipient must not have disabled (`subscribed` must be `'true'`). */
+export type ConsentTags = readonly string[];
 
+/**
+ * Enabled-by-default (#2549 D4): a tag passes unless it is `'disabled'` / legacy `'false'`, so an
+ * absent tag allows. `subscribed` stays an opt-in enrolment flag (D6) and must be `'true'`.
+ */
 function tagsMatch(
   tags: Record<string, string> | undefined,
   requiredTags: ConsentTags,
 ): boolean {
-  if (!tags) return false;
-  return Object.entries(requiredTags).every(
-    ([tag, value]) => Object.hasOwn(tags, tag) && tags[tag] === value,
+  return requiredTags.every((tag) =>
+    tag === TAG_SUBSCRIBED
+      ? tags?.[tag] === 'true'
+      : !isTagDisabled(tags?.[tag]),
   );
 }
 
@@ -64,8 +73,8 @@ export async function resolveConsentedSlugs(
 }
 
 const CHANNEL_BASE_TAGS: Record<'push' | 'email', ConsentTags> = {
-  push: { [TAG_SUBSCRIBED]: 'true', [TAG_PUSH]: 'true' },
-  email: { [TAG_SUBSCRIBED]: 'true', [TAG_EMAIL]: 'true' },
+  push: [TAG_SUBSCRIBED, TAG_PUSH],
+  email: [TAG_SUBSCRIBED, TAG_EMAIL],
 };
 
 /**
@@ -98,7 +107,7 @@ export async function gateRecipientChannels(
       allowed.set(channel, new Set(slugs));
       continue;
     }
-    const required = { ...CHANNEL_BASE_TAGS[channel], ...requiredTags };
+    const required = [...CHANNEL_BASE_TAGS[channel], ...requiredTags];
     const consented = slugs.filter((slug) =>
       tagsMatch(tagsBySlug.get(slug), required),
     );

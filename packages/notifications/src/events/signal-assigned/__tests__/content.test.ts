@@ -25,7 +25,7 @@ describe('buildSignalAssignedContent', () => {
     const result = buildSignalAssignedContent(event, recipient);
 
     expect(result.channels).toEqual(['email']);
-    expect(result.requiredTags).toEqual({});
+    expect(result.requiredTags).toEqual(['sub_signals']);
     expect(result.content.push).toBeUndefined();
     expect(result.content.email).toMatchObject({ kind: 'plain' });
   });

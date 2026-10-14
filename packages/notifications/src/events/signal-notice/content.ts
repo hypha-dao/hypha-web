@@ -1,3 +1,4 @@
+import { TAG_SUB_SIGNALS } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import type { SignalBoardNoticeEvent } from '../../core/types';
 import { buildSignalNoticeEmail } from './email';
@@ -15,7 +16,7 @@ export const buildSignalNoticeContent: ContentBuilder<
 
   return {
     channels: ['email'],
-    requiredTags: {},
+    requiredTags: [TAG_SUB_SIGNALS],
     content: {
       email: {
         kind: 'plain',

@@ -90,7 +90,7 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
     const heading = `${actorDisplayName} mentioned you`;
     return {
       channels: ['push', 'email'],
-      requiredTags: { [TAG_MENTION_CONSENT]: 'true' },
+      requiredTags: [TAG_MENTION_CONSENT],
       content: {
         push: {
           kind: 'plain',
@@ -115,7 +115,7 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
   // chat.message (all-messages)
   return {
     channels: ['push'],
-    requiredTags: {},
+    requiredTags: [],
     content: {
       push: {
         kind: 'plain',

@@ -55,7 +55,7 @@ describe('buildScheduledItemInvitedContent', () => {
     const result = buildScheduledItemInvitedContent(makeEvent(), {
       personSlug: 'alice',
     });
-    expect(result.requiredTags).toEqual({ [TAG_MEETING_CONSENT]: 'true' });
+    expect(result.requiredTags).toEqual([TAG_MEETING_CONSENT]);
   });
 
   it('only builds the channels the caller pre-claimed', () => {

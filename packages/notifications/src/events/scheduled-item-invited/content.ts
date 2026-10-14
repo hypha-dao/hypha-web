@@ -100,7 +100,7 @@ export const buildScheduledItemInvitedContent: ContentBuilder<
 
   return {
     channels,
-    requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
+    requiredTags: [TAG_MEETING_CONSENT],
     content: {
       push: channels.includes('push')
         ? {

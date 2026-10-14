@@ -32,14 +32,10 @@ describe('buildProposalSettlementContent', () => {
   it('gates on sub_proposalApprovedOrRejected for both accepted and rejected', () => {
     expect(
       buildProposalSettlementContent(accepted, creatorRecipient).requiredTags,
-    ).toEqual({
-      [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'true',
-    });
+    ).toEqual([TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]);
     expect(
       buildProposalSettlementContent(rejected, creatorRecipient).requiredTags,
-    ).toEqual({
-      [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'true',
-    });
+    ).toEqual([TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]);
   });
 
   it('uses execution copy for accepted and rejection copy for rejected', () => {

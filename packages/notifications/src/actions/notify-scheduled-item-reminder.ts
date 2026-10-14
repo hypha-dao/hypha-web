@@ -95,7 +95,7 @@ export async function notifyScheduledItemReminder(
 
   const meetingConsentTags =
     input.item.type === 'call' || input.item.type === 'meeting'
-      ? { [TAG_MEETING_CONSENT]: 'true' as const }
+      ? [TAG_MEETING_CONSENT]
       : undefined;
 
   let sent = 0;

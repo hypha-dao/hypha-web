@@ -3,6 +3,7 @@
  * `spaceTitle`/`actorDisplayName`/`url` to each `Recipient.data` since they're the same for
  * every assignee. Email only — the original action never sent push for this type.
  */
+import { TAG_SUB_SIGNALS } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import type { SignalAssignedEvent } from '../../core/types';
 import {
@@ -23,7 +24,7 @@ export const buildSignalAssignedContent: ContentBuilder<SignalAssignedEvent> = (
 
   return {
     channels: ['email'],
-    requiredTags: {},
+    requiredTags: [TAG_SUB_SIGNALS],
     content: {
       email: {
         kind: 'plain',

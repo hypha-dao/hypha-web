@@ -62,7 +62,7 @@ export async function dispatch(
     string,
     {
       channels: NotificationChannel[];
-      requiredTags: Record<string, string>;
+      requiredTags: string[];
       entries: typeof built;
     }
   >();

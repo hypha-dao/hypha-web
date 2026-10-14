@@ -82,7 +82,7 @@ export const buildProposalSettlementContent: ContentBuilder<
 
   return {
     channels: ['push', 'email'],
-    requiredTags: { [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'true' },
+    requiredTags: [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED],
     content: {
       push: templatePush ?? {
         kind: 'plain',

@@ -4,7 +4,8 @@ import { ProposalCreationProps } from './template';
 import { sendPushByAlias } from './sdk/send-push';
 import { sendEmailByAlias } from './sdk/send-email';
 import { LangMap } from './sdk/types';
-import { resolveConsentedSlugs, type ConsentTags } from './core/consent-gate';
+import { TAG_EMAIL, TAG_PUSH, TAG_SUBSCRIBED } from './constants';
+import { resolveConsentedSlugs } from './core/consent-gate';
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
 
@@ -12,13 +13,12 @@ export interface SendNotificationsInput extends ProposalCreationProps {
   proposalCreatorSlug?: string;
 }
 
-export interface Tags {
-  [key: string]: string;
-}
+/** Names of the consent tags a recipient must not have disabled (`subscribed` must be `'true'`). */
+export type Tags = string[];
 
 /** @deprecated moved to `core/consent-gate.ts::resolveConsentedSlugs` (#2470) — kept as a thin alias here so this file's call sites don't change until they migrate onto the new decision layer. */
 const filterUsers = (usernames: Array<string>, requiredTags: Tags) =>
-  resolveConsentedSlugs(usernames, requiredTags as ConsentTags);
+  resolveConsentedSlugs(usernames, requiredTags);
 
 export const sendPushNotifications = async ({
   contents,
@@ -38,11 +38,11 @@ export const sendPushNotifications = async ({
   }
 
   console.log('Send push...');
-  const aliases = await filterUsers(usernames, {
-    subscribed: 'true',
-    push: 'true',
-    ...requiredTags,
-  });
+  const aliases = await filterUsers(usernames, [
+    TAG_SUBSCRIBED,
+    TAG_PUSH,
+    ...(requiredTags ?? []),
+  ]);
 
   if (aliases.length === 0) {
     console.warn('No users matched push notification criteria');
@@ -79,11 +79,11 @@ export const sendPushNotificationsTemplate = async ({
   }
 
   console.log('Send push...');
-  const aliases = await filterUsers(usernames, {
-    subscribed: 'true',
-    push: 'true',
-    ...requiredTags,
-  });
+  const aliases = await filterUsers(usernames, [
+    TAG_SUBSCRIBED,
+    TAG_PUSH,
+    ...(requiredTags ?? []),
+  ]);
 
   if (aliases.length === 0) {
     console.warn('No users matched push notification criteria');
@@ -118,11 +118,11 @@ export const sendEmailNotifications = async ({
   }
 
   console.log('Send email...');
-  const aliases = await filterUsers(usernames, {
-    subscribed: 'true',
-    email: 'true',
-    ...requiredTags,
-  });
+  const aliases = await filterUsers(usernames, [
+    TAG_SUBSCRIBED,
+    TAG_EMAIL,
+    ...(requiredTags ?? []),
+  ]);
 
   if (aliases.length === 0) {
     console.warn('No users matched email notification criteria');
@@ -156,11 +156,11 @@ export const sendEmailNotificationsTemplate = async ({
   }
 
   console.log('Send email...');
-  const aliases = await filterUsers(usernames, {
-    subscribed: 'true',
-    email: 'true',
-    ...requiredTags,
-  });
+  const aliases = await filterUsers(usernames, [
+    TAG_SUBSCRIBED,
+    TAG_EMAIL,
+    ...(requiredTags ?? []),
+  ]);
 
   if (aliases.length === 0) {
     console.warn('No users matched email notification criteria');

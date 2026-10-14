@@ -173,7 +173,7 @@ export interface ChannelContent {
 export interface NotificationContent {
   channels: NotificationChannel[];
   /** OneSignal tags required for a channel to be allowed — passed to `ConsentGate`. */
-  requiredTags: Record<string, string>;
+  requiredTags: string[];
   content: ChannelContent;
 }
 
