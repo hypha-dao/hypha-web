@@ -26,6 +26,10 @@ import {
   assigneeAcknowledgementMap,
   resetDeadlineNotifyState,
 } from '../signal-notification-triggers';
+import {
+  attachCoherenceCapitals,
+  writeCoherenceCapitals,
+} from '../../network/capital-columns';
 
 export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
@@ -117,6 +121,7 @@ export const createCoherence = async (
     board: inputBoard,
     dueAt: inputDueAt,
     sharedWithNetwork,
+    capitals,
     ...rest
   }: CreateCoherenceInput,
   { db }: { db: DatabaseInstance },
@@ -173,7 +178,11 @@ export const createCoherence = async (
     );
   }
 
-  return newSignal;
+  if (capitals && capitals.length > 0) {
+    await writeCoherenceCapitals(db, newSignal.id, capitals);
+  }
+
+  return { ...newSignal, capitals: capitals ?? [] };
 };
 
 export const updateCoherenceBySlug = async (
@@ -241,6 +250,7 @@ export const updateCoherenceSignalBySlug = async (
     attachments,
     sharedWithNetwork,
     archived,
+    capitals,
   } = rest;
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
   const nextProgressStatus = progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
@@ -298,7 +308,13 @@ export const updateCoherenceSignalBySlug = async (
     .returning();
 
   if (updated.length === 1) {
-    return updated[0]!;
+    const saved = updated[0]!;
+    if (capitals !== undefined) {
+      await writeCoherenceCapitals(db, saved.id, capitals);
+      return { ...saved, capitals };
+    }
+    const [withCapitals] = await attachCoherenceCapitals(db, [saved]);
+    return withCapitals ?? saved;
   }
 
   if (updated.length > 1) {

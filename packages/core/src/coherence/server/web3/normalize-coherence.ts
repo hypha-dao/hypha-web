@@ -11,6 +11,7 @@ import {
   normalizeAssigneeIds,
 } from '../../signal-workflow';
 import { IndicativePayout, SignalAttachment } from '../../types';
+import { parseCapitalKeys } from '../../../network/capitals';
 
 function normalizeMediaUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -66,8 +67,9 @@ export function normalizeCoherence({
   sharedWithNetwork,
   source,
   externalId,
+  capitals,
   ...rest
-}: DbCoherence): Coherence {
+}: DbCoherence & { capitals?: unknown }): Coherence {
   return {
     type: (COHERENCE_TYPES as readonly string[]).includes(type)
       ? (type as CoherenceType)
@@ -108,5 +110,6 @@ export function normalizeCoherence({
     source: source?.trim() || null,
     externalId: externalId?.trim() || null,
     ...rest,
+    capitals: parseCapitalKeys(capitals),
   };
 }

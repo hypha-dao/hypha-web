@@ -121,6 +121,8 @@ const signalAttachmentsSchema = z
   .optional()
   .transform((value) => value ?? []);
 
+import { parseCapitalKeys } from '../network/capitals';
+
 const coherenceSignalFields = {
   type: z.enum(COHERENCE_SIGNAL_TYPES),
   priority: z.enum(COHERENCE_PRIORITIES),
@@ -140,6 +142,12 @@ const coherenceSignalFields = {
   videoUrl: optionalMediaUrlSchema,
   attachments: signalAttachmentsSchema,
   sharedWithNetwork: z.boolean().optional(),
+  capitals: z
+    .array(z.string())
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : parseCapitalKeys(value),
+    ),
   ...signalTaskFields,
 };
 

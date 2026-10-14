@@ -1,4 +1,5 @@
 import { TokenType } from '../common/web3/tokens';
+import type { CapitalKey } from '../network/capitals';
 
 export type Creator = {
   avatarUrl?: string;
@@ -173,6 +174,8 @@ export type CreateTokenInput = {
   agreementWeb3Id?: number;
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
+  /** One form of capital. Omitted on create leaves the token unnamed. */
+  capital?: CapitalKey | null;
 };
 
 export type UpdateTokenInput = {
@@ -192,6 +195,8 @@ export type UpdateTokenInput = {
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
   archiveToken?: boolean;
+  /** One form of capital. Null clears it. Omit to leave the stored value alone. */
+  capital?: CapitalKey | null;
 };
 
 /** Matches form `transferWhitelist` / issue-new-token shape; stored in pending token update JSON */
@@ -221,6 +226,8 @@ export type TokenUpdateData = {
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
   archiveToken?: boolean;
+  /** One form of capital. Null clears it. */
+  capital?: CapitalKey | null;
   /** Persisted for withdraw/resubmit hydration */
   enableProposalAutoMinting?: boolean;
   /** UI toggle — persisted so reopening the form matches the saved proposal */

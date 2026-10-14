@@ -12,6 +12,19 @@ const baseSignal = {
 };
 
 describe('indicative payouts on a signal', () => {
+  it('treats a missing capital list as none', () => {
+    const parsed = schemaCreateCoherenceForm.parse(baseSignal);
+    expect(parsed.capitals).toEqual(undefined);
+  });
+
+  it('keeps named forms of capital and drops anything else', () => {
+    const parsed = schemaCreateCoherenceForm.parse({
+      ...baseSignal,
+      capitals: ['social', 'nope', 'social', 'wisdom'],
+    });
+    expect(parsed.capitals).toEqual(['social', 'wisdom']);
+  });
+
   it('treats a missing amount list as none', () => {
     const parsed = schemaCreateCoherenceForm.parse(baseSignal);
     expect(parsed.indicativePayouts).toEqual([]);

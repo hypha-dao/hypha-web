@@ -31,6 +31,7 @@ import {
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
+import { CapitalChoice } from '../../spaces/components/capital-choice';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
 import type { Control, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
@@ -45,6 +46,8 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  parseCapitalKeys,
+  type CapitalKey,
   collectExistingTags,
   mergeTagInList,
   normalizeTagKey,
@@ -228,6 +231,7 @@ export const CreateSignalForm = ({
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
+  const tCapitals = useTranslations('NetworkExchange');
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -416,6 +420,7 @@ export const CreateSignalForm = ({
           ? initialValues.type
           : 'Opportunity',
       priority: initialValues?.priority ?? 'medium',
+      capitals: parseCapitalKeys(initialValues?.capitals),
       tags: Array.isArray(initialValues?.tags)
         ? (initialValues.tags.filter(
             (tag): tag is CoherenceTag =>
@@ -827,6 +832,7 @@ export const CreateSignalForm = ({
               parsed.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: parsed.assigneeIds,
             indicativePayouts: data.indicativePayouts,
+            capitals: parsed.capitals,
             sharedWithNetwork: data.sharedWithNetwork ?? false,
             ...media,
           });
@@ -1242,6 +1248,26 @@ export const CreateSignalForm = ({
                         </span>
                       </FormControl>
                     </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="capitals"
+                render={({ field }) => (
+                  <FormItem className="border-t border-border pt-6">
+                    <FormLabel className="text-foreground">
+                      {tCapitals('formsOfCapital')}
+                    </FormLabel>
+                    <FormDescription>
+                      {tCapitals('capitalHintMany')}
+                    </FormDescription>
+                    <CapitalChoice
+                      mode="many"
+                      selected={parseCapitalKeys(field.value)}
+                      onChange={(next: CapitalKey[]) => field.onChange(next)}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
