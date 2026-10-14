@@ -621,6 +621,9 @@
     "reachOut": "Hypha stelt voor",
     "longTimeNoSee": "Lang niet gesproken",
     "longTimeSentence": "Het is lang geleden dat jullie contact hadden.",
+    "suggestSentence": "Mensen om weer contact mee te zoeken, en mensen die de moeite waard zijn.",
+    "worthMeeting": "De moeite waard",
+    "sharedCount": "{count} gedeeld",
     "people": "Mensen",
     "groups": "Groepen",
     "search": "Leden zoeken",
@@ -633,7 +636,8 @@
     "justNow": "Zojuist",
     "youWrote": "Jij: {message}",
     "unread": "{count} nieuw",
-    "members": "{count} leden"
+    "members": "{count} leden",
+    "loadMoreFailed": "De rest van de lijst is niet geladen. Je kunt het opnieuw proberen."
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",

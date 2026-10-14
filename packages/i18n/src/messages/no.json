@@ -620,6 +620,9 @@
     "reachOut": "Hypha foreslår",
     "longTimeNoSee": "Lenge siden sist",
     "longTimeSentence": "Det er lenge siden dere hadde kontakt.",
+    "suggestSentence": "Folk å ta opp kontakten med, og folk det er verdt å møte.",
+    "worthMeeting": "Verdt å møte",
+    "sharedCount": "{count} felles",
     "people": "Personer",
     "groups": "Grupper",
     "search": "Søk etter medlemmer",
@@ -632,7 +635,8 @@
     "justNow": "Akkurat nå",
     "youWrote": "Du: {message}",
     "unread": "{count} nye",
-    "members": "{count} medlemmer"
+    "members": "{count} medlemmer",
+    "loadMoreFailed": "Resten av listen ble ikke lastet. Du kan prøve igjen."
   },
   "NetworkFeedback": {
     "triggerLabel": "Bidra til Hypha",

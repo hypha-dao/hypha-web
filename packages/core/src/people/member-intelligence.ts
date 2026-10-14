@@ -244,6 +244,29 @@ export type SharedSpacePerson = {
   sub: string | null;
 };
 
+/** First page of people on the connections screen. */
+export const MEMBER_CONNECTION_LIMIT = 12;
+/** Further pages stop here so one request cannot return the whole network. */
+export const MEMBER_CONNECTION_MAX = 120;
+
+/**
+ * How many shared-space people to return. The home stays on the first page.
+ * A connections request can ask for the next page, up to the maximum.
+ */
+export function resolveMemberConnectionLimit(
+  listLimit: number,
+  requested?: number,
+) {
+  const asked =
+    typeof requested === 'number' && Number.isFinite(requested)
+      ? Math.max(0, Math.floor(requested))
+      : 0;
+  return Math.min(
+    MEMBER_CONNECTION_MAX,
+    Math.max(listLimit, MEMBER_CONNECTION_LIMIT, asked),
+  );
+}
+
 export type SharedSpaceConnection = {
   id: number;
   slug: string | null;

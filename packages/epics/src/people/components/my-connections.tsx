@@ -18,6 +18,7 @@ import {
   useMatrixUserIdsByPersonIds,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
+import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
@@ -30,25 +31,20 @@ import {
   isHyphaBot,
   looksLikeHyphaBot,
   memberRowsForConnections,
+  STALE_CONNECTION_MS,
+  suggestConnections,
+  type ConnectionSuggestion,
   type ConversationRow,
   type MemberRow,
+  type NewcomerCandidate,
 } from './member-connections';
 import { PersonAvatar } from './person-avatar';
 
-const STALE_MS = 14 * 24 * 60 * 60 * 1000;
-const REACH_OUT_LIMIT = 6;
+/** Matches the first page returned for the home. Each click asks for one more. */
+const CONNECTIONS_PAGE = 12;
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 type ConnectionMemberRow = MemberRow<ConnectionPerson>;
-
-type ReachOutCard = {
-  key: string;
-  name: string;
-  avatarUrl?: string;
-  roomId: string | null;
-  lastTs: number | null;
-  person: ConnectionPerson | null;
-};
 
 function botUserId() {
   return process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
@@ -203,6 +199,7 @@ function formatWhen(ts: number, locale: string, justNow: string) {
 export function MyConnections() {
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
+  const tCommon = useTranslations('Common');
   const locale = useLocale();
   const { jwt } = useJwt();
   const { client, isMatrixAvailable, createRoom } = useMatrix();
@@ -215,6 +212,10 @@ export function MyConnections() {
   const [notice, setNotice] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [calling, setCalling] = useState(false);
+  const [directory, setDirectory] = useState<ConnectionPerson[] | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreFailed, setMoreFailed] = useState(false);
+  const [directoryComplete, setDirectoryComplete] = useState(false);
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -227,7 +228,16 @@ export function MyConnections() {
     },
   );
 
-  const connections = home?.connections ?? [];
+  const connections =
+    directory && directory.length >= (home?.connections.length ?? 0)
+      ? directory
+      : home?.connections ?? [];
+  const connectionTotal = Math.max(
+    home?.counts.connections ?? 0,
+    connections.length,
+  );
+  const hasMorePeople =
+    !directoryComplete && connections.length < connectionTotal;
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds: connections.map((person) => person.id),
   });
@@ -276,33 +286,73 @@ export function MyConnections() {
 
   const reachOut = useMemo(() => {
     if (!synced) return [];
-    const now = Date.now();
-    return members
-      .filter((row) => row.lastTs == null || now - row.lastTs > STALE_MS)
-      .sort((left, right) => {
-        if (left.lastTs == null && right.lastTs == null) return 0;
-        if (left.lastTs == null) return 1;
-        if (right.lastTs == null) return -1;
-        return left.lastTs - right.lastTs;
-      })
-      .slice(0, REACH_OUT_LIMIT)
-      .map(
-        (row): ReachOutCard => ({
-          key: `person-${row.person.id}`,
-          name: row.name,
-          avatarUrl: row.avatarUrl,
-          roomId: row.roomId,
-          lastTs: row.lastTs,
-          person: row.person,
-        }),
-      );
-  }, [members, synced]);
+    const newcomers: NewcomerCandidate[] = [];
+    const seen = new Set<number>();
+    for (const signal of home?.networkSignals ?? []) {
+      const id = signal.creatorId;
+      const name = signal.creatorName?.trim();
+      if (id == null || !name || seen.has(id)) continue;
+      seen.add(id);
+      newcomers.push({
+        id,
+        name,
+        avatarUrl: signal.creatorAvatarUrl,
+        spaceTitle: signal.spaceTitle,
+        spaceSlug: signal.spaceSlug,
+        score: signal.relevance?.score ?? 0,
+      });
+    }
+    return suggestConnections(
+      members,
+      newcomers,
+      Date.now(),
+      STALE_CONNECTION_MS,
+    );
+  }, [home?.networkSignals, members, synced]);
+  const reachOutIds = useMemo(
+    () => reachOut.map((card) => card.person.id),
+    [reachOut],
+  );
 
   const needle = query.trim().toLowerCase();
   const people = needle
     ? members.filter((row) => row.name.toLowerCase().includes(needle))
     : members;
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
+
+  async function loadMorePeople() {
+    if (loadingMore || !jwt || !hasMorePeople) return;
+    setLoadingMore(true);
+    setMoreFailed(false);
+    const next = Math.min(
+      connections.length + CONNECTIONS_PAGE,
+      connectionTotal,
+    );
+    try {
+      const response = await fetch(
+        `/api/v1/people/me/intelligence?connections=${next}`,
+        { headers: { Authorization: `Bearer ${jwt}` } },
+      );
+      if (!response.ok) {
+        setMoreFailed(true);
+        return;
+      }
+      const body = (await response.json()) as MemberIntelligence;
+      const page = body.connections ?? [];
+      if (page.length <= connections.length) {
+        setDirectoryComplete(true);
+        return;
+      }
+      setDirectory(page);
+      if (page.length >= (body.counts?.connections ?? connectionTotal)) {
+        setDirectoryComplete(true);
+      }
+    } catch {
+      setMoreFailed(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   function toggleSelected(id: number) {
     setSelected((current) => {
@@ -366,7 +416,7 @@ export function MyConnections() {
     }
   }
 
-  async function openReachOut(card: ReachOutCard) {
+  async function openReachOut(card: ConnectionSuggestion) {
     setNotice(null);
     if (card.roomId) {
       openCoherenceChat(
@@ -394,6 +444,7 @@ export function MyConnections() {
     <div className="flex min-w-0 flex-col gap-6">
       <MemberHomePeople
         people={connections}
+        extraPersonIds={reachOutIds}
         chatSpaceSlug={home?.chatSpaceSlug ?? null}
         fallbackName={t('someone')}
         onOpenChatReady={(openChat) => {
@@ -411,7 +462,7 @@ export function MyConnections() {
               {t('reachOut')}
             </h2>
             <p className="text-2 text-muted-foreground">
-              {t('longTimeSentence')}
+              {t('suggestSentence')}
             </p>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -432,11 +483,19 @@ export function MyConnections() {
                   {card.name}
                 </span>
                 <span className="text-1 text-foreground">
-                  {t('longTimeNoSee')}
+                  {card.kind === 'reconnect'
+                    ? t('longTimeNoSee')
+                    : t('worthMeeting')}
                 </span>
-                <span className="text-1 text-muted-foreground">
-                  {card.lastTs
-                    ? formatWhen(card.lastTs, locale, t('justNow'))
+                <span className="w-full truncate text-1 text-muted-foreground">
+                  {card.kind === 'reconnect'
+                    ? card.lastTs
+                      ? formatWhen(card.lastTs, locale, t('justNow'))
+                      : t('noMessage')
+                    : card.spaceTitle
+                    ? card.spaceTitle
+                    : card.sharedSpaceCount > 0
+                    ? t('sharedCount', { count: card.sharedSpaceCount })
                     : t('noMessage')}
                 </span>
               </button>
@@ -498,6 +557,26 @@ export function MyConnections() {
           onToggle={toggleSelected}
           onOpen={(row) => void openMember(row)}
         />
+      ) : null}
+
+      {hasMorePeople ? (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            disabled={loadingMore}
+            onClick={() => void loadMorePeople()}
+          >
+            {tCommon('loadMore')}
+          </Button>
+        </div>
+      ) : null}
+
+      {moreFailed ? (
+        <p className="text-center text-1 text-error-11" role="alert">
+          {t('loadMoreFailed')}
+        </p>
       ) : null}
     </div>
   );

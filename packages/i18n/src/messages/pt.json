@@ -1392,6 +1392,9 @@
     "reachOut": "A Hypha sugere",
     "longTimeNoSee": "Há quanto tempo",
     "longTimeSentence": "Já passou muito tempo desde que se falaram.",
+    "suggestSentence": "Pessoas para retomar o contacto, e pessoas que vale a pena conhecer.",
+    "worthMeeting": "Vale a pena conhecer",
+    "sharedCount": "{count} em comum",
     "people": "Pessoas",
     "groups": "Grupos",
     "search": "Procurar membros",
@@ -1404,7 +1407,8 @@
     "justNow": "Agora",
     "youWrote": "Tu: {message}",
     "unread": "{count} novas",
-    "members": "{count} membros"
+    "members": "{count} membros",
+    "loadMoreFailed": "O resto da lista não carregou. Podes tentar de novo."
   },
   "NetworkFeedback": {
     "triggerLabel": "Moldar a Hypha",

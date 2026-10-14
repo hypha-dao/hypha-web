@@ -20,8 +20,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    const rawConnections = request.nextUrl.searchParams.get('connections');
+    const requested =
+      rawConnections == null ? undefined : Number(rawConnections);
     const intelligence = await getMemberIntelligence(
-      { personId: caller.person.id },
+      {
+        personId: caller.person.id,
+        connectionLimit:
+          requested != null && Number.isFinite(requested)
+            ? requested
+            : undefined,
+      },
       { db: caller.db },
     );
     if (!intelligence) {

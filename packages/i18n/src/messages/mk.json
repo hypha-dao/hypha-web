@@ -621,6 +621,9 @@
     "reachOut": "Хифа предлага",
     "longTimeNoSee": "Одамна не сме се чуле",
     "longTimeSentence": "Помина долго време откако не сте се поврзале.",
+    "suggestSentence": "Луѓе за повторно поврзување, и луѓе што вреди да ги запознаеш.",
+    "worthMeeting": "Вреди да се запознаеш",
+    "sharedCount": "{count} заеднички",
     "people": "Луѓе",
     "groups": "Групи",
     "search": "Пребарај членови",
@@ -633,7 +636,8 @@
     "justNow": "Токму сега",
     "youWrote": "Ти: {message}",
     "unread": "{count} нови",
-    "members": "{count} членови"
+    "members": "{count} членови",
+    "loadMoreFailed": "Остатокот од листата не се вчита. Можеш да пробаш повторно."
   },
   "OnboardingAdventure": {
     "heroEyebrow": "ИНТЕЛИГЕНТНАТА ОРГАНИЗАЦИЈА",
