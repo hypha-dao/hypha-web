@@ -229,43 +229,27 @@ export function MemberHomeClosest({
     personIds,
   ]);
 
-  const aroundPeople = useMemo(() => {
-    if (!presenceById) return [];
-    return people
-      .filter((person) => {
-        const level = presenceById.get(person.id) ?? 'offline';
-        return level === 'active' || level === 'idle';
-      })
-      .sort((left, right) => {
-        const byPresence =
-          presenceRank(presenceById.get(left.id) ?? 'offline') -
-          presenceRank(presenceById.get(right.id) ?? 'offline');
-        if (byPresence !== 0) return byPresence;
-        return (
-          (messageCounts.get(right.id) ?? 0) - (messageCounts.get(left.id) ?? 0)
-        );
-      });
-  }, [messageCounts, people, presenceById]);
   const ranked = useMemo(
-    () => rankClosestContributors(aroundPeople, messageCounts, VISIBLE_PEOPLE),
-    [aroundPeople, messageCounts],
+    () => rankClosestContributors(people, messageCounts, VISIBLE_PEOPLE),
+    [messageCounts, people],
   );
   const visiblePeople = useMemo(() => {
-    const seen = new Set(ranked.people.map((person) => person.id));
-    const filled = [...ranked.people];
-    for (const person of aroundPeople) {
-      if (filled.length >= VISIBLE_PEOPLE) break;
-      if (seen.has(person.id)) continue;
-      filled.push(person);
-      seen.add(person.id);
-    }
-    return filled;
-  }, [aroundPeople, ranked.people]);
+    if (!presenceById) return ranked.people;
+    return [...ranked.people].sort((left, right) => {
+      const byPresence =
+        presenceRank(presenceById.get(left.id) ?? 'offline') -
+        presenceRank(presenceById.get(right.id) ?? 'offline');
+      if (byPresence !== 0) return byPresence;
+      return (
+        (messageCounts.get(right.id) ?? 0) - (messageCounts.get(left.id) ?? 0)
+      );
+    });
+  }, [messageCounts, presenceById, ranked.people]);
 
   const label = t('sensingAround');
-  const rest = Math.max(0, aroundPeople.length - visiblePeople.length);
+  const rest = Math.max(0, people.length - visiblePeople.length);
 
-  if (presenceById != null && ranked.people.length === 0) return null;
+  if (people.length === 0) return null;
 
   return (
     <nav aria-label={label} className="mt-1 min-w-0 max-w-full pb-3">
@@ -274,14 +258,19 @@ export function MemberHomeClosest({
       </p>
       {presenceById == null ? (
         <div className="mt-2 flex gap-2" aria-hidden>
-          {Array.from({ length: VISIBLE_PEOPLE }, (_, index) => (
-            <span
-              key={index}
-              className="animate-pulse rounded-full bg-neutral-3"
-              style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
-            />
-          ))}
+          {Array.from(
+            { length: Math.min(VISIBLE_PEOPLE, people.length) },
+            (_, index) => (
+              <span
+                key={index}
+                className="animate-pulse rounded-full bg-neutral-3"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+              />
+            ),
+          )}
         </div>
+      ) : visiblePeople.length === 0 ? (
+        <p className="mt-2 text-1 text-neutral-11">{t('sensingAroundEmpty')}</p>
       ) : (
         <ul className="mt-2 flex max-w-full flex-wrap items-center gap-2">
           {visiblePeople.map((person, index) => {
