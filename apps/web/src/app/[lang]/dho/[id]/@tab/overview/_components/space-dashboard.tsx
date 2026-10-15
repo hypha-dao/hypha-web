@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { UserEvent, type MatrixClient } from 'matrix-js-sdk';
-import { useLocale, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import {
   useFindCoherences,
   useMatrix,
   useMatrixUserIdsByPersonIds,
+  useMe,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
@@ -29,6 +30,88 @@ import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
 
 const VISIBLE_MEMBERS = 8;
+/** A week or more away is enough for a warm welcome back. No judgment. */
+const LONG_ABSENCE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function visitStorageKey(personSlug: string, spaceSlug: string) {
+  return `hypha.space-dashboard-visit:${personSlug}:${spaceSlug}`;
+}
+
+function readStoredVisit(key: string): Date | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredVisit(key: string, date: Date) {
+  try {
+    window.localStorage.setItem(key, date.toISOString());
+  } catch {
+    // Private mode or quota — skip quietly.
+  }
+}
+
+function greetingTimeKey(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 12) return 'greetingMorning' as const;
+  if (hour < 18) return 'greetingAfternoon' as const;
+  return 'greetingEvening' as const;
+}
+
+function SpaceDashboardGreeting({ spaceSlug }: { spaceSlug: string }) {
+  const t = useTranslations('OverviewOps');
+  const format = useFormatter();
+  const { person, isLoading } = useMe();
+  const [previousVisit, setPreviousVisit] = useState<Date | null>(null);
+  const [visitReady, setVisitReady] = useState(false);
+
+  useEffect(() => {
+    if (!person?.slug) {
+      setPreviousVisit(null);
+      setVisitReady(true);
+      return;
+    }
+    const key = visitStorageKey(person.slug, spaceSlug);
+    const previous = readStoredVisit(key);
+    setPreviousVisit(previous);
+    setVisitReady(true);
+    writeStoredVisit(key, new Date());
+  }, [person?.slug, spaceSlug]);
+
+  if (isLoading || !person) return null;
+  const name = person.name?.trim() || person.nickname?.trim();
+  if (!name) return null;
+
+  const longAway =
+    visitReady &&
+    previousVisit != null &&
+    Date.now() - previousVisit.getTime() >= LONG_ABSENCE_MS;
+
+  return (
+    <header className="flex min-w-0 flex-col gap-1">
+      <h1
+        className="text-5 leading-tight text-foreground sm:text-6"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {longAway
+          ? t('greetingBack', { name })
+          : t(greetingTimeKey(), { name })}
+      </h1>
+      {longAway && previousVisit ? (
+        <p className="text-2 text-neutral-11">
+          {t('greetingLastHere', {
+            date: format.dateTime(previousVisit, { dateStyle: 'medium' }),
+          })}
+        </p>
+      ) : null}
+    </header>
+  );
+}
 
 function sameIds(left: Set<number>, right: Set<number>) {
   if (left.size !== right.size) return false;
@@ -312,6 +395,8 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <SpaceDashboardGreeting spaceSlug={spaceSlug} />
+
       {membersLoading ? (
         <div className="flex gap-4" aria-hidden>
           {Array.from({ length: 5 }, (_, index) => (

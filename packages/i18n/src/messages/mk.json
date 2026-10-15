@@ -5144,6 +5144,11 @@
     "membersEmpty": "Сè уште нема членови.",
     "peopleHere": "Во овој простор",
     "connectedNow": "Поврзан",
+    "greetingMorning": "Добро утро, {name}.",
+    "greetingAfternoon": "Добар ден, {name}.",
+    "greetingEvening": "Добро вечер, {name}.",
+    "greetingBack": "Драго ни е што си повторно тука, {name}.",
+    "greetingLastHere": "Последен пат беше тука на {date}.",
     "ecosystemEmpty": "Сè уште нема други простори."
   },
   "Landing": {

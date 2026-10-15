@@ -5163,6 +5163,11 @@
     "membersEmpty": "Nog geen leden.",
     "peopleHere": "In deze space",
     "connectedNow": "Verbonden",
+    "greetingMorning": "Goedemorgen, {name}.",
+    "greetingAfternoon": "Goedemiddag, {name}.",
+    "greetingEvening": "Goedenavond, {name}.",
+    "greetingBack": "Fijn je weer te zien, {name}.",
+    "greetingLastHere": "Je was hier voor het laatst op {date}.",
     "ecosystemEmpty": "Nog geen andere spaces."
   },
   "Landing": {

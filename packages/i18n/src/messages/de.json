@@ -5157,6 +5157,11 @@
     "membersEmpty": "Noch keine Mitglieder.",
     "peopleHere": "In diesem Space",
     "connectedNow": "Verbunden",
+    "greetingMorning": "Guten Morgen, {name}.",
+    "greetingAfternoon": "Guten Tag, {name}.",
+    "greetingEvening": "Guten Abend, {name}.",
+    "greetingBack": "Schön, dich wiederzusehen, {name}.",
+    "greetingLastHere": "Du warst zuletzt am {date} hier.",
     "ecosystemEmpty": "Noch keine weiteren Spaces."
   },
   "Landing": {
