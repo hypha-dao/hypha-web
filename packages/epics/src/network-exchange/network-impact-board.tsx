@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   parseCapitalKeys,
-  useJwt,
   type CapitalKey,
   type NetworkFieldSignal,
 } from '@hypha-platform/core/client';
@@ -24,10 +23,13 @@ import {
   NetworkSectionHeader,
 } from './network-section-header';
 import { NetworkRightColumn } from './network-right-cards';
+import {
+  useMemberNamedSpaces,
+  type MemberNamedSpace,
+} from './use-member-named-spaces';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
 type StoryFormat = 'photo' | 'video' | 'voice';
-type NamedSpace = { slug: string; title: string };
 
 const SLUG = /^[a-z0-9_-]{1,80}$/i;
 
@@ -57,47 +59,13 @@ function plainText(value: string) {
   return out.replace(/\s+/g, ' ').trim();
 }
 
-function useMemberSpaces() {
-  const { jwt } = useJwt();
-  const [spaces, setSpaces] = useState<NamedSpace[]>([]);
-  useEffect(() => {
-    if (!jwt) return;
-    let cancelled = false;
-    void (async () => {
-      const me = await fetch('/api/v1/people/me', {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (!me.ok) return;
-      const person = (await me.json()) as { slug?: string };
-      if (!person.slug || !SLUG.test(person.slug)) return;
-      const list = await fetch(`/api/v1/people/${person.slug}/spaces`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (!list.ok) return;
-      const rows = (await list.json()) as { slug?: string; title?: string }[];
-      if (cancelled || !Array.isArray(rows)) return;
-      setSpaces(
-        rows.flatMap((row) =>
-          row.slug && row.title && SLUG.test(row.slug)
-            ? [{ slug: row.slug, title: row.title }]
-            : [],
-        ),
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [jwt]);
-  return spaces;
-}
-
 function SpaceSelect({
   spaces,
   value,
   onChange,
   label,
 }: {
-  spaces: NamedSpace[];
+  spaces: MemberNamedSpace[];
   value: string;
   onChange: (slug: string) => void;
   label: string;
@@ -319,7 +287,7 @@ function PostStoryCard({
   spaces,
 }: {
   lang: Locale;
-  spaces: NamedSpace[];
+  spaces: MemberNamedSpace[];
 }) {
   const t = useTranslations('NetworkExchange');
   const router = useRouter();
@@ -399,6 +367,7 @@ function PostStoryCard({
           if (!canPost) return;
           const params = new URLSearchParams();
           params.set('type', 'Impact');
+          params.set('sharedWithNetwork', '1');
           params.set('title', title.trim().slice(0, 80));
           router.push(
             `/${lang}/dho/${slug}/coherence/new-signal?${params.toString()}`,
@@ -422,7 +391,7 @@ export function NetworkImpactBoard({
   empty: string;
 }) {
   const t = useTranslations('NetworkExchange');
-  const memberSpaces = useMemberSpaces();
+  const memberSpaces = useMemberNamedSpaces();
   const [query, setQuery] = useState('');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
   const [openSlug, setOpenSlug] = useState('');

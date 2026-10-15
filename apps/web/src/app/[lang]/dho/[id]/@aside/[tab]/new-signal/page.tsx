@@ -18,6 +18,7 @@ type PageProps = {
     type?: string;
     title?: string;
     amount?: string;
+    sharedWithNetwork?: string;
   }>;
 };
 
@@ -26,7 +27,8 @@ export default async function NewSignalPage({
   searchParams,
 }: PageProps) {
   const { lang, id } = await params;
-  const { boardTag, type, title, amount } = await searchParams;
+  const { boardTag, type, title, amount, sharedWithNetwork } =
+    await searchParams;
 
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
@@ -54,6 +56,8 @@ export default async function NewSignalPage({
     Number(amount) > 0
       ? amount.trim()
       : '';
+  const shareOnNetwork =
+    sharedWithNetwork === '1' || sharedWithNetwork === 'true';
 
   const successfulUrl = getDhoPathCoherence(lang, id);
   return (
@@ -71,7 +75,8 @@ export default async function NewSignalPage({
             inheritedBoardTags.length > 0 ||
             signalType ||
             signalTitle ||
-            payoutAmount
+            payoutAmount ||
+            shareOnNetwork
               ? {
                   ...(inheritedBoardTags.length > 0
                     ? { tags: inheritedBoardTags }
@@ -85,6 +90,7 @@ export default async function NewSignalPage({
                         ],
                       }
                     : {}),
+                  ...(shareOnNetwork ? { sharedWithNetwork: true } : {}),
                 }
               : undefined
           }

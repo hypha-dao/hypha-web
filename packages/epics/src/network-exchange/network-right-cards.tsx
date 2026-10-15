@@ -17,7 +17,6 @@ import {
   getCategoryGroupLabel,
   NETWORK_FIELD_KINDS,
   parseCapitalKeys,
-  useJwt,
   type CapitalKey,
   type Category,
   type NetworkFieldPayout,
@@ -26,6 +25,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { CAPITAL_MARK } from './capital-marks';
+import { useMemberNamedSpaces } from './use-member-named-spaces';
 
 export type NetworkRailSpace = {
   slug: string;
@@ -711,42 +711,15 @@ function ActionShareCard({
 }) {
   const t = useTranslations('NetworkExchange');
   const router = useRouter();
-  const { jwt } = useJwt();
   const touched = useRef(false);
-  const [spaces, setSpaces] = useState<{ slug: string; title: string }[]>([]);
+  const spaces = useMemberNamedSpaces();
   const [spaceSlug, setSpaceSlug] = useState('');
   const [signalType, setSignalType] = useState<NetworkFieldSignalKind>(
     kind === 'need' ? 'Need' : 'Opportunity',
   );
   const [text, setText] = useState('');
   const [amount, setAmount] = useState('');
-
-  useEffect(() => {
-    if (!jwt) return;
-    let cancelled = false;
-    void (async () => {
-      const me = await fetch('/api/v1/people/me', {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (!me.ok) return;
-      const person = (await me.json()) as { slug?: string };
-      if (!person.slug) return;
-      const list = await fetch(`/api/v1/people/${person.slug}/spaces`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (!list.ok || cancelled) return;
-      const rows = (await list.json()) as { slug?: string; title?: string }[];
-      if (cancelled || !Array.isArray(rows)) return;
-      setSpaces(
-        rows.flatMap((row) =>
-          row.slug && row.title ? [{ slug: row.slug, title: row.title }] : [],
-        ),
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [jwt]);
+  const isNeed = kind === 'need';
 
   useEffect(() => {
     if (touched.current) return;
@@ -761,7 +734,8 @@ function ActionShareCard({
     const title = text.trim();
     if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !title) return;
     const params = new URLSearchParams();
-    params.set('type', signalType);
+    params.set('type', isNeed ? 'Need' : signalType);
+    params.set('sharedWithNetwork', '1');
     params.set('title', title.slice(0, 120));
     if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
       params.set('amount', amount);
@@ -777,10 +751,10 @@ function ActionShareCard({
         className="text-5"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        {kind === 'need' ? t('shareNeedTitle') : t('shareSignalTitle')}
+        {isNeed ? t('shareNeedTitle') : t('shareSignalTitle')}
       </h2>
       <p className="text-1 leading-relaxed text-neutral-11">
-        {kind === 'need' ? t('shareNeedBody') : t('shareSignalBody')}
+        {isNeed ? t('shareNeedBody') : t('shareSignalBody')}
       </p>
       <select
         value={spaceSlug}
@@ -802,30 +776,32 @@ function ActionShareCard({
           ))
         )}
       </select>
-      <div>
-        <p className="text-1 font-semibold">{t('signalType')}</p>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {NETWORK_FIELD_KINDS.map((option) => {
-            const on = signalType === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setSignalType(option)}
-                className={cn(
-                  'px-2 py-0.5 text-1',
-                  on
-                    ? 'bg-foreground text-background'
-                    : 'bg-neutral-2 text-neutral-11',
-                )}
-              >
-                {signalKindLabel(t, option)}
-              </button>
-            );
-          })}
+      {!isNeed ? (
+        <div>
+          <p className="text-1 font-semibold">{t('signalType')}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {NETWORK_FIELD_KINDS.map((option) => {
+              const on = signalType === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setSignalType(option)}
+                  className={cn(
+                    'px-2 py-0.5 text-1',
+                    on
+                      ? 'bg-foreground text-background'
+                      : 'bg-neutral-2 text-neutral-11',
+                  )}
+                >
+                  {signalKindLabel(t, option)}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : null}
       <textarea
         value={text}
         maxLength={200}
