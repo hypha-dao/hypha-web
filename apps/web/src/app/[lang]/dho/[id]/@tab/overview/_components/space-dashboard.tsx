@@ -1,9 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { UserEvent, type MatrixClient } from 'matrix-js-sdk';
 import { useLocale, useTranslations } from 'next-intl';
-import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  useFindCoherences,
+  useMatrix,
+  useMatrixUserIdsByPersonIds,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
 import {
   PersonAvatar,
   SpaceAttention,
@@ -21,6 +27,165 @@ import { useMembers } from '@web/hooks/use-members';
 import { OverviewMonth } from './overview-month';
 import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
+
+const VISIBLE_MEMBERS = 8;
+
+function sameIds(left: Set<number>, right: Set<number>) {
+  if (left.size !== right.size) return false;
+  for (const id of left) {
+    if (!right.has(id)) return false;
+  }
+  return true;
+}
+
+async function isSignedInNow(client: MatrixClient, matrixUserId: string) {
+  try {
+    const status = await client.getPresence(matrixUserId);
+    return status.presence === 'online' || Boolean(status.currently_active);
+  } catch {
+    return false;
+  }
+}
+
+function SpaceMemberCircles({
+  people,
+  membersHref,
+}: {
+  people: Array<{
+    id: number;
+    slug?: string | null;
+    avatarUrl?: string | null;
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+  }>;
+  membersHref: string;
+}) {
+  const t = useTranslations('OverviewOps');
+  const matrix = useMatrix();
+  const personIds = useMemo(() => people.map((person) => person.id), [people]);
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({ personIds });
+  const [onlineIds, setOnlineIds] = useState<Set<number> | null>(null);
+
+  useEffect(() => {
+    const client = matrix.client;
+    if (personIds.length === 0) {
+      setOnlineIds((current) =>
+        current && current.size === 0 ? current : new Set(),
+      );
+      return;
+    }
+    if (!client || !matrix.isAuthenticated || matrixIdsLoading) return;
+
+    let cancelled = false;
+    let timer = 0;
+    const recompute = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        void (async () => {
+          const next = new Set<number>();
+          await Promise.all(
+            personIds.map(async (personId) => {
+              const matrixUserId = personIdToMatrixUserId[personId];
+              if (!matrixUserId) return;
+              if (await isSignedInNow(client, matrixUserId)) next.add(personId);
+            }),
+          );
+          if (cancelled) return;
+          setOnlineIds((current) =>
+            current && sameIds(current, next) ? current : next,
+          );
+        })();
+      }, 250);
+    };
+
+    recompute();
+    const interval = window.setInterval(recompute, 30_000);
+    client.on(UserEvent.Presence, recompute);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+      client.removeListener(UserEvent.Presence, recompute);
+    };
+  }, [
+    matrix.client,
+    matrix.isAuthenticated,
+    matrixIdsLoading,
+    personIdToMatrixUserId,
+    personIds,
+  ]);
+
+  const ordered = useMemo(() => {
+    if (!onlineIds || onlineIds.size === 0) return people;
+    return [...people].sort((left, right) => {
+      const leftOn = onlineIds.has(left.id) ? 0 : 1;
+      const rightOn = onlineIds.has(right.id) ? 0 : 1;
+      return leftOn - rightOn;
+    });
+  }, [onlineIds, people]);
+  const visible = ordered.slice(0, VISIBLE_MEMBERS);
+  const rest = ordered.length - visible.length;
+
+  return (
+    <nav aria-label={t('peopleHere')}>
+      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+        {t('peopleHere')}
+      </p>
+      <ul className="mt-3 flex flex-wrap items-start gap-4">
+        {visible.map((person) => {
+          const name = personLabel(person);
+          const given = person.name?.trim() || name;
+          const connected = onlineIds?.has(person.id) ?? false;
+          return (
+            <li
+              key={person.id}
+              className="flex w-14 flex-col items-center gap-1.5"
+            >
+              <Link
+                href={
+                  person.slug
+                    ? `${membersHref}/person/${person.slug}`
+                    : membersHref
+                }
+                title={connected ? `${name}. ${t('connectedNow')}` : name}
+                className="relative inline-flex rounded-full"
+              >
+                <PersonAvatar
+                  avatarSrc={person.avatarUrl ?? undefined}
+                  userName={name}
+                  size="md"
+                  shape="circle"
+                />
+                {connected ? (
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 translate-y-1/2 rounded-full bg-success-9 ring-2 ring-background"
+                  />
+                ) : null}
+              </Link>
+              <span className="w-full truncate text-center text-1 text-neutral-11">
+                {given}
+              </span>
+            </li>
+          );
+        })}
+        {rest > 0 ? (
+          <li>
+            <Link
+              href={membersHref}
+              className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-foreground"
+              style={{ width: 32, height: 32 }}
+            >
+              +{rest}
+            </Link>
+          </li>
+        ) : null}
+      </ul>
+    </nav>
+  );
+}
 
 function personLabel(person: {
   name?: string | null;
@@ -151,6 +316,20 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {membersLoading ? (
+        <div className="flex gap-4" aria-hidden>
+          {Array.from({ length: 5 }, (_, index) => (
+            <span
+              key={index}
+              className="rounded-full bg-neutral-3"
+              style={{ width: 32, height: 32 }}
+            />
+          ))}
+        </div>
+      ) : people.length > 0 ? (
+        <SpaceMemberCircles people={people} membersHref={`${home}/members`} />
+      ) : null}
+
       {energy?.enabled ? <SpaceEnergySection /> : null}
 
       <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
@@ -251,92 +430,62 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           )}
         </Panel>
 
-        <Panel
-          title={tCommon('Members')}
-          href={`${home}/members`}
-          openLabel={t('open')}
-        >
-          {membersLoading ? (
-            <RowsSkeleton />
-          ) : people.length === 0 &&
+        {!membersLoading &&
+        (spaces.length > 0 || agents.length > 0 || people.length === 0) ? (
+          <Panel
+            title={tCommon('Members')}
+            href={`${home}/members`}
+            openLabel={t('open')}
+          >
+            {people.length === 0 &&
             spaces.length === 0 &&
             agents.length === 0 ? (
-            <Quiet>{t('membersEmpty')}</Quiet>
-          ) : (
-            <div className="flex flex-col gap-5 px-5 pb-5">
-              {people.length > 0 ? (
-                <div className="flex items-center">
-                  {people.slice(0, 8).map((person) => {
-                    const name = personLabel(person);
-                    return (
+              <Quiet>{t('membersEmpty')}</Quiet>
+            ) : (
+              <div className="flex flex-col gap-5 px-5 pb-5">
+                {spaces.length > 0 ? (
+                  <MembershipPreview title={tCommon('Spaces')}>
+                    {spaces.slice(0, 5).map((memberSpace) => (
                       <Link
-                        key={person.id}
+                        key={memberSpace.id}
                         href={
-                          person.slug
-                            ? `${home}/members/person/${person.slug}`
+                          memberSpace.slug
+                            ? `/${locale}/dho/${memberSpace.slug}/overview`
                             : `${home}/members`
                         }
-                        title={name}
-                        className="-ml-2 block rounded-full ring-2 ring-background-2 first:ml-0"
+                        className="block truncate text-2 text-foreground hover:underline"
                       >
-                        <PersonAvatar
-                          avatarSrc={person.avatarUrl ?? undefined}
-                          userName={name}
-                          size="sm"
-                          shape="circle"
-                        />
+                        {memberSpace.title}
                       </Link>
-                    );
-                  })}
-                  {people.length > 8 ? (
-                    <span className="ml-3 text-1 tabular-nums text-neutral-11">
-                      +{people.length - 8}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              {spaces.length > 0 ? (
-                <MembershipPreview title={tCommon('Spaces')}>
-                  {spaces.slice(0, 5).map((memberSpace) => (
-                    <Link
-                      key={memberSpace.id}
-                      href={
-                        memberSpace.slug
-                          ? `/${locale}/dho/${memberSpace.slug}/overview`
-                          : `${home}/members`
-                      }
-                      className="block truncate text-2 text-foreground hover:underline"
-                    >
-                      {memberSpace.title}
-                    </Link>
-                  ))}
-                </MembershipPreview>
-              ) : null}
-              {agents.length > 0 ? (
-                <MembershipPreview title={tNav('navigation.agents')}>
-                  {agents.slice(0, 5).map((agent) => {
-                    const name = tCoherence(agent.role);
-                    return (
-                      <span
-                        key={agent.id}
-                        className="inline-flex items-center gap-2 text-2 text-foreground"
-                      >
+                    ))}
+                  </MembershipPreview>
+                ) : null}
+                {agents.length > 0 ? (
+                  <MembershipPreview title={tNav('navigation.agents')}>
+                    {agents.slice(0, 5).map((agent) => {
+                      const name = tCoherence(agent.role);
+                      return (
                         <span
-                          className={`flex size-6 shrink-0 items-center justify-center rounded-full text-1 ${tagGroupAccentClass(
-                            agent.tagGroup,
-                          )}`}
+                          key={agent.id}
+                          className="inline-flex items-center gap-2 text-2 text-foreground"
                         >
-                          {getAgentAvatarInitials(name)}
+                          <span
+                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-1 ${tagGroupAccentClass(
+                              agent.tagGroup,
+                            )}`}
+                          >
+                            {getAgentAvatarInitials(name)}
+                          </span>
+                          {name}
                         </span>
-                        {name}
-                      </span>
-                    );
-                  })}
-                </MembershipPreview>
-              ) : null}
-            </div>
-          )}
-        </Panel>
+                      );
+                    })}
+                  </MembershipPreview>
+                ) : null}
+              </div>
+            )}
+          </Panel>
+        ) : null}
 
         <Panel
           className="lg:col-span-2"

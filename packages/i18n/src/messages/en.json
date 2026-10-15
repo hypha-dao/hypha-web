@@ -5195,6 +5195,8 @@
     "noOpenVotesNow": "No vote is open.",
     "calendarEmpty": "Nothing coming up.",
     "membersEmpty": "No members yet.",
+    "peopleHere": "In this space",
+    "connectedNow": "Connected",
     "ecosystemEmpty": "No other spaces here yet."
   },
   "Landing": {
