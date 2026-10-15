@@ -17,6 +17,11 @@ import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import { CAPITAL_MARK } from './capital-marks';
 import { NetworkRightColumn } from './network-right-cards';
+import {
+  NetworkCapitalFilters,
+  NetworkLiveSearch,
+  NetworkSectionHeader,
+} from './network-section-header';
 
 const FILTERS = ['all', 'Need', 'Risk', 'Tension'] as const;
 type NeedFilter = (typeof FILTERS)[number];
@@ -87,12 +92,23 @@ export function NetworkNeedsBoard({
   const dateLocale = resolveDateFnsLocale(useLocale());
   const { open, openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const [filter, setFilter] = useState<NeedFilter>('all');
+  const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
+  const [query, setQuery] = useState('');
   const [selectedSlug, setSelectedSlug] = useState(needs[0]?.slug ?? '');
-  const visible = useMemo(
-    () =>
-      filter === 'all' ? needs : needs.filter((need) => need.type === filter),
-    [filter, needs],
-  );
+  const needle = query.trim().toLowerCase();
+  const visible = useMemo(() => {
+    return needs.filter((need) => {
+      if (capital !== 'all' && capitalKey(need.capital) !== capital) {
+        return false;
+      }
+      if (filter !== 'all' && need.type !== filter) return false;
+      if (!needle) return true;
+      return [need.title, need.description, need.spaceTitle, need.spacePlace]
+        .join(' ')
+        .toLowerCase()
+        .includes(needle);
+    });
+  }, [capital, filter, needle, needs]);
   const selected =
     visible.find((need) => need.slug === selectedSlug) ??
     visible[0] ??
@@ -118,55 +134,57 @@ export function NetworkNeedsBoard({
     <div className="@container min-w-0">
       <div className="flex min-w-0 flex-col items-start gap-4 @4xl:flex-row @4xl:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <header>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-11">
-              {t('readFromSignals')}
+          <NetworkSectionHeader
+            eyebrow={t('readFromSignals')}
+            title={t('needsTitle')}
+          />
+          <NetworkLiveSearch
+            value={query}
+            onChange={setQuery}
+            placeholder={t('searchPlaceholder')}
+          />
+          <NetworkCapitalFilters
+            value={capital}
+            onChange={setCapital}
+            allLabel={t('allSpaces')}
+            labelFor={(key) => t(`capitals.${key}`)}
+          />
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label={t('needsTitle')}
+          >
+            {FILTERS.map((option) => {
+              const selectedFilter = filter === option;
+              const label =
+                option === 'all' ? t('filterAll') : kindLabel(option, t);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={selectedFilter}
+                  onClick={() => setFilter(option)}
+                  className={cn(
+                    'px-3 py-1 text-1',
+                    selectedFilter
+                      ? 'bg-foreground text-background'
+                      : 'bg-neutral-2 text-neutral-11',
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+            {needs.length > 0 ? (
+              <p className="basis-full text-1 text-neutral-11 sm:ml-auto sm:basis-auto sm:whitespace-nowrap">
+                {t('needsSummary', { needs: needs.length, spaces: spaceCount })}
+              </p>
+            ) : null}
+          </div>
+          {visible.length === 0 ? (
+            <p className="text-2 text-neutral-11">
+              {needs.length === 0 ? empty : t('needsFilterEmpty')}
             </p>
-            <h1
-              className="text-7 leading-tight sm:text-8"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {t('needsTitle')}
-            </h1>
-          </header>
-          {needs.length > 0 ? (
-            <p className="text-1 text-neutral-11">
-              {t('needsSummary', { needs: needs.length, spaces: spaceCount })}
-            </p>
-          ) : (
-            <p className="text-1 text-neutral-11">{empty}</p>
-          )}
-          {needs.length > 0 ? (
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label={t('needsTitle')}
-            >
-              {FILTERS.map((option) => {
-                const selectedFilter = filter === option;
-                const label =
-                  option === 'all' ? t('filterAll') : kindLabel(option, t);
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    aria-pressed={selectedFilter}
-                    onClick={() => setFilter(option)}
-                    className={cn(
-                      'px-3 py-1 text-1',
-                      selectedFilter
-                        ? 'bg-foreground text-background'
-                        : 'bg-neutral-2 text-neutral-11',
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-          {needs.length > 0 && visible.length === 0 ? (
-            <p className="text-1 text-neutral-11">{t('needsFilterEmpty')}</p>
           ) : null}
           {visible.length > 0 ? (
             <ul className="grid content-start grid-cols-1 gap-4 @3xl:grid-cols-2 @6xl:grid-cols-3">

@@ -3,10 +3,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  CAPITALS,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkFieldSignal,
@@ -20,18 +18,12 @@ import {
   NetworkRightColumn,
   type NetworkRailSpace,
 } from './network-right-cards';
+import {
+  NetworkCapitalFilters,
+  NetworkLiveSearch,
+  NetworkSectionHeader,
+} from './network-section-header';
 
-const ACTION_TYPES: NetworkFieldSignalKind[] = [
-  'Need',
-  'Opportunity',
-  'Risk',
-  'Tension',
-  'Insight',
-  'Action',
-  'Impact',
-];
-
-type TypeFilter = 'all' | NetworkFieldSignalKind;
 type StoryFilter = 'all' | 'picture';
 
 function typeLabel(
@@ -184,7 +176,6 @@ export function NetworkFieldBoard({
   const [query, setQuery] = useState('');
   const [selectedSlug, setSelectedSlug] = useState(signals[0]?.slug ?? '');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
-  const [type, setType] = useState<TypeFilter>('all');
   const [story, setStory] = useState<StoryFilter>('all');
   const needle = query.trim().toLowerCase();
 
@@ -212,10 +203,8 @@ export function NetworkFieldBoard({
     if (variant === 'impact') {
       return story === 'picture' ? matched.filter(hasPicture) : matched;
     }
-    return type === 'all'
-      ? matched
-      : matched.filter((signal) => signal.type === type);
-  }, [matched, story, type, variant]);
+    return matched.filter((signal) => signal.type === 'Action');
+  }, [matched, story, variant]);
   const pictured = matched.filter(hasPicture).length;
   const selected =
     visible.find((signal) => signal.slug === selectedSlug) ??
@@ -260,7 +249,7 @@ export function NetworkFieldBoard({
       <div
         className={
           action
-            ? 'flex min-w-0 flex-col gap-3 @4xl:h-[calc(100dvh-var(--menu-top-height,70px)-4rem)] @4xl:flex-row @4xl:items-stretch @4xl:overflow-hidden'
+            ? 'flex min-w-0 flex-col gap-4 @4xl:h-[calc(100dvh-var(--menu-top-height,70px)-4rem)] @4xl:flex-row @4xl:items-stretch @4xl:overflow-hidden'
             : 'contents'
         }
       >
@@ -270,125 +259,33 @@ export function NetworkFieldBoard({
             action ? 'min-h-0 w-full flex-1 gap-4' : 'gap-6',
           )}
         >
-          <header>
-            <p
-              className={cn(
-                'text-1 uppercase',
-                action
-                  ? 'mb-2 font-bold text-foreground'
-                  : 'tracking-[0.16em] text-neutral-11',
-              )}
-            >
-              {variant === 'impact'
+          <NetworkSectionHeader
+            eyebrow={
+              variant === 'impact'
                 ? t('storiesFromTheField')
-                : t('signalsFromTheField')}
-            </p>
-            <h1
-              className={
-                action ? 'text-7 leading-tight sm:text-8' : 'mt-2 text-8'
-              }
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {variant === 'impact' ? t('impactTitle') : t('actionTitle')}
-            </h1>
-          </header>
+                : t('signalsFromTheField')
+            }
+            title={variant === 'impact' ? t('impactTitle') : t('actionTitle')}
+          />
           <div className={action ? 'flex shrink-0 flex-col gap-4' : 'contents'}>
-            <form
-              className={cn(
-                'flex border border-border bg-background',
-                action && 'h-12',
-              )}
-              onSubmit={(event) => event.preventDefault()}
-            >
-              <label className="flex h-full min-w-0 flex-1 items-center gap-2 px-3">
-                <Search
-                  className="size-4 shrink-0 text-neutral-11"
-                  aria-hidden
-                />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={t('searchPlaceholder')}
-                  className={cn(
-                    'min-w-0 flex-1 bg-transparent text-2 outline-none placeholder:text-neutral-11',
-                    action ? 'py-0' : 'py-3',
-                  )}
-                />
-              </label>
-              <button
-                type="submit"
-                className={cn(
-                  'border-l border-border px-5 text-1 uppercase tracking-[0.12em]',
-                  action && 'font-bold text-neutral-11 hover:text-foreground',
-                )}
-              >
-                {t('search')}
-              </button>
-            </form>
-            <div
-              className={cn(
-                'flex flex-wrap gap-2',
-                action && 'gap-1 sm:flex-nowrap sm:overflow-x-auto sm:pb-1',
-              )}
-              role="group"
-              aria-label={t('allSpaces')}
-            >
-              <Chip
-                dense={action}
-                selected={capital === 'all'}
-                onClick={() => setCapital('all')}
-              >
-                {t('allSpaces')}
-              </Chip>
-              {CAPITALS.map((key) => (
-                <Chip
-                  key={key}
-                  dense={action}
-                  selected={capital === key}
-                  onClick={() => setCapital(key)}
-                >
-                  {t(`capitals.${key}`)}
-                </Chip>
-              ))}
-            </div>
+            <NetworkLiveSearch
+              value={query}
+              onChange={setQuery}
+              placeholder={t('searchPlaceholder')}
+            />
+            <NetworkCapitalFilters
+              value={capital}
+              onChange={setCapital}
+              allLabel={t('allSpaces')}
+              labelFor={(key) => t(`capitals.${key}`)}
+            />
           </div>
           {variant === 'action' ? (
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-pressed={type === 'all'}
-                onClick={() => setType('all')}
-                className={cn(
-                  'px-3 py-1 text-1',
-                  type === 'all'
-                    ? 'bg-foreground text-background'
-                    : 'bg-neutral-2 text-neutral-11',
-                )}
-              >
-                {t('filterAll')}
-              </button>
-              {ACTION_TYPES.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={type === option}
-                  onClick={() => setType(option)}
-                  className={cn(
-                    'px-3 py-1 text-1',
-                    type === option
-                      ? 'bg-foreground text-background'
-                      : 'bg-neutral-2 text-neutral-11',
-                  )}
-                >
-                  {typeLabel(option, t)}
-                </button>
-              ))}
-              {signals.length > 0 ? (
-                <p className="basis-full text-1 text-neutral-11 sm:ml-auto sm:basis-auto sm:whitespace-nowrap">
-                  {linkedText(visible, t)}
-                </p>
-              ) : null}
-            </div>
+            visible.length > 0 ? (
+              <p className="shrink-0 text-1 text-neutral-11">
+                {linkedText(visible, t)}
+              </p>
+            ) : null
           ) : (
             <div className="flex flex-wrap gap-2">
               <Chip selected={story === 'all'} onClick={() => setStory('all')}>

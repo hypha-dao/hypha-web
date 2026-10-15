@@ -1,7 +1,11 @@
 import { count, countDistinct, eq } from 'drizzle-orm';
 import { Locale } from '@hypha-platform/i18n';
-import { Container } from '@hypha-platform/ui';
-import { findAllSpaces, readSpaceCapitals } from '@hypha-platform/core/server';
+import type { Space } from '@hypha-platform/core/client';
+import {
+  findAllSpaces,
+  mapDbSpaceToSpace,
+  readSpaceCapitals,
+} from '@hypha-platform/core/server';
 import {
   db,
   documents,
@@ -9,6 +13,7 @@ import {
   spaces as spaceRows,
 } from '@hypha-platform/storage-postgres';
 import { NetworkExchangeView } from '@hypha-platform/epics';
+import { NetworkSectionShell } from '../_components/network-section-shell';
 
 async function readCount(
   query: PromiseLike<readonly { value: unknown }[]>,
@@ -45,12 +50,11 @@ export default async function ExchangePage(props: {
         .where(eq(documents.state, 'agreement')),
     ),
   ]);
-  const shown = rows.slice(0, 48);
   const capitals = await readSpaceCapitals(
     db,
-    shown.map((space) => space.id),
+    rows.map((space) => space.id),
   ).catch(() => new Map());
-  const spaces = shown.map((space) => {
+  const spaces = rows.map((space) => {
     const forms = capitals.get(space.id);
     return {
       id: space.id,
@@ -69,12 +73,13 @@ export default async function ExchangePage(props: {
   });
 
   return (
-    <Container className="flex flex-col gap-6 py-8">
+    <NetworkSectionShell>
       <NetworkExchangeView
         lang={lang}
         spaces={spaces}
+        mapSpaces={rows.map((row) => mapDbSpaceToSpace(row) as Space)}
         stats={{ spaces: rows.length, members, agreements }}
       />
-    </Container>
+    </NetworkSectionShell>
   );
 }

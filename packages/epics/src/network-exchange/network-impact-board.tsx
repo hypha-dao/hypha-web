@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
 import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  CAPITALS,
   parseCapitalKeys,
   useJwt,
   type CapitalKey,
@@ -22,6 +20,11 @@ import {
   DialogTitle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import {
+  NetworkCapitalFilters,
+  NetworkLiveSearch,
+  NetworkSectionHeader,
+} from './network-section-header';
 import { NetworkRightColumn } from './network-right-cards';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
@@ -128,35 +131,6 @@ function useSpaceTreasury(slug: string | null) {
     { revalidateOnFocus: false },
   );
   return { assets: data ?? [], isLoading: Boolean(safe) && isLoading };
-}
-
-function Chip({
-  selected,
-  onClick,
-  children,
-  className,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: string;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      className={cn(
-        'shrink-0 border px-2.5 py-1 text-[10px]',
-        selected
-          ? 'border-foreground bg-foreground text-background'
-          : 'border-border bg-background text-neutral-11',
-        className,
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function SpaceSelect({
@@ -606,63 +580,25 @@ export function NetworkImpactBoard({
 
   return (
     <div className="@container min-w-0">
-      <div className="flex min-w-0 flex-col gap-3 @4xl:flex-row @4xl:items-start">
+      <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <header>
-            <p className="mb-2 text-[10px] font-bold uppercase text-foreground">
-              {t('storiesFromTheField')}
-            </p>
-            <h1
-              className="text-3xl font-semibold leading-tight sm:text-4xl"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {t('impactTitle')}
-            </h1>
-          </header>
-          <form
-            className="flex h-12 border border-border bg-background"
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <label className="flex min-w-0 flex-1 items-center gap-3 px-4">
-              <Search className="size-4 shrink-0 text-neutral-11" aria-hidden />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('searchPlaceholder')}
-                aria-label={t('searchPlaceholder')}
-                className="min-w-0 flex-1 bg-transparent text-2 outline-none placeholder:text-neutral-11"
-              />
-            </label>
-            <button
-              type="submit"
-              className="border-l border-border px-4 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-11"
-            >
-              {t('search')}
-            </button>
-          </form>
+          <NetworkSectionHeader
+            eyebrow={t('storiesFromTheField')}
+            title={t('impactTitle')}
+          />
+          <NetworkLiveSearch
+            value={query}
+            onChange={setQuery}
+            placeholder={t('searchPlaceholder')}
+          />
+          <NetworkCapitalFilters
+            value={capital}
+            onChange={setCapital}
+            allLabel={t('allSpaces')}
+            labelFor={(key) => t(`capitals.${key}`)}
+          />
           <div
-            className="flex flex-wrap gap-1 sm:flex-nowrap sm:overflow-x-auto"
-            role="group"
-            aria-label={t('allSpaces')}
-          >
-            <Chip
-              selected={capital === 'all'}
-              onClick={() => setCapital('all')}
-            >
-              {t('allSpaces')}
-            </Chip>
-            {CAPITALS.map((key) => (
-              <Chip
-                key={key}
-                selected={capital === key}
-                onClick={() => setCapital(key)}
-              >
-                {t(`capitals.${key}`)}
-              </Chip>
-            ))}
-          </div>
-          <div
-            className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.12em]"
+            className="flex flex-wrap items-center gap-2"
             role="group"
             aria-label={t('impactTitle')}
           >
@@ -671,10 +607,10 @@ export function NetworkImpactBoard({
               aria-pressed={story === 'all'}
               onClick={() => setStory('all')}
               className={cn(
-                'border px-3 py-1.5',
+                'px-3 py-1 text-1',
                 story === 'all'
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'border-border bg-background text-neutral-11',
+                  ? 'bg-foreground text-background'
+                  : 'bg-neutral-2 text-neutral-11',
               )}
             >
               {t('allStories', { count: matched.length })}
@@ -684,10 +620,10 @@ export function NetworkImpactBoard({
               aria-pressed={story === 'picture'}
               onClick={() => setStory('picture')}
               className={cn(
-                'border px-3 py-1.5',
+                'px-3 py-1 text-1',
                 story === 'picture'
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'border-border bg-background text-neutral-11',
+                  ? 'bg-foreground text-background'
+                  : 'bg-neutral-2 text-neutral-11',
               )}
             >
               {t('withPicture', { count: pictured })}
