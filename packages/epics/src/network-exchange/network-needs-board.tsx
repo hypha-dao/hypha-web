@@ -19,12 +19,8 @@ import { CAPITAL_MARK } from './capital-marks';
 import { NetworkRightColumn } from './network-right-cards';
 import {
   NetworkCapitalFilters,
-  NetworkLiveSearch,
   NetworkSectionHeader,
 } from './network-section-header';
-
-const FILTERS = ['all', 'Need', 'Risk', 'Tension'] as const;
-type NeedFilter = (typeof FILTERS)[number];
 
 function capitalKey(value: string | null): CapitalKey | null {
   if (!value) return null;
@@ -91,31 +87,24 @@ export function NetworkNeedsBoard({
   const t = useTranslations('NetworkExchange');
   const dateLocale = resolveDateFnsLocale(useLocale());
   const { open, openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
-  const [filter, setFilter] = useState<NeedFilter>('all');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
-  const [query, setQuery] = useState('');
   const [selectedSlug, setSelectedSlug] = useState(needs[0]?.slug ?? '');
-  const needle = query.trim().toLowerCase();
   const visible = useMemo(() => {
     return needs.filter((need) => {
+      if (need.type !== 'Need') return false;
       if (capital !== 'all' && capitalKey(need.capital) !== capital) {
         return false;
       }
-      if (filter !== 'all' && need.type !== filter) return false;
-      if (!needle) return true;
-      return [need.title, need.description, need.spaceTitle, need.spacePlace]
-        .join(' ')
-        .toLowerCase()
-        .includes(needle);
+      return true;
     });
-  }, [capital, filter, needle, needs]);
+  }, [capital, needs]);
   const selected =
     visible.find((need) => need.slug === selectedSlug) ??
     visible[0] ??
     needs[0];
   const spaceCount = useMemo(
-    () => new Set(needs.map((need) => need.spaceSlug)).size,
-    [needs],
+    () => new Set(visible.map((need) => need.spaceSlug)).size,
+    [visible],
   );
 
   const openRoom = (need: NetworkOpenNeed) => {
@@ -138,49 +127,20 @@ export function NetworkNeedsBoard({
             eyebrow={t('readFromSignals')}
             title={t('needsTitle')}
           />
-          <NetworkLiveSearch
-            value={query}
-            onChange={setQuery}
-            placeholder={t('searchPlaceholder')}
-          />
           <NetworkCapitalFilters
             value={capital}
             onChange={setCapital}
             allLabel={t('allSpaces')}
             labelFor={(key) => t(`capitals.${key}`)}
           />
-          <div
-            className="flex flex-wrap items-center gap-2"
-            role="group"
-            aria-label={t('needsTitle')}
-          >
-            {FILTERS.map((option) => {
-              const selectedFilter = filter === option;
-              const label =
-                option === 'all' ? t('filterAll') : kindLabel(option, t);
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={selectedFilter}
-                  onClick={() => setFilter(option)}
-                  className={cn(
-                    'px-3 py-1 text-1',
-                    selectedFilter
-                      ? 'bg-foreground text-background'
-                      : 'bg-neutral-2 text-neutral-11',
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
-            {needs.length > 0 ? (
-              <p className="basis-full text-1 text-neutral-11 sm:ml-auto sm:basis-auto sm:whitespace-nowrap">
-                {t('needsSummary', { needs: needs.length, spaces: spaceCount })}
-              </p>
-            ) : null}
-          </div>
+          {visible.length > 0 ? (
+            <p className="text-1 text-neutral-11">
+              {t('needsSummary', {
+                needs: visible.length,
+                spaces: spaceCount,
+              })}
+            </p>
+          ) : null}
           {visible.length === 0 ? (
             <p className="text-2 text-neutral-11">
               {needs.length === 0 ? empty : t('needsFilterEmpty')}
