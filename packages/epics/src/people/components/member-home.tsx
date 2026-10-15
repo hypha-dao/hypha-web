@@ -272,6 +272,14 @@ export function MemberHome({
     }
     return filled;
   }, [home?.spaces, recentSpaceSlugs, visitedSpaceRecords]);
+  const createMemberSpaces = useMemo(
+    () =>
+      (home?.spaces ?? []).map((space) => ({
+        slug: space.slug,
+        title: space.title,
+      })),
+    [home?.spaces],
+  );
   const rawOrientation = home?.person.primaryOrientation;
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
@@ -496,7 +504,10 @@ export function MemberHome({
           </div>
           {home ? (
             <div>
-              <NetworkQuickCreate lang={lang} />
+              <NetworkQuickCreate
+                lang={lang}
+                memberSpaces={createMemberSpaces}
+              />
             </div>
           ) : null}
         </aside>
