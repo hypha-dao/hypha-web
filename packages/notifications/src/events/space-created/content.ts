@@ -12,6 +12,7 @@ import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
 import type { SpaceCreatedEvent } from '../../core/types';
+import { layout } from '../../template/common/layout';
 import {
   emailSpaceCreationForCreator,
   pushSpaceCreationForCreator,
@@ -55,7 +56,12 @@ export const buildSpaceCreatedContent: ContentBuilder<SpaceCreatedEvent> = (
       }) ?? {
         kind: 'plain',
         subject: plainEmail.subject,
-        body: plainEmail.body,
+        body: layout({
+          title: plainEmail.subject,
+          paragraphs: [plainEmail.body],
+          cta: url ? { label: 'Open Hypha', url } : undefined,
+          settingsUrl: notificationSettingsUrl,
+        }),
       },
     },
   };

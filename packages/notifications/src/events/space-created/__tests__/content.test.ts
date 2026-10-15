@@ -37,11 +37,14 @@ describe('buildSpaceCreatedContent', () => {
     vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
     vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
     const result = buildSpaceCreatedContent(event(1), recipient);
-    expect(result.content.email).toEqual({
+    expect(result.content.email).toMatchObject({
       kind: 'plain',
       subject: 'Successful space creation',
-      body: "You've successfully created a space.",
     });
+    const body = (result.content.email as { body: string }).body;
+    expect(body).toContain('You&#39;ve successfully created a space.');
+    expect(body).toContain('[unsubscribe_url]');
+    expect(body).toContain('/en/network/notification-centre');
     expect(result.content.push).toMatchObject({
       kind: 'plain',
       contents: { en: "You've successfully created a space." },
@@ -53,8 +56,8 @@ describe('buildSpaceCreatedContent', () => {
     vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
     vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
     const result = buildSpaceCreatedContent(event(3), recipient);
-    expect((result.content.email as { body: string }).body).toBe(
-      "You've successfully created 3 spaces.",
+    expect((result.content.email as { body: string }).body).toContain(
+      'You&#39;ve successfully created 3 spaces.',
     );
     expect(result.content.push).toMatchObject({
       kind: 'plain',

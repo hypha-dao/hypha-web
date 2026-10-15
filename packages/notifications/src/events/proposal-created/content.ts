@@ -13,6 +13,7 @@ import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
 import type { ProposalCreatedEvent } from '../../core/types';
+import { layout } from '../../template/common/layout';
 import {
   emailProposalCreationForCreator,
   emailProposalCreationForMembers,
@@ -86,7 +87,14 @@ export const buildProposalCreatedContent: ContentBuilder<
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
-        body: email.body,
+        body: layout({
+          title: email.subject,
+          paragraphs: [email.body],
+          cta: url ? { label: 'View proposal', url } : undefined,
+          settingsUrl: recipient.data?.notificationSettingsUrl as
+            | string
+            | undefined,
+        }),
       },
     },
   };

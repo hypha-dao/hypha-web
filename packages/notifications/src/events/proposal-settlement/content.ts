@@ -10,6 +10,7 @@ import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
 import type { Recipient } from '../../core/types';
+import { layout } from '../../template/common/layout';
 import {
   emailProposalExecutionForCreator,
   emailProposalExecutionForMembers,
@@ -93,7 +94,14 @@ export const buildProposalSettlementContent: ContentBuilder<
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
-        body: email.body,
+        body: layout({
+          title: email.subject,
+          paragraphs: [email.body],
+          cta: url ? { label: 'View proposal', url } : undefined,
+          settingsUrl: recipient.data?.notificationSettingsUrl as
+            | string
+            | undefined,
+        }),
       },
     },
   };
