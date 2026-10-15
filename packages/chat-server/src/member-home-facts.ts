@@ -50,11 +50,15 @@ function foldAsked(text: string) {
 function shareSignalRemainder(text: string): string | null {
   const normalized = foldAsked(text);
   if (!normalized) return null;
+  // foldAsked already collapsed whitespace to one space. Slice the tail
+  // instead of capturing it: a trailing (.*) overlaps with \s* and is
+  // polynomial on long runs of spaces.
   const match = normalized.match(
-    /^(?:please\s+)?(?:i\s+(?:want|would like|wanna|'d like|would love|'d love)\s+to\s+|i(?:'d| would)\s+(?:like|love)\s+to\s+|i(?:'ll| will)\s+|can i\s+|could i\s+|i can\s+|let me\s+|let(?:'s| us)\s+)?(?:share|post)\s+(?:(?:a|the)\s+)?signal\b[.!?:,\-–—]*\s*(.*)$/,
+    /^(?:please )?(?:i (?:want|would like|wanna|'d like|would love|'d love) to |i(?:'d| would) (?:like|love) to |i(?:'ll| will) |can i |could i |i can |let me |let(?:'s| us) )?(?:share|post) (?:(?:a|the) )?signal\b[.!?:,\-–—]*/,
   );
   if (!match) return null;
-  return (match[1] ?? '').replace(/^[.!?]+$/, '').trim();
+  const body = normalized.slice(match[0].length).trim();
+  return body.replace(/^[.!?]+$/, '');
 }
 
 /** The previous reply already asked them to paste lines or a file onto a signal. */
