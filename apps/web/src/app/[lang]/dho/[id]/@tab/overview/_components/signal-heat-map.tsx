@@ -147,9 +147,9 @@ function heatCellClass(count: number, index: number) {
 
 function HeatSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
       {Array.from({ length: 2 }, (_, map) => (
-        <div key={map} className="bg-background px-4 py-4">
+        <div key={map}>
           <div className="h-3 w-20 bg-muted" />
           <div
             className="mt-4 grid gap-px bg-border"
@@ -198,7 +198,7 @@ export function SignalHeatMaps({
   const count = groups.length;
 
   return (
-    <div className={cn('grid gap-px bg-border', heatGridClass(count))}>
+    <div className={cn('grid gap-6', heatGridClass(count))}>
       {groups.map((group, index) => {
         const label = tSignals.has(`types.${group.type}` as 'types.Need')
           ? tSignals(`types.${group.type}` as 'types.Need')
@@ -208,7 +208,7 @@ export function SignalHeatMaps({
             key={group.type}
             href={hrefForType(group.type)}
             className={cn(
-              'bg-background px-4 py-4 hover:bg-foreground/5',
+              'min-w-0 hover:opacity-80',
               heatCellClass(count, index),
             )}
           >

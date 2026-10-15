@@ -210,12 +210,8 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section
-      className={`flex min-w-0 flex-col border border-border bg-background-2 ${
-        className ?? ''
-      }`}
-    >
-      <div className="flex items-baseline justify-between gap-4 px-5 pt-5">
+    <section className={`flex min-w-0 flex-col ${className ?? ''}`}>
+      <div className="flex items-baseline justify-between gap-4">
         <h2
           className="text-3 text-foreground"
           style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -250,12 +246,12 @@ function MembershipPreview({
 }
 
 function Quiet({ children }: { children: ReactNode }) {
-  return <p className="px-5 pb-5 text-2 text-neutral-11">{children}</p>;
+  return <p className="text-2 text-neutral-11">{children}</p>;
 }
 
 function RowsSkeleton() {
   return (
-    <div className="grid gap-3 px-5 pb-5">
+    <div className="grid gap-3">
       <div className="h-4 w-2/3 bg-muted" />
       <div className="h-4 w-1/2 bg-muted" />
       <div className="h-4 w-3/5 bg-muted" />
@@ -334,10 +330,10 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
 
       <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
 
-      <div className="grid grid-cols-3 gap-px border border-border bg-border">
+      <div className="grid grid-cols-3 gap-6">
         {signalsLoading || updatesLoading || membersLoading
           ? [0, 1, 2].map((cell) => (
-              <div key={cell} className="bg-background-2 px-4 py-3">
+              <div key={cell}>
                 <span className="block h-8 w-10 bg-neutral-3" />
                 <span className="mt-2 block h-3 w-16 bg-neutral-3" />
               </div>
@@ -364,7 +360,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="bg-background-2 px-4 py-3 hover:bg-foreground/5"
+                className="min-w-0 hover:opacity-80"
               >
                 <span
                   className="block text-5 tabular-nums text-foreground"
@@ -442,7 +438,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             agents.length === 0 ? (
               <Quiet>{t('membersEmpty')}</Quiet>
             ) : (
-              <div className="flex flex-col gap-5 px-5 pb-5">
+              <div className="flex flex-col gap-5">
                 {spaces.length > 0 ? (
                   <MembershipPreview title={tCommon('Spaces')}>
                     {spaces.slice(0, 5).map((memberSpace) => (
