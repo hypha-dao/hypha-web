@@ -87,7 +87,7 @@ function HeatField({
       >
         {PRIORITIES.map((priority) => (
           <div key={priority} className="contents">
-            <span className="pr-2 text-1 text-neutral-11">
+            <span className="min-w-[4.25rem] pr-2 text-right text-1 text-neutral-11">
               {priorityLabel(priority)}
             </span>
             {Array.from({ length: BUCKETS }, (_, column) => {
@@ -206,7 +206,9 @@ export function SignalHeatMaps({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={cn('grid gap-6', heatGridClass(count))}>
+      <div
+        className={cn('grid justify-items-start gap-8', heatGridClass(count))}
+      >
         {groups.map((group, index) => {
           const label = tSignals.has(`types.${group.type}` as 'types.Need')
             ? tSignals(`types.${group.type}` as 'types.Need')
@@ -216,7 +218,7 @@ export function SignalHeatMaps({
               key={group.type}
               href={hrefForType(group.type)}
               className={cn(
-                'min-w-0 hover:opacity-80',
+                'block w-fit max-w-full min-w-0 hover:opacity-80',
                 heatCellClass(count, index),
               )}
             >
@@ -224,7 +226,7 @@ export function SignalHeatMaps({
                 <span className="truncate text-1 uppercase tracking-[0.12em] text-muted-foreground">
                   {label}
                 </span>
-                <span className="text-3 tabular-nums text-foreground">
+                <span className="shrink-0 text-3 tabular-nums text-foreground">
                   {group.items.length}
                 </span>
               </span>
