@@ -28,7 +28,6 @@ import {
 import { NetworkRightColumn } from './network-right-cards';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
-type StoryFilter = 'all' | 'picture';
 type StoryFormat = 'photo' | 'video' | 'voice';
 type NamedSpace = { slug: string; title: string };
 type TreasuryAsset = { symbol: string; value: number };
@@ -59,10 +58,6 @@ function plainText(value: string) {
     index = close + 1;
   }
   return out.replace(/\s+/g, ' ').trim();
-}
-
-function hasPicture(signal: NetworkFieldSignal) {
-  return Boolean(signal.leadImage || signal.videoUrl);
 }
 
 function isHyphaSymbol(symbol: string) {
@@ -536,11 +531,10 @@ export function NetworkImpactBoard({
   const memberSpaces = useMemberSpaces();
   const [query, setQuery] = useState('');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
-  const [story, setStory] = useState<StoryFilter>('all');
   const [openSlug, setOpenSlug] = useState('');
   const needle = query.trim().toLowerCase();
 
-  const matched = useMemo(
+  const visible = useMemo(
     () =>
       signals.filter((signal) => {
         if (capital !== 'all' && capitalKey(signal.capital) !== capital) {
@@ -560,8 +554,6 @@ export function NetworkImpactBoard({
       }),
     [capital, needle, signals],
   );
-  const pictured = matched.filter(hasPicture).length;
-  const visible = story === 'picture' ? matched.filter(hasPicture) : matched;
   const openStory = signals.find((signal) => signal.slug === openSlug) ?? null;
   const tokenSpaces = useMemo(() => {
     const seen = new Map<string, NamedSpace>();
@@ -597,38 +589,6 @@ export function NetworkImpactBoard({
             allLabel={t('allSpaces')}
             labelFor={(key) => t(`capitals.${key}`)}
           />
-          <div
-            className="flex flex-wrap items-center gap-2"
-            role="group"
-            aria-label={t('impactTitle')}
-          >
-            <button
-              type="button"
-              aria-pressed={story === 'all'}
-              onClick={() => setStory('all')}
-              className={cn(
-                'px-3 py-1 text-1',
-                story === 'all'
-                  ? 'bg-foreground text-background'
-                  : 'bg-neutral-2 text-neutral-11',
-              )}
-            >
-              {t('allStories', { count: matched.length })}
-            </button>
-            <button
-              type="button"
-              aria-pressed={story === 'picture'}
-              onClick={() => setStory('picture')}
-              className={cn(
-                'px-3 py-1 text-1',
-                story === 'picture'
-                  ? 'bg-foreground text-background'
-                  : 'bg-neutral-2 text-neutral-11',
-              )}
-            >
-              {t('withPicture', { count: pictured })}
-            </button>
-          </div>
           {visible.length === 0 ? (
             <p className="text-2 text-neutral-11">
               {signals.length === 0 ? empty : t('needsFilterEmpty')}

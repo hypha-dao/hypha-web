@@ -24,8 +24,6 @@ import {
   NetworkSectionHeader,
 } from './network-section-header';
 
-type StoryFilter = 'all' | 'picture';
-
 function typeLabel(
   type: NetworkFieldSignalKind,
   t: ReturnType<typeof useTranslations<'NetworkExchange'>>,
@@ -62,10 +60,6 @@ function shortToken(token: string) {
   return trimmed;
 }
 
-function hasPicture(signal: NetworkFieldSignal) {
-  return Boolean(signal.leadImage || signal.videoUrl);
-}
-
 function whenLabel(
   iso: string | null,
   locale: ReturnType<typeof resolveDateFnsLocale>,
@@ -74,37 +68,6 @@ function whenLabel(
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
   return formatDistanceToNowStrict(date, { addSuffix: true, locale });
-}
-
-function Chip({
-  selected,
-  onClick,
-  children,
-  dense = false,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: string;
-  dense?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      className={cn(
-        'border',
-        dense ? 'shrink-0 px-2.5 py-1 text-1' : 'px-3 py-1.5 text-1',
-        selected
-          ? 'border-foreground bg-foreground text-background'
-          : dense
-          ? 'border-border bg-background text-neutral-11'
-          : 'border-border bg-background text-foreground',
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function FieldPhoto({ src, alt }: { src: string | null; alt: string }) {
@@ -176,7 +139,6 @@ export function NetworkFieldBoard({
   const [query, setQuery] = useState('');
   const [selectedSlug, setSelectedSlug] = useState(signals[0]?.slug ?? '');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
-  const [story, setStory] = useState<StoryFilter>('all');
   const needle = query.trim().toLowerCase();
 
   const matched = useMemo(
@@ -200,12 +162,9 @@ export function NetworkFieldBoard({
     [capital, needle, signals],
   );
   const visible = useMemo(() => {
-    if (variant === 'impact') {
-      return story === 'picture' ? matched.filter(hasPicture) : matched;
-    }
+    if (variant === 'impact') return matched;
     return matched.filter((signal) => signal.type === 'Action');
-  }, [matched, story, variant]);
-  const pictured = matched.filter(hasPicture).length;
+  }, [matched, variant]);
   const selected =
     visible.find((signal) => signal.slug === selectedSlug) ??
     signals.find((signal) => signal.slug === selectedSlug) ??
@@ -280,25 +239,11 @@ export function NetworkFieldBoard({
               labelFor={(key) => t(`capitals.${key}`)}
             />
           </div>
-          {variant === 'action' ? (
-            visible.length > 0 ? (
-              <p className="shrink-0 text-1 text-neutral-11">
-                {linkedText(visible, t)}
-              </p>
-            ) : null
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Chip selected={story === 'all'} onClick={() => setStory('all')}>
-                {t('allStories', { count: matched.length })}
-              </Chip>
-              <Chip
-                selected={story === 'picture'}
-                onClick={() => setStory('picture')}
-              >
-                {t('withPicture', { count: pictured })}
-              </Chip>
-            </div>
-          )}
+          {variant === 'action' && visible.length > 0 ? (
+            <p className="shrink-0 text-1 text-neutral-11">
+              {linkedText(visible, t)}
+            </p>
+          ) : null}
           {visible.length === 0 ? (
             <p className="text-2 text-neutral-11">
               {signals.length === 0 ? empty : t('needsFilterEmpty')}
