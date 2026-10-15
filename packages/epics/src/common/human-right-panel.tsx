@@ -5350,7 +5350,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         ? t('networkRoomTitle')
                         : mode === 'space' && spaceRoom === 'ecosystem'
                         ? t('ecosystemRoomTitle')
-                        : undefined
+                        : welcomePartner ?? undefined
                     }
                     onReply={
                       blockSpaceChatForMembership

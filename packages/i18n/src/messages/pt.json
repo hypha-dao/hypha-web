@@ -3125,7 +3125,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Ontem às {time}",
     "timestampDate": "{date} às {time}",
-    "chatRoomTitle": "Sala de chat",
+    "chatRoomTitle": "Mensagem direta",
     "systemSender": "Sistema",
     "noMembers": "Nenhum membro encontrado",
     "unknownMember": "Desconhecido",

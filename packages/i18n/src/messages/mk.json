@@ -3682,7 +3682,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Вчера во {time}",
     "timestampDate": "{date} во {time}",
-    "chatRoomTitle": "Соба за разговор",
+    "chatRoomTitle": "Директна порака",
     "systemSender": "Систем",
     "noMembers": "Не се пронајдени членови",
     "unknownMember": "Непознат",
