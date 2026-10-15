@@ -14,6 +14,8 @@ type SpaceCardWithDiscoverabilityProps = {
   getHref: (slug: string) => string;
   isLoading?: boolean;
   showExitButton?: boolean;
+  /** Fires when the card link is activated (e.g. close the mobile spaces sheet). */
+  onNavigate?: () => void;
 };
 
 export function SpaceCardWithDiscoverability({
@@ -21,6 +23,7 @@ export function SpaceCardWithDiscoverability({
   getHref,
   isLoading,
   showExitButton,
+  onNavigate,
 }: SpaceCardWithDiscoverabilityProps) {
   const { isMember } = useSpaceMember({
     spaceId: space.web3SpaceId ?? undefined,
@@ -29,7 +32,11 @@ export function SpaceCardWithDiscoverability({
   const shouldShowExitButton = showExitButton && isMember === true;
 
   return (
-    <Link className="flex flex-col flex-1" href={getHref(space.slug as string)}>
+    <Link
+      className="flex flex-col flex-1"
+      href={getHref(space.slug as string)}
+      onClick={onNavigate}
+    >
       <SpaceCard
         description={space.description as string}
         icon={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
