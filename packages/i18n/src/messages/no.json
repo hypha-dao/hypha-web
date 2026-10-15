@@ -5158,6 +5158,11 @@
     "membersEmpty": "Ingen medlemmer ennå.",
     "peopleHere": "I dette space",
     "connectedNow": "Tilkoblet",
+    "greetingMorning": "God morgen, {name}.",
+    "greetingAfternoon": "God ettermiddag, {name}.",
+    "greetingEvening": "God kveld, {name}.",
+    "greetingBack": "Så fint å se deg igjen, {name}.",
+    "greetingLastHere": "Du var her sist {date}.",
     "ecosystemEmpty": "Ingen andre rom ennå."
   },
   "Landing": {
