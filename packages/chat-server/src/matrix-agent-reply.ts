@@ -1,7 +1,12 @@
 import 'server-only';
 
 import { generateText, stepCountIs } from 'ai';
-import { contentMentionsMatrixUser } from '@hypha-platform/core/client';
+import {
+  contentMentionsMatrixUser,
+  HYPHA_AGENT_SPECIALIST_FIELD,
+  selectSpecialistForQuestion,
+  specialistById,
+} from '@hypha-platform/core/client';
 import {
   getMatrixBotAsToken,
   getMatrixBotUserId,
@@ -48,9 +53,13 @@ function readTextEvents(
   return lines;
 }
 
-const AGENT_PROMPT = `You are AI Agents, speaking in a Matrix room only because someone just @mentioned you. You were not in the conversation before that, and you do not stay in it.
+function agentPrompt(role: string) {
+  return `You are ${role}, one specialist among AI Agents, speaking in a Matrix room only because someone just @mentioned AI Agents. You were not in the conversation before that, and you do not stay in it.
 
-When the message asks one question, answer that skill: the tension, the opportunity, the phrasing of the need, or the resources. Do not answer a skill they did not ask.
+Answer only the question they asked. Do not answer a skill they did not ask. Speak as ${role}.`;
+}
+
+const AGENT_PROMPT_REST = `
 
 Be useful and brief. High integrity, at the right distance. Never intrusive. Never curious. Do not greet. Do not say that you were mentioned. Do not open with Sure.
 
@@ -115,6 +124,8 @@ export async function replyToMatrixAgentMention({
   }
   if (!turn) return { replied: false };
 
+  const specialist =
+    selectSpecialistForQuestion(turn.question) ?? specialistById('purpose');
   const slug = spaceSlug?.trim() || '';
   const tools = createChatTools(
     authToken,
@@ -143,7 +154,9 @@ export async function replyToMatrixAgentMention({
   try {
     const result = await generateText({
       model: getHyphaChatModel(),
-      system: AGENT_PROMPT,
+      system: `${agentPrompt(
+        specialist?.role ?? 'AI Agents',
+      )}\n\n${AGENT_PROMPT_REST}`,
       prompt: [
         slug
           ? `Space slug: ${slug}`
@@ -176,7 +189,15 @@ export async function replyToMatrixAgentMention({
   }
 
   try {
-    await matrixSendTextMessage(trimmedRoom, text, botToken, homeserver);
+    await matrixSendTextMessage(
+      trimmedRoom,
+      text,
+      botToken,
+      homeserver,
+      specialist
+        ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
+        : undefined,
+    );
   } catch (error) {
     console.warn(
       '[MatrixAgent] Failed to post the reply:',

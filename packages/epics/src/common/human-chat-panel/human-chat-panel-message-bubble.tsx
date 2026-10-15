@@ -37,8 +37,13 @@ import {
   normalizePlainTextMxidCaptureFromMatch,
   useMatrix,
   usePersonBySub,
+  specialistById,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
+import {
+  getAgentAvatarInitials,
+  tagGroupAccentClass,
+} from '../ai-agent-competencies';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
@@ -705,6 +710,8 @@ type HumanChatPanelMessageBubbleProps = {
     senderName?: string;
     /** Author MXID when known (overflow delete). */
     senderMatrixId?: string;
+    /** Specialist who answered an @AI Agents mention. */
+    agentSpecialistId?: string;
     avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
@@ -1482,6 +1489,11 @@ export function HumanChatPanelMessageBubble({
   unreadBoundary = false,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const tCoherence = useTranslations('CoherenceTab');
+  const specialist = message.agentSpecialistId
+    ? specialistById(message.agentSpecialistId)
+    : null;
+  const specialistName = specialist ? tCoherence(specialist.roleKey) : null;
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
@@ -1664,6 +1676,7 @@ export function HumanChatPanelMessageBubble({
    * Never surface bridged Privy locals — fall back to "Unknown member" once resolution finishes.
    */
   const senderProfileLoading =
+    !specialistName &&
     message.role === 'member' &&
     Boolean(message.senderMatrixId) &&
     !senderHasVisibleLabel &&
@@ -1691,7 +1704,7 @@ export function HumanChatPanelMessageBubble({
           replyTo.sourceUserId,
         ));
 
-  const senderName = resolvedSenderName;
+  const senderName = specialistName ?? resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
   const mainAvatarSrc =
     message.role === 'user'
@@ -1849,6 +1862,15 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             {message.id === 'welcome' ? (
               <MemberHomeMark className="h-10 w-10" />
+            ) : specialistName ? (
+              <div
+                className={`flex h-10 w-10 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
+                  specialist?.id ?? '',
+                )}`}
+                aria-hidden
+              >
+                {getAgentAvatarInitials(specialistName)}
+              </div>
             ) : (
               <PersonAvatar
                 size="chat"

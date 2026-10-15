@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
-import { useMatrix, useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  specialistById,
+  useMatrix,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
+import {
+  getAgentAvatarInitials,
+  tagGroupAccentClass,
+} from '../ai-agent-competencies';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
 import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
@@ -19,6 +27,8 @@ type HumanChatPanelMembersProps = {
   /** Local user has joined the `GroupCall` in this room. */
   inOurCallSession?: boolean;
   currentUserMatrixId?: string | null;
+  /** Specialists already called in this room, first call first. */
+  calledSpecialistIds?: readonly string[];
 };
 
 export function HumanChatPanelMembers({
@@ -28,8 +38,14 @@ export function HumanChatPanelMembers({
   inCallMatrixUserIds = [],
   inOurCallSession = false,
   currentUserMatrixId,
+  calledSpecialistIds: calledIds = [],
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
+  const tCoherence = useTranslations('CoherenceTab');
+  const calledSpecialists = calledIds.flatMap((id) => {
+    const specialist = specialistById(id);
+    return specialist ? [specialist] : [];
+  });
   const { getRoomMembers, isMatrixAvailable, isAuthenticated } = useMatrix();
   const [onlineCount, setOnlineCount] = useState(0);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
@@ -42,7 +58,7 @@ export function HumanChatPanelMembers({
     web3SpaceId: space?.web3SpaceId,
     useMembers,
   });
-  const totalCount = members.length;
+  const totalCount = members.length + calledSpecialists.length;
 
   useEffect(() => {
     if (!roomId || !isMatrixAvailable || !isAuthenticated) {
@@ -122,11 +138,14 @@ export function HumanChatPanelMembers({
           {t('signalTeamMembersLoadFailed')}
         </div>
       )}
-      {!isLoading && !error && members.length === 0 && (
-        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-          {t('noMembers')}
-        </div>
-      )}
+      {!isLoading &&
+        !error &&
+        members.length === 0 &&
+        calledSpecialists.length === 0 && (
+          <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+            {t('noMembers')}
+          </div>
+        )}
       {members.map((member) => {
         const displayName =
           [member.name, member.surname].filter(Boolean).join(' ') ||
@@ -148,6 +167,26 @@ export function HumanChatPanelMembers({
             <span className="text-sm text-foreground truncate">
               {displayName}
             </span>
+          </div>
+        );
+      })}
+      {calledSpecialists.map((specialist) => {
+        const role = tCoherence(specialist.roleKey);
+        return (
+          <div
+            key={specialist.id}
+            className="flex items-center gap-3 rounded-none px-2 py-1.5"
+            data-testid="chat-panel-member-item"
+          >
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-semibold ${tagGroupAccentClass(
+                specialist.id,
+              )}`}
+              aria-hidden
+            >
+              {getAgentAvatarInitials(role)}
+            </div>
+            <span className="truncate text-sm text-foreground">{role}</span>
           </div>
         );
       })}

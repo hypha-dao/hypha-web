@@ -3,6 +3,7 @@ export * from './member-intelligence';
 export * from './network-horizon';
 export * from './closest-contributors';
 export * from './member-intelligence-guidance';
+export * from './ai-specialist-routing';
 export * from './member-home-thread';
 export * from './member-home-activation';
 export * from './validation';

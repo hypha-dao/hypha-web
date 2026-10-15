@@ -26,6 +26,8 @@ import {
   Play,
   Loader2,
   Plus,
+  ChevronLeft,
+  ChevronRight,
   ImageIcon,
   Paperclip,
   Video,
@@ -263,11 +265,16 @@ export type ChatMentionCandidate = {
   avatarUrl?: string;
   /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
   privySub?: string;
-  /** Stable row id when several skills share one Matrix user. */
+  /** Stable row id when the same Matrix user appears more than once. */
   rowKey?: string;
-  /** Question inserted after the mention, asking that agent for one skill. */
+  /** Question inserted after the mention, asking AI Agents for one skill. */
   prompt?: string;
-  /** Icon for an agent skill row. People rows keep their profile avatar. */
+  /**
+   * Skills offered after this one agent is chosen. Present only on the AI Agents
+   * row, so the picker does not list one agent per skill.
+   */
+  skills?: readonly { id: string; prompt: string }[];
+  /** Mycelium in a network room, or the space logo in a space room. */
   agentIcon?: ChatMentionAgentIcon;
 };
 
@@ -530,14 +537,17 @@ function filterMentionCandidates(
   const contains: ChatMentionCandidate[] = [];
   for (const m of all) {
     const label = m.displayLabel.toLowerCase();
-    const prompt = m.prompt?.toLowerCase() ?? '';
+    const prompts = [
+      m.prompt?.toLowerCase() ?? '',
+      ...(m.skills ?? []).map((skill) => skill.prompt.toLowerCase()),
+    ].filter(Boolean);
     const id = m.userId.toLowerCase();
     const local = m.userId.startsWith('@')
       ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
       : '';
     if (
       label.startsWith(q) ||
-      prompt.startsWith(q) ||
+      prompts.some((prompt) => prompt.startsWith(q)) ||
       id.startsWith(`@${q}`) ||
       id.startsWith(q) ||
       (local && local.startsWith(q))
@@ -547,7 +557,9 @@ function filterMentionCandidates(
       }
     } else if (
       contains.length < MAX_MENTION_SUGGESTIONS &&
-      (label.includes(q) || prompt.includes(q) || id.includes(q))
+      (label.includes(q) ||
+        prompts.some((prompt) => prompt.includes(q)) ||
+        id.includes(q))
     ) {
       contains.push(m);
     }
@@ -570,7 +582,7 @@ function AgentSkillMentionIcon({ icon }: { icon?: ChatMentionAgentIcon }) {
   return <MemberHomeMark className="h-6 w-6" />;
 }
 
-function AgentSkillMentionRow({
+function AgentMentionRow({
   candidate,
   isActive,
   onPick,
@@ -579,14 +591,14 @@ function AgentSkillMentionRow({
   isActive: boolean;
   onPick: () => void;
 }) {
-  const prompt = candidate.prompt?.trim() ?? '';
+  const hasSkills = (candidate.skills?.length ?? 0) > 0;
   return (
     <button
       type="button"
       role="option"
       aria-selected={isActive}
-      aria-label={`${prompt}, ${candidate.displayLabel}`}
-      title={prompt}
+      aria-label={candidate.displayLabel}
+      title={candidate.displayLabel}
       className={cn(
         'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
         isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/80',
@@ -595,12 +607,43 @@ function AgentSkillMentionRow({
       onClick={onPick}
     >
       <AgentSkillMentionIcon icon={candidate.agentIcon} />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-medium leading-snug">{prompt}</span>
-        <span className="truncate text-xs leading-snug text-muted-foreground">
-          {candidate.displayLabel}
-        </span>
+      <span className="min-w-0 flex-1 truncate font-medium leading-snug">
+        {candidate.displayLabel}
       </span>
+      {hasSkills ? (
+        <ChevronRight
+          className="h-4 w-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+      ) : null}
+    </button>
+  );
+}
+
+function AgentSkillQuestionRow({
+  prompt,
+  isActive,
+  onPick,
+}: {
+  prompt: string;
+  isActive: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={isActive}
+      aria-label={prompt}
+      title={prompt}
+      className={cn(
+        'flex w-full min-w-0 items-center rounded-sm px-2 py-1.5 text-left text-sm',
+        isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/80',
+      )}
+      onMouseDown={(ev) => ev.preventDefault()}
+      onClick={onPick}
+    >
+      <span className="truncate font-medium leading-snug">{prompt}</span>
     </button>
   );
 }
@@ -703,6 +746,8 @@ export function HumanChatPanelChatBar({
     [],
   );
   const [atActive, setAtActive] = useState(0);
+  const [agentSkillMenu, setAgentSkillMenu] =
+    useState<ChatMentionCandidate | null>(null);
   const atTokenRef = useRef<ReturnType<typeof getActiveAtToken>>(null);
 
   const activeAtPick =
@@ -866,6 +911,7 @@ export function HumanChatPanelChatBar({
         setAtOpen(false);
         setAtSuggestions([]);
         setAtActive(0);
+        setAgentSkillMenu(null);
         return;
       }
       const tok = getActiveAtToken(val, cursor);
@@ -874,12 +920,14 @@ export function HumanChatPanelChatBar({
         setAtOpen(false);
         setAtSuggestions([]);
         setAtActive(0);
+        setAgentSkillMenu(null);
         return;
       }
       if (!atMentionInteractable || !mentionCandidates.length) {
         setAtOpen(false);
         setAtSuggestions([]);
         setAtActive(0);
+        setAgentSkillMenu(null);
         return;
       }
       const sug = filterMentionCandidates(mentionCandidates, tok.query);
@@ -947,6 +995,12 @@ export function HumanChatPanelChatBar({
       const el = textareaRef.current;
       const tok = atTokenRef.current;
       if (!el || !tok) return;
+      const skills = member.skills ?? [];
+      if (skills.length > 0 && !member.prompt?.trim()) {
+        setAgentSkillMenu(member);
+        setAtActive(0);
+        return;
+      }
       const prompt = member.prompt?.trim();
       const labelForMerge = prompt
         ? member.displayLabel
@@ -965,6 +1019,7 @@ export function HumanChatPanelChatBar({
       onChange(next);
       setAtOpen(false);
       setAtSuggestions([]);
+      setAgentSkillMenu(null);
       atTokenRef.current = null;
       requestAnimationFrame(() => {
         el.focus();
@@ -1548,6 +1603,43 @@ export function HumanChatPanelChatBar({
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
+      if (
+        atOpen &&
+        agentSkillMenu &&
+        (agentSkillMenu.skills?.length ?? 0) > 0
+      ) {
+        const skills = agentSkillMenu.skills ?? [];
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setAtActive((i) => (i + 1) % skills.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setAtActive((i) => (i - 1 + skills.length) % skills.length);
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          if (keyboardPickDisabled) return;
+          const skill =
+            skills[Math.max(0, Math.min(atActive, skills.length - 1))];
+          if (skill) {
+            applyAtChoice({
+              ...agentSkillMenu,
+              skills: undefined,
+              prompt: skill.prompt,
+            });
+          }
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setAgentSkillMenu(null);
+          setAtActive(0);
+          return;
+        }
+      }
       if (atOpen && atSuggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -1584,6 +1676,7 @@ export function HumanChatPanelChatBar({
           e.preventDefault();
           setAtOpen(false);
           setAtSuggestions([]);
+          setAgentSkillMenu(null);
           atTokenRef.current = null;
           return;
         }
@@ -1633,6 +1726,7 @@ export function HumanChatPanelChatBar({
       atOpen,
       atSuggestions,
       atActive,
+      agentSkillMenu,
       applyAtChoice,
       keyboardResolvedPickLabel,
       keyboardPickDisabled,
@@ -2073,27 +2167,60 @@ export function HumanChatPanelChatBar({
           <div
             role="listbox"
             aria-label={t('mentionListLabel')}
-            className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+            className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-80 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
-            {atSuggestions.map((m, idx) =>
-              m.prompt ? (
-                <AgentSkillMentionRow
-                  key={m.rowKey ?? `${m.userId}-${m.prompt}`}
-                  candidate={m}
-                  isActive={idx === atActive}
-                  onPick={() => applyAtChoice(m)}
-                />
-              ) : (
-                <HumanChatMentionCandidateRow
-                  key={m.rowKey ?? m.userId}
-                  matrixUserId={m.userId}
-                  matrixFallbackLabel={m.displayLabel}
-                  matrixFallbackAvatarUrl={m.avatarUrl}
-                  privySub={m.privySub}
-                  isActive={idx === atActive}
-                  onPickResolved={(resolved) => applyAtChoice(m, resolved)}
-                />
-              ),
+            {agentSkillMenu ? (
+              <>
+                <button
+                  type="button"
+                  className="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted/80"
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => {
+                    setAgentSkillMenu(null);
+                    setAtActive(0);
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="truncate font-medium text-foreground">
+                    {agentSkillMenu.displayLabel}
+                  </span>
+                </button>
+                {(agentSkillMenu.skills ?? []).map((skill, idx) => (
+                  <AgentSkillQuestionRow
+                    key={skill.id}
+                    prompt={skill.prompt}
+                    isActive={idx === atActive}
+                    onPick={() =>
+                      applyAtChoice({
+                        ...agentSkillMenu,
+                        skills: undefined,
+                        prompt: skill.prompt,
+                      })
+                    }
+                  />
+                ))}
+              </>
+            ) : (
+              atSuggestions.map((m, idx) =>
+                m.skills?.length || m.agentIcon ? (
+                  <AgentMentionRow
+                    key={m.rowKey ?? m.userId}
+                    candidate={m}
+                    isActive={idx === atActive}
+                    onPick={() => applyAtChoice(m)}
+                  />
+                ) : (
+                  <HumanChatMentionCandidateRow
+                    key={m.rowKey ?? m.userId}
+                    matrixUserId={m.userId}
+                    matrixFallbackLabel={m.displayLabel}
+                    matrixFallbackAvatarUrl={m.avatarUrl}
+                    privySub={m.privySub}
+                    isActive={idx === atActive}
+                    onPickResolved={(resolved) => applyAtChoice(m, resolved)}
+                  />
+                ),
+              )
             )}
           </div>
         )}

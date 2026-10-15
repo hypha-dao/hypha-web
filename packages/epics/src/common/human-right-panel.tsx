@@ -58,6 +58,7 @@ import {
   looksLikeTechnicalSpaceMemoryName,
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
+  calledSpecialistIds,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -314,6 +315,8 @@ type UIMessage = {
   formattedContentHtml?: string;
   /** MXID of the message author (for reply target resolution). */
   senderMatrixId?: string;
+  /** Specialist who answered an @AI Agents mention. */
+  agentSpecialistId?: string;
   reactions?: Array<{
     emoji: string;
     count: number;
@@ -881,6 +884,9 @@ function toUIMessage(
       isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
+    ...(msg.agentSpecialistId
+      ? { agentSpecialistId: msg.agentSpecialistId }
+      : {}),
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : memberAvatar,
     timestamp: msg.timestamp,
     reactions,
@@ -3756,6 +3762,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return [...messages, pendingRow];
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
+  const calledAgents = useMemo(
+    () => calledSpecialistIds(mergedMessages),
+    [mergedMessages],
+  );
+
   useEffect(() => {
     if (!client || !roomId) return;
     const room = client.getRoom(roomId);
@@ -5331,6 +5342,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     useMembers={useMembers}
                     spaceSlug={spaceSlug}
                     roomId={roomId}
+                    calledSpecialistIds={calledAgents}
                     inCallMatrixUserIds={spaceCallInCallUserIds}
                     inOurCallSession={
                       callAppliesToCurrentChatRoom &&

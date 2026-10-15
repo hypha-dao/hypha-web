@@ -37,6 +37,8 @@ type UIMessage = {
   senderName?: string;
   /** Matrix author MXID when known. */
   senderMatrixId?: string;
+  /** Specialist who answered an @AI Agents mention. */
+  agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
   formattedContentHtml?: string;
