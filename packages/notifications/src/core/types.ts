@@ -162,7 +162,7 @@ export type NotificationEmailContent =
       templateId: string;
       customData?: Record<string, string>;
     }
-  | { kind: 'plain'; subject: string; body: string };
+  | { kind: 'plain'; subject: string; body: string; preheader?: string };
 
 export interface ChannelContent {
   push?: NotificationPushContent;

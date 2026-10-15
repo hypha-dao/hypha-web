@@ -60,7 +60,7 @@ export const buildSpaceCreatedContent: ContentBuilder<SpaceCreatedEvent> = (
           title: plainEmail.subject,
           paragraphs: [plainEmail.body],
           cta: url ? { label: 'Open Hypha', url } : undefined,
-          settingsUrl: notificationSettingsUrl,
+          footer: { unsubscribe: true, settingsUrl: notificationSettingsUrl },
         }),
       },
     },

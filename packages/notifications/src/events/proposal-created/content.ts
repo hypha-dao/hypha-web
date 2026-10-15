@@ -91,9 +91,12 @@ export const buildProposalCreatedContent: ContentBuilder<
           title: email.subject,
           paragraphs: [email.body],
           cta: url ? { label: 'View proposal', url } : undefined,
-          settingsUrl: recipient.data?.notificationSettingsUrl as
-            | string
-            | undefined,
+          footer: {
+            unsubscribe: true,
+            settingsUrl: recipient.data?.notificationSettingsUrl as
+              | string
+              | undefined,
+          },
         }),
       },
     },

@@ -1,33 +1,51 @@
 import { describe, expect, it } from 'vitest';
 
-import { layout } from '../layout';
+import { layout, paragraphHtml, preview, strong } from '../layout';
 
 describe('layout', () => {
-  it('escapes dynamic text and always carries the unsubscribe token', () => {
+  it('escapes dynamic text', () => {
     const html = layout({
       title: 'Hi <b>',
       paragraphs: ['"Quoted" & <script>'],
+      contentHtml: paragraphHtml(strong('<x>')) + preview('<i>'),
     });
-    expect(html).toContain('Hi &lt;b&gt;');
+    expect(html).toContain('<title>Hi &lt;b&gt;</title>');
     expect(html).toContain('&quot;Quoted&quot; &amp; &lt;script&gt;');
+    expect(html).toContain('<strong>&lt;x&gt;</strong>');
+    expect(html).toContain('class="preview">&lt;i&gt;');
     expect(html).not.toContain('<script>');
-    expect(html).toContain('[unsubscribe_url]');
   });
 
-  it('renders CTA, settings link and preheader only when given', () => {
-    const bare = layout({ title: 'T', paragraphs: [] });
-    expect(bare).not.toContain('Manage notification settings');
-    expect(bare).not.toContain('display:none');
+  it('renders the shared header, greeting, signoff and support footer', () => {
+    const html = layout({ title: 'T' });
+    expect(html).toContain(
+      'https://app.hypha.earth/brand/hypha-logo-white.png',
+    );
+    expect(html).toContain('Hey there,');
+    expect(html).toContain('With gratitude, Hypha');
+    expect(html).toContain('mailto:support@hypha.earth');
+  });
 
-    const full = layout({
-      preheader: 'Pre',
+  it('carries settings + unsubscribe only for subscription emails', () => {
+    const subscription = layout({
       title: 'T',
-      paragraphs: ['p'],
-      cta: { label: 'Go', url: 'https://x.test/a?b=1&c=2' },
-      settingsUrl: 'https://x.test/settings',
+      footer: { unsubscribe: true, settingsUrl: 'https://x.test/s' },
     });
-    expect(full).toContain('Manage notification settings');
-    expect(full).toContain('href="https://x.test/a?b=1&amp;c=2"');
-    expect(full).toContain('>Pre<');
+    expect(subscription).toContain('[unsubscribe_url]');
+    expect(subscription).toContain('Manage notification settings');
+
+    const transactional = layout({ title: 'T' });
+    expect(transactional).not.toContain('[unsubscribe_url]');
+    expect(transactional).not.toContain('Manage notification settings');
+  });
+
+  it('renders CTA and hidden preheader, escaping URLs', () => {
+    const html = layout({
+      title: 'T',
+      preheader: 'Pre',
+      cta: { label: 'Go', url: 'https://x.test/a?b=1&c=2' },
+    });
+    expect(html).toContain('class="cta" href="https://x.test/a?b=1&amp;c=2"');
+    expect(html).toContain('>Pre</div>');
   });
 });
