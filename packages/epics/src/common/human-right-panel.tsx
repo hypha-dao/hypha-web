@@ -2292,9 +2292,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       new Map(
         mentionCandidates.map((candidate) => {
           const o = mentionDisplayOverride[candidate.userId];
+          if (o?.trim()) return [candidate.userId, o] as const;
+          // AI Agents keeps its picker label — resolveMemberLabel falls back to the
+          // Matrix localpart (e.g. hypha_bot_preview) for the bot MXID.
+          if (candidate.rowKey === 'agent') {
+            const agentLabel = candidate.displayLabel?.trim();
+            if (agentLabel) return [candidate.userId, agentLabel] as const;
+          }
+          const resolved = resolveMemberLabel(candidate.userId)?.trim();
+          if (resolved) return [candidate.userId, resolved] as const;
           return [
             candidate.userId,
-            o?.trim() ? o : resolveMemberLabel(candidate.userId),
+            candidate.displayLabel?.trim() || '',
           ] as const;
         }),
       ),
