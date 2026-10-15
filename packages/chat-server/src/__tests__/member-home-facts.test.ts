@@ -384,4 +384,55 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain('next waiting item');
   });
+
+  it('treats Share signal as a missing body, and a longer message as the post', () => {
+    const command = formatMemberHomeFacts(home, { asked: 'Share signal' });
+    expect(command).toContain('The body is not in this message');
+    expect(command).toContain('Ask once for a few lines or a file, and stop');
+    expect(command).toContain(
+      'Do not thank them as if the request was already shared',
+    );
+    expect(command).toContain('Do not restate the briefing');
+    expect(command).not.toContain('This reply is about that card only');
+
+    const intent = formatMemberHomeFacts(home, {
+      asked: 'I want to share a signal',
+    });
+    expect(intent).toContain('The body is not in this message');
+
+    const alreadyAsked = formatMemberHomeFacts(home, {
+      asked: 'Share signal',
+      prior:
+        "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
+    });
+    expect(alreadyAsked).toContain(
+      'This turn: the lines or the file are still missing',
+    );
+    expect(alreadyAsked).toContain('Do not ask that same question again');
+    expect(alreadyAsked).not.toContain('The body is not in this message');
+
+    const content = formatMemberHomeFacts(home, {
+      asked: 'We shipped the energy ledger and two spaces are paying.',
+      prior:
+        "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
+    });
+    expect(content).toContain('This turn: this message is the content');
+    expect(content).toContain('create_human_chat_message');
+    expect(content).toContain('target signal_chat');
+    expect(content).toContain('Do not ask them to paste it again');
+
+    const withBody = formatMemberHomeFacts(home, {
+      asked:
+        'Share signal. We shipped the energy ledger and two spaces are paying.',
+    });
+    expect(withBody).toContain('This turn: this message is the content');
+    expect(withBody).not.toContain('The body is not in this message');
+
+    const declined = formatMemberHomeFacts(home, {
+      asked: 'No thanks',
+      prior:
+        "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
+    });
+    expect(declined).not.toContain('This turn: this message is the content');
+  });
 });

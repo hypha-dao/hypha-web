@@ -1,5 +1,7 @@
 import {
   HYPHA_ACTIVATION_PER_MONTH,
+  isMemberHomeItemDecline,
+  isMemberHomeItemDeferral,
   listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
   memberHomeThreadItemForMessage,
@@ -35,6 +37,73 @@ function isThisMember(home: MemberIntelligence, name: string): boolean {
   const candidate = name.trim().toLowerCase();
   const member = personName(home.person).trim().toLowerCase();
   return Boolean(candidate) && candidate === member;
+}
+
+function foldAsked(text: string) {
+  return text.trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+}
+
+/**
+ * "Share signal" and the ways a member says they want to share one.
+ * Anything after the command is the body. An empty remainder means it is missing.
+ */
+function shareSignalRemainder(text: string): string | null {
+  const normalized = foldAsked(text);
+  if (!normalized) return null;
+  const match = normalized.match(
+    /^(?:please\s+)?(?:i\s+(?:want|would like|wanna|'d like|would love|'d love)\s+to\s+|i(?:'d| would)\s+(?:like|love)\s+to\s+|i(?:'ll| will)\s+|can i\s+|could i\s+|i can\s+|let me\s+|let(?:'s| us)\s+)?(?:share|post)\s+(?:(?:a|the)\s+)?signal\b[.!?:,\-–—]*\s*(.*)$/,
+  );
+  if (!match) return null;
+  return (match[1] ?? '').replace(/^[.!?]+$/, '').trim();
+}
+
+/** The previous reply already asked them to paste lines or a file onto a signal. */
+function assistantAskedForSignalPost(text: string | null | undefined): boolean {
+  const normalized = foldAsked(text ?? '');
+  if (!/\bsignal\b/.test(normalized)) return false;
+  return /\b(?:few lines|a file|paste|drop it|short post)\b/.test(normalized);
+}
+
+function isShareControlPhrase(text: string): boolean {
+  const normalized = foldAsked(text);
+  if (!normalized) return false;
+  if (
+    isMemberHomeItemDecline(normalized) ||
+    isMemberHomeItemDeferral(normalized)
+  ) {
+    return true;
+  }
+  return (
+    /^(?:where can i be useful|step into a space|who should i connect with|what needs a decision|send someone tokens|pause|stop|enough)[.!?]?$/.test(
+      normalized,
+    ) || /\b(?:what needs a decision|needs a decision)\b/.test(normalized)
+  );
+}
+
+function isBareShareYes(text: string): boolean {
+  return /^(?:yes|yeah|yep|yup|sure|ok|okay|please|go ahead|do it|ready)[.!?]?$/.test(
+    foldAsked(text),
+  );
+}
+
+type ShareSignalTurn = 'awaiting' | 'ready';
+
+function shareSignalTurn(input: {
+  asked?: string | null;
+  prior?: string | null;
+  attached?: boolean;
+}): ShareSignalTurn | null {
+  const asked = input.asked?.trim() ?? '';
+  const remainder = asked ? shareSignalRemainder(asked) : null;
+  if (remainder != null) {
+    if (remainder.length > 0 || input.attached) return 'ready';
+    return 'awaiting';
+  }
+  if (!assistantAskedForSignalPost(input.prior)) return null;
+  if (asked && isShareControlPhrase(asked)) return null;
+  if (input.attached) return 'ready';
+  if (!asked || isBareShareYes(asked)) return 'awaiting';
+  return 'ready';
 }
 
 function creatorRecord(
@@ -89,6 +158,10 @@ export function formatMemberHomeFacts(
     notADecision?: boolean;
     /** The message this reply is answering. A new reply, not a rewrite. */
     asked?: string | null;
+    /** The assistant reply just before that message. */
+    prior?: string | null;
+    /** A file arrived with this message. */
+    attached?: boolean;
   },
 ): string {
   const spaces = home.spaces.map((space) => space.title).join('; ') || 'none';
@@ -138,11 +211,19 @@ export function formatMemberHomeFacts(
   const passedItems = waiting.filter((item) =>
     passed.has(memberHomeThreadItemKey(item)),
   );
-  const askedItem = options?.asked?.trim()
-    ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
-        content: options.asked,
-      })
-    : null;
+  const shareTurn = shareSignalTurn({
+    asked: options?.asked,
+    prior: options?.prior,
+    attached: options?.attached,
+  });
+  const askedForPost =
+    shareTurn === 'awaiting' && assistantAskedForSignalPost(options?.prior);
+  const askedItem =
+    shareTurn || !options?.asked?.trim()
+      ? null
+      : memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
+          content: options.asked,
+        });
   const networkLines =
     (home.networkSignals ?? []).length === 0
       ? null
@@ -229,12 +310,13 @@ export function formatMemberHomeFacts(
     'A no is final the first time. "I don\'t want to decide", "I don\'t want to look", "no thanks", or "no" drops that item, including the proposal you just asked them to look at. Do not ask again. Do not insist. Do not say you will not bring it up. Do not ask "Want to take a look?" about it or about the next proposal. That ask is the loop. If the next waiting item is someone who needs a hand, name them in that same reply and call show_member_home_item for that item. If the next item is a proposal, an invite, or a vote, do not open it in this reply.',
     'Not now is not a no. Remember it and do not offer it again in that same reply. Name the next fresh item instead. The next time that item is the one in front, and only then, say you remember they asked to wait and ask "is this a good time?" If they say not now again, leave it. Do not loop.',
     'A signal this member raised is left out unless its deadline is close. When raisedByMember=yes, they created it and the deadline is close. Do not tell them to call themselves. Do not ask them to discuss it or to give context as if someone else raised it. One line: they raised it, and the deadline is close. The card lets them update it.',
-    'Asking for context or a discussion is not a no when action=decision. "Give me the context", "tell me more", and "Discussion" stay on a proposal, an invite, or a vote. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on. On a signal, action is not decision. There is nothing to decide and nothing to validate. Discuss it or upvote it. Never say validate. Never say "You can now decide on the proposal card." That sentence is only for action=decision. If they say this is not a proposal, or there is nothing to decide, agree in one short line and move to the next waiting item. Call show_member_home_item for that next item. Do not explain the signal. Any button on a signal means they acted. One short line, then the next waiting item in the same reply. Do not stay on the signal.',
+    'Asking for context or a discussion is not a no when action=decision. "Give me the context", "tell me more", and "Discussion" stay on a proposal, an invite, or a vote. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on. On a signal, action is not decision. There is nothing to decide and nothing to validate. Discuss it or upvote it. Never say validate. Never say "You can now decide on the proposal card." That sentence is only for action=decision. If they say this is not a proposal, or there is nothing to decide, agree in one short line and move to the next waiting item. Call show_member_home_item for that next item. Do not explain the signal. Any button on a signal means they acted. One short line, then the next waiting item in the same reply. Do not stay on the signal. "Share signal" is not that button. It does not mean the request was shared.',
+    'Sharing a signal is not a completed share. "Share signal", or saying they want to share one, means they chose to share. Unless the lines or a file are already in that message, do not thank them as if the request was already shared, and do not restate the briefing. Ask once for a few lines or a file, and stop. If you already asked for that, do not ask the same question again: one short line that you still need the lines or the file, then stop. If the latest message is the content, more than that bare command, call create_human_chat_message with target signal_chat and turn it into a short post on the signal in this brief. Do not ask them to paste it again. After they have answered the open item, do not make that same item the only sentence again. Acknowledge what they just said and take the next concrete step their message allows. Do not invent a person, a space, or an amount.',
     'When you still need a person, an amount, or a token, ask for the one missing piece in one ordinary sentence. Never a numbered list. Never a field label. Forbidden, including close paraphrases: "Recipient\'s Name", "Amount of Tokens", "Token Type", "if applicable", "Once I have this information, we can move forward".',
     'One decision at a time, and only the one relevant for this member. "What needs a decision?" is that one item. Do not call a tool to list proposals or documents for this. Call show_member_home_item once for the item in this brief. Never a numbered list of proposals. Forbidden, including close paraphrases: "Currently, here are the recent proposals", "requiring your decision", "Do any of these proposals stand out", "stand out for you to make a decision".',
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know", "if there\'s another proposal", "another matter you\'d like to address", "a different aspect of". When this item is done and another is waiting, name that next item and call show_member_home_item for it. Do not ask what they would like to do.',
     "The proposal is the card. Call show_member_home_item with the slug on that item's line. Never say a waiting proposal is not available, and never offer a different proposal instead. Do not ask what they think.",
-    'If they say yes to helping someone, be glad for the person they are helping, using that person\'s name from the record, then name the next remaining item from that record the same way, including any token that record has. If spoken=he, say "he will appreciate it." If spoken=she, say "she will appreciate it." If the given name does not show he or she, say "they will appreciate it." Do not invent the person, the task, or the token. A yes or a no on a decision is not you acting. Do not approve it, do not say you approved it, and do not ask what they would like to decide. Say "You can now decide on the proposal card." and stop. Do not open the next proposal in that reply. A proposal they have already voted on is absent from the waiting list. Do not ask them to vote on it, even if an earlier message did. When action=outcome the vote is closed. Say the say= sentence and stop. Do not say "You can now decide on the proposal card." Do not ask them to vote, approve, or look. The card says Got it, thank you. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. Do not call the tool for an item you are not talking about. The person uses the card.',
+    'If they say yes to helping someone, be glad for the person they are helping, using that person\'s name from the record, then name the next remaining item from that record the same way, including any token that record has. If spoken=he, say "he will appreciate it." If spoken=she, say "she will appreciate it." If the given name does not show he or she, say "they will appreciate it." Do not invent the person, the task, or the token. "Share signal", or saying they want to share one, is not that yes. A yes or a no on a decision is not you acting. Do not approve it, do not say you approved it, and do not ask what they would like to decide. Say "You can now decide on the proposal card." and stop. Do not open the next proposal in that reply. A proposal they have already voted on is absent from the waiting list. Do not ask them to vote on it, even if an earlier message did. When action=outcome the vote is closed. Say the say= sentence and stop. Do not say "You can now decide on the proposal card." Do not ask them to vote, approve, or look. The card says Got it, thank you. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. A share without the lines is not that item\'s completion, so do not spend the reply restating it. Do not call the tool for an item you are not talking about. The person uses the card.',
     `Person: ${member}. You are speaking to ${member}. Never suggest they connect with themselves. Never introduce them as someone to meet, and never link their profile. If a roster or a tool result includes ${member}, skip that person.`,
     'Tone: unlocking possibilities together. Transparent and collective. Never a warning, never a pile, never a judgement. A high priority or an overdue signal is an opening for the people in that space. Always name the space.',
     networkLines
@@ -286,7 +368,13 @@ export function formatMemberHomeFacts(
       : null,
     'Each thing they say starts a new reply underneath that message. Do not rewrite an earlier reply. Several proposals can share a title. The person and the space decide which one it is. The words and the tool slug are that same proposal.',
     'A space and its signals live on the signals board. When they agree to look, call mcp_navigation with destination_type space_screen, space_screen signals, and that space slug. One short line. Do not list signals, priorities, or descriptions. Do not say you opened the space. Do not describe what the space is building. Do not ask what they would like to focus on there.',
-    askedItem
+    shareTurn && spoken
+      ? `Record for the post, not a briefing: ${itemLine(
+          spoken,
+        )}. Do not read it out. Do not call show_member_home_item.`
+      : shareTurn
+      ? 'No signal is in this brief. Do not invent one. Do not restate a briefing.'
+      : askedItem
       ? `They just asked about this one. This is a new reply under their message. Leave every earlier reply as it was. kind=${
           askedItem.kind
         } slug=${askedItem.slug} space="${askedItem.spaceTitle.replace(
@@ -311,7 +399,11 @@ export function formatMemberHomeFacts(
           "'",
         )}". This reply is about that card only. The card already shows the title, so do not repeat it and do not announce the card. Do not name any other title.`
       : null,
-    askedItem
+    shareTurn === 'awaiting'
+      ? 'They chose to share. Do not read this record out:'
+      : shareTurn === 'ready'
+      ? 'Post target. Do not read this record out:'
+      : askedItem
       ? 'Waiting items are context only. This reply stays on the one they just asked about. Do not summarise the list:'
       : 'The one item for this reply. There is no list to read out:',
     waitingLines,
@@ -343,6 +435,13 @@ export function formatMemberHomeFacts(
     home.chatSpaceSlug
       ? `A usual chat space exists among the spaces above. It is not the only place they belong.`
       : 'They do not have a usual chat space yet.',
+    shareTurn === 'awaiting'
+      ? askedForPost
+        ? 'This turn: the lines or the file are still missing. You already asked. Do not thank them as if the request was already shared. Do not restate the briefing. Do not ask that same question again. One short line that you still need those lines or the file, then stop.'
+        : 'This turn: they chose to share. The body is not in this message. Ask once for a few lines or a file, and stop. Do not thank them as if the request was already shared. Do not restate the briefing. Do not call show_member_home_item.'
+      : shareTurn === 'ready'
+      ? 'This turn: this message is the content. Call create_human_chat_message once with target signal_chat. space_slug and signal_slug come from the kind=signal line above. Turn their words or file into a short post. Do not ask them to paste it again. Do not thank them as if it was already shared. Do not invent a person, a space, or an amount. If no kind=signal line is in this brief, say so in one line and stop.'
+      : null,
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');

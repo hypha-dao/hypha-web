@@ -1156,6 +1156,20 @@ function sanitizeMessagesToTextOnly(
     .filter((message) => message.parts.length > 0);
 }
 
+function lastUserAttachedFile(
+  messages: ChatRequestPayload['messages'],
+): boolean {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+    return (message.parts ?? []).some((part) => {
+      if (part == null || typeof part !== 'object') return false;
+      return (part as { type?: unknown }).type === 'file';
+    });
+  }
+  return false;
+}
+
 function extractLastUserText(
   messages: ChatRequestPayload['messages'],
 ): string | null {
@@ -1367,6 +1381,8 @@ export async function createChatStreamResult(
           memberHomeLastUserText ?? '',
         ),
         asked: memberHomeLastUserText,
+        prior: extractLastAssistantText(messages),
+        attached: lastUserAttachedFile(messages),
       })
     : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
