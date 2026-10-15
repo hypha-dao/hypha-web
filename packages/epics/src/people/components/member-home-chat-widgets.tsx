@@ -26,7 +26,10 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Recipient } from '../../agreements/plugins/components/common/recipient';
 import { useUserAssets } from '../../treasury/hooks';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import { sortByPresenceThenShared } from './member-presence';
 import { PersonAvatar } from './person-avatar';
+import { PresenceDot } from './presence-dot';
+import { useMemberPresence } from './use-member-presence';
 
 type HomeConnection = MemberIntelligence['connections'][number];
 type HomeSpace = MemberIntelligence['spaces'][number];
@@ -179,8 +182,14 @@ export function MemberHomePeopleWidgetCard({
 }) {
   const t = useTranslations('MemberHome');
   const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? people : people.slice(0, PEOPLE_PREVIEW);
-  const remaining = people.length - visible.length;
+  const personIds = useMemo(() => people.map((person) => person.id), [people]);
+  const { presenceById } = useMemberPresence(personIds);
+  const ranked = useMemo(
+    () => sortByPresenceThenShared(people, presenceById),
+    [people, presenceById],
+  );
+  const visible = expanded ? ranked : ranked.slice(0, PEOPLE_PREVIEW);
+  const remaining = ranked.length - visible.length;
 
   const actions = [
     {
@@ -214,6 +223,7 @@ export function MemberHomePeopleWidgetCard({
         <ul>
           {visible.map((person) => {
             const name = personName(person, fallbackName);
+            const presence = presenceById.get(person.id) ?? 'offline';
             return (
               <li
                 key={person.id}
@@ -225,12 +235,15 @@ export function MemberHomePeopleWidgetCard({
                   aria-label={t('chatPerson', { name })}
                   onClick={() => onChat(person)}
                 >
-                  <PersonAvatar
-                    avatarSrc={person.avatarUrl ?? undefined}
-                    userName={name}
-                    size="md"
-                    shape="circle"
-                  />
+                  <span className="relative inline-flex shrink-0">
+                    <PersonAvatar
+                      avatarSrc={person.avatarUrl ?? undefined}
+                      userName={name}
+                      size="md"
+                      shape="circle"
+                    />
+                    <PresenceDot level={presence} size="sm" />
+                  </span>
                   <span className="min-w-0">
                     <span className="block truncate text-2 hover:underline">
                       {name}

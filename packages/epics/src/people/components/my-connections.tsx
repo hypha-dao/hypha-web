@@ -38,7 +38,13 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
+import {
+  sortByRecencyThenPresence,
+  type PresenceLevel,
+} from './member-presence';
 import { PersonAvatar } from './person-avatar';
+import { PresenceDot } from './presence-dot';
+import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
@@ -284,6 +290,12 @@ export function MyConnections() {
     [connections, home?.person.id, personIdToMatrixUserId, rows, t],
   );
 
+  const memberPersonIds = useMemo(
+    () => members.map((row) => row.person.id),
+    [members],
+  );
+  const { presenceById } = useMemberPresence(memberPersonIds);
+
   const reachOut = useMemo(() => {
     if (!synced) return [];
     const newcomers: NewcomerCandidate[] = [];
@@ -315,9 +327,12 @@ export function MyConnections() {
   );
 
   const needle = query.trim().toLowerCase();
-  const people = needle
-    ? members.filter((row) => row.name.toLowerCase().includes(needle))
-    : members;
+  const people = useMemo(() => {
+    const filtered = needle
+      ? members.filter((row) => row.name.toLowerCase().includes(needle))
+      : members;
+    return sortByRecencyThenPresence(filtered, presenceById);
+  }, [members, needle, presenceById]);
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
 
   async function loadMorePeople() {
@@ -547,6 +562,7 @@ export function MyConnections() {
         <MemberList
           title={t('people')}
           rows={people}
+          presenceById={presenceById}
           locale={locale}
           justNow={t('justNow')}
           noMessage={t('noMessage')}
@@ -585,6 +601,7 @@ export function MyConnections() {
 function MemberList({
   title,
   rows,
+  presenceById,
   locale,
   justNow,
   noMessage,
@@ -597,6 +614,7 @@ function MemberList({
 }: {
   title: string;
   rows: ConnectionMemberRow[];
+  presenceById: ReadonlyMap<number, PresenceLevel>;
   locale: string;
   justNow: string;
   noMessage: string;
@@ -626,6 +644,7 @@ function MemberList({
             ? formatWhen(row.lastTs, locale, justNow)
             : '';
           const checked = selected.has(row.person.id);
+          const presence = presenceById.get(row.person.id) ?? 'offline';
           return (
             <li
               key={row.person.id}
@@ -651,12 +670,15 @@ function MemberList({
                 onClick={() => onOpen(row)}
                 className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left hover:bg-accent-2"
               >
-                <PersonAvatar
-                  size="chat"
-                  shape="circle"
-                  avatarSrc={row.avatarUrl}
-                  userName={row.name}
-                />
+                <span className="relative inline-flex shrink-0">
+                  <PersonAvatar
+                    size="chat"
+                    shape="circle"
+                    avatarSrc={row.avatarUrl}
+                    userName={row.name}
+                  />
+                  <PresenceDot level={presence} />
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-3">
                     <span
