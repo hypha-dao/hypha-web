@@ -3705,7 +3705,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Gisteren om {time}",
     "timestampDate": "{date} bij {time}",
-    "chatRoomTitle": "Chatruimte",
+    "chatRoomTitle": "Privébericht",
     "systemSender": "Systeem",
     "noMembers": "Geen leden gevonden",
     "unknownMember": "Onbekend",

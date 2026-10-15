@@ -3704,7 +3704,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "I går kl. {time}",
     "timestampDate": "{date} kl. {time}",
-    "chatRoomTitle": "Chatterom",
+    "chatRoomTitle": "Direktmelding",
     "systemSender": "System",
     "noMembers": "Ingen medlemmer funnet",
     "unknownMember": "Ukjent",

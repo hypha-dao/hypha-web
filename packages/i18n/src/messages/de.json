@@ -3700,7 +3700,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Gestern um {time}",
     "timestampDate": "{date} um {time}",
-    "chatRoomTitle": "Chatraum",
+    "chatRoomTitle": "Direktnachricht",
     "systemSender": "System",
     "noMembers": "Keine Mitglieder gefunden",
     "unknownMember": "Unbekannt",

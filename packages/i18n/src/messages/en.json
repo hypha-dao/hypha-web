@@ -3737,7 +3737,7 @@
     "timestampToday": "{time}",
     "timestampYesterday": "Yesterday at {time}",
     "timestampDate": "{date} at {time}",
-    "chatRoomTitle": "Chat room",
+    "chatRoomTitle": "Direct message",
     "systemSender": "System",
     "noMembers": "No members found",
     "unknownMember": "Unknown",
