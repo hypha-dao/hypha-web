@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, FileText, Landmark, Radio, Sprout } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -29,6 +29,8 @@ import {
 } from '../coherence/utils/signal-media';
 
 const DRAFT_KEY = EXCHANGE_CAPITALS_DRAFT_KEY;
+/** Show a search field once the member has enough spaces that scanning tiles is hard. */
+const SPACE_SEARCH_FROM = 5;
 
 const CAPITAL_MARK: Record<CapitalKey, string> = {
   financial: '◈',
@@ -81,7 +83,29 @@ function signalKindLabel(
   return t('filterImpact');
 }
 
-export function NetworkQuickCreate({ lang }: { lang: Locale }) {
+function normalizeMemberSpaces(
+  rows: readonly { slug?: string | null; title?: string | null }[],
+): MemberSpace[] {
+  const seen = new Set<string>();
+  const next: MemberSpace[] = [];
+  for (const row of rows) {
+    const slug = row.slug?.trim() ?? '';
+    const title = row.title?.trim() ?? '';
+    if (!slug || !title || seen.has(slug)) continue;
+    seen.add(slug);
+    next.push({ slug, title });
+  }
+  return next;
+}
+
+export function NetworkQuickCreate({
+  lang,
+  memberSpaces,
+}: {
+  lang: Locale;
+  /** Prefer the member's known spaces (e.g. home intelligence) over a second fetch. */
+  memberSpaces?: readonly { slug: string; title: string }[];
+}) {
   const t = useTranslations('NetworkExchange');
   const tSignals = useTranslations('CoherenceTab');
   const router = useRouter();
@@ -93,10 +117,15 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
     authorizationToken: jwt ?? undefined,
   });
   const [kind, setKind] = useState<Kind>('project');
-  const [spaces, setSpaces] = useState<MemberSpace[]>([]);
+  const [spaces, setSpaces] = useState<MemberSpace[]>(() =>
+    normalizeMemberSpaces(memberSpaces ?? []),
+  );
+  const [spaceQuery, setSpaceQuery] = useState('');
   const [name, setName] = useState('');
   const [place, setPlace] = useState('');
-  const [spaceSlug, setSpaceSlug] = useState('');
+  const [spaceSlug, setSpaceSlug] = useState(
+    () => normalizeMemberSpaces(memberSpaces ?? [])[0]?.slug ?? '',
+  );
   const [seeks, setSeeks] = useState<CapitalKey[]>(['financial']);
   const [offers, setOffers] = useState<CapitalKey[]>(['social']);
   const [signalType, setSignalType] =
@@ -115,34 +144,61 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const applySpaces = (next: MemberSpace[]) => {
+    setSpaces(next);
+    setSpaceSlug((current) =>
+      current && next.some((space) => space.slug === current)
+        ? current
+        : next[0]?.slug || '',
+    );
+    setParties((current) =>
+      current.map((party, index) =>
+        party.slug && next.some((space) => space.slug === party.slug)
+          ? party
+          : { ...party, slug: next[index]?.slug ?? next[0]?.slug ?? '' },
+      ),
+    );
+  };
+
+  const memberSpacesKey = (memberSpaces ?? [])
+    .map((space) => `${space.slug}:${space.title}`)
+    .join('|');
+
   useEffect(() => {
-    const slug = person?.slug;
-    if (!jwt || !slug) return;
+    const fromProps = normalizeMemberSpaces(memberSpaces ?? []);
+    if (fromProps.length > 0) {
+      applySpaces(fromProps);
+      return;
+    }
+    if (!jwt) return;
     let cancelled = false;
     void (async () => {
-      const list = await fetch(`/api/v1/people/${slug}/spaces`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
+      const headers = { Authorization: `Bearer ${jwt}` };
+      const intel = await fetch('/api/v1/people/me/intelligence', { headers });
+      if (intel.ok) {
+        const body = (await intel.json()) as {
+          spaces?: { slug?: string; title?: string }[];
+        };
+        const fromIntel = normalizeMemberSpaces(body.spaces ?? []);
+        if (!cancelled && fromIntel.length > 0) {
+          applySpaces(fromIntel);
+          return;
+        }
+      }
+      const slug = person?.slug;
+      if (!slug) return;
+      const list = await fetch(`/api/v1/people/${slug}/spaces`, { headers });
       if (!list.ok) return;
       const rows = (await list.json()) as { slug?: string; title?: string }[];
       if (cancelled || !Array.isArray(rows)) return;
-      const next = rows.flatMap((row) =>
-        row.slug && row.title ? [{ slug: row.slug, title: row.title }] : [],
-      );
-      setSpaces(next);
-      setSpaceSlug((current) => current || next[0]?.slug || '');
-      setParties((current) =>
-        current.map((party, index) =>
-          party.slug
-            ? party
-            : { ...party, slug: next[index]?.slug ?? next[0]?.slug ?? '' },
-        ),
-      );
+      applySpaces(normalizeMemberSpaces(rows));
     })();
     return () => {
       cancelled = true;
     };
-  }, [jwt, person?.slug]);
+    // memberSpacesKey tracks prop identity without depending on array identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [jwt, memberSpacesKey, person?.slug]);
 
   useEffect(() => {
     if (isLoadingMe || allowedKinds.includes(kind)) return;
@@ -222,27 +278,63 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
     );
   };
 
+  const filteredSpaces = useMemo(() => {
+    const needle = spaceQuery.trim().toLowerCase();
+    if (!needle) return spaces;
+    return spaces.filter(
+      (space) =>
+        space.title.toLowerCase().includes(needle) ||
+        space.slug.toLowerCase().includes(needle),
+    );
+  }, [spaceQuery, spaces]);
+
   const spaceSelect = (
     value: string,
     onChange: (slug: string) => void,
     exclude: string[] = [],
-  ) => (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-10 w-full border border-border bg-neutral-2 px-2 text-2 text-foreground"
-    >
-      {spaces
-        .filter(
-          (space) => space.slug === value || !exclude.includes(space.slug),
-        )
-        .map((space) => (
-          <option key={space.slug} value={space.slug}>
-            {space.title}
-          </option>
-        ))}
-    </select>
-  );
+  ) => {
+    const options = filteredSpaces.filter(
+      (space) => space.slug === value || !exclude.includes(space.slug),
+    );
+    const showSearch = spaces.length >= SPACE_SEARCH_FROM;
+    return (
+      <div className="grid gap-2">
+        {showSearch ? (
+          <Input
+            value={spaceQuery}
+            onChange={(event) => setSpaceQuery(event.target.value)}
+            placeholder={t('searchMySpaces')}
+            aria-label={t('searchMySpaces')}
+          />
+        ) : null}
+        {options.length === 0 ? (
+          <p className="text-2 text-foreground">{t('noneYet')}</p>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {options.map((space) => {
+              const on = value === space.slug;
+              return (
+                <button
+                  key={space.slug}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => onChange(space.slug)}
+                  className={cn(
+                    'border px-2 py-1 text-1',
+                    on
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border text-neutral-11',
+                  )}
+                >
+                  {space.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const cards: {
     id: Kind;
@@ -372,17 +464,7 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
             {spaces.length > 0 ? (
               <label className="grid gap-1 text-1 text-neutral-11">
                 {t('attach')}
-                <select
-                  value={spaceSlug}
-                  onChange={(event) => setSpaceSlug(event.target.value)}
-                  className="h-10 border border-border bg-background px-2 text-2 text-foreground"
-                >
-                  {spaces.map((space) => (
-                    <option key={space.slug} value={space.slug}>
-                      {space.title}
-                    </option>
-                  ))}
-                </select>
+                {spaceSelect(spaceSlug, setSpaceSlug)}
               </label>
             ) : null}
             {note ? <p className="text-2 text-neutral-11">{note}</p> : null}
