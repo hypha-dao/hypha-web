@@ -23,6 +23,7 @@ import {
   NetworkSectionHeader,
 } from './network-section-header';
 import { NetworkRightColumn } from './network-right-cards';
+import { MemberSpaceSelect } from './member-space-select';
 import {
   useMemberNamedSpaces,
   type MemberNamedSpace,
@@ -57,33 +58,6 @@ function plainText(value: string) {
     index = close + 1;
   }
   return out.replace(/\s+/g, ' ').trim();
-}
-
-function SpaceSelect({
-  spaces,
-  value,
-  onChange,
-  label,
-}: {
-  spaces: MemberNamedSpace[];
-  value: string;
-  onChange: (slug: string) => void;
-  label: string;
-}) {
-  return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 font-semibold text-foreground"
-    >
-      {spaces.map((space) => (
-        <option key={space.slug} value={space.slug}>
-          {space.title}
-        </option>
-      ))}
-    </select>
-  );
 }
 
 function storyMeta(signal: NetworkFieldSignal) {
@@ -319,16 +293,13 @@ function PostStoryCard({
       <p className="text-1 leading-relaxed text-neutral-11">
         {t('shareStoryBody')} {t('shareStoryNeverPlea')}
       </p>
-      {spaces.length === 0 ? (
-        <p className="text-1 text-neutral-11">{t('noneYet')}</p>
-      ) : (
-        <SpaceSelect
-          spaces={spaces}
-          value={slug}
-          onChange={setSlug}
-          label={t('chooseSpace')}
-        />
-      )}
+      <MemberSpaceSelect
+        spaces={spaces}
+        value={slug}
+        onChange={setSlug}
+        label={t('chooseSpace')}
+        emptyLabel={t('noneYet')}
+      />
       <p className="text-1 font-semibold">{t('storyFormat')}</p>
       <div
         className="flex flex-wrap gap-1"

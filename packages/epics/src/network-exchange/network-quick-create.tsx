@@ -18,6 +18,7 @@ import {
 import { AddAttachment, Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { getLegacyCreateSpacePath } from '../common/get-path-function';
+import { SpaceSwitcherMark } from '../spaces/components/space-switcher-option';
 import {
   SIGNAL_DOCUMENT_ACCEPT,
   SIGNAL_DOCUMENT_LIMIT,
@@ -310,7 +311,7 @@ export function NetworkQuickCreate({
         {options.length === 0 ? (
           <p className="text-2 text-foreground">{t('noneYet')}</p>
         ) : (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
             {options.map((space) => {
               const on = value === space.slug;
               return (
@@ -320,13 +321,15 @@ export function NetworkQuickCreate({
                   aria-pressed={on}
                   onClick={() => onChange(space.slug)}
                   className={cn(
-                    'border px-2 py-1 text-1',
+                    'flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm',
                     on
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border text-neutral-11',
+                      ? 'bg-foreground text-background'
+                      : 'text-foreground hover:bg-background-4/70',
                   )}
+                  style={{ minHeight: 32 }}
                 >
-                  {space.title}
+                  <SpaceSwitcherMark alt={space.title} />
+                  <span className="min-w-0 flex-1 truncate">{space.title}</span>
                 </button>
               );
             })}

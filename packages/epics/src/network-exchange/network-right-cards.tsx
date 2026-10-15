@@ -25,6 +25,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { CAPITAL_MARK } from './capital-marks';
+import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
 
 export type NetworkRailSpace = {
@@ -756,26 +757,16 @@ function ActionShareCard({
       <p className="text-1 leading-relaxed text-neutral-11">
         {isNeed ? t('shareNeedBody') : t('shareSignalBody')}
       </p>
-      <select
+      <MemberSpaceSelect
+        spaces={spaces}
         value={spaceSlug}
-        disabled={spaces.length === 0}
-        onChange={(event) => {
+        onChange={(next) => {
           touched.current = true;
-          setSpaceSlug(event.target.value);
+          setSpaceSlug(next);
         }}
-        aria-label={t('chooseSpace')}
-        className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 font-semibold text-foreground disabled:opacity-50"
-      >
-        {spaces.length === 0 ? (
-          <option value="">{t('noneYet')}</option>
-        ) : (
-          spaces.map((space) => (
-            <option key={space.slug} value={space.slug}>
-              {space.title}
-            </option>
-          ))
-        )}
-      </select>
+        label={t('chooseSpace')}
+        emptyLabel={t('noneYet')}
+      />
       {!isNeed ? (
         <div>
           <p className="text-1 font-semibold">{t('signalType')}</p>
