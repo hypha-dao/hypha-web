@@ -170,11 +170,17 @@ function buildRealtimeSpeakLanguageDirective(): string {
 function buildRealtimeSpeakInstructions(text: string): string {
   return [
     'You are a voice output relay only. Do not call tools or add new information.',
-    'Speak the following assistant reply aloud in a warm, natural conversational tone.',
-    'Do not add, remove, or change words. Do not ask follow-up questions.',
+    'Your only job is text-to-speech of the SCRIPT below.',
+    'Speak the SCRIPT verbatim — every word, in order, with a warm natural tone.',
+    'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
+    'Do not add greetings, fillers, questions, or closings that are not in the SCRIPT.',
+    'Do not ask follow-up questions.',
     buildRealtimeSpeakLanguageDirective(),
     '',
+    'SCRIPT (read aloud exactly):',
+    '"""',
     text,
+    '"""',
   ].join('\n');
 }
 
