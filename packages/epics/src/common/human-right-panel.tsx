@@ -95,6 +95,7 @@ import {
   HumanChatPanelCallStage,
   HumanChatPanelScreenshareTakeoverDialog,
   type ChatDraftAttachment,
+  type ChatMentionAgentIcon,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
@@ -148,6 +149,7 @@ import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
   requestMatrixAgentReply,
+  matrixAgentSkills,
   withMatrixAgentMention,
 } from './human-chat-panel/matrix-agent-mention';
 import {
@@ -2249,8 +2251,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           signalTeamMemberIdSet.has(candidate.userId),
         )
       : rawMentionCandidates;
-    return withMatrixAgentMention(roster, t('agentMentionLabel'));
-  }, [isSignalThread, rawMentionCandidates, signalTeamMemberIdSet, t]);
+    const networkRoom = mode === 'space' && !spaceSlug?.trim();
+    const agentIcon: ChatMentionAgentIcon =
+      networkRoom || isDirectConversation || !spaceSlug?.trim()
+        ? { kind: 'network' }
+        : {
+            kind: 'space',
+            logoUrl: resolveSpaceDisplayLogoUrl(
+              space,
+              resolvedTheme === 'dark' ? 'dark' : 'light',
+            ),
+          };
+    return withMatrixAgentMention(
+      roster,
+      t('agentMentionLabel'),
+      matrixAgentSkills(t),
+      agentIcon,
+    );
+  }, [
+    isDirectConversation,
+    isSignalThread,
+    mode,
+    rawMentionCandidates,
+    resolvedTheme,
+    signalTeamMemberIdSet,
+    space,
+    spaceSlug,
+    t,
+  ]);
 
   const mentionLabelByUserId = useMemo(
     () =>

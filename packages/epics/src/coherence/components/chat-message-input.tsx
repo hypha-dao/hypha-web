@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   requestMatrixAgentReply,
+  matrixAgentSkills,
   withMatrixAgentMention,
 } from '../../common/human-chat-panel/matrix-agent-mention';
 import {
@@ -106,7 +107,12 @@ export const ChatMessageInput = ({
         sensitivity: 'base',
       }),
     );
-    return withMatrixAgentMention(list, tChat('agentMentionLabel'));
+    return withMatrixAgentMention(
+      list,
+      tChat('agentMentionLabel'),
+      matrixAgentSkills(tChat),
+      { kind: 'space' },
+    );
   }, [client, roomId, mentionMembershipEpoch, tChat]);
 
   const mentionLabelByUserId = React.useMemo(
