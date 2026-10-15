@@ -16,6 +16,7 @@ import { Button, ConfirmDialog } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  inviteMatrixAgentIfNeeded,
   requestMatrixAgentReply,
   matrixAgentSkills,
   withMatrixAgentMention,
@@ -198,6 +199,7 @@ export const ChatMessageInput = ({
         message: wirePlain,
         mentionUserIds,
       });
+      await inviteMatrixAgentIfNeeded(client, roomId, mentionUserIds);
       requestMatrixAgentReply({
         authToken,
         roomId,
@@ -209,6 +211,7 @@ export const ChatMessageInput = ({
     }
   }, [
     authToken,
+    client,
     input,
     mentionSanitizedLabelToUserId,
     roomId,

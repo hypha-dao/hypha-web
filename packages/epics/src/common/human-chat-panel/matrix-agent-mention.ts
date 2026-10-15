@@ -51,6 +51,42 @@ export function withMatrixAgentMention(
   return [agentRow, ...rest];
 }
 
+type MatrixInviteClient = {
+  getRoom?: (roomId: string) =>
+    | {
+        getMember?: (
+          userId: string,
+        ) => { membership?: string } | null | undefined;
+      }
+    | null
+    | undefined;
+  invite: (roomId: string, userId: string) => Promise<unknown>;
+};
+
+/**
+ * Invite AI Agents into an invite-only room before the server tries to read/reply.
+ * No-op when the agent is already invited or joined, or when the sender cannot invite.
+ */
+export async function inviteMatrixAgentIfNeeded(
+  client: MatrixInviteClient | null | undefined,
+  roomId: string,
+  mentionUserIds: string[],
+): Promise<void> {
+  const agentUserId = matrixAgentUserId();
+  const trimmedRoom = roomId.trim();
+  if (!client || !agentUserId || !trimmedRoom) return;
+  if (!mentionUserIds.includes(agentUserId)) return;
+  try {
+    const membership = client
+      .getRoom?.(trimmedRoom)
+      ?.getMember?.(agentUserId)?.membership;
+    if (membership === 'join' || membership === 'invite') return;
+    await client.invite(trimmedRoom, agentUserId);
+  } catch {
+    // Already a member, or this room does not allow invites from the sender.
+  }
+}
+
 /** Ask the server to answer if the latest room message @mentions AI Agents. */
 export function requestMatrixAgentReply({
   authToken,

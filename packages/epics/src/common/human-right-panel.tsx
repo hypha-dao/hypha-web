@@ -149,6 +149,7 @@ import { readLiveSignalSlugFromUrl } from '../coherence/lib/signal-deep-link-dom
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
+  inviteMatrixAgentIfNeeded,
   requestMatrixAgentReply,
   matrixAgentSkills,
   withMatrixAgentMention,
@@ -4560,6 +4561,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         });
         // Mention notifications are server-fired (#2470) from the #2483 AS receiver watching
         // this same Matrix message — no client trigger needed here anymore.
+        await inviteMatrixAgentIfNeeded(
+          matrixRef.current.client,
+          roomId,
+          mentionUserIds,
+        );
         requestMatrixAgentReply({
           authToken: authTokenRef.current,
           roomId,
