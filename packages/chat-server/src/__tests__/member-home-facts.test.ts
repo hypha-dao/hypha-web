@@ -158,6 +158,31 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Never volunteer to post');
     expect(facts).toContain('Should I post it?');
     expect(facts).toContain('Never invent that they already asked');
+    expect(facts).toContain(
+      'Never say that nothing needs them while any waiting item remains',
+    );
+  });
+
+  it('keeps walking when the short focus item is cleared but attention remains', () => {
+    const facts = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            web3ProposalId: 13,
+          },
+        ],
+      },
+      { passed: ['proposal:path'] },
+    );
+    expect(facts).toContain('slug=bridge');
+    expect(facts).toContain('Build the bridge');
+    expect(facts).not.toContain('Nothing in their spaces needs them');
   });
 
   it('puts who they are and who they share a space with on the decision line', () => {
