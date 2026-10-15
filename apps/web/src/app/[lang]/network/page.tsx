@@ -16,10 +16,10 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
+import { Container } from '@hypha-platform/ui';
 import { Suspense } from 'react';
 
 import { NetworkIndexFallback } from './_components/network-index-fallback';
-import { NetworkPageShell } from './_components/network-page-shell';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -33,11 +33,13 @@ type PageProps = {
 
 export default function Index(props: PageProps) {
   return (
-    <NetworkPageShell>
-      <Suspense fallback={<NetworkIndexFallback />}>
-        <NetworkSpaces {...props} />
-      </Suspense>
-    </NetworkPageShell>
+    <div className="w-full min-w-0">
+      <Container className="flex min-w-0 flex-col gap-9 py-9">
+        <Suspense fallback={<NetworkIndexFallback />}>
+          <NetworkSpaces {...props} />
+        </Suspense>
+      </Container>
+    </div>
   );
 }
 
