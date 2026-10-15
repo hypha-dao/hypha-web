@@ -19,6 +19,18 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** `http(s)` URLs pass through; anything else (e.g. `javascript:`) becomes `#`. */
+export function safeHref(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? parsed.toString()
+      : '#';
+  } catch {
+    return '#';
+  }
+}
+
 /** `<strong>` with escaped text, for composing inside `paragraphHtml`. */
 export function strong(text: string): string {
   return `<strong>${escapeHtml(text)}</strong>`;
@@ -52,7 +64,9 @@ export function preview(text: string): string {
 }
 
 export function button(label: string, url: string): string {
-  return `<p><a class="cta" href="${escapeHtml(url)}">${escapeHtml(label)}</a></p>`;
+  return `<p><a class="cta" href="${escapeHtml(url)}">${escapeHtml(
+    label,
+  )}</a></p>`;
 }
 
 export interface LayoutInput {
@@ -116,7 +130,9 @@ export function layout({
   const footerHtml = [
     `<p>Questions? Contact us at <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></p>`,
     footer.settingsUrl
-      ? `<p><a href="${escapeHtml(footer.settingsUrl)}" class="footer-btn">Manage notification settings</a></p>`
+      ? `<p><a href="${escapeHtml(
+          footer.settingsUrl,
+        )}" class="footer-btn">Manage notification settings</a></p>`
       : '',
     footer.unsubscribe
       ? `<p style="font-size:12px;"><a href="${UNSUBSCRIBE_TOKEN}" style="text-decoration:underline;color:#444;">Unsubscribe from all emails</a></p>`
@@ -129,11 +145,15 @@ export function layout({
     '<meta name="viewport" content="width=device-width, initial-scale=1" />',
     `<title>${escapeHtml(title)}</title><style>${STYLES}</style></head><body>`,
     preheader
-      ? `<div style="display:none;max-height:0;overflow:hidden;">${escapeHtml(preheader)}</div>`
+      ? `<div style="display:none;max-height:0;overflow:hidden;">${escapeHtml(
+          preheader,
+        )}</div>`
       : '',
     '<table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f9f9f9;"><tr><td align="center">',
     '<table class="container" width="600" border="0" cellspacing="0" cellpadding="0">',
-    `<tr><td class="header"><img width="200" height="68" alt="Hypha" style="display:block;margin:0 auto;border:0;" src="${escapeHtml(appUrl.replace(/\/+$/, '') + LOGO_PATH)}" /></td></tr>`,
+    `<tr><td class="header"><img width="200" height="68" alt="Hypha" style="display:block;margin:0 auto;border:0;" src="${escapeHtml(
+      appUrl.replace(/\/+$/, '') + LOGO_PATH,
+    )}" /></td></tr>`,
     `<tr><td class="content">${body}</td></tr>`,
     `<tr><td class="footer">${footerHtml}</td></tr>`,
     '</table></td></tr></table></body></html>',

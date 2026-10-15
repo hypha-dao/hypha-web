@@ -15,10 +15,8 @@ import type {
   NotificationEmailContent,
 } from '../../core/types';
 import { TAG_MENTION_CONSENT } from '../../constants';
-import {
-  buildMentionEmailBody,
-  getSafeMentionHref,
-} from '../../actions/notify-chat-mention.utils';
+import { getSafeMentionHref } from '../../actions/notify-chat-mention.utils';
+import { emailChatMention } from '../../template';
 
 /**
  * OneSignal dashboard template ("Chat - User Mentioned (email)") when `EMAIL_TEMPLATE_CHAT_MENTION`
@@ -59,16 +57,18 @@ function buildMentionEmail({
     };
   }
 
+  const email = emailChatMention({
+    actorName: actorDisplayName,
+    messagePreview,
+    url,
+    contextLabel: spaceTitle,
+    settingsUrl: notificationSettingsUrl,
+  });
   return {
     kind: 'plain',
     subject: heading,
-    body: buildMentionEmailBody({
-      actorDisplayName,
-      messagePreview,
-      url,
-      contextLabel: spaceTitle,
-      notificationSettingsUrl,
-    }),
+    preheader: email.preheader,
+    body: email.body,
   };
 }
 

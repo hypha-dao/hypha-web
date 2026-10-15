@@ -31,7 +31,11 @@ export function emailBankKybOnboarding({
     ? `Accept the Terms of Service and complete business verification to enable bank transfers for ${spaceTitle}.`
     : `Complete business verification to enable bank transfers for ${spaceTitle}.`;
 
-  const kycItem = `<a href="${escapeHtml(kycLink)}">Complete business verification</a><br /><span class="muted">Organization: ${escapeHtml(legalName)}</span>`;
+  const kycItem = `<a href="${escapeHtml(
+    kycLink,
+  )}">Complete business verification</a><br /><span class="muted">Organization: ${escapeHtml(
+    legalName,
+  )}</span>`;
 
   const stepsHtml = tosLink
     ? steps([
@@ -47,7 +51,9 @@ export function emailBankKybOnboarding({
     appUrl,
     contentHtml: [
       paragraphHtml(
-        `Your space ${strong(spaceTitle)} is almost ready to receive bank transfers.`,
+        `Your space ${strong(
+          spaceTitle,
+        )} is almost ready to receive bank transfers.`,
       ),
       paragraph('Complete the steps below to finish setup:'),
       stepsHtml,

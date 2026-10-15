@@ -32,12 +32,16 @@ export function emailBankEmailConfirmation({
     appUrl,
     contentHtml: [
       paragraphHtml(
-        `${strong(ownerLabel)} on Hypha has requested to register this email address with their banking provider (Bridge).`,
+        `${strong(
+          ownerLabel,
+        )} on Hypha has requested to register this email address with their banking provider (Bridge).`,
       ),
       paragraph('Click the button below to confirm.'),
       button('Authorize email', verifyLink),
       muted(
-        `Or copy and paste this link into your browser:<br />${escapeHtml(verifyLink)}`,
+        `Or copy and paste this link into your browser:<br />${escapeHtml(
+          verifyLink,
+        )}`,
       ),
       paragraph(
         'If you were not expecting this email or do not recognize the name above, you can safely ignore it — no action is required.',

@@ -7,5 +7,6 @@ export * from './proposal-rejection-for-members';
 export * from './space-creation-for-creator';
 export * from './bank-email-confirmation';
 export * from './bank-kyb-onboarding';
+export * from './chat-mention';
 
 export type * from './types';
