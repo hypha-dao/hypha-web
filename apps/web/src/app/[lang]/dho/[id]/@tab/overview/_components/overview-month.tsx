@@ -77,9 +77,7 @@ export function OverviewMonth({ spaceSlug }: { spaceSlug: string }) {
   }
 
   if (events.length === 0) {
-    return (
-      <p className="px-5 pb-5 text-2 text-neutral-11">{t('calendarEmpty')}</p>
-    );
+    return <p className="text-2 text-neutral-11">{t('calendarEmpty')}</p>;
   }
 
   return (
