@@ -34,6 +34,7 @@ import {
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
+import { prepareAssistantTextForSpeech } from '../../common/onboarding-voice-speech';
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
@@ -245,6 +246,21 @@ function straightforwardHomeText(text: string) {
     return 'You can now decide on the proposal card.';
   }
   return cleaned;
+}
+
+/**
+ * Chat bubble and spoken voice must share one script. Board copy replaces a
+ * catalogue dump; speech prep strips what TTS would skip or truncate.
+ */
+function homeAssistantScript(input: {
+  displayText: string;
+  stripDecisionCue?: boolean;
+}) {
+  const base = input.displayText.trim();
+  const withoutCue = input.stripDecisionCue
+    ? base.replace(/You can now decide on the proposal card\.?/gi, '').trim()
+    : base;
+  return prepareAssistantTextForSpeech(withoutCue);
 }
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
@@ -487,16 +503,6 @@ export function MemberHomeChat({
     setSoundReady(true);
   }, []);
 
-  const lastAssistantText = useMemo(() => {
-    for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
-      const message = homeMessages[i];
-      if (!message || message.role !== 'assistant') continue;
-      const text = messageText(message);
-      if (text) return straightforwardHomeText(text);
-    }
-    return '';
-  }, [homeMessages]);
-
   const handleVoiceTranscriptSend = useCallback(
     async (text: string) => {
       const normalized = text.trim();
@@ -529,10 +535,39 @@ export function MemberHomeChat({
     [dialogue, lang],
   );
 
+  const threadItems = useMemo(
+    () => listMemberHomeThreadItems(intelligence),
+    [intelligence],
+  );
+
+  /** Same string the bubble shows — Realtime must speak this script. */
+  const lastAssistantText = useMemo(() => {
+    for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
+      const message = homeMessages[i];
+      if (!message || message.role !== 'assistant') continue;
+      const rawText = messageText(message).replace(/\*\*/g, '');
+      if (!rawText) continue;
+      const board =
+        homeBoardFromMessage(message) ??
+        memberHomeSignalCatalogue(rawText, intelligence.spaces, lang);
+      const spokenItem = memberHomeThreadItemForMessage(threadItems, message);
+      return homeAssistantScript({
+        displayText: board
+          ? t('boardInstead', { space: board.title })
+          : straightforwardHomeText(rawText),
+        stripDecisionCue: Boolean(
+          spokenItem && spokenItem.action !== 'decision',
+        ),
+      });
+    }
+    return '';
+  }, [homeMessages, intelligence.spaces, lang, t, threadItems]);
+
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
     captureMicrophone: micOn,
     speakReplies: soundOn,
+    speakEarlyLeadIn: false,
     isStreaming,
     lastAssistantText,
     locale: lang,
@@ -606,10 +641,6 @@ export function MemberHomeChat({
     writeHomeThread(homeMessages);
   }, [homeMessages]);
 
-  const threadItems = useMemo(
-    () => listMemberHomeThreadItems(intelligence),
-    [intelligence],
-  );
   useEffect(() => {
     const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
     const merged = mergeMemberHomeMemory(fromMessages, readHomeChoices());
@@ -760,19 +791,17 @@ export function MemberHomeChat({
               message.role === 'assistant'
                 ? memberHomeThreadItemForMessage(threadItems, message)
                 : null;
-            const spoken = (
-              board
-                ? t('boardInstead', { space: board.title })
-                : message.role === 'assistant'
-                ? straightforwardHomeText(rawText)
-                : rawText
-            ).trim();
             const text =
-              spokenItem && spokenItem.action !== 'decision'
-                ? spoken
-                    .replace(/You can now decide on the proposal card\.?/gi, '')
-                    .trim()
-                : spoken;
+              message.role === 'assistant'
+                ? homeAssistantScript({
+                    displayText: board
+                      ? t('boardInstead', { space: board.title })
+                      : straightforwardHomeText(rawText),
+                    stripDecisionCue: Boolean(
+                      spokenItem && spokenItem.action !== 'decision',
+                    ),
+                  })
+                : rawText;
             const pinnedItem =
               message.role === 'assistant'
                 ? cardsByMessageId.get(message.id) ?? null
