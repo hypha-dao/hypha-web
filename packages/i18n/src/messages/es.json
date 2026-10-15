@@ -260,10 +260,10 @@
     "investorAction": "Ver las peticiones",
     "investorCount": "{count} peticiones abiertas",
     "chooseTitle": "¿Cómo te presentas principalmente?",
-    "chooseBody": "Miembro, constructor o inversor. Esto ajusta tu inicio. Puedes cambiarlo cuando quieras.",
+    "chooseBody": "Miembro, constructor o financiador. Esto ajusta tu inicio. Puedes cambiarlo en cualquier momento.",
     "orientationMember": "Miembro",
     "orientationBuilder": "Constructor",
-    "orientationInvestor": "Inversor",
+    "orientationInvestor": "Financiador",
     "changeOrientation": "Cambiar",
     "changeOrientationLabel": "Cambia cómo te presentas. Ahora: {orientation}.",
     "signInTitle": "Tu inicio te espera",
@@ -336,7 +336,7 @@
         "body": "Das forma a espacios alrededor de una visión y traes a otras personas."
       },
       "investor": {
-        "title": "Inversor",
+        "title": "Financiador",
         "body": "Lees lo que la red está pidiendo y despliegas capital."
       }
     }
@@ -2186,7 +2186,7 @@
         "orientation": "Cómo te presentas",
         "orientationMember": "Miembro",
         "orientationBuilder": "Constructor",
-        "orientationInvestor": "Inversor"
+        "orientationInvestor": "Financiador"
       },
       "placeholders": {
         "firstName": "Nombre de pila",

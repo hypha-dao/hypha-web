@@ -184,7 +184,7 @@
         "body": "You shape spaces around a vision and bring others in."
       },
       "investor": {
-        "title": "Investor",
+        "title": "Funder",
         "body": "You read what the network is asking for and deploy capital."
       }
     },
@@ -459,10 +459,10 @@
     "investorAction": "See the asks",
     "investorCount": "{count} open asks",
     "chooseTitle": "How do you mainly show up?",
-    "chooseBody": "Member, builder, or investor. This tunes your home. You can change it any time.",
+    "chooseBody": "Member, builder, or funder. This tunes your home. You can change it any time.",
     "orientationMember": "Member",
     "orientationBuilder": "Builder",
-    "orientationInvestor": "Investor",
+    "orientationInvestor": "Funder",
     "changeOrientation": "Change",
     "changeOrientationLabel": "Change how you show up. Currently {orientation}.",
     "signInTitle": "Your home is waiting",
@@ -2000,7 +2000,7 @@
         "orientation": "How you show up",
         "orientationMember": "Member",
         "orientationBuilder": "Builder",
-        "orientationInvestor": "Investor"
+        "orientationInvestor": "Funder"
       },
       "placeholders": {
         "firstName": "First Name",

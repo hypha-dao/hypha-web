@@ -260,10 +260,10 @@
     "investorAction": "Anfragen ansehen",
     "investorCount": "{count} offene Anfragen",
     "chooseTitle": "Wie zeigst du dich vor allem?",
-    "chooseBody": "Mitglied, Gestalter oder Investor. Das stimmt dein Zuhause ab. Du kannst es jederzeit ändern.",
+    "chooseBody": "Mitglied, Builder oder Geldgeber. Das stimmt dein Home ab. Du kannst es jederzeit ändern.",
     "orientationMember": "Mitglied",
     "orientationBuilder": "Gestalter",
-    "orientationInvestor": "Investor",
+    "orientationInvestor": "Geldgeber",
     "changeOrientation": "Ändern",
     "changeOrientationLabel": "Ändere, wie du dich zeigst. Aktuell {orientation}.",
     "signInTitle": "Dein Zuhause wartet",
@@ -336,7 +336,7 @@
         "body": "Du formst Spaces um eine Vision und holst andere dazu."
       },
       "investor": {
-        "title": "Investor",
+        "title": "Geldgeber",
         "body": "Du liest, worum das Netzwerk bittet, und setzt Kapital ein."
       }
     }
@@ -1969,7 +1969,7 @@
         "orientation": "Wie du auftrittst",
         "orientationMember": "Mitglied",
         "orientationBuilder": "Gestalter",
-        "orientationInvestor": "Investor"
+        "orientationInvestor": "Geldgeber"
       },
       "placeholders": {
         "firstName": "Vorname",
