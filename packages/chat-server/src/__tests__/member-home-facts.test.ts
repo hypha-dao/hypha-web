@@ -147,10 +147,14 @@ describe('formatMemberHomeFacts', () => {
       'Do not invent the person, the task, or the token.',
     );
     expect(facts).toContain('Never make a recipe');
-    expect(facts).toContain('Do not call it a chat');
     expect(facts).toContain('think about it');
     expect(facts).toContain('Do not list signals');
     expect(facts).toContain('Do not say you opened the space');
+    expect(facts).toContain(
+      'LENGTH: Typed chat is 2 or 3 short sentences, then stop.',
+    );
+    expect(facts).toContain('Never a wall of text');
+    expect(facts).toContain('never the full list');
   });
 
   it('puts who they are and who they share a space with on the decision line', () => {
