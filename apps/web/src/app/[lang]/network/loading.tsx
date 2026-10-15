@@ -1,10 +1,13 @@
+import { Container } from '@hypha-platform/ui';
+
 import { NetworkIndexFallback } from './_components/network-index-fallback';
-import { NetworkPageShell } from './_components/network-page-shell';
 
 export default function NetworkLoading() {
   return (
-    <NetworkPageShell>
-      <NetworkIndexFallback />
-    </NetworkPageShell>
+    <div className="w-full min-w-0">
+      <Container className="flex min-w-0 flex-col gap-9 py-9">
+        <NetworkIndexFallback />
+      </Container>
+    </div>
   );
 }

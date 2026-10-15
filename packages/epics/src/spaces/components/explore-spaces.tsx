@@ -444,18 +444,21 @@ export function ExploreSpaces({
   const showSpacesList = view === 'list' || view === 'overview';
   const showRanking = !enableNetworkMap || view === 'ranking';
 
-  const sharedHeader = (
+  const pageTitle = (
+    <Heading
+      size="9"
+      color="secondary"
+      weight="medium"
+      align="center"
+      className="flex flex-col"
+    >
+      <span>{t('manySpaces')}</span>
+      <span>{t('oneVibrantNetwork')}</span>
+    </Heading>
+  );
+
+  const sharedControls = (
     <div className="flex flex-col gap-4">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex w-full flex-col items-center"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
       <SpaceSearch value={query} className="w-full min-w-0" />
       <NetworkCapitalFilters
         value={capital}
@@ -526,59 +529,62 @@ export function ExploreSpaces({
     <div className="@container min-w-0">
       <div
         className={cn(
-          'flex min-w-0 flex-col gap-4',
+          'flex min-w-0 flex-col gap-9',
           sidePanel && '@4xl:flex-row @4xl:items-start',
         )}
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
-          {sharedHeader}
+        <div className="flex min-w-0 flex-1 flex-col gap-9">
+          {pageTitle}
+          {sharedControls}
 
-          {enableNetworkMap ? (
-            <>
-              {renderMapToolbar()}
-              <div className="my-6">{networkCensus}</div>
-              <NetworkGlobeMap
-                lang={lang}
-                spaces={mapSpaces}
-                className={cn('w-full', showMapStage && 'mb-7')}
-                isActive={showMapStage}
-                showStage={showMapStage}
-                alignProjection={view === 'overview' ? 'flat' : undefined}
-                onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
-              />
-              {showRanking ? (
-                <div className="mt-6">
+          <div className="flex min-w-0 flex-col gap-4">
+            {enableNetworkMap ? (
+              <>
+                {renderMapToolbar()}
+                <div className="my-6">{networkCensus}</div>
+                <NetworkGlobeMap
+                  lang={lang}
+                  spaces={mapSpaces}
+                  className={cn('w-full', showMapStage && 'mb-7')}
+                  isActive={showMapStage}
+                  showStage={showMapStage}
+                  alignProjection={view === 'overview' ? 'flat' : undefined}
+                  onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
+                />
+                {showRanking ? (
+                  <div className="mt-6">
+                    <NetworkRanking
+                      lang={lang}
+                      ranks={networkRanks}
+                      onSelect={selectRank}
+                    />
+                  </div>
+                ) : null}
+                <div className={cn(!showSpacesList && 'hidden')}>
+                  {listMetaRow}
+                  {spacesListContent}
+                </div>
+              </>
+            ) : (
+              <>
+                <CreateSpaceButton
+                  lang={lang}
+                  isAuthenticated={isAuthenticated}
+                  className="w-fit"
+                  buttonClassName={spaceToolbarPrimaryButtonClassName}
+                />
+                <div>
                   <NetworkRanking
                     lang={lang}
                     ranks={networkRanks}
                     onSelect={selectRank}
                   />
                 </div>
-              ) : null}
-              <div className={cn(!showSpacesList && 'hidden')}>
                 {listMetaRow}
                 {spacesListContent}
-              </div>
-            </>
-          ) : (
-            <>
-              <CreateSpaceButton
-                lang={lang}
-                isAuthenticated={isAuthenticated}
-                className="w-fit"
-                buttonClassName={spaceToolbarPrimaryButtonClassName}
-              />
-              <div>
-                <NetworkRanking
-                  lang={lang}
-                  ranks={networkRanks}
-                  onSelect={selectRank}
-                />
-              </div>
-              {listMetaRow}
-              {spacesListContent}
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
         {sidePanel ? (
           <div className="w-full shrink-0 @4xl:w-[380px]">{sidePanel}</div>
