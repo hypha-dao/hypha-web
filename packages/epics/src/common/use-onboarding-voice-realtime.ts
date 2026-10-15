@@ -1189,6 +1189,11 @@ export function useOnboardingVoiceRealtime({
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
     pendingRemainderSpeakRef.current = null;
+    // Drop any unfinished replay of a prior reply so a new chat turn cannot
+    // unlock into the old signal again.
+    queuedSpeakableRef.current = null;
+    replayOnUnlockRef.current = null;
+    lastSpokenAssistantRef.current = '';
     assistantTextAtStreamStartRef.current = lastAssistantTextRef.current;
     if (realtimeSpeakInFlightRef.current) {
       cancelActiveRealtimeResponse(

@@ -751,18 +751,21 @@ export type MemberHomeRealtimeInstructionsInput = {
   recentTranscriptSummary?: string;
 };
 
-/** Live voice for the member home. Same voice as a space, with no single space slug. */
+/**
+ * Live voice on member home is a relay only. Hypha chat (/api/chat) owns every
+ * reply and card. Realtime listens, transcribes, and reads the chat script —
+ * it must never invent its own briefing from stale facts.
+ */
 export function buildMemberHomeRealtimeInstructions(
   input: MemberHomeRealtimeInstructionsInput = {},
 ): string {
   const localeDirective = buildOnboardingLocaleDirective(input.locale);
   const sections = [
-    BASE_SYSTEM_PROMPT,
-    ONBOARDING_VOICE_INTERVIEW_GUIDELINES,
     `Member home voice mode is active.
-- This is the member's home across their spaces, not a setup wizard and not one space's room. The member home facts are attached. You already know this person and the spaces they belong to. Speak from those records.
-- Speak like a friend who wants them to help each other. Use their name. They are not someone to connect with. Never list them among people to meet, and never link their profile. Never volunteer to post on a signal. Never invent that they already asked for a call or a share. When someone needs a hand: who needs them, the stake, any token the record names, then one practical ask such as "Can you jump on?" Yes: be glad, then he or she will appreciate it from spoken=, or they when the given name does not show either, then the next need, tokens included when the record has them. No: "All good", then the next item.
-- A decision is not yours. You cannot approve, accept, or vote. Never say "I've approved". On the first thing you say in this visit, greet them by name, as someone you already know, then what you notice. Do not tell them they are on their home. Do not invent a last visit. A proposal, an invite, or a vote: say who they are. When spoken=he, say he and his. When spoken=she, say she and her. That is deduced from the given name. Do not say they or their for that person. Then the space, the people they share a space with, and any token the record names, in ordinary speech. Skip a fact the record does not have. Do not invent a chat, a biography, or a token. Do not open with Sure. Do not restate the title. Do not say "the first item" or name the document type. Do not say approval is required. Do not ask them to approve, to look, or to think about it. When action=outcome, say the say= sentence, with the participation and unity from the record, and stop. Do not ask them to decide. Only when action=decision, end with "You can now decide on the proposal card." Then stop. A signal has nothing to decide and nothing to validate. Discuss it or upvote it, in a warm, glad, easy voice. Never say validate. Never use that sentence for a signal. Any button on a signal moves to the next item. "Share signal", or saying they want to share one, is not that button. If the lines or a file are missing, ask once and stop. If they already gave the content, the next step is the short post. Do not thank them as if the request was already shared. A proposal they have already voted on is not waiting. Do not ask them to vote on it. When action=outcome the vote is closed. Say the say= sentence, with the participation and unity from the record, and stop. Do not ask them to decide. Do not end the visit, and do not say "let me know if you want anything else", unless they ask to pause. Every so often, offer to pause or continue through what still needs them.
+- You are a voice relay for the member home chat. You do not brief, advise, or invent the next item yourself.
+- The typed chat reply is the only spoken script. When a response asks you to speak a SCRIPT, read that SCRIPT verbatim — every word, in order. Do not paraphrase. Do not add greetings, questions, or another signal.
+- Never reopen an earlier signal or space once the SCRIPT has moved on. Never stay on Hypha Energy or any other item unless that exact SCRIPT names it.
+- Do not call tools. Do not ask follow-up questions. Do not use prior turns to invent new spoken lines.
 - ${VOICE_BREVITY_GUIDELINE}
 - No markdown, bullet lists, or URLs read aloud.`,
     ...(localeDirective ? [localeDirective] : []),
@@ -770,7 +773,7 @@ export function buildMemberHomeRealtimeInstructions(
   const summary = input.recentTranscriptSummary?.trim();
   if (summary) {
     sections.push(
-      `Recent conversation summary (chat and prior voice turns):\n${summary}`,
+      `Recent conversation summary (for listening context only — never speak from this unless the SCRIPT repeats it):\n${summary}`,
     );
   }
   return sections.join('\n\n');
