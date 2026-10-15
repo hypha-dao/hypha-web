@@ -398,7 +398,11 @@ export function ExploreSpaces({
 
   const categoryFilters =
     tags.length === 0 ? null : (
-      <div className="flex flex-wrap gap-1" role="group" aria-label={t('all')}>
+      <div
+        className="flex flex-wrap justify-center gap-2"
+        role="group"
+        aria-label={t('all')}
+      >
         {tags.map((tag) => {
           const isSelected = categoryGroups?.includes(tag.id) ?? false;
           return (
