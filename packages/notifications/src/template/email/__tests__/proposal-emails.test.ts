@@ -6,6 +6,7 @@ import {
   emailProposalExecutionForCreator,
   emailProposalExecutionForMembers,
   emailProposalRejectionForCreator,
+  emailProposalRejectionForMembers,
 } from '..';
 
 const links = {
@@ -156,5 +157,26 @@ describe('emailProposalRejectionForCreator (dashboard: Proposals - Rejected - fo
       url: 'javascript:alert(1)',
     });
     expect(email.body).toContain('class="cta" href="#"');
+  });
+});
+
+describe('emailProposalRejectionForMembers (dashboard: Proposals - Rejected - for members)', () => {
+  it('matches the dashboard subject, preheader and statement', () => {
+    const email = emailProposalRejectionForMembers({
+      proposalTitle: 'Plan',
+      spaceTitle: 'Acme',
+      ...links,
+    });
+    expect(email.subject).toBe('A proposal was rejected in Acme');
+    expect(email.preheader).toBe('Plan');
+    expect(email.body).toContain(
+      'A proposal &ldquo;Plan&rdquo; was <strong>rejected</strong> in <strong>Acme</strong>. ❌',
+    );
+  });
+
+  it('defaults the preheader and space', () => {
+    const email = emailProposalRejectionForMembers({});
+    expect(email.subject).toBe('A proposal was rejected in your space');
+    expect(email.preheader).toBe('See the outcome.');
   });
 });
