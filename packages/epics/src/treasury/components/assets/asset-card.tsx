@@ -3,6 +3,7 @@
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathDefaultLanding } from '@hypha-platform/epics';
+import { parseCapitalKey } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -19,6 +20,8 @@ type AssetCardProps = {
   referenceCurrency?: string | null;
   usdEqual?: number;
   type?: string;
+  /** One form of capital, when the token names one. */
+  capital?: string | null;
   isLoading?: boolean;
   supply?: {
     total: number;
@@ -59,12 +62,14 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   space,
   lang,
   type,
+  capital,
   createdAt,
   layout = 'grid',
   mutualCredit,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tNetwork = useTranslations('NetworkExchange');
   const format = useFormatter();
   const isSolo = layout === 'solo';
   const tokenTypeLabel =
@@ -80,6 +85,8 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           >[0],
         )
       : type;
+  const capitalKey = parseCapitalKey(capital);
+  const capitalLabel = capitalKey ? tNetwork(`capitals.${capitalKey}`) : null;
 
   const hasPrice = tokenPrice !== undefined && tokenPrice > 0;
   const hasSupply = supply?.total !== undefined;
@@ -142,7 +149,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Skeleton>
           {!isSolo ? (
             <Skeleton width="88px" height="16px" loading={isLoading}>
-              <div className="flex min-w-0 items-center gap-1.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="truncate text-1 text-muted-foreground">
                   {symbol}
                 </span>
@@ -156,18 +163,42 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                     {tokenTypeLabel}
                   </Badge>
                 ) : null}
+                {capitalLabel ? (
+                  <Badge
+                    size={1}
+                    colorVariant="neutral"
+                    variant="soft"
+                    className="h-fit w-fit shrink-0 font-normal"
+                  >
+                    {capitalLabel}
+                  </Badge>
+                ) : null}
               </div>
             </Skeleton>
-          ) : type ? (
+          ) : type || capitalLabel ? (
             <Skeleton width="72px" height="16px" loading={isLoading}>
-              <Badge
-                size={1}
-                colorVariant="neutral"
-                variant="soft"
-                className="h-fit w-fit shrink-0 font-normal"
-              >
-                {tokenTypeLabel}
-              </Badge>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                {type ? (
+                  <Badge
+                    size={1}
+                    colorVariant="neutral"
+                    variant="soft"
+                    className="h-fit w-fit shrink-0 font-normal"
+                  >
+                    {tokenTypeLabel}
+                  </Badge>
+                ) : null}
+                {capitalLabel ? (
+                  <Badge
+                    size={1}
+                    colorVariant="neutral"
+                    variant="soft"
+                    className="h-fit w-fit shrink-0 font-normal"
+                  >
+                    {capitalLabel}
+                  </Badge>
+                ) : null}
+              </div>
             </Skeleton>
           ) : null}
         </div>
