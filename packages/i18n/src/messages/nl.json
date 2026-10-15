@@ -279,7 +279,8 @@
     "errorNamed": "{name}, je startpagina kon niet worden geladen.",
     "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
     "retry": "Opnieuw proberen",
-    "sendTokensChoose": "Kies een token. Nu {symbol}."
+    "sendTokensChoose": "Kies een token. Nu {symbol}.",
+    "gotItDone": "Genoteerd"
   },
   "WelcomeFlow": {
     "offer": {

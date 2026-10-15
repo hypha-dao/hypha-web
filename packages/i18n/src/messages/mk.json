@@ -279,7 +279,8 @@
     "errorNamed": "{name}, твојот дом не можеше да се вчита.",
     "profileUnavailable": "Сè уште си најавен. Твојот профил не можеше да се вчита.",
     "retry": "Обиди се повторно",
-    "sendTokensChoose": "Избери токен. Сега {symbol}."
+    "sendTokensChoose": "Избери токен. Сега {symbol}.",
+    "gotItDone": "Забележано"
   },
   "WelcomeFlow": {
     "offer": {

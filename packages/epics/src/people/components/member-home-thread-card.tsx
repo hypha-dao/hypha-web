@@ -434,17 +434,25 @@ export function MemberHomeThreadCard({
             <Button
               type="button"
               {...choiceProps('got-it', true)}
+              disabled={chosen === 'got-it'}
+              aria-live="polite"
               onClick={() => {
                 if (!confirm('got-it')) return;
-                markHomeActed(memberHomeThreadItemKey(item));
-                if (!assistant) return;
-                onAsk(
-                  `I have the outcome on "${item.title}". Continue with the next.`,
-                  true,
-                );
+                const key = memberHomeThreadItemKey(item);
+                const title = item.title;
+                // Hold the card briefly so the button can show it was received
+                // before the queue advances and unmounts this card.
+                window.setTimeout(() => {
+                  markHomeActed(key);
+                  if (!assistant) return;
+                  onAsk(
+                    `I have the outcome on "${title}". Continue with the next.`,
+                    true,
+                  );
+                }, 700);
               }}
             >
-              {t('gotIt')}
+              {chosen === 'got-it' ? t('gotItDone') : t('gotIt')}
             </Button>
           ) : null}
           {!outcome && ownDeadline ? (
