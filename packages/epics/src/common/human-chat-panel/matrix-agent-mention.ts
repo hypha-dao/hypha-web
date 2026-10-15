@@ -26,7 +26,7 @@ export function matrixAgentSkills(
   ];
 }
 
-/** Keep AI Agents at the top of the @ picker, one row per skill. */
+/** Keep one AI Agents row at the top of the @ picker. Skills are chosen after it. */
 export function withMatrixAgentMention(
   candidates: ChatMentionCandidate[],
   label: string,
@@ -38,17 +38,17 @@ export function withMatrixAgentMention(
   const rest = candidates.filter(
     (candidate) => candidate.userId !== agentUserId,
   );
-  const prompts = skills.filter((skill) => skill.prompt.trim());
-  const agentRows: ChatMentionCandidate[] = (
-    prompts.length > 0 ? prompts : [{ id: 'agent', prompt: '' }]
-  ).map((skill) => ({
+  const prompts = skills
+    .map((skill) => ({ id: skill.id, prompt: skill.prompt.trim() }))
+    .filter((skill) => skill.prompt);
+  const agentRow: ChatMentionCandidate = {
     userId: agentUserId,
     displayLabel: label,
-    rowKey: `agent-${skill.id}`,
-    prompt: skill.prompt.trim() || undefined,
+    rowKey: 'agent',
+    skills: prompts,
     ...(icon ? { agentIcon: icon } : {}),
-  }));
-  return [...agentRows, ...rest];
+  };
+  return [agentRow, ...rest];
 }
 
 /** Ask the server to answer if the latest room message @mentions AI Agents. */

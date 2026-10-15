@@ -430,6 +430,7 @@ export async function matrixSendTextMessage(
   message: string,
   accessToken: string,
   homeserver: string,
+  extraContent?: Record<string, string>,
 ): Promise<string> {
   const txnId = `hypha.${Date.now()}.${Math.random()
     .toString(36)
@@ -447,6 +448,7 @@ export async function matrixSendTextMessage(
       body: JSON.stringify({
         msgtype: 'm.text',
         body: message,
+        ...(extraContent ?? {}),
       }),
     },
   );
