@@ -80,10 +80,10 @@ function HeatField({
   }, [signals]);
 
   return (
-    <div className="mt-4">
+    <div className="mt-3 w-fit max-w-full">
       <div
-        className="grid items-center gap-1"
-        style={{ gridTemplateColumns: 'auto repeat(4, minmax(0, 1fr))' }}
+        className="grid items-center gap-0.5"
+        style={{ gridTemplateColumns: 'auto repeat(4, 1.125rem)' }}
       >
         {PRIORITIES.map((priority) => (
           <div key={priority} className="contents">
@@ -103,8 +103,8 @@ function HeatField({
                   title={cellTitle(priorityLabel(priority), count, start, end)}
                   className={
                     count > 0
-                      ? 'signal-heat-cell aspect-square'
-                      : 'aspect-square bg-neutral-3'
+                      ? 'signal-heat-cell size-[1.125rem]'
+                      : 'size-[1.125rem] bg-neutral-3'
                   }
                   style={
                     count > 0
@@ -126,8 +126,8 @@ function HeatField({
         ))}
       </div>
       <div
-        className="mt-2 grid text-1 text-neutral-11"
-        style={{ gridTemplateColumns: 'auto repeat(4, minmax(0, 1fr))' }}
+        className="mt-1.5 grid text-1 text-neutral-11"
+        style={{ gridTemplateColumns: 'auto repeat(4, 1.125rem)' }}
       >
         <span />
         <span>{older}</span>
@@ -160,9 +160,9 @@ function HeatSkeleton() {
       {Array.from({ length: 2 }, (_, map) => (
         <div key={map}>
           <div className="h-3 w-20 bg-muted" />
-          <div className="mt-4 grid grid-cols-4 gap-1">
+          <div className="mt-3 grid w-fit grid-cols-4 gap-0.5">
             {Array.from({ length: PRIORITIES.length * BUCKETS }, (_, cell) => (
-              <span key={cell} className="aspect-square bg-neutral-3" />
+              <span key={cell} className="size-[1.125rem] bg-neutral-3" />
             ))}
           </div>
         </div>
