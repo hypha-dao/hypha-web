@@ -460,9 +460,8 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             ))}
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-5">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
         <Panel
-          className="lg:col-span-3"
           title={tCommon('Signals')}
           href={`${home}/coherence`}
           openLabel={t('open')}
@@ -478,7 +477,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         </Panel>
 
         <Panel
-          className="lg:col-span-2"
           title={tCommon('Calendar')}
           href={`${home}/calendar`}
           openLabel={t('open')}
