@@ -131,12 +131,30 @@ describe('emailProposalCreationForCreator (dashboard: Proposals - Created - for 
   });
 });
 
-describe('emailProposalRejectionForCreator', () => {
+describe('emailProposalRejectionForCreator (dashboard: Proposals - Rejected - for creator)', () => {
+  it('matches the dashboard subject, preheader and statement', () => {
+    const email = emailProposalRejectionForCreator({
+      proposalTitle: 'Plan',
+      spaceTitle: 'Acme',
+      ...links,
+    });
+    expect(email.subject).toBe('Your proposal was rejected in Acme');
+    expect(email.preheader).toBe('Plan');
+    expect(email.body).toContain(
+      'Your proposal &ldquo;Plan&rdquo; was <strong>rejected</strong> in <strong>Acme</strong>. ❌',
+    );
+  });
+
+  it('defaults the preheader and space', () => {
+    const email = emailProposalRejectionForCreator({});
+    expect(email.subject).toBe('Your proposal was rejected in your space');
+    expect(email.preheader).toBe('See the outcome.');
+  });
+
   it('neutralises non-http(s) CTA urls', () => {
     const email = emailProposalRejectionForCreator({
       url: 'javascript:alert(1)',
     });
     expect(email.body).toContain('class="cta" href="#"');
-    expect(email.subject).toBe('Your proposal was rejected in your space');
   });
 });

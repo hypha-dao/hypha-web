@@ -17,9 +17,9 @@ export function emailProposalRejectionForCreator({
     return proposalEmail({
       subject: `Your request to join ${space} was rejected`,
       preheader: 'See the outcome.',
-      statementHtml: `Unfortunately, your request to join ${strong(
-        space,
-      )} was ${strong('rejected')}.`,
+      statementHtml: `Your request to join ${strong(space)} was ${strong(
+        'rejected',
+      )}. ❌`,
       ...links,
     });
   }
@@ -27,9 +27,9 @@ export function emailProposalRejectionForCreator({
   return proposalEmail({
     subject: `Your proposal was rejected in ${space}`,
     preheader: proposalTitle?.trim() || 'See the outcome.',
-    statementHtml: `Unfortunately, your proposal${quotedTitleHtml(
-      proposalTitle,
-    )} was ${strong('rejected')} in ${strong(space)}.`,
+    statementHtml: `Your proposal${quotedTitleHtml(proposalTitle)} was ${strong(
+      'rejected',
+    )} in ${strong(space)}. ❌`,
     ...links,
   });
 }
