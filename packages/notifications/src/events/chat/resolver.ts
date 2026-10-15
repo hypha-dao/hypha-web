@@ -146,17 +146,26 @@ export const resolveChatRecipients: RecipientResolver<
   ]);
   const spaceTitle = spaceRow[0]?.title ?? undefined;
 
-  const candidateSlugs =
+  // A message that mentions someone is one `chat.mention` event, but it is still a message for the
+  // rest of the room: mentioned users get the mention (push + email, supersedes the plain message
+  // push - never both), everyone else who gets all-message pushes still receives the message.
+  const mentionedSlugs =
     event.type === 'chat.mention'
       ? await resolveMentionRecipientSlugs(event)
-      : await resolveAllMessagesRecipientSlugs(event);
-  if (candidateSlugs.length === 0) return [];
+      : [];
+  const messageSlugs = isChatMessageNotificationsDisabled()
+    ? []
+    : await resolveAllMessagesRecipientSlugs(event);
+  if (mentionedSlugs.length === 0 && messageSlugs.length === 0) return [];
 
   const actorSlug = actorPerson?.slug?.trim();
-  const recipientSlugs = [...new Set(candidateSlugs)].filter(
-    (slug) => slug && slug !== actorSlug,
+  const keep = (slug: string) => Boolean(slug) && slug !== actorSlug;
+  const mentioned = [...new Set(mentionedSlugs)].filter(keep);
+  const mentionedSet = new Set(mentioned);
+  const others = [...new Set(messageSlugs)].filter(
+    (slug) => keep(slug) && !mentionedSet.has(slug),
   );
-  if (recipientSlugs.length === 0) return [];
+  if (mentioned.length === 0 && others.length === 0) return [];
 
   const actorDisplayName =
     [actorPerson?.name, actorPerson?.surname]
@@ -179,7 +188,20 @@ export const resolveChatRecipients: RecipientResolver<
     spaceTitle,
     notificationSettingsUrl: buildNotificationSettingsUrl(),
   };
-  return recipientSlugs.map(
-    (personSlug): Recipient => ({ personSlug, role: event.type, data }),
-  );
+  return [
+    ...mentioned.map(
+      (personSlug): Recipient => ({
+        personSlug,
+        role: 'chat.mention',
+        data,
+      }),
+    ),
+    ...others.map(
+      (personSlug): Recipient => ({
+        personSlug,
+        role: 'chat.message',
+        data,
+      }),
+    ),
+  ];
 };

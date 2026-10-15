@@ -86,7 +86,11 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
     | string
     | undefined;
 
-  if (event.type === 'chat.mention') {
+  // The recipient's role decides the content: a `chat.mention` event also carries plain-message
+  // recipients (everyone else in the room), who must not get the mention email.
+  const kind = recipient.role ?? event.type;
+
+  if (kind === 'chat.mention') {
     const heading = `${actorDisplayName} mentioned you`;
     return {
       channels: ['push', 'email'],

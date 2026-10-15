@@ -154,3 +154,26 @@ describe('buildChatContent — chat.mention email template', () => {
     expect(result.content.email).toMatchObject({ kind: 'plain' });
   });
 });
+
+describe('buildChatContent — mention event, plain-message recipient', () => {
+  it('gives non-mentioned room members the message push only (no mention email)', () => {
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      role: 'chat.message',
+    });
+    expect(result.channels).toEqual(['push']);
+    expect(result.requiredTags).toEqual([]);
+    expect(result.content.email).toBeUndefined();
+    const push = result.content.push as { contents: { en: string } };
+    expect(push.contents.en).toBe('Alice: Hello team, standup in 5');
+  });
+
+  it('keeps the mention content for mentioned recipients', () => {
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      role: 'chat.mention',
+    });
+    expect(result.channels).toEqual(['push', 'email']);
+    expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
+  });
+});

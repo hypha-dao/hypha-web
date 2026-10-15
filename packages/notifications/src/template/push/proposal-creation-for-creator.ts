@@ -1,32 +1,26 @@
 import type { Push } from './types';
 import type { ProposalCreationProps } from '../common';
 
+/** Dashboard: "[PUSH] Proposal - Created - for Creator". */
 export function pushProposalCreationForCreator({
-  proposalState = 'proposal',
   proposalLabel,
   proposalTitle,
   spaceTitle,
 }: ProposalCreationProps): Push {
-  const space = spaceTitle ? `"${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle
-    ? `${proposalState} "${proposalTitle}"`
-    : `${proposalState}`;
+  const space = spaceTitle?.trim() || 'your space';
 
-  switch (proposalLabel) {
-    case 'Invite':
-      return {
-        headings: { en: 'You successfully created a join request' },
-        contents: { en: `Your request to join ${space} was created.` },
-      };
-
-    default:
-      return {
-        headings: {
-          en: `You successfully created ${proposal}`,
-        },
-        contents: {
-          en: `Your ${proposal} was successfully created in ${space}.`,
-        },
-      };
+  if (proposalLabel === 'Invite') {
+    return {
+      headings: { en: 'Your invite was created' },
+      contents: { en: `Your invite to join ${space} was created.` },
+    };
   }
+
+  const title = proposalTitle?.trim();
+  return {
+    headings: { en: 'Your proposal was created' },
+    contents: {
+      en: `Your proposal${title ? ` “${title}”` : ''} was created in ${space}.`,
+    },
+  };
 }
