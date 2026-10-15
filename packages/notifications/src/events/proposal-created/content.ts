@@ -13,7 +13,6 @@ import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
 import type { ProposalCreatedEvent } from '../../core/types';
-import { layout } from '../../template/common/layout';
 import {
   emailProposalCreationForCreator,
   emailProposalCreationForMembers,
@@ -33,8 +32,15 @@ export const buildProposalCreatedContent: ContentBuilder<
     ? recipient.displayName
     : (recipient.data?.creatorName as string | undefined);
 
-  const props = { creatorName, proposalLabel, spaceTitle };
   const url = recipient.data?.url as string | undefined;
+  const props = {
+    creatorName,
+    proposalLabel,
+    proposalTitle: recipient.data?.proposalTitle as string | undefined,
+    spaceTitle,
+    url,
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
+  };
   const templatePush = resolvePushTemplate(
     isCreator
       ? 'PUSH_TEMPLATE_PROPOSAL_CREATED_CREATOR'
@@ -87,17 +93,8 @@ export const buildProposalCreatedContent: ContentBuilder<
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
-        body: layout({
-          title: email.subject,
-          paragraphs: [email.body],
-          cta: url ? { label: 'View proposal', url } : undefined,
-          footer: {
-            unsubscribe: true,
-            settingsUrl: recipient.data?.notificationSettingsUrl as
-              | string
-              | undefined,
-          },
-        }),
+        preheader: email.preheader,
+        body: email.body,
       },
     },
   };

@@ -1,30 +1,33 @@
 import type { Email } from './types';
 import type { ProposalSettlementProps } from '../common';
+import { proposalEmail, quotedTitleHtml, strong } from './proposal-email';
 
 export function emailProposalExecutionForCreator({
-  creatorName,
   proposalLabel,
-  proposalState = 'proposal',
   proposalTitle,
   spaceTitle,
+  url,
+  settingsUrl,
+  appUrl,
 }: ProposalSettlementProps): Email {
-  const congratulation = creatorName
-    ? `Congratulations, ${creatorName},`
-    : 'Congratulations,';
-  const space = spaceTitle ? `the space "${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle ? `"${proposalTitle}"` : proposalState;
+  const space = spaceTitle?.trim() || 'your space';
+  const links = { url, settingsUrl, appUrl };
 
-  switch (proposalLabel) {
-    case 'Invite':
-      return {
-        subject: 'Successful joined a space',
-        body: `${congratulation} you've successfully joined ${space}.`,
-      };
-
-    default:
-      return {
-        subject: `Successful ${proposalState} execution`,
-        body: `${congratulation} your ${proposal} was successfully executed in ${space}.`,
-      };
+  if (proposalLabel === 'Invite') {
+    return proposalEmail({
+      subject: `You joined ${space}`,
+      preheader: 'See the outcome.',
+      statementHtml: `You&rsquo;ve successfully joined ${strong(space)}. ✅`,
+      ...links,
+    });
   }
+
+  return proposalEmail({
+    subject: `Your proposal was accepted in ${space}`,
+    preheader: proposalTitle?.trim() || 'See the outcome.',
+    statementHtml: `Your proposal${quotedTitleHtml(proposalTitle)} was ${strong(
+      'accepted',
+    )} in ${strong(space)}. ✅`,
+    ...links,
+  });
 }

@@ -10,7 +10,6 @@ import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
 import type { Recipient } from '../../core/types';
-import { layout } from '../../template/common/layout';
 import {
   emailProposalExecutionForCreator,
   emailProposalExecutionForMembers,
@@ -29,6 +28,8 @@ function settlementProps(recipient: Recipient) {
     proposalLabel: recipient.data?.proposalLabel as string | undefined,
     proposalState: recipient.data?.proposalState as string | undefined,
     spaceTitle: recipient.data?.spaceTitle as string | undefined,
+    url: recipient.data?.url as string | undefined,
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
   };
 }
 
@@ -94,17 +95,8 @@ export const buildProposalSettlementContent: ContentBuilder<
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
-        body: layout({
-          title: email.subject,
-          paragraphs: [email.body],
-          cta: url ? { label: 'View proposal', url } : undefined,
-          footer: {
-            unsubscribe: true,
-            settingsUrl: recipient.data?.notificationSettingsUrl as
-              | string
-              | undefined,
-          },
-        }),
+        preheader: email.preheader,
+        body: email.body,
       },
     },
   };

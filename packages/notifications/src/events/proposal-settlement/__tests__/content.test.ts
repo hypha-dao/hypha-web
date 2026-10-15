@@ -38,7 +38,7 @@ describe('buildProposalSettlementContent', () => {
     ).toEqual([TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]);
   });
 
-  it('uses execution copy for accepted and rejection copy for rejected', () => {
+  it('uses accepted copy for accepted and rejection copy for rejected', () => {
     const acceptedContent = buildProposalSettlementContent(
       accepted,
       creatorRecipient,
@@ -52,7 +52,7 @@ describe('buildProposalSettlementContent', () => {
       (
         acceptedContent.content.email as { subject: string }
       ).subject.toLowerCase(),
-    ).toMatch(/execut/);
+    ).toMatch(/accept/);
     expect(
       (
         rejectedContent.content.email as { subject: string }

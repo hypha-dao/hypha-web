@@ -1,27 +1,36 @@
 import type { Email } from './types';
 import type { ProposalSettlementProps } from '../common';
+import { proposalEmail, quotedTitleHtml, strong } from './proposal-email';
 
 export function emailProposalRejectionForMembers({
   creatorName = 'Someone',
   proposalLabel,
-  proposalState = 'proposal',
   proposalTitle,
   spaceTitle,
+  url,
+  settingsUrl,
+  appUrl,
 }: ProposalSettlementProps): Email {
-  const space = spaceTitle ? `the space "${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle ? `"${proposalTitle}"` : proposalState;
+  const space = spaceTitle?.trim() || 'your space';
+  const links = { url, settingsUrl, appUrl };
 
-  switch (proposalLabel) {
-    case 'Invite':
-      return {
-        subject: 'Join request was rejected in one of your spaces',
-        body: `${creatorName}'s join request to ${space} was rejected.`,
-      };
-
-    default:
-      return {
-        subject: `A ${proposalState} was rejected in one of your spaces`,
-        body: `${creatorName}'s ${proposal} was rejected in ${space}.`,
-      };
+  if (proposalLabel === 'Invite') {
+    return proposalEmail({
+      subject: `Join request was rejected in ${space}`,
+      preheader: 'See the outcome.',
+      statementHtml: `${strong(creatorName)}&rsquo;s join request to ${strong(
+        space,
+      )} was ${strong('rejected')}.`,
+      ...links,
+    });
   }
+
+  return proposalEmail({
+    subject: `A proposal was rejected in ${space}`,
+    preheader: proposalTitle?.trim() || 'See the outcome.',
+    statementHtml: `The proposal${quotedTitleHtml(proposalTitle)} was ${strong(
+      'rejected',
+    )} in ${strong(space)}.`,
+    ...links,
+  });
 }

@@ -1,30 +1,33 @@
 import type { Email } from './types';
 import type { ProposalCreationProps } from '../common';
+import { proposalEmail, quotedTitleHtml, strong } from './proposal-email';
 
 export function emailProposalCreationForCreator({
-  creatorName,
   proposalLabel,
-  proposalState = 'proposal',
   proposalTitle,
   spaceTitle,
+  url,
+  settingsUrl,
+  appUrl,
 }: ProposalCreationProps): Email {
-  const beginning = creatorName
-    ? `Dear ${creatorName}, great news,`
-    : 'Great news,';
-  const space = spaceTitle ? `the space "${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle ? `"${proposalTitle}"` : proposalState;
+  const space = spaceTitle?.trim() || 'your space';
+  const links = { url, settingsUrl, appUrl };
 
-  switch (proposalLabel) {
-    case 'Invite':
-      return {
-        subject: 'Your invite to join a space has been created',
-        body: `${beginning} your invite to join ${space} has been created.`,
-      };
-
-    default:
-      return {
-        subject: `Your ${proposalState} has been created`,
-        body: `${beginning} your ${proposal} has been created in ${space}.`,
-      };
+  if (proposalLabel === 'Invite') {
+    return proposalEmail({
+      subject: 'Your invite to join a space has been created',
+      preheader: 'Your invite is ready.',
+      statementHtml: `Your invite to join ${strong(space)} has been created.`,
+      ...links,
+    });
   }
+
+  return proposalEmail({
+    subject: `Your proposal has been created in ${space}`,
+    preheader: proposalTitle?.trim() || 'Members can now cast their votes.',
+    statementHtml: `Your proposal${quotedTitleHtml(
+      proposalTitle,
+    )} has been created in ${strong(space)}.`,
+    ...links,
+  });
 }
