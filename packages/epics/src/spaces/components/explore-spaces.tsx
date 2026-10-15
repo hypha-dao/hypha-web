@@ -7,12 +7,10 @@ import {
   CATEGORY_GROUPS,
   getCategoryGroupLabel,
   isSpaceArchived,
-  parseCapitalKeys,
   resolveSpaceMapPin,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
   splitTokensByNetworkSpaces,
-  type CapitalKey,
   type NetworkGrowth,
   type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
@@ -25,7 +23,6 @@ import {
   type NetworkMapView,
 } from '../../network-map';
 import { NetworkRanking } from '../../network-exchange';
-import { NetworkCapitalFilters } from '../../network-exchange/network-section-header';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
@@ -166,8 +163,6 @@ export function ExploreSpaces({
   spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
-  const tExchange = useTranslations('NetworkExchange');
-  const [capital, setCapital] = React.useState<CapitalKey | 'all'>('all');
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -184,7 +179,7 @@ export function ExploreSpaces({
     [spaces],
   );
 
-  const categoryFilteredSpaces = React.useMemo(
+  const listedSpaces = React.useMemo(
     () =>
       categoryGroups && categoryGroups.length > 0
         ? nonArchivedSpaces.filter((space) =>
@@ -193,18 +188,6 @@ export function ExploreSpaces({
         : nonArchivedSpaces,
     [nonArchivedSpaces, categoryGroups],
   );
-
-  const listedSpaces = React.useMemo(() => {
-    if (capital === 'all') return categoryFilteredSpaces;
-    return categoryFilteredSpaces.filter((space) => {
-      const entry = spaceCapitals?.[String(space.id)];
-      if (!entry) return false;
-      return (
-        parseCapitalKeys(entry.seeks).includes(capital) ||
-        parseCapitalKeys(entry.offers).includes(capital)
-      );
-    });
-  }, [capital, categoryFilteredSpaces, spaceCapitals]);
 
   const {
     filteredSpaces: selectedSpaces,
@@ -460,12 +443,6 @@ export function ExploreSpaces({
   const sharedControls = (
     <div className="flex flex-col gap-4">
       <SpaceSearch value={query} className="w-full min-w-0" />
-      <NetworkCapitalFilters
-        value={capital}
-        onChange={setCapital}
-        allLabel={tExchange('allSpaces')}
-        labelFor={(key) => tExchange(`capitals.${key}`)}
-      />
       {categoryFilters}
     </div>
   );
