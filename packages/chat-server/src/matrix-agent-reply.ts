@@ -11,13 +11,69 @@ import {
   getMatrixBotAsToken,
   getMatrixBotUserId,
   getMatrixHomeserverUrl,
+  matrixInviteUser,
   matrixJoinRoom,
   matrixListRoomMessages,
   matrixSendTextMessage,
+  resolveUserMatrixAccessTokenForSend,
 } from '@hypha-platform/core/server';
 import { mentionAwaitingAgent, type AgentRoomLine } from './matrix-agent-turn';
 import { createChatTools } from './tools';
 import { getHyphaChatModel } from './stream-chat';
+
+/**
+ * Invite-only DMs and private rooms block the bot from listing history until it is a
+ * member. Invite with the mentioner's session token, then accept as the bot — soft-fail so
+ * open-join rooms and rooms the bot already sits in still work.
+ */
+async function ensureAgentJoinedRoom({
+  roomId,
+  agentUserId,
+  botToken,
+  homeserver,
+  authToken,
+  requestUrl,
+}: {
+  roomId: string;
+  agentUserId: string;
+  botToken: string;
+  homeserver: string;
+  authToken: string;
+  requestUrl?: string;
+}): Promise<void> {
+  try {
+    await matrixJoinRoom(roomId, botToken, homeserver);
+    return;
+  } catch {
+    // Not invited yet, or already joined under a different code path.
+  }
+
+  const userToken = await resolveUserMatrixAccessTokenForSend(
+    authToken,
+    requestUrl,
+  );
+  if (userToken) {
+    try {
+      await matrixInviteUser(roomId, agentUserId, userToken, homeserver);
+    } catch (error) {
+      console.warn(
+        '[MatrixAgent] Failed to invite the agent into the room:',
+        roomId,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  try {
+    await matrixJoinRoom(roomId, botToken, homeserver);
+  } catch (error) {
+    console.warn(
+      '[MatrixAgent] Failed to join the room after invite:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
 
 function readTextEvents(
   chunk: unknown[],
@@ -99,6 +155,15 @@ export async function replyToMatrixAgentMention({
     return { replied: false };
   }
 
+  await ensureAgentJoinedRoom({
+    roomId: trimmedRoom,
+    agentUserId,
+    botToken,
+    homeserver,
+    authToken,
+    requestUrl,
+  });
+
   let turn: { question: string; earlier: string } | null = null;
   for (let attempt = 0; attempt < 4 && !turn; attempt += 1) {
     if (attempt > 0) await sleep(400);
@@ -119,7 +184,7 @@ export async function replyToMatrixAgentMention({
         trimmedRoom,
         error instanceof Error ? error.message : error,
       );
-      return { replied: false };
+      // Retry — invite/join or the mention event may not be visible yet.
     }
   }
   if (!turn) return { replied: false };
