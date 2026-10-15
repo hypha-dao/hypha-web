@@ -260,10 +260,10 @@
     "investorAction": "Se forespørslene",
     "investorCount": "{count} åpne forespørsler",
     "chooseTitle": "Hvordan viser du deg mest?",
-    "chooseBody": "Medlem, bygger eller investor. Dette stemmer hjemmet ditt. Du kan endre det når som helst.",
+    "chooseBody": "Medlem, bygger eller finansiør. Dette stemmer hjemmet ditt. Du kan endre det når som helst.",
     "orientationMember": "Medlem",
     "orientationBuilder": "Bygger",
-    "orientationInvestor": "Investor",
+    "orientationInvestor": "Finansiør",
     "changeOrientation": "Endre",
     "changeOrientationLabel": "Endre hvordan du viser deg. Nå {orientation}.",
     "signInTitle": "Hjemmet ditt venter",
@@ -336,7 +336,7 @@
         "body": "Du former rom rundt en visjon og tar andre med."
       },
       "investor": {
-        "title": "Investor",
+        "title": "Finansiør",
         "body": "Du leser hva nettverket ber om, og setter inn kapital."
       }
     }
@@ -1964,7 +1964,7 @@
         "orientation": "Hvordan du viser deg",
         "orientationMember": "Medlem",
         "orientationBuilder": "Bygger",
-        "orientationInvestor": "Investor"
+        "orientationInvestor": "Finansiør"
       },
       "placeholders": {
         "firstName": "Fornavn",

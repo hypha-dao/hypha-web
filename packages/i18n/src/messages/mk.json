@@ -260,10 +260,10 @@
     "investorAction": "Види ги барањата",
     "investorCount": "{count} отворени барања",
     "chooseTitle": "Како главно се појавуваш?",
-    "chooseBody": "Член, градител или инвеститор. Ова го подесува твојот дом. Можеш да го смениш во секое време.",
+    "chooseBody": "Член, градител или финансиер. Ова го прилагодува твојот дом. Можеш да го промениш во секое време.",
     "orientationMember": "Член",
     "orientationBuilder": "Градител",
-    "orientationInvestor": "Инвеститор",
+    "orientationInvestor": "Финансиер",
     "changeOrientation": "Смени",
     "changeOrientationLabel": "Смени како се појавуваш. Сега {orientation}.",
     "signInTitle": "Твојот дом чека",
@@ -336,7 +336,7 @@
         "body": "Обликуваш простори околу визија и ги носиш другите со себе."
       },
       "investor": {
-        "title": "Инвеститор",
+        "title": "Финансиер",
         "body": "Читаш што бара мрежата и вложуваш капитал."
       }
     }
@@ -1945,7 +1945,7 @@
         "orientation": "Како се појавуваш",
         "orientationMember": "Член",
         "orientationBuilder": "Градител",
-        "orientationInvestor": "Инвеститор"
+        "orientationInvestor": "Финансиер"
       },
       "placeholders": {
         "firstName": "Име",

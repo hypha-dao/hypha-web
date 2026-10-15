@@ -260,10 +260,10 @@
     "investorAction": "Voir les demandes",
     "investorCount": "{count} demandes ouvertes",
     "chooseTitle": "Comment te présentes-tu surtout ?",
-    "chooseBody": "Membre, bâtisseur ou investisseur. Cela règle ton accueil. Tu peux le changer à tout moment.",
+    "chooseBody": "Membre, bâtisseur ou financeur. Cela règle votre accueil. Vous pouvez le changer à tout moment.",
     "orientationMember": "Membre",
     "orientationBuilder": "Bâtisseur",
-    "orientationInvestor": "Investisseur",
+    "orientationInvestor": "Financeur",
     "changeOrientation": "Changer",
     "changeOrientationLabel": "Change ta façon de te présenter. Actuellement {orientation}.",
     "signInTitle": "Ton accueil t'attend",
@@ -336,7 +336,7 @@
         "body": "Tu formes des espaces autour d'une vision et tu fais entrer d'autres personnes."
       },
       "investor": {
-        "title": "Investisseur",
+        "title": "Financeur",
         "body": "Tu lis ce que le réseau demande et tu déploies du capital."
       }
     }
@@ -1394,7 +1394,7 @@
         "orientation": "Comment tu te présentes",
         "orientationMember": "Membre",
         "orientationBuilder": "Bâtisseur",
-        "orientationInvestor": "Investisseur"
+        "orientationInvestor": "Financeur"
       },
       "placeholders": {
         "firstName": "Prénom",

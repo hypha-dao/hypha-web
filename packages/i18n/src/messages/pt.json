@@ -260,10 +260,10 @@
     "investorAction": "Ver os pedidos",
     "investorCount": "{count} pedidos abertos",
     "chooseTitle": "Como te apresentas principalmente?",
-    "chooseBody": "Membro, construtor ou investidor. Isto ajusta a tua página inicial. Podes mudar quando quiseres.",
+    "chooseBody": "Membro, construtor ou financiador. Isto afina a tua home. Podes mudar a qualquer momento.",
     "orientationMember": "Membro",
     "orientationBuilder": "Construtor",
-    "orientationInvestor": "Investidor",
+    "orientationInvestor": "Financiador",
     "changeOrientation": "Mudar",
     "changeOrientationLabel": "Muda como te apresentas. Agora: {orientation}.",
     "signInTitle": "A tua página inicial está à espera",
@@ -336,7 +336,7 @@
         "body": "Dás forma a espaços em torno de uma visão e trazes outras pessoas."
       },
       "investor": {
-        "title": "Investidor",
+        "title": "Financiador",
         "body": "Lês o que a rede está a pedir e aplicas capital."
       }
     }
@@ -2165,7 +2165,7 @@
         "orientation": "Como você se apresenta",
         "orientationMember": "Membro",
         "orientationBuilder": "Construtor",
-        "orientationInvestor": "Investidor"
+        "orientationInvestor": "Financiador"
       },
       "placeholders": {
         "firstName": "Primeiro nome",

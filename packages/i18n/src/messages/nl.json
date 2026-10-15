@@ -260,10 +260,10 @@
     "investorAction": "De vragen bekijken",
     "investorCount": "{count} open vragen",
     "chooseTitle": "Hoe laat je je vooral zien?",
-    "chooseBody": "Lid, bouwer of investeerder. Dit stemt je startpagina af. Je kunt het altijd wijzigen.",
+    "chooseBody": "Lid, bouwer of financier. Dit stemt je home af. Je kunt het altijd wijzigen.",
     "orientationMember": "Lid",
     "orientationBuilder": "Bouwer",
-    "orientationInvestor": "Investeerder",
+    "orientationInvestor": "Financier",
     "changeOrientation": "Wijzigen",
     "changeOrientationLabel": "Wijzig hoe je je laat zien. Nu {orientation}.",
     "signInTitle": "Je startpagina wacht",
@@ -336,7 +336,7 @@
         "body": "Je vormt ruimtes rond een visie en haalt anderen erbij."
       },
       "investor": {
-        "title": "Investeerder",
+        "title": "Financier",
         "body": "Je leest wat het netwerk vraagt en zet kapitaal in."
       }
     }
@@ -1965,7 +1965,7 @@
         "orientation": "Hoe je verschijnt",
         "orientationMember": "Lid",
         "orientationBuilder": "Bouwer",
-        "orientationInvestor": "Investeerder"
+        "orientationInvestor": "Financier"
       },
       "placeholders": {
         "firstName": "Voornaam",
