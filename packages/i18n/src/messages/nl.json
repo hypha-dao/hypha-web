@@ -1191,7 +1191,12 @@
       "empty": "Nog geen geneste ruimtes om te tonen",
       "subtitle": "Bekijk hoe ruimtes in deze organisatie genest zijn",
       "zoomIn": "Inzoomen",
-      "zoomOut": "Uitzoomen"
+      "zoomOut": "Uitzoomen",
+      "lensStructure": "Structuur",
+      "lensFlows": "Stromen",
+      "openSpace": "{name} openen",
+      "flowsEmpty": "Er is nog geen waarde door deze space gegaan.",
+      "flowsError": "Waardestromen konden niet worden geladen."
     },
     "visibleSpaces": {
       "nestedRoot": "Wortel",

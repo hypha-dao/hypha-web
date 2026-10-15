@@ -1192,7 +1192,12 @@
       "empty": "Noch keine verschachtelten Spaces vorhanden",
       "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind",
       "zoomIn": "Vergrößern",
-      "zoomOut": "Verkleinern"
+      "zoomOut": "Verkleinern",
+      "lensStructure": "Struktur",
+      "lensFlows": "Flüsse",
+      "openSpace": "{name} öffnen",
+      "flowsEmpty": "Durch diesen Space ist noch kein Wert geflossen.",
+      "flowsError": "Werteflüsse konnten nicht geladen werden."
     },
     "visibleSpaces": {
       "nestedRoot": "Wurzel",

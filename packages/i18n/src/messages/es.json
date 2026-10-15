@@ -1963,7 +1963,12 @@
       "empty": "Aún no hay espacios anidados para mostrar",
       "subtitle": "Explora cómo se anidan los espacios en esta organización",
       "zoomIn": "Acercar",
-      "zoomOut": "Alejar"
+      "zoomOut": "Alejar",
+      "lensStructure": "Estructura",
+      "lensFlows": "Flujos",
+      "openSpace": "Abrir {name}",
+      "flowsEmpty": "Todavía no ha pasado valor por este espacio.",
+      "flowsError": "No se pudieron cargar los flujos de valor."
     },
     "visibleSpaces": {
       "nestedRoot": "Raíz",

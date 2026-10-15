@@ -1,0 +1,22 @@
+.mycelium-thread {
+  fill: none;
+  stroke: var(--neutral-12);
+  stroke-linecap: round;
+}
+
+.mycelium-flow {
+  stroke-dasharray: 5 9;
+  animation: mycelium-drift 9s linear infinite;
+}
+
+@keyframes mycelium-drift {
+  to {
+    stroke-dashoffset: -56;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mycelium-flow {
+    animation: none;
+  }
+}

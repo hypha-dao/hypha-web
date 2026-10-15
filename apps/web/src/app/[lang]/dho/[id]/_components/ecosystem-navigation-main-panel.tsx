@@ -27,7 +27,7 @@ import {
   useState,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { SpaceVisualization } from './space-visualization';
+import { MyceliumEcosystem } from './mycelium-ecosystem';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
@@ -608,12 +608,9 @@ export function EcosystemNavigationMainPanel({
               className="relative w-full shrink-0 overflow-hidden"
             >
               {hierarchyData ? (
-                <SpaceVisualization
-                  layout="fill"
+                <MyceliumEcosystem
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}
-                  enableHoverActions={false}
-                  showNodeLabels
                   ariaLabel={t('diagram.ariaLabel')}
                   onVisibleSpacesChange={handleVisibleSpacesChange}
                 />

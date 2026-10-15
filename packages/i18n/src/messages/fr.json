@@ -1192,7 +1192,12 @@
       "empty": "Aucun espace imbriqué à afficher pour le moment",
       "subtitle": "Explorez l’imbrication des espaces dans cette organisation",
       "zoomIn": "Zoom avant",
-      "zoomOut": "Zoom arrière"
+      "zoomOut": "Zoom arrière",
+      "lensStructure": "Structure",
+      "lensFlows": "Flux",
+      "openSpace": "Ouvrir {name}",
+      "flowsEmpty": "Aucune valeur n'a encore circulé dans cet espace.",
+      "flowsError": "Les flux de valeur n'ont pas pu être chargés."
     },
     "visibleSpaces": {
       "nestedRoot": "Racine",

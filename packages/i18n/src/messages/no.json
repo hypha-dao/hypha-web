@@ -1190,7 +1190,12 @@
       "empty": "Ingen nestede rom å vise ennå",
       "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen",
       "zoomIn": "Zoom inn",
-      "zoomOut": "Zoom ut"
+      "zoomOut": "Zoom ut",
+      "lensStructure": "Struktur",
+      "lensFlows": "Flyt",
+      "openSpace": "Åpne {name}",
+      "flowsEmpty": "Ingen verdi har gått gjennom dette space ennå.",
+      "flowsError": "Verdiflyten kunne ikke lastes."
     },
     "visibleSpaces": {
       "nestedRoot": "Rot",
