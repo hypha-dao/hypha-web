@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
 import {
-  CAPITALS,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkExchangeSpace,
@@ -17,6 +16,7 @@ import { exchangePairs } from './exchange-match';
 import { NetworkGlobeMap } from '../network-map/components/network-globe-map';
 import { NetworkRightColumn } from './network-right-cards';
 import {
+  NetworkCapitalFilters,
   NetworkLiveSearch,
   NetworkSectionHeader,
 } from './network-section-header';
@@ -38,9 +38,9 @@ function matchesQuery(space: NetworkExchangeSpace, query: string) {
 
 function matchesCapital(
   space: NetworkExchangeSpace,
-  capital: CapitalKey | null,
+  capital: CapitalKey | 'all',
 ) {
-  if (!capital) return true;
+  if (capital === 'all') return true;
   return (
     parseCapitalKeys(space.seeks).includes(capital) ||
     parseCapitalKeys(space.offers).includes(capital)
@@ -62,7 +62,7 @@ export function NetworkExchangeView({
   const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const [view, setView] = useState<'map' | 'list'>('map');
   const [query, setQuery] = useState('');
-  const [capital, setCapital] = useState<CapitalKey | null>(null);
+  const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
   const [picked, setPicked] = useState(spaces[0]?.slug ?? '');
   const [shownPairs, setShownPairs] = useState(LIST_PAGE);
   const number = new Intl.NumberFormat(lang);
@@ -110,11 +110,47 @@ export function NetworkExchangeView({
     <div className="@container min-w-0">
       <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <NetworkSectionHeader
+            eyebrow={t('sharingEconomy')}
+            title={t('exchangeTitle')}
+          />
+          <NetworkLiveSearch
+            value={query}
+            onChange={(value) => {
+              setQuery(value);
+              setShownPairs(LIST_PAGE);
+            }}
+            placeholder={t('searchPlaceholder')}
+          />
+          <NetworkCapitalFilters
+            value={capital}
+            onChange={(value) => {
+              setCapital(value);
+              setShownPairs(LIST_PAGE);
+            }}
+            allLabel={t('allSpaces')}
+            labelFor={(key) => t(`capitals.${key}`)}
+          />
+
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <NetworkSectionHeader
-              eyebrow={t('sharingEconomy')}
-              title={t('exchangeTitle')}
-            />
+            <div className="flex gap-1">
+              {(['map', 'list'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={view === option}
+                  onClick={() => setView(option)}
+                  className={cn(
+                    'border px-3 py-1.5 text-1 uppercase tracking-[0.12em]',
+                    view === option
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border text-neutral-11',
+                  )}
+                >
+                  {option === 'map' ? t('exchangeMap') : t('exchangeList')}
+                </button>
+              ))}
+            </div>
             <dl className="flex shrink-0">
               {counts.map((item, index) => (
                 <div
@@ -134,69 +170,6 @@ export function NetworkExchangeView({
                 </div>
               ))}
             </dl>
-          </div>
-
-          <div className="flex gap-1">
-            {(['map', 'list'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={view === option}
-                onClick={() => setView(option)}
-                className={cn(
-                  'border px-3 py-1.5 text-1 uppercase tracking-[0.12em]',
-                  view === option
-                    ? 'border-foreground bg-foreground text-background'
-                    : 'border-border text-neutral-11',
-                )}
-              >
-                {option === 'map' ? t('exchangeMap') : t('exchangeList')}
-              </button>
-            ))}
-          </div>
-
-          <NetworkLiveSearch
-            value={query}
-            onChange={(value) => {
-              setQuery(value);
-              setShownPairs(LIST_PAGE);
-            }}
-            placeholder={t('searchPlaceholder')}
-          />
-
-          <div className="flex flex-wrap gap-1">
-            <button
-              type="button"
-              aria-pressed={capital == null}
-              onClick={() => setCapital(null)}
-              className={cn(
-                'border px-2 py-1 text-1',
-                capital == null
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'border-border text-neutral-11',
-              )}
-            >
-              {t('allSpaces')}
-            </button>
-            {CAPITALS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={capital === key}
-                onClick={() => {
-                  setCapital(key);
-                  setShownPairs(LIST_PAGE);
-                }}
-                className={cn(
-                  'border px-2 py-1 text-1',
-                  capital === key
-                    ? 'border-foreground bg-foreground text-background'
-                    : 'border-border text-neutral-11',
-                )}
-              >
-                {t(`capitals.${key}`)}
-              </button>
-            ))}
           </div>
 
           {view === 'map' ? (

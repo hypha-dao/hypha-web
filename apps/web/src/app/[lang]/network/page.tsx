@@ -20,7 +20,6 @@ import { Suspense } from 'react';
 
 import { NetworkIndexFallback } from './_components/network-index-fallback';
 import { NetworkPageShell } from './_components/network-page-shell';
-import { NetworkPageTitle } from './_components/network-page-title';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -35,7 +34,6 @@ type PageProps = {
 export default function Index(props: PageProps) {
   return (
     <NetworkPageShell>
-      <NetworkPageTitle />
       <Suspense fallback={<NetworkIndexFallback />}>
         <NetworkSpaces {...props} />
       </Suspense>
