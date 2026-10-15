@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
 import { ArrowUpRight, ChevronDown, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -703,9 +703,11 @@ function ShareCard({
 function ActionShareCard({
   lang,
   preferredSlug,
+  kind = 'signal',
 }: {
   lang: Locale;
   preferredSlug: string;
+  kind?: 'signal' | 'need';
 }) {
   const t = useTranslations('NetworkExchange');
   const router = useRouter();
@@ -713,8 +715,9 @@ function ActionShareCard({
   const touched = useRef(false);
   const [spaces, setSpaces] = useState<{ slug: string; title: string }[]>([]);
   const [spaceSlug, setSpaceSlug] = useState('');
-  const [signalType, setSignalType] =
-    useState<NetworkFieldSignalKind>('Opportunity');
+  const [signalType, setSignalType] = useState<NetworkFieldSignalKind>(
+    kind === 'need' ? 'Need' : 'Opportunity',
+  );
   const [text, setText] = useState('');
   const [amount, setAmount] = useState('');
 
@@ -774,10 +777,10 @@ function ActionShareCard({
         className="text-5"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        {t('shareSignalTitle')}
+        {kind === 'need' ? t('shareNeedTitle') : t('shareSignalTitle')}
       </h2>
       <p className="text-1 leading-relaxed text-neutral-11">
-        {t('shareSignalBody')}
+        {kind === 'need' ? t('shareNeedBody') : t('shareSignalBody')}
       </p>
       <select
         value={spaceSlug}
@@ -911,6 +914,9 @@ function ImpactSharedCard({ count }: { count: number }) {
   );
 }
 
+const NETWORK_RIGHT_PANEL_CLASS =
+  'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto @4xl:flex @4xl:w-[380px]';
+
 export function NetworkRightColumn({
   lang,
   variant,
@@ -918,6 +924,7 @@ export function NetworkRightColumn({
   selectedSlug,
   payouts = [],
   impactCount = 0,
+  children,
 }: {
   lang: Locale;
   variant: 'exchange' | 'needs' | 'action' | 'impact';
@@ -925,6 +932,7 @@ export function NetworkRightColumn({
   selectedSlug: string;
   payouts?: NetworkFieldPayout[];
   impactCount?: number;
+  children?: ReactNode;
 }) {
   const tExchange = useTranslations('NetworkExchange');
   const { open } = useHumanChatPanel();
@@ -932,18 +940,17 @@ export function NetworkRightColumn({
     () => spaces.find((space) => space.slug === selectedSlug) ?? spaces[0],
     [selectedSlug, spaces],
   );
-  if (open || (variant !== 'action' && !selected)) return null;
+  if (open) return null;
+  if (variant === 'exchange' && !selected && !children) return null;
   const action = variant === 'action';
   return (
-    <aside
-      className={
-        action
-          ? 'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto @4xl:flex @4xl:w-[380px]'
-          : 'flex min-w-0 flex-col gap-4 lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto'
-      }
-    >
-      {selected && !action ? <SpaceCard lang={lang} space={selected} /> : null}
-      {variant === 'exchange' && selected ? (
+    <aside className={NETWORK_RIGHT_PANEL_CLASS}>
+      {children ? (
+        children
+      ) : selected && !action && variant !== 'needs' ? (
+        <SpaceCard lang={lang} space={selected} />
+      ) : null}
+      {!children && variant === 'exchange' && selected ? (
         <>
           <WeaveCard lang={lang} spaces={spaces} initialSlug={selected.slug} />
           <section className="border border-border p-4">
@@ -965,8 +972,14 @@ export function NetworkRightColumn({
           </section>
         </>
       ) : null}
-      {variant === 'needs' ? <ShareCard lang={lang} kind="need" /> : null}
-      {action ? (
+      {!children && variant === 'needs' ? (
+        <ActionShareCard
+          lang={lang}
+          preferredSlug={selected?.slug ?? selectedSlug}
+          kind="need"
+        />
+      ) : null}
+      {!children && action ? (
         <>
           <ActionShareCard
             lang={lang}
@@ -975,7 +988,7 @@ export function NetworkRightColumn({
           <AllocatedCard lang={lang} payouts={payouts} />
         </>
       ) : null}
-      {variant === 'impact' ? (
+      {!children && variant === 'impact' ? (
         <>
           <ShareCard lang={lang} kind="story" />
           <ImpactSharedCard count={impactCount} />

@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { NetworkRightColumn } from './network-right-cards';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
 type StoryFilter = 'all' | 'picture';
@@ -559,7 +559,6 @@ export function NetworkImpactBoard({
   empty: string;
 }) {
   const t = useTranslations('NetworkExchange');
-  const { open } = useHumanChatPanel();
   const memberSpaces = useMemberSpaces();
   const [query, setQuery] = useState('');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
@@ -606,126 +605,134 @@ export function NetworkImpactBoard({
   }, [memberSpaces, signals]);
 
   return (
-    <div className="network-side-grid grid min-w-0 items-start gap-3">
-      <div className="flex min-w-0 flex-col gap-4">
-        <header>
-          <p className="mb-2 text-[10px] font-bold uppercase text-foreground">
-            {t('storiesFromTheField')}
-          </p>
-          <h1
-            className="text-3xl font-semibold leading-tight sm:text-4xl"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {t('impactTitle')}
-          </h1>
-        </header>
-        <form
-          className="flex h-12 border border-border bg-background"
-          onSubmit={(event) => event.preventDefault()}
-        >
-          <label className="flex min-w-0 flex-1 items-center gap-3 px-4">
-            <Search className="size-4 shrink-0 text-neutral-11" aria-hidden />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('searchPlaceholder')}
-              aria-label={t('searchPlaceholder')}
-              className="min-w-0 flex-1 bg-transparent text-2 outline-none placeholder:text-neutral-11"
-            />
-          </label>
-          <button
-            type="submit"
-            className="border-l border-border px-4 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-11"
-          >
-            {t('search')}
-          </button>
-        </form>
-        <div
-          className="flex flex-wrap gap-1 sm:flex-nowrap sm:overflow-x-auto"
-          role="group"
-          aria-label={t('allSpaces')}
-        >
-          <Chip selected={capital === 'all'} onClick={() => setCapital('all')}>
-            {t('allSpaces')}
-          </Chip>
-          {CAPITALS.map((key) => (
-            <Chip
-              key={key}
-              selected={capital === key}
-              onClick={() => setCapital(key)}
+    <div className="@container min-w-0">
+      <div className="flex min-w-0 flex-col gap-3 @4xl:flex-row @4xl:items-start">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <header>
+            <p className="mb-2 text-[10px] font-bold uppercase text-foreground">
+              {t('storiesFromTheField')}
+            </p>
+            <h1
+              className="text-3xl font-semibold leading-tight sm:text-4xl"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
             >
-              {t(`capitals.${key}`)}
+              {t('impactTitle')}
+            </h1>
+          </header>
+          <form
+            className="flex h-12 border border-border bg-background"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <label className="flex min-w-0 flex-1 items-center gap-3 px-4">
+              <Search className="size-4 shrink-0 text-neutral-11" aria-hidden />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t('searchPlaceholder')}
+                aria-label={t('searchPlaceholder')}
+                className="min-w-0 flex-1 bg-transparent text-2 outline-none placeholder:text-neutral-11"
+              />
+            </label>
+            <button
+              type="submit"
+              className="border-l border-border px-4 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-11"
+            >
+              {t('search')}
+            </button>
+          </form>
+          <div
+            className="flex flex-wrap gap-1 sm:flex-nowrap sm:overflow-x-auto"
+            role="group"
+            aria-label={t('allSpaces')}
+          >
+            <Chip
+              selected={capital === 'all'}
+              onClick={() => setCapital('all')}
+            >
+              {t('allSpaces')}
             </Chip>
-          ))}
+            {CAPITALS.map((key) => (
+              <Chip
+                key={key}
+                selected={capital === key}
+                onClick={() => setCapital(key)}
+              >
+                {t(`capitals.${key}`)}
+              </Chip>
+            ))}
+          </div>
+          <div
+            className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.12em]"
+            role="group"
+            aria-label={t('impactTitle')}
+          >
+            <button
+              type="button"
+              aria-pressed={story === 'all'}
+              onClick={() => setStory('all')}
+              className={cn(
+                'border px-3 py-1.5',
+                story === 'all'
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-background text-neutral-11',
+              )}
+            >
+              {t('allStories', { count: matched.length })}
+            </button>
+            <button
+              type="button"
+              aria-pressed={story === 'picture'}
+              onClick={() => setStory('picture')}
+              className={cn(
+                'border px-3 py-1.5',
+                story === 'picture'
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-background text-neutral-11',
+              )}
+            >
+              {t('withPicture', { count: pictured })}
+            </button>
+          </div>
+          {visible.length === 0 ? (
+            <p className="text-2 text-neutral-11">
+              {signals.length === 0 ? empty : t('needsFilterEmpty')}
+            </p>
+          ) : (
+            <ul className="grid grid-flow-row-dense auto-rows-[180px] grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {visible.map((signal, index) => {
+                const featured = index % 5 === 0;
+                return (
+                  <li
+                    key={signal.slug}
+                    className={cn(
+                      'min-h-0',
+                      featured && 'md:col-span-2 md:row-span-2',
+                    )}
+                  >
+                    <StoryTile
+                      signal={signal}
+                      featured={featured}
+                      selected={signal.slug === openStory?.slug}
+                      onSelect={() => setOpenSlug(signal.slug)}
+                      videoLabel={t('fieldVideoMark')}
+                      photoLabel={t('photoMomentMark')}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
-        <div
-          className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.12em]"
-          role="group"
-          aria-label={t('impactTitle')}
+        <NetworkRightColumn
+          lang={lang}
+          variant="impact"
+          spaces={[]}
+          selectedSlug=""
         >
-          <button
-            type="button"
-            aria-pressed={story === 'all'}
-            onClick={() => setStory('all')}
-            className={cn(
-              'border px-3 py-1.5',
-              story === 'all'
-                ? 'border-foreground bg-foreground text-background'
-                : 'border-border bg-background text-neutral-11',
-            )}
-          >
-            {t('allStories', { count: matched.length })}
-          </button>
-          <button
-            type="button"
-            aria-pressed={story === 'picture'}
-            onClick={() => setStory('picture')}
-            className={cn(
-              'border px-3 py-1.5',
-              story === 'picture'
-                ? 'border-foreground bg-foreground text-background'
-                : 'border-border bg-background text-neutral-11',
-            )}
-          >
-            {t('withPicture', { count: pictured })}
-          </button>
-        </div>
-        {visible.length === 0 ? (
-          <p className="text-2 text-neutral-11">
-            {signals.length === 0 ? empty : t('needsFilterEmpty')}
-          </p>
-        ) : (
-          <ul className="grid grid-flow-row-dense auto-rows-[180px] grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((signal, index) => {
-              const featured = index % 5 === 0;
-              return (
-                <li
-                  key={signal.slug}
-                  className={cn(
-                    'min-h-0',
-                    featured && 'md:col-span-2 md:row-span-2',
-                  )}
-                >
-                  <StoryTile
-                    signal={signal}
-                    featured={featured}
-                    selected={signal.slug === openStory?.slug}
-                    onSelect={() => setOpenSlug(signal.slug)}
-                    videoLabel={t('fieldVideoMark')}
-                    photoLabel={t('photoMomentMark')}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-      {open ? null : (
-        <aside className="hidden min-w-0 flex-col gap-4 lg:sticky lg:top-[var(--menu-top-height)] lg:flex lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto">
           <PostStoryCard lang={lang} spaces={memberSpaces} />
           <ImpactTokenCard lang={lang} spaces={tokenSpaces} />
-        </aside>
-      )}
+        </NetworkRightColumn>
+      </div>
       <StoryDialog
         lang={lang}
         signal={openStory}
