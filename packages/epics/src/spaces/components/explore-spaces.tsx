@@ -7,10 +7,12 @@ import {
   CATEGORY_GROUPS,
   getCategoryGroupLabel,
   isSpaceArchived,
+  parseCapitalKeys,
   resolveSpaceMapPin,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
   splitTokensByNetworkSpaces,
+  type CapitalKey,
   type NetworkGrowth,
   type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
@@ -23,6 +25,10 @@ import {
   type NetworkMapView,
 } from '../../network-map';
 import { NetworkRanking } from '../../network-exchange';
+import {
+  NetworkCapitalFilters,
+  NetworkSectionHeader,
+} from '../../network-exchange/network-section-header';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
@@ -34,7 +40,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Skeleton } from '@hypha-platform/ui';
+import { Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -163,6 +169,8 @@ export function ExploreSpaces({
   spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
+  const tExchange = useTranslations('NetworkExchange');
+  const [capital, setCapital] = React.useState<CapitalKey | 'all'>('all');
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -189,12 +197,24 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categoryGroups],
   );
 
+  const listedSpaces = React.useMemo(() => {
+    if (capital === 'all') return categoryFilteredSpaces;
+    return categoryFilteredSpaces.filter((space) => {
+      const entry = spaceCapitals?.[String(space.id)];
+      if (!entry) return false;
+      return (
+        parseCapitalKeys(entry.seeks).includes(capital) ||
+        parseCapitalKeys(entry.offers).includes(capital)
+      );
+    });
+  }, [capital, categoryFilteredSpaces, spaceCapitals]);
+
   const {
     filteredSpaces: selectedSpaces,
     privateSpaces,
     isLoading: isFilterLoading,
   } = useFilterSpacesListWithDiscoverability({
-    spaces: categoryFilteredSpaces,
+    spaces: listedSpaces,
     useGeneralState: true,
     excludeSpaceLevelFromNetwork: true,
   });
@@ -374,46 +394,52 @@ export function ExploreSpaces({
           />
         }
         trailing={
-          view === 'map' || view === 'overview' ? (
-            <NetworkAddLocationButton
+          <div className="flex min-w-0 items-center gap-2">
+            <CreateSpaceButton
               lang={lang}
-              spaces={spaces}
               isAuthenticated={isAuthenticated}
-              className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
+              className="min-w-0 shrink-0"
+              buttonClassName={spaceToolbarPrimaryButtonClassName}
             />
-          ) : undefined
+            {view === 'map' || view === 'overview' ? (
+              <NetworkAddLocationButton
+                lang={lang}
+                spaces={spaces}
+                isAuthenticated={isAuthenticated}
+                className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
+              />
+            ) : null}
+          </div>
         }
       />
     ),
     [lang, spaces, isAuthenticated, view, setView],
   );
 
-  const categoryFilters = (
-    <div className="flex flex-wrap justify-center gap-2">
-      {tags.map((tag) => {
-        const isSelected = categoryGroups?.includes(tag.id) ?? false;
-        return (
-          <Badge
-            key={tag.id}
-            variant="outline"
-            colorVariant={isSelected ? 'accent' : 'neutral'}
-            size={1}
-            className={cn(
-              'craft-chip craft-chip-interactive shrink-0 cursor-pointer',
-              isSelected &&
-                'border-accent-8/55 bg-accent-2/35 text-foreground hover:bg-accent-3/40',
-            )}
-            onClick={() => {
-              const nextCategoryGroups = isSelected ? [] : [tag.id];
-              setCategoryGroups(nextCategoryGroups);
-            }}
-          >
-            {tag.label}
-          </Badge>
-        );
-      })}
-    </div>
-  );
+  const categoryFilters =
+    tags.length === 0 ? null : (
+      <div className="flex flex-wrap gap-1" role="group" aria-label={t('all')}>
+        {tags.map((tag) => {
+          const isSelected = categoryGroups?.includes(tag.id) ?? false;
+          return (
+            <button
+              key={tag.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => setCategoryGroups(isSelected ? [] : [tag.id])}
+              className={cn(
+                'shrink-0 border px-2.5 py-1 text-1',
+                isSelected
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-background text-neutral-11',
+              )}
+            >
+              {tag.label}
+            </button>
+          );
+        })}
+      </div>
+    );
 
   const showSortControl =
     !enableNetworkMap || view === 'list' || view === 'overview';
@@ -421,21 +447,19 @@ export function ExploreSpaces({
   const showSpacesList = view === 'list' || view === 'overview';
   const showRanking = !enableNetworkMap || view === 'ranking';
 
-  const searchActionsRow = (
-    <div className="flex w-full min-w-0 flex-row items-center gap-3">
-      <SpaceSearch value={query} className="min-w-0 flex-1" />
-      <CreateSpaceButton
-        lang={lang}
-        isAuthenticated={isAuthenticated}
-        className="min-w-0 shrink-0"
-        buttonClassName={spaceToolbarPrimaryButtonClassName}
-      />
-    </div>
-  );
-
   const sharedHeader = (
-    <div className="mb-6 flex flex-col gap-4">
-      {searchActionsRow}
+    <div className="flex flex-col gap-4">
+      <NetworkSectionHeader
+        eyebrow={t('manySpaces').replace(/,\s*$/, '')}
+        title={t('oneVibrantNetwork')}
+      />
+      <SpaceSearch value={query} className="w-full min-w-0" />
+      <NetworkCapitalFilters
+        value={capital}
+        onChange={setCapital}
+        allLabel={tExchange('allSpaces')}
+        labelFor={(key) => tExchange(`capitals.${key}`)}
+      />
       {categoryFilters}
     </div>
   );
@@ -496,14 +520,14 @@ export function ExploreSpaces({
     ) : null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-9">
+    <div className="@container min-w-0">
       <div
         className={cn(
-          'grid min-w-0 items-start',
-          sidePanel ? 'network-side-grid gap-6' : 'gap-6',
+          'flex min-w-0 flex-col gap-4',
+          sidePanel && '@4xl:flex-row @4xl:items-start',
         )}
       >
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
           {sharedHeader}
 
           {enableNetworkMap ? (
@@ -535,7 +559,13 @@ export function ExploreSpaces({
             </>
           ) : (
             <>
-              <div className="mb-6">
+              <CreateSpaceButton
+                lang={lang}
+                isAuthenticated={isAuthenticated}
+                className="w-fit"
+                buttonClassName={spaceToolbarPrimaryButtonClassName}
+              />
+              <div>
                 <NetworkRanking
                   lang={lang}
                   ranks={networkRanks}
@@ -547,7 +577,9 @@ export function ExploreSpaces({
             </>
           )}
         </div>
-        {sidePanel}
+        {sidePanel ? (
+          <div className="w-full shrink-0 @4xl:w-[380px]">{sidePanel}</div>
+        ) : null}
       </div>
     </div>
   );

@@ -132,7 +132,7 @@ export function NetworkNeedsBoard({
 
   return (
     <div className="@container min-w-0">
-      <div className="flex min-w-0 flex-col items-start gap-4 @4xl:flex-row @4xl:items-start">
+      <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <NetworkSectionHeader
             eyebrow={t('readFromSignals')}
