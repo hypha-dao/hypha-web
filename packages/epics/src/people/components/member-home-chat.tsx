@@ -214,6 +214,16 @@ function messageText(message: HomeMessage) {
     .trim();
 }
 
+/** One line of copy: no break, and at most one sentence-ending mark. */
+function homeTextIsOneLine(text: string) {
+  if (text.includes('\n')) return false;
+  return (text.match(/[.!?]/g)?.length ?? 0) <= 1;
+}
+
+/** From `lg`: ~3/4 of the screen, inset in the main pane, capped at 72rem. */
+const HOME_CHAT_COLUMN =
+  'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
+
 /** A decision stays with the member. Drop narration and any ask for their choice. */
 function straightforwardHomeText(text: string) {
   const steers = (sentence: string) =>
@@ -728,7 +738,7 @@ export function MemberHomeChat({
         className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto"
         aria-label={t('conversation')}
       >
-        <div className="mx-auto grid w-full max-w-3xl gap-4 px-4 py-4">
+        <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-4 py-4')}>
           <MemberHomeActivationCard
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
@@ -772,6 +782,10 @@ export function MemberHomeChat({
               (!message.metadata?.homeArrival && Boolean(text)) || keepsCard;
             if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
+            const oneLine =
+              text.length > 0 &&
+              (mine || (!board && !pinnedItem)) &&
+              homeTextIsOneLine(text);
             const memberName =
               [intelligence.person.name, intelligence.person.surname]
                 .filter(Boolean)
@@ -786,18 +800,13 @@ export function MemberHomeChat({
                     className={cn(
                       'flex gap-3',
                       mine ? 'justify-end' : 'justify-start',
+                      oneLine ? 'items-center' : 'items-start',
                     )}
                   >
-                    {mine ? (
-                      <PersonAvatar
-                        avatarSrc={intelligence.person.avatarUrl ?? undefined}
-                        userName={memberName}
-                        size="md"
-                        shape="circle"
-                        className="mt-0.5 shrink-0"
+                    {mine ? null : (
+                      <MemberHomeMark
+                        className={cn('h-8 w-8 shrink-0', !oneLine && 'mt-0.5')}
                       />
-                    ) : (
-                      <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
                     )}
                     <div
                       className={cn(
@@ -847,6 +856,15 @@ export function MemberHomeChat({
                         />
                       ) : null}
                     </div>
+                    {mine ? (
+                      <PersonAvatar
+                        avatarSrc={intelligence.person.avatarUrl ?? undefined}
+                        userName={memberName}
+                        size="md"
+                        shape="circle"
+                        className={cn('shrink-0', !oneLine && 'mt-0.5')}
+                      />
+                    ) : null}
                   </article>
                 ) : null}
                 {attached.map((widget) => (
@@ -878,7 +896,7 @@ export function MemberHomeChat({
       </div>
 
       {visibleError ? (
-        <div className="mx-auto mb-2 w-full max-w-3xl px-4">
+        <div className={cn(HOME_CHAT_COLUMN, 'mb-2 px-4')}>
           <div className="border border-border bg-background-2 px-3 py-2 text-2">
             <p>{t('threadDropped')}</p>
             <div className="mt-2 flex gap-2">
@@ -915,7 +933,7 @@ export function MemberHomeChat({
         </div>
       ) : null}
 
-      <div className="mx-auto w-full min-w-0 max-w-3xl shrink-0 pb-3">
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
         <div className="mb-6 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {chips.map((chip) => (
             <Button
