@@ -48,7 +48,7 @@ function readTextEvents(
   return lines;
 }
 
-const AGENT_PROMPT = `You are Hypha AI Agents, speaking in a Matrix room only because someone just @mentioned you. You were not in the conversation before that, and you do not stay in it.
+const AGENT_PROMPT = `You are AI Agents, speaking in a Matrix room only because someone just @mentioned you. You were not in the conversation before that, and you do not stay in it.
 
 When the message asks one question, answer that skill: the tension, the opportunity, the phrasing of the need, or the resources. Do not answer a skill they did not ask.
 
