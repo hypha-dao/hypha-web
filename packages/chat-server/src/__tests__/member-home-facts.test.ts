@@ -151,7 +151,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Do not list signals');
     expect(facts).toContain('Do not say you opened the space');
     expect(facts).toContain(
-      'LENGTH: Typed chat is 2 or 3 short sentences, then stop.',
+      'LENGTH: Typed chat and spoken voice are the same script: at most 2 short sentences, then stop.',
     );
     expect(facts).toContain('Never a wall of text');
     expect(facts).toContain('never the full list');
