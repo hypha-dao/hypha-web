@@ -25,8 +25,14 @@ import {
   type NamedRoomSnapshot,
 } from '@hypha-platform/core/client';
 
+import {
+  presenceFromMatrixStatus,
+  presenceRank,
+  type PresenceLevel,
+} from './member-presence';
 import { PersonAvatar } from './person-avatar';
 import { isPersonRole, PersonRoleBadge } from './person-badges';
+import { PresenceDot } from './presence-dot';
 
 type ClosestPerson = MemberIntelligence['connections'][number];
 
@@ -89,25 +95,26 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
   return { conversations, named };
 }
 
-function sameIds(left: Set<number>, right: Set<number>) {
-  if (left.size !== right.size) return false;
-  for (const id of left) {
-    if (!right.has(id)) return false;
-  }
-  return true;
-}
-
-/** Matrix presence `online` is set while the Hypha client is signed in. */
-async function isSignedInNow(
+async function readPresenceLevel(
   client: MatrixClient,
   matrixUserId: string,
-): Promise<boolean> {
+): Promise<PresenceLevel> {
   try {
-    const status = await client.getPresence(matrixUserId);
-    return status.presence === 'online' || Boolean(status.currently_active);
+    return presenceFromMatrixStatus(await client.getPresence(matrixUserId));
   } catch {
-    return false;
+    return 'offline';
   }
+}
+
+function samePresence(
+  left: Map<number, PresenceLevel>,
+  right: Map<number, PresenceLevel>,
+) {
+  if (left.size !== right.size) return false;
+  for (const [id, level] of left) {
+    if (right.get(id) !== level) return false;
+  }
+  return true;
 }
 
 export function MemberHomeClosest({
@@ -122,7 +129,10 @@ export function MemberHomeClosest({
   const [messageCounts, setMessageCounts] = useState<Map<number, number>>(
     () => new Map(),
   );
-  const [onlineIds, setOnlineIds] = useState<Set<number> | null>(null);
+  const [presenceById, setPresenceById] = useState<Map<
+    number,
+    PresenceLevel
+  > | null>(null);
   const [openingId, setOpeningId] = useState<number | null>(null);
   const openingRef = useRef(false);
   const personIds = useMemo(() => people.map((person) => person.id), [people]);
@@ -170,8 +180,8 @@ export function MemberHomeClosest({
   useEffect(() => {
     const client = matrix.client;
     if (personIds.length === 0) {
-      setOnlineIds((current) =>
-        current && current.size === 0 ? current : new Set(),
+      setPresenceById((current) =>
+        current && current.size === 0 ? current : new Map(),
       );
       return;
     }
@@ -183,17 +193,20 @@ export function MemberHomeClosest({
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         void (async () => {
-          const next = new Set<number>();
+          const next = new Map<number, PresenceLevel>();
           await Promise.all(
             personIds.map(async (personId) => {
               const matrixUserId = personIdToMatrixUserId[personId];
-              if (!matrixUserId) return;
-              if (await isSignedInNow(client, matrixUserId)) next.add(personId);
+              if (!matrixUserId) {
+                next.set(personId, 'offline');
+                return;
+              }
+              next.set(personId, await readPresenceLevel(client, matrixUserId));
             }),
           );
           if (cancelled) return;
-          setOnlineIds((current) =>
-            current && sameIds(current, next) ? current : next,
+          setPresenceById((current) =>
+            current && samePresence(current, next) ? current : next,
           );
         })();
       }, 250);
@@ -216,38 +229,50 @@ export function MemberHomeClosest({
     personIds,
   ]);
 
-  const onlinePeople = useMemo(
-    () =>
-      onlineIds ? people.filter((person) => onlineIds.has(person.id)) : [],
-    [onlineIds, people],
-  );
+  const aroundPeople = useMemo(() => {
+    if (!presenceById) return [];
+    return people
+      .filter((person) => {
+        const level = presenceById.get(person.id) ?? 'offline';
+        return level === 'active' || level === 'idle';
+      })
+      .sort((left, right) => {
+        const byPresence =
+          presenceRank(presenceById.get(left.id) ?? 'offline') -
+          presenceRank(presenceById.get(right.id) ?? 'offline');
+        if (byPresence !== 0) return byPresence;
+        return (
+          (messageCounts.get(right.id) ?? 0) - (messageCounts.get(left.id) ?? 0)
+        );
+      });
+  }, [messageCounts, people, presenceById]);
   const ranked = useMemo(
-    () => rankClosestContributors(onlinePeople, messageCounts, VISIBLE_PEOPLE),
-    [messageCounts, onlinePeople],
+    () => rankClosestContributors(aroundPeople, messageCounts, VISIBLE_PEOPLE),
+    [aroundPeople, messageCounts],
   );
   const visiblePeople = useMemo(() => {
     const seen = new Set(ranked.people.map((person) => person.id));
     const filled = [...ranked.people];
-    for (const person of onlinePeople) {
+    for (const person of aroundPeople) {
       if (filled.length >= VISIBLE_PEOPLE) break;
       if (seen.has(person.id)) continue;
       filled.push(person);
       seen.add(person.id);
     }
     return filled;
-  }, [onlinePeople, ranked.people]);
+  }, [aroundPeople, ranked.people]);
 
   const label = t('sensingAround');
-  const rest = Math.max(0, onlinePeople.length - visiblePeople.length);
+  const rest = Math.max(0, aroundPeople.length - visiblePeople.length);
 
-  if (onlineIds != null && ranked.people.length === 0) return null;
+  if (presenceById != null && ranked.people.length === 0) return null;
 
   return (
     <nav aria-label={label} className="mt-1 min-w-0 max-w-full pb-3">
       <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {label}
       </p>
-      {onlineIds == null ? (
+      {presenceById == null ? (
         <div className="mt-2 flex gap-2" aria-hidden>
           {Array.from({ length: VISIBLE_PEOPLE }, (_, index) => (
             <span
@@ -269,6 +294,7 @@ export function MemberHomeClosest({
                   })}`
                 : name;
             const opening = openingId === person.id;
+            const presence = presenceById.get(person.id) ?? 'offline';
             const portrait = (
               <span className="relative inline-flex">
                 <span
@@ -284,11 +310,7 @@ export function MemberHomeClosest({
                     shape="circle"
                   />
                 </span>
-                <span
-                  aria-hidden
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full bg-success-9 ring-2 ring-background"
-                  style={{ width: 8, height: 8 }}
-                />
+                <PresenceDot level={presence} size="sm" />
               </span>
             );
 
