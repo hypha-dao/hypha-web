@@ -9,10 +9,12 @@ import {
   CAPITALS,
   EXCHANGE_CAPITALS_DRAFT_KEY,
   NETWORK_FIELD_KINDS,
+  useAttachmentUpload,
+  useJwt,
+  useMe,
   type CapitalKey,
   type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
-import { useAttachmentUpload, useJwt } from '@hypha-platform/core/client';
 import { AddAttachment, Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { getLegacyCreateSpacePath } from '../common/get-path-function';
@@ -43,6 +45,19 @@ const CAPITAL_MARK: Record<CapitalKey, string> = {
 };
 
 type Kind = 'project' | 'funder' | 'signal' | 'agreement' | 'story';
+type Persona = 'member' | 'builder' | 'investor';
+
+/** Investor is the funder. Each persona only sees the actions that fit how they show up. */
+const KINDS_FOR_PERSONA: Record<Persona, readonly Kind[]> = {
+  member: ['signal', 'story'],
+  builder: ['project', 'signal', 'agreement', 'story'],
+  investor: ['funder', 'agreement'],
+};
+
+function personaOf(value: string | null | undefined): Persona {
+  if (value === 'builder' || value === 'investor') return value;
+  return 'member';
+}
 type StoryMedia = 'photo' | 'video' | 'voice';
 type MemberSpace = { slug: string; title: string };
 type Party = { slug: string; offers: CapitalKey[] };
@@ -71,6 +86,9 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const tSignals = useTranslations('CoherenceTab');
   const router = useRouter();
   const { jwt } = useJwt();
+  const { person, isLoading: isLoadingMe } = useMe();
+  const persona = personaOf(person?.primaryOrientation);
+  const allowedKinds = KINDS_FOR_PERSONA[persona];
   const { upload: uploadSignalMedia } = useAttachmentUpload({
     authorizationToken: jwt ?? undefined,
   });
@@ -98,16 +116,11 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!jwt) return;
+    const slug = person?.slug;
+    if (!jwt || !slug) return;
     let cancelled = false;
     void (async () => {
-      const me = await fetch('/api/v1/people/me', {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (!me.ok) return;
-      const person = (await me.json()) as { slug?: string };
-      if (!person.slug) return;
-      const list = await fetch(`/api/v1/people/${person.slug}/spaces`, {
+      const list = await fetch(`/api/v1/people/${slug}/spaces`, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       if (!list.ok) return;
@@ -129,7 +142,13 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
     return () => {
       cancelled = true;
     };
-  }, [jwt]);
+  }, [jwt, person?.slug]);
+
+  useEffect(() => {
+    if (isLoadingMe || allowedKinds.includes(kind)) return;
+    const next = allowedKinds[0];
+    if (next) setKind(next);
+  }, [allowedKinds, isLoadingMe, kind]);
 
   const chips = (
     selected: CapitalKey[],
@@ -270,21 +289,18 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
   const canPropose =
     Boolean(firstParty?.slug) &&
     /^[a-z0-9_-]{1,80}$/i.test(firstParty?.slug ?? '');
+  const visibleCards = cards.filter((card) => allowedKinds.includes(card.id));
+
+  if (isLoadingMe) {
+    return (
+      <div className="@container mx-auto w-full max-w-4xl" aria-busy="true" />
+    );
+  }
 
   return (
     <div className="@container mx-auto grid w-full max-w-4xl gap-4">
       <div className="grid gap-3 @min-[36rem]:grid-cols-2">
-        {cards.slice(0, 2).map((card) => (
-          <CreateCard
-            key={card.id}
-            card={card}
-            selected={kind === card.id}
-            onSelect={() => setKind(card.id)}
-          />
-        ))}
-      </div>
-      <div className="grid gap-3 @min-[36rem]:grid-cols-3">
-        {cards.slice(2).map((card) => (
+        {visibleCards.map((card) => (
           <CreateCard
             key={card.id}
             card={card}
@@ -310,24 +326,27 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
                   : t('shareProjectForm')}
               </p>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {(['project', 'funder'] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={kind === option}
-                  onClick={() => setKind(option)}
-                  className={cn(
-                    'border px-2 py-1 text-1',
-                    kind === option
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border text-neutral-11',
-                  )}
-                >
-                  {option === 'project' ? t('projectKind') : t('funderKind')}
-                </button>
-              ))}
-            </div>
+            {allowedKinds.includes('project') &&
+            allowedKinds.includes('funder') ? (
+              <div className="flex flex-wrap gap-1">
+                {(['project', 'funder'] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={kind === option}
+                    onClick={() => setKind(option)}
+                    className={cn(
+                      'border px-2 py-1 text-1',
+                      kind === option
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border text-neutral-11',
+                    )}
+                  >
+                    {option === 'project' ? t('projectKind') : t('funderKind')}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <Input
               value={name}
               maxLength={80}
