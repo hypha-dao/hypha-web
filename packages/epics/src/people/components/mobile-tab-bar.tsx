@@ -7,6 +7,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
+  ArrowLeftRight,
   ClipboardList,
   Earth,
   Globe2,
@@ -187,6 +188,12 @@ export function MobileTabBar({
         href: base,
         icon: Earth,
         exact: true,
+      },
+      {
+        key: 'exchange',
+        label: tNetwork('navExchange'),
+        href: `${base}/exchange`,
+        icon: ArrowLeftRight,
       },
       {
         key: 'needs',
