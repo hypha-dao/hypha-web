@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { COHERENCE_TYPES } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 
 import './signal-heat-map.css';
 
@@ -127,12 +128,26 @@ function HeatField({ signals, ink }: { signals: HeatSignal[]; ink: string }) {
   );
 }
 
+/** Columns that fill the row for 1–6 maps. No empty grey cells. */
+function heatGridClass(count: number) {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2 || count === 4) return 'grid-cols-1 sm:grid-cols-2';
+  if (count === 3) return 'grid-cols-1 sm:grid-cols-3';
+  if (count === 5) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6';
+  return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+}
+
+function heatCellClass(count: number, index: number) {
+  if (count !== 5) return undefined;
+  // Six tracks: three of two, then two of three, so both rows fill.
+  if (index < 3) return 'lg:col-span-2';
+  if (index === count - 1) return 'sm:col-span-2 lg:col-span-3';
+  return 'lg:col-span-3';
+}
+
 function HeatSkeleton() {
   return (
-    <div
-      className="grid gap-px bg-border"
-      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))' }}
-    >
+    <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2">
       {Array.from({ length: 2 }, (_, map) => (
         <div key={map} className="bg-background px-4 py-4">
           <div className="h-3 w-20 bg-muted" />
@@ -180,12 +195,11 @@ export function SignalHeatMaps({
     return <p className="px-4 py-4 text-2 text-neutral-11">{empty}</p>;
   }
 
+  const count = groups.length;
+
   return (
-    <div
-      className="grid gap-px bg-border"
-      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))' }}
-    >
-      {groups.map((group) => {
+    <div className={cn('grid gap-px bg-border', heatGridClass(count))}>
+      {groups.map((group, index) => {
         const label = tSignals.has(`types.${group.type}` as 'types.Need')
           ? tSignals(`types.${group.type}` as 'types.Need')
           : group.type;
@@ -193,7 +207,10 @@ export function SignalHeatMaps({
           <Link
             key={group.type}
             href={hrefForType(group.type)}
-            className="bg-background px-4 py-4 hover:bg-foreground/5"
+            className={cn(
+              'bg-background px-4 py-4 hover:bg-foreground/5',
+              heatCellClass(count, index),
+            )}
           >
             <span className="flex items-baseline justify-between gap-3">
               <span className="truncate text-1 uppercase tracking-[0.12em] text-muted-foreground">
