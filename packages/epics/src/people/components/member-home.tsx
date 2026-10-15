@@ -338,7 +338,7 @@ export function MemberHome({
   }, [home]);
 
   return (
-    <div className="@container/home relative isolate -mt-4 flex w-full min-w-0 flex-col pt-4 md:-mt-5 md:pt-5 xl:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem+var(--spacing-5))] xl:min-h-0 xl:overflow-hidden">
+    <div className="@container/home relative isolate -mt-4 flex h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden pt-4 max-xl:-mb-8 md:-mt-5 md:pt-5 xl:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem+var(--spacing-5))]">
       <div className="member-home-banner" aria-hidden>
         <img
           alt=""
@@ -347,10 +347,10 @@ export function MemberHome({
         />
         <div className="member-home-banner-veil" />
       </div>
-      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col @min-[48rem]/home:grid @min-[48rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[48rem]/home:grid-rows-[minmax(0,1fr)] @min-[48rem]/home:overflow-hidden @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:grid @min-[48rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[48rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
         <aside
           aria-label={t('panelSpaces')}
-          className="member-home-pane narrow-scrollbar order-2 col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 border-t border-border px-4 py-4 @max-[47.99rem]/home:flex @min-[68rem]/home:order-none @min-[68rem]/home:flex @min-[68rem]/home:overflow-y-auto @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
+          className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
         >
           <section className="border border-border bg-background">
             <div
@@ -511,7 +511,7 @@ export function MemberHome({
             </div>
           ) : null}
         </aside>
-        <main className="order-1 flex min-h-[calc(100dvh-var(--menu-top-height,4.5rem)-1rem-4rem-env(safe-area-inset-bottom))] min-w-0 flex-1 flex-col @min-[48rem]/home:order-none @min-[48rem]/home:col-start-1 @min-[48rem]/home:row-start-1 @min-[48rem]/home:min-h-0 @min-[48rem]/home:overflow-hidden @min-[68rem]/home:col-start-2">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:col-start-1 @min-[48rem]/home:row-start-1 @min-[68rem]/home:col-start-2">
           <div className="shrink-0 px-4 pt-4">
             <div className="flex min-w-0 items-start gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-3">
