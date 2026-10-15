@@ -45,9 +45,10 @@ describe('buildProposalCreatedContent', () => {
 
     expect(result.requiredTags).toEqual([TAG_SUB_NEW_PROPOSAL_OPEN]);
     expect((result.content.email as { body: string }).body).toContain('Alice');
+    // member push follows the dashboard copy, which names who created it
     expect(
       (result.content.push as { contents: { en: string } }).contents.en,
-    ).not.toContain('Alice');
+    ).toContain('Alice');
   });
 
   it('renders join-request copy when proposalLabel is Invite', () => {

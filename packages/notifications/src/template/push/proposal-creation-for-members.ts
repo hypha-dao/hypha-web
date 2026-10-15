@@ -1,29 +1,30 @@
 import type { Push } from './types';
 import type { ProposalCreationProps } from '../common';
 
+/** Dashboard: "[PUSH] Proposal - Created - for Members". */
 export function pushProposalCreationForMembers({
-  creatorName = 'Someone',
-  proposalState = 'proposal',
+  creatorName,
   proposalLabel,
   proposalTitle,
   spaceTitle,
 }: ProposalCreationProps): Push {
-  const space = spaceTitle ? `"${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle ? `"${proposalTitle}"` : `${proposalState}`;
+  const creator = creatorName?.trim() || 'Someone';
+  const space = spaceTitle?.trim() || 'your space';
 
-  switch (proposalLabel) {
-    case 'Invite':
-      return {
-        headings: { en: 'New join request to one of your spaces' },
-        contents: { en: `${creatorName} created a join request to ${space}.` },
-      };
-
-    default:
-      return {
-        headings: {
-          en: `New ${proposalState} was created in one of your spaces`,
-        },
-        contents: { en: `A new ${proposal} was just created in ${space}.` },
-      };
+  if (proposalLabel === 'Invite') {
+    return {
+      headings: { en: `New join request in ${space}` },
+      contents: { en: `${creator} wants to join ${space}.` },
+    };
   }
+
+  const title = proposalTitle?.trim();
+  return {
+    headings: { en: `New proposal in ${space}` },
+    contents: {
+      en: `${creator} created a new proposal${
+        title ? ` “${title}”` : ''
+      }. Have a look and vote.`,
+    },
+  };
 }
