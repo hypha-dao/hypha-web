@@ -123,6 +123,8 @@ export interface ScheduledItemInvitedEvent {
     endsAt: Date;
     timezone: string | null;
     joinUrl: string;
+    /** Notification Centre link for the email footer (same for every recipient). */
+    settingsUrl?: string;
     /** Pre-claimed by the caller's idempotency guard (`dispatch-scheduled-item-invitation.ts`) — only these channels are requested. */
     channels: Array<'email' | 'push'>;
     lang: string;

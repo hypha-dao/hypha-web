@@ -12,6 +12,7 @@ export const buildSignalNoticeContent: ContentBuilder<
     actorDisplayName: recipient.data?.actorDisplayName as string | undefined,
     dueAt: event.payload.dueAt ?? (recipient.data?.dueAt as string | null),
     url: (recipient.data?.url as string) ?? '#',
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
   });
 
   return {
@@ -21,6 +22,7 @@ export const buildSignalNoticeContent: ContentBuilder<
       email: {
         kind: 'plain',
         subject: email.subject,
+        preheader: email.preheader,
         body: email.body,
       },
     },

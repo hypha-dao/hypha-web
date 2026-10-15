@@ -9,4 +9,7 @@ export * from './bank-email-confirmation';
 export * from './bank-kyb-onboarding';
 export * from './chat-mention';
 
+export * from './signal-emails';
+export * from './scheduled-item-invitation';
+
 export type * from './types';
