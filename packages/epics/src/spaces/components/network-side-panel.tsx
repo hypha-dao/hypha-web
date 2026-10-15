@@ -198,10 +198,12 @@ export function NetworkSidePanel({
 
   const openSpaceRoom = () => {
     if (!focusedSlug) return;
+    // Empty coherence slug: open the space Matrix room as chat, not a signal
+    // thread (Signal Team / turn-into-proposal chrome).
     openCoherenceChat(
       focusedRoomId,
       focusedTitle,
-      focusedSlug,
+      '',
       focusedDescription,
       focusedSlug,
     );

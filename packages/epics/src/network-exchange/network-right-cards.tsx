@@ -394,7 +394,7 @@ function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
             openCoherenceChat(
               space.chatRoomId as string,
               space.title,
-              space.slug,
+              '',
               space.description,
               space.slug,
             );

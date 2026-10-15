@@ -248,7 +248,7 @@ export function HumanSidebarTrigger() {
             openCoherenceChat(
               focusedSpaceChat.roomId,
               focusedSpaceChat.title,
-              focusedSpaceChat.slug,
+              '',
               focusedSpaceChat.description,
               focusedSpaceChat.slug,
             );

@@ -49,7 +49,7 @@ export function NetworkRanking({
     openCoherenceChat(
       space.chatRoomId,
       space.spaceTitle,
-      space.spaceSlug,
+      '',
       null,
       space.spaceSlug,
     );
