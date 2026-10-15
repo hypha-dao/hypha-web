@@ -4,17 +4,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { Address, Space, useMe } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { getDhoSpaceContextPath } from '../../common/get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../../common/get-root-space';
 import { useMemberWeb3SpaceIds } from '../hooks/use-member-web3-space-ids';
-import { SpaceCardWithDiscoverability } from './space-card-with-discoverability';
+import { resolveSpaceDisplayLogoUrl } from '../utils/resolve-space-display-logo-url';
+import { SpaceSwitcherOption } from './space-switcher-option';
 
 /**
- * My Spaces sheet for mobile: search, the current ecosystem first, then the
- * rest — as cards, same shape as My Spaces / Network.
+ * The same My Spaces list as the desktop space switcher: search, the current
+ * ecosystem first, then the rest.
  */
 export function MySpacesSwitcherMenu({
   open,
@@ -27,6 +29,7 @@ export function MySpacesSwitcherMenu({
 }) {
   const tNavigation = useTranslations('Navigation');
   const tSpaces = useTranslations('Spaces');
+  const { resolvedTheme } = useTheme();
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
@@ -102,6 +105,7 @@ export function MySpacesSwitcherMenu({
   }, [groupedSpaces, normalizedSearch]);
   const hasFilteredSpaces =
     filtered.ecosystem.length + filtered.others.length > 0;
+  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
 
   useEffect(() => {
     if (open) return;
@@ -117,65 +121,58 @@ export function MySpacesSwitcherMenu({
     return () => cancelAnimationFrame(rafId);
   }, [open]);
 
-  const getHref = (slug: string) =>
-    getDhoSpaceContextPath({
-      pathname,
-      lang,
-      spaceSlug: slug,
-    }) ?? `/${lang}/dho/${slug}/agreements`;
-
-  const renderSpace = (space: Space) =>
-    space.slug ? (
-      <div key={space.id} className="flex h-full flex-col">
-        <SpaceCardWithDiscoverability
-          space={space}
-          getHref={getHref}
-          onNavigate={onSelect}
-        />
-      </div>
-    ) : null;
+  const renderSpace = (space: Space) => (
+    <SpaceSwitcherOption
+      key={space.id}
+      href={
+        getDhoSpaceContextPath({
+          pathname,
+          lang,
+          spaceSlug: space.slug,
+        }) ?? `/${lang}/dho/${space.slug}/agreements`
+      }
+      title={space.title}
+      iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
+      onClick={onSelect}
+      className="rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-background-4/70"
+    />
+  );
 
   return (
     <div
       className={cn('flex h-full min-h-0 flex-col bg-background-2', className)}
     >
-      <div className="shrink-0 border-b border-border/70 bg-background-3 px-3 pb-2 pt-2">
-        <p className="px-1 py-1.5 text-1 text-muted-foreground">
+      <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">
+        <p className="px-2 py-1.5 text-1 text-muted-foreground">
           {tNavigation('mySpaces')}
         </p>
-        <input
-          ref={searchInputRef}
-          type="text"
-          value={spaceSearch}
-          onChange={(event) => setSpaceSearch(event.target.value)}
-          placeholder={tSpaces('search')}
-          className="h-9 w-full rounded-lg border border-border/60 bg-background-2 px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
-          aria-label={tSpaces('search')}
-        />
+        <div className="px-1">
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={spaceSearch}
+            onChange={(event) => setSpaceSearch(event.target.value)}
+            placeholder={tSpaces('search')}
+            className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+            aria-label={tSpaces('search')}
+          />
+        </div>
       </div>
-      <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto p-1.5">
         {isAllSpacesLoading ? null : !hasFilteredSpaces || allSpacesError ? (
-          <p className="px-1 py-2 text-sm text-muted-foreground">
+          <p className="px-2 py-1.5 text-sm text-muted-foreground">
             {normalizedSearch || allSpacesError
               ? tSpaces('noSpacesFound')
               : activeSpace?.title?.trim() || tSpaces('noSpacesFound')}
           </p>
         ) : (
-          <div className="flex flex-col gap-4">
-            {filtered.ecosystem.length > 0 ? (
-              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-3">
-                {filtered.ecosystem.map(renderSpace)}
-              </div>
-            ) : null}
+          <>
+            {filtered.ecosystem.map(renderSpace)}
             {filtered.ecosystem.length > 0 && filtered.others.length > 0 ? (
-              <div className="h-px bg-border/70" />
+              <div className="my-1 h-px bg-border/70" />
             ) : null}
-            {filtered.others.length > 0 ? (
-              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-3">
-                {filtered.others.map(renderSpace)}
-              </div>
-            ) : null}
-          </div>
+            {filtered.others.map(renderSpace)}
+          </>
         )}
       </div>
     </div>
