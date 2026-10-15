@@ -44,6 +44,14 @@ export function useAiPanel() {
 
 // ─── Human Chat Panel Context ────────────────────────────────────────────────
 
+/** Space picked on the network map, so the header chat icon can open its room. */
+export type FocusedSpaceChat = {
+  roomId: string | null;
+  title: string;
+  slug: string;
+  description: string | null;
+};
+
 export type HumanChatPanelContextValue = {
   open: boolean;
   toggle: () => void;
@@ -55,6 +63,9 @@ export type HumanChatPanelContextValue = {
   unreadMentionCount: number;
   /** Publish unread mention count from the mounted chat panel. */
   setUnreadMentionCount: (count: number) => void;
+  /** Space currently selected on the network. Null when no card is open. */
+  focusedSpaceChat: FocusedSpaceChat | null;
+  setFocusedSpaceChat: (space: FocusedSpaceChat | null) => void;
   // Coherence mode
   mode: 'space' | 'coherence';
   coherenceRoomId: string | null;
@@ -80,6 +91,8 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   closeHumanChatPanel: () => {},
   unreadMentionCount: 0,
   setUnreadMentionCount: () => {},
+  focusedSpaceChat: null,
+  setFocusedSpaceChat: () => {},
   mode: 'space',
   coherenceRoomId: null,
   coherenceTitle: null,
@@ -117,10 +130,29 @@ export function HumanChatPanelProvider({
     null,
   );
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
+  const [focusedSpaceChat, setFocusedSpaceChatState] =
+    useState<FocusedSpaceChat | null>(null);
 
   const setUnreadMentionCount = useCallback((count: number) => {
     const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
     setUnreadMentionCountState((prev) => (prev === next ? prev : next));
+  }, []);
+
+  const setFocusedSpaceChat = useCallback((next: FocusedSpaceChat | null) => {
+    setFocusedSpaceChatState((prev) => {
+      if (prev === next) return prev;
+      if (
+        prev &&
+        next &&
+        prev.roomId === next.roomId &&
+        prev.title === next.title &&
+        prev.slug === next.slug &&
+        prev.description === next.description
+      ) {
+        return prev;
+      }
+      return next;
+    });
   }, []);
 
   const openCoherenceChat = useCallback(
@@ -169,6 +201,8 @@ export function HumanChatPanelProvider({
         closeHumanChatPanel,
         unreadMentionCount,
         setUnreadMentionCount,
+        focusedSpaceChat,
+        setFocusedSpaceChat,
         mode,
         coherenceRoomId,
         coherenceTitle,

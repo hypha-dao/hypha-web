@@ -198,8 +198,14 @@ export function AiPanelTrigger() {
 }
 
 export function HumanSidebarTrigger() {
-  const { open, toggle, openHumanChatPanel, unreadMentionCount } =
-    useHumanChatPanel();
+  const {
+    open,
+    toggle,
+    openHumanChatPanel,
+    openCoherenceChat,
+    focusedSpaceChat,
+    unreadMentionCount,
+  } = useHumanChatPanel();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const pathname = usePathname();
@@ -237,6 +243,16 @@ export function HumanSidebarTrigger() {
           }
           if (mutuallyExclusive && (leftOpen || overlayVisible)) {
             closeAiPanel();
+          }
+          if (focusedSpaceChat?.slug) {
+            openCoherenceChat(
+              focusedSpaceChat.roomId,
+              focusedSpaceChat.title,
+              focusedSpaceChat.slug,
+              focusedSpaceChat.description,
+              focusedSpaceChat.slug,
+            );
+            return;
           }
           openHumanChatPanel();
         }}
