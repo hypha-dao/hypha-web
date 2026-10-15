@@ -177,3 +177,16 @@ describe('buildChatContent — mention event, plain-message recipient', () => {
     expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
   });
 });
+
+describe('buildChatContent — mention push without a preview', () => {
+  it('names the space like the email preheader does', () => {
+    const noPreview: Recipient = {
+      ...recipient,
+      role: 'chat.mention',
+      data: { ...recipient.data, messagePreview: '' },
+    };
+    const push = buildChatContent(makeEvent('chat.mention'), noPreview).content
+      .push as { contents: { en: string } };
+    expect(push.contents.en).toBe('Alice mentioned you in Hypha Energy.');
+  });
+});

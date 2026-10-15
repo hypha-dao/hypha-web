@@ -100,7 +100,12 @@ export const buildChatContent: ContentBuilder<ChatNotificationEvent> = (
           kind: 'plain',
           headings: { en: heading },
           contents: {
-            en: messagePreview || `${actorDisplayName} mentioned you in chat.`,
+            // same context label as the email preheader (space title, else "chat")
+            en:
+              messagePreview ||
+              `${actorDisplayName} mentioned you in ${
+                spaceTitle?.trim() || 'chat'
+              }.`,
           },
           url,
         },
