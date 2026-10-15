@@ -25,7 +25,9 @@ describe('buildProposalCreatedContent', () => {
     expect(result.channels).toEqual(['push', 'email']);
     expect(result.requiredTags).toEqual(['sub_ownActions']);
     expect(result.content.email).toMatchObject({ kind: 'plain' });
-    // creator copy follows the dashboard template: generic greeting, no name
+    expect((result.content.email as { body: string }).body).toContain(
+      'Hey Alice,',
+    );
     expect((result.content.email as { body: string }).body).toContain(
       'Hypha Energy',
     );

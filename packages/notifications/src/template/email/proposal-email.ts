@@ -24,6 +24,7 @@ export function proposalEmail({
   preheader,
   statementHtml,
   followUps = [],
+  greeting,
   url,
   settingsUrl,
   appUrl,
@@ -32,6 +33,8 @@ export function proposalEmail({
   preheader: string;
   statementHtml: string;
   followUps?: string[];
+  /** Opening line; defaults to the layout's "Hey there,". */
+  greeting?: string;
   url?: string;
   settingsUrl?: string;
   appUrl?: string;
@@ -39,6 +42,7 @@ export function proposalEmail({
   const body = layout({
     title: subject,
     preheader,
+    greeting,
     appUrl,
     contentHtml:
       paragraphHtml(statementHtml) + followUps.map(paragraph).join(''),

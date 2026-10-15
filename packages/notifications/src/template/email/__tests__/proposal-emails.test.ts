@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   emailProposalCreationForMembers,
+  emailProposalCreationForCreator,
   emailProposalExecutionForCreator,
   emailProposalExecutionForMembers,
   emailProposalRejectionForCreator,
@@ -93,6 +94,40 @@ describe('emailProposalExecutionForMembers (dashboard: Proposals - Accepted - fo
     const email = emailProposalExecutionForMembers({});
     expect(email.subject).toBe('A proposal was accepted in your space');
     expect(email.preheader).toBe('See the outcome.');
+  });
+});
+
+describe('emailProposalCreationForCreator (dashboard: Proposals - Created - for creator)', () => {
+  it('greets by name and thanks the creator', () => {
+    const email = emailProposalCreationForCreator({
+      creatorName: 'Alice <A>',
+      proposalTitle: 'Plan',
+      spaceTitle: 'Acme',
+      ...links,
+    });
+    expect(email.subject).toBe('Your proposal has been created in Acme');
+    expect(email.preheader).toBe('Plan');
+    expect(email.body).toContain('Hey Alice &lt;A&gt;,');
+    expect(email.body).toContain(
+      'Your proposal &ldquo;Plan&rdquo; was successfully created in <strong>Acme</strong>! 🌱',
+    );
+    expect(email.body).toContain(
+      'Your contribution helps your space grow and thrive.',
+    );
+  });
+
+  it('renders the invite variant and defaults', () => {
+    const email = emailProposalCreationForCreator({
+      proposalLabel: 'Invite',
+      spaceTitle: 'Acme',
+    });
+    expect(email.subject).toBe('Your invite to join Acme has been created');
+    expect(email.preheader).toBe('Thank you for contributing.');
+    expect(email.body).toContain('Hey there,');
+    expect(email.body).toContain(
+      'Your invite to join <strong>Acme</strong> has been created. 🌱',
+    );
+    expect(email.body).not.toContain('helps your space grow');
   });
 });
 
