@@ -279,7 +279,8 @@
     "errorNamed": "{name}, não foi possível carregar a tua página inicial.",
     "profileUnavailable": "Continuas com sessão iniciada. Não foi possível carregar o teu perfil.",
     "retry": "Tentar outra vez",
-    "sendTokensChoose": "Escolhe um token. Agora: {symbol}."
+    "sendTokensChoose": "Escolhe um token. Agora: {symbol}.",
+    "gotItDone": "Anotado"
   },
   "WelcomeFlow": {
     "offer": {

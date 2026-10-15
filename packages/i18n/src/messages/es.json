@@ -279,7 +279,8 @@
     "errorNamed": "{name}, no se pudo cargar tu inicio.",
     "profileUnavailable": "Sigues con la sesión iniciada. No se pudo cargar tu perfil.",
     "retry": "Intentar de nuevo",
-    "sendTokensChoose": "Elige un token. Ahora: {symbol}."
+    "sendTokensChoose": "Elige un token. Ahora: {symbol}.",
+    "gotItDone": "Entendido"
   },
   "WelcomeFlow": {
     "offer": {
