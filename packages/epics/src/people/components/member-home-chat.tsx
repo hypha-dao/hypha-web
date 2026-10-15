@@ -59,6 +59,8 @@ import {
   MemberHomeSpacesWidgetCard,
 } from './member-home-chat-widgets';
 import type { MemberHomeOpenChat } from './member-home-people';
+import type { PresenceLevel } from './member-presence';
+import { useMemberPresence } from './use-member-presence';
 
 type HomeWidgetKind = 'spaces' | 'people' | 'tokens';
 
@@ -265,15 +267,66 @@ function homeAssistantScript(input: {
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
-function homeMessageNodes(text: string): ReactNode[] {
+type MentionPerson = {
+  id: number;
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+};
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function personMentionLabels(person: MentionPerson): string[] {
+  const labels: string[] = [];
+  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
+  if (full) labels.push(full);
+  const first = person.name?.trim();
+  if (first) labels.push(first);
+  const nick = person.nickname?.trim();
+  if (nick) labels.push(nick);
+  return [...new Set(labels)].sort((left, right) => right.length - left.length);
+}
+
+function homeMessageNodes(
+  text: string,
+  options?: {
+    people?: readonly MentionPerson[];
+    presenceById?: ReadonlyMap<number, PresenceLevel>;
+  },
+): ReactNode[] {
+  const mentions: { label: string; personId: number }[] = [];
+  const seenLabels = new Set<string>();
+  for (const person of options?.people ?? []) {
+    for (const label of personMentionLabels(person)) {
+      if (label.length < 2) continue;
+      const key = label.toLowerCase();
+      if (seenLabels.has(key)) continue;
+      seenLabels.add(key);
+      mentions.push({ label, personId: person.id });
+    }
+  }
+  const mentionPattern =
+    mentions.length > 0
+      ? mentions.map((mention) => escapeRegExp(mention.label)).join('|')
+      : null;
+  const pattern = mentionPattern
+    ? new RegExp(
+        `\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)|(https?:\\/\\/[^\\s)]+)|(${mentionPattern})`,
+        'gi',
+      )
+    : HOME_LINK;
+
   const nodes: ReactNode[] = [];
   let last = 0;
-  for (const match of text.matchAll(HOME_LINK)) {
+  for (const match of text.matchAll(pattern)) {
     const index = match.index ?? 0;
     if (index > last) nodes.push(text.slice(last, index));
     const href = match[2] ?? match[3];
-    const label = match[1] ?? href;
-    if (href && label) {
+    const linkLabel = match[1] ?? href;
+    const mentionLabel = match[4];
+    if (href && linkLabel) {
       nodes.push(
         <a
           key={`${index}-${href}`}
@@ -282,8 +335,34 @@ function homeMessageNodes(text: string): ReactNode[] {
           rel="noopener noreferrer"
           className="text-accent-11 underline underline-offset-4"
         >
-          {label}
+          {linkLabel}
         </a>,
+      );
+    } else if (mentionLabel) {
+      const mention = mentions.find(
+        (entry) => entry.label.toLowerCase() === mentionLabel.toLowerCase(),
+      );
+      const presence =
+        mention && options?.presenceById
+          ? options.presenceById.get(mention.personId) ?? 'offline'
+          : 'offline';
+      const around = presence === 'active' || presence === 'idle';
+      nodes.push(
+        <span
+          key={`${index}-${mentionLabel}`}
+          className="inline-flex items-center gap-1"
+        >
+          <span>{mentionLabel}</span>
+          {around ? (
+            <span
+              aria-hidden
+              className={cn(
+                'inline-block size-1.5 shrink-0 rounded-full',
+                presence === 'active' ? 'bg-success-9' : 'bg-amber-9',
+              )}
+            />
+          ) : null}
+        </span>,
       );
     }
     last = index + match[0].length;
@@ -318,6 +397,11 @@ export function MemberHomeChat({
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
+  const connectionIds = useMemo(
+    () => intelligence.connections.map((person) => person.id),
+    [intelligence.connections],
+  );
+  const { presenceById } = useMemberPresence(connectionIds);
 
   const transport = useMemo(
     () =>
@@ -850,7 +934,10 @@ export function MemberHomeChat({
                             mine && 'text-right',
                           )}
                         >
-                          {homeMessageNodes(text)}
+                          {homeMessageNodes(text, {
+                            people: intelligence.connections,
+                            presenceById,
+                          })}
                         </p>
                       ) : null}
                       {!mine && board ? (
