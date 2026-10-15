@@ -2,8 +2,6 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 
-import { formatMemberHomeFacts } from '../member-home-facts';
-import { loadMemberHomeFacts } from '../load-member-home-facts';
 import { buildSpaceContextSnapshot } from '../presence-brief';
 import {
   buildMemberHomeRealtimeInstructions,
@@ -90,9 +88,11 @@ async function loadVoicePresence(
     if (context.mode === 'space_advisor') {
       return await buildSpaceContextSnapshot(context.spaceSlug, null, token);
     }
+    // Member home: never attach facts here. Chat owns the briefing; stuffing
+    // the queue into Realtime made spoken audio ignore the chat script and
+    // stay stuck on an early signal.
     if (context.mode === 'member_home') {
-      const record = await loadMemberHomeFacts(token);
-      return record ? formatMemberHomeFacts(record.home) : null;
+      return null;
     }
   } catch {
     return null;
