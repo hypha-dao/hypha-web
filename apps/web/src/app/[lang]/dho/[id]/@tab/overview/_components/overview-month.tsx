@@ -62,7 +62,7 @@ export function OverviewMonth({ spaceSlug }: { spaceSlug: string }) {
 
   if (isLoading && events.length === 0) {
     return (
-      <div className="grid gap-4 px-5 pb-5">
+      <div className="grid gap-4">
         {Array.from({ length: 3 }, (_, row) => (
           <div
             key={row}
@@ -87,7 +87,7 @@ export function OverviewMonth({ spaceSlug }: { spaceSlug: string }) {
       {events.map((event) => (
         <li
           key={event.id}
-          className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 border-b border-border/50 px-5 py-3.5 last:border-b-0"
+          className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 border-b border-border/50 py-3.5 last:border-b-0"
         >
           <div>
             <span className="block text-1 text-neutral-11">

@@ -99,7 +99,7 @@ export function SpaceAttention({
   };
 
   return (
-    <section className="border border-border bg-background-2 p-5">
+    <section>
       <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
         {t('nowEyebrow')}
       </p>
