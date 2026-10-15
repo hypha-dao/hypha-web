@@ -405,7 +405,7 @@ export function MobileTabBar({
               setSpacesOpen(false);
               setCreateOpen(false);
             }}
-            icon={<Sparkles className={iconClass} strokeWidth={1.25} />}
+            icon={<House className={iconClass} strokeWidth={1.25} />}
           />
           <TabLink
             href={connectionsHref}
