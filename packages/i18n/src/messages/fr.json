@@ -5133,6 +5133,13 @@
     "open": "Voir plus",
     "signalsEmpty": "Rien d'ouvert.",
     "openCount": "{count} ouverts",
+    "nowEyebrow": "Cet espace",
+    "nowTitle": "A besoin de vous",
+    "nowQuiet": "Rien dans cet espace n'attend de vous.",
+    "nowActionVote": "Voter",
+    "nowActionSignal": "Répondre",
+    "openVotesTitle": "Votes ouverts",
+    "noOpenVotesNow": "Aucun vote n'est ouvert.",
     "calendarEmpty": "Rien à venir.",
     "membersEmpty": "Pas encore de membres.",
     "ecosystemEmpty": "Pas encore d'autres espaces."

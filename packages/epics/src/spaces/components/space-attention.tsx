@@ -57,7 +57,7 @@ export function SpaceAttention({
   lang: Locale;
   spaceSlug: string;
 }) {
-  const t = useTranslations('MemberHome');
+  const t = useTranslations('OverviewOps');
   const tCoherence = useTranslations('CoherenceTab');
   const { jwt } = useJwt();
   const { data, isLoading } = useSWR<MemberIntelligence | null>(
@@ -86,7 +86,6 @@ export function SpaceAttention({
   if (!isLoading && data && !inSpace && queue.length === 0) return null;
 
   const lead = queue[0] ?? null;
-  const rest = queue.slice(1, 5);
 
   const eyebrow = (item: MemberHomeThreadItem) => {
     if (item.category) {
@@ -101,11 +100,14 @@ export function SpaceAttention({
 
   return (
     <section className="border border-border bg-background-2 p-5">
+      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+        {t('nowEyebrow')}
+      </p>
       <h2
-        className="text-3 text-foreground"
+        className="mt-1 text-3 text-foreground"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        {t('useful')}
+        {t('nowTitle')}
       </h2>
       {isLoading ? (
         <div className="mt-4 grid gap-3">
@@ -114,10 +116,17 @@ export function SpaceAttention({
           <div className="h-4 w-full bg-neutral-3" />
         </div>
       ) : lead == null ? (
-        <p className="mt-4 text-2 text-neutral-11">{t('quiet')}</p>
+        <p className="mt-4 text-2 text-neutral-11">{t('nowQuiet')}</p>
       ) : (
         <Link href={itemHref(lang, lead)} className="group mt-4 block">
-          <span className="text-1 text-neutral-11">{eyebrow(lead)}</span>
+          <span className="text-1 uppercase tracking-[0.12em] text-foreground">
+            {lead.kind === 'proposal'
+              ? t('nowActionVote')
+              : t('nowActionSignal')}
+          </span>
+          <span className="mt-2 block text-1 text-neutral-11">
+            {eyebrow(lead)}
+          </span>
           <span
             className="mt-1 block text-5 text-foreground group-hover:underline"
             style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -131,44 +140,6 @@ export function SpaceAttention({
           ) : null}
         </Link>
       )}
-      {rest.length > 0 ? (
-        <div className="mt-5 border-t border-border pt-4">
-          <h3
-            className="text-2 text-foreground"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {t('waiting')}
-          </h3>
-          <ul className="mt-3">
-            {rest.map((item) => {
-              const summary = plainSummary(item.summary);
-              return (
-                <li
-                  key={`${item.kind}:${item.slug}`}
-                  className="border-b border-border/50 py-3 last:border-b-0"
-                >
-                  <Link
-                    href={itemHref(lang, item)}
-                    className="group block min-w-0"
-                  >
-                    <span className="text-1 text-neutral-11">
-                      {eyebrow(item)}
-                    </span>
-                    <span className="mt-0.5 block truncate text-2 text-foreground group-hover:underline">
-                      {item.title}
-                    </span>
-                    {summary ? (
-                      <span className="mt-1 block line-clamp-2 text-1 text-neutral-11">
-                        {summary}
-                      </span>
-                    ) : null}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
     </section>
   );
 }

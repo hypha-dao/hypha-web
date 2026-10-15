@@ -5135,6 +5135,13 @@
     "open": "Ver mais",
     "signalsEmpty": "Nada em aberto.",
     "openCount": "{count} em aberto",
+    "nowEyebrow": "Este espaço",
+    "nowTitle": "Precisa de você",
+    "nowQuiet": "Nada neste espaço está à sua espera.",
+    "nowActionVote": "Votar",
+    "nowActionSignal": "Responder",
+    "openVotesTitle": "Votações abertas",
+    "noOpenVotesNow": "Nenhuma votação está aberta.",
     "calendarEmpty": "Nada a seguir.",
     "membersEmpty": "Ainda sem membros.",
     "ecosystemEmpty": "Ainda sem outros espaços."

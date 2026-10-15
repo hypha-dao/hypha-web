@@ -5143,6 +5143,13 @@
     "open": "Meer zien",
     "signalsEmpty": "Niets open.",
     "openCount": "{count} open",
+    "nowEyebrow": "Deze space",
+    "nowTitle": "Heeft je nodig",
+    "nowQuiet": "In deze space wacht niets op je.",
+    "nowActionVote": "Stemmen",
+    "nowActionSignal": "Reageren",
+    "openVotesTitle": "Open stemmingen",
+    "noOpenVotesNow": "Er is geen stemming open.",
     "calendarEmpty": "Niets op komst.",
     "membersEmpty": "Nog geen leden.",
     "ecosystemEmpty": "Nog geen andere spaces."
