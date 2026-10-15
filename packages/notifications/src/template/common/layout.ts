@@ -39,6 +39,13 @@ export function muted(innerHtml: string): string {
   return `<p class="muted">${innerHtml}</p>`;
 }
 
+/** Left-aligned numbered list from safe inner-HTML items. */
+export function steps(itemsHtml: string[]): string {
+  return `<ol class="steps">${itemsHtml
+    .map((item) => `<li>${item}</li>`)
+    .join('')}</ol>`;
+}
+
 /** Grey quoted block, e.g. a chat message preview. */
 export function preview(text: string): string {
   return `<p class="preview">${escapeHtml(text)}</p>`;
@@ -80,6 +87,8 @@ const STYLES = [
   '.preview{margin:16px 0;padding:12px 16px;background-color:#f1f1f1;border-radius:8px;color:#444;font-size:15px;line-height:1.5;text-align:left}',
   '.cta{display:inline-block;padding:12px 24px;background-color:#03081B;color:#fff !important;border-radius:6px;text-decoration:none;font-weight:bold;font-size:15px}',
   '.muted{font-size:13px;color:#888}',
+  '.steps{text-align:left;max-width:440px;margin:20px auto 0;padding-left:20px}',
+  '.steps li{margin-bottom:14px;line-height:1.5}',
   '.footer{background-color:#f1f1f1;text-align:center;padding:15px;font-size:12px;color:#666}',
   'a{color:#03081B;text-decoration:none}',
   '.footer-btn{display:inline-block;padding:8px 16px;background-color:#03081B;color:#fff !important;border-radius:4px;text-decoration:none;font-size:12px;margin-top:10px}',
