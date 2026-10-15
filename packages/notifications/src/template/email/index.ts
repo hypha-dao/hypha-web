@@ -11,5 +11,6 @@ export * from './chat-mention';
 
 export * from './signal-emails';
 export * from './scheduled-item-invitation';
+export * from './call-and-reminder-emails';
 
 export type * from './types';
