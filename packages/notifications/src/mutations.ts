@@ -182,10 +182,12 @@ export const sendEmailNotificationsTemplate = async ({
 export const sendEmailNotificationsToEmails = async ({
   body,
   subject,
+  preheader,
   emails,
 }: {
   body: string;
   subject: string;
+  preheader?: string;
   emails: string[];
 }) => {
   if (!ONESIGNAL_APP_ID) {
@@ -202,7 +204,11 @@ export const sendEmailNotificationsToEmails = async ({
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: { include_email_tokens: recipients },
-    content: { email_body: body, email_subject: subject },
+    content: {
+      email_body: body,
+      email_subject: subject,
+      email_preheader: preheader,
+    },
   });
 };
 

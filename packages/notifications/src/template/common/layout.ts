@@ -34,6 +34,11 @@ export function paragraph(text: string): string {
   return paragraphHtml(escapeHtml(text));
 }
 
+/** Small grey paragraph from safe inner HTML (e.g. a copy-paste fallback link). */
+export function muted(innerHtml: string): string {
+  return `<p class="muted">${innerHtml}</p>`;
+}
+
 /** Grey quoted block, e.g. a chat message preview. */
 export function preview(text: string): string {
   return `<p class="preview">${escapeHtml(text)}</p>`;
@@ -74,6 +79,7 @@ const STYLES = [
   '.content{padding:30px;text-align:center;font-size:16px;line-height:1.6}',
   '.preview{margin:16px 0;padding:12px 16px;background-color:#f1f1f1;border-radius:8px;color:#444;font-size:15px;line-height:1.5;text-align:left}',
   '.cta{display:inline-block;padding:12px 24px;background-color:#03081B;color:#fff !important;border-radius:6px;text-decoration:none;font-weight:bold;font-size:15px}',
+  '.muted{font-size:13px;color:#888}',
   '.footer{background-color:#f1f1f1;text-align:center;padding:15px;font-size:12px;color:#666}',
   'a{color:#03081B;text-decoration:none}',
   '.footer-btn{display:inline-block;padding:8px 16px;background-color:#03081B;color:#fff !important;border-radius:4px;text-decoration:none;font-size:12px;margin-top:10px}',
@@ -118,7 +124,7 @@ export function layout({
       : '',
     '<table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f9f9f9;"><tr><td align="center">',
     '<table class="container" width="600" border="0" cellspacing="0" cellpadding="0">',
-    `<tr><td class="header"><img width="200" height="68" alt="Hypha" style="display:block;margin:0 auto;border:0;" src="${escapeHtml(appUrl + LOGO_PATH)}" /></td></tr>`,
+    `<tr><td class="header"><img width="200" height="68" alt="Hypha" style="display:block;margin:0 auto;border:0;" src="${escapeHtml(appUrl.replace(/\/+$/, '') + LOGO_PATH)}" /></td></tr>`,
     `<tr><td class="content">${body}</td></tr>`,
     `<tr><td class="footer">${footerHtml}</td></tr>`,
     '</table></td></tr></table></body></html>',
