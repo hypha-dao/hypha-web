@@ -19,7 +19,7 @@ import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 
 import { EcosystemMembershipModules } from '@web/app/[lang]/dho/[id]/_components/ecosystem-membership-modules';
-import { SpaceVisualization } from '@web/app/[lang]/dho/[id]/_components/space-visualization';
+import { MyceliumEcosystem } from '@web/app/[lang]/dho/[id]/_components/mycelium-ecosystem';
 import type { VisibleSpace } from '@web/app/[lang]/dho/[id]/_components/types';
 
 type HierarchyNode = {
@@ -189,12 +189,9 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
         }
       />
       <div className="relative h-[32rem] w-full">
-        <SpaceVisualization
-          layout="fill"
+        <MyceliumEcosystem
           data={hierarchy}
           currentSpaceId={currentSpace?.id}
-          enableHoverActions={false}
-          showNodeLabels
           ariaLabel={t('diagram.ariaLabel')}
           onVisibleSpacesChange={onVisibleSpacesChange}
         />

@@ -1226,7 +1226,12 @@
       "empty": "No nested spaces to show yet",
       "subtitle": "Explore how spaces nest in this organization",
       "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out"
+      "zoomOut": "Zoom out",
+      "lensStructure": "Structure",
+      "lensFlows": "Flows",
+      "openSpace": "Open {name}",
+      "flowsEmpty": "No value has moved through this space yet.",
+      "flowsError": "Value flows could not be loaded."
     },
     "visibleSpaces": {
       "nestedRoot": "Root",

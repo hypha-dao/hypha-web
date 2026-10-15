@@ -1966,7 +1966,12 @@
       "empty": "Ainda não há espaços aninhados para mostrar",
       "subtitle": "Explore como os espaços se aninham nesta organização",
       "zoomIn": "Ampliar",
-      "zoomOut": "Reduzir"
+      "zoomOut": "Reduzir",
+      "lensStructure": "Estrutura",
+      "lensFlows": "Fluxos",
+      "openSpace": "Abrir {name}",
+      "flowsEmpty": "Ainda não passou valor por este espaço.",
+      "flowsError": "Não foi possível carregar os fluxos de valor."
     },
     "visibleSpaces": {
       "nestedRoot": "Raiz",
