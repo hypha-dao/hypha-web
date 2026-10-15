@@ -25,10 +25,7 @@ import {
   type NetworkMapView,
 } from '../../network-map';
 import { NetworkRanking } from '../../network-exchange';
-import {
-  NetworkCapitalFilters,
-  NetworkSectionHeader,
-} from '../../network-exchange/network-section-header';
+import { NetworkCapitalFilters } from '../../network-exchange/network-section-header';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
@@ -40,7 +37,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Skeleton } from '@hypha-platform/ui';
+import { Heading, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -449,10 +446,16 @@ export function ExploreSpaces({
 
   const sharedHeader = (
     <div className="flex flex-col gap-4">
-      <NetworkSectionHeader
-        eyebrow={t('manySpaces').replace(/,\s*$/, '')}
-        title={t('oneVibrantNetwork')}
-      />
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="flex w-full flex-col items-center"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
       <SpaceSearch value={query} className="w-full min-w-0" />
       <NetworkCapitalFilters
         value={capital}

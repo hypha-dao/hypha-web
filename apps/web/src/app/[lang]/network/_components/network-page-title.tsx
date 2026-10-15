@@ -1,16 +1,23 @@
 'use client';
 
-import { NetworkSectionHeader } from '@hypha-platform/epics';
+import { Heading } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
-/** Same eyebrow and title as the other network sections. Shown while the directory loads. */
+/** Two-line centered title for the network directory only. Other network
+ * sections use {@link NetworkSectionHeader}. */
 export function NetworkPageTitle() {
   const t = useTranslations('Network');
 
   return (
-    <NetworkSectionHeader
-      eyebrow={t('manySpaces').replace(/,\s*$/, '')}
-      title={t('oneVibrantNetwork')}
-    />
+    <Heading
+      size="9"
+      color="secondary"
+      weight="medium"
+      align="center"
+      className="flex w-full flex-col items-center"
+    >
+      <span>{t('manySpaces')}</span>
+      <span>{t('oneVibrantNetwork')}</span>
+    </Heading>
   );
 }
