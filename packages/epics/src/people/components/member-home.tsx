@@ -853,7 +853,7 @@ function ClassicBoard({
       {queue.length === 0 ? (
         <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
       ) : (
-        <div className="mt-4 grid grid-cols-1 items-start gap-4 @min-[40rem]:grid-cols-2">
+        <div className="mt-4 grid w-full grid-cols-1 items-start gap-4">
           {queue.map((item) => {
             const key = itemKey(item);
             return (
