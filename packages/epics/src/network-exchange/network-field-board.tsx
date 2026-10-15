@@ -48,9 +48,11 @@ function typeLabel(
 }
 
 function badgeClass(type: NetworkFieldSignalKind) {
-  if (type === 'Need') return 'bg-foreground text-background';
-  if (type === 'Tension') return 'bg-warning-4 text-warning-12';
-  if (type === 'Risk') return 'bg-error-3 text-error-12';
+  if (type === 'Risk') return 'bg-error-3 text-error-11';
+  if (type === 'Tension') return 'bg-warning-3 text-warning-11';
+  if (type === 'Action' || type === 'Opportunity') {
+    return 'bg-foreground/10 text-foreground';
+  }
   return 'bg-neutral-3 text-foreground';
 }
 
@@ -60,9 +62,12 @@ function capitalKey(value: string | null): CapitalKey | null {
 }
 
 function shortToken(token: string) {
-  if (token.startsWith('0x') && token.length > 10)
-    return `${token.slice(0, 8)}…`;
-  return token;
+  const trimmed = token.trim();
+  if (/^hypha$/i.test(trimmed)) return 'HYPHA';
+  if (trimmed.startsWith('0x') && trimmed.length > 10) {
+    return `${trimmed.slice(0, 8)}…`;
+  }
+  return trimmed;
 }
 
 function hasPicture(signal: NetworkFieldSignal) {
@@ -83,10 +88,12 @@ function Chip({
   selected,
   onClick,
   children,
+  dense = false,
 }: {
   selected: boolean;
   onClick: () => void;
   children: string;
+  dense?: boolean;
 }) {
   return (
     <button
@@ -94,9 +101,12 @@ function Chip({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        'border px-3 py-1.5 text-1',
+        'border',
+        dense ? 'shrink-0 px-2.5 py-1 text-1' : 'px-3 py-1.5 text-1',
         selected
           ? 'border-foreground bg-foreground text-background'
+          : dense
+          ? 'border-border bg-background text-neutral-11'
           : 'border-border bg-background text-foreground',
       )}
     >
@@ -108,13 +118,13 @@ function Chip({
 function FieldPhoto({ src, alt }: { src: string | null; alt: string }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) {
-    return <div className="aspect-[16/10] w-full bg-neutral-3" />;
+    return <div className="aspect-video w-full bg-neutral-3" />;
   }
   return (
     <img
       src={src}
       alt={alt}
-      className="aspect-[16/10] w-full object-cover"
+      className="aspect-video w-full object-cover"
       onError={() => setFailed(true)}
     />
   );
@@ -237,133 +247,203 @@ export function NetworkFieldBoard({
       ).length
     : 0;
 
+  const action = variant === 'action';
+
   return (
-    <div className="network-side-grid grid min-w-0 items-start gap-6">
-      <div className="flex min-w-0 flex-col gap-6">
-        <header>
-          <p className="text-1 uppercase tracking-[0.16em] text-neutral-11">
-            {variant === 'impact'
-              ? t('storiesFromTheField')
-              : t('signalsFromTheField')}
-          </p>
-          <h1
-            className="mt-2 text-8"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {variant === 'impact' ? t('impactTitle') : t('actionTitle')}
-          </h1>
-        </header>
-        <form
-          className="flex border border-border bg-background"
-          onSubmit={(event) => event.preventDefault()}
-        >
-          <label className="flex min-w-0 flex-1 items-center gap-2 px-3">
-            <Search className="size-4 shrink-0 text-neutral-11" aria-hidden />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('searchPlaceholder')}
-              className="min-w-0 flex-1 bg-transparent py-3 text-2 outline-none placeholder:text-neutral-11"
-            />
-          </label>
-          <button
-            type="submit"
-            className="border-l border-border px-5 text-1 uppercase tracking-[0.12em]"
-          >
-            {t('search')}
-          </button>
-        </form>
+    <div
+      className={
+        action
+          ? '@container min-w-0'
+          : 'network-side-grid grid min-w-0 items-start gap-6'
+      }
+    >
+      <div
+        className={
+          action
+            ? 'flex min-w-0 flex-col gap-3 @4xl:h-[calc(100dvh-var(--menu-top-height,70px)-4rem)] @4xl:flex-row @4xl:items-stretch @4xl:overflow-hidden'
+            : 'contents'
+        }
+      >
         <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label={t('allSpaces')}
+          className={cn(
+            'flex min-w-0 flex-col',
+            action ? 'min-h-0 w-full flex-1 gap-4' : 'gap-6',
+          )}
         >
-          <Chip selected={capital === 'all'} onClick={() => setCapital('all')}>
-            {t('allSpaces')}
-          </Chip>
-          {CAPITALS.map((key) => (
-            <Chip
-              key={key}
-              selected={capital === key}
-              onClick={() => setCapital(key)}
+          <header>
+            <p
+              className={cn(
+                'text-1 uppercase',
+                action
+                  ? 'mb-2 font-bold text-foreground'
+                  : 'tracking-[0.16em] text-neutral-11',
+              )}
             >
-              {t(`capitals.${key}`)}
-            </Chip>
-          ))}
-        </div>
-        {variant === 'action' ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip selected={type === 'all'} onClick={() => setType('all')}>
-              {t('filterAll')}
-            </Chip>
-            {ACTION_TYPES.map((option) => (
-              <Chip
-                key={option}
-                selected={type === option}
-                onClick={() => setType(option)}
-              >
-                {typeLabel(option, t)}
-              </Chip>
-            ))}
-            {signals.length > 0 ? (
-              <p className="ml-auto text-1 text-neutral-11">
-                {linkedText(visible, t)}
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <Chip selected={story === 'all'} onClick={() => setStory('all')}>
-              {t('allStories', { count: matched.length })}
-            </Chip>
-            <Chip
-              selected={story === 'picture'}
-              onClick={() => setStory('picture')}
+              {variant === 'impact'
+                ? t('storiesFromTheField')
+                : t('signalsFromTheField')}
+            </p>
+            <h1
+              className={
+                action ? 'text-7 leading-tight sm:text-8' : 'mt-2 text-8'
+              }
+              style={{ fontFamily: 'var(--font-family-heading)' }}
             >
-              {t('withPicture', { count: pictured })}
-            </Chip>
-          </div>
-        )}
-        {visible.length === 0 ? (
-          <p className="text-2 text-neutral-11">
-            {signals.length === 0 ? empty : t('needsFilterEmpty')}
-          </p>
-        ) : variant === 'impact' ? (
-          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((signal, index) => (
-              <li
-                key={signal.slug}
+              {variant === 'impact' ? t('impactTitle') : t('actionTitle')}
+            </h1>
+          </header>
+          <div className={action ? 'flex shrink-0 flex-col gap-4' : 'contents'}>
+            <form
+              className={cn(
+                'flex border border-border bg-background',
+                action && 'h-12',
+              )}
+              onSubmit={(event) => event.preventDefault()}
+            >
+              <label className="flex h-full min-w-0 flex-1 items-center gap-2 px-3">
+                <Search
+                  className="size-4 shrink-0 text-neutral-11"
+                  aria-hidden
+                />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={t('searchPlaceholder')}
+                  className={cn(
+                    'min-w-0 flex-1 bg-transparent text-2 outline-none placeholder:text-neutral-11',
+                    action ? 'py-0' : 'py-3',
+                  )}
+                />
+              </label>
+              <button
+                type="submit"
                 className={cn(
-                  index === 0 && 'md:col-span-2 xl:col-span-2 xl:row-span-2',
+                  'border-l border-border px-5 text-1 uppercase tracking-[0.12em]',
+                  action && 'font-bold text-neutral-11 hover:text-foreground',
                 )}
               >
-                <StoryCard
-                  lang={lang}
-                  signal={signal}
-                  featured={index === 0}
-                  selected={signal.slug === selected?.slug}
-                  onSelect={() => setSelectedSlug(signal.slug)}
-                  t={t}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <ul className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((signal) => (
-              <li key={signal.slug} className="flex">
-                <article
-                  className={cn(
-                    'flex w-full cursor-pointer flex-col border bg-background',
-                    signal.slug === selected?.slug
-                      ? 'border-foreground'
-                      : 'border-border',
-                  )}
-                  onClick={() => setSelectedSlug(signal.slug)}
+                {t('search')}
+              </button>
+            </form>
+            <div
+              className={cn(
+                'flex flex-wrap gap-2',
+                action && 'gap-1 sm:flex-nowrap sm:overflow-x-auto sm:pb-1',
+              )}
+              role="group"
+              aria-label={t('allSpaces')}
+            >
+              <Chip
+                dense={action}
+                selected={capital === 'all'}
+                onClick={() => setCapital('all')}
+              >
+                {t('allSpaces')}
+              </Chip>
+              {CAPITALS.map((key) => (
+                <Chip
+                  key={key}
+                  dense={action}
+                  selected={capital === key}
+                  onClick={() => setCapital(key)}
                 >
-                  <div className="flex flex-1 flex-col text-left">
-                    <div className="flex flex-1 flex-col gap-3 p-3">
-                      <div className="flex items-center justify-between gap-3">
+                  {t(`capitals.${key}`)}
+                </Chip>
+              ))}
+            </div>
+          </div>
+          {variant === 'action' ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                aria-pressed={type === 'all'}
+                onClick={() => setType('all')}
+                className={cn(
+                  'px-3 py-1 text-1',
+                  type === 'all'
+                    ? 'bg-foreground text-background'
+                    : 'bg-neutral-2 text-neutral-11',
+                )}
+              >
+                {t('filterAll')}
+              </button>
+              {ACTION_TYPES.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={type === option}
+                  onClick={() => setType(option)}
+                  className={cn(
+                    'px-3 py-1 text-1',
+                    type === option
+                      ? 'bg-foreground text-background'
+                      : 'bg-neutral-2 text-neutral-11',
+                  )}
+                >
+                  {typeLabel(option, t)}
+                </button>
+              ))}
+              {signals.length > 0 ? (
+                <p className="basis-full text-1 text-neutral-11 sm:ml-auto sm:basis-auto sm:whitespace-nowrap">
+                  {linkedText(visible, t)}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Chip selected={story === 'all'} onClick={() => setStory('all')}>
+                {t('allStories', { count: matched.length })}
+              </Chip>
+              <Chip
+                selected={story === 'picture'}
+                onClick={() => setStory('picture')}
+              >
+                {t('withPicture', { count: pictured })}
+              </Chip>
+            </div>
+          )}
+          {visible.length === 0 ? (
+            <p className="text-2 text-neutral-11">
+              {signals.length === 0 ? empty : t('needsFilterEmpty')}
+            </p>
+          ) : variant === 'impact' ? (
+            <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {visible.map((signal, index) => (
+                <li
+                  key={signal.slug}
+                  className={cn(
+                    index === 0 && 'md:col-span-2 xl:col-span-2 xl:row-span-2',
+                  )}
+                >
+                  <StoryCard
+                    lang={lang}
+                    signal={signal}
+                    featured={index === 0}
+                    selected={signal.slug === selected?.slug}
+                    onSelect={() => setSelectedSlug(signal.slug)}
+                    t={t}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="grid content-start items-stretch gap-4 @4xl:min-h-0 @4xl:flex-1 @4xl:overflow-y-auto @3xl:grid-cols-2 @6xl:grid-cols-3">
+              {visible.map((signal) => {
+                const picked = signal.slug === selected?.slug;
+                return (
+                  <li key={signal.slug} className="flex">
+                    <button
+                      type="button"
+                      aria-pressed={picked}
+                      onClick={() => setSelectedSlug(signal.slug)}
+                      className={cn(
+                        'flex w-full flex-col border bg-background text-left hover:border-foreground',
+                        picked
+                          ? 'border-foreground bg-neutral-2 ring-1 ring-foreground'
+                          : 'border-border',
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                         <span
                           className={cn(
                             'px-2 py-0.5 text-1',
@@ -376,52 +456,48 @@ export function NetworkFieldBoard({
                           {whenLabel(signal.updatedAt, dateLocale)}
                         </span>
                       </div>
-                      <FieldPhoto src={signal.leadImage} alt="" />
-                      <h2
-                        className="line-clamp-2 text-3 leading-snug"
-                        style={{ fontFamily: 'var(--font-family-heading)' }}
+                      <div className="border-b border-border">
+                        <FieldPhoto src={signal.leadImage} alt="" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-2 p-4">
+                        <h2
+                          className="text-3 leading-snug"
+                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        >
+                          {signal.title}
+                        </h2>
+                        <p className="text-1 uppercase text-neutral-11">
+                          {signal.spaceTitle}
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          'border-t border-border px-4 py-3 font-mono text-1',
+                          signal.payouts.length > 0
+                            ? 'text-foreground'
+                            : 'text-neutral-11',
+                        )}
                       >
-                        {signal.title}
-                      </h2>
-                      <p className="text-1 uppercase tracking-[0.14em] text-neutral-11">
-                        {signal.spaceTitle}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-3">
-                    <p
-                      className={cn(
-                        'text-1',
-                        signal.payouts.length > 0
-                          ? 'text-foreground'
-                          : 'text-neutral-11',
-                      )}
-                    >
-                      {payoutText(signal, t)}
-                    </p>
-                    <Link
-                      href={`/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`}
-                      className="shrink-0 text-1 uppercase tracking-[0.12em]"
-                    >
-                      {t('openSignal')}
-                    </Link>
-                  </div>
-                </article>
-              </li>
-            ))}
-          </ul>
-        )}
+                        {payoutText(signal, t)}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+        {action || selected ? (
+          <NetworkRightColumn
+            lang={lang}
+            variant={variant}
+            spaces={spaces}
+            selectedSlug={selected?.spaceSlug ?? ''}
+            payouts={selected?.payouts ?? []}
+            impactCount={impactCount}
+          />
+        ) : null}
       </div>
-      {selected ? (
-        <NetworkRightColumn
-          lang={lang}
-          variant={variant}
-          spaces={spaces}
-          selectedSlug={selected.spaceSlug}
-          payouts={selected.payouts}
-          impactCount={impactCount}
-        />
-      ) : null}
     </div>
   );
 }

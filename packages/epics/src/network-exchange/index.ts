@@ -5,3 +5,4 @@ export * from './network-field-board';
 export * from './network-exchange-view';
 export * from './network-right-cards';
 export * from './network-quick-create';
+export * from './network-impact-board';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { CAPITAL_MARK } from './capital-marks';
 import { exchangePairs } from './exchange-match';
 import { ExchangeWorldMap } from './exchange-world-map';
 import { NetworkRightColumn } from './network-right-cards';
@@ -41,20 +43,6 @@ function matchesCapital(
     parseCapitalKeys(space.offers).includes(capital)
   );
 }
-
-const CAPITAL_MARK: Record<CapitalKey, string> = {
-  financial: '◈',
-  material: '▣',
-  living: '✿',
-  wellbeing: '♡',
-  ecological: '❋',
-  experiential: '◎',
-  wisdom: '☼',
-  social: '❀',
-  creative: '✧',
-  cultural: '❖',
-  intellectual: '✦',
-};
 
 function hasCoordinates(
   space: NetworkExchangeSpace,
@@ -122,6 +110,7 @@ export function NetworkExchangeView({
     place: space.place,
     leadImage: space.leadImage,
     chatRoomId: space.chatRoomId,
+    categories: space.categories,
     seeks: space.seeks,
     offers: space.offers,
   }));
@@ -137,42 +126,42 @@ export function NetworkExchangeView({
   ].filter((item): item is { label: string; value: number } => item != null);
 
   return (
-    <div className="network-side-grid grid min-w-0 items-start gap-6">
+    <div className="network-side-grid network-exchange-grid grid min-w-0 items-start gap-6">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-1 uppercase tracking-[0.14em] text-neutral-11">
+        <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+          <div className="w-full max-w-[18rem]">
+            <p className="text-1 uppercase tracking-[0.16em] text-neutral-11">
               {t('sharingEconomy')}
             </p>
             <h1
-              className="mt-1 text-5"
+              className="mt-2 text-balance text-8 font-medium leading-[1.05] tracking-[-0.03em]"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {t('exchangeTitle')}
             </h1>
           </div>
-          <dl className="flex">
+          <dl className="flex shrink-0 pt-1">
             {counts.map((item, index) => (
               <div
                 key={item.label}
                 className={cn(
-                  'min-w-16 px-4',
+                  'min-w-[4.75rem] px-4',
                   index > 0 && 'border-l border-border',
                 )}
               >
                 <dd
-                  className="text-4 tabular-nums"
+                  className="text-7 font-medium tabular-nums leading-none"
                   style={{ fontFamily: 'var(--font-family-heading)' }}
                 >
                   {number.format(item.value)}
                 </dd>
-                <dt className="text-1 text-neutral-11">{item.label}</dt>
+                <dt className="mt-1 text-1 text-neutral-11">{item.label}</dt>
               </div>
             ))}
           </dl>
         </div>
 
-        <div className="mt-4 flex gap-1">
+        <div className="mt-5 flex gap-1">
           {(['map', 'list'] as const).map((option) => (
             <button
               key={option}
@@ -192,22 +181,25 @@ export function NetworkExchangeView({
         </div>
 
         <form
-          className="mt-3 flex border border-border"
+          className="mt-3 flex border border-border bg-background"
           onSubmit={(event) => event.preventDefault()}
         >
-          <input
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setShownPairs(LIST_PAGE);
-            }}
-            placeholder={t('searchPlaceholder')}
-            aria-label={t('searchPlaceholder')}
-            className="h-10 min-w-0 flex-1 bg-transparent px-3 text-2 outline-none placeholder:text-neutral-11"
-          />
+          <label className="flex min-w-0 flex-1 items-center gap-2 px-3">
+            <Search className="size-4 shrink-0 text-neutral-11" aria-hidden />
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setShownPairs(LIST_PAGE);
+              }}
+              placeholder={t('searchPlaceholder')}
+              aria-label={t('searchPlaceholder')}
+              className="h-10 min-w-0 flex-1 bg-transparent text-2 outline-none placeholder:text-neutral-11"
+            />
+          </label>
           <button
             type="submit"
-            className="border-l border-border px-3 text-1 uppercase tracking-[0.12em]"
+            className="border-l border-border px-4 text-1 uppercase tracking-[0.12em]"
           >
             {t('search')}
           </button>
@@ -249,7 +241,7 @@ export function NetworkExchangeView({
         </div>
 
         {view === 'map' ? (
-          <div className="relative mt-4 h-[32rem] border border-border bg-background">
+          <div className="relative mt-3 h-[min(40rem,calc(100dvh-14rem))] min-h-[24rem] border border-border bg-background">
             <ExchangeWorldMap
               nodes={mapSpaces.map((space) => ({
                 slug: space.slug,
@@ -271,6 +263,19 @@ export function NetworkExchangeView({
                 {t('mapEmpty')}
               </p>
             ) : null}
+            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-1 text-neutral-11">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-foreground" />
+                {t('projectKind')}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-6 border-t border-dashed border-foreground" />
+                {t('statAgreements')}
+              </span>
+              <span>
+                {t('statSpaces')} · {number.format(mapSpaces.length)}
+              </span>
+            </div>
           </div>
         ) : pairs.length === 0 ? (
           <p className="mt-6 text-2 text-neutral-11">{t('exchangeEmpty')}</p>
@@ -279,9 +284,15 @@ export function NetworkExchangeView({
             {pairs.slice(0, shownPairs).map((pair) => (
               <li
                 key={`${pair.left.slug}:${pair.right.slug}`}
-                className="border border-border p-3"
+                className={cn(
+                  'border p-4',
+                  pair.left.slug === current?.slug ||
+                    pair.right.slug === current?.slug
+                    ? 'border-foreground'
+                    : 'border-border',
+                )}
               >
-                <p className="text-2">
+                <p className="text-3">
                   <button
                     type="button"
                     onClick={() => setPicked(pair.left.slug)}

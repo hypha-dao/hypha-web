@@ -1,5 +1,4 @@
 import { Locale } from '@hypha-platform/i18n';
-import { Container } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 import {
   listNetworkFieldSignals,
@@ -18,13 +17,13 @@ export default async function ProofOfActionPage(props: {
     { db },
   ).catch(() => []);
   return (
-    <Container className="flex flex-col py-8">
+    <div className="flex w-full min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
       <NetworkFieldBoard
         lang={lang}
         variant="action"
         signals={signals}
         empty={t('fieldEmpty')}
       />
-    </Container>
+    </div>
   );
 }

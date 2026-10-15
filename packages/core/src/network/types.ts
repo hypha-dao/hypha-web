@@ -1,6 +1,6 @@
 export type NetworkSignalKind = 'Need' | 'Action' | 'Impact';
 
-export type NetworkOpenNeedKind = 'Need';
+export type NetworkOpenNeedKind = 'Need' | 'Risk' | 'Tension';
 
 export const NETWORK_FIELD_KINDS = [
   'Need',
@@ -94,6 +94,7 @@ export type NetworkExchangeSpace = {
   leadImage: string | null;
   latitude: number | null;
   longitude: number | null;
+  categories: string[];
   seeks: string[];
   offers: string[];
 };
