@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { ArrowUpRight, ChevronDown, Users, Wallet, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { NetworkRanking } from '../../network-exchange';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 
 type TreasuryAsset = {
   symbol: string;
@@ -146,6 +147,7 @@ export function NetworkSidePanel({
 }) {
   const t = useTranslations('NetworkExchange');
   const tCommon = useTranslations('Common');
+  const { openCoherenceChat, setFocusedSpaceChat } = useHumanChatPanel();
   const { assets, isLoading } = useSpaceTreasury(selectedSpace?.slug ?? null);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const seeks = parseCapitalKeys(capitals?.seeks);
@@ -164,6 +166,46 @@ export function NetworkSidePanel({
   const expanded = expandedSlug === selectedSpace?.slug;
   const visibleAssets = expanded ? assets : assets.slice(0, 4);
   const hiddenCount = Math.max(0, assets.length - visibleAssets.length);
+  const focusedRoomId = selectedSpace?.chatRoomId?.trim() || null;
+  const focusedSlug = selectedSpace?.slug?.trim() || '';
+  const focusedTitle = selectedSpace?.title ?? '';
+  const focusedDescription = selectedSpace?.description?.trim()
+    ? selectedSpace.description.trim()
+    : null;
+
+  useEffect(() => {
+    if (!focusedSlug) {
+      setFocusedSpaceChat(null);
+      return;
+    }
+    setFocusedSpaceChat({
+      roomId: focusedRoomId,
+      title: focusedTitle,
+      slug: focusedSlug,
+      description: focusedDescription,
+    });
+  }, [
+    focusedDescription,
+    focusedRoomId,
+    focusedSlug,
+    focusedTitle,
+    setFocusedSpaceChat,
+  ]);
+
+  useEffect(() => {
+    return () => setFocusedSpaceChat(null);
+  }, [setFocusedSpaceChat]);
+
+  const openSpaceRoom = () => {
+    if (!focusedSlug) return;
+    openCoherenceChat(
+      focusedRoomId,
+      focusedTitle,
+      focusedSlug,
+      focusedDescription,
+      focusedSlug,
+    );
+  };
 
   return (
     <aside
@@ -309,6 +351,13 @@ export function NetworkSidePanel({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4">
+            <Button
+              type="button"
+              className="h-10 w-fit"
+              onClick={openSpaceRoom}
+            >
+              {t('connect')}
+            </Button>
             {spaceHref ? (
               <Button asChild className="h-10 w-fit">
                 <Link href={spaceHref}>

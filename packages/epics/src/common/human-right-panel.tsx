@@ -3176,6 +3176,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
       return;
 
+    const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
+    // A selected space may only know its slug until the space record loads.
+    if (openingSpaceSlug && !coherenceRoomId?.trim() && isSpaceLoading) {
+      return;
+    }
+
     let cancelled = false;
 
     const init = async () => {
@@ -3190,10 +3196,58 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDraftAttachments([]);
       setSendingPending(null);
       try {
-        let targetRoomId = coherenceRoomId;
+        let targetRoomId = coherenceRoomId?.trim() || null;
+        const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
+        if (!targetRoomId && openingSpaceSlug) {
+          targetRoomId =
+            space?.chatRoomId?.trim() ||
+            getStoredRoomId(openingSpaceSlug) ||
+            null;
+        }
 
-        // If no room exists yet, only create one when we can link it back
-        if (!targetRoomId) {
+        // A space room must not be created as a signal room.
+        if (!targetRoomId && openingSpaceSlug) {
+          if (blockSpaceChatForMembership) {
+            setIsJoining(false);
+            return;
+          }
+          console.log(
+            '[HumanRightPanel] Creating Matrix room for space:',
+            openingSpaceSlug,
+          );
+          const { roomId: newRoomId } = await promiseWithTimeout(
+            matrixRef.current.createRoom(`space-${openingSpaceSlug}`),
+            COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+            'Space room create timed out',
+          );
+          if (cancelled) return;
+          if (!newRoomId) {
+            throw new Error('Failed to create room: empty roomId returned');
+          }
+          targetRoomId = newRoomId;
+          storeRoomId(openingSpaceSlug, newRoomId);
+          if (authTokenRef.current) {
+            try {
+              await updateSpaceBySlugRef.current({
+                slug: openingSpaceSlug,
+                chatRoomId: newRoomId,
+              });
+              openCoherenceChat(
+                newRoomId,
+                coherenceTitle || space?.title || openingSpaceSlug,
+                coherenceSlug || openingSpaceSlug,
+                coherenceDescription,
+                openingSpaceSlug,
+              );
+            } catch (err) {
+              console.warn(
+                '[HumanRightPanel] Failed to persist chat room id on space:',
+                err,
+              );
+            }
+          }
+        } else if (!targetRoomId) {
+          // If no room exists yet, only create one when we can link it back
           if (!coherenceSlug || blockSpaceChatForMembership) {
             // Cannot persist without a slug — skip room creation
             setIsJoining(false);
@@ -3259,6 +3313,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             setHasMoreOlderMessages(historyResult.hasMoreOlder);
             syncRoomMessages(targetRoomId);
 
+            if (openingSpaceSlug) {
+              return;
+            }
             try {
               let description = coherenceDescription?.trim() || null;
               if (!description && coherenceSlug?.trim()) {
@@ -3336,6 +3393,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceTitle,
     coherenceSlug,
     coherenceDescription,
+    coherenceSpaceSlug,
+    isSpaceLoading,
+    space?.chatRoomId,
+    space?.title,
     isMatrixAvailable,
     isMatrixAuthenticated,
     blockSpaceChatForMembership,
