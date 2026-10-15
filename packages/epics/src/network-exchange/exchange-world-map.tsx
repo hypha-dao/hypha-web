@@ -111,8 +111,8 @@ export function ExchangeWorldMap({
               d={`M ${from.x} ${from.y} Q ${controlX} ${controlY} ${to.x} ${to.y}`}
               fill="none"
               stroke="currentColor"
-              strokeDasharray="5 4"
-              strokeOpacity="0.55"
+              strokeDasharray="4 3"
+              strokeOpacity="0.8"
               vectorEffect="non-scaling-stroke"
             />
             <text
@@ -121,7 +121,10 @@ export function ExchangeWorldMap({
               textAnchor="middle"
               dominantBaseline="middle"
               className="fill-foreground"
-              fontSize="11"
+              fontSize="12"
+              stroke="var(--background)"
+              strokeWidth="4"
+              paintOrder="stroke"
             >
               {arc.percent}%
             </text>
@@ -142,10 +145,10 @@ export function ExchangeWorldMap({
             <circle
               cx={point.x}
               cy={point.y}
-              r={selected ? 7 : 4.5}
+              r={selected ? 8 : 5.5}
               fill="currentColor"
               stroke="var(--background)"
-              strokeWidth={selected ? 2 : 1}
+              strokeWidth={selected ? 2.5 : 1.5}
             />
           </g>
         );

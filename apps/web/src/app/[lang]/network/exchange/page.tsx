@@ -62,6 +62,7 @@ export default async function ExchangePage(props: {
       leadImage: space.leadImage ?? null,
       latitude: space.latitude ?? null,
       longitude: space.longitude ?? null,
+      categories: space.categories ?? [],
       seeks: forms?.seeks ?? [],
       offers: forms?.offers ?? [],
     };

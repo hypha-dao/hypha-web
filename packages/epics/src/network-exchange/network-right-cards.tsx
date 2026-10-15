@@ -1,22 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
-import { ChevronDown, Wallet } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   CAPITALS,
+  CATEGORIES,
+  collapseCategoriesToGroups,
   DEFAULT_SPACE_LEAD_IMAGE,
+  getCategoryGroupLabel,
+  NETWORK_FIELD_KINDS,
   parseCapitalKeys,
+  useJwt,
   type CapitalKey,
+  type Category,
   type NetworkFieldPayout,
+  type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { CAPITAL_MARK } from './capital-marks';
 
 export type NetworkRailSpace = {
   slug: string;
@@ -25,6 +34,7 @@ export type NetworkRailSpace = {
   place: string;
   leadImage: string | null;
   chatRoomId: string | null;
+  categories?: string[];
   seeks: string[];
   offers: string[];
 };
@@ -66,10 +76,62 @@ function leadImageSrc(value: string | null | undefined) {
   return DEFAULT_SPACE_LEAD_IMAGE;
 }
 
+function readablePlace(label: string) {
+  const match = /^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(label);
+  if (!match) return label;
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return label;
+  const north = latitude >= 0 ? 'N' : 'S';
+  const east = longitude >= 0 ? 'E' : 'W';
+  return `${Math.abs(latitude).toFixed(2)}° ${north}, ${Math.abs(
+    longitude,
+  ).toFixed(2)}° ${east}`;
+}
+
+function categoryEyebrow(categories: string[] | undefined, project: string) {
+  const known = (categories ?? []).filter((value): value is Category =>
+    (CATEGORIES as readonly string[]).includes(value),
+  );
+  const group = collapseCategoriesToGroups(known)[0];
+  if (!group) return project;
+  return `${project} · ${getCategoryGroupLabel(group)}`;
+}
+
 function formatAmount(value: number, lang: string) {
   return new Intl.NumberFormat(lang, {
     maximumFractionDigits: value >= 100 ? 0 : 2,
   }).format(value);
+}
+
+function payoutFigures(amount: string, lang: string) {
+  const normalized = amount.trim().replace(/,/g, '');
+  if (!/^-?\d+(\.\d+)?$/.test(normalized)) return amount.trim();
+  const value = Number(normalized);
+  if (!Number.isFinite(value)) return amount.trim();
+  return formatAmount(value, lang);
+}
+
+function tokenUnit(token: string) {
+  const trimmed = token.trim();
+  if (/^hypha$/i.test(trimmed)) return 'HYPHA';
+  if (trimmed.startsWith('0x') && trimmed.length > 10) {
+    return `${trimmed.slice(0, 8)}…`;
+  }
+  return trimmed;
+}
+
+function signalKindLabel(
+  t: ReturnType<typeof useTranslations<'NetworkExchange'>>,
+  option: NetworkFieldSignalKind,
+) {
+  if (option === 'Need') return t('filterNeed');
+  if (option === 'Opportunity') return t('filterOpportunity');
+  if (option === 'Risk') return t('filterRisk');
+  if (option === 'Tension') return t('filterTension');
+  if (option === 'Insight') return t('filterInsight');
+  if (option === 'Action') return t('filterAction');
+  return t('filterImpact');
 }
 
 function useSpaceTreasury(slug: string | null) {
@@ -127,7 +189,9 @@ function CapitalLine({ keys }: { keys: CapitalKey[] }) {
     <ul className="mt-2 grid gap-1.5">
       {keys.map((key) => (
         <li key={key} className="flex items-center gap-2 text-1">
-          <span className="size-1.5 shrink-0 bg-foreground" aria-hidden />
+          <span className="w-3 shrink-0 text-center" aria-hidden>
+            {CAPITAL_MARK[key]}
+          </span>
           {t(`capitals.${key}`)}
         </li>
       ))}
@@ -156,7 +220,7 @@ function SpaceSelect({
         );
         if (match) onChange(match.slug);
       }}
-      className="h-10 w-full border border-border bg-background px-2 text-2 text-foreground"
+      className="h-10 w-full border border-border bg-neutral-2 px-2 text-2 text-foreground"
     >
       {options.map((space) => (
         <option key={space.slug} value={space.slug}>
@@ -195,6 +259,7 @@ function CapitalChips({
                 : 'border-border text-neutral-11',
             )}
           >
+            <span aria-hidden>{CAPITAL_MARK[key]} </span>
             {t(`capitals.${key}`)}
           </button>
         );
@@ -211,31 +276,30 @@ function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
   const seeks = parseCapitalKeys(space.seeks);
   const offers = parseCapitalKeys(space.offers);
   const summary = excerpt(space.description);
+  const place = readablePlace(space.place.trim());
   const shown = expanded ? assets : assets.slice(0, 4);
   const hidden = Math.max(0, assets.length - shown.length);
 
   return (
     <section className="border border-border bg-background">
-      <div className="relative h-40 overflow-hidden bg-neutral-3">
+      <div className="relative h-48 overflow-hidden bg-neutral-3">
         <img
           src={leadImageSrc(space.leadImage)}
           alt=""
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-4 pb-4 text-white">
           <p className="text-1 uppercase tracking-[0.12em] text-white/80">
-            {t('projectSpace')}
+            {categoryEyebrow(space.categories, t('projectSpace'))}
           </p>
           <h2
-            className="mt-1 text-4 leading-tight"
+            className="mt-1 text-6 font-medium leading-tight tracking-[-0.02em]"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
             {space.title}
           </h2>
-          {space.place ? (
-            <p className="mt-1 text-1 text-white/80">{space.place}</p>
-          ) : null}
+          {place ? <p className="mt-1 text-1 text-white/80">{place}</p> : null}
         </div>
       </div>
       {summary ? (
@@ -269,7 +333,7 @@ function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
                     {formatAmount(asset.value, lang)}
                   </p>
                   <p className="mt-1 text-1 uppercase tracking-[0.08em] text-neutral-11">
-                    {asset.symbol}
+                    {tokenUnit(asset.symbol)}
                   </p>
                 </div>
               ))}
@@ -291,7 +355,9 @@ function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
       </div>
       <div className="grid grid-cols-2 gap-2 px-4 py-4">
         <div className="bg-neutral-2 p-3">
-          <p className="text-1 uppercase tracking-[0.12em]">{t('seeks')}</p>
+          <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+            {t('seeks')}
+          </p>
           <CapitalLine keys={seeks} />
         </div>
         <div className="bg-neutral-2 p-3">
@@ -302,23 +368,23 @@ function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
         </div>
       </div>
       <div className="grid grid-cols-2 border-t border-border">
-        <Button
+        <button
           type="button"
           disabled
           title={t('resourceLater')}
           aria-label={`${t('resource')}. ${t('resourceLater')}`}
-          className="h-11"
+          className="inline-flex h-11 items-center justify-center gap-2 border-r border-border bg-foreground px-3 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
         >
           {t('resource')}
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          colorVariant="neutral"
-          className="h-11 border-y-0 border-r-0"
+          <ArrowUpRight className="size-3.5" aria-hidden />
+        </button>
+        <Link
+          href={`/${lang}/dho/${space.slug}/overview`}
+          className="inline-flex h-11 items-center justify-center gap-2 px-3 text-1 uppercase tracking-[0.12em]"
         >
-          <Link href={`/${lang}/dho/${space.slug}/overview`}>{t('visit')}</Link>
-        </Button>
+          {t('visit')}
+          <ArrowUpRight className="size-3.5" aria-hidden />
+        </Link>
       </div>
       {space.chatRoomId ? (
         <button
@@ -573,7 +639,7 @@ function WeaveCard({
               { slug: space.slug, gives: parseCapitalKeys(space.offers) },
             ]);
           }}
-          className="h-10 w-full border border-border bg-background px-2 text-2 text-foreground"
+          className="h-10 w-full border border-border bg-neutral-2 px-2 text-2 text-foreground"
         >
           <option value="">{t('addParty')}</option>
           {addable.map((space) => (
@@ -634,30 +700,200 @@ function ShareCard({
   );
 }
 
-function AllocatedCard({ payouts }: { payouts: NetworkFieldPayout[] }) {
+function ActionShareCard({
+  lang,
+  preferredSlug,
+}: {
+  lang: Locale;
+  preferredSlug: string;
+}) {
+  const t = useTranslations('NetworkExchange');
+  const router = useRouter();
+  const { jwt } = useJwt();
+  const touched = useRef(false);
+  const [spaces, setSpaces] = useState<{ slug: string; title: string }[]>([]);
+  const [spaceSlug, setSpaceSlug] = useState('');
+  const [signalType, setSignalType] =
+    useState<NetworkFieldSignalKind>('Opportunity');
+  const [text, setText] = useState('');
+  const [amount, setAmount] = useState('');
+
+  useEffect(() => {
+    if (!jwt) return;
+    let cancelled = false;
+    void (async () => {
+      const me = await fetch('/api/v1/people/me', {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      if (!me.ok) return;
+      const person = (await me.json()) as { slug?: string };
+      if (!person.slug) return;
+      const list = await fetch(`/api/v1/people/${person.slug}/spaces`, {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      if (!list.ok || cancelled) return;
+      const rows = (await list.json()) as { slug?: string; title?: string }[];
+      if (cancelled || !Array.isArray(rows)) return;
+      setSpaces(
+        rows.flatMap((row) =>
+          row.slug && row.title ? [{ slug: row.slug, title: row.title }] : [],
+        ),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [jwt]);
+
+  useEffect(() => {
+    if (touched.current) return;
+    if (spaces.some((space) => space.slug === preferredSlug)) {
+      setSpaceSlug(preferredSlug);
+      return;
+    }
+    setSpaceSlug((current) => current || spaces[0]?.slug || '');
+  }, [preferredSlug, spaces]);
+
+  const share = () => {
+    const title = text.trim();
+    if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !title) return;
+    const params = new URLSearchParams();
+    params.set('type', signalType);
+    params.set('title', title.slice(0, 120));
+    if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
+      params.set('amount', amount);
+    }
+    router.push(
+      `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
+    );
+  };
+
+  return (
+    <section className="w-full space-y-3 border border-border bg-background p-4 text-2">
+      <h2
+        className="text-5"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {t('shareSignalTitle')}
+      </h2>
+      <p className="text-1 leading-relaxed text-neutral-11">
+        {t('shareSignalBody')}
+      </p>
+      <select
+        value={spaceSlug}
+        disabled={spaces.length === 0}
+        onChange={(event) => {
+          touched.current = true;
+          setSpaceSlug(event.target.value);
+        }}
+        aria-label={t('chooseSpace')}
+        className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 font-semibold text-foreground disabled:opacity-50"
+      >
+        {spaces.length === 0 ? (
+          <option value="">{t('noneYet')}</option>
+        ) : (
+          spaces.map((space) => (
+            <option key={space.slug} value={space.slug}>
+              {space.title}
+            </option>
+          ))
+        )}
+      </select>
+      <div>
+        <p className="text-1 font-semibold">{t('signalType')}</p>
+        <div className="mt-2 flex flex-wrap gap-1">
+          {NETWORK_FIELD_KINDS.map((option) => {
+            const on = signalType === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setSignalType(option)}
+                className={cn(
+                  'px-2 py-0.5 text-1',
+                  on
+                    ? 'bg-foreground text-background'
+                    : 'bg-neutral-2 text-neutral-11',
+                )}
+              >
+                {signalKindLabel(t, option)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <textarea
+        value={text}
+        maxLength={200}
+        rows={3}
+        placeholder={t('whatHappened')}
+        aria-label={t('whatHappened')}
+        onChange={(event) => setText(event.target.value)}
+        className="w-full resize-none border border-border bg-neutral-2 p-3 text-2 outline-none"
+      />
+      <input
+        value={amount}
+        inputMode="decimal"
+        maxLength={12}
+        placeholder={t('linkedAmountHint')}
+        aria-label={t('linkedAmountHint')}
+        onChange={(event) => setAmount(event.target.value)}
+        className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 outline-none"
+      />
+      <button
+        type="button"
+        disabled={!spaceSlug || !text.trim()}
+        onClick={share}
+        className="w-full bg-foreground py-2.5 text-1 font-semibold uppercase tracking-[0.12em] text-background disabled:opacity-50"
+      >
+        {t('share')}
+      </button>
+    </section>
+  );
+}
+
+function AllocatedCard({
+  lang,
+  payouts,
+}: {
+  lang: Locale;
+  payouts: NetworkFieldPayout[];
+}) {
   const t = useTranslations('NetworkExchange');
   return (
-    <Shell title={t('allocatedTitle')} body={t('allocatedBody')}>
-      {payouts.length === 0 ? (
-        <p className="text-1 text-neutral-11">{t('noTreasuryLink')}</p>
-      ) : (
-        <div className="border border-border bg-neutral-2 p-3">
-          <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-            {t('allocatedToSignal')}
-          </p>
-          <ul className="mt-2 grid gap-1">
-            {payouts.map((payout) => (
-              <li key={`${payout.token}:${payout.amount}`} className="text-3">
-                {t('payoutLine', {
-                  amount: payout.amount,
-                  token: payout.token,
-                })}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </Shell>
+    <section className="w-full space-y-3 border border-border bg-background p-4 text-2">
+      <h2
+        className="text-5"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {t('allocatedTitle')}
+      </h2>
+      <p className="text-1 leading-relaxed text-neutral-11">
+        {t('allocatedBody')}
+      </p>
+      <div className="space-y-2 border border-border bg-neutral-2 p-3">
+        <p className="text-1 font-bold uppercase tracking-[0.14em] text-neutral-11">
+          {t('allocatedToSignal')}
+        </p>
+        {payouts.length === 0 ? (
+          <p className="text-1 text-neutral-11">{t('noTreasuryLink')}</p>
+        ) : (
+          payouts.map((payout, index) => (
+            <p
+              key={`${payout.token}:${payout.amount}:${index}`}
+              className={cn('font-semibold', index === 0 ? 'text-7' : 'text-5')}
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {payoutFigures(payout.amount, lang)}{' '}
+              <span className="text-2 font-medium text-neutral-11">
+                {tokenUnit(payout.token)}
+              </span>
+            </p>
+          ))
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -696,11 +932,18 @@ export function NetworkRightColumn({
     () => spaces.find((space) => space.slug === selectedSlug) ?? spaces[0],
     [selectedSlug, spaces],
   );
-  if (open || !selected) return null;
+  if (open || (variant !== 'action' && !selected)) return null;
+  const action = variant === 'action';
   return (
-    <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto">
-      <SpaceCard lang={lang} space={selected} />
-      {variant === 'exchange' ? (
+    <aside
+      className={
+        action
+          ? 'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto @4xl:flex @4xl:w-[380px]'
+          : 'flex min-w-0 flex-col gap-4 lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto'
+      }
+    >
+      {selected && !action ? <SpaceCard lang={lang} space={selected} /> : null}
+      {variant === 'exchange' && selected ? (
         <>
           <WeaveCard lang={lang} spaces={spaces} initialSlug={selected.slug} />
           <section className="border border-border p-4">
@@ -723,10 +966,13 @@ export function NetworkRightColumn({
         </>
       ) : null}
       {variant === 'needs' ? <ShareCard lang={lang} kind="need" /> : null}
-      {variant === 'action' ? (
+      {action ? (
         <>
-          <ShareCard lang={lang} kind="signal" />
-          <AllocatedCard payouts={payouts} />
+          <ActionShareCard
+            lang={lang}
+            preferredSlug={selected?.slug ?? selectedSlug}
+          />
+          <AllocatedCard lang={lang} payouts={payouts} />
         </>
       ) : null}
       {variant === 'impact' ? (

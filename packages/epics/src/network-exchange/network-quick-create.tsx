@@ -479,7 +479,7 @@ export function NetworkQuickCreate({ lang }: { lang: Locale }) {
               />
             </div>
             <label className="grid gap-1 text-1 text-neutral-11">
-              {t('linkedAmount')}
+              {t('linkedAmountHint')}
               <Input
                 value={linkedAmount}
                 inputMode="decimal"

@@ -453,6 +453,10 @@
   .network-side-grid {
     grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
   }
+
+  .network-exchange-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 22.5rem);
+  }
 }
 
 /* Call feeds — hide Chrome's native video PiP control (Hypha uses Document PiP). */
