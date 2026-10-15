@@ -179,7 +179,7 @@ function layoutField(
   const parent = path.length > 1 ? path[path.length - 2] : null;
   const cx = width / 2;
   const cy = height / 2;
-  const reach = Math.max(80, Math.min(width, height) / 2 - 36);
+  const reach = Math.max(80, Math.min(width, height) / 2 - 48);
   const visible = prune(focus, 2);
   const root = d3.hierarchy(visible);
   const laid = d3
@@ -204,7 +204,7 @@ function layoutField(
   };
 
   const radiusFor = (depth: number) =>
-    depth === 0 ? 26 : depth === 1 ? 16 : 11;
+    depth === 0 ? 36 : depth === 1 ? 24 : 15;
 
   const nodes: PlacedNode[] = laid.descendants().map((node) => {
     const at = node.depth === 0 ? { x: cx, y: cy } : point(node);
@@ -518,7 +518,7 @@ export function MyceliumEcosystem({
   const showMembers =
     lens === 'structure' && Math.min(size.width, size.height) >= 280;
   const focusNode = placedById.get(focus.id);
-  const chipRadius = (focusNode?.r ?? 26) + 36;
+  const chipRadius = (focusNode?.r ?? 36) + 40;
 
   const memberChips = useMemo(() => {
     if (!showMembers || !focusNode) return [];
@@ -698,7 +698,7 @@ export function MyceliumEcosystem({
                     focusNode?.y ?? size.height / 2,
                     thread.x,
                     thread.y,
-                    (focusNode?.r ?? 26) + 4,
+                    (focusNode?.r ?? 36) + 4,
                     16,
                   );
                   const start = thread.incoming
