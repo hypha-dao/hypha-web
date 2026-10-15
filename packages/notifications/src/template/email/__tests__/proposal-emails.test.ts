@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   emailProposalCreationForMembers,
   emailProposalExecutionForCreator,
+  emailProposalExecutionForMembers,
   emailProposalRejectionForCreator,
 } from '..';
 
@@ -71,6 +72,27 @@ describe('emailProposalCreationForMembers (dashboard: Proposals - Created - for 
     expect(emailProposalCreationForMembers({ ...links }).body).toContain(
       '<strong>Someone</strong>',
     );
+  });
+});
+
+describe('emailProposalExecutionForMembers (dashboard: Proposals - Accepted - for members)', () => {
+  it('matches the dashboard subject, preheader and statement', () => {
+    const email = emailProposalExecutionForMembers({
+      proposalTitle: 'Plan',
+      spaceTitle: 'Acme',
+      ...links,
+    });
+    expect(email.subject).toBe('A proposal was accepted in Acme');
+    expect(email.preheader).toBe('Plan');
+    expect(email.body).toContain(
+      'A proposal &ldquo;Plan&rdquo; was <strong>accepted</strong> in <strong>Acme</strong>. ✅',
+    );
+  });
+
+  it('defaults preheader and space', () => {
+    const email = emailProposalExecutionForMembers({});
+    expect(email.subject).toBe('A proposal was accepted in your space');
+    expect(email.preheader).toBe('See the outcome.');
   });
 });
 

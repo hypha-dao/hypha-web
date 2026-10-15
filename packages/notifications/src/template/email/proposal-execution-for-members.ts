@@ -28,9 +28,9 @@ export function emailProposalExecutionForMembers({
   return proposalEmail({
     subject: `A proposal was accepted in ${space}`,
     preheader: proposalTitle?.trim() || 'See the outcome.',
-    statementHtml: `The proposal${quotedTitleHtml(proposalTitle)} was ${strong(
+    statementHtml: `A proposal${quotedTitleHtml(proposalTitle)} was ${strong(
       'accepted',
-    )} in ${strong(space)}.`,
+    )} in ${strong(space)}. ✅`,
     ...links,
   });
 }
