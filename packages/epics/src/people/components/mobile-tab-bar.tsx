@@ -131,6 +131,9 @@ export function MobileTabBar({
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const networkRoute = isNetworkPath(pathname);
   const secondLevel = useMemo(() => {
+    // Spaces sheet overlays the page without changing the URL — hide
+    // network/space secondary nav so it doesn't sit above an unrelated tab.
+    if (spacesOpen) return [];
     if (spaceSlug) {
       const labelFor = (key: SpaceSectionNavKey): string => {
         switch (key) {
@@ -234,6 +237,7 @@ export function MobileTabBar({
     space?.pipelineEnabled,
     spaceMemoryEnabled,
     spaceSlug,
+    spacesOpen,
     tCoherence,
     tCommon,
     tNetwork,
