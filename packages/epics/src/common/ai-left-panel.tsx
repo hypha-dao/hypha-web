@@ -17,7 +17,6 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
-  ArrowLeftRight,
   ClipboardList,
   Earth,
   Menu,
@@ -662,12 +661,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         label: tNetwork('navNetwork'),
         href: base,
         icon: Earth,
-      },
-      {
-        key: 'exchange',
-        label: tNetwork('navExchange'),
-        href: `${base}/exchange`,
-        icon: ArrowLeftRight,
       },
       {
         key: 'needs',
