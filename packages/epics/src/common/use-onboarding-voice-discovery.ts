@@ -39,6 +39,8 @@ type UseOnboardingVoiceDiscoveryOptions = {
   captureMicrophone?: boolean;
   /** When false, replies stay on the page and are not spoken. */
   speakReplies?: boolean;
+  /** When false, wait for the full reply before speaking (member home). */
+  speakEarlyLeadIn?: boolean;
 };
 
 export function useOnboardingVoiceDiscovery(
@@ -74,6 +76,7 @@ export function useOnboardingVoiceDiscovery(
     onSendTranscript: options.onSendTranscript,
     captureMicrophone: options.captureMicrophone,
     speakReplies: options.speakReplies,
+    speakEarlyLeadIn: options.speakEarlyLeadIn,
   });
 
   const voice = useRealtime ? realtime : webSpeech;

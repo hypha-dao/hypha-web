@@ -64,6 +64,11 @@ type UseOnboardingVoiceRealtimeOptions = {
   captureMicrophone?: boolean;
   /** When false, replies stay on the page and are not spoken. */
   speakReplies?: boolean;
+  /**
+   * When false, wait for the full assistant reply before speaking. Home uses
+   * this so voice and the chat bubble stay on one finished script.
+   */
+  speakEarlyLeadIn?: boolean;
 };
 
 function mapSessionErrorToVoiceCode(status: number): VoiceInterviewErrorCode {
@@ -185,6 +190,7 @@ export function useOnboardingVoiceRealtime({
   onSendTranscript,
   captureMicrophone = true,
   speakReplies = true,
+  speakEarlyLeadIn = true,
 }: UseOnboardingVoiceRealtimeOptions) {
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
   const connectInFlightRef = useRef(false);
@@ -1201,6 +1207,7 @@ export function useOnboardingVoiceRealtime({
     if (!enabled || !isChatStreaming || !awaitingAssistantSpeakRef.current) {
       return;
     }
+    if (!speakEarlyLeadIn) return;
     if (earlySpeechStartedRef.current) return;
     // Until the new assistant message arrives, lastAssistantText is still the
     // previous turn — do not re-speak it as an "early" lead-in.
@@ -1222,7 +1229,13 @@ export function useOnboardingVoiceRealtime({
       return;
     }
     interimAckSpokenRef.current = true;
-  }, [enabled, isChatStreaming, lastAssistantText, speakAssistantReply]);
+  }, [
+    enabled,
+    isChatStreaming,
+    lastAssistantText,
+    speakAssistantReply,
+    speakEarlyLeadIn,
+  ]);
 
   useEffect(() => {
     if (!enabled || isChatStreaming) return;
