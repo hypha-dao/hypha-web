@@ -258,7 +258,7 @@ export function NetworkExchangeView({
                         openCoherenceChat(
                           pair.left.chatRoomId,
                           pair.left.title,
-                          pair.left.slug,
+                          '',
                           pair.left.description,
                           pair.left.slug,
                         );

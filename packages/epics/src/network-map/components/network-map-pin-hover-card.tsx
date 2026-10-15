@@ -41,7 +41,7 @@ export function NetworkMapPinHoverCard({
     openCoherenceChat(
       space.chatRoomId,
       space.title,
-      space.slug,
+      '',
       space.description,
       space.slug,
     );
