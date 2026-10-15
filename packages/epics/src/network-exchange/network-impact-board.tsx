@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   parseCapitalKeys,
   useJwt,
@@ -30,7 +28,6 @@ import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
 type StoryFormat = 'photo' | 'video' | 'voice';
 type NamedSpace = { slug: string; title: string };
-type TreasuryAsset = { symbol: string; value: number };
 
 const SLUG = /^[a-z0-9_-]{1,80}$/i;
 
@@ -58,16 +55,6 @@ function plainText(value: string) {
     index = close + 1;
   }
   return out.replace(/\s+/g, ' ').trim();
-}
-
-function isHyphaSymbol(symbol: string) {
-  return symbol.replace(/\s+/g, '').toUpperCase() === 'HYPHA';
-}
-
-function formatAmount(value: number, lang: string) {
-  return new Intl.NumberFormat(lang, {
-    maximumFractionDigits: value >= 100 ? 0 : 2,
-  }).format(value);
 }
 
 function useMemberSpaces() {
@@ -102,30 +89,6 @@ function useMemberSpaces() {
     };
   }, [jwt]);
   return spaces;
-}
-
-function useSpaceTreasury(slug: string | null) {
-  const { getAccessToken } = useAuthentication();
-  const safe = slug && SLUG.test(slug) ? slug : null;
-  const { data, isLoading } = useSWR(
-    safe ? [`/api/v1/spaces/${safe}/assets?bestEffort=true`] : null,
-    async ([endpoint]) => {
-      const token = await getAccessToken();
-      const headers: HeadersInit = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
-      const response = await fetch(endpoint, { headers });
-      if (!response.ok) return [] as TreasuryAsset[];
-      const body = (await response.json()) as {
-        assets?: { symbol?: string; value?: number }[];
-      };
-      return (body.assets ?? []).flatMap((asset) => {
-        if (!asset.symbol || !(asset.value && asset.value > 0)) return [];
-        return [{ symbol: asset.symbol, value: asset.value }];
-      });
-    },
-    { revalidateOnFocus: false },
-  );
-  return { assets: data ?? [], isLoading: Boolean(safe) && isLoading };
 }
 
 function SpaceSelect({
@@ -449,75 +412,6 @@ function PostStoryCard({
   );
 }
 
-function ImpactTokenCard({
-  lang,
-  spaces,
-}: {
-  lang: Locale;
-  spaces: NamedSpace[];
-}) {
-  const t = useTranslations('NetworkExchange');
-  const [slug, setSlug] = useState(spaces[0]?.slug ?? '');
-  useEffect(() => {
-    if (!spaces.some((space) => space.slug === slug)) {
-      setSlug(spaces[0]?.slug ?? '');
-    }
-  }, [slug, spaces]);
-  const { assets, isLoading } = useSpaceTreasury(slug || null);
-  const hypha = assets.find((asset) => isHyphaSymbol(asset.symbol)) ?? null;
-
-  return (
-    <section className="grid gap-3 border border-border bg-background p-4">
-      <h2
-        className="text-5"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
-        {t('impactTokenTitle')}
-      </h2>
-      <p className="text-1 leading-relaxed text-neutral-11">
-        {t('impactTokenBody')}
-      </p>
-      {spaces.length === 0 ? (
-        <p className="text-1 text-neutral-11">{t('noneYet')}</p>
-      ) : (
-        <SpaceSelect
-          spaces={spaces}
-          value={slug}
-          onChange={setSlug}
-          label={t('chooseSpace')}
-        />
-      )}
-      <div className="border border-border bg-neutral-2 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-11">
-          {t('issuedToSpace')}
-        </p>
-        {hypha && !isLoading ? (
-          <p
-            className="text-6 font-semibold"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {formatAmount(hypha.value, lang)}{' '}
-            <span className="text-2 font-medium text-neutral-11">
-              {t('hyphaToken')}
-            </span>
-          </p>
-        ) : (
-          <p className="mt-1 text-1 text-neutral-11">{t('noneYet')}</p>
-        )}
-      </div>
-      <button
-        type="button"
-        disabled
-        title={t('issueTokenLater')}
-        aria-label={`${t('issueToken')}. ${t('issueTokenLater')}`}
-        className="w-full border border-foreground bg-foreground py-2.5 text-1 font-semibold uppercase tracking-[0.12em] text-background disabled:opacity-50"
-      >
-        {t('issueToken')}
-      </button>
-    </section>
-  );
-}
-
 export function NetworkImpactBoard({
   lang,
   signals,
@@ -555,20 +449,6 @@ export function NetworkImpactBoard({
     [capital, needle, signals],
   );
   const openStory = signals.find((signal) => signal.slug === openSlug) ?? null;
-  const tokenSpaces = useMemo(() => {
-    const seen = new Map<string, NamedSpace>();
-    for (const signal of signals) {
-      if (!SLUG.test(signal.spaceSlug) || seen.has(signal.spaceSlug)) continue;
-      seen.set(signal.spaceSlug, {
-        slug: signal.spaceSlug,
-        title: signal.spaceTitle,
-      });
-    }
-    for (const space of memberSpaces) {
-      if (!seen.has(space.slug)) seen.set(space.slug, space);
-    }
-    return [...seen.values()];
-  }, [memberSpaces, signals]);
 
   return (
     <div className="@container min-w-0">
@@ -626,7 +506,6 @@ export function NetworkImpactBoard({
           selectedSlug=""
         >
           <PostStoryCard lang={lang} spaces={memberSpaces} />
-          <ImpactTokenCard lang={lang} spaces={tokenSpaces} />
         </NetworkRightColumn>
       </div>
       <StoryDialog
