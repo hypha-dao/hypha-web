@@ -155,6 +155,9 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain('Never a wall of text');
     expect(facts).toContain('never the full list');
+    expect(facts).toContain('Never volunteer to post');
+    expect(facts).toContain('Should I post it?');
+    expect(facts).toContain('Never invent that they already asked');
   });
 
   it('puts who they are and who they share a space with on the decision line', () => {
