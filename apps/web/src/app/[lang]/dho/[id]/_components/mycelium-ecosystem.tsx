@@ -179,7 +179,11 @@ function layoutField(
   const parent = path.length > 1 ? path[path.length - 2] : null;
   const cx = width / 2;
   const cy = height / 2;
-  const reach = Math.max(80, Math.min(width, height) / 2 - 48);
+  const minDim = Math.min(width, height);
+  // Fill most of the frame so sparse trees (parent + focus) are not a tiny
+  // cluster in the middle of a tall canvas.
+  const reach = Math.max(140, minDim * 0.42);
+  const nodeScale = Math.min(1.45, Math.max(1, minDim / 380));
   const visible = prune(focus, 2);
   const root = d3.hierarchy(visible);
   const laid = d3
@@ -204,7 +208,7 @@ function layoutField(
   };
 
   const radiusFor = (depth: number) =>
-    depth === 0 ? 36 : depth === 1 ? 24 : 15;
+    Math.round((depth === 0 ? 36 : depth === 1 ? 24 : 15) * nodeScale);
 
   const nodes: PlacedNode[] = laid.descendants().map((node) => {
     const at = node.depth === 0 ? { x: cx, y: cy } : point(node);
@@ -246,9 +250,15 @@ function layoutField(
   });
 
   if (parent) {
+    const focusNode = byId.get(focus.id);
+    const parentR = Math.round(18 * nodeScale);
+    const parentDist = Math.max(
+      reach * 0.52,
+      (focusNode?.r ?? 36) + parentR + 56,
+    );
     const parentPoint = {
       x: cx,
-      y: cy - Math.min(reach * 0.36, 84),
+      y: cy - parentDist,
     };
     nodes.push({
       id: parent.id,
@@ -257,18 +267,17 @@ function layoutField(
       logoUrl: parent.logoUrl,
       x: parentPoint.x,
       y: parentPoint.y,
-      r: 14,
+      r: parentR,
       role: 'parent',
       hasHiddenChildren: false,
     });
-    const focusNode = byId.get(focus.id);
     if (focusNode) {
       const ends = shorten(
         parentPoint.x,
         parentPoint.y,
         focusNode.x,
         focusNode.y,
-        14,
+        parentR,
         focusNode.r,
       );
       links.unshift({
@@ -518,7 +527,10 @@ export function MyceliumEcosystem({
   const showMembers =
     lens === 'structure' && Math.min(size.width, size.height) >= 280;
   const focusNode = placedById.get(focus.id);
-  const chipRadius = (focusNode?.r ?? 36) + 40;
+  const chipRadius = Math.max(
+    (focusNode?.r ?? 36) + 56,
+    Math.min(size.width, size.height) * 0.24,
+  );
 
   const memberChips = useMemo(() => {
     if (!showMembers || !focusNode) return [];
