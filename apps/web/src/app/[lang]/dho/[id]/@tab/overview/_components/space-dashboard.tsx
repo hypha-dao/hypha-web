@@ -131,25 +131,18 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     [coherences],
   );
 
-  const updates = useMemo(() => {
-    const rows = [
-      ...documents.onVoting,
-      ...documents.accepted,
-      ...documents.rejected,
-    ];
-    return rows
-      .slice()
-      .sort((left, right) => {
-        const rank = (status?: string) => (status === 'onVoting' ? 0 : 1);
-        const byStatus = rank(left.status) - rank(right.status);
-        if (byStatus !== 0) return byStatus;
-        return (
-          new Date(right.createdAt).getTime() -
-          new Date(left.createdAt).getTime()
-        );
-      })
-      .slice(0, 5);
-  }, [documents]);
+  const openVotes = useMemo(
+    () =>
+      documents.onVoting
+        .slice()
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt).getTime() -
+            new Date(left.createdAt).getTime(),
+        )
+        .slice(0, 4),
+    [documents.onVoting],
+  );
 
   const people = persons.data ?? [];
   const spaces = memberSpaces.data ?? [];
@@ -159,6 +152,53 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className="flex flex-col gap-4">
       {energy?.enabled ? <SpaceEnergySection /> : null}
+
+      <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
+
+      <div className="grid grid-cols-3 gap-px border border-border bg-border">
+        {signalsLoading || updatesLoading || membersLoading
+          ? [0, 1, 2].map((cell) => (
+              <div key={cell} className="bg-background-2 px-4 py-3">
+                <span className="block h-8 w-10 bg-neutral-3" />
+                <span className="mt-2 block h-3 w-16 bg-neutral-3" />
+              </div>
+            ))
+          : (
+              [
+                {
+                  href: `${home}/coherence`,
+                  count: openSignals.length,
+                  label: tCommon('Signals'),
+                },
+                {
+                  href: `${home}/agreements`,
+                  count: documents.onVoting.length,
+                  label: t('openVotesTitle'),
+                },
+                {
+                  href: `${home}/members`,
+                  count: people.length,
+                  label: tCommon('Members'),
+                },
+              ] as const
+            ).map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="bg-background-2 px-4 py-3 hover:bg-foreground/5"
+              >
+                <span
+                  className="block text-5 tabular-nums text-foreground"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {item.count}
+                </span>
+                <span className="mt-1 block text-1 text-neutral-11">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+      </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-5">
         <Panel
@@ -171,9 +211,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             signals={openSignals}
             isLoading={signalsLoading && !signalsError}
             empty={t('signalsEmpty')}
-            hrefForPriority={(priority) =>
-              `${home}/coherence?priority=${encodeURIComponent(priority)}`
-            }
             hrefForType={(type) =>
               `${home}/coherence?type=${encodeURIComponent(type)}`
             }
@@ -190,36 +227,26 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         </Panel>
       </div>
 
-      <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
-
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <Panel
-          title={t('recentActivityTitle')}
+          title={t('openVotesTitle')}
           href={`${home}/agreements`}
           openLabel={t('open')}
         >
           {updatesLoading ? (
             <RowsSkeleton />
-          ) : updates.length === 0 ? (
-            <Quiet>{t('noRecentActivity')}</Quiet>
+          ) : openVotes.length === 0 ? (
+            <Quiet>{t('noOpenVotesNow')}</Quiet>
           ) : (
             <SpaceActivityList
-              items={updates}
+              items={openVotes}
               untitled={t('untitledProposal')}
               hrefFor={(slug) =>
                 slug
                   ? `${home}/agreements/proposal/${slug}`
                   : `${home}/agreements`
               }
-              statusLabel={(status) =>
-                status === 'onVoting'
-                  ? t('statusOnVoting')
-                  : status === 'accepted'
-                  ? t('statusAccepted')
-                  : status === 'rejected'
-                  ? t('statusRejected')
-                  : ''
-              }
+              statusLabel={() => t('statusOnVoting')}
             />
           )}
         </Panel>

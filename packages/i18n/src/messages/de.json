@@ -5141,6 +5141,13 @@
     "open": "Mehr anzeigen",
     "signalsEmpty": "Nichts offen.",
     "openCount": "{count} offen",
+    "nowEyebrow": "Dieser Space",
+    "nowTitle": "Braucht dich",
+    "nowQuiet": "In diesem Space wartet nichts auf dich.",
+    "nowActionVote": "Abstimmen",
+    "nowActionSignal": "Antworten",
+    "openVotesTitle": "Offene Abstimmungen",
+    "noOpenVotesNow": "Keine Abstimmung ist offen.",
     "calendarEmpty": "Nichts steht an.",
     "membersEmpty": "Noch keine Mitglieder.",
     "ecosystemEmpty": "Noch keine weiteren Spaces."

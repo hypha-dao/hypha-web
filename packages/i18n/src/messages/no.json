@@ -5146,6 +5146,13 @@
     "open": "Se mer",
     "signalsEmpty": "Ingenting åpent.",
     "openCount": "{count} åpne",
+    "nowEyebrow": "Dette space",
+    "nowTitle": "Trenger deg",
+    "nowQuiet": "Ingenting i dette space venter på deg.",
+    "nowActionVote": "Stem",
+    "nowActionSignal": "Svar",
+    "openVotesTitle": "Åpne avstemninger",
+    "noOpenVotesNow": "Ingen avstemning er åpen.",
     "calendarEmpty": "Ingenting på vei.",
     "membersEmpty": "Ingen medlemmer ennå.",
     "ecosystemEmpty": "Ingen andre rom ennå."
