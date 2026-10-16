@@ -10,6 +10,7 @@ import {
   Switch,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { Bell, Mail, MonitorSmartphone } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
 import {
@@ -115,6 +116,51 @@ function SettingsRow({
       <Switch
         id={id}
         className="mt-0.5"
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+      />
+    </div>
+  );
+}
+
+/** A general (account or channel level) setting: unboxed, larger type, with an icon tile. */
+function GeneralSetting({
+  id,
+  icon,
+  title,
+  description,
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  id: string;
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  checked: boolean;
+  disabled?: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start gap-4 py-3">
+      <div className="flex size-10 shrink-0 items-center justify-center border border-border text-neutral-11">
+        {icon}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <label
+          htmlFor={id}
+          className="cursor-pointer text-4 font-medium leading-snug text-foreground"
+        >
+          {title}
+        </label>
+        {description && (
+          <span className="text-2 text-neutral-11">{description}</span>
+        )}
+      </div>
+      <Switch
+        id={id}
+        className="mt-1"
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}
@@ -286,22 +332,21 @@ export const NotificationCentreForm = ({
           className="space-y-8"
         >
           <div className="flex flex-col gap-6">
-            <SettingsCard>
-              <Skeleton width="100%" height="64px" loading={isLoading}>
-                <SettingsRow
-                  id="notificationsSubscribed"
-                  title={tNotificationCentre('subscribe.title')}
-                  description={
-                    subscribed
-                      ? tNotificationCentre('subscribe.subscribedDescription')
-                      : tNotificationCentre('subscribe.unsubscribedDescription')
-                  }
-                  checked={Boolean(subscribed)}
-                  disabled={isLoading || subscribePending}
-                  onCheckedChange={handleSubscribeToggle}
-                />
-              </Skeleton>
-            </SettingsCard>
+            <Skeleton width="100%" height="64px" loading={isLoading}>
+              <GeneralSetting
+                id="notificationsSubscribed"
+                icon={<Bell className="size-5" />}
+                title={tNotificationCentre('subscribe.title')}
+                description={
+                  subscribed
+                    ? tNotificationCentre('subscribe.subscribedDescription')
+                    : tNotificationCentre('subscribe.unsubscribedDescription')
+                }
+                checked={Boolean(subscribed)}
+                disabled={isLoading || subscribePending}
+                onCheckedChange={handleSubscribeToggle}
+              />
+            </Skeleton>
             {error && <FormMessage>{error}</FormMessage>}
             <fieldset
               disabled={preferencesDisabled}
@@ -310,13 +355,17 @@ export const NotificationCentreForm = ({
                 preferencesDisabled && 'pointer-events-none opacity-60',
               )}
             >
-              <SettingsCard title={tNotificationCentre('channels.title')}>
+              <div className="flex flex-col border-t border-border pt-4">
+                <h3 className="text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
+                  {tNotificationCentre('channels.title')}
+                </h3>
                 <FormField
                   control={form.control}
                   name="emailNotifications"
                   render={({ field }) => (
-                    <SettingsRow
+                    <GeneralSetting
                       id="emailNotifications"
+                      icon={<Mail className="size-5" />}
                       title={tNotificationCentre('channels.emailNotifications')}
                       description={
                         notificationEmail
@@ -344,8 +393,9 @@ export const NotificationCentreForm = ({
                   control={form.control}
                   name="browserNotifications"
                   render={({ field }) => (
-                    <SettingsRow
+                    <GeneralSetting
                       id="browserNotifications"
+                      icon={<MonitorSmartphone className="size-5" />}
                       title={tNotificationCentre(
                         'channels.browserNotifications',
                       )}
@@ -359,9 +409,9 @@ export const NotificationCentreForm = ({
                     />
                   )}
                 />
-              </SettingsCard>
+              </div>
 
-              <h3 className="-mb-2 text-3 font-medium text-neutral-11">
+              <h3 className="-mb-2 border-t border-border pt-4 text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
                 {tNotificationCentre('subscriptions.title')}
               </h3>
               {NOTIFICATION_SUBSCRIPTION_SECTIONS.map((section) => (
