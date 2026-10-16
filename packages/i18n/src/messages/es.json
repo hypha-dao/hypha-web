@@ -1059,15 +1059,18 @@
       "title": "Suscríbete a notificaciones",
       "subscribe": "Suscribirse",
       "unsubscribe": "Darse de baja",
-      "subscribedDescription": "Estás suscrito a notificaciones. Haz clic en cancelar suscripción en cualquier momento para dejar de recibir alertas.",
-      "unsubscribedDescription": "Haz clic en suscribirte para recibir notificaciones. Algunos navegadores bloquean las notificaciones por defecto, así que puede que tengas que habilitarlas usando el ícono del candado junto a la barra de direcciones o en la configuración de tu navegador."
+      "subscribedDescription": "Estás suscrito. Desactívalo para dejar de recibir todas las notificaciones, en todos tus dispositivos.",
+      "unsubscribedDescription": "Actívalo para recibir avisos por correo y en tu navegador. Si tu navegador bloquea las notificaciones, permítelas desde el icono del candado junto a la barra de direcciones."
     },
     "channels": {
+      "emailDescription": "Se envían a {email}.",
+      "emailDescriptionNoAddress": "Se envían al correo de tu cuenta.",
+      "browserDescription": "Alertas en este navegador o dispositivo. Actívalas en cada navegador que uses.",
       "title": "Canales de notificación",
       "description": "Elige cómo quieres recibir notificaciones:",
       "emailNotifications": "Notificaciones por correo electrónico",
       "toEmail": "a {email}",
-      "browserNotifications": "Notificaciones del navegador (anteriormente \"Notificaciones emergentes de escritorio\")",
+      "browserNotifications": "Notificaciones push del navegador",
       "yes": "Sí",
       "no": "No",
       "emailNotificationsWithEmail": "Notificaciones por correo electrónico ({email})",

@@ -17,8 +17,10 @@ export default function AsideNotificationCentrePage() {
   const closeUrl = pathname.substring(0, pathname.lastIndexOf('/'));
   const {
     subscribed,
+    pushActive,
     subscribe,
     unsubscribe,
+    enableBrowserPush,
     error,
     configuration,
     saveConfigurations,
@@ -41,6 +43,8 @@ export default function AsideNotificationCentrePage() {
           isLoading={isBusy}
           error={error}
           subscribed={subscribed}
+          pushActive={pushActive}
+          enableBrowserPush={enableBrowserPush}
           subscribe={subscribe}
           unsubscribe={unsubscribe}
           configuration={configuration}

@@ -295,7 +295,7 @@
       "description": "Kies hoe je meldingen wilt ontvangen:",
       "emailNotifications": "E-mailmeldingen",
       "toEmail": "naar {email}",
-      "browserNotifications": "Browsermeldingen (voorheen 'Bureaubladpop-upmeldingen')",
+      "browserNotifications": "Push-meldingen in de browser",
       "yes": "Ja",
       "no": "Nee",
       "emailNotificationsWithEmail": "E-mailmeldingen ({email})",

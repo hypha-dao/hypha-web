@@ -296,7 +296,7 @@
       "description": "Wählen Sie aus, wie Sie Benachrichtigungen erhalten möchten:",
       "emailNotifications": "E-Mail-Benachrichtigungen",
       "toEmail": "an {email}",
-      "browserNotifications": "Browser-Benachrichtigungen (früher „Desktop-Pop-up-Benachrichtigungen“)",
+      "browserNotifications": "Browser-Push-Benachrichtigungen",
       "yes": "Ja",
       "no": "Nein",
       "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})",

@@ -275,7 +275,7 @@
       "description": "Изберете како сакате да примате известувања:",
       "emailNotifications": "Известувања по е-пошта",
       "toEmail": "на {email}",
-      "browserNotifications": "Известувања во прелистувачот (порано „скокачки известувања на десктоп“)",
+      "browserNotifications": "Push известувања во прелистувачот",
       "yes": "Да",
       "no": "Не",
       "emailNotificationsWithEmail": "Известувања по е-пошта ({email})",

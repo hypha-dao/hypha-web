@@ -294,7 +294,7 @@
       "description": "Velg hvordan du vil motta varsler:",
       "emailNotifications": "E-postvarsler",
       "toEmail": "til {email}",
-      "browserNotifications": "Nettleservarsler (tidligere «popup-varsler på skrivebordet»)",
+      "browserNotifications": "Push-varsler i nettleseren",
       "yes": "Ja",
       "no": "Nei",
       "emailNotificationsWithEmail": "E-postvarsler ({email})",

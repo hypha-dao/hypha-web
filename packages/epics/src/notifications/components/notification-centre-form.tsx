@@ -3,17 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
-  Checkbox,
   Form,
-  FormControl,
   FormField,
-  FormItem,
-  FormLabel,
   FormMessage,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
-  Separator,
   Skeleton,
   Switch,
 } from '@hypha-platform/ui';
@@ -38,10 +30,8 @@ import { Person } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import {
   NotificationCentreFormValues,
-  NotificationSubscription,
   schemaNotificationCentreForm,
   YesNo,
-  yesNoEnum,
 } from '../hooks/validation';
 
 export type NotificationCentreFormProps = {
@@ -50,8 +40,12 @@ export type NotificationCentreFormProps = {
   isLoading?: boolean;
   error?: string | null;
   subscribed?: boolean;
+  /** This browser can receive push right now (permission granted and opted in). */
+  pushActive?: boolean;
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
+  /** Asks for browser permission and opts this browser in; resolves to whether push is now on. */
+  enableBrowserPush: () => Promise<boolean>;
   configuration?: NotificationConfiguration;
   saveConfigurations: (
     configuration: NotificationConfiguration,
@@ -66,13 +60,67 @@ function parseSwitch(value: YesNo): boolean {
   return value === 'yes';
 }
 
-function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
-  try {
-    const val = yesNoEnum.parse(value);
-    return val;
-  } catch (_) {
-    return defaultValue;
-  }
+/** One bordered block (Hypha style: square corners, hairline border) with a small caps header. */
+function SettingsCard({
+  title,
+  children,
+}: {
+  title?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border border-border">
+      {title && (
+        <h4 className="border-b border-border bg-background-2 px-4 py-2 text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
+          {title}
+        </h4>
+      )}
+      <div className="divide-y divide-border">{children}</div>
+    </section>
+  );
+}
+
+/** A title + description with a switch on the right. */
+function SettingsRow({
+  id,
+  title,
+  description,
+  hint,
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  id: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  hint?: React.ReactNode;
+  checked: boolean;
+  disabled?: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-4 py-3">
+      <div className="flex min-w-0 flex-col gap-1">
+        <label
+          htmlFor={id}
+          className="text-2 font-medium text-foreground cursor-pointer"
+        >
+          {title}
+        </label>
+        {description && (
+          <span className="text-2 text-neutral-11">{description}</span>
+        )}
+        {hint && <span className="text-2 text-neutral-10">{hint}</span>}
+      </div>
+      <Switch
+        id={id}
+        className="mt-0.5"
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+      />
+    </div>
+  );
 }
 
 export const NotificationCentreForm = ({
@@ -81,8 +129,10 @@ export const NotificationCentreForm = ({
   isLoading,
   error,
   subscribed,
+  pushActive,
   subscribe,
   unsubscribe,
+  enableBrowserPush,
   configuration,
   saveConfigurations,
 }: NotificationCentreFormProps) => {
@@ -108,7 +158,10 @@ export const NotificationCentreForm = ({
       return;
     }
     const modified = {
-      browserNotifications: getSwitch(configuration.browserNotifications),
+      // Push is per browser: shown on only when this browser can really receive it.
+      browserNotifications: getSwitch(
+        configuration.browserNotifications && Boolean(pushActive),
+      ),
       emailNotifications: getSwitch(configuration.emailNotifications),
       subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
@@ -121,7 +174,7 @@ export const NotificationCentreForm = ({
       }),
     };
     form.reset(modified, { keepDirty: false });
-  }, [form, configuration]);
+  }, [form, configuration, pushActive]);
 
   const handleSubmit = React.useCallback(
     async (values: NotificationCentreFormValues) => {
@@ -162,6 +215,26 @@ export const NotificationCentreForm = ({
     },
     [subscribe, unsubscribe],
   );
+  // Same for this browser's push: ask for permission straight from the click.
+  const [pushPending, setPushPending] = React.useState(false);
+  const handleBrowserToggle = React.useCallback(
+    async (checked: boolean) => {
+      if (!checked) {
+        form.setValue('browserNotifications', 'no', { shouldDirty: true });
+        return;
+      }
+      setPushPending(true);
+      try {
+        const active = await enableBrowserPush();
+        form.setValue('browserNotifications', getSwitch(active), {
+          shouldDirty: true,
+        });
+      } finally {
+        setPushPending(false);
+      }
+    },
+    [form, enableBrowserPush],
+  );
   const preferencesDisabled = !subscribed;
   const isDirty = form.formState.isDirty;
 
@@ -170,8 +243,6 @@ export const NotificationCentreForm = ({
     name: 'subscriptions',
   });
 
-  const yesLabel = tNotificationCentre('channels.yes');
-  const noLabel = tNotificationCentre('channels.no');
   const notificationEmail = person?.email ?? '';
 
   const subscriptionTextMap = React.useMemo(() => {
@@ -197,6 +268,11 @@ export const NotificationCentreForm = ({
     ) as Record<SubscriptionTag, { title?: string; description?: string }>;
   }, [tNotificationCentre]);
 
+  const optionalText = (key: string, fallback: string, values?: object) =>
+    tNotificationCentre.has(key)
+      ? tNotificationCentre(key, values as never)
+      : fallback;
+
   return (
     <div className="flex flex-col gap-5">
       <ModalStickyNavigation
@@ -209,190 +285,138 @@ export const NotificationCentreForm = ({
           onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
           className="space-y-8"
         >
-          <div className="flex flex-col gap-5">
-            <div className="flex gap-5 justify-between">
-              <Skeleton width="100%" height="24px" loading={isLoading}>
-                <h3 className="text-3 font-medium text-neutral-11">
-                  {tNotificationCentre('subscribe.title')}
-                </h3>
+          <div className="flex flex-col gap-6">
+            <SettingsCard>
+              <Skeleton width="100%" height="64px" loading={isLoading}>
+                <SettingsRow
+                  id="notificationsSubscribed"
+                  title={tNotificationCentre('subscribe.title')}
+                  description={
+                    subscribed
+                      ? tNotificationCentre('subscribe.subscribedDescription')
+                      : tNotificationCentre('subscribe.unsubscribedDescription')
+                  }
+                  checked={Boolean(subscribed)}
+                  disabled={isLoading || subscribePending}
+                  onCheckedChange={handleSubscribeToggle}
+                />
               </Skeleton>
-            </div>
-            <div className="flex flex-row items-center justify-between gap-4">
-              <span className="text-2 text-neutral-11">
-                {subscribed
-                  ? tNotificationCentre('subscribe.subscribedDescription')
-                  : tNotificationCentre('subscribe.unsubscribedDescription')}
-              </span>
-              <Switch
-                id="notificationsSubscribed"
-                aria-label={tNotificationCentre('subscribe.title')}
-                checked={Boolean(subscribed)}
-                disabled={isLoading || subscribePending}
-                onCheckedChange={handleSubscribeToggle}
-              />
-            </div>
+            </SettingsCard>
             {error && <FormMessage>{error}</FormMessage>}
             <fieldset
               disabled={preferencesDisabled}
               className={cn(
-                'm-0 flex min-w-0 flex-col gap-5 border-0 p-0',
+                'm-0 flex min-w-0 flex-col gap-6 border-0 p-0',
                 preferencesDisabled && 'pointer-events-none opacity-60',
               )}
             >
-              <Separator />
-              <div className="flex gap-5 justify-between">
-                <h3 className="text-3 font-medium text-neutral-11">
-                  {tNotificationCentre('channels.title')}
-                </h3>
-              </div>
-              <span className="text-2 text-neutral-11">
-                {tNotificationCentre('channels.description')}
-              </span>
-              <span className="text-2 text-neutral-11 flex flex-row justify-between">
-                <FormLabel>
-                  {notificationEmail
-                    ? tNotificationCentre(
-                        'channels.emailNotificationsWithEmail',
-                        {
-                          email: notificationEmail,
-                        },
-                      )
-                    : tNotificationCentre('channels.emailNotifications')}
-                </FormLabel>
+              <SettingsCard title={tNotificationCentre('channels.title')}>
                 <FormField
                   control={form.control}
                   name="emailNotifications"
                   render={({ field }) => (
-                    <RadioGroup
-                      className="flex flex-row justify-end"
-                      name="emailNotifications"
+                    <SettingsRow
+                      id="emailNotifications"
+                      title={tNotificationCentre('channels.emailNotifications')}
+                      description={
+                        notificationEmail
+                          ? optionalText(
+                              'channels.emailDescription',
+                              `Sent to ${notificationEmail}.`,
+                              { email: notificationEmail },
+                            )
+                          : optionalText(
+                              'channels.emailDescriptionNoAddress',
+                              'Sent to your account email.',
+                            )
+                      }
+                      checked={field.value === 'yes'}
                       disabled={preferencesDisabled}
-                      orientation="horizontal"
-                      value={field.value}
-                      onValueChange={(value: string) => {
-                        form.setValue(
-                          field.name,
-                          parseYesNoValue(value, 'yes'),
-                        );
-                      }}
-                    >
-                      <Label htmlFor="emailNotificationsYes">{yesLabel}</Label>
-                      <RadioGroupItem id="emailNotificationsYes" value="yes" />
-                      <Label htmlFor="emailNotificationsNo">{noLabel}</Label>
-                      <RadioGroupItem id="emailNotificationsNo" value="no" />
-                    </RadioGroup>
+                      onCheckedChange={(checked) =>
+                        form.setValue(field.name, getSwitch(checked), {
+                          shouldDirty: true,
+                        })
+                      }
+                    />
                   )}
                 />
-              </span>
-              <span className="text-2 text-neutral-11 flex flex-row justify-between">
-                <FormLabel>
-                  {tNotificationCentre('channels.browserNotifications')}
-                </FormLabel>
                 <FormField
                   control={form.control}
                   name="browserNotifications"
                   render={({ field }) => (
-                    <RadioGroup
-                      className="flex flex-row justify-end"
-                      name="browserNotifications"
-                      disabled={preferencesDisabled}
-                      orientation="horizontal"
-                      value={field.value}
-                      onValueChange={(value: string) => {
-                        form.setValue(
-                          field.name,
-                          parseYesNoValue(value, 'yes'),
-                        );
-                      }}
-                    >
-                      <Label htmlFor="browserNotificationYes">{yesLabel}</Label>
-                      <RadioGroupItem id="browserNotificationYes" value="yes" />
-                      <Label htmlFor="browserNotificationNo">{noLabel}</Label>
-                      <RadioGroupItem id="browserNotificationNo" value="no" />
-                    </RadioGroup>
+                    <SettingsRow
+                      id="browserNotifications"
+                      title={tNotificationCentre(
+                        'channels.browserNotifications',
+                      )}
+                      description={optionalText(
+                        'channels.browserDescription',
+                        'Alerts on this browser or device. Turn it on in each browser you use.',
+                      )}
+                      checked={field.value === 'yes'}
+                      disabled={preferencesDisabled || pushPending}
+                      onCheckedChange={handleBrowserToggle}
+                    />
                   )}
                 />
-              </span>
-              <Separator />
-              <div className="flex gap-5 justify-between">
-                <h3 className="text-3 font-medium text-neutral-11">
-                  {tNotificationCentre('subscriptions.title')}
-                </h3>
-              </div>
-              {subscriptions.map((field, index) => {
-                const section = NOTIFICATION_SUBSCRIPTION_SECTIONS.find(
-                  (item) => item.id === field.group,
-                );
-                const startsSection =
-                  index === 0 ||
-                  subscriptions[index - 1]?.group !== field.group;
-                return (
-                  <div key={field.id}>
-                    {startsSection && section && (
-                      <h4 className="mb-3 mt-2 text-2 font-medium uppercase tracking-wide text-neutral-10">
-                        {tNotificationCentre.has(
-                          `subscriptions.sections.${section.id}`,
-                        )
-                          ? tNotificationCentre(
-                              `subscriptions.sections.${section.id}`,
-                            )
-                          : section.title}
-                      </h4>
-                    )}
-                    <FormField
-                      control={form.control}
-                      name={`subscriptions.${index}`}
-                      render={({
-                        field: { name, value: subscription, onChange },
-                      }) => {
-                        const localizedSubscription =
-                          subscriptionTextMap[subscription.tagName];
-                        const checkboxId = `${name.replace('.', '_')}_checked`;
-                        return (
-                          <FormItem>
-                            <FormControl>
-                              <div className="flex flex-col gap-2">
-                                <span className="text-2 text-neutral-11 justify-between">
-                                  <div className="flex flex-row gap-2">
-                                    <Checkbox
-                                      id={checkboxId}
-                                      checked={subscription.tagValue}
-                                      disabled={preferencesDisabled}
-                                      onCheckedChange={(value) => {
-                                        onChange({
-                                          ...subscription,
-                                          tagValue: value === true,
-                                        });
-                                      }}
-                                    />
-                                    <FormLabel htmlFor={checkboxId}>
-                                      {localizedSubscription?.title ??
-                                        subscription.title}
-                                    </FormLabel>
-                                  </div>
-                                </span>
-                                <span className="text-2 text-neutral-11">
-                                  {localizedSubscription?.description ??
-                                    subscription.description}
-                                </span>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        );
-                      }}
-                    />
-                  </div>
-                );
-              })}
+              </SettingsCard>
+
+              <h3 className="-mb-2 text-3 font-medium text-neutral-11">
+                {tNotificationCentre('subscriptions.title')}
+              </h3>
+              {NOTIFICATION_SUBSCRIPTION_SECTIONS.map((section) => (
+                <SettingsCard
+                  key={section.id}
+                  title={optionalText(
+                    `subscriptions.sections.${section.id}`,
+                    section.title,
+                  )}
+                >
+                  {subscriptions.map((field, index) => {
+                    if (field.group !== section.id) return null;
+                    return (
+                      <FormField
+                        key={field.id}
+                        control={form.control}
+                        name={`subscriptions.${index}`}
+                        render={({
+                          field: { name, value: subscription, onChange },
+                        }) => {
+                          const localizedSubscription =
+                            subscriptionTextMap[subscription.tagName];
+                          return (
+                            <SettingsRow
+                              id={`${name.replace('.', '_')}_checked`}
+                              title={
+                                localizedSubscription?.title ??
+                                subscription.title
+                              }
+                              description={
+                                localizedSubscription?.description ??
+                                subscription.description
+                              }
+                              checked={subscription.tagValue}
+                              disabled={preferencesDisabled}
+                              onCheckedChange={(value) =>
+                                onChange({ ...subscription, tagValue: value })
+                              }
+                            />
+                          );
+                        }}
+                      />
+                    );
+                  })}
+                </SettingsCard>
+              ))}
             </fieldset>
             <div className="sticky bottom-0 z-[5] -mx-4 -mb-4 border-t border-border/90 bg-background-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:-mx-7 lg:-mb-7 lg:px-7">
               <div className="flex items-center justify-end gap-3">
                 {isDirty && (
                   <span className="mr-auto text-2 text-neutral-11">
-                    {tNotificationCentre.has('actions.unsavedChanges')
-                      ? tNotificationCentre('actions.unsavedChanges')
-                      : 'You have unsaved changes'}
+                    {optionalText(
+                      'actions.unsavedChanges',
+                      'You have unsaved changes',
+                    )}
                   </span>
                 )}
                 <Button

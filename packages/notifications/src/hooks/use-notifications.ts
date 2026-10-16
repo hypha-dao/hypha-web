@@ -23,6 +23,9 @@ export interface INotificationsContext {
   setInitialized: React.Dispatch<React.SetStateAction<boolean>>;
   subscribed: boolean;
   setSubscribed: React.Dispatch<React.SetStateAction<boolean>>;
+  /** This browser can actually receive push: permission granted and its subscription opted in. */
+  pushActive: boolean;
+  setPushActive: React.Dispatch<React.SetStateAction<boolean>>;
   loggedIn: boolean;
 }
 
@@ -41,6 +44,8 @@ export const NotificationsContext = React.createContext<INotificationsContext>({
   setInitialized: (_: React.SetStateAction<boolean>) => {},
   subscribed: false,
   setSubscribed: (_: React.SetStateAction<boolean>) => {},
+  pushActive: false,
+  setPushActive: (_: React.SetStateAction<boolean>) => {},
   loggedIn: false,
 });
 
@@ -77,18 +82,38 @@ async function writePreferenceTag(tagName: Tag, enabled: boolean) {
   }
 }
 
-export async function hasPermission() {
+/**
+ * Account-level enrolment (the master switch): the user opted in (`subscribed` tag) and is logged
+ * in to OneSignal. Independent of this browser's push permission (#2549 D25).
+ */
+export async function isEnrolled() {
   if (!OneSignal) {
     return false;
   }
   try {
     const tags = await OneSignal.User.getTags();
-    const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
-    const externalId = OneSignal.User.externalId;
-    const permission = OneSignal.Notifications.permission;
-    return permission && isSubscribed && Boolean(externalId);
+    return (
+      checkTag(tags, TAG_SUBSCRIBED, false) &&
+      Boolean(OneSignal.User.externalId)
+    );
   } catch (err) {
-    console.warn('Failed to check notification permission', err);
+    console.warn('Failed to check notification enrolment', err);
+    return false;
+  }
+}
+
+/** Device-level push state: this browser's permission is granted and its subscription is opted in. */
+export function isPushActive() {
+  if (!OneSignal) {
+    return false;
+  }
+  try {
+    return Boolean(
+      OneSignal.Notifications.permission &&
+        OneSignal.User.PushSubscription.optedIn,
+    );
+  } catch (err) {
+    console.warn('Failed to check push state', err);
     return false;
   }
 }
@@ -100,8 +125,14 @@ export const useNotifications = ({
   person: Person | undefined;
   isLoading: boolean;
 }) => {
-  const { initialized, subscribed, setSubscribed, loggedIn } =
-    React.useContext(NotificationsContext);
+  const {
+    initialized,
+    subscribed,
+    setSubscribed,
+    pushActive,
+    setPushActive,
+    loggedIn,
+  } = React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
   const [configuration, setConfiguration] =
     React.useState<NotificationConfiguration>();
@@ -113,7 +144,8 @@ export const useNotifications = ({
     try {
       const tags = await OneSignal.User.getTags();
       setConfiguration({
-        browserNotifications: isTagEnabled(tags, TAG_PUSH),
+        // Push is per device: on only if the user-level tag allows it AND this browser is opted in.
+        browserNotifications: isTagEnabled(tags, TAG_PUSH) && isPushActive(),
         emailNotifications: isTagEnabled(tags, TAG_EMAIL),
         subscriptions: SUBSCRIPTION_TAGS.map((tagName) => ({
           name: tagName,
@@ -137,7 +169,14 @@ export const useNotifications = ({
     }
     setError(null);
     try {
-      await OneSignal.Slidedown.promptPush({ force: true });
+      // Enrolment is account-level: a declined browser prompt must not block it (email still
+      // works) - the push switch just stays off for this browser.
+      try {
+        await OneSignal.Slidedown.promptPush({ force: true });
+      } catch (promptErr) {
+        console.warn('Push prompt declined:', promptErr);
+      }
+      setPushActive(isPushActive());
       await OneSignal.User.addTag(TAG_SUBSCRIBED, TRUE);
       // Own-action confirmations start switched off (#2549 D5) — but never overwrite a choice the
       // user already made.
@@ -149,9 +188,48 @@ export const useNotifications = ({
       await initializeConfiguration();
     } catch (err) {
       console.warn('Error:', err);
-      setError('Notification permissions declined.');
+      setError('Could not turn notifications on. Please try again.');
     }
-  }, [OneSignal, initialized, setError, initializeConfiguration]);
+  }, [
+    OneSignal,
+    initialized,
+    setError,
+    setSubscribed,
+    setPushActive,
+    initializeConfiguration,
+  ]);
+
+  /**
+   * Turns push on for this browser (asks for permission if needed). Runs straight from the
+   * switch click because browsers only allow the permission prompt from a user gesture.
+   */
+  const enableBrowserPush = React.useCallback(async () => {
+    if (!initialized) {
+      return false;
+    }
+    setError(null);
+    try {
+      if (!OneSignal.Notifications.permission) {
+        await OneSignal.Slidedown.promptPush({ force: true });
+      }
+      if (
+        OneSignal.Notifications.permission &&
+        !OneSignal.User.PushSubscription.optedIn
+      ) {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+    } catch (err) {
+      console.warn('Failed to enable browser push', err);
+    }
+    const active = isPushActive();
+    setPushActive(active);
+    if (!active) {
+      setError(
+        'Notifications are blocked for this browser. Allow them from the padlock icon next to the address bar, then try again.',
+      );
+    }
+    return active;
+  }, [OneSignal, initialized, setError, setPushActive]);
   const unsubscribe = React.useCallback(async () => {
     if (!initialized) {
       console.warn('Cannot unsubscribe notifications until initialized');
@@ -179,14 +257,21 @@ export const useNotifications = ({
       }
       setError(null);
       try {
+        // Push is per device: switching it off only opts THIS browser out. The user-level `push`
+        // tag is left alone so the user's other devices keep receiving; switching on clears any
+        // earlier `disabled` marker.
         if (configuration.browserNotifications) {
-          if (!OneSignal.User.PushSubscription.optedIn) {
+          if (
+            OneSignal.Notifications.permission &&
+            !OneSignal.User.PushSubscription.optedIn
+          ) {
             await OneSignal.User.PushSubscription.optIn();
           }
+          await writePreferenceTag(TAG_PUSH, true);
         } else if (OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optOut();
         }
-        await writePreferenceTag(TAG_PUSH, configuration.browserNotifications);
+        setPushActive(isPushActive());
 
         if (configuration.emailNotifications) {
           if (person.email) {
@@ -206,13 +291,15 @@ export const useNotifications = ({
         setError('Could not save notification settings. Please try again.');
       }
     },
-    [OneSignal, initialized, person, isLoading],
+    [OneSignal, initialized, person, isLoading, setPushActive],
   );
 
   return {
     subscribed,
+    pushActive,
     subscribe,
     unsubscribe,
+    enableBrowserPush,
     configuration,
     setConfiguration,
     saveConfigurations,
