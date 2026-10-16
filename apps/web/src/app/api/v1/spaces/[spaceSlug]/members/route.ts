@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getSpaceMembersForHttpApi,
+  readEnergyCommunityMemberAddresses,
   spaceMembersHttpPaginationQuerySchema,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -37,6 +38,19 @@ export async function GET(
       pageSize: url.searchParams.get('pageSize') ?? undefined,
     });
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
+    const energySharingOnly =
+      url.searchParams.get('energySharingOnly') === 'true';
+
+    let energyMemberAddresses: ReadonlySet<string> | undefined;
+    if (energySharingOnly) {
+      const energyMembers = await readEnergyCommunityMemberAddresses(
+        spaceSlug,
+        { db },
+      );
+      if (energyMembers.status === 'ok') {
+        energyMemberAddresses = energyMembers.addresses;
+      }
+    }
 
     let roster;
     try {
@@ -46,6 +60,7 @@ export async function GET(
           page: pagination.page,
           pageSize: pagination.pageSize,
           searchTerm,
+          energyMemberAddresses,
         },
         { db },
       );

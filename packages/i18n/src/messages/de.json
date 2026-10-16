@@ -4298,6 +4298,7 @@
       "ownershipTotal100": "Eigentumsanteile müssen insgesamt 100 % ergeben",
       "atLeastOneSource": "Mindestens eine Quelle ist erforderlich",
       "ownerMustBeMember": "Dieser Eigentümer muss auch als Mitglied hinzugefügt werden (Zähleranzahl 0 ist in Ordnung), sonst erhält er keine Einnahmen.",
+      "mustBeSpaceMember": "Nur Mitglieder dieses Space können der Energiegemeinschaft hinzugefügt werden.",
       "addTargetWallet": "Mindestens eine Ziel-Wallet hinzufügen",
       "targetWalletsTotal100": "Anteile der Ziel-Wallets müssen insgesamt 100 % ergeben"
     },

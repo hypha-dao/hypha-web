@@ -4322,7 +4322,8 @@
       "addOwner": "Add at least one owner",
       "ownershipTotal100": "Ownership shares must total 100%",
       "atLeastOneSource": "At least one source is required",
-      "ownerMustBeMember": "This owner must also be added as a member (meter count 0 is fine) or they will not receive revenue."
+      "ownerMustBeMember": "This owner must also be added as a member (meter count 0 is fine) or they will not receive revenue.",
+      "mustBeSpaceMember": "Only members of this space can be added to the energy community."
     },
     "errors": {
       "allowanceTimeout": "Timed out waiting for stablecoin allowance.",
