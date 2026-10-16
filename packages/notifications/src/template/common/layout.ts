@@ -108,6 +108,13 @@ const STYLES = [
   '.footer-btn{display:inline-block;padding:8px 16px;background-color:#03081B;color:#fff !important;border-radius:4px;text-decoration:none;font-size:12px;margin-top:10px}',
 ].join('');
 
+/** Linear-time trailing-slash trim (a `/\/+$/` regex backtracks quadratically on long runs). */
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end -= 1;
+  return value.slice(0, end);
+}
+
 export function layout({
   title,
   greeting = 'Hey there,',
@@ -146,7 +153,7 @@ export function layout({
     '<table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f9f9f9;"><tr><td align="center">',
     '<table class="container" width="600" border="0" cellspacing="0" cellpadding="0">',
     `<tr><td class="header"><img width="200" height="68" alt="Hypha" style="display:block;margin:0 auto;border:0;" src="${escapeHtml(
-      appUrl.replace(/\/+$/, '') + LOGO_PATH,
+      trimTrailingSlashes(appUrl) + LOGO_PATH,
     )}" /></td></tr>`,
     `<tr><td class="content">${body}</td></tr>`,
     `<tr><td class="footer">${footerHtml}</td></tr>`,

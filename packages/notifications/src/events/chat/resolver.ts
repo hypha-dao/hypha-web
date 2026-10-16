@@ -74,6 +74,7 @@ async function resolveSlugsForMatrixUserIds(
 /** Only the specifically mentioned users, scoped to who's actually joined to the room (never trust the mention list alone — any room member could type an arbitrary mxid in a message). */
 async function resolveMentionRecipientSlugs(
   event: ChatNotificationEvent,
+  getJoined: () => Promise<string[]>,
 ): Promise<string[]> {
   const mentionIds = [
     ...new Set(
@@ -84,7 +85,7 @@ async function resolveMentionRecipientSlugs(
   ];
   if (mentionIds.length === 0) return [];
 
-  const joined = new Set(await fetchJoinedRoomMatrixUserIds(event.roomId));
+  const joined = new Set(await getJoined());
   const legitimateMentionIds = mentionIds.filter((id) => joined.has(id));
   return resolveSlugsForMatrixUserIds(legitimateMentionIds);
 }
@@ -92,11 +93,11 @@ async function resolveMentionRecipientSlugs(
 /** Every room member for a space-room message; only the signal's assignees for a signal-room message (never the whole space — a signal thread is scoped, not broadcast). */
 async function resolveAllMessagesRecipientSlugs(
   event: ChatNotificationEvent,
+  getJoined: () => Promise<string[]>,
 ): Promise<string[]> {
   const { context } = event;
   if (context.kind === 'space') {
-    const joined = await fetchJoinedRoomMatrixUserIds(event.roomId);
-    return resolveSlugsForMatrixUserIds(joined);
+    return resolveSlugsForMatrixUserIds(await getJoined());
   }
 
   const [coherence] = await db
@@ -149,13 +150,17 @@ export const resolveChatRecipients: RecipientResolver<
   // A message that mentions someone is one `chat.mention` event, but it is still a message for the
   // rest of the room: mentioned users get the mention (push + email, supersedes the plain message
   // push - never both), everyone else who gets all-message pushes still receives the message.
+  // One Matrix member fetch per event, shared by the mention and all-messages paths.
+  let joinedPromise: Promise<string[]> | undefined;
+  const getJoined = () =>
+    (joinedPromise ??= fetchJoinedRoomMatrixUserIds(event.roomId));
   const mentionedSlugs =
     event.type === 'chat.mention'
-      ? await resolveMentionRecipientSlugs(event)
+      ? await resolveMentionRecipientSlugs(event, getJoined)
       : [];
   const messageSlugs = isChatMessageNotificationsDisabled()
     ? []
-    : await resolveAllMessagesRecipientSlugs(event);
+    : await resolveAllMessagesRecipientSlugs(event, getJoined);
   if (mentionedSlugs.length === 0 && messageSlugs.length === 0) return [];
 
   const actorSlug = actorPerson?.slug?.trim();
