@@ -1228,6 +1228,7 @@
       "noIndividuals": "Ingen individuelle medlemmer ennå",
       "noMemberSpaces": "Ingen medlemsrom ennå",
       "noAgents": "Ingen agenter mobilisert ennå",
+      "agentLastActive": "Sist aktiv {date}",
       "unnamedMember": "Medlem",
       "loading": "Laster…"
     }
@@ -1280,6 +1281,7 @@
     "aiAgents": "AI-agenter",
     "aiAgentsEmptyState": "Ingen AI-agenter er mobilisert ennå. Still strategiske spørsmål for å aktivere dem.",
     "aiAgentsMobilizedCount": "Mobilisert {count, plural, one {# gang} other {# ganger}}",
+    "aiAgentsLastActive": "Sist aktiv {date}",
     "inviteMember": "Inviter",
     "inviteClose": "Lukk",
     "inviteSearch": "Søk på navn",

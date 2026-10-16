@@ -1261,6 +1261,7 @@
       "noIndividuals": "No individual members yet",
       "noMemberSpaces": "No member spaces yet",
       "noAgents": "No agents mobilized yet",
+      "agentLastActive": "Last active {date}",
       "unnamedMember": "Member",
       "loading": "Loading…"
     }
@@ -1313,6 +1314,7 @@
     "aiAgents": "AI Agents",
     "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
     "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}",
+    "aiAgentsLastActive": "Last active {date}",
     "inviteMember": "Invite",
     "inviteClose": "Close",
     "inviteSearch": "Search by name",

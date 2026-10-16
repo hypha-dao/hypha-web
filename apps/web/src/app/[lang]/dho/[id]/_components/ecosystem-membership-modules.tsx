@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
   getAgentAvatarInitials,
@@ -29,6 +29,7 @@ type MembershipPreview = {
   imageUrl?: string | null;
   initials?: string;
   accentClassName?: string;
+  caption?: string;
 };
 
 type EcosystemMembershipModulesProps = {
@@ -87,6 +88,29 @@ function MembershipStack({
 
   if (members.length === 0) {
     return <p className="craft-meta text-pretty md:truncate">{emptyLabel}</p>;
+  }
+
+  if (members.some((member) => member.caption)) {
+    return (
+      <ul className="flex min-w-0 flex-col gap-2">
+        {members.slice(0, MAX_VISIBLE_PREVIEW_COUNT).map((member) => (
+          <li key={member.id} className="flex min-w-0 items-center gap-2">
+            <div
+              title={member.label}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border font-semibold ${
+                member.accentClassName ?? ''
+              }`}
+              aria-label={member.label}
+            >
+              {member.initials ?? member.label.slice(0, 2).toUpperCase()}
+            </div>
+            <span className="min-w-0 truncate text-1 text-neutral-11">
+              {member.caption}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
   }
 
   const visible = members.slice(0, visibleCount);
@@ -165,6 +189,7 @@ export function EcosystemMembershipModules({
 }: EcosystemMembershipModulesProps) {
   const t = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
+  const format = useFormatter();
   const mobilizedAgents = useMobilizedAiAgents(spaceSlug);
   const { persons, spaces, isLoading } = useMembers({
     spaceSlug,
@@ -205,14 +230,20 @@ export function EcosystemMembershipModules({
     () =>
       mobilizedAgents.map((agent) => {
         const label = tCoherence(agent.role);
+        const usedAt = new Date(agent.lastMobilizedAt);
         return {
           id: `agent-${agent.id}`,
           label,
           initials: getAgentAvatarInitials(label),
           accentClassName: tagGroupAccentClass(agent.tagGroup),
+          caption: Number.isNaN(usedAt.getTime())
+            ? undefined
+            : t('navigation.agentLastActive', {
+                date: format.dateTime(usedAt, { dateStyle: 'medium' }),
+              }),
         };
       }),
-    [mobilizedAgents, tCoherence],
+    [format, mobilizedAgents, t, tCoherence],
   );
 
   // Always render all three modules — including empty Agents — so the control

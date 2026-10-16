@@ -18,7 +18,7 @@ import {
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
 import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
@@ -45,6 +45,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
   const tCoherence = useTranslations('CoherenceTab');
+  const format = useFormatter();
   const [entityFilter, setEntityFilter] = useState<'member' | 'space' | 'ai'>(
     'member',
   );
@@ -202,6 +203,12 @@ export const MembersSection: FC<MemberSectionProps> = ({
                 <div className="mt-4 text-xs text-muted-foreground">
                   {tMembers('aiAgentsMobilizedCount', {
                     count: agent.mobilizedCount,
+                  })}
+                  {' · '}
+                  {tMembers('aiAgentsLastActive', {
+                    date: format.dateTime(new Date(agent.lastMobilizedAt), {
+                      dateStyle: 'medium',
+                    }),
                   })}
                 </div>
               </div>

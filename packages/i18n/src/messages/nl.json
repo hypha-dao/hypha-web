@@ -1229,6 +1229,7 @@
       "noIndividuals": "Nog geen individuele leden",
       "noMemberSpaces": "Nog geen lidruimtes",
       "noAgents": "Nog geen agenten gemobiliseerd",
+      "agentLastActive": "Laatst actief {date}",
       "unnamedMember": "Lid",
       "loading": "Laden…"
     }
@@ -1281,6 +1282,7 @@
     "aiAgents": "AI-agenten",
     "aiAgentsEmptyState": "Er zijn nog geen AI-agenten gemobiliseerd. Stel strategische vragen om ze te activeren.",
     "aiAgentsMobilizedCount": "Gemobiliseerd {count, plural, one {# keer} other {# keer}}",
+    "aiAgentsLastActive": "Laatst actief {date}",
     "inviteMember": "Uitnodigen",
     "inviteClose": "Sluiten",
     "inviteSearch": "Zoek op naam",

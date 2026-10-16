@@ -1230,6 +1230,7 @@
       "noIndividuals": "Noch keine Personen",
       "noMemberSpaces": "Noch keine Mitglieds-Spaces",
       "noAgents": "Noch keine Agenten mobilisiert",
+      "agentLastActive": "Zuletzt aktiv {date}",
       "unnamedMember": "Mitglied",
       "loading": "Wird geladen…"
     }
@@ -1282,6 +1283,7 @@
     "aiAgents": "KI-Agenten",
     "aiAgentsEmptyState": "Noch keine KI-Agenten mobilisiert. Stelle strategische Fragen, um sie zu aktivieren.",
     "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}",
+    "aiAgentsLastActive": "Zuletzt aktiv {date}",
     "inviteMember": "Einladen",
     "inviteClose": "Schließen",
     "inviteSearch": "Nach Namen suchen",
