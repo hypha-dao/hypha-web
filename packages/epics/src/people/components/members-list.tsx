@@ -15,6 +15,7 @@ type MembersListProps = {
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  energySharingOnly?: boolean;
   entityFilter?: 'member' | 'space';
 };
 
@@ -27,6 +28,7 @@ export const MembersList: FC<MembersListProps> = ({
   spaceSlug,
   searchTerm,
   refreshInterval,
+  energySharingOnly,
   entityFilter = 'member',
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
@@ -36,6 +38,7 @@ export const MembersList: FC<MembersListProps> = ({
     spaceSlug,
     searchTerm,
     refreshInterval,
+    energySharingOnly,
   });
   return (
     <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">

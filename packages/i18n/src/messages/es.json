@@ -4298,6 +4298,7 @@
       "ownershipTotal100": "Las participaciones de propiedad deben sumar 100 %",
       "atLeastOneSource": "Se requiere al menos una fuente",
       "ownerMustBeMember": "Este propietario también debe añadirse como miembro (puede tener 0 contadores) o no recibirá ingresos.",
+      "mustBeSpaceMember": "Solo los miembros de este espacio pueden añadirse a la comunidad energética.",
       "addTargetWallet": "Añade al menos una wallet de objetivo",
       "targetWalletsTotal100": "Las participaciones de las wallets de objetivos deben sumar 100 %"
     },

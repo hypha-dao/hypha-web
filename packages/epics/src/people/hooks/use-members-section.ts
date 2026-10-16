@@ -10,12 +10,14 @@ type UseMembersSectionProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
   refreshInterval?: number;
+  energySharingOnly?: boolean;
 };
 
 export const useMembersSection = ({
   useMembers,
   spaceSlug,
   refreshInterval,
+  energySharingOnly,
 }: UseMembersSectionProps) => {
   const [activeFilter, setActiveFilter] = useState<FilterParams<Person>>();
   const [pages, setPages] = React.useState(1);
@@ -32,6 +34,7 @@ export const useMembersSection = ({
     spaceSlug: spaceSlug,
     searchTerm,
     refreshInterval,
+    energySharingOnly,
   });
 
   const pagination = React.useMemo(() => {

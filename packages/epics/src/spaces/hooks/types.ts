@@ -27,6 +27,11 @@ export type UseMembersProps = {
   searchTerm?: string;
   refreshInterval?: number;
   paginationDisabled?: boolean;
+  /**
+   * When the space is an energy community, omit wallets that are not
+   * on-chain energy-sharing members. No-op for spaces without one.
+   */
+  energySharingOnly?: boolean;
 };
 
 export type UseMembers = (props: UseMembersProps) => UseMembersReturn;

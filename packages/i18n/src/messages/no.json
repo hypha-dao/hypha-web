@@ -4303,6 +4303,7 @@
       "ownershipTotal100": "Eierandelene må totalt utgjøre 100 %",
       "atLeastOneSource": "Minst én kilde er påkrevd",
       "ownerMustBeMember": "Denne eieren må også legges til som medlem (målerantall 0 er greit), ellers vil de ikke motta inntekter.",
+      "mustBeSpaceMember": "Bare medlemmer av dette området kan legges til i energifellesskapet.",
       "addTargetWallet": "Legg til minst én mål-lommebok",
       "targetWalletsTotal100": "Andelene til mål-lommebøkene må totalt utgjøre 100 %"
     },

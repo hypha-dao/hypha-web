@@ -104,6 +104,7 @@ export const EnableEnergyCommunityPlugin = ({
               members={members}
               spaces={spaces}
               defaultRecipientType="member"
+              allowManualAddress={false}
             />
             <div className="flex items-end justify-between gap-2">
               <FormField

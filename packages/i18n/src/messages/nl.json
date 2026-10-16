@@ -4304,6 +4304,7 @@
       "ownershipTotal100": "Eigendomsaandelen moeten in totaal 100% zijn",
       "atLeastOneSource": "Er is minimaal één bron vereist",
       "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten.",
+      "mustBeSpaceMember": "Alleen leden van deze space kunnen aan de energiegemeenschap worden toegevoegd.",
       "addTargetWallet": "Voeg ten minste één doelportemonnee toe",
       "targetWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn"
     },
