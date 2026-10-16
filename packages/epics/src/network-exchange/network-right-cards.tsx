@@ -881,8 +881,8 @@ function ImpactSharedCard({ count }: { count: number }) {
   );
 }
 
-const NETWORK_RIGHT_PANEL_CLASS =
-  'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto @4xl:flex @4xl:w-[380px]';
+export const NETWORK_RIGHT_PANEL_CLASS =
+  'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto @4xl:sticky @4xl:top-[var(--menu-top-height,70px)] @4xl:flex @4xl:max-h-[calc(100dvh-var(--menu-top-height,70px)-1.25rem)] @4xl:w-[380px] @4xl:overflow-y-auto';
 
 export function NetworkRightColumn({
   lang,

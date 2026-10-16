@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const rawConnections = request.nextUrl.searchParams.get('connections');
     const requested =
       rawConnections == null ? undefined : Number(rawConnections);
+    const connectionQuery = request.nextUrl.searchParams.get('q')?.trim();
     const intelligence = await getMemberIntelligence(
       {
         personId: caller.person.id,
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest) {
           requested != null && Number.isFinite(requested)
             ? requested
             : undefined,
+        connectionQuery: connectionQuery
+          ? connectionQuery.slice(0, 80)
+          : undefined,
       },
       { db: caller.db },
     );

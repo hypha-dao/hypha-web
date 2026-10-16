@@ -57,6 +57,7 @@ import type {
   NetworkCapitalAsk,
 } from '../member-intelligence';
 import {
+  MEMBER_CONNECTION_SEARCH_MAX,
   peerNamesByPerson,
   peopleSharingMemberSpaces,
   recentNotifications,
@@ -162,11 +163,13 @@ async function loadSharedPeople(
     spaceIds,
     limit,
     focusPersonIds,
+    query,
   }: {
     personId: number;
     spaceIds: number[];
     limit: number;
     focusPersonIds: readonly number[];
+    query?: string;
   },
   { db }: DbConfig,
 ): Promise<{
@@ -259,6 +262,7 @@ async function loadSharedPeople(
     people: peopleRows,
     spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
     limit,
+    query,
   });
   const orientations = await readPrimaryOrientations(
     db,
@@ -972,7 +976,13 @@ export async function getMemberIntelligence(
     personId,
     limit = LIST_LIMIT,
     connectionLimit,
-  }: { personId: number; limit?: number; connectionLimit?: number },
+    connectionQuery,
+  }: {
+    personId: number;
+    limit?: number;
+    connectionLimit?: number;
+    connectionQuery?: string;
+  },
   { db }: DbConfig,
 ): Promise<MemberIntelligence | null> {
   const listLimit = Math.min(Math.max(limit, 1), 24);
@@ -1212,7 +1222,11 @@ export async function getMemberIntelligence(
         {
           personId,
           spaceIds,
-          limit: resolveMemberConnectionLimit(listLimit, connectionLimit),
+          limit: resolveMemberConnectionLimit(
+            listLimit,
+            connectionQuery ? MEMBER_CONNECTION_SEARCH_MAX : connectionLimit,
+          ),
+          query: connectionQuery,
           focusPersonIds: [
             ...proposalSlice.creators.map((creator) => creator.id),
             ...signalSlice.creators.map((creator) => creator.id),

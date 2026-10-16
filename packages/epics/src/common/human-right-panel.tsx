@@ -4740,6 +4740,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   if (isMemberHome && mode === 'space' && !spaceSlug?.trim()) {
     return (
       <div className="flex h-full min-h-0 flex-col bg-page-background dark:bg-background-2">
+        <HumanChatPanelHeader title="" />
         <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <MyConnections />
         </div>

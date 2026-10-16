@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { ArrowUpRight, ChevronDown, Users, Wallet, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -150,6 +150,7 @@ export function NetworkSidePanel({
   const { openCoherenceChat, setFocusedSpaceChat } = useHumanChatPanel();
   const { assets, isLoading } = useSpaceTreasury(selectedSpace?.slug ?? null);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const seeks = parseCapitalKeys(capitals?.seeks);
   const offers = parseCapitalKeys(capitals?.offers);
   const summary = excerpt(selectedSpace?.description);
@@ -184,6 +185,7 @@ export function NetworkSidePanel({
       slug: focusedSlug,
       description: focusedDescription,
     });
+    panelRef.current?.scrollTo({ top: 0 });
   }, [
     focusedDescription,
     focusedRoomId,
@@ -211,8 +213,9 @@ export function NetworkSidePanel({
 
   return (
     <aside
+      ref={panelRef}
       aria-label={t('navNetwork')}
-      className="narrow-scrollbar flex min-w-0 flex-col bg-background lg:sticky lg:top-[var(--menu-top-height)] lg:max-h-[calc(100dvh-var(--menu-top-height))] lg:overflow-y-auto lg:border-l lg:border-border"
+      className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto border border-border bg-background"
     >
       {selectedSpace ? (
         <section>
@@ -226,7 +229,7 @@ export function NetworkSidePanel({
               type="button"
               onClick={onClose}
               aria-label={tCommon('close')}
-              className="absolute right-3 top-3 grid size-8 place-items-center border border-border bg-background-2 text-foreground hover:bg-background-3"
+              className="absolute right-3 top-3 z-10 grid size-8 place-items-center border border-border bg-background-2 text-foreground hover:bg-background-3"
             >
               <X className="size-4" strokeWidth={1.5} aria-hidden />
             </button>

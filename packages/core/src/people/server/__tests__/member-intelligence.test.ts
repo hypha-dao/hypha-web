@@ -235,6 +235,23 @@ describe('peopleSharingMemberSpaces', () => {
     ).toEqual({ count: 0, connections: [] });
   });
 
+  it('finds a member past the first page when a name is searched', () => {
+    const result = peopleSharingMemberSpaces({
+      callerPersonId: 1,
+      membersBySpace: [
+        { spaceId: 10, addresses: ['0xaaaa', '0xBBBB', '0xcccc'] },
+        { spaceId: 11, addresses: ['0xAAAA', '0xbbbb'] },
+      ],
+      people,
+      spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
+      limit: 1,
+      query: 'noor',
+    });
+
+    expect(result.count).toBe(1);
+    expect(result.connections.map((person) => person.id)).toEqual([3]);
+  });
+
   it('does not count space-actor profiles', () => {
     const result = peopleSharingMemberSpaces({
       callerPersonId: 1,

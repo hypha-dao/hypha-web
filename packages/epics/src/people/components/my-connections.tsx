@@ -244,6 +244,10 @@ export function MyConnections() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [calling, setCalling] = useState(false);
   const [directory, setDirectory] = useState<ConnectionPerson[] | null>(null);
+  const [searchDirectory, setSearchDirectory] = useState<
+    ConnectionPerson[] | null
+  >(null);
+  const [searching, setSearching] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreFailed, setMoreFailed] = useState(false);
   const [directoryComplete, setDirectoryComplete] = useState(false);
@@ -269,9 +273,51 @@ export function MyConnections() {
   );
   const hasMorePeople =
     !directoryComplete && connections.length < connectionTotal;
+  const needle = query.trim().toLowerCase();
+  const listed =
+    needle && searchDirectory != null ? searchDirectory : connections;
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: connections.map((person) => person.id),
+    personIds: listed.map((person) => person.id),
   });
+
+  useEffect(() => {
+    const term = query.trim();
+    if (!term || !jwt) {
+      setSearchDirectory(null);
+      setSearching(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setSearching(true);
+      void (async () => {
+        try {
+          const response = await fetch(
+            `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
+            {
+              headers: { Authorization: `Bearer ${jwt}` },
+              signal: controller.signal,
+            },
+          );
+          if (!response.ok) return;
+          const body = (await response.json()) as MemberIntelligence;
+          if (!controller.signal.aborted) {
+            setSearchDirectory(body.connections ?? []);
+          }
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+          }
+        } finally {
+          if (!controller.signal.aborted) setSearching(false);
+        }
+      })();
+    }, 200);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [jwt, query]);
 
   useEffect(() => {
     if (!client) {
@@ -306,13 +352,13 @@ export function MyConnections() {
   const members = useMemo(
     () =>
       memberRowsForConnections(
-        connections,
+        listed,
         rows,
         personIdToMatrixUserId,
         home?.person.id ?? null,
         t('someone'),
       ),
-    [connections, home?.person.id, personIdToMatrixUserId, rows, t],
+    [home?.person.id, listed, personIdToMatrixUserId, rows, t],
   );
 
   const memberPersonIds = useMemo(
@@ -351,10 +397,15 @@ export function MyConnections() {
     [reachOut],
   );
 
-  const needle = query.trim().toLowerCase();
   const people = useMemo(() => {
     const filtered = needle
-      ? members.filter((row) => row.name.toLowerCase().includes(needle))
+      ? members.filter((row) => {
+          const haystack = [row.name, row.person.nickname, row.person.slug]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(needle);
+        })
       : members;
     return sortByRecencyThenPresence(filtered, presenceById);
   }, [members, needle, presenceById]);
@@ -567,7 +618,7 @@ export function MyConnections() {
         </button>
       ) : null}
 
-      {home != null && people.length === 0 ? (
+      {home != null && people.length === 0 && !searching ? (
         <p className="text-2 text-muted-foreground">
           {needle ? t('noMatches') : t('empty')}
         </p>
@@ -590,7 +641,7 @@ export function MyConnections() {
         />
       ) : null}
 
-      {hasMorePeople ? (
+      {hasMorePeople && !needle ? (
         <div className="flex justify-center">
           <Button
             type="button"

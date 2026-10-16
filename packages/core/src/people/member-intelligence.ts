@@ -248,6 +248,8 @@ export type SharedSpacePerson = {
 export const MEMBER_CONNECTION_LIMIT = 12;
 /** Further pages stop here so one request cannot return the whole network. */
 export const MEMBER_CONNECTION_MAX = 120;
+/** Search scans every shared-space member, then returns this many matches. */
+export const MEMBER_CONNECTION_SEARCH_MAX = 500;
 
 /**
  * How many shared-space people to return. The home stays on the first page.
@@ -289,6 +291,7 @@ export function peopleSharingMemberSpaces({
   people,
   spaceActorSubPrefix,
   limit,
+  query,
 }: {
   callerPersonId: number;
   membersBySpace: ReadonlyArray<{
@@ -298,6 +301,7 @@ export function peopleSharingMemberSpaces({
   people: readonly SharedSpacePerson[];
   spaceActorSubPrefix: string;
   limit: number;
+  query?: string;
 }): { count: number; connections: SharedSpaceConnection[] } {
   const spaceIdsByAddress = new Map<string, Set<number>>();
   for (const space of membersBySpace) {
@@ -336,11 +340,31 @@ export function peopleSharingMemberSpaces({
     (left, right) =>
       right.sharedSpaceCount - left.sharedSpaceCount || left.id - right.id,
   );
+  const needle = query?.trim().toLowerCase() ?? '';
+  const matched = needle
+    ? ranked.filter((person) => personMatchesQuery(person, needle))
+    : ranked;
 
   return {
-    count: ranked.length,
-    connections: ranked.slice(0, Math.max(limit, 0)),
+    count: needle ? matched.length : ranked.length,
+    connections: matched.slice(0, Math.max(limit, 0)),
   };
+}
+
+function personMatchesQuery(
+  person: {
+    name: string | null;
+    surname: string | null;
+    nickname: string | null;
+    slug: string | null;
+  },
+  needle: string,
+) {
+  return [person.name, person.surname, person.nickname, person.slug]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(' ')
+    .toLowerCase()
+    .includes(needle);
 }
 
 /**

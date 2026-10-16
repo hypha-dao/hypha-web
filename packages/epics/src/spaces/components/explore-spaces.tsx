@@ -576,7 +576,9 @@ export function ExploreSpaces({
           </div>
         </div>
         {sidePanel ? (
-          <div className="w-full shrink-0 @4xl:w-[380px]">{sidePanel}</div>
+          <div className="flex w-full shrink-0 flex-col @4xl:sticky @4xl:top-[var(--menu-top-height,70px)] @4xl:max-h-[calc(100dvh-var(--menu-top-height,70px)-1.25rem)] @4xl:w-[380px] @4xl:overflow-hidden">
+            {sidePanel}
+          </div>
         ) : null}
       </div>
     </div>
