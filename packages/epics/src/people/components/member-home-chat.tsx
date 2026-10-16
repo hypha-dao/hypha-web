@@ -224,7 +224,7 @@ function homeTextIsOneLine(text: string) {
 }
 
 /** From `lg`: ~3/4 of the screen, inset in the main pane, capped at 72rem. */
-const HOME_CHAT_COLUMN =
+export const HOME_CHAT_COLUMN =
   'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
 
 /** A decision stays with the member. Drop narration and any ask for their choice. */

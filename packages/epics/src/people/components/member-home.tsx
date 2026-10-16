@@ -39,7 +39,7 @@ import {
 import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
-import { MemberHomeChat } from './member-home-chat';
+import { HOME_CHAT_COLUMN, MemberHomeChat } from './member-home-chat';
 import {
   HOME_QUEUE_EVENT,
   bindHomePerson,
@@ -347,7 +347,7 @@ export function MemberHome({
                     isLoading={home == null}
                   />
                   <Stat
-                    label={t('connections')}
+                    label={t('counts.people')}
                     value={home?.counts.connections ?? 0}
                     isLoading={home == null}
                   />
@@ -780,51 +780,53 @@ function ClassicBoard({
   return (
     <div
       ref={boardRef}
-      className="narrow-scrollbar @container min-h-0 flex-1 overflow-y-auto px-4 py-6"
+      className="narrow-scrollbar @container min-h-0 flex-1 overflow-y-auto py-6"
     >
-      <h2
-        className="text-3"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
-        {t('useful')}
-      </h2>
-      <p className="mt-1 text-1 text-neutral-11">{t('classicOrder')}</p>
-      {queue.length === 0 ? (
-        <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
-      ) : (
-        <div className="mt-4 grid w-full grid-cols-1 items-start gap-4">
-          {queue.map((item) => {
-            const key = itemKey(item);
-            return (
-              <div
-                key={key}
-                data-home-focus={key}
-                className={cn(
-                  'min-w-0',
-                  focusKey === key && 'ring-1 ring-foreground',
-                )}
-              >
-                <MemberHomeThreadCard
-                  lang={lang}
-                  item={item}
-                  assistant={false}
-                  proposal={
-                    item.kind === 'proposal'
-                      ? home.proposals.find(
-                          (proposal) => proposal.slug === item.slug,
-                        ) ?? null
-                      : null
-                  }
-                  onAsk={() => undefined}
-                  onReach={(person, mode) =>
-                    mode === 'call' ? onCall(person) : onChat(person)
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div className={cn(HOME_CHAT_COLUMN, 'px-4')}>
+        <h2
+          className="text-3"
+          style={{ fontFamily: 'var(--font-family-heading)' }}
+        >
+          {t('useful')}
+        </h2>
+        <p className="mt-1 text-1 text-neutral-11">{t('classicOrder')}</p>
+        {queue.length === 0 ? (
+          <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
+        ) : (
+          <div className="mt-4 grid w-full grid-cols-1 items-start gap-4">
+            {queue.map((item) => {
+              const key = itemKey(item);
+              return (
+                <div
+                  key={key}
+                  data-home-focus={key}
+                  className={cn(
+                    'min-w-0',
+                    focusKey === key && 'ring-1 ring-foreground',
+                  )}
+                >
+                  <MemberHomeThreadCard
+                    lang={lang}
+                    item={item}
+                    assistant={false}
+                    proposal={
+                      item.kind === 'proposal'
+                        ? home.proposals.find(
+                            (proposal) => proposal.slug === item.slug,
+                          ) ?? null
+                        : null
+                    }
+                    onAsk={() => undefined}
+                    onReach={(person, mode) =>
+                      mode === 'call' ? onCall(person) : onChat(person)
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
