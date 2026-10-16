@@ -100,10 +100,13 @@ function normalizeMemberSpaces(
 export function NetworkQuickCreate({
   lang,
   memberSpaces,
+  kinds,
 }: {
   lang: Locale;
   /** Prefer the member's known spaces (e.g. home intelligence) over a second fetch. */
   memberSpaces?: readonly { slug: string; title: string }[];
+  /** Limit the actions. The create page asks only for a new space. */
+  kinds?: readonly Kind[];
 }) {
   const t = useTranslations('NetworkExchange');
   const tSignals = useTranslations('CoherenceTab');
@@ -111,7 +114,7 @@ export function NetworkQuickCreate({
   const { jwt } = useJwt();
   const { person, isLoading: isLoadingMe } = useMe();
   const persona = personaOf(person?.primaryOrientation);
-  const allowedKinds = KINDS_FOR_PERSONA[persona];
+  const allowedKinds = kinds ?? KINDS_FOR_PERSONA[persona];
   const { upload: uploadSignalMedia } = useAttachmentUpload({
     authorizationToken: jwt ?? undefined,
   });
@@ -342,24 +345,33 @@ export function NetworkQuickCreate({
     /^[a-z0-9_-]{1,80}$/i.test(firstParty?.slug ?? '');
   const visibleCards = cards.filter((card) => allowedKinds.includes(card.id));
 
-  if (isLoadingMe) {
+  if (isLoadingMe && !kinds) {
     return (
       <div className="@container mx-auto w-full max-w-4xl" aria-busy="true" />
     );
   }
 
+  const showPicker = visibleCards.length > 1;
+
   return (
-    <div className="@container mx-auto grid w-full max-w-4xl gap-4">
-      <div className="grid gap-3 @min-[36rem]:grid-cols-2">
-        {visibleCards.map((card) => (
-          <CreateCard
-            key={card.id}
-            card={card}
-            selected={kind === card.id}
-            onSelect={() => setKind(card.id)}
-          />
-        ))}
-      </div>
+    <div
+      className={cn(
+        '@container grid w-full gap-4',
+        kinds ? 'h-full' : 'mx-auto max-w-4xl',
+      )}
+    >
+      {showPicker ? (
+        <div className="grid gap-3 @min-[36rem]:grid-cols-2">
+          {visibleCards.map((card) => (
+            <CreateCard
+              key={card.id}
+              card={card}
+              selected={kind === card.id}
+              onSelect={() => setKind(card.id)}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 border border-border p-4">
         {kind === 'project' || kind === 'funder' ? (

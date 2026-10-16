@@ -1,3 +1,9 @@
+.mycelium-node,
+.mycelium-node:focus,
+.mycelium-node:focus-visible {
+  outline: none;
+}
+
 .mycelium-thread {
   fill: none;
   stroke: var(--neutral-12);

@@ -288,6 +288,52 @@ function layoutField(
         bend: 0,
       });
     }
+
+    const parentNode = findNode(tree, parent.id);
+    const siblings = (parentNode?.children ?? [])
+      .filter((child) => child.id !== focus.id && !byId.has(child.id))
+      .slice(0, 6);
+    const siblingR = Math.round(20 * nodeScale);
+    const siblingDist = Math.max(parentDist * 0.92, parentR + siblingR + 44);
+    const down = Math.PI / 2;
+    siblings.forEach((sibling, index) => {
+      const half = Math.ceil(siblings.length / 2);
+      const onLeft = index < half;
+      const slot = onLeft ? index : index - half;
+      const countSide = onLeft ? half : siblings.length - half;
+      const step = countSide <= 1 ? 0 : slot / (countSide - 1);
+      const angle = onLeft
+        ? down + 0.5 + step * 0.85
+        : down - 0.5 - step * 0.85;
+      const at = {
+        x: parentPoint.x + Math.cos(angle) * siblingDist,
+        y: parentPoint.y + Math.sin(angle) * siblingDist,
+      };
+      nodes.push({
+        id: sibling.id,
+        name: sibling.name,
+        slug: sibling.slug,
+        logoUrl: sibling.logoUrl,
+        x: at.x,
+        y: at.y,
+        r: siblingR,
+        role: 'child',
+        hasHiddenChildren: sibling.children.length > 0,
+      });
+      const fromParent = shorten(
+        parentPoint.x,
+        parentPoint.y,
+        at.x,
+        at.y,
+        parentR,
+        siblingR,
+      );
+      links.push({
+        id: `sibling-${sibling.id}`,
+        ...fromParent,
+        bend: index % 2 === 0 ? 16 : -16,
+      });
+    });
   }
 
   return { nodes, links };
@@ -437,16 +483,33 @@ export function MyceliumEcosystem({
   const flows = useMemo(() => {
     const totals = new Map<
       string,
-      { label: string; symbol: string; out: number; inn: number }
+      {
+        label: string;
+        symbol: string;
+        out: number;
+        inn: number;
+        imageUrl?: string | null;
+      }
     >();
     for (const transfer of transfers) {
       const label = flowEndLabel(transfer);
       const symbol = transfer.symbol || '';
       const key = `${symbol}|${label.toLowerCase()}`;
-      const current = totals.get(key) ?? { label, symbol, out: 0, inn: 0 };
+      const current = totals.get(key) ?? {
+        label,
+        symbol,
+        out: 0,
+        inn: 0,
+        imageUrl:
+          transfer.space?.avatarUrl || transfer.person?.avatarUrl || null,
+      };
       const amount = Number.isFinite(transfer.value) ? transfer.value : 0;
       if (transfer.direction === 'outgoing') current.out += amount;
       else current.inn += amount;
+      if (!current.imageUrl) {
+        current.imageUrl =
+          transfer.space?.avatarUrl || transfer.person?.avatarUrl || null;
+      }
       totals.set(key, current);
     }
     return [...totals.values()]
@@ -454,33 +517,47 @@ export function MyceliumEcosystem({
       .slice(0, MAX_FLOWS);
   }, [transfers]);
 
-  const flowThreads = useMemo(() => {
+  const flowView = useMemo(() => {
     const focusNode = placedById.get(focus.id);
-    if (!focusNode || lens !== 'flows') return [];
-    const used = field.nodes
-      .filter((node) => node.id !== focus.id)
-      .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x));
-    let satellite = 0;
-    return flows.flatMap((flow) => {
+    if (!focusNode || lens !== 'flows' || flows.length === 0) {
+      return {
+        nodes: [] as Array<{
+          key: string;
+          label: string;
+          x: number;
+          y: number;
+          imageUrl?: string | null;
+        }>,
+        threads: [] as Array<{
+          key: string;
+          label: string;
+          incoming: boolean;
+          x: number;
+          y: number;
+          bend: number;
+        }>,
+      };
+    }
+    const dist = Math.max(108, Math.min(size.width, size.height) * 0.34);
+    const nodes = flows.map((flow, index) => {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * index) / flows.length;
       const match = findByTitle(tree, flow.label);
-      const placed = match ? placedById.get(match.id) : undefined;
-      let x: number;
-      let y: number;
-      if (placed && placed.id !== focus.id) {
-        x = placed.x;
-        y = placed.y;
-      } else {
-        const angle = Math.PI * 0.2 + satellite * 0.55;
-        satellite += 1;
-        const avoid = used.some(
-          (existing) => Math.abs(existing - angle) < 0.35,
-        );
-        const theta = avoid ? angle + Math.PI : angle;
-        const dist = Math.min(size.width, size.height) * 0.36;
-        x = size.width / 2 + Math.cos(theta) * dist;
-        y = size.height / 2 + Math.sin(theta) * dist;
-      }
-      const threads: Array<{
+      return {
+        key: `${flow.symbol}|${flow.label}`,
+        label: flow.label,
+        x: focusNode.x + Math.cos(angle) * dist,
+        y: focusNode.y + Math.sin(angle) * dist,
+        imageUrl: flow.imageUrl || match?.logoUrl,
+      };
+    });
+    const threads = flows.flatMap((flow, index) => {
+      const node = nodes[index];
+      if (!node) return [];
+      const amount = (value: number) =>
+        `${format.number(value, { maximumFractionDigits: 2 })} ${
+          flow.symbol
+        }`.trim();
+      const next: Array<{
         key: string;
         label: string;
         incoming: boolean;
@@ -489,33 +566,29 @@ export function MyceliumEcosystem({
         bend: number;
       }> = [];
       if (flow.out > 0) {
-        threads.push({
-          key: `${flow.symbol}-${flow.label}-out`,
-          label: `${format.number(flow.out, {
-            maximumFractionDigits: 2,
-          })} ${flow.symbol}`.trim(),
+        next.push({
+          key: `${node.key}-out`,
+          label: amount(flow.out),
           incoming: false,
-          x,
-          y,
-          bend: 18,
+          x: node.x,
+          y: node.y,
+          bend: 16,
         });
       }
       if (flow.inn > 0) {
-        threads.push({
-          key: `${flow.symbol}-${flow.label}-in`,
-          label: `${format.number(flow.inn, {
-            maximumFractionDigits: 2,
-          })} ${flow.symbol}`.trim(),
+        next.push({
+          key: `${node.key}-in`,
+          label: amount(flow.inn),
           incoming: true,
-          x,
-          y,
-          bend: -18,
+          x: node.x,
+          y: node.y,
+          bend: -16,
         });
       }
-      return threads;
+      return next;
     });
+    return { nodes, threads };
   }, [
-    field.nodes,
     flows,
     focus.id,
     format,
@@ -544,7 +617,7 @@ export function MyceliumEcosystem({
       imageUrl?: string | null;
     }> = [];
     const spokes = field.nodes
-      .filter((node) => node.role === 'child')
+      .filter((node) => node.id !== focus.id)
       .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x))
       .sort((left, right) => left - right);
     let openAngle = Math.PI;
@@ -562,7 +635,7 @@ export function MyceliumEcosystem({
       }
       openGap = bestGap;
     }
-    const spread = Math.min(Math.PI * 0.45, Math.max(0.4, openGap * 0.62));
+    const spread = Math.min(Math.PI * 1.35, Math.max(0.7, openGap * 0.72));
     const place = (
       items: Array<{
         key: string;
@@ -711,24 +784,53 @@ export function MyceliumEcosystem({
           className="h-full w-full"
         >
           <g>
-            {field.links.map((link) => {
-              const hot =
-                hoveredId != null &&
-                (link.id.startsWith(`${hoveredId}-`) ||
-                  link.id.endsWith(`-${hoveredId}`) ||
-                  link.id === `parent-${hoveredId}`);
-              return (
-                <path
-                  key={link.id}
-                  d={hyphaPath(link.x1, link.y1, link.x2, link.y2, link.bend)}
-                  className="mycelium-thread"
-                  strokeWidth={link.id.startsWith('parent-') ? 1.25 : 1}
-                  strokeOpacity={hot ? 0.85 : 0.28}
-                />
-              );
-            })}
+            {lens === 'structure'
+              ? field.links.map((link) => {
+                  const hot =
+                    hoveredId != null &&
+                    (link.id.startsWith(`${hoveredId}-`) ||
+                      link.id.endsWith(`-${hoveredId}`) ||
+                      link.id === `parent-${hoveredId}`);
+                  return (
+                    <path
+                      key={link.id}
+                      d={hyphaPath(
+                        link.x1,
+                        link.y1,
+                        link.x2,
+                        link.y2,
+                        link.bend,
+                      )}
+                      className="mycelium-thread"
+                      strokeWidth={link.id.startsWith('parent-') ? 1.25 : 1}
+                      strokeOpacity={hot ? 0.85 : 0.28}
+                    />
+                  );
+                })
+              : null}
+            {showMembers && focusNode
+              ? memberChips.map((chip) => {
+                  const ends = shorten(
+                    focusNode.x,
+                    focusNode.y,
+                    chip.x,
+                    chip.y,
+                    focusNode.r,
+                    12,
+                  );
+                  return (
+                    <path
+                      key={`chip-thread-${chip.key}`}
+                      d={hyphaPath(ends.x1, ends.y1, ends.x2, ends.y2, 8)}
+                      className="mycelium-thread"
+                      strokeWidth={0.75}
+                      strokeOpacity={0.4}
+                    />
+                  );
+                })
+              : null}
             {lens === 'flows'
-              ? flowThreads.map((thread) => {
+              ? flowView.threads.map((thread) => {
                   const ends = shorten(
                     focusNode?.x ?? size.width / 2,
                     focusNode?.y ?? size.height / 2,
@@ -795,7 +897,10 @@ export function MyceliumEcosystem({
                 />
               </marker>
             </defs>
-            {field.nodes.map((node) => {
+            {(lens === 'flows'
+              ? field.nodes.filter((node) => node.id === focus.id)
+              : field.nodes
+            ).map((node) => {
               const clip = `${clipPrefix}-${node.id}`;
               const logo = node.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
               return (
@@ -804,7 +909,7 @@ export function MyceliumEcosystem({
                   role="button"
                   tabIndex={0}
                   aria-label={t('diagram.openSpace', { name: node.name })}
-                  className="cursor-pointer"
+                  className="mycelium-node cursor-pointer"
                   onMouseEnter={() => setHoveredId(node.id)}
                   onMouseLeave={() => setHoveredId(null)}
                   onClick={() => setFocusId(node.id)}
@@ -824,14 +929,10 @@ export function MyceliumEcosystem({
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={node.r + (node.role === 'focus' ? 4 : 2)}
+                    r={node.r + 2}
                     fill="none"
                     stroke="var(--neutral-12)"
-                    strokeOpacity={
-                      node.id === currentSpaceId || node.role === 'focus'
-                        ? 0.9
-                        : 0.2
-                    }
+                    strokeOpacity={0.28}
                     strokeWidth={1}
                   />
                   <image
@@ -866,6 +967,65 @@ export function MyceliumEcosystem({
                 </g>
               );
             })}
+            {lens === 'flows'
+              ? flowView.nodes.map((node) => {
+                  const clip = `${clipPrefix}-flow-${node.key.replace(
+                    /[^a-zA-Z0-9]/g,
+                    '',
+                  )}`;
+                  const logo = node.imageUrl?.trim();
+                  return (
+                    <g key={node.key}>
+                      <title>{node.label}</title>
+                      <circle
+                        cx={node.x}
+                        cy={node.y}
+                        r={18}
+                        fill="var(--background)"
+                        stroke="var(--neutral-12)"
+                        strokeOpacity={0.45}
+                      />
+                      {logo ? (
+                        <>
+                          <defs>
+                            <clipPath id={clip}>
+                              <circle cx={node.x} cy={node.y} r={16} />
+                            </clipPath>
+                          </defs>
+                          <image
+                            href={logo}
+                            x={node.x - 16}
+                            y={node.y - 16}
+                            width={32}
+                            height={32}
+                            clipPath={`url(#${clip})`}
+                            preserveAspectRatio="xMidYMid slice"
+                          />
+                        </>
+                      ) : (
+                        <text
+                          x={node.x}
+                          y={node.y + 4}
+                          textAnchor="middle"
+                          className="fill-foreground text-[9px]"
+                        >
+                          {node.label.slice(0, 2)}
+                        </text>
+                      )}
+                      <text
+                        x={node.x}
+                        y={node.y + 34}
+                        textAnchor="middle"
+                        className="fill-foreground text-[11px]"
+                      >
+                        {node.label.length > 18
+                          ? `${node.label.slice(0, 17).trimEnd()}…`
+                          : node.label}
+                      </text>
+                    </g>
+                  );
+                })
+              : null}
             {showMembers
               ? memberChips.map((chip, index) => {
                   const portrait = chip.imageUrl?.trim();

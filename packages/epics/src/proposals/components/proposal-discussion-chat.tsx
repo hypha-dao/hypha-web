@@ -117,9 +117,66 @@ export function ProposalDiscussionChat({
   );
 
   const registeredRoomIdRef = React.useRef<string | null>(null);
-  const provisioningRef = React.useRef(false);
-  const provisionFailedRef = React.useRef(false);
+  const pendingRoomRef = React.useRef<Promise<string | null> | null>(null);
+  const roomIdRef = React.useRef(roomId);
+  roomIdRef.current = roomId;
+  const titleRef = React.useRef(title);
+  titleRef.current = title;
+  const createRoomRef = React.useRef(createRoom);
+  createRoomRef.current = createRoom;
+  const joinRoomRef = React.useRef(joinRoom);
+  joinRoomRef.current = joinRoom;
+  const updateAgreementRef = React.useRef(updateAgreementBySlug);
+  updateAgreementRef.current = updateAgreementBySlug;
+  const tRef = React.useRef(t);
+  tRef.current = t;
+  const getRoomMessagesRef = React.useRef(getRoomMessages);
+  getRoomMessagesRef.current = getRoomMessages;
+  const getRoomMembersRef = React.useRef(getRoomMembers);
+  getRoomMembersRef.current = getRoomMembers;
+  const registerRoomListenerRef = React.useRef(registerRoomListener);
+  registerRoomListenerRef.current = registerRoomListener;
+  const unregisterRoomListenerRef = React.useRef(unregisterRoomListener);
+  unregisterRoomListenerRef.current = unregisterRoomListener;
   const bottomId = React.useId();
+
+  const ensureRoom = React.useCallback(async (): Promise<string | null> => {
+    if (roomIdRef.current) return roomIdRef.current;
+    if (pendingRoomRef.current) return pendingRoomRef.current;
+    const task = (async () => {
+      setProvisionError(null);
+      setIsLoading(true);
+      try {
+        const currentTitle = titleRef.current?.trim();
+        const roomTitle = currentTitle
+          ? tRef.current('discussion.roomTitle', { title: currentTitle })
+          : tRef.current('discussion.roomTitleFallback');
+        const created = await createRoomRef.current(roomTitle, {
+          grantCreatorPl100: true,
+        });
+        const canonicalId = await joinRoomRef.current(created.roomId);
+        await updateAgreementRef.current({
+          slug: documentSlug,
+          chatRoomId: canonicalId,
+        });
+        roomIdRef.current = canonicalId;
+        setRoomId(canonicalId);
+        return canonicalId;
+      } catch (error) {
+        console.warn(
+          '[ProposalDiscussionChat] room provisioning failed',
+          error,
+        );
+        setProvisionError(tRef.current('discussion.unavailable'));
+        return null;
+      } finally {
+        setIsLoading(false);
+        pendingRoomRef.current = null;
+      }
+    })();
+    pendingRoomRef.current = task;
+    return task;
+  }, [documentSlug]);
 
   React.useEffect(() => {
     const next = initialChatRoomId?.trim() || null;
@@ -127,66 +184,12 @@ export function ProposalDiscussionChat({
   }, [initialChatRoomId, roomId]);
 
   // Lazily create + persist a Matrix room when the proposal has none yet.
+  // Title and client callbacks stay in refs so a parent re-render cannot
+  // cancel the in-flight create and leave the composer locked.
   React.useEffect(() => {
-    if (
-      !isMatrixAvailable ||
-      !documentSlug ||
-      roomId ||
-      provisioningRef.current ||
-      provisionFailedRef.current
-    ) {
-      return;
-    }
-    let cancelled = false;
-    provisioningRef.current = true;
-    setProvisionError(null);
-    setIsLoading(true);
-
-    const roomTitle = title?.trim()
-      ? t('discussion.roomTitle', { title: title.trim() })
-      : t('discussion.roomTitleFallback');
-
-    (async () => {
-      try {
-        const created = await createRoom(roomTitle, {
-          grantCreatorPl100: true,
-        });
-        const canonicalId = await joinRoom(created.roomId);
-        if (cancelled) return;
-        await updateAgreementBySlug({
-          slug: documentSlug,
-          chatRoomId: canonicalId,
-        });
-        if (cancelled) return;
-        setRoomId(canonicalId);
-      } catch (error) {
-        console.warn(
-          '[ProposalDiscussionChat] room provisioning failed',
-          error,
-        );
-        provisionFailedRef.current = true;
-        if (!cancelled) {
-          setProvisionError(t('discussion.unavailable'));
-        }
-      } finally {
-        provisioningRef.current = false;
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    createRoom,
-    documentSlug,
-    isMatrixAvailable,
-    joinRoom,
-    roomId,
-    t,
-    title,
-    updateAgreementBySlug,
-  ]);
+    if (!isMatrixAvailable || !documentSlug || roomId) return;
+    void ensureRoom();
+  }, [documentSlug, ensureRoom, isMatrixAvailable, roomId]);
 
   // Join, hydrate timeline, and listen for new messages.
   React.useEffect(() => {
@@ -198,16 +201,16 @@ export function ProposalDiscussionChat({
       let canonicalId = roomIdOrAlias;
       try {
         setIsLoading(true);
-        canonicalId = await joinRoom(roomIdOrAlias);
+        canonicalId = await joinRoomRef.current(roomIdOrAlias);
         if (cancelled) return;
         registeredRoomIdRef.current = canonicalId;
         if (canonicalId !== roomId) setRoomId(canonicalId);
 
-        registerRoomListener(
+        registerRoomListenerRef.current(
           canonicalId,
           async (message: Message) => {
             setMessages((prev) => [...prev, message]);
-            await getRoomMembers(canonicalId);
+            await getRoomMembersRef.current(canonicalId);
           },
           async (pinned: string[]) => {
             setMessages((prev) =>
@@ -219,14 +222,16 @@ export function ProposalDiscussionChat({
           },
         );
 
-        const msgs = getRoomMessages(canonicalId);
+        const msgs = getRoomMessagesRef.current(canonicalId);
         if (msgs) setMessages(msgs);
-        await getRoomMembers(canonicalId);
+        await getRoomMembersRef.current(canonicalId);
       } catch (error) {
         console.warn('[ProposalDiscussionChat] join failed', error);
-        unregisterRoomListener(canonicalId);
+        unregisterRoomListenerRef.current(canonicalId);
         registeredRoomIdRef.current = null;
-        if (!cancelled) setProvisionError(t('discussion.unavailable'));
+        if (!cancelled) {
+          setProvisionError(tRef.current('discussion.unavailable'));
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -236,19 +241,10 @@ export function ProposalDiscussionChat({
     return () => {
       cancelled = true;
       const id = registeredRoomIdRef.current ?? rootId;
-      unregisterRoomListener(id);
+      unregisterRoomListenerRef.current(id);
       registeredRoomIdRef.current = null;
     };
-  }, [
-    getRoomMembers,
-    getRoomMessages,
-    isMatrixAvailable,
-    joinRoom,
-    registerRoomListener,
-    roomId,
-    t,
-    unregisterRoomListener,
-  ]);
+  }, [isMatrixAvailable, roomId]);
 
   React.useEffect(() => {
     if (!messages.length) return;
@@ -352,21 +348,23 @@ export function ProposalDiscussionChat({
 
   const sendMessage = React.useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed || !roomId) return;
+    if (!trimmed) return;
+    const targetRoom = roomId ?? (await ensureRoom());
+    if (!targetRoom) return;
     try {
       const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
         input,
         mentionSanitizedLabelToUserId,
       );
       await sendMatrixMessage({
-        roomId,
+        roomId: targetRoom,
         message: wirePlain,
         mentionUserIds,
       });
-      await inviteMatrixAgentIfNeeded(client, roomId, mentionUserIds);
+      await inviteMatrixAgentIfNeeded(client, targetRoom, mentionUserIds);
       requestMatrixAgentReply({
         authToken,
-        roomId,
+        roomId: targetRoom,
         mentionUserIds,
       });
       setInput('');
@@ -376,6 +374,7 @@ export function ProposalDiscussionChat({
   }, [
     authToken,
     client,
+    ensureRoom,
     input,
     mentionSanitizedLabelToUserId,
     roomId,
@@ -435,7 +434,7 @@ export function ProposalDiscussionChat({
           <div className="max-h-[22rem] overflow-y-auto">
             <ChatMessageContainer
               messages={messages}
-              isLoading={isLoading && messages.length === 0}
+              isLoading={Boolean(roomId) && isLoading && messages.length === 0}
               togglePinnedMessage={toggleChatPinnedMessage}
             />
             <div id={`proposal-discussion-bottom-${bottomId}`} />
@@ -448,7 +447,7 @@ export function ProposalDiscussionChat({
             mentionCandidates={mentionCandidates}
             mentionPickerEnabled={mentionCandidates.length > 0}
             getMentionComposerLabel={getMentionComposerLabel}
-            composerLocked={!roomId || Boolean(provisionError)}
+            composerLocked={Boolean(provisionError)}
             composerLockedMessage={provisionError ?? t('discussion.connecting')}
           />
         </>

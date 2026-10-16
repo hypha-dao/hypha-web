@@ -22,7 +22,6 @@ import {
   Compass,
   Copy,
   Handshake,
-  PlusCircle,
   Wallet,
 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -30,8 +29,8 @@ import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
   AiPanelChatBar,
+  NetworkQuickCreate,
   ONBOARDING_SETUP_MODE,
-  getLegacyCreateSpacePath,
   saveOnboardingConversationContext,
   type AiPanelDraftAttachment,
   type OnboardingDiscoveryMode,
@@ -575,28 +574,7 @@ export function OnboardingAdventurePage({
             </CardContent>
           </Card>
 
-          <Card className={onboardingCardClass}>
-            <CardHeader className="space-y-2">
-              <CardTitle className="flex items-center gap-2 text-5">
-                <PlusCircle className="size-5 text-accent-11" aria-hidden />
-                {t('create.title')}
-              </CardTitle>
-              <CardDescription className="text-2 text-muted-foreground/90">
-                {t('create.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <Button
-                type="button"
-                className={primaryCtaClass}
-                onClick={() =>
-                  router.push(getLegacyCreateSpacePath(locale as Locale))
-                }
-              >
-                {t('create.cta')}
-              </Button>
-            </CardContent>
-          </Card>
+          <NetworkQuickCreate lang={locale as Locale} kinds={['project']} />
 
           <SelectorCard
             icon={<Handshake className="size-5" aria-hidden />}
