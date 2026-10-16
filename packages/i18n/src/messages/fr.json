@@ -1,6 +1,8 @@
 {
   "MemberHome": {
     "panelSpaces": "Espaces et personnes",
+    "spacesRail": "Vos espaces",
+    "overviewTitle": "En un coup d’œil",
     "panelInsights": "Ce qui a besoin de toi",
     "viewAi": "IA",
     "viewClassic": "Classique",

@@ -62,6 +62,7 @@ import {
   MemberHomeConnectionsWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
+import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 import { MemberHomeEnergyPanel } from './member-home-energy-panel';
 import './member-home-banner.css';
 
@@ -296,328 +297,345 @@ export function MemberHome({
         />
         <div className="member-home-banner-veil" />
       </div>
-      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:grid @min-[48rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[48rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
-        <aside
-          aria-label={t('panelSpaces')}
-          className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
-        >
-          <section className="border border-border bg-background">
-            <div
-              className={
-                home == null || orientation
-                  ? 'grid grid-cols-[auto_minmax(0,1fr)] items-center'
-                  : 'grid'
-              }
+      <div className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
+        <MemberHomeSpacesRail
+          lang={lang}
+          spaces={home?.spaces ?? []}
+          isLoading={home == null}
+        />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:grid @min-[48rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[48rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
+          <aside
+            aria-label={t('panelSpaces')}
+            className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
+          >
+            <section
+              aria-busy={home == null || undefined}
+              className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
             >
-              {home == null || orientation ? (
-                <div className="flex items-center justify-center px-3 py-3">
-                  {home == null || orientation == null ? (
-                    <Skeleton loading height="22px" width="6.5rem" />
-                  ) : (
-                    <OrientationBadge
-                      orientation={orientation}
-                      isSaving={isSavingOrientation}
-                      error={orientationError}
-                      onChoose={onChooseOrientation}
-                    />
-                  )}
-                </div>
-              ) : null}
-              <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 px-3 py-3">
-                <Stat
-                  label={t('counts.spaces')}
-                  value={home?.counts.spaces ?? 0}
-                  isLoading={home == null}
-                />
-                <Stat
-                  label={t('counts.proposals')}
-                  value={home?.counts.openProposals ?? 0}
-                  isLoading={home == null}
-                />
-                <Stat
-                  label={t('counts.signals')}
-                  value={home?.counts.signals ?? 0}
-                  isLoading={home == null}
-                />
-                <Stat
-                  label={t('connections')}
-                  value={home?.counts.connections ?? 0}
-                  isLoading={home == null}
-                />
-              </dl>
-            </div>
-          </section>
-          <div>
-            <MemberHomeWalletWidget
-              lang={lang}
-              personSlug={home?.person.slug}
-              hasAddress={Boolean(home?.wallet.address)}
-              isHomeLoading={home == null}
-            />
-          </div>
-          <div>
-            <Tile
-              title={t('notifications')}
-              count={
-                home && home.counts.notifications > 0
-                  ? home.counts.notifications
-                  : undefined
-              }
-              busy={home == null}
-            >
-              <ResourceList
-                isLoading={home == null}
-                empty={t('noNotifications')}
-                maxItems={5}
-                markSize={24}
-                items={
-                  home
-                    ? [...home.notifications]
-                        .sort((left, right) => {
-                          const leftAt = left.at ?? '';
-                          const rightAt = right.at ?? '';
-                          if (leftAt !== rightAt) {
-                            return leftAt < rightAt ? 1 : -1;
-                          }
-                          return left.id < right.id ? -1 : 1;
-                        })
-                        .flatMap((item) => {
-                          const match = queue.find(
-                            (entry) =>
-                              entry.kind === item.kind &&
-                              entry.slug === item.targetSlug,
-                          );
-                          return [
-                            {
-                              id: item.id,
-                              kind: item.kind,
-                              title: item.title,
-                              detail: item.detail,
-                              icon: item.spaceLogo ?? null,
-                              href:
-                                item.kind === 'signal'
-                                  ? getSignalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.targetSlug,
-                                    )
-                                  : getProposalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.targetSlug,
-                                    ),
-                              ...(match
-                                ? {
-                                    onSelect: () =>
-                                      setFocusKey(
-                                        `${match.kind}:${match.slug}`,
-                                      ),
-                                  }
-                                : {}),
-                            },
-                          ];
-                        })
-                    : []
-                }
-              />
-              {home && home.notifications.length > 5 ? (
-                <Button asChild className="mt-4 w-full text-sm">
-                  <Link href={`/${lang}/home/notifications`}>
-                    {t('seeMoreNotifications')}
-                  </Link>
-                </Button>
-              ) : null}
-            </Tile>
-          </div>
-          {home ? (
-            <div>
-              <NetworkQuickCreate
-                lang={lang}
-                memberSpaces={createMemberSpaces}
-              />
-            </div>
-          ) : null}
-        </aside>
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:col-start-1 @min-[48rem]/home:row-start-1 @min-[68rem]/home:col-start-2">
-          <div className="shrink-0 px-4 pt-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span
-                  className="inline-flex shrink-0"
-                  style={{ width: 24, height: 24 }}
-                >
-                  <MemberHomeMark className="h-full w-full" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  {greetingPending ? (
-                    <HomePulse className="h-9 w-56 max-w-full" />
-                  ) : (
-                    <h1
-                      className="truncate text-7"
-                      style={{ fontFamily: 'var(--font-family-heading)' }}
-                    >
-                      {t(greetingKey(), { name: displayName })}
-                    </h1>
-                  )}
-                </div>
-              </div>
-              <HomeViewSwitch
-                view={homeView}
-                ready={viewReady}
-                onChange={(next) => {
-                  writeHomeView(next);
-                  setHomeView(next);
-                }}
-              />
-            </div>
-            <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
-              {home == null ? (
-                <div className="mt-2 flex gap-2" aria-hidden>
-                  {Array.from({ length: 4 }, (_, index) => (
-                    <HomePulse
-                      key={index}
-                      className="h-8 w-8 rounded-full"
-                      delayMs={index * 70}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <MemberHomeClosest
-                  lang={lang}
-                  people={home.connections}
-                  fallbackName={memberFallback}
-                  onOpenChat={openChat}
-                />
-              )}
-            </div>
-          </div>
-          {home && showAssistant ? (
-            <MemberHomeChat
-              lang={lang}
-              intelligence={home}
-              onChatPerson={openChat}
-              onCallPerson={openCall}
-              onVideoPerson={openVideo}
-              onQueueMemory={onQueueMemory}
-            />
-          ) : home && viewReady ? (
-            <ClassicBoard
-              lang={lang}
-              home={home}
-              queue={queue}
-              focusKey={focusKey}
-              onChat={openChat}
-              onCall={openCall}
-            />
-          ) : (
-            <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6">
-              <ChatSkeleton />
-            </div>
-          )}
-        </main>
-        <aside
-          aria-label={t('panelInsights')}
-          className="narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
-        >
-          {orientation === 'member' && home ? (
-            <PersonaCard
-              title={t('memberTitle')}
-              body={t('memberBody')}
-              action={t('memberAction')}
-              href={`/${lang}/my-spaces`}
-              meta={t('memberCount', { count: home.counts.spaces })}
-            />
-          ) : null}
-          {orientation === 'builder' ? (
-            <PersonaCard
-              title={t('builderTitle')}
-              body={t('builderBody')}
-              action={t('builderAction')}
-              href={getOnboardingPath(lang)}
-            />
-          ) : null}
-          {home && home.invites.length > 0 ? (
-            <MemberHomeInviteBanners lang={lang} invites={home.invites} />
-          ) : null}
-          {home?.person.slug ? (
-            <MemberHomeEnergyPanel personSlug={home.person.slug} />
-          ) : null}
-          {orientation === 'investor' && home ? (
-            <PersonaCard
-              title={t('investorTitle')}
-              body={t('investorBody')}
-              action={t('investorAction')}
-              href={`/${lang}/network/needs`}
-              meta={t('investorCount', {
-                count: home.counts.capitalAsks,
-              })}
-            />
-          ) : null}
-          {home != null && orientation == null ? (
-            <section className="border border-border bg-background p-4">
               <h2
                 className="text-3"
                 style={{ fontFamily: 'var(--font-family-heading)' }}
               >
-                {t('chooseTitle')}
+                {t('overviewTitle')}
               </h2>
-              <p className="mt-3 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
-                {t('chooseBody')}
-              </p>
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                {ORIENTATIONS.map((option) => (
-                  <Button
-                    key={option}
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    disabled={isSavingOrientation}
-                    onClick={() => onChooseOrientation(option)}
-                  >
-                    {t(orientationLabelKey(option))}
-                  </Button>
-                ))}
+              <div
+                className={
+                  home == null || orientation
+                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3'
+                    : 'mt-3 grid'
+                }
+              >
+                {home == null || orientation ? (
+                  <div className="flex items-center justify-center">
+                    {home == null || orientation == null ? (
+                      <Skeleton loading height="22px" width="6.5rem" />
+                    ) : (
+                      <OrientationBadge
+                        orientation={orientation}
+                        isSaving={isSavingOrientation}
+                        error={orientationError}
+                        onChoose={onChooseOrientation}
+                      />
+                    )}
+                  </div>
+                ) : null}
+                <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2">
+                  <Stat
+                    label={t('counts.spaces')}
+                    value={home?.counts.spaces ?? 0}
+                    isLoading={home == null}
+                  />
+                  <Stat
+                    label={t('counts.proposals')}
+                    value={home?.counts.openProposals ?? 0}
+                    isLoading={home == null}
+                  />
+                  <Stat
+                    label={t('counts.signals')}
+                    value={home?.counts.signals ?? 0}
+                    isLoading={home == null}
+                  />
+                  <Stat
+                    label={t('connections')}
+                    value={home?.counts.connections ?? 0}
+                    isLoading={home == null}
+                  />
+                </dl>
               </div>
-              {orientationError ? (
-                <p className="mt-3 text-1 text-error-11" role="alert">
-                  {orientationError}
-                </p>
-              ) : null}
             </section>
-          ) : null}
 
-          <div>
-            <AttentionNeeded
-              lang={lang}
-              home={home}
-              queue={attentionQueue}
-              onSelect={setFocusKey}
-            />
-          </div>
-
-          <div className="grid gap-4">
-            <MemberHomeConnectionsWidget
-              lang={lang}
-              people={home?.connections ?? []}
-              isLoading={home == null}
-              fallbackName={memberFallback}
-              onChat={home ? openChat : undefined}
-              onCall={home ? openCall : undefined}
-              onVideo={home ? openVideo : undefined}
-            />
+            <div>
+              <MemberHomeWalletWidget
+                lang={lang}
+                personSlug={home?.person.slug}
+                hasAddress={Boolean(home?.wallet.address)}
+                isHomeLoading={home == null}
+              />
+            </div>
+            <div>
+              <Tile
+                title={t('notifications')}
+                count={
+                  home && home.counts.notifications > 0
+                    ? home.counts.notifications
+                    : undefined
+                }
+                busy={home == null}
+              >
+                <ResourceList
+                  isLoading={home == null}
+                  empty={t('noNotifications')}
+                  maxItems={5}
+                  markSize={24}
+                  items={
+                    home
+                      ? [...home.notifications]
+                          .sort((left, right) => {
+                            const leftAt = left.at ?? '';
+                            const rightAt = right.at ?? '';
+                            if (leftAt !== rightAt) {
+                              return leftAt < rightAt ? 1 : -1;
+                            }
+                            return left.id < right.id ? -1 : 1;
+                          })
+                          .flatMap((item) => {
+                            const match = queue.find(
+                              (entry) =>
+                                entry.kind === item.kind &&
+                                entry.slug === item.targetSlug,
+                            );
+                            return [
+                              {
+                                id: item.id,
+                                kind: item.kind,
+                                title: item.title,
+                                detail: item.detail,
+                                icon: item.spaceLogo ?? null,
+                                href:
+                                  item.kind === 'signal'
+                                    ? getSignalPath(
+                                        lang,
+                                        item.spaceSlug,
+                                        item.targetSlug,
+                                      )
+                                    : getProposalPath(
+                                        lang,
+                                        item.spaceSlug,
+                                        item.targetSlug,
+                                      ),
+                                ...(match
+                                  ? {
+                                      onSelect: () =>
+                                        setFocusKey(
+                                          `${match.kind}:${match.slug}`,
+                                        ),
+                                    }
+                                  : {}),
+                              },
+                            ];
+                          })
+                      : []
+                  }
+                />
+                {home && home.notifications.length > 5 ? (
+                  <Button asChild className="mt-4 w-full text-sm">
+                    <Link href={`/${lang}/home/notifications`}>
+                      {t('seeMoreNotifications')}
+                    </Link>
+                  </Button>
+                ) : null}
+              </Tile>
+            </div>
             {home ? (
-              <MemberHomePeople
-                people={home.connections}
-                chatSpaceSlug={home.chatSpaceSlug}
-                fallbackName={memberFallback}
-                extraPersonIds={reachIds}
-                onOpenChatReady={onOpenChatReady}
-                onOpenCallReady={onOpenCallReady}
-                onOpenVideoReady={onOpenVideoReady}
+              <div>
+                <NetworkQuickCreate
+                  lang={lang}
+                  memberSpaces={createMemberSpaces}
+                />
+              </div>
+            ) : null}
+          </aside>
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:col-start-1 @min-[48rem]/home:row-start-1 @min-[68rem]/home:col-start-2">
+            <div className="shrink-0 px-4 pt-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span
+                    className="inline-flex shrink-0"
+                    style={{ width: 24, height: 24 }}
+                  >
+                    <MemberHomeMark className="h-full w-full" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {greetingPending ? (
+                      <HomePulse className="h-9 w-56 max-w-full" />
+                    ) : (
+                      <h1
+                        className="truncate text-7"
+                        style={{ fontFamily: 'var(--font-family-heading)' }}
+                      >
+                        {t(greetingKey(), { name: displayName })}
+                      </h1>
+                    )}
+                  </div>
+                </div>
+                <HomeViewSwitch
+                  view={homeView}
+                  ready={viewReady}
+                  onChange={(next) => {
+                    writeHomeView(next);
+                    setHomeView(next);
+                  }}
+                />
+              </div>
+              <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
+                {home == null ? (
+                  <div className="mt-2 flex gap-2" aria-hidden>
+                    {Array.from({ length: 4 }, (_, index) => (
+                      <HomePulse
+                        key={index}
+                        className="h-8 w-8 rounded-full"
+                        delayMs={index * 70}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <MemberHomeClosest
+                    lang={lang}
+                    people={home.connections}
+                    fallbackName={memberFallback}
+                    onOpenChat={openChat}
+                  />
+                )}
+              </div>
+            </div>
+            {home && showAssistant ? (
+              <MemberHomeChat
+                lang={lang}
+                intelligence={home}
+                onChatPerson={openChat}
+                onCallPerson={openCall}
+                onVideoPerson={openVideo}
+                onQueueMemory={onQueueMemory}
+              />
+            ) : home && viewReady ? (
+              <ClassicBoard
+                lang={lang}
+                home={home}
+                queue={queue}
+                focusKey={focusKey}
+                onChat={openChat}
+                onCall={openCall}
+              />
+            ) : (
+              <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6">
+                <ChatSkeleton />
+              </div>
+            )}
+          </main>
+          <aside
+            aria-label={t('panelInsights')}
+            className="narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
+          >
+            {orientation === 'member' && home ? (
+              <PersonaCard
+                title={t('memberTitle')}
+                body={t('memberBody')}
+                action={t('memberAction')}
+                href={`/${lang}/my-spaces`}
+                meta={t('memberCount', { count: home.counts.spaces })}
               />
             ) : null}
-          </div>
-        </aside>
+            {orientation === 'builder' ? (
+              <PersonaCard
+                title={t('builderTitle')}
+                body={t('builderBody')}
+                action={t('builderAction')}
+                href={getOnboardingPath(lang)}
+              />
+            ) : null}
+            {home && home.invites.length > 0 ? (
+              <MemberHomeInviteBanners lang={lang} invites={home.invites} />
+            ) : null}
+            {home?.person.slug ? (
+              <MemberHomeEnergyPanel personSlug={home.person.slug} />
+            ) : null}
+            {orientation === 'investor' && home ? (
+              <PersonaCard
+                title={t('investorTitle')}
+                body={t('investorBody')}
+                action={t('investorAction')}
+                href={`/${lang}/network/needs`}
+                meta={t('investorCount', {
+                  count: home.counts.capitalAsks,
+                })}
+              />
+            ) : null}
+            {home != null && orientation == null ? (
+              <section className="border border-border bg-background p-4">
+                <h2
+                  className="text-3"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t('chooseTitle')}
+                </h2>
+                <p className="mt-3 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
+                  {t('chooseBody')}
+                </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {ORIENTATIONS.map((option) => (
+                    <Button
+                      key={option}
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={isSavingOrientation}
+                      onClick={() => onChooseOrientation(option)}
+                    >
+                      {t(orientationLabelKey(option))}
+                    </Button>
+                  ))}
+                </div>
+                {orientationError ? (
+                  <p className="mt-3 text-1 text-error-11" role="alert">
+                    {orientationError}
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
+
+            <div>
+              <AttentionNeeded
+                lang={lang}
+                home={home}
+                queue={attentionQueue}
+                onSelect={setFocusKey}
+              />
+            </div>
+
+            <div className="grid gap-4">
+              <MemberHomeConnectionsWidget
+                lang={lang}
+                people={home?.connections ?? []}
+                isLoading={home == null}
+                fallbackName={memberFallback}
+                onChat={home ? openChat : undefined}
+                onCall={home ? openCall : undefined}
+                onVideo={home ? openVideo : undefined}
+              />
+              {home ? (
+                <MemberHomePeople
+                  people={home.connections}
+                  chatSpaceSlug={home.chatSpaceSlug}
+                  fallbackName={memberFallback}
+                  extraPersonIds={reachIds}
+                  onOpenChatReady={onOpenChatReady}
+                  onOpenCallReady={onOpenCallReady}
+                  onOpenVideoReady={onOpenVideoReady}
+                />
+              ) : null}
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

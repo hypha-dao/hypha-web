@@ -1670,10 +1670,12 @@ export async function getMemberIntelligence(
       }),
     },
     attention,
-    spaces: spaceRows.slice(0, listLimit).map((space) => ({
+    // Full membership for the home spaces rail (not capped by listLimit).
+    spaces: spaceRows.map((space) => ({
       ...space,
       description: excerpt(space.description, 120),
     })),
+
     proposals: proposalsWithVotes.map(withPeers),
     signals: signals.map(withPeers),
     notifications: attention,
