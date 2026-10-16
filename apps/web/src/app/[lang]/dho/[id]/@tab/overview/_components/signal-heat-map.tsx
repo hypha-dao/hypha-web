@@ -79,10 +79,12 @@ function HeatField({
   }, [signals]);
 
   return (
-    <div className="mt-3 w-fit max-w-full">
+    <div className="mt-3 w-full min-w-0">
       <div
-        className="grid items-center gap-0.5"
-        style={{ gridTemplateColumns: 'auto repeat(4, 1.125rem)' }}
+        className="grid w-full items-center gap-1"
+        style={{
+          gridTemplateColumns: 'auto repeat(4, minmax(1.125rem, 1fr))',
+        }}
       >
         {PRIORITIES.map((priority) => (
           <div key={priority} className="contents">
@@ -102,8 +104,8 @@ function HeatField({
                   title={cellTitle(priorityLabel(priority), count, start, end)}
                   className={
                     count > 0
-                      ? 'signal-heat-cell size-[1.125rem]'
-                      : 'size-[1.125rem] bg-neutral-3'
+                      ? 'signal-heat-cell aspect-square w-full'
+                      : 'aspect-square w-full bg-neutral-3'
                   }
                   style={
                     count > 0
@@ -125,8 +127,10 @@ function HeatField({
         ))}
       </div>
       <div
-        className="mt-1.5 grid text-1 text-neutral-11"
-        style={{ gridTemplateColumns: 'auto repeat(4, 1.125rem)' }}
+        className="mt-1.5 grid w-full text-1 text-neutral-11"
+        style={{
+          gridTemplateColumns: 'auto repeat(4, minmax(1.125rem, 1fr))',
+        }}
       >
         <span />
         <span>{older}</span>
@@ -139,13 +143,13 @@ function HeatField({
 
 function HeatSkeleton() {
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-5">
+    <div className="grid w-full gap-6 sm:grid-cols-2">
       {Array.from({ length: 2 }, (_, map) => (
-        <div key={map} className="w-fit">
+        <div key={map} className="min-w-0">
           <div className="h-3 w-20 bg-muted" />
-          <div className="mt-3 grid w-fit grid-cols-4 gap-0.5">
+          <div className="mt-3 grid grid-cols-4 gap-1">
             {Array.from({ length: PRIORITIES.length * BUCKETS }, (_, cell) => (
-              <span key={cell} className="size-[1.125rem] bg-neutral-3" />
+              <span key={cell} className="aspect-square w-full bg-neutral-3" />
             ))}
           </div>
         </div>
@@ -186,8 +190,14 @@ export function SignalHeatMaps({
   }
 
   return (
-    <div className="flex w-fit max-w-full flex-col gap-3">
-      <div className="flex flex-wrap gap-x-6 gap-y-5">
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      <div
+        className={
+          groups.length > 1
+            ? 'grid w-full gap-x-8 gap-y-6 sm:grid-cols-2'
+            : 'grid w-full'
+        }
+      >
         {groups.map((group) => {
           const label = tSignals.has(`types.${group.type}` as 'types.Need')
             ? tSignals(`types.${group.type}` as 'types.Need')
@@ -196,9 +206,9 @@ export function SignalHeatMaps({
             <Link
               key={group.type}
               href={hrefForType(group.type)}
-              className="block w-fit max-w-full min-w-0 hover:opacity-80"
+              className="block min-w-0 hover:opacity-80"
             >
-              <span className="flex w-fit max-w-full items-baseline gap-2">
+              <span className="flex min-w-0 items-baseline gap-2">
                 <span className="truncate text-1 uppercase tracking-[0.12em] text-muted-foreground">
                   {label}
                 </span>

@@ -38,6 +38,24 @@ describe('withMatrixAgentMention', () => {
     expect(rows.some((row) => row.displayLabel === 'Bot Person')).toBe(false);
   });
 
+  it('hides the production bot account when it is also a room member', () => {
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = BOT_USER_ID;
+    const roster = [
+      { userId: '@ada:example.org', displayLabel: 'Ada Lovelace' },
+      {
+        userId: '@hypha_bot_prod:matrix.hypha.earth',
+        displayLabel: 'hypha_bot_prod',
+      },
+    ];
+
+    const rows = withMatrixAgentMention(roster, 'AI Agents', SKILLS);
+
+    expect(rows.map((row) => row.displayLabel)).toEqual([
+      'AI Agents',
+      'Ada Lovelace',
+    ]);
+  });
+
   it('returns the roster unchanged when the bot user id is unset', () => {
     const roster = [{ userId: '@ada:example.org', displayLabel: 'Ada' }];
     expect(withMatrixAgentMention(roster, 'AI Agents', SKILLS)).toEqual(roster);

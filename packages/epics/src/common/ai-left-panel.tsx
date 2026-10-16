@@ -807,6 +807,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ];
   }, [me?.primaryOrientation, pathname, spaceSlug, t]);
 
+  const welcomeText = useMemo(() => {
+    if (!(pathname.includes('/network') && !spaceSlug)) return t('welcome');
+    if (me?.primaryOrientation === 'builder') {
+      return t('welcomeNetworkBuilder');
+    }
+    if (me?.primaryOrientation === 'investor') {
+      return t('welcomeNetworkFunder');
+    }
+    return t('welcomeNetworkMember');
+  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
+
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();
     closeAiPanel();
@@ -3253,6 +3264,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestionItems={suggestionItems}
+          welcomeText={welcomeText}
           showInlineSuggestions={!hasUserMessage && !blockSpaceAiForInteraction}
           onSuggestionSelect={
             blockSpaceAiForInteraction ? undefined : handleSuggestionSelect

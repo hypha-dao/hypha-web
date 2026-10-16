@@ -26,8 +26,8 @@ import {
 } from '@hypha-platform/core/client';
 
 import {
-  presenceFromMatrixStatus,
   presenceRank,
+  readMemberPresence,
   type PresenceLevel,
 } from './member-presence';
 import { PersonAvatar } from './person-avatar';
@@ -92,17 +92,6 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
   }
 
   return { conversations, named };
-}
-
-async function readPresenceLevel(
-  client: MatrixClient,
-  matrixUserId: string,
-): Promise<PresenceLevel> {
-  try {
-    return presenceFromMatrixStatus(await client.getPresence(matrixUserId));
-  } catch {
-    return 'offline';
-  }
 }
 
 function samePresence(
@@ -200,7 +189,10 @@ export function MemberHomeClosest({
                 next.set(personId, 'offline');
                 return;
               }
-              next.set(personId, await readPresenceLevel(client, matrixUserId));
+              next.set(
+                personId,
+                await readMemberPresence(client, matrixUserId),
+              );
             }),
           );
           if (cancelled) return;

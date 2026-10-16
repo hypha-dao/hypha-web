@@ -112,6 +112,12 @@ function isHiddenHumanChatRoomMessage(event: MatrixSdk.MatrixEvent): boolean {
   return false;
 }
 
+/** Keep this session online on every sync. A one-off presence update is dropped. */
+async function markMatrixPresenceOnline(client: MatrixSdk.MatrixClient) {
+  await client.setSyncPresence(MatrixSdk.SetPresence.Online);
+  await client.setPresence({ presence: 'online' });
+}
+
 export interface SendAttachmentInput {
   file: File;
   /** Drives Matrix `msgtype`: `m.image` vs `m.file` vs `m.audio`. */
@@ -692,7 +698,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
         void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
 
-        await matrixClient.setPresence({ presence: 'online' });
+        await markMatrixPresenceOnline(matrixClient);
 
         clientRef.current = matrixClient;
         setClient(matrixClient);
@@ -735,7 +741,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         } else {
           retryMatrixClientSync(existingClient);
         }
-        await existingClient.setPresence({ presence: 'online' });
+        await markMatrixPresenceOnline(existingClient);
         setConnectionStatus('connected');
         setConnectionRetryFailed(false);
         return true;
@@ -796,7 +802,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             try {
               existingClient.setAccessToken(freshToken.accessToken);
               retryMatrixClientSync(existingClient);
-              await existingClient.setPresence({ presence: 'online' });
+              await markMatrixPresenceOnline(existingClient);
               recordMatrixCallTokenRefreshSuccess();
               setSessionRefreshFailedDuringCall(false);
               setConnectionStatus('connected');

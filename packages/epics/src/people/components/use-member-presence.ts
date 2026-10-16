@@ -1,16 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { UserEvent, type MatrixClient } from 'matrix-js-sdk';
+import { UserEvent } from 'matrix-js-sdk';
 import {
   useMatrix,
   useMatrixUserIdsByPersonIds,
 } from '@hypha-platform/core/client';
 
-import {
-  presenceFromMatrixStatus,
-  type PresenceLevel,
-} from './member-presence';
+import { readMemberPresence, type PresenceLevel } from './member-presence';
 
 function samePresence(
   left: Map<number, PresenceLevel>,
@@ -21,17 +18,6 @@ function samePresence(
     if (right.get(id) !== level) return false;
   }
   return true;
-}
-
-async function readPresence(
-  client: MatrixClient,
-  matrixUserId: string,
-): Promise<PresenceLevel> {
-  try {
-    return presenceFromMatrixStatus(await client.getPresence(matrixUserId));
-  } catch {
-    return 'offline';
-  }
 }
 
 /** Live Matrix presence for a set of people, polled and event-driven. */
@@ -69,7 +55,10 @@ export function useMemberPresence(personIds: readonly number[]) {
                 next.set(personId, 'offline');
                 return;
               }
-              next.set(personId, await readPresence(client, matrixUserId));
+              next.set(
+                personId,
+                await readMemberPresence(client, matrixUserId),
+              );
             }),
           );
           if (cancelled) return;

@@ -1,13 +1,16 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { ClientEvent, RoomEvent, SyncState } from 'matrix-js-sdk';
 import { Check, ChevronDown, MessageSquare, Phone, Video } from 'lucide-react';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
+  useMatrix,
+  useMatrixUserIdsByPersonIds,
   useTransferTokensMutation,
   type MemberIntelligence,
   type Person,
@@ -26,9 +29,18 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Recipient } from '../../agreements/plugins/components/common/recipient';
 import { useUserAssets } from '../../treasury/hooks';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import {
+  memberRowsForConnections,
+  STALE_CONNECTION_MS,
+  suggestConnections,
+  type ConnectionSuggestion,
+  type ConversationRow,
+  type NewcomerCandidate,
+} from './member-connections';
 import { sortByPresenceThenShared } from './member-presence';
 import { PersonAvatar } from './person-avatar';
 import { PresenceDot } from './presence-dot';
+import { readConversationRows } from './my-connections';
 import { useMemberPresence } from './use-member-presence';
 
 type HomeConnection = MemberIntelligence['connections'][number];
@@ -167,27 +179,150 @@ export function MemberHomeSpacesWidgetCard({
 
 const PEOPLE_PREVIEW = 5;
 
+function suggestionWhen(ts: number, locale: string, justNow: string) {
+  const minutes = Math.round((Date.now() - ts) / 60000);
+  if (minutes < 1) return justNow;
+  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  if (minutes < 60) return relative.format(-minutes, 'minute');
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return relative.format(-hours, 'hour');
+  const days = Math.round(hours / 24);
+  if (days < 7) return relative.format(-days, 'day');
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+  }).format(ts);
+}
+
+function newcomersFromSignals(
+  signals: MemberIntelligence['networkSignals'],
+  selfId: number | null,
+): NewcomerCandidate[] {
+  const newcomers: NewcomerCandidate[] = [];
+  const seen = new Set<number>();
+  for (const signal of signals ?? []) {
+    const id = signal.creatorId;
+    const name = signal.creatorName?.trim();
+    if (id == null || !name || id === selfId || seen.has(id)) continue;
+    seen.add(id);
+    newcomers.push({
+      id,
+      name,
+      avatarUrl: signal.creatorAvatarUrl,
+      spaceTitle: signal.spaceTitle,
+      spaceSlug: signal.spaceSlug,
+      score: signal.relevance?.score ?? 0,
+    });
+  }
+  return newcomers;
+}
+
 export function MemberHomePeopleWidgetCard({
   people,
+  networkSignals,
+  selfId,
   fallbackName,
   onChat,
   onCall,
   onVideo,
 }: {
   people: HomeConnection[];
+  networkSignals?: MemberIntelligence['networkSignals'];
+  selfId?: number | null;
   fallbackName: string;
   onChat: (person: HomeConnection) => void;
   onCall: (person: HomeConnection) => void;
   onVideo: (person: HomeConnection) => void;
 }) {
   const t = useTranslations('MemberHome');
+  const tConnections = useTranslations('Connections');
+  const locale = useLocale();
+  const { client } = useMatrix();
   const [expanded, setExpanded] = useState(false);
+  const [rows, setRows] = useState<ConversationRow[]>([]);
+  const [synced, setSynced] = useState(false);
   const personIds = useMemo(() => people.map((person) => person.id), [people]);
   const { presenceById } = useMemberPresence(personIds);
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({ personIds });
   const ranked = useMemo(
     () => sortByPresenceThenShared(people, presenceById),
     [people, presenceById],
   );
+
+  useEffect(() => {
+    if (!client) {
+      setRows([]);
+      setSynced(false);
+      return;
+    }
+    const refresh = () => {
+      setRows(readConversationRows(client));
+      const state = client.getSyncState();
+      if (state === SyncState.Prepared || state === SyncState.Syncing) {
+        setSynced(true);
+      }
+    };
+    refresh();
+    const onSync = () => {
+      refresh();
+      setSynced(true);
+    };
+    client.on(ClientEvent.Sync, onSync);
+    client.on(RoomEvent.Timeline, refresh);
+    client.on(RoomEvent.Receipt, refresh);
+    client.on(RoomEvent.MyMembership, refresh);
+    return () => {
+      client.removeListener(ClientEvent.Sync, onSync);
+      client.removeListener(RoomEvent.Timeline, refresh);
+      client.removeListener(RoomEvent.Receipt, refresh);
+      client.removeListener(RoomEvent.MyMembership, refresh);
+    };
+  }, [client]);
+
+  const suggestions = useMemo(() => {
+    const newcomers = newcomersFromSignals(networkSignals, selfId ?? null);
+    if (!synced) {
+      return suggestConnections([], newcomers, Date.now()).filter(
+        (card) => card.kind === 'meet',
+      );
+    }
+    const members = memberRowsForConnections(
+      people,
+      rows,
+      personIdToMatrixUserId,
+      selfId ?? null,
+      fallbackName,
+    );
+    return suggestConnections(
+      members,
+      newcomers,
+      Date.now(),
+      STALE_CONNECTION_MS,
+    );
+  }, [
+    fallbackName,
+    networkSignals,
+    people,
+    personIdToMatrixUserId,
+    rows,
+    selfId,
+    synced,
+  ]);
+
+  const openSuggestion = (card: ConnectionSuggestion) => {
+    const known = people.find((person) => person.id === card.person.id);
+    onChat(
+      known ?? {
+        id: card.person.id,
+        slug: card.person.slug ?? null,
+        name: card.person.name,
+        surname: card.person.surname,
+        nickname: card.person.nickname,
+        avatarUrl: card.person.avatarUrl ?? null,
+        sharedSpaceCount: card.sharedSpaceCount,
+      },
+    );
+  };
   const visible = expanded ? ranked : ranked.slice(0, PEOPLE_PREVIEW);
   const remaining = ranked.length - visible.length;
 
@@ -217,9 +352,67 @@ export function MemberHomePeopleWidgetCard({
       title={t('peopleWidgetTitle')}
       aside={people.length > 0 ? String(people.length) : undefined}
     >
-      {people.length === 0 ? (
+      {suggestions.length > 0 ? (
+        <section
+          className="mb-4 flex flex-col gap-3"
+          aria-label={tConnections('reachOut')}
+        >
+          <div className="flex flex-col gap-1">
+            <h3 className="text-2 font-medium text-foreground">
+              {tConnections('reachOut')}
+            </h3>
+            <p className="text-1 text-neutral-11">
+              {tConnections('suggestSentence')}
+            </p>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {suggestions.map((card) => (
+              <button
+                key={card.key}
+                type="button"
+                onClick={() => openSuggestion(card)}
+                className="flex w-40 shrink-0 flex-col items-start gap-2 border border-border p-3 text-left hover:bg-accent-2"
+              >
+                <PersonAvatar
+                  size="chat"
+                  shape="circle"
+                  avatarSrc={card.avatarUrl}
+                  userName={card.name}
+                />
+                <span className="w-full truncate text-2 text-foreground">
+                  {card.name}
+                </span>
+                <span className="text-1 text-foreground">
+                  {card.kind === 'reconnect'
+                    ? tConnections('longTimeNoSee')
+                    : tConnections('worthMeeting')}
+                </span>
+                <span className="w-full truncate text-1 text-neutral-11">
+                  {card.kind === 'reconnect'
+                    ? card.lastTs
+                      ? suggestionWhen(
+                          card.lastTs,
+                          locale,
+                          tConnections('justNow'),
+                        )
+                      : tConnections('noMessage')
+                    : card.spaceTitle
+                    ? card.spaceTitle
+                    : card.sharedSpaceCount > 0
+                    ? tConnections('sharedCount', {
+                        count: card.sharedSpaceCount,
+                      })
+                    : tConnections('noMessage')}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {people.length === 0 && suggestions.length === 0 ? (
         <p className="text-2 text-neutral-11">{t('peopleWidgetEmpty')}</p>
-      ) : (
+      ) : null}
+      {people.length > 0 ? (
         <ul>
           {visible.map((person) => {
             const name = personName(person, fallbackName);
@@ -279,7 +472,7 @@ export function MemberHomePeopleWidgetCard({
             );
           })}
         </ul>
-      )}
+      ) : null}
       {remaining > 0 ? (
         <button
           type="button"

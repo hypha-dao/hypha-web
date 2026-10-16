@@ -2,6 +2,7 @@ import type {
   ChatMentionAgentIcon,
   ChatMentionCandidate,
 } from './human-chat-panel-chat-bar';
+import { isHyphaBotMatrixIdentity } from './matrix-room-member-display';
 
 export type MatrixAgentSkill = {
   id: string;
@@ -33,11 +34,12 @@ export function withMatrixAgentMention(
   skills: readonly MatrixAgentSkill[] = [],
   icon?: ChatMentionAgentIcon,
 ): ChatMentionCandidate[] {
-  const agentUserId = matrixAgentUserId();
-  if (!agentUserId) return candidates;
   const rest = candidates.filter(
-    (candidate) => candidate.userId !== agentUserId,
+    (candidate) =>
+      !isHyphaBotMatrixIdentity(candidate.userId, candidate.displayLabel),
   );
+  const agentUserId = matrixAgentUserId();
+  if (!agentUserId) return rest;
   const prompts = skills
     .map((skill) => ({ id: skill.id, prompt: skill.prompt.trim() }))
     .filter((skill) => skill.prompt);

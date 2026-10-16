@@ -321,12 +321,12 @@ export function MemberHome({
               <div
                 className={
                   home == null || orientation
-                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3'
+                    ? 'mt-3 grid grid-cols-[7.75rem_minmax(0,1fr)] items-center gap-3'
                     : 'mt-3 grid'
                 }
               >
                 {home == null || orientation ? (
-                  <div className="flex items-center justify-center">
+                  <div className="flex w-[7.75rem] items-center justify-center">
                     {home == null || orientation == null ? (
                       <Skeleton loading height="22px" width="6.5rem" />
                     ) : (
@@ -665,7 +665,7 @@ function OrientationBadge({
             type="button"
             disabled={isSaving}
             aria-label={t('changeOrientationLabel', { orientation: label })}
-            className="inline-flex items-center gap-2 rounded-none text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center rounded-none text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
           >
             <PersonRoleBadge role={orientation} stacked />
           </button>

@@ -3415,6 +3415,7 @@
   },
   "AiPanel": {
     "title": "Hypha AI",
+    "networkTitle": "Hypha Network",
     "suggestions": {
       "createSpace": "Hjelp meg å opprette et nytt rom på Hypha",
       "createEcosystem": "Hjelp meg å sette opp en hel organisasjon med flere rom",
@@ -3460,6 +3461,9 @@
       "networkInvestorOpen": "Investeringsforespørsler"
     },
     "welcome": "Jeg er rommets AI som skaper sammenheng i strategien, bevegelse i driften og mening i påvirkningen, med spesialistagenter som glir inn når du kaller på dem.",
+    "welcomeNetworkMember": "Jeg hjelper deg å finne muligheter i nettverket — steder å bidra, folk å møte og beslutninger som trenger deg.",
+    "welcomeNetworkBuilder": "Jeg hjelper deg å finne ressurser i nettverket — folk, rom og støtte til det du bygger.",
+    "welcomeNetworkFunder": "Jeg hjelper deg å finne prosjekter å finansiere i nettverket — åpne forespørsler og arbeid som er klart for din støtte.",
     "specialistsResponding": "Spesialister bidrar",
     "specialistsRespondingStreaming": "Spesialister bidrar…",
     "placeholder": "Spør om hva som helst...",

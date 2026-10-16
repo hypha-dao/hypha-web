@@ -3416,6 +3416,7 @@
   },
   "AiPanel": {
     "title": "Hypha AI",
+    "networkTitle": "Hypha Network",
     "suggestions": {
       "createSpace": "Help me een nieuwe ruimte te creëren op Hypha",
       "createEcosystem": "Help mij een volledige organisatie op te zetten met meerdere ruimtes",
@@ -3461,6 +3462,9 @@
       "networkInvestorOpen": "Investeringsvragen"
     },
     "welcome": "Ik ben jouw ruimte-AI om samenhang te brengen in de strategie, beweging in operaties en betekenis aan impact, waarbij gespecialiseerde agenten binnenkomen wanneer je daarom vraagt.",
+    "welcomeNetworkMember": "Ik help je kansen in het netwerk te vinden — plekken om bij te dragen, mensen om te ontmoeten en besluiten die jou nodig hebben.",
+    "welcomeNetworkBuilder": "Ik help je middelen in het netwerk te vinden — mensen, spaces en steun voor wat je bouwt.",
+    "welcomeNetworkFunder": "Ik help je projecten te vinden om te financieren — open vragen en werk dat klaar is voor jouw steun.",
     "specialistsResponding": "Specialisten die bijdragen",
     "specialistsRespondingStreaming": "Specialisten die bijdragen…",
     "placeholder": "Vraag iets...",

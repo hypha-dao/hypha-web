@@ -1,4 +1,5 @@
 export {
+  isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   looksLikeTechnicalSpeakerLabel,
   matrixMemberDisplayLabel,

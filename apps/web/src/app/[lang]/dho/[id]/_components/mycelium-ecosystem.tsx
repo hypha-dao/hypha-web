@@ -179,10 +179,12 @@ function layoutField(
   const parent = path.length > 1 ? path[path.length - 2] : null;
   const cx = width / 2;
   const cy = height / 2;
-  const minDim = Math.min(width, height);
+  // Leave room under each node so the name is not clipped by the frame.
+  const labelPad = 28;
+  const minDim = Math.max(160, Math.min(width, height) - labelPad * 2);
   // Fill most of the frame so sparse trees (parent + focus) are not a tiny
   // cluster in the middle of a tall canvas.
-  const reach = Math.max(140, minDim * 0.42);
+  const reach = Math.max(140, minDim * 0.4);
   const nodeScale = Math.min(1.45, Math.max(1, minDim / 380));
   const visible = prune(focus, 2);
   const root = d3.hierarchy(visible);
@@ -527,10 +529,7 @@ export function MyceliumEcosystem({
   const showMembers =
     lens === 'structure' && Math.min(size.width, size.height) >= 280;
   const focusNode = placedById.get(focus.id);
-  const chipRadius = Math.max(
-    (focusNode?.r ?? 36) + 56,
-    Math.min(size.width, size.height) * 0.24,
-  );
+  const chipRadius = (focusNode?.r ?? 36) + 34;
 
   const memberChips = useMemo(() => {
     if (!showMembers || !focusNode) return [];
@@ -544,6 +543,26 @@ export function MyceliumEcosystem({
       initials?: string;
       imageUrl?: string | null;
     }> = [];
+    const spokes = field.nodes
+      .filter((node) => node.role === 'child')
+      .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x))
+      .sort((left, right) => left - right);
+    let openAngle = Math.PI;
+    let openGap = Math.PI;
+    if (spokes.length > 0) {
+      let bestGap = 0;
+      for (let index = 0; index < spokes.length; index += 1) {
+        const start = spokes[index] ?? 0;
+        const end = spokes[index + 1] ?? (spokes[0] ?? 0) + Math.PI * 2;
+        const gap = end - start;
+        if (gap > bestGap) {
+          bestGap = gap;
+          openAngle = start + gap / 2;
+        }
+      }
+      openGap = bestGap;
+    }
+    const spread = Math.min(Math.PI * 0.45, Math.max(0.4, openGap * 0.62));
     const place = (
       items: Array<{
         key: string;
@@ -554,14 +573,15 @@ export function MyceliumEcosystem({
         imageUrl?: string | null;
       }>,
       center: number,
+      radius: number,
     ) => {
-      const angles = arcSlots(items.length, center, Math.PI * 0.55);
+      const angles = arcSlots(items.length, center, spread);
       items.forEach((item, index) => {
         const angle = angles[index] ?? center;
         chips.push({
           ...item,
-          x: focusNode.x + Math.cos(angle) * chipRadius,
-          y: focusNode.y + Math.sin(angle) * chipRadius,
+          x: focusNode.x + Math.cos(angle) * radius,
+          y: focusNode.y + Math.sin(angle) * radius,
         });
       });
     };
@@ -579,7 +599,8 @@ export function MyceliumEcosystem({
         ),
         imageUrl: person.avatarUrl,
       })),
-      Math.PI,
+      openAngle,
+      chipRadius,
     );
     place(
       joinedSpaces.map((space: Space) => {
@@ -595,7 +616,8 @@ export function MyceliumEcosystem({
           imageUrl: space.logoUrl,
         };
       }),
-      0,
+      openAngle + spread * 0.15,
+      chipRadius + 28,
     );
     place(
       shownAgents.map((agent) => {
@@ -606,11 +628,13 @@ export function MyceliumEcosystem({
           initials: getAgentAvatarInitials(label),
         };
       }),
-      Math.PI / 2,
+      openAngle - spread * 0.15,
+      chipRadius + 28,
     );
     return chips;
   }, [
     chipRadius,
+    field.nodes,
     focus.slug,
     focusNode,
     joinedSpaces,
@@ -808,7 +832,7 @@ export function MyceliumEcosystem({
                         ? 0.9
                         : 0.2
                     }
-                    strokeWidth={node.role === 'focus' ? 1.5 : 1}
+                    strokeWidth={1}
                   />
                   <image
                     href={logo}
@@ -822,7 +846,7 @@ export function MyceliumEcosystem({
                   {node.role !== 'deeper' || size.width >= 520 ? (
                     <text
                       x={node.x}
-                      y={node.y + node.r + 14}
+                      y={node.y + node.r + 20}
                       textAnchor="middle"
                       className="fill-foreground text-[11px]"
                     >

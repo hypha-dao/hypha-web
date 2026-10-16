@@ -3414,6 +3414,7 @@
   },
   "AiPanel": {
     "title": "Hypha AI",
+    "networkTitle": "Hypha Network",
     "suggestions": {
       "createSpace": "Hilf mir, einen neuen Space auf Hypha zu erstellen",
       "createEcosystem": "Hilf mir, eine ganze Organisation mit mehreren Spaces einzurichten",
@@ -3459,6 +3460,9 @@
       "networkInvestorOpen": "Investitionsanfragen"
     },
     "welcome": "Ich bin deine Space-KI für Kohärenz in der Strategie, Bewegung in den Operations und Sinn im Impact—Spezialist:innen gleiten herein, sobald du sie rufst.",
+    "welcomeNetworkMember": "Ich helfe dir, Gelegenheiten im Netzwerk zu finden — Orte zum Mitwirken, Menschen zum Treffen und Entscheidungen, die dich brauchen.",
+    "welcomeNetworkBuilder": "Ich helfe dir, Ressourcen im Netzwerk zu finden — Menschen, Spaces und Unterstützung für das, was du aufbaust.",
+    "welcomeNetworkFunder": "Ich helfe dir, Projekte zum Finanzieren im Netzwerk zu finden — offene Anfragen und Arbeit, die bereit für deine Unterstützung ist.",
     "specialistsResponding": "Beitragende Spezialisten",
     "specialistsRespondingStreaming": "Beitragende Spezialisten…",
     "placeholder": "Einfach fragen...",

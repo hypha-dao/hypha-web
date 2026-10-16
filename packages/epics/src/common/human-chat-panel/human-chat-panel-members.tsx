@@ -16,6 +16,7 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
 import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import {
+  isHyphaBotMatrixIdentity,
   matrixMemberDisplayLabel,
   shortenMatrixIdForDisplay,
 } from './matrix-room-member-display';
@@ -90,19 +91,26 @@ export function HumanChatPanelMembers({
       try {
         const matrixMembers = await getRoomMembers(roomId);
         if (cancelled) return;
-        setOnlineCount(matrixMembers.filter((m) => m.presence).length);
+        setOnlineCount(
+          matrixMembers.filter(
+            (member) =>
+              member.presence && !isHyphaBotMatrixIdentity(member.userId),
+          ).length,
+        );
         if (roomScoped) {
           const room = client?.getRoom(roomId);
-          const next: RoomScopedMember[] = matrixMembers.map((entry) => {
-            const member = room?.getMember(entry.userId);
-            return {
-              userId: entry.userId,
-              displayName: member
-                ? matrixMemberDisplayLabel(member, entry.userId)
-                : shortenMatrixIdForDisplay(entry.userId),
-              online: entry.presence,
-            };
-          });
+          const next: RoomScopedMember[] = matrixMembers
+            .filter((entry) => !isHyphaBotMatrixIdentity(entry.userId))
+            .map((entry) => {
+              const member = room?.getMember(entry.userId);
+              return {
+                userId: entry.userId,
+                displayName: member
+                  ? matrixMemberDisplayLabel(member, entry.userId)
+                  : shortenMatrixIdForDisplay(entry.userId),
+                online: entry.presence,
+              };
+            });
           next.sort((left, right) =>
             left.displayName.localeCompare(right.displayName, undefined, {
               sensitivity: 'base',
@@ -166,7 +174,9 @@ export function HumanChatPanelMembers({
           </p>
           <p className="mt-1 break-words text-muted-foreground">
             {inCallMatrixUserIds
+              .filter((id) => !isHyphaBotMatrixIdentity(id))
               .map((id) => shortenMatrixIdForDisplay(id))
+              .filter(Boolean)
               .join(' · ')}
           </p>
         </div>

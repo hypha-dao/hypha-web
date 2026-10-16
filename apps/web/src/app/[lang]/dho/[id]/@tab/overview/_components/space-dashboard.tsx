@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
+  readMemberPresence,
   SpaceAttention,
   SpaceEnergySection,
   getAgentAvatarInitials,
@@ -122,12 +123,8 @@ function sameIds(left: Set<number>, right: Set<number>) {
 }
 
 async function isSignedInNow(client: MatrixClient, matrixUserId: string) {
-  try {
-    const status = await client.getPresence(matrixUserId);
-    return status.presence === 'online' || Boolean(status.currently_active);
-  } catch {
-    return false;
-  }
+  const level = await readMemberPresence(client, matrixUserId);
+  return level === 'active' || level === 'idle';
 }
 
 function SpaceMemberCircles({

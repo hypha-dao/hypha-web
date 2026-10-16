@@ -820,6 +820,8 @@ export function MemberHomeChat({
       return (
         <MemberHomePeopleWidgetCard
           people={intelligence.connections}
+          networkSignals={intelligence.networkSignals}
+          selfId={intelligence.person.id}
           fallbackName={t('fallbackMember')}
           onChat={(person) => {
             void onChatPerson(person);

@@ -24,6 +24,39 @@ export function presenceFromMatrixStatus(status: {
   return 'offline';
 }
 
+type PresenceClient = {
+  getPresence: (userId: string) => Promise<{
+    presence?: string | null;
+    currently_active?: boolean | null;
+  }>;
+  getUser?: (userId: string) => {
+    presence?: string;
+    currentlyActive?: boolean;
+    lastPresenceTs?: number;
+  } | null;
+};
+
+/**
+ * Prefer the live presence request. If the homeserver refuses it, use a
+ * presence event this client has already seen. An untouched user record
+ * defaults to offline and is not evidence.
+ */
+export async function readMemberPresence(
+  client: PresenceClient,
+  matrixUserId: string,
+): Promise<PresenceLevel> {
+  try {
+    return presenceFromMatrixStatus(await client.getPresence(matrixUserId));
+  } catch {
+    const known = client.getUser?.(matrixUserId);
+    if (!known?.lastPresenceTs) return 'offline';
+    return presenceFromMatrixStatus({
+      presence: known.presence,
+      currently_active: known.currentlyActive,
+    });
+  }
+}
+
 export function sortByPresenceThenShared<
   T extends { id: number; sharedSpaceCount: number },
 >(people: readonly T[], presence: ReadonlyMap<number, PresenceLevel>): T[] {

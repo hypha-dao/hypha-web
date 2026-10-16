@@ -52,6 +52,7 @@ import {
 } from '@hypha-platform/core/client';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import {
+  isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
 } from './matrix-room-member-display';
@@ -2081,26 +2082,35 @@ export function HumanChatPanelChatBar({
             aria-label={t('mentionListLabel')}
             className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-80 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
-            {atSuggestions.map((m, idx) =>
-              m.skills?.length || m.agentIcon ? (
-                <AgentMentionRow
-                  key={m.rowKey ?? m.userId}
-                  candidate={m}
-                  isActive={idx === atActive}
-                  onPick={() => applyAtChoice(m)}
-                />
-              ) : (
-                <HumanChatMentionCandidateRow
-                  key={m.rowKey ?? m.userId}
-                  matrixUserId={m.userId}
-                  matrixFallbackLabel={m.displayLabel}
-                  matrixFallbackAvatarUrl={m.avatarUrl}
-                  privySub={m.privySub}
-                  isActive={idx === atActive}
-                  onPickResolved={(resolved) => applyAtChoice(m, resolved)}
-                />
-              ),
-            )}
+            {atSuggestions
+              .filter(
+                (candidate) =>
+                  Boolean(candidate.skills?.length || candidate.agentIcon) ||
+                  !isHyphaBotMatrixIdentity(
+                    candidate.userId,
+                    candidate.displayLabel,
+                  ),
+              )
+              .map((m, idx) =>
+                m.skills?.length || m.agentIcon ? (
+                  <AgentMentionRow
+                    key={m.rowKey ?? m.userId}
+                    candidate={m}
+                    isActive={idx === atActive}
+                    onPick={() => applyAtChoice(m)}
+                  />
+                ) : (
+                  <HumanChatMentionCandidateRow
+                    key={m.rowKey ?? m.userId}
+                    matrixUserId={m.userId}
+                    matrixFallbackLabel={m.displayLabel}
+                    matrixFallbackAvatarUrl={m.avatarUrl}
+                    privySub={m.privySub}
+                    isActive={idx === atActive}
+                    onPickResolved={(resolved) => applyAtChoice(m, resolved)}
+                  />
+                ),
+              )}
           </div>
         )}
         {colonOpen && colonSuggestions.length > 0 && (

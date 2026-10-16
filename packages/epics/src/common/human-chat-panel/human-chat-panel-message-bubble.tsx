@@ -58,6 +58,7 @@ import {
 } from './human-chat-message-link';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
+  isHyphaBotMatrixIdentity,
   matrixMemberDisplayLabelFromRoom,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -1309,12 +1310,16 @@ function MxidMentionPill({
     sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
+  const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
+    if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
+      return t('agentMentionLabel');
+    }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = pickUserVisibleMemberLabel(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
-  }, [person, syncLabel, fullMxid]);
+  }, [person, syncLabel, fullMxid, t]);
 
   const loading =
     needsProfile &&
@@ -1613,6 +1618,9 @@ export function HumanChatPanelMessageBubble({
     usePersonBySub({ sub: replyPrivySub ?? replyCanonicalSub });
 
   const resolvedSenderName = useMemo(() => {
+    if (isHyphaBotMatrixIdentity(message.senderMatrixId, message.senderName)) {
+      return t('agentMentionLabel');
+    }
     if (message.role === 'user') {
       return message.senderName ?? t('you');
     }
@@ -1640,6 +1648,9 @@ export function HumanChatPanelMessageBubble({
 
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
+    if (isHyphaBotMatrixIdentity(replyTo.sourceUserId, replyTo.authorLabel)) {
+      return t('agentMentionLabel');
+    }
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
       replyTo.sourceUserId != null
