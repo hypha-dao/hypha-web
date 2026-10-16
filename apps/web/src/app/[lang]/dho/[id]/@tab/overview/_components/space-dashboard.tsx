@@ -294,7 +294,7 @@ function Panel({
 }) {
   return (
     <section className={`flex min-w-0 flex-col ${className ?? ''}`}>
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
           className="text-3 text-foreground"
           style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -308,7 +308,7 @@ function Panel({
           {openLabel}
         </Link>
       </div>
-      <div className="mt-4 min-w-0">{children}</div>
+      <div className="mt-3 min-w-0">{children}</div>
     </section>
   );
 }
@@ -415,7 +415,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
 
       <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="flex flex-wrap gap-x-8 gap-y-3">
         {signalsLoading || updatesLoading || membersLoading
           ? [0, 1, 2].map((cell) => (
               <div key={cell}>

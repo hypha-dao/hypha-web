@@ -156,8 +156,10 @@
     "voteNeedsChain": "Denne beslutningen er ikke klar til å bli registrert ennå.",
     "voteClosed": "Avstemning lukket",
     "gotIt": "Skjønner, takk",
-    "outcomePassed": "Forslaget ble vedtatt, med en deltakelse på {participation}% og en enhet på {unity}%.",
-    "outcomeClosed": "Forslaget ble ikke vedtatt. Deltakelsen var {participation}% og enheten var {unity}%.",
+    "gotItChosen": "Takk — jeg har sett hvordan {title} gikk. Hva nå?",
+    "outcomePassed": "Det ble vedtatt — {participation}% deltok, med {unity}% enhet.",
+    "outcomeClosed": "Denne gangen ble det ikke vedtatt. {participation}% deltok, med {unity}% enhet.",
+
     "onVoting": "Til avstemning",
     "closesIn": "Stenger om {time}",
     "fromTreasury": "fra kassen",
@@ -280,7 +282,7 @@
     "profileUnavailable": "Du er fortsatt innlogget. Profilen din kunne ikke lastes.",
     "retry": "Prøv igjen",
     "sendTokensChoose": "Velg et token. Nå {symbol}.",
-    "gotItDone": "Notert"
+    "gotItDone": "Takk — jeg er med"
   },
   "WelcomeFlow": {
     "offer": {

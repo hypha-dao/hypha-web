@@ -21,7 +21,9 @@ import {
   MobileContentFrame,
   MobileCreateButton,
   MobileTabBar,
+  RecentSpaceHistoryTracker,
 } from '@hypha-platform/epics';
+
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
@@ -256,6 +258,7 @@ export default async function RootLayout({
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <PanelProviders>
+                      <RecentSpaceHistoryTracker />
                       <GlobalCallDockProvider>
                         <PanelWrapLayout
                           left={
@@ -367,22 +370,25 @@ export default async function RootLayout({
                               </MobileContentFrame>
                             </div>
                             <Suspense fallback={null}>
-                              <DeferredFooter
-                                networkLabel={footerNetworkLabel}
-                                legalLabel={footerLegalLabel}
-                                hyphaServicesLabel={footerHyphaServicesLabel}
-                                hyphaTokenomicsLabel={
-                                  footerHyphaTokenomicsLabel
-                                }
-                                licensingPolicyLabel={
-                                  footerLicensingPolicyLabel
-                                }
-                                termsAndConditionsLabel={
-                                  footerTermsAndConditionsLabel
-                                }
-                                privacyPolicyLabel={footerPrivacyPolicyLabel}
-                                copyrightLabel={footerCopyrightLabel}
-                              />
+                              {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
+                              <div className="hidden xl:block">
+                                <DeferredFooter
+                                  networkLabel={footerNetworkLabel}
+                                  legalLabel={footerLegalLabel}
+                                  hyphaServicesLabel={footerHyphaServicesLabel}
+                                  hyphaTokenomicsLabel={
+                                    footerHyphaTokenomicsLabel
+                                  }
+                                  licensingPolicyLabel={
+                                    footerLicensingPolicyLabel
+                                  }
+                                  termsAndConditionsLabel={
+                                    footerTermsAndConditionsLabel
+                                  }
+                                  privacyPolicyLabel={footerPrivacyPolicyLabel}
+                                  copyrightLabel={footerCopyrightLabel}
+                                />
+                              </div>
                             </Suspense>
                           </div>
                           <MobileTabBar

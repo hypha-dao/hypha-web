@@ -1050,15 +1050,16 @@ export function MemberHomeChat({
       ) : null}
 
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mb-6 flex min-w-0 flex-nowrap gap-2 overflow-x-auto px-4 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-4 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {chips.map((chip) => (
             <Button
               key={chip.key}
               type="button"
               variant="outline"
               colorVariant="neutral"
+              size="sm"
               disabled={isStreaming}
-              className="h-auto shrink-0 whitespace-nowrap"
+              className="h-7 shrink-0 whitespace-nowrap px-2 py-0 text-[11px] font-medium tracking-wide"
               onClick={() => {
                 void send(chip.ask);
               }}

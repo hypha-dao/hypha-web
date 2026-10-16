@@ -156,8 +156,10 @@
     "voteNeedsChain": "Diese Entscheidung kann noch nicht festgehalten werden.",
     "voteClosed": "Abstimmung geschlossen",
     "gotIt": "Alles klar, danke",
-    "outcomePassed": "Der Vorschlag ist angenommen, mit einer Beteiligung von {participation}% und einer Einheit von {unity}%.",
-    "outcomeClosed": "Der Vorschlag ist nicht angenommen. Die Beteiligung lag bei {participation}% und die Einheit bei {unity}%.",
+    "gotItChosen": "Danke — ich habe gesehen, wie {title} ausgegangen ist. Was kommt als Nächstes?",
+    "outcomePassed": "Es ist angenommen — {participation}% haben mitgemacht, bei {unity}% Einheit.",
+    "outcomeClosed": "Diesmal nicht angenommen. {participation}% haben mitgemacht, bei {unity}% Einheit.",
+
     "onVoting": "In Abstimmung",
     "closesIn": "Schließt in {time}",
     "fromTreasury": "aus der Treasury",
@@ -280,7 +282,7 @@
     "profileUnavailable": "Du bist noch angemeldet. Dein Profil konnte nicht geladen werden.",
     "retry": "Nochmal versuchen",
     "sendTokensChoose": "Wähle einen Token. Aktuell {symbol}.",
-    "gotItDone": "Notiert"
+    "gotItDone": "Danke — ich bin dabei"
   },
   "WelcomeFlow": {
     "offer": {

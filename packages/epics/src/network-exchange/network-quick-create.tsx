@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, FileText, Landmark, Radio, Sprout } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -18,7 +18,7 @@ import {
 import { AddAttachment, Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { getLegacyCreateSpacePath } from '../common/get-path-function';
-import { SpaceSwitcherMark } from '../spaces/components/space-switcher-option';
+import { MemberSpaceSelect } from './member-space-select';
 import {
   SIGNAL_DOCUMENT_ACCEPT,
   SIGNAL_DOCUMENT_LIMIT,
@@ -30,8 +30,6 @@ import {
 } from '../coherence/utils/signal-media';
 
 const DRAFT_KEY = EXCHANGE_CAPITALS_DRAFT_KEY;
-/** Show a search field once the member has enough spaces that scanning tiles is hard. */
-const SPACE_SEARCH_FROM = 5;
 
 const CAPITAL_MARK: Record<CapitalKey, string> = {
   financial: '◈',
@@ -121,7 +119,6 @@ export function NetworkQuickCreate({
   const [spaces, setSpaces] = useState<MemberSpace[]>(() =>
     normalizeMemberSpaces(memberSpaces ?? []),
   );
-  const [spaceQuery, setSpaceQuery] = useState('');
   const [name, setName] = useState('');
   const [place, setPlace] = useState('');
   const [spaceSlug, setSpaceSlug] = useState(
@@ -279,63 +276,22 @@ export function NetworkQuickCreate({
     );
   };
 
-  const filteredSpaces = useMemo(() => {
-    const needle = spaceQuery.trim().toLowerCase();
-    if (!needle) return spaces;
-    return spaces.filter(
-      (space) =>
-        space.title.toLowerCase().includes(needle) ||
-        space.slug.toLowerCase().includes(needle),
-    );
-  }, [spaceQuery, spaces]);
-
   const spaceSelect = (
     value: string,
     onChange: (slug: string) => void,
     exclude: string[] = [],
   ) => {
-    const options = filteredSpaces.filter(
+    const options = spaces.filter(
       (space) => space.slug === value || !exclude.includes(space.slug),
     );
-    const showSearch = spaces.length >= SPACE_SEARCH_FROM;
     return (
-      <div className="grid gap-2">
-        {showSearch ? (
-          <Input
-            value={spaceQuery}
-            onChange={(event) => setSpaceQuery(event.target.value)}
-            placeholder={t('searchMySpaces')}
-            aria-label={t('searchMySpaces')}
-          />
-        ) : null}
-        {options.length === 0 ? (
-          <p className="text-2 text-foreground">{t('noneYet')}</p>
-        ) : (
-          <div className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
-            {options.map((space) => {
-              const on = value === space.slug;
-              return (
-                <button
-                  key={space.slug}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => onChange(space.slug)}
-                  className={cn(
-                    'flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm',
-                    on
-                      ? 'bg-foreground text-background'
-                      : 'text-foreground hover:bg-background-4/70',
-                  )}
-                  style={{ minHeight: 32 }}
-                >
-                  <SpaceSwitcherMark alt={space.title} />
-                  <span className="min-w-0 flex-1 truncate">{space.title}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <MemberSpaceSelect
+        spaces={options}
+        value={value}
+        onChange={onChange}
+        label={t('chooseSpace')}
+        emptyLabel={t('noneYet')}
+      />
     );
   };
 
