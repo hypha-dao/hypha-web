@@ -95,7 +95,13 @@ function LegacyFooter({
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-[minmax(0,1.25fr)_repeat(2,minmax(0,1fr))] md:gap-x-12 md:gap-y-0 lg:gap-x-16">
           <div className="flex min-w-0 flex-col items-start justify-start gap-3 sm:col-span-2 md:col-span-1">
             <Logo width={108} />
-            <p className="text-1 text-muted-foreground">{copyrightLabel}</p>
+            {/*
+              The wordmark is capped at 28px tall inside a 108px box, so the
+              painted H sits 13px in from the box. Match that edge.
+            */}
+            <p className="pl-[13px] text-1 text-muted-foreground">
+              {copyrightLabel}
+            </p>
           </div>
 
           <nav
