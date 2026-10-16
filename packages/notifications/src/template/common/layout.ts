@@ -64,7 +64,7 @@ export function preview(text: string): string {
 }
 
 export function button(label: string, url: string): string {
-  return `<p><a class="cta" href="${escapeHtml(url)}">${escapeHtml(
+  return `<p><a class="cta" href="${escapeHtml(safeHref(url))}">${escapeHtml(
     label,
   )}</a></p>`;
 }
@@ -137,7 +137,7 @@ export function layout({
     `<p>Questions? Contact us at <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></p>`,
     footer.settingsUrl
       ? `<p><a href="${escapeHtml(
-          footer.settingsUrl,
+          safeHref(footer.settingsUrl),
         )}" class="footer-btn">Manage notification settings</a></p>`
       : '',
     footer.unsubscribe
