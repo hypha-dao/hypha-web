@@ -415,14 +415,10 @@ export function MyConnections() {
           await client.invite(roomId, mxid).catch(() => undefined);
         }
       }
-      openCoherenceChat(roomId, title, '', null, home?.chatSpaceSlug ?? null);
-      await startAudioForRoom(
-        roomId,
-        home?.chatSpaceSlug ?? null,
-        undefined,
-        jwt,
-        { roomTitle: title },
-      );
+      openCoherenceChat(roomId, title, '', null, null);
+      await startAudioForRoom(roomId, null, undefined, jwt, {
+        roomTitle: title,
+      });
       setSelected(new Set());
     } catch {
       setNotice(tChat('callFailed'));
@@ -434,13 +430,7 @@ export function MyConnections() {
   async function openReachOut(card: ConnectionSuggestion) {
     setNotice(null);
     if (card.roomId) {
-      openCoherenceChat(
-        card.roomId,
-        card.name,
-        '',
-        null,
-        home?.chatSpaceSlug ?? null,
-      );
+      openCoherenceChat(card.roomId, card.name, '', null, null);
       return;
     }
     if (!card.person) return;

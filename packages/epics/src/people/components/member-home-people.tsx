@@ -45,7 +45,7 @@ function labelOf(person: HomePerson, fallback: string) {
 /** Keeps Matrix ready for the connections grid and opens that room in the comms panel. */
 export function MemberHomePeople({
   people,
-  chatSpaceSlug,
+  chatSpaceSlug: _chatSpaceSlug,
   fallbackName,
   extraPersonIds,
   onOpenChatReady,
@@ -78,12 +78,10 @@ export function MemberHomePeople({
   const matrixIdsLoadingRef = useRef(matrixIdsLoading);
   matrixIdsLoadingRef.current = matrixIdsLoading;
 
-  function showRoom(
-    roomId: string | null,
-    title: string,
-    spaceSlug?: string | null,
-  ) {
-    openCoherenceChat(roomId, title, '', null, spaceSlug ?? chatSpaceSlug);
+  function showRoom(roomId: string | null, title: string) {
+    // PM / group rooms are private — never attach a space slug or the AI and
+    // @-mentions inherit that space's roster.
+    openCoherenceChat(roomId, title, '', null, null);
   }
 
   async function waitForMatrix() {
@@ -121,8 +119,7 @@ export function MemberHomePeople({
   }
 
   async function resolvePersonRoom(person: HomePerson, title: string) {
-    const spaceSlug = person.spaceSlug ?? chatSpaceSlug;
-    showRoom(null, title, spaceSlug);
+    showRoom(null, title);
     const ready = await waitForMatrix();
     const client = ready.client;
     const selfId = client?.getUserId() ?? '';
@@ -152,7 +149,7 @@ export function MemberHomePeople({
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      showRoom(roomId, title, person.spaceSlug ?? chatSpaceSlug);
+      showRoom(roomId, title);
       return true;
     } catch {
       setNotice(t('matrixFailed'));
@@ -178,10 +175,9 @@ export function MemberHomePeople({
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      const spaceSlug = person.spaceSlug ?? chatSpaceSlug;
-      showRoom(roomId, title, spaceSlug);
+      showRoom(roomId, title);
       const start = video ? startVideoForRoom : startAudioForRoom;
-      await start(roomId, spaceSlug, undefined, jwt, {
+      await start(roomId, null, undefined, jwt, {
         roomTitle: title,
       });
       return true;
