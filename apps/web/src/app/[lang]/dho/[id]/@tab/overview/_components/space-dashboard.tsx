@@ -122,7 +122,7 @@ function Bars({ values, label }: { values: number[]; label: string }) {
         {values.map((value, index) => (
           <span
             key={index}
-            className="min-w-0 flex-1 bg-foreground"
+            className="min-w-0 flex-1 bg-[color:var(--space-spot,var(--space-accent))]"
             style={{
               height: `${Math.max(value > 0 ? 8 : 2, (value / peak) * 100)}%`,
               opacity: value > 0 ? 0.35 + (value / peak) * 0.65 : 0.12,
@@ -575,7 +575,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className="flex flex-col gap-6">
       {name ? (
-        <header className="flex min-w-0 flex-col gap-1">
+        <header className="flex min-w-0 flex-col gap-1 border-t-2 border-[color:var(--space-spot,var(--space-accent))] pt-3">
           <h1
             className="text-4 leading-tight text-foreground sm:text-5"
             style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -584,7 +584,9 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           </h1>
           <p className="text-2 text-neutral-11">{sinceLine}</p>
           {diagnosis ? (
-            <p className="text-2 text-foreground">{diagnosis}</p>
+            <p className="text-2 text-[color:var(--space-spot,var(--space-accent))]">
+              {diagnosis}
+            </p>
           ) : null}
           {nextSignal?.slug ? (
             <Link
@@ -764,7 +766,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
                   {assets.map((asset) => (
                     <span
                       key={asset.symbol}
-                      className="h-full bg-foreground"
+                      className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
                       style={{
                         width: `${(asset.value / assetTotal) * 100}%`,
                         opacity: 0.35 + (asset.value / assetTotal) * 0.65,

@@ -113,7 +113,8 @@ const PERCENTAGE_FORMATTER = d3.format('.1f');
  * of that one hue. With no accent they stay a quiet neutral — never the
  * generic chart blue.
  */
-const CHART_HUE = 'var(--space-accent, var(--muted-foreground))';
+const CHART_HUE =
+  'var(--space-spot, var(--space-accent, var(--muted-foreground)))';
 const SPACE_CHART_PALETTE_STYLE = {
   '--craft-chart-accent-1': `color-mix(in oklab, ${CHART_HUE} 20%, white 80%)`,
   '--craft-chart-accent-2': `color-mix(in oklab, ${CHART_HUE} 34%, white 66%)`,

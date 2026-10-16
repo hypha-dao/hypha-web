@@ -63,7 +63,9 @@ describe('craftAccentGradient', () => {
     });
 
     expect(styleVar(style, '--space-accent')).toBe(once);
-    expect(styleVar(style, '--color-accent-9')).toBe(once);
+    expect(styleVar(style, '--space-spot')).toBe(once);
+    expect(styleVar(style, '--color-accent-9')).toBe('');
+    expect(styleVar(style, '--accent-9')).toBe('');
     expect(once).not.toBe(craftAccentHex(once));
     expect(styleVar(style, '--space-accent-deep')).toBe(
       craftAccentGradient(neon).deep,
