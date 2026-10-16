@@ -1056,12 +1056,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     openHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
-  // A pin on the network has no space in the route. The open room carries it.
-  const spaceSlug = routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
+  // Person-to-person rooms (PM / group) have a title and no signal slug — never
+  // inherit a space from the route or a leftover home slug.
+  const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
+  const spaceSlug = isDirectConversation
+    ? undefined
+    : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
   const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem'>('space');
   const callSpaceSlug =
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
-    coherenceSpaceSlug?.trim() ||
+    (!isDirectConversation ? coherenceSpaceSlug?.trim() : null) ||
     null;
   const { jwt: authToken } = useJwt();
   const { useSendNotifications } = useHookRegistry();
@@ -1136,8 +1140,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
-  // A person-to-person room from the member home has a title and no signal slug.
-  const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
   // Dashboard chat has no space. Membership still gates every space and signal room.
   const blockSpaceChatForMembership =
     !isDirectConversation &&
@@ -2066,6 +2068,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [roomId, mode, space?.chatRoomId]);
 
   const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    // PM / group chat: only people actually in this Matrix room — never the
+    // space roster (that wrongly lets you @ people who are not in the DM).
+    if (isDirectConversation) {
+      if (!client || !roomId) return [];
+      const room = client.getRoom(roomId);
+      if (!room) return [];
+      const list: ChatMentionCandidate[] = [];
+      for (const member of room.getJoinedMembers()) {
+        const userId = member.userId?.trim();
+        if (!userId) continue;
+        if (currentUserId && userId === currentUserId) continue;
+        list.push({
+          userId,
+          displayLabel: matrixMemberDisplayLabel(member, userId),
+        });
+      }
+      list.sort((left, right) =>
+        left.displayLabel.localeCompare(right.displayLabel, undefined, {
+          sensitivity: 'base',
+        }),
+      );
+      return list;
+    }
     const candidates = buildSpaceRosterMentionCandidates({
       spaceMembers,
       personIdToMatrixUserId,
@@ -2073,7 +2098,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     });
     if (!currentUserId) return candidates;
     return candidates.filter((candidate) => candidate.userId !== currentUserId);
-  }, [spaceMembers, personIdToMatrixUserId, currentUserId, t]);
+  }, [
+    client,
+    currentUserId,
+    isDirectConversation,
+    mentionMembershipEpoch,
+    personIdToMatrixUserId,
+    roomId,
+    spaceMembers,
+    t,
+  ]);
 
   useEffect(() => {
     if (!client || rawMentionCandidates.length === 0) return;
@@ -4579,7 +4613,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           authToken: authTokenRef.current,
           roomId,
           mentionUserIds,
-          spaceSlug,
+          // Private PM / group rooms have no space — do not leak home/route slug.
+          spaceSlug: isDirectConversation ? null : spaceSlug,
         });
       }
       setSendingPending(null);
@@ -4676,6 +4711,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     draftAttachments,
     mentionSanitizedLabelToUserId,
     blockSpaceChatForMembership,
+    isDirectConversation,
     spaceSlug,
     tCommon,
     t,
@@ -5418,6 +5454,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     useMembers={useMembers}
                     spaceSlug={spaceSlug}
                     roomId={roomId}
+                    roomScoped={isDirectConversation}
                     calledSpecialistIds={calledAgents}
                     inCallMatrixUserIds={spaceCallInCallUserIds}
                     inOurCallSession={
