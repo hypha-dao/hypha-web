@@ -1074,19 +1074,25 @@
       "mentionConsent": "Consentimiento para notificaciones de menciones"
     },
     "subscriptions": {
+      "sections": {
+        "proposals": "Propuestas",
+        "conversations": "Chat y reuniones",
+        "signals": "Señales",
+        "yourActivity": "Tu actividad"
+      },
       "title": "Recibe una notificación cuando...",
       "comingSoon": "Muy pronto",
       "newProposalOpen": {
-        "title": "Una nueva propuesta está abierta a votación.",
+        "title": "Nueva propuesta para votar",
         "description": "En cualquiera de los espacios de los que eres miembro."
       },
       "proposalApprovedOrRejected": {
-        "title": "Una propuesta es aprobada o rechazada.",
+        "title": "Aceptada o rechazada",
         "description": "El resultado de las propuestas en los espacios de los que eres miembro, incluidas las tuyas."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentions": {
-        "title": "Menciones @ en el chat",
+        "title": "Menciones @",
         "description": "Cuando alguien te @menciona en un espacio o hilo de señal al que perteneces."
       },
       "meetings": {
@@ -1094,15 +1100,16 @@
         "description": "Invitaciones, recordatorios y avisos de llamada de reuniones y llamadas en tus espacios."
       },
       "signals": {
-        "title": "Señales",
+        "title": "Asignadas a ti y fechas límite",
         "description": "Cuando se te asigna una señal, te mencionan en una o cambia o vence una fecha límite."
       },
       "ownActions": {
-        "title": "Confirmaciones de tus propias acciones",
+        "title": "Confirmaciones",
         "description": "Cuando creas una propuesta o un espacio, una confirmación de que funcionó."
       }
     },
     "actions": {
+      "unsavedChanges": "Tienes cambios sin guardar",
       "retry": "Reintentar",
       "savePreferences": "Guardar preferencias"
     }

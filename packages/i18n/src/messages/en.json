@@ -302,19 +302,25 @@
       "mentionConsent": "Mention Notifications Consent"
     },
     "subscriptions": {
+      "sections": {
+        "proposals": "Proposals",
+        "conversations": "Chat and meetings",
+        "signals": "Signals",
+        "yourActivity": "Your activity"
+      },
       "title": "Get Notified When...",
       "comingSoon": "Coming Soon",
       "newProposalOpen": {
-        "title": "A new proposal is open for vote",
+        "title": "New proposal to vote on",
         "description": "In any of the spaces you're a member of."
       },
       "proposalApprovedOrRejected": {
-        "title": "A proposal is approved or rejected",
+        "title": "Accepted or rejected",
         "description": "The outcome of proposals in the spaces you're a member of, including your own."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentions": {
-        "title": "Chat @mentions",
+        "title": "@mentions",
         "description": "When someone @mentions you in a space or signal thread you belong to."
       },
       "meetings": {
@@ -322,15 +328,16 @@
         "description": "Invitations, reminders and call alerts for meetings and calls in your spaces."
       },
       "signals": {
-        "title": "Signals",
+        "title": "Assigned to you and deadlines",
         "description": "When a signal is assigned to you, you are mentioned on one, or a deadline changes or passes."
       },
       "ownActions": {
-        "title": "Confirmations of your own actions",
+        "title": "Confirmations",
         "description": "When you create a proposal or a space, a confirmation that it worked."
       }
     },
     "actions": {
+      "unsavedChanges": "You have unsaved changes",
       "retry": "Retry",
       "savePreferences": "Save Preferences"
     }
