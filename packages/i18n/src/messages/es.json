@@ -1082,16 +1082,24 @@
       },
       "proposalApprovedOrRejected": {
         "title": "Una propuesta es aprobada o rechazada.",
-        "description": "En cualquiera de los espacios de los que eres miembro."
+        "description": "El resultado de las propuestas en los espacios de los que eres miembro, incluidas las tuyas."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
-      "mentionOnChatMessage": {
-        "title": "Menciones @ y alertas de llamada",
-        "description": "Cuando alguien te @menciona o inicia una llamada en un espacio o hilo de señal al que perteneces."
+      "mentions": {
+        "title": "Menciones @ en el chat",
+        "description": "Cuando alguien te @menciona en un espacio o hilo de señal al que perteneces."
       },
-      "meetingReminders": {
-        "title": "Recordatorios de reuniones y llamadas",
-        "description": "Cuando una reunión o llamada en uno de tus espacios está a punto de comenzar."
+      "meetings": {
+        "title": "Reuniones y llamadas",
+        "description": "Invitaciones, recordatorios y avisos de llamada de reuniones y llamadas en tus espacios."
+      },
+      "signals": {
+        "title": "Señales",
+        "description": "Cuando se te asigna una señal, te mencionan en una o cambia o vence una fecha límite."
+      },
+      "ownActions": {
+        "title": "Confirmaciones de tus propias acciones",
+        "description": "Cuando creas una propuesta o un espacio, una confirmación de que funcionó."
       }
     },
     "actions": {

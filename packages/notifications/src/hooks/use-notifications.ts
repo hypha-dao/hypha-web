@@ -4,14 +4,15 @@ import { Person } from '@hypha-platform/core/client';
 import React from 'react';
 import OneSignal from 'react-onesignal';
 import {
+  isTagDisabled,
   SUBSCRIPTION_TAGS,
   SubscriptionTag,
   Tag,
   TAG_EMAIL,
-  TAG_MENTION_CONSENT,
-  TAG_MEETING_CONSENT,
   TAG_PUSH,
+  TAG_SUB_OWN_ACTIONS,
   TAG_SUBSCRIBED,
+  TAG_VALUE_DISABLED,
 } from '../constants';
 
 const TRUE = 'true';
@@ -28,8 +29,7 @@ export interface INotificationsContext {
 export interface NotificationConfiguration {
   emailNotifications: boolean;
   browserNotifications: boolean;
-  mentionNotificationsConsent: boolean;
-  meetingNotificationsConsent: boolean;
+  /** One entry per preference group (#2549 D3) with its real stored state. */
   subscriptions: {
     name: SubscriptionTag;
     value: boolean;
@@ -44,6 +44,7 @@ export const NotificationsContext = React.createContext<INotificationsContext>({
   loggedIn: false,
 });
 
+/** Opt-in tags (`subscribed`): only an explicit `'true'` counts. */
 export function checkTag(
   tags: {
     [key: string]: string;
@@ -52,6 +53,28 @@ export function checkTag(
   defaultValue: boolean,
 ) {
   return Object.hasOwn(tags, tagName) ? tags[tagName] === TRUE : defaultValue;
+}
+
+/**
+ * Preference toggles are enabled by default (#2549 D4): on unless the tag is `'disabled'` or the
+ * legacy `'false'`. Mirrors the server-side consent gate.
+ */
+export function isTagEnabled(
+  tags: {
+    [key: string]: string;
+  },
+  tagName: Tag,
+) {
+  return !isTagDisabled(tags[tagName]);
+}
+
+/** Switching a preference on removes its tag; switching it off writes the `'disabled'` marker. */
+async function writePreferenceTag(tagName: Tag, enabled: boolean) {
+  if (enabled) {
+    await OneSignal.User.removeTag(tagName);
+  } else {
+    await OneSignal.User.addTag(tagName, TAG_VALUE_DISABLED);
+  }
 }
 
 export async function hasPermission() {
@@ -89,28 +112,13 @@ export const useNotifications = ({
     }
     try {
       const tags = await OneSignal.User.getTags();
-      const browserNotifications = checkTag(tags, TAG_PUSH, true);
-      const emailNotifications = checkTag(tags, TAG_EMAIL, true);
-      const mentionNotificationsConsent = checkTag(
-        tags,
-        TAG_MENTION_CONSENT,
-        true,
-      );
-      const meetingNotificationsConsent = checkTag(
-        tags,
-        TAG_MEETING_CONSENT,
-        true,
-      );
-      const subscriptions = SUBSCRIPTION_TAGS.map((tagName) => ({
-        name: tagName,
-        value: checkTag(tags, tagName, true),
-      }));
       setConfiguration({
-        browserNotifications,
-        emailNotifications,
-        mentionNotificationsConsent,
-        meetingNotificationsConsent,
-        subscriptions,
+        browserNotifications: isTagEnabled(tags, TAG_PUSH),
+        emailNotifications: isTagEnabled(tags, TAG_EMAIL),
+        subscriptions: SUBSCRIPTION_TAGS.map((tagName) => ({
+          name: tagName,
+          value: isTagEnabled(tags, tagName),
+        })),
       });
     } catch (err) {
       console.warn('Failed to initialize notification configuration', err);
@@ -131,6 +139,12 @@ export const useNotifications = ({
     try {
       await OneSignal.Slidedown.promptPush({ force: true });
       await OneSignal.User.addTag(TAG_SUBSCRIBED, TRUE);
+      // Own-action confirmations start switched off (#2549 D5) — but never overwrite a choice the
+      // user already made.
+      const tags = await OneSignal.User.getTags();
+      if (!Object.hasOwn(tags, TAG_SUB_OWN_ACTIONS)) {
+        await OneSignal.User.addTag(TAG_SUB_OWN_ACTIONS, TAG_VALUE_DISABLED);
+      }
       setSubscribed(true);
       await initializeConfiguration();
     } catch (err) {
@@ -169,36 +183,22 @@ export const useNotifications = ({
           if (!OneSignal.User.PushSubscription.optedIn) {
             await OneSignal.User.PushSubscription.optIn();
           }
-          await OneSignal.User.addTag(TAG_PUSH, TRUE);
-        } else {
-          if (OneSignal.User.PushSubscription.optedIn) {
-            await OneSignal.User.PushSubscription.optOut();
-          }
-          await OneSignal.User.addTag(TAG_PUSH, FALSE);
+        } else if (OneSignal.User.PushSubscription.optedIn) {
+          await OneSignal.User.PushSubscription.optOut();
         }
+        await writePreferenceTag(TAG_PUSH, configuration.browserNotifications);
+
         if (configuration.emailNotifications) {
           if (person.email) {
             await OneSignal.User.addEmail(person.email);
           }
-          await OneSignal.User.addTag(TAG_EMAIL, TRUE);
-        } else {
-          if (person.email) {
-            await OneSignal.User.removeEmail(person.email);
-          }
-          await OneSignal.User.addTag(TAG_EMAIL, FALSE);
+        } else if (person.email) {
+          await OneSignal.User.removeEmail(person.email);
         }
-        await OneSignal.User.addTag(
-          TAG_MENTION_CONSENT,
-          configuration.mentionNotificationsConsent ? TRUE : FALSE,
-        );
-        await OneSignal.User.addTag(
-          TAG_MEETING_CONSENT,
-          configuration.meetingNotificationsConsent ? TRUE : FALSE,
-        );
+        await writePreferenceTag(TAG_EMAIL, configuration.emailNotifications);
+
         for (const subscription of configuration.subscriptions) {
-          const tagName = subscription.name;
-          const tagValue = subscription.value ? TRUE : FALSE;
-          await OneSignal.User.addTag(tagName, tagValue);
+          await writePreferenceTag(subscription.name, subscription.value);
         }
         setConfiguration(configuration);
       } catch (err) {

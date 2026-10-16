@@ -10,20 +10,22 @@ export const TAG_SUB_NEW_PROPOSAL_OPEN = 'sub_newProposalOpen';
 export const TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED =
   'sub_proposalApprovedOrRejected';
 
-export const MAIN_TAGS = [
-  TAG_SUBSCRIBED,
-  TAG_PUSH,
-  TAG_EMAIL,
-  TAG_MENTION_CONSENT,
-  TAG_MEETING_CONSENT,
-  // Not in SUBSCRIPTION_TAGS until the Notification Centre exposes them (#2549 slice 3).
-  TAG_SUB_OWN_ACTIONS,
-  TAG_SUB_SIGNALS,
-] as const;
+/** Enrolment + global channel switches. */
+export const MAIN_TAGS = [TAG_SUBSCRIBED, TAG_PUSH, TAG_EMAIL] as const;
+
+/**
+ * The six preference groups the Notification Centre exposes (#2549 D3) — each one toggle for both
+ * channels. Enabled = tag absent / `'true'`; disabled = `'disabled'` / legacy `'false'` (D4).
+ */
 export const SUBSCRIPTION_TAGS = [
   TAG_SUB_NEW_PROPOSAL_OPEN,
   TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
+  TAG_MENTION_CONSENT,
+  TAG_MEETING_CONSENT,
+  TAG_SUB_SIGNALS,
+  TAG_SUB_OWN_ACTIONS,
 ] as const;
+
 /** Written when a user switches a type/channel off. Absence of the tag means enabled (#2549 D4). */
 export const TAG_VALUE_DISABLED = 'disabled';
 

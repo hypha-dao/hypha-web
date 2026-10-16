@@ -22,8 +22,13 @@ import React from 'react';
 import {
   NOTIFICATION_SUBSCRIPTIONS,
   NotificationConfiguration,
+  SubscriptionTag,
+  TAG_MEETING_CONSENT,
+  TAG_MENTION_CONSENT,
   TAG_SUB_NEW_PROPOSAL_OPEN,
+  TAG_SUB_OWN_ACTIONS,
   TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
+  TAG_SUB_SIGNALS,
 } from '@hypha-platform/notifications/client';
 import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useRouter } from 'next/navigation';
@@ -86,20 +91,10 @@ export const NotificationCentreForm = ({
     defaultValues: {
       emailNotifications: configuration
         ? getSwitch(configuration.emailNotifications)
-        : 'no',
+        : 'yes',
       browserNotifications: configuration
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
-      mentionNotificationsConsent: configuration
-        ? typeof configuration.mentionNotificationsConsent === 'boolean'
-          ? getSwitch(configuration.mentionNotificationsConsent)
-          : 'yes'
-        : 'yes',
-      meetingNotificationsConsent: configuration
-        ? typeof configuration.meetingNotificationsConsent === 'boolean'
-          ? getSwitch(configuration.meetingNotificationsConsent)
-          : 'no'
-        : 'no',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS,
     },
     mode: 'onChange',
@@ -113,24 +108,13 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
-      mentionNotificationsConsent:
-        typeof configuration.mentionNotificationsConsent === 'boolean'
-          ? getSwitch(configuration.mentionNotificationsConsent)
-          : 'yes',
-      meetingNotificationsConsent:
-        typeof configuration.meetingNotificationsConsent === 'boolean'
-          ? getSwitch(configuration.meetingNotificationsConsent)
-          : 'no',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
           (s) => s.name === subscription.tagName,
         );
-        const tagName = sub?.name ?? subscription.tagName;
-        const tagValue = sub?.value ?? subscription.tagValue;
         return {
           ...subscription,
-          tagName,
-          tagValue,
+          tagValue: sub?.value ?? subscription.tagValue,
         };
       }),
     };
@@ -142,12 +126,6 @@ export const NotificationCentreForm = ({
       await saveConfigurations({
         browserNotifications: parseSwitch(values.browserNotifications),
         emailNotifications: parseSwitch(values.emailNotifications),
-        mentionNotificationsConsent: parseSwitch(
-          values.mentionNotificationsConsent,
-        ),
-        meetingNotificationsConsent: parseSwitch(
-          values.meetingNotificationsConsent,
-        ),
         subscriptions: values.subscriptions.map((subscription) => {
           return {
             name: subscription.tagName,
@@ -173,37 +151,28 @@ export const NotificationCentreForm = ({
   const noLabel = tNotificationCentre('channels.no');
   const notificationEmail = person?.email ?? '';
 
-  const subscriptionTextMap = React.useMemo(
-    () => ({
-      [TAG_SUB_NEW_PROPOSAL_OPEN]: {
-        title: tNotificationCentre.has('subscriptions.newProposalOpen.title')
-          ? tNotificationCentre('subscriptions.newProposalOpen.title')
-          : undefined,
-        description: tNotificationCentre.has(
-          'subscriptions.newProposalOpen.description',
-        )
-          ? tNotificationCentre('subscriptions.newProposalOpen.description')
-          : undefined,
-      },
-      [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: {
-        title: tNotificationCentre.has(
-          'subscriptions.proposalApprovedOrRejected.title',
-        )
-          ? tNotificationCentre(
-              'subscriptions.proposalApprovedOrRejected.title',
-            )
-          : undefined,
-        description: tNotificationCentre.has(
-          'subscriptions.proposalApprovedOrRejected.description',
-        )
-          ? tNotificationCentre(
-              'subscriptions.proposalApprovedOrRejected.description',
-            )
-          : undefined,
-      },
-    }),
-    [tNotificationCentre],
-  );
+  const subscriptionTextMap = React.useMemo(() => {
+    const keys: Record<SubscriptionTag, string> = {
+      [TAG_SUB_NEW_PROPOSAL_OPEN]: 'newProposalOpen',
+      [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'proposalApprovedOrRejected',
+      [TAG_MENTION_CONSENT]: 'mentions',
+      [TAG_MEETING_CONSENT]: 'meetings',
+      [TAG_SUB_SIGNALS]: 'signals',
+      [TAG_SUB_OWN_ACTIONS]: 'ownActions',
+    };
+    const text = (key: string, part: 'title' | 'description') =>
+      tNotificationCentre.has(`subscriptions.${key}.${part}`)
+        ? tNotificationCentre(`subscriptions.${key}.${part}`)
+        : undefined;
+    return Object.fromEntries(
+      (Object.entries(keys) as [SubscriptionTag, string][]).map(
+        ([tagName, key]) => [
+          tagName,
+          { title: text(key, 'title'), description: text(key, 'description') },
+        ],
+      ),
+    ) as Record<SubscriptionTag, { title?: string; description?: string }>;
+  }, [tNotificationCentre]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -318,86 +287,6 @@ export const NotificationCentreForm = ({
                 {tNotificationCentre('subscriptions.title')}
               </h3>
             </div>
-            <FormField
-              control={form.control}
-              name="mentionNotificationsConsent"
-              render={({ field }) => {
-                const checkboxId = 'mentionNotificationsConsentChecked';
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <div className="flex flex-col gap-2">
-                        <div className="text-2 text-neutral-11 justify-between">
-                          <div className="flex flex-row gap-2">
-                            <Checkbox
-                              id={checkboxId}
-                              checked={parseSwitch(field.value)}
-                              onCheckedChange={(value) => {
-                                form.setValue(
-                                  field.name,
-                                  value === true ? 'yes' : 'no',
-                                );
-                              }}
-                            />
-                            <FormLabel htmlFor={checkboxId}>
-                              {tNotificationCentre(
-                                'subscriptions.mentionOnChatMessage.title',
-                              )}
-                            </FormLabel>
-                          </div>
-                        </div>
-                        <span className="text-2 text-neutral-11">
-                          {tNotificationCentre(
-                            'subscriptions.mentionOnChatMessage.description',
-                          )}
-                        </span>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-            <FormField
-              control={form.control}
-              name="meetingNotificationsConsent"
-              render={({ field }) => {
-                const checkboxId = 'meetingNotificationsConsentChecked';
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <div className="flex flex-col gap-2">
-                        <div className="text-2 text-neutral-11 justify-between">
-                          <div className="flex flex-row gap-2">
-                            <Checkbox
-                              id={checkboxId}
-                              checked={parseSwitch(field.value)}
-                              onCheckedChange={(value) => {
-                                form.setValue(
-                                  field.name,
-                                  value === true ? 'yes' : 'no',
-                                );
-                              }}
-                            />
-                            <FormLabel htmlFor={checkboxId}>
-                              {tNotificationCentre(
-                                'subscriptions.meetingReminders.title',
-                              )}
-                            </FormLabel>
-                          </div>
-                        </div>
-                        <span className="text-2 text-neutral-11">
-                          {tNotificationCentre(
-                            'subscriptions.meetingReminders.description',
-                          )}
-                        </span>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
             {subscriptions.map((field, index) => (
               <div key={field.id}>
                 <FormField
@@ -417,11 +306,7 @@ export const NotificationCentreForm = ({
                               <div className="flex flex-row gap-2">
                                 <Checkbox
                                   id={checkboxId}
-                                  disabled={subscription.disabled}
-                                  checked={
-                                    !subscription.disabled &&
-                                    subscription.tagValue
-                                  }
+                                  checked={subscription.tagValue}
                                   onCheckedChange={(value) => {
                                     onChange({
                                       ...subscription,
@@ -430,20 +315,8 @@ export const NotificationCentreForm = ({
                                   }}
                                 />
                                 <FormLabel htmlFor={checkboxId}>
-                                  {subscription.disabled
-                                    ? tNotificationCentre(
-                                        'subscriptions.labelWithComingSoon',
-                                        {
-                                          title:
-                                            localizedSubscription?.title ??
-                                            subscription.title,
-                                          comingSoon: tNotificationCentre(
-                                            'subscriptions.comingSoon',
-                                          ),
-                                        },
-                                      )
-                                    : localizedSubscription?.title ??
-                                      subscription.title}
+                                  {localizedSubscription?.title ??
+                                    subscription.title}
                                 </FormLabel>
                               </div>
                             </span>

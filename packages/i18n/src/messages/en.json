@@ -310,16 +310,24 @@
       },
       "proposalApprovedOrRejected": {
         "title": "A proposal is approved or rejected",
-        "description": "In any of the spaces you're a member of."
+        "description": "The outcome of proposals in the spaces you're a member of, including your own."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
-      "mentionOnChatMessage": {
-        "title": "Chat @mentions and call alerts",
-        "description": "When someone @mentions you or starts a call in a space or signal thread you belong to."
+      "mentions": {
+        "title": "Chat @mentions",
+        "description": "When someone @mentions you in a space or signal thread you belong to."
       },
-      "meetingReminders": {
-        "title": "Meeting and call reminders",
-        "description": "When a meeting or call in one of your spaces is about to start."
+      "meetings": {
+        "title": "Meetings and calls",
+        "description": "Invitations, reminders and call alerts for meetings and calls in your spaces."
+      },
+      "signals": {
+        "title": "Signals",
+        "description": "When a signal is assigned to you, you are mentioned on one, or a deadline changes or passes."
+      },
+      "ownActions": {
+        "title": "Confirmations of your own actions",
+        "description": "When you create a proposal or a space, a confirmation that it worked."
       }
     },
     "actions": {
