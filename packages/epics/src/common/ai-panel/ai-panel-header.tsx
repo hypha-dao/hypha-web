@@ -38,7 +38,8 @@ function getDisplayIcon(
 
 /** Labeled identity control stays 40px inside the 70px bar. Icon chrome stays 36px. */
 const SPACE_SWITCHER_CLASS =
-  'inline-flex h-[40px] w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-lg font-medium leading-none tracking-tight text-foreground';
+  'inline-flex h-[40px] w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-lg font-medium leading-snug tracking-tight text-foreground';
+
 /** 32px circle — larger than the previous 24px mark, still inside the 40px control. */
 const SPACE_SWITCHER_AVATAR_CLASS =
   'h-6 w-6 shrink-0 overflow-hidden rounded-full';
@@ -268,9 +269,10 @@ export function AiPanelHeader({
                       </span>
                     )}
                   </span>
-                  <span className="min-w-0 truncate text-center">
+                  <span className="min-w-0 truncate text-center leading-snug">
                     {currentTitle}
                   </span>
+
                   <ChevronsUpDown className="craft-icon shrink-0 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
@@ -353,7 +355,7 @@ export function AiPanelHeader({
                   </span>
                 )}
               </span>
-              <span className="min-w-0 truncate text-center">
+              <span className="min-w-0 truncate text-center leading-snug">
                 {fallbackTitle}
               </span>
             </div>

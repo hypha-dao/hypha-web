@@ -56,7 +56,11 @@ export function RoleGlyph({
   );
 }
 
-/** One or more badges. Role badges are icon-only chips; the label stays on title/aria. */
+/**
+ * Role marks:
+ * - Default (beside a member name): bare icon, no box — label on title/aria.
+ * - Stacked (orientation control): larger icon with the role label under it.
+ */
 export function PersonBadges({
   items,
   stacked = false,
@@ -75,18 +79,24 @@ export function PersonBadges({
     >
       {items.map((item) =>
         item.role ? (
-          <span
-            key={item.id}
-            title={item.label}
-            aria-label={item.label}
-            className={
-              stacked
-                ? 'inline-flex size-9 items-center justify-center border border-border bg-neutral-3 text-foreground'
-                : 'inline-flex size-5 items-center justify-center border border-border bg-neutral-3 text-foreground'
-            }
-          >
-            <RoleGlyph role={item.role} size={stacked ? 18 : 12} />
-          </span>
+          stacked ? (
+            <span
+              key={item.id}
+              className="inline-flex flex-col items-center gap-1 text-1 text-foreground"
+            >
+              <RoleGlyph role={item.role} size={36} />
+              <span className="text-center">{item.label}</span>
+            </span>
+          ) : (
+            <span
+              key={item.id}
+              title={item.label}
+              aria-label={item.label}
+              className="inline-flex shrink-0 text-foreground"
+            >
+              <RoleGlyph role={item.role} size={14} />
+            </span>
+          )
         ) : (
           <span
             key={item.id}
