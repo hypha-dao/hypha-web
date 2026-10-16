@@ -31,7 +31,6 @@ import {
   type PresenceLevel,
 } from './member-presence';
 import { PersonAvatar } from './person-avatar';
-import { isPersonRole, PersonRoleBadge } from './person-badges';
 import { PresenceDot } from './presence-dot';
 
 type ClosestPerson = MemberIntelligence['connections'][number];
@@ -304,10 +303,7 @@ export function MemberHomeClosest({
             );
 
             return (
-              <li
-                key={person.id}
-                className="flex shrink-0 flex-col items-center gap-1"
-              >
+              <li key={person.id} className="flex shrink-0 items-center">
                 {href ? (
                   <Link
                     href={href}
@@ -349,9 +345,6 @@ export function MemberHomeClosest({
                     {portrait}
                   </span>
                 )}
-                {isPersonRole(person.primaryOrientation) ? (
-                  <PersonRoleBadge role={person.primaryOrientation} />
-                ) : null}
               </li>
             );
           })}
