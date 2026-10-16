@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -22,17 +23,29 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  listMemberHomeAttentionItems,
   listMemberHomeThreadItems,
+  memberHomeItemsStillWaiting,
+  mergeMemberHomeAttention,
   type MemberHomeThreadItem,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 
-import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import {
+  getOnboardingPath,
+  getProposalPath,
+  getSignalPath,
+} from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
 import { MemberHomeChat } from './member-home-chat';
-import { bindHomePerson } from './member-home-resume';
+import {
+  HOME_QUEUE_EVENT,
+  bindHomePerson,
+  readHomeActed,
+  readHomeChoices,
+} from './member-home-resume';
 
 export { HOME_REFRESH_EVENT } from './member-home-resume';
 import { MemberHomeThreadCard } from './member-home-thread-card';
@@ -45,8 +58,12 @@ import {
   MemberHomePeople,
   type MemberHomeOpenChat,
 } from './member-home-people';
-import { MemberHomeWalletWidget } from './member-home-side-widgets';
+import {
+  MemberHomeConnectionsWidget,
+  MemberHomeWalletWidget,
+} from './member-home-side-widgets';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
+import { MemberHomeEnergyPanel } from './member-home-energy-panel';
 import './member-home-banner.css';
 
 type MemberHomeProps = {
@@ -99,6 +116,61 @@ function isSignupOrientation(
   value: string | null | undefined,
 ): value is SignupOrientation {
   return value === 'member' || value === 'builder' || value === 'investor';
+}
+
+type HomeQueueMemory = {
+  passed: string[];
+  deferred: string[];
+  settled: string[];
+  recalled: string[];
+};
+
+type HomeQueueSnapshot = {
+  passed: string[];
+  deferred: string[];
+  settled: string[];
+  acted: string[];
+};
+
+const EMPTY_HOME_QUEUE_SNAPSHOT = JSON.stringify({
+  passed: [],
+  deferred: [],
+  settled: [],
+  acted: [],
+} satisfies HomeQueueSnapshot);
+
+function subscribeHomeQueue(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => undefined;
+  window.addEventListener(HOME_QUEUE_EVENT, onStoreChange);
+  window.addEventListener('storage', onStoreChange);
+  return () => {
+    window.removeEventListener(HOME_QUEUE_EVENT, onStoreChange);
+    window.removeEventListener('storage', onStoreChange);
+  };
+}
+
+function readHomeQueueSnapshot() {
+  const choices = readHomeChoices();
+  return JSON.stringify({
+    passed: choices.passed,
+    deferred: choices.deferred,
+    settled: choices.settled,
+    acted: readHomeActed(),
+  } satisfies HomeQueueSnapshot);
+}
+
+function sameHomeQueueMemory(
+  current: HomeQueueMemory | null,
+  next: HomeQueueMemory,
+) {
+  if (!current) return false;
+  const list = (keys: string[]) => keys.join('\n');
+  return (
+    list(current.passed) === list(next.passed) &&
+    list(current.deferred) === list(next.deferred) &&
+    list(current.settled) === list(next.settled) &&
+    list(current.recalled) === list(next.recalled)
+  );
 }
 
 export function MemberHome({
@@ -174,6 +246,34 @@ export function MemberHome({
     [home],
   );
   if (home?.person.slug) bindHomePerson(home.person.slug);
+  const queueSnapshot = useSyncExternalStore(
+    subscribeHomeQueue,
+    readHomeQueueSnapshot,
+    () => EMPTY_HOME_QUEUE_SNAPSHOT,
+  );
+  const [chatMemory, setChatMemory] = useState<HomeQueueMemory | null>(null);
+  const onQueueMemory = useCallback((memory: HomeQueueMemory) => {
+    setChatMemory((current) =>
+      sameHomeQueueMemory(current, memory) ? current : memory,
+    );
+  }, []);
+  const attentionSource = useMemo(
+    () => (home ? listMemberHomeAttentionItems(home) : []),
+    [home],
+  );
+  const attentionOrder = useRef<MemberHomeThreadItem[]>([]);
+  const attentionQueue = useMemo(() => {
+    const stored = JSON.parse(queueSnapshot) as HomeQueueSnapshot;
+    const waiting = memberHomeItemsStillWaiting(attentionSource, {
+      passed: chatMemory?.passed ?? stored.passed,
+      deferred: chatMemory?.deferred ?? stored.deferred,
+      settled: chatMemory?.settled ?? stored.settled,
+      acted: stored.acted,
+      recalled: chatMemory?.recalled ?? [],
+    });
+    return mergeMemberHomeAttention(attentionOrder.current, waiting);
+  }, [attentionSource, chatMemory, queueSnapshot]);
+  attentionOrder.current = attentionQueue;
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const reachIds = useMemo(() => {
     if (!home) return [];
@@ -203,14 +303,11 @@ export function MemberHome({
           spaces={home?.spaces ?? []}
           isLoading={home == null}
         />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)]">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
           <aside
             aria-label={t('panelSpaces')}
             className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
           >
-            {home && home.invites.length > 0 ? (
-              <MemberHomeInviteBanners lang={lang} invites={home.invites} />
-            ) : null}
             <section
               aria-busy={home == null || undefined}
               className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
@@ -359,17 +456,6 @@ export function MemberHome({
             ) : null}
           </aside>
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-2 @min-[68rem]/home:row-start-1">
-            {home ? (
-              <MemberHomePeople
-                people={home.connections}
-                chatSpaceSlug={home.chatSpaceSlug}
-                fallbackName={memberFallback}
-                extraPersonIds={reachIds}
-                onOpenChatReady={onOpenChatReady}
-                onOpenCallReady={onOpenCallReady}
-                onOpenVideoReady={onOpenVideoReady}
-              />
-            ) : null}
             <div className="shrink-0 px-4 pt-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -429,6 +515,7 @@ export function MemberHome({
                 onChatPerson={openChat}
                 onCallPerson={openCall}
                 onVideoPerson={openVideo}
+                onQueueMemory={onQueueMemory}
               />
             ) : home && viewReady ? (
               <ClassicBoard
@@ -445,6 +532,109 @@ export function MemberHome({
               </div>
             )}
           </main>
+          <aside
+            aria-label={t('panelInsights')}
+            className="narrow-scrollbar row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[80rem]/home:col-start-3 @min-[80rem]/home:flex"
+          >
+            {orientation === 'member' && home ? (
+              <PersonaCard
+                title={t('memberTitle')}
+                body={t('memberBody')}
+                action={t('memberAction')}
+                href={`/${lang}/my-spaces`}
+                meta={t('memberCount', { count: home.counts.spaces })}
+              />
+            ) : null}
+            {orientation === 'builder' ? (
+              <PersonaCard
+                title={t('builderTitle')}
+                body={t('builderBody')}
+                action={t('builderAction')}
+                href={getOnboardingPath(lang)}
+              />
+            ) : null}
+            {home && home.invites.length > 0 ? (
+              <MemberHomeInviteBanners lang={lang} invites={home.invites} />
+            ) : null}
+            {home?.person.slug ? (
+              <MemberHomeEnergyPanel personSlug={home.person.slug} />
+            ) : null}
+            {orientation === 'investor' && home ? (
+              <PersonaCard
+                title={t('investorTitle')}
+                body={t('investorBody')}
+                action={t('investorAction')}
+                href={`/${lang}/network/needs`}
+                meta={t('investorCount', {
+                  count: home.counts.capitalAsks,
+                })}
+              />
+            ) : null}
+            {home != null && orientation == null ? (
+              <section className="border border-border bg-background p-4">
+                <h2
+                  className="text-3"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t('chooseTitle')}
+                </h2>
+                <p className="mt-3 max-w-[48ch] text-1 leading-relaxed text-neutral-11">
+                  {t('chooseBody')}
+                </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {ORIENTATIONS.map((option) => (
+                    <Button
+                      key={option}
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={isSavingOrientation}
+                      onClick={() => onChooseOrientation(option)}
+                    >
+                      {t(orientationLabelKey(option))}
+                    </Button>
+                  ))}
+                </div>
+                {orientationError ? (
+                  <p className="mt-3 text-1 text-error-11" role="alert">
+                    {orientationError}
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
+
+            <div>
+              <AttentionNeeded
+                lang={lang}
+                home={home}
+                queue={attentionQueue}
+                onSelect={setFocusKey}
+              />
+            </div>
+
+            <div className="grid gap-4">
+              <MemberHomeConnectionsWidget
+                lang={lang}
+                people={home?.connections ?? []}
+                isLoading={home == null}
+                fallbackName={memberFallback}
+                onChat={home ? openChat : undefined}
+                onCall={home ? openCall : undefined}
+                onVideo={home ? openVideo : undefined}
+              />
+              {home ? (
+                <MemberHomePeople
+                  people={home.connections}
+                  chatSpaceSlug={home.chatSpaceSlug}
+                  fallbackName={memberFallback}
+                  extraPersonIds={reachIds}
+                  onOpenChatReady={onOpenChatReady}
+                  onOpenCallReady={onOpenCallReady}
+                  onOpenVideoReady={onOpenVideoReady}
+                />
+              ) : null}
+            </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -799,6 +989,66 @@ function Tile({
   );
 }
 
+const ATTENTION_PAGE = 5;
+
+function AttentionNeeded({
+  lang,
+  home,
+  queue,
+  onSelect,
+}: {
+  lang: Locale;
+  home: MemberIntelligence | null;
+  queue: MemberHomeThreadItem[];
+  onSelect: (key: string) => void;
+}) {
+  const t = useTranslations('MemberHome');
+  const tTypes = useTranslations('CoherenceTab');
+  const items = queue.flatMap((item) => {
+    const typeName = item.category?.trim();
+    const typeKey = typeName ? (`types.${typeName}` as 'types.Need') : null;
+    const typeLabel =
+      typeKey && tTypes.has(typeKey) ? tTypes(typeKey) : typeName;
+    return [
+      {
+        id: `${item.kind}:${item.slug}`,
+        kind: item.kind,
+        title: item.title,
+        detail:
+          item.kind === 'signal'
+            ? [typeLabel, item.spaceTitle].filter(Boolean).join(' · ')
+            : [item.spaceTitle, item.documentKind].filter(Boolean).join(' · '),
+        href:
+          item.kind === 'proposal'
+            ? getProposalPath(lang, item.spaceSlug, item.slug)
+            : getSignalPath(lang, item.spaceSlug, item.slug),
+        onSelect: () => onSelect(`${item.kind}:${item.slug}`),
+        icon: item.spaceLogo ?? null,
+      },
+    ];
+  });
+
+  return (
+    <Tile
+      title={t('waiting')}
+      count={items.length > 0 ? items.length : undefined}
+      busy={home == null}
+    >
+      <ResourceList
+        isLoading={home == null}
+        empty={t('noWaiting')}
+        maxItems={ATTENTION_PAGE}
+        items={items}
+      />
+      {items.length > ATTENTION_PAGE ? (
+        <Button asChild className="mt-4 w-full text-sm">
+          <Link href={`/${lang}/home/attention`}>{t('seeMore')}</Link>
+        </Button>
+      ) : null}
+    </Tile>
+  );
+}
+
 function ResourceMark({
   kind,
   iconUrl,
@@ -916,5 +1166,37 @@ function ResourceList({
         );
       })}
     </ul>
+  );
+}
+
+function PersonaCard({
+  title,
+  body,
+  action,
+  href,
+  meta,
+}: {
+  title: string;
+  body: string;
+  action: string;
+  href: string;
+  meta?: string;
+}) {
+  return (
+    <section className="border border-border bg-background p-4">
+      <h2
+        className="text-3"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {title}
+      </h2>
+      <p className="mt-3 max-w-[52ch] text-1 leading-relaxed text-neutral-11">
+        {body}
+      </p>
+      {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}
+      <Button asChild className="mt-4 w-full text-sm">
+        <Link href={href}>{action}</Link>
+      </Button>
+    </section>
   );
 }
