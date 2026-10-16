@@ -303,7 +303,7 @@ export function MemberHome({
           spaces={home?.spaces ?? []}
           isLoading={home == null}
         />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:grid @min-[48rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[48rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
           <aside
             aria-label={t('panelSpaces')}
             className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
@@ -455,7 +455,7 @@ export function MemberHome({
               </div>
             ) : null}
           </aside>
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[48rem]/home:col-start-1 @min-[48rem]/home:row-start-1 @min-[68rem]/home:col-start-2">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-2 @min-[68rem]/home:row-start-1">
             <div className="shrink-0 px-4 pt-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -534,7 +534,7 @@ export function MemberHome({
           </main>
           <aside
             aria-label={t('panelInsights')}
-            className="narrow-scrollbar col-start-2 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[48rem]/home:flex @min-[68rem]/home:col-start-3"
+            className="narrow-scrollbar row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[80rem]/home:col-start-3 @min-[80rem]/home:flex"
           >
             {orientation === 'member' && home ? (
               <PersonaCard
