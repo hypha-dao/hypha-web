@@ -107,7 +107,6 @@ export default async function RootLayout({
   let humanChatEnabled = false;
 
   let navHomeLabel = 'Home';
-  let navMyConnectionsLabel = 'Connections';
   let navMySpacesLabel = 'Spaces';
   let navMyWalletLabel = 'Wallet';
   let navNetworkLabel = 'Network';
@@ -170,7 +169,6 @@ export default async function RootLayout({
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
     navHomeLabel = tNav('myDashboard');
-    navMyConnectionsLabel = tNav('myConnections');
     navMySpacesLabel = tNav('mySpaces');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
@@ -323,10 +321,6 @@ export default async function RootLayout({
                                     {
                                       label: navHomeLabel,
                                       href: `/${locale}/home`,
-                                    },
-                                    {
-                                      label: navMyConnectionsLabel,
-                                      href: `/${locale}/connections`,
                                     },
                                     {
                                       label: navMySpacesLabel,

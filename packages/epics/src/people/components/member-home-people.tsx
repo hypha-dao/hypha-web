@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ClientEvent, SyncState } from 'matrix-js-sdk';
 import {
   findNamedDirectRoomId,
   useJwt,
@@ -87,10 +88,34 @@ export function MemberHomePeople({
   async function waitForMatrix() {
     for (let attempt = 0; attempt < 30; attempt += 1) {
       const current = matrixRef.current;
-      if (current.isAuthenticated && current.client) return current;
+      if (current.isAuthenticated && current.client) {
+        await waitForRoomList(current.client);
+        return current;
+      }
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
     return matrixRef.current;
+  }
+
+  function waitForRoomList(client: NonNullable<typeof matrix.client>) {
+    const state = client.getSyncState();
+    if (state === SyncState.Prepared || state === SyncState.Syncing) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      const timer = window.setTimeout(finish, 4000);
+      const onSync = (next: SyncState | null) => {
+        if (next === SyncState.Prepared || next === SyncState.Syncing) {
+          finish();
+        }
+      };
+      function finish() {
+        window.clearTimeout(timer);
+        client.removeListener(ClientEvent.Sync, onSync);
+        resolve();
+      }
+      client.on(ClientEvent.Sync, onSync);
+    });
   }
 
   async function waitForMatrixUserId(personId: number) {
@@ -119,7 +144,6 @@ export function MemberHomePeople({
   }
 
   async function resolvePersonRoom(person: HomePerson, title: string) {
-    showRoom(null, title);
     const ready = await waitForMatrix();
     const client = ready.client;
     const selfId = client?.getUserId() ?? '';
@@ -128,15 +152,14 @@ export function MemberHomePeople({
       return null;
     }
     const mxid = await waitForMatrixUserId(person.id);
-    if (mxid && selfId) {
-      const existing = findNamedDirectRoomId(
-        readJoinedPeopleRooms(client).named,
-        selfId,
-        mxid,
-        title,
-      );
-      if (existing) return existing;
-    }
+    if (!mxid || !selfId) return null;
+    const existing = findNamedDirectRoomId(
+      readJoinedPeopleRooms(client).named,
+      selfId,
+      mxid,
+      title,
+    );
+    if (existing) return existing;
     return openRoom(title, [person.id], ready);
   }
 

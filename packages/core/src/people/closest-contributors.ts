@@ -16,6 +16,10 @@ export type NamedRoomSnapshot = {
   roomId: string;
   name: string;
   joinedUserIds: readonly string[];
+  /** Latest activity, so several chats with the same person reopen the used one. */
+  lastActiveTs?: number;
+  /** Loaded messages. An empty room created by mistake loses to the real chat. */
+  messageCount?: number;
 };
 
 /**
@@ -117,8 +121,8 @@ export function rankClosestContributors<
 }
 
 /**
- * A two-person room the home already titled with this person's name.
- * Larger rooms, including space chats, are left alone.
+ * The direct room with this person. The title is a hint when several exist.
+ * A room is still theirs when Matrix named it differently. Larger rooms stay out.
  */
 export function findNamedDirectRoomId(
   rooms: readonly NamedRoomSnapshot[],
@@ -129,14 +133,24 @@ export function findNamedDirectRoomId(
   const self = selfUserId.trim();
   const other = otherUserId.trim();
   const expected = roomName.trim().toLowerCase();
-  if (!self || !other || !expected) return null;
+  if (!self || !other) return null;
 
-  for (const room of rooms) {
-    if (room.name.trim().toLowerCase() !== expected) continue;
+  const direct = rooms.filter((room) => {
     const others = [
       ...new Set(room.joinedUserIds.filter((id) => id && id !== self)),
     ];
-    if (others.length === 1 && others[0] === other) return room.roomId;
-  }
-  return null;
+    return others.length === 1 && others[0] === other;
+  });
+  if (direct.length === 0) return null;
+  const named = expected
+    ? direct.find((room) => room.name.trim().toLowerCase() === expected)
+    : undefined;
+  const withHistory = direct.filter((room) => (room.messageCount ?? 0) > 0);
+  const pool = named ? [named] : withHistory.length > 0 ? withHistory : direct;
+  const [latest] = [...pool].sort(
+    (left, right) =>
+      (right.messageCount ?? 0) - (left.messageCount ?? 0) ||
+      (right.lastActiveTs ?? 0) - (left.lastActiveTs ?? 0),
+  );
+  return latest?.roomId ?? null;
 }

@@ -106,6 +106,7 @@ import {
 } from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
+import { MyConnections } from '../people/components/my-connections';
 import {
   computeAggregateUnreadMentionCount,
   computeHumanChatUnreadState,
@@ -1023,6 +1024,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
   const params = useParams<{ id?: string }>();
   const pathname = usePathname() ?? '';
+  const isMemberHome = /^\/[^/]+\/home(?:\/|$)/.test(pathname);
+  const isConnectionsPage = /^\/[^/]+\/connections(?:\/|$)/.test(pathname);
   const router = useRouter();
   const searchParams = useSearchParams();
   const routeSpaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
@@ -1054,6 +1057,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
+    closeHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
@@ -1684,7 +1688,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     closeCoherenceChat();
-  }, [closeCoherenceChat, pathname, router, searchParams]);
+    if (isConnectionsPage) closeHumanChatPanel();
+  }, [
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    isConnectionsPage,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   const pendingCallStartNotifyRef = useRef(false);
   const callStartedNotifyRoomRef = useRef<string | null>(null);
@@ -3109,6 +3121,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'space') return;
     if (spaceSlug?.trim()) return;
+    if (isMemberHome) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
 
@@ -3163,6 +3176,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     spaceSlug,
+    isMemberHome,
     isMatrixAvailable,
     isMatrixAuthenticated,
     syncRoomMessages,
@@ -4722,6 +4736,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     };
   }, []);
+
+  if (isMemberHome && mode === 'space' && !spaceSlug?.trim()) {
+    return (
+      <div className="flex h-full min-h-0 flex-col bg-page-background dark:bg-background-2">
+        <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4">
+          <MyConnections />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

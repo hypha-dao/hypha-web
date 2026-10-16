@@ -10,6 +10,7 @@ import {
   UserEvent,
   type MatrixClient,
 } from 'matrix-js-sdk';
+import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -72,12 +73,7 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
     const joinedUserIds = room
       .getJoinedMembers()
       .map((member) => member.userId)
-      .filter((id) => id && id !== botId);
-    named.push({
-      roomId: room.roomId,
-      name: room.name ?? '',
-      joinedUserIds,
-    });
+      .filter((id) => id && id !== botId && !isHyphaBotMatrixIdentity(id));
 
     const messageSenderIds: string[] = [];
     for (const event of room.getLiveTimeline().getEvents()) {
@@ -85,9 +81,18 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
       if (isRedactedRoomMessageEvent(event)) continue;
       if (getMessageReplaceTargetEventId(event) != null) continue;
       const sender = event.getSender();
-      if (!sender || sender === botId) continue;
+      if (!sender || sender === botId || isHyphaBotMatrixIdentity(sender)) {
+        continue;
+      }
       messageSenderIds.push(sender);
     }
+    named.push({
+      roomId: room.roomId,
+      name: room.name ?? '',
+      joinedUserIds,
+      lastActiveTs: room.getLastActiveTimestamp(),
+      messageCount: messageSenderIds.length,
+    });
     conversations.push({ joinedUserIds, messageSenderIds });
   }
 

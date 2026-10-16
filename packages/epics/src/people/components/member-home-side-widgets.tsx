@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { MessageSquare, Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { Button, Skeleton } from '@hypha-platform/ui';
 import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
@@ -216,7 +217,6 @@ export function MemberHomeSpacesWidget({
 const CONNECTIONS_PREVIEW = 5;
 
 export function MemberHomeConnectionsWidget({
-  lang,
   people,
   isLoading,
   fallbackName,
@@ -233,6 +233,7 @@ export function MemberHomeConnectionsWidget({
   onVideo?: (person: HomeConnection) => Promise<boolean>;
 }) {
   const t = useTranslations('MemberHome');
+  const { closeCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const visiblePeople = people.slice(0, CONNECTIONS_PREVIEW);
 
   return (
@@ -329,9 +330,16 @@ export function MemberHomeConnectionsWidget({
         </ul>
       )}
       {!isLoading && people.length > CONNECTIONS_PREVIEW ? (
-        <WidgetAction href={`/${lang}/connections`}>
+        <Button
+          type="button"
+          className="mt-4 w-full text-sm"
+          onClick={() => {
+            closeCoherenceChat();
+            openHumanChatPanel();
+          }}
+        >
           {t('seeMore')}
-        </WidgetAction>
+        </Button>
       ) : null}
     </Widget>
   );

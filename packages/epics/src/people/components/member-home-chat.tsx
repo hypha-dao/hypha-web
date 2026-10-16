@@ -1052,22 +1052,19 @@ export function MemberHomeChat({
       ) : null}
 
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-4 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mx-4 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {chips.map((chip) => (
-            <Button
+            <button
               key={chip.key}
               type="button"
-              variant="outline"
-              colorVariant="neutral"
-              size="sm"
               disabled={isStreaming}
-              className="h-7 shrink-0 whitespace-nowrap px-2 py-0 text-[11px] font-medium tracking-wide"
+              className="shrink-0 rounded-full bg-foreground px-3 py-1 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
               onClick={() => {
                 void send(chip.ask);
               }}
             >
               {chip.ask}
-            </Button>
+            </button>
           ))}
         </div>
         {micOn && voiceInterview.liveTranscript ? (

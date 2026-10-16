@@ -371,7 +371,7 @@ export function MobileTabBar({
           />
           <TabLink
             href={connectionsHref}
-            label={t('myConnections')}
+            label={t('chat')}
             active={connectionsActive}
             badge={unreadCount}
             onClick={() => setCreateOpen(false)}

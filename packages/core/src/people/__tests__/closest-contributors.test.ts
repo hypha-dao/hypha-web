@@ -126,6 +126,32 @@ describe('findNamedDirectRoomId', () => {
     ).toBe('!dm:hypha');
   });
 
+  it('reopens a direct chat even when the room title differs', () => {
+    expect(
+      findNamedDirectRoomId(
+        [
+          {
+            roomId: '!older:hypha',
+            name: 'Vlad Hramtsov',
+            joinedUserIds: [self, '@vlad:hypha'],
+            lastActiveTs: 10,
+            messageCount: 4,
+          },
+          {
+            roomId: '!newer:hypha',
+            name: '',
+            joinedUserIds: [self, '@vlad:hypha'],
+            lastActiveTs: 50,
+            messageCount: 0,
+          },
+        ],
+        self,
+        '@vlad:hypha',
+        'Vlad',
+      ),
+    ).toBe('!older:hypha');
+  });
+
   it('does not treat a larger room as a direct chat', () => {
     expect(
       findNamedDirectRoomId(
