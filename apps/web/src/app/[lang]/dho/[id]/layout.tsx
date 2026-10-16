@@ -106,15 +106,18 @@ export default async function DhoLayout({
       : undefined;
   const spaceFlags = spaceFromDb.flags ?? [];
 
+  const [memberCounts, energyMembers] = await Promise.all([
+    getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId),
+    readEnergyCommunityMemberAddresses(daoSlug, { db }).catch((error) => {
+      console.error('Failed to read energy community members:', error);
+      return { status: 'unavailable' as const };
+    }),
+  ]);
   const {
     members: rawSpaceMembers,
     memberAddresses,
     agreements: spaceAgreements,
-  } = await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
-
-  const energyMembers = await readEnergyCommunityMemberAddresses(daoSlug, {
-    db,
-  });
+  } = memberCounts;
   const spaceMembers =
     energyMembers.status === 'ok' && rawSpaceMembers !== null
       ? memberAddresses.filter((address) =>
