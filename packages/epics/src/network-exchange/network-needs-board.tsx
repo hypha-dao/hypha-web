@@ -19,6 +19,7 @@ import { CAPITAL_MARK } from './capital-marks';
 import { NetworkRightColumn } from './network-right-cards';
 import {
   NetworkCapitalFilters,
+  NetworkLiveSearch,
   NetworkSectionHeader,
 } from './network-section-header';
 
@@ -87,17 +88,29 @@ export function NetworkNeedsBoard({
   const t = useTranslations('NetworkExchange');
   const dateLocale = resolveDateFnsLocale(useLocale());
   const { open, openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const [query, setQuery] = useState('');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
   const [selectedSlug, setSelectedSlug] = useState(needs[0]?.slug ?? '');
+  const needle = query.trim().toLowerCase();
   const visible = useMemo(() => {
     return needs.filter((need) => {
       if (need.type !== 'Need') return false;
       if (capital !== 'all' && capitalKey(need.capital) !== capital) {
         return false;
       }
-      return true;
+      if (!needle) return true;
+      return [
+        need.title,
+        need.description,
+        need.spaceTitle,
+        need.spacePlace,
+        need.spaceDescription,
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(needle);
     });
-  }, [capital, needs]);
+  }, [capital, needs, needle]);
   const selected =
     visible.find((need) => need.slug === selectedSlug) ??
     visible[0] ??
@@ -126,6 +139,11 @@ export function NetworkNeedsBoard({
           <NetworkSectionHeader
             eyebrow={t('readFromSignals')}
             title={t('needsTitle')}
+          />
+          <NetworkLiveSearch
+            value={query}
+            onChange={setQuery}
+            placeholder={t('searchPlaceholder')}
           />
           <NetworkCapitalFilters
             value={capital}
