@@ -10,6 +10,7 @@ import {
   UserEvent,
   type MatrixClient,
 } from 'matrix-js-sdk';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
@@ -118,6 +119,7 @@ export function MemberHomeClosest({
 }: MemberHomeClosestProps) {
   const t = useTranslations('MemberHome');
   const router = useRouter();
+  const { closeCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const matrix = useMatrix();
   const [messageCounts, setMessageCounts] = useState<Map<number, number>>(
     () => new Map(),
@@ -347,12 +349,26 @@ export function MemberHomeClosest({
           })}
           {rest > 0 ? (
             <li>
-              <span
-                className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12"
+              <Link
+                href={`/${lang}/connections`}
+                aria-label={t('seeMore')}
+                className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12 xl:hidden"
                 style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
               >
                 {t('sensingMore', { count: rest })}
-              </span>
+              </Link>
+              <button
+                type="button"
+                aria-label={t('seeMore')}
+                className="hidden items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12 xl:flex"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+                onClick={() => {
+                  closeCoherenceChat();
+                  openHumanChatPanel();
+                }}
+              >
+                {t('sensingMore', { count: rest })}
+              </button>
             </li>
           ) : null}
         </ul>

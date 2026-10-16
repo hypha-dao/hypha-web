@@ -1,5 +1,6 @@
 'use client';
 
+import { NetworkSectionHeader } from '@hypha-platform/epics';
 import { Heading } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
@@ -9,15 +10,23 @@ export function NetworkPageTitle() {
   const t = useTranslations('Network');
 
   return (
-    <Heading
-      size="9"
-      color="secondary"
-      weight="medium"
-      align="center"
-      className="flex flex-col"
-    >
-      <span>{t('manySpaces')}</span>
-      <span>{t('oneVibrantNetwork')}</span>
-    </Heading>
+    <>
+      <div className="xl:hidden">
+        <NetworkSectionHeader
+          eyebrow={t('manySpaces')}
+          title={t('oneVibrantNetwork')}
+        />
+      </div>
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="hidden flex-col xl:flex"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
+    </>
   );
 }

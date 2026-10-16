@@ -6,7 +6,6 @@ import useSWR from 'swr';
 import {
   ClientEvent,
   EventType,
-  NotificationCountType,
   RoomEvent,
   SyncState,
   type MatrixClient,
@@ -74,6 +73,36 @@ function avatarHttp(client: MatrixClient, mxc: string | null | undefined) {
   return client.mxcUrlToHttp(mxc, 80, 80, 'crop') ?? undefined;
 }
 
+/** Messages from the other person that this member has not read yet. */
+function countNewMessages(room: Room, selfId: string | null) {
+  if (!selfId) return 0;
+  const readUpToId = room.getEventReadUpTo(selfId, false);
+  let count = 0;
+  for (const event of room.getLiveTimeline().getEvents()) {
+    if (event.getType() !== EventType.RoomMessage) continue;
+    if (event.isRedacted()) continue;
+    const relates = event.getContent()?.['m.relates_to'] as
+      | { rel_type?: string }
+      | undefined;
+    if (relates?.rel_type === 'm.replace') continue;
+    const sender = event.getSender();
+    const id = event.getId();
+    if (!sender || !id || sender === selfId) continue;
+    if (readUpToId) {
+      const order = room.compareEventOrdering(readUpToId, id);
+      if (order !== null && order >= 0) continue;
+    }
+    if (
+      typeof room.hasUserReadEvent === 'function' &&
+      room.hasUserReadEvent(selfId, id)
+    ) {
+      continue;
+    }
+    count += 1;
+  }
+  return count;
+}
+
 function lastRoomMessage(room: Room, selfId: string | null) {
   const events = room.getLiveTimeline().getEvents();
   for (let index = events.length - 1; index >= 0; index -= 1) {
@@ -129,7 +158,6 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
         ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
         : room.getMxcAvatarUrl();
     const last = lastRoomMessage(room, selfId);
-    const unread = room.getUnreadNotificationCount(NotificationCountType.Total);
 
     rows.push({
       roomId: room.roomId,
@@ -138,7 +166,7 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
       preview: last.preview,
       mine: last.mine,
       lastTs: last.ts,
-      unread: typeof unread === 'number' && unread > 0 ? unread : 0,
+      unread: kind === 'person' ? countNewMessages(room, selfId) : 0,
       memberCount: members.length,
       otherUserId: other?.userId ?? null,
       kind,
@@ -151,13 +179,10 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
 
 export function sumConversationUnread(client: MatrixClient | null) {
   if (!client) return 0;
-  let total = 0;
-  for (const room of client.getRooms()) {
-    if (room.getMyMembership() !== 'join') continue;
-    const count = room.getUnreadNotificationCount(NotificationCountType.Total);
-    if (typeof count === 'number' && count > 0) total += count;
-  }
-  return total;
+  return readConversationRows(client).reduce(
+    (total, row) => total + row.unread,
+    0,
+  );
 }
 
 export function useConversationUnreadCount() {

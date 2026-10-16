@@ -19,7 +19,6 @@ import {
   PanelWrapLayout,
   HumanSidebarTrigger,
   MobileContentFrame,
-  MobileCreateButton,
   MobileTabBar,
   RecentSpaceHistoryTracker,
 } from '@hypha-platform/epics';
@@ -293,7 +292,6 @@ export default async function RootLayout({
                               }
                               mobileAction={
                                 <>
-                                  <MobileCreateButton />
                                   <ConnectedButtonProfile
                                     newUserRedirectPath="/profile/signup"
                                     baseRedirectPath={`/${locale}/home`}

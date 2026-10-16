@@ -22,7 +22,7 @@ import {
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
-import { NetworkRanking } from '../../network-exchange';
+import { NetworkRanking, NetworkSectionHeader } from '../../network-exchange';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
@@ -432,16 +432,24 @@ export function ExploreSpaces({
   const showRanking = !enableNetworkMap || view === 'ranking';
 
   const pageTitle = (
-    <Heading
-      size="9"
-      color="secondary"
-      weight="medium"
-      align="center"
-      className="flex flex-col"
-    >
-      <span>{t('manySpaces')}</span>
-      <span>{t('oneVibrantNetwork')}</span>
-    </Heading>
+    <>
+      <div className="xl:hidden">
+        <NetworkSectionHeader
+          eyebrow={t('manySpaces')}
+          title={t('oneVibrantNetwork')}
+        />
+      </div>
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="hidden flex-col xl:flex"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
+    </>
   );
 
   const sharedControls = (

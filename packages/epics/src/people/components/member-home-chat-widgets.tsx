@@ -28,6 +28,11 @@ import { cn } from '@hypha-platform/ui-utils';
 
 import { Recipient } from '../../agreements/plugins/components/common/recipient';
 import { useUserAssets } from '../../treasury/hooks';
+import {
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+} from '../../common/recent-space-history';
+import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher-menu';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import {
   memberRowsForConnections,
@@ -47,6 +52,7 @@ type HomeConnection = MemberIntelligence['connections'][number];
 type HomeSpace = MemberIntelligence['spaces'][number];
 
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
+const RECIPIENT_PREVIEW = 5;
 
 type NoteKey =
   | 'sendTokensThanks'
@@ -116,6 +122,30 @@ export function MemberHomeSpacesWidgetCard({
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const [finderOpen, setFinderOpen] = useState(false);
+  const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
+  );
+
+  useEffect(() => subscribeRecentSpaceSlugs(setRecentSlugs), []);
+
+  const recentSpaces = useMemo(() => {
+    const bySlug = new Map(spaces.map((space) => [space.slug, space]));
+    const ordered: HomeSpace[] = [];
+    const seen = new Set<string>();
+    for (const slug of recentSlugs) {
+      const space = bySlug.get(slug);
+      if (!space || seen.has(space.slug)) continue;
+      ordered.push(space);
+      seen.add(space.slug);
+    }
+    for (const space of spaces) {
+      if (seen.has(space.slug)) continue;
+      ordered.push(space);
+      seen.add(space.slug);
+    }
+    return ordered.slice(0, SPACE_PREVIEW);
+  }, [recentSlugs, spaces]);
 
   return (
     <WidgetFrame
@@ -138,7 +168,7 @@ export function MemberHomeSpacesWidgetCard({
             />
           </div>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {spaces.map((space) => {
+            {recentSpaces.map((space) => {
               const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);
               return (
                 <li key={space.id}>
@@ -170,6 +200,27 @@ export function MemberHomeSpacesWidgetCard({
               );
             })}
           </ul>
+          {spaces.length > SPACE_PREVIEW ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 w-full"
+                aria-expanded={finderOpen}
+                onClick={() => setFinderOpen((open) => !open)}
+              >
+                {t('spacesFindMore')}
+              </Button>
+              {finderOpen ? (
+                <div className="mt-3 h-72 overflow-hidden border border-border">
+                  <MySpacesSwitcherMenu
+                    open={finderOpen}
+                    onSelect={() => setFinderOpen(false)}
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <p className="mt-3 text-2 text-neutral-11">{t('spacesWidgetHint')}</p>
         </>
       )}
@@ -178,6 +229,7 @@ export function MemberHomeSpacesWidgetCard({
 }
 
 const PEOPLE_PREVIEW = 5;
+const SPACE_PREVIEW = 5;
 
 function suggestionWhen(ts: number, locale: string, justNow: string) {
   const minutes = Math.round((Date.now() - ts) / 60000);
@@ -505,6 +557,17 @@ export function MemberHomeSendTokensWidget({
 }) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
+  const { client } = useMatrix();
+  const [conversationRows, setConversationRows] = useState<ConversationRow[]>(
+    [],
+  );
+  const connectionIds = useMemo(
+    () => people.map((person) => person.id),
+    [people],
+  );
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
+    personIds: connectionIds,
+  });
   const { jwt: authToken } = useJwt();
   const { assets, isLoading, manualUpdate } = useUserAssets({
     personSlug,
@@ -568,33 +631,42 @@ export function MemberHomeSendTokensWidget({
     ? amount
     : amountChoices[0] ?? 0;
 
+  useEffect(() => {
+    if (!client) {
+      setConversationRows([]);
+      return;
+    }
+    const refresh = () => setConversationRows(readConversationRows(client));
+    refresh();
+    client.on(ClientEvent.Sync, refresh);
+    client.on(RoomEvent.Timeline, refresh);
+    return () => {
+      client.removeListener(ClientEvent.Sync, refresh);
+      client.removeListener(RoomEvent.Timeline, refresh);
+    };
+  }, [client]);
+
   const targets = useMemo(() => {
-    const peopleTargets: TokenTarget[] = people.flatMap((person) => {
-      const address = person.address?.trim();
+    const recent = memberRowsForConnections(
+      people,
+      conversationRows,
+      personIdToMatrixUserId,
+      null,
+      fallbackName,
+    );
+    return recent.flatMap((row) => {
+      const address = row.person.address?.trim();
       if (!address) return [];
       return [
         {
           kind: 'person' as const,
-          id: `person-${person.id}`,
-          name: personName(person, fallbackName),
+          id: `person-${row.person.id}`,
+          name: row.name,
           address,
         },
       ];
     });
-    const spaceTargets: TokenTarget[] = spaces.flatMap((space) => {
-      const address = space.address?.trim();
-      if (!address) return [];
-      return [
-        {
-          kind: 'space' as const,
-          id: `space-${space.id}`,
-          name: space.title,
-          address,
-        },
-      ];
-    });
-    return [...peopleTargets, ...spaceTargets];
-  }, [fallbackName, people, spaces]);
+  }, [conversationRows, fallbackName, people, personIdToMatrixUserId]);
   const visibleTargets = useMemo(() => {
     if (
       picked &&
@@ -609,6 +681,13 @@ export function MemberHomeSendTokensWidget({
   const target =
     targets.find((item) => item.id === targetId) ??
     (picked?.id === targetId ? picked : null);
+  const previewTargets = useMemo(() => {
+    const preview = visibleTargets.slice(0, RECIPIENT_PREVIEW);
+    if (!target || preview.some((item) => item.id === target.id)) {
+      return preview;
+    }
+    return [target, ...preview].slice(0, RECIPIENT_PREVIEW);
+  }, [target, visibleTargets]);
   const noteKey: NoteKey = NOTES[noteIndex] ?? 'sendTokensThanks';
 
   async function send() {
@@ -765,13 +844,13 @@ export function MemberHomeSendTokensWidget({
             <p className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
               {t('sendTokensTo')}
             </p>
-            {visibleTargets.length === 0 ? (
+            {previewTargets.length === 0 ? (
               <p className="mt-2 text-2 text-neutral-11">
                 {t('sendTokensNoOne')}
               </p>
             ) : (
               <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {visibleTargets.map((item) => {
+                {previewTargets.map((item) => {
                   const active = item.id === target?.id;
                   const person = people.find(
                     (entry) => `person-${entry.id}` === item.id,

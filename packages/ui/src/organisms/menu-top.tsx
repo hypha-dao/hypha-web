@@ -301,7 +301,11 @@ export const MenuTop = ({
           aria-hidden={isCompact || undefined}
         >
           {children}
-          {trailingAction}
+          {trailingAction ? (
+            <div className="hidden shrink-0 items-center xl:flex">
+              {trailingAction}
+            </div>
+          ) : null}
         </div>
 
         {/* Compact action group (right side): chat, profile, optional hamburger.

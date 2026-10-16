@@ -321,12 +321,12 @@ export function MemberHome({
               <div
                 className={
                   home == null || orientation
-                    ? 'mt-3 grid grid-cols-[7.75rem_minmax(0,1fr)] items-center gap-3'
+                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3'
                     : 'mt-3 grid'
                 }
               >
                 {home == null || orientation ? (
-                  <div className="flex w-[7.75rem] items-center justify-center">
+                  <div className="flex items-center justify-center">
                     {home == null || orientation == null ? (
                       <Skeleton loading height="22px" width="6.5rem" />
                     ) : (
