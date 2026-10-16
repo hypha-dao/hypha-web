@@ -53,9 +53,12 @@ function itemHref(lang: Locale, item: MemberHomeThreadItem) {
 export function SpaceAttention({
   lang,
   spaceSlug,
+  turn = 0,
 }: {
   lang: Locale;
   spaceSlug: string;
+  /** Rotates which item leads, so a second visit is not the same card. */
+  turn?: number;
 }) {
   const t = useTranslations('OverviewOps');
   const tCoherence = useTranslations('CoherenceTab');
@@ -85,7 +88,10 @@ export function SpaceAttention({
     data?.spaces.some((space) => space.slug === spaceSlug) ?? false;
   if (!isLoading && data && !inSpace && queue.length === 0) return null;
 
-  const lead = queue[0] ?? null;
+  const lead =
+    queue.length > 0
+      ? queue[((turn % queue.length) + queue.length) % queue.length] ?? null
+      : null;
 
   const eyebrow = (item: MemberHomeThreadItem) => {
     if (item.category) {
@@ -128,7 +134,7 @@ export function SpaceAttention({
             {eyebrow(lead)}
           </span>
           <span
-            className="mt-1 block text-5 text-foreground group-hover:underline"
+            className="mt-1 block text-3 text-foreground group-hover:underline"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
             {lead.title}

@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import useSWR from 'swr';
 import { UserEvent, type MatrixClient } from 'matrix-js-sdk';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useFindCoherences,
   useMatrix,
@@ -15,12 +17,7 @@ import {
   PersonAvatar,
   readMemberPresence,
   SpaceAttention,
-  SpaceEnergySection,
-  getAgentAvatarInitials,
-  tagGroupAccentClass,
-  useMobilizedAiAgents,
   useSpaceDocumentsWithStatuses,
-  useSpaceEnergy,
 } from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
 import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
@@ -57,60 +54,86 @@ function writeStoredVisit(key: string, date: Date) {
   }
 }
 
-function greetingTimeKey(date = new Date()) {
-  const hour = date.getHours();
-  if (hour < 12) return 'greetingMorning' as const;
-  if (hour < 18) return 'greetingAfternoon' as const;
-  return 'greetingEvening' as const;
+type Situation = 'back' | 'vote' | 'risk' | 'tension' | 'fresh' | 'quiet';
+
+const GREETING = {
+  back: ['greetingBackA', 'greetingBackB'],
+  vote: ['greetingVoteA', 'greetingVoteB'],
+  risk: ['greetingRiskA', 'greetingRiskB'],
+  tension: ['greetingTensionA', 'greetingTensionB'],
+  fresh: ['greetingFreshA', 'greetingFreshB'],
+  quiet: ['greetingQuietA', 'greetingQuietB'],
+} as const;
+
+function turnStorageKey(personSlug: string, spaceSlug: string) {
+  return `${visitStorageKey(personSlug, spaceSlug)}:turn`;
 }
 
-function SpaceDashboardGreeting({ spaceSlug }: { spaceSlug: string }) {
-  const t = useTranslations('OverviewOps');
-  const format = useFormatter();
-  const { person, isLoading } = useMe();
-  const [previousVisit, setPreviousVisit] = useState<Date | null>(null);
-  const [visitReady, setVisitReady] = useState(false);
+function readTurn(key: string) {
+  try {
+    const value = Number(window.localStorage.getItem(key) ?? '0');
+    return Number.isFinite(value) ? value : 0;
+  } catch {
+    return 0;
+  }
+}
 
-  useEffect(() => {
-    if (!person?.slug) {
-      setPreviousVisit(null);
-      setVisitReady(true);
-      return;
-    }
-    const key = visitStorageKey(person.slug, spaceSlug);
-    const previous = readStoredVisit(key);
-    setPreviousVisit(previous);
-    setVisitReady(true);
-    writeStoredVisit(key, new Date());
-  }, [person?.slug, spaceSlug]);
+function writeTurn(key: string, turn: number) {
+  try {
+    window.localStorage.setItem(key, String(turn));
+  } catch {
+    // Private mode or quota — skip quietly.
+  }
+}
 
-  if (isLoading || !person) return null;
-  const name = person.name?.trim() || person.nickname?.trim();
-  if (!name) return null;
+/** Survives a strict-mode remount so the briefing is not saved before it is read. */
+const visitSnapshots = new Map<
+  string,
+  { previous: Date | null; turn: number }
+>();
+const visitGuard: string | null = null;
 
-  const longAway =
-    visitReady &&
-    previousVisit != null &&
-    Date.now() - previousVisit.getTime() >= LONG_ABSENCE_MS;
+function stampOf(value: string | Date | null | undefined) {
+  if (!value) return null;
+  const time = value instanceof Date ? value.getTime() : Date.parse(value);
+  return Number.isFinite(time) ? time : null;
+}
 
+function weekBuckets(times: number[], weeks = 8) {
+  const counts = Array.from({ length: weeks }, () => 0);
+  const span = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  for (const time of times) {
+    const age = Math.floor((now - time) / span);
+    if (age >= 0 && age < weeks) counts[weeks - 1 - age] += 1;
+  }
+  return counts;
+}
+
+function Bars({ values, label }: { values: number[]; label: string }) {
+  const peak = Math.max(1, ...values);
+  const total = values.reduce((sum, value) => sum + value, 0);
   return (
-    <header className="flex min-w-0 flex-col gap-1">
-      <h1
-        className="text-5 leading-tight text-foreground sm:text-6"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
-        {longAway
-          ? t('greetingBack', { name })
-          : t(greetingTimeKey(), { name })}
-      </h1>
-      {longAway && previousVisit ? (
-        <p className="text-2 text-neutral-11">
-          {t('greetingLastHere', {
-            date: format.dateTime(previousVisit, { dateStyle: 'medium' }),
-          })}
-        </p>
-      ) : null}
-    </header>
+    <div className="min-w-0">
+      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+        {label}
+      </p>
+      <div className="mt-3 flex h-16 items-end gap-1" aria-hidden>
+        {values.map((value, index) => (
+          <span
+            key={index}
+            className="min-w-0 flex-1 bg-foreground"
+            style={{
+              height: `${Math.max(value > 0 ? 8 : 2, (value / peak) * 100)}%`,
+              opacity: value > 0 ? 0.35 + (value / peak) * 0.65 : 0.12,
+            }}
+          />
+        ))}
+      </div>
+      <p className="sr-only">
+        {label}: {total}
+      </p>
+    </div>
   );
 }
 
@@ -213,16 +236,12 @@ function SpaceMemberCircles({
       <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
         {t('peopleHere')}
       </p>
-      <ul className="mt-3 flex flex-wrap items-start gap-4">
-        {visible.map((person) => {
+      <ul className="mt-2 flex flex-wrap items-center gap-2">
+        {visible.map((person, index) => {
           const name = personLabel(person);
-          const given = person.name?.trim() || name;
           const connected = onlineIds?.has(person.id) ?? false;
           return (
-            <li
-              key={person.id}
-              className="flex w-14 flex-col items-center gap-1.5"
-            >
+            <li key={person.id} className="flex shrink-0 items-center">
               <Link
                 href={
                   person.slug
@@ -232,22 +251,27 @@ function SpaceMemberCircles({
                 title={connected ? `${name}. ${t('connectedNow')}` : name}
                 className="relative inline-flex rounded-full"
               >
-                <PersonAvatar
-                  avatarSrc={person.avatarUrl ?? undefined}
-                  userName={name}
-                  size="md"
-                  shape="circle"
-                />
+                <span
+                  className={
+                    index === 0
+                      ? 'inline-flex rounded-full ring-1 ring-foreground'
+                      : 'inline-flex rounded-full'
+                  }
+                >
+                  <PersonAvatar
+                    avatarSrc={person.avatarUrl ?? undefined}
+                    userName={name}
+                    size="md"
+                    shape="circle"
+                  />
+                </span>
                 {connected ? (
                   <span
                     aria-hidden
-                    className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 translate-y-1/2 rounded-full bg-success-9 ring-2 ring-background"
+                    className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-success-9 ring-2 ring-background"
                   />
                 ) : null}
               </Link>
-              <span className="w-full truncate text-center text-1 text-neutral-11">
-                {given}
-              </span>
             </li>
           );
         })}
@@ -310,21 +334,6 @@ function Panel({
   );
 }
 
-function MembershipPreview({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div>
-      <p className="text-1 text-neutral-11">{title}</p>
-      <div className="mt-2 grid gap-1.5">{children}</div>
-    </div>
-  );
-}
-
 function Quiet({ children }: { children: ReactNode }) {
   return <p className="text-2 text-neutral-11">{children}</p>;
 }
@@ -341,12 +350,14 @@ function RowsSkeleton() {
 
 export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const locale = useLocale();
+  const format = useFormatter();
   const t = useTranslations('OverviewOps');
   const tCommon = useTranslations('Common');
   const tNav = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
+  const { person } = useMe();
+  const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
-  const { data: energy } = useSpaceEnergy();
   const {
     coherences,
     isLoading: signalsLoading,
@@ -360,42 +371,236 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     spaceSlug,
     paginationDisabled: true,
   });
-  const agents = useMobilizedAiAgents(spaceSlug);
   const { documents, isLoading: updatesLoading } =
     useSpaceDocumentsWithStatuses({
       spaceSlug,
       spaceId: space?.web3SpaceId,
     });
+  const [visit, setVisit] = useState<{
+    previous: Date | null;
+    turn: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!person?.slug) {
+      setVisit({ previous: null, turn: 0 });
+      return;
+    }
+    const id = `${person.slug}:${spaceSlug}`;
+    const cached = visitSnapshots.get(id);
+    if (visitGuard === id && cached) {
+      setVisit(cached);
+      const release = window.setTimeout(() => {
+        visitSnapshots.delete(id);
+        if (visitGuard === id) visitGuard = null;
+      }, 400);
+      return () => window.clearTimeout(release);
+    }
+    const key = visitStorageKey(person.slug, spaceSlug);
+    const previous = readStoredVisit(key);
+    const turn = readTurn(turnStorageKey(person.slug, spaceSlug)) + 1;
+    const next = { previous, turn };
+    visitSnapshots.set(id, next);
+    visitGuard = id;
+    setVisit(next);
+    writeStoredVisit(key, new Date());
+    writeTurn(turnStorageKey(person.slug, spaceSlug), turn);
+    const release = window.setTimeout(() => {
+      visitSnapshots.delete(id);
+      if (visitGuard === id) visitGuard = null;
+    }, 400);
+    return () => window.clearTimeout(release);
+  }, [person?.slug, spaceSlug]);
+
+  const { data: treasuryAssets, isLoading: treasuryLoading } = useSWR(
+    spaceSlug ? [`/api/v1/spaces/${spaceSlug}/assets?bestEffort=true`] : null,
+    async ([endpoint]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(endpoint, { headers });
+      if (!response.ok) return [] as Array<{ symbol: string; value: number }>;
+      const body = (await response.json()) as {
+        assets?: { symbol?: string; value?: number }[];
+      };
+      return (body.assets ?? []).flatMap((asset) => {
+        if (!asset.symbol || !(asset.value && asset.value > 0)) return [];
+        return [{ symbol: asset.symbol, value: asset.value }];
+      });
+    },
+    { revalidateOnFocus: false },
+  );
 
   const openSignals = useMemo(
     () => (coherences ?? []).filter((signal) => !signal.archived),
     [coherences],
   );
 
-  const openVotes = useMemo(
+  const recentActivity = useMemo(() => {
+    const rows = [
+      ...documents.accepted.map((item) => ({
+        ...item,
+        activityStatus: 'accepted' as const,
+      })),
+      ...documents.rejected.map((item) => ({
+        ...item,
+        activityStatus: 'rejected' as const,
+      })),
+      ...documents.onVoting.map((item) => ({
+        ...item,
+        activityStatus: 'onVoting' as const,
+      })),
+    ];
+    return rows
+      .sort(
+        (left, right) =>
+          (stampOf(right.createdAt) ?? 0) - (stampOf(left.createdAt) ?? 0),
+      )
+      .slice(0, 3);
+  }, [documents.accepted, documents.onVoting, documents.rejected]);
+
+  const weekSignals = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return openSignals
+      .filter((signal) => (stampOf(signal.createdAt) ?? 0) >= cutoff)
+      .sort(
+        (left, right) =>
+          (stampOf(right.createdAt) ?? 0) - (stampOf(left.createdAt) ?? 0),
+      );
+  }, [openSignals]);
+
+  const memberActivity = useMemo(
     () =>
-      documents.onVoting
-        .slice()
-        .sort(
-          (left, right) =>
-            new Date(right.createdAt).getTime() -
-            new Date(left.createdAt).getTime(),
-        )
-        .slice(0, 4),
-    [documents.onVoting],
+      weekBuckets(
+        openSignals.flatMap((signal) => {
+          const time = stampOf(signal.createdAt);
+          return time == null ? [] : [time];
+        }),
+      ),
+    [openSignals],
+  );
+  const agreementActivity = useMemo(
+    () =>
+      weekBuckets(
+        [
+          ...documents.accepted,
+          ...documents.rejected,
+          ...documents.onVoting,
+        ].flatMap((item) => {
+          const time = stampOf(item.createdAt);
+          return time == null ? [] : [time];
+        }),
+      ),
+    [documents.accepted, documents.onVoting, documents.rejected],
   );
 
   const people = persons.data ?? [];
   const spaces = memberSpaces.data ?? [];
-
+  const assets = treasuryAssets ?? [];
+  const assetTotal = assets.reduce((sum, asset) => sum + asset.value, 0);
   const home = `/${locale}/dho/${spaceSlug}`;
+  const turn = visit?.turn ?? 0;
+  const name = person?.name?.trim() || person?.nickname?.trim() || '';
+  const longAway =
+    visit?.previous != null &&
+    Date.now() - visit.previous.getTime() >= LONG_ABSENCE_MS;
+  const riskCount = openSignals.filter(
+    (signal) => signal.type === 'Risk',
+  ).length;
+  const tensionCount = openSignals.filter(
+    (signal) => signal.type === 'Tension',
+  ).length;
+  const situation: Situation = longAway
+    ? 'back'
+    : documents.onVoting.length > 0
+    ? 'vote'
+    : riskCount > 0 && riskCount >= tensionCount
+    ? 'risk'
+    : tensionCount > 0
+    ? 'tension'
+    : weekSignals.length > 0
+    ? 'fresh'
+    : 'quiet';
+  const sinceSignals =
+    visit?.previous == null
+      ? weekSignals
+      : openSignals.filter(
+          (signal) =>
+            (stampOf(signal.createdAt) ?? 0) > visit.previous!.getTime(),
+        );
+  const sinceParts = [
+    sinceSignals.length > 0
+      ? t('briefSignals', { count: sinceSignals.length })
+      : null,
+    documents.onVoting.length > 0
+      ? t('briefVotes', { count: documents.onVoting.length })
+      : null,
+  ].filter(Boolean);
+  const sinceLine =
+    visit?.previous == null
+      ? t('briefFirst', { space: space?.title ?? spaceSlug })
+      : sinceParts.length === 0
+      ? t('briefQuiet')
+      : t('briefSince', {
+          date: format.dateTime(visit.previous, { dateStyle: 'medium' }),
+          update: sinceParts.join(' · '),
+        });
+  const typeCounts = new Map<string, number>();
+  for (const signal of openSignals) {
+    typeCounts.set(signal.type, (typeCounts.get(signal.type) ?? 0) + 1);
+  }
+  let dominantType: string | null = null;
+  let dominantCount = 0;
+  for (const [type, count] of typeCounts) {
+    if (count > dominantCount) {
+      dominantType = type;
+      dominantCount = count;
+    }
+  }
+  const diagnosis =
+    dominantType && dominantCount >= 2
+      ? t('briefDiagnosis', {
+          type: tCoherence.has(`types.${dominantType}` as 'types.Need')
+            ? tCoherence(`types.${dominantType}` as 'types.Need')
+            : dominantType,
+        })
+      : null;
+  const linkedWeek = weekSignals.filter(
+    (signal): signal is typeof signal & { slug: string } =>
+      Boolean(signal.slug),
+  );
+  const nextSignal = linkedWeek[turn % Math.max(linkedWeek.length, 1)];
+  const showEcosystem = spaces.length > 0 || space?.parentId != null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <SpaceDashboardGreeting spaceSlug={spaceSlug} />
+    <div className="flex flex-col gap-6">
+      {name ? (
+        <header className="flex min-w-0 flex-col gap-1">
+          <h1
+            className="text-4 leading-tight text-foreground sm:text-5"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {t(GREETING[situation][turn % 2], { name })}
+          </h1>
+          <p className="text-2 text-neutral-11">{sinceLine}</p>
+          {diagnosis ? (
+            <p className="text-2 text-foreground">{diagnosis}</p>
+          ) : null}
+          {nextSignal?.slug ? (
+            <Link
+              href={`${home}/coherence?signal=${encodeURIComponent(
+                nextSignal.slug,
+              )}`}
+              className="text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {t('briefNext', { title: nextSignal.title })}
+            </Link>
+          ) : null}
+        </header>
+      ) : null}
 
       {membersLoading ? (
-        <div className="flex gap-4" aria-hidden>
+        <div className="flex gap-2" aria-hidden>
           {Array.from({ length: 5 }, (_, index) => (
             <span
               key={index}
@@ -408,54 +613,75 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         <SpaceMemberCircles people={people} membersHref={`${home}/members`} />
       ) : null}
 
-      {energy?.enabled ? <SpaceEnergySection /> : null}
-
-      <SpaceAttention lang={locale as Locale} spaceSlug={spaceSlug} />
-
-      <div className="flex flex-wrap gap-x-8 gap-y-3">
-        {signalsLoading || updatesLoading || membersLoading
-          ? [0, 1, 2].map((cell) => (
-              <div key={cell}>
-                <span className="block h-8 w-10 bg-neutral-3" />
-                <span className="mt-2 block h-3 w-16 bg-neutral-3" />
-              </div>
-            ))
-          : (
-              [
-                {
-                  href: `${home}/coherence`,
-                  count: openSignals.length,
-                  label: tCommon('Signals'),
-                },
-                {
-                  href: `${home}/agreements`,
-                  count: documents.onVoting.length,
-                  label: t('openVotesTitle'),
-                },
-                {
-                  href: `${home}/members`,
-                  count: people.length,
-                  label: tCommon('Members'),
-                },
-              ] as const
-            ).map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="min-w-0 hover:opacity-80"
-              >
-                <span
-                  className="block text-5 tabular-nums text-foreground"
-                  style={{ fontFamily: 'var(--font-family-heading)' }}
-                >
-                  {item.count}
-                </span>
-                <span className="mt-1 block text-1 text-neutral-11">
-                  {item.label}
-                </span>
-              </Link>
-            ))}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <SpaceAttention
+          lang={locale as Locale}
+          spaceSlug={spaceSlug}
+          turn={turn}
+        />
+        <Panel
+          title={t('lastActivityTitle')}
+          href={`${home}/agreements`}
+          openLabel={t('open')}
+        >
+          {updatesLoading ? (
+            <RowsSkeleton />
+          ) : recentActivity.length === 0 ? (
+            <Quiet>{t('noRecentActivity')}</Quiet>
+          ) : (
+            <SpaceActivityList
+              items={recentActivity}
+              untitled={t('untitledProposal')}
+              hrefFor={(slug) =>
+                slug
+                  ? `${home}/agreements/proposal/${slug}`
+                  : `${home}/agreements`
+              }
+              statusLabel={(status) =>
+                status === 'accepted'
+                  ? t('statusAccepted')
+                  : status === 'rejected'
+                  ? t('statusRejected')
+                  : t('statusOnVoting')
+              }
+            />
+          )}
+        </Panel>
       </div>
+
+      <Panel
+        title={t('signalsWeekTitle')}
+        href={`${home}/coherence`}
+        openLabel={t('open')}
+      >
+        {signalsLoading ? (
+          <RowsSkeleton />
+        ) : linkedWeek.length === 0 ? (
+          <Quiet>{t('signalsWeekEmpty')}</Quiet>
+        ) : (
+          <ul className="grid gap-2 sm:grid-cols-3">
+            {linkedWeek.slice(0, 3).map((signal) => (
+              <li key={signal.slug}>
+                <Link
+                  href={`${home}/coherence?signal=${encodeURIComponent(
+                    signal.slug,
+                  )}`}
+                  className="block min-w-0 hover:underline"
+                >
+                  <span className="block text-1 uppercase tracking-[0.12em] text-neutral-11">
+                    {tCoherence.has(`types.${signal.type}` as 'types.Need')
+                      ? tCoherence(`types.${signal.type}` as 'types.Need')
+                      : signal.type}
+                  </span>
+                  <span className="mt-1 block truncate text-2 text-foreground">
+                    {signal.title}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
         <Panel
@@ -482,96 +708,93 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         </Panel>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <Panel
-          title={t('openVotesTitle')}
-          href={`${home}/agreements`}
+          title={t('insightsTitle')}
+          href={`${home}/members`}
           openLabel={t('open')}
         >
-          {updatesLoading ? (
-            <RowsSkeleton />
-          ) : openVotes.length === 0 ? (
-            <Quiet>{t('noOpenVotesNow')}</Quiet>
+          {memberActivity.every((value) => value === 0) &&
+          agreementActivity.every((value) => value === 0) ? (
+            <Quiet>{t('insightsEmpty')}</Quiet>
           ) : (
-            <SpaceActivityList
-              items={openVotes}
-              untitled={t('untitledProposal')}
-              hrefFor={(slug) =>
-                slug
-                  ? `${home}/agreements/proposal/${slug}`
-                  : `${home}/agreements`
-              }
-              statusLabel={() => t('statusOnVoting')}
-            />
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Bars values={memberActivity} label={t('insightsMembers')} />
+              <Bars
+                values={agreementActivity}
+                label={t('insightsAgreements')}
+              />
+            </div>
           )}
         </Panel>
 
-        {!membersLoading &&
-        (spaces.length > 0 || agents.length > 0 || people.length === 0) ? (
-          <Panel
-            title={tCommon('Members')}
-            href={`${home}/members`}
-            openLabel={t('open')}
-          >
-            {people.length === 0 &&
-            spaces.length === 0 &&
-            agents.length === 0 ? (
-              <Quiet>{t('membersEmpty')}</Quiet>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {spaces.length > 0 ? (
-                  <MembershipPreview title={tCommon('Spaces')}>
-                    {spaces.slice(0, 5).map((memberSpace) => (
-                      <Link
-                        key={memberSpace.id}
-                        href={
-                          memberSpace.slug
-                            ? `/${locale}/dho/${memberSpace.slug}/overview`
-                            : `${home}/members`
-                        }
-                        className="block truncate text-2 text-foreground hover:underline"
-                      >
-                        {memberSpace.title}
-                      </Link>
-                    ))}
-                  </MembershipPreview>
-                ) : null}
-                {agents.length > 0 ? (
-                  <MembershipPreview title={tNav('navigation.agents')}>
-                    {agents.slice(0, 5).map((agent) => {
-                      const name = tCoherence(agent.role);
-                      return (
-                        <span
-                          key={agent.id}
-                          className="inline-flex items-center gap-2 text-2 text-foreground"
-                        >
-                          <span
-                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-1 ${tagGroupAccentClass(
-                              agent.tagGroup,
-                            )}`}
-                          >
-                            {getAgentAvatarInitials(name)}
-                          </span>
-                          {name}
-                        </span>
-                      );
-                    })}
-                  </MembershipPreview>
-                ) : null}
-              </div>
-            )}
-          </Panel>
-        ) : null}
-
         <Panel
-          className="lg:col-span-2"
+          title={t('treasuryTitle')}
+          href={`${home}/treasury`}
+          openLabel={t('open')}
+        >
+          {treasuryLoading ? (
+            <RowsSkeleton />
+          ) : assets.length === 0 ? (
+            <Quiet>{t('treasuryEmpty')}</Quiet>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <ul className="grid grid-cols-3 gap-3">
+                {assets.slice(0, 3).map((asset) => (
+                  <li key={asset.symbol} className="min-w-0">
+                    <span
+                      className="block truncate text-3 tabular-nums text-foreground"
+                      style={{ fontFamily: 'var(--font-family-heading)' }}
+                    >
+                      {format.number(asset.value, {
+                        maximumFractionDigits: asset.value >= 100 ? 0 : 2,
+                      })}
+                    </span>
+                    <span className="mt-1 block truncate text-1 text-neutral-11">
+                      {asset.symbol}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div>
+                <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                  {t('distributionTitle')}
+                </p>
+                <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
+                  {assets.map((asset) => (
+                    <span
+                      key={asset.symbol}
+                      className="h-full bg-foreground"
+                      style={{
+                        width: `${(asset.value / assetTotal) * 100}%`,
+                        opacity: 0.35 + (asset.value / assetTotal) * 0.65,
+                      }}
+                      title={`${asset.symbol} ${format.number(asset.value, {
+                        maximumFractionDigits: 2,
+                      })}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </Panel>
+      </div>
+
+      {showEcosystem ? (
+        <Panel
           title={tNav('ecosystem')}
           href={`${home}/ecosystem-navigation`}
           openLabel={t('open')}
         >
+          {spaces.length > 0 ? (
+            <p className="mb-3 text-2 text-neutral-11">
+              {t('ecosystemNote', { count: spaces.length })}
+            </p>
+          ) : null}
           <EcosystemDiagram spaceSlug={spaceSlug} />
         </Panel>
-      </div>
+      ) : null}
     </div>
   );
 }

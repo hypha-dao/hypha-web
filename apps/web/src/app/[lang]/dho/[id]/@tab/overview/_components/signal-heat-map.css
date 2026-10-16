@@ -1,22 +1,3 @@
-@keyframes signal-heat-pulse {
-  0%,
-  100% {
-    opacity: 0.34;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 .signal-heat-cell {
-  animation-name: signal-heat-pulse;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .signal-heat-cell {
-    animation: none;
-    opacity: 1;
-  }
+  opacity: 1;
 }

@@ -181,7 +181,9 @@ export function SignalHeatMaps({
     return COHERENCE_TYPES.flatMap((type) => {
       const items = byType.get(type);
       return items && items.length > 0 ? [{ type, items }] : [];
-    });
+    })
+      .sort((left, right) => right.items.length - left.items.length)
+      .slice(0, 4);
   }, [signals]);
 
   if (isLoading) return <HeatSkeleton />;
