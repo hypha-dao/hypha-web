@@ -18,6 +18,8 @@ type HumanChatPanelHeaderProps = {
    * Same target as the former settings control on the tab row.
    */
   notificationSettingsHref?: string | null;
+  /** One room name, in the same box as the space and ecosystem choice. */
+  mark?: string;
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
   roomChoice?: {
     value: string;
@@ -33,6 +35,7 @@ export function HumanChatPanelHeader({
   onBack,
   trailingStart,
   notificationSettingsHref,
+  mark,
   roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
@@ -91,6 +94,11 @@ export function HumanChatPanelHeader({
         {displayDescription && (
           <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
+        {mark && !roomChoice ? (
+          <span className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background">
+            {mark}
+          </span>
+        ) : null}
         {roomChoice ? (
           <div
             role="group"
