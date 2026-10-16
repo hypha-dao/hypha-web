@@ -258,7 +258,8 @@
     "memberCount": "{count} Spaces",
     "builderTitle": "Forme einen Space um deine Vision",
     "builderBody": "Geh die KI-Erfahrung durch und bring einen Space ins Netzwerk um das, was du bauen willst.",
-    "builderAction": "Erfahrung beginnen",
+    "builderAction": "Space erstellen",
+
     "investorTitle": "Netzwerk-Marktplatz",
     "investorBody": "Spaces veröffentlichen, worum sie bitten. Lies eine Anfrage und setze Kapital darin ein.",
     "investorAction": "Anfragen ansehen",
@@ -3195,6 +3196,15 @@
       "delegate": "Delegieren",
       "member": "Mitglied",
       "active": "Aktiv"
+    },
+    "discussion": {
+      "title": "Diskussion",
+      "subtitle": "Sprich hier im Kontext mit deinem Space über diesen Vorschlag.",
+      "signInHint": "Melde dich an und verbinde den Chat, um diesen Vorschlag zu diskutieren.",
+      "unavailable": "Die Diskussion konnte nicht geöffnet werden. Versuche es gleich noch einmal.",
+      "connecting": "Diskussion wird geöffnet…",
+      "roomTitle": "Vorschlag: {title}",
+      "roomTitleFallback": "Vorschlagsdiskussion"
     },
     "sections": {
       "payment": "Zahlung",

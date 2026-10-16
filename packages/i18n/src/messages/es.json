@@ -258,7 +258,8 @@
     "memberCount": "{count} espacios",
     "builderTitle": "Da forma a un espacio con tu visión",
     "builderBody": "Recorre la experiencia con IA y trae un espacio a la red alrededor de lo que quieres construir.",
-    "builderAction": "Empezar la experiencia",
+    "builderAction": "Crear espacio",
+
     "investorTitle": "Mercado de la red",
     "investorBody": "Los espacios publican lo que piden. Lee una petición y despliega capital en ella.",
     "investorAction": "Ver las peticiones",
@@ -2641,6 +2642,15 @@
       "delegate": "Delegar",
       "member": "Miembro",
       "active": "Activo"
+    },
+    "discussion": {
+      "title": "Discusión",
+      "subtitle": "Habla de esta propuesta con tu espacio, aquí mismo en contexto.",
+      "signInHint": "Inicia sesión y conecta el chat para discutir esta propuesta.",
+      "unavailable": "No se pudo abrir la discusión. Inténtalo de nuevo en un momento.",
+      "connecting": "Abriendo la discusión…",
+      "roomTitle": "Propuesta: {title}",
+      "roomTitleFallback": "Discusión de la propuesta"
     },
     "sections": {
       "payment": "Pago",

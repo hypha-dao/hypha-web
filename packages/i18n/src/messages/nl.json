@@ -258,7 +258,8 @@
     "memberCount": "{count} ruimtes",
     "builderTitle": "Vorm een ruimte rond je visie",
     "builderBody": "Loop de AI-ervaring door en breng een ruimte in het netwerk rond wat je wilt bouwen.",
-    "builderAction": "De ervaring beginnen",
+    "builderAction": "Space maken",
+
     "investorTitle": "Netwerkmarktplaats",
     "investorBody": "Ruimtes publiceren wat ze vragen. Lees een vraag en zet er kapitaal in.",
     "investorAction": "De vragen bekijken",
@@ -3197,6 +3198,15 @@
       "delegate": "Delegeren",
       "member": "Lid",
       "active": "Actief"
+    },
+    "discussion": {
+      "title": "Discussie",
+      "subtitle": "Bespreek dit voorstel met je space — hier, in context.",
+      "signInHint": "Meld je aan en verbind chat om dit voorstel te bespreken.",
+      "unavailable": "De discussie kon niet worden geopend. Probeer het zo opnieuw.",
+      "connecting": "Discussie openen…",
+      "roomTitle": "Voorstel: {title}",
+      "roomTitleFallback": "Voorsteldiscussie"
     },
     "sections": {
       "payment": "Betaling",

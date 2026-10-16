@@ -49,6 +49,8 @@ export type Document = {
   web3ProposalId: number | null;
   label?: string;
   status?: DocumentStatus;
+  /** Matrix room for discussion under the proposal content. */
+  chatRoomId?: string | null;
 };
 
 export interface CreateAgreementInput {
@@ -69,6 +71,7 @@ export interface UpdateAgreementInput {
   slug?: string;
   attachments?: (string | Attachment)[];
   web3ProposalId?: number | null;
+  chatRoomId?: string | null;
 }
 
 export type UpdateAgreementBySlugInput = {

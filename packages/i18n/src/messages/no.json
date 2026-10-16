@@ -258,7 +258,8 @@
     "memberCount": "{count} rom",
     "builderTitle": "Form et rom rundt visjonen din",
     "builderBody": "Gå gjennom KI-opplevelsen og ta et rom inn i nettverket rundt det du vil bygge.",
-    "builderAction": "Start opplevelsen",
+    "builderAction": "Opprett rom",
+
     "investorTitle": "Nettverksmarked",
     "investorBody": "Rom publiserer det de ber om. Les en forespørsel, og sett inn kapital i den.",
     "investorAction": "Se forespørslene",
@@ -3196,6 +3197,15 @@
       "delegate": "Delegat",
       "member": "Medlem",
       "active": "Aktiv"
+    },
+    "discussion": {
+      "title": "Diskusjon",
+      "subtitle": "Snakk om dette forslaget med rommet ditt — her, i kontekst.",
+      "signInHint": "Logg inn og koble til chat for å diskutere dette forslaget.",
+      "unavailable": "Diskusjonen kunne ikke åpnes. Prøv igjen om litt.",
+      "connecting": "Åpner diskusjon…",
+      "roomTitle": "Forslag: {title}",
+      "roomTitleFallback": "Forslagsdiskusjon"
     },
     "sections": {
       "payment": "Betaling",

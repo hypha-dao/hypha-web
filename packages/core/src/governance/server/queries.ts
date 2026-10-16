@@ -87,6 +87,7 @@ export const mapToDocument = (
     web3ProposalId: dbDocument.web3ProposalId,
     creator: actualCreator,
     label: dbDocument.label || '',
+    chatRoomId: dbDocument.chatRoomId ?? null,
   };
 };
 

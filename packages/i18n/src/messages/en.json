@@ -453,7 +453,8 @@
     "memberCount": "{count} spaces",
     "builderTitle": "Shape a space on your vision",
     "builderBody": "Walk through the AI experience and bring a space into the network around what you want to build.",
-    "builderAction": "Begin the experience",
+    "builderAction": "Create space",
+
     "investorTitle": "Network marketplace",
     "investorBody": "Spaces publish what they are asking for. Read an ask, then deploy capital into it.",
     "investorAction": "See the asks",
@@ -3230,6 +3231,15 @@
       "member": "Member",
       "active": "Active"
     },
+    "discussion": {
+      "title": "Discussion",
+      "subtitle": "Talk about this proposal with your space — right here in context.",
+      "signInHint": "Sign in and connect chat to discuss this proposal.",
+      "unavailable": "Discussion could not be opened. Try again in a moment.",
+      "connecting": "Opening discussion…",
+      "roomTitle": "Proposal: {title}",
+      "roomTitleFallback": "Proposal discussion"
+    },
     "sections": {
       "payment": "Payment",
       "transparencySettings": "Transparency Settings",
@@ -3241,6 +3251,7 @@
       "showDetails": "Show",
       "hideDetails": "Hide"
     },
+
     "labels": {
       "unknown": "Unknown",
       "custom": "Custom",

@@ -228,6 +228,7 @@ export default function Agreements() {
           spaceSlug={space?.slug || ''}
           label={document?.label || ''}
           documentSlug={documentSlug}
+          chatRoomId={document?.chatRoomId}
           dbTokens={tokens || []}
           onWithdrawSuccess={async () => {
             await update();
