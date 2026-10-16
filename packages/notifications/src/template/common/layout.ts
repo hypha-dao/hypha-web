@@ -72,7 +72,7 @@ export function button(label: string, url: string): string {
 export interface LayoutInput {
   /** `<title>` of the document. */
   title: string;
-  /** Inbox preview text — hidden in the body; also send it as `email_preheader`. */
+  /** Inbox preview text. Sent as `email_preheader` (OneSignal injects the hidden preview span), not rendered here. */
   preheader?: string;
   /** Opening line; `null` omits it. Defaults to "Hey there,". */
   greeting?: string | null;
@@ -110,7 +110,6 @@ const STYLES = [
 
 export function layout({
   title,
-  preheader,
   greeting = 'Hey there,',
   paragraphs = [],
   contentHtml = '',
@@ -144,11 +143,6 @@ export function layout({
     '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />',
     '<meta name="viewport" content="width=device-width, initial-scale=1" />',
     `<title>${escapeHtml(title)}</title><style>${STYLES}</style></head><body>`,
-    preheader
-      ? `<div style="display:none;max-height:0;overflow:hidden;">${escapeHtml(
-          preheader,
-        )}</div>`
-      : '',
     '<table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f9f9f9;"><tr><td align="center">',
     '<table class="container" width="600" border="0" cellspacing="0" cellpadding="0">',
     `<tr><td class="header"><img width="200" height="68" alt="Hypha" style="display:block;margin:0 auto;border:0;" src="${escapeHtml(

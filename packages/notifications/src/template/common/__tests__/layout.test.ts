@@ -39,13 +39,14 @@ describe('layout', () => {
     expect(transactional).not.toContain('Manage notification settings');
   });
 
-  it('renders CTA and hidden preheader, escaping URLs', () => {
+  it('renders the CTA escaping URLs, without an in-body preheader', () => {
     const html = layout({
       title: 'T',
       preheader: 'Pre',
       cta: { label: 'Go', url: 'https://x.test/a?b=1&c=2' },
     });
     expect(html).toContain('class="cta" href="https://x.test/a?b=1&amp;c=2"');
-    expect(html).toContain('>Pre</div>');
+    // the preheader travels as `email_preheader`; OneSignal injects the hidden span
+    expect(html).not.toContain('>Pre<');
   });
 });
