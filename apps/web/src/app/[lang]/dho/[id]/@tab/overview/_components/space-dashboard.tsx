@@ -91,7 +91,7 @@ const visitSnapshots = new Map<
   string,
   { previous: Date | null; turn: number }
 >();
-const visitGuard: string | null = null;
+let visitGuard: string | null = null;
 
 function stampOf(value: string | Date | null | undefined) {
   if (!value) return null;
@@ -105,7 +105,11 @@ function weekBuckets(times: number[], weeks = 8) {
   const now = Date.now();
   for (const time of times) {
     const age = Math.floor((now - time) / span);
-    if (age >= 0 && age < weeks) counts[weeks - 1 - age] += 1;
+    const index = weeks - 1 - age;
+    const current = counts[index];
+    if (age >= 0 && age < weeks && current !== undefined) {
+      counts[index] = current + 1;
+    }
   }
   return counts;
 }
@@ -580,7 +584,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             className="text-4 leading-tight text-foreground sm:text-5"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
-            {t(GREETING[situation][turn % 2], { name })}
+            {t(GREETING[situation][turn % 2] ?? 'greetingQuietA', { name })}
           </h1>
           <p className="text-2 text-neutral-11">{sinceLine}</p>
           {diagnosis ? (
