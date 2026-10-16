@@ -314,9 +314,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain(
       'Card on screen: kind=proposal slug=path action=outcome',
     );
-    expect(facts).toContain(
-      'say="The proposal passed with a participation of 62% and unity of 91%."',
-    );
+    expect(facts).toContain('say="It passed — 62% took part, with 91% unity."');
     expect(facts).not.toContain('slug=path document=proposal action=decision');
   });
 

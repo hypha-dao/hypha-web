@@ -29,7 +29,6 @@ import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
-import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher-menu';
 import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
 import { useConversationUnreadCount } from './my-connections';
 
@@ -103,7 +102,6 @@ export function MobileTabBar({
   const { person } = useMe();
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
-  const [spacesOpen, setSpacesOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const unreadCount = useConversationUnreadCount();
@@ -114,7 +112,6 @@ export function MobileTabBar({
 
   useEffect(() => {
     const openCreate = () => {
-      setSpacesOpen(false);
       setCreateOpen(true);
     };
     window.addEventListener(OPEN_MOBILE_CREATE, openCreate);
@@ -122,7 +119,6 @@ export function MobileTabBar({
   }, []);
 
   useEffect(() => {
-    setSpacesOpen(false);
     setCreateOpen(false);
   }, [pathname]);
 
@@ -130,9 +126,6 @@ export function MobileTabBar({
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const networkRoute = isNetworkPath(pathname);
   const secondLevel = useMemo(() => {
-    // Spaces sheet overlays the page without changing the URL — hide
-    // network/space secondary nav so it doesn't sit above an unrelated tab.
-    if (spacesOpen) return [];
     if (spaceSlug) {
       const labelFor = (key: SpaceSectionNavKey): string => {
         switch (key) {
@@ -230,7 +223,6 @@ export function MobileTabBar({
     space?.pipelineEnabled,
     spaceMemoryEnabled,
     spaceSlug,
-    spacesOpen,
     tCoherence,
     tCommon,
     tNetwork,
@@ -250,50 +242,26 @@ export function MobileTabBar({
 
   const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/connections`;
+  const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
   const networkHref = `/${lang}/network`;
   const profileHref = person?.slug
     ? `/${lang}/profile/${person.slug}`
     : `/${lang}/profile/signup`;
 
-  const dashboardActive =
-    !spacesOpen && !createOpen && segmentActive(pathname, 'home');
+  const dashboardActive = !createOpen && segmentActive(pathname, 'home');
   const connectionsActive =
-    !spacesOpen && !createOpen && segmentActive(pathname, 'connections');
+    !createOpen && segmentActive(pathname, 'connections');
   const spacesActive =
-    spacesOpen ||
-    segmentActive(pathname, 'my-spaces') ||
-    segmentActive(pathname, 'dho');
-  const walletActive =
-    !spacesOpen && !createOpen && segmentActive(pathname, 'my-wallet');
-  const networkActive =
-    !spacesOpen && !createOpen && segmentActive(pathname, 'network');
+    !createOpen &&
+    (segmentActive(pathname, 'my-spaces') || segmentActive(pathname, 'dho'));
+  const walletActive = !createOpen && segmentActive(pathname, 'my-wallet');
+  const networkActive = !createOpen && segmentActive(pathname, 'network');
 
   if (!mounted) return null;
 
   return createPortal(
     <>
-      <div
-        className={cn(
-          'fixed inset-x-0 z-[35] flex flex-col border-l border-border bg-page-background transition-transform duration-300 ease-out xl:hidden',
-          !spacesOpen && 'pointer-events-none',
-        )}
-        style={{
-          top: 70,
-          bottom:
-            'var(--mobile-tab-offset, calc(64px + env(safe-area-inset-bottom, 0px)))',
-          transform: spacesOpen ? 'translateX(0)' : 'translateX(100%)',
-        }}
-        aria-hidden={!spacesOpen}
-        inert={!spacesOpen}
-      >
-        <MySpacesSwitcherMenu
-          open={spacesOpen}
-          onSelect={() => setSpacesOpen(false)}
-          className="min-h-0 flex-1"
-        />
-      </div>
-
       <div
         className={cn(
           'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out xl:hidden',
@@ -398,10 +366,7 @@ export function MobileTabBar({
             href={dashboardHref}
             label={t('myDashboard')}
             active={dashboardActive}
-            onClick={() => {
-              setSpacesOpen(false);
-              setCreateOpen(false);
-            }}
+            onClick={() => setCreateOpen(false)}
             icon={<House className={iconClass} strokeWidth={1.25} />}
           />
           <TabLink
@@ -409,10 +374,7 @@ export function MobileTabBar({
             label={t('myConnections')}
             active={connectionsActive}
             badge={unreadCount}
-            onClick={() => {
-              setSpacesOpen(false);
-              setCreateOpen(false);
-            }}
+            onClick={() => setCreateOpen(false)}
             icon={<MessagesSquare className={iconClass} strokeWidth={1.25} />}
           />
           <TabLink
@@ -420,31 +382,23 @@ export function MobileTabBar({
             label={t('myWallet')}
             active={walletActive}
             center
-            onClick={() => {
-              setSpacesOpen(false);
-              setCreateOpen(false);
-            }}
+            onClick={() => setCreateOpen(false)}
             icon={
               <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
             }
           />
-          <TabButton
+          <TabLink
+            href={spacesHref}
             label={t('mySpaces')}
             active={spacesActive}
-            onClick={() => {
-              setCreateOpen(false);
-              setSpacesOpen((open) => !open);
-            }}
+            onClick={() => setCreateOpen(false)}
             icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
           />
           <TabLink
             href={networkHref}
             label={t('network')}
             active={networkActive}
-            onClick={() => {
-              setSpacesOpen(false);
-              setCreateOpen(false);
-            }}
+            onClick={() => setCreateOpen(false)}
             icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
           />
         </div>
@@ -495,35 +449,6 @@ function TabLink({
         {label}
       </span>
     </Link>
-  );
-}
-
-function TabButton({
-  label,
-  active,
-  onClick,
-  icon,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  icon: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        'flex flex-col items-center justify-end gap-1 pb-1.5 text-muted-foreground',
-        active && 'text-foreground',
-      )}
-    >
-      <TabGlyph active={active}>{icon}</TabGlyph>
-      <span className="max-w-full truncate px-0.5 text-[10px] leading-none tracking-tight">
-        {label}
-      </span>
-    </button>
   );
 }
 

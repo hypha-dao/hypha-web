@@ -56,7 +56,7 @@ export function RoleGlyph({
   );
 }
 
-/** One or more badges. A role is the first kind; later badges use the same chip. */
+/** One or more badges. Role badges are icon-only chips; the label stays on title/aria. */
 export function PersonBadges({
   items,
   stacked = false,
@@ -73,23 +73,29 @@ export function PersonBadges({
           : 'inline-flex max-w-full flex-wrap items-center gap-1'
       }
     >
-      {items.map((item) => (
-        <span
-          key={item.id}
-          className={
-            stacked
-              ? 'inline-flex flex-col items-center gap-1 text-1 text-foreground'
-              : 'inline-flex max-w-full items-center gap-1.5 border border-foreground bg-background px-2 py-0.5 text-1 text-foreground'
-          }
-        >
-          {item.role ? (
-            <RoleGlyph role={item.role} size={stacked ? 36 : 14} />
-          ) : null}
-          <span className={stacked ? 'text-center' : 'truncate'}>
-            {item.label}
+      {items.map((item) =>
+        item.role ? (
+          <span
+            key={item.id}
+            title={item.label}
+            aria-label={item.label}
+            className={
+              stacked
+                ? 'inline-flex size-9 items-center justify-center border border-border bg-neutral-3 text-foreground'
+                : 'inline-flex size-5 items-center justify-center border border-border bg-neutral-3 text-foreground'
+            }
+          >
+            <RoleGlyph role={item.role} size={stacked ? 18 : 12} />
           </span>
-        </span>
-      ))}
+        ) : (
+          <span
+            key={item.id}
+            className="inline-flex max-w-full items-center border border-border bg-neutral-3 px-2 py-0.5 text-1 text-foreground"
+          >
+            <span className="truncate">{item.label}</span>
+          </span>
+        ),
+      )}
     </span>
   );
 }

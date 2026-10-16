@@ -27,7 +27,6 @@ import {
   listMemberHomeThreadItems,
   memberHomeItemsStillWaiting,
   mergeMemberHomeAttention,
-  useSpacesBySlugs,
   type MemberHomeThreadItem,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
@@ -38,13 +37,8 @@ import {
   getSignalPath,
 } from '../../common/get-path-function';
 import type { SignupOrientation } from './signup-flow';
-import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
-import {
-  MAX_VISIBLE_RECENT_SPACES,
-  readRecentSpaceSlugs,
-  subscribeRecentSpaceSlugs,
-} from '../../common/recent-space-history';
+
 import { MemberHomeChat } from './member-home-chat';
 import {
   HOME_QUEUE_EVENT,
@@ -66,7 +60,6 @@ import {
 } from './member-home-people';
 import {
   MemberHomeConnectionsWidget,
-  MemberHomeSpacesWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
 import { MemberHomeEnergyPanel } from './member-home-energy-panel';
@@ -189,8 +182,8 @@ export function MemberHome({
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
-  const { resolvedTheme } = useTheme();
   const openChatRef = useRef<MemberHomeOpenChat>(async () => false);
+
   const onOpenChatReady = useCallback((openChat: MemberHomeOpenChat) => {
     openChatRef.current = openChat;
   }, []);
@@ -214,13 +207,8 @@ export function MemberHome({
     (person) => openVideoRef.current(person),
     [],
   );
-  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
-  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
-    readRecentSpaceSlugs(),
-  );
-  useEffect(() => subscribeRecentSpaceSlugs(setRecentSpaceSlugs), []);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [viewReady, setViewReady] = useState(false);
   useEffect(() => {
@@ -233,45 +221,6 @@ export function MemberHome({
     return () => window.removeEventListener('storage', onStorage);
   }, []);
   const showAssistant = viewReady && homeView === 'ai';
-  const recentLookupSlugs = useMemo(
-    () => recentSpaceSlugs.slice(0, MAX_VISIBLE_RECENT_SPACES),
-    [recentSpaceSlugs],
-  );
-  const { spaces: visitedSpaceRecords } = useSpacesBySlugs(
-    recentLookupSlugs,
-    false,
-  );
-  const recentSpaces = useMemo(() => {
-    const membership = home?.spaces ?? [];
-    const bySlug = new Map(membership.map((space) => [space.slug, space]));
-    for (const space of visitedSpaceRecords) {
-      if (bySlug.has(space.slug)) continue;
-      bySlug.set(space.slug, {
-        id: space.id,
-        slug: space.slug,
-        title: space.title,
-        description: space.description ?? '',
-        logoUrl: space.logoUrl ?? null,
-        ecosystemLogoUrlLight: space.ecosystemLogoUrlLight ?? null,
-        ecosystemLogoUrlDark: space.ecosystemLogoUrlDark ?? null,
-        address: space.address ?? null,
-        web3SpaceId: space.web3SpaceId ?? null,
-      });
-    }
-    const visited = recentSpaceSlugs.flatMap((slug) => {
-      const space = bySlug.get(slug);
-      return space ? [space] : [];
-    });
-    const seen = new Set(visited.map((space) => space.slug));
-    const filled = visited.slice(0, MAX_VISIBLE_RECENT_SPACES);
-    for (const space of membership) {
-      if (filled.length >= MAX_VISIBLE_RECENT_SPACES) break;
-      if (seen.has(space.slug)) continue;
-      filled.push(space);
-      seen.add(space.slug);
-    }
-    return filled;
-  }, [home?.spaces, recentSpaceSlugs, visitedSpaceRecords]);
   const createMemberSpaces = useMemo(
     () =>
       (home?.spaces ?? []).map((space) => ({
@@ -398,28 +347,6 @@ export function MemberHome({
               </dl>
             </div>
           </section>
-          <div className="w-full min-w-0">
-            <MemberHomeSpacesWidget lang={lang} busy={home == null}>
-              {home == null ? (
-                <CardSkeleton lines={4} detail={false} round />
-              ) : recentSpaces.length === 0 ? (
-                <p className="text-1 text-neutral-11">{t('noSpaces')}</p>
-              ) : (
-                <ul className="grid w-full grid-cols-1">
-                  {recentSpaces.map((space) => (
-                    <li key={space.id} className="min-w-0">
-                      <SpaceSwitcherOption
-                        href={`/${lang}/dho/${space.slug}/overview`}
-                        title={space.title}
-                        iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
-                        className="rounded-none px-2 py-1.5 text-1 hover:bg-background-4/70"
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </MemberHomeSpacesWidget>
-          </div>
           <div>
             <MemberHomeWalletWidget
               lang={lang}

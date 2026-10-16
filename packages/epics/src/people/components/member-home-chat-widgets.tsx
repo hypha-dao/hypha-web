@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, MessageSquare, Phone, Video } from 'lucide-react';
+import { Check, ChevronDown, MessageSquare, Phone, Video } from 'lucide-react';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
@@ -593,32 +593,45 @@ export function MemberHomeSendTokensWidget({
                     <li key={item.id}>
                       <button
                         type="button"
+                        aria-pressed={active}
                         className={cn(
-                          'flex w-full flex-col items-center gap-1 px-1 py-2',
-                          active ? 'bg-accent-2' : 'hover:bg-accent-2',
+                          'flex w-full flex-col items-center gap-1 border px-1 py-2',
+                          active
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-transparent hover:bg-accent-2',
                         )}
                         onClick={() => setTargetId(item.id)}
                       >
-                        {person ? (
-                          <PersonAvatar
-                            avatarSrc={person.avatarUrl ?? undefined}
-                            userName={item.name}
-                            size="md"
-                            shape="circle"
-                          />
-                        ) : (
-                          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2 text-1">
-                            {icon ? (
-                              <img
-                                src={icon}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              item.name.trim().charAt(0).toUpperCase()
-                            )}
-                          </span>
-                        )}
+                        <span className="relative inline-flex">
+                          {person ? (
+                            <PersonAvatar
+                              avatarSrc={person.avatarUrl ?? undefined}
+                              userName={item.name}
+                              size="md"
+                              shape="circle"
+                            />
+                          ) : (
+                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2 text-1 text-foreground">
+                              {icon ? (
+                                <img
+                                  src={icon}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                item.name.trim().charAt(0).toUpperCase()
+                              )}
+                            </span>
+                          )}
+                          {active ? (
+                            <span
+                              className="absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-background text-foreground"
+                              aria-hidden
+                            >
+                              <Check className="size-2.5" strokeWidth={3} />
+                            </span>
+                          ) : null}
+                        </span>
                         <span className="line-clamp-2 w-full text-center text-[11px] leading-tight">
                           {item.name}
                         </span>

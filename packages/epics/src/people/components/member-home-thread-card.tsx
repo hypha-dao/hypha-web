@@ -445,10 +445,7 @@ export function MemberHomeThreadCard({
                 window.setTimeout(() => {
                   markHomeActed(key);
                   if (!assistant) return;
-                  onAsk(
-                    `I have the outcome on "${title}". Continue with the next.`,
-                    true,
-                  );
+                  onAsk(t('gotItChosen', { title }), true);
                 }, 700);
               }}
             >

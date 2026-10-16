@@ -600,9 +600,11 @@
     "voteNeedsChain": "This decision is not ready to record yet.",
     "voteClosed": "Vote closed",
     "gotIt": "Got it, thank you",
-    "outcomePassed": "The proposal passed with a participation of {participation}% and unity of {unity}%.",
-    "outcomeClosed": "The proposal did not pass. Participation was {participation}% and unity was {unity}%.",
+    "gotItChosen": "Thanks — I've seen how {title} turned out. What's next?",
+    "outcomePassed": "It passed — {participation}% took part, with {unity}% unity.",
+    "outcomeClosed": "It didn't pass this time. {participation}% took part, with {unity}% unity.",
     "onVoting": "On voting",
+
     "closesIn": "Closes in {time}",
     "fromTreasury": "from treasury",
     "yesCount": "{count} yes",
@@ -654,7 +656,7 @@
     "profileUnavailable": "You are still signed in. Your profile could not be loaded.",
     "retry": "Try again",
     "sendTokensChoose": "Choose a token. Currently {symbol}.",
-    "gotItDone": "Noted"
+    "gotItDone": "Thanks — I'm with you"
   },
   "Marketplace": {
     "metaTitle": "Network marketplace | Hypha",

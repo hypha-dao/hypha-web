@@ -156,8 +156,10 @@
     "voteNeedsChain": "Dit besluit kan nog niet worden vastgelegd.",
     "voteClosed": "Stemming gesloten",
     "gotIt": "Begrepen, bedankt",
-    "outcomePassed": "Het voorstel is aangenomen, met een deelname van {participation}% en een eenheid van {unity}%.",
-    "outcomeClosed": "Het voorstel is niet aangenomen. De deelname was {participation}% en de eenheid was {unity}%.",
+    "gotItChosen": "Bedankt — ik heb gezien hoe {title} is afgelopen. Wat nu?",
+    "outcomePassed": "Het is aangenomen — {participation}% deed mee, met {unity}% eenheid.",
+    "outcomeClosed": "Deze keer niet aangenomen. {participation}% deed mee, met {unity}% eenheid.",
+
     "onVoting": "In stemming",
     "closesIn": "Sluit over {time}",
     "fromTreasury": "uit de treasury",
@@ -280,7 +282,7 @@
     "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
     "retry": "Opnieuw proberen",
     "sendTokensChoose": "Kies een token. Nu {symbol}.",
-    "gotItDone": "Genoteerd"
+    "gotItDone": "Bedankt — ik ben erbij"
   },
   "WelcomeFlow": {
     "offer": {

@@ -156,8 +156,10 @@
     "voteNeedsChain": "Оваа одлука сè уште не може да се запише.",
     "voteClosed": "Гласањето е затворено",
     "gotIt": "Јасно, благодарам",
-    "outcomePassed": "Предлогот помина, со учество од {participation}% и единство од {unity}%.",
-    "outcomeClosed": "Предлогот не помина. Учеството беше {participation}%, а единството {unity}%.",
+    "gotItChosen": "Благодарам — видов како заврши {title}. Што следи?",
+    "outcomePassed": "Помина — учествуваа {participation}%, со {unity}% единство.",
+    "outcomeClosed": "Овој пат не помина. Учествуваа {participation}%, со {unity}% единство.",
+
     "onVoting": "На гласање",
     "closesIn": "Затвора за {time}",
     "fromTreasury": "од трезорот",
@@ -280,7 +282,7 @@
     "profileUnavailable": "Сè уште си најавен. Твојот профил не можеше да се вчита.",
     "retry": "Обиди се повторно",
     "sendTokensChoose": "Избери токен. Сега {symbol}.",
-    "gotItDone": "Забележано"
+    "gotItDone": "Благодарам — сум со тебе"
   },
   "WelcomeFlow": {
     "offer": {
