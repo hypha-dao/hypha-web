@@ -26,6 +26,8 @@ type RecipientProps = {
   emptySpacesMessage?: string;
   label?: string;
   showTabs?: boolean;
+  /** When false, only the member/space list can be chosen — no free-typed wallet. */
+  allowManualAddress?: boolean;
 };
 
 export const Recipient = ({
@@ -42,6 +44,7 @@ export const Recipient = ({
   emptySpacesMessage,
   label,
   showTabs = true,
+  allowManualAddress = true,
 }: RecipientProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const [uncontrolledRecipientType, setUncontrolledRecipientType] =
@@ -228,11 +231,13 @@ export const Recipient = ({
           />
         </div>
       </div>
-      <WalletAddress
-        address={manualAddress}
-        onChange={handleAddressChange}
-        disabled={readOnly}
-      />
+      {allowManualAddress ? (
+        <WalletAddress
+          address={manualAddress}
+          onChange={handleAddressChange}
+          disabled={readOnly}
+        />
+      ) : null}
     </div>
   );
 };

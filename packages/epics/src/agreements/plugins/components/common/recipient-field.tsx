@@ -27,6 +27,7 @@ export function RecipientField({
   showTabs,
   name = 'recipient',
   withMemoField = false,
+  allowManualAddress,
 }: {
   members: Person[];
   spaces?: Space[];
@@ -41,6 +42,7 @@ export function RecipientField({
   showTabs?: boolean;
   name?: string;
   withMemoField?: boolean;
+  allowManualAddress?: boolean;
 }) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { control } = useFormContext();
@@ -79,6 +81,7 @@ export function RecipientField({
                   emptySpacesMessage={emptySpacesMessage}
                   label={label}
                   showTabs={showTabs}
+                  allowManualAddress={allowManualAddress}
                 />
               </FormControl>
               <FormMessage custom={customMessage} />

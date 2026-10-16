@@ -9,7 +9,10 @@ import {
 } from '@hypha-platform/epics';
 import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  readEnergyCommunityMemberAddresses,
+} from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -30,25 +33,30 @@ import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-
 async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
   /** null when enrichment failed — do not treat as “zero members” */
   members: number | null;
+  memberAddresses: readonly string[];
   agreements: number | null;
 }> {
   if (!canConvertToBigInt(web3SpaceId)) {
-    return { members: null, agreements: null };
+    return { members: null, memberAddresses: [], agreements: null };
   }
   const id = BigInt(web3SpaceId);
-  const [members, agreements] = await Promise.all([
+  const [memberResult, agreements] = await Promise.all([
     (async () => {
       try {
         const [spaceDetails] = await fetchSpaceDetails({
           spaceIds: [id],
         });
-        return spaceDetails?.members.length ?? 0;
+        const memberAddresses = spaceDetails?.members ?? [];
+        return {
+          members: memberAddresses.length,
+          memberAddresses,
+        };
       } catch (error) {
         console.error(
           `Failed to get space details for a space ${web3SpaceId}:`,
           error,
         );
-        return null;
+        return { members: null, memberAddresses: [] as readonly string[] };
       }
     })(),
     (async () => {
@@ -66,7 +74,11 @@ async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
       }
     })(),
   ]);
-  return { members, agreements };
+  return {
+    members: memberResult.members,
+    memberAddresses: memberResult.memberAddresses,
+    agreements,
+  };
 }
 
 export default async function DhoLayout({
@@ -94,8 +106,24 @@ export default async function DhoLayout({
       : undefined;
   const spaceFlags = spaceFromDb.flags ?? [];
 
-  const { members: spaceMembers, agreements: spaceAgreements } =
-    await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
+  const [memberCounts, energyMembers] = await Promise.all([
+    getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId),
+    readEnergyCommunityMemberAddresses(daoSlug, { db }).catch((error) => {
+      console.error('Failed to read energy community members:', error);
+      return { status: 'unavailable' as const };
+    }),
+  ]);
+  const {
+    members: rawSpaceMembers,
+    memberAddresses,
+    agreements: spaceAgreements,
+  } = memberCounts;
+  const spaceMembers =
+    energyMembers.status === 'ok' && rawSpaceMembers !== null
+      ? memberAddresses.filter((address) =>
+          energyMembers.addresses.has(address.toLowerCase()),
+        ).length
+      : rawSpaceMembers;
 
   const rawLead = spaceFromDb.leadImage?.trim();
   const heroBannerImageHref =
@@ -107,7 +135,7 @@ export default async function DhoLayout({
 
   const compactBannerSpaceArchived =
     spaceFlags.includes('archived') ||
-    (spaceMembers !== null && spaceMembers === 0);
+    (rawSpaceMembers !== null && rawSpaceMembers === 0);
 
   return (
     <SpaceAccentPortalBridge>

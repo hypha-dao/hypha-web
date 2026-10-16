@@ -4296,6 +4296,7 @@
       "ownershipTotal100": "As quotas de propriedade devem totalizar 100%",
       "atLeastOneSource": "É necessária pelo menos uma fonte",
       "ownerMustBeMember": "Este proprietário também deve ser adicionado como membro (contagem de contadores 0 é aceitável), caso contrário não receberá receitas.",
+      "mustBeSpaceMember": "Apenas membros deste espaço podem ser adicionados à comunidade de energia.",
       "addTargetWallet": "Adicione pelo menos uma carteira de objetivo",
       "targetWalletsTotal100": "As quotas das carteiras de objetivos devem totalizar 100%"
     },

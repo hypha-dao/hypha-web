@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMemberEntriesFromAddresses,
   mergeJoinEventTimesByAddress,
+  retainEnergySharingMembers,
 } from '../get-space-members-roster-helpers';
+import type { SpaceMemberRosterEntry } from '../get-space-members-roster-helpers';
 import type { Space } from '../../types';
 import type { Membership } from '@hypha-platform/storage-postgres';
 
@@ -114,5 +116,65 @@ describe('mergeJoinEventTimesByAddress', () => {
       },
     ]);
     expect(map.get('0xabc')?.toISOString()).toBe('2026-04-01T00:00:00.000Z');
+  });
+});
+
+describe('retainEnergySharingMembers', () => {
+  const person = (address: string | undefined): SpaceMemberRosterEntry => ({
+    member_kind: 'person',
+    membership: null,
+    join_source: 'unknown',
+    joined_at: null,
+    person: {
+      id: 1,
+      address,
+      links: [],
+      createdAt: new Date('2020-01-01'),
+      updatedAt: new Date('2020-01-01'),
+    },
+  });
+
+  it('keeps people and spaces whose wallet is in the energy community', () => {
+    const spaceEntry: SpaceMemberRosterEntry = {
+      member_kind: 'space',
+      membership: null,
+      join_source: 'unknown',
+      joined_at: null,
+      space: {
+        id: 2,
+        title: 'School',
+        slug: 'school',
+        description: null,
+        links: [],
+        categories: [],
+        flags: [],
+        createdAt: new Date('2020-01-01'),
+        updatedAt: new Date('2020-01-01'),
+        address: '0xABCDEF0000000000000000000000000000000001',
+      } as Space,
+    };
+
+    const kept = retainEnergySharingMembers(
+      [
+        person('0x1111111111111111111111111111111111111111'),
+        person('0x2222222222222222222222222222222222222222'),
+        person(undefined),
+        spaceEntry,
+      ],
+      new Set([
+        '0x1111111111111111111111111111111111111111',
+        '0xabcdef0000000000000000000000000000000001',
+      ]),
+    );
+
+    expect(kept.map((entry) => entry.member_kind)).toEqual(['person', 'space']);
+  });
+
+  it('matches energy member addresses case-insensitively', () => {
+    const kept = retainEnergySharingMembers(
+      [person('0xAbCdef0000000000000000000000000000000002')],
+      new Set(['0xabcdef0000000000000000000000000000000002']),
+    );
+    expect(kept).toHaveLength(1);
   });
 });

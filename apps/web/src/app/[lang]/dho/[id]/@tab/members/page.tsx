@@ -1,6 +1,11 @@
 import { Locale } from '@hypha-platform/i18n';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
-import { getSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findEnergyCommunityBySpaceSlug,
+  getSpaceBySlug,
+  isMissingEnergyCommunitiesTableError,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { getTranslations } from 'next-intl/server';
 
 import { useMembers } from '@web/hooks/use-members';
@@ -21,6 +26,14 @@ export default async function MembershipPage(props: PageProps) {
   const spaceFromDb = await getSpaceBySlug({ slug: id });
   const web3SpaceId = spaceFromDb?.web3SpaceId;
 
+  let energySharingOnly = false;
+  try {
+    const energyCommunity = await findEnergyCommunityBySpaceSlug(id, { db });
+    energySharingOnly = Boolean(energyCommunity);
+  } catch (error) {
+    if (!isMissingEnergyCommunitiesTableError(error)) throw error;
+  }
+
   const basePath = getDhoPathMembers(lang as Locale, id as string);
 
   return (
@@ -28,7 +41,7 @@ export default async function MembershipPage(props: PageProps) {
       <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle
           title={tCommon('Members')}
-          count={spaceFromDb?.memberCount ?? null}
+          count={energySharingOnly ? null : spaceFromDb?.memberCount ?? null}
           lang={lang}
         />
         <MembersSection
@@ -36,6 +49,7 @@ export default async function MembershipPage(props: PageProps) {
           useMembers={useMembers}
           spaceSlug={id}
           refreshInterval={5000}
+          energySharingOnly={energySharingOnly}
         />
       </div>
     </SpaceTabAccessWrapper>

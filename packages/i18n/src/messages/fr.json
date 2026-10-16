@@ -4294,6 +4294,7 @@
       "ownershipTotal100": "Les parts de propriété doivent totaliser 100 %",
       "atLeastOneSource": "Au moins une source est requise",
       "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus.",
+      "mustBeSpaceMember": "Seuls les membres de cet espace peuvent être ajoutés à la communauté énergétique.",
       "addTargetWallet": "Ajoutez au moins un portefeuille d'objectif",
       "targetWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %"
     },

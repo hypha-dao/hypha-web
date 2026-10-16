@@ -30,6 +30,7 @@ export const useMembers: UseMembers = ({
   searchTerm,
   refreshInterval,
   paginationDisabled = false,
+  energySharingOnly = false,
 }: {
   page?: number;
   pageSize?: number;
@@ -38,15 +39,22 @@ export const useMembers: UseMembers = ({
   searchTerm?: string;
   refreshInterval?: number;
   paginationDisabled?: boolean;
+  energySharingOnly?: boolean;
 }): UseMembersReturn => {
   const { getAccessToken } = useAuthentication();
 
   const queryParams = React.useMemo(() => {
+    const energyFilter = energySharingOnly ? { energySharingOnly: 'true' } : {};
     const effectiveFilter = paginationDisabled
-      ? { ...(searchTerm ? { searchTerm } : {}) }
-      : { page, pageSize, ...(searchTerm ? { searchTerm } : {}) };
+      ? { ...energyFilter, ...(searchTerm ? { searchTerm } : {}) }
+      : {
+          page,
+          pageSize,
+          ...energyFilter,
+          ...(searchTerm ? { searchTerm } : {}),
+        };
     return `?${queryString.stringify(effectiveFilter)}`;
-  }, [page, pageSize, searchTerm, paginationDisabled]);
+  }, [page, pageSize, searchTerm, paginationDisabled, energySharingOnly]);
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/members${queryParams}`,
@@ -105,6 +113,7 @@ export const useMembers: UseMembers = ({
           {
             page,
             pageSize,
+            ...(energySharingOnly ? { energySharingOnly: 'true' } : {}),
             ...(searchTerm ? { searchTerm } : {}),
           },
         )}`;

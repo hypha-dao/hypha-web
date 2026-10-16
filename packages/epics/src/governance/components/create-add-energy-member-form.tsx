@@ -31,6 +31,18 @@ export const CreateAddEnergyMemberForm = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
+  const spaceMemberAddresses = React.useMemo(() => {
+    const addresses = new Set<string>();
+    for (const member of members) {
+      const address = member.address?.trim().toLowerCase();
+      if (address) addresses.add(address);
+    }
+    for (const space of spaces) {
+      const address = space.address?.trim().toLowerCase();
+      if (address) addresses.add(address);
+    }
+    return addresses;
+  }, [members, spaces]);
 
   const schema = React.useMemo(
     () =>
@@ -39,7 +51,11 @@ export const CreateAddEnergyMemberForm = ({
           recipient: z
             .string()
             .trim()
-            .regex(ADDRESS_RE, t('validation.selectMemberOrSpace')),
+            .regex(ADDRESS_RE, t('validation.selectMemberOrSpace'))
+            .refine(
+              (value) => spaceMemberAddresses.has(value.toLowerCase()),
+              t('validation.mustBeSpaceMember'),
+            ),
           meterCount: z
             .string()
             .trim()
@@ -49,7 +65,7 @@ export const CreateAddEnergyMemberForm = ({
             ),
         }),
       }),
-    [t],
+    [t, spaceMemberAddresses],
   );
 
   type FormValues = z.infer<typeof schema>;
