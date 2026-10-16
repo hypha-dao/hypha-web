@@ -52,7 +52,6 @@ import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonRoleBadge } from './person-badges';
 import { MemberHomeInviteBanners } from './member-home-invite-banner';
-import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
 import { MemberHomeClosest } from './member-home-closest';
 import {
   MemberHomePeople,
@@ -222,14 +221,6 @@ export function MemberHome({
     return () => window.removeEventListener('storage', onStorage);
   }, []);
   const showAssistant = viewReady && homeView === 'ai';
-  const createMemberSpaces = useMemo(
-    () =>
-      (home?.spaces ?? []).map((space) => ({
-        slug: space.slug,
-        title: space.title,
-      })),
-    [home?.spaces],
-  );
   const rawOrientation = home?.person.primaryOrientation;
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
@@ -303,10 +294,10 @@ export function MemberHome({
           spaces={home?.spaces ?? []}
           isLoading={home == null}
         />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
           <aside
             aria-label={t('panelSpaces')}
-            className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
+            className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-4 py-4 @min-[68rem]/home:flex @min-[68rem]/home:w-full @min-[68rem]/home:max-w-[20rem] @min-[68rem]/home:border-r @min-[68rem]/home:border-t-0"
           >
             <section
               aria-busy={home == null || undefined}
@@ -446,14 +437,6 @@ export function MemberHome({
                 ) : null}
               </Tile>
             </div>
-            {home ? (
-              <div>
-                <NetworkQuickCreate
-                  lang={lang}
-                  memberSpaces={createMemberSpaces}
-                />
-              </div>
-            ) : null}
           </aside>
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-2 @min-[68rem]/home:row-start-1">
             <div className="shrink-0 px-4 pt-4">
