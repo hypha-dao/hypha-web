@@ -86,7 +86,7 @@ export function SpaceAttention({
 
   const inSpace =
     data?.spaces.some((space) => space.slug === spaceSlug) ?? false;
-  if (!isLoading && data && !inSpace && queue.length === 0) return null;
+  if (!isLoading && (!data || !inSpace) && queue.length === 0) return null;
 
   const lead =
     queue.length > 0
@@ -104,8 +104,10 @@ export function SpaceAttention({
       : tCoherence('signals');
   };
 
+  if (!isLoading && lead == null) return null;
+
   return (
-    <section>
+    <section className="craft-card p-4">
       <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
         {t('nowEyebrow')}
       </p>
@@ -115,14 +117,12 @@ export function SpaceAttention({
       >
         {t('nowTitle')}
       </h2>
-      {isLoading ? (
+      {isLoading || lead == null ? (
         <div className="mt-4 grid gap-3">
           <div className="h-3 w-16 bg-neutral-3" />
           <div className="h-5 w-2/3 bg-neutral-3" />
           <div className="h-4 w-full bg-neutral-3" />
         </div>
-      ) : lead == null ? (
-        <p className="mt-4 text-2 text-neutral-11">{t('nowQuiet')}</p>
       ) : (
         <Link href={itemHref(lang, lead)} className="group mt-4 block">
           <span className="text-1 uppercase tracking-[0.12em] text-foreground">
@@ -140,7 +140,7 @@ export function SpaceAttention({
             {lead.title}
           </span>
           {plainSummary(lead.summary) ? (
-            <span className="mt-2 block line-clamp-3 text-2 text-neutral-11">
+            <span className="mt-2 block line-clamp-4 text-2 text-neutral-11">
               {plainSummary(lead.summary)}
             </span>
           ) : null}

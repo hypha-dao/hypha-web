@@ -73,14 +73,14 @@ export function SpaceActivityList({
   ) => string;
 }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-3">
       {items.map((item) => {
         const status = item.status;
         return (
           <Link
             key={item.id}
             href={hrefFor(item.slug)}
-            className="flex flex-col gap-1 border-b border-border/50 py-3.5 last:border-b-0 hover:opacity-80"
+            className="craft-card-interactive flex flex-col gap-1 p-4"
           >
             {status ? (
               <span className="text-1 text-neutral-11">

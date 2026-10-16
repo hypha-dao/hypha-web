@@ -24,7 +24,6 @@ import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { useMembers } from '@web/hooks/use-members';
 
 import { OverviewMonth } from './overview-month';
-import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
 
 const VISIBLE_MEMBERS = 8;
@@ -304,6 +303,23 @@ function personLabel(person: {
   return full || person.nickname?.trim() || '';
 }
 
+const PRIORITY_RANK: Record<string, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
+
+function plainText(value: string) {
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+    .replace(/[*_`>#]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function Panel({
   title,
   href,
@@ -318,7 +334,9 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section className={`flex min-w-0 flex-col ${className ?? ''}`}>
+    <section
+      className={`craft-card flex min-w-0 flex-col p-4 ${className ?? ''}`}
+    >
       <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
           className="text-3 text-foreground"
@@ -362,11 +380,9 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
-  const {
-    coherences,
-    isLoading: signalsLoading,
-    error: signalsError,
-  } = useFindCoherences({ spaceSlug });
+  const { coherences, isLoading: signalsLoading } = useFindCoherences({
+    spaceSlug,
+  });
   const {
     persons,
     spaces: memberSpaces,
@@ -574,6 +590,23 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       Boolean(signal.slug),
   );
   const nextSignal = linkedWeek[turn % Math.max(linkedWeek.length, 1)];
+  const featuredSignals = [...openSignals]
+    .filter((signal): signal is typeof signal & { slug: string } =>
+      Boolean(signal.slug),
+    )
+    .sort((left, right) => {
+      const rank =
+        (PRIORITY_RANK[left.priority] ?? 2) -
+        (PRIORITY_RANK[right.priority] ?? 2);
+      if (rank !== 0) return rank;
+      return (stampOf(right.createdAt) ?? 0) - (stampOf(left.createdAt) ?? 0);
+    })
+    .slice(0, 4);
+  const showInsights = !(
+    memberActivity.every((value) => value === 0) &&
+    agreementActivity.every((value) => value === 0)
+  );
+  const showTreasury = treasuryLoading || assets.length > 0;
   const showEcosystem = spaces.length > 0 || space?.parentId != null;
 
   return (
@@ -619,173 +652,193 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         <SpaceMemberCircles people={people} membersHref={`${home}/members`} />
       ) : null}
 
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <SpaceAttention
-          lang={locale as Locale}
-          spaceSlug={spaceSlug}
-          turn={turn}
-        />
-        <Panel
-          title={t('lastActivityTitle')}
-          href={`${home}/agreements`}
-          openLabel={t('open')}
-        >
-          {updatesLoading ? (
-            <RowsSkeleton />
-          ) : recentActivity.length === 0 ? (
-            <Quiet>{t('noRecentActivity')}</Quiet>
-          ) : (
-            <SpaceActivityList
-              items={recentActivity}
-              untitled={t('untitledProposal')}
-              hrefFor={(slug) =>
-                slug
-                  ? `${home}/agreements/proposal/${slug}`
-                  : `${home}/agreements`
-              }
-              statusLabel={(status) =>
-                status === 'accepted'
-                  ? t('statusAccepted')
-                  : status === 'rejected'
-                  ? t('statusRejected')
-                  : t('statusOnVoting')
-              }
-            />
-          )}
-        </Panel>
-      </div>
-
-      <Panel
-        title={t('signalsWeekTitle')}
-        href={`${home}/coherence`}
-        openLabel={t('open')}
-      >
-        {signalsLoading ? (
-          <RowsSkeleton />
-        ) : linkedWeek.length === 0 ? (
-          <Quiet>{t('signalsWeekEmpty')}</Quiet>
-        ) : (
-          <ul className="grid gap-2 sm:grid-cols-3">
-            {linkedWeek.slice(0, 3).map((signal) => (
-              <li key={signal.slug}>
-                <Link
-                  href={`${home}/coherence?signal=${encodeURIComponent(
-                    signal.slug,
-                  )}`}
-                  className="block min-w-0 hover:underline"
-                >
-                  <span className="block text-1 uppercase tracking-[0.12em] text-neutral-11">
-                    {tCoherence.has(`types.${signal.type}` as 'types.Need')
-                      ? tCoherence(`types.${signal.type}` as 'types.Need')
-                      : signal.type}
-                  </span>
-                  <span className="mt-1 block truncate text-2 text-foreground">
-                    {signal.title}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
-
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
-        <Panel
-          title={tCommon('Signals')}
-          href={`${home}/coherence`}
-          openLabel={t('open')}
-        >
-          <SignalHeatMaps
-            signals={openSignals}
-            isLoading={signalsLoading && !signalsError}
-            empty={t('signalsEmpty')}
-            hrefForType={(type) =>
-              `${home}/coherence?type=${encodeURIComponent(type)}`
-            }
-          />
-        </Panel>
-
-        <Panel
-          title={tCommon('Calendar')}
-          href={`${home}/calendar`}
-          openLabel={t('open')}
-        >
-          <OverviewMonth spaceSlug={spaceSlug} />
-        </Panel>
-      </div>
-
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <Panel
-          title={t('insightsTitle')}
-          href={`${home}/members`}
-          openLabel={t('open')}
-        >
-          {memberActivity.every((value) => value === 0) &&
-          agreementActivity.every((value) => value === 0) ? (
-            <Quiet>{t('insightsEmpty')}</Quiet>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Bars values={memberActivity} label={t('insightsMembers')} />
-              <Bars
-                values={agreementActivity}
-                label={t('insightsAgreements')}
-              />
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+        <section className="min-w-0">
+          <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2
+              className="text-3 text-foreground"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {tCommon('Signals')}
+            </h2>
+            <Link
+              href={`${home}/coherence`}
+              className="shrink-0 text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {t('open')}
+            </Link>
+          </div>
+          {signalsLoading ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <RowsSkeleton />
+              <RowsSkeleton />
             </div>
-          )}
-        </Panel>
-
-        <Panel
-          title={t('treasuryTitle')}
-          href={`${home}/treasury`}
-          openLabel={t('open')}
-        >
-          {treasuryLoading ? (
-            <RowsSkeleton />
-          ) : assets.length === 0 ? (
-            <Quiet>{t('treasuryEmpty')}</Quiet>
+          ) : featuredSignals.length === 0 ? (
+            <Quiet>{t('signalsEmpty')}</Quiet>
           ) : (
-            <div className="flex flex-col gap-4">
-              <ul className="grid grid-cols-3 gap-3">
-                {assets.slice(0, 3).map((asset) => (
-                  <li key={asset.symbol} className="min-w-0">
-                    <span
-                      className="block truncate text-3 tabular-nums text-foreground"
-                      style={{ fontFamily: 'var(--font-family-heading)' }}
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+              {featuredSignals.map((signal) => {
+                const body = plainText(signal.description);
+                const typeLabel = tCoherence.has(
+                  `types.${signal.type}` as 'types.Need',
+                )
+                  ? tCoherence(`types.${signal.type}` as 'types.Need')
+                  : signal.type;
+                return (
+                  <li key={signal.slug}>
+                    <Link
+                      href={`${home}/coherence?signal=${encodeURIComponent(
+                        signal.slug,
+                      )}`}
+                      className="craft-card-interactive flex h-full flex-col gap-2 p-4"
                     >
-                      {format.number(asset.value, {
-                        maximumFractionDigits: asset.value >= 100 ? 0 : 2,
-                      })}
-                    </span>
-                    <span className="mt-1 block truncate text-1 text-neutral-11">
-                      {asset.symbol}
-                    </span>
+                      <span className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                        {typeLabel}
+                      </span>
+                      <span className="text-2 text-foreground">
+                        {signal.title}
+                      </span>
+                      {body ? (
+                        <span className="line-clamp-4 text-1 text-neutral-11">
+                          {body}
+                        </span>
+                      ) : null}
+                    </Link>
                   </li>
-                ))}
-              </ul>
-              <div>
-                <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                  {t('distributionTitle')}
-                </p>
-                <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
-                  {assets.map((asset) => (
-                    <span
-                      key={asset.symbol}
-                      className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
-                      style={{
-                        width: `${(asset.value / assetTotal) * 100}%`,
-                        opacity: 0.35 + (asset.value / assetTotal) * 0.65,
-                      }}
-                      title={`${asset.symbol} ${format.number(asset.value, {
-                        maximumFractionDigits: 2,
-                      })}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+                );
+              })}
+            </ul>
           )}
-        </Panel>
+        </section>
+
+        <div className="flex min-w-0 flex-col gap-3">
+          <SpaceAttention
+            lang={locale as Locale}
+            spaceSlug={spaceSlug}
+            turn={turn}
+          />
+          <section className="min-w-0">
+            <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h2
+                className="text-3 text-foreground"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t('lastActivityTitle')}
+              </h2>
+              <Link
+                href={`${home}/agreements`}
+                className="shrink-0 text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {t('open')}
+              </Link>
+            </div>
+            <div className="mt-3">
+              {updatesLoading ? (
+                <RowsSkeleton />
+              ) : recentActivity.length === 0 ? (
+                <Quiet>{t('noRecentActivity')}</Quiet>
+              ) : (
+                <SpaceActivityList
+                  items={recentActivity}
+                  untitled={t('untitledProposal')}
+                  hrefFor={(slug) =>
+                    slug
+                      ? `${home}/agreements/proposal/${slug}`
+                      : `${home}/agreements`
+                  }
+                  statusLabel={(status) =>
+                    status === 'accepted'
+                      ? t('statusAccepted')
+                      : status === 'rejected'
+                      ? t('statusRejected')
+                      : t('statusOnVoting')
+                  }
+                />
+              )}
+            </div>
+          </section>
+          <OverviewMonth
+            spaceSlug={spaceSlug}
+            title={tCommon('Calendar')}
+            href={`${home}/calendar`}
+            openLabel={t('open')}
+          />
+        </div>
       </div>
+
+      {showInsights || showTreasury ? (
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          {showInsights ? (
+            <Panel
+              title={t('insightsTitle')}
+              href={`${home}/members`}
+              openLabel={t('open')}
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Bars values={memberActivity} label={t('insightsMembers')} />
+                <Bars
+                  values={agreementActivity}
+                  label={t('insightsAgreements')}
+                />
+              </div>
+            </Panel>
+          ) : null}
+
+          {showTreasury ? (
+            <Panel
+              title={t('treasuryTitle')}
+              href={`${home}/treasury`}
+              openLabel={t('open')}
+            >
+              {treasuryLoading ? (
+                <RowsSkeleton />
+              ) : assets.length === 0 ? (
+                <Quiet>{t('treasuryEmpty')}</Quiet>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <ul className="grid grid-cols-3 gap-3">
+                    {assets.slice(0, 3).map((asset) => (
+                      <li key={asset.symbol} className="min-w-0">
+                        <span
+                          className="block truncate text-3 tabular-nums text-foreground"
+                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        >
+                          {format.number(asset.value, {
+                            maximumFractionDigits: asset.value >= 100 ? 0 : 2,
+                          })}
+                        </span>
+                        <span className="mt-1 block truncate text-1 text-neutral-11">
+                          {asset.symbol}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div>
+                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                      {t('distributionTitle')}
+                    </p>
+                    <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
+                      {assets.map((asset) => (
+                        <span
+                          key={asset.symbol}
+                          className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
+                          style={{
+                            width: `${(asset.value / assetTotal) * 100}%`,
+                            opacity: 0.35 + (asset.value / assetTotal) * 0.65,
+                          }}
+                          title={`${asset.symbol} ${format.number(asset.value, {
+                            maximumFractionDigits: 2,
+                          })}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Panel>
+          ) : null}
+        </div>
+      ) : null}
 
       {showEcosystem ? (
         <Panel
