@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   ClipboardList,
-  Earth,
   Globe2,
   House,
   LayoutGrid,
@@ -34,6 +33,7 @@ import {
   buildWalletSectionNavItems,
   isWalletSectionNavActive,
 } from '../../wallet/components/wallet-section-nav';
+import { MyceliumMenuIcon } from './member-home-mark';
 import { useConversationUnreadCount } from './my-connections';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
@@ -225,7 +225,7 @@ export function MobileTabBar({
         key: 'network',
         label: tNetwork('navNetwork'),
         href: base,
-        icon: Earth,
+        icon: MyceliumMenuIcon,
         exact: true,
       },
       {

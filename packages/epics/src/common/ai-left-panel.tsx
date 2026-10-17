@@ -18,7 +18,6 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   ClipboardList,
-  Earth,
   Menu,
   PanelLeftClose,
   Plus,
@@ -71,6 +70,7 @@ import {
   type SpaceSectionNavKey,
 } from './space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from './space-section-nav-icons';
+import { MyceliumMenuIcon } from '../people/components/member-home-mark';
 import {
   buildWalletSectionNavItems,
   isWalletSectionNavActive,
@@ -667,7 +667,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         key: 'network',
         label: tNetwork('navNetwork'),
         href: base,
-        icon: Earth,
+        icon: MyceliumMenuIcon,
       },
       {
         key: 'needs',

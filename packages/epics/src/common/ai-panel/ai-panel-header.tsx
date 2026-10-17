@@ -2,7 +2,7 @@
 
 import useSWR from 'swr';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
+import { ChevronsUpDown, PanelLeftClose } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { cn } from '@hypha-platform/ui-utils';
@@ -253,22 +254,18 @@ export function AiPanelHeader({
                   )}
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className={SPACE_SWITCHER_AVATAR_CLASS}>
-                    {currentIcon ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={currentIcon}
-                          alt={currentTitle}
-                          className="h-full w-full object-cover"
-                        />
-                      </>
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center">
-                        <Sparkles className="craft-icon text-muted-foreground" />
-                      </span>
-                    )}
-                  </span>
+                  {currentIcon ? (
+                    <span className={SPACE_SWITCHER_AVATAR_CLASS}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={currentIcon}
+                        alt={currentTitle}
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                  ) : (
+                    <MemberHomeMark className="h-6 w-6" />
+                  )}
                   <span className="min-w-0 truncate text-center leading-snug">
                     {currentTitle}
                   </span>
@@ -339,22 +336,18 @@ export function AiPanelHeader({
             </DropdownMenu>
           ) : (
             <div className={SPACE_SWITCHER_CLASS}>
-              <span className={SPACE_SWITCHER_AVATAR_CLASS}>
-                {currentIcon ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={currentIcon}
-                      alt={fallbackTitle}
-                      className="h-full w-full object-cover"
-                    />
-                  </>
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center">
-                    <Sparkles className="craft-icon text-muted-foreground" />
-                  </span>
-                )}
-              </span>
+              {currentIcon ? (
+                <span className={SPACE_SWITCHER_AVATAR_CLASS}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentIcon}
+                    alt={fallbackTitle}
+                    className="h-full w-full object-cover"
+                  />
+                </span>
+              ) : (
+                <MemberHomeMark className="h-6 w-6" />
+              )}
               <span className="min-w-0 truncate text-center leading-snug">
                 {fallbackTitle}
               </span>
