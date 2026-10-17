@@ -64,6 +64,12 @@ import {
 } from './member-home-side-widgets';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 import { MemberHomeEnergyPanel } from './member-home-energy-panel';
+import {
+  HOME_VIEW_EVENT,
+  readHomeView,
+  writeHomeView,
+  type HomeView,
+} from './member-home-view';
 import './member-home-banner.css';
 
 type MemberHomeProps = {
@@ -77,28 +83,6 @@ type MemberHomeProps = {
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
-const HOME_VIEW_KEY = 'hypha-member-home-view';
-
-type HomeView = 'ai' | 'classic';
-
-function readHomeView(): HomeView {
-  try {
-    return window.localStorage.getItem(HOME_VIEW_KEY) === 'classic'
-      ? 'classic'
-      : 'ai';
-  } catch {
-    return 'ai';
-  }
-}
-
-function writeHomeView(view: HomeView) {
-  try {
-    window.localStorage.setItem(HOME_VIEW_KEY, view);
-  } catch {
-    // Private browsing can block storage. The choice still applies this visit.
-  }
-}
-
 function orientationLabelKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientationMember' as const;
   if (orientation === 'builder') return 'orientationBuilder' as const;
@@ -213,15 +197,18 @@ export function MemberHome({
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [viewReady, setViewReady] = useState(false);
   useEffect(() => {
-    setHomeView(readHomeView());
+    const sync = () => setHomeView(readHomeView());
+    sync();
     setViewReady(true);
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === HOME_VIEW_KEY) setHomeView(readHomeView());
+    window.addEventListener(HOME_VIEW_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(HOME_VIEW_EVENT, sync);
+      window.removeEventListener('storage', sync);
     };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
   }, []);
   const showAssistant = viewReady && homeView === 'ai';
+  const showField = viewReady && homeView === 'field';
   const rawOrientation = home?.person.primaryOrientation;
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
@@ -295,10 +282,19 @@ export function MemberHome({
           spaces={home?.spaces ?? []}
           isLoading={home == null}
         />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]">
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]',
+            showField && 'max-xl:overflow-y-auto',
+          )}
+        >
           <aside
             aria-label={t('panelSpaces')}
-            className="member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-4 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:max-w-[20rem] @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0"
+            className={cn(
+              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-4 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:max-w-[20rem] @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0',
+              showField &&
+                'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
+            )}
           >
             <section
               aria-busy={home == null || undefined}
@@ -439,7 +435,12 @@ export function MemberHome({
               </Tile>
             </div>
           </aside>
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-1 @min-[68rem]/home:row-start-1 @min-[80rem]/home:col-start-2">
+          <main
+            className={cn(
+              'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-1 @min-[68rem]/home:row-start-1 @min-[80rem]/home:col-start-2',
+              showField && 'max-xl:hidden',
+            )}
+          >
             <div className="shrink-0 px-5 pt-4 md:px-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -465,10 +466,7 @@ export function MemberHome({
                 <HomeViewSwitch
                   view={homeView}
                   ready={viewReady}
-                  onChange={(next) => {
-                    writeHomeView(next);
-                    setHomeView(next);
-                  }}
+                  onChange={writeHomeView}
                 />
               </div>
               <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
@@ -516,7 +514,11 @@ export function MemberHome({
           </main>
           <aside
             aria-label={t('panelInsights')}
-            className="narrow-scrollbar row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[68rem]/home:col-start-2 @min-[68rem]/home:flex @min-[80rem]/home:col-start-3"
+            className={cn(
+              'narrow-scrollbar row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[68rem]/home:col-start-2 @min-[68rem]/home:flex @min-[80rem]/home:col-start-3',
+              showField &&
+                'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
+            )}
           >
             {orientation === 'member' && home ? (
               <PersonaCard
@@ -718,7 +720,7 @@ function HomeViewSwitch({
     <div
       role="group"
       aria-label={t('viewToggleLabel')}
-      className="ml-auto inline-flex shrink-0 border border-foreground"
+      className="ml-auto hidden shrink-0 border border-foreground xl:inline-flex"
     >
       {(['ai', 'classic'] as const).map((option) => {
         const selected = ready && view === option;

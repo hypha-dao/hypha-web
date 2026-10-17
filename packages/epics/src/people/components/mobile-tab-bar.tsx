@@ -10,10 +10,13 @@ import {
   ClipboardList,
   Globe2,
   House,
+  LayoutDashboard,
   LayoutGrid,
   MessagesSquare,
   Plus,
+  Rows3,
   Settings,
+  Sparkles,
   Target,
   Wallet,
   Waves,
@@ -35,6 +38,12 @@ import {
 } from '../../wallet/components/wallet-section-nav';
 import { useFundWallet } from '../../treasury/hooks/use-fund-wallet';
 import { MyceliumMenuIcon } from './member-home-mark';
+import {
+  HOME_VIEW_EVENT,
+  readHomeView,
+  writeHomeView,
+  type HomeView,
+} from './member-home-view';
 import { useConversationUnreadCount } from './my-connections';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
@@ -130,6 +139,7 @@ export function MobileTabBar({
   const tCoherence = useTranslations('CoherenceTab');
   const tNetwork = useTranslations('NetworkExchange');
   const tActions = useTranslations('ProfileActions');
+  const tHome = useTranslations('MemberHome');
   const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
@@ -141,11 +151,23 @@ export function MobileTabBar({
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
   const [createOpen, setCreateOpen] = useState(false);
+  const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mounted, setMounted] = useState(false);
   const unreadCount = useConversationUnreadCount();
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setHomeView(readHomeView());
+    sync();
+    window.addEventListener(HOME_VIEW_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(HOME_VIEW_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
   }, []);
 
   useEffect(() => {
@@ -173,6 +195,31 @@ export function MobileTabBar({
     external?: boolean;
     disabled?: boolean;
   }> => {
+    const homeRoute =
+      pathname === `/${lang}/home` || pathname === `/${lang}/home/`;
+    if (homeRoute) {
+      const views = [
+        { key: 'ai' as const, label: tHome('viewAi'), icon: Sparkles },
+        {
+          key: 'classic' as const,
+          label: tHome('viewClassic'),
+          icon: Rows3,
+        },
+        {
+          key: 'field' as const,
+          label: tHome('viewField'),
+          icon: LayoutDashboard,
+        },
+      ];
+      return views.map((view) => ({
+        key: view.key,
+        href: '',
+        label: view.label,
+        active: homeView === view.key,
+        onClick: () => writeHomeView(view.key),
+        icon: <view.icon className={subIconClass} strokeWidth={1.5} />,
+      }));
+    }
     if (spaceSlug) {
       const labelFor = (key: SpaceSectionNavKey): string => {
         switch (key) {
@@ -287,6 +334,7 @@ export function MobileTabBar({
     }));
   }, [
     fundWallet,
+    homeView,
     lang,
     networkRoute,
     pathname,
@@ -296,6 +344,7 @@ export function MobileTabBar({
     spaceSlug,
     tActions,
     tCoherence,
+    tHome,
     tCommon,
     tNetwork,
     tTreasury,
