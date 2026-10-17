@@ -76,6 +76,7 @@ import {
   isWalletSectionNavActive,
 } from '../wallet/components/wallet-section-nav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
+import { useFundWallet } from '../treasury/hooks/use-fund-wallet';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
@@ -305,6 +306,8 @@ type NavItem = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  external?: boolean;
+  onSelect?: () => void;
 };
 
 function formatChatStreamErrorMessage(error: unknown): string {
@@ -354,7 +357,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
   const tNetwork = useTranslations('NetworkExchange');
-  const tProfile = useTranslations('Profile');
+  const tActions = useTranslations('ProfileActions');
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -457,6 +460,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: me?.address as `0x${string}` | undefined,
+  });
   const { data: spaceEnergyData } = useSpaceEnergy();
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -710,14 +716,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (spaceSlug || !lang) return [];
     if (!pathname.includes('/my-wallet')) return [];
     const base = `/${lang}/my-wallet`;
-    return buildWalletSectionNavItems(base).map((item) => ({
+    return buildWalletSectionNavItems(base, {
+      walletAddress: me?.address,
+    }).map((item) => ({
       key: item.key,
-      label: tProfile(item.labelKey),
+      label: tActions(item.labelKey),
       icon: item.icon,
-      href: item.href,
+      href: item.href ?? '',
       active: isWalletSectionNavActive(item, pathname),
+      external: item.external,
+      disabled: item.disabled,
+      onSelect: item.fundWallet
+        ? () => {
+            void fundWallet();
+          }
+        : undefined,
     }));
-  }, [lang, pathname, spaceSlug, tProfile]);
+  }, [fundWallet, lang, me?.address, pathname, spaceSlug, tActions]);
 
   const menuNavItems =
     sectionNavItems.length > 0
@@ -878,6 +893,58 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         showLabel ? MENU_ROW_LINK_EXPANDED_CLASS : MENU_ROW_LINK_COLLAPSED_CLASS
       } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`;
 
+      const iconAndLabel = (
+        <>
+          <span className={ICON_COLUMN_CLASS}>
+            <item.icon className={iconClassName} strokeWidth={1.25} />
+          </span>
+          {showLabel ? (
+            <span className={labelClassName}>{item.label}</span>
+          ) : null}
+        </>
+      );
+      const closeIfExpanded = () => {
+        if (mode !== 'collapsed') handleExpandedMenuNavigation();
+      };
+      const control =
+        isDisabled || item.onSelect ? (
+          <button
+            type="button"
+            aria-label={item.label}
+            disabled={isDisabled}
+            onClick={() => {
+              if (isDisabled) return;
+              item.onSelect?.();
+              closeIfExpanded();
+            }}
+            className={rowClassName}
+          >
+            {iconAndLabel}
+          </button>
+        ) : item.external ? (
+          <a
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={item.label}
+            onClick={closeIfExpanded}
+            className={rowClassName}
+          >
+            {iconAndLabel}
+          </a>
+        ) : (
+          <Link
+            href={item.href}
+            scroll={false}
+            onClick={mode === 'collapsed' ? undefined : closeIfExpanded}
+            aria-label={item.label}
+            aria-current={item.active ? 'page' : undefined}
+            className={rowClassName}
+          >
+            {iconAndLabel}
+          </Link>
+        );
+
       return (
         <SidebarMenuItem key={`${keyPrefix}-${item.key}`}>
           <SidebarMenuButton
@@ -887,40 +954,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             isActive={item.active}
             className={MENU_BUTTON_CLASS}
           >
-            {isDisabled ? (
-              <span
-                aria-label={item.label}
-                aria-disabled="true"
-                className={rowClassName}
-              >
-                <span className={ICON_COLUMN_CLASS}>
-                  <item.icon className={iconClassName} strokeWidth={1.25} />
-                </span>
-                {showLabel ? (
-                  <span className={labelClassName}>{item.label}</span>
-                ) : null}
-              </span>
-            ) : (
-              <Link
-                href={item.href}
-                scroll={false}
-                onClick={
-                  mode === 'collapsed'
-                    ? undefined
-                    : handleExpandedMenuNavigation
-                }
-                aria-label={item.label}
-                aria-current={item.active ? 'page' : undefined}
-                className={rowClassName}
-              >
-                <span className={ICON_COLUMN_CLASS}>
-                  <item.icon className={iconClassName} strokeWidth={1.25} />
-                </span>
-                {showLabel ? (
-                  <span className={labelClassName}>{item.label}</span>
-                ) : null}
-              </Link>
-            )}
+            {control}
           </SidebarMenuButton>
         </SidebarMenuItem>
       );

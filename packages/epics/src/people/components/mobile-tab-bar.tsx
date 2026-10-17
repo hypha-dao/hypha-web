@@ -33,6 +33,7 @@ import {
   buildWalletSectionNavItems,
   isWalletSectionNavActive,
 } from '../../wallet/components/wallet-section-nav';
+import { useFundWallet } from '../../treasury/hooks/use-fund-wallet';
 import { MyceliumMenuIcon } from './member-home-mark';
 import { useConversationUnreadCount } from './my-connections';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
@@ -128,12 +129,15 @@ export function MobileTabBar({
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
   const tNetwork = useTranslations('NetworkExchange');
-  const tProfile = useTranslations('Profile');
+  const tActions = useTranslations('ProfileActions');
   const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}` | undefined,
+  });
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
   const [createOpen, setCreateOpen] = useState(false);
@@ -159,7 +163,16 @@ export function MobileTabBar({
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const networkRoute = isNetworkPath(pathname);
-  const secondLevel = useMemo(() => {
+  const secondLevel = useMemo((): Array<{
+    key: string;
+    href: string;
+    label: string;
+    active: boolean;
+    icon: ReactNode;
+    onClick?: () => void;
+    external?: boolean;
+    disabled?: boolean;
+  }> => {
     if (spaceSlug) {
       const labelFor = (key: SpaceSectionNavKey): string => {
         switch (key) {
@@ -207,13 +220,22 @@ export function MobileTabBar({
     }
     if (segmentActive(pathname, 'my-wallet')) {
       const base = `/${lang}/my-wallet`;
-      return buildWalletSectionNavItems(base).map((item) => {
+      return buildWalletSectionNavItems(base, {
+        walletAddress: person?.address,
+      }).map((item) => {
         const Icon = item.icon;
         return {
           key: item.key,
-          href: item.href,
-          label: tProfile(item.labelKey),
+          href: item.href ?? '',
+          label: tActions(item.labelKey),
           active: isWalletSectionNavActive(item, pathname),
+          external: item.external,
+          disabled: item.disabled,
+          onClick: item.fundWallet
+            ? () => {
+                void fundWallet();
+              }
+            : undefined,
           icon: <Icon className={subIconClass} strokeWidth={1.5} />,
         };
       });
@@ -264,16 +286,18 @@ export function MobileTabBar({
       icon: <link.icon className={subIconClass} strokeWidth={1.5} />,
     }));
   }, [
+    fundWallet,
     lang,
     networkRoute,
     pathname,
+    person?.address,
     space?.pipelineEnabled,
     spaceMemoryEnabled,
     spaceSlug,
+    tActions,
     tCoherence,
     tCommon,
     tNetwork,
-    tProfile,
     tTreasury,
   ]);
 
@@ -377,30 +401,65 @@ export function MobileTabBar({
             style={{ height: SUB_NAV_PX }}
             aria-label={spaceSlug ? t('mySpaces') : t('network')}
           >
-            {secondLevel.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-current={item.active ? 'page' : undefined}
-                className={cn(
-                  'flex w-[4.25rem] shrink-0 flex-col items-center justify-end gap-0.5 px-0.5 pb-1.5 text-muted-foreground',
-                  item.active && 'text-foreground',
-                )}
-              >
-                <span
-                  className={cn(
-                    'grid shrink-0 place-items-center',
-                    item.active && 'border-t border-foreground',
-                  )}
-                  style={{ width: SUB_GLYPH_PX, height: SUB_GLYPH_PX }}
+            {secondLevel.map((item) => {
+              const className = cn(
+                'flex w-[4.25rem] shrink-0 flex-col items-center justify-end gap-0.5 border-0 bg-transparent px-0.5 pb-1.5 text-muted-foreground',
+                item.active && 'text-foreground',
+                item.disabled && 'opacity-50',
+              );
+              const body = (
+                <>
+                  <span
+                    className={cn(
+                      'grid shrink-0 place-items-center',
+                      item.active && 'border-t border-foreground',
+                    )}
+                    style={{ width: SUB_GLYPH_PX, height: SUB_GLYPH_PX }}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="max-w-full truncate text-[9px] leading-tight tracking-tight">
+                    {item.label}
+                  </span>
+                </>
+              );
+              if (item.onClick || item.disabled) {
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    disabled={item.disabled}
+                    onClick={item.onClick}
+                    className={className}
+                  >
+                    {body}
+                  </button>
+                );
+              }
+              if (item.external) {
+                return (
+                  <a
+                    key={item.key}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                  >
+                    {body}
+                  </a>
+                );
+              }
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  aria-current={item.active ? 'page' : undefined}
+                  className={className}
                 >
-                  {item.icon}
-                </span>
-                <span className="max-w-full truncate text-[9px] leading-tight tracking-tight">
-                  {item.label}
-                </span>
-              </Link>
-            ))}
+                  {body}
+                </Link>
+              );
+            })}
           </div>
         ) : null}
         <div
