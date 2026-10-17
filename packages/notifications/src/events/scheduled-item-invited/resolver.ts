@@ -5,6 +5,7 @@ import {
   toAbsoluteAppUrl,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { buildNotificationSettingsUrl } from '../../core/notification-settings-url';
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type { Recipient, ScheduledItemInvitedEvent } from '../../core/types';
 
@@ -43,6 +44,7 @@ export function buildScheduledItemInvitedEvent(input: {
       endsAt: input.item.endsAt,
       timezone: input.item.timezone,
       joinUrl,
+      settingsUrl: buildNotificationSettingsUrl(),
       channels: input.channels,
       lang,
     },

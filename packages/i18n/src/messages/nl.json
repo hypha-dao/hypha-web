@@ -279,6 +279,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Meldingen kunnen alleen worden beheerd als je bent ingelogd. Log in om de jouwe te beheren."
+    },
     "title": "Meldingscentrum",
     "loading": {
       "keepWindowOpen": "Houd dit venster open totdat we klaar zijn."
@@ -295,7 +298,7 @@
       "description": "Kies hoe je meldingen wilt ontvangen:",
       "emailNotifications": "E-mailmeldingen",
       "toEmail": "naar {email}",
-      "browserNotifications": "Browsermeldingen (voorheen 'Bureaubladpop-upmeldingen')",
+      "browserNotifications": "Push-meldingen in de browser",
       "yes": "Ja",
       "no": "Nee",
       "emailNotificationsWithEmail": "E-mailmeldingen ({email})",
@@ -4304,6 +4307,7 @@
       "ownershipTotal100": "Eigendomsaandelen moeten in totaal 100% zijn",
       "atLeastOneSource": "Er is minimaal één bron vereist",
       "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten.",
+      "mustBeSpaceMember": "Alleen leden van deze space kunnen aan de energiegemeenschap worden toegevoegd.",
       "addTargetWallet": "Voeg ten minste één doelportemonnee toe",
       "targetWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn"
     },

@@ -30,6 +30,7 @@ type MemberSectionProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
   refreshInterval?: number;
+  energySharingOnly?: boolean;
 };
 
 export const MembersSection: FC<MemberSectionProps> = ({
@@ -37,6 +38,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   useMembers,
   spaceSlug,
   refreshInterval,
+  energySharingOnly,
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
@@ -57,6 +59,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
     useMembers,
     spaceSlug,
     refreshInterval,
+    energySharingOnly,
   });
   const { space } = useSpaceBySlug(spaceSlug as string);
   const { isMember, isMemberLoading } = useSpaceMember({
@@ -213,6 +216,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             spaceSlug={spaceSlug}
             searchTerm={searchTerm}
             refreshInterval={refreshInterval}
+            energySharingOnly={energySharingOnly}
             entityFilter={entityFilter}
           />
         ))

@@ -165,6 +165,27 @@ export function buildMemberEntriesFromAddresses(args: {
   return entries;
 }
 
+/**
+ * Keep roster rows whose wallet is an on-chain energy-community member.
+ * People and member spaces without an address are omitted.
+ */
+export function retainEnergySharingMembers(
+  entries: SpaceMemberRosterEntry[],
+  energyMemberAddresses: ReadonlySet<string>,
+): SpaceMemberRosterEntry[] {
+  const allowed = new Set(
+    Array.from(energyMemberAddresses, (address) => address.toLowerCase()),
+  );
+  return entries.filter((entry) => {
+    const address =
+      entry.member_kind === 'person'
+        ? entry.person.address
+        : entry.space.address;
+    if (!address?.trim()) return false;
+    return allowed.has(address.trim().toLowerCase());
+  });
+}
+
 export function applySearchFilter(
   entries: SpaceMemberRosterEntry[],
   searchTerm: string | undefined,

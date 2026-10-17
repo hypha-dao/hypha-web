@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { buildSpaceCreatedContent } from '../content';
 import type { Recipient, SpaceCreatedEvent } from '../../../core/types';
@@ -23,25 +23,26 @@ const recipient: Recipient = {
 };
 
 describe('buildSpaceCreatedContent', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
   it('requests push + email gated on base tags only', () => {
     const result = buildSpaceCreatedContent(event(1), recipient);
     expect(result.channels).toEqual(['push', 'email']);
-    expect(result.requiredTags).toEqual({});
+    expect(result.requiredTags).toEqual(['sub_ownActions']);
   });
 
-  it('falls back to plain copy (singular) without the env vars, push carries the url', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
-    vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
+  it('renders plain copy (singular), push carries the url', () => {
     const result = buildSpaceCreatedContent(event(1), recipient);
-    expect(result.content.email).toEqual({
+    expect(result.content.email).toMatchObject({
       kind: 'plain',
-      subject: 'Successful space creation',
-      body: "You've successfully created a space.",
+      subject: 'Your space has been created',
     });
+    const body = (result.content.email as { body: string }).body;
+    expect(body).toContain(
+      'You&rsquo;ve successfully created a space in the Hypha network. 🚀',
+    );
+    expect(body).toContain('Hey Alice,');
+    expect(body).toContain('Go to my spaces');
+    expect(body).toContain('[unsubscribe_url]');
+    expect(body).toContain('/en/network/notification-centre');
     expect(result.content.push).toMatchObject({
       kind: 'plain',
       contents: { en: "You've successfully created a space." },
@@ -50,42 +51,13 @@ describe('buildSpaceCreatedContent', () => {
   });
 
   it('pluralises the plain copy for several spaces', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
-    vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
     const result = buildSpaceCreatedContent(event(3), recipient);
-    expect((result.content.email as { body: string }).body).toBe(
-      "You've successfully created 3 spaces.",
+    expect((result.content.email as { body: string }).body).toContain(
+      'You&rsquo;ve successfully created <strong>3</strong> spaces in the Hypha network. 🚀',
     );
     expect(result.content.push).toMatchObject({
       kind: 'plain',
       contents: { en: "You've successfully created 3 spaces." },
-    });
-  });
-
-  it('uses the email and push templates when their vars are set', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', 'tpl-email');
-    vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', 'tpl-push');
-    const result = buildSpaceCreatedContent(event(2), recipient);
-    expect(result.content.email).toEqual({
-      kind: 'template',
-      templateId: 'tpl-email',
-      customData: {
-        user_name: 'Alice',
-        spaces_count: '2',
-        url: 'https://app.hypha.earth/en/my-spaces',
-        notification_settings_url:
-          'https://app.hypha.earth/en/network/notification-centre',
-      },
-    });
-    expect(result.content.push).toEqual({
-      kind: 'template',
-      templateId: 'tpl-push',
-      customData: {
-        user_name: 'Alice',
-        spaces_count: '2',
-        url: 'https://app.hypha.earth/en/my-spaces',
-      },
-      url: 'https://app.hypha.earth/en/my-spaces',
     });
   });
 });

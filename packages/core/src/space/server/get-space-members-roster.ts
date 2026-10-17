@@ -16,6 +16,7 @@ import type { DbConfig } from '../../server';
 import {
   applySearchFilter,
   buildMemberEntriesFromAddresses,
+  retainEnergySharingMembers,
   mergeJoinEventTimesByAddress,
   normalizeMemberAddress,
   type RosterPerson,
@@ -255,11 +256,14 @@ export async function getSpaceMembersForHttpApi(
     page = 1,
     pageSize = 10,
     searchTerm,
+    energyMemberAddresses,
   }: {
     spaceSlug: string;
     page?: number;
     pageSize?: number;
     searchTerm?: string;
+    /** When set, only these on-chain energy-community wallets stay in the roster. */
+    energyMemberAddresses?: ReadonlySet<string>;
   },
   { db }: DbConfig,
 ): Promise<
@@ -275,7 +279,10 @@ export async function getSpaceMembersForHttpApi(
     return { found: false };
   }
 
-  const filtered = applySearchFilter(computed.entries, searchTerm);
+  const rosterEntries = energyMemberAddresses
+    ? retainEnergySharingMembers(computed.entries, energyMemberAddresses)
+    : computed.entries;
+  const filtered = applySearchFilter(rosterEntries, searchTerm);
   const personRows = filtered.filter((e) => e.member_kind === 'person');
   const spaceRowsFiltered = filtered.filter((e) => e.member_kind === 'space');
 

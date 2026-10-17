@@ -10,7 +10,8 @@ import OneSignal, {
 } from 'react-onesignal';
 import { HookRegistryProvider, useMe } from '@hypha-platform/core/client';
 import {
-  hasPermission,
+  isEnrolled,
+  isPushActive,
   NotificationsContext,
   useSendNotifications,
 } from '../hooks';
@@ -36,6 +37,7 @@ export function NotificationSubscriber({
   const { person, isLoading } = useMe();
   const [initialized, setInitialized] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(false);
+  const [pushActive, setPushActive] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
   const hasInitAttemptRef = React.useRef(false);
   const syncedExternalIdRef = React.useRef<string | null>(null);
@@ -61,8 +63,8 @@ export function NotificationSubscriber({
           }
           syncedExternalIdRef.current = personSlug;
           setLoggedIn(true);
-          const isSubscribed = await hasPermission();
-          setSubscribed(isSubscribed);
+          setSubscribed(await isEnrolled());
+          setPushActive(isPushActive());
         } catch (err) {
           console.error('Error on login:', err);
         }
@@ -83,6 +85,7 @@ export function NotificationSubscriber({
           syncedExternalIdRef.current = null;
           setLoggedIn(false);
           setSubscribed(false);
+          setPushActive(false);
         }
       };
       logoutNotifications();
@@ -101,8 +104,8 @@ export function NotificationSubscriber({
       try {
         if (oneSignalInitialized) {
           setInitialized(true);
-          const alreadySubscribed = await hasPermission();
-          setSubscribed(alreadySubscribed);
+          setSubscribed(await isEnrolled());
+          setPushActive(isPushActive());
           return;
         }
 
@@ -156,8 +159,8 @@ export function NotificationSubscriber({
         oneSignalInitPromise = null;
         console.log('OneSignal initialized');
         setInitialized(true);
-        const isSubscribed = await hasPermission();
-        setSubscribed(isSubscribed);
+        setSubscribed(await isEnrolled());
+        setPushActive(isPushActive());
       } catch (err) {
         oneSignalInitPromise = null;
         hasInitAttemptRef.current = false;
@@ -199,23 +202,9 @@ export function NotificationSubscriber({
       if (DEV_ENV) {
         console.log('The notification permission change:', permission);
       }
-      if (!permission) {
-        setSubscribed(false);
-        return;
-      }
-
-      hasPermission()
-        .then((isSubscribed) => {
-          setSubscribed(isSubscribed);
-        })
-        .catch((err) => {
-          if (DEV_ENV) {
-            console.warn(
-              'Failed to recompute subscription after permission change',
-              err,
-            );
-          }
-        });
+      // Push is per browser: a permission change only affects this browser's push switch, never
+      // the account-level enrolment.
+      setPushActive(isPushActive());
     };
     const permissionPromptDisplayHandler = () => {
       console.log('The notification permission prompt display!');
@@ -225,7 +214,6 @@ export function NotificationSubscriber({
     };
     const slidedownCancelClick = (wasShown: boolean) => {
       console.log('Slidedown Cancel Click:', wasShown);
-      setSubscribed(false);
     };
     const slidedownClosedHandler = (wasShown: boolean) => {
       console.log('Slidedown Closed:', wasShown);
@@ -240,6 +228,7 @@ export function NotificationSubscriber({
       console.log('User change:', change);
     };
     const subscriptionChangeHandler = (event: SubscriptionChangeEvent) => {
+      setPushActive(isPushActive());
       if (DEV_ENV) {
         console.log('User PushSubscription change:', {
           previous: {
@@ -350,6 +339,8 @@ export function NotificationSubscriber({
         setInitialized,
         subscribed,
         setSubscribed,
+        pushActive,
+        setPushActive,
         loggedIn,
       }}
     >

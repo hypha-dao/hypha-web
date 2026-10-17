@@ -278,6 +278,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Varsler kan bare administreres når du er logget inn. Logg inn for å administrere dine."
+    },
     "title": "Varslingssenter",
     "loading": {
       "keepWindowOpen": "Hold dette vinduet åpent til vi er ferdige."
@@ -294,7 +297,7 @@
       "description": "Velg hvordan du vil motta varsler:",
       "emailNotifications": "E-postvarsler",
       "toEmail": "til {email}",
-      "browserNotifications": "Nettleservarsler (tidligere «popup-varsler på skrivebordet»)",
+      "browserNotifications": "Push-varsler i nettleseren",
       "yes": "Ja",
       "no": "Nei",
       "emailNotificationsWithEmail": "E-postvarsler ({email})",
@@ -4303,6 +4306,7 @@
       "ownershipTotal100": "Eierandelene må totalt utgjøre 100 %",
       "atLeastOneSource": "Minst én kilde er påkrevd",
       "ownerMustBeMember": "Denne eieren må også legges til som medlem (målerantall 0 er greit), ellers vil de ikke motta inntekter.",
+      "mustBeSpaceMember": "Bare medlemmer av dette området kan legges til i energifellesskapet.",
       "addTargetWallet": "Legg til minst én mål-lommebok",
       "targetWalletsTotal100": "Andelene til mål-lommebøkene må totalt utgjøre 100 %"
     },

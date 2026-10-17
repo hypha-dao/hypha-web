@@ -279,6 +279,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Notifications can only be managed when you’re logged in. Log in to manage yours."
+    },
     "title": "Notification Centre",
     "loading": {
       "keepWindowOpen": "Keep this window open until we're finished."
@@ -287,42 +290,60 @@
       "title": "Subscribe to Notifications",
       "subscribe": "Subscribe",
       "unsubscribe": "Unsubscribe",
-      "subscribedDescription": "You’re subscribed to notifications. Click unsubscribe at any time to stop receiving alerts.",
-      "unsubscribedDescription": "Click subscribe to receive notifications. Some browsers block notifications by default, so you may need to enable them using the padlock icon next to the address bar or in your browser’s settings."
+      "subscribedDescription": "You’re subscribed. Turn this off to stop all notifications, on every device.",
+      "unsubscribedDescription": "Turn this on to be notified by email and in your browser. If your browser blocks notifications, allow them from the padlock icon next to the address bar."
     },
     "channels": {
+      "emailDescription": "Sent to {email}.",
+      "emailDescriptionNoAddress": "Sent to your account email.",
+      "browserDescription": "Alerts on this browser or device. Turn it on in each browser you use.",
       "title": "Notification Channels",
       "description": "Choose how you’d like to receive notifications:",
       "emailNotifications": "Email Notifications",
       "toEmail": "to {email}",
-      "browserNotifications": "Browser Notifications (formerly \"Desktop Pop-up Notifications\")",
+      "browserNotifications": "Browser push notifications",
       "yes": "Yes",
       "no": "No",
       "emailNotificationsWithEmail": "Email Notifications ({email})",
       "mentionConsent": "Mention Notifications Consent"
     },
     "subscriptions": {
+      "sections": {
+        "proposals": "Proposals",
+        "conversations": "Chat and meetings",
+        "signals": "Signals",
+        "yourActivity": "Your activity"
+      },
       "title": "Get Notified When...",
       "comingSoon": "Coming Soon",
       "newProposalOpen": {
-        "title": "A new proposal is open for vote",
+        "title": "New proposal to vote on",
         "description": "In any of the spaces you're a member of."
       },
       "proposalApprovedOrRejected": {
-        "title": "A proposal is approved or rejected",
-        "description": "In any of the spaces you're a member of."
+        "title": "Accepted or rejected",
+        "description": "The outcome of proposals in the spaces you're a member of, including your own."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
-      "mentionOnChatMessage": {
-        "title": "Chat @mentions and call alerts",
-        "description": "When someone @mentions you or starts a call in a space or signal thread you belong to."
+      "mentions": {
+        "title": "@mentions",
+        "description": "When someone @mentions you in a space or signal thread you belong to."
       },
-      "meetingReminders": {
-        "title": "Meeting and call reminders",
-        "description": "When a meeting or call in one of your spaces is about to start."
+      "meetings": {
+        "title": "Meetings and calls",
+        "description": "Invitations, reminders and call alerts for meetings and calls in your spaces."
+      },
+      "signals": {
+        "title": "Assigned to you and deadlines",
+        "description": "When a signal is assigned to you, you are mentioned on one, or a deadline changes or passes."
+      },
+      "ownActions": {
+        "title": "Confirmations",
+        "description": "When you create a proposal or a space, a confirmation that it worked."
       }
     },
     "actions": {
+      "unsavedChanges": "You have unsaved changes",
       "retry": "Retry",
       "savePreferences": "Save Preferences"
     }
@@ -4307,7 +4328,8 @@
       "addOwner": "Add at least one owner",
       "ownershipTotal100": "Ownership shares must total 100%",
       "atLeastOneSource": "At least one source is required",
-      "ownerMustBeMember": "This owner must also be added as a member (meter count 0 is fine) or they will not receive revenue."
+      "ownerMustBeMember": "This owner must also be added as a member (meter count 0 is fine) or they will not receive revenue.",
+      "mustBeSpaceMember": "Only members of this space can be added to the energy community."
     },
     "errors": {
       "allowanceTimeout": "Timed out waiting for stablecoin allowance.",

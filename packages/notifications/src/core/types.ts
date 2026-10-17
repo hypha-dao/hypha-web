@@ -123,9 +123,54 @@ export interface ScheduledItemInvitedEvent {
     endsAt: Date;
     timezone: string | null;
     joinUrl: string;
+    /** Notification Centre link for the email footer (same for every recipient). */
+    settingsUrl?: string;
     /** Pre-claimed by the caller's idempotency guard (`dispatch-scheduled-item-invitation.ts`) — only these channels are requested. */
     channels: Array<'email' | 'push'>;
     lang: string;
+  };
+}
+
+/**
+ * A call was started in a space chat / signal thread (#2549 D16 - formerly a bespoke
+ * `notifyCallStartedAction` send). Recipients are resolved server-side from the scope.
+ */
+export interface CallStartedEvent {
+  type: 'call.started';
+  source: { kind: 'domain'; entityType: 'call'; entityId: string };
+  context: {
+    spaceSlug: string;
+    scope: 'space_members' | 'signal_team';
+    actorSlug?: string;
+    targetMatrixUserIds?: string[];
+  };
+  payload: {
+    actorDisplayName: string;
+    contextLabel: string;
+    url: string;
+    /** Notification Centre link for the email footer. */
+    settingsUrl?: string;
+  };
+}
+
+/** Pre-start reminder of a scheduled item (#2549 D16 - formerly a bespoke `notifyScheduledItemReminder` send). */
+export interface ScheduledItemReminderEvent {
+  type: 'scheduled_item.reminder';
+  source: { kind: 'domain'; entityType: 'scheduled_item'; entityId: string };
+  context: {
+    /** Already resolved by the caller (shares its idempotency claim). */
+    memberSlugs: string[];
+    /** `call` / `meeting` items are gated on `consent_meetings`; other types are not. */
+    itemType: string;
+  };
+  payload: {
+    title: string;
+    spaceTitle: string;
+    whenLabel: string;
+    url: string;
+    settingsUrl?: string;
+    /** Pre-claimed by the caller - only these channels are requested. */
+    channels: Array<'email' | 'push'>;
   };
 }
 
@@ -137,6 +182,8 @@ export type NotificationEvent =
   | SignalAssignedEvent
   | SignalBoardNoticeEvent
   | ScheduledItemInvitedEvent
+  | CallStartedEvent
+  | ScheduledItemReminderEvent
   | ChatNotificationEvent;
 
 export type NotificationChannel = 'push' | 'email' | 'in_app';
@@ -162,7 +209,7 @@ export type NotificationEmailContent =
       templateId: string;
       customData?: Record<string, string>;
     }
-  | { kind: 'plain'; subject: string; body: string };
+  | { kind: 'plain'; subject: string; body: string; preheader?: string };
 
 export interface ChannelContent {
   push?: NotificationPushContent;
@@ -173,7 +220,7 @@ export interface ChannelContent {
 export interface NotificationContent {
   channels: NotificationChannel[];
   /** OneSignal tags required for a channel to be allowed — passed to `ConsentGate`. */
-  requiredTags: Record<string, string>;
+  requiredTags: string[];
   content: ChannelContent;
 }
 

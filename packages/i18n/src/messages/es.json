@@ -1051,6 +1051,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Las notificaciones solo se pueden gestionar con la sesión iniciada. Inicia sesión para gestionar las tuyas."
+    },
     "title": "Centro de notificaciones",
     "loading": {
       "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."
@@ -1059,42 +1062,60 @@
       "title": "Suscríbete a notificaciones",
       "subscribe": "Suscribirse",
       "unsubscribe": "Darse de baja",
-      "subscribedDescription": "Estás suscrito a notificaciones. Haz clic en cancelar suscripción en cualquier momento para dejar de recibir alertas.",
-      "unsubscribedDescription": "Haz clic en suscribirte para recibir notificaciones. Algunos navegadores bloquean las notificaciones por defecto, así que puede que tengas que habilitarlas usando el ícono del candado junto a la barra de direcciones o en la configuración de tu navegador."
+      "subscribedDescription": "Estás suscrito. Desactívalo para dejar de recibir todas las notificaciones, en todos tus dispositivos.",
+      "unsubscribedDescription": "Actívalo para recibir avisos por correo y en tu navegador. Si tu navegador bloquea las notificaciones, permítelas desde el icono del candado junto a la barra de direcciones."
     },
     "channels": {
+      "emailDescription": "Se envían a {email}.",
+      "emailDescriptionNoAddress": "Se envían al correo de tu cuenta.",
+      "browserDescription": "Alertas en este navegador o dispositivo. Actívalas en cada navegador que uses.",
       "title": "Canales de notificación",
       "description": "Elige cómo quieres recibir notificaciones:",
       "emailNotifications": "Notificaciones por correo electrónico",
       "toEmail": "a {email}",
-      "browserNotifications": "Notificaciones del navegador (anteriormente \"Notificaciones emergentes de escritorio\")",
+      "browserNotifications": "Notificaciones push del navegador",
       "yes": "Sí",
       "no": "No",
       "emailNotificationsWithEmail": "Notificaciones por correo electrónico ({email})",
       "mentionConsent": "Consentimiento para notificaciones de menciones"
     },
     "subscriptions": {
+      "sections": {
+        "proposals": "Propuestas",
+        "conversations": "Chat y reuniones",
+        "signals": "Señales",
+        "yourActivity": "Tu actividad"
+      },
       "title": "Recibe una notificación cuando...",
       "comingSoon": "Muy pronto",
       "newProposalOpen": {
-        "title": "Una nueva propuesta está abierta a votación.",
+        "title": "Nueva propuesta para votar",
         "description": "En cualquiera de los espacios de los que eres miembro."
       },
       "proposalApprovedOrRejected": {
-        "title": "Una propuesta es aprobada o rechazada.",
-        "description": "En cualquiera de los espacios de los que eres miembro."
+        "title": "Aceptada o rechazada",
+        "description": "El resultado de las propuestas en los espacios de los que eres miembro, incluidas las tuyas."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
-      "mentionOnChatMessage": {
-        "title": "Menciones @ y alertas de llamada",
-        "description": "Cuando alguien te @menciona o inicia una llamada en un espacio o hilo de señal al que perteneces."
+      "mentions": {
+        "title": "Menciones @",
+        "description": "Cuando alguien te @menciona en un espacio o hilo de señal al que perteneces."
       },
-      "meetingReminders": {
-        "title": "Recordatorios de reuniones y llamadas",
-        "description": "Cuando una reunión o llamada en uno de tus espacios está a punto de comenzar."
+      "meetings": {
+        "title": "Reuniones y llamadas",
+        "description": "Invitaciones, recordatorios y avisos de llamada de reuniones y llamadas en tus espacios."
+      },
+      "signals": {
+        "title": "Asignadas a ti y fechas límite",
+        "description": "Cuando se te asigna una señal, te mencionan en una o cambia o vence una fecha límite."
+      },
+      "ownActions": {
+        "title": "Confirmaciones",
+        "description": "Cuando creas una propuesta o un espacio, una confirmación de que funcionó."
       }
     },
     "actions": {
+      "unsavedChanges": "Tienes cambios sin guardar",
       "retry": "Reintentar",
       "savePreferences": "Guardar preferencias"
     }
@@ -4298,6 +4319,7 @@
       "ownershipTotal100": "Las participaciones de propiedad deben sumar 100 %",
       "atLeastOneSource": "Se requiere al menos una fuente",
       "ownerMustBeMember": "Este propietario también debe añadirse como miembro (puede tener 0 contadores) o no recibirá ingresos.",
+      "mustBeSpaceMember": "Solo los miembros de este espacio pueden añadirse a la comunidad energética.",
       "addTargetWallet": "Añade al menos una wallet de objetivo",
       "targetWalletsTotal100": "Las participaciones de las wallets de objetivos deben sumar 100 %"
     },

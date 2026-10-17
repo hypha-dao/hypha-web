@@ -1,26 +1,28 @@
 import type { Push } from './types';
 import type { ProposalSettlementProps } from '../common';
 
+/** Dashboard: "[PUSH] Proposal - Rejected - for Creator". */
 export function pushProposalRejectionForCreator({
-  proposalState = 'proposal',
   proposalLabel,
   proposalTitle,
   spaceTitle,
 }: ProposalSettlementProps): Push {
-  const space = spaceTitle ? `the space "${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle ? `"${proposalTitle}"` : proposalState;
+  const space = spaceTitle?.trim() || 'your space';
 
-  switch (proposalLabel) {
-    case 'Invite':
-      return {
-        contents: { en: `Your request to join ${space} was rejected.` },
-        headings: { en: 'Your request to join a space was rejected' },
-      };
-
-    default:
-      return {
-        contents: { en: `Your ${proposal} was rejected in ${space}.` },
-        headings: { en: `Your ${proposalState} was rejected` },
-      };
+  if (proposalLabel === 'Invite') {
+    return {
+      headings: { en: 'Your join request was rejected' },
+      contents: { en: `Your request to join ${space} was rejected.` },
+    };
   }
+
+  const title = proposalTitle?.trim();
+  return {
+    headings: { en: 'Your proposal was rejected' },
+    contents: {
+      en: `Your proposal${
+        title ? ` “${title}”` : ''
+      } was rejected in ${space}.`,
+    },
+  };
 }

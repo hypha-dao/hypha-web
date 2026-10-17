@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { buildChatContent } from '../content';
 import type { ChatNotificationEvent, Recipient } from '../../../core/types';
@@ -43,7 +43,7 @@ describe('buildChatContent — chat.message (all-messages)', () => {
 
   it('gates on base tags only — no extra requiredTag', () => {
     const result = buildChatContent(makeEvent('chat.message'), recipient);
-    expect(result.requiredTags).toEqual({});
+    expect(result.requiredTags).toEqual([]);
   });
 
   it('push body names the actor and previews the message', () => {
@@ -57,7 +57,7 @@ describe('buildChatContent — chat.mention', () => {
   it('requests push and email, gated on consent_mentions', () => {
     const result = buildChatContent(makeEvent('chat.mention'), recipient);
     expect(result.channels).toEqual(['push', 'email']);
-    expect(result.requiredTags).toEqual({ [TAG_MENTION_CONSENT]: 'true' });
+    expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
     expect(result.content.push).toBeDefined();
     expect(result.content.email).toBeDefined();
   });
@@ -72,85 +72,48 @@ describe('buildChatContent — chat.mention', () => {
   });
 });
 
-describe('buildChatContent — chat.mention email template', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('uses the OneSignal template when EMAIL_TEMPLATE_CHAT_MENTION is set', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', ' tpl-123 ');
+describe('buildChatContent — chat.mention email', () => {
+  it('is rendered in code as plain HTML with the mention subject and preheader', () => {
     const result = buildChatContent(makeEvent('chat.mention'), recipient);
-    expect(result.content.email).toEqual({
-      kind: 'template',
-      templateId: 'tpl-123',
-      customData: {
-        actor_name: 'Alice',
-        context_label: 'Hypha Energy',
-        message_preview: 'Hello team, standup in 5',
-        url: 'https://app.hypha.earth/en/dho/hypha-energy?msg=%24abc123',
-      },
+    expect(result.content.email).toMatchObject({
+      kind: 'plain',
+      subject: expect.stringContaining('mentioned you'),
     });
   });
+});
 
-  it('sends raw (unescaped) text and falls back to "chat" without a space title', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
+describe('buildChatContent — mention event, plain-message recipient', () => {
+  it('gives non-mentioned room members the message push only (no mention email)', () => {
     const result = buildChatContent(makeEvent('chat.mention'), {
       ...recipient,
-      data: {
-        ...recipient.data,
-        messagePreview: '<b>hi</b> & bye',
-        spaceTitle: undefined,
-      },
+      role: 'chat.message',
     });
-    const email = result.content.email as {
-      customData: Record<string, string>;
-    };
-    expect(email.customData.message_preview).toBe('<b>hi</b> & bye');
-    expect(email.customData.context_label).toBe('chat');
+    expect(result.channels).toEqual(['push']);
+    expect(result.requiredTags).toEqual([]);
+    expect(result.content.email).toBeUndefined();
+    const push = result.content.push as { contents: { en: string } };
+    expect(push.contents.en).toBe('Alice: Hello team, standup in 5');
   });
 
-  it('neutralises non-http(s) urls before they reach the template', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
+  it('keeps the mention content for mentioned recipients', () => {
     const result = buildChatContent(makeEvent('chat.mention'), {
       ...recipient,
-      data: { ...recipient.data, url: 'javascript:alert(1)' },
+      role: 'chat.mention',
     });
-    const email = result.content.email as {
-      customData: Record<string, string>;
-    };
-    expect(email.customData.url).toBe('#');
+    expect(result.channels).toEqual(['push', 'email']);
+    expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
   });
+});
 
-  it('passes the notification settings url when the resolver provides it', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
-    const result = buildChatContent(makeEvent('chat.mention'), {
+describe('buildChatContent — mention push without a preview', () => {
+  it('names the space like the email preheader does', () => {
+    const noPreview: Recipient = {
       ...recipient,
-      data: {
-        ...recipient.data,
-        notificationSettingsUrl:
-          'https://app.hypha.earth/en/network/notification-centre',
-      },
-    });
-    const email = result.content.email as {
-      customData: Record<string, string>;
+      role: 'chat.mention',
+      data: { ...recipient.data, messagePreview: '' },
     };
-    expect(email.customData.notification_settings_url).toBe(
-      'https://app.hypha.earth/en/network/notification-centre',
-    );
-  });
-
-  it('omits notification_settings_url when unset so the template default applies', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', 'tpl-123');
-    const result = buildChatContent(makeEvent('chat.mention'), recipient);
-    const email = result.content.email as {
-      customData: Record<string, string>;
-    };
-    expect(email.customData).not.toHaveProperty('notification_settings_url');
-  });
-
-  it('falls back to plain HTML when the env var is unset', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', '');
-    const result = buildChatContent(makeEvent('chat.mention'), recipient);
-    expect(result.content.email).toMatchObject({ kind: 'plain' });
+    const push = buildChatContent(makeEvent('chat.mention'), noPreview).content
+      .push as { contents: { en: string } };
+    expect(push.contents.en).toBe('Alice mentioned you in Hypha Energy.');
   });
 });

@@ -1,14 +1,13 @@
 /**
  * Pure content-selection for `proposal.created` — no DB/web3 imports, so it's cheap to unit test
- * in isolation from `resolver.ts` (which does the actual DB/web3 lookups). Email uses the OneSignal
- * dashboard template when `EMAIL_TEMPLATE_PROPOSAL_CREATED_{CREATOR,MEMBERS}` is set, else the
- * locally rendered plain content (the fallback); push likewise uses
- * `PUSH_TEMPLATE_PROPOSAL_CREATED_{CREATOR,MEMBERS}` when set, else plain.
+ * in isolation from `resolver.ts` (which does the actual DB/web3 lookups). Email and push are
+ * rendered in code (`template/`) - no OneSignal dashboard templates (#2549).
  */
-import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../../constants';
+import {
+  TAG_SUB_NEW_PROPOSAL_OPEN,
+  TAG_SUB_OWN_ACTIONS,
+} from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
-import { resolveEmailTemplate } from '../../core/email-template';
-import { resolvePushTemplate } from '../../core/push-template';
 import type { ProposalCreatedEvent } from '../../core/types';
 import {
   emailProposalCreationForCreator,
@@ -29,39 +28,15 @@ export const buildProposalCreatedContent: ContentBuilder<
     ? recipient.displayName
     : (recipient.data?.creatorName as string | undefined);
 
-  const props = { creatorName, proposalLabel, spaceTitle };
   const url = recipient.data?.url as string | undefined;
-  const templatePush = resolvePushTemplate(
-    isCreator
-      ? 'PUSH_TEMPLATE_PROPOSAL_CREATED_CREATOR'
-      : 'PUSH_TEMPLATE_PROPOSAL_CREATED_MEMBERS',
-    {
-      ...(isCreator ? {} : { creator_name: creatorName }),
-      space_title: spaceTitle,
-      proposal_title: recipient.data?.proposalTitle as string | undefined,
-      proposal_kind: proposalLabel,
-      url,
-    },
+  const props = {
+    creatorName,
+    proposalLabel,
+    proposalTitle: recipient.data?.proposalTitle as string | undefined,
+    spaceTitle,
     url,
-  );
-  const templateEmail = resolveEmailTemplate(
-    isCreator
-      ? 'EMAIL_TEMPLATE_PROPOSAL_CREATED_CREATOR'
-      : 'EMAIL_TEMPLATE_PROPOSAL_CREATED_MEMBERS',
-    {
-      // creator variant greets the recipient; the members variant names who created it
-      ...(isCreator
-        ? { user_name: creatorName }
-        : { creator_name: creatorName }),
-      space_title: spaceTitle,
-      proposal_title: recipient.data?.proposalTitle as string | undefined,
-      proposal_kind: proposalLabel,
-      url,
-      notification_settings_url: recipient.data?.notificationSettingsUrl as
-        | string
-        | undefined,
-    },
-  );
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
+  };
   const email = isCreator
     ? emailProposalCreationForCreator(props)
     : emailProposalCreationForMembers(props);
@@ -71,17 +46,19 @@ export const buildProposalCreatedContent: ContentBuilder<
 
   return {
     channels: ['push', 'email'],
-    requiredTags: { [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true' },
+    // the creator's own-action confirmation is its own group (#2549 D3/D9)
+    requiredTags: [isCreator ? TAG_SUB_OWN_ACTIONS : TAG_SUB_NEW_PROPOSAL_OPEN],
     content: {
-      push: templatePush ?? {
+      push: {
         kind: 'plain',
         contents: push.contents,
         headings: push.headings,
         url,
       },
-      email: templateEmail ?? {
+      email: {
         kind: 'plain',
         subject: email.subject,
+        preheader: email.preheader,
         body: email.body,
       },
     },

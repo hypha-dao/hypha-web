@@ -169,6 +169,7 @@ export function EcosystemMembershipModules({
   const { persons, spaces, isLoading } = useMembers({
     spaceSlug,
     paginationDisabled: true,
+    energySharingOnly: true,
   });
 
   const individuals = useMemo<MembershipPreview[]>(

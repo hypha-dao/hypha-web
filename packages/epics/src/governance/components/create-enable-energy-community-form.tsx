@@ -101,13 +101,26 @@ const internalUnitsToPriceDisplay = (units: string): string => {
   return (value / 100).toFixed(2);
 };
 
-const createEnableEnergyCommunitySchema = (t: (key: string) => string) => {
+const spaceMemberRecipientSchema = (
+  t: (key: string) => string,
+  spaceMemberAddresses: ReadonlySet<string>,
+) =>
+  z
+    .string()
+    .trim()
+    .regex(ADDRESS_RE, t('validation.selectMemberOrSpace'))
+    .refine(
+      (value) => spaceMemberAddresses.has(value.toLowerCase()),
+      t('validation.mustBeSpaceMember'),
+    );
+
+const createEnableEnergyCommunitySchema = (
+  t: (key: string) => string,
+  spaceMemberAddresses: ReadonlySet<string>,
+) => {
   const percentageString = createPercentageStringSchema(t);
   const memberRowSchema = z.object({
-    recipient: z
-      .string()
-      .trim()
-      .regex(ADDRESS_RE, t('validation.selectMemberOrSpace')),
+    recipient: spaceMemberRecipientSchema(t, spaceMemberAddresses),
     meterCount: z
       .string()
       .trim()
@@ -289,9 +302,22 @@ export const CreateEnableEnergyCommunityForm = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
+  const spaceMemberAddresses = React.useMemo(() => {
+    const addresses = new Set<string>();
+    for (const member of members) {
+      const address = member.address?.trim().toLowerCase();
+      if (address) addresses.add(address);
+    }
+    for (const space of spaces) {
+      const address = space.address?.trim().toLowerCase();
+      if (address) addresses.add(address);
+    }
+    return addresses;
+  }, [members, spaces]);
   const schema = React.useMemo(
-    () => createEnableEnergyCommunitySchema((key) => t(key)),
-    [t],
+    () =>
+      createEnableEnergyCommunitySchema((key) => t(key), spaceMemberAddresses),
+    [t, spaceMemberAddresses],
   );
   const defaultEnergyTokenName = t('forms.defaultEnergyTokenName');
   const defaultEnergyTokenSymbol = t('forms.defaultEnergyTokenSymbol');

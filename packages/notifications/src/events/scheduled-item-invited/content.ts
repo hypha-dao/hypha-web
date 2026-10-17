@@ -8,15 +8,7 @@
 import type { ContentBuilder } from '../../core/content-builder';
 import type { ScheduledItemInvitedEvent } from '../../core/types';
 import { TAG_MEETING_CONSENT } from '../../constants/tags';
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import { emailScheduledItemInvitation } from '../../template';
 
 function sanitizeUrl(url: string): string {
   try {
@@ -49,36 +41,6 @@ function formatWhen(
   return `${startLabel} – ${endTime}`;
 }
 
-function buildInvitationEmailBody(input: {
-  title: string;
-  spaceTitle: string;
-  whenLabel: string;
-  /** Already sanitized by the caller — sanitizing again here would re-resolve a `'#'` fallback against a placeholder base and produce a broken-looking absolute URL (a bug in the code this was re-derived from). */
-  joinUrl: string;
-  description?: string | null;
-}): string {
-  const safeTitle = escapeHtml(input.title);
-  const safeSpace = escapeHtml(input.spaceTitle);
-  const safeWhen = escapeHtml(input.whenLabel);
-  const safeUrl = escapeHtml(input.joinUrl);
-  const safeDescription = input.description?.trim()
-    ? `<p style="margin:16px 0 0;color:#555;">${escapeHtml(
-        input.description.trim(),
-      )}</p>`
-    : '';
-
-  return `<div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;">
-  <p style="margin:0 0 8px;font-size:14px;color:#555;">${safeSpace}</p>
-  <h1 style="margin:0 0 12px;font-size:22px;">You're invited: ${safeTitle}</h1>
-  <p style="margin:0 0 20px;font-size:15px;color:#333;">${safeWhen}</p>
-  <p style="margin:0 0 24px;">
-    <a href="${safeUrl}" style="display:inline-block;background:#6d28d9;color:#fff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:10px;">Join meeting</a>
-  </p>
-  <p style="margin:0;font-size:13px;color:#666;">Or copy this link:<br><a href="${safeUrl}" style="color:#6d28d9;word-break:break-all;">${safeUrl}</a></p>
-  ${safeDescription}
-</div>`;
-}
-
 export const buildScheduledItemInvitedContent: ContentBuilder<
   ScheduledItemInvitedEvent
 > = (event) => {
@@ -97,10 +59,18 @@ export const buildScheduledItemInvitedContent: ContentBuilder<
   const pushUrl = safeJoinUrl === '#' ? undefined : safeJoinUrl;
   const whenLabel = formatWhen(startsAt, endsAt, lang, timezone);
   const heading = `Invitation: ${title.trim()}`;
+  const invitation = emailScheduledItemInvitation({
+    title: title.trim(),
+    spaceTitle: spaceTitle.trim(),
+    whenLabel,
+    joinUrl: safeJoinUrl,
+    description,
+    settingsUrl: event.payload.settingsUrl,
+  });
 
   return {
     channels,
-    requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
+    requiredTags: [TAG_MEETING_CONSENT],
     content: {
       push: channels.includes('push')
         ? {
@@ -113,14 +83,9 @@ export const buildScheduledItemInvitedContent: ContentBuilder<
       email: channels.includes('email')
         ? {
             kind: 'plain',
-            subject: heading,
-            body: buildInvitationEmailBody({
-              title: title.trim(),
-              spaceTitle: spaceTitle.trim(),
-              whenLabel,
-              joinUrl: safeJoinUrl,
-              description,
-            }),
+            subject: invitation.subject,
+            preheader: invitation.preheader,
+            body: invitation.body,
           }
         : undefined,
     },

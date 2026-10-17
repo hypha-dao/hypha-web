@@ -5,6 +5,7 @@ import {
   getSpaceDhoPath,
 } from '@hypha-platform/core/server';
 import { db, people } from '@hypha-platform/storage-postgres';
+import { buildNotificationSettingsUrl } from '../../core/notification-settings-url';
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type {
   Recipient,
@@ -86,6 +87,7 @@ export const resolveSignalNoticeRecipients: RecipientResolver<
     spaceTitle: space.title,
     actorDisplayName,
     url,
+    notificationSettingsUrl: buildNotificationSettingsUrl(),
     dueAt: event.payload.dueAt ?? null,
   };
 

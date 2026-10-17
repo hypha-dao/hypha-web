@@ -44,6 +44,7 @@ export const AddEnergyMemberPlugin = ({
           members={members}
           spaces={spaces}
           defaultRecipientType="member"
+          allowManualAddress={false}
         />
         <FormField
           control={control}

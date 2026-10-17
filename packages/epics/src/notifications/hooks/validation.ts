@@ -7,15 +7,13 @@ export const notificationSubscriptionSchema = z.object({
   title: z.string(),
   description: z.string(),
   tagName: z.enum(SUBSCRIPTION_TAGS),
-  tagValue: z.boolean().default(false),
-  disabled: z.boolean().optional(),
+  tagValue: z.boolean().default(true),
+  group: z.string(),
 });
 
 export const schemaNotificationCentreForm = z.object({
-  emailNotifications: yesNoEnum.default('no'),
-  browserNotifications: yesNoEnum.default('no'),
-  mentionNotificationsConsent: yesNoEnum.default('yes'),
-  meetingNotificationsConsent: yesNoEnum.default('no'),
+  emailNotifications: yesNoEnum.default('yes'),
+  browserNotifications: yesNoEnum.default('yes'),
   subscriptions: z.array(notificationSubscriptionSchema),
 });
 

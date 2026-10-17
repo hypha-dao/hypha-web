@@ -3,12 +3,10 @@
  * `spaceTitle`/`actorDisplayName`/`url` to each `Recipient.data` since they're the same for
  * every assignee. Email only — the original action never sent push for this type.
  */
+import { TAG_SUB_SIGNALS } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import type { SignalAssignedEvent } from '../../core/types';
-import {
-  buildSignalAssignedEmailBody,
-  buildSignalAssignedEmailSubject,
-} from '../../actions/notify-signal-assigned.utils';
+import { emailSignalAssigned } from '../../template';
 
 export const buildSignalAssignedContent: ContentBuilder<SignalAssignedEvent> = (
   event,
@@ -19,23 +17,24 @@ export const buildSignalAssignedContent: ContentBuilder<SignalAssignedEvent> = (
     | string
     | undefined;
   const url = recipient.data?.url as string;
-  const title = event.payload.signalTitle.trim() || 'a signal';
+  const email = emailSignalAssigned({
+    signalTitle: event.payload.signalTitle,
+    spaceTitle,
+    actorName: actorDisplayName,
+    dueAt: event.payload.dueAt ?? (recipient.data?.dueAt as string | null),
+    url,
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
+  });
 
   return {
     channels: ['email'],
-    requiredTags: {},
+    requiredTags: [TAG_SUB_SIGNALS],
     content: {
       email: {
         kind: 'plain',
-        subject: buildSignalAssignedEmailSubject(title),
-        body: buildSignalAssignedEmailBody({
-          signalTitle: title,
-          spaceTitle,
-          actorDisplayName,
-          url,
-          dueAt:
-            event.payload.dueAt ?? (recipient.data?.dueAt as string | null),
-        }),
+        subject: email.subject,
+        preheader: email.preheader,
+        body: email.body,
       },
     },
   };

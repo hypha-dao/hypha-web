@@ -12,6 +12,8 @@ export * from './events/signal-assigned';
 export * from './events/signal-notice';
 export * from './events/scheduled-item-invited';
 export * from './events/chat';
+export * from './events/call-started';
+export * from './events/scheduled-item-reminder';
 export * from './actions';
 export * from './actions/notify-scheduled-item-reminder';
 export * from './actions/dispatch-scheduled-item-invitation';
