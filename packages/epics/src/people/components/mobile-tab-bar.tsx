@@ -1,26 +1,33 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
+  ClipboardList,
+  Earth,
   Globe2,
   House,
   LayoutGrid,
   MessagesSquare,
   Plus,
   Settings,
+  Target,
   Wallet,
+  Waves,
 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useMe } from '@hypha-platform/core/client';
+import { useMe, useSpaceBySlug } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
+import type { SpaceSectionNavKey } from '../../common/space-section-nav';
+import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
 import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
 import { useConversationUnreadCount } from './my-connections';
@@ -32,7 +39,7 @@ const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
 
 const iconClass = 'block h-5 w-5 shrink-0';
 /** Bar is fixed. Glyphs use px so the spacing scale cannot make them taller than the row. */
-const TAB_BAR_PX = 64;
+const TAB_BAR_PX = 68;
 const SUB_NAV_PX = 56;
 const TAB_GLYPH_PX = 28;
 const TAB_CENTER_GLYPH_PX = 36;
@@ -41,8 +48,22 @@ function segmentActive(pathname: string, segment: string) {
   return pathname.split('/').includes(segment);
 }
 
+function shouldShowMobileSpacesRail(pathname: string) {
+  if (segmentActive(pathname, 'home')) return false;
+  return (
+    segmentActive(pathname, 'connections') ||
+    segmentActive(pathname, 'my-wallet') ||
+    Boolean(getDhoSpaceSlugFromPathname(pathname)) ||
+    isNetworkPath(pathname)
+  );
+}
+
 export function MobileContentFrame({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
+  const params = useParams<{ lang?: string }>();
+  const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
+  const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
+  const showSpacesRail = shouldShowMobileSpacesRail(pathname);
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -71,11 +92,22 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
+        showSpacesRail && 'max-xl:flex max-xl:w-full max-xl:min-w-0',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
     >
-      {children}
+      {showSpacesRail ? (
+        <div
+          className={cn(
+            'sticky top-0 z-10 flex shrink-0 self-start xl:hidden',
+            'h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))]',
+          )}
+        >
+          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} />
+        </div>
+      ) : null}
+      <div className={cn(showSpacesRail && 'min-w-0 flex-1')}>{children}</div>
     </div>
   );
 }
@@ -85,8 +117,11 @@ export function MobileTabBar({
 }: {
   spaceMemoryEnabled?: boolean;
 }) {
-  void spaceMemoryEnabled;
   const t = useTranslations('Navigation');
+  const tCommon = useTranslations('Common');
+  const tCoherence = useTranslations('CoherenceTab');
+  const tNetwork = useTranslations('NetworkExchange');
+  const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
@@ -114,12 +149,114 @@ export function MobileTabBar({
   }, [pathname]);
 
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
+  const { space } = useSpaceBySlug(spaceSlug ?? '');
   const networkRoute = isNetworkPath(pathname);
-  /** Space and network screens trade the section strip for the spaces list. */
-  const showSpacesSubnav = Boolean(spaceSlug) || networkRoute;
+  const secondLevel = useMemo(() => {
+    if (spaceSlug) {
+      const labelFor = (key: SpaceSectionNavKey): string => {
+        switch (key) {
+          case 'overview':
+            return tCommon('overview');
+          case 'agreements':
+            return tCommon('Agreements');
+          case 'members':
+            return tCommon('Members');
+          case 'treasury':
+            return tCommon('Treasury');
+          case 'calendar':
+            return tCommon('Calendar');
+          case 'coherence':
+            return tCommon('Coherence');
+          case 'pipeline':
+            return tCommon('Pipeline');
+          case 'energy':
+            return tCommon('Energy');
+          case 'rewards':
+            return tTreasury('rewardsSection.title');
+          case 'memory':
+            return tCoherence('spaceMemory');
+          default:
+            return key;
+        }
+      };
+      return buildSpaceSectionNavItems({
+        lang,
+        spaceSlug,
+        pathname,
+        pipelineEnabled: Boolean(space?.pipelineEnabled),
+        coherenceEnabled: true,
+        memoryEnabled: spaceMemoryEnabled,
+      }).map((item) => {
+        const Icon = SPACE_SECTION_NAV_ICONS[item.key];
+        return {
+          key: item.key,
+          href: item.href,
+          label: labelFor(item.key),
+          active: item.active,
+          icon: <Icon className={iconClass} strokeWidth={1.25} />,
+        };
+      });
+    }
+    if (!networkRoute) return [];
+    const base = `/${lang}/network`;
+    const links = [
+      {
+        key: 'network',
+        label: tNetwork('navNetwork'),
+        href: base,
+        icon: Earth,
+        exact: true,
+      },
+      {
+        key: 'needs',
+        label: tNetwork('navNeeds'),
+        href: `${base}/needs`,
+        icon: ClipboardList,
+      },
+      {
+        key: 'action',
+        label: tNetwork('navAction'),
+        href: `${base}/proof-of-action`,
+        icon: Waves,
+      },
+      {
+        key: 'impact',
+        label: tNetwork('navImpact'),
+        href: `${base}/proof-of-impact`,
+        icon: Target,
+      },
+      {
+        key: 'create',
+        label: tNetwork('navCreate'),
+        href: `${base}/create`,
+        icon: Plus,
+      },
+    ] as const;
+    return links.map((link) => ({
+      key: link.key,
+      href: link.href,
+      label: link.label,
+      active:
+        'exact' in link && link.exact
+          ? pathname === base || pathname === `${base}/`
+          : pathname === link.href || pathname.startsWith(`${link.href}/`),
+      icon: <link.icon className={iconClass} strokeWidth={1.25} />,
+    }));
+  }, [
+    lang,
+    networkRoute,
+    pathname,
+    space?.pipelineEnabled,
+    spaceMemoryEnabled,
+    spaceSlug,
+    tCoherence,
+    tCommon,
+    tNetwork,
+    tTreasury,
+  ]);
 
   useEffect(() => {
-    const px = TAB_BAR_PX + (showSpacesSubnav ? SUB_NAV_PX : 0);
+    const px = TAB_BAR_PX + (secondLevel.length > 0 ? SUB_NAV_PX : 0);
     document.documentElement.style.setProperty(
       '--mobile-tab-offset',
       `calc(${px}px + env(safe-area-inset-bottom, 0px))`,
@@ -127,7 +264,7 @@ export function MobileTabBar({
     return () => {
       document.documentElement.style.removeProperty('--mobile-tab-offset');
     };
-  }, [showSpacesSubnav]);
+  }, [secondLevel.length]);
 
   const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/connections`;
@@ -212,12 +349,36 @@ export function MobileTabBar({
         }}
         aria-label={t('openMenu')}
       >
-        {showSpacesSubnav ? (
+        {secondLevel.length > 0 ? (
           <div
-            className="flex items-center border-b border-border bg-background-2"
+            className="flex overflow-x-auto border-b border-border bg-background-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ height: SUB_NAV_PX }}
+            aria-label={spaceSlug ? t('mySpaces') : t('network')}
           >
-            <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} />
+            {secondLevel.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                className={cn(
+                  'flex min-w-[4.5rem] flex-1 flex-col items-center justify-end gap-1 px-1 pb-1.5 text-muted-foreground',
+                  item.active && 'text-foreground',
+                )}
+              >
+                <span
+                  className={cn(
+                    'grid shrink-0 place-items-center',
+                    item.active && 'border-t border-foreground',
+                  )}
+                  style={{ width: TAB_GLYPH_PX, height: TAB_GLYPH_PX }}
+                >
+                  {item.icon}
+                </span>
+                <span className="max-w-full truncate text-[10px] leading-tight tracking-tight">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
           </div>
         ) : null}
         <div
@@ -296,7 +457,7 @@ function TabLink({
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
       className={cn(
-        'flex flex-col items-center justify-end gap-1 pb-1.5 text-muted-foreground',
+        'flex flex-col items-center justify-end gap-0.5 overflow-visible pb-2 text-muted-foreground',
         active && 'text-foreground',
       )}
     >
@@ -310,7 +471,7 @@ function TabLink({
           </span>
         ) : null}
       </span>
-      <span className="max-w-full truncate px-0.5 text-[10px] leading-none tracking-tight">
+      <span className="max-w-full truncate px-0.5 text-[10px] leading-tight tracking-tight">
         {label}
       </span>
     </Link>

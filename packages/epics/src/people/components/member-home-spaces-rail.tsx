@@ -55,10 +55,12 @@ export function MemberHomeSpacesRail({
   lang,
   spaces,
   isLoading,
+  activeSlug,
 }: {
   lang: Locale;
   spaces: HomeSpace[];
   isLoading?: boolean;
+  activeSlug?: string | null;
 }) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
@@ -113,16 +115,21 @@ export function MemberHomeSpacesRail({
           <>
             {orderedSpaces.map((space) => {
               const iconUrl = resolveSpaceDisplayLogoUrl(space, logoVariant);
+              const active = activeSlug === space.slug;
               return (
                 <Tooltip key={space.id}>
                   <TooltipTrigger asChild>
                     <Link
                       href={`/${lang}/dho/${space.slug}/overview`}
                       aria-label={space.title}
+                      aria-current={active ? 'page' : undefined}
                       className={cn(
                         'relative shrink-0 overflow-hidden rounded-full bg-neutral-3',
-                        'ring-1 ring-transparent transition-[box-shadow,transform] hover:ring-foreground',
+                        'ring-1 transition-[box-shadow,transform]',
                         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                        active
+                          ? 'ring-foreground'
+                          : 'ring-transparent hover:ring-foreground',
                       )}
                       style={{ width: RAIL_ICON, height: RAIL_ICON }}
                     >
