@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { buildProposalSettlementContent } from '../content';
 import type { ProposalSettlementEvent } from '../resolver';
@@ -69,114 +69,22 @@ describe('buildProposalSettlementContent', () => {
   });
 });
 
-describe('buildProposalSettlementContent — email template', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  const linkData = {
-    spaceTitle: 'Hypha Energy',
-    proposalTitle: 'Fund the thing',
-    url: 'https://app.hypha.earth/en/dho/hypha-energy/agreements/proposal/fund',
-    notificationSettingsUrl:
-      'https://app.hypha.earth/en/network/notification-centre',
-  };
-
+describe('buildProposalSettlementContent — rendered in code', () => {
   it.each([
-    [
-      'accepted',
-      accepted,
-      'creator',
-      'EMAIL_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR',
-    ],
-    [
-      'accepted',
-      accepted,
-      'member',
-      'EMAIL_TEMPLATE_PROPOSAL_ACCEPTED_MEMBERS',
-    ],
-    [
-      'rejected',
-      rejected,
-      'creator',
-      'EMAIL_TEMPLATE_PROPOSAL_REJECTED_CREATOR',
-    ],
-    [
-      'rejected',
-      rejected,
-      'member',
-      'EMAIL_TEMPLATE_PROPOSAL_REJECTED_MEMBERS',
-    ],
-  ] as const)('%s / %s uses %s', (_name, evt, role, envVar) => {
-    vi.stubEnv(envVar, 'tpl-x');
-    const result = buildProposalSettlementContent(evt, {
-      personSlug: 'p',
-      role,
-      data: linkData,
-    });
-    expect(result.content.email).toEqual({
-      kind: 'template',
-      templateId: 'tpl-x',
-      customData: {
-        space_title: 'Hypha Energy',
-        proposal_title: 'Fund the thing',
-        url: linkData.url,
-        notification_settings_url: linkData.notificationSettingsUrl,
-      },
-    });
-  });
-
-  it('falls back to plain email without the env var', () => {
-    vi.stubEnv('EMAIL_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR', '');
-    const result = buildProposalSettlementContent(accepted, creatorRecipient);
-    expect(result.content.email).toMatchObject({ kind: 'plain' });
-  });
-
-  it.each([
-    [
-      'accepted',
-      accepted,
-      'creator',
-      'PUSH_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR',
-    ],
-    ['accepted', accepted, 'member', 'PUSH_TEMPLATE_PROPOSAL_ACCEPTED_MEMBERS'],
-    [
-      'rejected',
-      rejected,
-      'creator',
-      'PUSH_TEMPLATE_PROPOSAL_REJECTED_CREATOR',
-    ],
-    ['rejected', rejected, 'member', 'PUSH_TEMPLATE_PROPOSAL_REJECTED_MEMBERS'],
-  ] as const)('push: %s / %s uses %s', (_name, evt, role, envVar) => {
-    vi.stubEnv(envVar, 'push-x');
-    const result = buildProposalSettlementContent(evt, {
-      personSlug: 'p',
-      role,
-      data: { ...linkData, proposalLabel: 'Invite' },
-    });
-    expect(result.content.push).toEqual({
-      kind: 'template',
-      templateId: 'push-x',
-      customData: {
-        space_title: 'Hypha Energy',
-        proposal_title: 'Fund the thing',
-        proposal_kind: 'Invite',
-        url: linkData.url,
-      },
-      url: linkData.url,
-    });
-  });
-
-  it('push: plain fallback carries the launch url', () => {
-    vi.stubEnv('PUSH_TEMPLATE_PROPOSAL_ACCEPTED_CREATOR', '');
-    const result = buildProposalSettlementContent(accepted, {
-      personSlug: 'alice',
-      role: 'creator',
-      data: linkData,
-    });
-    expect(result.content.push).toMatchObject({
-      kind: 'plain',
-      url: linkData.url,
-    });
-  });
+    ['accepted', accepted, 'creator'],
+    ['accepted', accepted, 'member'],
+    ['rejected', rejected, 'creator'],
+    ['rejected', rejected, 'member'],
+  ] as const)(
+    '%s / %s: email and push are plain; push carries the launch url',
+    (_outcome, evt, role) => {
+      const url = 'https://app.hypha.earth/en/dho/x/agreements/proposal/y';
+      const result = buildProposalSettlementContent(evt, {
+        ...(role === 'creator' ? creatorRecipient : memberRecipient),
+        data: { spaceTitle: 'Hypha Energy', proposalTitle: 'Fund', url },
+      });
+      expect(result.content.email).toMatchObject({ kind: 'plain' });
+      expect(result.content.push).toMatchObject({ kind: 'plain', url });
+    },
+  );
 });
