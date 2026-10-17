@@ -143,9 +143,9 @@ function HeatField({
 
 function HeatSkeleton() {
   return (
-    <div className="grid w-full gap-6 sm:grid-cols-2">
+    <div className="flex w-full gap-6 overflow-hidden">
       {Array.from({ length: 2 }, (_, map) => (
-        <div key={map} className="min-w-0">
+        <div key={map} className="w-[11.5rem] shrink-0 sm:w-[13rem]">
           <div className="h-3 w-20 bg-muted" />
           <div className="mt-3 grid grid-cols-4 gap-1">
             {Array.from({ length: PRIORITIES.length * BUCKETS }, (_, cell) => (
@@ -193,13 +193,7 @@ export function SignalHeatMaps({
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
-      <div
-        className={
-          groups.length > 1
-            ? 'grid w-full gap-x-8 gap-y-6 sm:grid-cols-2'
-            : 'grid w-full'
-        }
-      >
+      <div className="-mx-1 flex w-full min-w-0 gap-6 overflow-x-auto px-1 pb-1">
         {groups.map((group) => {
           const label = tSignals.has(`types.${group.type}` as 'types.Need')
             ? tSignals(`types.${group.type}` as 'types.Need')
@@ -208,7 +202,7 @@ export function SignalHeatMaps({
             <Link
               key={group.type}
               href={hrefForType(group.type)}
-              className="block min-w-0 hover:opacity-80"
+              className="block w-[11.5rem] shrink-0 hover:opacity-80 sm:w-[13rem]"
             >
               <span className="flex min-w-0 items-baseline gap-2">
                 <span className="truncate text-1 uppercase tracking-[0.12em] text-muted-foreground">

@@ -24,6 +24,7 @@ import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { useMembers } from '@web/hooks/use-members';
 
 import { OverviewMonth } from './overview-month';
+import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
 
 const VISIBLE_MEMBERS = 8;
@@ -96,48 +97,6 @@ function stampOf(value: string | Date | null | undefined) {
   if (!value) return null;
   const time = value instanceof Date ? value.getTime() : Date.parse(value);
   return Number.isFinite(time) ? time : null;
-}
-
-function weekBuckets(times: number[], weeks = 8) {
-  const counts = Array.from({ length: weeks }, () => 0);
-  const span = 7 * 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  for (const time of times) {
-    const age = Math.floor((now - time) / span);
-    const index = weeks - 1 - age;
-    const current = counts[index];
-    if (age >= 0 && age < weeks && current !== undefined) {
-      counts[index] = current + 1;
-    }
-  }
-  return counts;
-}
-
-function Bars({ values, label }: { values: number[]; label: string }) {
-  const peak = Math.max(1, ...values);
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return (
-    <div className="min-w-0">
-      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-        {label}
-      </p>
-      <div className="mt-3 flex h-16 items-end gap-1" aria-hidden>
-        {values.map((value, index) => (
-          <span
-            key={index}
-            className="min-w-0 flex-1 bg-[color:var(--space-spot,var(--space-accent))]"
-            style={{
-              height: `${Math.max(value > 0 ? 8 : 2, (value / peak) * 100)}%`,
-              opacity: value > 0 ? 0.35 + (value / peak) * 0.65 : 0.12,
-            }}
-          />
-        ))}
-      </div>
-      <p className="sr-only">
-        {label}: {total}
-      </p>
-    </div>
-  );
 }
 
 function sameIds(left: Set<number>, right: Set<number>) {
@@ -489,31 +448,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       );
   }, [openSignals]);
 
-  const memberActivity = useMemo(
-    () =>
-      weekBuckets(
-        openSignals.flatMap((signal) => {
-          const time = stampOf(signal.createdAt);
-          return time == null ? [] : [time];
-        }),
-      ),
-    [openSignals],
-  );
-  const agreementActivity = useMemo(
-    () =>
-      weekBuckets(
-        [
-          ...documents.accepted,
-          ...documents.rejected,
-          ...documents.onVoting,
-        ].flatMap((item) => {
-          const time = stampOf(item.createdAt);
-          return time == null ? [] : [time];
-        }),
-      ),
-    [documents.accepted, documents.onVoting, documents.rejected],
-  );
-
   const people = persons.data ?? [];
   const spaces = memberSpaces.data ?? [];
   const assets = treasuryAssets ?? [];
@@ -602,10 +536,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       return (stampOf(right.createdAt) ?? 0) - (stampOf(left.createdAt) ?? 0);
     })
     .slice(0, 4);
-  const showInsights = !(
-    memberActivity.every((value) => value === 0) &&
-    agreementActivity.every((value) => value === 0)
-  );
   const showTreasury = treasuryLoading || assets.length > 0;
   const showEcosystem = spaces.length > 0 || space?.parentId != null;
 
@@ -766,79 +696,84 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         </div>
       </div>
 
-      {showInsights || showTreasury ? (
-        <div className="grid items-start gap-3 lg:grid-cols-2">
-          {showInsights ? (
-            <Panel
-              title={t('insightsTitle')}
-              href={`${home}/members`}
-              openLabel={t('open')}
-            >
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Bars values={memberActivity} label={t('insightsMembers')} />
-                <Bars
-                  values={agreementActivity}
-                  label={t('insightsAgreements')}
-                />
-              </div>
-            </Panel>
-          ) : null}
+      <div
+        className={
+          showTreasury
+            ? 'grid items-start gap-3 lg:grid-cols-2'
+            : 'grid items-start gap-3'
+        }
+      >
+        <Panel
+          title={t('insightsTitle')}
+          href={`${home}/coherence`}
+          openLabel={t('open')}
+        >
+          <div className="min-w-0 overflow-x-auto">
+            <SignalHeatMaps
+              signals={openSignals}
+              isLoading={signalsLoading}
+              empty={t('signalsEmpty')}
+              hrefForType={(type) =>
+                `${home}/coherence?type=${encodeURIComponent(type)}`
+              }
+            />
+          </div>
+        </Panel>
 
-          {showTreasury ? (
-            <Panel
-              title={t('treasuryTitle')}
-              href={`${home}/treasury`}
-              openLabel={t('open')}
-            >
-              {treasuryLoading ? (
-                <RowsSkeleton />
-              ) : assets.length === 0 ? (
-                <Quiet>{t('treasuryEmpty')}</Quiet>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <ul className="grid grid-cols-3 gap-3">
-                    {assets.slice(0, 3).map((asset) => (
-                      <li key={asset.symbol} className="min-w-0">
-                        <span
-                          className="block truncate text-3 tabular-nums text-foreground"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {format.number(asset.value, {
-                            maximumFractionDigits: asset.value >= 100 ? 0 : 2,
-                          })}
-                        </span>
-                        <span className="mt-1 block truncate text-1 text-neutral-11">
-                          {asset.symbol}
-                        </span>
-                      </li>
+        {showTreasury ? (
+          <Panel
+            title={t('treasuryTitle')}
+            href={`${home}/treasury`}
+            openLabel={t('open')}
+          >
+            {treasuryLoading ? (
+              <RowsSkeleton />
+            ) : assets.length === 0 ? (
+              <Quiet>{t('treasuryEmpty')}</Quiet>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <ul className="grid grid-cols-3 gap-3">
+                  {assets.slice(0, 3).map((asset) => (
+                    <li key={asset.symbol} className="min-w-0">
+                      <span
+                        className="block truncate text-3 tabular-nums text-foreground"
+                        style={{ fontFamily: 'var(--font-family-heading)' }}
+                      >
+                        {format.number(asset.value, {
+                          maximumFractionDigits: asset.value >= 100 ? 0 : 2,
+                        })}
+                      </span>
+                      <span className="mt-1 block truncate text-1 text-neutral-11">
+                        {asset.symbol}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div>
+                  <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                    {t('distributionTitle')}
+                  </p>
+                  <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
+                    {assets.map((asset) => (
+                      <span
+                        key={asset.symbol}
+                        className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
+                        style={{
+                          width: `${(asset.value / assetTotal) * 100}%`,
+                          opacity: 0.35 + (asset.value / assetTotal) * 0.65,
+                        }}
+                        title={`${asset.symbol} ${format.number(asset.value, {
+                          maximumFractionDigits: 2,
+                        })}`}
+                      />
                     ))}
-                  </ul>
-                  <div>
-                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                      {t('distributionTitle')}
-                    </p>
-                    <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
-                      {assets.map((asset) => (
-                        <span
-                          key={asset.symbol}
-                          className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
-                          style={{
-                            width: `${(asset.value / assetTotal) * 100}%`,
-                            opacity: 0.35 + (asset.value / assetTotal) * 0.65,
-                          }}
-                          title={`${asset.symbol} ${format.number(asset.value, {
-                            maximumFractionDigits: 2,
-                          })}`}
-                        />
-                      ))}
-                    </div>
                   </div>
                 </div>
-              )}
-            </Panel>
-          ) : null}
-        </div>
-      ) : null}
+              </div>
+            )}
+          </Panel>
+        ) : null}
+      </div>
 
       {showEcosystem ? (
         <Panel

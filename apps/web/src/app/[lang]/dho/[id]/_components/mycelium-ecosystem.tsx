@@ -178,14 +178,22 @@ function layoutField(
   const path = pathTo(tree, focus.id) ?? [focus];
   const parent = path.length > 1 ? path[path.length - 2] : null;
   const cx = width / 2;
-  const cy = height / 2;
   // Leave room under each node so the name is not clipped by the frame.
   const labelPad = 28;
   const minDim = Math.max(160, Math.min(width, height) - labelPad * 2);
+  const nodeScale = Math.min(1.45, Math.max(1, minDim / 380));
+  // At n-1+, reserve a top band for parent/siblings and drop the focus
+  // subtree so labels and orbits do not collide.
+  const hasParent = parent != null;
+  const topBand = hasParent ? Math.max(72, Math.min(120, height * 0.22)) : 0;
+  const cy = hasParent
+    ? Math.min(height - labelPad - 48, topBand + (height - topBand) * 0.55)
+    : height / 2;
   // Fill most of the frame so sparse trees (parent + focus) are not a tiny
   // cluster in the middle of a tall canvas.
-  const reach = Math.max(140, minDim * 0.4);
-  const nodeScale = Math.min(1.45, Math.max(1, minDim / 380));
+  const reach = hasParent
+    ? Math.max(96, Math.min(minDim * 0.28, (height - topBand) * 0.32))
+    : Math.max(140, minDim * 0.4);
   const visible = prune(focus, 2);
   const root = d3.hierarchy(visible);
   const laid = d3
@@ -199,6 +207,7 @@ function layoutField(
     .descendants()
     .filter((node) => node.depth === 1)
     .map((node) => node.x ?? 0);
+  // Rotate so the largest open arc is at the top (parent band / label room).
   const rotation = clearTop(childAngles);
   const point = (node: d3.HierarchyPointNode<SpaceNode>) => {
     const angle = (node.x ?? 0) + rotation - Math.PI / 2;
@@ -253,14 +262,10 @@ function layoutField(
 
   if (parent) {
     const focusNode = byId.get(focus.id);
-    const parentR = Math.round(18 * nodeScale);
-    const parentDist = Math.max(
-      reach * 0.52,
-      (focusNode?.r ?? 36) + parentR + 56,
-    );
+    const parentR = Math.round(16 * nodeScale);
     const parentPoint = {
       x: cx,
-      y: cy - parentDist,
+      y: Math.max(parentR + labelPad, topBand * 0.45),
     };
     nodes.push({
       id: parent.id,
@@ -289,26 +294,33 @@ function layoutField(
       });
     }
 
+    // Siblings sit in a horizontal row with the parent — never arc down into
+    // the focus cluster (that caused the n-1 overlap).
     const parentNode = findNode(tree, parent.id);
     const siblings = (parentNode?.children ?? [])
       .filter((child) => child.id !== focus.id && !byId.has(child.id))
-      .slice(0, 6);
-    const siblingR = Math.round(20 * nodeScale);
-    const siblingDist = Math.max(parentDist * 0.92, parentR + siblingR + 44);
-    const down = Math.PI / 2;
+      .slice(0, 4);
+    const siblingR = Math.round(15 * nodeScale);
+    const sidePad = siblingR + 20;
+    const usableWidth = Math.max(120, width - sidePad * 2);
+    const siblingGap = Math.max(
+      siblingR * 2 + 36,
+      Math.min(usableWidth / Math.max(siblings.length + 1, 1), 120),
+    );
     siblings.forEach((sibling, index) => {
-      const half = Math.ceil(siblings.length / 2);
-      const onLeft = index < half;
-      const slot = onLeft ? index : index - half;
-      const countSide = onLeft ? half : siblings.length - half;
-      const step = countSide <= 1 ? 0 : slot / (countSide - 1);
-      const angle = onLeft
-        ? down + 0.5 + step * 0.85
-        : down - 0.5 - step * 0.85;
+      const offset = (index - (siblings.length - 1) / 2) * siblingGap;
+      // Alternate slightly above/below the parent row so labels do not stack.
       const at = {
-        x: parentPoint.x + Math.cos(angle) * siblingDist,
-        y: parentPoint.y + Math.sin(angle) * siblingDist,
+        x: Math.min(width - sidePad, Math.max(sidePad, parentPoint.x + offset)),
+        y: parentPoint.y + (index % 2 === 0 ? -10 : 10),
       };
+      // Keep siblings clear of the focus node vertically.
+      if (
+        focusNode &&
+        Math.abs(at.y - focusNode.y) < focusNode.r + siblingR + 40
+      ) {
+        at.y = Math.min(at.y, focusNode.y - focusNode.r - siblingR - 48);
+      }
       nodes.push({
         id: sibling.id,
         name: sibling.name,
@@ -331,7 +343,7 @@ function layoutField(
       links.push({
         id: `sibling-${sibling.id}`,
         ...fromParent,
-        bend: index % 2 === 0 ? 16 : -16,
+        bend: index % 2 === 0 ? 10 : -10,
       });
     });
   }
@@ -602,7 +614,8 @@ export function MyceliumEcosystem({
   const showMembers =
     lens === 'structure' && Math.min(size.width, size.height) >= 280;
   const focusNode = placedById.get(focus.id);
-  const chipRadius = (focusNode?.r ?? 36) + 34;
+  const chipRadius = (focusNode?.r ?? 36) + 40;
+  const hasParentContext = path.length > 1;
 
   const memberChips = useMemo(() => {
     if (!showMembers || !focusNode) return [];
@@ -616,26 +629,43 @@ export function MyceliumEcosystem({
       initials?: string;
       imageUrl?: string | null;
     }> = [];
-    const spokes = field.nodes
-      .filter((node) => node.id !== focus.id)
+    const structureNodes = field.nodes.filter((node) => node.id !== focus.id);
+    const spokes = structureNodes
       .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x))
       .sort((left, right) => left - right);
-    let openAngle = Math.PI;
-    let openGap = Math.PI;
+    // Prefer the lower hemisphere when a parent band owns the top.
+    let openAngle = hasParentContext ? Math.PI / 2 : Math.PI;
+    let openGap = hasParentContext ? Math.PI * 0.9 : Math.PI;
     if (spokes.length > 0) {
       let bestGap = 0;
+      let bestMid = openAngle;
       for (let index = 0; index < spokes.length; index += 1) {
         const start = spokes[index] ?? 0;
         const end = spokes[index + 1] ?? (spokes[0] ?? 0) + Math.PI * 2;
         const gap = end - start;
+        const mid = start + gap / 2;
+        // At n-1, only consider gaps that open downward.
+        if (hasParentContext) {
+          const normalized =
+            ((mid % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          const downward =
+            normalized > Math.PI * 0.15 && normalized < Math.PI * 0.85;
+          if (!downward) continue;
+        }
         if (gap > bestGap) {
           bestGap = gap;
-          openAngle = start + gap / 2;
+          bestMid = mid;
         }
       }
-      openGap = bestGap;
+      if (bestGap > 0) {
+        openGap = bestGap;
+        openAngle = bestMid;
+      }
     }
-    const spread = Math.min(Math.PI * 1.35, Math.max(0.7, openGap * 0.72));
+    const spread = Math.min(
+      hasParentContext ? Math.PI * 0.85 : Math.PI * 1.1,
+      Math.max(0.55, openGap * 0.65),
+    );
     const place = (
       items: Array<{
         key: string;
@@ -658,6 +688,8 @@ export function MyceliumEcosystem({
         });
       });
     };
+    // People only around the focus — spaces/agents on a second ring so avatars
+    // do not stack into one crowded fan.
     place(
       people.map((person) => ({
         key: `person-${person.id}`,
@@ -689,8 +721,8 @@ export function MyceliumEcosystem({
           imageUrl: space.logoUrl,
         };
       }),
-      openAngle + spread * 0.15,
-      chipRadius + 28,
+      openAngle + (hasParentContext ? 0 : spread * 0.2),
+      chipRadius + (hasParentContext ? 36 : 28),
     );
     place(
       shownAgents.map((agent) => {
@@ -701,15 +733,17 @@ export function MyceliumEcosystem({
           initials: getAgentAvatarInitials(label),
         };
       }),
-      openAngle - spread * 0.15,
-      chipRadius + 28,
+      openAngle - (hasParentContext ? 0 : spread * 0.2),
+      chipRadius + (hasParentContext ? 52 : 28),
     );
     return chips;
   }, [
     chipRadius,
     field.nodes,
+    focus.id,
     focus.slug,
     focusNode,
+    hasParentContext,
     joinedSpaces,
     lang,
     people,
