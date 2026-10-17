@@ -60,6 +60,7 @@
     "groupCall": "Chamada de grupo",
     "callPerson": "Ligar a {name}",
     "videoPerson": "Videochamada com {name}",
+    "connect": "Conectar",
     "chatPerson": "Conversar com {name}",
     "matrixUnavailable": "O chat ainda não está ligado.",
     "matrixFailed": "Não foi possível abrir esse chat.",

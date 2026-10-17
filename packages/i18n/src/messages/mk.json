@@ -60,6 +60,7 @@
     "groupCall": "Групен повик",
     "callPerson": "Повикај го {name}",
     "videoPerson": "Видео повик со {name}",
+    "connect": "Поврзи",
     "chatPerson": "Разговор со {name}",
     "matrixUnavailable": "Разговорот сè уште не е поврзан.",
     "matrixFailed": "Тој разговор не можеше да се отвори.",

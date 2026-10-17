@@ -60,6 +60,7 @@
     "groupCall": "Groepsgesprek",
     "callPerson": "Bel {name}",
     "videoPerson": "Videogesprek met {name}",
+    "connect": "Verbinden",
     "chatPerson": "Chat met {name}",
     "matrixUnavailable": "De chat is nog niet verbonden.",
     "matrixFailed": "Die chat kon niet worden geopend.",

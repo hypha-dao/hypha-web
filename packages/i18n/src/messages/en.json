@@ -507,6 +507,7 @@
     "groupCall": "Group call",
     "callPerson": "Call {name}",
     "videoPerson": "Video call {name}",
+    "connect": "Connect",
     "chatPerson": "Chat with {name}",
     "matrixUnavailable": "Chat is not connected yet.",
     "matrixFailed": "That chat could not be opened.",

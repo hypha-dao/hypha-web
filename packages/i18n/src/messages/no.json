@@ -60,6 +60,7 @@
     "groupCall": "Gruppesamtale",
     "callPerson": "Ring {name}",
     "videoPerson": "Videosamtale med {name}",
+    "connect": "Koble til",
     "chatPerson": "Chat med {name}",
     "matrixUnavailable": "Chatten er ikke koblet til ennå.",
     "matrixFailed": "Den chatten kunne ikke åpnes.",
