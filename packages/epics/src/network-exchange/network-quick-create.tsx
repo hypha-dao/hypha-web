@@ -60,7 +60,13 @@ function personaOf(value: string | null | undefined): Persona {
   return 'member';
 }
 type StoryMedia = 'photo' | 'video' | 'voice';
-type MemberSpace = { slug: string; title: string };
+type MemberSpace = {
+  slug: string;
+  title: string;
+  logoUrl?: string | null;
+  ecosystemLogoUrlLight?: string | null;
+  ecosystemLogoUrlDark?: string | null;
+};
 type Party = { slug: string; offers: CapitalKey[] };
 
 function toggle(list: CapitalKey[], key: CapitalKey): CapitalKey[] {
@@ -83,7 +89,13 @@ function signalKindLabel(
 }
 
 function normalizeMemberSpaces(
-  rows: readonly { slug?: string | null; title?: string | null }[],
+  rows: readonly {
+    slug?: string | null;
+    title?: string | null;
+    logoUrl?: string | null;
+    ecosystemLogoUrlLight?: string | null;
+    ecosystemLogoUrlDark?: string | null;
+  }[],
 ): MemberSpace[] {
   const seen = new Set<string>();
   const next: MemberSpace[] = [];
@@ -92,7 +104,13 @@ function normalizeMemberSpaces(
     const title = row.title?.trim() ?? '';
     if (!slug || !title || seen.has(slug)) continue;
     seen.add(slug);
-    next.push({ slug, title });
+    next.push({
+      slug,
+      title,
+      logoUrl: row.logoUrl ?? null,
+      ecosystemLogoUrlLight: row.ecosystemLogoUrlLight ?? null,
+      ecosystemLogoUrlDark: row.ecosystemLogoUrlDark ?? null,
+    });
   }
   return next;
 }
@@ -104,7 +122,7 @@ export function NetworkQuickCreate({
 }: {
   lang: Locale;
   /** Prefer the member's known spaces (e.g. home intelligence) over a second fetch. */
-  memberSpaces?: readonly { slug: string; title: string }[];
+  memberSpaces?: readonly MemberSpace[];
   /** Limit the actions. The create page asks only for a new space. */
   kinds?: readonly Kind[];
 }) {
@@ -162,7 +180,12 @@ export function NetworkQuickCreate({
   };
 
   const memberSpacesKey = (memberSpaces ?? [])
-    .map((space) => `${space.slug}:${space.title}`)
+    .map(
+      (space) =>
+        `${space.slug}:${space.title}:${space.logoUrl ?? ''}:${
+          space.ecosystemLogoUrlLight ?? ''
+        }:${space.ecosystemLogoUrlDark ?? ''}`,
+    )
     .join('|');
 
   useEffect(() => {
@@ -178,7 +201,7 @@ export function NetworkQuickCreate({
       const intel = await fetch('/api/v1/people/me/intelligence', { headers });
       if (intel.ok) {
         const body = (await intel.json()) as {
-          spaces?: { slug?: string; title?: string }[];
+          spaces?: MemberSpace[];
         };
         const fromIntel = normalizeMemberSpaces(body.spaces ?? []);
         if (!cancelled && fromIntel.length > 0) {
@@ -190,7 +213,7 @@ export function NetworkQuickCreate({
       if (!slug) return;
       const list = await fetch(`/api/v1/people/${slug}/spaces`, { headers });
       if (!list.ok) return;
-      const rows = (await list.json()) as { slug?: string; title?: string }[];
+      const rows = (await list.json()) as MemberSpace[];
       if (cancelled || !Array.isArray(rows)) return;
       applySpaces(normalizeMemberSpaces(rows));
     })();

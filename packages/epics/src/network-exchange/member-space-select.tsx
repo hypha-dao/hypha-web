@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
-import { Combobox, Image } from '@hypha-platform/ui';
+import { Combobox } from '@hypha-platform/ui';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import type { MemberNamedSpace } from './use-member-named-spaces';
 
@@ -15,13 +15,15 @@ function SpaceMark({
   title: string;
   logoUrl?: string | null;
 }) {
+  const src = logoUrl || DEFAULT_SPACE_AVATAR_IMAGE;
   return (
     <>
-      <Image
-        src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+      {/* Plain img: next/image drops remote space logos that the rail already shows. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={src}
+        src={src}
         alt=""
-        width={24}
-        height={24}
         className="size-6 shrink-0 rounded-full object-cover"
       />
       <span className="truncate">{title}</span>
