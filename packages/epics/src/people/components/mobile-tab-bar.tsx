@@ -30,6 +30,10 @@ import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
 import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
+import {
+  buildWalletSectionNavItems,
+  isWalletSectionNavActive,
+} from '../../wallet/components/wallet-section-nav';
 import { useConversationUnreadCount } from './my-connections';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
@@ -124,6 +128,7 @@ export function MobileTabBar({
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
   const tNetwork = useTranslations('NetworkExchange');
+  const tProfile = useTranslations('Profile');
   const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
@@ -200,6 +205,19 @@ export function MobileTabBar({
         };
       });
     }
+    if (segmentActive(pathname, 'my-wallet')) {
+      const base = `/${lang}/my-wallet`;
+      return buildWalletSectionNavItems(base).map((item) => {
+        const Icon = item.icon;
+        return {
+          key: item.key,
+          href: item.href,
+          label: tProfile(item.labelKey),
+          active: isWalletSectionNavActive(item, pathname),
+          icon: <Icon className={subIconClass} strokeWidth={1.5} />,
+        };
+      });
+    }
     if (!networkRoute) return [];
     const base = `/${lang}/network`;
     const links = [
@@ -255,6 +273,7 @@ export function MobileTabBar({
     tCoherence,
     tCommon,
     tNetwork,
+    tProfile,
     tTreasury,
   ]);
 

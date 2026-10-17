@@ -71,6 +71,10 @@ import {
   type SpaceSectionNavKey,
 } from './space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from './space-section-nav-icons';
+import {
+  buildWalletSectionNavItems,
+  isWalletSectionNavActive,
+} from '../wallet/components/wallet-section-nav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -350,6 +354,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
   const tNetwork = useTranslations('NetworkExchange');
+  const tProfile = useTranslations('Profile');
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -701,8 +706,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }));
   }, [lang, pathname, spaceSlug, tNetwork]);
 
+  const walletNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !lang) return [];
+    if (!pathname.includes('/my-wallet')) return [];
+    const base = `/${lang}/my-wallet`;
+    return buildWalletSectionNavItems(base).map((item) => ({
+      key: item.key,
+      label: tProfile(item.labelKey),
+      icon: item.icon,
+      href: item.href,
+      active: isWalletSectionNavActive(item, pathname),
+    }));
+  }, [lang, pathname, spaceSlug, tProfile]);
+
   const menuNavItems =
-    sectionNavItems.length > 0 ? sectionNavItems : networkNavItems;
+    sectionNavItems.length > 0
+      ? sectionNavItems
+      : networkNavItems.length > 0
+      ? networkNavItems
+      : walletNavItems;
 
   const isSpaceSettingsActive = useMemo(
     () =>
