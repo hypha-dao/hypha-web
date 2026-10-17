@@ -278,6 +278,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Varsler kan bare administreres når du er logget inn. Logg inn for å administrere dine."
+    },
     "title": "Varslingssenter",
     "loading": {
       "keepWindowOpen": "Hold dette vinduet åpent til vi er ferdige."

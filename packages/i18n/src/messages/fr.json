@@ -280,6 +280,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Les notifications ne peuvent être gérées que lorsque vous êtes connecté. Connectez-vous pour gérer les vôtres."
+    },
     "title": "Centre de notifications",
     "loading": {
       "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."

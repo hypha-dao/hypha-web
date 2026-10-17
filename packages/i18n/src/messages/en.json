@@ -279,6 +279,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Notifications can only be managed when you’re logged in. Log in to manage yours."
+    },
     "title": "Notification Centre",
     "loading": {
       "keepWindowOpen": "Keep this window open until we're finished."

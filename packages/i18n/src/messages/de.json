@@ -280,6 +280,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Benachrichtigungen können nur verwaltet werden, wenn Sie angemeldet sind. Melden Sie sich an, um Ihre zu verwalten."
+    },
     "title": "Benachrichtigungszentrale",
     "loading": {
       "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."

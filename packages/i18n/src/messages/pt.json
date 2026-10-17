@@ -1051,6 +1051,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "As notificações só podem ser gerenciadas quando você está conectado. Faça login para gerenciar as suas."
+    },
     "title": "Central de Notificações",
     "loading": {
       "keepWindowOpen": "Mantenha esta janela aberta até terminarmos."

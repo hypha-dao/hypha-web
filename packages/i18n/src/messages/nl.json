@@ -279,6 +279,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Meldingen kunnen alleen worden beheerd als je bent ingelogd. Log in om de jouwe te beheren."
+    },
     "title": "Meldingscentrum",
     "loading": {
       "keepWindowOpen": "Houd dit venster open totdat we klaar zijn."

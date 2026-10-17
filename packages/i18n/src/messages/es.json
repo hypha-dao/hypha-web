@@ -1051,6 +1051,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Las notificaciones solo se pueden gestionar con la sesión iniciada. Inicia sesión para gestionar las tuyas."
+    },
     "title": "Centro de notificaciones",
     "loading": {
       "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."

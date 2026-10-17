@@ -11,6 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Bell, Mail, MonitorSmartphone } from 'lucide-react';
+import { RxCross1 } from 'react-icons/rx';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
 import {
@@ -25,6 +26,7 @@ import {
   TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
   TAG_SUB_SIGNALS,
 } from '@hypha-platform/notifications/client';
+import { Empty } from '../../common/empty';
 import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useRouter } from 'next/navigation';
 import { Person } from '@hypha-platform/core/client';
@@ -39,6 +41,8 @@ export type NotificationCentreFormProps = {
   person?: Person;
   closeUrl: string;
   isLoading?: boolean;
+  /** Visitor is not logged in: show an empty state instead of the settings. */
+  signedOut?: boolean;
   error?: string | null;
   subscribed?: boolean;
   /** This browser can receive push right now (permission granted and opted in). */
@@ -173,6 +177,7 @@ export const NotificationCentreForm = ({
   person,
   closeUrl,
   isLoading,
+  signedOut,
   error,
   subscribed,
   pushActive,
@@ -318,6 +323,24 @@ export const NotificationCentreForm = ({
     tNotificationCentre.has(key)
       ? tNotificationCentre(key, values as never)
       : fallback;
+
+  if (signedOut) {
+    return (
+      <div className="flex flex-col gap-5">
+        <ModalStickyNavigation
+          contextTitle={tModalAside('notificationCentre')}
+          closeUrl={closeUrl}
+          showBack={false}
+        />
+        <Empty icon={RxCross1}>
+          {optionalText(
+            'signedOut.message',
+            'Notifications can only be managed when you’re logged in. Log in to manage yours.',
+          )}
+        </Empty>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
