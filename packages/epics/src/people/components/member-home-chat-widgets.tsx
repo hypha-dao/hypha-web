@@ -16,7 +16,6 @@ import {
   type Person,
   type Space,
 } from '@hypha-platform/core/client';
-import { listTransferRecipientPeople } from '@hypha-platform/core/people/server/actions';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   Button,
@@ -751,17 +750,32 @@ export function MemberHomeSendTokensWidget({
     if (directoryPeople && directorySpaces) return;
     setDirectoryLoading(true);
     try {
-      const [peopleRows, spaceResponse] = await Promise.all([
-        listTransferRecipientPeople(),
-        fetch('/api/v1/spaces?parentOnly=false'),
-      ]);
-      if (!spaceResponse.ok) {
-        throw new Error('spaces');
+      const response = await fetch('/api/v1/transfer-recipients');
+      if (!response.ok) {
+        throw new Error('recipients');
       }
-      const spaceRows = (await spaceResponse.json()) as Space[];
-      if (!Array.isArray(spaceRows)) {
-        throw new Error('spaces');
-      }
+      const body = (await response.json()) as {
+        people?: Array<{
+          id: number;
+          name: string;
+          surname: string;
+          avatarUrl?: string | null;
+          address: string;
+          slug: string;
+        }>;
+        spaces?: Array<{
+          id: number;
+          title: string;
+          slug: string;
+          address: string;
+          logoUrl?: string | null;
+          web3SpaceId?: number | null;
+          parentId?: number | null;
+          flags?: Space['flags'];
+        }>;
+      };
+      const peopleRows = Array.isArray(body.people) ? body.people : [];
+      const now = new Date(0);
       setDirectoryPeople(
         peopleRows.map((person) => ({
           id: person.id,
@@ -770,12 +784,26 @@ export function MemberHomeSendTokensWidget({
           avatarUrl: person.avatarUrl ?? undefined,
           address: person.address,
           slug: person.slug,
-          createdAt: new Date(0),
-          updatedAt: new Date(0),
+          createdAt: now,
+          updatedAt: now,
         })),
       );
       setDirectorySpaces(
-        spaceRows.filter((space) => Boolean(space.address?.trim())),
+        (Array.isArray(body.spaces) ? body.spaces : []).map((space) => ({
+          id: space.id,
+          title: space.title,
+          description: null,
+          slug: space.slug,
+          address: space.address,
+          logoUrl: space.logoUrl ?? null,
+          web3SpaceId: space.web3SpaceId ?? null,
+          parentId: space.parentId ?? null,
+          flags: space.flags ?? [],
+          links: [],
+          categories: [],
+          createdAt: now,
+          updatedAt: now,
+        })),
       );
     } catch {
       setDirectoryOpen(false);

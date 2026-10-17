@@ -150,6 +150,52 @@ export type FindAllPeopleWithoutPaginationConfig = {
   db: DatabaseInstance;
 };
 
+const PAYABLE_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
+
+export type PayablePerson = {
+  id: number;
+  name: string;
+  surname: string;
+  avatarUrl: string | null;
+  address: string;
+  slug: string;
+};
+
+/**
+ * People a transfer can pay. Skips rows that cannot be a recipient instead of
+ * failing the whole directory when one profile is incomplete.
+ */
+export const listPayablePeople = async ({
+  db,
+}: FindAllPeopleWithoutPaginationConfig): Promise<PayablePerson[]> => {
+  const rows = await db
+    .select({
+      id: people.id,
+      name: people.name,
+      surname: people.surname,
+      avatarUrl: people.avatarUrl,
+      address: people.address,
+      slug: people.slug,
+    })
+    .from(people)
+    .where(isHumanPerson());
+
+  return rows.flatMap((person) => {
+    const address = person.address?.trim() ?? '';
+    if (!person.id || !PAYABLE_ADDRESS.test(address)) return [];
+    return [
+      {
+        id: person.id,
+        name: person.name ?? '',
+        surname: person.surname ?? '',
+        avatarUrl: person.avatarUrl ?? null,
+        address,
+        slug: person.slug ?? '',
+      },
+    ];
+  });
+};
+
 export const findAllPeopleWithoutPagination = async ({
   db,
 }: FindAllPeopleWithoutPaginationConfig): Promise<Person[]> => {

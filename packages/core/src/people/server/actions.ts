@@ -7,11 +7,7 @@ import {
   GetPersonBySubInput,
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  findAllPeopleWithoutPagination,
-  findPersonById,
-  findPersonBySub,
-} from './queries';
+import { findPersonById, findPersonBySub, listPayablePeople } from './queries';
 
 export async function editPersonAction(
   data: EditPersonInput,
@@ -32,21 +28,7 @@ export async function getPersonById(
 
 /** People a direct transfer can pay. Same list as Transfer funds. */
 export async function listTransferRecipientPeople() {
-  const people = await findAllPeopleWithoutPagination({ db });
-  return people.flatMap((person) => {
-    const address = person.address?.trim();
-    if (!address) return [];
-    return [
-      {
-        id: person.id,
-        name: person.name ?? '',
-        surname: person.surname ?? '',
-        avatarUrl: person.avatarUrl ?? null,
-        address,
-        slug: person.slug ?? '',
-      },
-    ];
-  });
+  return listPayablePeople({ db });
 }
 
 export async function getPersonBySub(
