@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -37,6 +38,7 @@ import {
   getProposalPath,
   getSignalPath,
 } from '../../common/get-path-function';
+import { getMainColumnScrollRoot } from '../../common/main-column-scroll';
 import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
@@ -170,6 +172,15 @@ export function MemberHome({
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
+  useLayoutEffect(() => {
+    const root = getMainColumnScrollRoot() ?? document.documentElement;
+    const previousOverflow = root.style.overflowY;
+    root.style.overflowY = 'hidden';
+    root.scrollTop = 0;
+    return () => {
+      root.style.overflowY = previousOverflow;
+    };
+  }, []);
   const openChatRef = useRef<MemberHomeOpenChat>(async () => false);
 
   const onOpenChatReady = useCallback((openChat: MemberHomeOpenChat) => {
@@ -277,7 +288,7 @@ export function MemberHome({
   }, [home]);
 
   return (
-    <div className="@container/home relative isolate -mt-4 flex h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden pt-4 max-xl:-mb-8 md:-mt-5 md:pt-5 xl:h-[calc(100dvh-var(--menu-top-height,4.5rem)-1.25rem+var(--spacing-5))]">
+    <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden pt-4 md:-mt-5 md:pt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]">
       <div className="member-home-banner" aria-hidden>
         <img
           alt=""

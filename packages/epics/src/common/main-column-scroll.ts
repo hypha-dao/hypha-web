@@ -54,6 +54,10 @@ function attachScrollTarget() {
  * Called from the scrollable `SidebarInset` ref (or `null` on unmount).
  * When panels are off, root stays `null` and we fall back to `window`.
  */
+export function getMainColumnScrollRoot() {
+  return scrollRoot;
+}
+
 export function setMainColumnScrollRoot(el: HTMLElement | null) {
   if (scrollRoot === el) return;
   const prev: HTMLElement | Window | null =
