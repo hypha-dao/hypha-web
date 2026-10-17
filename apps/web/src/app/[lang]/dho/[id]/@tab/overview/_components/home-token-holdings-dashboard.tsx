@@ -16,9 +16,6 @@ import {
   CardDescription,
   CardTitle,
   Skeleton,
-  Tabs,
-  ScrollableTabsList,
-  TabsTrigger,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -100,12 +97,6 @@ type DistributionHistoryResponse = {
   }>;
 };
 
-type HomeSectionFilter =
-  | 'energy'
-  | 'activity'
-  | 'distribution'
-  | 'payingSpaces';
-
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
  * Overview charts render in the space tab, outside the hero accent scope.
@@ -155,8 +146,19 @@ const DONUT_SEGMENT_STROKE = 'var(--background)';
 const DONUT_SEGMENT_STROKE_WIDTH = 0.5;
 const DONUT_PAD_ANGLE = 0;
 const DONUT_CORNER_RADIUS = 0;
-/** Charts sit on the page ground: no frame, no panel, no shadow. */
-const CHART_SECTION_CLASS = 'flex min-w-0 flex-col bg-transparent';
+/** Chart panels use the same card as the rest of the space dashboard. */
+const CHART_SECTION_CLASS = 'craft-card flex min-w-0 flex-col p-4';
+
+function DashboardSectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      className="text-3 text-foreground"
+      style={{ fontFamily: 'var(--font-family-heading)' }}
+    >
+      {children}
+    </h2>
+  );
+}
 
 function toNumericValue(raw: string): number {
   const parsed = Number.parseFloat(raw);
@@ -1473,9 +1475,6 @@ export function HomeTokenHoldingsDashboard({
   const activityLoading = !authReady || activityLoadingRaw;
   const holdingsLoading = !authReady || isLoading;
 
-  const [activeFilter, setActiveFilter] =
-    React.useState<HomeSectionFilter>('activity');
-
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
       const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`;
@@ -1495,100 +1494,57 @@ export function HomeTokenHoldingsDashboard({
   // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
   const showEnergyWidget = false && hasEnergyData;
   const showPayingSpaces = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
-  const filterItems = React.useMemo(
-    () =>
-      [
-        ...(showEnergyWidget
-          ? [{ value: 'energy', label: tTokenHoldings('filters.energy') }]
-          : []),
-        { value: 'activity', label: tTokenHoldings('filters.activity') },
-        {
-          value: 'distribution',
-          label: tTokenHoldings('filters.distribution'),
-        },
-        ...(showPayingSpaces
-          ? [
-              {
-                value: 'payingSpaces',
-                label: tTokenHoldings('filters.payingSpaces'),
-              },
-            ]
-          : []),
-      ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [showEnergyWidget, showPayingSpaces, tTokenHoldings],
-  );
-  const showActivity = activeFilter === 'activity';
-  const showDistribution = activeFilter === 'distribution';
-  const showPayingSpacesTab = activeFilter === 'payingSpaces';
   // Temporarily hidden for deployment; keep components wired for quick re-enable.
   const showSignalsWidget = false;
   const showDistributionHistoryWidget = false;
 
-  React.useEffect(() => {
-    if (activeFilter === 'energy' && !showEnergyWidget) {
-      setActiveFilter('activity');
-    }
-    if (activeFilter === 'payingSpaces' && !showPayingSpaces) {
-      setActiveFilter('activity');
-    }
-  }, [activeFilter, showEnergyWidget, showPayingSpaces]);
-
   return (
-    <div className="flex flex-col gap-4" style={chartStyle}>
-      <Tabs
-        value={activeFilter}
-        onValueChange={(value) => setActiveFilter(value as HomeSectionFilter)}
-      >
-        <ScrollableTabsList triggerVariant="switch">
-          {filterItems.map((item) => (
-            <TabsTrigger key={item.value} value={item.value} variant="switch">
-              {item.label}
-            </TabsTrigger>
-          ))}
-        </ScrollableTabsList>
-      </Tabs>
+    <div className="flex flex-col gap-8" style={chartStyle}>
+      <section className="flex flex-col gap-4">
+        <DashboardSectionTitle>
+          {tTokenHoldings('filters.activity')}
+        </DashboardSectionTitle>
+        {!activityLoading && activityError ? (
+          <section className={`${CHART_SECTION_CLASS} gap-1`}>
+            <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
+            <CardDescription>
+              {tTokenHoldings('activity.error')}
+            </CardDescription>
+          </section>
+        ) : null}
 
-      {showActivity ? (
-        <>
-          {!activityLoading && activityError ? (
-            <section className="flex flex-col gap-1">
-              <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
-              <CardDescription>
-                {tTokenHoldings('activity.error')}
-              </CardDescription>
-            </section>
-          ) : null}
-
-          {!activityLoading && !activityError && activityData ? (
-            <div
-              className={
-                showSignalsWidget
-                  ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
-              }
-            >
-              <div className="grid min-w-0 content-start gap-4">
-                {showSignalsWidget ? (
-                  <SignalsPulseMapWidget signals={activityData.signals} />
-                ) : null}
-                <MembersEvolutionWidget
-                  monthly={activityData.members.monthly}
-                  locale={locale}
-                />
-              </div>
-              <div className="flex min-h-0 min-w-0 flex-col">
-                <ProposalsPieWidget data={activityData.proposals} />
-              </div>
+        {!activityLoading && !activityError && activityData ? (
+          <div
+            className={
+              showSignalsWidget
+                ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
+                : 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
+            }
+          >
+            <div className="grid min-w-0 content-start gap-4">
+              {showSignalsWidget ? (
+                <SignalsPulseMapWidget signals={activityData.signals} />
+              ) : null}
+              <MembersEvolutionWidget
+                monthly={activityData.members.monthly}
+                locale={locale}
+              />
             </div>
-          ) : null}
-        </>
-      ) : null}
+            <div className="flex min-h-0 min-w-0 flex-col">
+              <ProposalsPieWidget data={activityData.proposals} />
+            </div>
+          </div>
+        ) : null}
+      </section>
 
-      {showDistribution ? (
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
+      <section className="flex flex-col gap-4">
+        <DashboardSectionTitle>
+          {tTokenHoldings('filters.distribution')}
+        </DashboardSectionTitle>
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
           <div className="min-w-0">
             {!holdingsLoading && error ? (
-              <section className="flex flex-col gap-1">
+              <section className={`${CHART_SECTION_CLASS} gap-1`}>
                 <CardTitle>
                   {error instanceof TokenHoldingsFetchError &&
                   (error.code === 'access_denied' || error.status === 401)
@@ -1605,7 +1561,7 @@ export function HomeTokenHoldingsDashboard({
             ) : null}
 
             {!holdingsLoading && !error && data && data.tokens.length === 0 ? (
-              <section className="flex flex-col gap-1">
+              <section className={`${CHART_SECTION_CLASS} gap-1`}>
                 <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
                 <CardDescription>
                   {tTokenHoldings('empty.description')}
@@ -1747,14 +1703,19 @@ export function HomeTokenHoldingsDashboard({
           </div>
           <DistributionRewards spaceSlug={spaceSlug} />
         </div>
+      </section>
+
+      {showPayingSpaces ? (
+        <section className="flex flex-col gap-4">
+          <DashboardSectionTitle>
+            {tTokenHoldings('filters.payingSpaces')}
+          </DashboardSectionTitle>
+          <PayingSpacesDashboard spaceSlug={spaceSlug} />
+        </section>
       ) : null}
 
-      {showPayingSpacesTab && showPayingSpaces ? (
-        <PayingSpacesDashboard spaceSlug={spaceSlug} />
-      ) : null}
-
-      {activeFilter === 'energy' && showEnergyWidget ? (
-        <section className="flex flex-col gap-1">
+      {showEnergyWidget ? (
+        <section className={`${CHART_SECTION_CLASS} gap-1`}>
           <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
           <CardDescription>
             {tTokenHoldings('energy.description')}

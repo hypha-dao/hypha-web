@@ -11,9 +11,9 @@ const BUCKETS = 4;
 const PRIORITIES = ['critical', 'high', 'medium', 'low'] as const;
 
 const TYPE_INK: Record<string, string> = {
-  Need: 'var(--success-9)',
+  Need: 'var(--success-11)',
   Resource: 'var(--neutral-11)',
-  Opportunity: 'var(--success-9)',
+  Opportunity: 'var(--success-11)',
   Insight: 'var(--info-9)',
   Tension: 'var(--warning-9)',
   Risk: 'var(--error-9)',
