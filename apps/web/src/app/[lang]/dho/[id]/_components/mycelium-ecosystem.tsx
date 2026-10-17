@@ -63,8 +63,9 @@ type PlacedLink = {
 
 type Lens = 'structure' | 'flows';
 
-const MAX_CHIPS = 5;
 const MAX_FLOWS = 8;
+/** Avatar diameter plus a little air, so member chips do not stack. */
+const CHIP_SEP = 26;
 
 function toSpaceNode(node: MyceliumHierarchyNode): SpaceNode {
   return {
@@ -178,22 +179,29 @@ function layoutField(
   const path = pathTo(tree, focus.id) ?? [focus];
   const parent = path.length > 1 ? path[path.length - 2] : null;
   const cx = width / 2;
+  const cy = height / 2;
   // Leave room under each node so the name is not clipped by the frame.
   const labelPad = 28;
   const minDim = Math.max(160, Math.min(width, height) - labelPad * 2);
   const nodeScale = Math.min(1.45, Math.max(1, minDim / 380));
-  // At n-1+, reserve a top band for parent/siblings and drop the focus
-  // subtree so labels and orbits do not collide.
-  const hasParent = parent != null;
-  const topBand = hasParent ? Math.max(72, Math.min(120, height * 0.22)) : 0;
-  const cy = hasParent
-    ? Math.min(height - labelPad - 48, topBand + (height - topBand) * 0.55)
-    : height / 2;
-  // Fill most of the frame so sparse trees (parent + focus) are not a tiny
-  // cluster in the middle of a tall canvas.
-  const reach = hasParent
-    ? Math.max(96, Math.min(minDim * 0.28, (height - topBand) * 0.32))
-    : Math.max(140, minDim * 0.4);
+  // Same reach as the root diagram: a ring around a centered focus.
+  const pad = Math.round(24 * nodeScale) + labelPad + 8;
+  const maxReach = Math.max(
+    96,
+    Math.min(cx, cy, width - cx, height - cy) - pad,
+  );
+  const reach = Math.min(Math.max(140, minDim * 0.4), maxReach);
+  if (parent) {
+    return layoutNeighborhood({
+      tree,
+      focus,
+      parent,
+      cx,
+      cy,
+      reach,
+      nodeScale,
+    });
+  }
   const visible = prune(focus, 2);
   const root = d3.hierarchy(visible);
   const laid = d3
@@ -260,93 +268,106 @@ function layoutField(
     });
   });
 
-  if (parent) {
-    const focusNode = byId.get(focus.id);
-    const parentR = Math.round(16 * nodeScale);
-    const parentPoint = {
-      x: cx,
-      y: Math.max(parentR + labelPad, topBand * 0.45),
-    };
-    nodes.push({
-      id: parent.id,
-      name: parent.name,
-      slug: parent.slug,
-      logoUrl: parent.logoUrl,
-      x: parentPoint.x,
-      y: parentPoint.y,
-      r: parentR,
-      role: 'parent',
-      hasHiddenChildren: false,
-    });
-    if (focusNode) {
-      const ends = shorten(
-        parentPoint.x,
-        parentPoint.y,
-        focusNode.x,
-        focusNode.y,
-        parentR,
-        focusNode.r,
-      );
-      links.unshift({
-        id: `parent-${parent.id}`,
-        ...ends,
-        bend: 0,
-      });
-    }
+  return { nodes, links };
+}
 
-    // Siblings sit in a horizontal row with the parent — never arc down into
-    // the focus cluster (that caused the n-1 overlap).
-    const parentNode = findNode(tree, parent.id);
-    const siblings = (parentNode?.children ?? [])
-      .filter((child) => child.id !== focus.id && !byId.has(child.id))
-      .slice(0, 4);
-    const siblingR = Math.round(15 * nodeScale);
-    const sidePad = siblingR + 20;
-    const usableWidth = Math.max(120, width - sidePad * 2);
-    const siblingGap = Math.max(
-      siblingR * 2 + 36,
-      Math.min(usableWidth / Math.max(siblings.length + 1, 1), 120),
-    );
-    siblings.forEach((sibling, index) => {
-      const offset = (index - (siblings.length - 1) / 2) * siblingGap;
-      // Alternate slightly above/below the parent row so labels do not stack.
-      const at = {
-        x: Math.min(width - sidePad, Math.max(sidePad, parentPoint.x + offset)),
-        y: parentPoint.y + (index % 2 === 0 ? -10 : 10),
-      };
-      // Keep siblings clear of the focus node vertically.
-      if (
-        focusNode &&
-        Math.abs(at.y - focusNode.y) < focusNode.r + siblingR + 40
-      ) {
-        at.y = Math.min(at.y, focusNode.y - focusNode.r - siblingR - 48);
-      }
-      nodes.push({
-        id: sibling.id,
-        name: sibling.name,
-        slug: sibling.slug,
-        logoUrl: sibling.logoUrl,
-        x: at.x,
-        y: at.y,
-        r: siblingR,
-        role: 'child',
-        hasHiddenChildren: sibling.children.length > 0,
-      });
-      const fromParent = shorten(
-        parentPoint.x,
-        parentPoint.y,
-        at.x,
-        at.y,
-        parentR,
-        siblingR,
-      );
-      links.push({
-        id: `sibling-${sibling.id}`,
-        ...fromParent,
-        bend: index % 2 === 0 ? 10 : -10,
-      });
+/**
+ * Nested space: the focus sits in the middle, like the root diagram.
+ * Parent, siblings, and children share one ring, with a gap up-left for members.
+ */
+function layoutNeighborhood({
+  tree,
+  focus,
+  parent,
+  cx,
+  cy,
+  reach,
+  nodeScale,
+}: {
+  tree: SpaceNode;
+  focus: SpaceNode;
+  parent: SpaceNode;
+  cx: number;
+  cy: number;
+  reach: number;
+  nodeScale: number;
+}): { nodes: PlacedNode[]; links: PlacedLink[] } {
+  const focusR = Math.round(36 * nodeScale);
+  const satelliteR = Math.round(24 * nodeScale);
+  const children = prune(focus, 1).children;
+  const siblings = (findNode(tree, parent.id)?.children ?? []).filter(
+    (child) => child.id !== focus.id,
+  );
+  const satellites: Array<{
+    node: SpaceNode;
+    role: Role;
+    hidden: boolean;
+  }> = [
+    { node: parent, role: 'parent', hidden: false },
+    ...siblings.map((node) => ({
+      node,
+      role: 'child' as const,
+      hidden: node.children.length > 0,
+    })),
+    ...children.map((node) => ({
+      node,
+      role: 'child' as const,
+      hidden: node.children.length > 0,
+    })),
+  ];
+
+  // Up-left, clear of the name that hangs under the focus.
+  const gapCenter = -Math.PI * 0.72;
+  const gapSize = Math.PI * 0.95;
+  const span = Math.PI * 2 - gapSize;
+  const edge = gapCenter + gapSize / 2;
+
+  const nodes: PlacedNode[] = [
+    {
+      id: focus.id,
+      name: focus.name,
+      slug: focus.slug,
+      logoUrl: focus.logoUrl,
+      x: cx,
+      y: cy,
+      r: focusR,
+      role: 'focus',
+      hasHiddenChildren: false,
+    },
+  ];
+  const links: PlacedLink[] = [];
+
+  satellites.forEach((satellite, index) => {
+    const angle =
+      satellites.length <= 1
+        ? gapCenter + Math.PI
+        : edge + (span * index) / (satellites.length - 1);
+    const at = {
+      x: cx + Math.cos(angle) * reach,
+      y: cy + Math.sin(angle) * reach,
+    };
+    const radius = satellite.role === 'parent' ? satelliteR + 2 : satelliteR;
+    nodes.push({
+      id: satellite.node.id,
+      name: satellite.node.name,
+      slug: satellite.node.slug,
+      logoUrl: satellite.node.logoUrl,
+      x: at.x,
+      y: at.y,
+      r: radius,
+      role: satellite.role,
+      hasHiddenChildren: satellite.hidden,
     });
-  }
+    const ends = shorten(cx, cy, at.x, at.y, focusR, radius);
+    links.push({
+      id:
+        satellite.role === 'parent'
+          ? `parent-${satellite.node.id}`
+          : `${focus.id}-${satellite.node.id}`,
+      ...ends,
+      bend: index % 2 === 0 ? 12 : -12,
+    });
+  });
 
   return { nodes, links };
 }
@@ -380,6 +401,30 @@ function arcSlots(count: number, center: number, spread: number) {
     { length: count },
     (_, index) => start + (spread * index) / (count - 1),
   );
+}
+
+/** Fill an open arc with as many chips as fit, one ring at a time. */
+function packArc(
+  count: number,
+  center: number,
+  spread: number,
+  inner: number,
+  outer: number,
+) {
+  const rings: Array<{ radius: number; angles: number[] }> = [];
+  let left = count;
+  let radius = inner;
+  const limit = Math.max(inner, outer);
+  while (left > 0 && radius <= limit + 0.5) {
+    const arc = Math.max(CHIP_SEP, spread * radius);
+    const fit = Math.max(1, Math.floor(arc / CHIP_SEP));
+    const n = Math.min(left, fit);
+    const used = n <= 1 ? 0 : Math.min(spread, ((n - 1) * CHIP_SEP) / radius);
+    rings.push({ radius, angles: arcSlots(n, center, used) });
+    left -= n;
+    radius += CHIP_SEP;
+  }
+  return { rings, hidden: left };
 }
 
 export function MyceliumEcosystem({
@@ -482,15 +527,8 @@ export function MyceliumEcosystem({
     [field.nodes],
   );
 
-  const people = (persons.data ?? []).slice(0, MAX_CHIPS);
-  const peopleMore = Math.max(0, (persons.data ?? []).length - people.length);
-  const joinedSpaces = (memberSpaces.data ?? []).slice(0, MAX_CHIPS);
-  const spacesMore = Math.max(
-    0,
-    (memberSpaces.data ?? []).length - joinedSpaces.length,
-  );
-  const shownAgents = agents.slice(0, MAX_CHIPS);
-  const agentsMore = Math.max(0, agents.length - shownAgents.length);
+  const people = persons.data ?? [];
+  const joinedSpaces = memberSpaces.data ?? [];
 
   const flows = useMemo(() => {
     const totals = new Map<
@@ -614,28 +652,30 @@ export function MyceliumEcosystem({
   const showMembers =
     lens === 'structure' && Math.min(size.width, size.height) >= 280;
   const focusNode = placedById.get(focus.id);
-  const chipRadius = (focusNode?.r ?? 36) + 40;
-  const hasParentContext = path.length > 1;
 
-  const memberChips = useMemo(() => {
-    if (!showMembers || !focusNode) return [];
-    const chips: Array<{
-      key: string;
-      label: string;
-      x: number;
-      y: number;
-      href?: string;
-      focusSpaceId?: number;
-      initials?: string;
-      imageUrl?: string | null;
-    }> = [];
+  const membershipMarks = useMemo(() => {
+    const empty = {
+      chips: [] as Array<{
+        key: string;
+        label: string;
+        x: number;
+        y: number;
+        href?: string;
+        focusSpaceId?: number;
+        initials?: string;
+        imageUrl?: string | null;
+      }>,
+      peopleMore: 0,
+      spacesMore: 0,
+      agentsMore: 0,
+    };
+    if (!showMembers || !focusNode) return empty;
     const structureNodes = field.nodes.filter((node) => node.id !== focus.id);
     const spokes = structureNodes
       .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x))
       .sort((left, right) => left - right);
-    // Prefer the lower hemisphere when a parent band owns the top.
-    let openAngle = hasParentContext ? Math.PI / 2 : Math.PI;
-    let openGap = hasParentContext ? Math.PI * 0.9 : Math.PI;
+    let openAngle = -Math.PI * 0.72;
+    let openGap = Math.PI;
     if (spokes.length > 0) {
       let bestGap = 0;
       let bestMid = openAngle;
@@ -644,14 +684,6 @@ export function MyceliumEcosystem({
         const end = spokes[index + 1] ?? (spokes[0] ?? 0) + Math.PI * 2;
         const gap = end - start;
         const mid = start + gap / 2;
-        // At n-1, only consider gaps that open downward.
-        if (hasParentContext) {
-          const normalized =
-            ((mid % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-          const downward =
-            normalized > Math.PI * 0.15 && normalized < Math.PI * 0.85;
-          if (!downward) continue;
-        }
         if (gap > bestGap) {
           bestGap = gap;
           bestMid = mid;
@@ -662,97 +694,123 @@ export function MyceliumEcosystem({
         openAngle = bestMid;
       }
     }
-    const spread = Math.min(
-      hasParentContext ? Math.PI * 0.85 : Math.PI * 1.1,
-      Math.max(0.55, openGap * 0.65),
-    );
-    const place = (
-      items: Array<{
-        key: string;
-        label: string;
-        href?: string;
-        focusSpaceId?: number;
-        initials?: string;
-        imageUrl?: string | null;
-      }>,
-      center: number,
-      radius: number,
-    ) => {
-      const angles = arcSlots(items.length, center, spread);
-      items.forEach((item, index) => {
-        const angle = angles[index] ?? center;
-        chips.push({
-          ...item,
-          x: focusNode.x + Math.cos(angle) * radius,
-          y: focusNode.y + Math.sin(angle) * radius,
-        });
-      });
-    };
-    // People only around the focus — spaces/agents on a second ring so avatars
-    // do not stack into one crowded fan.
-    place(
-      people.map((person) => ({
-        key: `person-${person.id}`,
-        label: personLabel(person, t('navigation.unnamedMember')),
-        href:
-          person.slug && focus.slug
-            ? `/${lang}/dho/${focus.slug}/members/person/${person.slug}`
-            : undefined,
-        initials: personLabel(person, t('navigation.unnamedMember')).slice(
-          0,
-          2,
-        ),
-        imageUrl: person.avatarUrl,
-      })),
-      openAngle,
-      chipRadius,
-    );
-    place(
-      joinedSpaces.map((space: Space) => {
-        const inTree = findNode(tree, space.id);
-        return {
-          key: `space-${space.id}`,
-          label: space.title,
+    const spread = Math.min(Math.PI * 1.15, Math.max(0.7, openGap * 0.72));
+    const nearest = structureNodes.reduce((min, node) => {
+      const clear =
+        Math.hypot(node.x - focusNode.x, node.y - focusNode.y) - node.r;
+      return Math.min(min, clear);
+    }, Infinity);
+    const inner = focusNode.r + 34;
+    const outer = Number.isFinite(nearest)
+      ? Math.max(inner, nearest - 16)
+      : inner + CHIP_SEP * 3;
+    type Chip = (typeof empty.chips)[number];
+    const groups: Array<{
+      kind: 'people' | 'spaces' | 'agents';
+      items: Chip[];
+    }> = [
+      {
+        kind: 'people',
+        items: people.map((person) => ({
+          key: `person-${person.id}`,
+          label: personLabel(person, t('navigation.unnamedMember')),
           href:
-            !inTree && space.slug
-              ? `/${lang}/dho/${space.slug}/overview`
+            person.slug && focus.slug
+              ? `/${lang}/dho/${focus.slug}/members/person/${person.slug}`
               : undefined,
-          focusSpaceId: inTree ? space.id : undefined,
-          imageUrl: space.logoUrl,
-        };
-      }),
-      openAngle + (hasParentContext ? 0 : spread * 0.2),
-      chipRadius + (hasParentContext ? 36 : 28),
-    );
-    place(
-      shownAgents.map((agent) => {
-        const label = tCoherence(agent.role);
-        return {
-          key: `agent-${agent.id}`,
-          label,
-          initials: getAgentAvatarInitials(label),
-        };
-      }),
-      openAngle - (hasParentContext ? 0 : spread * 0.2),
-      chipRadius + (hasParentContext ? 52 : 28),
-    );
-    return chips;
+          initials: personLabel(person, t('navigation.unnamedMember')).slice(
+            0,
+            2,
+          ),
+          imageUrl: person.avatarUrl,
+          x: 0,
+          y: 0,
+        })),
+      },
+      {
+        kind: 'spaces',
+        items: joinedSpaces.map((space: Space) => {
+          const inTree = findNode(tree, space.id);
+          return {
+            key: `space-${space.id}`,
+            label: space.title,
+            href:
+              !inTree && space.slug
+                ? `/${lang}/dho/${space.slug}/overview`
+                : undefined,
+            focusSpaceId: inTree ? space.id : undefined,
+            imageUrl: space.logoUrl,
+            x: 0,
+            y: 0,
+          };
+        }),
+      },
+      {
+        kind: 'agents',
+        items: agents.map((agent) => {
+          const label = tCoherence(agent.role);
+          return {
+            key: `agent-${agent.id}`,
+            label,
+            initials: getAgentAvatarInitials(label),
+            x: 0,
+            y: 0,
+          };
+        }),
+      },
+    ];
+    const chips: Chip[] = [];
+    const hidden = { people: 0, spaces: 0, agents: 0 };
+    let radius = inner;
+    for (const group of groups) {
+      const packed = packArc(
+        group.items.length,
+        openAngle,
+        spread,
+        radius,
+        outer,
+      );
+      let used = 0;
+      for (const ring of packed.rings) {
+        ring.angles.forEach((angle, index) => {
+          const item = group.items[used + index];
+          if (!item) return;
+          chips.push({
+            ...item,
+            x: focusNode.x + Math.cos(angle) * ring.radius,
+            y: focusNode.y + Math.sin(angle) * ring.radius,
+          });
+        });
+        used += ring.angles.length;
+      }
+      hidden[group.kind] = packed.hidden;
+      const last = packed.rings[packed.rings.length - 1];
+      radius = last ? last.radius + CHIP_SEP : radius;
+    }
+    return {
+      chips,
+      peopleMore: hidden.people,
+      spacesMore: hidden.spaces,
+      agentsMore: hidden.agents,
+    };
   }, [
-    chipRadius,
+    agents,
     field.nodes,
     focus.id,
     focus.slug,
     focusNode,
-    hasParentContext,
     joinedSpaces,
     lang,
     people,
     showMembers,
-    shownAgents,
     t,
     tCoherence,
     tree,
   ]);
+  const memberChips = membershipMarks.chips;
+  const peopleMore = membershipMarks.peopleMore;
+  const spacesMore = membershipMarks.spacesMore;
+  const agentsMore = membershipMarks.agentsMore;
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
