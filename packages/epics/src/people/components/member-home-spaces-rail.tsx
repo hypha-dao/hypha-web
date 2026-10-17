@@ -26,13 +26,13 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 
 const RAIL_ICON = 40;
 
-function orderSpacesByRecentVisit(
-  spaces: HomeSpace[],
+export function orderSpacesByRecentVisit<T extends { slug: string }>(
+  spaces: readonly T[],
   recentSlugs: string[],
-): HomeSpace[] {
-  if (spaces.length === 0) return spaces;
+): T[] {
+  if (spaces.length === 0) return [...spaces];
   const bySlug = new Map(spaces.map((space) => [space.slug, space]));
-  const ordered: HomeSpace[] = [];
+  const ordered: T[] = [];
   const seen = new Set<string>();
 
   for (const slug of recentSlugs) {
