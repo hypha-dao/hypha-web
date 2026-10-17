@@ -282,9 +282,10 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             offcanvasCollapsed
               ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 overflow-hidden'
               : iconCollapsed && (variant === 'floating' || variant === 'inset')
-              ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] grow-0'
+              ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] grow-0 max-xl:!w-0'
               : iconCollapsed
-              ? '!w-(--sidebar-width-icon) grow-0'
+              ? // Below xl the mobile spaces rail owns left nav — collapse the gap.
+                '!w-(--sidebar-width-icon) grow-0 max-xl:!w-0 max-xl:!min-w-0 max-xl:!max-w-0'
               : 'w-(--sidebar-width) grow-0',
           )}
         />
@@ -304,8 +305,9 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               : 'group-data-[side=left]:border-r group-data-[side=right]:border-l',
             iconCollapsed &&
               (variant === 'floating' || variant === 'inset'
-                ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]'
-                : '!w-(--sidebar-width-icon)'),
+                ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] max-xl:!hidden'
+                : // Hide collapsed icon rail below xl (spaces rail / tab bar take over).
+                  '!w-(--sidebar-width-icon) max-xl:!hidden'),
             className,
           )}
           {...props}

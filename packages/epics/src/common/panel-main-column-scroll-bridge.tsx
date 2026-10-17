@@ -17,14 +17,9 @@ type Props = {
   leftSidebarWidth: string;
   /** Pixels of persistent icon rail included in the left sidebar width. */
   leftIconRailPx?: number;
-  /**
-   * When true (mobile chrome / spaces rail visible), collapse fully with
-   * offcanvas so the AI icon rail never sits beside the spaces rail.
-   */
-  hideCollapsedIconRail?: boolean;
   onLeftOpenChange: (open: boolean) => void;
-  rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
+  rightOpen: boolean;
   rightSidebarWidth: string;
   leftContent: React.ReactNode;
   rightContent: React.ReactNode;
@@ -36,13 +31,13 @@ type Props = {
  * sticky DHO chrome see one scroll root instead of nested `overflow-y-auto` insets.
  *
  * Sidebars use `z-[50]` so they sit above `ProposalOverlayShell` scrim (`z-40`).
+ * Collapsed icon rail hides below `xl` via Sidebar CSS (spaces rail owns that band).
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,
   leftPanelOpen,
   leftSidebarWidth,
   leftIconRailPx = 0,
-  hideCollapsedIconRail = false,
   onLeftOpenChange,
   rightOpen,
   onRightOpenChange,
@@ -63,19 +58,16 @@ export function PanelDualSidebarScrollBridge({
       style={
         {
           '--sidebar-width': leftSidebarWidth,
-          '--sidebar-width-icon': hideCollapsedIconRail ? '0px' : '72px',
+          '--sidebar-width-icon': '72px',
         } as React.CSSProperties
       }
     >
       <Sidebar
         side="left"
         variant="sidebar"
-        collapsible={hideCollapsedIconRail ? 'offcanvas' : 'icon'}
+        collapsible="icon"
         mobileWidth={leftOpen ? '100vw' : undefined}
-        className={cn(
-          'z-[50] overflow-visible',
-          hideCollapsedIconRail && !leftOpen && 'max-xl:!hidden',
-        )}
+        className="z-[50] overflow-visible"
       >
         {leftContent}
         <SidebarResizeHandle
