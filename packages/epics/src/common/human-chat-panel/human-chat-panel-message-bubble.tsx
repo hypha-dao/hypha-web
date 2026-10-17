@@ -1784,8 +1784,8 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
-    /* Match AI panel production type scale (text-sm / ~14px); keep compact stack. */
-    'text-sm leading-snug text-foreground',
+    /* Shared with the AI panel: 13px, a little tighter than body text. */
+    'text-[13px] leading-[1.35] text-foreground',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
@@ -1816,7 +1816,7 @@ export function HumanChatPanelMessageBubble({
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex flex-col overflow-visible rounded-none px-3 py-1 transition-colors',
+        'group relative -mx-4 flex flex-col overflow-visible rounded-none px-4 py-1 transition-colors',
         'hover:bg-foreground/[0.04] focus-within:bg-foreground/[0.04]',
         highlightMentionForViewer && 'border-l-2 border-l-accent-9',
         unreadBoundary &&

@@ -949,13 +949,13 @@ export function AiPanelMessageBubble({
         <div
           className={cn(
             // Transcript on the panel ground — no dialogue box or grey well.
-            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none border-0 bg-transparent px-0 py-0.5 text-sm leading-snug text-foreground shadow-none',
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none border-0 bg-transparent px-0 py-0.5 text-[13px] leading-[1.35] text-foreground shadow-none',
           )}
         >
           {hasVisibleText && (
             <div className="flex h-fit w-full min-w-0 flex-col gap-1">
               {useSectionAccordion ? (
-                <div className="flex flex-col gap-1.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0">
+                <div className="flex flex-col gap-1 break-words text-[13px] leading-[1.35] text-foreground/95 [&_p]:m-0">
                   {markdownSections.map((section, sectionIndex) => {
                     const isOpen =
                       sectionIndex === 0 || openSections[sectionIndex] === true;
@@ -1070,7 +1070,7 @@ export function AiPanelMessageBubble({
               ) : (
                 <div
                   className={cn(
-                    'space-y-0.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0',
+                    'space-y-0.5 break-words text-[13px] leading-[1.35] text-foreground/95 [&_p]:m-0',
                     showExpandToggle && !expanded && 'line-clamp-6',
                   )}
                 >
