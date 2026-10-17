@@ -330,23 +330,22 @@ export function MemberHome({
               <div
                 className={
                   home == null || orientation
-                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3'
+                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'
                     : 'mt-3 grid'
                 }
               >
-                {home == null || orientation ? (
-                  <div className="flex items-center justify-center">
-                    {home == null || orientation == null ? (
-                      <Skeleton loading height="22px" width="6.5rem" />
-                    ) : (
-                      <OrientationBadge
-                        orientation={orientation}
-                        isSaving={isSavingOrientation}
-                        error={orientationError}
-                        onChoose={onChooseOrientation}
-                      />
-                    )}
+                {home == null || orientation == null ? (
+                  <div className="flex w-14 shrink-0 flex-col items-center gap-1.5">
+                    <HomePulse className="h-9 w-9" />
+                    <HomePulse className="h-3 w-12" />
                   </div>
+                ) : orientation ? (
+                  <OrientationBadge
+                    orientation={orientation}
+                    isSaving={isSavingOrientation}
+                    error={orientationError}
+                    onChoose={onChooseOrientation}
+                  />
                 ) : null}
                 <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2">
                   <Stat
@@ -956,7 +955,7 @@ function Stat({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-1 leading-tight tracking-[0.04em] break-words text-neutral-11 uppercase">
+      <dt className="text-1 leading-tight tracking-[0.04em] whitespace-nowrap text-neutral-11 uppercase">
         {label}
       </dt>
       <dd
