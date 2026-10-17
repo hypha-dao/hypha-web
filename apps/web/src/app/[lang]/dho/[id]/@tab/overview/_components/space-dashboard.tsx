@@ -18,6 +18,7 @@ import {
 import {
   PersonAvatar,
   readMemberPresence,
+  useMemberDirectoryConnect,
   SignalCategoryTag,
   SpaceAttention,
   useDisplayCurrency,
@@ -131,6 +132,8 @@ function SpaceMemberCircles({
   membersHref: string;
 }) {
   const t = useTranslations('OverviewOps');
+  const { person: me } = useMe();
+  const { openChat, notice } = useMemberDirectoryConnect(people);
   const matrix = useMatrix();
   const personIds = useMemo(() => people.map((person) => person.id), [people]);
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
@@ -206,16 +209,19 @@ function SpaceMemberCircles({
         {visible.map((person, index) => {
           const name = personLabel(person);
           const connected = onlineIds?.has(person.id) ?? false;
+          const canChat = person.id !== me?.id;
           return (
             <li key={person.id} className="flex shrink-0 items-center">
-              <Link
-                href={
-                  person.slug
-                    ? `${membersHref}/person/${person.slug}`
-                    : membersHref
-                }
+              <button
+                type="button"
+                disabled={!canChat}
                 title={connected ? `${name}. ${t('connectedNow')}` : name}
-                className="relative inline-flex rounded-full"
+                aria-label={name}
+                className="relative inline-flex rounded-full disabled:cursor-default"
+                onClick={() => {
+                  if (!canChat) return;
+                  void openChat(person);
+                }}
               >
                 <span
                   className={
@@ -237,7 +243,7 @@ function SpaceMemberCircles({
                     className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-success-9 ring-2 ring-background"
                   />
                 ) : null}
-              </Link>
+              </button>
             </li>
           );
         })}
@@ -253,6 +259,11 @@ function SpaceMemberCircles({
           </li>
         ) : null}
       </ul>
+      {notice ? (
+        <p className="mt-2 text-1 text-error-11" role="alert">
+          {notice}
+        </p>
+      ) : null}
     </nav>
   );
 }

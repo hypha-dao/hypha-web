@@ -6,6 +6,7 @@ export * from './edit-person-section';
 export * from './eth-address';
 export * from './export-embedded-wallet-button';
 export * from './member-detail';
+export * from './use-member-directory-connect';
 export * from './member-spaces';
 export * from './members-section';
 export * from './person-avatar';

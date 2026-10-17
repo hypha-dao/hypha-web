@@ -25,7 +25,6 @@ type MembersListProps = {
 export const MembersList: FC<MembersListProps> = ({
   page,
   minimize,
-  basePath,
   useMembers,
   spaceId,
   spaceSlug,
@@ -62,11 +61,25 @@ export const MembersList: FC<MembersListProps> = ({
         people.map((member) => {
           const connectable = member.id !== me?.id;
           return (
-            <Link
-              href={`${basePath}/${member.slug}`}
+            <div
               key={member.slug}
-              scroll={false}
-              className="block h-full"
+              role={connectable ? 'button' : undefined}
+              tabIndex={connectable ? 0 : undefined}
+              className={
+                connectable ? 'block h-full cursor-pointer' : 'block h-full'
+              }
+              onClick={() => {
+                if (!connectable) return;
+                void openChat(member);
+              }}
+              onKeyDown={(event) => {
+                if (!connectable || event.target !== event.currentTarget) {
+                  return;
+                }
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                void openChat(member);
+              }}
             >
               <MemberCard
                 spaceId={spaceId}
@@ -77,7 +90,7 @@ export const MembersList: FC<MembersListProps> = ({
                 onCall={connectable ? () => void openCall(member) : undefined}
                 onVideo={connectable ? () => void openVideo(member) : undefined}
               />
-            </Link>
+            </div>
           );
         })}
       {entityFilter !== 'member' &&
