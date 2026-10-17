@@ -72,9 +72,16 @@ export function sortByPresenceThenShared<
 }
 
 export function sortByRecencyThenPresence<
-  T extends { lastTs: number | null; person: { id: number }; name: string },
+  T extends {
+    lastTs: number | null;
+    person: { id: number };
+    name: string;
+    unread?: number;
+  },
 >(rows: readonly T[], presence: ReadonlyMap<number, PresenceLevel>): T[] {
   return [...rows].sort((left, right) => {
+    const byUnread = (right.unread ?? 0) - (left.unread ?? 0);
+    if (byUnread !== 0) return byUnread;
     const byTime = (right.lastTs ?? 0) - (left.lastTs ?? 0);
     if (byTime !== 0) return byTime;
     const byPresence =

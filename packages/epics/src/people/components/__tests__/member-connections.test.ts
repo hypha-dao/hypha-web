@@ -4,6 +4,7 @@ import {
   STALE_CONNECTION_MS,
   memberRowsForConnections,
   suggestConnections,
+  unreadRoomsMissingFromMembers,
   type NewcomerCandidate,
 } from '../member-connections';
 
@@ -102,6 +103,104 @@ describe('memberRowsForConnections', () => {
     );
 
     expect(rows.map((row) => row.person.id)).toEqual([9]);
+  });
+
+  it('matches Matrix ids case-insensitively when attaching unread', () => {
+    const rows = memberRowsForConnections(
+      [person(1, 'Gerardo', 'Reza')],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          name: 'Gerardo Reza',
+          otherUserId: '@Gerardo:matrix',
+          preview: 'hello',
+          unread: 1,
+          lastTs: 10,
+        }),
+      ],
+      { 1: '@gerardo:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows[0]).toMatchObject({
+      roomId: '!dm',
+      unread: 1,
+      preview: 'hello',
+    });
+  });
+});
+
+describe('unreadRoomsMissingFromMembers', () => {
+  it('surfaces unread DMs that are not in the loaded directory', () => {
+    const directory = memberRowsForConnections(
+      [person(1, 'Kate', 'Bennett')],
+      [],
+      { 1: '@kate:matrix' },
+      null,
+      'Someone',
+    );
+    const extras = unreadRoomsMissingFromMembers(
+      [
+        room({
+          roomId: '!stranger',
+          kind: 'person',
+          name: 'Gerardo Reza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'ping',
+          unread: 1,
+          lastTs: 50,
+        }),
+      ],
+      directory,
+      { 1: '@kate:matrix' },
+    );
+
+    expect(extras).toHaveLength(1);
+    expect(extras[0]).toMatchObject({
+      roomId: '!stranger',
+      unread: 1,
+      name: 'Gerardo Reza',
+      preview: 'ping',
+    });
+  });
+
+  it('skips unread rooms already attached to a listed member', () => {
+    const directory = memberRowsForConnections(
+      [person(1, 'Gerardo', 'Reza')],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          name: 'Gerardo Reza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'ping',
+          unread: 1,
+          lastTs: 50,
+        }),
+      ],
+      { 1: '@gerardo:matrix' },
+      null,
+      'Someone',
+    );
+    const extras = unreadRoomsMissingFromMembers(
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          name: 'Gerardo Reza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'ping',
+          unread: 1,
+          lastTs: 50,
+        }),
+      ],
+      directory,
+      { 1: '@gerardo:matrix' },
+    );
+
+    expect(extras).toEqual([]);
   });
 });
 

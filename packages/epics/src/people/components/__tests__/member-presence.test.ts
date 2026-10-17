@@ -72,4 +72,29 @@ describe('sort helpers', () => {
     expect(ranked.map((row) => row.person.id)).toEqual([1, 2]);
     expect(presenceRank('active')).toBeLessThan(presenceRank('idle'));
   });
+
+  it('puts unread conversations above quieter ones', () => {
+    const presence = new Map([
+      [1, 'active' as const],
+      [2, 'offline' as const],
+    ]);
+    const ranked = sortByRecencyThenPresence(
+      [
+        {
+          person: { id: 1 },
+          name: 'Active quiet',
+          lastTs: 500,
+          unread: 0,
+        },
+        {
+          person: { id: 2 },
+          name: 'Unread older',
+          lastTs: 100,
+          unread: 1,
+        },
+      ],
+      presence,
+    );
+    expect(ranked.map((row) => row.person.id)).toEqual([2, 1]);
+  });
 });

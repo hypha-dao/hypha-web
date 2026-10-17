@@ -4,6 +4,8 @@ export type ConnectionListPerson = {
   surname: string | null;
   nickname: string | null;
   avatarUrl?: string | null;
+  slug?: string | null;
+  sharedSpaceCount?: number;
 };
 
 export type ConversationRow = {
@@ -97,12 +99,63 @@ function directRoomByMatrixId(rows: readonly ConversationRow[]) {
   const rooms = new Map<string, ConversationRow>();
   for (const row of rows) {
     if (row.kind !== 'person' || !row.otherUserId) continue;
-    const current = rooms.get(row.otherUserId);
+    const key = row.otherUserId.toLowerCase();
+    const current = rooms.get(key);
     if (!current || (row.lastTs ?? 0) >= (current.lastTs ?? 0)) {
-      rooms.set(row.otherUserId, row);
+      rooms.set(key, row);
     }
   }
   return rooms;
+}
+
+/**
+ * Unread 1:1 rooms that do not map onto the loaded member directory yet.
+ * Keeps the Chat tab badge and the people list in step.
+ */
+export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
+  rooms: readonly ConversationRow[],
+  members: readonly MemberRow<T>[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+): MemberRow<T>[] {
+  const knownMxids = new Set(
+    Object.values(personIdToMatrixUserId)
+      .filter((id): id is string => Boolean(id))
+      .map((id) => id.toLowerCase()),
+  );
+  const knownRooms = new Set(
+    members
+      .map((member) => member.roomId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const extras: MemberRow<T>[] = [];
+  let syntheticId = -1;
+  for (const room of rooms) {
+    if (room.kind !== 'person' || room.unread <= 0) continue;
+    if (knownRooms.has(room.roomId)) continue;
+    if (room.otherUserId && knownMxids.has(room.otherUserId.toLowerCase())) {
+      continue;
+    }
+    extras.push({
+      person: {
+        id: syntheticId,
+        name: room.name || null,
+        surname: null,
+        nickname: null,
+        avatarUrl: room.avatarUrl ?? null,
+        slug: null,
+        sharedSpaceCount: 0,
+      } as T,
+      name: room.name.trim() || room.otherUserId || room.roomId,
+      avatarUrl: room.avatarUrl,
+      preview: room.preview,
+      mine: room.mine,
+      lastTs: room.lastTs,
+      unread: room.unread,
+      roomId: room.roomId,
+    });
+    syntheticId -= 1;
+  }
+  return extras;
 }
 
 /** Members this person connects with. Signal rooms stay out of the list. */
@@ -118,7 +171,7 @@ export function memberRowsForConnections<T extends ConnectionListPerson>(
     .filter((person) => person.id !== selfId)
     .map((person) => {
       const mxid = personIdToMatrixUserId[person.id];
-      const room = mxid ? direct.get(mxid) : undefined;
+      const room = mxid ? direct.get(mxid.toLowerCase()) : undefined;
       const name = personName(person, fallback);
       return {
         person,

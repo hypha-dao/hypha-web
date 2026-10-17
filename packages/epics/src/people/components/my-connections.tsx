@@ -30,6 +30,7 @@ import {
   isHyphaBot,
   looksLikeHyphaBot,
   memberRowsForConnections,
+  unreadRoomsMissingFromMembers,
   STALE_CONNECTION_MS,
   suggestConnections,
   type ConnectionSuggestion,
@@ -349,17 +350,23 @@ export function MyConnections() {
     };
   }, [client]);
 
-  const members = useMemo(
-    () =>
-      memberRowsForConnections(
-        listed,
+  const members = useMemo(() => {
+    const directoryRows = memberRowsForConnections(
+      listed,
+      rows,
+      personIdToMatrixUserId,
+      home?.person.id ?? null,
+      t('someone'),
+    );
+    return [
+      ...unreadRoomsMissingFromMembers(
         rows,
+        directoryRows,
         personIdToMatrixUserId,
-        home?.person.id ?? null,
-        t('someone'),
       ),
-    [home?.person.id, listed, personIdToMatrixUserId, rows, t],
-  );
+      ...directoryRows,
+    ];
+  }, [home?.person.id, listed, personIdToMatrixUserId, rows, t]);
 
   const memberPersonIds = useMemo(
     () => members.map((row) => row.person.id),
