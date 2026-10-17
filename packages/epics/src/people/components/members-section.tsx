@@ -222,20 +222,24 @@ export const MembersSection: FC<MemberSectionProps> = ({
           <p>{tMembers('listIsEmpty')}</p>
         </Empty>
       ) : (
-        Array.from({ length: pages }).map((_, index) => (
-          <MembersList
-            basePath={basePath}
-            page={index + 1}
-            key={index}
-            useMembers={useMembers}
-            spaceId={space?.id}
-            spaceSlug={spaceSlug}
-            searchTerm={searchTerm}
-            refreshInterval={refreshInterval}
-            energySharingOnly={energySharingOnly}
-            entityFilter={entityFilter}
-          />
-        ))
+        <div className="@container/members w-full">
+          <div className="member-list grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">
+            {Array.from({ length: pages }).map((_, index) => (
+              <MembersList
+                basePath={basePath}
+                page={index + 1}
+                key={index}
+                useMembers={useMembers}
+                spaceId={space?.id}
+                spaceSlug={spaceSlug}
+                searchTerm={searchTerm}
+                refreshInterval={refreshInterval}
+                energySharingOnly={energySharingOnly}
+                entityFilter={entityFilter}
+              />
+            ))}
+          </div>
+        </div>
       )}
       {entityFilter === 'ai' || pagination?.total === 0 ? null : (
         <SectionLoadMore
