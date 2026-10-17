@@ -16,7 +16,7 @@ const HomeTokenHoldingsDashboard = dynamic(
     ),
   {
     ssr: false,
-    loading: () => <TabLoadingSkeleton showTitle={false} />,
+    loading: () => <TabLoadingSkeleton layout="treasury" showTitle={false} />,
   },
 );
 

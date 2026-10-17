@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  type CSSProperties,
   type ReactNode,
   useCallback,
   useEffect,
@@ -473,7 +474,7 @@ export function MemberHome({
               <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
                 {home == null ? (
                   <div className="mt-2 flex gap-2" aria-hidden>
-                    {Array.from({ length: 4 }, (_, index) => (
+                    {Array.from({ length: 5 }, (_, index) => (
                       <HomePulse
                         key={index}
                         className="h-8 w-8 rounded-full"
@@ -510,9 +511,7 @@ export function MemberHome({
                 onCall={openCall}
               />
             ) : (
-              <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-6 md:px-4">
-                <ChatSkeleton />
-              </div>
+              <ChatSkeleton />
             )}
           </main>
           <aside
@@ -835,14 +834,19 @@ function ClassicBoard({
 function HomePulse({
   className,
   delayMs = 0,
+  style,
 }: {
   className?: string;
   delayMs?: number;
+  style?: CSSProperties;
 }) {
   return (
     <div
       className={cn('animate-pulse rounded-none bg-foreground/10', className)}
-      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
+      style={{
+        ...style,
+        ...(delayMs ? { animationDelay: `${delayMs}ms` } : {}),
+      }}
       aria-hidden
     />
   );
@@ -851,22 +855,20 @@ function HomePulse({
 function CardSkeleton({
   lines = 3,
   detail = true,
-  round = false,
+  mark = 32,
 }: {
   lines?: number;
   detail?: boolean;
-  round?: boolean;
+  mark?: number;
 }) {
   return (
     <div className="grid gap-3" aria-hidden>
       {Array.from({ length: lines }, (_, index) => (
         <div key={index} className="flex items-center gap-3">
           <HomePulse
-            className={cn(
-              'shrink-0',
-              round ? 'h-8 w-8 rounded-full' : 'h-6 w-6',
-            )}
+            className="shrink-0"
             delayMs={index * 80}
+            style={{ width: mark, height: mark }}
           />
           <div className="grid min-w-0 flex-1 gap-1.5">
             <HomePulse
@@ -886,27 +888,29 @@ function CardSkeleton({
   );
 }
 
+/** Empty conversation plus the chip row and composer that stay on screen. */
 function ChatSkeleton() {
+  const chipWidths = [88, 72, 96, 80, 104];
   return (
-    <div className="grid gap-6" aria-hidden>
-      {Array.from({ length: 3 }, (_, index) => (
-        <div key={index} className="flex gap-3">
-          <HomePulse
-            className="mt-0.5 h-8 w-8 shrink-0"
-            delayMs={index * 120}
-          />
-          <div className="grid min-w-0 flex-1 gap-2 pt-1">
+    <div className="flex min-h-0 flex-1 flex-col" aria-hidden>
+      <div className="min-h-0 flex-1" />
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
+        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden pt-2 md:mx-4">
+          {chipWidths.map((width, index) => (
             <HomePulse
-              className="h-3 w-2/3 max-w-md"
-              delayMs={index * 120 + 40}
+              key={width}
+              className="h-8 shrink-0 border border-foreground/15 bg-transparent"
+              delayMs={index * 60}
+              style={{ width }}
             />
-            <HomePulse
-              className="h-3 w-1/2 max-w-sm"
-              delayMs={index * 120 + 80}
-            />
-          </div>
+          ))}
         </div>
-      ))}
+        <div className="mx-5 flex h-11 items-center gap-2 border border-border px-3 md:mx-4">
+          <HomePulse className="h-3 min-w-0 flex-1" delayMs={80} />
+          <HomePulse className="h-8 w-8 shrink-0" delayMs={120} />
+          <HomePulse className="h-8 w-8 shrink-0" delayMs={160} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1094,7 +1098,9 @@ function ResourceList({
 }) {
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
-  if (isLoading) return <CardSkeleton />;
+  if (isLoading) {
+    return <CardSkeleton lines={maxItems} mark={markSize} />;
+  }
   if (items.length === 0) {
     return <p className="text-1 text-neutral-11">{empty}</p>;
   }

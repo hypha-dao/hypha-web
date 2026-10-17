@@ -119,26 +119,32 @@ export function MemberHomeAttention({
         </div>
         <div className="mt-4 border border-border bg-background">
           {isLoading ? (
-            <div className="grid gap-3 p-4">
-              <Skeleton
-                loading
-                height="16px"
-                width="70%"
-                className="rounded-none bg-foreground/10"
-              />
-              <Skeleton
-                loading
-                height="16px"
-                width="46%"
-                className="rounded-none bg-foreground/10"
-              />
-              <Skeleton
-                loading
-                height="16px"
-                width="62%"
-                className="rounded-none bg-foreground/10"
-              />
-            </div>
+            <ul className="divide-y divide-border" aria-hidden>
+              {Array.from({ length: 5 }, (_, index) => (
+                <li key={index} className="flex items-center gap-3 px-4 py-3">
+                  <Skeleton
+                    loading
+                    height="32px"
+                    width="32px"
+                    className="shrink-0 rounded-none bg-foreground/10"
+                  />
+                  <div className="grid min-w-0 flex-1 gap-1.5">
+                    <Skeleton
+                      loading
+                      height="12px"
+                      width="70%"
+                      className="rounded-none bg-foreground/10"
+                    />
+                    <Skeleton
+                      loading
+                      height="12px"
+                      width="40%"
+                      className="rounded-none bg-foreground/10"
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : items.length === 0 ? (
             <p className="p-4 text-1 text-neutral-11">{t('noWaiting')}</p>
           ) : (

@@ -158,12 +158,38 @@ export function MemberHomeWalletWidget({
       }
     >
       {isHomeLoading ? (
-        <Skeleton
-          loading
-          height="36px"
-          width="9rem"
-          className="rounded-none bg-foreground/10"
-        />
+        <div aria-hidden>
+          <Skeleton
+            loading
+            height="28px"
+            width="9rem"
+            className="rounded-none bg-foreground/10"
+          />
+          <ul className="mt-4 flex flex-col gap-2">
+            {Array.from({ length: 3 }, (_, index) => (
+              <li key={index} className="flex items-center gap-2">
+                <Skeleton
+                  loading
+                  height="20px"
+                  width="20px"
+                  className="shrink-0 rounded-full bg-foreground/10"
+                />
+                <Skeleton
+                  loading
+                  height="12px"
+                  width="4rem"
+                  className="rounded-none bg-foreground/10"
+                />
+                <Skeleton
+                  loading
+                  height="12px"
+                  width="3rem"
+                  className="ml-auto rounded-none bg-foreground/10"
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : showBalance ? (
         <div>
           <p
@@ -239,17 +265,43 @@ export function MemberHomeConnectionsWidget({
   return (
     <Widget title={t('connections')} busy={isLoading}>
       {isLoading ? (
-        <div className="flex flex-wrap gap-3">
-          {Array.from({ length: 4 }, (_, index) => (
-            <Skeleton
-              key={index}
-              loading
-              height="32px"
-              width="32px"
-              className="rounded-full bg-foreground/10"
-            />
+        <ul className="flex flex-col gap-3" aria-hidden>
+          {Array.from({ length: 3 }, (_, index) => (
+            <li key={index} className="flex items-center gap-2">
+              <Skeleton
+                loading
+                height="32px"
+                width="32px"
+                className="shrink-0 rounded-full bg-foreground/10"
+              />
+              <div className="grid min-w-0 flex-1 gap-1.5">
+                <Skeleton
+                  loading
+                  height="12px"
+                  width="7rem"
+                  className="rounded-none bg-foreground/10"
+                />
+                <Skeleton
+                  loading
+                  height="10px"
+                  width="4.5rem"
+                  className="rounded-none bg-foreground/10"
+                />
+              </div>
+              <div className="flex shrink-0 gap-1">
+                {Array.from({ length: 3 }, (__, action) => (
+                  <Skeleton
+                    key={action}
+                    loading
+                    height="32px"
+                    width="32px"
+                    className="rounded-none bg-foreground/10"
+                  />
+                ))}
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : people.length === 0 ? (
         <p className="text-1 text-neutral-11">{t('noConnections')}</p>
       ) : (
