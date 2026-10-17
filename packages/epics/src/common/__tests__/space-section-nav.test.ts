@@ -12,10 +12,16 @@ const base = {
   pathname: '/en/dho/hypha/overview',
 };
 
-const menuKeys = ['overview', 'coherence', 'agreements', 'treasury'] as const;
+const menuKeys = [
+  'overview',
+  'coherence',
+  'members',
+  'agreements',
+  'treasury',
+] as const;
 
 describe('buildSpaceSectionNavItems', () => {
-  it('keeps the menu to home, signals, agreements, and treasury', () => {
+  it('keeps the menu to home, signals, members, agreements, and treasury', () => {
     const items = buildSpaceSectionNavItems(base);
     expect(items.map((item) => item.key)).toEqual([...menuKeys]);
     expect(
@@ -51,6 +57,7 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.map((item) => item.key)).toEqual([
       'overview',
       'coherence',
+      'members',
       'pipeline',
       'agreements',
       'treasury',
@@ -58,7 +65,7 @@ describe('buildSpaceSectionNavItems', () => {
     ]);
   });
 
-  it('keeps energy, calendar, members, rewards, and ecosystem off the menu', () => {
+  it('keeps energy, calendar, rewards, and ecosystem off the menu', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       pipelineEnabled: true,
@@ -68,7 +75,7 @@ describe('buildSpaceSectionNavItems', () => {
     const keys = items.map((item) => item.key);
     expect(keys).not.toContain('energy');
     expect(keys).not.toContain('calendar');
-    expect(keys).not.toContain('members');
+    expect(keys).toContain('members');
     expect(keys).not.toContain('rewards');
     expect(keys).not.toContain('ecosystem-navigation');
   });
@@ -78,6 +85,7 @@ describe('buildSpaceSectionNavItems', () => {
       'overview',
       'agreements',
       'coherence',
+      'members',
       'treasury',
       'memory',
     ];
@@ -96,7 +104,6 @@ describe('buildSpaceSectionNavItems', () => {
   it('keeps Home selected on screens that now live on the dashboard', () => {
     for (const key of [
       'calendar',
-      'members',
       'rewards',
       'energy',
       'ecosystem-navigation',

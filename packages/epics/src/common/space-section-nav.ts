@@ -22,13 +22,13 @@ export const SPACE_SECTION_NAV_GROUP: Record<
 > = {
   overview: 'primary',
   coherence: 'primary',
+  members: 'primary',
   agreements: 'primary',
   treasury: 'primary',
   memory: 'primary',
   pipeline: 'primary',
   'ecosystem-navigation': 'more',
   calendar: 'more',
-  members: 'more',
   energy: 'more',
   rewards: 'more',
 };
@@ -36,7 +36,6 @@ export const SPACE_SECTION_NAV_GROUP: Record<
 /** These screens live on the space home. The menu keeps Home selected there. */
 const HOME_DASHBOARD_TABS = new Set<string>([
   'calendar',
-  'members',
   'rewards',
   'energy',
   'ecosystem-navigation',
@@ -82,8 +81,8 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Menu: Home · Signals · Deals (when on) · Agreements · Treasury · Space memory
- * Calendar, members, rewards, ecosystem, and energy stay on the home dashboard.
+ * Menu: Home · Signals · Members · Deals (when on) · Agreements · Treasury · Space memory
+ * Calendar, rewards, ecosystem, and energy stay on the home dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -111,6 +110,8 @@ export function buildSpaceSectionNavItems({
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
   }
 
+  items.push(navItem('members', lang, spaceSlug, isActive('members')));
+
   if (pipelineEnabled) {
     items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
   }
@@ -131,7 +132,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Home, Signals, Agreements, Treasury, and Space memory.
+ * Home, Signals, Members, Agreements, Treasury, and Space memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];
