@@ -547,14 +547,6 @@ export function MemberHome({
                 href={getOnboardingPath(lang)}
               />
             ) : null}
-            {home && home.invites.length > 0 ? (
-              <MemberHomeInviteBanners lang={lang} invites={home.invites} />
-            ) : null}
-            {home?.person.slug ? (
-              <div className={cn(showField && 'max-xl:hidden')}>
-                <MemberHomeEnergyPanel personSlug={home.person.slug} />
-              </div>
-            ) : null}
             {orientation === 'investor' && home ? (
               <PersonaCard
                 title={t('investorTitle')}
@@ -565,6 +557,14 @@ export function MemberHome({
                   count: home.counts.capitalAsks,
                 })}
               />
+            ) : null}
+            {home && home.invites.length > 0 ? (
+              <MemberHomeInviteBanners lang={lang} invites={home.invites} />
+            ) : null}
+            {home?.person.slug ? (
+              <div className={cn(showField && 'max-xl:hidden')}>
+                <MemberHomeEnergyPanel personSlug={home.person.slug} />
+              </div>
             ) : null}
             {home != null && orientation == null ? (
               <section className="border border-border bg-background p-4">
