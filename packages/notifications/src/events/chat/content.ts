@@ -15,15 +15,9 @@ import type {
   NotificationEmailContent,
 } from '../../core/types';
 import { TAG_MENTION_CONSENT } from '../../constants';
-import { getSafeMentionHref } from '../../actions/notify-chat-mention.utils';
 import { emailChatMention } from '../../template';
 
-/**
- * OneSignal dashboard template ("Chat - User Mentioned (email)") when `EMAIL_TEMPLATE_CHAT_MENTION`
- * is set; otherwise the locally-rendered HTML, so an environment without the ID configured still
- * sends the email. `customData` carries raw text — the template escapes it — and `url` is
- * http(s)-validated here because the template can't.
- */
+/** The mention email, rendered in code (`template/email/chat-mention.ts`). */
 function buildMentionEmail({
   heading,
   actorDisplayName,
@@ -39,24 +33,6 @@ function buildMentionEmail({
   spaceTitle?: string;
   notificationSettingsUrl?: string;
 }): NotificationEmailContent {
-  const templateId = process.env.EMAIL_TEMPLATE_CHAT_MENTION?.trim();
-  if (templateId) {
-    return {
-      kind: 'template',
-      templateId,
-      customData: {
-        actor_name: actorDisplayName,
-        context_label: spaceTitle?.trim() || 'chat',
-        message_preview: messagePreview,
-        url: getSafeMentionHref(url),
-        // Omitted when unset so the template's `| default:` fallback applies.
-        ...(notificationSettingsUrl
-          ? { notification_settings_url: notificationSettingsUrl }
-          : {}),
-      },
-    };
-  }
-
   const email = emailChatMention({
     actorName: actorDisplayName,
     messagePreview,
