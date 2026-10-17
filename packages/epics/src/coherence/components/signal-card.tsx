@@ -247,7 +247,7 @@ function SignalCardComponent({
   return (
     <Card
       className={cn(
-        'craft-card-interactive group relative flex h-full w-full min-h-0 flex-col',
+        'craft-card-interactive group relative flex h-auto w-full min-h-0 flex-col',
         !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         className,

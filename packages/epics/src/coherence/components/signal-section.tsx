@@ -241,7 +241,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }
 
   return (
-    <div className="relative flex w-full flex-col gap-4 pb-24">
+    <div className="relative flex w-full flex-col gap-4 pb-16">
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           {onBoardFiltersChange ? (

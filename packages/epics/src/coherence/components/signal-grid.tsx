@@ -35,7 +35,7 @@ export function SignalGrid({
           <div key={signal.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
             <SignalCard
               {...signal}
-              className="h-full min-h-0 w-full"
+              className="h-auto min-h-0 w-full"
               isLoading={isLoading}
               refresh={refresh}
             />
@@ -61,7 +61,7 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
-              className="h-full min-h-0 w-full"
+              className="h-auto min-h-0 w-full"
               isLoading={isLoading}
               refresh={refresh}
             />
@@ -75,7 +75,7 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
-              className="h-full min-h-0 w-full"
+              className="h-auto min-h-0 w-full"
               isLoading={isLoading}
               refresh={refresh}
             />
