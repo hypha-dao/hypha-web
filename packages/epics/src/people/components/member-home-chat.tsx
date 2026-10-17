@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -397,6 +398,12 @@ export function MemberHomeChat({
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
+  const seenMotionIds = useRef(new Set<string>());
+  const settleSend = useRef(false);
+  const glideScroll = useRef(false);
+  const gliding = useRef(false);
+  const pinnedToEnd = useRef(true);
+  const settlingIds = useRef(new Set<string>());
   const connectionIds = useMemo(
     () => intelligence.connections.map((person) => person.id),
     [intelligence.connections],
@@ -463,10 +470,7 @@ export function MemberHomeChat({
       const trimmed = text.trim();
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
-      if (!hidden) {
-        setInput('');
-        if (includeDrafts) setDrafts([]);
-      }
+      const reveal = !hidden;
       await stop();
       if (!hidden && files.length === 0) {
         const previousAssistant = [...messagesRef.current]
@@ -504,6 +508,13 @@ export function MemberHomeChat({
               ],
             },
           ];
+          if (reveal) {
+            setInput('');
+            if (includeDrafts) setDrafts([]);
+            settleSend.current = true;
+            glideScroll.current = true;
+            pinnedToEnd.current = true;
+          }
           setMessages(next);
           writeHomeThread(next);
           return;
@@ -537,24 +548,36 @@ export function MemberHomeChat({
       const textParts = trimmed
         ? [{ type: 'text' as const, text: trimmed }]
         : [];
-      await sendMessage(
-        {
-          role: 'user',
-          metadata: hidden ? { homeArrival: true } : undefined,
-          parts: [...textParts, ...fileParts],
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          body: {
-            memberHome: true,
-            locale: lang,
-            memberHomeMemory: {
-              ...readHomeChoices(),
-              acted: readHomeActed(),
+      if (reveal) {
+        setInput('');
+        if (includeDrafts) setDrafts([]);
+        settleSend.current = true;
+        glideScroll.current = true;
+        pinnedToEnd.current = true;
+      }
+      try {
+        await sendMessage(
+          {
+            role: 'user',
+            metadata: hidden ? { homeArrival: true } : undefined,
+            parts: [...textParts, ...fileParts],
+          },
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            body: {
+              memberHome: true,
+              locale: lang,
+              memberHomeMemory: {
+                ...readHomeChoices(),
+                acted: readHomeActed(),
+              },
             },
           },
-        },
-      );
+        );
+      } catch (error) {
+        if (reveal) setInput(trimmed);
+        throw error;
+      }
     },
     [
       clearError,
@@ -785,8 +808,14 @@ export function MemberHomeChat({
   useEffect(() => {
     const node = scroller.current;
     if (!node) return;
-    node.scrollTop = node.scrollHeight;
-  }, [focusedItem, homeMessages, isStreaming, widgets]);
+    const onScroll = () => {
+      if (gliding.current) return;
+      const gap = node.scrollHeight - node.scrollTop - node.clientHeight;
+      pinnedToEnd.current = gap < 120;
+    };
+    node.addEventListener('scroll', onScroll, { passive: true });
+    return () => node.removeEventListener('scroll', onScroll);
+  }, []);
   useEffect(() => {
     onFocusItem?.(focusedItem);
   }, [focusedItem, onFocusItem]);
@@ -801,6 +830,38 @@ export function MemberHomeChat({
     }
     return true;
   }, [homeMessages, isStreaming, threadItems]);
+
+  for (const message of homeMessages) {
+    if (seenMotionIds.current.has(message.id)) continue;
+    seenMotionIds.current.add(message.id);
+    if (!settleSend.current || message.metadata?.homeArrival) continue;
+    settlingIds.current.add(message.id);
+    if (message.role === 'assistant') settleSend.current = false;
+  }
+
+  useLayoutEffect(() => {
+    const node = scroller.current;
+    if (!node || !pinnedToEnd.current || gliding.current) return;
+    const top = node.scrollHeight;
+    const glide =
+      glideScroll.current &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    glideScroll.current = false;
+    if (Math.abs(node.scrollTop - top) < 2) return;
+    if (glide) {
+      gliding.current = true;
+      node.scrollTo({ top, behavior: 'smooth' });
+      window.setTimeout(() => {
+        gliding.current = false;
+        const current = scroller.current;
+        if (current && pinnedToEnd.current) {
+          current.scrollTop = current.scrollHeight;
+        }
+      }, 520);
+      return;
+    }
+    node.scrollTop = top;
+  }, [focusedItem, homeMessages, isStreaming, showSensing, widgets]);
 
   const chips = [
     { key: 'useful', ask: t('chipUseful') },
@@ -850,6 +911,7 @@ export function MemberHomeChat({
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+      <HomeSendMotion />
       <div
         ref={scroller}
         className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto"
@@ -914,6 +976,7 @@ export function MemberHomeChat({
                   <article
                     className={cn(
                       'flex gap-3',
+                      settlingIds.current.has(message.id) && 'home-send-settle',
                       mine ? 'justify-end' : 'justify-start',
                       oneLine ? 'items-center' : 'items-start',
                     )}
@@ -1003,8 +1066,8 @@ export function MemberHomeChat({
               </article>
             ))}
           {showSensing ? (
-            <article className="flex gap-3" aria-live="polite">
-              <MemberHomeMark className="mt-0.5 h-8 w-8" />
+            <article className="home-send-settle flex gap-3" aria-live="polite">
+              <MemberHomeMark className="home-send-breathe mt-0.5 h-8 w-8" />
               <p className="text-2 leading-relaxed text-neutral-11">
                 {t('thinking')}
               </p>
@@ -1127,5 +1190,32 @@ export function MemberHomeChat({
         </div>
       </div>
     </div>
+  );
+}
+
+function HomeSendMotion() {
+  return (
+    <style>{`
+      @keyframes home-send-settle {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .home-send-settle {
+        animation: home-send-settle 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      @keyframes home-send-breathe {
+        0%, 100% { opacity: 0.38; }
+        50% { opacity: 1; }
+      }
+      .home-send-breathe {
+        animation: home-send-breathe 1.8s ease-in-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .home-send-settle,
+        .home-send-breathe {
+          animation: none;
+        }
+      }
+    `}</style>
   );
 }
