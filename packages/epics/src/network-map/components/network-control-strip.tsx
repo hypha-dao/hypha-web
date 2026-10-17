@@ -41,10 +41,10 @@ export function NetworkControlStrip({
           {mapChrome}
         </div>
       ) : (
-        <div className="min-w-0 flex-1" />
+        <div className="hidden min-w-0 flex-1 md:block" />
       )}
       {trailing ? (
-        <div className="ml-auto shrink-0 self-start sm:self-auto">
+        <div className="shrink-0 self-start md:ml-auto md:self-auto">
           {trailing}
         </div>
       ) : null}
