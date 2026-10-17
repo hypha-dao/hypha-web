@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@hypha-platform/ui';
+import { usePathname } from 'next/navigation';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 
@@ -12,17 +12,17 @@ type WalletActionsToolbarProps = {
 };
 
 /**
- * The wallet's primary actions, so they keep the solid accent fill rather than
- * the quiet outline treatment used for banners and surrounding chrome.
+ * Wallet secondary menu — Buy Space Tokens, Buy Hypha, Actions.
+ * Replaces the solid CTA buttons on larger screens (and keeps the same
+ * destinations as a quiet strip on smaller ones).
  */
-const ACTION_BUTTON_CLASS = 'shrink-0 whitespace-nowrap px-3 text-sm sm:px-4';
-
 export function WalletActionsToolbar({
   basePath,
   disabled = false,
   className,
 }: WalletActionsToolbarProps) {
   const tProfile = useTranslations('Profile');
+  const pathname = usePathname() ?? '';
 
   const actions = [
     { href: `${basePath}/actions/buy-space-tokens`, label: 'buySpaceTokens' },
@@ -34,29 +34,42 @@ export function WalletActionsToolbar({
   ] as const;
 
   return (
-    <div
+    <nav
+      aria-label={tProfile('actions')}
       className={cn(
-        'flex min-w-0 flex-nowrap items-center justify-start gap-2 overflow-x-auto',
+        'flex min-w-0 flex-nowrap items-end gap-0 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         className,
       )}
     >
-      {actions.map(({ href, label }) =>
-        disabled ? (
-          <Button
+      {actions.map(({ href, label }) => {
+        const active =
+          pathname === href ||
+          (label === 'actions'
+            ? pathname === href
+            : pathname === href || pathname.startsWith(`${href}/`));
+        const classNameForItem = cn(
+          'shrink-0 border-b-2 px-3 pb-2 text-1 font-medium uppercase tracking-wide transition-colors',
+          active
+            ? 'border-foreground text-foreground'
+            : 'border-transparent text-muted-foreground hover:text-foreground',
+          disabled && 'pointer-events-none opacity-50',
+        );
+        return disabled ? (
+          <span key={href} className={classNameForItem}>
+            {tProfile(label)}
+          </span>
+        ) : (
+          <Link
             key={href}
-            className={cn(ACTION_BUTTON_CLASS, 'cursor-not-allowed')}
-            disabled
+            href={href}
+            scroll={false}
+            aria-current={active ? 'page' : undefined}
+            className={classNameForItem}
           >
             {tProfile(label)}
-          </Button>
-        ) : (
-          <Button key={href} asChild className={ACTION_BUTTON_CLASS}>
-            <Link href={href} scroll={false}>
-              {tProfile(label)}
-            </Link>
-          </Button>
-        ),
-      )}
-    </div>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

@@ -502,6 +502,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const chatHydratedForSlugRef = useRef<string | null>(null);
   const spaceChatId = spaceSlug?.trim()
     ? `space-ai-${spaceSlug.trim()}`
+    : pathname.includes('/my-wallet')
+    ? 'member-ai'
     : 'space-ai-global';
   const {
     createSpace: createSpaceWithWalletFlow,
@@ -796,6 +798,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ];
       return ids.map(card);
     }
+    // Member wallet: personal assistant, not space-scoped tools.
+    if (pathname.includes('/my-wallet') && !spaceSlug) {
+      return [
+        'networkMemberUseful',
+        'networkMemberPeople',
+        'networkMemberSpaces',
+        'createSpace',
+        'sharedNeeds',
+      ].map(card);
+    }
     return [
       ...(!spaceSlug ? [card('createSpace'), card('createEcosystem')] : []),
       card('spaceHealth'),
@@ -808,6 +820,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [me?.primaryOrientation, pathname, spaceSlug, t]);
 
   const welcomeText = useMemo(() => {
+    if (pathname.includes('/my-wallet') && !spaceSlug) {
+      return t('welcomeNetworkMember');
+    }
     if (!(pathname.includes('/network') && !spaceSlug)) return t('welcome');
     if (me?.primaryOrientation === 'builder') {
       return t('welcomeNetworkBuilder');
