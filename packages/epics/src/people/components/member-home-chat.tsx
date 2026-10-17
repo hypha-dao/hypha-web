@@ -1058,7 +1058,7 @@ export function MemberHomeChat({
               key={chip.key}
               type="button"
               disabled={isStreaming}
-              className="shrink-0 rounded-none bg-foreground px-3 py-1 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
+              className="shrink-0 rounded-none bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
               onClick={() => {
                 void send(chip.ask);
               }}
