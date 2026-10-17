@@ -65,7 +65,34 @@ describe('buildSpaceSectionNavItems', () => {
     ]);
   });
 
-  it('keeps energy, calendar, rewards, and ecosystem off the menu', () => {
+  it('opens an energy community on energy and keeps the space dashboard beside it', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pipelineEnabled: true,
+      energyEnabled: true,
+      memoryEnabled: true,
+    });
+    expect(items.map((item) => item.key)).toEqual([
+      'energy',
+      'overview',
+      'coherence',
+      'members',
+      'pipeline',
+      'agreements',
+      'treasury',
+      'memory',
+    ]);
+    expect(items.find((item) => item.key === 'energy')?.href).toBe(
+      '/en/dho/hypha/energy',
+    );
+    expect(items.find((item) => item.key === 'overview')?.href).toBe(
+      '/en/dho/hypha/overview?board=space',
+    );
+    expect(SPACE_SECTION_NAV_GROUP.energy).toBe('primary');
+    expect(items.find((item) => item.active)?.key).toBe('overview');
+  });
+
+  it('keeps calendar, rewards, and ecosystem off the menu', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       pipelineEnabled: true,
@@ -73,7 +100,6 @@ describe('buildSpaceSectionNavItems', () => {
       memoryEnabled: true,
     });
     const keys = items.map((item) => item.key);
-    expect(keys).not.toContain('energy');
     expect(keys).not.toContain('calendar');
     expect(keys).toContain('members');
     expect(keys).not.toContain('rewards');
@@ -101,13 +127,26 @@ describe('buildSpaceSectionNavItems', () => {
     }
   });
 
+  it('selects energy on the energy screen when that section is on', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pathname: '/en/dho/hypha/energy',
+      energyEnabled: true,
+    });
+    expect(items.find((item) => item.active)?.key).toBe('energy');
+  });
+
+  it('omits energy when the space is not an energy community', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pathname: '/en/dho/hypha/energy',
+    });
+    expect(items.map((item) => item.key)).not.toContain('energy');
+    expect(items.find((item) => item.active)).toBeUndefined();
+  });
+
   it('keeps Home selected on screens that now live on the dashboard', () => {
-    for (const key of [
-      'calendar',
-      'rewards',
-      'energy',
-      'ecosystem-navigation',
-    ]) {
+    for (const key of ['calendar', 'rewards', 'ecosystem-navigation']) {
       const items = buildSpaceSectionNavItems({
         ...base,
         pathname: `/en/dho/hypha/${key}`,

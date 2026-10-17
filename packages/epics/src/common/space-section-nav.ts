@@ -29,17 +29,20 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   pipeline: 'primary',
   'ecosystem-navigation': 'more',
   calendar: 'more',
-  energy: 'more',
+  energy: 'primary',
   rewards: 'more',
 };
 
-/** These screens live on the space home. The menu keeps Home selected there. */
+/** These screens live on the space dashboard. The menu keeps Overview selected there. */
 const HOME_DASHBOARD_TABS = new Set<string>([
   'calendar',
   'rewards',
-  'energy',
   'ecosystem-navigation',
 ]);
+
+/** Overview link that stays on the space dashboard inside an energy community. */
+export const SPACE_DASHBOARD_BOARD_PARAM = 'board';
+export const SPACE_DASHBOARD_BOARD_VALUE = 'space';
 
 export type SpaceSectionNavItem = {
   key: SpaceSectionNavKey;
@@ -81,19 +84,21 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Menu: Home · Signals · Members · Deals (when on) · Agreements · Treasury · Space memory
- * Calendar, rewards, ecosystem, and energy stay on the home dashboard.
+ * An energy community opens on Energy. Overview stays next to it so the space dashboard remains one step away.
+ * Menu: Energy (when on) · Overview · Signals · Members · Deals (when on) · Agreements · Treasury · Space memory
+ * Calendar, rewards, and ecosystem stay on the space dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
   spaceSlug,
   pathname,
   pipelineEnabled = false,
+  energyEnabled = false,
   coherenceEnabled = true,
   memoryEnabled = false,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
   const rawActiveTab = getActiveTabFromPath(pathname);
-  // Banking lives under Treasury. Dashboard sections keep Home selected.
+  // Banking lives under Treasury. Space-dashboard sections keep Overview selected.
   const activeTab =
     rawActiveTab === 'banking'
       ? 'treasury'
@@ -102,9 +107,17 @@ export function buildSpaceSectionNavItems({
       : rawActiveTab;
   const isActive = (key: SpaceSectionNavKey) => activeTab === key;
 
-  const items: SpaceSectionNavItem[] = [
-    navItem('overview', lang, spaceSlug, isActive('overview')),
-  ];
+  const items: SpaceSectionNavItem[] = [];
+
+  if (energyEnabled) {
+    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
+  }
+
+  const overview = navItem('overview', lang, spaceSlug, isActive('overview'));
+  if (energyEnabled) {
+    overview.href = `${overview.href}?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`;
+  }
+  items.push(overview);
 
   if (coherenceEnabled) {
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
@@ -132,7 +145,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Home, Signals, Members, Agreements, Treasury, and Space memory.
+ * Energy, Overview, Signals, Members, Agreements, Treasury, and Space memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];

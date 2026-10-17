@@ -16,12 +16,12 @@ import {
   SheetContent,
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
+import { MyceliumMenuIcon } from './member-home-mark';
 import { EthAddress } from './eth-address';
 import {
   Bell,
   ChevronRight,
   Compass,
-  Globe2,
   LayoutGrid,
   Loader2,
   MessagesSquare,
@@ -112,7 +112,7 @@ function resolveNavItemIcon(href?: string) {
     return <Wallet className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/network')) {
-    return <Globe2 className="craft-icon" strokeWidth={1.25} aria-hidden />;
+    return <MyceliumMenuIcon className="craft-icon" strokeWidth={1.25} />;
   }
   return null;
 }

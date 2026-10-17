@@ -204,11 +204,15 @@ function EnergyCommunityCard({
   );
 }
 
-export function MemberHomeEnergyPanel({ personSlug }: { personSlug: string }) {
+export function useMemberEnergyCommunities(
+  personSlug: string | null | undefined,
+) {
   const { jwt } = useJwt();
-  const endpoint = `/api/v1/people/${personSlug}/energy/home`;
-  const { data } = useSWR(
-    jwt ? [endpoint, jwt] : null,
+  const endpoint = personSlug
+    ? `/api/v1/people/${personSlug}/energy/home`
+    : null;
+  const { data, isLoading } = useSWR(
+    jwt && endpoint ? [endpoint, jwt] : null,
     async ([path, token]) => {
       const response = await fetch(path, {
         headers: { Authorization: `Bearer ${token}` },
@@ -221,7 +225,14 @@ export function MemberHomeEnergyPanel({ personSlug }: { personSlug: string }) {
     { refreshInterval: 60_000, shouldRetryOnError: false },
   );
 
-  const communities = data?.communities ?? [];
+  return {
+    communities: data?.communities ?? [],
+    isLoading: Boolean(endpoint && jwt && isLoading && data == null),
+  };
+}
+
+export function MemberHomeEnergyPanel({ personSlug }: { personSlug: string }) {
+  const { communities } = useMemberEnergyCommunities(personSlug);
   if (communities.length === 0) return null;
 
   return (

@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   ClipboardList,
-  Globe2,
   House,
   LayoutDashboard,
   LayoutGrid,
@@ -17,6 +16,7 @@ import {
   Rows3,
   Settings,
   Sparkles,
+  Zap,
   Target,
   Wallet,
   Waves,
@@ -37,6 +37,8 @@ import {
   isWalletSectionNavActive,
 } from '../../wallet/components/wallet-section-nav';
 import { useFundWallet } from '../../treasury/hooks/use-fund-wallet';
+import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
+import { useMemberEnergyCommunities } from './member-home-energy-panel';
 import { MyceliumMenuIcon } from './member-home-mark';
 import {
   HOME_VIEW_EVENT,
@@ -140,11 +142,16 @@ export function MobileTabBar({
   const tNetwork = useTranslations('NetworkExchange');
   const tActions = useTranslations('ProfileActions');
   const tHome = useTranslations('MemberHome');
+  const tEnergy = useTranslations('MemberHome.energy');
   const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
+  const onHome = pathname === `/${lang}/home` || pathname === `/${lang}/home/`;
+  const { communities: energyCommunities } = useMemberEnergyCommunities(
+    onHome ? person?.slug : null,
+  );
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}` | undefined,
   });
@@ -184,6 +191,7 @@ export function MobileTabBar({
 
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
+  const { data: spaceEnergy } = useSpaceEnergy();
   const networkRoute = isNetworkPath(pathname);
   const secondLevel = useMemo((): Array<{
     key: string;
@@ -198,8 +206,12 @@ export function MobileTabBar({
     const homeRoute =
       pathname === `/${lang}/home` || pathname === `/${lang}/home/`;
     if (homeRoute) {
-      const views = [
-        { key: 'ai' as const, label: tHome('viewAi'), icon: Sparkles },
+      const views: Array<{
+        key: HomeView;
+        label: string;
+        icon: typeof Sparkles;
+      }> = [
+        { key: 'ai', label: tHome('viewAi'), icon: Sparkles },
         {
           key: 'classic' as const,
           label: tHome('viewClassic'),
@@ -211,6 +223,13 @@ export function MobileTabBar({
           icon: LayoutDashboard,
         },
       ];
+      if (energyCommunities.length > 0) {
+        views.push({
+          key: 'energy',
+          label: tEnergy('title'),
+          icon: Zap,
+        });
+      }
       return views.map((view) => ({
         key: view.key,
         href: '',
@@ -252,6 +271,7 @@ export function MobileTabBar({
         spaceSlug,
         pathname,
         pipelineEnabled: Boolean(space?.pipelineEnabled),
+        energyEnabled: Boolean(spaceEnergy?.enabled),
         coherenceEnabled: true,
         memoryEnabled: spaceMemoryEnabled,
       }).map((item) => {
@@ -333,6 +353,7 @@ export function MobileTabBar({
       icon: <link.icon className={subIconClass} strokeWidth={1.5} />,
     }));
   }, [
+    energyCommunities.length,
     fundWallet,
     homeView,
     lang,
@@ -340,10 +361,12 @@ export function MobileTabBar({
     pathname,
     person?.address,
     space?.pipelineEnabled,
+    spaceEnergy?.enabled,
     spaceMemoryEnabled,
     spaceSlug,
     tActions,
     tCoherence,
+    tEnergy,
     tHome,
     tCommon,
     tNetwork,
@@ -555,7 +578,7 @@ export function MobileTabBar({
             label={t('network')}
             active={networkActive}
             onClick={() => setCreateOpen(false)}
-            icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
+            icon={<MyceliumMenuIcon className={iconClass} strokeWidth={1.25} />}
           />
         </div>
       </nav>

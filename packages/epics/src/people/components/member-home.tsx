@@ -63,7 +63,10 @@ import {
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
-import { MemberHomeEnergyPanel } from './member-home-energy-panel';
+import {
+  MemberHomeEnergyPanel,
+  useMemberEnergyCommunities,
+} from './member-home-energy-panel';
 import {
   HOME_VIEW_EVENT,
   readHomeView,
@@ -209,6 +212,13 @@ export function MemberHome({
   }, []);
   const showAssistant = viewReady && homeView === 'ai';
   const showField = viewReady && homeView === 'field';
+  const showEnergy = viewReady && homeView === 'energy';
+  const { communities: energyCommunities, isLoading: energyLoading } =
+    useMemberEnergyCommunities(home?.person.slug);
+  useEffect(() => {
+    if (!viewReady || energyLoading || homeView !== 'energy') return;
+    if (energyCommunities.length === 0) writeHomeView('field');
+  }, [energyCommunities.length, energyLoading, homeView, viewReady]);
   const rawOrientation = home?.person.primaryOrientation;
   const orientation = isSignupOrientation(rawOrientation)
     ? rawOrientation
@@ -285,7 +295,7 @@ export function MemberHome({
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]',
-            showField && 'max-xl:overflow-y-auto',
+            (showField || showEnergy) && 'max-xl:overflow-y-auto',
           )}
         >
           <aside
@@ -438,7 +448,7 @@ export function MemberHome({
           <main
             className={cn(
               'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-1 @min-[68rem]/home:row-start-1 @min-[80rem]/home:col-start-2',
-              showField && 'max-xl:hidden',
+              (showField || showEnergy) && 'max-xl:hidden',
             )}
           >
             <div className="shrink-0 px-5 pt-4 md:px-4">
@@ -541,7 +551,9 @@ export function MemberHome({
               <MemberHomeInviteBanners lang={lang} invites={home.invites} />
             ) : null}
             {home?.person.slug ? (
-              <MemberHomeEnergyPanel personSlug={home.person.slug} />
+              <div className={cn(showField && 'max-xl:hidden')}>
+                <MemberHomeEnergyPanel personSlug={home.person.slug} />
+              </div>
             ) : null}
             {orientation === 'investor' && home ? (
               <PersonaCard
@@ -619,6 +631,11 @@ export function MemberHome({
               ) : null}
             </div>
           </aside>
+          {showEnergy && home?.person.slug ? (
+            <div className="flex shrink-0 flex-col gap-4 px-5 py-4 xl:hidden">
+              <MemberHomeEnergyPanel personSlug={home.person.slug} />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
