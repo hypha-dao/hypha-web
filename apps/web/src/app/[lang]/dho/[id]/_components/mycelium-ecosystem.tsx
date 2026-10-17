@@ -61,8 +61,6 @@ type PlacedLink = {
   bend: number;
 };
 
-type Lens = 'structure' | 'flows';
-
 const MAX_FLOWS = 8;
 /** Avatar diameter plus a little air, so member chips do not stack. */
 const CHIP_SEP = 26;
@@ -131,6 +129,42 @@ function shorten(
     x2: x2 - (dx / len) * trimEnd,
     y2: y2 - (dy / len) * trimEnd,
   };
+}
+
+function arrowHead(x1: number, y1: number, x2: number, y2: number) {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const size = 9;
+  const spread = 0.5;
+  const leftX = x2 - Math.cos(angle - spread) * size;
+  const leftY = y2 - Math.sin(angle - spread) * size;
+  const rightX = x2 - Math.cos(angle + spread) * size;
+  const rightY = y2 - Math.sin(angle + spread) * size;
+  return `M${leftX} ${leftY} L${x2} ${y2} L${rightX} ${rightY}`;
+}
+
+function useFrameSize() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 480, height: 360 });
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const apply = () => {
+      const next = {
+        width: Math.max(240, Math.round(node.clientWidth)),
+        height: Math.max(220, Math.round(node.clientHeight)),
+      };
+      setSize((current) =>
+        current.width === next.width && current.height === next.height
+          ? current
+          : next,
+      );
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, size };
 }
 
 function hyphaPath(
@@ -447,10 +481,9 @@ export function MyceliumEcosystem({
   const clipPrefix = useId().replace(/:/g, '');
   const tree = useMemo(() => toSpaceNode(data), [data]);
   const [focusId, setFocusId] = useState(currentSpaceId ?? data.id);
-  const [lens, setLens] = useState<Lens>('structure');
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [size, setSize] = useState({ width: 640, height: 480 });
-  const frameRef = useRef<HTMLDivElement>(null);
+  const structureFrame = useFrameSize();
+  const flowsFrame = useFrameSize();
 
   useEffect(() => {
     if (currentSpaceId != null) setFocusId(currentSpaceId);
@@ -472,7 +505,7 @@ export function MyceliumEcosystem({
     isLoading: flowsLoading,
     error: flowsError,
   } = useTransfers({
-    spaceSlug: lens === 'flows' ? focus.slug : undefined,
+    spaceSlug: focus.slug,
     refreshInterval: 0,
   });
 
@@ -498,33 +531,33 @@ export function MyceliumEcosystem({
     parentNode?.id,
   ]);
 
-  useEffect(() => {
-    const node = frameRef.current;
-    if (!node) return;
-    const apply = () => {
-      const next = {
-        width: Math.max(240, Math.round(node.clientWidth)),
-        height: Math.max(220, Math.round(node.clientHeight)),
-      };
-      setSize((current) =>
-        current.width === next.width && current.height === next.height
-          ? current
-          : next,
-      );
-    };
-    apply();
-    const observer = new ResizeObserver(apply);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  const field = useMemo(
-    () => layoutField(tree, focus.id, size.width, size.height),
-    [focus.id, size.height, size.width, tree],
+  const structureField = useMemo(
+    () =>
+      layoutField(
+        tree,
+        focus.id,
+        structureFrame.size.width,
+        structureFrame.size.height,
+      ),
+    [focus.id, structureFrame.size.height, structureFrame.size.width, tree],
   );
-  const placedById = useMemo(
-    () => new Map(field.nodes.map((node) => [node.id, node])),
-    [field.nodes],
+  const flowsField = useMemo(
+    () =>
+      layoutField(
+        tree,
+        focus.id,
+        flowsFrame.size.width,
+        flowsFrame.size.height,
+      ),
+    [flowsFrame.size.height, flowsFrame.size.width, focus.id, tree],
+  );
+  const flowsPlacedById = useMemo(
+    () => new Map(flowsField.nodes.map((node) => [node.id, node])),
+    [flowsField.nodes],
+  );
+  const structurePlacedById = useMemo(
+    () => new Map(structureField.nodes.map((node) => [node.id, node])),
+    [structureField.nodes],
   );
 
   const people = persons.data ?? [];
@@ -568,8 +601,8 @@ export function MyceliumEcosystem({
   }, [transfers]);
 
   const flowView = useMemo(() => {
-    const focusNode = placedById.get(focus.id);
-    if (!focusNode || lens !== 'flows' || flows.length === 0) {
+    const focusNode = flowsPlacedById.get(focus.id);
+    if (!focusNode || flows.length === 0) {
       return {
         nodes: [] as Array<{
           key: string;
@@ -588,7 +621,10 @@ export function MyceliumEcosystem({
         }>,
       };
     }
-    const dist = Math.max(108, Math.min(size.width, size.height) * 0.34);
+    const dist = Math.max(
+      108,
+      Math.min(flowsFrame.size.width, flowsFrame.size.height) * 0.34,
+    );
     const nodes = flows.map((flow, index) => {
       const angle = -Math.PI / 2 + (Math.PI * 2 * index) / flows.length;
       const match = findByTitle(tree, flow.label);
@@ -640,18 +676,17 @@ export function MyceliumEcosystem({
     return { nodes, threads };
   }, [
     flows,
+    flowsFrame.size.height,
+    flowsFrame.size.width,
+    flowsPlacedById,
     focus.id,
     format,
-    lens,
-    placedById,
-    size.height,
-    size.width,
     tree,
   ]);
 
   const showMembers =
-    lens === 'structure' && Math.min(size.width, size.height) >= 280;
-  const focusNode = placedById.get(focus.id);
+    Math.min(structureFrame.size.width, structureFrame.size.height) >= 280;
+  const focusNode = structurePlacedById.get(focus.id);
 
   const membershipMarks = useMemo(() => {
     const empty = {
@@ -670,7 +705,9 @@ export function MyceliumEcosystem({
       agentsMore: 0,
     };
     if (!showMembers || !focusNode) return empty;
-    const structureNodes = field.nodes.filter((node) => node.id !== focus.id);
+    const structureNodes = structureField.nodes.filter(
+      (node) => node.id !== focus.id,
+    );
     const spokes = structureNodes
       .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x))
       .sort((left, right) => left - right);
@@ -795,7 +832,6 @@ export function MyceliumEcosystem({
     };
   }, [
     agents,
-    field.nodes,
     focus.id,
     focus.slug,
     focusNode,
@@ -814,30 +850,8 @@ export function MyceliumEcosystem({
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-2">
-        <div className="flex border border-border">
-          {(
-            [
-              ['structure', t('diagram.lensStructure')],
-              ['flows', t('diagram.lensFlows')],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={cn(
-                'px-3 py-1.5 text-1 uppercase tracking-[0.12em]',
-                lens === value
-                  ? 'bg-foreground text-background'
-                  : 'text-neutral-11 hover:text-foreground',
-              )}
-              onClick={() => setLens(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {path.length > 1 ? (
+      {path.length > 1 ? (
+        <div className="flex flex-wrap items-center justify-end gap-3 px-1 pb-2">
           <nav
             aria-label={ariaLabel}
             className="flex min-w-0 items-center gap-1"
@@ -866,357 +880,408 @@ export function MyceliumEcosystem({
               );
             })}
           </nav>
-        ) : null}
-      </div>
-      <div ref={frameRef} className="relative min-h-0 flex-1">
-        <svg
-          role="img"
-          aria-label={ariaLabel}
-          viewBox={`0 0 ${size.width} ${size.height}`}
-          className="h-full w-full"
-        >
-          <g>
-            {lens === 'structure'
-              ? field.links.map((link) => {
-                  const hot =
-                    hoveredId != null &&
-                    (link.id.startsWith(`${hoveredId}-`) ||
-                      link.id.endsWith(`-${hoveredId}`) ||
-                      link.id === `parent-${hoveredId}`);
-                  return (
-                    <path
-                      key={link.id}
-                      d={hyphaPath(
-                        link.x1,
-                        link.y1,
-                        link.x2,
-                        link.y2,
-                        link.bend,
-                      )}
-                      className="mycelium-thread"
-                      strokeWidth={link.id.startsWith('parent-') ? 1.25 : 1}
-                      strokeOpacity={hot ? 0.85 : 0.28}
-                    />
-                  );
-                })
-              : null}
-            {showMembers && focusNode
-              ? memberChips.map((chip) => {
-                  const ends = shorten(
-                    focusNode.x,
-                    focusNode.y,
-                    chip.x,
-                    chip.y,
-                    focusNode.r,
-                    12,
-                  );
-                  return (
-                    <path
-                      key={`chip-thread-${chip.key}`}
-                      d={hyphaPath(ends.x1, ends.y1, ends.x2, ends.y2, 8)}
-                      className="mycelium-thread"
-                      strokeWidth={0.75}
-                      strokeOpacity={0.4}
-                    />
-                  );
-                })
-              : null}
-            {lens === 'flows'
-              ? flowView.threads.map((thread) => {
-                  const ends = shorten(
-                    focusNode?.x ?? size.width / 2,
-                    focusNode?.y ?? size.height / 2,
-                    thread.x,
-                    thread.y,
-                    (focusNode?.r ?? 36) + 4,
-                    16,
-                  );
-                  const start = thread.incoming
-                    ? { x: ends.x2, y: ends.y2 }
-                    : { x: ends.x1, y: ends.y1 };
-                  const end = thread.incoming
-                    ? { x: ends.x1, y: ends.y1 }
-                    : { x: ends.x2, y: ends.y2 };
-                  const midX = (start.x + end.x) / 2;
-                  const midY = (start.y + end.y) / 2;
-                  return (
-                    <g key={thread.key} className="text-foreground">
-                      <path
-                        d={hyphaPath(
-                          start.x,
-                          start.y,
-                          end.x,
-                          end.y,
-                          thread.bend,
-                        )}
-                        className="mycelium-thread mycelium-flow"
-                        strokeWidth={thread.incoming ? 1.25 : 1.75}
-                        strokeOpacity={thread.incoming ? 0.45 : 0.8}
-                        markerEnd={`url(#${clipPrefix}-arrow)`}
-                      />
-                      <text
-                        x={midX}
-                        y={midY - 6}
-                        textAnchor="middle"
-                        className="fill-foreground text-[10px]"
-                        style={{
-                          paintOrder: 'stroke',
-                          stroke: 'var(--background)',
-                          strokeWidth: 4,
-                        }}
-                      >
-                        {thread.label}
-                      </text>
-                    </g>
-                  );
-                })
-              : null}
-            <defs>
-              <marker
-                id={`${clipPrefix}-arrow`}
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
+        </div>
+      ) : null}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2">
+        {(
+          [
+            {
+              lens: 'structure' as const,
+              title: t('diagram.lensStructure'),
+              frame: structureFrame,
+              field: structureField,
+              node: structurePlacedById.get(focus.id),
+            },
+            {
+              lens: 'flows' as const,
+              title: t('diagram.lensFlows'),
+              frame: flowsFrame,
+              field: flowsField,
+              node: flowsPlacedById.get(focus.id),
+            },
+          ] as const
+        ).map((pane) => {
+          const lens = pane.lens;
+          const field = pane.field;
+          const size = pane.frame.size;
+          const focusNode = pane.node;
+          const showMembers =
+            lens === 'structure' && Math.min(size.width, size.height) >= 280;
+          return (
+            <section
+              key={lens}
+              className="craft-card flex min-h-0 flex-col overflow-hidden p-3"
+            >
+              <h3 className="px-1 pb-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
+                {pane.title}
+              </h3>
+              <div
+                ref={pane.frame.ref}
+                className="relative min-h-[14rem] flex-1"
               >
-                <path
-                  d="M1 1.5 L8 5 L1 8.5"
-                  fill="none"
-                  stroke="var(--neutral-12)"
-                  strokeWidth="1.4"
-                />
-              </marker>
-            </defs>
-            {(lens === 'flows'
-              ? field.nodes.filter((node) => node.id === focus.id)
-              : field.nodes
-            ).map((node) => {
-              const clip = `${clipPrefix}-${node.id}`;
-              const logo = node.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
-              return (
-                <g
-                  key={node.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={t('diagram.openSpace', { name: node.name })}
-                  className="mycelium-node cursor-pointer"
-                  onMouseEnter={() => setHoveredId(node.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                  onClick={() => setFocusId(node.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      setFocusId(node.id);
-                    }
-                  }}
+                <svg
+                  role="img"
+                  aria-label={ariaLabel}
+                  viewBox={`0 0 ${size.width} ${size.height}`}
+                  className="h-full w-full"
                 >
-                  <title>{node.name}</title>
-                  <defs>
-                    <clipPath id={clip}>
-                      <circle cx={node.x} cy={node.y} r={node.r - 1} />
-                    </clipPath>
-                  </defs>
-                  <circle
-                    cx={node.x}
-                    cy={node.y}
-                    r={node.r + 2}
-                    fill="none"
-                    stroke="var(--neutral-12)"
-                    strokeOpacity={0.28}
-                    strokeWidth={1}
-                  />
-                  <image
-                    href={logo}
-                    x={node.x - node.r}
-                    y={node.y - node.r}
-                    width={node.r * 2}
-                    height={node.r * 2}
-                    clipPath={`url(#${clip})`}
-                    preserveAspectRatio="xMidYMid slice"
-                  />
-                  {node.role !== 'deeper' || size.width >= 520 ? (
-                    <text
-                      x={node.x}
-                      y={node.y + node.r + 20}
-                      textAnchor="middle"
-                      className="fill-foreground text-[11px]"
-                    >
-                      {node.name.length > 18
-                        ? `${node.name.slice(0, 17).trimEnd()}…`
-                        : node.name}
-                    </text>
-                  ) : null}
-                  {node.hasHiddenChildren ? (
-                    <circle
-                      cx={node.x + node.r * 0.7}
-                      cy={node.y - node.r * 0.7}
-                      r={3.5}
-                      fill="var(--neutral-12)"
-                    />
-                  ) : null}
-                </g>
-              );
-            })}
-            {lens === 'flows'
-              ? flowView.nodes.map((node) => {
-                  const clip = `${clipPrefix}-flow-${node.key.replace(
-                    /[^a-zA-Z0-9]/g,
-                    '',
-                  )}`;
-                  const logo = node.imageUrl?.trim();
-                  return (
-                    <g key={node.key}>
-                      <title>{node.label}</title>
-                      <circle
-                        cx={node.x}
-                        cy={node.y}
-                        r={18}
-                        fill="var(--background)"
-                        stroke="var(--neutral-12)"
-                        strokeOpacity={0.45}
-                      />
-                      {logo ? (
-                        <>
+                  <g>
+                    {lens === 'structure'
+                      ? field.links.map((link) => {
+                          const hot =
+                            hoveredId != null &&
+                            (link.id.startsWith(`${hoveredId}-`) ||
+                              link.id.endsWith(`-${hoveredId}`) ||
+                              link.id === `parent-${hoveredId}`);
+                          return (
+                            <path
+                              key={link.id}
+                              d={hyphaPath(
+                                link.x1,
+                                link.y1,
+                                link.x2,
+                                link.y2,
+                                link.bend,
+                              )}
+                              className="mycelium-thread"
+                              strokeWidth={
+                                link.id.startsWith('parent-') ? 1.25 : 1
+                              }
+                              strokeOpacity={hot ? 0.85 : 0.28}
+                            />
+                          );
+                        })
+                      : null}
+                    {showMembers && focusNode
+                      ? memberChips.map((chip) => {
+                          const ends = shorten(
+                            focusNode.x,
+                            focusNode.y,
+                            chip.x,
+                            chip.y,
+                            focusNode.r,
+                            12,
+                          );
+                          return (
+                            <path
+                              key={`chip-thread-${chip.key}`}
+                              d={hyphaPath(
+                                ends.x1,
+                                ends.y1,
+                                ends.x2,
+                                ends.y2,
+                                8,
+                              )}
+                              className="mycelium-thread"
+                              strokeWidth={0.75}
+                              strokeOpacity={0.4}
+                            />
+                          );
+                        })
+                      : null}
+                    {lens === 'flows'
+                      ? flowView.threads.map((thread) => {
+                          const ends = shorten(
+                            focusNode?.x ?? size.width / 2,
+                            focusNode?.y ?? size.height / 2,
+                            thread.x,
+                            thread.y,
+                            (focusNode?.r ?? 36) + 4,
+                            16,
+                          );
+                          const start = thread.incoming
+                            ? { x: ends.x2, y: ends.y2 }
+                            : { x: ends.x1, y: ends.y1 };
+                          const end = thread.incoming
+                            ? { x: ends.x1, y: ends.y1 }
+                            : { x: ends.x2, y: ends.y2 };
+                          const midX = (start.x + end.x) / 2;
+                          const midY = (start.y + end.y) / 2;
+                          const dx = end.x - start.x;
+                          const dy = end.y - start.y;
+                          const length = Math.hypot(dx, dy) || 1;
+                          const controlX = midX + (-dy / length) * thread.bend;
+                          const controlY = midY + (dx / length) * thread.bend;
+                          const labelX = midX + (-dy / length) * 14;
+                          const labelY = midY + (dx / length) * 14;
+                          return (
+                            <g key={thread.key} className="text-foreground">
+                              <path
+                                d={hyphaPath(
+                                  start.x,
+                                  start.y,
+                                  end.x,
+                                  end.y,
+                                  thread.bend,
+                                )}
+                                className="mycelium-thread mycelium-flow"
+                                strokeWidth={thread.incoming ? 1.25 : 1.75}
+                                strokeOpacity={thread.incoming ? 0.55 : 0.9}
+                              />
+                              <path
+                                d={arrowHead(controlX, controlY, end.x, end.y)}
+                                fill="none"
+                                stroke="var(--neutral-12)"
+                                strokeWidth={1.6}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <text
+                                x={labelX}
+                                y={labelY}
+                                textAnchor="middle"
+                                className="fill-foreground text-[10px]"
+                                style={{
+                                  paintOrder: 'stroke',
+                                  stroke: 'var(--background)',
+                                  strokeWidth: 4,
+                                }}
+                              >
+                                {thread.incoming ? '← ' : '→ '}
+                                {thread.label}
+                              </text>
+                            </g>
+                          );
+                        })
+                      : null}
+                    {(lens === 'flows'
+                      ? field.nodes.filter((node) => node.id === focus.id)
+                      : field.nodes
+                    ).map((node) => {
+                      const clip = `${clipPrefix}-${lens}-${node.id}`;
+                      const logo =
+                        node.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
+                      return (
+                        <g
+                          key={node.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={t('diagram.openSpace', {
+                            name: node.name,
+                          })}
+                          className="mycelium-node cursor-pointer"
+                          onMouseEnter={() => setHoveredId(node.id)}
+                          onMouseLeave={() => setHoveredId(null)}
+                          onClick={() => setFocusId(node.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setFocusId(node.id);
+                            }
+                          }}
+                        >
+                          <title>{node.name}</title>
                           <defs>
                             <clipPath id={clip}>
-                              <circle cx={node.x} cy={node.y} r={16} />
+                              <circle cx={node.x} cy={node.y} r={node.r - 1} />
                             </clipPath>
                           </defs>
+                          <circle
+                            cx={node.x}
+                            cy={node.y}
+                            r={node.r + 2}
+                            fill="none"
+                            stroke="var(--neutral-12)"
+                            strokeOpacity={0.28}
+                            strokeWidth={1}
+                          />
                           <image
                             href={logo}
-                            x={node.x - 16}
-                            y={node.y - 16}
-                            width={32}
-                            height={32}
+                            x={node.x - node.r}
+                            y={node.y - node.r}
+                            width={node.r * 2}
+                            height={node.r * 2}
                             clipPath={`url(#${clip})`}
                             preserveAspectRatio="xMidYMid slice"
                           />
-                        </>
-                      ) : (
-                        <text
-                          x={node.x}
-                          y={node.y + 4}
-                          textAnchor="middle"
-                          className="fill-foreground text-[9px]"
-                        >
-                          {node.label.slice(0, 2)}
-                        </text>
-                      )}
-                      <text
-                        x={node.x}
-                        y={node.y + 34}
-                        textAnchor="middle"
-                        className="fill-foreground text-[11px]"
-                      >
-                        {node.label.length > 18
-                          ? `${node.label.slice(0, 17).trimEnd()}…`
-                          : node.label}
-                      </text>
-                    </g>
-                  );
-                })
-              : null}
-            {showMembers
-              ? memberChips.map((chip, index) => {
-                  const portrait = chip.imageUrl?.trim();
-                  const chipClip = `${clipPrefix}-chip-${index}`;
-                  const body = (
-                    <>
-                      <title>{chip.label}</title>
-                      <defs>
-                        <clipPath id={chipClip}>
-                          <circle cx={chip.x} cy={chip.y} r={10} />
-                        </clipPath>
-                      </defs>
-                      <circle
-                        cx={chip.x}
-                        cy={chip.y}
-                        r={11}
-                        fill="var(--background)"
-                        stroke="var(--neutral-12)"
-                        strokeOpacity={0.35}
-                      />
-                      {portrait ? (
-                        <image
-                          href={portrait}
-                          x={chip.x - 10}
-                          y={chip.y - 10}
-                          width={20}
-                          height={20}
-                          clipPath={`url(#${chipClip})`}
-                          preserveAspectRatio="xMidYMid slice"
-                        />
-                      ) : (
-                        <text
-                          x={chip.x}
-                          y={chip.y + 3}
-                          textAnchor="middle"
-                          className="fill-foreground text-[8px]"
-                        >
-                          {(chip.initials ?? chip.label).slice(0, 2)}
-                        </text>
-                      )}
-                    </>
-                  );
-                  if (chip.href) {
-                    return (
-                      <a
-                        key={chip.key}
-                        href={chip.href}
-                        aria-label={chip.label}
-                      >
-                        {body}
-                      </a>
-                    );
-                  }
-                  return (
-                    <g
-                      key={chip.key}
-                      role={chip.focusSpaceId ? 'button' : undefined}
-                      tabIndex={chip.focusSpaceId ? 0 : undefined}
-                      className={
-                        chip.focusSpaceId ? 'cursor-pointer' : undefined
-                      }
-                      onClick={() => {
-                        if (chip.focusSpaceId) setFocusId(chip.focusSpaceId);
-                      }}
-                    >
-                      {body}
-                    </g>
-                  );
-                })
-              : null}
-          </g>
-        </svg>
-        {lens === 'flows' && !flowsLoading && flows.length === 0 ? (
-          <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-1 text-neutral-11">
-            {flowsError ? t('diagram.flowsError') : t('diagram.flowsEmpty')}
-          </p>
-        ) : null}
-        {lens === 'structure' && showMembers && !membersLoading
-          ? (() => {
-              const overflow = [
-                peopleMore > 0
-                  ? `${t('navigation.individuals')} +${peopleMore}`
-                  : null,
-                spacesMore > 0
-                  ? `${t('navigation.memberSpaces')} +${spacesMore}`
-                  : null,
-                agentsMore > 0
-                  ? `${t('navigation.agents')} +${agentsMore}`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(' · ');
-              return overflow ? (
-                <p className="pointer-events-none absolute bottom-2 left-2 text-1 text-neutral-11">
-                  {overflow}
-                </p>
-              ) : null;
-            })()
-          : null}
+                          {node.role !== 'deeper' || size.width >= 520 ? (
+                            <text
+                              x={node.x}
+                              y={node.y + node.r + 20}
+                              textAnchor="middle"
+                              className="fill-foreground text-[11px]"
+                            >
+                              {node.name.length > 18
+                                ? `${node.name.slice(0, 17).trimEnd()}…`
+                                : node.name}
+                            </text>
+                          ) : null}
+                          {node.hasHiddenChildren ? (
+                            <circle
+                              cx={node.x + node.r * 0.7}
+                              cy={node.y - node.r * 0.7}
+                              r={3.5}
+                              fill="var(--neutral-12)"
+                            />
+                          ) : null}
+                        </g>
+                      );
+                    })}
+                    {lens === 'flows'
+                      ? flowView.nodes.map((node) => {
+                          const clip = `${clipPrefix}-flow-${node.key.replace(
+                            /[^a-zA-Z0-9]/g,
+                            '',
+                          )}`;
+                          const logo = node.imageUrl?.trim();
+                          return (
+                            <g key={node.key}>
+                              <title>{node.label}</title>
+                              <circle
+                                cx={node.x}
+                                cy={node.y}
+                                r={18}
+                                fill="var(--background)"
+                                stroke="var(--neutral-12)"
+                                strokeOpacity={0.45}
+                              />
+                              {logo ? (
+                                <>
+                                  <defs>
+                                    <clipPath id={clip}>
+                                      <circle cx={node.x} cy={node.y} r={16} />
+                                    </clipPath>
+                                  </defs>
+                                  <image
+                                    href={logo}
+                                    x={node.x - 16}
+                                    y={node.y - 16}
+                                    width={32}
+                                    height={32}
+                                    clipPath={`url(#${clip})`}
+                                    preserveAspectRatio="xMidYMid slice"
+                                  />
+                                </>
+                              ) : (
+                                <text
+                                  x={node.x}
+                                  y={node.y + 4}
+                                  textAnchor="middle"
+                                  className="fill-foreground text-[9px]"
+                                >
+                                  {node.label.slice(0, 2)}
+                                </text>
+                              )}
+                              <text
+                                x={node.x}
+                                y={node.y + 34}
+                                textAnchor="middle"
+                                className="fill-foreground text-[11px]"
+                              >
+                                {node.label.length > 18
+                                  ? `${node.label.slice(0, 17).trimEnd()}…`
+                                  : node.label}
+                              </text>
+                            </g>
+                          );
+                        })
+                      : null}
+                    {showMembers
+                      ? memberChips.map((chip, index) => {
+                          const portrait = chip.imageUrl?.trim();
+                          const chipClip = `${clipPrefix}-chip-${index}`;
+                          const body = (
+                            <>
+                              <title>{chip.label}</title>
+                              <defs>
+                                <clipPath id={chipClip}>
+                                  <circle cx={chip.x} cy={chip.y} r={10} />
+                                </clipPath>
+                              </defs>
+                              <circle
+                                cx={chip.x}
+                                cy={chip.y}
+                                r={11}
+                                fill="var(--background)"
+                                stroke="var(--neutral-12)"
+                                strokeOpacity={0.35}
+                              />
+                              {portrait ? (
+                                <image
+                                  href={portrait}
+                                  x={chip.x - 10}
+                                  y={chip.y - 10}
+                                  width={20}
+                                  height={20}
+                                  clipPath={`url(#${chipClip})`}
+                                  preserveAspectRatio="xMidYMid slice"
+                                />
+                              ) : (
+                                <text
+                                  x={chip.x}
+                                  y={chip.y + 3}
+                                  textAnchor="middle"
+                                  className="fill-foreground text-[8px]"
+                                >
+                                  {(chip.initials ?? chip.label).slice(0, 2)}
+                                </text>
+                              )}
+                            </>
+                          );
+                          if (chip.href) {
+                            return (
+                              <a
+                                key={chip.key}
+                                href={chip.href}
+                                aria-label={chip.label}
+                              >
+                                {body}
+                              </a>
+                            );
+                          }
+                          return (
+                            <g
+                              key={chip.key}
+                              role={chip.focusSpaceId ? 'button' : undefined}
+                              tabIndex={chip.focusSpaceId ? 0 : undefined}
+                              className={
+                                chip.focusSpaceId ? 'cursor-pointer' : undefined
+                              }
+                              onClick={() => {
+                                if (chip.focusSpaceId)
+                                  setFocusId(chip.focusSpaceId);
+                              }}
+                            >
+                              {body}
+                            </g>
+                          );
+                        })
+                      : null}
+                  </g>
+                </svg>
+                {lens === 'flows' && !flowsLoading && flows.length === 0 ? (
+                  <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-1 text-neutral-11">
+                    {flowsError
+                      ? t('diagram.flowsError')
+                      : t('diagram.flowsEmpty')}
+                  </p>
+                ) : null}
+                {lens === 'structure' && showMembers && !membersLoading
+                  ? (() => {
+                      const overflow = [
+                        peopleMore > 0
+                          ? `${t('navigation.individuals')} +${peopleMore}`
+                          : null,
+                        spacesMore > 0
+                          ? `${t('navigation.memberSpaces')} +${spacesMore}`
+                          : null,
+                        agentsMore > 0
+                          ? `${t('navigation.agents')} +${agentsMore}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ');
+                      return overflow ? (
+                        <p className="pointer-events-none absolute bottom-2 left-2 text-1 text-neutral-11">
+                          {overflow}
+                        </p>
+                      ) : null;
+                    })()
+                  : null}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
