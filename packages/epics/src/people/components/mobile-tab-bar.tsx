@@ -38,10 +38,13 @@ const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
 
 const iconClass = 'block h-5 w-5 shrink-0';
+/** Secondary strip — a step quieter than primary tab icons. */
+const subIconClass = 'block h-4 w-4 shrink-0';
 /** Bar is fixed. Glyphs use px so the spacing scale cannot make them taller than the row. */
 const TAB_BAR_PX = 68;
-const SUB_NAV_PX = 56;
+const SUB_NAV_PX = 52;
 const TAB_GLYPH_PX = 28;
+const SUB_GLYPH_PX = 22;
 const TAB_CENTER_GLYPH_PX = 36;
 
 function segmentActive(pathname: string, segment: string) {
@@ -193,7 +196,7 @@ export function MobileTabBar({
           href: item.href,
           label: labelFor(item.key),
           active: item.active,
-          icon: <Icon className={iconClass} strokeWidth={1.25} />,
+          icon: <Icon className={subIconClass} strokeWidth={1.5} />,
         };
       });
     }
@@ -240,7 +243,7 @@ export function MobileTabBar({
         'exact' in link && link.exact
           ? pathname === base || pathname === `${base}/`
           : pathname === link.href || pathname.startsWith(`${link.href}/`),
-      icon: <link.icon className={iconClass} strokeWidth={1.25} />,
+      icon: <link.icon className={subIconClass} strokeWidth={1.5} />,
     }));
   }, [
     lang,
@@ -351,7 +354,7 @@ export function MobileTabBar({
       >
         {secondLevel.length > 0 ? (
           <div
-            className="flex overflow-x-auto border-b border-border bg-background-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex justify-center gap-0.5 overflow-x-auto border-b border-border bg-background-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ height: SUB_NAV_PX }}
             aria-label={spaceSlug ? t('mySpaces') : t('network')}
           >
@@ -361,7 +364,7 @@ export function MobileTabBar({
                 href={item.href}
                 aria-current={item.active ? 'page' : undefined}
                 className={cn(
-                  'flex min-w-[4.5rem] flex-1 flex-col items-center justify-end gap-1 px-1 pb-1.5 text-muted-foreground',
+                  'flex w-[4.25rem] shrink-0 flex-col items-center justify-end gap-0.5 px-0.5 pb-1.5 text-muted-foreground',
                   item.active && 'text-foreground',
                 )}
               >
@@ -370,11 +373,11 @@ export function MobileTabBar({
                     'grid shrink-0 place-items-center',
                     item.active && 'border-t border-foreground',
                   )}
-                  style={{ width: TAB_GLYPH_PX, height: TAB_GLYPH_PX }}
+                  style={{ width: SUB_GLYPH_PX, height: SUB_GLYPH_PX }}
                 >
                   {item.icon}
                 </span>
-                <span className="max-w-full truncate text-[10px] leading-tight tracking-tight">
+                <span className="max-w-full truncate text-[9px] leading-tight tracking-tight">
                   {item.label}
                 </span>
               </Link>

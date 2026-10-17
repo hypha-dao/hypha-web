@@ -43,6 +43,7 @@ import { useCallMembershipRegistry } from './human-chat-panel/use-call-membershi
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
+import { cn } from '@hypha-platform/ui-utils';
 
 // ─── Panel Providers ─────────────────────────────────────────────────────────
 // Owns the open/close state for both panels and wraps children with the
@@ -319,6 +320,8 @@ const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 const MOBILE_PANEL_BREAKPOINT_PX = 768;
+/** Matches Tailwind `xl` / MobileTabBar — below this the spaces rail owns left nav. */
+const MOBILE_CHROME_BREAKPOINT_PX = 1280;
 
 const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-left-width',
@@ -409,18 +412,21 @@ export function PanelWrapLayout({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
   const isMobileViewport = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
+  // MobileTabBar + spaces rail (`xl:hidden`) — never show the AI icon rail beside them.
+  const isMobileChrome = viewportWidth < MOBILE_CHROME_BREAKPOINT_PX;
+  const showCollapsedAiIconRail = showAiPanel && !isMobileChrome;
   // Desktop conversation sits beside the icon rail, so the left track is
   // rail + panel. The hamburger menu still replaces the rail and stays 320px.
   // Below md the sheet stays full width and does not reserve a rail column.
   const dockIconRailBesideAi =
-    !isOnboarding && !isMobileViewport && leftOpen && !leftOverlayVisible;
+    !isOnboarding && !isMobileChrome && leftOpen && !leftOverlayVisible;
   const leftIconRailPx = dockIconRailBesideAi ? LEFT_SIDEBAR_ICON_WIDTH_PX : 0;
   const leftExpandedWidthPx = LEFT_AI_PANEL_WIDTH_PX + leftIconRailPx;
   const leftFootprintPx = isOnboarding
     ? 0
     : leftExpanded
     ? leftExpandedWidthPx
-    : showAiPanel
+    : showCollapsedAiIconRail
     ? LEFT_SIDEBAR_ICON_WIDTH_PX
     : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
@@ -451,7 +457,7 @@ export function PanelWrapLayout({
       ? '0px'
       : leftExpanded
       ? leftExpandedSidebarWidth
-      : showAiPanel
+      : showCollapsedAiIconRail
       ? LEFT_SIDEBAR_ICON_WIDTH
       : '0px'
     : '0px';
@@ -592,6 +598,7 @@ export function PanelWrapLayout({
         leftPanelOpen={leftOpen}
         leftSidebarWidth={leftExpandedSidebarWidth}
         leftIconRailPx={leftIconRailPx}
+        hideCollapsedIconRail={isMobileChrome}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
@@ -650,8 +657,12 @@ export function PanelWrapLayout({
       </SidebarProvider>
     );
   } else if (effectiveLeft) {
-    const leftCollapsibleMode = isOnboarding ? 'offcanvas' : 'icon';
-    const leftIconWidth = isOnboarding ? '0px' : LEFT_SIDEBAR_ICON_WIDTH;
+    // Below xl the spaces rail replaces the collapsed AI icon rail — use
+    // offcanvas so a closed left panel leaves zero width (never both rails).
+    const leftCollapsibleMode =
+      isOnboarding || isMobileChrome ? 'offcanvas' : 'icon';
+    const leftIconWidth =
+      isOnboarding || isMobileChrome ? '0px' : LEFT_SIDEBAR_ICON_WIDTH;
     content = (
       <SidebarProvider
         defaultOpen={false}
@@ -679,7 +690,10 @@ export function PanelWrapLayout({
           variant="sidebar"
           collapsible={leftCollapsibleMode}
           mobileWidth={leftExpanded || isOnboarding ? '100vw' : undefined}
-          className="z-[50] overflow-visible"
+          className={cn(
+            'z-[50] overflow-visible',
+            !leftExpanded && isMobileChrome && 'max-xl:!hidden',
+          )}
         >
           {effectiveLeft.content}
           {!isOnboarding ? (

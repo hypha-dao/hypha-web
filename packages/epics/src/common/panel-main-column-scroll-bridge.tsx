@@ -17,6 +17,11 @@ type Props = {
   leftSidebarWidth: string;
   /** Pixels of persistent icon rail included in the left sidebar width. */
   leftIconRailPx?: number;
+  /**
+   * When true (mobile chrome / spaces rail visible), collapse fully with
+   * offcanvas so the AI icon rail never sits beside the spaces rail.
+   */
+  hideCollapsedIconRail?: boolean;
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
@@ -37,6 +42,7 @@ export function PanelDualSidebarScrollBridge({
   leftPanelOpen,
   leftSidebarWidth,
   leftIconRailPx = 0,
+  hideCollapsedIconRail = false,
   onLeftOpenChange,
   rightOpen,
   onRightOpenChange,
@@ -57,16 +63,19 @@ export function PanelDualSidebarScrollBridge({
       style={
         {
           '--sidebar-width': leftSidebarWidth,
-          '--sidebar-width-icon': '72px',
+          '--sidebar-width-icon': hideCollapsedIconRail ? '0px' : '72px',
         } as React.CSSProperties
       }
     >
       <Sidebar
         side="left"
         variant="sidebar"
-        collapsible="icon"
+        collapsible={hideCollapsedIconRail ? 'offcanvas' : 'icon'}
         mobileWidth={leftOpen ? '100vw' : undefined}
-        className="z-[50] overflow-visible"
+        className={cn(
+          'z-[50] overflow-visible',
+          hideCollapsedIconRail && !leftOpen && 'max-xl:!hidden',
+        )}
       >
         {leftContent}
         <SidebarResizeHandle
