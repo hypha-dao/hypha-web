@@ -36,7 +36,7 @@ export function AiPanelSuggestions({
               type="button"
               title={item.prompt}
               onClick={() => onSelect(item.prompt)}
-              className="shrink-0 rounded-none bg-foreground px-3 py-1 text-[11px] font-medium leading-none text-background"
+              className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-1 text-[11px] font-medium leading-none text-foreground"
             >
               {item.tagLabel}
             </button>

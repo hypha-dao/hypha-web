@@ -439,7 +439,7 @@ export function MemberHome({
             </div>
           </aside>
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-1 @min-[68rem]/home:row-start-1 @min-[80rem]/home:col-start-2">
-            <div className="shrink-0 px-4 pt-4">
+            <div className="shrink-0 px-5 pt-4 md:px-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span
@@ -510,7 +510,7 @@ export function MemberHome({
                 onCall={openCall}
               />
             ) : (
-              <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6">
+              <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-6 md:px-4">
                 <ChatSkeleton />
               </div>
             )}
@@ -782,7 +782,7 @@ function ClassicBoard({
       ref={boardRef}
       className="narrow-scrollbar @container min-h-0 flex-1 overflow-y-auto py-6"
     >
-      <div className={cn(HOME_CHAT_COLUMN, 'px-4')}>
+      <div className={cn(HOME_CHAT_COLUMN, 'px-5 md:px-4')}>
         <h2
           className="text-3"
           style={{ fontFamily: 'var(--font-family-heading)' }}

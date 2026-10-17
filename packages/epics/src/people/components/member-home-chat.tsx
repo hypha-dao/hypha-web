@@ -855,7 +855,7 @@ export function MemberHomeChat({
         className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto"
         aria-label={t('conversation')}
       >
-        <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-4 py-4')}>
+        <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-5 py-4 md:px-4')}>
           <MemberHomeActivationCard
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
@@ -1014,7 +1014,7 @@ export function MemberHomeChat({
       </div>
 
       {visibleError ? (
-        <div className={cn(HOME_CHAT_COLUMN, 'mb-2 px-4')}>
+        <div className={cn(HOME_CHAT_COLUMN, 'mb-2 px-5 md:px-4')}>
           <div className="border border-border bg-background-2 px-3 py-2 text-2">
             <p>{t('threadDropped')}</p>
             <div className="mt-2 flex gap-2">
@@ -1052,13 +1052,13 @@ export function MemberHomeChat({
       ) : null}
 
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-4 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] md:mx-4 [&::-webkit-scrollbar]:hidden">
           {chips.map((chip) => (
             <button
               key={chip.key}
               type="button"
               disabled={isStreaming}
-              className="shrink-0 rounded-none bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
+              className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
               onClick={() => {
                 void send(chip.ask);
               }}
@@ -1068,7 +1068,7 @@ export function MemberHomeChat({
           ))}
         </div>
         {micOn && voiceInterview.liveTranscript ? (
-          <p className="px-4 pb-1 text-1 text-neutral-11">
+          <p className="px-5 pb-1 text-1 text-neutral-11 md:px-4">
             “{voiceInterview.liveTranscript}”
           </p>
         ) : null}
@@ -1078,12 +1078,12 @@ export function MemberHomeChat({
             onClick={() => {
               void voiceInterview.startListening();
             }}
-            className="px-4 pb-1 text-left text-1 text-neutral-11"
+            className="px-5 pb-1 text-left text-1 text-neutral-11 md:px-4"
           >
             {t('soundNeedsMic')}
           </button>
         ) : null}
-        <div className="mx-4 border border-border bg-background">
+        <div className="mx-5 border border-border bg-background md:mx-4">
           <AiPanelChatBar
             value={input}
             onChange={setInput}
