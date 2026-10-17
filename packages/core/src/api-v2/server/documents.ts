@@ -298,7 +298,7 @@ export async function buildMyVoteV2(
       },
     };
   } catch (error) {
-    console.error('[api-v2] my-vote chain read failed', error);
+    console.error('[api-v2] voting/me chain read failed', error);
     return {
       ok: false,
       status: 502,

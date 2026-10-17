@@ -17,7 +17,7 @@ export type MyMembershipV2 = {
  * The caller's own relationship to a space. No content access gate: the
  * answer is about the caller, so a verified user who is not a member gets
  * `200 {isMember:false, isDelegate:false}`, not 403/404. A delegate who is not
- * a member is a valid state. Uses the same `readMemberAndDelegate` as `my-vote`
+ * a member is a valid state. Uses the same `readMemberAndDelegate` as `voting/me`
  * so the two cannot drift.
  */
 export async function buildMyMembershipV2(
@@ -76,7 +76,7 @@ export async function buildMyMembershipV2(
       },
     };
   } catch (error) {
-    console.error('[api-v2] my-membership chain read failed', error);
+    console.error('[api-v2] memberships/me chain read failed', error);
     return {
       ok: false,
       status: 502,

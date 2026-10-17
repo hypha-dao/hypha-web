@@ -75,7 +75,7 @@ export type SpacesListV2 = {
   /**
    * v1 `Space` items plus requested blocks. Intentional omission:
    * `memberAddresses` (no wallet-address arrays in v2; use `memberCount` and
-   * `my-membership`).
+   * `memberships/me`).
    */
   data: Array<
     Omit<Space, 'memberAddresses'> & {

@@ -7,7 +7,7 @@ import {
   failureResponse,
   jsonV2,
   v2Route,
-} from '../../../../../../lib/api-v2/authenticate-v2';
+} from '../../../../../../../lib/api-v2/authenticate-v2';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ async function handleGet(
 
     return jsonV2(result.body);
   } catch (error) {
-    console.error('Failed to fetch my-membership (v2):', error);
+    console.error('Failed to fetch memberships/me (v2):', error);
     return jsonV2({ error: 'Failed to fetch membership' }, { status: 500 });
   }
 }

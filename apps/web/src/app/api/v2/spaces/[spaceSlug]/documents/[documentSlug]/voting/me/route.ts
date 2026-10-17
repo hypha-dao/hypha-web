@@ -7,7 +7,7 @@ import {
   failureResponse,
   jsonV2,
   v2Route,
-} from '../../../../../../../../lib/api-v2/authenticate-v2';
+} from '../../../../../../../../../lib/api-v2/authenticate-v2';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,7 +50,7 @@ async function handleGet(
 
     return jsonV2(result.body);
   } catch (error) {
-    console.error('Failed to fetch my-vote (v2):', error);
+    console.error('Failed to fetch voting/me (v2):', error);
     return jsonV2({ error: 'Failed to fetch vote state' }, { status: 500 });
   }
 }

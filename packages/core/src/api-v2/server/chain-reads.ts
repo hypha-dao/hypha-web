@@ -283,7 +283,7 @@ export async function readMemberAndDelegate(
   return { isMember: Boolean(member), isDelegate };
 }
 
-/** `isProposalWithdrawn(id)`; my-vote needs one proposal, not a space-wide list. */
+/** `isProposalWithdrawn(id)`; voting/me needs one proposal, not a space-wide list. */
 export async function readIsProposalWithdrawn(
   proposalId: number,
 ): Promise<boolean> {
