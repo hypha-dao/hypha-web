@@ -68,6 +68,18 @@ const nextConfig: NextConfig = {
           { key: 'Vary', value: 'Authorization, x-hypha-client-key' },
         ],
       },
+      // Same net for the integration API (INTEGRATION_API_RESPONSE_HEADERS in
+      // packages/core/src/integration-api/response-headers.ts).
+      {
+        source: '/api/integration/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store' },
+          {
+            key: 'Vary',
+            value: 'Authorization, x-hypha-client-key, x-hypha-ops-secret',
+          },
+        ],
+      },
       {
         source: '/onesignal/:path*',
         headers: [

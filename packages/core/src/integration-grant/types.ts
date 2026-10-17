@@ -31,3 +31,31 @@ export function resolveGrantScopes(
   const unique = Array.from(new Set(requested));
   return unique.every((scope) => clientScopes.includes(scope)) ? unique : null;
 }
+
+/** What the integration API returns for a grant: no internal client or person ids. */
+export type PublicIntegrationGrant = Pick<
+  IntegrationGrantSummary,
+  'id' | 'scopes' | 'status' | 'grantedAt' | 'revokedAt'
+>;
+
+export type PublicIntegrationGrantWithClient = PublicIntegrationGrant & {
+  client: { slug: string; name: string };
+};
+
+export function toPublicGrant(
+  grant: IntegrationGrantSummary,
+): PublicIntegrationGrant {
+  return {
+    id: grant.id,
+    scopes: grant.scopes,
+    status: grant.status,
+    grantedAt: grant.grantedAt,
+    revokedAt: grant.revokedAt,
+  };
+}
+
+export function toPublicGrantWithClient(
+  grant: IntegrationGrantWithClient,
+): PublicIntegrationGrantWithClient {
+  return { ...toPublicGrant(grant), client: grant.client };
+}

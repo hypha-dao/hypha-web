@@ -47,6 +47,7 @@ export * from './integration-client/server';
 export * from './integration-client';
 export * from './integration-grant/server';
 export * from './integration-grant';
+export * from './integration-api/server';
 export * from './schedule/server';
 export * from './schedule';
 export * from './pipeline/server';

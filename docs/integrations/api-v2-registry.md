@@ -205,8 +205,89 @@ person object that is not built from the allowlist above.
 | `GET /api/v2/spaces/{slug}/members`                            | enriched              | `GET /api/v1/spaces/[spaceSlug]/members`      | `planned` | v2 gate, key                                                                                                                                                                                       |                                                                                                                                                                                                                                                                                                                                   |                                                                                 |
 | `GET /api/v2/people/me`                                        | mirror                | `GET /api/v1/people/me`                       | `planned` | key protection                                                                                                                                                                                     | v0 keeps `people/me` on v1 (bare token; not key-protected; revisit with #2533)                                                                                                                                                                                                                                                    |                                                                                 |
 
-Existing integration routes (`/api/v1/integration-grants`, request and ops routes) stay under `/api/v1`;
-their placement is a separate call. M4 (the server-signed vote) is a separate step after these routes.
+The integration infrastructure (clients, grants, ops) is not part of `/api/v2`: it lives in its own namespace,
+`/api/integration/v1` (see [Integration API](#integration-api)). M4 (the server-signed vote) is a separate step after these routes.
+
+## Integration API
+
+`/api/integration/v1` is a different API from `/api/v2`. `/api/v2` is the **domain** API (spaces, documents,
+memberships, voting) and every route requires the client key. The integration API is the **platform**
+infrastructure around it: who may integrate (clients), who consented to what (grants), and the operator tools.
+It has its own auth per area, its own version line (it has no v1 twin to supersede, so it starts at `v1`), its
+own response helper and its own tests. Nothing in `/api/v2` depends on it except one narrow call: verify a
+client key and return the client (`authenticateIntegrationClient`).
+
+### Auth per area
+
+| Area                | Credentials                                                           | Meaning                                                       |
+| ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `clients/requests`  | user token (`Authorization: Bearer`)                                  | a signed-in person asks for a client; needs a Hypha profile   |
+| `clients/me`        | client key (`x-hypha-client-key`)                                     | the calling client                                            |
+| `clients/me/grants` | client key **and** user token                                         | the client acts for that user; only the calling client's data |
+| `users/me/grants`   | user token only                                                       | the person sees and revokes their own consent (any client)    |
+| `ops/clients`       | ops secret (`x-hypha-ops-secret` or `Authorization: Bearer <secret>`) | operators; separate from the space API key ops secret         |
+
+Rules: the client and the person are always taken from the credentials, never from a path, query or body.
+Registration needs a Hypha profile (`403 {"error":"A Hypha profile is required"}` otherwise), so a user
+without one cannot consent. No path or body names the identity provider.
+
+### Responses and caching
+
+Every response, including errors and an exception that escaped a handler, carries
+`Cache-Control: private, no-store` and `Vary: Authorization, x-hypha-client-key, x-hypha-ops-secret`
+(ops responses return key material once). They are built through one helper and every route exports through
+`integrationRoute`; `next.config.ts` repeats the headers for answers the framework builds itself. A contract
+test fails when a route skips the wrapper or the values drift.
+
+### Routes
+
+| Route                                                      | Kind | Replaces (removed, no redirect)                          | Status    | Auth                            |
+| ---------------------------------------------------------- | ---- | -------------------------------------------------------- | --------- | ------------------------------- |
+| `POST /api/integration/v1/clients/requests`                | new  | `POST /api/v1/integration-clients/requests`              | **built** | user token                      |
+| `GET /api/integration/v1/clients/me`                       | new  | none                                                     | **built** | client key                      |
+| `POST /api/integration/v1/clients/me/grants`               | new  | `POST /api/v1/integration-grants`                        | **built** | client key + user token         |
+| `GET /api/integration/v1/clients/me/grants`                | new  | `GET /api/v1/integration-grants` (client view)           | **built** | client key + user token         |
+| `DELETE /api/integration/v1/clients/me/grants/{id}`        | new  | `DELETE /api/v1/integration-grants/{id}` (client)        | **built** | client key + user token         |
+| `GET /api/integration/v1/users/me/grants`                  | new  | `GET /api/v1/integration-grants` (user view)             | **built** | user token                      |
+| `DELETE /api/integration/v1/users/me/grants/{id}`          | new  | `DELETE /api/v1/integration-grants/{id}` (user)          | **built** | user token                      |
+| `GET /api/integration/v1/ops/clients`                      | new  | `GET /api/v1/ops/integration-clients`                    | **built** | ops secret                      |
+| `POST /api/integration/v1/ops/clients/{slug}/approve`      | new  | `POST /api/v1/ops/integration-clients/{slug}/approve`    | **built** | ops secret                      |
+| `POST /api/integration/v1/ops/clients/{slug}/revoke`       | new  | `POST /api/v1/ops/integration-clients/{slug}/revoke`     | **built** | ops secret                      |
+| `POST /api/integration/v1/ops/clients/{slug}/rotate-key`   | new  | `POST /api/v1/ops/integration-clients/{slug}/rotate-key` | **built** | ops secret                      |
+| signer state of the user's wallet (opt-in or sub-resource) | new  | none                                                     | `planned` | client key + user token (M4/M5) |
+
+### Shapes and status codes
+
+- Grant (client view and registration): `{ id, scopes, status, grantedAt, revokedAt }`; `status` is `active` or
+  `revoked`. **"Already consented" = an item with `status: active`** in `GET clients/me/grants`. The list holds
+  only the calling client's grants for the token user (active first, then history); no other client's data,
+  no email, no subject, no internal client or person id.
+- Grant (`users/me/grants`): the same fields plus `client: { slug, name }`.
+- `POST clients/me/grants`: body optional (`{ scopes? }`, empty means all of the client's scopes). One active
+  grant per client and person: a second registration updates the scopes and returns the same `id`; after a
+  revoke a new registration creates a new row. `200 { grant }`; `403` scopes beyond the client's scopes.
+  Registration does not check the wallet signer (that is checked when the server signs).
+- `DELETE .../grants/{id}`: `200 { revoked: true, id }`; `404` no active grant with that id for this
+  client/person; `400` invalid id. Revoking stops the client acting for the user; it does not remove anything
+  from the wallet.
+- `POST clients/requests`: `202 { slug, status: "pending" }` (no key); `429` several pending requests;
+  `409` name already used; `400` validation.
+- `ops/...`: `503` secret not configured, `401` wrong secret, `404` unknown slug for the state; approve and
+  rotate return `clientKey` once.
+- Everywhere: `401` missing/invalid credentials (client-key failures carry a `code`: `missing_key`,
+  `invalid_key`, `client_not_approved`), `403` no Hypha profile, `500` unexpected (no detail).
+
+### Extraction notes
+
+The namespace is built to be moved out later without changing public paths:
+
+- own path prefix, own version line, own response helper and tests; handlers are plain `Request`/`Response`
+  functions with every outside dependency listed in one type (`IntegrationApiDeps`);
+- the only thing `/api/v2` takes from it is "verify a client key, return the client";
+- a subdomain can be mapped with a host-conditioned rewrite (Next config or the platform) without a proxy,
+  and pointed at another service later;
+- known obstacle: `integration_grants.person_id` is a foreign key to `people.id`, and registration looks the
+  user up in the Hypha database. A plain user reference would decouple the tables (undecided).
 
 ## Responsibility ledger
 

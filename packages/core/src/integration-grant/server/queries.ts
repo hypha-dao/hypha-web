@@ -55,6 +55,30 @@ export const findActiveGrant = async (
   return grant;
 };
 
+/**
+ * One person's grants for one client (active first, then history). Scoped by
+ * client in the query itself, so another client's rows cannot be returned.
+ */
+export const listIntegrationGrantsForClientPerson = async (
+  { clientId, personId }: { clientId: number; personId: number },
+  { db }: DbConfig,
+): Promise<IntegrationGrantSummary[]> => {
+  const rows = await db
+    .select()
+    .from(integrationGrants)
+    .where(
+      and(
+        eq(integrationGrants.clientId, clientId),
+        eq(integrationGrants.personId, personId),
+      ),
+    )
+    .orderBy(
+      sql`case when ${integrationGrants.status} = 'active' then 0 else 1 end`,
+      desc(integrationGrants.grantedAt),
+    );
+  return rows.map(toGrantSummary);
+};
+
 /** A person's grants (active first, then history), with the client identity. */
 export const listIntegrationGrantsForPerson = async (
   { personId }: { personId: number },
