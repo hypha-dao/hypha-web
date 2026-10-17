@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Bell, Mail, MonitorSmartphone } from 'lucide-react';
-import { RxCross1 } from 'react-icons/rx';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
 import {
@@ -332,7 +331,7 @@ export const NotificationCentreForm = ({
           closeUrl={closeUrl}
           showBack={false}
         />
-        <Empty icon={RxCross1}>
+        <Empty>
           {optionalText(
             'signedOut.message',
             'Notifications can only be managed when you’re logged in. Log in to manage yours.',
