@@ -2,17 +2,9 @@
 
 import { useMemo } from 'react';
 import { MemberHead } from './member-head';
-import {
-  Skeleton,
-  Button,
-  Separator,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@hypha-platform/ui';
+import { Skeleton, Button, Separator } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
-import { ChevronDown, MessageSquare, Phone, Video } from 'lucide-react';
+import { MessageSquare, Phone, Video } from 'lucide-react';
 import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
 import { Address, Space, useMe } from '@hypha-platform/core/client';
@@ -78,51 +70,53 @@ export const MemberDetail = ({
         <MemberHead {...member} lang={lang} isLoading={isLoading} />
         <div className="flex shrink-0 items-start gap-2">
           {canConnect && directoryPerson[0] ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="flex items-center"
-                >
-                  {tHome('connect')}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={() => {
-                    const person = directoryPerson[0];
-                    if (!person) return;
-                    void openChat(person);
-                  }}
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  {tHome('chatPerson', { name: displayName })}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => {
-                    const person = directoryPerson[0];
-                    if (!person) return;
-                    void openCall(person);
-                  }}
-                >
-                  <Phone className="mr-2 h-4 w-4" />
-                  {tHome('callPerson', { name: displayName })}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => {
-                    const person = directoryPerson[0];
-                    if (!person) return;
-                    void openVideo(person);
-                  }}
-                >
-                  <Video className="mr-2 h-4 w-4" />
-                  {tHome('videoPerson', { name: displayName })}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex shrink-0 gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                colorVariant="neutral"
+                aria-label={tHome('callPerson', { name: displayName })}
+                title={tHome('callPerson', { name: displayName })}
+                onClick={() => {
+                  const person = directoryPerson[0];
+                  if (!person) return;
+                  void openCall(person);
+                }}
+              >
+                <Phone className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                colorVariant="neutral"
+                aria-label={tHome('videoPerson', { name: displayName })}
+                title={tHome('videoPerson', { name: displayName })}
+                onClick={() => {
+                  const person = directoryPerson[0];
+                  if (!person) return;
+                  void openVideo(person);
+                }}
+              >
+                <Video className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                colorVariant="neutral"
+                aria-label={tHome('chatPerson', { name: displayName })}
+                title={tHome('chatPerson', { name: displayName })}
+                onClick={() => {
+                  const person = directoryPerson[0];
+                  if (!person) return;
+                  void openChat(person);
+                }}
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+            </div>
           ) : null}
           <Link href={closeUrl} scroll={false}>
             <Button
