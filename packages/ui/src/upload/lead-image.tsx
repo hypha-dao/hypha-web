@@ -64,7 +64,11 @@ function dataURLtoFile(dataUrl: string, filename: string) {
   while (n--) {
     u8arr[n] = bstr.charCodeAt(n);
   }
-  return new File([u8arr], filename, { type: mime });
+  const file = new File([u8arr], filename, { type: mime });
+  if (file.size === 0) {
+    throw new Error('Cropped image is empty.');
+  }
+  return file;
 }
 
 export const UploadLeadImage = ({
@@ -199,19 +203,28 @@ export const UploadLeadImage = ({
 
   const confirmCrop = React.useCallback(async () => {
     if (!imageSrc || !croppedAreaPixels) return;
-    const croppedImageUrl = await getCroppedImg(
-      imageSrc,
-      croppedAreaPixels,
-      outputMimeType,
-    );
-    setPreview(croppedImageUrl);
-
-    const fileExtension = outputMimeType === 'image/png' ? 'png' : 'jpg';
-    const file = dataURLtoFile(croppedImageUrl, `cropped.${fileExtension}`);
-    onChange(file);
-
-    setImageSrc(null);
-  }, [imageSrc, croppedAreaPixels, onChange]);
+    try {
+      const croppedImageUrl = await getCroppedImg(
+        imageSrc,
+        croppedAreaPixels,
+        outputMimeType,
+      );
+      const fileExtension = outputMimeType === 'image/png' ? 'png' : 'jpg';
+      const file = dataURLtoFile(croppedImageUrl, `cropped.${fileExtension}`);
+      setPreview(croppedImageUrl);
+      onChange(file);
+      setImageSrc(null);
+      setError(null);
+    } catch {
+      setError(messages.uploadFailed);
+    }
+  }, [
+    croppedAreaPixels,
+    imageSrc,
+    messages.uploadFailed,
+    onChange,
+    outputMimeType,
+  ]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

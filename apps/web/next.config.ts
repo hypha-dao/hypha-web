@@ -2,10 +2,28 @@ import path from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
+import { UPLOADTHING_IMAGE_REMOTE_PATTERNS } from '../../packages/core/src/assets/uploadthing-cdn';
 import { routing } from '../../packages/i18n/src/routing';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const LOCALES = routing.locales;
+
+const ENV_IMAGE_REMOTE_PATTERNS = IMAGE_HOSTS.map((hostname) => hostname.trim())
+  .filter(Boolean)
+  .map((hostname) => ({ protocol: 'https' as const, hostname }));
+
+const IMAGE_REMOTE_PATTERNS = [
+  ...UPLOADTHING_IMAGE_REMOTE_PATTERNS.map((pattern) => ({
+    protocol: pattern.protocol,
+    hostname: pattern.hostname,
+  })),
+  ...ENV_IMAGE_REMOTE_PATTERNS,
+].filter(
+  (pattern, index, patterns) =>
+    patterns.findIndex(
+      (candidate) => candidate.hostname === pattern.hostname,
+    ) === index,
+);
 
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
@@ -71,10 +89,10 @@ const nextConfig: NextConfig = {
   },
   images: {
     unoptimized: process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
-    remotePatterns: IMAGE_HOSTS.map((hostname) => ({
-      protocol: 'https',
-      hostname,
-    })),
+    // UploadThing v7 banners live on `*.ufs.sh`. Hardcode those hosts (like
+    // CSP) so header images work even when NEXT_PUBLIC_IMAGE_HOSTS still lists
+    // only legacy `utfs.io`.
+    remotePatterns: IMAGE_REMOTE_PATTERNS,
   },
   redirects: async () => {
     return [
