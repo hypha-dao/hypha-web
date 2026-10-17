@@ -12,9 +12,7 @@ type WalletActionsToolbarProps = {
 };
 
 /**
- * Wallet secondary menu — Buy Space Tokens, Buy Hypha, Actions.
- * Replaces the solid CTA buttons on larger screens (and keeps the same
- * destinations as a quiet strip on smaller ones).
+ * Wallet secondary menu — Buy Hypha, Actions, Buy Space Tokens (vertical).
  */
 export function WalletActionsToolbar({
   basePath,
@@ -25,30 +23,32 @@ export function WalletActionsToolbar({
   const pathname = usePathname() ?? '';
 
   const actions = [
-    { href: `${basePath}/actions/buy-space-tokens`, label: 'buySpaceTokens' },
     {
       href: `${basePath}/actions/purchase-hypha-tokens`,
-      label: 'buyHypha',
+      label: 'buyHypha' as const,
     },
-    { href: `${basePath}/actions`, label: 'actions' },
-  ] as const;
+    { href: `${basePath}/actions`, label: 'actions' as const },
+    {
+      href: `${basePath}/actions/buy-space-tokens`,
+      label: 'buySpaceTokens' as const,
+    },
+  ];
 
   return (
     <nav
       aria-label={tProfile('actions')}
       className={cn(
-        'flex min-w-0 flex-nowrap items-end gap-0 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        'flex w-full min-w-0 flex-col items-stretch gap-0 border-b border-border',
         className,
       )}
     >
       {actions.map(({ href, label }) => {
         const active =
-          pathname === href ||
-          (label === 'actions'
+          label === 'actions'
             ? pathname === href
-            : pathname === href || pathname.startsWith(`${href}/`));
+            : pathname === href || pathname.startsWith(`${href}/`);
         const classNameForItem = cn(
-          'shrink-0 border-b-2 px-3 pb-2 text-1 font-medium uppercase tracking-wide transition-colors',
+          'w-full border-l-2 px-3 py-2 text-1 font-medium uppercase tracking-wide transition-colors',
           active
             ? 'border-foreground text-foreground'
             : 'border-transparent text-muted-foreground hover:text-foreground',
