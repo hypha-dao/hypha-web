@@ -7,6 +7,7 @@ import { createGetNetworkEcosystemPatternsTool } from './get-network-ecosystem-p
 import { createProposeOrganisationBlueprintTool } from './propose-organisation-blueprint';
 import { createMcpNavigationTool } from './mcp-navigation';
 import { createOnboardingGuidanceTool } from './onboarding-guidance';
+import { applyVisualAssetsToKnownAnswers } from './onboarding-visual-assets-guidance';
 import { createSearchSpacesTool } from './search-spaces';
 import { webSearchTool } from './web-search';
 import { createGenerateSpaceVisualAssetsTool } from './generate-space-visual-assets';
@@ -299,6 +300,18 @@ function extractVisualAssetsFromContext(
   };
 }
 
+function extractVisualAssetsConfirmedFromContext(
+  conversationContext?: unknown,
+): boolean {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return false;
+  }
+  return (
+    (conversationContext as { visualAssetsConfirmed?: unknown })
+      .visualAssetsConfirmed === true
+  );
+}
+
 function withInjectedOnboardingVisualAssets<T extends Record<string, unknown>>(
   payload: T,
   visualAssets?: OnboardingVisualAssetsContext,
@@ -448,6 +461,8 @@ function resolveOnboardingInjectionContext(
     contextSetupJourney,
     contextEntryMethod: extractEntryMethodFromContext(conversationContext),
     contextVisualAssets: extractVisualAssetsFromContext(conversationContext),
+    contextVisualAssetsConfirmed:
+      extractVisualAssetsConfirmedFromContext(conversationContext),
     contextEcosystemBlueprint:
       extractEcosystemBlueprintFromContext(conversationContext),
   };
@@ -478,6 +493,7 @@ export function createOnboardingToolSet(
     contextSetupJourney,
     contextEntryMethod,
     contextVisualAssets,
+    contextVisualAssetsConfirmed,
     contextEcosystemBlueprint,
   } = resolveOnboardingInjectionContext(
     conversationContext,
@@ -547,6 +563,11 @@ export function createOnboardingToolSet(
           knownAnswers.ecosystem_blueprint = contextEcosystemBlueprint;
         }
       }
+      applyVisualAssetsToKnownAnswers(knownAnswers, {
+        visualAssets: contextVisualAssets,
+        visualAssetsConfirmed: contextVisualAssetsConfirmed,
+        lastUserText: effectiveLastUserText,
+      });
       return onboardingGuidanceTool.execute({
         ...payload,
         known_answers: knownAnswers,
