@@ -257,6 +257,80 @@ what it can drop.
 - **Cache is per instance.** The chain-facts cache is in memory per server instance; a shared store would
   tighten the staleness window across instances and is not needed yet.
 
+## Caching and proxies
+
+### What v2 sends, and why
+
+Every `/api/v2` response, whatever its status (200, 4xx, 5xx, an error that escaped a handler), carries:
+
+```
+Cache-Control: private, no-store
+Vary: Authorization, x-hypha-client-key
+```
+
+**Why.** A v2 body depends on who asks: the spaces list returns only what the viewer may see, the single
+space and documents routes apply an access gate per viewer, and the `my-*` routes answer about the caller.
+The same URL therefore returns different bodies for different users. A shared cache (a CDN, a reverse
+proxy, a framework data cache, an in-process memo keyed by URL) that stored one viewer's response could
+serve it to another viewer. `private, no-store` tells every cache not to store the response; `Vary` is a
+second guard for any cache that stores it anyway.
+
+**How it is enforced.** Routes export their handler through `v2Route` (`apps/web/src/lib/api-v2`), which
+applies the headers to every response, including an unexpected exception, so a new route cannot forget
+them. `apps/web/next.config.ts` repeats the same values for `/api/v2/:path*` to cover responses the
+framework builds itself (405, automatic `OPTIONS`). A contract test
+(`packages/core/src/api-v2/__tests__/response-headers-contract.test.ts`) fails if a route bypasses the
+wrapper, if a response class loses the headers, or if the config drifts from the constant.
+
+### What an integrator's own proxy must do
+
+Hypha is called from the integrator's server (client key held there), and the integrator's browser then
+talks to the integrator's own routes. Those routes return viewer-dependent bodies, so they are part of the
+same contract:
+
+- Either pass `Cache-Control` and `Vary` through unchanged, or set `Cache-Control: private, no-store` and
+  `Vary: Authorization` on every proxied response yourself. Do not assume the framework or the hosting
+  platform adds them; a proxy that builds its own response from the upstream JSON drops the upstream headers.
+- Do this for every route that forwards a v2 body, not only the list: `my-*`, the single space and the
+  documents are viewer-dependent too.
+- Never memoise or share-cache a v2 response across viewers: no CDN or edge cache rule on these routes, no
+  framework data cache or `revalidate` on the upstream fetch, no in-process cache keyed by URL alone.
+- Fetch upstream with no caching (for example `cache: 'no-store'`) unless you add a per-viewer cache as
+  described below.
+
+### The cost of `no-store`, and safer middle grounds (options, not requirements)
+
+`no-store` means every request reaches Hypha, which reads the chain (a multicall for levels, more for a
+signed-in viewer) and the database. Chain facts are already cached in memory on the Hypha side for
+`CHAIN_FACTS_TTL_MS` (30 s), so a repeated request is cheaper than a cold one, but it is not free. If an
+integrator wants a speed-up, from safest to loosest:
+
+1. **Browser-only caching.** Send `Cache-Control: private, max-age=<short>` with `Vary: Authorization` from
+   the integrator's route: only the user's own browser may reuse it.
+2. **Per-viewer cache in the integrator's server memory**, keyed by the token's subject (not by URL alone)
+   plus the full URL, with a short lifetime (seconds). Remember a viewer's own membership or a new vote may
+   take up to the lifetime to show; clear it after a write by that viewer.
+3. **Guest responses only** (no `Authorization` sent): identical for all guests of one client key, so a
+   short shared cache is possible. The key is part of the Hypha response's `Vary`, so key this cache by
+   client as well. Do not extend this to signed-in viewers.
+
+Not recommended: any cache keyed by URL only, a long lifetime on anything gated, or caching error
+responses.
+
+### Could any v2 response become cacheable? (open, per route)
+
+Default stays `private, no-store`. The candidates, with the reason each is not done yet:
+
+| Candidate                                                                 | What it would allow                                                                                                 | Why not by default                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guest request (client key, no token) on the list, single space, documents | `public, max-age=30` or similar when no `Authorization` is sent: the body is the same for every guest of the client | The route would pick its header from the request, a branch that has to be correct forever; the gate and levels change on chain, so a stale copy can show a space that just became private (the in-memory chain cache already allows up to 30 s of that, a shared cache would add its own window on top); cost per guest request is one levels multicall plus a DB read, not yet measured under load |
+| `include=`-only variants                                                  | none                                                                                                                | The item set already depends on the viewer; `include` does not change that                                                                                                                                                                                                                                                                                                                          |
+| `my-*`                                                                    | none                                                                                                                | Always about the caller                                                                                                                                                                                                                                                                                                                                                                             |
+
+No measurement supports a relaxation yet. Evidence needed before proposing one: wall-clock cold and warm
+latency per route, the request volume from integrators, and the acceptable staleness window for a space that
+becomes more private.
+
 ## Status codes
 
 `400` unknown `include` block; `401` missing/invalid client key, missing/invalid token, or a token

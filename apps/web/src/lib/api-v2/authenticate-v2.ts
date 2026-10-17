@@ -3,6 +3,7 @@ import {
   authenticateIntegrationClient,
   resolveV2Caller,
   V2_RESPONSE_HEADERS,
+  withV2Headers,
   type V2Caller,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -57,6 +58,19 @@ export function jsonV2(
   return NextResponse.json(body, {
     status: init?.status,
     headers: V2_RESPONSE_HEADERS,
+  });
+}
+
+/**
+ * Every v2 route exports its handler through this wrapper: all responses,
+ * including an error that escaped the handler, carry the v2 cache headers.
+ */
+export function v2Route<A extends unknown[]>(
+  handler: (...args: A) => Promise<NextResponse>,
+): (...args: A) => Promise<NextResponse> {
+  return withV2Headers(handler, (error) => {
+    console.error('Unhandled v2 route error:', error);
+    return jsonV2({ error: 'Internal error' }, { status: 500 });
   });
 }
 

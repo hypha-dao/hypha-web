@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { buildMyMembershipV2 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -6,6 +6,7 @@ import {
   authenticateV2,
   failureResponse,
   jsonV2,
+  v2Route,
 } from '../../../../../../lib/api-v2/authenticate-v2';
 
 export const runtime = 'nodejs';
@@ -28,7 +29,7 @@ export const dynamic = 'force-dynamic';
  *               an unknown space only; 502 when the chain read fails.
  * ui-delegated: the Join / hide-Join decision and its copy.
  */
-export async function GET(
+async function handleGet(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
@@ -47,9 +48,8 @@ export async function GET(
     return jsonV2(result.body);
   } catch (error) {
     console.error('Failed to fetch my-membership (v2):', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch membership' },
-      { status: 500 },
-    );
+    return jsonV2({ error: 'Failed to fetch membership' }, { status: 500 });
   }
 }
+
+export const GET = v2Route(handleGet);

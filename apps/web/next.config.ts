@@ -58,6 +58,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Safety net for responses Next.js builds itself (405, automatic OPTIONS)
+      // that never pass through a v2 handler. Same values as V2_RESPONSE_HEADERS
+      // in packages/core/src/api-v2/response-headers.ts (a test keeps them equal).
+      {
+        source: '/api/v2/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store' },
+          { key: 'Vary', value: 'Authorization, x-hypha-client-key' },
+        ],
+      },
       {
         source: '/onesignal/:path*',
         headers: [

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { buildSpacesListV2 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -6,6 +6,7 @@ import {
   authenticateV2,
   failureResponse,
   jsonV2,
+  v2Route,
 } from '../../../../lib/api-v2/authenticate-v2';
 
 export const runtime = 'nodejs';
@@ -39,7 +40,7 @@ export const dynamic = 'force-dynamic';
  * ui-delegated: layout, sorting and copy; treating `memberCount` 0 as
  *               unknown. NOT delegated: "may this viewer see this space".
  */
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   const auth = await authenticateV2(request);
   if (!auth.ok) return auth.response;
 
@@ -84,9 +85,8 @@ export async function GET(request: NextRequest) {
     return jsonV2(result.body);
   } catch (error) {
     console.error('Failed to fetch spaces (v2):', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch spaces' },
-      { status: 500 },
-    );
+    return jsonV2({ error: 'Failed to fetch spaces' }, { status: 500 });
   }
 }
+
+export const GET = v2Route(handleGet);

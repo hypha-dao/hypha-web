@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getOrder } from '@hypha-platform/core/client';
 import { buildDocumentsListV2 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -7,6 +7,7 @@ import {
   authenticateV2,
   failureResponse,
   jsonV2,
+  v2Route,
 } from '../../../../../../lib/api-v2/authenticate-v2';
 
 export const runtime = 'nodejs';
@@ -35,7 +36,7 @@ export const dynamic = 'force-dynamic';
  *               onVoting + awaitingDecision; polling and refresh-after-vote;
  *               the detail banner's stale-read guard.
  */
-export async function GET(
+async function handleGet(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
@@ -69,9 +70,8 @@ export async function GET(
     return jsonV2(result.body);
   } catch (error) {
     console.error('Failed to fetch documents (v2):', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch documents' },
-      { status: 500 },
-    );
+    return jsonV2({ error: 'Failed to fetch documents' }, { status: 500 });
   }
 }
+
+export const GET = v2Route(handleGet);
