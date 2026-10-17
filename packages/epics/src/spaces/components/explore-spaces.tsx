@@ -523,8 +523,10 @@ export function ExploreSpaces({
         )}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-9">
-          {pageTitle}
-          {sharedControls}
+          <div className="flex min-w-0 flex-col gap-4">
+            {pageTitle}
+            {sharedControls}
+          </div>
 
           <div className="flex min-w-0 flex-col gap-4">
             {enableNetworkMap ? (

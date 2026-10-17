@@ -13,7 +13,7 @@ export default async function MyWalletPage(props: PageProps) {
 
   return (
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
-      <Container className="flex min-w-0 flex-col gap-9 py-9">
+      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5">
         <header className="xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
             {t('allYourRewards')}
