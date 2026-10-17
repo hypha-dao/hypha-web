@@ -15,13 +15,13 @@ const base = {
 const menuKeys = [
   'overview',
   'coherence',
-  'members',
   'agreements',
+  'members',
   'treasury',
 ] as const;
 
 describe('buildSpaceSectionNavItems', () => {
-  it('keeps the menu to home, signals, members, agreements, and treasury', () => {
+  it('keeps the menu to home, signals, agreements, members, and treasury', () => {
     const items = buildSpaceSectionNavItems(base);
     expect(items.map((item) => item.key)).toEqual([...menuKeys]);
     expect(
@@ -57,9 +57,9 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.map((item) => item.key)).toEqual([
       'overview',
       'coherence',
-      'members',
       'pipeline',
       'agreements',
+      'members',
       'treasury',
       'memory',
     ]);
@@ -76,9 +76,9 @@ describe('buildSpaceSectionNavItems', () => {
       'energy',
       'overview',
       'coherence',
-      'members',
       'pipeline',
       'agreements',
+      'members',
       'treasury',
       'memory',
     ]);
