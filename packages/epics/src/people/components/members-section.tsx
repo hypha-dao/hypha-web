@@ -166,53 +166,55 @@ export const MembersSection: FC<MemberSectionProps> = ({
             <p>{tMembers('aiAgentsEmptyState')}</p>
           </Empty>
         ) : (
-          <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-            {aiAgents.map((agent) => (
-              <div key={agent.id} className="craft-card p-4">
-                <div className="mb-3 flex items-start gap-3">
-                  <div
-                    className={`craft-icon-box flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
-                      agent.tagGroup,
-                    )}`}
-                    aria-hidden="true"
-                  >
-                    {getAgentAvatarInitials(tCoherence(agent.role))}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="mb-1 text-sm font-medium text-foreground">
-                      {tCoherence(agent.role)}
-                    </div>
-                    <div className="craft-meta">
-                      {tCoherence(`tagGroup.${agent.tagGroup}`)}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {tCoherence(agent.focus)}
-                </p>
-                <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                  {agent.roleDefinition.map((line, index) => (
-                    <li
-                      key={`${agent.id}-def-${index}`}
-                      className="leading-relaxed"
+          <div className="@container/members w-full">
+            <div className="member-list grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">
+              {aiAgents.map((agent) => (
+                <div key={agent.id} className="craft-card p-4">
+                  <div className="mb-3 flex items-start gap-3">
+                    <div
+                      className={`craft-icon-box flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
+                        agent.tagGroup,
+                      )}`}
+                      aria-hidden="true"
                     >
-                      {index + 1}. {tCoherence(line)}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 text-xs text-muted-foreground">
-                  {tMembers('aiAgentsMobilizedCount', {
-                    count: agent.mobilizedCount,
-                  })}
-                  {' · '}
-                  {tMembers('aiAgentsLastActive', {
-                    date: format.dateTime(new Date(agent.lastMobilizedAt), {
-                      dateStyle: 'medium',
-                    }),
-                  })}
+                      {getAgentAvatarInitials(tCoherence(agent.role))}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="mb-1 text-sm font-medium text-foreground">
+                        {tCoherence(agent.role)}
+                      </div>
+                      <div className="craft-meta">
+                        {tCoherence(`tagGroup.${agent.tagGroup}`)}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {tCoherence(agent.focus)}
+                  </p>
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    {agent.roleDefinition.map((line, index) => (
+                      <li
+                        key={`${agent.id}-def-${index}`}
+                        className="leading-relaxed"
+                      >
+                        {index + 1}. {tCoherence(line)}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 text-xs text-muted-foreground">
+                    {tMembers('aiAgentsMobilizedCount', {
+                      count: agent.mobilizedCount,
+                    })}
+                    {' · '}
+                    {tMembers('aiAgentsLastActive', {
+                      date: format.dateTime(new Date(agent.lastMobilizedAt), {
+                        dateStyle: 'medium',
+                      }),
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )
       ) : pagination?.total === 0 ? (

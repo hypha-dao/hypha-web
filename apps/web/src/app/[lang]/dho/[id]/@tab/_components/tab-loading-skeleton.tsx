@@ -94,22 +94,24 @@ function MembersSkeleton({ showTitle }: { showTitle: boolean }) {
         <Pulse className="h-8 w-16" delayMs={80} />
       </div>
       <Pulse className="h-10 w-full" delayMs={60} />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-        {Array.from({ length: 6 }, (_, index) => (
-          <div
-            key={index}
-            className="flex items-start gap-2.5 border border-border p-3"
-          >
-            <Pulse
-              className="h-10 w-10 shrink-0 rounded-full"
-              delayMs={index * 50}
-            />
-            <div className="grid min-w-0 flex-1 gap-2 pt-1">
-              <Pulse className="h-3 w-2/3" delayMs={index * 50 + 30} />
-              <Pulse className="h-3 w-1/3" delayMs={index * 50 + 60} />
+      <div className="@container/members w-full">
+        <div className="grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-2.5 border border-border p-3"
+            >
+              <Pulse
+                className="h-10 w-10 shrink-0 rounded-full"
+                delayMs={index * 50}
+              />
+              <div className="grid min-w-0 flex-1 gap-2 pt-1">
+                <Pulse className="h-3 w-2/3" delayMs={index * 50 + 30} />
+                <Pulse className="h-3 w-1/3" delayMs={index * 50 + 60} />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
