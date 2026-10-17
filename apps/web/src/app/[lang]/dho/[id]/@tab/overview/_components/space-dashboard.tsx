@@ -18,6 +18,7 @@ import {
 import {
   PersonAvatar,
   readMemberPresence,
+  SignalCategoryTag,
   SpaceAttention,
   useDisplayCurrency,
   useSpaceDocumentsWithStatuses,
@@ -589,7 +590,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className="flex flex-col gap-6">
       {name ? (
-        <header className="flex min-w-0 flex-col gap-1 border-t-2 border-[color:var(--space-spot,var(--space-accent))] pt-3">
+        <header className="flex min-w-0 flex-col gap-1 border-b-2 border-[color:var(--space-spot,var(--space-accent))] pb-3">
           <h1
             className="text-4 leading-tight text-foreground sm:text-5"
             style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -656,11 +657,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             <ul className="mt-3 grid gap-3 sm:grid-cols-2">
               {featuredSignals.map((signal) => {
                 const body = plainText(signal.description);
-                const typeLabel = tCoherence.has(
-                  `types.${signal.type}` as 'types.Need',
-                )
-                  ? tCoherence(`types.${signal.type}` as 'types.Need')
-                  : signal.type;
                 return (
                   <li key={signal.slug}>
                     <Link
@@ -669,9 +665,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
                       )}`}
                       className="craft-card-interactive flex h-full flex-col gap-2 p-4"
                     >
-                      <span className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                        {typeLabel}
-                      </span>
+                      <SignalCategoryTag type={signal.type} withLabel />
                       <span className="text-2 text-foreground">
                         {signal.title}
                       </span>

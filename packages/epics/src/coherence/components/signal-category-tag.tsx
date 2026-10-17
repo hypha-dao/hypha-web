@@ -18,9 +18,15 @@ const CATEGORY_TONE_CLASS = {
 type SignalCategoryTagProps = {
   type?: string | null;
   className?: string;
+  /** Show the type name beside the icon, as a tag rather than a bare mark. */
+  withLabel?: boolean;
 };
 
-export function SignalCategoryTag({ type, className }: SignalCategoryTagProps) {
+export function SignalCategoryTag({
+  type,
+  className,
+  withLabel = false,
+}: SignalCategoryTagProps) {
   const t = useTranslations('CoherenceTab');
   const value = type?.trim() ?? '';
   if (!value) return null;
@@ -33,6 +39,22 @@ export function SignalCategoryTag({ type, className }: SignalCategoryTagProps) {
   const key = `types.${value}`;
   const label = t.has(key as never) ? t(key as never) : option?.title ?? value;
   const icon = (option?.icon ?? 'Circle') as LucideReactIcon;
+
+  if (withLabel) {
+    return (
+      <span
+        title={label}
+        className={cn(
+          'inline-flex w-fit max-w-full items-center gap-1 border border-border/60 px-1.5 py-0.5 text-1 font-normal leading-[calc(16/12)] tracking-normal normal-case',
+          tone,
+          className,
+        )}
+      >
+        <DynamicIcon name={icon} size={14} aria-hidden />
+        <span className="truncate">{label}</span>
+      </span>
+    );
+  }
 
   return (
     <span

@@ -10,8 +10,10 @@ export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
 
   return (
     <div className="flex flex-col gap-8 py-4">
-      <TabScreenTitle title={tCommon('overview')} />
-      <SpaceDashboard spaceSlug={spaceSlug} />
+      <div className="flex flex-col gap-3">
+        <TabScreenTitle title={tCommon('overview')} />
+        <SpaceDashboard spaceSlug={spaceSlug} />
+      </div>
       <HomeTokenHoldingsDashboardLazy spaceSlug={spaceSlug} />
     </div>
   );
