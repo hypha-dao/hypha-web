@@ -57,7 +57,7 @@ export function NavigationTabs({
     (key: SpaceSectionNavKey): string => {
       switch (key) {
         case 'overview':
-          return t('home');
+          return t('overview');
         case 'agreements':
           return t('Agreements');
         case 'members':
@@ -67,7 +67,7 @@ export function NavigationTabs({
         case 'calendar':
           return t('Calendar');
         case 'coherence':
-          return t('Signals');
+          return t('Coherence');
         case 'pipeline':
           return t('Pipeline');
         case 'energy':

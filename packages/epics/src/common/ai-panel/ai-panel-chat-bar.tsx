@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
 import {
   FileIcon,
@@ -15,6 +16,7 @@ import {
   Loader2,
   ImageIcon,
   Mic,
+  MicOff,
   Paperclip,
   Play,
   Plus,
@@ -127,7 +129,22 @@ type AiPanelChatBarProps = {
   composerDisabled?: boolean;
   /** `hero` is the landing composer. `quiet` sits on the onboarding ground, with no frame of its own. */
   variant?: AiPanelChatBarVariant;
+  /** Home keeps the suggestion row flush with the field, so the top rule stays off. */
+  topRule?: boolean;
   sendAriaLabel?: string;
+  /** Sits in the toolbar immediately after the microphone. */
+  accessory?: ReactNode;
+  /**
+   * Replaces dictation. The microphone stays open and each spoken turn is sent
+   * by the caller; this button only cuts or restores that listening.
+   */
+  conversationMicrophone?: {
+    active: boolean;
+    hearing: boolean;
+    onToggle: () => void;
+    muteLabel: string;
+    unmuteLabel: string;
+  };
 };
 
 function formatFileSize(bytes: number): string {
@@ -288,7 +305,10 @@ export function AiPanelChatBar({
   placeholder,
   composerDisabled = false,
   variant = 'panel',
+  topRule = true,
   sendAriaLabel,
+  accessory,
+  conversationMicrophone,
 }: AiPanelChatBarProps) {
   const isHero = variant === 'hero';
   /** Side panel and quiet onboarding share one frameless composer. */
@@ -654,8 +674,7 @@ export function AiPanelChatBar({
       className={cn(
         'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent',
         !isHero && 'px-3 pb-2 pt-2',
-        // Same hairline the chat composer uses above its field.
-        variant === 'panel' && 'border-t border-border/70',
+        variant === 'panel' && topRule && 'border-t border-border/70',
       )}
     >
       <div
@@ -1019,34 +1038,72 @@ export function AiPanelChatBar({
                   />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={startDictation}
-                disabled={isStreaming || composerDisabled}
-                className={cn(
-                  isDictating ? recordingStopButtonClass : iconButtonClass,
-                  isStreaming && 'cursor-not-allowed opacity-50',
-                )}
-                aria-label={
-                  isDictating
-                    ? tHuman('composerStopDictation')
-                    : tHuman('composerDictateMessage')
-                }
-                title={
-                  isDictating
-                    ? tHuman('composerStopDictation')
-                    : tHuman('composerDictateMessage')
-                }
-              >
-                {isDictating ? (
-                  <ComposerRecOnAirIndicator />
-                ) : (
-                  <Mic
-                    className={composerIconClass}
-                    strokeWidth={composerIconStroke}
-                  />
-                )}
-              </button>
+              {conversationMicrophone ? (
+                <button
+                  type="button"
+                  onClick={conversationMicrophone.onToggle}
+                  disabled={composerDisabled}
+                  aria-pressed={conversationMicrophone.active}
+                  aria-label={
+                    conversationMicrophone.active
+                      ? conversationMicrophone.muteLabel
+                      : conversationMicrophone.unmuteLabel
+                  }
+                  title={
+                    conversationMicrophone.active
+                      ? conversationMicrophone.muteLabel
+                      : conversationMicrophone.unmuteLabel
+                  }
+                  className={cn(
+                    iconButtonClass,
+                    conversationMicrophone.active && 'text-foreground',
+                    conversationMicrophone.hearing &&
+                      'bg-foreground/10 text-foreground',
+                  )}
+                >
+                  {conversationMicrophone.active ? (
+                    <Mic
+                      className={composerIconClass}
+                      strokeWidth={composerIconStroke}
+                    />
+                  ) : (
+                    <MicOff
+                      className={composerIconClass}
+                      strokeWidth={composerIconStroke}
+                    />
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startDictation}
+                  disabled={isStreaming || composerDisabled}
+                  className={cn(
+                    isDictating ? recordingStopButtonClass : iconButtonClass,
+                    isStreaming && 'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={
+                    isDictating
+                      ? tHuman('composerStopDictation')
+                      : tHuman('composerDictateMessage')
+                  }
+                  title={
+                    isDictating
+                      ? tHuman('composerStopDictation')
+                      : tHuman('composerDictateMessage')
+                  }
+                >
+                  {isDictating ? (
+                    <ComposerRecOnAirIndicator />
+                  ) : (
+                    <Mic
+                      className={composerIconClass}
+                      strokeWidth={composerIconStroke}
+                    />
+                  )}
+                </button>
+              )}
+              {accessory}
             </div>
             <button
               type="button"

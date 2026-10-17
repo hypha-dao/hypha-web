@@ -30,8 +30,8 @@ import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
   AiPanelChatBar,
-  getLegacyCreateSpacePath,
   ONBOARDING_SETUP_MODE,
+  getLegacyCreateSpacePath,
   saveOnboardingConversationContext,
   type AiPanelDraftAttachment,
   type OnboardingDiscoveryMode,
@@ -441,7 +441,7 @@ export function OnboardingAdventurePage({
     <div className="flex flex-col">
       <section
         data-landing-marketing
-        className="relative -mx-5 overflow-hidden bg-[var(--hypha-paper)] px-5 pb-14 pt-8 text-foreground md:pb-20 md:pt-10 dark:bg-[var(--hypha-ink)]"
+        className="relative -mx-5 overflow-hidden bg-[var(--hypha-paper)] px-5 pb-0 pt-8 text-foreground md:pt-10 dark:bg-[var(--hypha-ink)]"
       >
         <Container className="relative flex flex-col gap-12 md:gap-14">
           <header className="flex flex-col items-center gap-6 text-center md:gap-8">
@@ -458,13 +458,25 @@ export function OnboardingAdventurePage({
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-accent-muted)]">
               {t('heroEyebrow')}
             </p>
+            <style>{`
+              @media (max-width: 767px) {
+                h1.onboarding-hero-title {
+                  font-size: 1.75rem;
+                  line-height: 1.2;
+                }
+                h1.onboarding-hero-title > span {
+                  display: inline;
+                  margin-top: 0;
+                }
+              }
+            `}</style>
             <h1
-              className="landing-marketing-copy mx-auto max-w-4xl text-balance text-[clamp(2.5rem,5.5vw,4.5rem)] font-medium leading-[1.06] tracking-[-0.03em]"
+              className="onboarding-hero-title landing-marketing-copy mx-auto max-w-4xl text-balance text-[clamp(2.5rem,5.5vw,4.5rem)] font-medium leading-[1.06] tracking-[-0.03em]"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               <span className="landing-marketing-copy block">
                 {t('titleLine1')}
-              </span>
+              </span>{' '}
               <span className="landing-marketing-copy mt-1 block">
                 {t('titleLine2')}
               </span>
@@ -517,7 +529,7 @@ export function OnboardingAdventurePage({
         </Container>
       </section>
 
-      <Container className="flex flex-col gap-10 py-10 md:py-12">
+      <Container className="flex flex-col gap-8 pt-6 pb-10 md:pt-8">
         <ol className="mx-auto flex w-full max-w-3xl list-none flex-wrap items-center justify-center gap-2 px-2">
           {[
             t('explore.title'),

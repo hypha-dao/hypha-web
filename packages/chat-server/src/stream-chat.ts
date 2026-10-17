@@ -6,6 +6,7 @@ import {
   streamText,
 } from 'ai';
 import type {
+  LanguageModel,
   StreamTextTransform,
   TextStreamPart,
   ToolSet,
@@ -13,6 +14,20 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import {
+  listMemberHomeThreadItems,
+  SHOW_MEMBER_HOME_ITEM_TOOL,
+  memberHomeItemMemory,
+  mergeMemberHomeMemory,
+  shownMemberHomeItemKeys,
+} from '@hypha-platform/core/client';
+import { formatMemberHomeFacts } from './member-home-facts';
+import { loadMemberHomeFacts } from './load-member-home-facts';
+import {
+  buildSpaceContextSnapshot,
+  loadSignedInMemberBrief,
+} from './presence-brief';
+import { createShowMemberHomeItemTool } from './tools/show-member-home-item';
 import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { resolveChatLocale } from './locale-ui-labels';
@@ -44,6 +59,7 @@ import { buildProposalFormStateDirective } from './tools/proposal-form-state';
 import { buildProposalAcceptanceDirective } from './tools/proposal-acceptance-directive';
 import {
   createChatTools,
+  safeChatTool,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
@@ -69,7 +85,8 @@ export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
-const DEFAULT_OPENROUTER_CHAT_MODEL = 'openai/gpt-4o-mini';
+/** Frontier chat model. A small model drops the home instructions. */
+const DEFAULT_OPENROUTER_CHAT_MODEL = 'anthropic/claude-opus-5.5';
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
@@ -289,6 +306,11 @@ function resolveOpenRouterChatModelId(): string {
   }
 
   return fromEnv;
+}
+
+/** The chat model used by the member home and by a mentioned agent in Matrix. */
+export function getHyphaChatModel(): LanguageModel {
+  return openrouterWithHyphaHeaders(resolveOpenRouterChatModelId());
 }
 
 function messageFromUnknownError(error: unknown): string {
@@ -1048,6 +1070,14 @@ export type ChatStreamCallbacks = {
   locale?: ChatRequestPayload['locale'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
+  /** Personal home: same Hypha AI voice, plus this member's records. */
+  memberHome?: boolean;
+  memberHomeMemory?: {
+    passed?: string[];
+    deferred?: string[];
+    settled?: string[];
+    acted?: string[];
+  };
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1124,6 +1154,20 @@ function sanitizeMessagesToTextOnly(
       };
     })
     .filter((message) => message.parts.length > 0);
+}
+
+function lastUserAttachedFile(
+  messages: ChatRequestPayload['messages'],
+): boolean {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+    return (message.parts ?? []).some((part) => {
+      if (part == null || typeof part !== 'object') return false;
+      return (part as { type?: unknown }).type === 'file';
+    });
+  }
+  return false;
 }
 
 function extractLastUserText(
@@ -1233,11 +1277,14 @@ function buildEffectiveSystemPrompt(
   lastUserText: string | null,
   conversationContext: ChatRequestPayload['conversationContext'],
   spaceContextSnapshot: string | null,
+  memberBrief: string | null,
 ): string {
   const basePrompt = buildSystemPrompt(spaceSlug);
   const parts = [basePrompt];
   if (spaceContextSnapshot) {
     parts.push(`\n\n${spaceContextSnapshot}`);
+  } else if (memberBrief) {
+    parts.push(`\n\n${memberBrief}`);
   }
   const inOnboarding = conversationContext?.mode === 'onboarding_setup';
   const postCreateOnboardingPhase =
@@ -1251,79 +1298,6 @@ function buildEffectiveSystemPrompt(
     parts.push(`\n\n${competencyDirective}`);
   }
   return parts.join('');
-}
-
-async function buildSpaceContextSnapshot(
-  spaceSlug: string,
-  clientTitle?: string | null,
-): Promise<string | null> {
-  const safe = sanitizeSlug(spaceSlug);
-  if (!safe) return null;
-
-  try {
-    const result = await getSpaceBySlugTool.execute({ slug: safe });
-    if (
-      !result ||
-      typeof result !== 'object' ||
-      !('found' in result) ||
-      result.found !== true ||
-      !('space' in result) ||
-      !result.space ||
-      typeof result.space !== 'object'
-    ) {
-      return null;
-    }
-
-    const space = result.space as {
-      title?: string;
-      description?: string | null;
-      memberCount?: number;
-      documentCount?: number;
-    };
-    const title = typeof space.title === 'string' ? space.title : safe;
-    const description =
-      typeof space.description === 'string' && space.description.trim()
-        ? space.description.trim()
-        : null;
-
-    return [
-      'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):',
-      `- Active space slug for tools: ${safe}`,
-      `- Display name: ${title}`,
-      ...(clientTitle && clientTitle !== title
-        ? [`- Client-reported title: ${clientTitle}`]
-        : []),
-      ...(description ? [`- Purpose: ${description}`] : []),
-      ...(typeof space.memberCount === 'number'
-        ? [`- Members: ${space.memberCount}`]
-        : []),
-      ...(typeof space.documentCount === 'number'
-        ? [`- Documents: ${space.documentCount}`]
-        : []),
-      ...(typeof (space as { activationMode?: string }).activationMode ===
-      'string'
-        ? [
-            `- Activation mode: ${
-              (space as { activationMode: string }).activationMode
-            }`,
-          ]
-        : []),
-      ...((
-        space as { privacy?: { isAlreadyPrivate?: boolean; summary?: string } }
-      ).privacy?.summary
-        ? [
-            `- Privacy: ${
-              (space as { privacy: { summary: string } }).privacy.summary
-            }`,
-          ]
-        : []),
-      `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
-      `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
-      `- Privacy/transparency changes on existing spaces require create_space_setup_proposal (proposal_type space_transparency) and member vote — never claim updates via update_space_settings.`,
-    ].join('\n');
-  } catch {
-    return null;
-  }
 }
 
 async function convertMessagesSafely(
@@ -1372,8 +1346,45 @@ export async function createChatStreamResult(
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
     locale,
+    memberHome,
+    memberHomeMemory,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
+  const memberHomeRecord = memberHome
+    ? await loadMemberHomeFacts(authToken)
+    : null;
+  const memberHomeItems = memberHomeRecord
+    ? listMemberHomeThreadItems(memberHomeRecord.home)
+    : [];
+  const memberHomeMemoryFromMessages = memberHomeRecord
+    ? memberHomeItemMemory(memberHomeItems, messages)
+    : null;
+  const memberHomeChoices = memberHomeMemoryFromMessages
+    ? mergeMemberHomeMemory(memberHomeMemoryFromMessages, memberHomeMemory)
+    : null;
+  const memberHomeLastUserText = memberHomeRecord
+    ? extractLastUserText(messages)
+    : null;
+  const memberHomeFacts = memberHomeRecord
+    ? formatMemberHomeFacts(memberHomeRecord.home, {
+        alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
+        passed: memberHomeChoices?.passed,
+        deferred: memberHomeChoices?.deferred,
+        recalled: memberHomeMemoryFromMessages?.recalled,
+        settled: memberHomeChoices?.settled,
+        held: memberHomeMemoryFromMessages?.held,
+        acted: memberHomeMemory?.acted,
+        resumed: /carried out the recommended action/i.test(
+          memberHomeLastUserText ?? '',
+        ),
+        notADecision: /not a proposal|nothing to decide/i.test(
+          memberHomeLastUserText ?? '',
+        ),
+        asked: memberHomeLastUserText,
+        prior: extractLastAssistantText(messages),
+        attached: lastUserAttachedFile(messages),
+      })
+    : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
@@ -1398,20 +1409,37 @@ export async function createChatStreamResult(
     activeProposalFormSnapshot,
     chatLocale,
   );
+  if (memberHomeRecord) {
+    tools[SHOW_MEMBER_HOME_ITEM_TOOL] = safeChatTool(
+      SHOW_MEMBER_HOME_ITEM_TOOL,
+      createShowMemberHomeItemTool(memberHomeItems),
+    );
+  }
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
     spaceSlug,
     authToken,
     debugRequestId,
   });
-  const spaceContextSnapshot = spaceSlug?.trim()
-    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
+  const requestedSpaceSlug = spaceSlug?.trim() || '';
+  const voiceSpaceSlug =
+    requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
+  const spaceContextSnapshot = requestedSpaceSlug
+    ? await buildSpaceContextSnapshot(
+        requestedSpaceSlug,
+        activeSpaceTitle,
+        authToken,
+      )
     : null;
+  const memberBrief = spaceContextSnapshot
+    ? null
+    : await loadSignedInMemberBrief(authToken);
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
-    spaceSlug,
+    voiceSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
+    memberBrief,
   );
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1520,7 +1548,7 @@ export async function createChatStreamResult(
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           voiceDiscoveryActive
-            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
           localizedEntryMethodGuidelines
@@ -1578,7 +1606,9 @@ export async function createChatStreamResult(
 
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: systemPrompt,
+    system: memberHomeFacts
+      ? `${systemPrompt}\n\n${memberHomeFacts}`
+      : systemPrompt,
     messages:
       modelMessages.length > 0
         ? modelMessages

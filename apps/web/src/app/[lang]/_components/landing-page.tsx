@@ -2,7 +2,11 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useAuthentication } from '@hypha-platform/authentication';
+import {
+  resolveAccountEntryPath,
+  useAuthentication,
+} from '@hypha-platform/authentication';
+import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
@@ -12,13 +16,27 @@ import '../_shared/landing-marketing.css';
 export function LandingPage({ lang }: { lang: Locale }) {
   const t = useTranslations('Landing');
   const { isAuthenticated, isLoading, login } = useAuthentication();
+  const { person, isLoading: isPersonLoading, meError } = useMe();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace(`/${lang}/my-spaces`);
+    if (isLoading || !isAuthenticated || isPersonLoading || meError) return;
+    if (person === null) {
+      router.replace(resolveAccountEntryPath({ lang, hasProfile: false }));
+      return;
     }
-  }, [isLoading, isAuthenticated, lang, router]);
+    if (person) {
+      router.replace(resolveAccountEntryPath({ lang, hasProfile: true }));
+    }
+  }, [
+    isLoading,
+    isAuthenticated,
+    isPersonLoading,
+    meError,
+    person,
+    lang,
+    router,
+  ]);
 
   return (
     <div
@@ -45,11 +63,22 @@ export function LandingPage({ lang }: { lang: Locale }) {
           <Button
             size="lg"
             onClick={() => {
-              if (isAuthenticated) {
-                router.push(`/${lang}/my-spaces`);
+              if (!isAuthenticated) {
+                void login?.();
                 return;
               }
-              void login?.();
+              if (isPersonLoading || meError) return;
+              if (person === null) {
+                router.push(
+                  resolveAccountEntryPath({ lang, hasProfile: false }),
+                );
+                return;
+              }
+              if (person) {
+                router.push(
+                  resolveAccountEntryPath({ lang, hasProfile: true }),
+                );
+              }
             }}
           >
             {t('ctaEnter')}

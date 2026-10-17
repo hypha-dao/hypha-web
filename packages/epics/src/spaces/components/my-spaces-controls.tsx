@@ -3,6 +3,7 @@
 import { SpaceOrder } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { CreateSpaceButton } from './create-space-button';
@@ -22,10 +23,15 @@ export function MySpacesControls({
   showCreateButton = false,
 }: MySpacesControlsProps) {
   const { isAuthenticated } = useAuthentication();
+  const tSpaces = useTranslations('Spaces');
 
   return (
     <div className="flex w-full min-w-0 flex-row items-center gap-3">
-      <SpaceSearch value={query} className="min-w-0 flex-1" />
+      <SpaceSearch
+        value={query}
+        className="min-w-0 flex-1"
+        placeholder={tSpaces('searchEcosystemOrSpace')}
+      />
       {showCreateButton ? (
         <CreateSpaceButton
           lang={lang}

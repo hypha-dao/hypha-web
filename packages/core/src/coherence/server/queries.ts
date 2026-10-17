@@ -17,6 +17,79 @@ import {
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 import { CoherencePriority } from '../coherence-priorities';
+import { attachCoherenceCapitals } from '../../network/capital-columns';
+
+/** Columns present on both main and the long-lived preview branch. */
+const coreCoherenceColumns = {
+  id: coherences.id,
+  creatorId: coherences.creatorId,
+  spaceId: coherences.spaceId,
+  title: coherences.title,
+  description: coherences.description,
+  type: coherences.type,
+  priority: coherences.priority,
+  slug: coherences.slug,
+  roomId: coherences.roomId,
+  archived: coherences.archived,
+  views: coherences.views,
+  messages: coherences.messages,
+  tags: coherences.tags,
+  dueAt: coherences.dueAt,
+  progressStatus: coherences.progressStatus,
+  board: coherences.board,
+  assigneeIds: coherences.assigneeIds,
+  source: coherences.source,
+  externalId: coherences.externalId,
+  createdAt: coherences.createdAt,
+  updatedAt: coherences.updatedAt,
+};
+
+function isMissingColumnError(error: unknown): boolean {
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current && typeof current === 'object' && !seen.has(current)) {
+    seen.add(current);
+    const record = current as {
+      code?: unknown;
+      message?: unknown;
+      cause?: unknown;
+    };
+    if (record.code === '42703') return true;
+    if (
+      typeof record.message === 'string' &&
+      record.message.includes('does not exist') &&
+      record.message.toLowerCase().includes('column')
+    ) {
+      return true;
+    }
+    current = record.cause;
+  }
+  return false;
+}
+
+function completeCoherenceRow(
+  row: Omit<
+    Coherence,
+    | 'assigneeAcknowledgedAt'
+    | 'deadlineNotifyState'
+    | 'indicativePayouts'
+    | 'leadImage'
+    | 'videoUrl'
+    | 'attachments'
+    | 'sharedWithNetwork'
+  >,
+): Coherence {
+  return {
+    ...row,
+    assigneeAcknowledgedAt: {},
+    deadlineNotifyState: {},
+    indicativePayouts: [],
+    leadImage: null,
+    videoUrl: null,
+    attachments: [],
+    sharedWithNetwork: false,
+  };
+}
 
 type FindAllCoherencesInput = {
   spaceId?: number;
@@ -65,15 +138,11 @@ export const findAllCoherences = async (
         return desc(coherences.createdAt);
     }
   })(orderBy);
-  const results = await db
-    .select()
-    .from(coherences)
-    .where(
-      and(
-        eq(coherences.spaceId, spaceId),
-        includeArchived ? undefined : eq(coherences.archived, false),
-        search
-          ? sql`(
+  const where = and(
+    eq(coherences.spaceId, spaceId),
+    includeArchived ? undefined : eq(coherences.archived, false),
+    search
+      ? sql`(
               -- Full-text search for exact word matches (highest priority)
               (setweight(to_tsvector('english', ${coherences.title}), 'A') ||
                setweight(to_tsvector('english', ${coherences.description}), 'B')
@@ -84,29 +153,34 @@ export const findAllCoherences = async (
               OR
               ${coherences.description} ILIKE ${'%' + search + '%'}
             )`
-          : undefined,
-        type ? eq(coherences.type, type) : undefined,
-        tags && tags.length > 0
-          ? arrayOverlaps(coherences.tags, tags)
-          : undefined,
-        priority ? eq(coherences.priority, priority) : undefined,
-        progressStatus
-          ? eq(coherences.progressStatus, progressStatus)
-          : undefined,
-        board ? eq(coherences.board, board) : undefined,
-        assigneeId
-          ? sql`${coherences.assigneeIds} @> ${JSON.stringify([
-              assigneeId,
-            ])}::jsonb`
-          : undefined,
-        overdue
-          ? and(isNotNull(coherences.dueAt), lte(coherences.dueAt, new Date()))
-          : undefined,
-      ),
-    )
-    .orderBy(order);
+      : undefined,
+    type ? eq(coherences.type, type) : undefined,
+    tags && tags.length > 0 ? arrayOverlaps(coherences.tags, tags) : undefined,
+    priority ? eq(coherences.priority, priority) : undefined,
+    progressStatus ? eq(coherences.progressStatus, progressStatus) : undefined,
+    board ? eq(coherences.board, board) : undefined,
+    assigneeId
+      ? sql`${coherences.assigneeIds} @> ${JSON.stringify([assigneeId])}::jsonb`
+      : undefined,
+    overdue
+      ? and(isNotNull(coherences.dueAt), lte(coherences.dueAt, new Date()))
+      : undefined,
+  );
 
-  return results;
+  try {
+    const rows = await db.select().from(coherences).where(where).orderBy(order);
+    return attachCoherenceCapitals(db, rows);
+  } catch (error) {
+    // A full select asks for columns this database may not have yet, which
+    // fails the whole list and leaves every filter count at 0.
+    if (!isMissingColumnError(error)) throw error;
+    const rows = await db
+      .select(coreCoherenceColumns)
+      .from(coherences)
+      .where(where)
+      .orderBy(order);
+    return attachCoherenceCapitals(db, rows.map(completeCoherenceRow));
+  }
 };
 
 export const findCoherenceById = async (
@@ -136,9 +210,8 @@ export const findCoherenceBySlug = async (
     return null;
   }
 
-  return {
-    ...response,
-  };
+  const [row] = await attachCoherenceCapitals(db, [response]);
+  return row ?? null;
 };
 
 /**

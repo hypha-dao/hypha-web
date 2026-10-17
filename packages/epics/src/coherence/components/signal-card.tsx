@@ -25,7 +25,13 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  CalendarDays,
+  FilePlus,
+  Pencil,
+} from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -41,6 +47,9 @@ import {
 } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
 
 /**
  * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
@@ -54,7 +63,6 @@ type SignalCardProps = {
   refresh: () => Promise<void>;
   onOpenConversation?: () => void;
   className?: string;
-  leadImage?: string;
   isActive?: boolean;
 };
 
@@ -62,10 +70,12 @@ function SignalCardComponent({
   isLoading,
   title,
   description,
+  type,
   priority,
   slug,
   createdAt,
   tags,
+  indicativePayouts = [],
   archived,
   messages = 0,
   roomId,
@@ -76,7 +86,7 @@ function SignalCardComponent({
   refresh,
   onOpenConversation,
   className,
-  leadImage: _leadImage,
+  leadImage,
   isActive = false,
 }: SignalCardProps & Coherence) {
   const { jwt: authToken } = useJwt();
@@ -169,6 +179,20 @@ function SignalCardComponent({
     }
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
+  const handleTurnIntoProposal = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!params.lang || !params.id) return;
+    stageSignalAsContributionProposal({
+      title,
+      description,
+      payouts: indicativePayouts,
+    });
+    router.push(
+      `/${params.lang}/dho/${params.id}/agreements/create/propose-contribution`,
+    );
+  };
+
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
   if (hasPersonSlot) {
     metaParts.push({
@@ -223,7 +247,7 @@ function SignalCardComponent({
   return (
     <Card
       className={cn(
-        'craft-card-interactive group relative flex h-full w-full min-h-0 flex-col',
+        'craft-card-interactive group relative flex h-auto w-full min-h-0 flex-col',
         !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         className,
@@ -325,6 +349,13 @@ function SignalCardComponent({
           </div>
 
           <div className="flex flex-col gap-2.5">
+            {leadImage ? (
+              <img
+                src={leadImage}
+                alt=""
+                className="max-h-24 w-full object-cover"
+              />
+            ) : null}
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex min-w-0 items-start gap-2">
                 <span
@@ -373,6 +404,11 @@ function SignalCardComponent({
               </div>
             </div>
 
+            <div className="flex flex-wrap items-center gap-1.5 pl-3.5">
+              <SignalCategoryTag type={type} />
+              <SignalIndicativeAmounts payouts={indicativePayouts} />
+            </div>
+
             {tags?.length > 0 ? (
               <SignalTagBadges
                 tags={tags}
@@ -396,6 +432,21 @@ function SignalCardComponent({
             refresh={refresh}
             disabled={isLoading || Boolean(archived)}
           />
+          {!archived ? (
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              className={SIGNAL_CARD_ICON_BUTTON_CLASS}
+              disabled={isLoading}
+              aria-label={t('turnIntoProposal')}
+              title={t('turnIntoProposal')}
+              onClick={handleTurnIntoProposal}
+              onKeyDown={stopCardActivationKey}
+            >
+              <FilePlus className="h-4 w-4" strokeWidth={1.25} aria-hidden />
+            </Button>
+          ) : null}
           {onOpenConversation && !archived ? (
             <Button
               variant="ghost"

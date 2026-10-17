@@ -37,6 +37,8 @@ type UIMessage = {
   senderName?: string;
   /** Matrix author MXID when known. */
   senderMatrixId?: string;
+  /** Specialist who answered an @AI Agents mention. */
+  agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
   formattedContentHtml?: string;
@@ -134,6 +136,9 @@ type HumanChatPanelMessagesProps = {
   roomId?: string | null;
   currentUserId?: string | null;
   currentUserAvatarUrl?: string | null;
+  /** Replaces the default space welcome. Space chat leaves both unset. */
+  welcomeText?: string;
+  welcomeSenderName?: string;
   onReply?: (messageId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
@@ -175,6 +180,8 @@ export function HumanChatPanelMessages({
   roomId,
   currentUserId,
   currentUserAvatarUrl,
+  welcomeText,
+  welcomeSenderName,
   onReply,
   onEditMessage,
   onDeleteMessage,
@@ -203,8 +210,8 @@ export function HumanChatPanelMessages({
     id: 'welcome',
     role: 'member',
     isSynthetic: true,
-    parts: [{ type: 'text', text: t('welcome') }],
-    senderName: t('chatRoomTitle'),
+    parts: [{ type: 'text', text: welcomeText ?? t('welcome') }],
+    senderName: welcomeSenderName ?? t('chatRoomTitle'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(0);
@@ -532,7 +539,7 @@ export function HumanChatPanelMessages({
             el.scrollHeight - el.scrollTop - el.clientHeight;
           stickToBottomRef.current = distanceFromBottom <= threshold;
         }}
-        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-3"
       >
         <div className="flex flex-col gap-2">
           {messages.length > 0 || hasMoreOlderMessages ? (

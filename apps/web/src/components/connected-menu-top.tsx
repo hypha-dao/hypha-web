@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { MenuTop } from '@hypha-platform/ui';
@@ -11,7 +11,6 @@ import {
   isSafeImageUrl,
   useAiPanel,
   AiPanelTrigger,
-  AiSidebarTrigger,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { Space } from '@hypha-platform/core/client';
@@ -47,6 +46,14 @@ export function ConnectedMenuTop({
   aiChatEnabled,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
+  const [isMobileBar, setIsMobileBar] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const apply = () => setIsMobileBar(query.matches);
+    apply();
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
+  }, []);
   const router = useRouter();
   const tNavigation = useTranslations('Navigation');
   const { resolvedTheme } = useTheme();
@@ -57,28 +64,24 @@ export function ConnectedMenuTop({
     [pathname],
   );
   const isSpaceRoute = Boolean(activeSpaceSlug);
-  const { data: activeSpace, isLoading: isLoadingActiveSpace } =
-    useSWR<Space | null>(
-      activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}` : null,
-      async (url: string) => {
-        const response = await fetch(url, {
-          headers: { Accept: 'application/json' },
-          cache: 'no-store',
+  const { data: activeSpace } = useSWR<Space | null>(
+    activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}` : null,
+    async (url: string) => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        console.warn('[ConnectedMenuTop] spaces fetch failed', {
+          status: response.status,
+          url,
         });
-        if (!response.ok) {
-          console.warn('[ConnectedMenuTop] spaces fetch failed', {
-            status: response.status,
-            url,
-          });
-          return null;
-        }
-        return (await response.json()) as Space;
-      },
-    );
-  const {
-    data: organisationSpaces = [],
-    isLoading: isLoadingOrganisationSpaces,
-  } = useSWR<Space[]>(
+        return null;
+      }
+      return (await response.json()) as Space;
+    },
+  );
+  const { data: organisationSpaces = [] } = useSWR<Space[]>(
     activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}/organisation` : null,
     async (url: string) => {
       const response = await fetch(url, {
@@ -135,22 +138,15 @@ export function ConnectedMenuTop({
 
   const resolvedLeadingAction = aiChatEnabled ? (
     <div className="flex items-center gap-1.5 sm:gap-2">
-      {!overlayVisible ? (
-        <div className="md:hidden">
-          <AiSidebarTrigger />
-        </div>
-      ) : null}
       <AiPanelTrigger />
     </div>
   ) : (
     leadingAction
   );
 
-  const canRenderSpaceLogoNode =
-    suppressDefaultLogo &&
-    (Boolean(rootSpace) || isLoadingActiveSpace || isLoadingOrganisationSpaces);
-  const logoNode = canRenderSpaceLogoNode ? (
-    rootSpace ? (
+  const canRenderSpaceLogoNode = suppressDefaultLogo && Boolean(rootSpace);
+  const logoNode =
+    canRenderSpaceLogoNode && rootSpace ? (
       rootHasCustomLogo && rootLogoUrl ? (
         <Link
           href={rootSpaceHref ?? '#'}
@@ -188,16 +184,9 @@ export function ConnectedMenuTop({
           </span>
         </Link>
       )
-    ) : (
-      <span
-        className="inline-flex h-[36px] w-[12rem]"
-        aria-hidden
-        title={tNavigation('ecosystemLogo')}
-      />
-    )
-  ) : undefined;
+    ) : undefined;
   const useReplacementLogoNode =
-    Boolean(logoNode) && !(overlayVisible && isSpaceRoute);
+    Boolean(logoNode) && !(overlayVisible && isSpaceRoute) && !isMobileBar;
 
   return (
     <MenuTop

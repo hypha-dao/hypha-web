@@ -45,11 +45,14 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
   useJwt,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
 import {
+  isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
 } from './matrix-room-member-display';
@@ -248,6 +251,11 @@ export type ChatDraftEditSlot = {
   spoiler?: boolean;
 };
 
+/** Mycelium mark in the network room, or the space logo in a space room. */
+export type ChatMentionAgentIcon =
+  | { kind: 'network' }
+  | { kind: 'space'; logoUrl?: string | null };
+
 /** Matrix room member for `@` autocomplete (MXID + display label). */
 export type ChatMentionCandidate = {
   userId: string;
@@ -256,6 +264,17 @@ export type ChatMentionCandidate = {
   avatarUrl?: string;
   /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
   privySub?: string;
+  /** Stable row id when the same Matrix user appears more than once. */
+  rowKey?: string;
+  /** Question inserted after the mention, asking AI Agents for one skill. */
+  prompt?: string;
+  /**
+   * Skills offered after this one agent is chosen. Present only on the AI Agents
+   * row, so the picker does not list one agent per skill.
+   */
+  skills?: readonly { id: string; prompt: string }[];
+  /** Mycelium in a network room, or the space logo in a space room. */
+  agentIcon?: ChatMentionAgentIcon;
 };
 
 export type ChatDraftAttachment = {
@@ -517,12 +536,17 @@ function filterMentionCandidates(
   const contains: ChatMentionCandidate[] = [];
   for (const m of all) {
     const label = m.displayLabel.toLowerCase();
+    const prompts = [
+      m.prompt?.toLowerCase() ?? '',
+      ...(m.skills ?? []).map((skill) => skill.prompt.toLowerCase()),
+    ].filter(Boolean);
     const id = m.userId.toLowerCase();
     const local = m.userId.startsWith('@')
       ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
       : '';
     if (
       label.startsWith(q) ||
+      prompts.some((prompt) => prompt.startsWith(q)) ||
       id.startsWith(`@${q}`) ||
       id.startsWith(q) ||
       (local && local.startsWith(q))
@@ -532,7 +556,9 @@ function filterMentionCandidates(
       }
     } else if (
       contains.length < MAX_MENTION_SUGGESTIONS &&
-      (label.includes(q) || id.includes(q))
+      (label.includes(q) ||
+        prompts.some((prompt) => prompt.includes(q)) ||
+        id.includes(q))
     ) {
       contains.push(m);
     }
@@ -541,6 +567,49 @@ function filterMentionCandidates(
     }
   }
   return [...starts, ...contains].slice(0, MAX_MENTION_SUGGESTIONS);
+}
+
+function AgentSkillMentionIcon({ icon }: { icon?: ChatMentionAgentIcon }) {
+  if (icon?.kind === 'space') {
+    const src = icon.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
+    return (
+      <span className="flex h-6 w-6 shrink-0 overflow-hidden rounded-full">
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      </span>
+    );
+  }
+  return <MemberHomeMark className="h-6 w-6" />;
+}
+
+function AgentMentionRow({
+  candidate,
+  isActive,
+  onPick,
+}: {
+  candidate: ChatMentionCandidate;
+  isActive: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={isActive}
+      aria-label={candidate.displayLabel}
+      title={candidate.displayLabel}
+      className={cn(
+        'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
+        isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/80',
+      )}
+      onMouseDown={(ev) => ev.preventDefault()}
+      onClick={onPick}
+    >
+      <AgentSkillMentionIcon icon={candidate.agentIcon} />
+      <span className="min-w-0 flex-1 truncate font-medium leading-snug">
+        {candidate.displayLabel}
+      </span>
+    </button>
+  );
 }
 
 function wrapSelection(
@@ -652,7 +721,9 @@ export function HumanChatPanelChatBar({
   const {
     resolvedLabel: keyboardResolvedPickLabel,
     pickDisabled: keyboardPickDisabled,
-  } = useResolvedMentionCandidateLabel(activeAtPick);
+  } = useResolvedMentionCandidateLabel(
+    activeAtPick?.prompt ? null : activeAtPick,
+  );
 
   const [selectionBar, setSelectionBar] = useState<{
     top: number;
@@ -883,12 +954,17 @@ export function HumanChatPanelChatBar({
       const el = textareaRef.current;
       const tok = atTokenRef.current;
       if (!el || !tok) return;
-      const labelForMerge =
-        resolvedComposerLabel?.trim() || member.displayLabel;
-      const labelForToken =
-        getMentionComposerLabel?.(member, resolvedComposerLabel) ??
-        labelForMerge;
-      const insertion = formatComposerMentionToken(labelForToken);
+      const prompt = member.prompt?.trim();
+      const labelForMerge = prompt
+        ? member.displayLabel
+        : resolvedComposerLabel?.trim() || member.displayLabel;
+      const labelForToken = prompt
+        ? getMentionComposerLabel?.(member, member.displayLabel) ??
+          member.displayLabel
+        : getMentionComposerLabel?.(member, resolvedComposerLabel) ??
+          labelForMerge;
+      const token = formatComposerMentionToken(labelForToken);
+      const insertion = prompt ? `${token}${prompt} ` : token;
       onMergeMentionDisplayLabel?.(member.userId, labelForMerge);
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
@@ -1503,7 +1579,9 @@ export function HumanChatPanelChatBar({
           if (pick)
             applyAtChoice(
               pick,
-              keyboardResolvedPickLabel.trim()
+              pick.prompt
+                ? undefined
+                : keyboardResolvedPickLabel.trim()
                 ? keyboardResolvedPickLabel
                 : undefined,
             );
@@ -2002,19 +2080,37 @@ export function HumanChatPanelChatBar({
           <div
             role="listbox"
             aria-label={t('mentionListLabel')}
-            className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+            className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-80 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
-            {atSuggestions.map((m, idx) => (
-              <HumanChatMentionCandidateRow
-                key={m.userId}
-                matrixUserId={m.userId}
-                matrixFallbackLabel={m.displayLabel}
-                matrixFallbackAvatarUrl={m.avatarUrl}
-                privySub={m.privySub}
-                isActive={idx === atActive}
-                onPickResolved={(resolved) => applyAtChoice(m, resolved)}
-              />
-            ))}
+            {atSuggestions
+              .filter(
+                (candidate) =>
+                  Boolean(candidate.skills?.length || candidate.agentIcon) ||
+                  !isHyphaBotMatrixIdentity(
+                    candidate.userId,
+                    candidate.displayLabel,
+                  ),
+              )
+              .map((m, idx) =>
+                m.skills?.length || m.agentIcon ? (
+                  <AgentMentionRow
+                    key={m.rowKey ?? m.userId}
+                    candidate={m}
+                    isActive={idx === atActive}
+                    onPick={() => applyAtChoice(m)}
+                  />
+                ) : (
+                  <HumanChatMentionCandidateRow
+                    key={m.rowKey ?? m.userId}
+                    matrixUserId={m.userId}
+                    matrixFallbackLabel={m.displayLabel}
+                    matrixFallbackAvatarUrl={m.avatarUrl}
+                    privySub={m.privySub}
+                    isActive={idx === atActive}
+                    onPickResolved={(resolved) => applyAtChoice(m, resolved)}
+                  />
+                ),
+              )}
           </div>
         )}
         {colonOpen && colonSuggestions.length > 0 && (

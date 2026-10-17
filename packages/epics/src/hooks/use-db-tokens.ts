@@ -29,6 +29,8 @@ type Token = {
   referenceCurrency?: string | null;
   referencePrice?: number | null;
   archived: boolean;
+  /** One form of capital, when the token names one. */
+  capital?: string | null;
 };
 
 type UseDbTokensReturn = {

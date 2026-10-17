@@ -2,8 +2,12 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 
-import { buildOnboardingRealtimeInstructions } from '../system-prompt';
-import { buildSpaceAdvisorRealtimeInstructions } from '../system-prompt';
+import { buildSpaceContextSnapshot } from '../presence-brief';
+import {
+  buildMemberHomeRealtimeInstructions,
+  buildOnboardingRealtimeInstructions,
+  buildSpaceAdvisorRealtimeInstructions,
+} from '../system-prompt';
 import type { RealtimeVoiceSessionRequest } from './request-schema';
 import { assertVoiceDiscoverySessionContext } from './request-schema';
 import {
@@ -73,9 +77,32 @@ type OpenAiClientSecretResponse = {
   };
 };
 
+async function loadVoicePresence(
+  payload: RealtimeVoiceSessionRequest,
+  authToken: string | undefined,
+): Promise<string | null> {
+  const token = authToken?.trim();
+  if (!token) return null;
+  const context = payload.conversationContext;
+  try {
+    if (context.mode === 'space_advisor') {
+      return await buildSpaceContextSnapshot(context.spaceSlug, null, token);
+    }
+    // Member home: never attach facts here. Chat owns the briefing; stuffing
+    // the queue into Realtime made spoken audio ignore the chat script and
+    // stay stuck on an early signal.
+    if (context.mode === 'member_home') {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export async function createRealtimeVoiceSession(
   payload: RealtimeVoiceSessionRequest,
-  options?: { safetyUserId?: string },
+  options?: { safetyUserId?: string; authToken?: string },
 ): Promise<RealtimeVoiceSessionResult> {
   assertVoiceDiscoverySessionContext(payload.conversationContext);
 
@@ -96,18 +123,26 @@ export async function createRealtimeVoiceSession(
     payload.conversationContext.locale?.trim() ||
     'en';
 
-  const instructions =
-    payload.conversationContext.mode === 'space_advisor'
+  const context = payload.conversationContext;
+  const voiceScript =
+    context.mode === 'space_advisor'
       ? buildSpaceAdvisorRealtimeInstructions({
-          spaceSlug: payload.conversationContext.spaceSlug,
+          spaceSlug: context.spaceSlug,
+          locale,
+          recentTranscriptSummary: payload.recentTranscriptSummary,
+        })
+      : context.mode === 'member_home'
+      ? buildMemberHomeRealtimeInstructions({
           locale,
           recentTranscriptSummary: payload.recentTranscriptSummary,
         })
       : buildOnboardingRealtimeInstructions({
-          setupPhase: payload.conversationContext.setupPhase,
+          setupPhase: context.setupPhase,
           locale,
           recentTranscriptSummary: payload.recentTranscriptSummary,
         });
+  const presence = await loadVoicePresence(payload, options?.authToken);
+  const instructions = presence ? `${voiceScript}\n\n${presence}` : voiceScript;
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -129,6 +164,9 @@ export async function createRealtimeVoiceSession(
           type: 'realtime',
           model,
           instructions,
+          // Set the speaker here. A later session.update that rewrites audio
+          // drops the WebRTC output track, and the reply stays silent.
+          output_modalities: ['audio'],
           audio: {
             input: {
               transcription: audioInput.transcription,

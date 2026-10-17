@@ -16,7 +16,17 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import { Menu, PanelLeftClose, Settings, Sparkles } from 'lucide-react';
+import {
+  ClipboardList,
+  Menu,
+  PanelLeftClose,
+  Plus,
+  Settings,
+  Target,
+  Volume2,
+  VolumeX,
+  Waves,
+} from 'lucide-react';
 import {
   Category,
   Space,
@@ -43,14 +53,13 @@ import {
   SidebarMenuItem,
   Button,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   AiPanelHeader,
   AiPanelMessages,
   AiPanelSuggestions,
   AiPanelChatBar,
-  OnboardingDiscoveryModeToggle,
-  OnboardingVoiceInterviewBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
@@ -61,7 +70,13 @@ import {
   type SpaceSectionNavKey,
 } from './space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from './space-section-nav-icons';
+import { MyceliumMenuIcon } from '../people/components/member-home-mark';
+import {
+  buildWalletSectionNavItems,
+  isWalletSectionNavActive,
+} from '../wallet/components/wallet-section-nav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
+import { useFundWallet } from '../treasury/hooks/use-fund-wallet';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
@@ -188,11 +203,8 @@ import {
   shouldOpenOnboardingVotingMethodProposal,
 } from './onboarding-voting-method-inference';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
-import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
-import {
-  loadSpaceDiscoveryMode,
-  saveSpaceDiscoveryMode,
-} from './ai-panel-discovery-mode';
+import { isInteractiveCreatePath } from './get-path-function';
+import { readSpaceVoiceOn, writeSpaceVoiceOn } from './ai-panel-discovery-mode';
 import {
   buildSpaceAdvisorVoiceSessionContext,
   type VoiceSessionContext,
@@ -294,6 +306,8 @@ type NavItem = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  external?: boolean;
+  onSelect?: () => void;
 };
 
 function formatChatStreamErrorMessage(error: unknown): string {
@@ -325,7 +339,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
-  const isOnboardingPath = pathname.includes('/onboarding');
+  const isOnboardingPath = isInteractiveCreatePath(pathname);
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());
@@ -342,6 +356,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSelectNavigation = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
+  const tNetwork = useTranslations('NetworkExchange');
+  const tActions = useTranslations('ProfileActions');
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -380,22 +396,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }),
     [isOnboardingPath, onboardingContext, spaceSlug],
   );
-  const [spaceDiscoveryMode, setSpaceDiscoveryMode] =
-    useState<OnboardingDiscoveryMode>('chat');
-
-  useEffect(() => {
-    setSpaceDiscoveryMode(loadSpaceDiscoveryMode(spaceSlug));
-  }, [spaceSlug]);
-
   const isOnboardingSetup = attachOnboardingForActiveSpace;
-  const discoveryMode: OnboardingDiscoveryMode =
-    isOnboardingSetup && onboardingContext?.discoveryMode
-      ? onboardingContext.discoveryMode
-      : spaceDiscoveryMode;
-  const showDiscoveryModeToggle =
-    Boolean(spaceSlug?.trim()) && !blockSpaceAiForActivityAccess;
-  const isVoiceInterview =
-    showDiscoveryModeToggle && discoveryMode === 'voice_interview';
   const bypassOnboardingMembership = useMemo(
     () =>
       shouldBypassSpaceMembershipForOnboarding(onboardingContext, {
@@ -431,6 +432,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
+  const [micOn, setMicOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(true);
+  const [voiceReady, setVoiceReady] = useState(false);
+
+  useEffect(() => {
+    setMicOn(readSpaceVoiceOn(spaceSlug, 'mic'));
+    setSoundOn(readSpaceVoiceOn(spaceSlug, 'sound'));
+    setVoiceReady(true);
+  }, [spaceSlug]);
+
+  const conversationOpen =
+    Boolean(spaceSlug?.trim()) &&
+    isAiOpen &&
+    !blockSpaceAiForActivityAccess &&
+    !blockSpaceAiForInteraction;
+  const dialogue = conversationOpen && voiceReady && (micOn || soundOn);
+  const isVoiceInterview = dialogue;
   const {
     open: rightOpen,
     closeHumanChatPanel,
@@ -442,6 +460,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: me?.address as `0x${string}` | undefined,
+  });
   const { data: spaceEnergyData } = useSpaceEnergy();
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -492,6 +513,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const chatHydratedForSlugRef = useRef<string | null>(null);
   const spaceChatId = spaceSlug?.trim()
     ? `space-ai-${spaceSlug.trim()}`
+    : pathname.includes('/my-wallet')
+    ? 'member-ai'
     : 'space-ai-global';
   const {
     createSpace: createSpaceWithWalletFlow,
@@ -585,7 +608,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const labelFor = (key: SpaceSectionNavKey): string => {
       switch (key) {
         case 'overview':
-          return tCommon('home');
+          return tCommon('overview');
         case 'agreements':
           return tCommon('Agreements');
         case 'members':
@@ -595,7 +618,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         case 'calendar':
           return tCommon('Calendar');
         case 'coherence':
-          return tCoherence('signals');
+          return tCommon('Coherence');
         case 'pipeline':
           return tCommon('Pipeline');
         case 'energy':
@@ -639,6 +662,84 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     tSelectNavigation,
     tTreasury,
   ]);
+
+  const networkNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !lang) return [];
+    const base = `/${lang}/network`;
+    const onNetwork = pathname === base || pathname.startsWith(`${base}/`);
+    if (!onNetwork) return [];
+    const links = [
+      {
+        key: 'network',
+        label: tNetwork('navNetwork'),
+        href: base,
+        icon: MyceliumMenuIcon,
+      },
+      {
+        key: 'needs',
+        label: tNetwork('navNeeds'),
+        href: `${base}/needs`,
+        icon: ClipboardList,
+      },
+      {
+        key: 'action',
+        label: tNetwork('navAction'),
+        href: `${base}/proof-of-action`,
+        icon: Waves,
+      },
+      {
+        key: 'impact',
+        label: tNetwork('navImpact'),
+        href: `${base}/proof-of-impact`,
+        icon: Target,
+      },
+      {
+        key: 'create',
+        label: tNetwork('navCreate'),
+        href: `${base}/create`,
+        icon: Plus,
+      },
+    ] as const;
+    return links.map((link) => ({
+      key: link.key,
+      label: link.label,
+      icon: link.icon,
+      href: link.href,
+      active:
+        link.href === base
+          ? pathname === base || pathname === `${base}/`
+          : pathname === link.href || pathname.startsWith(`${link.href}/`),
+    }));
+  }, [lang, pathname, spaceSlug, tNetwork]);
+
+  const walletNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !lang) return [];
+    if (!pathname.includes('/my-wallet')) return [];
+    const base = `/${lang}/my-wallet`;
+    return buildWalletSectionNavItems(base, {
+      walletAddress: me?.address,
+    }).map((item) => ({
+      key: item.key,
+      label: tActions(item.labelKey),
+      icon: item.icon,
+      href: item.href ?? '',
+      active: isWalletSectionNavActive(item, pathname),
+      external: item.external,
+      disabled: item.disabled,
+      onSelect: item.fundWallet
+        ? () => {
+            void fundWallet();
+          }
+        : undefined,
+    }));
+  }, [fundWallet, lang, me?.address, pathname, spaceSlug, tActions]);
+
+  const menuNavItems =
+    sectionNavItems.length > 0
+      ? sectionNavItems
+      : networkNavItems.length > 0
+      ? networkNavItems
+      : walletNavItems;
 
   const isSpaceSettingsActive = useMemo(
     () =>
@@ -684,7 +785,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, []);
 
   useEffect(() => {
-    if (!spaceSlug) return;
     setRecentSpaceSlugs(syncRecentSpacesForActiveSlug(spaceSlug));
   }, [spaceSlug]);
 
@@ -701,56 +801,74 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       .slice(0, MAX_VISIBLE_RECENT_SPACES);
   }, [recentSpaceSlugs, recentSpacesData, spaceSlug]);
 
-  const suggestionItems = useMemo(
-    () =>
-      [
-        ...(!spaceSlug
-          ? ([
-              {
-                id: 'createSpace',
-                prompt: t('suggestions.createSpace'),
-                tagLabel: t('suggestionTags.createSpace'),
-              },
-              {
-                id: 'createEcosystem',
-                prompt: t('suggestions.createEcosystem'),
-                tagLabel: t('suggestionTags.createEcosystem'),
-              },
-            ] as const)
-          : []),
-        {
-          id: 'spaceHealth',
-          prompt: t('suggestions.spaceHealth'),
-          tagLabel: t('suggestionTags.spaceHealth'),
-        },
-        {
-          id: 'nextSignal',
-          prompt: t('suggestions.nextSignal'),
-          tagLabel: t('suggestionTags.nextSignal'),
-        },
-        {
-          id: 'blindSpot',
-          prompt: t('suggestions.blindSpot'),
-          tagLabel: t('suggestionTags.blindSpot'),
-        },
-        {
-          id: 'summarizeDiscussion',
-          prompt: t('suggestions.summarizeDiscussion'),
-          tagLabel: t('suggestionTags.summarizeDiscussion'),
-        },
-        {
-          id: 'spaceMemory',
-          prompt: t('suggestions.spaceMemory'),
-          tagLabel: t('suggestionTags.spaceMemory'),
-        },
-        {
-          id: 'valueFlows',
-          prompt: t('suggestions.valueFlows'),
-          tagLabel: t('suggestionTags.valueFlows'),
-        },
-      ] as const,
-    [spaceSlug, t],
-  );
+  const suggestionItems = useMemo(() => {
+    const card = (id: string) => ({
+      id,
+      prompt: t(`suggestions.${id}`),
+      tagLabel: t(`suggestionTags.${id}`),
+    });
+    if (pathname.includes('/network') && !spaceSlug) {
+      const orientation = me?.primaryOrientation;
+      const ids =
+        orientation === 'builder'
+          ? [
+              'findResources',
+              'createSpace',
+              'networkBuilderNeeds',
+              'networkBuilderPeople',
+              'createEcosystem',
+            ]
+          : orientation === 'investor'
+          ? [
+              'findProject',
+              'networkInvestorAsks',
+              'networkInvestorCapital',
+              'networkInvestorOpen',
+              'sharedNeeds',
+            ]
+          : [
+              'networkMemberUseful',
+              'networkMemberDecisions',
+              'networkMemberPeople',
+              'sharedNeeds',
+              'networkMemberSpaces',
+            ];
+      return ids.map(card);
+    }
+    // Member wallet: personal assistant, not space-scoped tools.
+    if (pathname.includes('/my-wallet') && !spaceSlug) {
+      return [
+        'networkMemberUseful',
+        'networkMemberPeople',
+        'networkMemberSpaces',
+        'createSpace',
+        'sharedNeeds',
+      ].map(card);
+    }
+    return [
+      ...(!spaceSlug ? [card('createSpace'), card('createEcosystem')] : []),
+      card('spaceHealth'),
+      card('nextSignal'),
+      card('blindSpot'),
+      card('summarizeDiscussion'),
+      card('spaceMemory'),
+      card('valueFlows'),
+    ];
+  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
+
+  const welcomeText = useMemo(() => {
+    if (pathname.includes('/my-wallet') && !spaceSlug) {
+      return t('welcomeNetworkMember');
+    }
+    if (!(pathname.includes('/network') && !spaceSlug)) return t('welcome');
+    if (me?.primaryOrientation === 'builder') {
+      return t('welcomeNetworkBuilder');
+    }
+    if (me?.primaryOrientation === 'investor') {
+      return t('welcomeNetworkFunder');
+    }
+    return t('welcomeNetworkMember');
+  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
 
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();
@@ -775,6 +893,58 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         showLabel ? MENU_ROW_LINK_EXPANDED_CLASS : MENU_ROW_LINK_COLLAPSED_CLASS
       } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`;
 
+      const iconAndLabel = (
+        <>
+          <span className={ICON_COLUMN_CLASS}>
+            <item.icon className={iconClassName} strokeWidth={1.25} />
+          </span>
+          {showLabel ? (
+            <span className={labelClassName}>{item.label}</span>
+          ) : null}
+        </>
+      );
+      const closeIfExpanded = () => {
+        if (mode !== 'collapsed') handleExpandedMenuNavigation();
+      };
+      const control =
+        isDisabled || item.onSelect ? (
+          <button
+            type="button"
+            aria-label={item.label}
+            disabled={isDisabled}
+            onClick={() => {
+              if (isDisabled) return;
+              item.onSelect?.();
+              closeIfExpanded();
+            }}
+            className={rowClassName}
+          >
+            {iconAndLabel}
+          </button>
+        ) : item.external ? (
+          <a
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={item.label}
+            onClick={closeIfExpanded}
+            className={rowClassName}
+          >
+            {iconAndLabel}
+          </a>
+        ) : (
+          <Link
+            href={item.href}
+            scroll={false}
+            onClick={mode === 'collapsed' ? undefined : closeIfExpanded}
+            aria-label={item.label}
+            aria-current={item.active ? 'page' : undefined}
+            className={rowClassName}
+          >
+            {iconAndLabel}
+          </Link>
+        );
+
       return (
         <SidebarMenuItem key={`${keyPrefix}-${item.key}`}>
           <SidebarMenuButton
@@ -784,40 +954,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             isActive={item.active}
             className={MENU_BUTTON_CLASS}
           >
-            {isDisabled ? (
-              <span
-                aria-label={item.label}
-                aria-disabled="true"
-                className={rowClassName}
-              >
-                <span className={ICON_COLUMN_CLASS}>
-                  <item.icon className={iconClassName} strokeWidth={1.25} />
-                </span>
-                {showLabel ? (
-                  <span className={labelClassName}>{item.label}</span>
-                ) : null}
-              </span>
-            ) : (
-              <Link
-                href={item.href}
-                scroll={false}
-                onClick={
-                  mode === 'collapsed'
-                    ? undefined
-                    : handleExpandedMenuNavigation
-                }
-                aria-label={item.label}
-                aria-current={item.active ? 'page' : undefined}
-                className={rowClassName}
-              >
-                <span className={ICON_COLUMN_CLASS}>
-                  <item.icon className={iconClassName} strokeWidth={1.25} />
-                </span>
-                {showLabel ? (
-                  <span className={labelClassName}>{item.label}</span>
-                ) : null}
-              </Link>
-            )}
+            {control}
           </SidebarMenuButton>
         </SidebarMenuItem>
       );
@@ -1152,8 +1289,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
-        discoveryMode:
-          discoveryMode === 'voice_interview' ? discoveryMode : undefined,
+        discoveryMode: isVoiceInterview ? 'voice_interview' : undefined,
         activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
         locale: lang,
       });
@@ -1161,8 +1297,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
     [
       activeSpaceName,
-      discoveryMode,
       getAccessToken,
+      isVoiceInterview,
       isOnboardingPath,
       isOnboardingSetup,
       lang,
@@ -2832,7 +2968,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {
     if (!isVoiceInterview || !spaceSlug?.trim()) return undefined;
     if (isOnboardingSetup && onboardingContext) {
-      return onboardingContext;
+      return { ...onboardingContext, discoveryMode: 'voice_interview' };
     }
     return buildSpaceAdvisorVoiceSessionContext({
       spaceSlug,
@@ -2852,41 +2988,40 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     onStopChat: stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
+    captureMicrophone: micOn,
+    speakReplies: soundOn,
   });
 
-  const handleDiscoveryModeChange = useCallback(
-    (mode: OnboardingDiscoveryMode) => {
-      if (!showDiscoveryModeToggle || mode === discoveryMode) return;
-      if (mode === 'chat') {
-        voiceInterview.stopListening();
-        voiceInterview.stopSpeaking();
-        if (isOnboardingSetup && messages.length) {
-          saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
-        }
-      }
-      if (isOnboardingSetup) {
-        setOnboardingContext((prev) => {
-          const base = ensureSpaceSetupContext(prev, lang);
-          const next = { ...base, discoveryMode: mode };
-          saveOnboardingConversationContext(next);
-          return next;
-        });
-      } else if (spaceSlug?.trim()) {
-        saveSpaceDiscoveryMode(spaceSlug, mode);
-        setSpaceDiscoveryMode(mode);
-      }
-    },
-    [
-      discoveryMode,
-      isOnboardingSetup,
-      lang,
-      messages,
-      showDiscoveryModeToggle,
-      spaceSlug,
-      voiceInterview.stopListening,
-      voiceInterview.stopSpeaking,
-    ],
-  );
+  const toggleSound = useCallback(() => {
+    setSoundOn((current) => {
+      const next = !current;
+      if (next) void voiceInterview.startListening();
+      else voiceInterview.stopSpeaking();
+      writeSpaceVoiceOn(spaceSlug, 'sound', next);
+      return next;
+    });
+  }, [spaceSlug, voiceInterview.startListening, voiceInterview.stopSpeaking]);
+
+  const toggleMic = useCallback(() => {
+    const micNeedsGrant =
+      voiceInterview.voiceError === 'not-allowed' ||
+      voiceInterview.voiceError === 'audio-capture';
+    if (micOn && micNeedsGrant) {
+      void voiceInterview.startListening();
+      return;
+    }
+    setMicOn((current) => {
+      const next = !current;
+      if (next) void voiceInterview.startListening();
+      writeSpaceVoiceOn(spaceSlug, 'mic', next);
+      return next;
+    });
+  }, [
+    micOn,
+    spaceSlug,
+    voiceInterview.startListening,
+    voiceInterview.voiceError,
+  ]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
@@ -2937,7 +3072,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       <SidebarGroup className="p-2 pt-4">
         <SidebarGroupContent>
           <SidebarMenu className="gap-2">
-            {sectionNavItems.map((item) =>
+            {menuNavItems.map((item) =>
               renderSectionNavItem(item, 'collapsed', 'collapsed'),
             )}
           </SidebarMenu>
@@ -3031,7 +3166,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {sectionNavItems.map((item) =>
+                  {menuNavItems.map((item) =>
                     renderSectionNavItem(item, 'expanded', 'overlay'),
                   )}
                 </SidebarMenu>
@@ -3200,6 +3335,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestionItems={suggestionItems}
+          welcomeText={welcomeText}
           showInlineSuggestions={!hasUserMessage && !blockSpaceAiForInteraction}
           onSuggestionSelect={
             blockSpaceAiForInteraction ? undefined : handleSuggestionSelect
@@ -3256,15 +3392,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarContent>
       <SidebarFooter className="relative z-20 overflow-visible bg-page-background p-0 dark:bg-background-2">
-        {showDiscoveryModeToggle ? (
-          <div className="flex justify-center px-3 pb-1 pt-3">
-            <OnboardingDiscoveryModeToggle
-              mode={discoveryMode}
-              disabled={blockSpaceAiForInteraction || isStreaming}
-              onChange={handleDiscoveryModeChange}
-            />
-          </div>
-        ) : null}
         {hasUserMessage && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
@@ -3272,31 +3399,74 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             variant="tags"
           />
         ) : null}
-        {isVoiceInterview ? (
-          <OnboardingVoiceInterviewBar
-            phase={voiceInterview.phase}
-            liveTranscript={voiceInterview.liveTranscript}
-            voiceError={voiceInterview.voiceError}
-            disabled={blockSpaceAiForInteraction || isStreaming}
-            isConnecting={voiceInterview.isConnecting}
-            isRealtimeConnected={voiceInterview.isRealtimeConnected}
-            transport={voiceInterview.transport}
-            realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
-            usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
-            onToggleListening={voiceInterview.toggleListening}
-          />
-        ) : (
-          <AiPanelChatBar
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            draftAttachments={draftAttachments}
-            onDraftAttachmentsChange={setDraftAttachments}
-            onStop={handleStop}
-            isStreaming={isStreaming}
-            composerDisabled={blockSpaceAiForInteraction}
-          />
-        )}
+        {conversationOpen && micOn && voiceInterview.liveTranscript ? (
+          <p className="px-4 pb-1 text-1 text-neutral-11">
+            “{voiceInterview.liveTranscript}”
+          </p>
+        ) : null}
+        {dialogue && voiceInterview.voiceError ? (
+          <p className="px-4 pb-1 text-1 text-neutral-11">
+            {voiceInterview.voiceError === 'unsupported'
+              ? t('onboardingVoiceUnsupported')
+              : voiceInterview.voiceError === 'not-allowed'
+              ? t('onboardingVoicePermissionDenied')
+              : voiceInterview.voiceError === 'audio-capture'
+              ? t('onboardingVoiceMicUnavailable')
+              : voiceInterview.voiceError === 'network'
+              ? t('onboardingVoiceNetworkError')
+              : t('onboardingVoiceSessionError')}
+          </p>
+        ) : null}
+        <AiPanelChatBar
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          draftAttachments={draftAttachments}
+          onDraftAttachmentsChange={setDraftAttachments}
+          onStop={handleStop}
+          isStreaming={isStreaming}
+          composerDisabled={blockSpaceAiForInteraction}
+          conversationMicrophone={
+            conversationOpen
+              ? {
+                  active: micOn,
+                  hearing: micOn && voiceInterview.userSpeaking,
+                  onToggle: toggleMic,
+                  muteLabel: t('conversationMicMute'),
+                  unmuteLabel: t('conversationMicUnmute'),
+                }
+              : undefined
+          }
+          accessory={
+            conversationOpen ? (
+              <button
+                type="button"
+                aria-pressed={soundOn}
+                aria-label={
+                  soundOn
+                    ? t('conversationSoundMute')
+                    : t('conversationSoundUnmute')
+                }
+                title={
+                  soundOn
+                    ? t('conversationSoundMute')
+                    : t('conversationSoundUnmute')
+                }
+                onClick={toggleSound}
+                className={cn(
+                  'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] place-items-center bg-transparent p-0 text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  soundOn && 'text-foreground',
+                )}
+              >
+                {soundOn ? (
+                  <Volume2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                ) : (
+                  <VolumeX className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+              </button>
+            ) : null
+          }
+        />
       </SidebarFooter>
     </>,
   );

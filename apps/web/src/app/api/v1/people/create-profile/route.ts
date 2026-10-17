@@ -32,23 +32,49 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating profile:', error);
 
-    let errorMessage = 'Failed to create profile';
-    if (error instanceof Error) {
-      if (error.message.includes('people_slug_unique')) {
-        errorMessage =
-          'Profile with this nickname already exists. Please choose a different one.';
-      } else if (error.message.includes('people_email_unique')) {
-        errorMessage =
-          'An account with this email already exists. Try signing in or use a different email.';
-      }
-    }
-
     return NextResponse.json(
       {
-        error: errorMessage,
+        error: profileCreateErrorMessage(error),
         details: error instanceof Error ? error.message : undefined,
       },
       { status: 400 },
     );
   }
+}
+
+function errorChainMessages(error: unknown): string[] {
+  const messages: string[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    if (current instanceof Error && current.message) {
+      messages.push(current.message);
+    } else if (typeof current === 'string' && current) {
+      messages.push(current);
+    }
+
+    if (typeof current === 'object' && current && 'cause' in current) {
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+
+  return messages;
+}
+
+function profileCreateErrorMessage(error: unknown): string {
+  // Constraint names are matched server-side. Other cause text stays in the log.
+  const combined = errorChainMessages(error).join('\n');
+
+  if (combined.includes('people_slug_unique')) {
+    return 'nickname_taken';
+  }
+  if (combined.includes('people_email_unique')) {
+    return 'email_taken';
+  }
+
+  return 'profile_create_failed';
 }

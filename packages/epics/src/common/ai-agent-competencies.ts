@@ -373,6 +373,18 @@ function storageKey(spaceSlug: string): string {
   return `hypha:ai-mobilized-agents:v1:${spaceSlug}`;
 }
 
+/** An agent keeps its memory in the space for six months after the last use. */
+export function agentMemoryIsCurrent(
+  lastMobilizedAt: string,
+  now = Date.now(),
+): boolean {
+  const usedAt = Date.parse(lastMobilizedAt);
+  if (!Number.isFinite(usedAt)) return false;
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - 6);
+  return usedAt >= cutoff.getTime();
+}
+
 export function detectAiAgentsForQuestion(
   question: string,
 ): AiCompetencyAgent[] {
@@ -406,47 +418,50 @@ export function readMobilizedAiAgents(
     const catalogById = new Map(
       AGENT_CATALOG.map((agent) => [agent.id, agent]),
     );
-    return parsed
-      .filter(
-        (item): item is MobilizedAiCompetencyAgent =>
-          item &&
-          typeof item === 'object' &&
-          typeof item.id === 'string' &&
-          typeof item.role === 'string' &&
-          typeof item.focus === 'string' &&
-          typeof item.tagGroup === 'string' &&
-          typeof item.mobilizedCount === 'number' &&
-          typeof item.lastMobilizedAt === 'string',
-      )
-      .map((item) => {
-        const catalog = catalogById.get(item.id);
-        if (!catalog) {
-          return {
-            id: item.id,
-            role: item.role,
-            focus: item.focus,
-            tagGroup: item.tagGroup,
-            avatarLabel:
-              typeof item.avatarLabel === 'string' ? item.avatarLabel : '',
-            roleDefinition: Array.isArray(item.roleDefinition)
-              ? item.roleDefinition.filter(
-                  (entry): entry is string => typeof entry === 'string',
-                )
-              : [],
-            mobilizedCount: item.mobilizedCount,
-            lastMobilizedAt: item.lastMobilizedAt,
-          };
-        }
+    const kept = parsed.filter(
+      (item): item is MobilizedAiCompetencyAgent =>
+        item &&
+        typeof item === 'object' &&
+        typeof item.id === 'string' &&
+        typeof item.role === 'string' &&
+        typeof item.focus === 'string' &&
+        typeof item.tagGroup === 'string' &&
+        typeof item.mobilizedCount === 'number' &&
+        typeof item.lastMobilizedAt === 'string' &&
+        agentMemoryIsCurrent(item.lastMobilizedAt),
+    );
+    if (kept.length !== parsed.length) {
+      window.localStorage.setItem(storageKey(spaceSlug), JSON.stringify(kept));
+    }
+    return kept.map((item) => {
+      const catalog = catalogById.get(item.id);
+      if (!catalog) {
         return {
-          ...catalog,
-          ...item,
-          role: catalog.role,
-          focus: catalog.focus,
-          tagGroup: catalog.tagGroup,
-          avatarLabel: catalog.avatarLabel,
-          roleDefinition: catalog.roleDefinition,
+          id: item.id,
+          role: item.role,
+          focus: item.focus,
+          tagGroup: item.tagGroup,
+          avatarLabel:
+            typeof item.avatarLabel === 'string' ? item.avatarLabel : '',
+          roleDefinition: Array.isArray(item.roleDefinition)
+            ? item.roleDefinition.filter(
+                (entry): entry is string => typeof entry === 'string',
+              )
+            : [],
+          mobilizedCount: item.mobilizedCount,
+          lastMobilizedAt: item.lastMobilizedAt,
         };
-      });
+      }
+      return {
+        ...catalog,
+        ...item,
+        role: catalog.role,
+        focus: catalog.focus,
+        tagGroup: catalog.tagGroup,
+        avatarLabel: catalog.avatarLabel,
+        roleDefinition: catalog.roleDefinition,
+      };
+    });
   } catch {
     return [];
   }
@@ -641,7 +656,8 @@ function getMobilizedAiAgentsSnapshot(
   }
 
   const agents = readMobilizedAiAgents(spaceSlug);
-  mobilizedAgentsSnapshotCacheBySlug.set(spaceSlug, { raw, agents });
+  const stored = window.localStorage.getItem(storageKey(spaceSlug));
+  mobilizedAgentsSnapshotCacheBySlug.set(spaceSlug, { raw: stored, agents });
   return agents;
 }
 

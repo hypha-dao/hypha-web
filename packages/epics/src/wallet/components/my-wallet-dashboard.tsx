@@ -19,7 +19,6 @@ import {
   TabsTrigger,
 } from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
-import { WalletActionsToolbar } from './wallet-actions-toolbar';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
@@ -112,40 +111,32 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
       onValueChange={setActiveTab}
       className="flex w-full min-w-0 flex-col gap-4"
     >
-      <div className="@container/wallet-toolbar w-full min-w-0">
-        <div className="flex w-full min-w-0 flex-col gap-2 @[52rem]:flex-row @[52rem]:items-center @[52rem]:justify-between @[52rem]:gap-3">
-          <ScrollableTabsList triggerVariant="switch">
-            <TabsTrigger value="wallet" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.wallet')}
-                count={walletCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="banking" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.banking')}
-                count={bankingCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="transactions" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.transactions')}
-                count={transactionCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="rewards" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.rewards')}
-                count={rewardsCount}
-              />
-            </TabsTrigger>
-          </ScrollableTabsList>
-          <WalletActionsToolbar
-            basePath={basePath}
-            className="w-full @[52rem]:w-auto @[52rem]:shrink-0"
+      <ScrollableTabsList triggerVariant="switch">
+        <TabsTrigger value="wallet" variant="switch">
+          <WalletTabLabel
+            label={tMyWallet('tabs.wallet')}
+            count={walletCount}
           />
-        </div>
-      </div>
+        </TabsTrigger>
+        <TabsTrigger value="banking" variant="switch">
+          <WalletTabLabel
+            label={tMyWallet('tabs.banking')}
+            count={bankingCount}
+          />
+        </TabsTrigger>
+        <TabsTrigger value="transactions" variant="switch">
+          <WalletTabLabel
+            label={tMyWallet('tabs.transactions')}
+            count={transactionCount}
+          />
+        </TabsTrigger>
+        <TabsTrigger value="rewards" variant="switch">
+          <WalletTabLabel
+            label={tMyWallet('tabs.rewards')}
+            count={rewardsCount}
+          />
+        </TabsTrigger>
+      </ScrollableTabsList>
 
       <TabsContent value="wallet" className="mt-0">
         <UserAssetsSection

@@ -15,7 +15,18 @@ export * from './web-links';
 export * from './get-active-tab-from-path';
 export * from './get-dho-space-context-path';
 export * from './get-dho-space-slug-from-pathname';
+export {
+  MAX_RECENT_SPACE_HISTORY,
+  MAX_VISIBLE_RECENT_SPACES,
+  readRecentSpaceSlugs,
+  recordRecentSpaceVisit,
+  subscribeRecentSpaceSlugs,
+  syncRecentSpacesForActiveSlug,
+  writeRecentSpaceSlugs,
+} from './recent-space-history';
+export { RecentSpaceHistoryTracker } from './recent-space-history-tracker';
 export * from './get-root-space';
+
 export * from './get-path-function';
 export * from './space-section-nav';
 export * from './space-section-nav-icons';
@@ -205,6 +216,7 @@ export {
   releaseMainColumnScrollHeightHold,
   getMainColumnNaturalMaxScroll,
   planBannerContentFit,
+  planShortPageScroll,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,
 } from './main-column-scroll';
@@ -216,7 +228,7 @@ export {
   HumanChatPanelCallReactPopover,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
-export { useIsSpaceContext } from './use-is-space-context';
+export { useIsNetworkContext, useIsSpaceContext } from './use-is-space-context';
 export {
   GlobalCallDockProvider,
   useGlobalCallDock,

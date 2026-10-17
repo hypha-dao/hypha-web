@@ -42,7 +42,6 @@ type SignalSectionProps = {
   basePath: string;
   web3SpaceId: number;
   signals: Coherence[];
-  leadImage?: string;
   isLoading: boolean;
   viewMode: SignalViewMode;
   order?: string;
@@ -60,7 +59,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   web3SpaceId,
   signals,
-  leadImage,
   isLoading,
   viewMode,
   refresh,
@@ -243,7 +241,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }
 
   return (
-    <div className="relative flex w-full flex-col gap-4 pb-24">
+    <div className="relative flex w-full flex-col gap-4 pb-16">
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           {onBoardFiltersChange ? (
@@ -308,7 +306,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalGrid
               isLoading={false}
               basePath={basePath}
-              leadImage={leadImage}
               signals={visibleSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}

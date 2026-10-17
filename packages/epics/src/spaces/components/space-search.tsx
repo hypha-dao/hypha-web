@@ -21,12 +21,14 @@ type SpaceSearchProps = {
   suggestions?: Suggestion[];
   value?: string;
   className?: string;
+  placeholder?: string;
 };
 
 export const SpaceSearch = ({
   suggestions,
   value,
   className,
+  placeholder,
 }: SpaceSearchProps) => {
   const t = useTranslations('Network');
   const pathname = usePathname();
@@ -53,7 +55,7 @@ export const SpaceSearch = ({
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>
       <Input
         type="search"
-        placeholder={t('findASpace')}
+        placeholder={placeholder ?? t('findASpace')}
         leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         defaultValue={value}
         onChange={(e) => handleSearch(e.target.value)}

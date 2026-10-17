@@ -334,6 +334,7 @@ export async function GET(
 
     const referencePriceByAddress: Record<string, number> = {};
     const referenceCurrencyByAddress: Record<string, string> = {};
+    const capitalByAddress: Record<string, string> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
@@ -344,6 +345,9 @@ export async function GET(
       if (t.address && t.referenceCurrency) {
         referenceCurrencyByAddress[t.address.toLowerCase()] =
           t.referenceCurrency;
+      }
+      if (t.address && t.capital) {
+        capitalByAddress[t.address.toLowerCase()] = t.capital;
       }
     });
 
@@ -430,6 +434,7 @@ export async function GET(
             value: amount,
             tokenPrice: rate,
             referenceCurrency: rateCurrency,
+            capital: capitalByAddress[token.address.toLowerCase()] ?? null,
             usdEqual: convertToUsd(rate * amount, rateCurrency, usdRates),
             chartData: [],
             transactions: [],

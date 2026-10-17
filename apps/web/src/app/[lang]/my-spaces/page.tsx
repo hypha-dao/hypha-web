@@ -1,4 +1,5 @@
-import { MyFilteredSpaces, MySpacesControls } from '@hypha-platform/epics';
+import { MemberSpacesStepIn, MySpacesControls } from '@hypha-platform/epics';
+import { MySpacesBoard } from '@web/components/my-spaces-board';
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
@@ -33,7 +34,7 @@ export default async function Index(props: PageProps) {
 
   let mySpaces: Space[] = [];
   try {
-    mySpaces = await getAllSpaces({ search: query, parentOnly: false });
+    mySpaces = await getAllSpaces({ parentOnly: false });
   } catch (reason) {
     console.error('[my-spaces/page] Failed to fetch filtered spaces', reason);
   }
@@ -42,31 +43,38 @@ export default async function Index(props: PageProps) {
 
   return (
     <div className="w-full min-w-0">
-      <Container className="flex min-w-0 flex-col gap-9 py-9">
-        <Heading
-          size="9"
-          color="secondary"
-          weight="medium"
-          align="center"
-          className="flex flex-col"
-        >
-          <span>{t('allYourSpaces')}</span>
-          <span>{t('inOnePlace')}</span>
-        </Heading>
-        <Suspense fallback={null}>
-          <MySpacesControls
+      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9">
+        <div className="xl:hidden">
+          <MemberSpacesStepIn lang={lang} />
+        </div>
+        <div className="hidden min-w-0 flex-col gap-9 xl:flex">
+          <div className="flex min-w-0 flex-col gap-4">
+            <Heading
+              size="9"
+              color="secondary"
+              weight="medium"
+              align="center"
+              className="flex flex-col"
+            >
+              <span>{t('allYourSpaces')}</span>
+              <span>{t('inOnePlace')}</span>
+            </Heading>
+            <Suspense fallback={null}>
+              <MySpacesControls
+                lang={lang}
+                query={query}
+                order={order}
+                showCreateButton
+              />
+            </Suspense>
+          </div>
+          <MySpacesBoard
             lang={lang}
-            query={query}
+            spaces={mySpaces}
             order={order}
-            showCreateButton
+            query={query}
           />
-        </Suspense>
-        <MyFilteredSpaces
-          lang={lang}
-          spaces={mySpaces}
-          order={order}
-          showLoadMore={false}
-        />
+        </div>
       </Container>
     </div>
   );

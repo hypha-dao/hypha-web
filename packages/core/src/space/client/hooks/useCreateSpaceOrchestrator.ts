@@ -20,6 +20,10 @@ import { publicClient } from '@hypha-platform/core/client';
 import { getSpaceFromLogs } from '../web3/dao-space-factory/get-space-created-event';
 import { useImageUpload } from '../../../assets/client';
 import { CreateSpaceInput } from '../../types';
+import {
+  clearExchangeCapitalsDraft,
+  readExchangeCapitalsDraft,
+} from '../../../network/capitals';
 
 type UseCreateSpaceOrchestratorInput = {
   authToken?: string | null;
@@ -363,7 +367,17 @@ export const useCreateSpaceOrchestrator = ({
           ecosystemLogoUrlLight: uploadedFileUrls.ecosystemLogoUrlLight,
           ecosystemLogoUrlDark: uploadedFileUrls.ecosystemLogoUrlDark,
         };
-        const createdSpace = await web2.createSpace(createSpaceInput);
+        const draftCapitals = createSpaceInput.exchangeCapitals
+          ? null
+          : readExchangeCapitalsDraft();
+        const createdSpace = await web2.createSpace(
+          draftCapitals
+            ? { ...createSpaceInput, exchangeCapitals: draftCapitals }
+            : createSpaceInput,
+        );
+        if (createSpaceInput.exchangeCapitals || draftCapitals) {
+          clearExchangeCapitalsDraft();
+        }
         web2SpaceId = createdSpace?.id;
 
         if (person?.address && createdSpace?.id) {

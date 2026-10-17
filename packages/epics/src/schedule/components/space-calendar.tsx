@@ -115,6 +115,8 @@ export type SpaceCalendarProps = {
   spaceSlug: string;
   spaceId: number;
   lang?: string;
+  /** Month grid only. The page title and New button stay on the calendar route. */
+  embedded?: boolean;
 };
 
 function buildCalendarPath(lang: string, spaceSlug: string, suffix = '') {
@@ -162,7 +164,11 @@ function normalizeCalendarEventRange(
   return { ...normalized, allDay };
 }
 
-export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
+export function SpaceCalendar({
+  spaceSlug,
+  lang = 'en',
+  embedded = false,
+}: SpaceCalendarProps) {
   const t = useTranslations('Calendar');
   const intlFormat = useFormatter();
   const router = useRouter();
@@ -519,33 +525,39 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <header className="flex w-full flex-nowrap items-center justify-between gap-3">
-        <h1 className="craft-page-title min-w-0 text-6 font-medium">
-          {t('title')}
-          {typeof itemCount === 'number' ? (
-            <span className="ml-2 text-4 font-normal text-muted-foreground">
-              | {intlFormat.number(itemCount)}
-            </span>
-          ) : isLoading ? (
-            <span className="ml-2 text-4 font-normal text-muted-foreground">
-              | …
-            </span>
+      {embedded ? null : (
+        <header className="flex w-full flex-nowrap items-center justify-between gap-3">
+          <h1 className="craft-page-title min-w-0 text-6 font-medium">
+            {t('title')}
+            {typeof itemCount === 'number' ? (
+              <span className="ml-2 text-4 font-normal text-muted-foreground">
+                | {intlFormat.number(itemCount)}
+              </span>
+            ) : isLoading ? (
+              <span className="ml-2 text-4 font-normal text-muted-foreground">
+                | …
+              </span>
+            ) : null}
+          </h1>
+          {isAuthenticated ? (
+            <div className="shrink-0">
+              <Button
+                type="button"
+                onClick={() =>
+                  openCreate(
+                    new Date(),
+                    new Date(Date.now() + 3_600_000),
+                    false,
+                  )
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('newItem')}
+              </Button>
+            </div>
           ) : null}
-        </h1>
-        {isAuthenticated ? (
-          <div className="shrink-0">
-            <Button
-              type="button"
-              onClick={() =>
-                openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t('newItem')}
-            </Button>
-          </div>
-        ) : null}
-      </header>
+        </header>
+      )}
 
       <div
         className={cn(

@@ -4,6 +4,7 @@ import {
   extractRealtimeErrorInfo,
   isIgnorableRealtimeError,
   isSubstantiveUserTranscript,
+  microphoneCaptureErrorCode,
 } from '../onboarding-voice-realtime-client';
 
 describe('realtime error helpers', () => {
@@ -39,6 +40,28 @@ describe('realtime error helpers', () => {
         message: 'Invalid session.update payload',
       }),
     ).toBe(false);
+  });
+});
+
+describe('microphoneCaptureErrorCode', () => {
+  it('recognises a blocked microphone', () => {
+    expect(
+      microphoneCaptureErrorCode(
+        new DOMException('Permission denied', 'NotAllowedError'),
+      ),
+    ).toBe('not-allowed');
+  });
+
+  it('recognises a missing microphone', () => {
+    expect(
+      microphoneCaptureErrorCode(
+        new DOMException('Requested device not found', 'NotFoundError'),
+      ),
+    ).toBe('audio-capture');
+  });
+
+  it('leaves session failures for the voice retry path', () => {
+    expect(microphoneCaptureErrorCode(new Error('Could not start'))).toBe(null);
   });
 });
 

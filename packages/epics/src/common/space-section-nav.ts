@@ -22,16 +22,27 @@ export const SPACE_SECTION_NAV_GROUP: Record<
 > = {
   overview: 'primary',
   coherence: 'primary',
+  members: 'primary',
   agreements: 'primary',
   treasury: 'primary',
-  'ecosystem-navigation': 'primary',
+  memory: 'primary',
+  pipeline: 'primary',
+  'ecosystem-navigation': 'more',
   calendar: 'more',
-  members: 'more',
-  pipeline: 'more',
-  energy: 'more',
+  energy: 'primary',
   rewards: 'more',
-  memory: 'more',
 };
+
+/** These screens live on the space dashboard. The menu keeps Overview selected there. */
+const HOME_DASHBOARD_TABS = new Set<string>([
+  'calendar',
+  'rewards',
+  'ecosystem-navigation',
+]);
+
+/** Overview link that stays on the space dashboard inside an energy community. */
+export const SPACE_DASHBOARD_BOARD_PARAM = 'board';
+export const SPACE_DASHBOARD_BOARD_VALUE = 'space';
 
 export type SpaceSectionNavItem = {
   key: SpaceSectionNavKey;
@@ -73,8 +84,9 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * Primary order: Dashboard · Signals · Agreements · Treasury · Ecosystem
- * More: Calendar, Members + remaining gated/secondary sections
+ * An energy community opens on Energy. Overview stays next to it so the space dashboard remains one step away.
+ * Menu: Energy (when on) · Overview · Signals · Deals (when on) · Agreements · Members · Treasury · Space memory
+ * Calendar, rewards, and ecosystem stay on the space dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -86,39 +98,40 @@ export function buildSpaceSectionNavItems({
   memoryEnabled = false,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
   const rawActiveTab = getActiveTabFromPath(pathname);
-  // Banking lives under Treasury — keep Treasury highlighted on /banking routes.
-  const activeTab = rawActiveTab === 'banking' ? 'treasury' : rawActiveTab;
+  // Banking lives under Treasury. Space-dashboard sections keep Overview selected.
+  const activeTab =
+    rawActiveTab === 'banking'
+      ? 'treasury'
+      : HOME_DASHBOARD_TABS.has(rawActiveTab)
+      ? 'overview'
+      : rawActiveTab;
   const isActive = (key: SpaceSectionNavKey) => activeTab === key;
 
-  const items: SpaceSectionNavItem[] = [
-    navItem('overview', lang, spaceSlug, isActive('overview')),
-  ];
+  const items: SpaceSectionNavItem[] = [];
+
+  if (energyEnabled) {
+    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
+  }
+
+  const overview = navItem('overview', lang, spaceSlug, isActive('overview'));
+  if (energyEnabled) {
+    overview.href = `${overview.href}?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`;
+  }
+  items.push(overview);
 
   if (coherenceEnabled) {
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
   }
 
-  items.push(
-    navItem('agreements', lang, spaceSlug, isActive('agreements')),
-    navItem('treasury', lang, spaceSlug, isActive('treasury')),
-    navItem(
-      'ecosystem-navigation',
-      lang,
-      spaceSlug,
-      isActive('ecosystem-navigation'),
-    ),
-    navItem('calendar', lang, spaceSlug, isActive('calendar')),
-    navItem('members', lang, spaceSlug, isActive('members')),
-  );
-
   if (pipelineEnabled) {
     items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
   }
-  if (energyEnabled) {
-    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
-  }
 
-  items.push(navItem('rewards', lang, spaceSlug, isActive('rewards')));
+  items.push(
+    navItem('agreements', lang, spaceSlug, isActive('agreements')),
+    navItem('members', lang, spaceSlug, isActive('members')),
+    navItem('treasury', lang, spaceSlug, isActive('treasury')),
+  );
 
   if (memoryEnabled) {
     items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
@@ -131,8 +144,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Dashboard, Signals, Agreements, Treasury, Ecosystem.
- * An active More screen stays in the overflow menu and does not replace Ecosystem.
+ * Energy, Overview, Signals, Agreements, Members, Treasury, and Space memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];

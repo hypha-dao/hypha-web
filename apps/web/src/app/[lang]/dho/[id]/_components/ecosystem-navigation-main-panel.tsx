@@ -27,7 +27,7 @@ import {
   useState,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { SpaceVisualization } from './space-visualization';
+import { MyceliumEcosystem } from './mycelium-ecosystem';
 import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
@@ -152,6 +152,9 @@ function columnContentHeight(scrollParent: HTMLElement): number {
  * Stage box that makes the column exactly fill the scrollport once the
  * banner is collapsed. Independent of the stage's current height.
  */
+/** The cluster used to fill the leftover window. Keep it to a panel, not the screen. */
+const DIAGRAM_STAGE_MAX_PX = 512;
+
 function stageHeightForCollapsedColumn(
   stageHeight: number,
   contentHeight: number,
@@ -193,6 +196,15 @@ function stageOverlapUnderFooter(
   return (
     stage.getBoundingClientRect().bottom - footer.getBoundingClientRect().top
   );
+}
+
+function hierarchyDepth(node: HierarchyNode): number {
+  const children = node.children ?? [];
+  let deepest = 1;
+  for (const child of children) {
+    deepest = Math.max(deepest, 1 + hierarchyDepth(child));
+  }
+  return deepest;
 }
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
@@ -467,13 +479,16 @@ export function EcosystemNavigationMainPanel({
         if (footerClearance != null) {
           room = Math.min(room, footerClearance);
         }
-        // A phone column is short once the membership row is in it, so the
-        // leftover slot shrinks the disc. Keep at least a square and let the
-        // page scroll instead of crushing the cluster.
-        if (stageWidth < 768) {
+        // A short leftover slot squashes every nested ring into the same
+        // band. From three levels down, keep at least a square and let the
+        // page scroll. Phones already do this — the membership row leaves
+        // them almost no height.
+        const depth = hierarchyData ? hierarchyDepth(hierarchyData) : 1;
+        if (stageWidth < 768 || depth >= 3) {
           room = Math.max(room, stageWidth);
         }
-        const next = room >= 64 ? Math.round(room) : stageWidth;
+        const fitted = room >= 64 ? Math.round(room) : stageWidth;
+        const next = Math.min(fitted, DIAGRAM_STAGE_MAX_PX);
         const heightMatches =
           Math.abs(next - current.offsetHeight) <= 2 &&
           current.style.aspectRatio === 'auto';
@@ -593,12 +608,9 @@ export function EcosystemNavigationMainPanel({
               className="relative w-full shrink-0 overflow-hidden"
             >
               {hierarchyData ? (
-                <SpaceVisualization
-                  layout="fill"
+                <MyceliumEcosystem
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}
-                  enableHoverActions={false}
-                  showNodeLabels
                   ariaLabel={t('diagram.ariaLabel')}
                   onVisibleSpacesChange={handleVisibleSpacesChange}
                 />

@@ -18,8 +18,8 @@ type Props = {
   /** Pixels of persistent icon rail included in the left sidebar width. */
   leftIconRailPx?: number;
   onLeftOpenChange: (open: boolean) => void;
-  rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
+  rightOpen: boolean;
   rightSidebarWidth: string;
   leftContent: React.ReactNode;
   rightContent: React.ReactNode;
@@ -31,6 +31,7 @@ type Props = {
  * sticky DHO chrome see one scroll root instead of nested `overflow-y-auto` insets.
  *
  * Sidebars use `z-[50]` so they sit above `ProposalOverlayShell` scrim (`z-40`).
+ * Collapsed icon rail hides below `xl` via Sidebar CSS (spaces rail owns that band).
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,

@@ -32,7 +32,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Links } from '../../common';
 import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useScrollToErrors } from '../../hooks';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 /** Subset of person fields used to seed the edit form (not the full domain `Person`). */
@@ -48,6 +48,8 @@ interface EditPersonSectionInput {
   email?: string;
   links?: string[];
   preferredCurrency?: string;
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
+  networkOffer?: string | null;
 }
 
 const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
@@ -75,6 +77,7 @@ export const EditPersonSection = ({
   error,
 }: EditPersonSectionProps) => {
   const tProfile = useTranslations('Profile');
+  const tSignup = useTranslations('Signup');
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
@@ -223,11 +226,45 @@ export const EditPersonSection = ({
       preferredCurrency: TOKEN_PRICE_REFERENCE_CURRENCIES.find(
         (code) => code === person?.preferredCurrency,
       ),
+      primaryOrientation: person?.primaryOrientation ?? undefined,
+      networkOffer: person?.networkOffer ?? '',
     },
     mode: 'onChange',
   });
 
   useScrollToErrors(form, formRef);
+
+  const seededPersonId = useRef<number | null>(null);
+  useEffect(() => {
+    if (!person?.id || form.formState.isDirty) return;
+    if (seededPersonId.current === person.id) return;
+    seededPersonId.current = person.id;
+    form.reset({
+      avatarUrl: person.avatarUrl || '',
+      name: person.name || '',
+      surname: person.surname || '',
+      nickname: person.nickname || '',
+      description: person.description || '',
+      leadImageUrl: person.leadImageUrl || '',
+      id: person.id,
+      links: person.links || [],
+      email: person.email || '',
+      location: person.location || '',
+      preferredCurrency: TOKEN_PRICE_REFERENCE_CURRENCIES.find(
+        (code) => code === person.preferredCurrency,
+      ),
+      primaryOrientation: person.primaryOrientation ?? undefined,
+      networkOffer: person.networkOffer ?? '',
+    });
+  }, [form, person]);
+
+  const orientation = form.watch('primaryOrientation');
+  const offerLabel =
+    orientation === 'member' ||
+    orientation === 'builder' ||
+    orientation === 'investor'
+      ? tSignup(`offer.${orientation}`)
+      : null;
 
   const handleSubmit = async (values: FormData) => {
     try {
@@ -510,6 +547,77 @@ export const EditPersonSection = ({
                   />
                 </span>
               </div>
+              <div className="flex justify-between">
+                <Text className={cn('text-2', 'text-neutral-11')}>
+                  {tProfile('editForm.labels.orientation')}
+                </Text>
+                <span className="flex items-center">
+                  <FormField
+                    control={form.control}
+                    name="primaryOrientation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger className="w-60">
+                              <SelectValue
+                                placeholder={tProfile(
+                                  'editForm.placeholders.orientation',
+                                )}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">
+                                {tProfile('editForm.labels.orientationMember')}
+                              </SelectItem>
+                              <SelectItem value="builder">
+                                {tProfile('editForm.labels.orientationBuilder')}
+                              </SelectItem>
+                              <SelectItem value="investor">
+                                {tProfile(
+                                  'editForm.labels.orientationInvestor',
+                                )}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </span>
+              </div>
+              {offerLabel ? (
+                <div className="flex flex-col gap-2">
+                  <Text className={cn('text-2', 'text-neutral-11')}>
+                    {offerLabel}
+                  </Text>
+                  <FormField
+                    control={form.control}
+                    name="networkOffer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            value={field.value ?? ''}
+                            rows={4}
+                            maxLength={500}
+                            disabled={isLoading}
+                            aria-label={offerLabel}
+                            placeholder={tSignup('offer.placeholder')}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              ) : null}
               <div>
                 <FormField
                   control={form.control}

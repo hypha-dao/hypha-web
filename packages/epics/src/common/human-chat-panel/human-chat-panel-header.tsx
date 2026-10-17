@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, PanelRightClose, Settings } from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +18,15 @@ type HumanChatPanelHeaderProps = {
    * Same target as the former settings control on the tab row.
    */
   notificationSettingsHref?: string | null;
+  /** One room name, in the same box as the space and ecosystem choice. */
+  mark?: string;
+  /** Two rooms that sit side by side, such as a space and its ecosystem. */
+  roomChoice?: {
+    value: string;
+    options: { value: string; label: string }[];
+    ariaLabel: string;
+    onChange: (next: string) => void;
+  };
 };
 
 export function HumanChatPanelHeader({
@@ -25,6 +35,8 @@ export function HumanChatPanelHeader({
   onBack,
   trailingStart,
   notificationSettingsHref,
+  mark,
+  roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
   const router = useRouter();
@@ -40,7 +52,7 @@ export function HumanChatPanelHeader({
           <button
             type="button"
             onClick={onBack}
-            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="flex h-[36px] w-[36px] items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label={t('backToSpaceChat')}
           >
             <ArrowLeft className="craft-icon" />
@@ -53,7 +65,7 @@ export function HumanChatPanelHeader({
               setOpen(false);
               setOpenMobile(false);
             }}
-            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="flex h-[36px] w-[36px] items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
@@ -70,7 +82,7 @@ export function HumanChatPanelHeader({
               setOpenMobile(false);
               router.push(notificationSettingsHref);
             }}
-            className="flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
@@ -82,7 +94,38 @@ export function HumanChatPanelHeader({
         {displayDescription && (
           <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
-        {displayTitle ? (
+        {mark && !roomChoice ? (
+          <span className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background">
+            {mark}
+          </span>
+        ) : null}
+        {roomChoice ? (
+          <div
+            role="group"
+            aria-label={roomChoice.ariaLabel}
+            className="inline-flex shrink-0 border border-foreground"
+          >
+            {roomChoice.options.map((option) => {
+              const selected = roomChoice.value === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => roomChoice.onChange(option.value)}
+                  className={cn(
+                    'px-3 py-1 text-1',
+                    selected
+                      ? 'bg-foreground text-background'
+                      : 'bg-background text-foreground',
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : displayTitle ? (
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
             {displayTitle}
           </span>

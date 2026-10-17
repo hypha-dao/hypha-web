@@ -66,6 +66,7 @@ playwright-report/
 **/CLAUDE.local.md
 .tmp_pr*_threads_now.json
 .tmp_pr*_unresolved_slim.json
+.tmp-*/
 
 # Hypha context satellite (personal, machine-specific — never commit)
 .hypha-context.local/

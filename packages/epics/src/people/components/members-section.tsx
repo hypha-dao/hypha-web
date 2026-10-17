@@ -5,6 +5,7 @@ import { Text } from '@radix-ui/themes';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
+import { SpaceMemberInviteButton } from './space-member-invite-button';
 import { useMembersSection } from '../hooks/use-members-section';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
@@ -16,7 +17,8 @@ import {
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
+import { useFormatter, useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
 import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
@@ -43,6 +45,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
   const tCoherence = useTranslations('CoherenceTab');
+  const format = useFormatter();
   const [entityFilter, setEntityFilter] = useState<'member' | 'space' | 'ai'>(
     'member',
   );
@@ -65,6 +68,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const { isMember, isMemberLoading } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
   });
+  const params = useParams();
+  const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { person } = useMe();
   const { isAuthenticated } = useAuthentication();
   const { isDelegate } = useIsDelegate({
@@ -129,6 +134,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
           disabled={entityFilter === 'ai'}
         />
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+          {isMember && spaceSlug ? (
+            <SpaceMemberInviteButton spaceSlug={spaceSlug} lang={lang} />
+          ) : null}
           <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
           {!isDelegate ? (
             canDelegateLink ? (
@@ -158,47 +166,55 @@ export const MembersSection: FC<MemberSectionProps> = ({
             <p>{tMembers('aiAgentsEmptyState')}</p>
           </Empty>
         ) : (
-          <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-            {aiAgents.map((agent) => (
-              <div key={agent.id} className="craft-card p-4">
-                <div className="mb-3 flex items-start gap-3">
-                  <div
-                    className={`craft-icon-box flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
-                      agent.tagGroup,
-                    )}`}
-                    aria-hidden="true"
-                  >
-                    {getAgentAvatarInitials(tCoherence(agent.role))}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="mb-1 text-sm font-medium text-foreground">
-                      {tCoherence(agent.role)}
-                    </div>
-                    <div className="craft-meta">
-                      {tCoherence(`tagGroup.${agent.tagGroup}`)}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {tCoherence(agent.focus)}
-                </p>
-                <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                  {agent.roleDefinition.map((line, index) => (
-                    <li
-                      key={`${agent.id}-def-${index}`}
-                      className="leading-relaxed"
+          <div className="@container/members w-full">
+            <div className="member-list grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">
+              {aiAgents.map((agent) => (
+                <div key={agent.id} className="craft-card p-4">
+                  <div className="mb-3 flex items-start gap-3">
+                    <div
+                      className={`craft-icon-box flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
+                        agent.tagGroup,
+                      )}`}
+                      aria-hidden="true"
                     >
-                      {index + 1}. {tCoherence(line)}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 text-xs text-muted-foreground">
-                  {tMembers('aiAgentsMobilizedCount', {
-                    count: agent.mobilizedCount,
-                  })}
+                      {getAgentAvatarInitials(tCoherence(agent.role))}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="mb-1 text-sm font-medium text-foreground">
+                        {tCoherence(agent.role)}
+                      </div>
+                      <div className="craft-meta">
+                        {tCoherence(`tagGroup.${agent.tagGroup}`)}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {tCoherence(agent.focus)}
+                  </p>
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    {agent.roleDefinition.map((line, index) => (
+                      <li
+                        key={`${agent.id}-def-${index}`}
+                        className="leading-relaxed"
+                      >
+                        {index + 1}. {tCoherence(line)}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 text-xs text-muted-foreground">
+                    {tMembers('aiAgentsMobilizedCount', {
+                      count: agent.mobilizedCount,
+                    })}
+                    {' · '}
+                    {tMembers('aiAgentsLastActive', {
+                      date: format.dateTime(new Date(agent.lastMobilizedAt), {
+                        dateStyle: 'medium',
+                      }),
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )
       ) : pagination?.total === 0 ? (
@@ -206,20 +222,24 @@ export const MembersSection: FC<MemberSectionProps> = ({
           <p>{tMembers('listIsEmpty')}</p>
         </Empty>
       ) : (
-        Array.from({ length: pages }).map((_, index) => (
-          <MembersList
-            basePath={basePath}
-            page={index + 1}
-            key={index}
-            useMembers={useMembers}
-            spaceId={space?.id}
-            spaceSlug={spaceSlug}
-            searchTerm={searchTerm}
-            refreshInterval={refreshInterval}
-            energySharingOnly={energySharingOnly}
-            entityFilter={entityFilter}
-          />
-        ))
+        <div className="@container/members w-full">
+          <div className="member-list grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">
+            {Array.from({ length: pages }).map((_, index) => (
+              <MembersList
+                basePath={basePath}
+                page={index + 1}
+                key={index}
+                useMembers={useMembers}
+                spaceId={space?.id}
+                spaceSlug={spaceSlug}
+                searchTerm={searchTerm}
+                refreshInterval={refreshInterval}
+                energySharingOnly={energySharingOnly}
+                entityFilter={entityFilter}
+              />
+            ))}
+          </div>
+        </div>
       )}
       {entityFilter === 'ai' || pagination?.total === 0 ? null : (
         <SectionLoadMore

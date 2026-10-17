@@ -37,8 +37,14 @@ import {
   normalizePlainTextMxidCaptureFromMatch,
   useMatrix,
   usePersonBySub,
+  specialistById,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
+import {
+  getAgentAvatarInitials,
+  tagGroupAccentClass,
+} from '../ai-agent-competencies';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -52,6 +58,7 @@ import {
 } from './human-chat-message-link';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
+  isHyphaBotMatrixIdentity,
   matrixMemberDisplayLabelFromRoom,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -704,6 +711,8 @@ type HumanChatPanelMessageBubbleProps = {
     senderName?: string;
     /** Author MXID when known (overflow delete). */
     senderMatrixId?: string;
+    /** Specialist who answered an @AI Agents mention. */
+    agentSpecialistId?: string;
     avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
@@ -1301,12 +1310,16 @@ function MxidMentionPill({
     sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
+  const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
+    if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
+      return t('agentMentionLabel');
+    }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = pickUserVisibleMemberLabel(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
-  }, [person, syncLabel, fullMxid]);
+  }, [person, syncLabel, fullMxid, t]);
 
   const loading =
     needsProfile &&
@@ -1481,6 +1494,11 @@ export function HumanChatPanelMessageBubble({
   unreadBoundary = false,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const tCoherence = useTranslations('CoherenceTab');
+  const specialist = message.agentSpecialistId
+    ? specialistById(message.agentSpecialistId)
+    : null;
+  const specialistName = specialist ? tCoherence(specialist.roleKey) : null;
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
@@ -1600,6 +1618,9 @@ export function HumanChatPanelMessageBubble({
     usePersonBySub({ sub: replyPrivySub ?? replyCanonicalSub });
 
   const resolvedSenderName = useMemo(() => {
+    if (isHyphaBotMatrixIdentity(message.senderMatrixId, message.senderName)) {
+      return t('agentMentionLabel');
+    }
     if (message.role === 'user') {
       return message.senderName ?? t('you');
     }
@@ -1627,6 +1648,9 @@ export function HumanChatPanelMessageBubble({
 
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
+    if (isHyphaBotMatrixIdentity(replyTo.sourceUserId, replyTo.authorLabel)) {
+      return t('agentMentionLabel');
+    }
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
       replyTo.sourceUserId != null
@@ -1663,6 +1687,7 @@ export function HumanChatPanelMessageBubble({
    * Never surface bridged Privy locals — fall back to "Unknown member" once resolution finishes.
    */
   const senderProfileLoading =
+    !specialistName &&
     message.role === 'member' &&
     Boolean(message.senderMatrixId) &&
     !senderHasVisibleLabel &&
@@ -1690,7 +1715,7 @@ export function HumanChatPanelMessageBubble({
           replyTo.sourceUserId,
         ));
 
-  const senderName = resolvedSenderName;
+  const senderName = specialistName ?? resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
   const mainAvatarSrc =
     message.role === 'user'
@@ -1759,8 +1784,8 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
-    /* Match AI panel production type scale (text-sm / ~14px); keep compact stack. */
-    'text-sm leading-snug text-foreground',
+    /* Shared with the AI panel: 13px, a little tighter than body text. */
+    'text-[13px] leading-[1.35] text-foreground',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
@@ -1791,7 +1816,7 @@ export function HumanChatPanelMessageBubble({
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex flex-col overflow-visible rounded-none px-3 py-1 transition-colors',
+        'group relative -mx-4 flex flex-col overflow-visible rounded-none px-4 py-1 transition-colors',
         'hover:bg-foreground/[0.04] focus-within:bg-foreground/[0.04]',
         highlightMentionForViewer && 'border-l-2 border-l-accent-9',
         unreadBoundary &&
@@ -1846,13 +1871,26 @@ export function HumanChatPanelMessageBubble({
           data-testid="chat-message-avatar"
         >
           <div ref={mainAvatarMeasureRef} className="relative">
-            <PersonAvatar
-              size="chat"
-              className="rounded-full"
-              avatarSrc={mainAvatarSrc}
-              userName={senderName}
-              isLoading={senderProfileLoading}
-            />
+            {message.id === 'welcome' ? (
+              <MemberHomeMark className="h-10 w-10" />
+            ) : specialistName ? (
+              <div
+                className={`flex h-10 w-10 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
+                  specialist?.id ?? '',
+                )}`}
+                aria-hidden
+              >
+                {getAgentAvatarInitials(specialistName)}
+              </div>
+            ) : (
+              <PersonAvatar
+                size="chat"
+                className="rounded-full"
+                avatarSrc={mainAvatarSrc}
+                userName={senderName}
+                isLoading={senderProfileLoading}
+              />
+            )}
           </div>
         </div>
 

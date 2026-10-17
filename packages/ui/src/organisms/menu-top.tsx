@@ -301,17 +301,21 @@ export const MenuTop = ({
           aria-hidden={isCompact || undefined}
         >
           {children}
-          {trailingAction}
+          {trailingAction ? (
+            <div className="hidden shrink-0 items-center xl:flex">
+              {trailingAction}
+            </div>
+          ) : null}
         </div>
 
         {/* Compact action group (right side): chat, profile, optional hamburger.
-            Always show below `md` so auth (e.g. Sign in) stays visible whenever the
+            Always show below `xl` so auth (e.g. Sign in) stays visible whenever the
             desktop action row is hidden by the app layout; `isCompact` still controls
-            md+ when the desktop group is collapsed into this column. */}
+            xl+ when the desktop group is collapsed into this column. */}
         <div
           className={clsx(
-            'ml-auto items-center gap-1.5 max-md:flex sm:gap-2',
-            isCompact ? 'md:flex' : 'md:hidden',
+            'ml-auto items-center gap-1.5 max-xl:flex sm:gap-2',
+            isCompact ? 'xl:flex' : 'xl:hidden',
           )}
         >
           {trailingAction ? (

@@ -23,11 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  Skeleton,
   Slider,
+  Switch,
+  AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
+import { CapitalChoice } from '../../spaces/components/capital-choice';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
 import type { Control, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
@@ -42,11 +46,14 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  parseCapitalKeys,
+  type CapitalKey,
   collectExistingTags,
   mergeTagInList,
   normalizeTagKey,
   personProfileHref,
   wouldCreateNearDuplicate,
+  useAttachmentUpload,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useFindCoherences,
@@ -59,6 +66,20 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import React from 'react';
+import {
+  asMediaItems,
+  mergeMedia,
+  SIGNAL_DOCUMENT_ACCEPT,
+  SIGNAL_DOCUMENT_LIMIT,
+  SIGNAL_IMAGE_ACCEPT,
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_MEDIA_MAX_BYTES,
+  splitSignalMedia,
+  takeSignalCreateMedia,
+  uploadSignalFiles,
+  type SignalMediaDraft,
+  type SignalMediaItem,
+} from '../utils/signal-media';
 import { useScrollToErrors } from '../../hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -81,6 +102,9 @@ import { SpaceMemberSelect } from '../../pipeline/components/space-member-select
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
+import { TokenPayoutFieldArray } from '../../agreements';
+import { useTokens } from '../../treasury/hooks/use-tokens';
+import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -207,6 +231,7 @@ export const CreateSignalForm = ({
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
+  const tCapitals = useTranslations('NetworkExchange');
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -228,6 +253,44 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
+  const { tokens, isLoading: isLoadingTokens } = useTokens({ spaceSlug });
+  const { upload: uploadAttachment } = useAttachmentUpload({
+    authorizationToken: authToken ?? undefined,
+  });
+  const openingMedia = splitSignalMedia(initialValues);
+  const [imageFiles, setImageFiles] = React.useState<File[]>([]);
+  const [keptImages, setKeptImages] = React.useState<SignalMediaItem[]>(
+    openingMedia.images,
+  );
+  const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
+  const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
+    openingMedia.documents,
+  );
+
+  const createMediaDraft = React.useRef<SignalMediaDraft | null>(null);
+  const createMediaLoaded = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!createMediaLoaded.current) {
+      createMediaLoaded.current = true;
+      createMediaDraft.current =
+        mode === 'create' ? takeSignalCreateMedia() : null;
+    }
+    const split = splitSignalMedia(initialValues);
+    const draft = createMediaDraft.current;
+    setImageFiles([]);
+    setDocumentFiles([]);
+    setKeptImages(
+      mergeMedia(split.images, draft?.images ?? [], SIGNAL_IMAGE_LIMIT),
+    );
+    setKeptDocuments(
+      mergeMedia(
+        split.documents,
+        draft?.documents ?? [],
+        SIGNAL_DOCUMENT_LIMIT,
+      ),
+    );
+  }, [initialValues, mode, signalSlug]);
   const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
     useMembers({
       spaceSlug,
@@ -357,6 +420,7 @@ export const CreateSignalForm = ({
           ? initialValues.type
           : 'Opportunity',
       priority: initialValues?.priority ?? 'medium',
+      capitals: parseCapitalKeys(initialValues?.capitals),
       tags: Array.isArray(initialValues?.tags)
         ? (initialValues.tags.filter(
             (tag): tag is CoherenceTag =>
@@ -374,6 +438,15 @@ export const CreateSignalForm = ({
       assigneeIds:
         initialValues?.assigneeIds ??
         (mode === 'create' && person?.id ? [person.id] : []),
+      indicativePayouts:
+        initialValues?.indicativePayouts &&
+        initialValues.indicativePayouts.length > 0
+          ? initialValues.indicativePayouts
+          : [{ amount: '', token: '' }],
+      leadImage: initialValues?.leadImage ?? null,
+      videoUrl: initialValues?.videoUrl ?? '',
+      attachments: initialValues?.attachments ?? [],
+      sharedWithNetwork: initialValues?.sharedWithNetwork ?? false,
     }),
     [initialValues, mode, person?.id, spaceId, workflow],
   );
@@ -675,6 +748,42 @@ export const CreateSignalForm = ({
   // `updateCoherenceSignalBySlugAction` themselves, right after the assignee list is persisted —
   // no client trigger needed here.
 
+  const resolveSignalMedia = React.useCallback(
+    async (videoUrl: string | null) => {
+      const fail = () => {
+        throw new Error(
+          t.has('signalFormUploadFailed')
+            ? t('signalFormUploadFailed')
+            : 'Could not upload the file. Try again.',
+        );
+      };
+      let images = keptImages;
+      let documents = keptDocuments;
+      try {
+        if (imageFiles.length > 0) {
+          images = [
+            ...keptImages,
+            ...(await uploadSignalFiles(imageFiles, uploadAttachment)),
+          ].slice(0, SIGNAL_IMAGE_LIMIT);
+        }
+        if (documentFiles.length > 0) {
+          documents = [
+            ...keptDocuments,
+            ...(await uploadSignalFiles(documentFiles, uploadAttachment)),
+          ].slice(0, SIGNAL_DOCUMENT_LIMIT);
+        }
+      } catch {
+        fail();
+      }
+      return {
+        leadImage: images[0]?.url ?? null,
+        videoUrl,
+        attachments: [...images, ...documents],
+      };
+    },
+    [documentFiles, imageFiles, keptDocuments, keptImages, t, uploadAttachment],
+  );
+
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       const parsed = schemaCreateCoherenceForm.parse(data);
@@ -708,6 +817,7 @@ export const CreateSignalForm = ({
           return;
         }
         try {
+          const media = await resolveSignalMedia(data.videoUrl ?? null);
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
             title: parsed.title,
@@ -721,6 +831,10 @@ export const CreateSignalForm = ({
             board:
               parsed.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: parsed.assigneeIds,
+            indicativePayouts: data.indicativePayouts,
+            capitals: parsed.capitals,
+            sharedWithNetwork: data.sharedWithNetwork ?? false,
+            ...media,
           });
           // The signal is saved — close now and let the chat sync and the
           // list refresh finish in the background.
@@ -780,7 +894,8 @@ export const CreateSignalForm = ({
         return;
       }
       try {
-        const coherence = await createCoherence({ ...parsed });
+        const media = await resolveSignalMedia(data.videoUrl ?? null);
+        const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         // Close the panel as soon as the signal exists — everything below is
@@ -897,8 +1012,22 @@ export const CreateSignalForm = ({
       router,
       successfulUrl,
       revalidateCoherences,
+      resolveSignalMedia,
     ],
   );
+
+  const handleTurnIntoProposal = () => {
+    const values = form.getValues();
+    stageSignalAsContributionProposal({
+      title: values.title,
+      description: values.description,
+      payouts: values.indicativePayouts ?? [],
+    });
+    if (!lang || !spaceSlug) return;
+    router.push(
+      `/${lang}/dho/${spaceSlug}/agreements/create/propose-contribution`,
+    );
+  };
 
   const handleInvalid = async (err?: Record<string, unknown>) => {
     console.warn('form errors:', err);
@@ -1022,8 +1151,8 @@ export const CreateSignalForm = ({
             <Separator className="bg-border" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-6 px-0 pt-5">
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pt-5 lg:px-7">
+            <section className="flex flex-col gap-6">
               <FormField
                 control={form.control}
                 name="type"
@@ -1061,13 +1190,38 @@ export const CreateSignalForm = ({
                   </FormItem>
                 )}
               />
-            </section>
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              <FormField
+                control={form.control}
+                name="sharedWithNetwork"
+                render={({ field }) => (
+                  <FormItem className="border-t border-border pt-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <FormLabel className="text-sm font-medium text-foreground">
+                          {t('shareWithNetwork')}
+                        </FormLabel>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {t('shareWithNetworkHint')}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === true}
+                          onCheckedChange={field.onChange}
+                          disabled={isMutating}
+                          aria-label={t('shareWithNetwork')}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="border-t border-border pt-6">
                     <div className="flex w-full flex-col gap-3">
                       <FormLabel className="text-foreground">
                         {t('priority')} <RequirementMark />
@@ -1098,11 +1252,113 @@ export const CreateSignalForm = ({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="capitals"
+                render={({ field }) => (
+                  <FormItem className="border-t border-border pt-6">
+                    <FormLabel className="text-foreground">
+                      {tCapitals('formsOfCapital')}
+                    </FormLabel>
+                    <FormDescription>
+                      {tCapitals('capitalHintMany')}
+                    </FormDescription>
+                    <CapitalChoice
+                      mode="many"
+                      selected={parseCapitalKeys(field.value)}
+                      onChange={(next: CapitalKey[]) => field.onChange(next)}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </section>
-            {mode === 'create' ? (
-              <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
-                {/* creatorVotePercent is local state, not a form field, so
-                    avoid the FormField-context-bound components here. */}
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => {
+                  const descriptionValue = field.value || '';
+                  return (
+                    <FormItem>
+                      <FormLabel className="gap-1 text-foreground">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
+                          <RichTextEditor
+                            editorRef={null}
+                            bordered={false}
+                            markdown={descriptionValue}
+                            translation={translateEditor}
+                            placeholder={t('descriptionPlaceholder')}
+                            onChange={(markdown) => field.onChange(markdown)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        placeholder={t('selectOneOrMore')}
+                        searchPlaceholder={
+                          t.has('searchOrCreateTag')
+                            ? t('searchOrCreateTag')
+                            : 'Type to search or create a tag'
+                        }
+                        options={tagOptions}
+                        value={field.value}
+                        allowToggleAll={false}
+                        allowCreate={true}
+                        maxCount={2}
+                        uiStyle="tag-picker"
+                        labels={{
+                          more: (count) =>
+                            t.has('tagsMore' as never)
+                              ? `${t('tagsMore' as never)} ${count}`
+                              : `+ ${count} more`,
+                          noRecentTags: t.has('noRecentTags' as never)
+                            ? t('noRecentTags' as never)
+                            : 'No recent tags yet. Start typing to search tags.',
+                          noResults: t.has('noResults' as never)
+                            ? t('noResults' as never)
+                            : 'No results found.',
+                          mostUsed: t.has('mostUsedTagsHeading' as never)
+                            ? t('mostUsedTagsHeading' as never)
+                            : '--- Most used tags ---',
+                          create: (term) =>
+                            t.has('createTag' as never)
+                              ? `${t('createTag' as never)} "${term}"`
+                              : `Create "${term}"`,
+                          clear: t.has('clear' as never)
+                            ? t('clear' as never)
+                            : 'Clear',
+                          close: t.has('close' as never)
+                            ? t('close' as never)
+                            : 'Close',
+                        }}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </section>
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              {mode === 'create' ? (
                 <div className="flex w-full flex-col gap-3">
                   <Label className="text-foreground">
                     {t('signalFormVotingPower')}
@@ -1122,9 +1378,7 @@ export const CreateSignalForm = ({
                     {t('signalFormVotingPowerHint')}
                   </p>
                 </div>
-              </section>
-            ) : null}
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              ) : null}
               <div className="grid gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -1271,159 +1525,87 @@ export const CreateSignalForm = ({
                 initialTitle={initialValues?.title}
               />
             ) : null}
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormImage')}
+                </p>
+                <AddAttachment
+                  accept={SIGNAL_IMAGE_ACCEPT}
+                  maxFiles={Math.max(0, SIGNAL_IMAGE_LIMIT - keptImages.length)}
+                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                  label={t('signalFormImageHint')}
+                  value={[...keptImages, ...imageFiles]}
+                  defaultAttachments={keptImages}
+                  onChange={setImageFiles}
+                  onExistingAttachmentsChange={(updated) =>
+                    setKeptImages(asMediaItems(updated))
+                  }
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="description"
-                render={({ field }) => {
-                  const descriptionValue = field.value || '';
-                  return (
-                    <FormItem>
-                      <FormLabel className="gap-1 text-foreground">
-                        {t('description')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
-                          <RichTextEditor
-                            editorRef={null}
-                            bordered={false}
-                            markdown={descriptionValue}
-                            translation={translateEditor}
-                            placeholder={t('descriptionPlaceholder')}
-                            mentionCandidates={spaceMembers.data.flatMap(
-                              (member) => {
-                                const slug = member.slug?.trim();
-                                if (!slug) return [];
-                                return [
-                                  {
-                                    id: slug,
-                                    label:
-                                      [member.name, member.surname]
-                                        .filter(Boolean)
-                                        .join(' ') ||
-                                      member.nickname ||
-                                      slug,
-                                    href: personProfileHref(slug, lang),
-                                  },
-                                ];
-                              },
-                            )}
-                            onChange={(markdown) => field.onChange(markdown)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription />
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={form.control}
-                name="tags"
+                name="videoUrl"
                 render={({ field }) => (
-                  <FormItem className="mt-6">
+                  <FormItem>
                     <FormLabel className="text-foreground">
-                      {t('tags')}
+                      {t('signalFormVideo')}
                     </FormLabel>
                     <FormControl>
-                      <MultiSelect
-                        placeholder={t('selectOneOrMore')}
-                        searchPlaceholder={
-                          t.has('searchOrCreateTag')
-                            ? t('searchOrCreateTag')
-                            : 'Type to search or create a tag'
-                        }
-                        options={tagOptions}
-                        value={field.value}
-                        allowToggleAll={false}
-                        allowCreate={true}
-                        maxCount={2}
-                        uiStyle="tag-picker"
-                        textClassName={SIGNAL_BOARD_META_TEXT_CLASS}
-                        headingClassName={SIGNAL_BOARD_META_TEXT_CLASS}
-                        getCreateWarning={(term) =>
-                          wouldCreateNearDuplicate(
-                            term,
-                            existingBoardTags,
-                            field.value ?? [],
-                          )
-                            ? t('tagNearDuplicateWarning', {
-                                tag:
-                                  existingBoardTags.find(
-                                    (tag) =>
-                                      normalizeTagKey(tag) ===
-                                      normalizeTagKey(term),
-                                  ) ?? term,
-                              })
-                            : null
-                        }
-                        labels={{
-                          more: (count) =>
-                            t.has('tagsMore' as never)
-                              ? `${t('tagsMore' as never)} ${count}`
-                              : `+ ${count} more`,
-                          noRecentTags: t.has('noRecentTags' as never)
-                            ? t('noRecentTags' as never)
-                            : 'No recent tags yet. Start typing to search tags.',
-                          noResults: t.has('noResults' as never)
-                            ? t('noResults' as never)
-                            : 'No results found.',
-                          mostUsed: t.has('mostUsedTagsHeading' as never)
-                            ? t('mostUsedTagsHeading' as never)
-                            : '--- Most used tags ---',
-                          create: (term) =>
-                            t.has('createTag' as never)
-                              ? `${t('createTag' as never)} "${term}"`
-                              : `Create "${term}"`,
-                          clear: t.has('clear' as never)
-                            ? t('clear' as never)
-                            : 'Clear',
-                          close: t.has('close' as never)
-                            ? t('close' as never)
-                            : 'Close',
-                        }}
-                        onValueChange={field.onChange}
+                      <Input
+                        type="url"
+                        disabled={isMutating}
+                        placeholder="https://"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
                       />
                     </FormControl>
-                    {canManageSignal && existingBoardTags.length > 1 ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="sm"
-                        className="mt-2 h-8 px-2 text-muted-foreground"
-                        onClick={() => setMergeTagsOpen(true)}
-                      >
-                        {t('mergeTagsAction')}
-                      </Button>
-                    ) : null}
+                    <FormDescription>
+                      {t('signalFormVideoHint')}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <SignalTagMergeDialog
-                open={mergeTagsOpen}
-                onOpenChange={setMergeTagsOpen}
-                existingTags={existingBoardTags}
-                onMerge={async (fromTag, toTag) => {
-                  if (!spaceSlug) return;
-                  await mergeCoherenceTags({ spaceSlug, fromTag, toTag });
-                  const mergedTags = mergeTagInList(
-                    form.getValues('tags') ?? [],
-                    fromTag,
-                    toTag,
-                  );
-                  form.resetField('tags', {
-                    defaultValue: mergedTags,
-                    keepDirty: true,
-                  });
-                  await revalidateCoherences(spaceSlug);
-                }}
-              />
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormAttachments')}
+                </p>
+                <AddAttachment
+                  accept={SIGNAL_DOCUMENT_ACCEPT}
+                  maxFiles={Math.max(
+                    0,
+                    SIGNAL_DOCUMENT_LIMIT - keptDocuments.length,
+                  )}
+                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                  label={t('signalFormAttachmentsHint')}
+                  value={[...keptDocuments, ...documentFiles]}
+                  defaultAttachments={keptDocuments}
+                  onChange={setDocumentFiles}
+                  onExistingAttachmentsChange={(updated) =>
+                    setKeptDocuments(asMediaItems(updated))
+                  }
+                />
+              </div>
             </section>
 
-            <div className="flex w-full justify-end gap-2">
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              <Skeleton loading={isLoadingTokens} width="100%" height={90}>
+                <TokenPayoutFieldArray
+                  tokens={tokens}
+                  name="indicativePayouts"
+                  label={t('indicativeTokens')}
+                  markRequired={false}
+                  isLoadingTokens={isLoadingTokens}
+                />
+              </Skeleton>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t('indicativeTokensHint')}
+              </p>
+            </section>
+
+            <div className="flex w-full justify-end gap-2 pt-8">
               <SignalFormRootError control={form.control} />
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
@@ -1533,6 +1715,17 @@ export const CreateSignalForm = ({
                       : 'Archive'}
                   </Button>
                 </ConfirmDialog>
+              ) : null}
+              {mode === 'edit' ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  disabled={isMutating || !spaceSlug}
+                  onClick={handleTurnIntoProposal}
+                >
+                  {t('turnIntoProposal')}
+                </Button>
               ) : null}
               <Button type="submit" disabled={isMutating || !isEditAuthorized}>
                 {mode === 'edit'

@@ -14,12 +14,15 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   AiPanelTrigger,
-  AiSidebarTrigger,
   GlobalCallDockProvider,
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
+  MobileContentFrame,
+  MobileTabBar,
+  RecentSpaceHistoryTracker,
 } from '@hypha-platform/epics';
+
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
@@ -102,8 +105,9 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
-  let navMySpacesLabel = 'My Spaces';
-  let navMyWalletLabel = 'My Wallet';
+  let navHomeLabel = 'Home';
+  let navMessagesLabel = 'Messages';
+  let navMyWalletLabel = 'Wallet';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
@@ -163,7 +167,8 @@ export default async function RootLayout({
 
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
-    navMySpacesLabel = tNav('mySpaces');
+    navHomeLabel = tNav('myDashboard');
+    navMessagesLabel = tNav('chat');
     navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
     navOpenMenuLabel = tNav('openMenu');
@@ -250,6 +255,7 @@ export default async function RootLayout({
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <PanelProviders>
+                      <RecentSpaceHistoryTracker />
                       <GlobalCallDockProvider>
                         <PanelWrapLayout
                           left={
@@ -270,21 +276,14 @@ export default async function RootLayout({
                           }
                         >
                           {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                          <div className="sticky top-0 z-30 shrink-0">
+                          <div className="sticky top-0 z-40 shrink-0 bg-page-background">
                             <ConnectedMenuTop
                               aiChatEnabled={aiChatEnabled}
                               logoHref={ROOT_URL}
                               openMenuLabel={navOpenMenuLabel}
                               closeMenuLabel={navCloseMenuLabel}
                               leadingAction={
-                                aiChatEnabled ? (
-                                  <div className="flex items-center gap-1.5 sm:gap-2">
-                                    <div className="md:hidden">
-                                      <AiSidebarTrigger />
-                                    </div>
-                                    <AiPanelTrigger />
-                                  </div>
-                                ) : undefined
+                                aiChatEnabled ? <AiPanelTrigger /> : undefined
                               }
                               trailingAction={
                                 humanChatEnabled ? (
@@ -292,45 +291,38 @@ export default async function RootLayout({
                                 ) : undefined
                               }
                               mobileAction={
-                                <ConnectedButtonProfile
-                                  newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
-                                  navItems={[
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
-                                  showNetworkFeedback
-                                  trailingBeforeProfile={
-                                    isLanguageSelectVisible ? (
-                                      <ConnectedLanguageSelect
-                                        selectLanguageLabel={
-                                          navSelectLanguageLabel
-                                        }
-                                      />
-                                    ) : undefined
-                                  }
-                                  compact
-                                />
+                                <>
+                                  <ConnectedButtonProfile
+                                    newUserRedirectPath="/profile/signup"
+                                    baseRedirectPath={`/${locale}/home`}
+                                    navItems={[]}
+                                    showNetworkFeedback
+                                    trailingBeforeProfile={
+                                      isLanguageSelectVisible ? (
+                                        <ConnectedLanguageSelect
+                                          selectLanguageLabel={
+                                            navSelectLanguageLabel
+                                          }
+                                        />
+                                      ) : undefined
+                                    }
+                                    compact
+                                  />
+                                </>
                               }
                             >
-                              <div className="hidden md:flex">
+                              <div className="hidden xl:flex">
                                 <ConnectedButtonProfile
                                   newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
+                                  baseRedirectPath={`/${locale}/home`}
                                   navItems={[
                                     {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
+                                      label: navHomeLabel,
+                                      href: `/${locale}/home`,
+                                    },
+                                    {
+                                      label: navMessagesLabel,
+                                      href: `/${locale}/connections`,
                                     },
                                     {
                                       label: navMyWalletLabel,
@@ -359,25 +351,41 @@ export default async function RootLayout({
                           <NextSSRPlugin
                             routerConfig={extractRouterConfig(fileRouter)}
                           />
-                          <div className="mb-auto pb-8">
-                            <div className="flex h-full justify-normal pt-4 md:pt-5">
-                              <div className="w-full h-full">{children}</div>
+                          <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
+                            <div className="pb-8">
+                              <MobileContentFrame>
+                                <div className="flex h-full justify-normal pt-4 md:pt-5">
+                                  <div className="w-full h-full">
+                                    {children}
+                                  </div>
+                                </div>
+                              </MobileContentFrame>
                             </div>
+                            <Suspense fallback={null}>
+                              {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
+                              <div className="hidden xl:block">
+                                <DeferredFooter
+                                  networkLabel={footerNetworkLabel}
+                                  legalLabel={footerLegalLabel}
+                                  hyphaServicesLabel={footerHyphaServicesLabel}
+                                  hyphaTokenomicsLabel={
+                                    footerHyphaTokenomicsLabel
+                                  }
+                                  licensingPolicyLabel={
+                                    footerLicensingPolicyLabel
+                                  }
+                                  termsAndConditionsLabel={
+                                    footerTermsAndConditionsLabel
+                                  }
+                                  privacyPolicyLabel={footerPrivacyPolicyLabel}
+                                  copyrightLabel={footerCopyrightLabel}
+                                />
+                              </div>
+                            </Suspense>
                           </div>
-                          <Suspense fallback={null}>
-                            <DeferredFooter
-                              networkLabel={footerNetworkLabel}
-                              legalLabel={footerLegalLabel}
-                              hyphaServicesLabel={footerHyphaServicesLabel}
-                              hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                              licensingPolicyLabel={footerLicensingPolicyLabel}
-                              termsAndConditionsLabel={
-                                footerTermsAndConditionsLabel
-                              }
-                              privacyPolicyLabel={footerPrivacyPolicyLabel}
-                              copyrightLabel={footerCopyrightLabel}
-                            />
-                          </Suspense>
+                          <MobileTabBar
+                            spaceMemoryEnabled={spaceMemoryEnabled}
+                          />
                         </PanelWrapLayout>
                         {/* Outside capture root so tab screen share excludes the floating dock. */}
                         {humanChatEnabled && <ConnectedGlobalCallDock />}

@@ -7,7 +7,7 @@ import {
   GetPersonBySubInput,
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
-import { findPersonById, findPersonBySub } from './queries';
+import { findPersonById, findPersonBySub, listPayablePeople } from './queries';
 
 export async function editPersonAction(
   data: EditPersonInput,
@@ -24,6 +24,11 @@ export async function getPersonById(
     return null;
   }
   return findPersonById({ id }, { db });
+}
+
+/** People a direct transfer can pay. Same list as Transfer funds. */
+export async function listTransferRecipientPeople() {
+  return listPayablePeople({ db });
 }
 
 export async function getPersonBySub(

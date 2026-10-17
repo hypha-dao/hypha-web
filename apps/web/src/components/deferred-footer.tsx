@@ -11,11 +11,20 @@ function isNetworkMapView(pathname: string, view: string | null): boolean {
   return view !== 'list';
 }
 
+/** Member home fills the viewport. The site footer sits under that frame. */
+function isMemberHome(pathname: string): boolean {
+  return /^\/[^/]+\/home\/?$/.test(pathname);
+}
+
 export function DeferredFooter(props: FooterProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const globeReady = useNetworkGlobeReady();
   const view = searchParams.get('view');
+
+  if (isMemberHome(pathname)) {
+    return null;
+  }
 
   if (isNetworkMapView(pathname, view) && !globeReady) {
     return null;

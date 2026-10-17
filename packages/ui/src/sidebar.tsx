@@ -255,6 +255,13 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       );
     }
 
+    const offcanvasCollapsed =
+      collapsible === 'offcanvas' && state === 'collapsed';
+    // Icon rail (network, spaces): the group-data width does not beat
+    // `w-(--sidebar-width) !important`, so the track painted at 320px and
+    // then eased to 72px. A centered page title rode that slide.
+    const iconCollapsed = collapsible === 'icon' && state === 'collapsed';
+
     return (
       <div
         className="group peer hidden text-sidebar-foreground md:block"
@@ -267,31 +274,40 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         <div
           data-sidebar-gap
           className={cn(
-            'relative min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
+            'relative min-w-0 shrink-0 bg-transparent transition-[width] duration-300 ease-out',
             'group-data-[side=right]:rotate-180',
-            // Offcanvas collapsed: `!w-0` beats `w-(--sidebar-width) !important` in Tailwind v4 so
-            // the flex track cannot stay 320px with the panel visually closed. `group-data-[…]`
-            // is redundant with the same collapsed state — width is controlled here only.
-            collapsible === 'offcanvas' && state === 'collapsed'
+            // Collapsed width is set here only. `!` beats `w-(--sidebar-width)`
+            // in Tailwind v4 so the flex track cannot start at the expanded
+            // width and animate closed.
+            offcanvasCollapsed
               ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 overflow-hidden'
+              : iconCollapsed && (variant === 'floating' || variant === 'inset')
+              ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] grow-0 max-xl:!w-0'
+              : iconCollapsed
+              ? // Below xl the mobile spaces rail owns left nav — collapse the gap.
+                '!w-(--sidebar-width-icon) grow-0 max-xl:!w-0 max-xl:!min-w-0 max-xl:!max-w-0'
               : 'w-(--sidebar-width) grow-0',
-            variant === 'floating' || variant === 'inset'
-              ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]'
-              : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
           )}
         />
         <div
           data-sidebar-fixed
           ref={ref}
           className={cn(
-            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) overflow-visible transition-[left,right,width] duration-200 ease-linear md:flex',
+            // Transform slide (not left/right) so open/close always animates —
+            // left/right calc can fail when --sidebar-width is a min() value.
+            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width,bottom] duration-300 ease-out md:flex',
             side === 'left'
-              ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
-              : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
+              ? 'left-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:-translate-x-full'
+              : 'right-0 group-data-[collapsible=offcanvas]:translate-x-full',
             // Adjust the padding for floating and inset variants.
             variant === 'floating' || variant === 'inset'
-              ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]'
-              : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+              ? 'p-2'
+              : 'group-data-[side=left]:border-r group-data-[side=right]:border-l',
+            iconCollapsed &&
+              (variant === 'floating' || variant === 'inset'
+                ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] max-xl:!hidden'
+                : // Hide collapsed icon rail below xl (spaces rail / tab bar take over).
+                  '!w-(--sidebar-width-icon) max-xl:!hidden'),
             className,
           )}
           {...props}

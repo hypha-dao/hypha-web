@@ -10,9 +10,11 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import { sql, eq, inArray, and, notLike, or, isNull } from 'drizzle-orm';
+import { sql, eq, inArray, and, notLike, or, isNull, ne } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
+import { readPrimaryOrientation } from './primary-orientation-column';
+import { readNetworkOffer } from './network-offer';
 import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
@@ -25,9 +27,15 @@ const nullToUndefined = <T>(value: T | null): T | undefined =>
 const isHumanPerson = () =>
   or(isNull(people.sub), notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`));
 
-export const getDefaultFields = () => {
+/**
+ * Columns that exist before migration 0080. Selecting `primary_orientation`
+ * here makes every profile read fail when that column has not been added yet,
+ * and the menu then stays on "My Profile".
+ */
+export const personColumns = () => {
   return {
     id: people.id,
+    sub: people.sub,
     slug: people.slug,
     avatarUrl: people.avatarUrl,
     description: people.description,
@@ -41,11 +49,30 @@ export const getDefaultFields = () => {
     address: people.address,
     leadImageUrl: people.leadImageUrl,
     preferredCurrency: people.preferredCurrency,
+    links: people.links,
+  };
+};
+
+export const getDefaultFields = () => {
+  return {
+    ...personColumns(),
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
 
-export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
+async function mapPersonRow(
+  db: DatabaseInstance,
+  dbPerson: { id: number } | undefined,
+) {
+  if (!dbPerson) return null;
+  const primaryOrientation = await readPrimaryOrientation(db, dbPerson.id);
+  const networkOffer = await readNetworkOffer(db, dbPerson.id);
+  return mapToDomainPerson({ ...dbPerson, primaryOrientation, networkOffer });
+}
+
+export const mapToDomainPerson = (
+  dbPerson: Partial<DbPerson> & { networkOffer?: string | null },
+): Person => {
   invariant(dbPerson.slug, 'Person must have a slug');
   invariant(dbPerson.createdAt, 'Person must have createdAt');
   invariant(dbPerson.updatedAt, 'Person must have updatedAt');
@@ -64,6 +91,18 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     preferredCurrency: nullToUndefined(dbPerson.preferredCurrency ?? null),
+    primaryOrientation:
+      dbPerson.primaryOrientation === 'member' ||
+      dbPerson.primaryOrientation === 'builder' ||
+      dbPerson.primaryOrientation === 'investor'
+        ? dbPerson.primaryOrientation
+        : null,
+    networkOffer:
+      typeof dbPerson.networkOffer === 'string'
+        ? dbPerson.networkOffer
+        : dbPerson.networkOffer === null
+        ? null
+        : undefined,
     links: nullToUndefined(dbPerson.links ?? null),
     createdAt: dbPerson.createdAt!,
     updatedAt: dbPerson.updatedAt!,
@@ -111,6 +150,52 @@ export type FindAllPeopleWithoutPaginationConfig = {
   db: DatabaseInstance;
 };
 
+const PAYABLE_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
+
+export type PayablePerson = {
+  id: number;
+  name: string;
+  surname: string;
+  avatarUrl: string | null;
+  address: string;
+  slug: string;
+};
+
+/**
+ * People a transfer can pay. Skips rows that cannot be a recipient instead of
+ * failing the whole directory when one profile is incomplete.
+ */
+export const listPayablePeople = async ({
+  db,
+}: FindAllPeopleWithoutPaginationConfig): Promise<PayablePerson[]> => {
+  const rows = await db
+    .select({
+      id: people.id,
+      name: people.name,
+      surname: people.surname,
+      avatarUrl: people.avatarUrl,
+      address: people.address,
+      slug: people.slug,
+    })
+    .from(people)
+    .where(isHumanPerson());
+
+  return rows.flatMap((person) => {
+    const address = person.address?.trim() ?? '';
+    if (!person.id || !PAYABLE_ADDRESS.test(address)) return [];
+    return [
+      {
+        id: person.id,
+        name: person.name ?? '',
+        surname: person.surname ?? '',
+        avatarUrl: person.avatarUrl ?? null,
+        address,
+        slug: person.slug ?? '',
+      },
+    ];
+  });
+};
+
 export const findAllPeopleWithoutPagination = async ({
   db,
 }: FindAllPeopleWithoutPaginationConfig): Promise<Person[]> => {
@@ -146,14 +231,14 @@ export const findPersonById = async (
   { db }: DbConfig,
 ) => {
   const [dbPerson] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.id, id))
     .limit(1);
 
   if (!dbPerson) return null;
 
-  return mapToDomainPerson(dbPerson);
+  return mapPersonRow(db, dbPerson);
 };
 
 export type FindPersonByWeb3AddressInput = {
@@ -164,13 +249,13 @@ export const findPersonByWeb3Address = async (
   { db }: DbConfig,
 ) => {
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
     .limit(1);
   if (!person) return null;
 
-  return mapToDomainPerson(person);
+  return mapPersonRow(db, person);
 };
 
 export type FindPeopleByWeb3AddressesInput = {
@@ -184,7 +269,7 @@ export const findPeopleByWeb3Addresses = async (
 
   const upperAddresses = addresses.map((addr) => addr.toUpperCase());
   const dbPeople = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(inArray(sql`upper(${people.address})`, upperAddresses));
 
@@ -202,13 +287,13 @@ export const findPersonByEmail = async (
   if (!normalized) return null;
 
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(sql`lower(${people.email})`, normalized))
     .limit(1);
   if (!person) return null;
 
-  return mapToDomainPerson(person);
+  return mapPersonRow(db, person);
 };
 
 export type FindPersonBySpaceIdInput = { spaceId: number };
@@ -316,7 +401,7 @@ export const findPersonsBySlug = async (
   if (slugs.length === 0) return [];
 
   const persons = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(inArray(people.slug, slugs));
 
@@ -331,20 +416,20 @@ export const findPersonBySlug = async (
   { db }: DbConfig,
 ) => {
   const [dbPerson] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.slug, slug))
     .limit(1);
 
   if (!dbPerson) return null;
 
-  return mapToDomainPerson(dbPerson);
+  return mapPersonRow(db, dbPerson);
 };
 
 export const findSelf = async ({ db }: DbConfig) => {
   try {
     const [dbPerson] = await db
-      .select()
+      .select(personColumns())
       .from(people)
       .where(sql`sub = auth.user_id()`)
       .limit(1);
@@ -353,7 +438,7 @@ export const findSelf = async ({ db }: DbConfig) => {
       return null;
     }
 
-    return mapToDomainPerson(dbPerson);
+    return mapPersonRow(db, dbPerson);
   } catch (error) {
     console.error('Error finding authenticated user:', error);
     throw error instanceof Error
@@ -458,6 +543,49 @@ export const findDocumentsCreatorsForNotifications = async (
     .groupBy(documents.id, people.slug, spaces.slug, spaces.title);
 };
 
+export type NetworkPersonHit = {
+  id: number;
+  slug: string | null;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  avatarUrl: string | null;
+};
+
+/** People outside the caller's spaces, matched by name. Humans only. */
+export async function searchNetworkPeople(
+  {
+    query,
+    excludePersonId,
+    limit = 8,
+  }: { query: string; excludePersonId: number; limit?: number },
+  { db }: DbConfig,
+): Promise<NetworkPersonHit[]> {
+  const term = query.trim();
+  if (term.length < 2) return [];
+  const like = `%${term}%`;
+  const rows = await db
+    .select({
+      id: people.id,
+      slug: people.slug,
+      name: people.name,
+      surname: people.surname,
+      nickname: people.nickname,
+      avatarUrl: people.avatarUrl,
+    })
+    .from(people)
+    .where(
+      and(
+        isHumanPerson(),
+        ne(people.id, excludePersonId),
+        sql`(${people.name} ILIKE ${like} OR ${people.surname} ILIKE ${like} OR ${people.nickname} ILIKE ${like})`,
+      ),
+    )
+    .orderBy(people.id)
+    .limit(Math.min(Math.max(limit, 1), 12));
+  return rows;
+}
+
 export type FindPersonBySubInput = {
   sub: string;
 };
@@ -466,11 +594,11 @@ export const findPersonBySub = async (
   { db }: DbConfig,
 ) => {
   const [person] = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(eq(people.sub, sub))
     .limit(1);
   if (!person) return null;
 
-  return mapToDomainPerson(person);
+  return mapPersonRow(db, person);
 };

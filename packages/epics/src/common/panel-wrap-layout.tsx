@@ -31,7 +31,13 @@ import {
   useAiPanel,
   useHumanChatPanel,
 } from './human-chat-panel-context';
-import { useIsSpaceContext } from './use-is-space-context';
+import { isInteractiveCreatePath } from './get-path-function';
+import {
+  isMyWalletPath,
+  showsHumanChatIcon,
+  useIsNetworkContext,
+  useIsSpaceContext,
+} from './use-is-space-context';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
@@ -120,10 +126,13 @@ export function AiSidebarTrigger() {
     useAiPanel();
   const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
+  const pathname = usePathname();
+  const isWallet = isMyWalletPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace) return null;
+  if (!isSpace && !isNetwork && !isWallet) return null;
 
   const isMenuOpen = overlayVisible;
 
@@ -161,10 +170,13 @@ export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
   const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
+  const pathname = usePathname();
+  const isWallet = isMyWalletPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace) return null;
+  if (!isSpace && !isNetwork && !isWallet) return null;
 
   return (
     <button
@@ -191,11 +203,19 @@ export function AiPanelTrigger() {
 }
 
 export function HumanSidebarTrigger() {
-  const { open, toggle, openHumanChatPanel, unreadMentionCount } =
-    useHumanChatPanel();
+  const {
+    open,
+    toggle,
+    openHumanChatPanel,
+    openCoherenceChat,
+    focusedSpaceChat,
+    unreadMentionCount,
+  } = useHumanChatPanel();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
+  const pathname = usePathname();
   const isSpace = useIsSpaceContext();
+  const isNetwork = useIsNetworkContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const { activeRoomId } = useGlobalCallDock();
   const { jwt } = useJwt();
@@ -207,9 +227,8 @@ export function HumanSidebarTrigger() {
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
-  // Chat is space-only. Hide the header trigger outside a space, and while the
-  // panel is open (the panel has its own chrome). Unread mentions only exist in-space.
-  if (!isSpace || open) return null;
+  // Hide the header trigger while the panel is open. Unread mentions only exist in a space.
+  if (!showsHumanChatIcon(pathname, isSpace, isNetwork) || open) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
@@ -229,6 +248,16 @@ export function HumanSidebarTrigger() {
           }
           if (mutuallyExclusive && (leftOpen || overlayVisible)) {
             closeAiPanel();
+          }
+          if (focusedSpaceChat?.slug) {
+            openCoherenceChat(
+              focusedSpaceChat.roomId,
+              focusedSpaceChat.title,
+              '',
+              focusedSpaceChat.description,
+              focusedSpaceChat.slug,
+            );
+            return;
           }
           openHumanChatPanel();
         }}
@@ -350,20 +379,25 @@ export function PanelWrapLayout({
     closeHumanChatPanel,
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isOnboarding = pathname.includes('/onboarding');
-  const effectiveLeft = isSpace ? left : undefined;
-  // Human chat is space-only (`/[lang]/dho/[id]/…`). Outside a space the panel
-  // is not mounted, so it cannot stay open on network, my spaces, or wallet.
-  const effectiveRight = isSpace ? right : undefined;
+  const isNetwork = useIsNetworkContext();
+  const isWallet = isMyWalletPath(pathname);
+  const isOnboarding = isInteractiveCreatePath(pathname);
+  /** Space, network, and member wallet (member AI — not a space panel). */
+  const showAiPanel = isSpace || isNetwork || isWallet;
+  const effectiveLeft = showAiPanel ? left : undefined;
+  // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
+  const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);
+  const effectiveRight = showHumanChat ? right : undefined;
 
-  // Close when the route leaves a space. Does not run again if something opens
-  // the panel while already outside a space and then navigates into one (the
-  // call dock opens chat and pushes the space route together).
+  // Close when the route leaves home, connections, my spaces, my wallet, a space, or the network. Does not run again
+  // if something opens the panel while already outside a space and then
+  // navigates into one (the call dock opens chat and pushes the space route
+  // together).
   useEffect(() => {
-    if (!isSpace) {
+    if (!showHumanChat) {
       closeHumanChatPanel();
     }
-  }, [isSpace, closeHumanChatPanel]);
+  }, [showHumanChat, closeHumanChatPanel]);
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
@@ -378,6 +412,7 @@ export function PanelWrapLayout({
   // Desktop conversation sits beside the icon rail, so the left track is
   // rail + panel. The hamburger menu still replaces the rail and stays 320px.
   // Below md the sheet stays full width and does not reserve a rail column.
+  // Collapsed icon rail hides below xl via Sidebar CSS (spaces rail owns that band).
   const dockIconRailBesideAi =
     !isOnboarding && !isMobileViewport && leftOpen && !leftOverlayVisible;
   const leftIconRailPx = dockIconRailBesideAi ? LEFT_SIDEBAR_ICON_WIDTH_PX : 0;
@@ -386,7 +421,7 @@ export function PanelWrapLayout({
     ? 0
     : leftExpanded
     ? leftExpandedWidthPx
-    : isSpace
+    : showAiPanel
     ? LEFT_SIDEBAR_ICON_WIDTH_PX
     : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
@@ -417,7 +452,7 @@ export function PanelWrapLayout({
       ? '0px'
       : leftExpanded
       ? leftExpandedSidebarWidth
-      : isSpace
+      : showAiPanel
       ? LEFT_SIDEBAR_ICON_WIDTH
       : '0px'
     : '0px';
@@ -426,13 +461,22 @@ export function PanelWrapLayout({
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // Before paint — SSR hydrates with a mobile width; correct it here so the
+  // desktop icon rail is not stuck offcanvas until the user resizes.
+  useLayoutEffect(() => {
+    setViewportWidth(window.innerWidth);
     const onResize = () => setViewportWidth(window.innerWidth);
-    onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useLayoutEffect(() => {
+    setSidebarLeftPx(fallbackSidebarLeftPx);
+  }, [fallbackSidebarLeftPx]);
+
+  useLayoutEffect(() => {
+    setSidebarRightPx(fallbackSidebarRightPx);
+  }, [fallbackSidebarRightPx]);
 
   useLayoutEffect(() => {
     if (typeof document === 'undefined') return;

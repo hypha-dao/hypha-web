@@ -26,6 +26,10 @@ import {
   assigneeAcknowledgementMap,
   resetDeadlineNotifyState,
 } from '../signal-notification-triggers';
+import {
+  attachCoherenceCapitals,
+  writeCoherenceCapitals,
+} from '../../network/capital-columns';
 
 export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
@@ -116,6 +120,8 @@ export const createCoherence = async (
     assigneeIds: inputAssigneeIds,
     board: inputBoard,
     dueAt: inputDueAt,
+    sharedWithNetwork,
+    capitals,
     ...rest
   }: CreateCoherenceInput,
   { db }: { db: DatabaseInstance },
@@ -161,6 +167,7 @@ export const createCoherence = async (
       assigneeIds,
       board: inputBoard ?? defaultBoard,
       dueAt: inputDueAt ?? null,
+      sharedWithNetwork: sharedWithNetwork ?? false,
       ...rest,
     })
     .returning();
@@ -171,7 +178,11 @@ export const createCoherence = async (
     );
   }
 
-  return newSignal;
+  if (capitals && capitals.length > 0) {
+    await writeCoherenceCapitals(db, newSignal.id, capitals);
+  }
+
+  return { ...newSignal, capitals: capitals ?? [] };
 };
 
 export const updateCoherenceBySlug = async (
@@ -233,7 +244,13 @@ export const updateCoherenceSignalBySlug = async (
     progressStatus,
     board,
     assigneeIds,
+    indicativePayouts,
+    leadImage,
+    videoUrl,
+    attachments,
+    sharedWithNetwork,
     archived,
+    capitals,
   } = rest;
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
   const nextProgressStatus = progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
@@ -280,13 +297,24 @@ export const updateCoherenceSignalBySlug = async (
         nextDueAt,
         row.deadlineNotifyState,
       ),
+      ...(indicativePayouts !== undefined ? { indicativePayouts } : {}),
+      ...(leadImage !== undefined ? { leadImage } : {}),
+      ...(videoUrl !== undefined ? { videoUrl } : {}),
+      ...(attachments !== undefined ? { attachments } : {}),
+      ...(sharedWithNetwork !== undefined ? { sharedWithNetwork } : {}),
       ...(archived !== undefined ? { archived } : {}),
     })
     .where(eq(coherences.id, row.id))
     .returning();
 
   if (updated.length === 1) {
-    return updated[0]!;
+    const saved = updated[0]!;
+    if (capitals !== undefined) {
+      await writeCoherenceCapitals(db, saved.id, capitals);
+      return { ...saved, capitals };
+    }
+    const [withCapitals] = await attachCoherenceCapitals(db, [saved]);
+    return withCapitals ?? saved;
   }
 
   if (updated.length > 1) {

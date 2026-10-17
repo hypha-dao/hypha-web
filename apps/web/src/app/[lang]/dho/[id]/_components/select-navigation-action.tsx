@@ -2,7 +2,7 @@
 
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { SpaceVisualization } from './space-visualization';
+import { MyceliumEcosystem } from './mycelium-ecosystem';
 import { VisibleSpacesList } from './visible-spaces-list';
 import {
   useOrganisationSpacesBySingleSlug,
@@ -10,10 +10,8 @@ import {
   isSpaceArchived,
 } from '@hypha-platform/core/client';
 import { Space } from '@hypha-platform/core/client';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Separator } from '@hypha-platform/ui';
-import { useTheme } from 'next-themes';
 import type { VisibleSpace } from './types';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
@@ -78,8 +76,6 @@ export const SelectNavigationAction = ({
   children,
 }: SelectNavigationActionProps) => {
   const t = useTranslations('SelectNavigationAction');
-  const { resolvedTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('nested-spaces');
   const [visibleSpaces, setVisibleSpaces] = useState<VisibleSpace[]>([]);
   const previousSpacesRef = useRef<string>('');
   const { space: currentSpace, isLoading: isLoadingSpace } =
@@ -147,57 +143,23 @@ export const SelectNavigationAction = ({
     >
       <Separator />
       {children}
-      <div className="mt-2">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className={`w-full p-4 rounded-[6px] ${
-            resolvedTheme === 'dark' ? 'bg-primary-foreground' : 'bg-neutral-3'
-          }`}
-        >
-          <div className="w-full flex justify-center">
-            <TabsList triggerVariant="switch">
-              <TabsTrigger variant="switch" value="nested-spaces">
-                {t('tabs.nestedSpaces')}
-              </TabsTrigger>
-              <TabsTrigger variant="switch" value="space-to-space">
-                {t('tabs.spaceToSpace')}
-              </TabsTrigger>
-              <TabsTrigger variant="switch" value="values-flows">
-                {t('tabs.valuesFlows')}
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value="nested-spaces" className="mt-4">
-            <div className="flex flex-col gap-6">
-              {hierarchyData && (
-                <SpaceVisualization
-                  data={hierarchyData}
-                  currentSpaceId={currentSpace?.id}
-                  onVisibleSpacesChange={handleVisibleSpacesChange}
-                />
-              )}
-              {visibleSpaces.length > 0 && nonArchivedSpaces.length > 0 && (
-                <VisibleSpacesList
-                  visibleSpaces={visibleSpaces}
-                  allSpaces={nonArchivedSpaces}
-                  lang={lang}
-                  entrySpaceId={currentSpace?.id}
-                />
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="space-to-space" className="mt-4">
-            <div className="text-center text-neutral-11 py-8">
-              {t('comingSoon.spaceToSpaceVisualization')}
-            </div>
-          </TabsContent>
-          <TabsContent value="values-flows" className="mt-4">
-            <div className="text-center text-neutral-11 py-8">
-              {t('comingSoon.valuesFlowsVisualization')}
-            </div>
-          </TabsContent>
-        </Tabs>
+      <div className="mt-2 flex h-[32rem] flex-col gap-6">
+        {hierarchyData ? (
+          <MyceliumEcosystem
+            data={hierarchyData}
+            currentSpaceId={currentSpace?.id}
+            ariaLabel={t('diagram.ariaLabel')}
+            onVisibleSpacesChange={handleVisibleSpacesChange}
+          />
+        ) : null}
+        {visibleSpaces.length > 0 && nonArchivedSpaces.length > 0 ? (
+          <VisibleSpacesList
+            visibleSpaces={visibleSpaces}
+            allSpaces={nonArchivedSpaces}
+            lang={lang}
+            entrySpaceId={currentSpace?.id}
+          />
+        ) : null}
       </div>
     </SelectAction>
   );

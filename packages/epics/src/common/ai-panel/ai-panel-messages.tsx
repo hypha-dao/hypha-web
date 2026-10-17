@@ -51,6 +51,8 @@ type AiPanelMessagesProps = {
   /** `quiet` drops avatar and bubble frames — onboarding screen only. */
   chrome?: 'default' | 'quiet';
   suggestionItems: readonly AiPanelSuggestionItem[];
+  /** Opening line when the thread is still empty. */
+  welcomeText?: string;
   /** Large suggestion cards below welcome — only before the user sends a message. */
   showInlineSuggestions?: boolean;
   onSuggestionSelect?: (text: string) => void;
@@ -84,6 +86,7 @@ export function AiPanelMessages({
   messages,
   chrome = 'default',
   suggestionItems,
+  welcomeText,
   showInlineSuggestions = false,
   onSuggestionSelect,
   userAvatarUrl,
@@ -166,7 +169,7 @@ export function AiPanelMessages({
             parts: [
               {
                 type: 'text' as const,
-                text: t('welcome'),
+                text: welcomeText ?? t('welcome'),
               },
             ],
           },
@@ -175,7 +178,7 @@ export function AiPanelMessages({
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-2"
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-2"
     >
       <div className="flex flex-col gap-2">
         {displayMessages.map((msg, index) => (

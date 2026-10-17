@@ -18,6 +18,8 @@ export * from './geo/client';
 export * from './org-memory';
 export * from './platform';
 export * from './energy';
+export * from './network/capitals';
+export * from './network/types';
 export {
   getDefaultDestinationCurrency,
   getDestinationCurrenciesForSourceRail,

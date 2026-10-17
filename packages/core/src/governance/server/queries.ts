@@ -6,7 +6,6 @@ import {
   Document as DbDocument,
   spaces,
   people,
-  Person as DbPerson,
   Space as DbSpace,
   tokenUpdates,
   tokens,
@@ -22,6 +21,7 @@ import {
 import { Document } from '../types';
 import { extractExchangeDepositEscrowId } from '../exchange-deposit-marker';
 import { alias } from 'drizzle-orm/pg-core';
+import { personColumns } from '../../people/server/queries';
 
 type CreatorType = {
   avatarUrl?: string;
@@ -31,9 +31,16 @@ type CreatorType = {
   address?: string;
 };
 
+type PersonCreatorFields = {
+  avatarUrl?: string | null;
+  name?: string | null;
+  surname?: string | null;
+  address?: string | null;
+};
+
 export const mapToDocument = (
   dbDocument: DbDocument,
-  personCreator?: DbPerson | null,
+  personCreator?: PersonCreatorFields | null,
   spaceCreator?: DbSpace | null,
 ): Document & { creator?: CreatorType } => {
   let actualCreator: CreatorType | undefined;
@@ -80,6 +87,7 @@ export const mapToDocument = (
     web3ProposalId: dbDocument.web3ProposalId,
     creator: actualCreator,
     label: dbDocument.label || '',
+    chatRoomId: dbDocument.chatRoomId ?? null,
   };
 };
 
@@ -96,7 +104,7 @@ export const findDocumentById = async (
   const result = await db
     .select({
       document: documents,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)
@@ -128,7 +136,7 @@ export const findDocumentWithSpaceById = async (
     .select({
       document: documents,
       space: spaces,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)
@@ -157,7 +165,7 @@ export const findDocumentWithSpaceByIdRaw = async (
     .select({
       document: documents,
       space: spaces,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)
@@ -183,7 +191,7 @@ export const findDocumentBySlug = async (
   const result = await db
     .select({
       document: documents,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)
@@ -207,7 +215,7 @@ export const findAllDocuments = async ({ db }: DbConfig) => {
   const results = await db
     .select({
       document: documents,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)
@@ -300,7 +308,7 @@ export const findAllDocumentsBySpaceSlug = async (
   const base = db
     .select({
       document: documents,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
       total: sql<number>`cast(count(*) over() as integer)`,
     })
@@ -342,7 +350,7 @@ export const findMostRecentDocuments = async ({ db }: DbConfig) => {
   const results = await db
     .select({
       document: documents,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)
@@ -404,7 +412,7 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
   const base = db
     .select({
       document: documents,
-      personCreator: people,
+      personCreator: personColumns(),
       spaceCreator: spaceCreator,
     })
     .from(documents)

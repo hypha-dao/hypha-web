@@ -21,6 +21,15 @@ describe('pickUserVisibleMemberLabel', () => {
     ).toBe('Alex Prate');
   });
 
+  it('hides the production bot account name', () => {
+    expect(
+      pickUserVisibleMemberLabel(
+        '@hypha_bot_prod:matrix.hypha.earth',
+        'hypha_bot_prod',
+      ),
+    ).toBeNull();
+  });
+
   it('returns null when every candidate is a bridged Privy slug', () => {
     expect(
       pickUserVisibleMemberLabel(

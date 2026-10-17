@@ -13,6 +13,7 @@ import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { getDhoPathAgreements } from '../../common';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { SpaceCard } from '../../spaces/components/space-card';
 import { SpaceModeLabel } from '../../spaces/components/space-mode-label';
 
@@ -33,6 +34,19 @@ export function NetworkMapPinHoverCard({
 }: NetworkMapPinHoverCardProps) {
   const href = getDhoPathAgreements(lang, space.slug);
   const tCommon = useTranslations('Common');
+  const tNetwork = useTranslations('NetworkExchange');
+  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const openRoom = () => {
+    if (!space.chatRoomId) return;
+    openCoherenceChat(
+      space.chatRoomId,
+      space.title,
+      '',
+      space.description,
+      space.slug,
+    );
+    openHumanChatPanel();
+  };
 
   if (compact) {
     return (
@@ -70,6 +84,14 @@ export function NetworkMapPinHoverCard({
             />
           </Card>
         </Link>
+        <button
+          type="button"
+          className="pointer-events-auto mt-2 w-full border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
+          disabled={!space.chatRoomId}
+          onClick={openRoom}
+        >
+          {space.chatRoomId ? tNetwork('openRoom') : tNetwork('noRoom')}
+        </button>
       </div>
     );
   }
@@ -98,6 +120,14 @@ export function NetworkMapPinHoverCard({
           className="bg-background"
         />
       </Link>
+      <button
+        type="button"
+        className="pointer-events-auto mt-2 w-full border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
+        disabled={!space.chatRoomId}
+        onClick={openRoom}
+      >
+        {space.chatRoomId ? tNetwork('openRoom') : tNetwork('noRoom')}
+      </button>
     </div>
   );
 }

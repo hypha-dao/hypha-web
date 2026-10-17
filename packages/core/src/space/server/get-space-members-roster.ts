@@ -11,6 +11,8 @@ import {
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { findAllEvents } from '../../events/server/queries';
+import { readPrimaryOrientations } from '../../people/server/primary-orientation-column';
+import { personColumns } from '../../people/server/queries';
 import { findSpaceBySlug } from './queries';
 import type { DbConfig } from '../../server';
 import {
@@ -165,9 +167,13 @@ export async function computeSpaceMemberEntries(
   const upperList = uniqueAddresses.map((a) => a.toUpperCase());
 
   const peopleRows = await db
-    .select()
+    .select(personColumns())
     .from(people)
     .where(inArray(sql`upper(${people.address})`, upperList));
+  const orientations = await readPrimaryOrientations(
+    db,
+    peopleRows.map((row) => row.id),
+  );
 
   const peopleByAddress = new Map<string, RosterPerson>();
   for (const row of peopleRows) {
@@ -184,6 +190,7 @@ export async function computeSpaceMemberEntries(
       nickname: row.nickname ?? undefined,
       address: row.address ?? undefined,
       links: (row.links as string[]) ?? [],
+      primaryOrientation: orientations.get(row.id) ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });

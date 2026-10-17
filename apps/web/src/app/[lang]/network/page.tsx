@@ -1,8 +1,10 @@
 import { Locale } from '@hypha-platform/i18n';
-import { Container } from '@hypha-platform/ui';
 import {
   getAllSpaces,
   getNetworkGrowth,
+  listNetworkSpaceRanks,
+  readSpaceCapitals,
+  resolveCreatorMapCoordinates,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
   SPACE_ORDERS,
@@ -14,6 +16,10 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
+import { Container } from '@hypha-platform/ui';
+import { Suspense } from 'react';
+
+import { NetworkIndexFallback } from './_components/network-index-fallback';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -25,7 +31,19 @@ type PageProps = {
   }>;
 };
 
-export default async function Index(props: PageProps) {
+export default function Index(props: PageProps) {
+  return (
+    <div className="w-full min-w-0">
+      <Container className="flex min-w-0 flex-col gap-9 py-3 sm:py-4 lg:py-5">
+        <Suspense fallback={<NetworkIndexFallback />}>
+          <NetworkSpaces {...props} />
+        </Suspense>
+      </Container>
+    </div>
+  );
+}
+
+async function NetworkSpaces(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
@@ -41,7 +59,7 @@ export default async function Index(props: PageProps) {
 
   let spaces: Space[] = [];
   let networkGrowth: NetworkGrowth | null = null;
-  const [spacesResult, growthResult] = await Promise.all([
+  const [spacesResult, growthResult, ranksResult] = await Promise.all([
     getAllSpaces({
       search: query?.trim() || undefined,
       parentOnly: false,
@@ -56,9 +74,38 @@ export default async function Index(props: PageProps) {
           return null;
         })
       : Promise.resolve(null),
+    listNetworkSpaceRanks({ db }).catch((error: unknown) => {
+      console.error('Failed to load network ranks:', error);
+      return [];
+    }),
   ]);
   spaces = spacesResult;
   networkGrowth = growthResult;
+
+  const creatorMapPins = enableNetworkMap
+    ? await resolveCreatorMapCoordinates(spaces, { db }).catch(
+        (error: unknown) => {
+          console.error('Failed to resolve creator map pins:', error);
+          return {};
+        },
+      )
+    : {};
+
+  const spaceCapitals = enableNetworkMap
+    ? Object.fromEntries(
+        [
+          ...(
+            await readSpaceCapitals(
+              db,
+              spaces.map((space) => space.id),
+            ).catch((error: unknown) => {
+              console.error('Failed to load space capitals:', error);
+              return new Map();
+            })
+          ).entries(),
+        ].map(([id, value]) => [String(id), value]),
+      )
+    : {};
 
   const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
@@ -68,17 +115,18 @@ export default async function Index(props: PageProps) {
   const sortedSpaces = sortSpacesByOrder(spaces, order);
 
   return (
-    <Container className="flex flex-col gap-9 py-9">
-      <ExploreSpaces
-        lang={lang}
-        query={query}
-        spaces={sortedSpaces}
-        categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
-        order={order}
-        uniqueCategoryGroups={uniqueCategoryGroups}
-        enableNetworkMap={enableNetworkMap}
-        networkGrowth={networkGrowth}
-      />
-    </Container>
+    <ExploreSpaces
+      lang={lang}
+      query={query}
+      spaces={sortedSpaces}
+      categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
+      order={order}
+      uniqueCategoryGroups={uniqueCategoryGroups}
+      enableNetworkMap={enableNetworkMap}
+      networkGrowth={networkGrowth}
+      creatorMapPins={creatorMapPins}
+      networkRanks={ranksResult}
+      spaceCapitals={spaceCapitals}
+    />
   );
 }

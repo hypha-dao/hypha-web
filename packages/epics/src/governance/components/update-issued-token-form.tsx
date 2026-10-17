@@ -386,6 +386,7 @@ export const UpdateIssuedTokenForm = ({
       iconUrl: '',
       initialIconUrl: '',
       type: undefined,
+      capital: '',
       maxSupply: 0,
       decaySettings: {
         decayInterval: 2592000,

@@ -1,0 +1,275 @@
+import 'server-only';
+
+import { generateText, stepCountIs } from 'ai';
+import {
+  contentMentionsMatrixUser,
+  HYPHA_AGENT_SPECIALIST_FIELD,
+  selectSpecialistForQuestion,
+  specialistById,
+} from '@hypha-platform/core/client';
+import {
+  getMatrixBotAsToken,
+  getMatrixBotUserId,
+  getMatrixHomeserverUrl,
+  matrixInviteUser,
+  matrixJoinRoom,
+  matrixListRoomMessages,
+  matrixSendTextMessage,
+  resolveUserMatrixAccessTokenForSend,
+} from '@hypha-platform/core/server';
+import { mentionAwaitingAgent, type AgentRoomLine } from './matrix-agent-turn';
+import { createChatTools } from './tools';
+import { getHyphaChatModel } from './stream-chat';
+
+/**
+ * Invite-only DMs and private rooms block the bot from listing history until it is a
+ * member. Invite with the mentioner's session token, then accept as the bot — soft-fail so
+ * open-join rooms and rooms the bot already sits in still work.
+ */
+async function ensureAgentJoinedRoom({
+  roomId,
+  agentUserId,
+  botToken,
+  homeserver,
+  authToken,
+  requestUrl,
+}: {
+  roomId: string;
+  agentUserId: string;
+  botToken: string;
+  homeserver: string;
+  authToken: string;
+  requestUrl?: string;
+}): Promise<void> {
+  try {
+    await matrixJoinRoom(roomId, botToken, homeserver);
+    return;
+  } catch {
+    // Not invited yet, or already joined under a different code path.
+  }
+
+  const userToken = await resolveUserMatrixAccessTokenForSend(
+    authToken,
+    requestUrl,
+  );
+  if (userToken) {
+    try {
+      await matrixInviteUser(roomId, agentUserId, userToken, homeserver);
+    } catch (error) {
+      console.warn(
+        '[MatrixAgent] Failed to invite the agent into the room:',
+        roomId,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  try {
+    await matrixJoinRoom(roomId, botToken, homeserver);
+  } catch (error) {
+    console.warn(
+      '[MatrixAgent] Failed to join the room after invite:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+function readTextEvents(
+  chunk: unknown[],
+  agentUserId: string,
+): AgentRoomLine[] {
+  const lines: AgentRoomLine[] = [];
+  for (const event of chunk) {
+    if (!event || typeof event !== 'object') continue;
+    const row = event as Record<string, unknown>;
+    if (row.type !== 'm.room.message') continue;
+    const content = row.content;
+    if (!content || typeof content !== 'object') continue;
+    const bodyContent = content as Record<string, unknown>;
+    if (bodyContent.msgtype !== 'm.text') continue;
+    const relates = bodyContent['m.relates_to'];
+    if (
+      relates &&
+      typeof relates === 'object' &&
+      (relates as { rel_type?: string }).rel_type === 'm.replace'
+    ) {
+      continue;
+    }
+    const sender = typeof row.sender === 'string' ? row.sender : '';
+    const body =
+      typeof bodyContent.body === 'string' ? bodyContent.body.trim() : '';
+    if (!sender || !body) continue;
+    lines.push({
+      sender,
+      body,
+      mentionsAgent: contentMentionsMatrixUser(content, agentUserId),
+    });
+  }
+  return lines;
+}
+
+function agentPrompt(role: string) {
+  return `You are ${role}, one specialist among AI Agents, speaking in a Matrix room only because someone just @mentioned AI Agents. You were not in the conversation before that, and you do not stay in it.
+
+Answer only the question they asked. Do not answer a skill they did not ask. Speak as ${role}.`;
+}
+
+const AGENT_PROMPT_REST = `
+
+Be useful and brief. High integrity, at the right distance. Never intrusive. Never curious. Do not greet. Do not say that you were mentioned. Do not open with Sure.
+
+Help with the work in the message: name a tension if one is there, nail an opportunity if one is there, phrase a need so the room can act on it, or estimate the resources the work seems to need. Use common sense and, when the world outside the room matters, web_search. When a space slug is given, read that space and the ecosystem around it before you answer: its signals, people, documents, memory, and discussion summary. When no space slug is given, this is a private person-to-person room (a DM or small group) — answer only from the room history and the question; do not invent a space, a member list, or pretend this is a space channel. Speak as someone accompanying the room. The power is the collective, people already helping each other. No open question. End on the one next step the room can take. Do not invent a slug, a person, a vote, a token, an amount, or a decision. You are not in the decision.
+
+Do not create a signal, a proposal, or another message. If they want wording, give them the words in this reply.
+
+Reply in the language of the message that mentioned you. One to four sentences, or a short list when they asked for an estimate. Plain text.`;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * If the latest text in the room @mentions the agent and it has not already replied, post one
+ * helpful answer as the agent. Quiet when the mention is absent.
+ */
+export async function replyToMatrixAgentMention({
+  roomId,
+  authToken,
+  spaceSlug,
+  requestUrl,
+}: {
+  roomId: string;
+  authToken: string;
+  spaceSlug?: string | null;
+  requestUrl?: string;
+}): Promise<{ replied: boolean }> {
+  const homeserver = getMatrixHomeserverUrl();
+  const botToken = getMatrixBotAsToken();
+  const agentUserId = getMatrixBotUserId();
+  const trimmedRoom = roomId.trim();
+  if (!homeserver || !botToken || !agentUserId || !trimmedRoom) {
+    return { replied: false };
+  }
+  if (!process.env.OPENROUTER_API_KEY?.trim()) {
+    return { replied: false };
+  }
+
+  await ensureAgentJoinedRoom({
+    roomId: trimmedRoom,
+    agentUserId,
+    botToken,
+    homeserver,
+    authToken,
+    requestUrl,
+  });
+
+  let turn: { question: string; earlier: string } | null = null;
+  for (let attempt = 0; attempt < 4 && !turn; attempt += 1) {
+    if (attempt > 0) await sleep(400);
+    try {
+      const history = await matrixListRoomMessages(
+        trimmedRoom,
+        botToken,
+        homeserver,
+        { limit: 30 },
+      );
+      turn = mentionAwaitingAgent(
+        readTextEvents(history.chunk, agentUserId),
+        agentUserId,
+      );
+    } catch (error) {
+      console.warn(
+        '[MatrixAgent] Failed to read the room:',
+        trimmedRoom,
+        error instanceof Error ? error.message : error,
+      );
+      // Retry — invite/join or the mention event may not be visible yet.
+    }
+  }
+  if (!turn) return { replied: false };
+
+  const specialist =
+    selectSpecialistForQuestion(turn.question) ?? specialistById('purpose');
+  const slug = spaceSlug?.trim() || '';
+  const tools = createChatTools(
+    authToken,
+    requestUrl,
+    undefined,
+    undefined,
+    turn.question,
+    [turn.question],
+    null,
+    null,
+  );
+  const readTools = slug
+    ? {
+        get_signals_by_space_slug: tools.get_signals_by_space_slug,
+        get_people_by_space_slug: tools.get_people_by_space_slug,
+        get_documents_by_space_slug: tools.get_documents_by_space_slug,
+        get_ecosystem_by_space_slug: tools.get_ecosystem_by_space_slug,
+        get_org_memory_by_space_slug: tools.get_org_memory_by_space_slug,
+        summarize_space_discussion_by_slug:
+          tools.summarize_space_discussion_by_slug,
+        web_search: tools.web_search,
+      }
+    : { web_search: tools.web_search };
+
+  let text = '';
+  try {
+    const result = await generateText({
+      model: getHyphaChatModel(),
+      system: `${agentPrompt(
+        specialist?.role ?? 'AI Agents',
+      )}\n\n${AGENT_PROMPT_REST}`,
+      prompt: [
+        slug
+          ? `Space slug: ${slug}`
+          : 'Space slug: none. This is a private person-to-person room. Do not look up a space or quote a space member list.',
+        turn.earlier
+          ? `Earlier in the room:\n${turn.earlier}`
+          : 'No earlier messages.',
+        `The message that mentioned you:\n${turn.question}`,
+      ].join('\n\n'),
+      tools: readTools as unknown as Parameters<
+        typeof generateText
+      >[0]['tools'],
+      stopWhen: stepCountIs(4),
+    });
+    text = result.text.trim().slice(0, 2000);
+  } catch (error) {
+    console.warn(
+      '[MatrixAgent] Failed to write a reply:',
+      trimmedRoom,
+      error instanceof Error ? error.message : error,
+    );
+    return { replied: false };
+  }
+  if (!text) return { replied: false };
+
+  try {
+    await matrixJoinRoom(trimmedRoom, botToken, homeserver);
+  } catch {
+    // The agent is already in the room, or the room is one it created.
+  }
+
+  try {
+    await matrixSendTextMessage(
+      trimmedRoom,
+      text,
+      botToken,
+      homeserver,
+      specialist
+        ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
+        : undefined,
+    );
+  } catch (error) {
+    console.warn(
+      '[MatrixAgent] Failed to post the reply:',
+      trimmedRoom,
+      error instanceof Error ? error.message : error,
+    );
+    return { replied: false };
+  }
+  return { replied: true };
+}
