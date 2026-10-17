@@ -106,7 +106,7 @@ export default async function RootLayout({
   let humanChatEnabled = false;
 
   let navHomeLabel = 'Home';
-  const navMessagesLabel = 'Messages';
+  let navMessagesLabel = 'Messages';
   let navMyWalletLabel = 'Wallet';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
