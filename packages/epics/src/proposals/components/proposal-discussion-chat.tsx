@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import { mutate as mutateCache } from 'swr';
 import {
   RoomStateEvent,
   type MatrixEvent,
@@ -13,6 +15,7 @@ import {
   useAgreementMutationsWeb2Rsc,
   useJwt,
   useMatrix,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -36,6 +39,7 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from '../../common/human-chat-panel/human-chat-display-mention';
+import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
 function computeDuplicateSanitizedDisplayKeys(
   mentionLabelByUserId: ReadonlyMap<string, string>,
@@ -80,17 +84,21 @@ export function ProposalDiscussionChat({
   documentSlug,
   title,
   initialChatRoomId,
+  spaceSlug,
   className,
 }: {
   documentSlug: string;
   title?: string;
   initialChatRoomId?: string | null;
+  spaceSlug?: string;
   className?: string;
 }) {
   const t = useTranslations('ProposalDetails');
   const tChat = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
   const { jwt: authToken } = useJwt();
+  const { resolvedTheme } = useTheme();
+  const { space } = useSpaceBySlug(spaceSlug ?? '');
   const { updateAgreementBySlug } = useAgreementMutationsWeb2Rsc(authToken);
   const {
     isMatrixAvailable,
@@ -98,6 +106,7 @@ export function ProposalDiscussionChat({
     createRoom,
     joinRoom,
     getRoomMessages,
+    loadRoomHistory,
     getRoomMembers,
     registerRoomListener,
     unregisterRoomListener,
@@ -126,12 +135,13 @@ export function ProposalDiscussionChat({
   createRoomRef.current = createRoom;
   const joinRoomRef = React.useRef(joinRoom);
   joinRoomRef.current = joinRoom;
-  const updateAgreementRef = React.useRef(updateAgreementBySlug);
-  updateAgreementRef.current = updateAgreementBySlug;
   const tRef = React.useRef(t);
   tRef.current = t;
   const getRoomMessagesRef = React.useRef(getRoomMessages);
   getRoomMessagesRef.current = getRoomMessages;
+  const loadRoomHistoryRef = React.useRef(loadRoomHistory);
+  loadRoomHistoryRef.current = loadRoomHistory;
+  const persistedRoomRef = React.useRef(initialChatRoomId?.trim() || null);
   const getRoomMembersRef = React.useRef(getRoomMembers);
   getRoomMembersRef.current = getRoomMembers;
   const registerRoomListenerRef = React.useRef(registerRoomListener);
@@ -155,10 +165,6 @@ export function ProposalDiscussionChat({
           grantCreatorPl100: true,
         });
         const canonicalId = await joinRoomRef.current(created.roomId);
-        await updateAgreementRef.current({
-          slug: documentSlug,
-          chatRoomId: canonicalId,
-        });
         roomIdRef.current = canonicalId;
         setRoomId(canonicalId);
         return canonicalId;
@@ -180,8 +186,31 @@ export function ProposalDiscussionChat({
 
   React.useEffect(() => {
     const next = initialChatRoomId?.trim() || null;
+    if (next) persistedRoomRef.current = next;
     if (next && next !== roomId) setRoomId(next);
   }, [initialChatRoomId, roomId]);
+
+  // Keep the room id on the document so a later visit opens the same thread.
+  React.useEffect(() => {
+    if (!roomId || !authToken || !documentSlug) return;
+    if (persistedRoomRef.current === roomId) return;
+    let cancelled = false;
+    void updateAgreementBySlug({ slug: documentSlug, chatRoomId: roomId })
+      .then(() => {
+        if (cancelled) return;
+        persistedRoomRef.current = roomId;
+        void mutateCache([`/api/v1/documents/${documentSlug}/`]);
+      })
+      .catch((error) => {
+        console.warn(
+          '[ProposalDiscussionChat] failed to store the room',
+          error,
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken, documentSlug, roomId, updateAgreementBySlug]);
 
   // Lazily create + persist a Matrix room when the proposal has none yet.
   // Title and client callbacks stay in refs so a parent re-render cannot
@@ -209,7 +238,11 @@ export function ProposalDiscussionChat({
         registerRoomListenerRef.current(
           canonicalId,
           async (message: Message) => {
-            setMessages((prev) => [...prev, message]);
+            setMessages((prev) =>
+              prev.some((item) => item.id === message.id)
+                ? prev
+                : [...prev, message],
+            );
             await getRoomMembersRef.current(canonicalId);
           },
           async (pinned: string[]) => {
@@ -222,6 +255,15 @@ export function ProposalDiscussionChat({
           },
         );
 
+        try {
+          await loadRoomHistoryRef.current(canonicalId, {
+            pageSize: 50,
+            maxBatches: 4,
+          });
+        } catch (error) {
+          console.warn('[ProposalDiscussionChat] history load failed', error);
+        }
+        if (cancelled) return;
         const msgs = getRoomMessagesRef.current(canonicalId);
         if (msgs) setMessages(msgs);
         await getRoomMembersRef.current(canonicalId);
@@ -293,13 +335,17 @@ export function ProposalDiscussionChat({
         sensitivity: 'base',
       }),
     );
+    const logoUrl = resolveSpaceDisplayLogoUrl(
+      space,
+      resolvedTheme === 'dark' ? 'dark' : 'light',
+    );
     return withMatrixAgentMention(
       list,
       tChat('agentMentionLabel'),
       matrixAgentSkills(tChat),
-      { kind: 'space' },
+      { kind: 'space', logoUrl },
     );
-  }, [client, roomId, mentionMembershipEpoch, tChat]);
+  }, [client, mentionMembershipEpoch, resolvedTheme, roomId, space, tChat]);
 
   const mentionLabelByUserId = React.useMemo(
     () =>

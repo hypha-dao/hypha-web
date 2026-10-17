@@ -1300,6 +1300,7 @@ export const ProposalDetail = ({
           documentSlug={documentSlug}
           title={title}
           initialChatRoomId={chatRoomId}
+          spaceSlug={spaceSlug}
         />
       ) : null}
       <FormVoting
