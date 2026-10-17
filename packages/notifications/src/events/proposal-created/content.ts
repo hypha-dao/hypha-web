@@ -5,7 +5,10 @@
  * locally rendered plain content (the fallback); push likewise uses
  * `PUSH_TEMPLATE_PROPOSAL_CREATED_{CREATOR,MEMBERS}` when set, else plain.
  */
-import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../../constants';
+import {
+  TAG_SUB_NEW_PROPOSAL_OPEN,
+  TAG_SUB_OWN_ACTIONS,
+} from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
@@ -29,8 +32,15 @@ export const buildProposalCreatedContent: ContentBuilder<
     ? recipient.displayName
     : (recipient.data?.creatorName as string | undefined);
 
-  const props = { creatorName, proposalLabel, spaceTitle };
   const url = recipient.data?.url as string | undefined;
+  const props = {
+    creatorName,
+    proposalLabel,
+    proposalTitle: recipient.data?.proposalTitle as string | undefined,
+    spaceTitle,
+    url,
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
+  };
   const templatePush = resolvePushTemplate(
     isCreator
       ? 'PUSH_TEMPLATE_PROPOSAL_CREATED_CREATOR'
@@ -71,7 +81,8 @@ export const buildProposalCreatedContent: ContentBuilder<
 
   return {
     channels: ['push', 'email'],
-    requiredTags: { [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true' },
+    // the creator's own-action confirmation is its own group (#2549 D3/D9)
+    requiredTags: [isCreator ? TAG_SUB_OWN_ACTIONS : TAG_SUB_NEW_PROPOSAL_OPEN],
     content: {
       push: templatePush ?? {
         kind: 'plain',
@@ -82,6 +93,7 @@ export const buildProposalCreatedContent: ContentBuilder<
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
+        preheader: email.preheader,
         body: email.body,
       },
     },

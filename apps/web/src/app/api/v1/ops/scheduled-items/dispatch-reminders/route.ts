@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           recipientSlugsByItem.set(reminder.item.id, memberSlugs);
         }
 
-        await notifyScheduledItemReminder({
+        const outcome = await notifyScheduledItemReminder({
           item: reminder.item,
           occurrenceStartsAt: reminder.occurrenceStartsAt,
           spaceSlug: reminder.spaceSlug,
@@ -71,30 +71,17 @@ export async function POST(request: NextRequest) {
           channels: claimedChannels,
         });
 
+        if (outcome.failedChannels.length > 0) {
+          // Partial delivery: free only the failed channels' claims so a later run retries them;
+          // delivered channels keep theirs (no duplicate reminder).
+          await releaseClaims(reminder, outcome.failedChannels);
+          failed += 1;
+          continue;
+        }
+
         dispatched += 1;
       } catch (error) {
-        for (const channel of claimedChannels) {
-          try {
-            await releaseScheduledReminderDispatch(
-              {
-                scheduledItemId: reminder.item.id,
-                occurrenceStartsAt: reminder.occurrenceStartsAt,
-                channel,
-              },
-              { db },
-            );
-          } catch (releaseError) {
-            console.error(
-              'Failed to release scheduled item reminder claim:',
-              {
-                scheduledItemId: reminder.item.id,
-                occurrenceStartsAt: reminder.occurrenceStartsAt.toISOString(),
-                channel,
-              },
-              releaseError,
-            );
-          }
-        }
+        await releaseClaims(reminder, claimedChannels);
         failed += 1;
         console.error(
           'Failed to dispatch scheduled item reminder:',
@@ -120,5 +107,33 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to dispatch scheduled item reminders' },
       { status: 500 },
     );
+  }
+}
+
+async function releaseClaims(
+  reminder: Awaited<ReturnType<typeof findDueScheduledReminders>>[number],
+  channels: Array<'email' | 'push'>,
+) {
+  for (const channel of channels) {
+    try {
+      await releaseScheduledReminderDispatch(
+        {
+          scheduledItemId: reminder.item.id,
+          occurrenceStartsAt: reminder.occurrenceStartsAt,
+          channel,
+        },
+        { db },
+      );
+    } catch (releaseError) {
+      console.error(
+        'Failed to release scheduled item reminder claim:',
+        {
+          scheduledItemId: reminder.item.id,
+          occurrenceStartsAt: reminder.occurrenceStartsAt.toISOString(),
+          channel,
+        },
+        releaseError,
+      );
+    }
   }
 }

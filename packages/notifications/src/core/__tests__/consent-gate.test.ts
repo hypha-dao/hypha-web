@@ -21,13 +21,13 @@ describe('resolveConsentedSlugs', () => {
 
   it('throws when the OneSignal app id is not configured', async () => {
     vi.stubEnv('NEXT_PUBLIC_ONESIGNAL_APP_ID', '');
-    await expect(resolveConsentedSlugs(['alice'], {})).rejects.toThrow(
+    await expect(resolveConsentedSlugs(['alice'], [])).rejects.toThrow(
       'ONESIGNAL_APP_ID environment variable is not set',
     );
   });
 
   it('returns [] without calling OneSignal for an empty input', async () => {
-    expect(await resolveConsentedSlugs([], { subscribed: 'true' })).toEqual([]);
+    expect(await resolveConsentedSlugs([], ['subscribed'])).toEqual([]);
     expect(getUser).not.toHaveBeenCalled();
   });
 
@@ -40,10 +40,10 @@ describe('resolveConsentedSlugs', () => {
       return userWithTags({});
     });
 
-    const allowed = await resolveConsentedSlugs(['alice', 'bob', 'carol'], {
-      subscribed: 'true',
-      push: 'true',
-    });
+    const allowed = await resolveConsentedSlugs(
+      ['alice', 'bob', 'carol'],
+      ['subscribed', 'push'],
+    );
 
     expect(allowed).toEqual(['alice']);
   });
@@ -55,10 +55,10 @@ describe('resolveConsentedSlugs', () => {
       return Promise.reject(new Error('not found'));
     });
 
-    const allowed = await resolveConsentedSlugs(['alice', 'ghost'], {
-      subscribed: 'true',
-      push: 'true',
-    });
+    const allowed = await resolveConsentedSlugs(
+      ['alice', 'ghost'],
+      ['subscribed', 'push'],
+    );
 
     expect(allowed).toEqual(['alice']);
   });
@@ -76,7 +76,11 @@ describe('gateRecipientChannels', () => {
           email: 'true',
         });
       if (slug === 'bob')
-        return userWithTags({ subscribed: 'true', push: 'true' });
+        return userWithTags({
+          subscribed: 'true',
+          push: 'true',
+          email: 'disabled',
+        });
       return userWithTags({});
     });
   });
@@ -89,7 +93,7 @@ describe('gateRecipientChannels', () => {
     const allowed = await gateRecipientChannels(
       [{ personSlug: 'alice' }, { personSlug: 'bob' }],
       ['push', 'email'],
-      {},
+      [],
     );
 
     expect(allowed.get('push')).toEqual(new Set(['alice', 'bob']));
@@ -100,10 +104,71 @@ describe('gateRecipientChannels', () => {
     const allowed = await gateRecipientChannels(
       [{ personSlug: 'alice' }, { personSlug: 'ghost' }],
       ['in_app'],
-      {},
+      [],
     );
 
     expect(allowed.get('in_app')).toEqual(new Set(['alice', 'ghost']));
     expect(getUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('consent semantics (#2549: enabled unless disabled)', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_ONESIGNAL_APP_ID', 'app-id');
+    getUser.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    ['absent', undefined, true],
+    ["'true'", 'true', true],
+    ["'disabled'", 'disabled', false],
+    ["legacy 'false'", 'false', false],
+  ])('type tag %s -> allowed=%s', async (_label, value, expected) => {
+    getUser.mockResolvedValue(
+      userWithTags({
+        subscribed: 'true',
+        ...(value === undefined ? {} : { sub_signals: value }),
+      }),
+    );
+    const allowed = await resolveConsentedSlugs(
+      ['alice'],
+      ['subscribed', 'sub_signals'],
+    );
+    expect(allowed).toEqual(expected ? ['alice'] : []);
+  });
+
+  it.each([
+    ['absent', undefined, true],
+    ["'disabled'", 'disabled', false],
+    ["legacy 'false'", 'false', false],
+  ])('channel tag %s -> allowed=%s', async (_label, value, expected) => {
+    getUser.mockResolvedValue(
+      userWithTags({
+        subscribed: 'true',
+        ...(value === undefined ? {} : { email: value, push: value }),
+      }),
+    );
+    const allowed = await gateRecipientChannels(
+      [{ personSlug: 'alice' }],
+      ['push', 'email'],
+      [],
+    );
+    expect(allowed.get('push')?.has('alice')).toBe(expected);
+    expect(allowed.get('email')?.has('alice')).toBe(expected);
+  });
+
+  it('still requires subscribed === true for email and push', async () => {
+    getUser.mockResolvedValue(userWithTags({}));
+    const allowed = await gateRecipientChannels(
+      [{ personSlug: 'alice' }],
+      ['push', 'email'],
+      [],
+    );
+    expect(allowed.get('push')?.size).toBe(0);
+    expect(allowed.get('email')?.size).toBe(0);
   });
 });

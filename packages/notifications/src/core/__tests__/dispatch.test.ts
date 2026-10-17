@@ -54,7 +54,7 @@ describe('dispatch', () => {
       resolver: async () => recipients,
       contentBuilder: (_e, recipient) => ({
         channels: ['push'],
-        requiredTags: { sub: 'true' },
+        requiredTags: ['sub'],
         content: {
           push: {
             kind: 'template',
@@ -96,7 +96,7 @@ describe('dispatch', () => {
       resolver: async () => [{ personSlug: 'bob' }],
       contentBuilder: () => ({
         channels: ['push'],
-        requiredTags: {},
+        requiredTags: [],
         content: {},
       }),
       strategy: () => false,
@@ -113,7 +113,7 @@ describe('dispatch', () => {
       resolver: async () => [{ personSlug: 'carol' }],
       contentBuilder: () => ({
         channels: ['push'],
-        requiredTags: {},
+        requiredTags: [],
         content: { push: { kind: 'template', templateId: 't' } },
       }),
     });
@@ -131,7 +131,7 @@ describe('dispatch', () => {
       resolver: async () => [{ personSlug: 'alice' }, { personSlug: 'bob' }],
       contentBuilder: () => ({
         channels: ['push'],
-        requiredTags: { sub: 'true' },
+        requiredTags: ['sub'],
         content: { push: { kind: 'template', templateId: 't' } },
       }),
     });

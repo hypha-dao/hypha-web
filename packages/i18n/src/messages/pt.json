@@ -1051,6 +1051,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "As notificações só podem ser gerenciadas quando você está conectado. Faça login para gerenciar as suas."
+    },
     "title": "Central de Notificações",
     "loading": {
       "keepWindowOpen": "Mantenha esta janela aberta até terminarmos."
@@ -1067,7 +1070,7 @@
       "description": "Escolha como você deseja receber notificações:",
       "emailNotifications": "Notificações por e-mail",
       "toEmail": "para {email}",
-      "browserNotifications": "Notificações do navegador (anteriormente \"Notificações pop-up na área de trabalho\")",
+      "browserNotifications": "Notificações push do navegador",
       "yes": "Sim",
       "no": "Não",
       "emailNotificationsWithEmail": "Notificações por e-mail ({email})",

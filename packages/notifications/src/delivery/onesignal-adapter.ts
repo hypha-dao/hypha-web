@@ -64,7 +64,11 @@ export const onesignalDispatcher: NotificationDispatcher = {
                     template_id: email.templateId,
                     custom_data: email.customData,
                   }
-                : { email_subject: email.subject, email_body: email.body },
+                : {
+                    email_subject: email.subject,
+                    email_body: email.body,
+                    email_preheader: email.preheader,
+                  },
           }),
         );
       }

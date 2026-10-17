@@ -30,18 +30,25 @@ describe('buildSpaceCreatedContent', () => {
   it('requests push + email gated on base tags only', () => {
     const result = buildSpaceCreatedContent(event(1), recipient);
     expect(result.channels).toEqual(['push', 'email']);
-    expect(result.requiredTags).toEqual({});
+    expect(result.requiredTags).toEqual(['sub_ownActions']);
   });
 
   it('falls back to plain copy (singular) without the env vars, push carries the url', () => {
     vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
     vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
     const result = buildSpaceCreatedContent(event(1), recipient);
-    expect(result.content.email).toEqual({
+    expect(result.content.email).toMatchObject({
       kind: 'plain',
-      subject: 'Successful space creation',
-      body: "You've successfully created a space.",
+      subject: 'Your space has been created',
     });
+    const body = (result.content.email as { body: string }).body;
+    expect(body).toContain(
+      'You&rsquo;ve successfully created a space in the Hypha network. 🚀',
+    );
+    expect(body).toContain('Hey Alice,');
+    expect(body).toContain('Go to my spaces');
+    expect(body).toContain('[unsubscribe_url]');
+    expect(body).toContain('/en/network/notification-centre');
     expect(result.content.push).toMatchObject({
       kind: 'plain',
       contents: { en: "You've successfully created a space." },
@@ -53,8 +60,8 @@ describe('buildSpaceCreatedContent', () => {
     vi.stubEnv('EMAIL_TEMPLATE_SPACE_CREATED', '');
     vi.stubEnv('PUSH_TEMPLATE_SPACE_CREATED', '');
     const result = buildSpaceCreatedContent(event(3), recipient);
-    expect((result.content.email as { body: string }).body).toBe(
-      "You've successfully created 3 spaces.",
+    expect((result.content.email as { body: string }).body).toContain(
+      'You&rsquo;ve successfully created <strong>3</strong> spaces in the Hypha network. 🚀',
     );
     expect(result.content.push).toMatchObject({
       kind: 'plain',

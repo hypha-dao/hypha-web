@@ -2,10 +2,8 @@
 
 import { NotifyCallStartedInput } from '@hypha-platform/core/client';
 import { PrivyClient } from '@privy-io/node';
-import { TAG_MENTION_CONSENT } from '../constants';
-import { sendEmailNotifications, sendPushNotifications } from '../mutations';
-import { buildCallStartedEmailBody } from './notify-call-started.utils';
-import { resolveCallStartedRecipientSlugs } from './notify-call-started.recipients';
+import { dispatch } from '../core/dispatch';
+import { buildCallStartedEvent } from '../events/call-started';
 
 let privyClientSingleton: PrivyClient | null = null;
 
@@ -55,58 +53,27 @@ export async function notifyCallStartedAction(
   const trimmedSpaceSlug = spaceSlug?.trim();
   if (!trimmedSpaceSlug) return;
 
-  const usernames = await resolveCallStartedRecipientSlugs({
-    scope,
-    spaceSlug: trimmedSpaceSlug,
-    actorSlug: actorSlug?.trim(),
-    targetMatrixUserIds,
-  });
-  if (usernames.length === 0) return;
-
-  const safeActor = actorDisplayName?.trim() || 'Someone';
-  const safeContext = contextLabel?.trim() || 'chat';
-  const subject = `${safeActor} started a call`;
-  const contents = {
-    en: `Join the call in ${safeContext}.`,
-  };
-  const headings = {
-    en: subject,
-  };
-  const requiredTags = {
-    [TAG_MENTION_CONSENT]: 'true',
-  };
-
-  const results = await Promise.allSettled([
-    sendPushNotifications({
-      contents,
-      headings,
-      usernames,
-      requiredTags,
+  // Recipient scoping, consent gating (`consent_meetings`) and the shared email layout all live
+  // behind `dispatch()` now (#2549 D16).
+  const result = await dispatch(
+    buildCallStartedEvent({
+      actorSlug: actorSlug?.trim(),
+      actorDisplayName,
+      spaceSlug: trimmedSpaceSlug,
+      contextLabel,
+      scope,
+      targetMatrixUserIds,
       url,
     }),
-    sendEmailNotifications({
-      subject,
-      body: buildCallStartedEmailBody({
-        actorDisplayName: safeActor,
-        contextLabel: safeContext,
-        url,
-      }),
-      usernames,
-      requiredTags,
-    }),
-  ]);
-
-  const rejected = results.filter(
-    (result): result is PromiseRejectedResult => result.status === 'rejected',
   );
 
-  if (rejected.length > 0) {
+  // `null` = nothing to send after scoping/consent — not a failure. Only a delivery attempt
+  // where nothing got through is reported as one.
+  if (result && result.sent === 0 && result.failed > 0) {
     console.error(
       '[notifyCallStartedAction] Notification delivery failed',
-      rejected.map((r) => r.reason),
+      result,
     );
-    if (rejected.length === results.length) {
-      throw new Error('Failed to deliver call notification on all channels');
-    }
+    throw new Error('Failed to deliver call notification on all channels');
   }
 }

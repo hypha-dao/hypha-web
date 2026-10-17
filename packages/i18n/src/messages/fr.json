@@ -280,6 +280,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Les notifications ne peuvent être gérées que lorsque vous êtes connecté. Connectez-vous pour gérer les vôtres."
+    },
     "title": "Centre de notifications",
     "loading": {
       "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
@@ -296,7 +299,7 @@
       "description": "Choisissez comment vous souhaitez recevoir les notifications :",
       "emailNotifications": "Notifications par e-mail",
       "toEmail": "à {email}",
-      "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
+      "browserNotifications": "Notifications push du navigateur",
       "yes": "Oui",
       "no": "Non",
       "emailNotificationsWithEmail": "Notifications par e-mail ({email})",

@@ -279,6 +279,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Meldingen kunnen alleen worden beheerd als je bent ingelogd. Log in om de jouwe te beheren."
+    },
     "title": "Meldingscentrum",
     "loading": {
       "keepWindowOpen": "Houd dit venster open totdat we klaar zijn."
@@ -295,7 +298,7 @@
       "description": "Kies hoe je meldingen wilt ontvangen:",
       "emailNotifications": "E-mailmeldingen",
       "toEmail": "naar {email}",
-      "browserNotifications": "Browsermeldingen (voorheen 'Bureaubladpop-upmeldingen')",
+      "browserNotifications": "Push-meldingen in de browser",
       "yes": "Ja",
       "no": "Nee",
       "emailNotificationsWithEmail": "E-mailmeldingen ({email})",

@@ -4,9 +4,10 @@
  * `EMAIL_TEMPLATE_SPACE_CREATED` / `PUSH_TEMPLATE_SPACE_CREATED` is set, else the locally
  * rendered plain content (the fallback — an environment without the IDs still notifies).
  *
- * Gated on the base channel tags only (`subscribed` + `push`/`email`): there is no per-event
- * subscription tag for "I created a space" (it is a direct confirmation to the actor).
+ * Gated on `sub_ownActions` (own-action confirmations, disabled by default for new subscribers —
+ * #2549 D3/D5) on top of the base channel tags.
  */
+import { TAG_SUB_OWN_ACTIONS } from '../../constants';
 import type { ContentBuilder } from '../../core/content-builder';
 import { resolveEmailTemplate } from '../../core/email-template';
 import { resolvePushTemplate } from '../../core/push-template';
@@ -31,12 +32,17 @@ export const buildSpaceCreatedContent: ContentBuilder<SpaceCreatedEvent> = (
     url,
   };
 
-  const plainEmail = emailSpaceCreationForCreator({ spacesCount });
+  const plainEmail = emailSpaceCreationForCreator({
+    spacesCount,
+    userName: recipient.displayName,
+    url,
+    settingsUrl: notificationSettingsUrl,
+  });
   const plainPush = pushSpaceCreationForCreator({ spacesCount });
 
   return {
     channels: ['push', 'email'],
-    requiredTags: {},
+    requiredTags: [TAG_SUB_OWN_ACTIONS],
     content: {
       push: resolvePushTemplate(
         'PUSH_TEMPLATE_SPACE_CREATED',
@@ -54,6 +60,7 @@ export const buildSpaceCreatedContent: ContentBuilder<SpaceCreatedEvent> = (
       }) ?? {
         kind: 'plain',
         subject: plainEmail.subject,
+        preheader: plainEmail.preheader,
         body: plainEmail.body,
       },
     },

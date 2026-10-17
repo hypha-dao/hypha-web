@@ -278,6 +278,9 @@
     }
   },
   "NotificationCentre": {
+    "signedOut": {
+      "message": "Varsler kan bare administreres når du er logget inn. Logg inn for å administrere dine."
+    },
     "title": "Varslingssenter",
     "loading": {
       "keepWindowOpen": "Hold dette vinduet åpent til vi er ferdige."
@@ -294,7 +297,7 @@
       "description": "Velg hvordan du vil motta varsler:",
       "emailNotifications": "E-postvarsler",
       "toEmail": "til {email}",
-      "browserNotifications": "Nettleservarsler (tidligere «popup-varsler på skrivebordet»)",
+      "browserNotifications": "Push-varsler i nettleseren",
       "yes": "Ja",
       "no": "Nei",
       "emailNotificationsWithEmail": "E-postvarsler ({email})",

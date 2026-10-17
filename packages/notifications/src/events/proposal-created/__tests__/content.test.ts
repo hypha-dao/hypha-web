@@ -12,7 +12,7 @@ const event: ProposalCreatedEvent = {
 };
 
 describe('buildProposalCreatedContent', () => {
-  it('addresses the creator by their own name, gated on sub_newProposalOpen', () => {
+  it('addresses the creator by their own name, gated on sub_ownActions', () => {
     const recipient: Recipient = {
       personSlug: 'alice',
       displayName: 'Alice',
@@ -23,11 +23,11 @@ describe('buildProposalCreatedContent', () => {
     const result = buildProposalCreatedContent(event, recipient);
 
     expect(result.channels).toEqual(['push', 'email']);
-    expect(result.requiredTags).toEqual({
-      [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
-    });
+    expect(result.requiredTags).toEqual(['sub_ownActions']);
     expect(result.content.email).toMatchObject({ kind: 'plain' });
-    expect((result.content.email as { body: string }).body).toContain('Alice');
+    expect((result.content.email as { body: string }).body).toContain(
+      'Hey Alice,',
+    );
     expect((result.content.email as { body: string }).body).toContain(
       'Hypha Energy',
     );
@@ -43,10 +43,12 @@ describe('buildProposalCreatedContent', () => {
 
     const result = buildProposalCreatedContent(event, recipient);
 
+    expect(result.requiredTags).toEqual([TAG_SUB_NEW_PROPOSAL_OPEN]);
     expect((result.content.email as { body: string }).body).toContain('Alice');
+    // member push follows the dashboard copy, which names who created it
     expect(
       (result.content.push as { contents: { en: string } }).contents.en,
-    ).not.toContain('Alice');
+    ).toContain('Alice');
   });
 
   it('renders join-request copy when proposalLabel is Invite', () => {

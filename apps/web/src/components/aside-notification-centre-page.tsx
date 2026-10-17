@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe } from '@hypha-platform/core/client';
 import {
   NotificationCentreForm,
@@ -13,12 +14,15 @@ import { useTranslations } from 'next-intl';
 export default function AsideNotificationCentrePage() {
   const tNotificationCentre = useTranslations('NotificationCentre');
   const { person, isLoading } = useMe();
+  const { isAuthenticated, isLoading: authLoading } = useAuthentication();
   const pathname = usePathname();
   const closeUrl = pathname.substring(0, pathname.lastIndexOf('/'));
   const {
     subscribed,
+    pushActive,
     subscribe,
     unsubscribe,
+    enableBrowserPush,
     error,
     configuration,
     saveConfigurations,
@@ -39,8 +43,11 @@ export default function AsideNotificationCentrePage() {
           person={person ?? undefined}
           closeUrl={closeUrl}
           isLoading={isBusy}
+          signedOut={!authLoading && !isAuthenticated}
           error={error}
           subscribed={subscribed}
+          pushActive={pushActive}
+          enableBrowserPush={enableBrowserPush}
           subscribe={subscribe}
           unsubscribe={unsubscribe}
           configuration={configuration}

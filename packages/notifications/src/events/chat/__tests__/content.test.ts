@@ -43,7 +43,7 @@ describe('buildChatContent — chat.message (all-messages)', () => {
 
   it('gates on base tags only — no extra requiredTag', () => {
     const result = buildChatContent(makeEvent('chat.message'), recipient);
-    expect(result.requiredTags).toEqual({});
+    expect(result.requiredTags).toEqual([]);
   });
 
   it('push body names the actor and previews the message', () => {
@@ -57,7 +57,7 @@ describe('buildChatContent — chat.mention', () => {
   it('requests push and email, gated on consent_mentions', () => {
     const result = buildChatContent(makeEvent('chat.mention'), recipient);
     expect(result.channels).toEqual(['push', 'email']);
-    expect(result.requiredTags).toEqual({ [TAG_MENTION_CONSENT]: 'true' });
+    expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
     expect(result.content.push).toBeDefined();
     expect(result.content.email).toBeDefined();
   });
@@ -152,5 +152,41 @@ describe('buildChatContent — chat.mention email template', () => {
     vi.stubEnv('EMAIL_TEMPLATE_CHAT_MENTION', '');
     const result = buildChatContent(makeEvent('chat.mention'), recipient);
     expect(result.content.email).toMatchObject({ kind: 'plain' });
+  });
+});
+
+describe('buildChatContent — mention event, plain-message recipient', () => {
+  it('gives non-mentioned room members the message push only (no mention email)', () => {
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      role: 'chat.message',
+    });
+    expect(result.channels).toEqual(['push']);
+    expect(result.requiredTags).toEqual([]);
+    expect(result.content.email).toBeUndefined();
+    const push = result.content.push as { contents: { en: string } };
+    expect(push.contents.en).toBe('Alice: Hello team, standup in 5');
+  });
+
+  it('keeps the mention content for mentioned recipients', () => {
+    const result = buildChatContent(makeEvent('chat.mention'), {
+      ...recipient,
+      role: 'chat.mention',
+    });
+    expect(result.channels).toEqual(['push', 'email']);
+    expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
+  });
+});
+
+describe('buildChatContent — mention push without a preview', () => {
+  it('names the space like the email preheader does', () => {
+    const noPreview: Recipient = {
+      ...recipient,
+      role: 'chat.mention',
+      data: { ...recipient.data, messagePreview: '' },
+    };
+    const push = buildChatContent(makeEvent('chat.mention'), noPreview).content
+      .push as { contents: { en: string } };
+    expect(push.contents.en).toBe('Alice mentioned you in Hypha Energy.');
   });
 });

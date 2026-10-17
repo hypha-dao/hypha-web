@@ -28,6 +28,8 @@ function settlementProps(recipient: Recipient) {
     proposalLabel: recipient.data?.proposalLabel as string | undefined,
     proposalState: recipient.data?.proposalState as string | undefined,
     spaceTitle: recipient.data?.spaceTitle as string | undefined,
+    url: recipient.data?.url as string | undefined,
+    settingsUrl: recipient.data?.notificationSettingsUrl as string | undefined,
   };
 }
 
@@ -82,7 +84,7 @@ export const buildProposalSettlementContent: ContentBuilder<
 
   return {
     channels: ['push', 'email'],
-    requiredTags: { [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: 'true' },
+    requiredTags: [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED],
     content: {
       push: templatePush ?? {
         kind: 'plain',
@@ -93,6 +95,7 @@ export const buildProposalSettlementContent: ContentBuilder<
       email: templateEmail ?? {
         kind: 'plain',
         subject: email.subject,
+        preheader: email.preheader,
         body: email.body,
       },
     },
