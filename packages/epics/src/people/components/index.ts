@@ -21,6 +21,7 @@ export * from './people-buy-space-tokens';
 export * from './space-with-number-of-months';
 export * from './space-with-number-of-months-array';
 export * from './activate-spaces-form';
+export * from './activate-spaces-checkout';
 export * from './space-member-card';
 export * from './delegate-voting-section';
 export * from './mfa-banner';

@@ -7,8 +7,12 @@ import { getTokenDecimals } from '@hypha-platform/core/client';
 import { hyphaTokenAbi, hyphaTokenAddress } from '../../../generated';
 import { erc20Abi } from 'viem';
 import { TOKENS } from '@hypha-platform/core/client';
+import {
+  assertOnChainSpaceRenewalSupported,
+  type SpaceActivationPaymentToken,
+} from './space-activation-payment';
 
-type PaymentToken = 'USDC' | 'HYPHA';
+type PaymentToken = SpaceActivationPaymentToken;
 
 interface ActivateSpacesInput {
   spaceIds: bigint[];
@@ -36,6 +40,11 @@ export const useActivateSpacesMutation = () => {
       }
 
       const { spaceIds, amounts, paymentToken } = arg;
+
+      // EURC is a UI option only. payForSpaces always transferFroms the
+      // hardcoded `usdc` token — calling it with an EURC amount would either
+      // revert or (worse) pull USDC if a leftover allowance exists.
+      assertOnChainSpaceRenewalSupported(paymentToken);
 
       if (!spaceIds.length || !amounts.length) {
         throw new Error('Empty spaceIds or amounts');

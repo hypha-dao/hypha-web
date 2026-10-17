@@ -2,22 +2,19 @@
 
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Form,
-  Button,
-  Input,
-  Image,
-  Separator,
-  Tabs,
-  TabsTrigger,
-  TabsList,
-  Label,
-} from '@hypha-platform/ui';
+import { Form, Button, Separator } from '@hypha-platform/ui';
+import { ActivateSpacesCheckout } from './activate-spaces-checkout';
 import {
   activateSpacesSchema,
   ActivateSpacesFormValues,
 } from '../hooks/validation';
-import { extractRevertReason, Space, useMe } from '@hypha-platform/core/client';
+import {
+  extractRevertReason,
+  Space,
+  useMe,
+  EURC_NOT_SUPPORTED_ONCHAIN_CODE,
+  type SpaceActivationPaymentToken,
+} from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
@@ -169,11 +166,18 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const watchedSpaces = useWatch({ control, name: 'spaces' });
   const paymentToken = useWatch({ control, name: 'paymentToken' });
 
-  const { totalUSDC, totalHYPHA, submitActivation, isActivating } =
-    useActivateSpaces({
-      spaces: watchedSpaces,
-      paymentToken,
-    });
+  const {
+    totalUSDC,
+    totalHYPHA,
+    totalEURC,
+    eurcRateReady,
+    submitActivation,
+    isActivating,
+  } = useActivateSpaces({
+    spaces: watchedSpaces,
+    paymentToken,
+  });
+  const canSubmitOnChain = paymentToken !== 'EURC';
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const closePanelUrl = useMemo(
@@ -193,7 +197,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     return !isPersonLoading && person ? [person] : [];
   }, [isPersonLoading, person]);
 
-  const onSubmit = async (data: ActivateSpacesFormValues) => {
+  const onSubmit = async (_data: ActivateSpacesFormValues) => {
     setShowSuccessMessage(false);
     try {
       const tx = await submitActivation();
@@ -216,6 +220,10 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
         if (error.message.includes('Smart wallet client not available')) {
           errorMessage = tActions(
             'activateSpaces.form.errors.smartWalletNotConnected',
+          );
+        } else if (error.message.includes(EURC_NOT_SUPPORTED_ONCHAIN_CODE)) {
+          errorMessage = tAgreementFlow(
+            'plugins.activateSpaces.eurcNotSupportedOnchain',
           );
         } else if (
           error.message.includes('ERC20: transfer amount exceeds balance') ||
@@ -257,75 +265,16 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       >
         <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
         <Separator />
-        <Label>{tAgreementFlow('plugins.activateSpaces.checkOut')}</Label>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">
-            {tAgreementFlow('plugins.activateSpaces.totalContribution')}
-          </span>
-          <span className="text-2 text-neutral-11 text-nowrap">
-            $ {totalUSDC}
-          </span>
-        </div>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11">
-            {tAgreementFlow('plugins.activateSpaces.payWith')}
-          </span>
-          <Tabs
-            value={paymentToken}
-            onValueChange={(value) =>
-              setValue('paymentToken', value as 'HYPHA' | 'USDC')
-            }
-          >
-            <TabsList triggerVariant="switch">
-              <TabsTrigger variant="switch" value="HYPHA">
-                HYPHA
-              </TabsTrigger>
-              <TabsTrigger variant="switch" value="USDC">
-                USDC
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">
-            {tAgreementFlow('plugins.activateSpaces.totalAmountIn', {
-              token: paymentToken,
-            })}
-          </span>
-          <span className="text-2 text-neutral-11 text-nowrap">
-            {paymentToken === 'USDC' ? (
-              <Input
-                leftIcon={
-                  <Image
-                    src="/placeholder/usdc-icon.svg"
-                    width={24}
-                    height={24}
-                    alt={tActions('activateSpaces.form.icons.usdcAlt')}
-                  />
-                }
-                value={totalUSDC.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-                disabled
-              />
-            ) : (
-              <Input
-                leftIcon={
-                  <Image
-                    src="/placeholder/space-avatar-image.svg"
-                    width={24}
-                    height={24}
-                    alt={tActions('activateSpaces.form.icons.hyphaAlt')}
-                  />
-                }
-                value={totalHYPHA.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-                disabled
-              />
-            )}
-          </span>
-        </div>
+        <ActivateSpacesCheckout
+          paymentToken={paymentToken}
+          onPaymentTokenChange={(value) =>
+            setValue('paymentToken', value as SpaceActivationPaymentToken)
+          }
+          totalUSDC={totalUSDC}
+          totalHYPHA={totalHYPHA}
+          totalEURC={totalEURC}
+          eurcRateReady={eurcRateReady}
+        />
         <Separator />
         <RecipientField
           label={tAgreementFlow('plugins.activateSpaces.paidBy')}
@@ -356,7 +305,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
               {tActions('activateSpaces.form.success.activated')}
             </div>
           ) : (
-            <Button type="submit" disabled={isActivating}>
+            <Button type="submit" disabled={isActivating || !canSubmitOnChain}>
               {tActions('activateSpaces.form.actions.activate')}
             </Button>
           )}
