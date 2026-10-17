@@ -5255,6 +5255,7 @@
     "insightsAgreements": "Agreements",
     "insightsEmpty": "Not enough activity yet.",
     "treasuryTitle": "Treasury",
+    "treasuryTotal": "Total",
     "treasuryEmpty": "No balances in view.",
     "distributionTitle": "Distribution",
     "ecosystemNote": "{count} neighbouring spaces.",

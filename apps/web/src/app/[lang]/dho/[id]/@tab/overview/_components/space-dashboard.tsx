@@ -7,6 +7,8 @@ import { UserEvent, type MatrixClient } from 'matrix-js-sdk';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  isCatalogueToken,
+  isHyphaToken,
   useFindCoherences,
   useMatrix,
   useMatrixUserIdsByPersonIds,
@@ -17,6 +19,7 @@ import {
   PersonAvatar,
   readMemberPresence,
   SpaceAttention,
+  useDisplayCurrency,
   useSpaceDocumentsWithStatuses,
 } from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
@@ -319,6 +322,18 @@ function Quiet({ children }: { children: ReactNode }) {
   return <p className="text-2 text-neutral-11">{children}</p>;
 }
 
+type TreasuryAsset = {
+  symbol: string;
+  value: number;
+  usdEqual: number;
+  address: string;
+};
+
+/** USDC, EURC, and the other catalogue assets that are not HYPHA. */
+function isLiquidNonHypha(asset: TreasuryAsset) {
+  return isCatalogueToken(asset.address) && !isHyphaToken(asset.address);
+}
+
 function RowsSkeleton() {
   return (
     <div className="grid gap-3">
@@ -336,6 +351,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const tCommon = useTranslations('Common');
   const tNav = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
+  const { formatFromUsd } = useDisplayCurrency();
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
@@ -391,21 +407,44 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     return () => window.clearTimeout(release);
   }, [person?.slug, spaceSlug]);
 
-  const { data: treasuryAssets, isLoading: treasuryLoading } = useSWR(
+  const { data: treasury, isLoading: treasuryLoading } = useSWR(
     spaceSlug ? [`/api/v1/spaces/${spaceSlug}/assets?bestEffort=true`] : null,
     async ([endpoint]) => {
+      const empty = { assets: [] as TreasuryAsset[], balance: 0 };
       const token = await getAccessToken();
       const headers: HeadersInit = {};
       if (token) headers.Authorization = `Bearer ${token}`;
       const response = await fetch(endpoint, { headers });
-      if (!response.ok) return [] as Array<{ symbol: string; value: number }>;
+      if (!response.ok) return empty;
       const body = (await response.json()) as {
-        assets?: { symbol?: string; value?: number }[];
+        assets?: {
+          symbol?: string;
+          value?: number;
+          usdEqual?: number;
+          address?: string;
+        }[];
+        balance?: number;
       };
-      return (body.assets ?? []).flatMap((asset) => {
+      const assets = (body.assets ?? []).flatMap((asset) => {
         if (!asset.symbol || !(asset.value && asset.value > 0)) return [];
-        return [{ symbol: asset.symbol, value: asset.value }];
+        return [
+          {
+            symbol: asset.symbol,
+            value: asset.value,
+            usdEqual:
+              typeof asset.usdEqual === 'number' &&
+              Number.isFinite(asset.usdEqual)
+                ? asset.usdEqual
+                : 0,
+            address: asset.address ?? '',
+          },
+        ];
       });
+      const balance =
+        typeof body.balance === 'number' && Number.isFinite(body.balance)
+          ? body.balance
+          : assets.reduce((sum, asset) => sum + asset.usdEqual, 0);
+      return { assets, balance };
     },
     { revalidateOnFocus: false },
   );
@@ -450,8 +489,16 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
 
   const people = persons.data ?? [];
   const spaces = memberSpaces.data ?? [];
-  const assets = treasuryAssets ?? [];
-  const assetTotal = assets.reduce((sum, asset) => sum + asset.value, 0);
+  const assets = treasury?.assets ?? [];
+  const treasuryBalance = treasury?.balance ?? 0;
+  const spaceTokens = assets.filter((asset) => !isLiquidNonHypha(asset));
+  const liquidTokens = assets.filter(isLiquidNonHypha);
+  const distributionTokens =
+    spaceTokens.length > 0 ? spaceTokens : liquidTokens;
+  const assetTotal = distributionTokens.reduce(
+    (sum, asset) => sum + asset.value,
+    0,
+  );
   const home = `/${locale}/dho/${spaceSlug}`;
   const turn = visit?.turn ?? 0;
   const name = person?.name?.trim() || person?.nickname?.trim() || '';
@@ -732,43 +779,81 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
               <Quiet>{t('treasuryEmpty')}</Quiet>
             ) : (
               <div className="flex flex-col gap-4">
-                <ul className="grid grid-cols-3 gap-3">
-                  {assets.slice(0, 3).map((asset) => (
-                    <li key={asset.symbol} className="min-w-0">
-                      <span
-                        className="block truncate text-3 tabular-nums text-foreground"
-                        style={{ fontFamily: 'var(--font-family-heading)' }}
-                      >
-                        {format.number(asset.value, {
-                          maximumFractionDigits: asset.value >= 100 ? 0 : 2,
-                        })}
-                      </span>
-                      <span className="mt-1 block truncate text-1 text-neutral-11">
-                        {asset.symbol}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div>
-                  <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                    {t('distributionTitle')}
-                  </p>
-                  <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
-                    {assets.map((asset) => (
-                      <span
-                        key={asset.symbol}
-                        className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
-                        style={{
-                          width: `${(asset.value / assetTotal) * 100}%`,
-                          opacity: 0.35 + (asset.value / assetTotal) * 0.65,
-                        }}
-                        title={`${asset.symbol} ${format.number(asset.value, {
-                          maximumFractionDigits: 2,
-                        })}`}
-                      />
-                    ))}
-                  </div>
+                <div className="min-w-0">
+                  <span
+                    className="block truncate text-3 tabular-nums text-foreground"
+                    style={{ fontFamily: 'var(--font-family-heading)' }}
+                  >
+                    {formatFromUsd(treasuryBalance)}
+                  </span>
+                  <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
+                    {t('treasuryTotal')}
+                  </span>
                 </div>
+                {spaceTokens.length > 0 ? (
+                  <ul className="grid grid-cols-3 gap-3">
+                    {spaceTokens.slice(0, 3).map((asset) => (
+                      <li key={asset.symbol} className="min-w-0">
+                        <span
+                          className="block truncate text-3 tabular-nums text-foreground"
+                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        >
+                          {format.number(asset.value, {
+                            maximumFractionDigits: asset.value >= 100 ? 0 : 2,
+                          })}
+                        </span>
+                        <span className="mt-1 block truncate text-1 text-neutral-11">
+                          {asset.symbol}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {liquidTokens.length > 0 ? (
+                  <ul className="grid grid-cols-3 gap-3">
+                    {liquidTokens.map((asset) => (
+                      <li
+                        key={asset.address || asset.symbol}
+                        className="min-w-0"
+                      >
+                        <span
+                          className="block truncate text-3 tabular-nums text-foreground"
+                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        >
+                          {format.number(asset.value, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                        <span className="mt-1 block truncate text-1 text-neutral-11">
+                          {asset.symbol}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {assetTotal > 0 ? (
+                  <div>
+                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                      {t('distributionTitle')}
+                    </p>
+                    <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
+                      {distributionTokens.map((asset) => (
+                        <span
+                          key={asset.address || asset.symbol}
+                          className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
+                          style={{
+                            width: `${(asset.value / assetTotal) * 100}%`,
+                            opacity: 0.35 + (asset.value / assetTotal) * 0.65,
+                          }}
+                          title={`${asset.symbol} ${format.number(asset.value, {
+                            maximumFractionDigits: 2,
+                          })}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
           </Panel>
