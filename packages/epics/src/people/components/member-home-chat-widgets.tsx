@@ -52,6 +52,7 @@ type HomeConnection = MemberIntelligence['connections'][number];
 type HomeSpace = MemberIntelligence['spaces'][number];
 
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
+const SPACE_PREVIEW = 5;
 const RECIPIENT_PREVIEW = 5;
 
 type NoteKey =
@@ -115,9 +116,15 @@ function WidgetFrame({
 export function MemberHomeSpacesWidgetCard({
   lang,
   spaces,
+  framed = true,
+  limit = SPACE_PREVIEW,
 }: {
   lang: Locale;
   spaces: HomeSpace[];
+  /** Card chrome on home. The spaces screen supplies its own title. */
+  framed?: boolean;
+  /** Cap the grid and offer the finder. Null shows every space. */
+  limit?: number | null;
 }) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
@@ -144,8 +151,81 @@ export function MemberHomeSpacesWidgetCard({
       ordered.push(space);
       seen.add(space.slug);
     }
-    return ordered.slice(0, SPACE_PREVIEW);
+    return ordered;
   }, [recentSlugs, spaces]);
+  const shown = limit == null ? recentSpaces : recentSpaces.slice(0, limit);
+
+  const body =
+    spaces.length === 0 ? (
+      <p className="text-2 text-neutral-11">{t('spacesWidgetEmpty')}</p>
+    ) : (
+      <>
+        <div className="mb-4 overflow-hidden border border-border">
+          <img
+            src="/brand/strategy-mycelium.png"
+            alt=""
+            className="h-28 w-full object-cover object-center"
+          />
+        </div>
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {shown.map((space) => {
+            const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);
+            return (
+              <li key={space.id}>
+                <Link
+                  href={`/${lang}/dho/${space.slug}/overview`}
+                  className="flex flex-col items-center gap-2 px-1 py-2 text-center hover:bg-accent-2"
+                >
+                  <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2">
+                    {icon ? (
+                      <img
+                        src={icon}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span
+                        className="text-3"
+                        style={{ fontFamily: 'var(--font-family-heading)' }}
+                      >
+                        {space.title.trim().charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </span>
+                  <span className="line-clamp-2 text-1 leading-snug">
+                    {space.title}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        {limit != null && spaces.length > limit ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full"
+              aria-expanded={finderOpen}
+              onClick={() => setFinderOpen((open) => !open)}
+            >
+              {t('spacesFindMore')}
+            </Button>
+            {finderOpen ? (
+              <div className="mt-3 h-72 overflow-hidden border border-border">
+                <MySpacesSwitcherMenu
+                  open={finderOpen}
+                  onSelect={() => setFinderOpen(false)}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+        <p className="mt-3 text-2 text-neutral-11">{t('spacesWidgetHint')}</p>
+      </>
+    );
+
+  if (!framed) return body;
 
   return (
     <WidgetFrame
@@ -156,80 +236,12 @@ export function MemberHomeSpacesWidgetCard({
           : undefined
       }
     >
-      {spaces.length === 0 ? (
-        <p className="text-2 text-neutral-11">{t('spacesWidgetEmpty')}</p>
-      ) : (
-        <>
-          <div className="mb-4 overflow-hidden border border-border">
-            <img
-              src="/brand/strategy-mycelium.png"
-              alt=""
-              className="h-28 w-full object-cover object-center"
-            />
-          </div>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {recentSpaces.map((space) => {
-              const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);
-              return (
-                <li key={space.id}>
-                  <Link
-                    href={`/${lang}/dho/${space.slug}/overview`}
-                    className="flex flex-col items-center gap-2 px-1 py-2 text-center hover:bg-accent-2"
-                  >
-                    <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2">
-                      {icon ? (
-                        <img
-                          src={icon}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span
-                          className="text-3"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {space.title.trim().charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
-                    <span className="line-clamp-2 text-1 leading-snug">
-                      {space.title}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-          {spaces.length > SPACE_PREVIEW ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-3 w-full"
-                aria-expanded={finderOpen}
-                onClick={() => setFinderOpen((open) => !open)}
-              >
-                {t('spacesFindMore')}
-              </Button>
-              {finderOpen ? (
-                <div className="mt-3 h-72 overflow-hidden border border-border">
-                  <MySpacesSwitcherMenu
-                    open={finderOpen}
-                    onSelect={() => setFinderOpen(false)}
-                  />
-                </div>
-              ) : null}
-            </>
-          ) : null}
-          <p className="mt-3 text-2 text-neutral-11">{t('spacesWidgetHint')}</p>
-        </>
-      )}
+      {body}
     </WidgetFrame>
   );
 }
 
 const PEOPLE_PREVIEW = 5;
-const SPACE_PREVIEW = 5;
 
 function suggestionWhen(ts: number, locale: string, justNow: string) {
   const minutes = Math.round((Date.now() - ts) / 60000);
