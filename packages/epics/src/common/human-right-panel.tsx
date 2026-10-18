@@ -4814,7 +4814,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       <div className="flex h-full min-h-0 flex-col bg-page-background dark:bg-background-2">
         <HumanChatPanelHeader
           title=""
-          mark={t('messagesLabel')}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
             showAuthedUi ? (
