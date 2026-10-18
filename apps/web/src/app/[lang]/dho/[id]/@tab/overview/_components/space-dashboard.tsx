@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
+import { ArrowRight } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -556,6 +557,29 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       Boolean(signal.slug),
   );
   const nextSignal = linkedWeek[turn % Math.max(linkedWeek.length, 1)];
+  /** Greeting points at something — give it a way in (vote, tension, risk, signal). */
+  const greetingHref = (() => {
+    if (situation === 'vote') {
+      const proposal = documents.onVoting.find((item) => item.slug?.trim());
+      return proposal?.slug
+        ? `${home}/agreements/proposal/${proposal.slug}`
+        : `${home}/agreements`;
+    }
+    if (situation === 'risk' || situation === 'tension') {
+      const type = situation === 'risk' ? 'Risk' : 'Tension';
+      const signal = openSignals.find(
+        (item) => item.type === type && item.slug?.trim(),
+      );
+      if (signal?.slug) {
+        return `${home}/coherence?signal=${encodeURIComponent(signal.slug)}`;
+      }
+      return `${home}/coherence?type=${encodeURIComponent(type)}`;
+    }
+    if ((situation === 'fresh' || situation === 'back') && nextSignal?.slug) {
+      return `${home}/coherence?signal=${encodeURIComponent(nextSignal.slug)}`;
+    }
+    return null;
+  })();
   const featuredSignals = [...openSignals]
     .filter((signal): signal is typeof signal & { slug: string } =>
       Boolean(signal.slug),
@@ -596,19 +620,42 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     <div className="flex flex-col gap-6">
       {name ? (
         <header className="flex min-w-0 flex-col gap-1 border-b-2 border-[color:var(--space-spot,var(--space-accent))] pb-3">
-          <h1
-            className="text-4 leading-tight text-foreground sm:text-5"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {t(GREETING[situation][turn % 2] ?? 'greetingQuietA', { name })}
-          </h1>
+          {greetingHref ? (
+            <Link
+              href={greetingHref}
+              className="group inline-flex max-w-full items-baseline gap-2 text-foreground hover:text-[color:var(--space-spot,var(--space-accent))]"
+            >
+              <h1
+                className="min-w-0 text-4 leading-tight sm:text-5"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {t(GREETING[situation][turn % 2] ?? 'greetingQuietA', { name })}
+              </h1>
+              <ArrowRight
+                className="size-5 shrink-0 translate-y-0.5 opacity-45 transition-opacity group-hover:opacity-100 sm:size-6"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+            </Link>
+          ) : (
+            <h1
+              className="text-4 leading-tight text-foreground sm:text-5"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {t(GREETING[situation][turn % 2] ?? 'greetingQuietA', { name })}
+            </h1>
+          )}
           <p className="text-2 text-neutral-11">{sinceLine}</p>
           {diagnosis ? (
             <p className="text-2 text-[color:var(--space-spot,var(--space-accent))]">
               {diagnosis}
             </p>
           ) : null}
-          {nextSignal?.slug ? (
+          {nextSignal?.slug &&
+          greetingHref !==
+            `${home}/coherence?signal=${encodeURIComponent(
+              nextSignal.slug,
+            )}` ? (
             <Link
               href={`${home}/coherence?signal=${encodeURIComponent(
                 nextSignal.slug,
