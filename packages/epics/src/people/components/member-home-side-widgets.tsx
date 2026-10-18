@@ -305,81 +305,84 @@ export function MemberHomeConnectionsWidget({
       ) : people.length === 0 ? (
         <p className="text-1 text-neutral-11">{t('noConnections')}</p>
       ) : (
-        <ul className="flex flex-wrap gap-3">
-          {visiblePeople.map((person) => {
-            const name = personLabel(person, fallbackName);
-            const label = t('sharedSpaces', {
-              count: person.sharedSpaceCount,
-            });
-            return (
-              <li
-                key={person.id}
-                className="flex min-w-[11rem] max-w-full flex-1 items-center gap-2"
-              >
-                <button
-                  type="button"
-                  title={`${name}. ${label}`}
-                  aria-label={t('chatPerson', { name })}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left hover:underline"
-                  onClick={() => {
-                    void onChat?.(person);
-                  }}
+        <div className="@container">
+          <ul className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2">
+            {visiblePeople.map((person) => {
+              const name = personLabel(person, fallbackName);
+              const label = t('sharedSpaces', {
+                count: person.sharedSpaceCount,
+              });
+              return (
+                <li
+                  key={person.id}
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
                 >
-                  <PersonAvatar
-                    avatarSrc={person.avatarUrl ?? undefined}
-                    userName={name}
-                    size="md"
-                    shape="circle"
-                  />
-                  <span className="flex min-w-0 flex-col items-start gap-1">
-                    <span className="min-w-0 truncate text-1">{name}</span>
-                    {isPersonRole(person.primaryOrientation) ? (
-                      <PersonRoleBadge role={person.primaryOrientation} />
-                    ) : null}
-                  </span>
-                </button>
-                <div className="flex shrink-0 gap-1">
-                  <Button
+                  <button
                     type="button"
-                    size="icon"
-                    variant="outline"
-                    colorVariant="neutral"
-                    aria-label={t('callPerson', { name })}
-                    onClick={() => {
-                      void onCall?.(person);
-                    }}
-                  >
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    colorVariant="neutral"
-                    aria-label={t('videoPerson', { name })}
-                    onClick={() => {
-                      void onVideo?.(person);
-                    }}
-                  >
-                    <Video className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    colorVariant="neutral"
+                    title={`${name}. ${label}`}
                     aria-label={t('chatPerson', { name })}
+                    className="flex min-w-0 items-center gap-2 text-left hover:underline"
                     onClick={() => {
                       void onChat?.(person);
                     }}
                   >
-                    <MessageSquare className="h-4 w-4" />
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                    <PersonAvatar
+                      avatarSrc={person.avatarUrl ?? undefined}
+                      userName={name}
+                      size="md"
+                      shape="circle"
+                      className="shrink-0"
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col items-stretch gap-1 overflow-hidden">
+                      <span className="block truncate text-1">{name}</span>
+                      {isPersonRole(person.primaryOrientation) ? (
+                        <PersonRoleBadge role={person.primaryOrientation} />
+                      ) : null}
+                    </span>
+                  </button>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      colorVariant="neutral"
+                      aria-label={t('callPerson', { name })}
+                      onClick={() => {
+                        void onCall?.(person);
+                      }}
+                    >
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      colorVariant="neutral"
+                      aria-label={t('videoPerson', { name })}
+                      onClick={() => {
+                        void onVideo?.(person);
+                      }}
+                    >
+                      <Video className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      colorVariant="neutral"
+                      aria-label={t('chatPerson', { name })}
+                      onClick={() => {
+                        void onChat?.(person);
+                      }}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
       {!isLoading && people.length > CONNECTIONS_PREVIEW ? (
         <Button
