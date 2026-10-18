@@ -133,13 +133,32 @@ function shorten(
 
 function arrowHead(x1: number, y1: number, x2: number, y2: number) {
   const angle = Math.atan2(y2 - y1, x2 - x1);
-  const size = 9;
-  const spread = 0.5;
+  const size = 12;
+  const spread = 0.42;
   const leftX = x2 - Math.cos(angle - spread) * size;
   const leftY = y2 - Math.sin(angle - spread) * size;
   const rightX = x2 - Math.cos(angle + spread) * size;
   const rightY = y2 - Math.sin(angle + spread) * size;
-  return `M${leftX} ${leftY} L${x2} ${y2} L${rightX} ${rightY}`;
+  return `M${x2} ${y2} L${leftX} ${leftY} L${rightX} ${rightY} Z`;
+}
+
+/** Filled arrow sitting on the curve, pointing from the start toward the end. */
+function arrowOnCurve(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  bend: number,
+) {
+  const control = curveControl(x1, y1, x2, y2, bend);
+  const t = 0.68;
+  const u = 1 - t;
+  const x = u * u * x1 + 2 * u * t * control.x + t * t * x2;
+  const y = u * u * y1 + 2 * u * t * control.y + t * t * y2;
+  const dx = 2 * u * (control.x - x1) + 2 * t * (x2 - control.x);
+  const dy = 2 * u * (control.y - y1) + 2 * t * (y2 - control.y);
+  const len = Math.hypot(dx, dy) || 1;
+  return arrowHead(x - dx / len, y - dy / len, x, y);
 }
 
 function useFrameSize() {
@@ -167,7 +186,7 @@ function useFrameSize() {
   return { ref, size };
 }
 
-function hyphaPath(
+function curveControl(
   x1: number,
   y1: number,
   x2: number,
@@ -179,9 +198,93 @@ function hyphaPath(
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.hypot(dx, dy) || 1;
-  const ox = (-dy / len) * bend;
-  const oy = (dx / len) * bend;
-  return `M${x1},${y1} Q${mx + ox},${my + oy} ${x2},${y2}`;
+  return {
+    x: mx + (-dy / len) * bend,
+    y: my + (dx / len) * bend,
+  };
+}
+
+function hyphaPath(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  bend: number,
+) {
+  const control = curveControl(x1, y1, x2, y2, bend);
+  return `M${x1},${y1} Q${control.x},${control.y} ${x2},${y2}`;
+}
+
+function separateNodes(nodes: PlacedNode[], width: number, height: number) {
+  for (let pass = 0; pass < 28; pass += 1) {
+    for (let i = 0; i < nodes.length; i += 1) {
+      for (let j = i + 1; j < nodes.length; j += 1) {
+        const a = nodes[i];
+        const b = nodes[j];
+        if (!a || !b) continue;
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let dist = Math.hypot(dx, dy);
+        const min = a.r + b.r + 20;
+        if (dist >= min) continue;
+        if (dist < 0.01) {
+          dx = 1;
+          dy = 0;
+          dist = 1;
+        }
+        const push = (min - dist) / 2;
+        const ux = dx / dist;
+        const uy = dy / dist;
+        const aFixed = a.role === 'focus';
+        const bFixed = b.role === 'focus';
+        if (!aFixed) {
+          a.x -= ux * (bFixed ? push * 2 : push);
+          a.y -= uy * (bFixed ? push * 2 : push);
+        }
+        if (!bFixed) {
+          b.x += ux * (aFixed ? push * 2 : push);
+          b.y += uy * (aFixed ? push * 2 : push);
+        }
+      }
+    }
+    for (const node of nodes) {
+      if (node.role === 'focus') continue;
+      const marginX = node.r + 64;
+      const marginY = node.r + 28;
+      node.x = Math.min(width - marginX, Math.max(marginX, node.x));
+      node.y = Math.min(height - marginY, Math.max(node.r + 10, node.y));
+    }
+  }
+}
+
+function retargetLinks(nodes: PlacedNode[], links: PlacedLink[]): PlacedLink[] {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const focus = nodes.find((node) => node.role === 'focus');
+  return links.flatMap((link) => {
+    const sourceId = link.id.startsWith('parent-')
+      ? focus?.id
+      : Number(link.id.split('-')[0]);
+    const targetId = link.id.startsWith('parent-')
+      ? Number(link.id.slice('parent-'.length))
+      : Number(link.id.split('-')[1]);
+    const source = sourceId != null ? byId.get(sourceId) : undefined;
+    const target = targetId != null ? byId.get(targetId) : undefined;
+    if (!source || !target) return [];
+    return [
+      {
+        id: link.id,
+        ...shorten(
+          source.x,
+          source.y,
+          target.x,
+          target.y,
+          source.r + 2,
+          target.r + 2,
+        ),
+        bend: link.bend,
+      },
+    ];
+  });
 }
 
 function clearTop(angles: number[]) {
@@ -214,19 +317,17 @@ function layoutField(
   const parent = path.length > 1 ? path[path.length - 2] : null;
   const cx = width / 2;
   const cy = height / 2;
-  // Leave room under each node so the name is not clipped by the frame.
-  const labelPad = 28;
-  const minDim = Math.max(160, Math.min(width, height) - labelPad * 2);
-  const nodeScale = Math.min(1.45, Math.max(1, minDim / 380));
-  // Same reach as the root diagram: a ring around a centered focus.
-  const pad = Math.round(24 * nodeScale) + labelPad + 8;
-  const maxReach = Math.max(
-    96,
-    Math.min(cx, cy, width - cx, height - cy) - pad,
-  );
-  const reach = Math.min(Math.max(140, minDim * 0.4), maxReach);
+  // Room outside the ring so a name can sit beside its node instead of on it.
+  const roomX = Math.min(cx, width - cx);
+  const roomY = Math.min(cy, height - cy);
+  const labelPadX = roomX > 180 ? 78 : 40;
+  const labelPadY = roomY > 150 ? 36 : 22;
+  const minDim = Math.max(160, Math.min(width, height) - labelPadY * 2);
+  const nodeScale = Math.min(1.35, Math.max(0.85, minDim / 420));
+  const maxReach = Math.max(72, Math.min(roomX - labelPadX, roomY - labelPadY));
+  const reach = maxReach;
   if (parent) {
-    return layoutNeighborhood({
+    const placed = layoutNeighborhood({
       tree,
       focus,
       parent,
@@ -235,8 +336,30 @@ function layoutField(
       reach,
       nodeScale,
     });
+    separateNodes(placed.nodes, width, height);
+    return {
+      nodes: placed.nodes,
+      links: retargetLinks(placed.nodes, placed.links),
+    };
   }
-  const visible = prune(focus, 2);
+  const focusR = Math.round(36 * nodeScale);
+  const childR = Math.round(24 * nodeScale);
+  const slot = childR * 2 + 36;
+  const innerRadius = focusR + childR + 48;
+  const innerCapacity = Math.max(
+    1,
+    Math.floor((Math.PI * 2 * Math.min(innerRadius, reach)) / slot),
+  );
+  const grandchildCount = focus.children.reduce(
+    (sum, child) => sum + child.children.length,
+    0,
+  );
+  const showDeeper =
+    grandchildCount > 0 &&
+    focus.children.length > 0 &&
+    focus.children.length <= innerCapacity &&
+    reach - innerRadius >= childR + 32;
+  const visible = prune(focus, showDeeper ? 2 : 1);
   const root = d3.hierarchy(visible);
   const laid = d3
     .tree<SpaceNode>()
@@ -251,9 +374,17 @@ function layoutField(
     .map((node) => node.x ?? 0);
   // Rotate so the largest open arc is at the top (parent band / label room).
   const rotation = clearTop(childAngles);
+  const maxDepth = laid.height;
   const point = (node: d3.HierarchyPointNode<SpaceNode>) => {
     const angle = (node.x ?? 0) + rotation - Math.PI / 2;
-    const dist = node.y ?? 0;
+    const depth = node.depth;
+    const dist =
+      depth <= 0
+        ? 0
+        : !showDeeper || maxDepth <= 1
+        ? reach
+        : innerRadius +
+          ((depth - 1) / Math.max(1, maxDepth - 1)) * (reach - innerRadius);
     return {
       x: cx + Math.cos(angle) * dist,
       y: cy + Math.sin(angle) * dist,
@@ -302,7 +433,8 @@ function layoutField(
     });
   });
 
-  return { nodes, links };
+  separateNodes(nodes, width, height);
+  return { nodes, links: retargetLinks(nodes, links) };
 }
 
 /**
@@ -568,27 +700,26 @@ export function MyceliumEcosystem({
       string,
       {
         label: string;
-        symbol: string;
-        out: number;
-        inn: number;
         imageUrl?: string | null;
+        legs: Map<string, { symbol: string; out: number; inn: number }>;
       }
     >();
     for (const transfer of transfers) {
       const label = flowEndLabel(transfer);
       const symbol = transfer.symbol || '';
-      const key = `${symbol}|${label.toLowerCase()}`;
+      const key = label.toLowerCase();
       const current = totals.get(key) ?? {
         label,
-        symbol,
-        out: 0,
-        inn: 0,
         imageUrl:
           transfer.space?.avatarUrl || transfer.person?.avatarUrl || null,
+        legs: new Map(),
       };
-      const amount = Number.isFinite(transfer.value) ? transfer.value : 0;
-      if (transfer.direction === 'outgoing') current.out += amount;
-      else current.inn += amount;
+      const leg = current.legs.get(symbol) ?? { symbol, out: 0, inn: 0 };
+      const parsed = Number(transfer.value);
+      const amount = Number.isFinite(parsed) ? parsed : 0;
+      if (transfer.direction === 'outgoing') leg.out += amount;
+      else leg.inn += amount;
+      current.legs.set(symbol, leg);
       if (!current.imageUrl) {
         current.imageUrl =
           transfer.space?.avatarUrl || transfer.person?.avatarUrl || null;
@@ -596,6 +727,14 @@ export function MyceliumEcosystem({
       totals.set(key, current);
     }
     return [...totals.values()]
+      .map((flow) => {
+        const legs = [...flow.legs.values()];
+        return {
+          ...flow,
+          out: legs.reduce((sum, leg) => sum + leg.out, 0),
+          inn: legs.reduce((sum, leg) => sum + leg.inn, 0),
+        };
+      })
       .sort((left, right) => right.out + right.inn - (left.out + left.inn))
       .slice(0, MAX_FLOWS);
   }, [transfers]);
@@ -629,20 +768,25 @@ export function MyceliumEcosystem({
       const angle = -Math.PI / 2 + (Math.PI * 2 * index) / flows.length;
       const match = findByTitle(tree, flow.label);
       return {
-        key: `${flow.symbol}|${flow.label}`,
+        key: flow.label.toLowerCase(),
         label: flow.label,
         x: focusNode.x + Math.cos(angle) * dist,
         y: focusNode.y + Math.sin(angle) * dist,
         imageUrl: flow.imageUrl || match?.logoUrl,
       };
     });
+    const describe = (flow: (typeof flows)[number], pick: 'out' | 'inn') =>
+      [...flow.legs.values()]
+        .filter((leg) => leg[pick] > 0)
+        .map((leg) =>
+          `${format.number(leg[pick], { maximumFractionDigits: 2 })} ${
+            leg.symbol
+          }`.trim(),
+        )
+        .join(' · ');
     const threads = flows.flatMap((flow, index) => {
       const node = nodes[index];
       if (!node) return [];
-      const amount = (value: number) =>
-        `${format.number(value, { maximumFractionDigits: 2 })} ${
-          flow.symbol
-        }`.trim();
       const next: Array<{
         key: string;
         label: string;
@@ -651,24 +795,26 @@ export function MyceliumEcosystem({
         y: number;
         bend: number;
       }> = [];
-      if (flow.out > 0) {
+      const outgoing = describe(flow, 'out');
+      const incoming = describe(flow, 'inn');
+      if (outgoing) {
         next.push({
           key: `${node.key}-out`,
-          label: amount(flow.out),
+          label: outgoing,
           incoming: false,
           x: node.x,
           y: node.y,
-          bend: 16,
+          bend: 18,
         });
       }
-      if (flow.inn > 0) {
+      if (incoming) {
         next.push({
           key: `${node.key}-in`,
-          label: amount(flow.inn),
+          label: incoming,
           incoming: true,
           x: node.x,
           y: node.y,
-          bend: -16,
+          bend: -18,
         });
       }
       return next;
@@ -731,7 +877,7 @@ export function MyceliumEcosystem({
         openAngle = bestMid;
       }
     }
-    const spread = Math.min(Math.PI * 1.15, Math.max(0.7, openGap * 0.72));
+    const spread = Math.min(Math.PI * 0.95, Math.max(0.4, openGap * 0.78));
     const nearest = structureNodes.reduce((min, node) => {
       const clear =
         Math.hypot(node.x - focusNode.x, node.y - focusNode.y) - node.r;
@@ -933,22 +1079,39 @@ export function MyceliumEcosystem({
                             (link.id.startsWith(`${hoveredId}-`) ||
                               link.id.endsWith(`-${hoveredId}`) ||
                               link.id === `parent-${hoveredId}`);
+                          const towardParent = link.id.startsWith('parent-');
+                          const from = towardParent
+                            ? { x: link.x2, y: link.y2 }
+                            : { x: link.x1, y: link.y1 };
+                          const to = towardParent
+                            ? { x: link.x1, y: link.y1 }
+                            : { x: link.x2, y: link.y2 };
                           return (
-                            <path
-                              key={link.id}
-                              d={hyphaPath(
-                                link.x1,
-                                link.y1,
-                                link.x2,
-                                link.y2,
-                                link.bend,
-                              )}
-                              className="mycelium-thread"
-                              strokeWidth={
-                                link.id.startsWith('parent-') ? 1.25 : 1
-                              }
-                              strokeOpacity={hot ? 0.85 : 0.28}
-                            />
+                            <g key={link.id}>
+                              <path
+                                d={hyphaPath(
+                                  link.x1,
+                                  link.y1,
+                                  link.x2,
+                                  link.y2,
+                                  link.bend,
+                                )}
+                                className="mycelium-thread"
+                                strokeWidth={towardParent ? 1.25 : 1}
+                                strokeOpacity={hot ? 0.85 : 0.28}
+                              />
+                              <path
+                                d={arrowOnCurve(
+                                  from.x,
+                                  from.y,
+                                  to.x,
+                                  to.y,
+                                  towardParent ? -link.bend : link.bend,
+                                )}
+                                fill="var(--neutral-12)"
+                                fillOpacity={hot ? 0.9 : 0.45}
+                              />
+                            </g>
                           );
                         })
                       : null}
@@ -1000,10 +1163,8 @@ export function MyceliumEcosystem({
                           const dx = end.x - start.x;
                           const dy = end.y - start.y;
                           const length = Math.hypot(dx, dy) || 1;
-                          const controlX = midX + (-dy / length) * thread.bend;
-                          const controlY = midY + (dx / length) * thread.bend;
-                          const labelX = midX + (-dy / length) * 14;
-                          const labelY = midY + (dx / length) * 14;
+                          const labelX = midX + (-dy / length) * 16;
+                          const labelY = midY + (dx / length) * 16;
                           return (
                             <g key={thread.key} className="text-foreground">
                               <path
@@ -1019,12 +1180,15 @@ export function MyceliumEcosystem({
                                 strokeOpacity={thread.incoming ? 0.55 : 0.9}
                               />
                               <path
-                                d={arrowHead(controlX, controlY, end.x, end.y)}
-                                fill="none"
-                                stroke="var(--neutral-12)"
-                                strokeWidth={1.6}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                                d={arrowOnCurve(
+                                  start.x,
+                                  start.y,
+                                  end.x,
+                                  end.y,
+                                  thread.bend,
+                                )}
+                                fill="var(--neutral-12)"
+                                fillOpacity={thread.incoming ? 0.55 : 1}
                               />
                               <text
                                 x={labelX}
@@ -1094,18 +1258,42 @@ export function MyceliumEcosystem({
                             clipPath={`url(#${clip})`}
                             preserveAspectRatio="xMidYMid slice"
                           />
-                          {node.role !== 'deeper' || size.width >= 520 ? (
-                            <text
-                              x={node.x}
-                              y={node.y + node.r + 20}
-                              textAnchor="middle"
-                              className="fill-foreground text-[11px]"
-                            >
-                              {node.name.length > 18
-                                ? `${node.name.slice(0, 17).trimEnd()}…`
-                                : node.name}
-                            </text>
-                          ) : null}
+                          {(() => {
+                            const originX = focusNode?.x ?? size.width / 2;
+                            const originY = focusNode?.y ?? size.height / 2;
+                            const dx = node.x - originX;
+                            const dy = node.y - originY;
+                            const len = Math.hypot(dx, dy) || 1;
+                            const outward = node.role !== 'focus';
+                            const labelDistance = node.r + 16;
+                            const labelX = outward
+                              ? node.x + (dx / len) * labelDistance
+                              : node.x;
+                            const labelY = outward
+                              ? node.y + (dy / len) * labelDistance + 4
+                              : node.y + node.r + 18;
+                            const anchor = !outward
+                              ? 'middle'
+                              : dx > node.r * 0.45
+                              ? 'start'
+                              : dx < -node.r * 0.45
+                              ? 'end'
+                              : 'middle';
+                            const name =
+                              node.name.length > 22
+                                ? `${node.name.slice(0, 21).trimEnd()}…`
+                                : node.name;
+                            return (
+                              <text
+                                x={labelX}
+                                y={labelY}
+                                textAnchor={anchor}
+                                className="fill-foreground text-[11px]"
+                              >
+                                {name}
+                              </text>
+                            );
+                          })()}
                           {node.hasHiddenChildren ? (
                             <circle
                               cx={node.x + node.r * 0.7}
