@@ -1,5 +1,6 @@
-import { MemberSpacesStepIn, MySpacesControls } from '@hypha-platform/epics';
+import { MySpacesControls } from '@hypha-platform/epics';
 import { MySpacesBoard } from '@web/components/my-spaces-board';
+import { MySpacesIconBoard } from '@web/components/my-spaces-icon-board';
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
@@ -45,7 +46,12 @@ export default async function Index(props: PageProps) {
     <div className="w-full min-w-0">
       <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9">
         <div className="xl:hidden">
-          <MemberSpacesStepIn lang={lang} />
+          <MySpacesIconBoard
+            lang={lang}
+            spaces={mySpaces}
+            order={order}
+            query={query}
+          />
         </div>
         <div className="hidden min-w-0 flex-col gap-9 xl:flex">
           <div className="flex min-w-0 flex-col gap-4">

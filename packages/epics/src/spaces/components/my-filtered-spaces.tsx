@@ -137,12 +137,15 @@ export function MyFilteredSpaces({
   order,
   query = '',
   renderDiagram,
+  renderSpaces,
 }: {
   lang: Locale;
   spaces: Space[];
   order?: SpaceOrder;
   query?: string;
   renderDiagram?: (root: Space) => ReactNode;
+  /** Replaces the space cards. The ecosystem heading and diagram toggle stay. */
+  renderSpaces?: (spaces: Space[]) => ReactNode;
 }) {
   const { person, isLoading: isLoadingPerson } = useMe();
   const { web3SpaceIds, isLoading: isLoadingMemberSpaceIds } =
@@ -292,6 +295,8 @@ export function MyFilteredSpaces({
                 </div>
                 {showDiagram && renderDiagram ? (
                   renderDiagram(group.root)
+                ) : renderSpaces ? (
+                  renderSpaces(group.spaces)
                 ) : (
                   <SpaceCardContainer
                     lang={lang}
