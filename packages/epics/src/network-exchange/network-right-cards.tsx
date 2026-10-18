@@ -24,6 +24,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { CAPITAL_MARK } from './capital-marks';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
@@ -271,7 +272,7 @@ function CapitalChips({
 
 function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
   const t = useTranslations('NetworkExchange');
-  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const { openPublicChat, opening: openingPublic } = useOpenSpacePublicChat();
   const { assets, isLoading } = useSpaceTreasury(space.slug);
   const [expanded, setExpanded] = useState(false);
   const seeks = parseCapitalKeys(space.seeks);
@@ -387,24 +388,20 @@ function SpaceCard({ lang, space }: { lang: Locale; space: NetworkRailSpace }) {
           <ArrowUpRight className="size-3.5" aria-hidden />
         </Link>
       </div>
-      {space.chatRoomId ? (
-        <button
-          type="button"
-          className="border-t border-border px-3 py-3 text-1 uppercase tracking-[0.12em]"
-          onClick={() => {
-            openCoherenceChat(
-              space.chatRoomId as string,
-              space.title,
-              '',
-              space.description,
-              space.slug,
-            );
-            openHumanChatPanel();
-          }}
-        >
-          {t('connect')}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        disabled={openingPublic}
+        className="border-t border-border px-3 py-3 text-1 uppercase tracking-[0.12em] disabled:opacity-50"
+        onClick={() => {
+          void openPublicChat({
+            slug: space.slug,
+            title: space.title,
+            description: space.description,
+          });
+        }}
+      >
+        {t('connect')}
+      </button>
     </section>
   );
 }

@@ -301,8 +301,22 @@ export async function matrixCreateRoom(
 /** Stable alias localpart for the single network-wide room. */
 export const NETWORK_ROOM_ALIAS_LOCALPART = 'hypha-network';
 
-/** Stable alias localpart for the single ecosystem-wide room. */
-export const ECOSYSTEM_ROOM_ALIAS_LOCALPART = 'hypha-ecosystem';
+/** Prefix for per-ecosystem rooms (`hypha-ecosystem-{rootSlug}`). */
+export const ECOSYSTEM_ROOM_ALIAS_PREFIX = 'hypha-ecosystem';
+
+/** Prefix for per-space public rooms (`hypha-public-{spaceSlug}`). */
+export const PUBLIC_ROOM_ALIAS_PREFIX = 'hypha-public';
+
+/** Matrix room alias localparts: lowercase ascii, hyphen-safe. */
+export function matrixAliasLocalpart(prefix: string, slug: string): string {
+  const safe = slug
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._=-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 180);
+  return safe ? `${prefix}-${safe}` : prefix;
+}
 
 /** Server name from a Matrix user id (`@user:server` → `server`). */
 export function matrixServerNameFromUserId(userId: string): string | null {

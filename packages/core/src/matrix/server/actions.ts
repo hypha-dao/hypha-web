@@ -25,12 +25,14 @@ import {
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { Environment } from '../../coherence/types';
 import {
-  ECOSYSTEM_ROOM_ALIAS_LOCALPART,
+  ECOSYSTEM_ROOM_ALIAS_PREFIX,
   NETWORK_ROOM_ALIAS_LOCALPART,
+  PUBLIC_ROOM_ALIAS_PREFIX,
   getMatrixAdditionalBotAsTokens,
   getMatrixBotAsToken,
   getMatrixBotUserId,
   getMatrixHomeserverUrl,
+  matrixAliasLocalpart,
   matrixApplyRoomPowerLevels,
   matrixCreateAliasedRoom,
   matrixCreateRoom,
@@ -381,16 +383,43 @@ export async function ensureNetworkChatRoomAction({
   });
 }
 
-/** The one ecosystem-wide room (`#hypha-ecosystem:server`). */
+/**
+ * One room per ecosystem root (`#hypha-ecosystem-{rootSlug}:server`).
+ * Distinct from the root space’s member room (`spaces.chat_room_id`).
+ */
 export async function ensureEcosystemChatRoomAction({
   matrixUserId,
+  ecosystemSlug,
 }: {
   matrixUserId: string;
+  ecosystemSlug: string;
 }): Promise<{ roomId: string } | null> {
+  const slug = ecosystemSlug.trim();
+  if (!slug) return null;
   return ensureAliasedChatRoomAction({
     matrixUserId,
-    aliasLocalpart: ECOSYSTEM_ROOM_ALIAS_LOCALPART,
-    roomName: 'Ecosystem',
+    aliasLocalpart: matrixAliasLocalpart(ECOSYSTEM_ROOM_ALIAS_PREFIX, slug),
+    roomName: `Ecosystem · ${slug}`,
+  });
+}
+
+/**
+ * One public room per space (`#hypha-public-{spaceSlug}:server`).
+ * Open to anyone connecting from the network; not the members-only space room.
+ */
+export async function ensurePublicChatRoomAction({
+  matrixUserId,
+  spaceSlug,
+}: {
+  matrixUserId: string;
+  spaceSlug: string;
+}): Promise<{ roomId: string } | null> {
+  const slug = spaceSlug.trim();
+  if (!slug) return null;
+  return ensureAliasedChatRoomAction({
+    matrixUserId,
+    aliasLocalpart: matrixAliasLocalpart(PUBLIC_ROOM_ALIAS_PREFIX, slug),
+    roomName: `Public · ${slug}`,
   });
 }
 

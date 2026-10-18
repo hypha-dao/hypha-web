@@ -13,7 +13,7 @@ import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { getDhoPathAgreements } from '../../common';
-import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { useOpenSpacePublicChat } from '../../common/use-open-space-public-chat';
 import { SpaceCard } from '../../spaces/components/space-card';
 import { SpaceModeLabel } from '../../spaces/components/space-mode-label';
 
@@ -35,17 +35,13 @@ export function NetworkMapPinHoverCard({
   const href = getDhoPathAgreements(lang, space.slug);
   const tCommon = useTranslations('Common');
   const tNetwork = useTranslations('NetworkExchange');
-  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const { openPublicChat, opening: openingPublic } = useOpenSpacePublicChat();
   const openRoom = () => {
-    if (!space.chatRoomId) return;
-    openCoherenceChat(
-      space.chatRoomId,
-      space.title,
-      '',
-      space.description,
-      space.slug,
-    );
-    openHumanChatPanel();
+    void openPublicChat({
+      slug: space.slug,
+      title: space.title,
+      description: space.description,
+    });
   };
 
   if (compact) {
@@ -87,10 +83,10 @@ export function NetworkMapPinHoverCard({
         <button
           type="button"
           className="pointer-events-auto mt-2 w-full border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
-          disabled={!space.chatRoomId}
+          disabled={openingPublic}
           onClick={openRoom}
         >
-          {space.chatRoomId ? tNetwork('openRoom') : tNetwork('noRoom')}
+          {tNetwork('openRoom')}
         </button>
       </div>
     );
@@ -123,10 +119,10 @@ export function NetworkMapPinHoverCard({
       <button
         type="button"
         className="pointer-events-auto mt-2 w-full border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
-        disabled={!space.chatRoomId}
+        disabled={openingPublic}
         onClick={openRoom}
       >
-        {space.chatRoomId ? tNetwork('openRoom') : tNetwork('noRoom')}
+        {tNetwork('openRoom')}
       </button>
     </div>
   );

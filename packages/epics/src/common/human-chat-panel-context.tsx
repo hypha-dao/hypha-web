@@ -74,12 +74,15 @@ export type HumanChatPanelContextValue = {
   coherenceDescription: string | null;
   /** Space a direct conversation belongs to, so a call can start the way it does in that space. */
   coherenceSpaceSlug: string | null;
+  /** True when this coherence room is the space’s public channel (network connect). */
+  coherencePublic: boolean;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
     slug: string,
     description?: string | null,
     spaceSlug?: string | null,
+    options?: { public?: boolean },
   ) => void;
   closeCoherenceChat: () => void;
 };
@@ -99,6 +102,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceSlug: null,
   coherenceDescription: null,
   coherenceSpaceSlug: null,
+  coherencePublic: false,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
 });
@@ -129,6 +133,7 @@ export function HumanChatPanelProvider({
   const [coherenceSpaceSlug, setCoherenceSpaceSlug] = useState<string | null>(
     null,
   );
+  const [coherencePublic, setCoherencePublic] = useState(false);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
@@ -162,12 +167,14 @@ export function HumanChatPanelProvider({
       slug: string,
       description?: string | null,
       spaceSlug?: string | null,
+      options?: { public?: boolean },
     ) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
       setCoherenceSlug(slug);
       setCoherenceDescription(description?.trim() ? description.trim() : null);
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
+      setCoherencePublic(Boolean(options?.public));
       setMode('coherence');
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
@@ -182,6 +189,7 @@ export function HumanChatPanelProvider({
     setCoherenceSlug(null);
     setCoherenceDescription(null);
     setCoherenceSpaceSlug(null);
+    setCoherencePublic(false);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -209,6 +217,7 @@ export function HumanChatPanelProvider({
         coherenceSlug,
         coherenceDescription,
         coherenceSpaceSlug,
+        coherencePublic,
         openCoherenceChat,
         closeCoherenceChat,
       }}

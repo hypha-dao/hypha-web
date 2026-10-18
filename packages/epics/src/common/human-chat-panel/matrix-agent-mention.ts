@@ -94,7 +94,14 @@ export async function inviteMatrixAgentIfNeeded(
  * right surface — proposal, signal, space, ecosystem, network, or a DM.
  */
 export type MatrixAgentRoomContext = {
-  kind: 'proposal' | 'signal' | 'space' | 'ecosystem' | 'network' | 'dm';
+  kind:
+    | 'proposal'
+    | 'signal'
+    | 'space'
+    | 'ecosystem'
+    | 'public'
+    | 'network'
+    | 'dm';
   spaceSlug?: string | null;
   documentSlug?: string | null;
   documentTitle?: string | null;

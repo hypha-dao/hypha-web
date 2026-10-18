@@ -57,6 +57,7 @@ import {
   ensureEcosystemChatRoomAction,
   ensureMemberJoinedRoomAction,
   ensureNetworkChatRoomAction,
+  ensurePublicChatRoomAction,
 } from '../../server/actions';
 import {
   parseSignalTeamNoticeFromWireContent,
@@ -559,8 +560,10 @@ interface MatrixContextType {
   ) => Promise<{ roomId: string }>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
-  /** Join the single ecosystem-wide room, creating it on first use. */
-  ensureEcosystemRoom: () => Promise<{ roomId: string }>;
+  /** Join this ecosystem’s shared room (not the root space member room). */
+  ensureEcosystemRoom: (ecosystemSlug: string) => Promise<{ roomId: string }>;
+  /** Join this space’s public room (network connect); not the member room. */
+  ensurePublicRoom: (spaceSlug: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
@@ -1133,29 +1136,61 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     throw new Error('Room not available in Matrix client after creation');
   }, [client]);
 
-  const ensureEcosystemRoom = React.useCallback(async () => {
-    if (!client) {
-      throw new Error('Client should be specified');
-    }
-    const userId = client.getUserId();
-    if (!userId) {
-      throw new Error('Matrix user id is not available');
-    }
-    const ensured = await ensureEcosystemChatRoomAction({
-      matrixUserId: userId,
-    });
-    if (!ensured) {
-      throw new Error('Failed to open the ecosystem room');
-    }
-    const { roomId } = ensured;
-    for (let i = 0; i < 200; i++) {
-      if (client.getRoom(roomId)) {
-        return { roomId };
+  const ensureEcosystemRoom = React.useCallback(
+    async (ecosystemSlug: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
       }
-      await new Promise((r) => setTimeout(r, 50));
-    }
-    throw new Error('Room not available in Matrix client after creation');
-  }, [client]);
+      const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
+      const ensured = await ensureEcosystemChatRoomAction({
+        matrixUserId: userId,
+        ecosystemSlug,
+      });
+      if (!ensured) {
+        throw new Error('Failed to open the ecosystem room');
+      }
+      const { roomId } = ensured;
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          return { roomId };
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
+
+  const ensurePublicRoom = React.useCallback(
+    async (spaceSlug: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
+      const ensured = await ensurePublicChatRoomAction({
+        matrixUserId: userId,
+        spaceSlug,
+      });
+      if (!ensured) {
+        throw new Error('Failed to open the public room');
+      }
+      const { roomId } = ensured;
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          return { roomId };
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
 
   const toggleReaction = React.useCallback(
     async ({ roomId, targetEventId, key }: ToggleReactionInput) => {
@@ -2309,6 +2344,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     createRoom,
     ensureNetworkRoom,
     ensureEcosystemRoom,
+    ensurePublicRoom,
     sendMessage,
     editRoomMessage,
     redactRoomEvent,
@@ -2345,6 +2381,9 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   ensureEcosystemRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensurePublicRoom: async () => {
     throw new Error('Matrix unavailable');
   },
   sendMessage: async () => {

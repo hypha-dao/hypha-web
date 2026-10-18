@@ -49,7 +49,15 @@ export async function POST(request: NextRequest) {
       : null;
   const kindRaw = typeof rawContext?.kind === 'string' ? rawContext.kind : '';
   const kind = (
-    ['proposal', 'signal', 'space', 'ecosystem', 'network', 'dm'] as const
+    [
+      'proposal',
+      'signal',
+      'space',
+      'ecosystem',
+      'public',
+      'network',
+      'dm',
+    ] as const
   ).find((value) => value === kindRaw);
   const readString = (value: unknown) =>
     typeof value === 'string' ? value.trim() : '';

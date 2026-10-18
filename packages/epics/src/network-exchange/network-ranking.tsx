@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
 import type { NetworkSpaceRank } from '@hypha-platform/core/client';
-import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 
 type Metric = 'need' | 'action' | 'impact';
 
@@ -18,7 +18,7 @@ export function NetworkRanking({
   onSelect?: (space: NetworkSpaceRank) => void;
 }) {
   const t = useTranslations('NetworkExchange');
-  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const { openPublicChat } = useOpenSpacePublicChat();
   const [metric, setMetric] = useState<Metric>('impact');
   const ranked = useMemo(
     () =>
@@ -42,18 +42,14 @@ export function NetworkRanking({
   }
 
   const openRoom = (space: NetworkSpaceRank) => {
-    if (!space.chatRoomId) {
-      window.location.assign(`/${lang}/dho/${space.spaceSlug}/overview`);
-      return;
-    }
-    openCoherenceChat(
-      space.chatRoomId,
-      space.spaceTitle,
-      '',
-      null,
-      space.spaceSlug,
-    );
-    openHumanChatPanel();
+    void openPublicChat({
+      slug: space.spaceSlug,
+      title: space.spaceTitle,
+    }).then((opened) => {
+      if (!opened) {
+        window.location.assign(`/${lang}/dho/${space.spaceSlug}/overview`);
+      }
+    });
   };
 
   return (

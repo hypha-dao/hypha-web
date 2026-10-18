@@ -134,7 +134,14 @@ function sleep(ms: number) {
  * helpful answer as the agent. Quiet when the mention is absent.
  */
 export type MatrixAgentRoomContext = {
-  kind: 'proposal' | 'signal' | 'space' | 'ecosystem' | 'network' | 'dm';
+  kind:
+    | 'proposal'
+    | 'signal'
+    | 'space'
+    | 'ecosystem'
+    | 'public'
+    | 'network'
+    | 'dm';
   spaceSlug?: string | null;
   documentSlug?: string | null;
   documentTitle?: string | null;
@@ -177,8 +184,13 @@ function describeRoomContext(
   }
   if (kind === 'ecosystem') {
     return spaceSlug
-      ? `You are in the ecosystem room for space slug ${spaceSlug}. Read that space and the ecosystem around it before you answer.`
+      ? `You are in the ecosystem room for space slug ${spaceSlug}. This is shared by every space in that ecosystem — not the root space’s private member room. Read that space and the ecosystem around it before you answer.`
       : 'You are in an ecosystem room. Answer from the room history; look up ecosystem tools when a space slug appears.';
+  }
+  if (kind === 'public') {
+    return spaceSlug
+      ? `You are in the public channel for space slug ${spaceSlug}. Anyone on the network can write here; the members-only space room is separate. Read that space before you answer, and keep the tone open to visitors.`
+      : 'You are in a public space channel open to network visitors. Answer from the room history; look up the space when a slug appears.';
   }
   if (kind === 'network') {
     return 'You are in the network room. Answer from the room history and network-wide tools; do not invent a single home space.';

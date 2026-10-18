@@ -1054,6 +1054,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     coherenceDescription,
     coherenceSpaceSlug,
+    coherencePublic,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
@@ -1066,7 +1067,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const spaceSlug = isDirectConversation
     ? undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
-  const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem'>('space');
+  const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem' | 'public'>(
+    'space',
+  );
   const callSpaceSlug =
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
     (!isDirectConversation ? coherenceSpaceSlug?.trim() : null) ||
@@ -1144,9 +1147,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
-  // Dashboard chat has no space. Membership still gates every space and signal room.
+  // Dashboard chat has no space. Membership still gates space / ecosystem /
+  // signal rooms. Public channels (network connect) stay open to visitors.
   const blockSpaceChatForMembership =
     !isDirectConversation &&
+    !coherencePublic &&
+    !(mode === 'space' && spaceRoom === 'public') &&
     (mode === 'space' || mode === 'coherence') &&
     Boolean(mode === 'coherence' || spaceSlug?.trim()) &&
     (isUserSpaceStateLoading || !isSpaceMember);
@@ -2915,7 +2921,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!spaceSlug?.trim()) return;
     const joinedKey = joinedRef.current;
     const staysForThisSpace =
-      joinedKey === spaceSlug || joinedKey === `ecosystem:${spaceSlug}`;
+      joinedKey === spaceSlug ||
+      joinedKey === `ecosystem:${spaceSlug}` ||
+      joinedKey === `public:${spaceSlug}`;
     if (joinedKey && !staysForThisSpace) {
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
@@ -2938,6 +2946,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!spaceSlug?.trim()) return;
     if (isUserSpaceStateLoading) return;
     if (hasSpaceActivityAccess) return;
+    // Public stays open to visitors; only member rooms need activity access.
+    if (spaceRoom === 'public') return;
     if (roomId) {
       matrixRef.current.unregisterRoomListener(roomId);
     }
@@ -2954,17 +2964,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId,
     hasSpaceActivityAccess,
     isUserSpaceStateLoading,
+    spaceRoom,
   ]);
 
-  // Join space room when Matrix is ready (space mode)
+  // Join space / ecosystem / public room when Matrix is ready (space mode)
   useEffect(() => {
     if (mode !== 'space') return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (!spaceSlug) return;
     if (isSpaceLoading) return;
     if (isUserSpaceStateLoading) return;
-    if (!hasSpaceActivityAccess) return;
+    const openingPublic = spaceRoom === 'public';
     const openingEcosystem = spaceRoom === 'ecosystem';
+    if (!openingPublic && !hasSpaceActivityAccess) return;
     if (
       openingEcosystem &&
       space?.parentId != null &&
@@ -2973,89 +2985,108 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     ) {
       return;
     }
-    const targetSlug =
-      openingEcosystem && rootSpace?.slug?.trim()
-        ? rootSpace.slug.trim()
-        : spaceSlug;
-    const joinedKey = openingEcosystem ? `ecosystem:${spaceSlug}` : spaceSlug;
+    const ecosystemSlug =
+      (rootSpace?.slug?.trim() || spaceSlug).trim() || spaceSlug;
+    const joinedKey = openingEcosystem
+      ? `ecosystem:${spaceSlug}`
+      : openingPublic
+      ? `public:${spaceSlug}`
+      : spaceSlug;
     if (joinedRef.current === joinedKey) return;
 
     let cancelled = false;
-    const { joinRoom, createRoom, loadRoomHistory, client } = matrixRef.current;
+    const {
+      joinRoom,
+      createRoom,
+      loadRoomHistory,
+      client,
+      ensureEcosystemRoom,
+      ensurePublicRoom,
+    } = matrixRef.current;
 
     const initRoom = async () => {
       setIsJoining(true);
       setError(null);
       try {
-        const canonicalRoomId =
-          (openingEcosystem
-            ? rootSpace?.chatRoomId
-            : space?.chatRoomId
-          )?.trim() || null;
-        const storedRoomId = getStoredRoomId(targetSlug);
+        let targetRoomId: string | null = null;
 
-        if (
-          canonicalRoomId &&
-          storedRoomId &&
-          canonicalRoomId !== storedRoomId
-        ) {
-          clearStoredRoomId(targetSlug);
-        }
+        if (openingEcosystem) {
+          const { roomId: ecosystemRoomId } = await ensureEcosystemRoom(
+            ecosystemSlug,
+          );
+          targetRoomId = ecosystemRoomId;
+        } else if (openingPublic) {
+          const { roomId: publicRoomId } = await ensurePublicRoom(spaceSlug);
+          targetRoomId = publicRoomId;
+        } else {
+          const canonicalRoomId = space?.chatRoomId?.trim() || null;
+          const storedRoomId = getStoredRoomId(spaceSlug);
 
-        let targetRoomId: string | null = canonicalRoomId || storedRoomId;
-
-        const ensureJoined = async (roomIdOrAlias: string) => {
-          const canonicalId = await joinRoom(roomIdOrAlias);
-          const room = client?.getRoom(canonicalId);
-          if (!room) {
-            throw new Error('Room not available in Matrix client after join');
+          if (
+            canonicalRoomId &&
+            storedRoomId &&
+            canonicalRoomId !== storedRoomId
+          ) {
+            clearStoredRoomId(spaceSlug);
           }
-          return canonicalId;
-        };
 
-        if (targetRoomId) {
-          try {
-            targetRoomId = await ensureJoined(targetRoomId);
-            storeRoomId(targetSlug, targetRoomId);
-          } catch (joinErr) {
-            if (canonicalRoomId && targetRoomId === canonicalRoomId) {
-              throw joinErr;
+          targetRoomId = canonicalRoomId || storedRoomId;
+
+          const ensureJoined = async (roomIdOrAlias: string) => {
+            const canonicalId = await joinRoom(roomIdOrAlias);
+            const room = client?.getRoom(canonicalId);
+            if (!room) {
+              throw new Error('Room not available in Matrix client after join');
             }
-            clearStoredRoomId(targetSlug);
-            targetRoomId = null;
-          }
-        }
+            return canonicalId;
+          };
 
-        if (!targetRoomId) {
-          if (canonicalRoomId) {
-            throw new Error('Failed to join canonical space chat room');
-          }
-          if (blockSpaceChatForMembership) {
-            if (!cancelled) setIsJoining(false);
-            return;
-          }
-          const { roomId: newRoomId } = await createRoom(`space-${targetSlug}`);
-          if (!newRoomId) {
-            throw new Error('Failed to create room: empty roomId returned');
-          }
-          targetRoomId = newRoomId;
-          storeRoomId(targetSlug, newRoomId);
-          if (authTokenRef.current) {
+          if (targetRoomId) {
             try {
-              await updateSpaceBySlugRef.current({
-                slug: targetSlug,
-                chatRoomId: newRoomId,
-              });
-            } catch (persistErr) {
-              console.warn(
-                '[HumanRightPanel] Failed to persist chat room id on space:',
-                persistErr,
-              );
+              targetRoomId = await ensureJoined(targetRoomId);
+              storeRoomId(spaceSlug, targetRoomId);
+            } catch (joinErr) {
+              if (canonicalRoomId && targetRoomId === canonicalRoomId) {
+                throw joinErr;
+              }
+              clearStoredRoomId(spaceSlug);
+              targetRoomId = null;
+            }
+          }
+
+          if (!targetRoomId) {
+            if (canonicalRoomId) {
+              throw new Error('Failed to join canonical space chat room');
+            }
+            if (blockSpaceChatForMembership) {
+              if (!cancelled) setIsJoining(false);
+              return;
+            }
+            const { roomId: newRoomId } = await createRoom(
+              `space-${spaceSlug}`,
+            );
+            if (!newRoomId) {
+              throw new Error('Failed to create room: empty roomId returned');
+            }
+            targetRoomId = newRoomId;
+            storeRoomId(spaceSlug, newRoomId);
+            if (authTokenRef.current) {
+              try {
+                await updateSpaceBySlugRef.current({
+                  slug: spaceSlug,
+                  chatRoomId: newRoomId,
+                });
+              } catch (persistErr) {
+                console.warn(
+                  '[HumanRightPanel] Failed to persist chat room id on space:',
+                  persistErr,
+                );
+              }
             }
           }
         }
 
-        if (cancelled) return;
+        if (cancelled || !targetRoomId) return;
         joinedRef.current = joinedKey;
         setRoomId(targetRoomId);
 
@@ -3110,7 +3141,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     space?.parentId,
     spaceRoom,
     rootSpace?.slug,
-    rootSpace?.chatRoomId,
     isOrganisationLoading,
     blockSpaceChatForMembership,
     syncRoomMessages,
@@ -4633,6 +4663,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? { kind: 'network' }
             : mode === 'space' && spaceRoom === 'ecosystem'
             ? { kind: 'ecosystem', spaceSlug }
+            : mode === 'space' && spaceRoom === 'public'
+            ? { kind: 'public', spaceSlug }
+            : coherencePublic
+            ? { kind: 'public', spaceSlug }
             : mode === 'coherence' && coherenceSlug?.trim()
             ? {
                 kind: 'signal',
@@ -4798,22 +4832,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   options: [
                     { value: 'space', label: t('spaceRoomTitle') },
                     { value: 'ecosystem', label: t('ecosystemRoomTitle') },
+                    { value: 'public', label: t('publicRoomTitle') },
                   ],
                   onChange: (next) => {
-                    if (next !== 'space' && next !== 'ecosystem') return;
-                    if (next === spaceRoom) return;
-                    const nextRoomId =
-                      next === 'ecosystem'
-                        ? rootSpace?.chatRoomId?.trim() || null
-                        : space?.chatRoomId?.trim() || null;
-                    if (nextRoomId && nextRoomId === roomId) {
-                      setSpaceRoom(next);
-                      joinedRef.current =
-                        next === 'ecosystem'
-                          ? `ecosystem:${spaceSlug}`
-                          : spaceSlug;
+                    if (
+                      next !== 'space' &&
+                      next !== 'ecosystem' &&
+                      next !== 'public'
+                    ) {
                       return;
                     }
+                    if (next === spaceRoom) return;
+                    // Ecosystem / public rooms are alias-backed — never reuse
+                    // the member space room id when switching.
                     joinedRef.current = null;
                     if (roomId) {
                       matrixRef.current.unregisterRoomListener(roomId);
@@ -5441,6 +5472,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         ? t('networkWelcome')
                         : mode === 'space' && spaceRoom === 'ecosystem'
                         ? t('ecosystemWelcome')
+                        : mode === 'space' && spaceRoom === 'public'
+                        ? t('publicWelcome')
+                        : coherencePublic
+                        ? t('publicWelcome')
                         : welcomePartner
                         ? t('welcomeWith', { name: welcomePartner })
                         : undefined
@@ -5450,6 +5485,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         ? t('networkRoomTitle')
                         : mode === 'space' && spaceRoom === 'ecosystem'
                         ? t('ecosystemRoomTitle')
+                        : mode === 'space' && spaceRoom === 'public'
+                        ? t('publicRoomTitle')
+                        : coherencePublic
+                        ? t('publicRoomTitle')
                         : welcomePartner ?? undefined
                     }
                     onReply={
