@@ -19,6 +19,8 @@ export type ConversationRow = {
   memberCount: number;
   otherUserId: string | null;
   kind: 'person' | 'group';
+  /** A signal thread that happens to have one other person. Not a private message. */
+  signalThread?: boolean;
 };
 
 export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
@@ -95,10 +97,66 @@ function personName(person: ConnectionListPerson, fallback: string) {
   return full || person.nickname || fallback;
 }
 
+const signalThreadRoomIds = new Set<string>();
+const signalThreadRoomListeners = new Set<() => void>();
+
+/** Rooms already known to be signal threads, including ones loaded from Hypha. */
+export function rememberSignalThreadRooms(
+  roomIds: Iterable<string | null | undefined>,
+  options?: { quiet?: boolean },
+) {
+  let changed = false;
+  for (const roomId of roomIds) {
+    const id = roomId?.trim();
+    if (!id || signalThreadRoomIds.has(id)) continue;
+    signalThreadRoomIds.add(id);
+    changed = true;
+  }
+  if (!changed || options?.quiet) return;
+  for (const listener of signalThreadRoomListeners) listener();
+}
+
+export function isRememberedSignalThreadRoom(roomId: string) {
+  return signalThreadRoomIds.has(roomId.trim());
+}
+
+export function subscribeSignalThreadRooms(listener: () => void) {
+  signalThreadRoomListeners.add(listener);
+  return () => {
+    signalThreadRoomListeners.delete(listener);
+  };
+}
+
+export function eventContentIsSignalThread(
+  content: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!content) return false;
+  const msgtype =
+    typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+  if (
+    msgtype === 'io.hypha.signal.team.v1' ||
+    msgtype === 'io.hypha.signal.team.request.v1'
+  ) {
+    return true;
+  }
+  const body = typeof content.body === 'string' ? content.body.trim() : '';
+  if (
+    body.startsWith('[hypha:signal-team]') ||
+    body.startsWith('[hypha:signal-team-request]')
+  ) {
+    return true;
+  }
+  const slug =
+    typeof content.coherenceSlug === 'string'
+      ? content.coherenceSlug.trim()
+      : '';
+  return slug.length > 0;
+}
+
 function directRoomByMatrixId(rows: readonly ConversationRow[]) {
   const rooms = new Map<string, ConversationRow>();
   for (const row of rows) {
-    if (row.kind !== 'person' || !row.otherUserId) continue;
+    if (row.signalThread || row.kind !== 'person' || !row.otherUserId) continue;
     const key = row.otherUserId.toLowerCase();
     const current = rooms.get(key);
     if (!current || (row.lastTs ?? 0) >= (current.lastTs ?? 0)) {
@@ -130,7 +188,9 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
   const extras: MemberRow<T>[] = [];
   let syntheticId = -1;
   for (const room of rooms) {
-    if (room.kind !== 'person' || room.unread <= 0) continue;
+    if (room.signalThread || room.kind !== 'person' || room.unread <= 0) {
+      continue;
+    }
     if (knownRooms.has(room.roomId)) continue;
     if (room.otherUserId && knownMxids.has(room.otherUserId.toLowerCase())) {
       continue;

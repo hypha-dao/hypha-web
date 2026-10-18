@@ -89,6 +89,60 @@ describe('memberRowsForConnections', () => {
     expect(rows[1]).toMatchObject({ roomId: null, preview: '' });
   });
 
+  it('does not use a signal thread as the private message', () => {
+    const rows = memberRowsForConnections(
+      [person(1, 'Edgar', 'Kampers')],
+      [
+        room({
+          roomId: '!signal',
+          kind: 'person',
+          signalThread: true,
+          name: 'Asset liquidity',
+          otherUserId: '@edgar:matrix',
+          preview: 'I just had a really good call',
+          lastTs: 900,
+        }),
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          name: 'Edgar Kampers',
+          otherUserId: '@edgar:matrix',
+          preview: 'See you tomorrow',
+          lastTs: 200,
+        }),
+      ],
+      { 1: '@edgar:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows[0]).toMatchObject({
+      roomId: '!dm',
+      preview: 'See you tomorrow',
+    });
+  });
+
+  it('leaves the private row empty when the only shared room is a signal', () => {
+    const rows = memberRowsForConnections(
+      [person(1, 'Edgar', 'Kampers')],
+      [
+        room({
+          roomId: '!signal',
+          kind: 'person',
+          signalThread: true,
+          otherUserId: '@edgar:matrix',
+          preview: 'I just had a really good call',
+          lastTs: 900,
+        }),
+      ],
+      { 1: '@edgar:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows[0]).toMatchObject({ roomId: null, preview: '' });
+  });
+
   it('drops the signed-in member and the Hypha bot', () => {
     const rows = memberRowsForConnections(
       [

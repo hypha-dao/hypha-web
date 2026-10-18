@@ -28,9 +28,13 @@ import {
   type MemberHomeOpenChat,
 } from './member-home-people';
 import {
+  eventContentIsSignalThread,
   isHyphaBot,
+  isRememberedSignalThreadRoom,
   looksLikeHyphaBot,
   memberRowsForConnections,
+  rememberSignalThreadRooms,
+  subscribeSignalThreadRooms,
   unreadRoomsMissingFromMembers,
   STALE_CONNECTION_MS,
   suggestConnections,
@@ -170,6 +174,20 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
       kind === 'person'
         ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
         : room.getMxcAvatarUrl();
+    const timeline = room.getLiveTimeline().getEvents();
+    const signalThread =
+      isRememberedSignalThreadRoom(room.roomId) ||
+      timeline.some(
+        (event) =>
+          event.getType() === EventType.RoomMessage &&
+          eventContentIsSignalThread(
+            event.getContent() as Record<string, unknown> | null,
+          ),
+      );
+    if (signalThread) {
+      rememberSignalThreadRooms([room.roomId], { quiet: true });
+      continue;
+    }
     const last = lastRoomMessage(room, selfId);
 
     rows.push({
@@ -355,13 +373,21 @@ export function MyConnections() {
     client.on(RoomEvent.Timeline, refresh);
     client.on(RoomEvent.Receipt, refresh);
     client.on(RoomEvent.MyMembership, refresh);
+    const unsubscribeSignalRooms = subscribeSignalThreadRooms(refresh);
     return () => {
+      unsubscribeSignalRooms();
       client.removeListener(ClientEvent.Sync, onSync);
       client.removeListener(RoomEvent.Timeline, refresh);
       client.removeListener(RoomEvent.Receipt, refresh);
       client.removeListener(RoomEvent.MyMembership, refresh);
     };
   }, [client]);
+
+  useEffect(() => {
+    rememberSignalThreadRooms(
+      (home?.signals ?? []).map((signal) => signal.roomId),
+    );
+  }, [home?.signals]);
 
   const members = useMemo(() => {
     const directoryRows = memberRowsForConnections(

@@ -20,6 +20,8 @@ export type NamedRoomSnapshot = {
   lastActiveTs?: number;
   /** Loaded messages. An empty room created by mistake loses to the real chat. */
   messageCount?: number;
+  /** Signal thread. A two-person signal room is not a private message. */
+  signalThread?: boolean;
 };
 
 /**
@@ -136,6 +138,7 @@ export function findNamedDirectRoomId(
   if (!self || !other) return null;
 
   const direct = rooms.filter((room) => {
+    if (room.signalThread) return false;
     const others = [
       ...new Set(room.joinedUserIds.filter((id) => id && id !== self)),
     ];

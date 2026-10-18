@@ -43,6 +43,7 @@ import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
 import { HOME_CHAT_COLUMN, MemberHomeChat } from './member-home-chat';
+import { rememberSignalThreadRooms } from './member-connections';
 import {
   HOME_QUEUE_EVENT,
   bindHomePerson,
@@ -208,6 +209,11 @@ export function MemberHome({
   );
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
+  useEffect(() => {
+    rememberSignalThreadRooms(
+      (home?.signals ?? []).map((signal) => signal.roomId),
+    );
+  }, [home?.signals]);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [viewReady, setViewReady] = useState(false);
   useEffect(() => {

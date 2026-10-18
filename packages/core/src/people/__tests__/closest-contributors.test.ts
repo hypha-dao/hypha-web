@@ -152,6 +152,31 @@ describe('findNamedDirectRoomId', () => {
     ).toBe('!older:hypha');
   });
 
+  it('does not reopen a signal thread as a direct chat', () => {
+    expect(
+      findNamedDirectRoomId(
+        [
+          {
+            roomId: '!signal:hypha',
+            name: 'Asset liquidity',
+            joinedUserIds: [self, '@edgar:hypha'],
+            messageCount: 4,
+            signalThread: true,
+          },
+          {
+            roomId: '!dm:hypha',
+            name: 'Edgar Kampers',
+            joinedUserIds: [self, '@edgar:hypha'],
+            messageCount: 1,
+          },
+        ],
+        self,
+        '@edgar:hypha',
+        'Edgar Kampers',
+      ),
+    ).toBe('!dm:hypha');
+  });
+
   it('does not treat a larger room as a direct chat', () => {
     expect(
       findNamedDirectRoomId(

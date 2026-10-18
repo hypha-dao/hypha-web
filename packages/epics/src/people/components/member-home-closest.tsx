@@ -28,6 +28,11 @@ import {
 } from '@hypha-platform/core/client';
 
 import {
+  eventContentIsSignalThread,
+  isRememberedSignalThreadRoom,
+  rememberSignalThreadRooms,
+} from './member-connections';
+import {
   presenceRank,
   readMemberPresence,
   type PresenceLevel,
@@ -86,6 +91,21 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
         continue;
       }
       messageSenderIds.push(sender);
+    }
+    const signalThread =
+      isRememberedSignalThreadRoom(room.roomId) ||
+      room
+        .getLiveTimeline()
+        .getEvents()
+        .some((event) => {
+          if (event.getType() !== EventType.RoomMessage) return false;
+          return eventContentIsSignalThread(
+            event.getContent() as Record<string, unknown> | null,
+          );
+        });
+    if (signalThread) {
+      rememberSignalThreadRooms([room.roomId], { quiet: true });
+      continue;
     }
     named.push({
       roomId: room.roomId,
