@@ -38,6 +38,8 @@ interface ProfileRedeemTokensProps {
   personSlug: string;
   closeUrl?: string;
   backUrl?: string;
+  /** Renders the form in the page column instead of the slide-over. */
+  embedded?: boolean;
 }
 
 type SpaceSummary = {
@@ -75,6 +77,7 @@ export const ProfileRedeemTokens = ({
   personSlug,
   closeUrl,
   backUrl,
+  embedded = false,
 }: ProfileRedeemTokensProps) => {
   const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const tActions = useTranslations('ProfileActions');
@@ -370,30 +373,33 @@ export const ProfileRedeemTokens = ({
   const resolvedCloseUrl = closeUrl ?? `/${lang}/profile/${personSlug}`;
   const resolvedBackUrl = backUrl ?? `/${lang}/profile/${personSlug}/actions`;
 
-  return (
-    <ProposalOverlayShell>
-      <div className="flex flex-col gap-5">
+  const form = (
+    <div className="flex flex-col gap-5">
+      {embedded ? null : (
         <ModalStickyNavigation
           contextTitle={tModalAside('redeemTokens')}
           closeUrl={resolvedCloseUrl}
           backUrl={resolvedBackUrl}
           backLabel={tActions('backToActions')}
         />
-        <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
-        <Separator />
-        {isCoreLoading ? (
-          <div className="flex items-center gap-2 text-sm text-neutral-10 py-8">
-            <Loader2 className="animate-spin w-5 h-5" />
-            {tRedeem('loading')}
-          </div>
-        ) : (
-          <PeopleRedeemForm
-            tokens={tokens}
-            updateAssets={manualUpdate}
-            isLoadingTokens={isTokensLoading}
-          />
-        )}
-      </div>
-    </ProposalOverlayShell>
+      )}
+      <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
+      <Separator />
+      {isCoreLoading ? (
+        <div className="flex items-center gap-2 text-sm text-neutral-10 py-8">
+          <Loader2 className="animate-spin w-5 h-5" />
+          {tRedeem('loading')}
+        </div>
+      ) : (
+        <PeopleRedeemForm
+          tokens={tokens}
+          updateAssets={manualUpdate}
+          isLoadingTokens={isTokensLoading}
+        />
+      )}
+    </div>
   );
+
+  if (embedded) return form;
+  return <ProposalOverlayShell>{form}</ProposalOverlayShell>;
 };

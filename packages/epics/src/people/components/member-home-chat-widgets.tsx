@@ -1,14 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
 import { ClientEvent, RoomEvent, SyncState } from 'matrix-js-sdk';
-import { Check, ChevronDown, MessageSquare, Phone, Video } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  MessageSquare,
+  Phone,
+  Plus,
+  Video,
+} from 'lucide-react';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
+  useMe,
   useMatrix,
   useMatrixUserIdsByPersonIds,
   useTransferTokensMutation,
@@ -26,7 +34,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 
 import { Recipient } from '../../agreements/plugins/components/common/recipient';
-import { useUserAssets } from '../../treasury/hooks';
+import { useFundWallet, useUserAssets } from '../../treasury/hooks';
 import {
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
@@ -51,6 +59,7 @@ type HomeConnection = MemberIntelligence['connections'][number];
 type HomeSpace = MemberIntelligence['spaces'][number];
 
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
+const AMOUNT_INPUT = /^\d*\.?\d{0,2}$/;
 const SPACE_PREVIEW = 5;
 const RECIPIENT_PREVIEW = 5;
 
@@ -546,6 +555,33 @@ type TokenTarget =
   | { kind: 'person'; id: string; name: string; address: string }
   | { kind: 'space'; id: string; name: string; address: string };
 
+type TokenLine = {
+  id: string;
+  tokenAddress: string | null;
+  amount: string;
+};
+
+function tokenSpendable(
+  token:
+    | {
+        value?: number | null;
+        mutualCredit?: {
+          creditEligible?: boolean;
+          creditLimitLeft?: number;
+        } | null;
+      }
+    | null
+    | undefined,
+) {
+  const balance = token?.value ?? 0;
+  const creditLeft =
+    token?.mutualCredit?.creditEligible &&
+    typeof token.mutualCredit.creditLimitLeft === 'number'
+      ? token.mutualCredit.creditLimitLeft
+      : 0;
+  return { balance, creditLeft, spendable: balance + creditLeft };
+}
+
 export function MemberHomeSendTokensWidget({
   personSlug,
   hasWallet,
@@ -573,28 +609,40 @@ export function MemberHomeSendTokensWidget({
     personIds: connectionIds,
   });
   const { jwt: authToken } = useJwt();
+  const locale = useLocale();
+  const { person } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}` | undefined,
+  });
   const { assets, isLoading, manualUpdate } = useUserAssets({
     personSlug,
   });
   const { transferTokens, isTransferring } = useTransferTokensMutation({
     authToken,
   });
-  const [tokenAddress, setTokenAddress] = useState<string | null>(null);
-  const [tokenMenuOpen, setTokenMenuOpen] = useState(false);
+  const lineSeq = useRef(1);
+  const [lines, setLines] = useState<TokenLine[]>([
+    { id: 'line-1', tokenAddress: null, amount: '25' },
+  ]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
-  const [amount, setAmount] = useState<number>(25);
   const [noteIndex, setNoteIndex] = useState(0);
+  const [memoDraft, setMemoDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fundingKind, setFundingKind] = useState<'funds' | 'hypha' | null>(
+    null,
+  );
   const [directoryOpen, setDirectoryOpen] = useState(false);
   const [directoryPeople, setDirectoryPeople] = useState<Person[] | null>(null);
   const [directorySpaces, setDirectorySpaces] = useState<Space[] | null>(null);
   const [directoryLoading, setDirectoryLoading] = useState(false);
   const [picked, setPicked] = useState<TokenTarget | null>(null);
   const [sent, setSent] = useState<{
+    count: number;
     amount: number;
     symbol: string;
     name: string;
-    left: number;
+    left: number | null;
   } | null>(null);
 
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
@@ -615,25 +663,16 @@ export function MemberHomeSendTokensWidget({
     });
   }, [assets]);
 
-  const selected =
-    tokens.find((token) => token.address === tokenAddress) ?? tokens[0] ?? null;
-  const balance = selected?.value ?? 0;
-  const creditLeft =
-    selected?.mutualCredit?.creditEligible &&
-    typeof selected.mutualCredit.creditLimitLeft === 'number'
-      ? selected.mutualCredit.creditLimitLeft
-      : 0;
-  const spendable = balance + creditLeft;
-  const choices = AMOUNTS.filter((value) => value <= spendable + 1e-9);
-  const amountChoices =
-    choices.length > 0
-      ? [...choices]
-      : spendable >= 0.01
-      ? [Math.floor(spendable * 100) / 100]
-      : [];
-  const activeAmount = amountChoices.includes(amount)
-    ? amount
-    : amountChoices[0] ?? 0;
+  useEffect(() => {
+    const first = tokens[0]?.address;
+    if (!first) return;
+    setLines((current) => {
+      if (current[0]?.tokenAddress) return current;
+      return current.map((line, index) =>
+        index === 0 ? { ...line, tokenAddress: first } : line,
+      );
+    });
+  }, [tokens]);
 
   useEffect(() => {
     if (!client) {
@@ -693,28 +732,92 @@ export function MemberHomeSendTokensWidget({
     return [target, ...preview].slice(0, RECIPIENT_PREVIEW);
   }, [target, visibleTargets]);
   const noteKey: NoteKey = NOTES[noteIndex] ?? 'sendTokensThanks';
+  const memo = memoDraft ?? t(noteKey);
+  const readyLines = lines.flatMap((line) => {
+    const token = tokens.find((item) => item.address === line.tokenAddress);
+    const amount = Number(line.amount);
+    if (!token?.address || !(amount > 0)) return [];
+    return [{ line, token, amount }];
+  });
+
+  function updateLine(id: string, patch: Partial<TokenLine>) {
+    setLines((current) =>
+      current.map((line) => (line.id === id ? { ...line, ...patch } : line)),
+    );
+  }
+
+  function addLine() {
+    const used = new Set(
+      lines
+        .map((line) => line.tokenAddress?.toLowerCase())
+        .filter((address): address is string => Boolean(address)),
+    );
+    const nextToken = tokens.find(
+      (token) => token.address && !used.has(token.address.toLowerCase()),
+    );
+    if (!nextToken?.address) return;
+    lineSeq.current += 1;
+    setLines((current) => [
+      ...current,
+      {
+        id: `line-${lineSeq.current}`,
+        tokenAddress: nextToken.address ?? null,
+        amount: '25',
+      },
+    ]);
+  }
 
   async function send() {
-    if (!selected?.address || !target || activeAmount <= 0 || isTransferring) {
+    if (!target || readyLines.length === 0 || isTransferring) return;
+    setError(null);
+    setFundingKind(null);
+
+    const totals = new Map<string, number>();
+    for (const item of readyLines) {
+      const key = item.token.address?.toLowerCase() ?? '';
+      totals.set(key, (totals.get(key) ?? 0) + item.amount);
+    }
+    let shortfall: 'funds' | 'hypha' | null = null;
+    for (const [address, total] of totals) {
+      const asset = tokens.find(
+        (token) => token.address?.toLowerCase() === address,
+      );
+      if (total > tokenSpendable(asset).spendable + 1e-9) {
+        shortfall = asset?.symbol === 'HYPHA' ? 'hypha' : 'funds';
+        if (shortfall === 'hypha') break;
+      }
+    }
+    if (shortfall) {
+      setFundingKind(shortfall);
+      setError('insufficient');
       return;
     }
-    setError(null);
+
     try {
       await transferTokens({
         recipient: target.address,
-        payouts: [
-          {
-            amount: String(activeAmount),
-            token: selected.address,
-          },
-        ],
-        memo: t(noteKey),
+        payouts: readyLines.map((item) => ({
+          amount: item.line.amount,
+          token: item.token.address ?? '',
+        })),
+        memo: memo.trim() || undefined,
       });
+      const first = readyLines[0];
+      const sameToken = readyLines.every(
+        (item) =>
+          item.token.address?.toLowerCase() ===
+          first?.token.address?.toLowerCase(),
+      );
+      const spent = readyLines.reduce((sum, item) => sum + item.amount, 0);
       setSent({
-        amount: activeAmount,
-        symbol: selected.symbol,
+        count: readyLines.length,
+        amount: first?.amount ?? 0,
+        symbol: first?.token.symbol ?? '',
         name: target.name,
-        left: Math.max(0, balance - activeAmount),
+        left:
+          sameToken && first
+            ? Math.max(0, tokenSpendable(first.token).balance - spent)
+            : null,
       });
       try {
         await manualUpdate();
@@ -727,6 +830,13 @@ export function MemberHomeSendTokensWidget({
         setError(t('sendTokensNoWallet'));
       } else if (message.toLowerCase().includes('user rejected')) {
         setError(t('sendTokensRejected'));
+      } else if (
+        message.includes('ERC20: transfer amount exceeds balance') ||
+        message.toLowerCase().includes('insufficient')
+      ) {
+        const hypha = readyLines.some((item) => item.token.symbol === 'HYPHA');
+        setFundingKind(hypha ? 'hypha' : 'funds');
+        setError('insufficient');
       } else {
         setError(t('sendTokensFailed'));
       }
@@ -834,7 +944,7 @@ export function MemberHomeSendTokensWidget({
     setDirectoryOpen(false);
   }
 
-  if (sent && selected) {
+  if (sent) {
     return (
       <WidgetFrame title={t('sendTokensTitle')}>
         <div className="flex flex-col items-center px-2 py-6 text-center">
@@ -845,19 +955,26 @@ export function MemberHomeSendTokensWidget({
             className="mt-4 text-4 font-medium tracking-[-0.03em]"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
-            {t('sendTokensArrived', {
-              amount: formatAmount(sent.amount),
-              symbol: sent.symbol,
-              name: sent.name,
-            })}
+            {sent.count > 1
+              ? t('sendTokensArrivedMany', {
+                  count: sent.count,
+                  name: sent.name,
+                })
+              : t('sendTokensArrived', {
+                  amount: formatAmount(sent.amount),
+                  symbol: sent.symbol,
+                  name: sent.name,
+                })}
           </p>
           <p className="mt-2 text-2 text-neutral-11">{t('sendTokensSigned')}</p>
-          <p className="mt-4 text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
-            {t('sendTokensLeft', {
-              amount: formatAmount(sent.left),
-              symbol: sent.symbol,
-            })}
-          </p>
+          {sent.left != null ? (
+            <p className="mt-4 text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
+              {t('sendTokensLeft', {
+                amount: formatAmount(sent.left),
+                symbol: sent.symbol,
+              })}
+            </p>
+          ) : null}
         </div>
       </WidgetFrame>
     );
@@ -969,123 +1086,182 @@ export function MemberHomeSendTokensWidget({
             ) : null}
           </div>
 
-          {selected ? (
-            <div className="text-center">
-              <div
-                className="text-8 leading-none tabular-nums tracking-[-0.04em]"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {formatAmount(activeAmount)}
-                {tokens.length > 1 ? (
-                  <Popover open={tokenMenuOpen} onOpenChange={setTokenMenuOpen}>
-                    <PopoverTrigger asChild>
+          <div className="flex flex-col gap-3">
+            {lines.map((line) => {
+              const selected =
+                tokens.find((token) => token.address === line.tokenAddress) ??
+                null;
+              const balance = tokenSpendable(selected).balance;
+              const numeric = Number(line.amount);
+              const menuOpen = openMenuId === line.id;
+              return (
+                <div
+                  key={line.id}
+                  className="border border-border px-4 py-5 text-center"
+                >
+                  {lines.length > 1 ? (
+                    <div className="mb-2 flex justify-end">
                       <button
                         type="button"
-                        aria-label={t('sendTokensChoose', {
-                          symbol: selected.symbol,
-                        })}
-                        className="ml-2 inline-flex items-center gap-1 align-middle text-2 tracking-[0.14em] uppercase"
+                        className="text-1 text-neutral-11"
+                        onClick={() =>
+                          setLines((current) =>
+                            current.filter((item) => item.id !== line.id),
+                          )
+                        }
                       >
-                        {selected.symbol}
-                        <ChevronDown
-                          aria-hidden
-                          strokeWidth={1.5}
-                          className={cn(
-                            'size-3.5 text-neutral-10 transition-transform',
-                            tokenMenuOpen && 'rotate-180',
-                          )}
-                        />
+                        {t('sendTokensRemove')}
                       </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="center"
-                      className="w-64 rounded-none border-border bg-background p-1 text-foreground shadow-md"
-                    >
-                      <ul className="max-h-64 overflow-y-auto">
-                        {tokens.map((token) => {
-                          const active = token.address === selected.address;
-                          return (
-                            <li key={token.address}>
-                              <button
-                                type="button"
-                                className={cn(
-                                  'flex w-full items-center gap-3 px-3 py-2 text-left',
-                                  active ? 'bg-accent-2' : 'hover:bg-accent-2',
-                                )}
-                                onClick={() => {
-                                  setTokenAddress(token.address ?? null);
-                                  setSent(null);
-                                  setTokenMenuOpen(false);
-                                }}
-                              >
-                                {token.icon ? (
-                                  <img
-                                    src={token.icon}
-                                    alt=""
-                                    className="h-5 w-5 shrink-0"
-                                  />
-                                ) : (
-                                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-border text-[10px]">
-                                    {token.symbol.trim().charAt(0)}
-                                  </span>
-                                )}
-                                <span className="min-w-0 truncate text-2 font-medium tracking-[0.08em] uppercase">
-                                  {token.symbol}
-                                </span>
-                                <span className="ml-auto shrink-0 text-2 tabular-nums text-neutral-11">
-                                  {formatAmount(token.value)}
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <span className="ml-2 align-middle text-2 tracking-[0.14em] uppercase">
-                    {selected.symbol}
-                  </span>
-                )}
-              </div>
-              <p className="mt-2 text-1 text-neutral-11">
-                {t('sendTokensYouHave', {
-                  amount: formatAmount(balance),
-                  symbol: selected.symbol,
-                })}
-              </p>
-            </div>
-          ) : null}
-
-          {amountChoices.length > 0 ? (
-            <div className="flex flex-wrap justify-center gap-2">
-              {amountChoices.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={cn(
-                    'h-10 min-w-10 border px-3 text-2 tabular-nums',
-                    value === activeAmount
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border hover:bg-accent-2',
-                  )}
-                  onClick={() => setAmount(value)}
-                >
-                  {formatAmount(value)}
-                </button>
-              ))}
-            </div>
-          ) : null}
+                    </div>
+                  ) : null}
+                  <div
+                    className="text-8 leading-none tabular-nums tracking-[-0.04em]"
+                    style={{ fontFamily: 'var(--font-family-heading)' }}
+                  >
+                    <label className="sr-only" htmlFor={`${line.id}-amount`}>
+                      {t('sendTokensAmount')}
+                    </label>
+                    <input
+                      id={`${line.id}-amount`}
+                      inputMode="decimal"
+                      value={line.amount}
+                      onChange={(event) => {
+                        const next = event.target.value.replace(',', '.');
+                        if (next !== '' && !AMOUNT_INPUT.test(next)) {
+                          return;
+                        }
+                        updateLine(line.id, { amount: next });
+                      }}
+                      className="w-28 bg-transparent text-center outline-none"
+                    />
+                    {tokens.length > 1 ? (
+                      <Popover
+                        open={menuOpen}
+                        onOpenChange={(open) =>
+                          setOpenMenuId(open ? line.id : null)
+                        }
+                      >
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={t('sendTokensChoose', {
+                              symbol: selected?.symbol ?? '',
+                            })}
+                            className="ml-2 inline-flex items-center gap-1 align-middle text-2 tracking-[0.14em] uppercase"
+                          >
+                            {selected?.symbol}
+                            <ChevronDown
+                              aria-hidden
+                              strokeWidth={1.5}
+                              className={cn(
+                                'size-3.5 text-neutral-10 transition-transform',
+                                menuOpen && 'rotate-180',
+                              )}
+                            />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="center"
+                          className="w-64 rounded-none border-border bg-background p-1 text-foreground shadow-md"
+                        >
+                          <ul className="max-h-64 overflow-y-auto">
+                            {tokens.map((token) => {
+                              const active =
+                                token.address === selected?.address;
+                              return (
+                                <li key={token.address}>
+                                  <button
+                                    type="button"
+                                    className={cn(
+                                      'flex w-full items-center gap-3 px-3 py-2 text-left',
+                                      active
+                                        ? 'bg-accent-2'
+                                        : 'hover:bg-accent-2',
+                                    )}
+                                    onClick={() => {
+                                      updateLine(line.id, {
+                                        tokenAddress: token.address ?? null,
+                                      });
+                                      setOpenMenuId(null);
+                                    }}
+                                  >
+                                    {token.icon ? (
+                                      <img
+                                        src={token.icon}
+                                        alt=""
+                                        className="h-5 w-5 shrink-0"
+                                      />
+                                    ) : (
+                                      <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-border text-[10px]">
+                                        {token.symbol.trim().charAt(0)}
+                                      </span>
+                                    )}
+                                    <span className="min-w-0 truncate text-2 font-medium tracking-[0.08em] uppercase">
+                                      {token.symbol}
+                                    </span>
+                                    <span className="ml-auto shrink-0 text-2 tabular-nums text-neutral-11">
+                                      {formatAmount(token.value)}
+                                    </span>
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <span className="ml-2 align-middle text-2 tracking-[0.14em] uppercase">
+                        {selected?.symbol}
+                      </span>
+                    )}
+                  </div>
+                  {selected ? (
+                    <p className="mt-2 text-1 text-neutral-11">
+                      {t('sendTokensYouHave', {
+                        amount: formatAmount(balance),
+                        symbol: selected.symbol,
+                      })}
+                    </p>
+                  ) : null}
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {AMOUNTS.map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={cn(
+                          'h-10 min-w-10 border px-3 text-2 tabular-nums',
+                          Math.abs(numeric - value) < 1e-9
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border hover:bg-accent-2',
+                        )}
+                        onClick={() =>
+                          updateLine(line.id, { amount: String(value) })
+                        }
+                      >
+                        {formatAmount(value)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {lines.length < tokens.length ? (
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 border border-dashed border-border py-3 text-1 text-neutral-11"
+                onClick={addLine}
+              >
+                <Plus className="size-4" aria-hidden />
+                {t('sendTokensAdd')}
+              </button>
+            ) : null}
+          </div>
 
           <Button
             type="button"
             className="w-full"
             disabled={
-              !hasWallet ||
-              !target ||
-              !selected ||
-              activeAmount <= 0 ||
-              isTransferring
+              !hasWallet || !target || readyLines.length === 0 || isTransferring
             }
             onClick={() => {
               void send();
@@ -1093,26 +1269,63 @@ export function MemberHomeSendTokensWidget({
           >
             {isTransferring
               ? t('sendTokensSigning')
-              : target
-              ? t('sendTokensSend', {
-                  amount: formatAmount(activeAmount),
-                  symbol: selected?.symbol ?? '',
+              : !target
+              ? t('sendTokensPickFirst')
+              : readyLines.length > 1
+              ? t('sendTokensSendMany', {
+                  count: readyLines.length,
                   name: target.name,
                 })
-              : t('sendTokensPickFirst')}
+              : t('sendTokensSend', {
+                  amount: formatAmount(readyLines[0]?.amount ?? 0),
+                  symbol: readyLines[0]?.token.symbol ?? '',
+                  name: target.name,
+                })}
           </Button>
-          <button
-            type="button"
-            className="text-center text-1 text-neutral-11"
-            onClick={() => setNoteIndex((index) => (index + 1) % NOTES.length)}
-          >
-            {t(noteKey)}
-            <span className="text-neutral-10">
-              {' '}
+          <div className="text-center text-1 text-neutral-11">
+            <label className="sr-only" htmlFor="send-tokens-memo">
+              {t(noteKey)}
+            </label>
+            <input
+              id="send-tokens-memo"
+              value={memo}
+              onChange={(event) => setMemoDraft(event.target.value)}
+              className="w-full bg-transparent text-center outline-none"
+            />
+            <button
+              type="button"
+              className="text-neutral-10"
+              onClick={() => {
+                setNoteIndex((index) => (index + 1) % NOTES.length);
+                setMemoDraft(null);
+              }}
+            >
               · {t('sendTokensChangeNote')}
-            </span>
-          </button>
-          {error ? (
+            </button>
+          </div>
+          {error === 'insufficient' ? (
+            <p className="text-2 text-foreground" role="alert">
+              {t('sendTokensInsufficient')}{' '}
+              {fundingKind === 'hypha' ? (
+                <Link
+                  href={`/${locale}/my-wallet/actions/purchase-hypha-tokens`}
+                  className="font-bold text-accent-9 underline"
+                >
+                  {t('sendTokensTopUp')}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="font-bold text-accent-9 underline"
+                  onClick={() => {
+                    void fundWallet();
+                  }}
+                >
+                  {t('sendTokensTopUp')}
+                </button>
+              )}
+            </p>
+          ) : error ? (
             <p className="text-2 text-error-11" role="alert">
               {error}
             </p>

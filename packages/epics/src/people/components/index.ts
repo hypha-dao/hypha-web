@@ -25,6 +25,7 @@ export * from './member-home-notifications';
 export * from './mobile-tab-bar';
 export * from './my-connections';
 export * from './member-home-phase';
+export { MemberHomeSendTokensWidget } from './member-home-chat-widgets';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';
 export * from './people-redeem-form';
