@@ -1231,7 +1231,7 @@ export function MyceliumEcosystem({
               </h3>
               <div
                 ref={pane.frame.ref}
-                className="relative min-h-[14rem] flex-1"
+                className="relative min-h-[28rem] flex-1 md:min-h-[16rem]"
               >
                 <svg
                   role="img"

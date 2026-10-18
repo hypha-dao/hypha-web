@@ -4,7 +4,7 @@ import { cn } from '@hypha-platform/ui-utils';
 export function signalCardActiveClass(isActive: boolean, className?: string) {
   return cn(
     isActive &&
-      'border-foreground/35 bg-transparent shadow-none [outline:none]',
+      'relative z-10 border-foreground bg-transparent shadow-none outline outline-1 outline-foreground',
     className,
   );
 }

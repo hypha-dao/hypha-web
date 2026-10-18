@@ -83,10 +83,6 @@ export function useCoherenceSignalDeepLink({
   React.useEffect(() => {
     if (!targetSlug || isLoading) return;
 
-    if (humanChatEnabled && !humanChatOpen && !activeCoherenceSlug?.trim()) {
-      return;
-    }
-
     const signal = (signals ?? []).find(
       (item) => item.slug?.trim() === targetSlug,
     );
@@ -120,7 +116,7 @@ export function useCoherenceSignalDeepLink({
     const alreadyViewingSignal =
       chatSlug === targetSlug || openedChatForSlugRef.current === targetSlug;
 
-    if (!humanChatEnabled && onOpenSignalChat && !alreadyViewingSignal) {
+    if (onOpenSignalChat && !alreadyViewingSignal) {
       openedChatForSlugRef.current = targetSlug;
       onOpenSignalChat(signal);
     } else if (alreadyViewingSignal) {

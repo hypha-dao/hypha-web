@@ -15,11 +15,11 @@ import { useMembers } from '@web/hooks/use-members';
 
 /** `h-8` / `w-8` — theme `--spacing-8` is 48px, not the default 32px scale. */
 const AVATAR_SIZE_PX = 48;
-/** `-space-x-2` overlap between circles in the stack. */
-const AVATAR_OVERLAP_PX = 8;
+/** `gap-2` — same 8px gap as the home portrait row. Theme `--spacing-2`. */
+const AVATAR_GAP_PX = 8;
 /**
  * Clear space after the last circle before +N.
- * Matches `gap-3` (theme `--spacing-3`). Avatars still overlap each other.
+ * Matches `gap-3` (theme `--spacing-3`).
  */
 const COUNT_GAP_PX = 12;
 /** Width reserved for the "+NNN" label itself, not including COUNT_GAP_PX. */
@@ -54,8 +54,7 @@ function fitVisibleAvatarCount(containerWidth: number, total: number): number {
     count >= 1;
     count -= 1
   ) {
-    const stackWidth =
-      AVATAR_SIZE_PX + (count - 1) * (AVATAR_SIZE_PX - AVATAR_OVERLAP_PX);
+    const stackWidth = count * AVATAR_SIZE_PX + (count - 1) * AVATAR_GAP_PX;
     const badgeWidth =
       count < total ? COUNT_GAP_PX + OVERFLOW_COUNT_RESERVE_PX : 0;
     if (stackWidth + badgeWidth <= containerWidth) {
@@ -186,7 +185,7 @@ function MembershipStack({
       ref={containerRef}
       className="flex w-full min-h-8 min-w-0 items-center gap-3"
     >
-      <div className="flex min-w-0 overflow-hidden -space-x-2">
+      <div className="flex min-w-0 gap-2 overflow-hidden">
         {visible.map((member) => (
           <MembershipAvatar key={member.id} member={member} />
         ))}

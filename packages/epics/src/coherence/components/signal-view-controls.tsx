@@ -56,7 +56,7 @@ export function SignalViewControls({
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto',
+        'flex min-w-0 flex-wrap items-center gap-2 sm:justify-end',
         className,
       )}
     >

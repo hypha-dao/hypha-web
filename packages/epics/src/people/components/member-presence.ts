@@ -7,13 +7,22 @@ export function presenceRank(level: PresenceLevel): number {
   return 2;
 }
 
+/** A message this recent means the person is at the keyboard. */
+const RECENT_ACTIVE_MS = 5 * 60 * 1000;
+/** Still around, but not in the last few minutes. */
+const RECENT_IDLE_MS = 30 * 60 * 1000;
+/** How many live events to scan per room when presence itself is missing. */
+const ACTIVITY_SCAN = 40;
+
 /**
  * Matrix `online` + active → green. `unavailable`, or online but not
- * currently active → yellow. Everything else → empty.
+ * currently active → yellow. A recent `last_active_ago` still counts when
+ * the homeserver has already flipped the flag to offline.
  */
 export function presenceFromMatrixStatus(status: {
   presence?: string | null;
   currently_active?: boolean | null;
+  last_active_ago?: number | null;
 }): PresenceLevel {
   const presence = status.presence?.trim().toLowerCase() ?? '';
   if (presence === 'unavailable') return 'idle';
@@ -21,40 +30,119 @@ export function presenceFromMatrixStatus(status: {
     if (status.currently_active === false) return 'idle';
     return 'active';
   }
+  const ago = status.last_active_ago;
+  if (typeof ago === 'number' && ago > 0) {
+    if (ago <= RECENT_ACTIVE_MS) return 'active';
+    if (ago <= RECENT_IDLE_MS) return 'idle';
+  }
   return 'offline';
 }
+
+/** The more present of the two. Unknown levels are ignored. */
+export function preferPresence(
+  levels: readonly (PresenceLevel | null | undefined)[],
+): PresenceLevel {
+  let best: PresenceLevel = 'offline';
+  for (const level of levels) {
+    if (!level) continue;
+    if (presenceRank(level) < presenceRank(best)) best = level;
+  }
+  return best;
+}
+
+export function presenceFromRecency(
+  lastTs: number | null | undefined,
+  now = Date.now(),
+): PresenceLevel | null {
+  if (lastTs == null || !Number.isFinite(lastTs) || lastTs <= 0) return null;
+  const ago = now - lastTs;
+  if (ago <= RECENT_ACTIVE_MS) return 'active';
+  if (ago <= RECENT_IDLE_MS) return 'idle';
+  return null;
+}
+
+type PresenceEvent = {
+  getSender?: () => string | undefined;
+  getTs?: () => number;
+  getType?: () => string;
+};
 
 type PresenceClient = {
   getPresence: (userId: string) => Promise<{
     presence?: string | null;
     currently_active?: boolean | null;
+    last_active_ago?: number | null;
   }>;
+  getUserId?: () => string | null;
   getUser?: (userId: string) => {
     presence?: string;
     currentlyActive?: boolean;
     lastPresenceTs?: number;
   } | null;
+  getRooms?: () => Array<{
+    getLiveTimeline?: () => { getEvents?: () => PresenceEvent[] };
+  }>;
 };
 
+function cachedPresence(
+  client: PresenceClient,
+  matrixUserId: string,
+): PresenceLevel | null {
+  const known = client.getUser?.(matrixUserId);
+  // An untouched user record defaults to offline and is not evidence.
+  if (!known?.lastPresenceTs) return null;
+  return presenceFromMatrixStatus({
+    presence: known.presence,
+    currently_active: known.currentlyActive,
+  });
+}
+
+/** Latest human message from this account across joined rooms. */
+export function latestMessageTs(
+  client: Pick<PresenceClient, 'getRooms'>,
+  matrixUserId: string,
+): number | null {
+  const rooms = client.getRooms?.() ?? [];
+  let latest = 0;
+  for (const room of rooms) {
+    const events = room.getLiveTimeline?.().getEvents?.() ?? [];
+    const start = Math.max(0, events.length - ACTIVITY_SCAN);
+    for (let index = events.length - 1; index >= start; index -= 1) {
+      const event = events[index];
+      if (event?.getSender?.() !== matrixUserId) continue;
+      if (event.getType?.() !== 'm.room.message') break;
+      const ts = event.getTs?.() ?? 0;
+      if (ts > latest) latest = ts;
+      break;
+    }
+  }
+  return latest > 0 ? latest : null;
+}
+
 /**
- * Prefer the live presence request. If the homeserver refuses it, use a
- * presence event this client has already seen. An untouched user record
- * defaults to offline and is not evidence.
+ * Live presence, a presence event already in sync, a recent message, and
+ * this signed-in session. An empty homeserver answer must not hide a
+ * stronger signal — that is what left every light off.
  */
 export async function readMemberPresence(
   client: PresenceClient,
   matrixUserId: string,
+  now = Date.now(),
 ): Promise<PresenceLevel> {
+  let live: PresenceLevel | null = null;
   try {
-    return presenceFromMatrixStatus(await client.getPresence(matrixUserId));
+    live = presenceFromMatrixStatus(await client.getPresence(matrixUserId));
   } catch {
-    const known = client.getUser?.(matrixUserId);
-    if (!known?.lastPresenceTs) return 'offline';
-    return presenceFromMatrixStatus({
-      presence: known.presence,
-      currently_active: known.currentlyActive,
-    });
+    live = null;
   }
+  const self =
+    client.getUserId?.() === matrixUserId ? ('active' as const) : null;
+  return preferPresence([
+    live,
+    cachedPresence(client, matrixUserId),
+    presenceFromRecency(latestMessageTs(client, matrixUserId), now),
+    self,
+  ]);
 }
 
 export function sortByPresenceThenShared<

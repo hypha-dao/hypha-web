@@ -19,7 +19,7 @@ export class CoherencePage extends BasePage {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   /**
-   * The "Coherence" tab in the DHO navigation bar.
+   * The Signals tab in the DHO navigation bar.
    * Rendered as role="tab" (Radix TabsTrigger with asChild merges onto the Link).
    */
   readonly coherenceTab: Locator;
@@ -47,7 +47,7 @@ export class CoherencePage extends BasePage {
 
     // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
     this.coherenceTab = page.getByRole('tab', {
-      name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
+      name: /signals|signaux|sinais|señales|signale|signalen|signaler|сигнали/i,
     });
 
     // Signal section label (SectionFilter: "{label} | {count}"; count omitted when 0)

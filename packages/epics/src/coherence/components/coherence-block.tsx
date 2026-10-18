@@ -222,10 +222,7 @@ export function CoherenceBlock({
     if (humanChatEnabled && humanChatOpen && mode === 'coherence' && slug) {
       return slug;
     }
-    if (!humanChatEnabled) {
-      return searchParams.get('signal')?.trim() ?? null;
-    }
-    return null;
+    return searchParams.get('signal')?.trim() || null;
   }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
 
   const acknowledgingSlugRef = React.useRef<string | null>(null);
@@ -326,6 +323,7 @@ export function CoherenceBlock({
     priorityFilters,
     typeFilters,
     activeCoherenceSlug: coherenceSlug,
+    onOpenSignalChat: humanChatEnabled ? handleSignalClick : undefined,
     onRevealArchivedSignal: handleRevealArchivedSignal,
     onClearPriorityFilter: handleClearPriorityFilter,
     onRefreshSignals: refresh,
@@ -345,7 +343,13 @@ export function CoherenceBlock({
           ) : null}
         </h1>
       </header>
-      <div className="flex min-w-0 max-w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div
+        className={
+          typeFilters.length > 0 || priorityFilters.length > 0
+            ? 'flex min-w-0 max-w-full flex-col gap-2'
+            : 'flex min-w-0 max-w-full flex-row flex-wrap items-center gap-2'
+        }
+      >
         <SignalBoardFilters
           typeFilters={typeFilters}
           priorityFilters={priorityFilters}

@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
-import { ArrowRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -245,6 +245,31 @@ const PRIORITY_RANK: Record<string, number> = {
   medium: 2,
   low: 3,
 };
+
+function pickSignal<
+  T extends {
+    slug?: string | null;
+    title?: string | null;
+    type: string;
+    priority?: string | null;
+    createdAt?: string | Date | null;
+  },
+>(signals: readonly T[], type?: string) {
+  return (
+    [...signals]
+      .filter(
+        (signal) =>
+          Boolean(signal.slug?.trim()) && (!type || signal.type === type),
+      )
+      .sort((left, right) => {
+        const rank =
+          (PRIORITY_RANK[left.priority ?? ''] ?? 2) -
+          (PRIORITY_RANK[right.priority ?? ''] ?? 2);
+        if (rank !== 0) return rank;
+        return (stampOf(right.createdAt) ?? 0) - (stampOf(left.createdAt) ?? 0);
+      })[0] ?? null
+  );
+}
 
 function plainText(value: string) {
   return value
@@ -568,28 +593,34 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       Boolean(signal.slug),
   );
   const nextSignal = linkedWeek[turn % Math.max(linkedWeek.length, 1)];
-  /** Greeting points at something — give it a way in (vote, tension, risk, signal). */
-  const greetingHref = (() => {
+  /**
+   * The greeting arrow opens one record, never a type filter.
+   * A signal link is `?signal=<slug>` so that card is the selected one.
+   */
+  const greetingLink = (() => {
     if (situation === 'vote') {
       const proposal = documents.onVoting.find((item) => item.slug?.trim());
-      return proposal?.slug
-        ? `${home}/agreements/proposal/${proposal.slug}`
-        : `${home}/agreements`;
+      if (!proposal?.slug) return null;
+      return {
+        href: `${home}/agreements/proposal/${proposal.slug}`,
+        title: proposal.title?.trim() || t('untitledProposal'),
+        signalSlug: null as string | null,
+      };
     }
-    if (situation === 'risk' || situation === 'tension') {
-      const type = situation === 'risk' ? 'Risk' : 'Tension';
-      const signal = openSignals.find(
-        (item) => item.type === type && item.slug?.trim(),
-      );
-      if (signal?.slug) {
-        return `${home}/coherence?signal=${encodeURIComponent(signal.slug)}`;
-      }
-      return `${home}/coherence?type=${encodeURIComponent(type)}`;
-    }
-    if ((situation === 'fresh' || situation === 'back') && nextSignal?.slug) {
-      return `${home}/coherence?signal=${encodeURIComponent(nextSignal.slug)}`;
-    }
-    return null;
+    const signal =
+      situation === 'risk'
+        ? pickSignal(openSignals, 'Risk')
+        : situation === 'tension'
+        ? pickSignal(openSignals, 'Tension')
+        : situation === 'fresh' || situation === 'back'
+        ? pickSignal(weekSignals)
+        : null;
+    if (!signal?.slug) return null;
+    return {
+      href: `${home}/coherence?signal=${encodeURIComponent(signal.slug)}`,
+      title: signal.title?.trim() || signal.slug,
+      signalSlug: signal.slug,
+    };
   })();
   const featuredSignals = [...openSignals]
     .filter((signal): signal is typeof signal & { slug: string } =>
@@ -631,9 +662,9 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     <div className="flex flex-col gap-6">
       {name ? (
         <header className="flex min-w-0 flex-col gap-1 border-b-2 border-[color:var(--space-spot,var(--space-accent))] pb-3">
-          {greetingHref ? (
+          {greetingLink ? (
             <Link
-              href={greetingHref}
+              href={greetingLink.href}
               className="group inline-flex max-w-full items-baseline gap-2 text-foreground hover:text-[color:var(--space-spot,var(--space-accent))]"
             >
               <h1
@@ -642,11 +673,14 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
               >
                 {t(GREETING[situation][turn % 2] ?? 'greetingQuietA', { name })}
               </h1>
-              <ArrowRight
-                className="size-5 shrink-0 translate-y-0.5 opacity-45 transition-opacity group-hover:opacity-100 sm:size-6"
-                strokeWidth={1.5}
-                aria-hidden
-              />
+              <span className="inline-flex min-w-0 max-w-[16rem] shrink items-center gap-1 text-1 text-neutral-11 group-hover:text-[color:var(--space-spot,var(--space-accent))]">
+                <span className="truncate">{greetingLink.title}</span>
+                <ArrowUpRight
+                  className="size-4 shrink-0"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+              </span>
             </Link>
           ) : (
             <h1
@@ -663,7 +697,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             </p>
           ) : null}
           {nextSignal?.slug &&
-          greetingHref !==
+          greetingLink?.href !==
             `${home}/coherence?signal=${encodeURIComponent(
               nextSignal.slug,
             )}` ? (
@@ -729,13 +763,19 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                   {featuredSignals.map((signal) => {
                     const body = plainText(signal.description);
+                    const selected = greetingLink?.signalSlug === signal.slug;
                     return (
                       <li key={signal.slug}>
                         <Link
                           href={`${home}/coherence?signal=${encodeURIComponent(
                             signal.slug,
                           )}`}
-                          className="craft-card-interactive flex h-full flex-col gap-2 p-4"
+                          aria-current={selected ? 'true' : undefined}
+                          className={
+                            selected
+                              ? 'craft-card-interactive relative z-10 flex h-full flex-col gap-2 border-foreground p-4 outline outline-1 outline-foreground'
+                              : 'craft-card-interactive flex h-full flex-col gap-2 p-4'
+                          }
                         >
                           <SignalCategoryTag type={signal.type} withLabel />
                           <span className="text-2 text-foreground">

@@ -104,8 +104,8 @@ function HeatField({
                   title={cellTitle(priorityLabel(priority), count, start, end)}
                   className={
                     count > 0
-                      ? 'signal-heat-cell aspect-square w-full'
-                      : 'aspect-square w-full bg-neutral-3'
+                      ? 'signal-heat-cell aspect-square w-full border border-border'
+                      : 'aspect-square w-full border border-border bg-neutral-4'
                   }
                   style={
                     count > 0
@@ -149,7 +149,10 @@ function HeatSkeleton() {
           <div className="h-3 w-20 bg-muted" />
           <div className="mt-3 grid grid-cols-4 gap-1">
             {Array.from({ length: PRIORITIES.length * BUCKETS }, (_, cell) => (
-              <span key={cell} className="aspect-square w-full bg-neutral-3" />
+              <span
+                key={cell}
+                className="aspect-square w-full border border-border bg-neutral-4"
+              />
             ))}
           </div>
         </div>
