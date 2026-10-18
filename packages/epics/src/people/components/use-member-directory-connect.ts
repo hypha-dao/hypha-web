@@ -19,6 +19,8 @@ export type DirectoryPerson = {
   name?: string | null;
   surname?: string | null;
   nickname?: string | null;
+  slug?: string | null;
+  address?: string | null;
 };
 
 function labelOf(person: DirectoryPerson, fallback: string) {
@@ -51,8 +53,17 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
   const matrixIdsLoadingRef = useRef(matrixIdsLoading);
   matrixIdsLoadingRef.current = matrixIdsLoading;
 
-  function showRoom(roomId: string | null, title: string) {
-    openCoherenceChat(roomId, title, '', null, null);
+  function showRoom(
+    roomId: string | null,
+    title: string,
+    person: DirectoryPerson,
+  ) {
+    const peerSlug = person.slug?.trim();
+    openCoherenceChat(roomId, title, '', null, null, {
+      peerPerson: peerSlug
+        ? { slug: peerSlug, address: person.address ?? null }
+        : null,
+    });
   }
 
   async function waitForMatrix() {
@@ -129,7 +140,7 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
     try {
       const roomId = await resolvePersonRoom(person, title);
       if (!roomId) return;
-      showRoom(roomId, title);
+      showRoom(roomId, title, person);
     } catch {
       setNotice(t('matrixFailed'));
     }
@@ -141,7 +152,7 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
     try {
       const roomId = await resolvePersonRoom(person, title);
       if (!roomId) return;
-      showRoom(roomId, title);
+      showRoom(roomId, title, person);
       const start = video ? startVideoForRoom : startAudioForRoom;
       await start(roomId, null, undefined, jwt, { roomTitle: title });
     } catch {

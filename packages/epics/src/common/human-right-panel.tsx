@@ -108,6 +108,11 @@ import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { MyConnections } from '../people/components/my-connections';
 import {
+  MemberSpaceIcons,
+  memberProfileAsideHref,
+  usePersonMemberSpaces,
+} from '../people/components/member-space-icons';
+import {
   computeAggregateUnreadMentionCount,
   computeHumanChatUnreadState,
 } from './human-chat-panel/matrix-chat-unread';
@@ -1055,6 +1060,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceDescription,
     coherenceSpaceSlug,
     coherencePublic,
+    coherencePeerPerson,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
@@ -1067,6 +1073,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const spaceSlug = isDirectConversation
     ? undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
+  const { spaces: peerMemberSpaces, isLoading: peerMemberSpacesLoading } =
+    usePersonMemberSpaces({
+      personAddress: isDirectConversation
+        ? coherencePeerPerson?.address
+        : undefined,
+      personSlug: isDirectConversation ? coherencePeerPerson?.slug : undefined,
+    });
+  const peerSpacesOverflowHref =
+    isDirectConversation && coherencePeerPerson?.slug
+      ? memberProfileAsideHref({
+          lang: getLocaleFromPath(pathname),
+          hostSpaceSlug: routeSpaceSlug || coherenceSpaceSlug,
+          personSlug: coherencePeerPerson.slug,
+          fallbackSpaceSlug: peerMemberSpaces[0]?.slug,
+        })
+      : null;
   const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem' | 'public'>(
     'space',
   );
@@ -4823,6 +4845,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               : mode === 'space' && !spaceSlug?.trim()
               ? t('networkRoomTitle')
               : ''
+          }
+          titleStart={
+            isDirectConversation &&
+            (peerMemberSpaces.length > 0 || peerMemberSpacesLoading) ? (
+              <MemberSpaceIcons
+                spaces={peerMemberSpaces}
+                overflowHref={peerSpacesOverflowHref}
+                isLoading={peerMemberSpacesLoading}
+                size={24}
+              />
+            ) : null
           }
           roomChoice={
             mode === 'space' && spaceSlug?.trim()

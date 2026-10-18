@@ -19,13 +19,20 @@ import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
 import { mutate as mutateCache, type Key } from 'swr';
 import { useFormatter, useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
 import { LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
+import {
+  MemberSpaceIcons,
+  memberProfileAsideHref,
+  usePersonMemberSpaces,
+} from './member-space-icons';
 
 export type MemberCardProps = {
   spaceId?: number;
   name?: string;
   surname?: string;
   nickname?: string;
+  slug?: string;
   location?: string;
   avatarUrl?: string;
   status?: string;
@@ -43,6 +50,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   name,
   surname,
   nickname,
+  slug,
   location,
   avatarUrl,
   status,
@@ -57,8 +65,19 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const tCommon = useTranslations('Common');
   const tHome = useTranslations('MemberHome');
   const format = useFormatter();
-  const { id: spaceSlug } = useParams();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { space } = useSpaceBySlug(spaceSlug as string);
+  const { spaces: memberSpaces, isLoading: spacesLoading } =
+    usePersonMemberSpaces({
+      personAddress: address,
+      personSlug: slug,
+    });
+  const overflowHref = memberProfileAsideHref({
+    lang,
+    hostSpaceSlug: typeof spaceSlug === 'string' ? spaceSlug : null,
+    personSlug: slug,
+    fallbackSpaceSlug: memberSpaces[0]?.slug,
+  });
   const { undelegate, isUndelegating } = useUndelegateWeb3Rpc();
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
@@ -235,12 +254,21 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           </div>
         </div>
       </div>
-      <div className="min-h-5">
+      <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
         {localIsDelegate ? (
           <span className="craft-meta font-medium">
             {tCommon('delegatedVotingMemberLabel')}
           </span>
-        ) : null}
+        ) : (
+          <span />
+        )}
+        <MemberSpaceIcons
+          spaces={memberSpaces}
+          overflowHref={overflowHref}
+          isLoading={Boolean(address) && (isLoading || spacesLoading)}
+          size={minimize ? 24 : 28}
+          className="justify-end"
+        />
       </div>
     </Card>
   );

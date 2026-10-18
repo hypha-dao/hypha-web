@@ -1,13 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { useFormatter, useTranslations } from 'next-intl';
-import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { useMe } from '@hypha-platform/core/client';
 import {
   getAgentAvatarInitials,
   tagGroupAccentClass,
+  useMemberDirectoryConnect,
   useMobilizedAiAgents,
 } from '@hypha-platform/epics';
+import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import { useMembers } from '@web/hooks/use-members';
 
 /** `h-8` / `w-8` — theme `--spacing-8` is 48px, not the default 32px scale. */
@@ -30,6 +33,9 @@ type MembershipPreview = {
   initials?: string;
   accentClassName?: string;
   caption?: string;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
 };
 
 type EcosystemMembershipModulesProps = {
@@ -60,12 +66,79 @@ function fitVisibleAvatarCount(containerWidth: number, total: number): number {
   return 1;
 }
 
+function MembershipAvatarFace({ member }: { member: MembershipPreview }) {
+  if (member.accentClassName) {
+    return (
+      <div
+        title={member.label}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold ${member.accentClassName}`}
+        aria-hidden={Boolean(member.onClick || member.href)}
+      >
+        {member.initials ?? member.label.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <Avatar
+      className="h-8 w-8 shrink-0 rounded-full border border-border/70"
+      title={member.label}
+    >
+      <AvatarImage
+        alt={member.label}
+        className="rounded-full object-cover"
+        src={member.imageUrl || undefined}
+      />
+      <AvatarFallback aria-hidden className="rounded-full text-[10px]">
+        {(member.initials ?? member.label.slice(0, 2)).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
+function MembershipAvatar({ member }: { member: MembershipPreview }) {
+  const interactiveClass =
+    'inline-flex shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default';
+
+  if (member.onClick) {
+    return (
+      <button
+        type="button"
+        disabled={member.disabled}
+        title={member.label}
+        aria-label={member.label}
+        className={interactiveClass}
+        onClick={member.onClick}
+      >
+        <MembershipAvatarFace member={member} />
+      </button>
+    );
+  }
+
+  if (member.href) {
+    return (
+      <Link
+        href={member.href}
+        title={member.label}
+        aria-label={member.label}
+        className={interactiveClass}
+      >
+        <MembershipAvatarFace member={member} />
+      </Link>
+    );
+  }
+
+  return <MembershipAvatarFace member={member} />;
+}
+
 function MembershipStack({
   members,
   emptyLabel,
+  overflowHref,
 }: {
   members: MembershipPreview[];
   emptyLabel: string;
+  overflowHref?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(
@@ -95,15 +168,7 @@ function MembershipStack({
       <ul className="flex min-w-0 flex-col gap-2">
         {members.slice(0, MAX_VISIBLE_PREVIEW_COUNT).map((member) => (
           <li key={member.id} className="flex min-w-0 items-center gap-2">
-            <div
-              title={member.label}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border font-semibold ${
-                member.accentClassName ?? ''
-              }`}
-              aria-label={member.label}
-            >
-              {member.initials ?? member.label.slice(0, 2).toUpperCase()}
-            </div>
+            <MembershipAvatar member={member} />
             <span className="min-w-0 truncate text-1 text-neutral-11">
               {member.caption}
             </span>
@@ -122,38 +187,23 @@ function MembershipStack({
       className="flex w-full min-h-8 min-w-0 items-center gap-3"
     >
       <div className="flex min-w-0 overflow-hidden -space-x-2">
-        {visible.map((member) =>
-          member.accentClassName ? (
-            <div
-              key={member.id}
-              title={member.label}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold ${member.accentClassName}`}
-              aria-label={member.label}
-            >
-              {member.initials ?? member.label.slice(0, 2).toUpperCase()}
-            </div>
-          ) : (
-            <Avatar
-              key={member.id}
-              className="h-8 w-8 shrink-0 rounded-full border border-border/70"
-              title={member.label}
-            >
-              <AvatarImage
-                alt={member.label}
-                className="rounded-full object-cover"
-                src={member.imageUrl || undefined}
-              />
-              <AvatarFallback aria-hidden className="rounded-full text-[10px]">
-                {(member.initials ?? member.label.slice(0, 2)).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          ),
-        )}
+        {visible.map((member) => (
+          <MembershipAvatar key={member.id} member={member} />
+        ))}
       </div>
       {overflow > 0 ? (
-        <span className="shrink-0 text-1 font-medium text-muted-foreground">
-          +{overflow}
-        </span>
+        overflowHref ? (
+          <Link
+            href={overflowHref}
+            className="shrink-0 text-1 font-medium text-muted-foreground hover:text-foreground hover:underline"
+          >
+            +{overflow}
+          </Link>
+        ) : (
+          <span className="shrink-0 text-1 font-medium text-muted-foreground">
+            +{overflow}
+          </span>
+        )
       ) : null}
     </div>
   );
@@ -190,6 +240,8 @@ export function EcosystemMembershipModules({
   const t = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
   const format = useFormatter();
+  const lang = useLocale();
+  const { person: me } = useMe();
   const mobilizedAgents = useMobilizedAiAgents(spaceSlug);
   const { persons, spaces, isLoading } = useMembers({
     spaceSlug,
@@ -197,22 +249,32 @@ export function EcosystemMembershipModules({
     energySharingOnly: true,
   });
 
+  const people = useMemo(() => persons.data ?? [], [persons.data]);
+  const { openChat, notice } = useMemberDirectoryConnect(people);
+
   const individuals = useMemo<MembershipPreview[]>(
     () =>
-      (persons.data ?? []).map((person) => {
+      people.map((person) => {
         const label =
           [person.name, person.surname].filter(Boolean).join(' ') ||
           person.nickname ||
           person.slug ||
           t('navigation.unnamedMember');
+        const canChat = person.id !== me?.id;
         return {
           id: `person-${person.id}`,
           label,
           imageUrl: person.avatarUrl,
           initials: label.slice(0, 2),
+          disabled: !canChat,
+          onClick: canChat
+            ? () => {
+                void openChat(person);
+              }
+            : undefined,
         };
       }),
-    [persons.data, t],
+    [me?.id, openChat, people, t],
   );
 
   const memberSpaces = useMemo<MembershipPreview[]>(
@@ -222,8 +284,9 @@ export function EcosystemMembershipModules({
         label: space.title,
         imageUrl: space.logoUrl,
         initials: space.title.slice(0, 2),
+        href: space.slug ? `/${lang}/dho/${space.slug}/overview` : undefined,
       })),
-    [spaces.data],
+    [lang, spaces.data],
   );
 
   const agents = useMemo<MembershipPreview[]>(
@@ -246,6 +309,8 @@ export function EcosystemMembershipModules({
     [format, mobilizedAgents, t, tCoherence],
   );
 
+  const membersHref = `/${lang}/dho/${spaceSlug}/members`;
+
   // Always render all three modules — including empty Agents — so the control
   // stays visible on the header row (hiding was causing AI agent to vanish).
   const modules = useMemo(
@@ -255,6 +320,7 @@ export function EcosystemMembershipModules({
         label: t('navigation.individuals'),
         members: individuals,
         emptyLabel: t('navigation.noIndividuals'),
+        overflowHref: membersHref,
       },
       {
         key: 'memberSpaces' as const,
@@ -269,7 +335,7 @@ export function EcosystemMembershipModules({
         emptyLabel: t('navigation.noAgents'),
       },
     ],
-    [agents, individuals, memberSpaces, t],
+    [agents, individuals, memberSpaces, membersHref, t],
   );
 
   return (
@@ -319,6 +385,9 @@ export function EcosystemMembershipModules({
                   <MembershipStack
                     members={module.members}
                     emptyLabel={module.emptyLabel}
+                    overflowHref={
+                      'overflowHref' in module ? module.overflowHref : undefined
+                    }
                   />
                 )}
               </div>
@@ -326,6 +395,11 @@ export function EcosystemMembershipModules({
           );
         })}
       </div>
+      {notice ? (
+        <p className="text-1 text-error-11 md:col-span-full" role="alert">
+          {notice}
+        </p>
+      ) : null}
     </div>
   );
 }

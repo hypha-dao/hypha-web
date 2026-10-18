@@ -52,6 +52,12 @@ export type FocusedSpaceChat = {
   description: string | null;
 };
 
+/** Peer in a person-to-person room — drives space icons in the chat header. */
+export type CoherencePeerPerson = {
+  slug: string;
+  address?: string | null;
+};
+
 export type HumanChatPanelContextValue = {
   open: boolean;
   toggle: () => void;
@@ -76,13 +82,15 @@ export type HumanChatPanelContextValue = {
   coherenceSpaceSlug: string | null;
   /** True when this coherence room is the space’s public channel (network connect). */
   coherencePublic: boolean;
+  /** Person on the other side of a direct chat (when known). */
+  coherencePeerPerson: CoherencePeerPerson | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
     slug: string,
     description?: string | null,
     spaceSlug?: string | null,
-    options?: { public?: boolean },
+    options?: { public?: boolean; peerPerson?: CoherencePeerPerson | null },
   ) => void;
   closeCoherenceChat: () => void;
 };
@@ -103,6 +111,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceDescription: null,
   coherenceSpaceSlug: null,
   coherencePublic: false,
+  coherencePeerPerson: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
 });
@@ -134,6 +143,8 @@ export function HumanChatPanelProvider({
     null,
   );
   const [coherencePublic, setCoherencePublic] = useState(false);
+  const [coherencePeerPerson, setCoherencePeerPerson] =
+    useState<CoherencePeerPerson | null>(null);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
@@ -167,7 +178,7 @@ export function HumanChatPanelProvider({
       slug: string,
       description?: string | null,
       spaceSlug?: string | null,
-      options?: { public?: boolean },
+      options?: { public?: boolean; peerPerson?: CoherencePeerPerson | null },
     ) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
@@ -175,6 +186,15 @@ export function HumanChatPanelProvider({
       setCoherenceDescription(description?.trim() ? description.trim() : null);
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
+      const peerSlug = options?.peerPerson?.slug?.trim();
+      setCoherencePeerPerson(
+        peerSlug
+          ? {
+              slug: peerSlug,
+              address: options?.peerPerson?.address ?? null,
+            }
+          : null,
+      );
       setMode('coherence');
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
@@ -190,6 +210,7 @@ export function HumanChatPanelProvider({
     setCoherenceDescription(null);
     setCoherenceSpaceSlug(null);
     setCoherencePublic(false);
+    setCoherencePeerPerson(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -218,6 +239,7 @@ export function HumanChatPanelProvider({
         coherenceDescription,
         coherenceSpaceSlug,
         coherencePublic,
+        coherencePeerPerson,
         openCoherenceChat,
         closeCoherenceChat,
       }}

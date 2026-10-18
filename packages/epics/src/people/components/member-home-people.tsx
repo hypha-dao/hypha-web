@@ -79,10 +79,13 @@ export function MemberHomePeople({
   const matrixIdsLoadingRef = useRef(matrixIdsLoading);
   matrixIdsLoadingRef.current = matrixIdsLoading;
 
-  function showRoom(roomId: string | null, title: string) {
+  function showRoom(roomId: string | null, title: string, person?: HomePerson) {
     // PM / group rooms are private — never attach a space slug or the AI and
     // @-mentions inherit that space's roster.
-    openCoherenceChat(roomId, title, '', null, null);
+    const peerSlug = person?.slug?.trim();
+    openCoherenceChat(roomId, title, '', null, null, {
+      peerPerson: peerSlug ? { slug: peerSlug } : null,
+    });
   }
 
   async function waitForMatrix() {
@@ -172,7 +175,7 @@ export function MemberHomePeople({
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      showRoom(roomId, title);
+      showRoom(roomId, title, person);
       return true;
     } catch {
       setNotice(t('matrixFailed'));
@@ -198,7 +201,7 @@ export function MemberHomePeople({
         setNotice(t('matrixUnavailable'));
         return false;
       }
-      showRoom(roomId, title);
+      showRoom(roomId, title, person);
       const start = video ? startVideoForRoom : startAudioForRoom;
       await start(roomId, null, undefined, jwt, {
         roomTitle: title,

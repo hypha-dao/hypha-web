@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
+import useSWR from 'swr';
 import * as d3 from 'd3';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   type Person,
@@ -50,6 +52,9 @@ type PlacedNode = {
   r: number;
   role: Role;
   hasHiddenChildren: boolean;
+  /** Person-centred zoom: the hub is a member, not a space. */
+  kind?: 'space' | 'person';
+  initials?: string;
 };
 
 type PlacedLink = {
@@ -61,9 +66,19 @@ type PlacedLink = {
   bend: number;
 };
 
+type PersonFocus = {
+  id: number;
+  slug: string;
+  label: string;
+  imageUrl?: string | null;
+  initials: string;
+};
+
 const MAX_FLOWS = 8;
 /** Avatar diameter plus a little air, so member chips do not stack. */
 const CHIP_SEP = 26;
+/** Synthetic node id for the person hub in a member zoom. */
+const PERSON_FOCUS_NODE_ID = -1;
 
 function toSpaceNode(node: MyceliumHierarchyNode): SpaceNode {
   return {
@@ -547,6 +562,79 @@ function personLabel(person: Person, fallback: string) {
   );
 }
 
+/** Member zoom: person in the centre, every space they belong to on a ring. */
+function layoutPersonField(
+  person: PersonFocus,
+  spaces: Array<{
+    id: number;
+    name: string;
+    slug?: string;
+    logoUrl?: string | null;
+  }>,
+  width: number,
+  height: number,
+): { nodes: PlacedNode[]; links: PlacedLink[] } {
+  const cx = width / 2;
+  const cy = height / 2;
+  const roomX = Math.min(cx, width - cx);
+  const roomY = Math.min(cy, height - cy);
+  const labelPadX = roomX > 180 ? 78 : 40;
+  const labelPadY = roomY > 150 ? 36 : 22;
+  const minDim = Math.max(160, Math.min(width, height) - labelPadY * 2);
+  const nodeScale = Math.min(1.35, Math.max(0.85, minDim / 420));
+  const maxReach = Math.max(72, Math.min(roomX - labelPadX, roomY - labelPadY));
+  const focusR = Math.round(36 * nodeScale);
+  const childR = Math.round(24 * nodeScale);
+  const hub: PlacedNode = {
+    id: PERSON_FOCUS_NODE_ID,
+    name: person.label,
+    logoUrl: person.imageUrl,
+    x: cx,
+    y: cy,
+    r: focusR,
+    role: 'focus',
+    hasHiddenChildren: false,
+    kind: 'person',
+    initials: person.initials,
+  };
+  if (spaces.length === 0) {
+    return { nodes: [hub], links: [] };
+  }
+  const slot = childR * 2 + 36;
+  const ringRadius = Math.min(
+    maxReach,
+    Math.max(focusR + childR + 48, (spaces.length * slot) / (Math.PI * 2)),
+  );
+  const angles = spaces.map(
+    (_, index) => -Math.PI / 2 + (index * Math.PI * 2) / spaces.length,
+  );
+  const rotation = clearTop(angles);
+  const nodes: PlacedNode[] = [hub];
+  spaces.forEach((space, index) => {
+    const angle = (angles[index] ?? 0) + rotation;
+    nodes.push({
+      id: space.id,
+      name: space.name,
+      slug: space.slug,
+      logoUrl: space.logoUrl,
+      x: cx + Math.cos(angle) * ringRadius,
+      y: cy + Math.sin(angle) * ringRadius,
+      r: childR,
+      role: 'child',
+      hasHiddenChildren: false,
+      kind: 'space',
+    });
+  });
+  separateNodes(nodes, width, height);
+  const hubNode = nodes[0] ?? hub;
+  const links: PlacedLink[] = nodes.slice(1).map((node, index) => ({
+    id: `member-space-${node.id}`,
+    ...shorten(hubNode.x, hubNode.y, node.x, node.y, hubNode.r, node.r),
+    bend: index % 2 === 0 ? 12 : -12,
+  }));
+  return { nodes, links };
+}
+
 function flowEndLabel(transfer: TransferWithEntity) {
   const spaceTitle = transfer.space?.title?.trim();
   if (spaceTitle) return spaceTitle;
@@ -610,9 +698,12 @@ export function MyceliumEcosystem({
   const tCoherence = useTranslations('CoherenceTab');
   const format = useFormatter();
   const { lang } = useParams<{ lang: string }>();
+  const router = useRouter();
+  const { getAccessToken } = useAuthentication();
   const clipPrefix = useId().replace(/:/g, '');
   const tree = useMemo(() => toSpaceNode(data), [data]);
   const [focusId, setFocusId] = useState(currentSpaceId ?? data.id);
+  const [personFocus, setPersonFocus] = useState<PersonFocus | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   /** Counterparty key in the Flows lens — amount labels only show for this peer. */
   const [hoveredFlowKey, setHoveredFlowKey] = useState<string | null>(null);
@@ -620,7 +711,10 @@ export function MyceliumEcosystem({
   const flowsFrame = useFrameSize();
 
   useEffect(() => {
-    if (currentSpaceId != null) setFocusId(currentSpaceId);
+    if (currentSpaceId != null) {
+      setFocusId(currentSpaceId);
+      setPersonFocus(null);
+    }
   }, [currentSpaceId]);
 
   const focus = findNode(tree, focusId) ?? tree;
@@ -634,6 +728,24 @@ export function MyceliumEcosystem({
     paginationDisabled: true,
   });
   const agents = useMobilizedAiAgents(focus.slug);
+
+  const { data: personSpaces = [], isLoading: personSpacesLoading } = useSWR<
+    Space[]
+  >(
+    personFocus?.slug ? ['mycelium-person-spaces', personFocus.slug] : null,
+    async ([, slug]: [string, string]) => {
+      const token = await getAccessToken();
+      if (!token) return [];
+      const res = await fetch(`/api/v1/people/${slug}/spaces`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) return [];
+      return (await res.json()) as Space[];
+    },
+  );
   const {
     transfers,
     isLoading: flowsLoading,
@@ -665,16 +777,45 @@ export function MyceliumEcosystem({
     parentNode?.id,
   ]);
 
-  const structureField = useMemo(
+  const personSpaceNodes = useMemo(
     () =>
-      layoutField(
-        tree,
-        focus.id,
+      personSpaces.map((space) => ({
+        id: space.id,
+        name: space.title,
+        slug: space.slug,
+        logoUrl: space.logoUrl,
+      })),
+    [personSpaces],
+  );
+
+  const structureField = useMemo(() => {
+    if (personFocus) {
+      return layoutPersonField(
+        personFocus,
+        personSpaceNodes,
         structureFrame.size.width,
         structureFrame.size.height,
-      ),
-    [focus.id, structureFrame.size.height, structureFrame.size.width, tree],
-  );
+      );
+    }
+    return layoutField(
+      tree,
+      focus.id,
+      structureFrame.size.width,
+      structureFrame.size.height,
+    );
+  }, [
+    focus.id,
+    personFocus,
+    personSpaceNodes,
+    structureFrame.size.height,
+    structureFrame.size.width,
+    tree,
+  ]);
+
+  const openSpaceFromGraph = (spaceId: number) => {
+    setPersonFocus(null);
+    setFocusId(spaceId);
+  };
   const flowsField = useMemo(
     () =>
       layoutField(
@@ -837,8 +978,10 @@ export function MyceliumEcosystem({
   ]);
 
   const showMembers =
+    !personFocus &&
     Math.min(structureFrame.size.width, structureFrame.size.height) >= 280;
-  const focusNode = structurePlacedById.get(focus.id);
+  const structureFocusId = personFocus ? PERSON_FOCUS_NODE_ID : focus.id;
+  const focusNode = structurePlacedById.get(structureFocusId);
 
   const membershipMarks = useMemo(() => {
     const empty = {
@@ -849,6 +992,7 @@ export function MyceliumEcosystem({
         y: number;
         href?: string;
         focusSpaceId?: number;
+        focusPerson?: PersonFocus;
         initials?: string;
         imageUrl?: string | null;
       }>,
@@ -858,7 +1002,7 @@ export function MyceliumEcosystem({
     };
     if (!showMembers || !focusNode) return empty;
     const structureNodes = structureField.nodes.filter(
-      (node) => node.id !== focus.id,
+      (node) => node.id !== structureFocusId,
     );
     const spokes = structureNodes
       .map((node) => Math.atan2(node.y - focusNode.y, node.x - focusNode.x))
@@ -900,21 +1044,27 @@ export function MyceliumEcosystem({
     }> = [
       {
         kind: 'people',
-        items: people.map((person) => ({
-          key: `person-${person.id}`,
-          label: personLabel(person, t('navigation.unnamedMember')),
-          href:
-            person.slug && focus.slug
-              ? `/${lang}/dho/${focus.slug}/members/person/${person.slug}`
-              : undefined,
-          initials: personLabel(person, t('navigation.unnamedMember')).slice(
-            0,
-            2,
-          ),
-          imageUrl: person.avatarUrl,
-          x: 0,
-          y: 0,
-        })),
+        items: people.flatMap((person) => {
+          if (!person.slug) return [];
+          const label = personLabel(person, t('navigation.unnamedMember'));
+          return [
+            {
+              key: `person-${person.id}`,
+              label,
+              focusPerson: {
+                id: person.id,
+                slug: person.slug,
+                label,
+                imageUrl: person.avatarUrl,
+                initials: label.slice(0, 2),
+              },
+              initials: label.slice(0, 2),
+              imageUrl: person.avatarUrl,
+              x: 0,
+              y: 0,
+            },
+          ];
+        }),
       },
       {
         kind: 'spaces',
@@ -984,13 +1134,13 @@ export function MyceliumEcosystem({
     };
   }, [
     agents,
-    focus.id,
-    focus.slug,
     focusNode,
     joinedSpaces,
     lang,
     people,
     showMembers,
+    structureField.nodes,
+    structureFocusId,
     t,
     tCoherence,
     tree,
@@ -1000,16 +1150,18 @@ export function MyceliumEcosystem({
   const spacesMore = membershipMarks.spacesMore;
   const agentsMore = membershipMarks.agentsMore;
 
+  const showBreadcrumb = path.length > 1 || personFocus != null;
+
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
-      {path.length > 1 ? (
+      {showBreadcrumb ? (
         <div className="flex flex-wrap items-center justify-end gap-3 px-1 pb-2">
           <nav
             aria-label={ariaLabel}
             className="flex min-w-0 items-center gap-1"
           >
             {path.map((node, index) => {
-              const last = index === path.length - 1;
+              const last = index === path.length - 1 && !personFocus;
               return (
                 <span key={node.id} className="flex min-w-0 items-center gap-1">
                   {index > 0 ? (
@@ -1023,7 +1175,7 @@ export function MyceliumEcosystem({
                     <button
                       type="button"
                       className="truncate text-1 text-neutral-11 hover:text-foreground hover:underline"
-                      onClick={() => setFocusId(node.id)}
+                      onClick={() => openSpaceFromGraph(node.id)}
                     >
                       {node.name}
                     </button>
@@ -1031,6 +1183,14 @@ export function MyceliumEcosystem({
                 </span>
               );
             })}
+            {personFocus ? (
+              <span className="flex min-w-0 items-center gap-1">
+                <span className="text-1 text-neutral-8">/</span>
+                <span className="truncate text-1 text-foreground">
+                  {personFocus.label}
+                </span>
+              </span>
+            ) : null}
           </nav>
         </div>
       ) : null}
@@ -1042,7 +1202,7 @@ export function MyceliumEcosystem({
               title: t('diagram.lensStructure'),
               frame: structureFrame,
               field: structureField,
-              node: structurePlacedById.get(focus.id),
+              node: structurePlacedById.get(structureFocusId),
             },
             {
               lens: 'flows' as const,
@@ -1058,7 +1218,9 @@ export function MyceliumEcosystem({
           const size = pane.frame.size;
           const focusNode = pane.node;
           const showMembers =
-            lens === 'structure' && Math.min(size.width, size.height) >= 280;
+            lens === 'structure' &&
+            !personFocus &&
+            Math.min(size.width, size.height) >= 280;
           return (
             <section
               key={lens}
@@ -1267,26 +1429,55 @@ export function MyceliumEcosystem({
                       : field.nodes
                     ).map((node) => {
                       const clip = `${clipPrefix}-${lens}-${node.id}`;
-                      const logo =
-                        node.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
+                      const isPerson = node.kind === 'person';
+                      const portrait = node.logoUrl?.trim();
+                      const logo = isPerson
+                        ? portrait
+                        : portrait || DEFAULT_SPACE_AVATAR_IMAGE;
+                      const canOpen =
+                        !isPerson &&
+                        (findNode(tree, node.id) != null || Boolean(node.slug));
+                      const openNode = () => {
+                        if (isPerson) return;
+                        if (findNode(tree, node.id)) {
+                          openSpaceFromGraph(node.id);
+                          return;
+                        }
+                        if (node.slug) {
+                          router.push(`/${lang}/dho/${node.slug}/overview`);
+                        }
+                      };
                       return (
                         <g
                           key={node.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={t('diagram.openSpace', {
-                            name: node.name,
-                          })}
-                          className="mycelium-node cursor-pointer"
+                          role={canOpen ? 'button' : undefined}
+                          tabIndex={canOpen ? 0 : undefined}
+                          aria-label={
+                            isPerson
+                              ? node.name
+                              : t('diagram.openSpace', { name: node.name })
+                          }
+                          className={
+                            canOpen
+                              ? 'mycelium-node cursor-pointer'
+                              : 'mycelium-node'
+                          }
                           onMouseEnter={() => setHoveredId(node.id)}
                           onMouseLeave={() => setHoveredId(null)}
-                          onClick={() => setFocusId(node.id)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              setFocusId(node.id);
-                            }
-                          }}
+                          onClick={canOpen ? openNode : undefined}
+                          onKeyDown={
+                            canOpen
+                              ? (event) => {
+                                  if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                  ) {
+                                    event.preventDefault();
+                                    openNode();
+                                  }
+                                }
+                              : undefined
+                          }
                         >
                           <title>{node.name}</title>
                           <defs>
@@ -1298,20 +1489,31 @@ export function MyceliumEcosystem({
                             cx={node.x}
                             cy={node.y}
                             r={node.r + 2}
-                            fill="none"
+                            fill={isPerson ? 'var(--background)' : 'none'}
                             stroke="var(--neutral-12)"
                             strokeOpacity={0.28}
                             strokeWidth={1}
                           />
-                          <image
-                            href={logo}
-                            x={node.x - node.r}
-                            y={node.y - node.r}
-                            width={node.r * 2}
-                            height={node.r * 2}
-                            clipPath={`url(#${clip})`}
-                            preserveAspectRatio="xMidYMid slice"
-                          />
+                          {logo ? (
+                            <image
+                              href={logo}
+                              x={node.x - node.r}
+                              y={node.y - node.r}
+                              width={node.r * 2}
+                              height={node.r * 2}
+                              clipPath={`url(#${clip})`}
+                              preserveAspectRatio="xMidYMid slice"
+                            />
+                          ) : (
+                            <text
+                              x={node.x}
+                              y={node.y + 4}
+                              textAnchor="middle"
+                              className="fill-foreground text-[12px]"
+                            >
+                              {(node.initials ?? node.name).slice(0, 2)}
+                            </text>
+                          )}
                           {(() => {
                             const originX = focusNode?.x ?? size.width / 2;
                             const originY = focusNode?.y ?? size.height / 2;
@@ -1493,18 +1695,45 @@ export function MyceliumEcosystem({
                               </a>
                             );
                           }
+                          const canActivate = Boolean(
+                            chip.focusPerson || chip.focusSpaceId,
+                          );
                           return (
                             <g
                               key={chip.key}
-                              role={chip.focusSpaceId ? 'button' : undefined}
-                              tabIndex={chip.focusSpaceId ? 0 : undefined}
+                              role={canActivate ? 'button' : undefined}
+                              tabIndex={canActivate ? 0 : undefined}
                               className={
-                                chip.focusSpaceId ? 'cursor-pointer' : undefined
+                                canActivate ? 'cursor-pointer' : undefined
                               }
                               onClick={() => {
-                                if (chip.focusSpaceId)
-                                  setFocusId(chip.focusSpaceId);
+                                if (chip.focusPerson) {
+                                  setPersonFocus(chip.focusPerson);
+                                  return;
+                                }
+                                if (chip.focusSpaceId) {
+                                  openSpaceFromGraph(chip.focusSpaceId);
+                                }
                               }}
+                              onKeyDown={
+                                canActivate
+                                  ? (event) => {
+                                      if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                      ) {
+                                        event.preventDefault();
+                                        if (chip.focusPerson) {
+                                          setPersonFocus(chip.focusPerson);
+                                          return;
+                                        }
+                                        if (chip.focusSpaceId) {
+                                          openSpaceFromGraph(chip.focusSpaceId);
+                                        }
+                                      }
+                                    }
+                                  : undefined
+                              }
                             >
                               {body}
                             </g>
@@ -1518,6 +1747,11 @@ export function MyceliumEcosystem({
                     {flowsError
                       ? t('diagram.flowsError')
                       : t('diagram.flowsEmpty')}
+                  </p>
+                ) : null}
+                {lens === 'structure' && personFocus && personSpacesLoading ? (
+                  <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-1 text-neutral-11">
+                    {t('navigation.loading')}
                   </p>
                 ) : null}
                 {lens === 'structure' && showMembers && !membersLoading

@@ -486,12 +486,16 @@ export function MyConnections() {
     }
     setNotice(null);
     if (row.roomId) {
+      const peerSlug = row.person.slug?.trim();
       openCoherenceChat(
         row.roomId,
         row.name,
         '',
         null,
         home?.chatSpaceSlug ?? null,
+        {
+          peerPerson: peerSlug ? { slug: peerSlug } : null,
+        },
       );
       return;
     }
@@ -535,7 +539,10 @@ export function MyConnections() {
   async function openReachOut(card: ConnectionSuggestion) {
     setNotice(null);
     if (card.roomId) {
-      openCoherenceChat(card.roomId, card.name, '', null, null);
+      const peerSlug = card.person?.slug?.trim();
+      openCoherenceChat(card.roomId, card.name, '', null, null, {
+        peerPerson: peerSlug ? { slug: peerSlug } : null,
+      });
       return;
     }
     if (!card.person) return;

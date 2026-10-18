@@ -8,6 +8,7 @@ export * from './export-embedded-wallet-button';
 export * from './member-detail';
 export * from './use-member-directory-connect';
 export * from './member-spaces';
+export * from './member-space-icons';
 export * from './members-section';
 export * from './person-avatar';
 export { presenceRank, readMemberPresence } from './member-presence';
