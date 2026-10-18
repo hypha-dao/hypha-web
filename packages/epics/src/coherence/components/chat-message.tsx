@@ -7,9 +7,11 @@ import {
 } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, MarkdownSuspense, Skeleton } from '@hypha-platform/ui';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { PinIcon } from 'lucide-react';
+import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
 
 type ChatMessageProps = {
   message: Message;
@@ -22,17 +24,22 @@ export const ChatMessage = ({
   isLoading,
   togglePinnedMessage,
 }: ChatMessageProps) => {
+  const tChat = useTranslations('HumanChatPanel');
+  const isAgent = isHyphaBotMatrixIdentity(message.sender);
   const { privyUserId, isLoading: isLoadingPrivyUserId } =
-    useUserPrivyIdByMatrixId({ matrixUserId: message.sender });
+    useUserPrivyIdByMatrixId({
+      matrixUserId: isAgent ? undefined : message.sender,
+    });
   const { person, isLoading: isLoadingPerson } = usePersonBySub({
-    sub: privyUserId,
+    sub: isAgent ? undefined : privyUserId,
   });
   const displayName = React.useMemo(() => {
+    if (isAgent) return tChat('agentMentionLabel');
     if (isLoadingPerson || !person) {
       return '';
     }
     return `${person.name} ${person.surname}`;
-  }, [isLoadingPerson, person]);
+  }, [isAgent, isLoadingPerson, person, tChat]);
   const togglePinned = React.useCallback(() => {
     togglePinnedMessage(message.id);
   }, [message.id, togglePinnedMessage]);

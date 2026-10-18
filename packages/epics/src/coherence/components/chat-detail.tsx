@@ -230,6 +230,7 @@ export const ChatDetail = ({
           <ChatMessageInput
             roomId={conversation?.roomId ?? ''}
             coherenceSlug={conversation?.slug ?? ''}
+            coherenceTitle={conversation?.title}
             closeUrl={closeUrl}
           />
         </div>

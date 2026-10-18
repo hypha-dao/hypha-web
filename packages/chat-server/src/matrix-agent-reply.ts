@@ -133,15 +133,76 @@ function sleep(ms: number) {
  * If the latest text in the room @mentions the agent and it has not already replied, post one
  * helpful answer as the agent. Quiet when the mention is absent.
  */
+export type MatrixAgentRoomContext = {
+  kind: 'proposal' | 'signal' | 'space' | 'ecosystem' | 'network' | 'dm';
+  spaceSlug?: string | null;
+  documentSlug?: string | null;
+  documentTitle?: string | null;
+  signalSlug?: string | null;
+  signalTitle?: string | null;
+};
+
+function describeRoomContext(
+  context: MatrixAgentRoomContext | null | undefined,
+  spaceSlug: string,
+): string {
+  const kind = context?.kind;
+  if (kind === 'proposal') {
+    const title = context?.documentTitle?.trim();
+    const slug = context?.documentSlug?.trim();
+    return [
+      'You are in a proposal discussion thread.',
+      title ? `Proposal title: ${title}` : null,
+      slug ? `Proposal document slug: ${slug}` : null,
+      spaceSlug
+        ? `Space slug: ${spaceSlug}. Read this proposal and the space around it before you answer.`
+        : 'Space slug is unknown — answer from the room and the proposal title only.',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+  if (kind === 'signal') {
+    const title = context?.signalTitle?.trim();
+    const slug = context?.signalSlug?.trim();
+    return [
+      'You are in a signal chat thread.',
+      title ? `Signal title: ${title}` : null,
+      slug ? `Signal slug: ${slug}` : null,
+      spaceSlug
+        ? `Space slug: ${spaceSlug}. Read this signal and the space around it before you answer.`
+        : 'Space slug is unknown — answer from the room and the signal title only.',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+  if (kind === 'ecosystem') {
+    return spaceSlug
+      ? `You are in the ecosystem room for space slug ${spaceSlug}. Read that space and the ecosystem around it before you answer.`
+      : 'You are in an ecosystem room. Answer from the room history; look up ecosystem tools when a space slug appears.';
+  }
+  if (kind === 'network') {
+    return 'You are in the network room. Answer from the room history and network-wide tools; do not invent a single home space.';
+  }
+  if (kind === 'dm') {
+    return 'Space slug: none. This is a private person-to-person room. Do not look up a space or quote a space member list.';
+  }
+  if (spaceSlug) {
+    return `You are in a space room. Space slug: ${spaceSlug}. Read that space and the ecosystem around it before you answer.`;
+  }
+  return 'Space slug: none. This is a private person-to-person room. Do not look up a space or quote a space member list.';
+}
+
 export async function replyToMatrixAgentMention({
   roomId,
   authToken,
   spaceSlug,
+  context,
   requestUrl,
 }: {
   roomId: string;
   authToken: string;
   spaceSlug?: string | null;
+  context?: MatrixAgentRoomContext | null;
   requestUrl?: string;
 }): Promise<{ replied: boolean }> {
   const homeserver = getMatrixHomeserverUrl();
@@ -191,7 +252,10 @@ export async function replyToMatrixAgentMention({
 
   const specialist =
     selectSpecialistForQuestion(turn.question) ?? specialistById('purpose');
-  const slug = spaceSlug?.trim() || '';
+  const slug = context?.spaceSlug?.trim() || spaceSlug?.trim() || '';
+  const roomKind = context?.kind ?? (slug ? 'space' : 'dm');
+  const allowSpaceTools =
+    Boolean(slug) && roomKind !== 'dm' && roomKind !== 'network';
   const tools = createChatTools(
     authToken,
     requestUrl,
@@ -202,7 +266,7 @@ export async function replyToMatrixAgentMention({
     null,
     null,
   );
-  const readTools = slug
+  const readTools = allowSpaceTools
     ? {
         get_signals_by_space_slug: tools.get_signals_by_space_slug,
         get_people_by_space_slug: tools.get_people_by_space_slug,
@@ -211,6 +275,11 @@ export async function replyToMatrixAgentMention({
         get_org_memory_by_space_slug: tools.get_org_memory_by_space_slug,
         summarize_space_discussion_by_slug:
           tools.summarize_space_discussion_by_slug,
+        web_search: tools.web_search,
+      }
+    : roomKind === 'network'
+    ? {
+        get_ecosystem_by_space_slug: tools.get_ecosystem_by_space_slug,
         web_search: tools.web_search,
       }
     : { web_search: tools.web_search };
@@ -223,9 +292,10 @@ export async function replyToMatrixAgentMention({
         specialist?.role ?? 'AI Agents',
       )}\n\n${AGENT_PROMPT_REST}`,
       prompt: [
-        slug
-          ? `Space slug: ${slug}`
-          : 'Space slug: none. This is a private person-to-person room. Do not look up a space or quote a space member list.',
+        describeRoomContext(
+          context ?? { kind: roomKind, spaceSlug: slug },
+          slug,
+        ),
         turn.earlier
           ? `Earlier in the room:\n${turn.earlier}`
           : 'No earlier messages.',

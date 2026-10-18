@@ -89,21 +89,38 @@ export async function inviteMatrixAgentIfNeeded(
   }
 }
 
+/**
+ * Where the mention happened. The agent reads this so it answers against the
+ * right surface — proposal, signal, space, ecosystem, network, or a DM.
+ */
+export type MatrixAgentRoomContext = {
+  kind: 'proposal' | 'signal' | 'space' | 'ecosystem' | 'network' | 'dm';
+  spaceSlug?: string | null;
+  documentSlug?: string | null;
+  documentTitle?: string | null;
+  signalSlug?: string | null;
+  signalTitle?: string | null;
+};
+
 /** Ask the server to answer if the latest room message @mentions AI Agents. */
 export function requestMatrixAgentReply({
   authToken,
   roomId,
   mentionUserIds,
   spaceSlug,
+  context,
 }: {
   authToken: string | null | undefined;
   roomId: string;
   mentionUserIds: string[];
+  /** @deprecated Prefer `context.spaceSlug` — kept for older call sites. */
   spaceSlug?: string | null;
+  context?: MatrixAgentRoomContext | null;
 }) {
   const agentUserId = matrixAgentUserId();
   const token = authToken?.trim();
   if (!agentUserId || !token || !mentionUserIds.includes(agentUserId)) return;
+  const resolvedSlug = context?.spaceSlug?.trim() || spaceSlug?.trim() || null;
   void fetch('/api/matrix/agent-reply', {
     method: 'POST',
     headers: {
@@ -112,7 +129,17 @@ export function requestMatrixAgentReply({
     },
     body: JSON.stringify({
       roomId,
-      spaceSlug: spaceSlug?.trim() || null,
+      spaceSlug: resolvedSlug,
+      context: context
+        ? {
+            kind: context.kind,
+            spaceSlug: resolvedSlug,
+            documentSlug: context.documentSlug?.trim() || null,
+            documentTitle: context.documentTitle?.trim() || null,
+            signalSlug: context.signalSlug?.trim() || null,
+            signalTitle: context.signalTitle?.trim() || null,
+          }
+        : null,
     }),
   }).catch(() => {
     // The room stays as the people left it when the reply cannot be posted.

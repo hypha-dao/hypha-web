@@ -462,6 +462,11 @@ type ProposalDetailProps = ProposalHeadProps & {
   documentSlug: string;
   /** Matrix room for discussion under the proposal body. */
   chatRoomId?: string | null;
+  /**
+   * True once the document fetch has settled. Until then `chatRoomId` may
+   * still be missing, and the discussion must not create a replacement room.
+   */
+  chatRoomResolved?: boolean;
   dbTokens?: DbToken[];
   authToken?: string | null;
 
@@ -499,6 +504,7 @@ export const ProposalDetail = ({
   label,
   documentSlug,
   chatRoomId,
+  chatRoomResolved,
   dbTokens,
   authToken,
   onAccept,
@@ -1300,6 +1306,7 @@ export const ProposalDetail = ({
           documentSlug={documentSlug}
           title={title}
           initialChatRoomId={chatRoomId}
+          chatRoomResolved={chatRoomResolved}
           spaceSlug={spaceSlug}
         />
       ) : null}

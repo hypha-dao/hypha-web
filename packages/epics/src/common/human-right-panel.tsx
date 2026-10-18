@@ -4627,8 +4627,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           authToken: authTokenRef.current,
           roomId,
           mentionUserIds,
-          // Private PM / group rooms have no space — do not leak home/route slug.
-          spaceSlug: isDirectConversation ? null : spaceSlug,
+          context: isDirectConversation
+            ? { kind: 'dm' }
+            : mode === 'space' && !spaceSlug?.trim()
+            ? { kind: 'network' }
+            : mode === 'space' && spaceRoom === 'ecosystem'
+            ? { kind: 'ecosystem', spaceSlug }
+            : mode === 'coherence' && coherenceSlug?.trim()
+            ? {
+                kind: 'signal',
+                spaceSlug,
+                signalSlug: coherenceSlug,
+                signalTitle: coherenceTitle,
+              }
+            : { kind: 'space', spaceSlug },
         });
       }
       setSendingPending(null);
@@ -4727,6 +4739,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     blockSpaceChatForMembership,
     isDirectConversation,
     spaceSlug,
+    mode,
+    spaceRoom,
+    coherenceSlug,
+    coherenceTitle,
     tCommon,
     t,
   ]);
