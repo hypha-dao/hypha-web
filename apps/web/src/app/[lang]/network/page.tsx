@@ -31,11 +31,12 @@ type PageProps = {
   }>;
 };
 
-export default function Index(props: PageProps) {
+export default async function Index(props: PageProps) {
+  const searchParams = await props.searchParams;
   return (
     <div className="w-full min-w-0">
       <Container className="flex min-w-0 flex-col gap-9 py-3 sm:py-4 lg:py-5">
-        <Suspense fallback={<NetworkIndexFallback />}>
+        <Suspense fallback={<NetworkIndexFallback view={searchParams?.view} />}>
           <NetworkSpaces {...props} />
         </Suspense>
       </Container>

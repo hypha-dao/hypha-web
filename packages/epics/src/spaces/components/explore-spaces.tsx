@@ -341,7 +341,9 @@ export function ExploreSpaces({
 
   const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';
   const spacesListContent = showSpacesSkeleton ? (
-    <NetworkLoadingGrid count={12} cardGridClassName={cardGridClassName} />
+    view === 'list' ? (
+      <NetworkLoadingGrid count={12} cardGridClassName={cardGridClassName} />
+    ) : null
   ) : (
     <SpaceCardList
       lang={lang}

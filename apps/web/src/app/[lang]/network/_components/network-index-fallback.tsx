@@ -2,16 +2,23 @@ import { NetworkLoadingGrid } from '@hypha-platform/epics';
 
 import { NetworkPageTitle } from './network-page-title';
 
-export function NetworkIndexFallback() {
+export function NetworkIndexFallback({ view }: { view?: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-4" aria-busy="true">
       <NetworkPageTitle />
       <div className="flex min-w-0 flex-col gap-4">
         <div className="h-10 w-full animate-pulse rounded-md border border-neutral-4 bg-neutral-2" />
-        <NetworkLoadingGrid
-          count={12}
-          cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-        />
+        {view === 'list' ? (
+          <NetworkLoadingGrid
+            count={12}
+            cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+          />
+        ) : (
+          <div
+            className="aspect-[2/1] w-full animate-pulse border border-neutral-4 bg-neutral-2"
+            aria-hidden
+          />
+        )}
       </div>
     </div>
   );

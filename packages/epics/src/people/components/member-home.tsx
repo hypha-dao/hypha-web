@@ -925,7 +925,31 @@ function ChatSkeleton() {
   const chipWidths = [88, 72, 96, 80, 104];
   return (
     <div className="flex min-h-0 flex-1 flex-col" aria-hidden>
-      <div className="min-h-0 flex-1" />
+      <div className="flex min-h-0 flex-1 items-center">
+        <div className={cn(HOME_CHAT_COLUMN, 'grid w-full gap-4 px-5 md:px-4')}>
+          <HomePulse className="h-8 w-2/3 max-w-md" />
+          <div className="grid gap-3 border border-border bg-background/80 p-4">
+            <HomePulse className="h-4 w-1/3" delayMs={40} />
+            <HomePulse className="h-3 w-full" delayMs={80} />
+            <HomePulse className="h-3 w-5/6" delayMs={120} />
+            <HomePulse className="h-28 w-full" delayMs={160} />
+          </div>
+          <div className="grid gap-3 border border-border bg-background/80 p-4">
+            <div className="flex items-center gap-3">
+              <HomePulse
+                className="h-10 w-10 shrink-0 rounded-full"
+                delayMs={80}
+              />
+              <div className="grid min-w-0 flex-1 gap-2">
+                <HomePulse className="h-3 w-1/2" delayMs={120} />
+                <HomePulse className="h-3 w-1/3" delayMs={160} />
+              </div>
+            </div>
+            <HomePulse className="h-3 w-full" delayMs={200} />
+            <HomePulse className="h-3 w-4/5" delayMs={240} />
+          </div>
+        </div>
+      </div>
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
         <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden pt-2 md:mx-4">
           {chipWidths.map((width, index) => (
