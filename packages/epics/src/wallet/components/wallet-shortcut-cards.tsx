@@ -39,7 +39,7 @@ function ShortcutCard({
   featured,
   onClick,
   disabled,
-}: Shortcut) {
+}: Omit<Shortcut, 'key'>) {
   const className = cn(
     'flex aspect-square min-w-[7.5rem] flex-col items-center justify-center gap-3 border p-3 text-center',
     featured
@@ -145,8 +145,8 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
       aria-label={t('title')}
       className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7"
     >
-      {shortcuts.map((shortcut) => (
-        <ShortcutCard key={shortcut.key} {...shortcut} />
+      {shortcuts.map(({ key, ...shortcut }) => (
+        <ShortcutCard key={key} {...shortcut} />
       ))}
     </nav>
   );

@@ -24,6 +24,8 @@ import {
 import { ActionShareCard, NetworkRightColumn } from './network-right-cards';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
+const SLUG = /^[a-z0-9_-]{1,80}$/i;
+
 function capitalKey(value: string | null): CapitalKey | null {
   if (!value) return null;
   return parseCapitalKeys([value])[0] ?? null;
