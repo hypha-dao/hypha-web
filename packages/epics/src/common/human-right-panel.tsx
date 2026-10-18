@@ -2911,7 +2911,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
   const prevChatModeRef = useRef(mode);
-  const lastHumanChatSpaceSlugRef = useRef(spaceSlug?.trim() || null);
+  const lastHumanChatSpaceSlugRef = useRef(routeSpaceSlug || null);
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
@@ -2920,9 +2920,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, exitCoherenceChat]);
 
-  // Reset human chat when navigating to a different space (picker, recently visited, etc.)
+  // Reset human chat when the route space changes. A direct message blanks the
+  // derived space slug without leaving the page, so that must not close the PM.
   useEffect(() => {
-    const nextSlug = spaceSlug?.trim() || null;
+    const nextSlug = routeSpaceSlug || null;
     const prevSlug = lastHumanChatSpaceSlugRef.current;
     if (prevSlug === nextSlug) return;
     lastHumanChatSpaceSlugRef.current = nextSlug;
@@ -2931,7 +2932,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setSpaceRoom('space');
     exitCoherenceChat();
     resetChatStateOnAuthDrop();
-  }, [spaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
+  }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;
