@@ -5169,6 +5169,7 @@
     "holdingsTitle": "Saldos",
     "holdingsDescription": "Saldos de tokens e ativos do espaço.",
     "open": "Ver mais",
+    "signalsTitle": "Sinais mais relevantes",
     "signalsEmpty": "Nada em aberto.",
     "openCount": "{count} em aberto",
     "nowEyebrow": "Este espaço",

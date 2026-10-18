@@ -5212,6 +5212,7 @@
     "holdingsTitle": "Holdings",
     "holdingsDescription": "Token balances and space assets.",
     "open": "See more",
+    "signalsTitle": "Most relevant signals",
     "signalsEmpty": "Nothing open.",
     "openCount": "{count} open",
     "nowEyebrow": "This space",

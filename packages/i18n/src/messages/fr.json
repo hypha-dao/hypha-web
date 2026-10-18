@@ -5168,6 +5168,7 @@
     "holdingsTitle": "Avoirs",
     "holdingsDescription": "Soldes de jetons et actifs de l’espace.",
     "open": "Voir plus",
+    "signalsTitle": "Signaux les plus pertinents",
     "signalsEmpty": "Rien d'ouvert.",
     "openCount": "{count} ouverts",
     "nowEyebrow": "Cet espace",

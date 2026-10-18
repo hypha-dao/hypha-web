@@ -5171,6 +5171,7 @@
     "holdingsTitle": "Bestände",
     "holdingsDescription": "Token-Salden und Space-Assets.",
     "open": "Mehr anzeigen",
+    "signalsTitle": "Relevanteste Signale",
     "signalsEmpty": "Nichts offen.",
     "openCount": "{count} offen",
     "nowEyebrow": "Dieser Space",

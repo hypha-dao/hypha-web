@@ -597,6 +597,10 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     .slice(0, 4);
   const showTreasury = treasuryLoading || assets.length > 0;
   const showEcosystem = spaces.length > 0 || space?.parentId != null;
+  const showSignals = signalsLoading || featuredSignals.length > 0;
+  const distributionSlices = distributionTokens.filter(
+    (asset) => asset.value > 0,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -641,59 +645,87 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         <SpaceMemberCircles people={people} membersHref={`${home}/members`} />
       ) : null}
 
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
-        <section className="min-w-0">
-          <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2
-              className="text-3 text-foreground"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {tCommon('Signals')}
-            </h2>
-            <Link
-              href={`${home}/coherence`}
-              className="shrink-0 text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
-            >
-              {t('open')}
-            </Link>
+      <div
+        className={
+          showSignals
+            ? 'grid items-start gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]'
+            : 'grid items-start gap-3 lg:grid-cols-2'
+        }
+      >
+        {showSignals ? (
+          <div className="flex min-w-0 flex-col gap-6">
+            <section className="min-w-0">
+              <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2
+                  className="text-3 text-foreground"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t('signalsTitle')}
+                </h2>
+                <Link
+                  href={`${home}/coherence`}
+                  className="shrink-0 text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  {t('open')}
+                </Link>
+              </div>
+              {signalsLoading ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <RowsSkeleton />
+                  <RowsSkeleton />
+                </div>
+              ) : (
+                <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {featuredSignals.map((signal) => {
+                    const body = plainText(signal.description);
+                    return (
+                      <li key={signal.slug}>
+                        <Link
+                          href={`${home}/coherence?signal=${encodeURIComponent(
+                            signal.slug,
+                          )}`}
+                          className="craft-card-interactive flex h-full flex-col gap-2 p-4"
+                        >
+                          <SignalCategoryTag type={signal.type} withLabel />
+                          <span className="text-2 text-foreground">
+                            {signal.title}
+                          </span>
+                          {body ? (
+                            <span className="line-clamp-4 text-1 text-neutral-11">
+                              {body}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+            {featuredSignals.length > 0 ? (
+              <Panel
+                title={t('insightsTitle')}
+                href={`${home}/coherence`}
+                openLabel={t('open')}
+              >
+                <div className="min-w-0 overflow-x-auto">
+                  <SignalHeatMaps
+                    signals={openSignals}
+                    isLoading={signalsLoading}
+                    empty={t('signalsEmpty')}
+                    hrefForType={(type) =>
+                      `${home}/coherence?type=${encodeURIComponent(type)}`
+                    }
+                  />
+                </div>
+              </Panel>
+            ) : null}
           </div>
-          {signalsLoading ? (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <RowsSkeleton />
-              <RowsSkeleton />
-            </div>
-          ) : featuredSignals.length === 0 ? (
-            <Quiet>{t('signalsEmpty')}</Quiet>
-          ) : (
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {featuredSignals.map((signal) => {
-                const body = plainText(signal.description);
-                return (
-                  <li key={signal.slug}>
-                    <Link
-                      href={`${home}/coherence?signal=${encodeURIComponent(
-                        signal.slug,
-                      )}`}
-                      className="craft-card-interactive flex h-full flex-col gap-2 p-4"
-                    >
-                      <SignalCategoryTag type={signal.type} withLabel />
-                      <span className="text-2 text-foreground">
-                        {signal.title}
-                      </span>
-                      {body ? (
-                        <span className="line-clamp-4 text-1 text-neutral-11">
-                          {body}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+        ) : null}
 
-        <div className="flex min-w-0 flex-col gap-3">
+        <div
+          className={showSignals ? 'flex min-w-0 flex-col gap-3' : 'contents'}
+        >
           <SpaceAttention
             lang={locale as Locale}
             spaceSlug={spaceSlug}
@@ -748,122 +780,108 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         </div>
       </div>
 
-      <div
-        className={
-          showTreasury
-            ? 'grid items-start gap-3 lg:grid-cols-2'
-            : 'grid items-start gap-3'
-        }
-      >
+      {showTreasury ? (
         <Panel
-          title={t('insightsTitle')}
-          href={`${home}/coherence`}
+          title={t('treasuryTitle')}
+          href={`${home}/treasury`}
           openLabel={t('open')}
         >
-          <div className="min-w-0 overflow-x-auto">
-            <SignalHeatMaps
-              signals={openSignals}
-              isLoading={signalsLoading}
-              empty={t('signalsEmpty')}
-              hrefForType={(type) =>
-                `${home}/coherence?type=${encodeURIComponent(type)}`
-              }
-            />
-          </div>
-        </Panel>
-
-        {showTreasury ? (
-          <Panel
-            title={t('treasuryTitle')}
-            href={`${home}/treasury`}
-            openLabel={t('open')}
-          >
-            {treasuryLoading ? (
-              <RowsSkeleton />
-            ) : assets.length === 0 ? (
-              <Quiet>{t('treasuryEmpty')}</Quiet>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div className="min-w-0">
-                  <span
-                    className="block truncate text-3 tabular-nums text-foreground"
-                    style={{ fontFamily: 'var(--font-family-heading)' }}
-                  >
-                    {formatFromUsd(treasuryBalance)}
-                  </span>
-                  <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
-                    {t('treasuryTotal')}
-                  </span>
-                </div>
-                {spaceTokens.length > 0 ? (
-                  <ul className="grid grid-cols-3 gap-3">
-                    {spaceTokens.slice(0, 3).map((asset) => (
-                      <li key={asset.symbol} className="min-w-0">
-                        <span
-                          className="block truncate text-3 tabular-nums text-foreground"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {format.number(asset.value, {
-                            maximumFractionDigits: asset.value >= 100 ? 0 : 2,
-                          })}
-                        </span>
-                        <span className="mt-1 block truncate text-1 text-neutral-11">
-                          {asset.symbol}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {liquidTokens.length > 0 ? (
-                  <ul className="grid grid-cols-3 gap-3">
-                    {liquidTokens.map((asset) => (
-                      <li
-                        key={asset.address || asset.symbol}
-                        className="min-w-0"
-                      >
-                        <span
-                          className="block truncate text-3 tabular-nums text-foreground"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {format.number(asset.value, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                        <span className="mt-1 block truncate text-1 text-neutral-11">
-                          {asset.symbol}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {assetTotal > 0 ? (
-                  <div>
-                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                      {t('distributionTitle')}
-                    </p>
-                    <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
-                      {distributionTokens.map((asset) => (
-                        <span
-                          key={asset.address || asset.symbol}
-                          className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
-                          style={{
-                            width: `${(asset.value / assetTotal) * 100}%`,
-                            opacity: 0.35 + (asset.value / assetTotal) * 0.65,
-                          }}
-                          title={`${asset.symbol} ${format.number(asset.value, {
-                            maximumFractionDigits: 2,
-                          })}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+          {treasuryLoading ? (
+            <RowsSkeleton />
+          ) : assets.length === 0 ? (
+            <Quiet>{t('treasuryEmpty')}</Quiet>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="min-w-0">
+                <span
+                  className="block truncate text-3 tabular-nums text-foreground"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {formatFromUsd(treasuryBalance)}
+                </span>
+                <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
+                  {t('treasuryTotal')}
+                </span>
               </div>
-            )}
-          </Panel>
-        ) : null}
-      </div>
+              {spaceTokens.length > 0 ? (
+                <ul className="grid grid-cols-3 gap-3">
+                  {spaceTokens.slice(0, 3).map((asset) => (
+                    <li key={asset.symbol} className="min-w-0">
+                      <span
+                        className="block truncate text-3 tabular-nums text-foreground"
+                        style={{ fontFamily: 'var(--font-family-heading)' }}
+                      >
+                        {format.number(asset.value, {
+                          maximumFractionDigits: asset.value >= 100 ? 0 : 2,
+                        })}
+                      </span>
+                      <span className="mt-1 block truncate text-1 text-neutral-11">
+                        {asset.symbol}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {liquidTokens.length > 0 ? (
+                <ul className="grid grid-cols-3 gap-3">
+                  {liquidTokens.map((asset) => (
+                    <li key={asset.address || asset.symbol} className="min-w-0">
+                      <span
+                        className="block truncate text-3 tabular-nums text-foreground"
+                        style={{ fontFamily: 'var(--font-family-heading)' }}
+                      >
+                        {format.number(asset.value, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span className="mt-1 block truncate text-1 text-neutral-11">
+                        {asset.symbol}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {distributionSlices.length > 1 && assetTotal > 0 ? (
+                <div>
+                  <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                    {t('distributionTitle')}
+                  </p>
+                  <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
+                    {distributionSlices.map((asset, index) => (
+                      <span
+                        key={asset.address || asset.symbol}
+                        className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
+                        style={{
+                          width: `${(asset.value / assetTotal) * 100}%`,
+                          opacity:
+                            1 - index * (0.55 / distributionSlices.length),
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <ul className="mt-2 grid gap-1">
+                    {distributionSlices.map((asset) => (
+                      <li
+                        key={`share-${asset.address || asset.symbol}`}
+                        className="flex min-w-0 items-baseline justify-between gap-3 text-1 text-neutral-11"
+                      >
+                        <span className="truncate">{asset.symbol}</span>
+                        <span className="shrink-0 tabular-nums">
+                          {format.number(asset.value / assetTotal, {
+                            style: 'percent',
+                            maximumFractionDigits: 0,
+                          })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </Panel>
+      ) : null}
 
       {showEcosystem ? (
         <Panel
