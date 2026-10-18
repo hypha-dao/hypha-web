@@ -159,13 +159,6 @@ export function MemberHomeSpacesWidgetCard({
       <p className="text-2 text-neutral-11">{t('spacesWidgetEmpty')}</p>
     ) : (
       <>
-        <div className="mb-4 overflow-hidden border border-border">
-          <img
-            src="/brand/strategy-mycelium.png"
-            alt=""
-            className="h-28 w-full object-cover object-center"
-          />
-        </div>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {shown.map((space) => {
             const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);

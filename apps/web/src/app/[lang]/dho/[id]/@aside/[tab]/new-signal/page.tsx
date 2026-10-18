@@ -17,7 +17,9 @@ type PageProps = {
     boardTag?: string | string[];
     type?: string;
     title?: string;
+    description?: string;
     amount?: string;
+    video?: string;
     sharedWithNetwork?: string;
   }>;
 };
@@ -27,8 +29,15 @@ export default async function NewSignalPage({
   searchParams,
 }: PageProps) {
   const { lang, id } = await params;
-  const { boardTag, type, title, amount, sharedWithNetwork } =
-    await searchParams;
+  const {
+    boardTag,
+    type,
+    title,
+    description,
+    amount,
+    video,
+    sharedWithNetwork,
+  } = await searchParams;
 
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
@@ -49,7 +58,13 @@ export default async function NewSignalPage({
     ? (type as (typeof COHERENCE_SIGNAL_TYPES)[number])
     : undefined;
   const signalTitle =
-    typeof title === 'string' ? title.trim().slice(0, 120) : '';
+    typeof title === 'string' ? title.trim().slice(0, 50) : '';
+  const signalDescription =
+    typeof description === 'string' ? description.trim().slice(0, 4000) : '';
+  const signalVideo =
+    typeof video === 'string' && /^https?:\/\//i.test(video.trim())
+      ? video.trim().slice(0, 2000)
+      : '';
   const payoutAmount =
     typeof amount === 'string' &&
     /^\d+(\.\d{1,2})?$/.test(amount.trim()) &&
@@ -75,6 +90,8 @@ export default async function NewSignalPage({
             inheritedBoardTags.length > 0 ||
             signalType ||
             signalTitle ||
+            signalDescription ||
+            signalVideo ||
             payoutAmount ||
             shareOnNetwork
               ? {
@@ -83,6 +100,10 @@ export default async function NewSignalPage({
                     : {}),
                   ...(signalType ? { type: signalType } : {}),
                   ...(signalTitle ? { title: signalTitle } : {}),
+                  ...(signalDescription
+                    ? { description: signalDescription }
+                    : {}),
+                  ...(signalVideo ? { videoUrl: signalVideo } : {}),
                   ...(payoutAmount
                     ? {
                         indicativePayouts: [

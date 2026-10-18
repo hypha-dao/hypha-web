@@ -11,8 +11,8 @@ import {
   House,
   LayoutDashboard,
   LayoutGrid,
+  Globe2,
   MessagesSquare,
-  Network,
   Plus,
   Rows3,
   Settings,
@@ -314,7 +314,7 @@ export function MobileTabBar({
         key: 'network',
         label: tNetwork('navNetwork'),
         href: base,
-        icon: Network,
+        icon: Globe2,
         exact: true,
       },
       {
@@ -578,7 +578,7 @@ export function MobileTabBar({
             label={t('network')}
             active={networkActive}
             onClick={() => setCreateOpen(false)}
-            icon={<Network className={iconClass} strokeWidth={1.25} />}
+            icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
           />
         </div>
       </nav>

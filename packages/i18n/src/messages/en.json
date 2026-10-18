@@ -366,6 +366,9 @@
     "share": "Share",
     "post": "Post",
     "whatHappened": "What happened?",
+    "shareNeedPrompt": "Share a need with the network.",
+    "videoFile": "Video",
+    "videoFileHint": "MP4, WebM, or QuickTime. 16 MB.",
     "linkedAmountHint": "Linked treasury amount (optional)",
     "storyTitle": "Story title",
     "allocatedTitle": "Allocated funds",
@@ -1978,6 +1981,7 @@
   },
   "Footer": {
     "network": "Network",
+    "poweredBy": "Powered by",
     "legal": "Legal",
     "hyphaServices": "Hypha Services",
     "hyphaTokenomics": "Hypha Tokenomics",

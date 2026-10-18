@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   parseCapitalKeys,
@@ -22,17 +21,8 @@ import {
   NetworkLiveSearch,
   NetworkSectionHeader,
 } from './network-section-header';
-import { NetworkRightColumn } from './network-right-cards';
-import { MemberSpaceSelect } from './member-space-select';
-import {
-  useMemberNamedSpaces,
-  type MemberNamedSpace,
-} from './use-member-named-spaces';
+import { ActionShareCard, NetworkRightColumn } from './network-right-cards';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
-
-type StoryFormat = 'photo' | 'video' | 'voice';
-
-const SLUG = /^[a-z0-9_-]{1,80}$/i;
 
 function capitalKey(value: string | null): CapitalKey | null {
   if (!value) return null;
@@ -256,102 +246,6 @@ function StoryDialog({
   );
 }
 
-function PostStoryCard({
-  lang,
-  spaces,
-}: {
-  lang: Locale;
-  spaces: MemberNamedSpace[];
-}) {
-  const t = useTranslations('NetworkExchange');
-  const router = useRouter();
-  const [slug, setSlug] = useState('');
-  const [format, setFormat] = useState<StoryFormat>('photo');
-  const [title, setTitle] = useState('');
-  const formats: { id: StoryFormat; label: string }[] = [
-    { id: 'photo', label: t('storyPhotoMark') },
-    { id: 'video', label: t('storyVideoMark') },
-    { id: 'voice', label: t('storyVoiceMark') },
-  ];
-
-  useEffect(() => {
-    if (!spaces.some((space) => space.slug === slug)) {
-      setSlug(spaces[0]?.slug ?? '');
-    }
-  }, [slug, spaces]);
-
-  const canPost = Boolean(slug && SLUG.test(slug) && title.trim());
-
-  return (
-    <section className="grid gap-3 border border-border bg-background p-4">
-      <h2
-        className="text-5"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
-        {t('shareStoryTitle')}
-      </h2>
-      <p className="text-1 leading-relaxed text-neutral-11">
-        {t('shareStoryBody')} {t('shareStoryNeverPlea')}
-      </p>
-      <MemberSpaceSelect
-        spaces={spaces}
-        value={slug}
-        onChange={setSlug}
-        label={t('chooseSpace')}
-        emptyLabel={t('noneYet')}
-      />
-      <p className="text-1 font-semibold">{t('storyFormat')}</p>
-      <div
-        className="flex flex-wrap gap-1"
-        role="group"
-        aria-label={t('storyFormat')}
-      >
-        {formats.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={format === option.id}
-            onClick={() => setFormat(option.id)}
-            className={cn(
-              'px-2 py-0.5 text-[11px]',
-              format === option.id
-                ? 'bg-foreground text-background'
-                : 'bg-neutral-2 text-neutral-11',
-            )}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-      <input
-        value={title}
-        maxLength={80}
-        placeholder={t('storyTitle')}
-        aria-label={t('storyTitle')}
-        onChange={(event) => setTitle(event.target.value)}
-        className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 outline-none"
-      />
-      <button
-        type="button"
-        disabled={!canPost}
-        onClick={() => {
-          if (!canPost) return;
-          const params = new URLSearchParams();
-          params.set('type', 'Impact');
-          params.set('sharedWithNetwork', '1');
-          params.set('title', title.trim().slice(0, 80));
-          router.push(
-            `/${lang}/dho/${slug}/coherence/new-signal?${params.toString()}`,
-          );
-        }}
-        className="w-full border border-foreground bg-foreground py-2.5 text-1 font-semibold uppercase tracking-[0.12em] text-background disabled:opacity-50"
-      >
-        {t('post')}
-      </button>
-    </section>
-  );
-}
-
 export function NetworkImpactBoard({
   lang,
   signals,
@@ -362,7 +256,6 @@ export function NetworkImpactBoard({
   empty: string;
 }) {
   const t = useTranslations('NetworkExchange');
-  const memberSpaces = useMemberNamedSpaces();
   const [query, setQuery] = useState('');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
   const [openSlug, setOpenSlug] = useState('');
@@ -445,7 +338,7 @@ export function NetworkImpactBoard({
           spaces={[]}
           selectedSlug=""
         >
-          <PostStoryCard lang={lang} spaces={memberSpaces} />
+          <ActionShareCard lang={lang} preferredSlug="" kind="impact" />
         </NetworkRightColumn>
       </div>
       <StoryDialog

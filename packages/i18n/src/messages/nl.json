@@ -507,6 +507,9 @@
     "share": "Delen",
     "post": "Plaatsen",
     "whatHappened": "Wat gebeurde er?",
+    "shareNeedPrompt": "Deel een behoefte met het netwerk.",
+    "videoFile": "Video",
+    "videoFileHint": "MP4, WebM of QuickTime. 16 MB.",
     "linkedAmountHint": "Gekoppeld kasbedrag (optioneel)",
     "storyTitle": "Titel van het verhaal",
     "allocatedTitle": "Toegewezen middelen",
@@ -1945,6 +1948,7 @@
   "Footer": {
     "network": "Netwerk",
     "legal": "Juridisch",
+    "poweredBy": "Mogelijk gemaakt door",
     "hyphaServices": "Hypha-diensten",
     "hyphaTokenomics": "Hypha-tokenomics",
     "licensingPolicy": "Licentiebeleid",

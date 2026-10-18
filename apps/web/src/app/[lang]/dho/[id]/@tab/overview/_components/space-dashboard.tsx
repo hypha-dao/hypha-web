@@ -831,8 +831,8 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           ) : assets.length === 0 ? (
             <Quiet>{t('treasuryEmpty')}</Quiet>
           ) : (
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="flex min-w-0 flex-col gap-4 border border-border p-3">
                 <div className="min-w-0">
                   <span
                     className="block truncate text-3 tabular-nums text-foreground"
@@ -844,28 +844,9 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
                     {t('treasuryTotal')}
                   </span>
                 </div>
-                {spaceTokens.length > 0 ? (
-                  <ul className="grid grid-cols-3 gap-3">
-                    {spaceTokens.slice(0, 3).map((asset) => (
-                      <li key={asset.symbol} className="min-w-0">
-                        <span
-                          className="block truncate text-3 tabular-nums text-foreground"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {format.number(asset.value, {
-                            maximumFractionDigits: asset.value >= 100 ? 0 : 2,
-                          })}
-                        </span>
-                        <span className="mt-1 block truncate text-1 text-neutral-11">
-                          {asset.symbol}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {liquidTokens.length > 0 ? (
-                  <ul className="grid grid-cols-3 gap-3">
-                    {liquidTokens.map((asset) => (
+                <ul className="grid grid-cols-2 gap-3">
+                  {[...spaceTokens.slice(0, 3), ...liquidTokens].map(
+                    (asset) => (
                       <li
                         key={asset.address || asset.symbol}
                         className="min-w-0"
@@ -875,73 +856,88 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
                           style={{ fontFamily: 'var(--font-family-heading)' }}
                         >
                           {format.number(asset.value, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
+                            minimumFractionDigits: isLiquidNonHypha(asset)
+                              ? 2
+                              : 0,
+                            maximumFractionDigits:
+                              isLiquidNonHypha(asset) || asset.value < 100
+                                ? 2
+                                : 0,
                           })}
                         </span>
                         <span className="mt-1 block truncate text-1 text-neutral-11">
                           {asset.symbol}
                         </span>
                       </li>
-                    ))}
-                  </ul>
-                ) : null}
+                    ),
+                  )}
+                </ul>
               </div>
-              {distributionWedges.length > 1 ? (
-                <div className="flex shrink-0 items-center justify-end gap-4">
-                  <svg
-                    viewBox="-1.08 -1.08 2.16 2.16"
-                    className="h-28 w-28 shrink-0"
-                    role="img"
-                    aria-label={t('distributionTitle')}
-                  >
-                    {distributionWedges.map((wedge) => (
-                      <path
-                        key={wedge.key}
-                        d={pieWedge(wedge.start, wedge.end)}
-                        fill={wedge.fill}
-                        stroke="var(--background)"
-                        strokeWidth={0.03}
+              <div className="flex min-w-0 items-center gap-4 border border-border p-3">
+                {distributionWedges.length > 0 ? (
+                  <>
+                    {distributionWedges.length > 1 ? (
+                      <svg
+                        viewBox="-1.08 -1.08 2.16 2.16"
+                        className="h-28 w-28 shrink-0"
+                        role="img"
+                        aria-label={t('distributionTitle')}
                       >
-                        <title>
-                          {`${wedge.symbol} ${format.number(wedge.share, {
-                            style: 'percent',
-                            maximumFractionDigits: wedge.share < 0.01 ? 1 : 0,
-                          })}`}
-                        </title>
-                      </path>
-                    ))}
-                  </svg>
-                  <div className="min-w-[9rem]">
-                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                      {t('distributionTitle')}
-                    </p>
-                    <ul className="mt-2 grid gap-1">
-                      {distributionWedges.map((wedge) => (
-                        <li
-                          key={`share-${wedge.key}`}
-                          className="flex min-w-0 items-center gap-2 text-1 text-neutral-11"
-                        >
-                          <span
-                            className="h-2 w-2 shrink-0"
-                            style={{ background: wedge.fill }}
-                            aria-hidden
-                          />
-                          <span className="min-w-0 flex-1 truncate">
-                            {wedge.symbol}
-                          </span>
-                          <span className="shrink-0 tabular-nums">
-                            {format.number(wedge.share, {
-                              style: 'percent',
-                              maximumFractionDigits: wedge.share < 0.01 ? 1 : 0,
-                            })}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ) : null}
+                        {distributionWedges.map((wedge) => (
+                          <path
+                            key={wedge.key}
+                            d={pieWedge(wedge.start, wedge.end)}
+                            fill={wedge.fill}
+                            stroke="var(--background)"
+                            strokeWidth={0.03}
+                          >
+                            <title>
+                              {`${wedge.symbol} ${format.number(wedge.share, {
+                                style: 'percent',
+                                maximumFractionDigits:
+                                  wedge.share < 0.01 ? 1 : 0,
+                              })}`}
+                            </title>
+                          </path>
+                        ))}
+                      </svg>
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                        {t('distributionTitle')}
+                      </p>
+                      <ul className="mt-2 grid gap-1">
+                        {distributionWedges.map((wedge) => (
+                          <li
+                            key={`share-${wedge.key}`}
+                            className="flex min-w-0 items-center gap-2 text-1 text-neutral-11"
+                          >
+                            <span
+                              className="h-2 w-2 shrink-0"
+                              style={{ background: wedge.fill }}
+                              aria-hidden
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                              {wedge.symbol}
+                            </span>
+                            <span className="shrink-0 tabular-nums">
+                              {format.number(wedge.share, {
+                                style: 'percent',
+                                maximumFractionDigits:
+                                  wedge.share < 0.01 ? 1 : 0,
+                              })}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                    {t('distributionTitle')}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </Panel>

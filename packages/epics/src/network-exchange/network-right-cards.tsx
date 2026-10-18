@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
 import { ArrowUpRight, ChevronDown, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@hypha-platform/ui';
+import { AddAttachment, Button } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type { Locale } from '@hypha-platform/i18n';
 import {
@@ -15,12 +15,12 @@ import {
   collapseCategoriesToGroups,
   DEFAULT_SPACE_LEAD_IMAGE,
   getCategoryGroupLabel,
-  NETWORK_FIELD_KINDS,
   parseCapitalKeys,
+  useAttachmentUpload,
+  useJwt,
   type CapitalKey,
   type Category,
   type NetworkFieldPayout,
-  type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
@@ -28,6 +28,18 @@ import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { CAPITAL_MARK } from './capital-marks';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
+import {
+  SIGNAL_DOCUMENT_ACCEPT,
+  SIGNAL_DOCUMENT_LIMIT,
+  SIGNAL_IMAGE_ACCEPT,
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_MEDIA_MAX_BYTES,
+  uploadSignalFiles,
+  writeSignalCreateMedia,
+} from '../coherence/utils/signal-media';
+
+const SIGNAL_VIDEO_ACCEPT =
+  'video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov';
 
 export type NetworkRailSpace = {
   slug: string;
@@ -121,19 +133,6 @@ function tokenUnit(token: string) {
     return `${trimmed.slice(0, 8)}…`;
   }
   return trimmed;
-}
-
-function signalKindLabel(
-  t: ReturnType<typeof useTranslations<'NetworkExchange'>>,
-  option: NetworkFieldSignalKind,
-) {
-  if (option === 'Need') return t('filterNeed');
-  if (option === 'Opportunity') return t('filterOpportunity');
-  if (option === 'Risk') return t('filterRisk');
-  if (option === 'Tension') return t('filterTension');
-  if (option === 'Insight') return t('filterInsight');
-  if (option === 'Action') return t('filterAction');
-  return t('filterImpact');
 }
 
 function useSpaceTreasury(slug: string | null) {
@@ -698,26 +697,40 @@ function ShareCard({
   );
 }
 
-function ActionShareCard({
+const SHARE_KIND = {
+  need: 'Need',
+  action: 'Action',
+  impact: 'Impact',
+} as const;
+
+export function ActionShareCard({
   lang,
   preferredSlug,
-  kind = 'signal',
+  kind = 'action',
 }: {
   lang: Locale;
   preferredSlug: string;
-  kind?: 'signal' | 'need';
+  kind?: keyof typeof SHARE_KIND;
 }) {
   const t = useTranslations('NetworkExchange');
+  const tSignals = useTranslations('CoherenceTab');
   const router = useRouter();
+  const { jwt } = useJwt();
+  const { upload: uploadSignalMedia } = useAttachmentUpload({
+    authorizationToken: jwt ?? undefined,
+  });
   const touched = useRef(false);
   const spaces = useMemberNamedSpaces();
   const [spaceSlug, setSpaceSlug] = useState('');
-  const [signalType, setSignalType] = useState<NetworkFieldSignalKind>(
-    kind === 'need' ? 'Need' : 'Opportunity',
-  );
   const [text, setText] = useState('');
   const [amount, setAmount] = useState('');
-  const isNeed = kind === 'need';
+  const [images, setImages] = useState<File[]>([]);
+  const [documents, setDocuments] = useState<File[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
+  const [note, setNote] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const signalType = SHARE_KIND[kind];
+  const prompt = kind === 'need' ? t('shareNeedPrompt') : t('whatHappened');
 
   useEffect(() => {
     if (touched.current) return;
@@ -728,19 +741,39 @@ function ActionShareCard({
     setSpaceSlug((current) => current || spaces[0]?.slug || '');
   }, [preferredSlug, spaces]);
 
-  const share = () => {
-    const title = text.trim();
-    if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !title) return;
-    const params = new URLSearchParams();
-    params.set('type', isNeed ? 'Need' : signalType);
-    params.set('sharedWithNetwork', '1');
-    params.set('title', title.slice(0, 120));
-    if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
-      params.set('amount', amount);
+  const share = async () => {
+    const body = text.trim();
+    if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !body) return;
+    setSaving(true);
+    setNote(null);
+    try {
+      const uploadedImages = await uploadSignalFiles(images, uploadSignalMedia);
+      const uploadedDocuments = await uploadSignalFiles(
+        documents,
+        uploadSignalMedia,
+      );
+      const uploadedVideos = await uploadSignalFiles(videos, uploadSignalMedia);
+      const videoUrl = uploadedVideos[0]?.url;
+      writeSignalCreateMedia({
+        images: uploadedImages,
+        documents: uploadedDocuments,
+        ...(videoUrl ? { videoUrl } : {}),
+      });
+      const params = new URLSearchParams();
+      params.set('type', signalType);
+      params.set('sharedWithNetwork', '1');
+      params.set('title', body.slice(0, 50));
+      params.set('description', body.slice(0, 4000));
+      if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
+        params.set('amount', amount);
+      }
+      router.push(
+        `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
+      );
+    } catch {
+      setNote(tSignals('signalFormUploadFailed'));
+      setSaving(false);
     }
-    router.push(
-      `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
-    );
   };
 
   return (
@@ -749,10 +782,18 @@ function ActionShareCard({
         className="text-5"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        {isNeed ? t('shareNeedTitle') : t('shareSignalTitle')}
+        {kind === 'need'
+          ? t('shareNeedTitle')
+          : kind === 'impact'
+          ? t('shareStoryTitle')
+          : t('shareSignalTitle')}
       </h2>
       <p className="text-1 leading-relaxed text-neutral-11">
-        {isNeed ? t('shareNeedBody') : t('shareSignalBody')}
+        {kind === 'need'
+          ? t('shareNeedBody')
+          : kind === 'impact'
+          ? t('shareStoryBody')
+          : t('shareSignalBody')}
       </p>
       <MemberSpaceSelect
         spaces={spaces}
@@ -764,41 +805,50 @@ function ActionShareCard({
         label={t('chooseSpace')}
         emptyLabel={t('noneYet')}
       />
-      {!isNeed ? (
-        <div>
-          <p className="text-1 font-semibold">{t('signalType')}</p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {NETWORK_FIELD_KINDS.map((option) => {
-              const on = signalType === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setSignalType(option)}
-                  className={cn(
-                    'px-2 py-0.5 text-1',
-                    on
-                      ? 'bg-foreground text-background'
-                      : 'bg-neutral-2 text-neutral-11',
-                  )}
-                >
-                  {signalKindLabel(t, option)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
       <textarea
         value={text}
-        maxLength={200}
+        maxLength={4000}
         rows={3}
-        placeholder={t('whatHappened')}
-        aria-label={t('whatHappened')}
+        placeholder={prompt}
+        aria-label={prompt}
         onChange={(event) => setText(event.target.value)}
         className="w-full resize-none border border-border bg-neutral-2 p-3 text-2 outline-none"
       />
+      <div>
+        <p className="text-1 text-neutral-11">{tSignals('signalFormImage')}</p>
+        <AddAttachment
+          accept={SIGNAL_IMAGE_ACCEPT}
+          maxFiles={SIGNAL_IMAGE_LIMIT}
+          maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+          label={tSignals('signalFormImageHint')}
+          value={images}
+          onChange={setImages}
+        />
+      </div>
+      <div>
+        <p className="text-1 text-neutral-11">
+          {tSignals('signalFormAttachments')}
+        </p>
+        <AddAttachment
+          accept={SIGNAL_DOCUMENT_ACCEPT}
+          maxFiles={SIGNAL_DOCUMENT_LIMIT}
+          maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+          label={tSignals('signalFormAttachmentsHint')}
+          value={documents}
+          onChange={setDocuments}
+        />
+      </div>
+      <div>
+        <p className="text-1 text-neutral-11">{t('videoFile')}</p>
+        <AddAttachment
+          accept={SIGNAL_VIDEO_ACCEPT}
+          maxFiles={1}
+          maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+          label={t('videoFileHint')}
+          value={videos}
+          onChange={setVideos}
+        />
+      </div>
       <input
         value={amount}
         inputMode="decimal"
@@ -808,13 +858,20 @@ function ActionShareCard({
         onChange={(event) => setAmount(event.target.value)}
         className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 outline-none"
       />
+      {note ? (
+        <p className="text-1 text-neutral-11" role="alert">
+          {note}
+        </p>
+      ) : null}
       <button
         type="button"
-        disabled={!spaceSlug || !text.trim()}
-        onClick={share}
+        disabled={!spaceSlug || !text.trim() || saving}
+        onClick={() => {
+          void share();
+        }}
         className="w-full bg-foreground py-2.5 text-1 font-semibold uppercase tracking-[0.12em] text-background disabled:opacity-50"
       >
-        {t('share')}
+        {kind === 'impact' ? t('post') : t('share')}
       </button>
     </section>
   );
@@ -948,13 +1005,18 @@ export function NetworkRightColumn({
           <ActionShareCard
             lang={lang}
             preferredSlug={selected?.slug ?? selectedSlug}
+            kind="action"
           />
           <AllocatedCard lang={lang} payouts={payouts} />
         </>
       ) : null}
       {!children && variant === 'impact' ? (
         <>
-          <ShareCard lang={lang} kind="story" />
+          <ActionShareCard
+            lang={lang}
+            preferredSlug={selected?.slug ?? selectedSlug}
+            kind="impact"
+          />
           <ImpactSharedCard count={impactCount} />
         </>
       ) : null}

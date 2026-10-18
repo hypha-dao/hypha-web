@@ -507,6 +507,9 @@
     "share": "Del",
     "post": "Legg ut",
     "whatHappened": "Hva skjedde?",
+    "shareNeedPrompt": "Del et behov med nettverket.",
+    "videoFile": "Video",
+    "videoFileHint": "MP4, WebM eller QuickTime. 16 MB.",
     "linkedAmountHint": "Tilknyttet kassebeløp (valgfritt)",
     "storyTitle": "Tittel på historien",
     "allocatedTitle": "Tildelte midler",
@@ -1944,6 +1947,7 @@
   "Footer": {
     "network": "Nettverk",
     "legal": "Juridisk",
+    "poweredBy": "Drevet av",
     "hyphaServices": "Hypha-tjenester",
     "hyphaTokenomics": "Hypha-tokenomics",
     "licensingPolicy": "Lisensretningslinjer",

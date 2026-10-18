@@ -17,6 +17,7 @@ export type SignalMediaItem = { name: string; url: string };
 export type SignalMediaDraft = {
   images: SignalMediaItem[];
   documents: SignalMediaItem[];
+  videoUrl?: string;
 };
 
 const UPLOAD_BATCH = 5;
@@ -44,7 +45,11 @@ export function splitSignalMedia(input?: {
 
 export function writeSignalCreateMedia(draft: SignalMediaDraft) {
   if (typeof window === 'undefined') return;
-  if (draft.images.length === 0 && draft.documents.length === 0) {
+  if (
+    draft.images.length === 0 &&
+    draft.documents.length === 0 &&
+    !draft.videoUrl?.trim()
+  ) {
     window.sessionStorage.removeItem(SIGNAL_CREATE_MEDIA_KEY);
     return;
   }
@@ -64,8 +69,10 @@ export function takeSignalCreateMedia(): SignalMediaDraft | null {
     const documents = Array.isArray(parsed.documents)
       ? parsed.documents.flatMap(mediaItem)
       : [];
-    if (images.length === 0 && documents.length === 0) return null;
-    return { images, documents };
+    const videoUrl =
+      typeof parsed.videoUrl === 'string' ? parsed.videoUrl.trim() : '';
+    if (images.length === 0 && documents.length === 0 && !videoUrl) return null;
+    return { images, documents, ...(videoUrl ? { videoUrl } : {}) };
   } catch {
     return null;
   }

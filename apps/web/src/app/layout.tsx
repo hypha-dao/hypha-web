@@ -108,18 +108,17 @@ export default async function RootLayout({
   let navHomeLabel = 'Home';
   let navMessagesLabel = 'Messages';
   let navMyWalletLabel = 'Wallet';
+  let navMySpacesLabel = 'Spaces';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
   let navSelectLanguageLabel = 'Select language';
-  let footerNetworkLabel = 'Network';
-  let footerLegalLabel = 'Legal';
+  let footerPoweredByLabel = 'Powered by';
   let footerHyphaServicesLabel = 'Hypha Services';
   let footerHyphaTokenomicsLabel = 'Hypha Tokenomics';
   let footerLicensingPolicyLabel = 'Licensing Policy';
   let footerTermsAndConditionsLabel = 'Terms and Conditions';
   let footerPrivacyPolicyLabel = 'Privacy Policy';
-  let footerCopyrightLabel = `© ${new Date().getFullYear()} Hypha`;
 
   const [
     languageSelectResult,
@@ -170,6 +169,7 @@ export default async function RootLayout({
     navHomeLabel = tNav('myDashboard');
     navMessagesLabel = tNav('chat');
     navMyWalletLabel = tNav('myWallet');
+    navMySpacesLabel = tNav('mySpaces');
     navNetworkLabel = tNav('network');
     navOpenMenuLabel = tNav('openMenu');
     navCloseMenuLabel = tNav('closeMenu');
@@ -183,16 +183,12 @@ export default async function RootLayout({
 
   if (footerTranslationsResult.status === 'fulfilled') {
     const tFooter = footerTranslationsResult.value;
-    footerNetworkLabel = tFooter('network');
-    footerLegalLabel = tFooter('legal');
+    footerPoweredByLabel = tFooter('poweredBy');
     footerHyphaServicesLabel = tFooter('hyphaServices');
     footerHyphaTokenomicsLabel = tFooter('hyphaTokenomics');
     footerLicensingPolicyLabel = tFooter('licensingPolicy');
     footerTermsAndConditionsLabel = tFooter('termsAndConditions');
     footerPrivacyPolicyLabel = tFooter('privacyPolicy');
-    footerCopyrightLabel = tFooter('copyright', {
-      year: new Date().getFullYear(),
-    });
   } else {
     console.error(
       '[app/layout] Failed to resolve Footer translations',
@@ -295,7 +291,28 @@ export default async function RootLayout({
                                   <ConnectedButtonProfile
                                     newUserRedirectPath="/profile/signup"
                                     baseRedirectPath={`/${locale}/home`}
-                                    navItems={[]}
+                                    navItems={[
+                                      {
+                                        label: navHomeLabel,
+                                        href: `/${locale}/home`,
+                                      },
+                                      {
+                                        label: navMessagesLabel,
+                                        href: `/${locale}/connections`,
+                                      },
+                                      {
+                                        label: navMyWalletLabel,
+                                        href: `/${locale}/my-wallet`,
+                                      },
+                                      {
+                                        label: navMySpacesLabel,
+                                        href: `/${locale}/my-spaces`,
+                                      },
+                                      {
+                                        label: navNetworkLabel,
+                                        href: `/${locale}/network`,
+                                      },
+                                    ]}
                                     showNetworkFeedback
                                     trailingBeforeProfile={
                                       isLanguageSelectVisible ? (
@@ -327,6 +344,10 @@ export default async function RootLayout({
                                     {
                                       label: navMyWalletLabel,
                                       href: `/${locale}/my-wallet`,
+                                    },
+                                    {
+                                      label: navMySpacesLabel,
+                                      href: `/${locale}/my-spaces`,
                                     },
                                     {
                                       label: navNetworkLabel,
@@ -365,8 +386,7 @@ export default async function RootLayout({
                               {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
                               <div className="hidden xl:block">
                                 <DeferredFooter
-                                  networkLabel={footerNetworkLabel}
-                                  legalLabel={footerLegalLabel}
+                                  poweredByLabel={footerPoweredByLabel}
                                   hyphaServicesLabel={footerHyphaServicesLabel}
                                   hyphaTokenomicsLabel={
                                     footerHyphaTokenomicsLabel
@@ -378,7 +398,6 @@ export default async function RootLayout({
                                     footerTermsAndConditionsLabel
                                   }
                                   privacyPolicyLabel={footerPrivacyPolicyLabel}
-                                  copyrightLabel={footerCopyrightLabel}
                                 />
                               </div>
                             </Suspense>

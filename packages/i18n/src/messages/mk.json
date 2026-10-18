@@ -507,6 +507,9 @@
     "share": "Сподели",
     "post": "Објави",
     "whatHappened": "Што се случи?",
+    "shareNeedPrompt": "Споделете потреба со мрежата.",
+    "videoFile": "Видео",
+    "videoFileHint": "MP4, WebM или QuickTime. 16 MB.",
     "linkedAmountHint": "Поврзан износ од благајната (по избор)",
     "storyTitle": "Наслов на приказната",
     "allocatedTitle": "Доделени средства",
@@ -1925,6 +1928,7 @@
   "Footer": {
     "network": "Мрежа",
     "legal": "Правни информации",
+    "poweredBy": "Овозможено од",
     "hyphaServices": "Hypha услуги",
     "hyphaTokenomics": "Hypha токеномика",
     "licensingPolicy": "Политика за лиценцирање",

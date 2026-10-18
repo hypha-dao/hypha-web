@@ -21,11 +21,12 @@ import {
   Bell,
   ChevronRight,
   Compass,
+  House,
   LayoutGrid,
   Loader2,
   MessagesSquare,
+  Globe2,
   LogOutIcon,
-  Network,
   Repeat,
   Shield,
   TrashIcon,
@@ -100,6 +101,9 @@ function resolveNavItemIcon(href?: string) {
   if (!href) {
     return null;
   }
+  if (href.includes('/home')) {
+    return <House className="craft-icon" strokeWidth={1.25} aria-hidden />;
+  }
   if (href.includes('/connections')) {
     return (
       <MessagesSquare className="craft-icon" strokeWidth={1.25} aria-hidden />
@@ -112,7 +116,7 @@ function resolveNavItemIcon(href?: string) {
     return <Wallet className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/network')) {
-    return <Network className="craft-icon" strokeWidth={1.25} aria-hidden />;
+    return <Globe2 className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   return null;
 }

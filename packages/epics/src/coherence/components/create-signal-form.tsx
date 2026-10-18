@@ -463,6 +463,12 @@ export const CreateSignalForm = ({
     if (mode !== 'edit') return;
     form.reset(formDefaults);
   }, [form, formDefaults, mode, signalSlug]);
+  React.useEffect(() => {
+    const videoUrl = createMediaDraft.current?.videoUrl?.trim();
+    if (mode === 'create' && videoUrl) {
+      form.setValue('videoUrl', videoUrl);
+    }
+  }, [form, mode]);
 
   useScrollToErrors(form, formRef);
 

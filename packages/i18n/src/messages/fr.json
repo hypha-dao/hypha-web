@@ -507,6 +507,9 @@
     "share": "Partager",
     "post": "Publier",
     "whatHappened": "Que s'est-il passé ?",
+    "shareNeedPrompt": "Partagez un besoin avec le réseau.",
+    "videoFile": "Vidéo",
+    "videoFileHint": "MP4, WebM ou QuickTime. 16 Mo.",
     "linkedAmountHint": "Montant de trésorerie lié (facultatif)",
     "storyTitle": "Titre de l'histoire",
     "allocatedTitle": "Fonds alloués",
@@ -1374,6 +1377,7 @@
   "Footer": {
     "network": "Réseau",
     "legal": "Légal",
+    "poweredBy": "Propulsé par",
     "hyphaServices": "Services Hypha",
     "hyphaTokenomics": "Tokenomics Hypha",
     "licensingPolicy": "Politique de licence",

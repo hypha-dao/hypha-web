@@ -1326,17 +1326,7 @@ export function MyceliumEcosystem({
                           const end = thread.incoming
                             ? { x: ends.x1, y: ends.y1 }
                             : { x: ends.x2, y: ends.y2 };
-                          const midX = (start.x + end.x) / 2;
-                          const midY = (start.y + end.y) / 2;
-                          const dx = end.x - start.x;
-                          const dy = end.y - start.y;
-                          const length = Math.hypot(dx, dy) || 1;
-                          const labelX = midX + (-dy / length) * 18;
-                          const labelY = midY + (dx / length) * 18;
                           const active = hoveredFlowKey === thread.peerKey;
-                          const amountLabel = `${
-                            thread.incoming ? '← ' : '→ '
-                          }${thread.label}`;
                           const path = hyphaPath(
                             start.x,
                             start.y,
@@ -1353,7 +1343,6 @@ export function MyceliumEcosystem({
                               }
                               onMouseLeave={() => setHoveredFlowKey(null)}
                             >
-                              <title>{amountLabel}</title>
                               {/* Wide invisible stroke so the thin flow is easy to hover. */}
                               <path
                                 d={path}
@@ -1405,21 +1394,6 @@ export function MyceliumEcosystem({
                                     : 1
                                 }
                               />
-                              {active ? (
-                                <text
-                                  x={labelX}
-                                  y={labelY}
-                                  textAnchor="middle"
-                                  className="pointer-events-none fill-foreground text-[10px]"
-                                  style={{
-                                    paintOrder: 'stroke',
-                                    stroke: 'var(--background)',
-                                    strokeWidth: 4,
-                                  }}
-                                >
-                                  {amountLabel}
-                                </text>
-                              ) : null}
                             </g>
                           );
                         })
@@ -1569,17 +1543,6 @@ export function MyceliumEcosystem({
                           )}`;
                           const logo = node.imageUrl?.trim();
                           const active = hoveredFlowKey === node.key;
-                          const peerThreads = flowView.threads.filter(
-                            (thread) => thread.peerKey === node.key,
-                          );
-                          const hoverSummary = peerThreads
-                            .map(
-                              (thread) =>
-                                `${thread.incoming ? '←' : '→'} ${
-                                  thread.label
-                                }`,
-                            )
-                            .join('\n');
                           return (
                             <g
                               key={node.key}
@@ -1587,11 +1550,6 @@ export function MyceliumEcosystem({
                               onMouseEnter={() => setHoveredFlowKey(node.key)}
                               onMouseLeave={() => setHoveredFlowKey(null)}
                             >
-                              <title>
-                                {hoverSummary
-                                  ? `${node.label}\n${hoverSummary}`
-                                  : node.label}
-                              </title>
                               <circle
                                 cx={node.x}
                                 cy={node.y}
@@ -1742,6 +1700,41 @@ export function MyceliumEcosystem({
                       : null}
                   </g>
                 </svg>
+                {lens === 'flows' && hoveredFlowKey && size.width > 0
+                  ? (() => {
+                      const peer = flowView.nodes.find(
+                        (node) => node.key === hoveredFlowKey,
+                      );
+                      if (!peer) return null;
+                      const lines = flowView.threads.filter(
+                        (thread) => thread.peerKey === peer.key,
+                      );
+                      if (lines.length === 0) return null;
+                      const placeRight = peer.x < size.width / 2;
+                      return (
+                        <div
+                          role="tooltip"
+                          className="pointer-events-none absolute z-10 max-w-[16rem] border border-border bg-background px-3 py-2 text-1 text-foreground"
+                          style={{
+                            left: `${(peer.x / size.width) * 100}%`,
+                            top: `${(peer.y / size.height) * 100}%`,
+                            transform: placeRight
+                              ? 'translate(1.25rem, -50%)'
+                              : 'translate(calc(-100% - 1.25rem), -50%)',
+                          }}
+                        >
+                          <p className="font-medium">{peer.label}</p>
+                          <ul className="mt-1 grid gap-0.5 text-neutral-11">
+                            {lines.map((thread) => (
+                              <li key={thread.key}>
+                                {thread.incoming ? '←' : '→'} {thread.label}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })()
+                  : null}
                 {lens === 'flows' && !flowsLoading && flows.length === 0 ? (
                   <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-1 text-neutral-11">
                     {flowsError
