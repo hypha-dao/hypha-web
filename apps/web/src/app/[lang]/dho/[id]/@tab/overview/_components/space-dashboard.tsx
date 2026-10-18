@@ -294,6 +294,28 @@ function plainText(value: string) {
     .trim();
 }
 
+/** Alternating light and dark mixes of the space hue so neighboring slices stay distinct. */
+const DISTRIBUTION_FILLS = [
+  'var(--space-spot, var(--space-accent))',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 22%, white 78%)',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 58%, black 42%)',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 50%, white 50%)',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 40%, black 60%)',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 68%, white 32%)',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 76%, black 24%)',
+  'color-mix(in oklab, var(--space-spot, var(--space-accent)) 34%, white 66%)',
+];
+
+function pieWedge(start: number, end: number) {
+  const radius = 1;
+  const large = end - start > Math.PI ? 1 : 0;
+  const x1 = Math.cos(start) * radius;
+  const y1 = Math.sin(start) * radius;
+  const x2 = Math.cos(end) * radius;
+  const y2 = Math.sin(end) * radius;
+  return `M 0 0 L ${x1} ${y1} A ${radius} ${radius} 0 ${large} 1 ${x2} ${y2} Z`;
+}
+
 function Panel({
   title,
   href,
@@ -601,6 +623,23 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const distributionSlices = distributionTokens.filter(
     (asset) => asset.value > 0,
   );
+  const distributionWedges = (() => {
+    let cursor = -Math.PI / 2;
+    return distributionSlices.map((asset, index) => {
+      const share = assetTotal > 0 ? asset.value / assetTotal : 0;
+      const start = cursor;
+      const end = cursor + share * Math.PI * 2;
+      cursor = end;
+      return {
+        key: asset.address || asset.symbol,
+        symbol: asset.symbol,
+        share,
+        start,
+        end,
+        fill: DISTRIBUTION_FILLS[index % DISTRIBUTION_FILLS.length] ?? '',
+      };
+    });
+  })();
 
   return (
     <div className="flex flex-col gap-6">
@@ -791,91 +830,115 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           ) : assets.length === 0 ? (
             <Quiet>{t('treasuryEmpty')}</Quiet>
           ) : (
-            <div className="flex flex-col gap-4">
-              <div className="min-w-0">
-                <span
-                  className="block truncate text-3 tabular-nums text-foreground"
-                  style={{ fontFamily: 'var(--font-family-heading)' }}
-                >
-                  {formatFromUsd(treasuryBalance)}
-                </span>
-                <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
-                  {t('treasuryTotal')}
-                </span>
-              </div>
-              {spaceTokens.length > 0 ? (
-                <ul className="grid grid-cols-3 gap-3">
-                  {spaceTokens.slice(0, 3).map((asset) => (
-                    <li key={asset.symbol} className="min-w-0">
-                      <span
-                        className="block truncate text-3 tabular-nums text-foreground"
-                        style={{ fontFamily: 'var(--font-family-heading)' }}
-                      >
-                        {format.number(asset.value, {
-                          maximumFractionDigits: asset.value >= 100 ? 0 : 2,
-                        })}
-                      </span>
-                      <span className="mt-1 block truncate text-1 text-neutral-11">
-                        {asset.symbol}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {liquidTokens.length > 0 ? (
-                <ul className="grid grid-cols-3 gap-3">
-                  {liquidTokens.map((asset) => (
-                    <li key={asset.address || asset.symbol} className="min-w-0">
-                      <span
-                        className="block truncate text-3 tabular-nums text-foreground"
-                        style={{ fontFamily: 'var(--font-family-heading)' }}
-                      >
-                        {format.number(asset.value, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                      <span className="mt-1 block truncate text-1 text-neutral-11">
-                        {asset.symbol}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {distributionSlices.length > 1 && assetTotal > 0 ? (
-                <div>
-                  <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                    {t('distributionTitle')}
-                  </p>
-                  <div className="mt-2 flex h-2 w-full overflow-hidden bg-neutral-3">
-                    {distributionSlices.map((asset, index) => (
-                      <span
-                        key={asset.address || asset.symbol}
-                        className="h-full bg-[color:var(--space-spot,var(--space-accent))]"
-                        style={{
-                          width: `${(asset.value / assetTotal) * 100}%`,
-                          opacity:
-                            1 - index * (0.55 / distributionSlices.length),
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <ul className="mt-2 grid gap-1">
-                    {distributionSlices.map((asset) => (
-                      <li
-                        key={`share-${asset.address || asset.symbol}`}
-                        className="flex min-w-0 items-baseline justify-between gap-3 text-1 text-neutral-11"
-                      >
-                        <span className="truncate">{asset.symbol}</span>
-                        <span className="shrink-0 tabular-nums">
-                          {format.number(asset.value / assetTotal, {
-                            style: 'percent',
-                            maximumFractionDigits: 0,
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col gap-4">
+                <div className="min-w-0">
+                  <span
+                    className="block truncate text-3 tabular-nums text-foreground"
+                    style={{ fontFamily: 'var(--font-family-heading)' }}
+                  >
+                    {formatFromUsd(treasuryBalance)}
+                  </span>
+                  <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
+                    {t('treasuryTotal')}
+                  </span>
+                </div>
+                {spaceTokens.length > 0 ? (
+                  <ul className="grid grid-cols-3 gap-3">
+                    {spaceTokens.slice(0, 3).map((asset) => (
+                      <li key={asset.symbol} className="min-w-0">
+                        <span
+                          className="block truncate text-3 tabular-nums text-foreground"
+                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        >
+                          {format.number(asset.value, {
+                            maximumFractionDigits: asset.value >= 100 ? 0 : 2,
                           })}
+                        </span>
+                        <span className="mt-1 block truncate text-1 text-neutral-11">
+                          {asset.symbol}
                         </span>
                       </li>
                     ))}
                   </ul>
+                ) : null}
+                {liquidTokens.length > 0 ? (
+                  <ul className="grid grid-cols-3 gap-3">
+                    {liquidTokens.map((asset) => (
+                      <li
+                        key={asset.address || asset.symbol}
+                        className="min-w-0"
+                      >
+                        <span
+                          className="block truncate text-3 tabular-nums text-foreground"
+                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        >
+                          {format.number(asset.value, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                        <span className="mt-1 block truncate text-1 text-neutral-11">
+                          {asset.symbol}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+              {distributionWedges.length > 1 ? (
+                <div className="flex shrink-0 items-center justify-end gap-4">
+                  <svg
+                    viewBox="-1.08 -1.08 2.16 2.16"
+                    className="h-28 w-28 shrink-0"
+                    role="img"
+                    aria-label={t('distributionTitle')}
+                  >
+                    {distributionWedges.map((wedge) => (
+                      <path
+                        key={wedge.key}
+                        d={pieWedge(wedge.start, wedge.end)}
+                        fill={wedge.fill}
+                        stroke="var(--background)"
+                        strokeWidth={0.03}
+                      >
+                        <title>
+                          {`${wedge.symbol} ${format.number(wedge.share, {
+                            style: 'percent',
+                            maximumFractionDigits: wedge.share < 0.01 ? 1 : 0,
+                          })}`}
+                        </title>
+                      </path>
+                    ))}
+                  </svg>
+                  <div className="min-w-[9rem]">
+                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                      {t('distributionTitle')}
+                    </p>
+                    <ul className="mt-2 grid gap-1">
+                      {distributionWedges.map((wedge) => (
+                        <li
+                          key={`share-${wedge.key}`}
+                          className="flex min-w-0 items-center gap-2 text-1 text-neutral-11"
+                        >
+                          <span
+                            className="h-2 w-2 shrink-0"
+                            style={{ background: wedge.fill }}
+                            aria-hidden
+                          />
+                          <span className="min-w-0 flex-1 truncate">
+                            {wedge.symbol}
+                          </span>
+                          <span className="shrink-0 tabular-nums">
+                            {format.number(wedge.share, {
+                              style: 'percent',
+                              maximumFractionDigits: wedge.share < 0.01 ? 1 : 0,
+                            })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               ) : null}
             </div>
