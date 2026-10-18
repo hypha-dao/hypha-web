@@ -848,6 +848,15 @@
     "oneWallet": "One Wallet",
     "loading": "Loading...",
     "signInToViewWallet": "Sign in to view your wallet.",
+    "shortcuts": {
+      "deposit": "Deposit funds",
+      "transfer": "Transfer funds",
+      "redeem": "Redeem tokens",
+      "buyHypha": "Buy Hypha Tokens",
+      "buySpace": "Buy Space Tokens",
+      "activate": "Activate space",
+      "migrate": "Migrate tokens"
+    },
     "tabs": {
       "wallet": "Wallet",
       "banking": "Banking",

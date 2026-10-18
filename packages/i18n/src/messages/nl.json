@@ -832,6 +832,15 @@
     "oneWallet": "Eén portemonnee",
     "loading": "Laden...",
     "signInToViewWallet": "Log in om uw portemonnee te bekijken.",
+    "shortcuts": {
+      "deposit": "Geld storten",
+      "transfer": "Geld overmaken",
+      "redeem": "Tokens inwisselen",
+      "buyHypha": "Hypha-tokens kopen",
+      "buySpace": "Space-tokens kopen",
+      "activate": "Space activeren",
+      "migrate": "Tokens migreren"
+    },
     "tabs": {
       "wallet": "Portemonnee",
       "banking": "Bankieren",

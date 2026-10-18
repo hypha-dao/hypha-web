@@ -831,6 +831,15 @@
     "oneWallet": "én lommebok",
     "loading": "Laster inn...",
     "signInToViewWallet": "Logg inn for å se lommeboken din.",
+    "shortcuts": {
+      "deposit": "Sett inn midler",
+      "transfer": "Overfør midler",
+      "redeem": "Løs inn tokens",
+      "buyHypha": "Kjøp Hypha-tokens",
+      "buySpace": "Kjøp space-tokens",
+      "activate": "Aktiver space",
+      "migrate": "Migrer tokens"
+    },
     "tabs": {
       "wallet": "Lommebok",
       "banking": "Bank",

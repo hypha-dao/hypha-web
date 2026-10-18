@@ -833,6 +833,15 @@
     "oneWallet": "Ein Wallet",
     "loading": "Wird geladen...",
     "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen.",
+    "shortcuts": {
+      "deposit": "Guthaben einzahlen",
+      "transfer": "Guthaben überweisen",
+      "redeem": "Token einlösen",
+      "buyHypha": "Hypha-Token kaufen",
+      "buySpace": "Space-Token kaufen",
+      "activate": "Space aktivieren",
+      "migrate": "Token migrieren"
+    },
     "tabs": {
       "wallet": "Wallet",
       "banking": "Bankdienste",

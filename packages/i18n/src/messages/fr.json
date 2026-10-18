@@ -833,6 +833,15 @@
     "oneWallet": "Un seul portefeuille",
     "loading": "Chargement...",
     "signInToViewWallet": "Connectez-vous pour afficher votre portefeuille.",
+    "shortcuts": {
+      "deposit": "Déposer des fonds",
+      "transfer": "Transférer des fonds",
+      "redeem": "Échanger des jetons",
+      "buyHypha": "Acheter des jetons Hypha",
+      "buySpace": "Acheter des jetons d'espace",
+      "activate": "Activer l'espace",
+      "migrate": "Migrer les jetons"
+    },
     "tabs": {
       "wallet": "Portefeuille",
       "banking": "Services bancaires",

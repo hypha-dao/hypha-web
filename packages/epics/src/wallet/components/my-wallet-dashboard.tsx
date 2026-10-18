@@ -12,6 +12,7 @@ import { ProfileBankingSection } from '../../banking/components/profile-banking-
 import { SpaceAccessDenied } from '../../spaces/components/space-access-denied';
 import { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
 import { SpaceAccentLoader } from '../../common/space-accent-loader';
+import { WalletShortcutCards } from './wallet-shortcut-cards';
 import {
   Tabs,
   TabsContent,
@@ -111,6 +112,7 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
       onValueChange={setActiveTab}
       className="flex w-full min-w-0 flex-col gap-4"
     >
+      <WalletShortcutCards basePath={basePath} />
       <ScrollableTabsList triggerVariant="switch">
         <TabsTrigger value="wallet" variant="switch">
           <WalletTabLabel

@@ -1604,6 +1604,15 @@
     "oneWallet": "Uma carteira",
     "loading": "Carregando...",
     "signInToViewWallet": "Faça login para ver sua carteira.",
+    "shortcuts": {
+      "deposit": "Depositar fundos",
+      "transfer": "Transferir fundos",
+      "redeem": "Resgatar tokens",
+      "buyHypha": "Comprar tokens Hypha",
+      "buySpace": "Comprar tokens do espaço",
+      "activate": "Ativar espaço",
+      "migrate": "Migrar tokens"
+    },
     "tabs": {
       "wallet": "Carteira",
       "banking": "Banco",
