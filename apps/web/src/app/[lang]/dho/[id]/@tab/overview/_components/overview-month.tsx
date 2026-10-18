@@ -9,7 +9,8 @@ import {
 } from '@hypha-platform/core/client';
 
 const HORIZON_DAYS = 45;
-const AGENDA_LIMIT = 6;
+/** Four rows sit level with the signal heat map beside this card. */
+const AGENDA_LIMIT = 4;
 
 function startOfDay(date: Date) {
   const day = new Date(date);

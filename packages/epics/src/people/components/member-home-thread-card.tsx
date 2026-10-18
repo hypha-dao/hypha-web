@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -65,6 +66,8 @@ type MemberHomeThreadCardProps = {
   chat?: boolean;
   /** Classic home keeps the card and drops every line that would talk to the AI. */
   assistant?: boolean;
+  /** Classic lead card: title opens the item, picture sits beside the text. */
+  board?: boolean;
 };
 
 function kindLabel(
@@ -111,6 +114,7 @@ export function MemberHomeThreadCard({
   compact = false,
   chat = false,
   assistant = true,
+  board = false,
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
@@ -323,12 +327,13 @@ export function MemberHomeThreadCard({
       className={cn(
         'member-home-thread-card w-full overflow-hidden',
         chat && 'member-home-thread-card--chat',
+        board && leadImage && 'member-home-thread-card--board @container',
       )}
     >
       {leadImage ? (
         <img src={leadImage} alt="" className="member-home-thread-image" />
       ) : null}
-      <div className={chat ? 'p-3' : 'p-4'}>
+      <div className={cn('member-home-thread-body', chat ? 'p-3' : 'p-4')}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
             {isProposal
@@ -345,14 +350,33 @@ export function MemberHomeThreadCard({
             <span className="min-w-0 truncate">{item.spaceTitle}</span>
           </p>
         </div>
-        <h2
-          className={
-            chat ? 'mt-2 text-2' : compact ? 'mt-3 text-1' : 'mt-3 text-4'
-          }
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {item.title}
-        </h2>
+        {board ? (
+          <Link
+            href={visitHref}
+            className="group mt-3 inline-flex max-w-full items-baseline gap-2 text-foreground"
+          >
+            <h2
+              className="min-w-0 text-4 group-hover:underline"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {item.title}
+            </h2>
+            <ArrowRight
+              className="size-5 shrink-0 translate-y-0.5 opacity-45 group-hover:opacity-100"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+          </Link>
+        ) : (
+          <h2
+            className={
+              chat ? 'mt-2 text-2' : compact ? 'mt-3 text-1' : 'mt-3 text-4'
+            }
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {item.title}
+          </h2>
+        )}
         {creator ? (
           <div
             className={cn('flex items-center gap-2', chat ? 'mt-2' : 'mt-3')}

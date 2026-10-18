@@ -821,15 +821,17 @@ function ClassicBoard({
         {queue.length === 0 ? (
           <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
         ) : (
-          <div className="mt-4 grid w-full grid-cols-1 items-start gap-4">
-            {queue.map((item) => {
+          <div className="mt-4 grid w-full grid-cols-1 items-start gap-4 @min-[48rem]:grid-cols-2">
+            {queue.map((item, index) => {
               const key = itemKey(item);
+              const lead = index === 0;
               return (
                 <div
                   key={key}
                   data-home-focus={key}
                   className={cn(
                     'min-w-0',
+                    lead && '@min-[48rem]:col-span-2',
                     focusKey === key && 'ring-1 ring-foreground',
                   )}
                 >
@@ -837,6 +839,7 @@ function ClassicBoard({
                     lang={lang}
                     item={item}
                     assistant={false}
+                    board={lead}
                     proposal={
                       item.kind === 'proposal'
                         ? home.proposals.find(

@@ -102,3 +102,25 @@
 .member-home-thread-card--chat .member-home-thread-image {
   height: 72px;
 }
+
+/* Classic lead: the picture fills the empty side instead of stacking under the text. */
+@container (min-width: 36rem) {
+  .member-home-thread-card--board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(11rem, 18rem);
+    align-items: stretch;
+  }
+
+  .member-home-thread-card--board > .member-home-thread-image {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 12rem;
+  }
+
+  .member-home-thread-card--board > .member-home-thread-body {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
