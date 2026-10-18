@@ -4608,6 +4608,7 @@
     "fieldLinkedSignalNone": "Нема поврзан сигнал",
     "linkedEventOpen": "Отвори",
     "fieldAllDay": "Цел ден",
+    "noUpcoming": "Нема настани",
     "fieldAllDayHint": "Прикажи на календарот без конкретни часови",
     "fieldStarts": "Започнува",
     "fieldEnds": "Завршува",

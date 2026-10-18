@@ -4621,6 +4621,7 @@
     "fieldLinkedSignalNone": "Kein verknüpftes Signal",
     "linkedEventOpen": "Öffnen",
     "fieldAllDay": "Ganztägig",
+    "noUpcoming": "Keine Termine",
     "fieldAllDayHint": "Ohne konkrete Uhrzeit im Kalender anzeigen",
     "fieldStarts": "Beginn",
     "fieldEnds": "Ende",

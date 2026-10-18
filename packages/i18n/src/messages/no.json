@@ -4626,6 +4626,7 @@
     "fieldLinkedSignalNone": "Ingen tilknyttet signal",
     "linkedEventOpen": "Åpne",
     "fieldAllDay": "Hele dagen",
+    "noUpcoming": "Ingen hendelser",
     "fieldAllDayHint": "Vis i kalenderen uten spesifikke tidspunkter",
     "fieldStarts": "Starter",
     "fieldEnds": "Slutter",

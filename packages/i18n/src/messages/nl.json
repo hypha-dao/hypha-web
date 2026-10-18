@@ -4627,6 +4627,7 @@
     "fieldLinkedSignalNone": "Geen gekoppeld signaal",
     "linkedEventOpen": "Open",
     "fieldAllDay": "De hele dag",
+    "noUpcoming": "Geen afspraken",
     "fieldAllDayHint": "Toon op de kalender zonder specifieke tijden",
     "fieldStarts": "Begint",
     "fieldEnds": "Eindigt",

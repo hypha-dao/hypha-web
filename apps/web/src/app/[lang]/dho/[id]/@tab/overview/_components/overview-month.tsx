@@ -71,10 +71,8 @@ export function OverviewMonth({
 
   const time = { hour: '2-digit' as const, minute: '2-digit' as const };
 
-  if (!isLoading && events.length === 0) return null;
-
   return (
-    <section className="craft-card p-4">
+    <section className="craft-card flex h-full flex-col p-4">
       <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
           className="text-3 text-foreground"
@@ -94,6 +92,8 @@ export function OverviewMonth({
           <div className="h-10 bg-neutral-3" />
           <div className="h-10 bg-neutral-3" />
         </div>
+      ) : events.length === 0 ? (
+        <p className="mt-3 text-2 text-neutral-11">{tCalendar('noUpcoming')}</p>
       ) : (
         <ol className="mt-3 flex flex-col gap-3">
           {events.map((event) => (

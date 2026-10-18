@@ -4664,6 +4664,7 @@
     "fieldLinkedSignalNone": "No linked signal",
     "linkedEventOpen": "Open",
     "fieldAllDay": "All day",
+    "noUpcoming": "No events",
     "fieldAllDayHint": "Show on the calendar without specific times",
     "fieldStarts": "Starts",
     "fieldEnds": "Ends",

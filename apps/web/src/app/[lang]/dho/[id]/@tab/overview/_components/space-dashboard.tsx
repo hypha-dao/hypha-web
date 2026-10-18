@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
@@ -21,6 +22,7 @@ import {
   useMemberPresence,
   SignalCategoryTag,
   SpaceAttention,
+  SpacePendingRewardsSection,
   useDisplayCurrency,
   useSpaceDocumentsWithStatuses,
 } from '@hypha-platform/epics';
@@ -31,6 +33,14 @@ import { useMembers } from '@web/hooks/use-members';
 import { OverviewMonth } from './overview-month';
 import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
+
+const SpaceTokenHolderDiagrams = dynamic(
+  () =>
+    import('./home-token-holdings-dashboard').then(
+      (mod) => mod.SpaceTokenHolderDiagrams,
+    ),
+  { ssr: false },
+);
 
 const VISIBLE_MEMBERS = 8;
 /** Match home “Sensing who is around” portrait size. */
@@ -334,6 +344,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const locale = useLocale();
   const format = useFormatter();
   const t = useTranslations('OverviewOps');
+  const tTreasury = useTranslations('TreasuryTab');
   const tCommon = useTranslations('Common');
   const tNav = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
@@ -689,7 +700,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         className={
           showSignals
             ? 'grid items-start gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]'
-            : 'grid items-start gap-3 lg:grid-cols-2'
+            : 'grid items-stretch gap-3 lg:grid-cols-2'
         }
       >
         {showSignals ? (
@@ -820,129 +831,6 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         </div>
       </div>
 
-      {showTreasury ? (
-        <Panel
-          title={t('treasuryTitle')}
-          href={`${home}/treasury`}
-          openLabel={t('open')}
-        >
-          {treasuryLoading ? (
-            <RowsSkeleton />
-          ) : assets.length === 0 ? (
-            <Quiet>{t('treasuryEmpty')}</Quiet>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="flex min-w-0 flex-col gap-4 border border-border p-3">
-                <div className="min-w-0">
-                  <span
-                    className="block truncate text-3 tabular-nums text-foreground"
-                    style={{ fontFamily: 'var(--font-family-heading)' }}
-                  >
-                    {formatFromUsd(treasuryBalance)}
-                  </span>
-                  <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
-                    {t('treasuryTotal')}
-                  </span>
-                </div>
-                <ul className="grid grid-cols-2 gap-3">
-                  {[...spaceTokens.slice(0, 3), ...liquidTokens].map(
-                    (asset) => (
-                      <li
-                        key={asset.address || asset.symbol}
-                        className="min-w-0"
-                      >
-                        <span
-                          className="block truncate text-3 tabular-nums text-foreground"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {format.number(asset.value, {
-                            minimumFractionDigits: isLiquidNonHypha(asset)
-                              ? 2
-                              : 0,
-                            maximumFractionDigits:
-                              isLiquidNonHypha(asset) || asset.value < 100
-                                ? 2
-                                : 0,
-                          })}
-                        </span>
-                        <span className="mt-1 block truncate text-1 text-neutral-11">
-                          {asset.symbol}
-                        </span>
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </div>
-              <div className="flex min-w-0 items-center gap-4 border border-border p-3">
-                {distributionWedges.length > 0 ? (
-                  <>
-                    {distributionWedges.length > 1 ? (
-                      <svg
-                        viewBox="-1.08 -1.08 2.16 2.16"
-                        className="h-28 w-28 shrink-0"
-                        role="img"
-                        aria-label={t('distributionTitle')}
-                      >
-                        {distributionWedges.map((wedge) => (
-                          <path
-                            key={wedge.key}
-                            d={pieWedge(wedge.start, wedge.end)}
-                            fill={wedge.fill}
-                            stroke="var(--background)"
-                            strokeWidth={0.03}
-                          >
-                            <title>
-                              {`${wedge.symbol} ${format.number(wedge.share, {
-                                style: 'percent',
-                                maximumFractionDigits:
-                                  wedge.share < 0.01 ? 1 : 0,
-                              })}`}
-                            </title>
-                          </path>
-                        ))}
-                      </svg>
-                    ) : null}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                        {t('distributionTitle')}
-                      </p>
-                      <ul className="mt-2 grid gap-1">
-                        {distributionWedges.map((wedge) => (
-                          <li
-                            key={`share-${wedge.key}`}
-                            className="flex min-w-0 items-center gap-2 text-1 text-neutral-11"
-                          >
-                            <span
-                              className="h-2 w-2 shrink-0"
-                              style={{ background: wedge.fill }}
-                              aria-hidden
-                            />
-                            <span className="min-w-0 flex-1 truncate">
-                              {wedge.symbol}
-                            </span>
-                            <span className="shrink-0 tabular-nums">
-                              {format.number(wedge.share, {
-                                style: 'percent',
-                                maximumFractionDigits:
-                                  wedge.share < 0.01 ? 1 : 0,
-                              })}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                    {t('distributionTitle')}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </Panel>
-      ) : null}
-
       {showEcosystem ? (
         <Panel
           title={tNav('ecosystem')}
@@ -955,6 +843,153 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
             </p>
           ) : null}
           <EcosystemDiagram spaceSlug={spaceSlug} />
+        </Panel>
+      ) : null}
+
+      {showTreasury ? (
+        <Panel
+          title={t('treasuryTitle')}
+          href={`${home}/treasury`}
+          openLabel={t('open')}
+        >
+          {treasuryLoading ? (
+            <RowsSkeleton />
+          ) : assets.length === 0 ? (
+            <Quiet>{t('treasuryEmpty')}</Quiet>
+          ) : (
+            <>
+              <div className="grid gap-3 lg:grid-cols-3">
+                <div className="flex min-w-0 flex-col gap-4 border border-border p-3">
+                  <div className="min-w-0">
+                    <span
+                      className="block truncate text-3 tabular-nums text-foreground"
+                      style={{ fontFamily: 'var(--font-family-heading)' }}
+                    >
+                      {formatFromUsd(treasuryBalance)}
+                    </span>
+                    <span className="mt-1 block truncate text-1 uppercase tracking-[0.12em] text-neutral-11">
+                      {t('treasuryTotal')}
+                    </span>
+                  </div>
+                  <ul className="grid grid-cols-2 gap-3">
+                    {[...spaceTokens.slice(0, 3), ...liquidTokens].map(
+                      (asset) => (
+                        <li
+                          key={asset.address || asset.symbol}
+                          className="min-w-0"
+                        >
+                          <span
+                            className="block truncate text-3 tabular-nums text-foreground"
+                            style={{ fontFamily: 'var(--font-family-heading)' }}
+                          >
+                            {format.number(asset.value, {
+                              minimumFractionDigits: isLiquidNonHypha(asset)
+                                ? 2
+                                : 0,
+                              maximumFractionDigits:
+                                isLiquidNonHypha(asset) || asset.value < 100
+                                  ? 2
+                                  : 0,
+                            })}
+                          </span>
+                          <span className="mt-1 block truncate text-1 text-neutral-11">
+                            {asset.symbol}
+                          </span>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
+                <div className="flex min-w-0 items-center gap-4 border border-border p-3">
+                  {distributionWedges.length > 0 ? (
+                    <>
+                      {distributionWedges.length > 1 ? (
+                        <svg
+                          viewBox="-1.08 -1.08 2.16 2.16"
+                          className="h-28 w-28 shrink-0"
+                          role="img"
+                          aria-label={t('distributionTitle')}
+                        >
+                          {distributionWedges.map((wedge) => (
+                            <path
+                              key={wedge.key}
+                              d={pieWedge(wedge.start, wedge.end)}
+                              fill={wedge.fill}
+                              stroke="var(--background)"
+                              strokeWidth={0.03}
+                            >
+                              <title>
+                                {`${wedge.symbol} ${format.number(wedge.share, {
+                                  style: 'percent',
+                                  maximumFractionDigits:
+                                    wedge.share < 0.01 ? 1 : 0,
+                                })}`}
+                              </title>
+                            </path>
+                          ))}
+                        </svg>
+                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                          {t('distributionTitle')}
+                        </p>
+                        <ul className="mt-2 grid gap-1">
+                          {distributionWedges.map((wedge) => (
+                            <li
+                              key={`share-${wedge.key}`}
+                              className="flex min-w-0 items-center gap-2 text-1 text-neutral-11"
+                            >
+                              <span
+                                className="h-2 w-2 shrink-0"
+                                style={{ background: wedge.fill }}
+                                aria-hidden
+                              />
+                              <span className="min-w-0 flex-1 truncate">
+                                {wedge.symbol}
+                              </span>
+                              <span className="shrink-0 tabular-nums">
+                                {format.number(wedge.share, {
+                                  style: 'percent',
+                                  maximumFractionDigits:
+                                    wedge.share < 0.01 ? 1 : 0,
+                                })}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                      {t('distributionTitle')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-col gap-3 border border-border p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                      {tTreasury('rewardsSection.title')}
+                    </p>
+                    <Link
+                      href={`${home}/rewards`}
+                      className="shrink-0 text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                      {t('open')}
+                    </Link>
+                  </div>
+                  {space?.web3SpaceId != null ? (
+                    <SpacePendingRewardsSection
+                      web3SpaceId={space.web3SpaceId}
+                      compactHeader
+                    />
+                  ) : (
+                    <Quiet>{t('treasuryEmpty')}</Quiet>
+                  )}
+                </div>
+              </div>
+              <SpaceTokenHolderDiagrams spaceSlug={spaceSlug} />
+            </>
+          )}
         </Panel>
       ) : null}
     </div>

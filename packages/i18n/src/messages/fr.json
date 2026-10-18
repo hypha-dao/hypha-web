@@ -4617,6 +4617,7 @@
     "fieldLinkedSignalNone": "Aucun signal lié",
     "linkedEventOpen": "Ouvrir",
     "fieldAllDay": "Toute la journée",
+    "noUpcoming": "Aucun événement",
     "fieldAllDayHint": "Afficher sans heure précise",
     "fieldStarts": "Début",
     "fieldEnds": "Fin",
