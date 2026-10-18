@@ -307,14 +307,31 @@ export const ECOSYSTEM_ROOM_ALIAS_PREFIX = 'hypha-ecosystem';
 /** Prefix for per-space public rooms (`hypha-public-{spaceSlug}`). */
 export const PUBLIC_ROOM_ALIAS_PREFIX = 'hypha-public';
 
-/** Matrix room alias localparts: lowercase ascii, hyphen-safe. */
+function isAliasLocalpartChar(char: string): boolean {
+  return (
+    (char >= 'a' && char <= 'z') ||
+    (char >= '0' && char <= '9') ||
+    char === '.' ||
+    char === '_' ||
+    char === '=' ||
+    char === '-'
+  );
+}
+
+/**
+ * Matrix room alias localparts: lowercase ascii, hyphen-safe.
+ * Character scan instead of a regex so long hyphen runs cannot stall.
+ */
 export function matrixAliasLocalpart(prefix: string, slug: string): string {
-  const safe = slug
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._=-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 180);
+  let body = '';
+  for (const char of slug.trim().toLowerCase()) {
+    body += isAliasLocalpartChar(char) ? char : '-';
+  }
+  let start = 0;
+  let end = body.length;
+  while (start < end && body[start] === '-') start += 1;
+  while (end > start && body[end - 1] === '-') end -= 1;
+  const safe = body.slice(start, end).slice(0, 180);
   return safe ? `${prefix}-${safe}` : prefix;
 }
 
