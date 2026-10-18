@@ -161,11 +161,9 @@
     "voteNeedsChain": "Cette décision n’est pas encore prête à être enregistrée.",
     "voteClosed": "Vote clos",
     "gotIt": "Compris, merci",
-
     "gotItChosen": "Merci — j’ai vu comment {title} s’est terminée. Et ensuite ?",
     "outcomePassed": "C’est adopté — {participation}% ont participé, avec {unity}% d’unité.",
     "outcomeClosed": "Cette fois, ce n’est pas adopté. {participation}% ont participé, avec {unity}% d’unité.",
-
     "onVoting": "Au vote",
     "closesIn": "Se termine dans {time}",
     "fromTreasury": "de la trésorerie",
@@ -263,7 +261,6 @@
     "builderTitle": "Forme un espace autour de ta vision",
     "builderBody": "Parcours l'expérience avec l'IA et amène un espace dans le réseau autour de ce que tu veux construire.",
     "builderAction": "Créer un espace",
-
     "investorTitle": "Marché du réseau",
     "investorBody": "Les espaces publient ce qu'ils demandent. Lis une demande, puis déploie du capital dedans.",
     "investorAction": "Voir les demandes",
@@ -657,6 +654,11 @@
     "empty": "Les personnes avec qui tu es en lien apparaîtront ici.",
     "noMatches": "Aucun membre ne correspond.",
     "groupCall": "Appel de groupe",
+    "startGroupCall": "Lancer l’appel de groupe",
+    "cancelPick": "Annuler",
+    "removeSelected": "Retirer {name}",
+    "selectedCount": "{count} sélectionné(s)",
+    "pickMembers": "Touche des personnes pour les ajouter à l’appel",
     "selectMember": "Sélectionner {name}",
     "noMessage": "Pas encore de message",
     "someone": "Quelqu'un",

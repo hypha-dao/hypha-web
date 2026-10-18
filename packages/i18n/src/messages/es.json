@@ -164,7 +164,6 @@
     "gotItChosen": "Gracias — ya vi cómo quedó {title}. ¿Qué sigue?",
     "outcomePassed": "Se aprobó — participó el {participation}%, con un {unity}% de unidad.",
     "outcomeClosed": "Esta vez no se aprobó. Participó el {participation}%, con un {unity}% de unidad.",
-
     "onVoting": "En votación",
     "closesIn": "Cierra en {time}",
     "fromTreasury": "de la tesorería",
@@ -262,7 +261,6 @@
     "builderTitle": "Da forma a un espacio con tu visión",
     "builderBody": "Recorre la experiencia con IA y trae un espacio a la red alrededor de lo que quieres construir.",
     "builderAction": "Crear espacio",
-
     "investorTitle": "Mercado de la red",
     "investorBody": "Los espacios publican lo que piden. Lee una petición y despliega capital en ella.",
     "investorAction": "Ver las peticiones",
@@ -1427,6 +1425,11 @@
     "empty": "Las personas con las que te conectas aparecerán aquí.",
     "noMatches": "Ningún miembro coincide.",
     "groupCall": "Llamada de grupo",
+    "startGroupCall": "Iniciar llamada de grupo",
+    "cancelPick": "Cancelar",
+    "removeSelected": "Quitar a {name}",
+    "selectedCount": "{count} seleccionados",
+    "pickMembers": "Toca personas para añadirlas a la llamada",
     "selectMember": "Seleccionar {name}",
     "noMessage": "Todavía sin mensajes",
     "someone": "Alguien",

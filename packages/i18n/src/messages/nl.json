@@ -164,7 +164,6 @@
     "gotItChosen": "Bedankt — ik heb gezien hoe {title} is afgelopen. Wat nu?",
     "outcomePassed": "Het is aangenomen — {participation}% deed mee, met {unity}% eenheid.",
     "outcomeClosed": "Deze keer niet aangenomen. {participation}% deed mee, met {unity}% eenheid.",
-
     "onVoting": "In stemming",
     "closesIn": "Sluit over {time}",
     "fromTreasury": "uit de treasury",
@@ -262,7 +261,6 @@
     "builderTitle": "Vorm een ruimte rond je visie",
     "builderBody": "Loop de AI-ervaring door en breng een ruimte in het netwerk rond wat je wilt bouwen.",
     "builderAction": "Space maken",
-
     "investorTitle": "Netwerkmarktplaats",
     "investorBody": "Ruimtes publiceren wat ze vragen. Lees een vraag en zet er kapitaal in.",
     "investorAction": "De vragen bekijken",
@@ -656,6 +654,11 @@
     "empty": "Mensen met wie je verbonden bent verschijnen hier.",
     "noMatches": "Geen lid komt overeen.",
     "groupCall": "Groepsgesprek",
+    "startGroupCall": "Groepsgesprek starten",
+    "cancelPick": "Annuleren",
+    "removeSelected": "{name} verwijderen",
+    "selectedCount": "{count} geselecteerd",
+    "pickMembers": "Tik op mensen om ze aan het gesprek toe te voegen",
     "selectMember": "{name} selecteren",
     "noMessage": "Nog geen bericht",
     "someone": "Iemand",

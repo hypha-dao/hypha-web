@@ -614,6 +614,8 @@ export function MyceliumEcosystem({
   const tree = useMemo(() => toSpaceNode(data), [data]);
   const [focusId, setFocusId] = useState(currentSpaceId ?? data.id);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  /** Counterparty key in the Flows lens — amount labels only show for this peer. */
+  const [hoveredFlowKey, setHoveredFlowKey] = useState<string | null>(null);
   const structureFrame = useFrameSize();
   const flowsFrame = useFrameSize();
 
@@ -752,6 +754,7 @@ export function MyceliumEcosystem({
         }>,
         threads: [] as Array<{
           key: string;
+          peerKey: string;
           label: string;
           incoming: boolean;
           x: number;
@@ -789,6 +792,7 @@ export function MyceliumEcosystem({
       if (!node) return [];
       const next: Array<{
         key: string;
+        peerKey: string;
         label: string;
         incoming: boolean;
         x: number;
@@ -800,6 +804,7 @@ export function MyceliumEcosystem({
       if (outgoing) {
         next.push({
           key: `${node.key}-out`,
+          peerKey: node.key,
           label: outgoing,
           incoming: false,
           x: node.x,
@@ -810,6 +815,7 @@ export function MyceliumEcosystem({
       if (incoming) {
         next.push({
           key: `${node.key}-in`,
+          peerKey: node.key,
           label: incoming,
           incoming: true,
           x: node.x,
@@ -1058,7 +1064,7 @@ export function MyceliumEcosystem({
               key={lens}
               className="craft-card flex min-h-0 flex-col overflow-hidden p-3"
             >
-              <h3 className="px-1 pb-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
+              <h3 className="px-1 pb-2 text-1 tracking-[0.12em] text-neutral-11 uppercase">
                 {pane.title}
               </h3>
               <div
@@ -1163,21 +1169,59 @@ export function MyceliumEcosystem({
                           const dx = end.x - start.x;
                           const dy = end.y - start.y;
                           const length = Math.hypot(dx, dy) || 1;
-                          const labelX = midX + (-dy / length) * 16;
-                          const labelY = midY + (dx / length) * 16;
+                          const labelX = midX + (-dy / length) * 18;
+                          const labelY = midY + (dx / length) * 18;
+                          const active = hoveredFlowKey === thread.peerKey;
+                          const amountLabel = `${
+                            thread.incoming ? '← ' : '→ '
+                          }${thread.label}`;
+                          const path = hyphaPath(
+                            start.x,
+                            start.y,
+                            end.x,
+                            end.y,
+                            thread.bend,
+                          );
                           return (
-                            <g key={thread.key} className="text-foreground">
+                            <g
+                              key={thread.key}
+                              className="text-foreground"
+                              onMouseEnter={() =>
+                                setHoveredFlowKey(thread.peerKey)
+                              }
+                              onMouseLeave={() => setHoveredFlowKey(null)}
+                            >
+                              <title>{amountLabel}</title>
+                              {/* Wide invisible stroke so the thin flow is easy to hover. */}
                               <path
-                                d={hyphaPath(
-                                  start.x,
-                                  start.y,
-                                  end.x,
-                                  end.y,
-                                  thread.bend,
-                                )}
-                                className="mycelium-thread mycelium-flow"
-                                strokeWidth={thread.incoming ? 1.25 : 1.75}
-                                strokeOpacity={thread.incoming ? 0.55 : 0.9}
+                                d={path}
+                                fill="none"
+                                stroke="transparent"
+                                strokeWidth={14}
+                                strokeLinecap="round"
+                                className="cursor-pointer"
+                              />
+                              <path
+                                d={path}
+                                className="mycelium-thread mycelium-flow pointer-events-none"
+                                strokeWidth={
+                                  active
+                                    ? thread.incoming
+                                      ? 1.75
+                                      : 2.25
+                                    : thread.incoming
+                                    ? 1.25
+                                    : 1.75
+                                }
+                                strokeOpacity={
+                                  active
+                                    ? 1
+                                    : hoveredFlowKey
+                                    ? 0.22
+                                    : thread.incoming
+                                    ? 0.55
+                                    : 0.9
+                                }
                               />
                               <path
                                 d={arrowOnCurve(
@@ -1187,23 +1231,33 @@ export function MyceliumEcosystem({
                                   end.y,
                                   thread.bend,
                                 )}
+                                className="pointer-events-none"
                                 fill="var(--neutral-12)"
-                                fillOpacity={thread.incoming ? 0.55 : 1}
+                                fillOpacity={
+                                  active
+                                    ? 1
+                                    : hoveredFlowKey
+                                    ? 0.25
+                                    : thread.incoming
+                                    ? 0.55
+                                    : 1
+                                }
                               />
-                              <text
-                                x={labelX}
-                                y={labelY}
-                                textAnchor="middle"
-                                className="fill-foreground text-[10px]"
-                                style={{
-                                  paintOrder: 'stroke',
-                                  stroke: 'var(--background)',
-                                  strokeWidth: 4,
-                                }}
-                              >
-                                {thread.incoming ? '← ' : '→ '}
-                                {thread.label}
-                              </text>
+                              {active ? (
+                                <text
+                                  x={labelX}
+                                  y={labelY}
+                                  textAnchor="middle"
+                                  className="pointer-events-none fill-foreground text-[10px]"
+                                  style={{
+                                    paintOrder: 'stroke',
+                                    stroke: 'var(--background)',
+                                    strokeWidth: 4,
+                                  }}
+                                >
+                                  {amountLabel}
+                                </text>
+                              ) : null}
                             </g>
                           );
                         })
@@ -1312,16 +1366,38 @@ export function MyceliumEcosystem({
                             '',
                           )}`;
                           const logo = node.imageUrl?.trim();
+                          const active = hoveredFlowKey === node.key;
+                          const peerThreads = flowView.threads.filter(
+                            (thread) => thread.peerKey === node.key,
+                          );
+                          const hoverSummary = peerThreads
+                            .map(
+                              (thread) =>
+                                `${thread.incoming ? '←' : '→'} ${
+                                  thread.label
+                                }`,
+                            )
+                            .join('\n');
                           return (
-                            <g key={node.key}>
-                              <title>{node.label}</title>
+                            <g
+                              key={node.key}
+                              className="cursor-pointer"
+                              onMouseEnter={() => setHoveredFlowKey(node.key)}
+                              onMouseLeave={() => setHoveredFlowKey(null)}
+                            >
+                              <title>
+                                {hoverSummary
+                                  ? `${node.label}\n${hoverSummary}`
+                                  : node.label}
+                              </title>
                               <circle
                                 cx={node.x}
                                 cy={node.y}
                                 r={18}
                                 fill="var(--background)"
                                 stroke="var(--neutral-12)"
-                                strokeOpacity={0.45}
+                                strokeOpacity={active ? 0.85 : 0.45}
+                                strokeWidth={active ? 1.5 : 1}
                               />
                               {logo ? (
                                 <>

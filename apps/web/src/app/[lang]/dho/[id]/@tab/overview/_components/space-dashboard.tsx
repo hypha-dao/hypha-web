@@ -3,22 +3,21 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
-import { UserEvent, type MatrixClient } from 'matrix-js-sdk';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   isCatalogueToken,
   isHyphaToken,
   useFindCoherences,
-  useMatrix,
-  useMatrixUserIdsByPersonIds,
   useMe,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
-  readMemberPresence,
+  PresenceDot,
+  presenceRank,
   useMemberDirectoryConnect,
+  useMemberPresence,
   SignalCategoryTag,
   SpaceAttention,
   useDisplayCurrency,
@@ -33,6 +32,8 @@ import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
 
 const VISIBLE_MEMBERS = 8;
+/** Match home “Sensing who is around” portrait size. */
+const PORTRAIT_PX = 32;
 /** A week or more away is enough for a warm welcome back. No judgment. */
 const LONG_ABSENCE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -104,19 +105,6 @@ function stampOf(value: string | Date | null | undefined) {
   return Number.isFinite(time) ? time : null;
 }
 
-function sameIds(left: Set<number>, right: Set<number>) {
-  if (left.size !== right.size) return false;
-  for (const id of left) {
-    if (!right.has(id)) return false;
-  }
-  return true;
-}
-
-async function isSignedInNow(client: MatrixClient, matrixUserId: string) {
-  const level = await readMemberPresence(client, matrixUserId);
-  return level === 'active' || level === 'idle';
-}
-
 function SpaceMemberCircles({
   people,
   membersHref,
@@ -134,131 +122,94 @@ function SpaceMemberCircles({
   const t = useTranslations('OverviewOps');
   const { person: me } = useMe();
   const { openChat, notice } = useMemberDirectoryConnect(people);
-  const matrix = useMatrix();
   const personIds = useMemo(() => people.map((person) => person.id), [people]);
-  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
-    useMatrixUserIdsByPersonIds({ personIds });
-  const [onlineIds, setOnlineIds] = useState<Set<number> | null>(null);
-
-  useEffect(() => {
-    const client = matrix.client;
-    if (personIds.length === 0) {
-      setOnlineIds((current) =>
-        current && current.size === 0 ? current : new Set(),
-      );
-      return;
-    }
-    if (!client || !matrix.isAuthenticated || matrixIdsLoading) return;
-
-    let cancelled = false;
-    let timer = 0;
-    const recompute = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        void (async () => {
-          const next = new Set<number>();
-          await Promise.all(
-            personIds.map(async (personId) => {
-              const matrixUserId = personIdToMatrixUserId[personId];
-              if (!matrixUserId) return;
-              if (await isSignedInNow(client, matrixUserId)) next.add(personId);
-            }),
-          );
-          if (cancelled) return;
-          setOnlineIds((current) =>
-            current && sameIds(current, next) ? current : next,
-          );
-        })();
-      }, 250);
-    };
-
-    recompute();
-    const interval = window.setInterval(recompute, 30_000);
-    client.on(UserEvent.Presence, recompute);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      window.clearInterval(interval);
-      client.removeListener(UserEvent.Presence, recompute);
-    };
-  }, [
-    matrix.client,
-    matrix.isAuthenticated,
-    matrixIdsLoading,
-    personIdToMatrixUserId,
-    personIds,
-  ]);
+  const { presenceById, isLoading: presenceLoading } =
+    useMemberPresence(personIds);
 
   const ordered = useMemo(() => {
-    if (!onlineIds || onlineIds.size === 0) return people;
+    if (presenceLoading) return people;
     return [...people].sort((left, right) => {
-      const leftOn = onlineIds.has(left.id) ? 0 : 1;
-      const rightOn = onlineIds.has(right.id) ? 0 : 1;
-      return leftOn - rightOn;
+      return (
+        presenceRank(presenceById.get(left.id) ?? 'offline') -
+        presenceRank(presenceById.get(right.id) ?? 'offline')
+      );
     });
-  }, [onlineIds, people]);
+  }, [people, presenceById, presenceLoading]);
   const visible = ordered.slice(0, VISIBLE_MEMBERS);
   const rest = ordered.length - visible.length;
 
   return (
-    <nav aria-label={t('peopleHere')}>
-      <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+    <nav aria-label={t('peopleHere')} className="mt-1 min-w-0 max-w-full pb-3">
+      <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {t('peopleHere')}
       </p>
-      <ul className="mt-2 flex flex-wrap items-center gap-2">
-        {visible.map((person, index) => {
-          const name = personLabel(person);
-          const connected = onlineIds?.has(person.id) ?? false;
-          const canChat = person.id !== me?.id;
-          return (
-            <li key={person.id} className="flex shrink-0 items-center">
-              <button
-                type="button"
-                disabled={!canChat}
-                title={connected ? `${name}. ${t('connectedNow')}` : name}
-                aria-label={name}
-                className="relative inline-flex rounded-full disabled:cursor-default"
-                onClick={() => {
-                  if (!canChat) return;
-                  void openChat(person);
-                }}
-              >
-                <span
-                  className={
-                    index === 0
-                      ? 'inline-flex rounded-full ring-1 ring-foreground'
-                      : 'inline-flex rounded-full'
-                  }
+      {presenceLoading ? (
+        <div className="mt-2 flex gap-2" aria-hidden>
+          {Array.from(
+            { length: Math.min(VISIBLE_MEMBERS, people.length) },
+            (_, index) => (
+              <span
+                key={index}
+                className="animate-pulse rounded-full bg-neutral-3"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+              />
+            ),
+          )}
+        </div>
+      ) : (
+        <ul className="mt-2 flex max-w-full flex-wrap items-center gap-2">
+          {visible.map((person, index) => {
+            const name = personLabel(person);
+            const presence = presenceById.get(person.id) ?? 'offline';
+            const around = presence === 'active' || presence === 'idle';
+            const canChat = person.id !== me?.id;
+            return (
+              <li key={person.id} className="flex shrink-0 items-center">
+                <button
+                  type="button"
+                  disabled={!canChat}
+                  title={around ? `${name}. ${t('connectedNow')}` : name}
+                  aria-label={name}
+                  className="inline-flex rounded-full disabled:cursor-default"
+                  onClick={() => {
+                    if (!canChat) return;
+                    void openChat(person);
+                  }}
                 >
-                  <PersonAvatar
-                    avatarSrc={person.avatarUrl ?? undefined}
-                    userName={name}
-                    size="md"
-                    shape="circle"
-                  />
-                </span>
-                {connected ? (
-                  <span
-                    aria-hidden
-                    className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-success-9 ring-2 ring-background"
-                  />
-                ) : null}
-              </button>
+                  <span className="relative inline-flex">
+                    <span
+                      className={
+                        index === 0
+                          ? 'inline-flex rounded-full ring-1 ring-foreground'
+                          : 'inline-flex rounded-full'
+                      }
+                    >
+                      <PersonAvatar
+                        avatarSrc={person.avatarUrl ?? undefined}
+                        userName={name}
+                        size="md"
+                        shape="circle"
+                      />
+                    </span>
+                    <PresenceDot level={presence} size="sm" />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {rest > 0 ? (
+            <li>
+              <Link
+                href={membersHref}
+                className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+              >
+                +{rest}
+              </Link>
             </li>
-          );
-        })}
-        {rest > 0 ? (
-          <li>
-            <Link
-              href={membersHref}
-              className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-foreground"
-              style={{ width: 32, height: 32 }}
-            >
-              +{rest}
-            </Link>
-          </li>
-        ) : null}
-      </ul>
+          ) : null}
+        </ul>
+      )}
       {notice ? (
         <p className="mt-2 text-1 text-error-11" role="alert">
           {notice}
@@ -671,14 +622,17 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       ) : null}
 
       {membersLoading ? (
-        <div className="flex gap-2" aria-hidden>
-          {Array.from({ length: 5 }, (_, index) => (
-            <span
-              key={index}
-              className="rounded-full bg-neutral-3"
-              style={{ width: 32, height: 32 }}
-            />
-          ))}
+        <div className="mt-1 min-w-0 max-w-full pb-3" aria-hidden>
+          <div className="h-4 w-28 rounded bg-neutral-3" />
+          <div className="mt-2 flex gap-2">
+            {Array.from({ length: 5 }, (_, index) => (
+              <span
+                key={index}
+                className="animate-pulse rounded-full bg-neutral-3"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+              />
+            ))}
+          </div>
         </div>
       ) : people.length > 0 ? (
         <SpaceMemberCircles people={people} membersHref={`${home}/members`} />

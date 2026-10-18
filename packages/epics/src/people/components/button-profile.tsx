@@ -16,7 +16,6 @@ import {
   SheetContent,
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
-import { MyceliumMenuIcon } from './member-home-mark';
 import { EthAddress } from './eth-address';
 import {
   Bell,
@@ -26,6 +25,7 @@ import {
   Loader2,
   MessagesSquare,
   LogOutIcon,
+  Network,
   Repeat,
   Shield,
   TrashIcon,
@@ -112,7 +112,7 @@ function resolveNavItemIcon(href?: string) {
     return <Wallet className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/network')) {
-    return <MyceliumMenuIcon className="craft-icon" strokeWidth={1.25} />;
+    return <Network className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   return null;
 }

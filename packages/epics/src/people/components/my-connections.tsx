@@ -19,6 +19,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { Phone, Search, X } from 'lucide-react';
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -62,11 +63,22 @@ function messagePreview(body: string) {
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('>'));
   const text = (kept.at(-1) ?? body)
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/gi, (url) => {
+      try {
+        return new URL(url.replace(/[),.;]+$/, '')).hostname.replace(
+          /^www\./,
+          '',
+        );
+      } catch {
+        return 'link';
+      }
+    })
     .replace(/<?@[A-Za-z0-9._=\-/]+:[A-Za-z0-9.-]+(?::\d+)?>?/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  if (text.length <= 80) return text;
-  return `${text.slice(0, 79)}…`;
+  if (text.length <= 48) return text;
+  return `${text.slice(0, 47).trimEnd()}…`;
 }
 
 function avatarHttp(client: MatrixClient, mxc: string | null | undefined) {
@@ -243,6 +255,7 @@ export function MyConnections() {
   const [synced, setSynced] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [picking, setPicking] = useState(false);
   const [calling, setCalling] = useState(false);
   const [directory, setDirectory] = useState<ConnectionPerson[] | null>(null);
   const [searchDirectory, setSearchDirectory] = useState<
@@ -461,7 +474,16 @@ export function MyConnections() {
     });
   }
 
+  function exitPicking() {
+    setPicking(false);
+    setSelected(new Set());
+  }
+
   async function openMember(row: ConnectionMemberRow) {
+    if (picking) {
+      toggleSelected(row.person.id);
+      return;
+    }
     setNotice(null);
     if (row.roomId) {
       openCoherenceChat(
@@ -502,7 +524,7 @@ export function MyConnections() {
       await startAudioForRoom(roomId, null, undefined, jwt, {
         roomTitle: title,
       });
-      setSelected(new Set());
+      exitPicking();
     } catch {
       setNotice(tChat('callFailed'));
     } finally {
@@ -559,7 +581,7 @@ export function MyConnections() {
                 key={card.key}
                 type="button"
                 onClick={() => void openReachOut(card)}
-                className="flex w-40 shrink-0 flex-col items-start gap-2 border border-border p-3 text-left hover:bg-accent-2"
+                className="flex w-40 shrink-0 flex-col items-start gap-2 rounded-2xl border border-border p-3 text-left hover:bg-accent-2"
               >
                 <PersonAvatar
                   size="chat"
@@ -592,15 +614,101 @@ export function MyConnections() {
         </section>
       ) : null}
 
-      <label className="flex flex-col gap-1">
-        <span className="sr-only">{t('search')}</span>
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={t('search')}
-          className="h-10 w-full border border-border bg-transparent px-3 text-2 text-foreground outline-none placeholder:text-muted-foreground"
-        />
-      </label>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">{t('search')}</span>
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('search')}
+              className="h-10 w-full rounded-full border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </label>
+          {picking ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="shrink-0"
+              onClick={exitPicking}
+            >
+              {t('cancelPick')}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="shrink-0 gap-1.5"
+              disabled={!isMatrixAvailable || people.length < 2}
+              onClick={() => setPicking(true)}
+            >
+              <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
+              {t('groupCall')}
+            </Button>
+          )}
+        </div>
+
+        {picking && selectedPeople.length > 0 ? (
+          <div
+            className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label={t('selectedCount', { count: selectedPeople.length })}
+          >
+            {selectedPeople.map((row) => (
+              <button
+                key={row.person.id}
+                type="button"
+                className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
+                aria-label={t('removeSelected', { name: row.name })}
+                onClick={() => toggleSelected(row.person.id)}
+              >
+                <span className="relative inline-flex">
+                  <PersonAvatar
+                    size="chat"
+                    shape="circle"
+                    avatarSrc={row.avatarUrl}
+                    userName={row.name}
+                  />
+                  <span
+                    className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                    aria-hidden
+                  >
+                    <X className="size-2.5" strokeWidth={2.5} />
+                  </span>
+                </span>
+                <span className="w-full truncate text-1 text-neutral-11">
+                  {row.name.split(' ')[0] || row.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {picking ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
+              {selectedPeople.length > 0
+                ? t('selectedCount', { count: selectedPeople.length })
+                : t('pickMembers')}
+            </p>
+            <Button
+              type="button"
+              disabled={selectedPeople.length < 2 || calling}
+              className="shrink-0 gap-1.5"
+              onClick={() => void startGroupCall()}
+            >
+              <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
+              {t('startGroupCall')}
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
       {notice ? (
         <p className="text-1 text-error-11" role="alert">
@@ -612,17 +720,6 @@ export function MyConnections() {
         <p className="text-2 text-muted-foreground">
           {tChat('matrixUnavailable')}
         </p>
-      ) : null}
-
-      {selectedPeople.length >= 2 ? (
-        <button
-          type="button"
-          disabled={calling}
-          onClick={() => void startGroupCall()}
-          className="h-10 self-start border border-foreground bg-foreground px-3 text-2 text-background disabled:opacity-50"
-        >
-          {t('groupCall')}
-        </button>
       ) : null}
 
       {home != null && people.length === 0 && !searching ? (
@@ -642,8 +739,8 @@ export function MyConnections() {
           youLabel={(message) => t('youWrote', { message })}
           unreadLabel={(count) => t('unread', { count })}
           selectLabel={(name) => t('selectMember', { name })}
+          picking={picking}
           selected={selected}
-          onToggle={toggleSelected}
           onOpen={(row) => void openMember(row)}
         />
       ) : null}
@@ -681,8 +778,8 @@ function MemberList({
   youLabel,
   unreadLabel,
   selectLabel,
+  picking,
   selected,
-  onToggle,
   onOpen,
 }: {
   title: string;
@@ -694,16 +791,13 @@ function MemberList({
   youLabel: (message: string) => string;
   unreadLabel: (count: number) => string;
   selectLabel: (name: string) => string;
+  picking: boolean;
   selected: Set<number>;
-  onToggle: (id: number) => void;
   onOpen: (row: ConnectionMemberRow) => void;
 }) {
   return (
-    <section className="border border-border">
-      <h2
-        className="border-b border-border px-3 py-2 text-2 text-foreground"
-        style={{ fontFamily: 'var(--font-family-heading)' }}
-      >
+    <section className="overflow-hidden rounded-2xl border border-border bg-background">
+      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
       <ul>
@@ -721,28 +815,31 @@ function MemberList({
           return (
             <li
               key={row.person.id}
-              className="flex items-stretch border-b border-border last:border-b-0"
+              className="border-b border-border last:border-b-0"
             >
               <button
                 type="button"
-                role="checkbox"
-                aria-checked={checked}
-                aria-label={selectLabel(row.name)}
-                onClick={() => onToggle(row.person.id)}
+                onClick={() => onOpen(row)}
+                aria-pressed={picking ? checked : undefined}
+                aria-label={picking ? selectLabel(row.name) : undefined}
                 className={cn(
-                  'm-3 grid size-4 shrink-0 place-items-center self-center border border-foreground',
-                  checked && 'bg-foreground',
+                  'flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
+                  picking && checked && 'bg-accent-2/60',
                 )}
               >
-                {checked ? (
-                  <span className="size-2 bg-background" aria-hidden />
+                {picking ? (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'grid size-5 shrink-0 place-items-center rounded-full border border-neutral-8',
+                      checked && 'border-foreground bg-foreground',
+                    )}
+                  >
+                    {checked ? (
+                      <span className="size-2 rounded-full bg-background" />
+                    ) : null}
+                  </span>
                 ) : null}
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpen(row)}
-                className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left hover:bg-accent-2"
-              >
                 <span className="relative inline-flex shrink-0">
                   <PersonAvatar
                     size="chat"
@@ -752,11 +849,11 @@ function MemberList({
                   />
                   <PresenceDot level={presence} />
                 </span>
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
                     <span
                       className={cn(
-                        'truncate text-2 text-foreground',
+                        'min-w-0 truncate text-2 text-foreground',
                         row.unread > 0 && 'font-semibold',
                       )}
                     >
@@ -769,12 +866,12 @@ function MemberList({
                     ) : null}
                   </span>
                   <span className="mt-0.5 flex items-center justify-between gap-3">
-                    <span className="truncate text-1 text-muted-foreground">
+                    <span className="min-w-0 flex-1 truncate text-1 text-muted-foreground">
                       {preview}
                     </span>
                     {row.unread > 0 ? (
                       <span
-                        className="grid h-5 min-w-5 shrink-0 place-items-center bg-foreground px-1 text-[10px] leading-none text-background"
+                        className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"
                         aria-label={unreadLabel(row.unread)}
                       >
                         {row.unread > 99 ? '99+' : row.unread}

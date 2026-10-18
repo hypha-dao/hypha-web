@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   MessagesSquare,
+  Network,
   Plus,
   Rows3,
   Settings,
@@ -39,7 +40,6 @@ import {
 import { useFundWallet } from '../../treasury/hooks/use-fund-wallet';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
 import { useMemberEnergyCommunities } from './member-home-energy-panel';
-import { MyceliumMenuIcon } from './member-home-mark';
 import {
   HOME_VIEW_EVENT,
   readHomeView,
@@ -314,7 +314,7 @@ export function MobileTabBar({
         key: 'network',
         label: tNetwork('navNetwork'),
         href: base,
-        icon: MyceliumMenuIcon,
+        icon: Network,
         exact: true,
       },
       {
@@ -578,7 +578,7 @@ export function MobileTabBar({
             label={t('network')}
             active={networkActive}
             onClick={() => setCreateOpen(false)}
-            icon={<MyceliumMenuIcon className={iconClass} strokeWidth={1.25} />}
+            icon={<Network className={iconClass} strokeWidth={1.25} />}
           />
         </div>
       </nav>

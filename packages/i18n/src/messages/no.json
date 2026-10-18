@@ -164,7 +164,6 @@
     "gotItChosen": "Takk — jeg har sett hvordan {title} gikk. Hva nå?",
     "outcomePassed": "Det ble vedtatt — {participation}% deltok, med {unity}% enhet.",
     "outcomeClosed": "Denne gangen ble det ikke vedtatt. {participation}% deltok, med {unity}% enhet.",
-
     "onVoting": "Til avstemning",
     "closesIn": "Stenger om {time}",
     "fromTreasury": "fra kassen",
@@ -262,7 +261,6 @@
     "builderTitle": "Form et rom rundt visjonen din",
     "builderBody": "Gå gjennom KI-opplevelsen og ta et rom inn i nettverket rundt det du vil bygge.",
     "builderAction": "Opprett rom",
-
     "investorTitle": "Nettverksmarked",
     "investorBody": "Rom publiserer det de ber om. Les en forespørsel, og sett inn kapital i den.",
     "investorAction": "Se forespørslene",
@@ -655,6 +653,11 @@
     "empty": "Personene du er knyttet til vises her.",
     "noMatches": "Ingen medlemmer samsvarer.",
     "groupCall": "Gruppesamtale",
+    "startGroupCall": "Start gruppesamtale",
+    "cancelPick": "Avbryt",
+    "removeSelected": "Fjern {name}",
+    "selectedCount": "{count} valgt",
+    "pickMembers": "Trykk på personer for å legge dem til i samtalen",
     "selectMember": "Velg {name}",
     "noMessage": "Ingen meldinger ennå",
     "someone": "Noen",
