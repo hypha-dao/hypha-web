@@ -95,7 +95,7 @@ export function OverviewMonth({
         </div>
       ) : (
         <ol className="mt-3 flex flex-col gap-3">
-          {events.slice(0, 2).map((event) => (
+          {events.map((event) => (
             <li
               key={event.id}
               className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3"
