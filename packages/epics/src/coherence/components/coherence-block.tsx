@@ -343,31 +343,32 @@ export function CoherenceBlock({
           ) : null}
         </h1>
       </header>
-      <div
-        className={
-          typeFilters.length > 0 || priorityFilters.length > 0
-            ? 'flex min-w-0 max-w-full flex-col gap-2'
-            : 'flex min-w-0 max-w-full flex-row flex-wrap items-center gap-2'
+      <SignalBoardFilters
+        typeFilters={typeFilters}
+        priorityFilters={priorityFilters}
+        typeCounts={typeCounts}
+        priorityCounts={priorityCounts}
+        boardFilters={boardFilters}
+        onBoardFiltersChange={handleBoardFiltersChange}
+        existingTags={existingTags}
+        members={spaceMembers}
+        currentPersonId={person?.id}
+        controls={
+          <SignalViewControls
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            hideArchived={hideArchived}
+            onHideArchivedChange={setHideArchived}
+            workflowSettingsHref={workflowSettingsHref}
+            createSignalHref={
+              canMutate
+                ? `/${lang}/dho/${spaceSlug}/coherence/new-signal`
+                : null
+            }
+            className="shrink-0"
+          />
         }
-      >
-        <SignalBoardFilters
-          typeFilters={typeFilters}
-          priorityFilters={priorityFilters}
-          typeCounts={typeCounts}
-          priorityCounts={priorityCounts}
-        />
-        <SignalViewControls
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          hideArchived={hideArchived}
-          onHideArchivedChange={setHideArchived}
-          workflowSettingsHref={workflowSettingsHref}
-          createSignalHref={
-            canMutate ? `/${lang}/dho/${spaceSlug}/coherence/new-signal` : null
-          }
-          className="lg:shrink-0"
-        />
-      </div>
+      />
       {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
       <SignalSection
         basePath={chatBasePath}
@@ -378,11 +379,6 @@ export function CoherenceBlock({
         refresh={refresh}
         onSignalClick={onSignalClick}
         activeSignalSlug={activeSignalSlug}
-        boardFilters={boardFilters}
-        onBoardFiltersChange={handleBoardFiltersChange}
-        existingTags={existingTags}
-        members={spaceMembers}
-        currentPersonId={person?.id}
       />
     </div>
   );

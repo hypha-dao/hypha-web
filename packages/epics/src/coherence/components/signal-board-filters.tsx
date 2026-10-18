@@ -1,13 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { Check, ListFilter, X } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
   COHERENCE_SIGNAL_TYPES,
   type CoherenceSignalType,
+  type Person,
+  type SignalBoardFilters as BoardFilters,
 } from '@hypha-platform/core/client';
+import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
+import { SignalMenuFilters, SignalTitleSearch } from './signal-filter-bar';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -20,6 +24,13 @@ type SignalBoardFiltersProps = {
   priorityFilters: readonly SignalPriority[];
   typeCounts: { all: number } & Record<CoherenceSignalType, number>;
   priorityCounts: Record<'all' | SignalPriority, number>;
+  boardFilters: BoardFilters;
+  onBoardFiltersChange: (filters: BoardFilters) => void;
+  existingTags: string[];
+  members: Person[];
+  currentPersonId?: number | null;
+  /** Add, view, and archive controls. They stay on the search row. */
+  controls?: ReactNode;
 };
 
 function parseAllowed<T extends string>(
@@ -132,12 +143,23 @@ export function SignalBoardFilters({
   priorityFilters,
   typeCounts,
   priorityCounts,
+  boardFilters,
+  onBoardFiltersChange,
+  existingTags,
+  members,
+  currentPersonId,
+  controls,
 }: SignalBoardFiltersProps) {
   const t = useTranslations('CoherenceTab');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const active = typeFilters.length > 0 || priorityFilters.length > 0;
+  const boardActive =
+    (boardFilters.assignee != null && boardFilters.assignee !== 'any') ||
+    boardFilters.deadline != null ||
+    (boardFilters.tags ?? []).some((tag) => tag.trim().length > 0);
+  const active =
+    typeFilters.length > 0 || priorityFilters.length > 0 || boardActive;
 
   const writeParam = React.useCallback(
     (key: 'type' | 'priority', values: readonly string[]) => {
@@ -162,118 +184,215 @@ export function SignalBoardFilters({
     });
   }, [pathname, router, searchParams]);
 
+  const assigneeLabel =
+    boardFilters.assignee === 'me'
+      ? t('filterAssignedToMe')
+      : typeof boardFilters.assignee === 'number'
+      ? (() => {
+          const member = members.find(
+            (person) => person.id === boardFilters.assignee,
+          );
+          return member
+            ? personRosterDisplayLabel(member, t('signalAssigneeUnknown'))
+            : t('signalAssigneeUnknown');
+        })()
+      : null;
+  const deadlineLabel = boardFilters.deadline
+    ? t(`filterDeadline_${boardFilters.deadline.mode}`)
+    : null;
+
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-label={t('filter')}
-            title={t('filter')}
-            className={cn(
-              'inline-flex h-10 w-10 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
-              active ? 'border-foreground text-foreground' : 'border-border/70',
-            )}
-          >
-            <ListFilter className="craft-icon" strokeWidth={1.25} aria-hidden />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          collisionPadding={16}
-          className="narrow-scrollbar max-h-[var(--radix-popover-content-available-height,70dvh)] w-72 overflow-y-auto overscroll-contain rounded-none border-border bg-background p-0 text-foreground shadow-none"
-        >
-          <section className="border-b border-border py-2">
-            <p className="px-3 py-1 text-1 uppercase tracking-[0.12em] text-neutral-11">
-              {t('type')}
-            </p>
-            <div className="grid">
-              <FilterOption
-                label={t('all')}
-                count={typeCounts.all}
-                selected={typeFilters.length === 0}
-                onSelect={() => writeParam('type', [])}
-              />
-              {COHERENCE_SIGNAL_TYPES.map((type) => (
-                <FilterOption
-                  key={type}
-                  label={t(`types.${type}` as 'types.Need')}
-                  count={typeCounts[type] ?? 0}
-                  selected={typeFilters.includes(type)}
-                  onSelect={() =>
-                    writeParam(
-                      'type',
-                      toggleValue(typeFilters, type, COHERENCE_SIGNAL_TYPES),
-                    )
-                  }
-                />
-              ))}
-            </div>
-          </section>
-          <section className="border-b border-border py-2">
-            <p className="px-3 py-1 text-1 uppercase tracking-[0.12em] text-neutral-11">
-              {t('priority')}
-            </p>
-            <div className="grid">
-              <FilterOption
-                label={t('all')}
-                count={priorityCounts.all}
-                selected={priorityFilters.length === 0}
-                onSelect={() => writeParam('priority', [])}
-              />
-              {SIGNAL_PRIORITIES.map((priority) => (
-                <FilterOption
-                  key={priority}
-                  label={t(`priorities.${priority}`)}
-                  count={priorityCounts[priority]}
-                  selected={priorityFilters.includes(priority)}
-                  onSelect={() =>
-                    writeParam(
-                      'priority',
-                      toggleValue(priorityFilters, priority, SIGNAL_PRIORITIES),
-                    )
-                  }
-                />
-              ))}
-            </div>
-          </section>
-          {active ? (
-            <div className="flex justify-end px-3 py-2">
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className="flex min-w-[14rem] flex-1 items-center gap-2">
+          <SignalTitleSearch
+            filters={boardFilters}
+            onChange={onBoardFiltersChange}
+          />
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
-                onClick={clearFilters}
-                className="text-1 text-neutral-11 hover:text-foreground"
+                aria-label={t('filter')}
+                title={t('filter')}
+                className={cn(
+                  'inline-flex h-10 w-10 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
+                  active
+                    ? 'border-foreground text-foreground'
+                    : 'border-border/70',
+                )}
               >
-                {t('reset')}
+                <ListFilter
+                  className="craft-icon"
+                  strokeWidth={1.25}
+                  aria-hidden
+                />
               </button>
-            </div>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              collisionPadding={16}
+              onPointerDownOutside={(event) => {
+                const target = event.target;
+                if (
+                  target instanceof Element &&
+                  target.closest(
+                    '[data-radix-popper-content-wrapper], [role="listbox"]',
+                  )
+                ) {
+                  event.preventDefault();
+                }
+              }}
+              className="narrow-scrollbar max-h-[var(--radix-popover-content-available-height,70dvh)] w-80 overflow-y-auto overscroll-contain rounded-none border-border bg-background p-0 text-foreground shadow-none"
+            >
+              <section className="border-b border-border py-2">
+                <p className="px-3 py-1 text-1 uppercase tracking-[0.12em] text-neutral-11">
+                  {t('type')}
+                </p>
+                <div className="grid">
+                  <FilterOption
+                    label={t('all')}
+                    count={typeCounts.all}
+                    selected={typeFilters.length === 0}
+                    onSelect={() => writeParam('type', [])}
+                  />
+                  {COHERENCE_SIGNAL_TYPES.map((type) => (
+                    <FilterOption
+                      key={type}
+                      label={t(`types.${type}` as 'types.Need')}
+                      count={typeCounts[type] ?? 0}
+                      selected={typeFilters.includes(type)}
+                      onSelect={() =>
+                        writeParam(
+                          'type',
+                          toggleValue(
+                            typeFilters,
+                            type,
+                            COHERENCE_SIGNAL_TYPES,
+                          ),
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+              <section className="border-b border-border py-2">
+                <p className="px-3 py-1 text-1 uppercase tracking-[0.12em] text-neutral-11">
+                  {t('priority')}
+                </p>
+                <div className="grid">
+                  <FilterOption
+                    label={t('all')}
+                    count={priorityCounts.all}
+                    selected={priorityFilters.length === 0}
+                    onSelect={() => writeParam('priority', [])}
+                  />
+                  {SIGNAL_PRIORITIES.map((priority) => (
+                    <FilterOption
+                      key={priority}
+                      label={t(`priorities.${priority}`)}
+                      count={priorityCounts[priority]}
+                      selected={priorityFilters.includes(priority)}
+                      onSelect={() =>
+                        writeParam(
+                          'priority',
+                          toggleValue(
+                            priorityFilters,
+                            priority,
+                            SIGNAL_PRIORITIES,
+                          ),
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+              <SignalMenuFilters
+                filters={boardFilters}
+                onChange={onBoardFiltersChange}
+                existingTags={existingTags}
+                members={members}
+                currentPersonId={currentPersonId}
+              />
+              {active ? (
+                <div className="flex justify-end border-t border-border px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearFilters();
+                      onBoardFiltersChange({});
+                    }}
+                    className="text-1 text-neutral-11 hover:text-foreground"
+                  >
+                    {t('reset')}
+                  </button>
+                </div>
+              ) : null}
+            </PopoverContent>
+          </Popover>
+        </div>
+        {controls}
+      </div>
+      {active ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {typeFilters.map((type) => (
+            <FilterTag
+              key={type}
+              label={t(`types.${type}` as 'types.Need')}
+              onRemove={() =>
+                writeParam(
+                  'type',
+                  typeFilters.filter((value) => value !== type),
+                )
+              }
+            />
+          ))}
+          {priorityFilters.map((priority) => (
+            <FilterTag
+              key={priority}
+              label={t(`priorities.${priority}`)}
+              onRemove={() =>
+                writeParam(
+                  'priority',
+                  priorityFilters.filter((value) => value !== priority),
+                )
+              }
+            />
+          ))}
+          {assigneeLabel ? (
+            <FilterTag
+              label={assigneeLabel}
+              onRemove={() =>
+                onBoardFiltersChange({ ...boardFilters, assignee: undefined })
+              }
+            />
           ) : null}
-        </PopoverContent>
-      </Popover>
-      {typeFilters.map((type) => (
-        <FilterTag
-          key={type}
-          label={t(`types.${type}` as 'types.Need')}
-          onRemove={() =>
-            writeParam(
-              'type',
-              typeFilters.filter((value) => value !== type),
-            )
-          }
-        />
-      ))}
-      {priorityFilters.map((priority) => (
-        <FilterTag
-          key={priority}
-          label={t(`priorities.${priority}`)}
-          onRemove={() =>
-            writeParam(
-              'priority',
-              priorityFilters.filter((value) => value !== priority),
-            )
-          }
-        />
-      ))}
+          {deadlineLabel ? (
+            <FilterTag
+              label={deadlineLabel}
+              onRemove={() => {
+                const next = { ...boardFilters };
+                delete next.deadline;
+                onBoardFiltersChange(next);
+              }}
+            />
+          ) : null}
+          {(boardFilters.tags ?? []).map((tag) => (
+            <FilterTag
+              key={tag}
+              label={tag}
+              onRemove={() =>
+                onBoardFiltersChange({
+                  ...boardFilters,
+                  tags: (boardFilters.tags ?? []).filter(
+                    (value) => value !== tag,
+                  ),
+                })
+              }
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
