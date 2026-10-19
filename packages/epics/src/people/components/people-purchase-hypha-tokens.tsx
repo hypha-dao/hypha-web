@@ -220,6 +220,20 @@ export const PeoplePurchaseHyphaTokens = ({
     !Number.isFinite(parsedAmount) ||
     parsedAmount <= 0 ||
     parsedAmount <= paymentBalance + 1e-9;
+  const defaultUsdcAmount = useMemo(() => {
+    if (!Number.isFinite(paymentBalance) || paymentBalance < 10) return 0;
+    return Math.floor(paymentBalance / 10) * 10;
+  }, [paymentBalance]);
+
+  useEffect(() => {
+    if (appearance !== 'wallet' || defaultUsdcAmount <= 0) return;
+    const current = form.getValues('payout.amount')?.trim() ?? '';
+    if (current !== '') return;
+    form.setValue('payout.amount', String(defaultUsdcAmount), {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+  }, [appearance, defaultUsdcAmount, form]);
 
   const handlePurchase = async (data: FormValues) => {
     try {
@@ -341,7 +355,22 @@ export const PeoplePurchaseHyphaTokens = ({
                           'plugins.buyHyphaTokens.purchaseAmount',
                         )}
                         symbol={PAYMENT_TOKEN?.symbol ?? 'USDC'}
-                        presets={[25, 50, 100, 250, 500]}
+                        presets={[
+                          ...new Set(
+                            [
+                              10,
+                              25,
+                              50,
+                              100,
+                              250,
+                              500,
+                              defaultUsdcAmount,
+                            ].filter(
+                              (value) =>
+                                value > 0 && value <= paymentBalance + 1e-9,
+                            ),
+                          ),
+                        ].sort((left, right) => left - right)}
                         holding={{
                           label: tWallet('available'),
                           amount: formatWalletAmount(paymentBalance),

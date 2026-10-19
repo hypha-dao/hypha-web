@@ -10,7 +10,7 @@ import {
   Gem,
   QrCode,
   RefreshCcw,
-  WalletCards,
+  Wallet,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
@@ -87,14 +87,16 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   const { person } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}` | undefined,
+    title: t('receiveFunds.title'),
+    subtitle: t('receiveFunds.subtitle'),
   });
   const address = person?.address?.trim();
 
   const shortcuts: Shortcut[] = [
     {
-      key: 'deposit',
-      label: t('shortcuts.deposit'),
-      icon: WalletCards,
+      key: 'receive',
+      label: t('shortcuts.receive'),
+      icon: QrCode,
       onClick: () => {
         fundWallet();
       },
@@ -134,11 +136,8 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
     {
       key: 'fundSpace',
       label: t('shortcuts.fundSpace'),
-      icon: QrCode,
-      href: `${basePath.replace(
-        /\/my-wallet$/,
-        '',
-      )}/interactive-create#fund-a-space`,
+      icon: Wallet,
+      href: `${basePath}/actions/fund-a-space`,
     },
     {
       key: 'migrate',

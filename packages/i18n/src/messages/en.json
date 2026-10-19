@@ -866,7 +866,7 @@
     "backToWallet": "Back to wallet",
     "available": "Available",
     "shortcuts": {
-      "deposit": "Deposit funds",
+      "receive": "Receive funds",
       "transfer": "Send tokens",
       "redeem": "Redeem tokens",
       "buyHypha": "Buy Hypha Tokens",
@@ -874,6 +874,29 @@
       "activate": "Activate space",
       "migrate": "Migrate tokens",
       "fundSpace": "Fund a Space"
+    },
+    "receiveFunds": {
+      "title": "Receive Funds",
+      "subtitle": "Share this QR code or wallet address to receive funds in this wallet."
+    },
+    "fundSpace": {
+      "description": "Choose a space with a treasury address to fund it.",
+      "searchPlaceholder": "Search spaces...",
+      "searchHint": "Start typing to see matching spaces.",
+      "noSpacesFound": "No spaces found.",
+      "selected": "Selected",
+      "cta": "Show deposit details",
+      "loadingSpaces": "Loading spaces...",
+      "unavailable": "No spaces with treasury addresses are currently available.",
+      "details": {
+        "share": "Share this QR code or treasury address to fund this space.",
+        "qrAriaLabel": "Treasury address QR code for {spaceName}",
+        "baseOnly": "Make sure to send funds on Base.",
+        "addressLabel": "Treasury address",
+        "copy": "Copy address",
+        "copied": "Address copied",
+        "invalidAddress": "Invalid treasury address format."
+      }
     },
     "tabs": {
       "assets": "Assets",

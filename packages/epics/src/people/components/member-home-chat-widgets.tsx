@@ -72,7 +72,8 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
 const AMOUNT_INPUT = /^\d*\.?\d{0,2}$/;
 const SPACE_PREVIEW = 5;
-const RECIPIENT_PREVIEW = 5;
+/** Quick-pick strip: denser on larger screens. */
+const RECIPIENT_PREVIEW = 10;
 
 type NoteKey =
   | 'sendTokensThanks'
@@ -640,8 +641,12 @@ export function MemberHomeSendTokensWidget({
   const [conversationRows, setConversationRows] = useState<ConversationRow[]>(
     [],
   );
+  const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [directoryPeople, setDirectoryPeople] = useState<Person[] | null>(null);
+  const [directorySpaces, setDirectorySpaces] = useState<Space[] | null>(null);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const connectionIds = useMemo(
-    () => people.map((person) => person.id),
+    () => people.map((entry) => entry.id),
     [people],
   );
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
@@ -671,10 +676,6 @@ export function MemberHomeSendTokensWidget({
   const [fundingKind, setFundingKind] = useState<'funds' | 'hypha' | null>(
     null,
   );
-  const [directoryOpen, setDirectoryOpen] = useState(false);
-  const [directoryPeople, setDirectoryPeople] = useState<Person[] | null>(null);
-  const [directorySpaces, setDirectorySpaces] = useState<Space[] | null>(null);
-  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [picked, setPicked] = useState<TokenTarget | null>(null);
   const [sent, setSent] = useState<{
     count: number;
@@ -812,17 +813,23 @@ export function MemberHomeSendTokensWidget({
   }, [loadTransferRecipients, people.length]);
 
   const targets = useMemo(() => {
+    const now = Date.now();
+    // Quick pick is only people you've spoken with recently — not the full
+    // directory. Stale contacts stay available under "see more".
     if (people.length > 0) {
       const recent = memberRowsForConnections(
         people,
         conversationRows,
         personIdToMatrixUserId,
-        null,
+        person?.id ?? null,
         fallbackName,
       );
       return recent.flatMap((row) => {
         const address = row.person.address?.trim();
         if (!address) return [];
+        if (row.lastTs == null || now - row.lastTs > STALE_CONNECTION_MS) {
+          return [];
+        }
         return [
           {
             kind: 'person' as const,
@@ -835,29 +842,60 @@ export function MemberHomeSendTokensWidget({
     }
     const selfAddress = person?.address?.trim().toLowerCase() ?? '';
     const selfSlug = person?.slug?.trim() ?? '';
-    return (directoryPeople ?? []).flatMap((entry) => {
+    const directory = (directoryPeople ?? []).filter((entry) => {
       const address = entry.address?.trim();
-      if (!address) return [];
-      if (selfAddress && address.toLowerCase() === selfAddress) return [];
-      if (selfSlug && entry.slug?.trim() === selfSlug) return [];
-      const name =
-        [entry.name, entry.surname].filter(Boolean).join(' ').trim() ||
-        fallbackName;
-      return [
-        {
-          kind: 'person' as const,
-          id: `person-${entry.id}`,
-          name,
-          address,
-        },
-      ];
+      if (!address) return false;
+      if (selfAddress && address.toLowerCase() === selfAddress) return false;
+      if (selfSlug && entry.slug?.trim() === selfSlug) return false;
+      return true;
     });
+    const byName = new Map<string, (typeof directory)[number]>();
+    for (const entry of directory) {
+      const full = [entry.name, entry.surname]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+        .toLowerCase();
+      if (full && !byName.has(full)) byName.set(full, entry);
+    }
+    return conversationRows
+      .filter(
+        (room) =>
+          room.kind === 'person' &&
+          !room.signalThread &&
+          room.lastTs != null &&
+          now - room.lastTs <= STALE_CONNECTION_MS,
+      )
+      .sort((left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0))
+      .flatMap((room) => {
+        const key = room.name.trim().toLowerCase();
+        const match = key ? byName.get(key) : undefined;
+        const address = match?.address?.trim();
+        if (!match || !address) return [];
+        const name =
+          [match.name, match.surname].filter(Boolean).join(' ').trim() ||
+          room.name.trim() ||
+          fallbackName;
+        return [
+          {
+            kind: 'person' as const,
+            id: `person-${match.id}`,
+            name,
+            address,
+          },
+        ];
+      })
+      .filter((item, index, list) => {
+        const first = list.findIndex((row) => row.id === item.id);
+        return first === index;
+      });
   }, [
     conversationRows,
     directoryPeople,
     fallbackName,
     people,
     person?.address,
+    person?.id,
     person?.slug,
     personIdToMatrixUserId,
   ]);
@@ -1093,7 +1131,7 @@ export function MemberHomeSendTokensWidget({
                   : t('sendTokensNoOne')}
               </p>
             ) : (
-              <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+              <ul className="mt-2 grid grid-cols-4 gap-1 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
                 {previewTargets.map((item) => {
                   const active = item.id === target?.id;
                   const person =

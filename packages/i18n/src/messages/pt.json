@@ -1624,7 +1624,7 @@
     "backToWallet": "Voltar à carteira",
     "available": "Disponível",
     "shortcuts": {
-      "deposit": "Depositar fundos",
+      "receive": "Receber fundos",
       "transfer": "Enviar tokens",
       "redeem": "Resgatar tokens",
       "buyHypha": "Comprar tokens Hypha",
@@ -1632,6 +1632,29 @@
       "activate": "Ativar espaço",
       "migrate": "Migrar tokens",
       "fundSpace": "Financiar um espaço"
+    },
+    "receiveFunds": {
+      "title": "Receber fundos",
+      "subtitle": "Partilhe este código QR ou o endereço da carteira para receber fundos."
+    },
+    "fundSpace": {
+      "description": "Escolha um espaço com endereço de tesouraria para o financiar.",
+      "searchPlaceholder": "Pesquisar espaços...",
+      "searchHint": "Comece a escrever para ver espaços correspondentes.",
+      "noSpacesFound": "Nenhum espaço encontrado.",
+      "selected": "Selecionado",
+      "cta": "Mostrar detalhes do depósito",
+      "loadingSpaces": "A carregar espaços...",
+      "unavailable": "Não há espaços com endereços de tesouraria disponíveis de momento.",
+      "details": {
+        "share": "Partilhe este código QR ou o endereço de tesouraria para financiar este espaço.",
+        "qrAriaLabel": "Código QR do endereço de tesouraria de {spaceName}",
+        "baseOnly": "Certifique-se de enviar fundos na Base.",
+        "addressLabel": "Endereço de tesouraria",
+        "copy": "Copiar endereço",
+        "copied": "Endereço copiado",
+        "invalidAddress": "Formato de endereço de tesouraria inválido."
+      }
     },
     "tabs": {
       "assets": "Ativos",

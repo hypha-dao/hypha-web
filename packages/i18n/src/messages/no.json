@@ -851,7 +851,7 @@
     "backToWallet": "Tilbake til lommeboken",
     "available": "Tilgjengelig",
     "shortcuts": {
-      "deposit": "Sett inn midler",
+      "receive": "Motta midler",
       "transfer": "Send tokens",
       "redeem": "Løs inn tokens",
       "buyHypha": "Kjøp Hypha-tokens",
@@ -859,6 +859,29 @@
       "activate": "Aktiver space",
       "migrate": "Migrer tokens",
       "fundSpace": "Finansier et space"
+    },
+    "receiveFunds": {
+      "title": "Motta midler",
+      "subtitle": "Del denne QR-koden eller lommebokadressen for å motta midler i denne lommeboken."
+    },
+    "fundSpace": {
+      "description": "Velg et space med en treasury-adresse for å finansiere det.",
+      "searchPlaceholder": "Søk i spaces...",
+      "searchHint": "Begynn å skrive for å se matchende spaces.",
+      "noSpacesFound": "Ingen spaces funnet.",
+      "selected": "Valgt",
+      "cta": "Vis innskuddsdetaljer",
+      "loadingSpaces": "Laster spaces...",
+      "unavailable": "Ingen spaces med treasury-adresser er tilgjengelige for øyeblikket.",
+      "details": {
+        "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
+        "qrAriaLabel": "QR-kode for treasury-adresse til {spaceName}",
+        "baseOnly": "Sørg for å sende midler på Base.",
+        "addressLabel": "Treasury-adresse",
+        "copy": "Kopier adresse",
+        "copied": "Adresse kopiert",
+        "invalidAddress": "Ugyldig format på treasury-adresse."
+      }
     },
     "tabs": {
       "assets": "Eiendeler",

@@ -1624,7 +1624,7 @@
     "backToWallet": "Volver a la billetera",
     "available": "Disponible",
     "shortcuts": {
-      "deposit": "Depositar fondos",
+      "receive": "Recibir fondos",
       "transfer": "Enviar tokens",
       "redeem": "Canjear tokens",
       "buyHypha": "Comprar tokens Hypha",
@@ -1632,6 +1632,29 @@
       "activate": "Activar espacio",
       "migrate": "Migrar tokens",
       "fundSpace": "Financiar un espacio"
+    },
+    "receiveFunds": {
+      "title": "Recibir fondos",
+      "subtitle": "Comparte este código QR o la dirección de la cartera para recibir fondos."
+    },
+    "fundSpace": {
+      "description": "Elige un espacio con dirección de tesorería para financiarlo.",
+      "searchPlaceholder": "Buscar espacios...",
+      "searchHint": "Empieza a escribir para ver espacios coincidentes.",
+      "noSpacesFound": "No se encontraron espacios.",
+      "selected": "Seleccionado",
+      "cta": "Mostrar detalles del depósito",
+      "loadingSpaces": "Cargando espacios...",
+      "unavailable": "No hay espacios con direcciones de tesorería disponibles actualmente.",
+      "details": {
+        "share": "Comparte este código QR o la dirección de tesorería para financiar este espacio.",
+        "qrAriaLabel": "Código QR de la dirección de tesorería de {spaceName}",
+        "baseOnly": "Asegúrate de enviar fondos en Base.",
+        "addressLabel": "Dirección de tesorería",
+        "copy": "Copiar dirección",
+        "copied": "Dirección copiada",
+        "invalidAddress": "Formato de dirección de tesorería no válido."
+      }
     },
     "tabs": {
       "assets": "Activos",

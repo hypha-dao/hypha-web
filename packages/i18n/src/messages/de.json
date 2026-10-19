@@ -853,7 +853,7 @@
     "backToWallet": "Zurück zum Wallet",
     "available": "Verfügbar",
     "shortcuts": {
-      "deposit": "Guthaben einzahlen",
+      "receive": "Guthaben empfangen",
       "transfer": "Token senden",
       "redeem": "Token einlösen",
       "buyHypha": "Hypha-Token kaufen",
@@ -861,6 +861,29 @@
       "activate": "Space aktivieren",
       "migrate": "Token migrieren",
       "fundSpace": "Einen Space finanzieren"
+    },
+    "receiveFunds": {
+      "title": "Guthaben empfangen",
+      "subtitle": "Teile diesen QR-Code oder die Wallet-Adresse, um Guthaben in dieser Wallet zu empfangen."
+    },
+    "fundSpace": {
+      "description": "Wähle einen Space mit Treasury-Adresse aus, um ihn zu finanzieren.",
+      "searchPlaceholder": "Spaces suchen...",
+      "searchHint": "Tippe, um passende Spaces zu sehen.",
+      "noSpacesFound": "Keine Spaces gefunden.",
+      "selected": "Ausgewählt",
+      "cta": "Einzahlungsdetails anzeigen",
+      "loadingSpaces": "Spaces werden geladen...",
+      "unavailable": "Derzeit sind keine Spaces mit Treasury-Adressen verfügbar.",
+      "details": {
+        "share": "Teile diesen QR-Code oder die Treasury-Adresse, um diesen Space zu finanzieren.",
+        "qrAriaLabel": "QR-Code der Treasury-Adresse für {spaceName}",
+        "baseOnly": "Sende Guthaben nur im Base-Netzwerk.",
+        "addressLabel": "Treasury-Adresse",
+        "copy": "Adresse kopieren",
+        "copied": "Adresse kopiert",
+        "invalidAddress": "Ungültiges Format der Treasury-Adresse."
+      }
     },
     "tabs": {
       "assets": "Vermögen",

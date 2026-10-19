@@ -853,7 +853,7 @@
     "backToWallet": "Retour au portefeuille",
     "available": "Disponible",
     "shortcuts": {
-      "deposit": "Déposer des fonds",
+      "receive": "Recevoir des fonds",
       "transfer": "Envoyer des jetons",
       "redeem": "Échanger des jetons",
       "buyHypha": "Acheter des jetons Hypha",
@@ -861,6 +861,29 @@
       "activate": "Activer l'espace",
       "migrate": "Migrer les jetons",
       "fundSpace": "Financer un espace"
+    },
+    "receiveFunds": {
+      "title": "Recevoir des fonds",
+      "subtitle": "Partagez ce QR code ou l'adresse du portefeuille pour recevoir des fonds."
+    },
+    "fundSpace": {
+      "description": "Choisissez un espace avec une adresse de trésorerie pour le financer.",
+      "searchPlaceholder": "Rechercher des espaces...",
+      "searchHint": "Commencez à taper pour voir les espaces correspondants.",
+      "noSpacesFound": "Aucun espace trouvé.",
+      "selected": "Sélectionné",
+      "cta": "Afficher les détails du dépôt",
+      "loadingSpaces": "Chargement des espaces...",
+      "unavailable": "Aucun espace avec adresse de trésorerie n'est actuellement disponible.",
+      "details": {
+        "share": "Partagez ce QR code ou l'adresse de trésorerie pour financer cet espace.",
+        "qrAriaLabel": "QR code de l'adresse de trésorerie pour {spaceName}",
+        "baseOnly": "Assurez-vous d'envoyer les fonds sur Base.",
+        "addressLabel": "Adresse de trésorerie",
+        "copy": "Copier l'adresse",
+        "copied": "Adresse copiée",
+        "invalidAddress": "Format d'adresse de trésorerie invalide."
+      }
     },
     "tabs": {
       "assets": "Actifs",

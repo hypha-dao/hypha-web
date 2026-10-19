@@ -852,7 +852,7 @@
     "backToWallet": "Terug naar de portemonnee",
     "available": "Beschikbaar",
     "shortcuts": {
-      "deposit": "Geld storten",
+      "receive": "Geld ontvangen",
       "transfer": "Tokens versturen",
       "redeem": "Tokens inwisselen",
       "buyHypha": "Hypha-tokens kopen",
@@ -860,6 +860,29 @@
       "activate": "Space activeren",
       "migrate": "Tokens migreren",
       "fundSpace": "Financier een space"
+    },
+    "receiveFunds": {
+      "title": "Geld ontvangen",
+      "subtitle": "Deel deze QR-code of walletadres om geld in deze wallet te ontvangen."
+    },
+    "fundSpace": {
+      "description": "Kies een space met een treasury-adres om deze te financieren.",
+      "searchPlaceholder": "Zoek spaces...",
+      "searchHint": "Begin met typen om overeenkomende spaces te zien.",
+      "noSpacesFound": "Geen spaces gevonden.",
+      "selected": "Geselecteerd",
+      "cta": "Toon stortingsdetails",
+      "loadingSpaces": "Spaces laden...",
+      "unavailable": "Er zijn momenteel geen spaces met treasury-adressen beschikbaar.",
+      "details": {
+        "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
+        "qrAriaLabel": "QR-code van het treasury-adres voor {spaceName}",
+        "baseOnly": "Stuur fondsen alleen op Base.",
+        "addressLabel": "Treasury-adres",
+        "copy": "Adres kopiëren",
+        "copied": "Adres gekopieerd",
+        "invalidAddress": "Ongeldig formaat van treasury-adres."
+      }
     },
     "tabs": {
       "assets": "Activa",
