@@ -557,9 +557,10 @@ export function HumanChatPanelMessages({
             el.scrollHeight - el.scrollTop - el.clientHeight;
           stickToBottomRef.current = distanceFromBottom <= threshold;
         }}
-        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-3"
+        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-3"
       >
-        <div className="flex flex-col gap-2">
+        {/* Top padding keeps the floating action bar from clipping at the edge. */}
+        <div className="flex flex-col gap-2 pt-3">
           {messages.length > 0 || hasMoreOlderMessages ? (
             <div
               ref={topSentinelRef}

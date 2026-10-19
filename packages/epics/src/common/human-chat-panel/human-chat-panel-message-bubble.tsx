@@ -1835,6 +1835,8 @@ export function HumanChatPanelMessageBubble({
       className={cn(
         'group relative -mx-4 flex flex-col overflow-visible rounded-none px-4 py-1 transition-colors',
         'hover:bg-foreground/[0.04] focus-within:bg-foreground/[0.04]',
+        // Keep the floating action bar above neighbouring rows while it is open.
+        isActionBarVisible && 'z-20',
         highlightMentionForViewer && 'border-l-2 border-l-accent-9',
         unreadBoundary &&
           !highlightMentionForViewer &&

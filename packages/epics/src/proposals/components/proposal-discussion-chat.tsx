@@ -5,8 +5,10 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { mutate as mutateCache } from 'swr';
 import {
+  RoomEvent,
   RoomStateEvent,
   type MatrixEvent,
+  type Room,
   type RoomMember,
   type RoomState,
 } from 'matrix-js-sdk';
@@ -183,6 +185,12 @@ export function ProposalDiscussionChat({
   const [provisionError, setProvisionError] = React.useState<string | null>(
     null,
   );
+  const [composerError, setComposerError] = React.useState<string | null>(null);
+
+  const refreshRoomMessages = React.useCallback((targetRoomId: string) => {
+    const refreshed = getRoomMessagesRef.current(targetRoomId);
+    if (refreshed) setMessages(refreshed);
+  }, []);
 
   const registeredRoomIdRef = React.useRef<string | null>(null);
   const pendingRoomRef = React.useRef<Promise<string | null> | null>(null);
@@ -503,11 +511,37 @@ export function ProposalDiscussionChat({
       if (state?.roomId !== roomId) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
+    const onLocalEchoUpdated = (
+      ev: MatrixEvent,
+      _r: Room,
+      oldEventId?: string,
+    ) => {
+      if (!oldEventId) return;
+      const newId = ev.getId();
+      if (!newId || oldEventId === newId) return;
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === oldEventId ? { ...message, id: newId } : message,
+        ),
+      );
+      setReplyDraft((draft) =>
+        draft?.messageId === oldEventId
+          ? { ...draft, messageId: newId }
+          : draft,
+      );
+      setEditDraft((draft) =>
+        draft?.messageId === oldEventId
+          ? { ...draft, messageId: newId }
+          : draft,
+      );
+    };
     client.on(RoomStateEvent.Members, bumpMembership);
     client.on(RoomStateEvent.NewMember, bumpMembership);
+    room.on(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
     return () => {
       client.off(RoomStateEvent.Members, bumpMembership);
       client.off(RoomStateEvent.NewMember, bumpMembership);
+      room.off(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
     };
   }, [client, roomId]);
 
@@ -634,11 +668,13 @@ export function ProposalDiscussionChat({
   const handleDeleteMessage = React.useCallback(
     async (messageId: string) => {
       if (!roomId) return;
+      setComposerError(null);
       try {
         await redactRoomEvent({ roomId, eventId: messageId });
         setMessages((prev) =>
           prev.filter((message) => message.id !== messageId),
         );
+        refreshRoomMessages(roomId);
         if (editDraft?.messageId === messageId) {
           setEditDraft(null);
           setInput('');
@@ -648,27 +684,37 @@ export function ProposalDiscussionChat({
         }
       } catch (error) {
         console.warn('[ProposalDiscussionChat] delete failed', error);
+        setComposerError(tChat('messageDeleteFailed'));
+        throw error;
       }
     },
-    [editDraft?.messageId, redactRoomEvent, replyDraft?.messageId, roomId],
+    [
+      editDraft?.messageId,
+      redactRoomEvent,
+      refreshRoomMessages,
+      replyDraft?.messageId,
+      roomId,
+      tChat,
+    ],
   );
 
   const handleToggleReaction = React.useCallback(
     async (messageId: string, emoji: string) => {
       if (!roomId) return;
+      setComposerError(null);
       try {
         await toggleReaction({
           roomId,
           targetEventId: messageId,
           key: emoji,
         });
-        const refreshed = getRoomMessages(roomId);
-        if (refreshed) setMessages(refreshed);
+        refreshRoomMessages(roomId);
       } catch (error) {
         console.warn('[ProposalDiscussionChat] reaction failed', error);
+        setComposerError(tChat('reactionToggleFailed'));
       }
     },
-    [getRoomMessages, roomId, toggleReaction],
+    [refreshRoomMessages, roomId, tChat, toggleReaction],
   );
 
   const sendMessage = React.useCallback(async () => {
@@ -681,6 +727,7 @@ export function ProposalDiscussionChat({
     const savedReply = replyDraft;
     const savedEdit = editDraft;
     const savedInput = input;
+    setComposerError(null);
     try {
       const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
         input,
@@ -713,6 +760,7 @@ export function ProposalDiscussionChat({
           },
         });
       }
+      refreshRoomMessages(targetRoom);
       setInput('');
       setReplyDraft(null);
       setEditDraft(null);
@@ -721,6 +769,7 @@ export function ProposalDiscussionChat({
       setInput(savedInput);
       setReplyDraft(savedReply);
       setEditDraft(savedEdit);
+      setComposerError(tChat('sendFailed'));
     }
   }, [
     authToken,
@@ -731,10 +780,12 @@ export function ProposalDiscussionChat({
     ensureRoom,
     input,
     mentionSanitizedLabelToUserId,
+    refreshRoomMessages,
     replyDraft,
     roomId,
     sendMatrixMessage,
     spaceSlug,
+    tChat,
     title,
   ]);
 
@@ -780,7 +831,7 @@ export function ProposalDiscussionChat({
         </p>
       ) : (
         <>
-          <div className="flex h-[22rem] min-h-0 flex-col overflow-hidden">
+          <div className="flex h-[22rem] min-h-0 flex-col">
             <HumanChatPanelMessages
               messages={panelMessages}
               roomId={roomId}
@@ -799,9 +850,17 @@ export function ProposalDiscussionChat({
               </p>
             ) : null}
           </div>
+          {composerError ? (
+            <p className="text-1 text-error-11" role="alert">
+              {composerError}
+            </p>
+          ) : null}
           <HumanChatPanelChatBar
             value={input}
-            onChange={setInput}
+            onChange={(next) => {
+              setComposerError(null);
+              setInput(next);
+            }}
             onSend={sendMessage}
             placeholder={tCoherence('saySomething')}
             mentionCandidates={mentionCandidates}
@@ -827,6 +886,7 @@ export function ProposalDiscussionChat({
                     onDismiss: () => {
                       setEditDraft(null);
                       setInput('');
+                      setComposerError(null);
                     },
                   }
                 : undefined
