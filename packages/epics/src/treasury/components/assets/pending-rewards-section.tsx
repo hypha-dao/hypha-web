@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { type Person, usePendingRewards } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
 import { useUserAssetsSection } from '../../hooks';
@@ -109,6 +109,22 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       </a>
     ) : null;
 
+  const rewardsNote = (
+    <p className="max-w-[46ch] border-l border-border pl-4 text-2 leading-relaxed text-neutral-11">
+      {tProfile('rewardsExplanation')}
+    </p>
+  );
+
+  const rewardsColumn = (card: ReactNode) => (
+    <div className="mt-1 flex w-full flex-col items-start gap-5 lg:flex-row lg:items-center lg:gap-8">
+      <div className="flex w-full max-w-sm shrink-0 flex-col items-start gap-3">
+        {card}
+        {migrateLink}
+      </div>
+      {rewardsNote}
+    </div>
+  );
+
   const onHandleClaim = useCallback(async () => {
     try {
       const txHash = await claim();
@@ -148,29 +164,25 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         </Button>
       </div>
       <div className="w-full">
-        {isLoading ? (
-          <div className="mt-1 flex w-full max-w-sm flex-col items-start gap-3">
-            <AssetCard isLoading layout="solo" />
-            {migrateLink}
-          </div>
-        ) : !isAuthenticated ? (
-          <Empty>
-            <p>{tProfile('noRewardsFoundForUser')}</p>
-          </Empty>
-        ) : (
-          <div className="mt-1 flex w-full max-w-sm flex-col items-start gap-3">
-            <AssetCard
-              {...(hyphaTokenAsset ?? {
-                ...HYPHA_REWARDS_FALLBACK,
-                address: hyphaTokenAddress,
-                value: 0,
-              })}
-              isLoading={isLoadingAssets}
-              layout="solo"
-            />
-            {migrateLink}
-          </div>
-        )}
+        {isLoading
+          ? rewardsColumn(<AssetCard isLoading layout="solo" />)
+          : !isAuthenticated
+          ? rewardsColumn(
+              <Empty>
+                <p>{tProfile('noRewardsFoundForUser')}</p>
+              </Empty>,
+            )
+          : rewardsColumn(
+              <AssetCard
+                {...(hyphaTokenAsset ?? {
+                  ...HYPHA_REWARDS_FALLBACK,
+                  address: hyphaTokenAddress,
+                  value: 0,
+                })}
+                isLoading={isLoadingAssets}
+                layout="solo"
+              />,
+            )}
       </div>
     </div>
   );

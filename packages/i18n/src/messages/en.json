@@ -2075,6 +2075,7 @@
     "claimOnlyOnPersonalPage": "Claim is only available on your personal page",
     "rewardValueMustBeGreaterThanZero": "The reward value must be greater than 0",
     "noRewardsFoundForUser": "No rewards found for this user",
+    "rewardsExplanation": "When you buy and hold HYPHA tokens in your wallet, you earn rewards every time a Space pays its network contribution in HYPHA. The more Spaces contribute as the Hypha network grows, the more rewards are generated for Hypha token holders.",
     "buyHypha": "Buy HYPHA",
     "buySpaceTokens": "Buy Space tokens",
     "actions": "Actions",

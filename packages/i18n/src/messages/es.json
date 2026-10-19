@@ -2261,6 +2261,7 @@
     "claimOnlyOnPersonalPage": "El reclamo solo está disponible en su página personal",
     "rewardValueMustBeGreaterThanZero": "El valor de la recompensa debe ser mayor que 0.",
     "noRewardsFoundForUser": "No se encontraron recompensas para este usuario.",
+    "rewardsExplanation": "Cuando compra y conserva tokens HYPHA en su billetera, gana recompensas cada vez que un Space paga su contribución a la red en HYPHA. Cuantos más Spaces contribuyan a medida que crece la red Hypha, más recompensas se generan para quienes tienen tokens Hypha.",
     "buyHypha": "Comprar HYPHA",
     "buySpaceTokens": "Comprar tokens del espacio",
     "actions": "Acciones",

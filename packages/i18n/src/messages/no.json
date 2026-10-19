@@ -2046,6 +2046,7 @@
     "claimOnlyOnPersonalPage": "Uthenting er kun tilgjengelig på din personlige side",
     "rewardValueMustBeGreaterThanZero": "Belønningsverdien må være større enn 0",
     "noRewardsFoundForUser": "Ingen belønninger funnet for denne brukeren",
+    "rewardsExplanation": "Når du kjøper og holder HYPHA-tokens i lommeboken din, tjener du belønninger hver gang et Space betaler nettverksbidraget sitt i HYPHA. Jo flere Spaces som bidrar etter hvert som Hypha-nettverket vokser, desto flere belønninger genereres for de som holder Hypha-tokens.",
     "buyHypha": "Kjøp HYPHA",
     "buySpaceTokens": "Kjøp rom-tokener",
     "actions": "Handlinger",
