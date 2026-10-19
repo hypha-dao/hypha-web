@@ -32,7 +32,7 @@ export default function ChatPage() {
       ) : (
         <ChatDetail
           creator={{
-            id: creator?.id ?? conversation?.creatorId,
+            id: creator?.id ?? conversation?.creatorId ?? undefined,
             avatar: creator?.avatarUrl || '',
             name: creator?.name || '',
             surname: creator?.surname || '',
