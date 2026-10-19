@@ -773,7 +773,13 @@ function DistributionOverTimeChart({
   );
 }
 
-function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
+function ProposalsPieWidget({
+  data,
+  embedded = false,
+}: {
+  data: ActivityResponse['proposals'];
+  embedded?: boolean;
+}) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const pieData = React.useMemo(
     () => [
@@ -820,19 +826,25 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .padAngle(DONUT_PAD_ANGLE);
 
   return (
-    <section className={`${CHART_SECTION_CLASS} h-full`}>
-      <div className="flex flex-col gap-1 pb-3">
-        <CardTitle className="text-4 font-medium tracking-tight">
+    <section
+      className={
+        embedded
+          ? 'flex h-full min-h-0 min-w-0 flex-col'
+          : `${CHART_SECTION_CLASS} h-full`
+      }
+    >
+      <div className="flex flex-col gap-0.5 pb-2">
+        <CardTitle className="text-3 font-medium tracking-tight">
           {tTokenHoldings('proposals.title')}
         </CardTitle>
         <CardDescription className="text-1 text-muted-foreground">
           {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </div>
-      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2">
         <svg
           viewBox="-120 -120 240 240"
-          className="h-[200px] w-full max-w-[220px] sm:h-[220px]"
+          className="h-[132px] w-full max-w-[160px]"
           aria-label={tTokenHoldings('proposals.ariaLabel')}
         >
           {arcs.map((slice, index) => (
@@ -892,9 +904,11 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
 function MembersEvolutionWidget({
   monthly,
   locale,
+  embedded = false,
 }: {
   monthly: ActivityResponse['members']['monthly'];
   locale: string;
+  embedded?: boolean;
 }) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const chartMonthly = React.useMemo(
@@ -921,8 +935,8 @@ function MembersEvolutionWidget({
   }, [chartMonthly]);
 
   const width = 760;
-  const height = 340;
-  const margin = { top: 18, right: 22, bottom: 56, left: 44 };
+  const height = 210;
+  const margin = { top: 8, right: 16, bottom: 36, left: 36 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -959,15 +973,21 @@ function MembersEvolutionWidget({
     .curve(d3.curveMonotoneX);
 
   return (
-    <section className={`${CHART_SECTION_CLASS} h-full`}>
-      <div className="flex flex-col gap-1 pb-3">
-        <CardTitle className="text-4 font-medium tracking-tight">
+    <section
+      className={
+        embedded
+          ? 'flex h-full min-h-0 min-w-0 flex-col'
+          : `${CHART_SECTION_CLASS} h-full min-h-0`
+      }
+    >
+      <div className="flex flex-col gap-0.5 pb-2">
+        <CardTitle className="text-3 font-medium tracking-tight">
           {tTokenHoldings('members.title')}
         </CardTitle>
         <CardDescription className="text-1 text-muted-foreground">
           {tTokenHoldings('members.subtitle')}
         </CardDescription>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 text-1 text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-1 text-muted-foreground">
           <span className="tabular-nums">
             <span className="text-foreground">{totals.people}</span>{' '}
             {tTokenHoldings('members.people')}
@@ -986,11 +1006,12 @@ function MembersEvolutionWidget({
           </span>
         </div>
       </div>
-      <div className="flex flex-1 flex-col space-y-3">
-        <div className="overflow-x-auto">
+      <div className="flex min-h-0 flex-1 flex-col space-y-3">
+        <div className="min-h-0 flex-1 overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="min-w-[620px] w-full"
+            preserveAspectRatio="xMidYMid meet"
+            className="h-[150px] w-full lg:h-full"
           >
             <g transform={`translate(${margin.left},${margin.top})`}>
               {memberAxisTicks.map((tick) => (
@@ -1056,7 +1077,7 @@ function MembersEvolutionWidget({
                     />
                     <text
                       x={monthX}
-                      y={innerHeight + 20}
+                      y={innerHeight + 16}
                       textAnchor="middle"
                       className="fill-muted-foreground text-[10px]"
                     >
@@ -1549,11 +1570,7 @@ export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
   );
 }
 
-export function HomeTokenHoldingsDashboard({
-  spaceSlug,
-}: {
-  spaceSlug: string;
-}) {
+export function SpaceGovernanceCharts({ spaceSlug }: { spaceSlug: string }) {
   const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
     useAccessTokenReady();
   const locale = useLocale();
@@ -1568,8 +1585,6 @@ export function HomeTokenHoldingsDashboard({
       ? { '--space-accent': spaceAccent }
       : null),
   } as React.CSSProperties;
-  // Network-gated overview APIs need a Bearer token. Wait for Privy + token
-  // and key SWR by auth so we don't cache a premature 401 as a sticky error.
   const authReady = !isAuthLoading && accessTokenReady;
   const authKey = isAuthenticated ? 'auth' : 'anon';
   const {
@@ -1581,69 +1596,55 @@ export function HomeTokenHoldingsDashboard({
     fetchOverviewActivity(spaceSlug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 120_000 },
   );
-  // SWR reports isLoading=false when the key is null — treat auth wait as loading.
   const activityLoading = !authReady || activityLoadingRaw;
-  const hasEnergyData = Boolean(activityData?.energy.available);
-  // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
-  const showEnergyWidget = false && hasEnergyData;
-  const showPayingSpaces = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
-  // Temporarily hidden for deployment; keep components wired for quick re-enable.
-  const showSignalsWidget = false;
+
+  if (activityLoading) return null;
+  if (activityError) {
+    return (
+      <p className="text-1 text-muted-foreground" style={chartStyle}>
+        {tTokenHoldings('activity.error')}
+      </p>
+    );
+  }
+  if (!activityData) return null;
 
   return (
-    <div className="flex flex-col gap-8" style={chartStyle}>
-      <section className="flex flex-col gap-4">
-        <DashboardSectionTitle>
-          {tTokenHoldings('filters.activity')}
-        </DashboardSectionTitle>
-        {!activityLoading && activityError ? (
-          <section className={`${CHART_SECTION_CLASS} gap-1`}>
-            <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
-            <CardDescription>
-              {tTokenHoldings('activity.error')}
-            </CardDescription>
-          </section>
-        ) : null}
+    <div
+      className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+      style={chartStyle}
+    >
+      <div className="relative min-w-0">
+        <div className="flex min-h-0 flex-col lg:absolute lg:inset-0">
+          <MembersEvolutionWidget
+            embedded
+            monthly={activityData.members.monthly}
+            locale={locale}
+          />
+        </div>
+      </div>
+      <div className="flex min-h-0 min-w-0 flex-col lg:border-s lg:border-border lg:ps-4">
+        <ProposalsPieWidget embedded data={activityData.proposals} />
+      </div>
+    </div>
+  );
+}
 
-        {!activityLoading && !activityError && activityData ? (
-          <div
-            className={
-              showSignalsWidget
-                ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                : 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
-            }
-          >
-            <div className="grid min-w-0 content-start gap-4">
-              {showSignalsWidget ? (
-                <SignalsPulseMapWidget signals={activityData.signals} />
-              ) : null}
-              <MembersEvolutionWidget
-                monthly={activityData.members.monthly}
-                locale={locale}
-              />
-            </div>
-            <div className="flex min-h-0 min-w-0 flex-col">
-              <ProposalsPieWidget data={activityData.proposals} />
-            </div>
-          </div>
-        ) : null}
-      </section>
+export function HomeTokenHoldingsDashboard({
+  spaceSlug,
+}: {
+  spaceSlug: string;
+}) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const showPayingSpaces = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
 
+  return (
+    <div className="flex flex-col gap-8">
       {showPayingSpaces ? (
         <section className="flex flex-col gap-4">
           <DashboardSectionTitle>
             {tTokenHoldings('filters.payingSpaces')}
           </DashboardSectionTitle>
           <PayingSpacesDashboard spaceSlug={spaceSlug} />
-        </section>
-      ) : null}
-
-      {showEnergyWidget ? (
-        <section className={`${CHART_SECTION_CLASS} gap-1`}>
-          <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
-          <CardDescription>
-            {tTokenHoldings('energy.description')}
-          </CardDescription>
         </section>
       ) : null}
     </div>

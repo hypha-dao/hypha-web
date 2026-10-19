@@ -5239,6 +5239,7 @@
     "briefNext": "Ensuite : {title}",
     "briefDiagnosis": "{type} est le signal le plus fort de cet espace.",
     "lastActivityTitle": "Dernière activité",
+    "governanceTitle": "Gouvernance",
     "signalsWeekTitle": "Nouveau cette semaine",
     "signalsWeekEmpty": "Aucun nouveau signal cette semaine.",
     "insightsTitle": "Ce trimestre",

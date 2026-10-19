@@ -5230,6 +5230,7 @@
     "briefNext": "Следно: {title}",
     "briefDiagnosis": "{type} е најсилниот сигнал во овој простор.",
     "lastActivityTitle": "Последна активност",
+    "governanceTitle": "Управување",
     "signalsWeekTitle": "Ново оваа недела",
     "signalsWeekEmpty": "Нема нови сигнали оваа недела.",
     "insightsTitle": "Овој квартал",

@@ -5248,6 +5248,7 @@
     "briefNext": "Neste: {title}",
     "briefDiagnosis": "{type} er det sterkeste signalet i dette rommet.",
     "lastActivityTitle": "Siste aktivitet",
+    "governanceTitle": "Styring",
     "signalsWeekTitle": "Nytt denne uken",
     "signalsWeekEmpty": "Ingen nye signaler denne uken.",
     "insightsTitle": "Dette kvartalet",

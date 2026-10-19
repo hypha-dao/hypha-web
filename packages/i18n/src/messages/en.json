@@ -5286,6 +5286,7 @@
     "briefNext": "Next: {title}",
     "briefDiagnosis": "{type} is the strongest signal in this space.",
     "lastActivityTitle": "Last activity",
+    "governanceTitle": "Governance",
     "signalsWeekTitle": "New this week",
     "signalsWeekEmpty": "No new signals this week.",
     "insightsTitle": "This quarter",

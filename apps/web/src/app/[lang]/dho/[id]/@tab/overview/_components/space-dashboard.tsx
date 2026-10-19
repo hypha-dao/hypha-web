@@ -34,6 +34,14 @@ import { OverviewMonth } from './overview-month';
 import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
 
+const SpaceGovernanceCharts = dynamic(
+  () =>
+    import('./home-token-holdings-dashboard').then(
+      (mod) => mod.SpaceGovernanceCharts,
+    ),
+  { ssr: false },
+);
+
 const SpaceTokenHolderDiagrams = dynamic(
   () =>
     import('./home-token-holdings-dashboard').then(
@@ -870,6 +878,14 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
           />
         </div>
       </div>
+
+      <Panel
+        title={t('governanceTitle')}
+        href={`${home}/agreements`}
+        openLabel={t('open')}
+      >
+        <SpaceGovernanceCharts spaceSlug={spaceSlug} />
+      </Panel>
 
       {showEcosystem ? (
         <Panel

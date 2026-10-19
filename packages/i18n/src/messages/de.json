@@ -5243,6 +5243,7 @@
     "briefNext": "Als Nächstes: {title}",
     "briefDiagnosis": "{type} ist das stärkste Signal in diesem Space.",
     "lastActivityTitle": "Letzte Aktivität",
+    "governanceTitle": "Governance",
     "signalsWeekTitle": "Neu diese Woche",
     "signalsWeekEmpty": "Keine neuen Signale diese Woche.",
     "insightsTitle": "Dieses Quartal",
