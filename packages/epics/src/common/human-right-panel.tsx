@@ -2118,7 +2118,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const room = client.getRoom(roomId);
       if (!room) return [];
       const list: ChatMentionCandidate[] = [];
-      for (const member of room.getJoinedMembers()) {
+      for (const member of room.getMembers()) {
+        const membership = member.membership;
+        if (membership !== 'join' && membership !== 'invite') continue;
         const userId = member.userId?.trim();
         if (!userId) continue;
         if (currentUserId && userId === currentUserId) continue;
@@ -2743,6 +2745,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       t,
     ],
   );
+
+  useEffect(() => {
+    if (!isDirectConversation || !client || !roomId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+    let cancelled = false;
+    void room.loadMembersIfNeeded().then(() => {
+      if (!cancelled) setMentionMembershipEpoch((n) => n + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, isDirectConversation, roomId]);
 
   useEffect(() => {
     if (!client || !roomId) return;
