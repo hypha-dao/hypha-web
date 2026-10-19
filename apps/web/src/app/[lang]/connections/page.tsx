@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MyConnections } from '@hypha-platform/epics';
 import { Container, Heading } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
@@ -29,7 +30,9 @@ export default async function ConnectionsPage() {
           <span>{t('titleLineOne')}</span>
           <span>{t('titleLineTwo')}</span>
         </Heading>
-        <MyConnections />
+        <Suspense fallback={null}>
+          <MyConnections />
+        </Suspense>
       </Container>
     </div>
   );

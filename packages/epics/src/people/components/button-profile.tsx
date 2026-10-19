@@ -36,6 +36,7 @@ import {
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
+import { useConversationUnreadCount } from './my-connections';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -141,6 +142,15 @@ export const ButtonProfile = ({
 }: ButtonProfileProps) => {
   const t = useTranslations('Navigation');
   const tCommon = useTranslations('Common');
+  const tConnections = useTranslations('Connections');
+  const unreadMessages = useConversationUnreadCount();
+  const messageBadge = (href?: string) =>
+    href?.includes('/connections') ? unreadMessages : 0;
+  const messageAria = (href?: string, label?: string) => {
+    const badge = messageBadge(href);
+    if (!label || badge <= 0) return undefined;
+    return `${label}, ${tConnections('unread', { count: badge })}`;
+  };
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [networkFeedbackOpen, setNetworkFeedbackOpen] = useState(false);
@@ -696,6 +706,8 @@ export const ButtonProfile = ({
                 href={item.href}
                 label={item.label}
                 icon={resolveNavItemIcon(item.href)}
+                badge={messageBadge(item.href)}
+                ariaLabel={messageAria(item.href, item.label)}
               />
             ))}
             {showNetworkFeedback ? (
@@ -772,6 +784,8 @@ export const ButtonProfile = ({
                   href={item.href}
                   label={item.label}
                   icon={resolveNavItemIcon(item.href)}
+                  badge={messageBadge(item.href)}
+                  ariaLabel={messageAria(item.href, item.label)}
                 />
               ))}
             </div>

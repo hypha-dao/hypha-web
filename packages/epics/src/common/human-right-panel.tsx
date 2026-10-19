@@ -78,6 +78,7 @@ import {
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { Empty } from './empty';
+import { notifyConversationUnreadChanged } from '../people/components/conversation-unread-event';
 import { getRootSpace } from './get-root-space';
 
 import {
@@ -4083,6 +4084,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (getMessageReplaceTargetEventId(ev) != null) continue;
         try {
           await markRoomRead(targetRoomId, id);
+          notifyConversationUnreadChanged();
           setUnreadBump((n) => n + 1);
           setAggregateMentionBump((n) => n + 1);
         } catch {
@@ -4125,14 +4127,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [markChatTimelineRead]);
 
   useEffect(() => {
-    if (mode !== 'space') return;
+    const isPrivateMessageLink = mode === 'coherence';
+    if (mode !== 'space' && !isPrivateMessageLink) return;
     /** Signal deep links (`?signal=`) are handled by the dedicated effect below. */
     if (readSignalDeepLinkSlug(searchParams)) return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
     if (!qpMsg || !roomId) return;
-    /** Short link: `?msg=` only (same space room). Legacy: `?chat=` + `msg`. */
-    const sameRoom = (!qpChat && roomId) || (qpChat && qpChat === roomId);
+    /**
+     * Space: `?msg=` alone (current room) or legacy `?chat=` + `msg`.
+     * Private message: `?chat=` must be this room.
+     */
+    const sameRoom = isPrivateMessageLink
+      ? Boolean(qpChat && qpChat === roomId)
+      : (!qpChat && Boolean(roomId)) || Boolean(qpChat && qpChat === roomId);
     if (!sameRoom) return;
 
     openHumanChatPanel();
@@ -4389,13 +4397,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
    * When `?msg=` is present, retry locating the row after the timeline grows (initial effect may run
    * before messages arrive). One rAF per `messages.length` change — not merged list length tricks.
    */
+  const directChatRoomId =
+    mode === 'coherence' ? searchParams?.get('chat')?.trim() : undefined;
   const deepLinkEventId =
-    mode === 'space' ? searchParams?.get('msg')?.trim() : undefined;
+    mode === 'space' || directChatRoomId
+      ? searchParams?.get('msg')?.trim()
+      : undefined;
   useEffect(() => {
     if (!deepLinkEventId || !roomId) return;
     const qpChat = searchParams?.get('chat')?.trim();
-    const sameRoom =
-      (!qpChat && Boolean(roomId)) || (qpChat && qpChat === roomId);
+    const sameRoom = directChatRoomId
+      ? qpChat === roomId
+      : (!qpChat && Boolean(roomId)) || Boolean(qpChat && qpChat === roomId);
     if (!sameRoom) return;
 
     let cancelled = false;
@@ -4438,6 +4451,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
   }, [
     deepLinkEventId,
+    directChatRoomId,
     roomId,
     messages.length,
     mode,
@@ -5555,6 +5569,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       unreadChatState.unreadNotificationCount
                     }
                     unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                    viewportActive={sidebarOpen && activeTab === 'chat'}
                     onReachedTimelineBottom={handleReachedTimelineBottom}
                     onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
                     scrollTargetEventId={scrollToEventId}

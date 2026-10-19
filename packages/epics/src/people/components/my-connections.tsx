@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import {
@@ -22,6 +23,10 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Phone, Search, X } from 'lucide-react';
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
+import {
+  CONVERSATION_UNREAD_EVENT,
+  notifyConversationUnreadChanged,
+} from './conversation-unread-event';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   MemberHomePeople,
@@ -233,6 +238,8 @@ export function sumConversationUnread(client: MatrixClient | null) {
   );
 }
 
+export { notifyConversationUnreadChanged };
+
 export function useConversationUnreadCount() {
   const { client } = useMatrix();
   const [count, setCount] = useState(0);
@@ -250,10 +257,14 @@ export function useConversationUnreadCount() {
     client.on(ClientEvent.Sync, refresh);
     client.on(RoomEvent.Timeline, refresh);
     client.on(RoomEvent.Receipt, refresh);
+    client.on(RoomEvent.AccountData, refresh);
+    window.addEventListener(CONVERSATION_UNREAD_EVENT, refresh);
     return () => {
       client.removeListener(ClientEvent.Sync, refresh);
       client.removeListener(RoomEvent.Timeline, refresh);
       client.removeListener(RoomEvent.Receipt, refresh);
+      client.removeListener(RoomEvent.AccountData, refresh);
+      window.removeEventListener(CONVERSATION_UNREAD_EVENT, refresh);
     };
   }, [client]);
 
@@ -284,6 +295,8 @@ export function MyConnections() {
   const { client, isMatrixAvailable, createRoom } = useMatrix();
   const { startAudioForRoom } = useGlobalCallDock();
   const { openCoherenceChat } = useHumanChatPanel();
+  const searchParams = useSearchParams();
+  const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
@@ -328,6 +341,15 @@ export function MyConnections() {
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds: listed.map((person) => person.id),
   });
+
+  useEffect(() => {
+    const chat = searchParams.get('chat')?.trim();
+    if (!chat || searchParams.get('signal')?.trim()) return;
+    const key = `${chat}:${searchParams.get('msg')?.trim() ?? ''}`;
+    if (openedDirectChatRef.current === key) return;
+    openedDirectChatRef.current = key;
+    openCoherenceChat(chat, '', '', null, null);
+  }, [openCoherenceChat, searchParams]);
 
   useEffect(() => {
     const term = query.trim();
@@ -390,9 +412,11 @@ export function MyConnections() {
     client.on(RoomEvent.Timeline, refresh);
     client.on(RoomEvent.Receipt, refresh);
     client.on(RoomEvent.MyMembership, refresh);
+    window.addEventListener(CONVERSATION_UNREAD_EVENT, refresh);
     const unsubscribeSignalRooms = subscribeSignalThreadRooms(refresh);
     return () => {
       unsubscribeSignalRooms();
+      window.removeEventListener(CONVERSATION_UNREAD_EVENT, refresh);
       client.removeListener(ClientEvent.Sync, onSync);
       client.removeListener(RoomEvent.Timeline, refresh);
       client.removeListener(RoomEvent.Receipt, refresh);

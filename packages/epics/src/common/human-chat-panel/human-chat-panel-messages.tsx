@@ -158,6 +158,8 @@ type HumanChatPanelMessagesProps = {
   unreadNotificationCount?: number;
   /** Called when the scroll viewport reaches the bottom (mark read). */
   onReachedTimelineBottom?: () => void;
+  /** When false the thread is off-screen, so reaching the bottom must not count as read. */
+  viewportActive?: boolean;
   /** User clicked “Mark as read” in the banner. */
   onMarkAsReadFromBanner?: () => void;
   /** Scroll this Matrix event id into view when set (e.g. mention inbox). */
@@ -194,6 +196,7 @@ export function HumanChatPanelMessages({
   unreadCountIsCapped = false,
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
+  viewportActive = true,
   onMarkAsReadFromBanner,
   scrollTargetEventId,
   onConsumedScrollTarget,
@@ -468,21 +471,36 @@ export function HumanChatPanelMessages({
   useEffect(() => {
     const root = containerRef.current;
     const sentinel = bottomSentinelRef.current;
-    if (!root || !sentinel || !onReachedTimelineBottom) return;
+    if (!viewportActive || !root || !sentinel || !onReachedTimelineBottom) {
+      return;
+    }
 
+    const bottomIsVisible = () => {
+      const rootRect = root.getBoundingClientRect();
+      if (rootRect.height < 8 || rootRect.width < 8) return false;
+      const rect = sentinel.getBoundingClientRect();
+      return rect.top <= rootRect.bottom && rect.bottom >= rootRect.top;
+    };
+    const markIfSeen = () => {
+      if (bottomIsVisible()) onReachedTimelineBottom();
+    };
+
+    markIfSeen();
+    const frame = requestAnimationFrame(markIfSeen);
     const io = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            onReachedTimelineBottom();
-          }
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onReachedTimelineBottom();
         }
       },
-      { root, threshold: 0.25 },
+      { root, threshold: 0.01 },
     );
     io.observe(sentinel);
-    return () => io.disconnect();
-  }, [onReachedTimelineBottom, timelineRows.length]);
+    return () => {
+      cancelAnimationFrame(frame);
+      io.disconnect();
+    };
+  }, [onReachedTimelineBottom, timelineRows.length, viewportActive]);
 
   const messageIndexForStreaming = displayMessages.length - 1;
 
