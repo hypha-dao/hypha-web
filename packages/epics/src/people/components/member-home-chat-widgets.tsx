@@ -81,6 +81,16 @@ const NOTES: NoteKey[] = [
   'sendTokensWithCare',
 ];
 
+function randomNoteIndex(exclude?: number) {
+  if (NOTES.length <= 1) return 0;
+  let next = Math.floor(Math.random() * NOTES.length);
+  if (exclude == null || NOTES.length < 2) return next;
+  while (next === exclude) {
+    next = Math.floor(Math.random() * NOTES.length);
+  }
+  return next;
+}
+
 function personName(
   person: {
     name: string | null;
@@ -633,7 +643,7 @@ export function MemberHomeSendTokensWidget({
   ]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
-  const [noteIndex, setNoteIndex] = useState(0);
+  const [noteIndex, setNoteIndex] = useState(() => randomNoteIndex());
   const [memoDraft, setMemoDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fundingKind, setFundingKind] = useState<'funds' | 'hypha' | null>(
@@ -1352,7 +1362,7 @@ export function MemberHomeSendTokensWidget({
               type="button"
               className="text-neutral-10"
               onClick={() => {
-                setNoteIndex((index) => (index + 1) % NOTES.length);
+                setNoteIndex((index) => randomNoteIndex(index));
                 setMemoDraft(null);
               }}
             >
