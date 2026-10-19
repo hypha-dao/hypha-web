@@ -248,7 +248,7 @@ export function MobileTabBar({
           case 'calendar':
             return tCommon('Calendar');
           case 'coherence':
-            return tCommon('Coherence');
+            return tCommon('Signals');
           case 'pipeline':
             return tCommon('Pipeline');
           case 'energy':

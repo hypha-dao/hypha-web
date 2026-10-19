@@ -65,7 +65,7 @@ describe('buildSpaceSectionNavItems', () => {
     ]);
   });
 
-  it('opens an energy community on energy and keeps the space dashboard beside it', () => {
+  it('keeps the space dashboard first and energy directly under it', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       pipelineEnabled: true,
@@ -73,8 +73,8 @@ describe('buildSpaceSectionNavItems', () => {
       memoryEnabled: true,
     });
     expect(items.map((item) => item.key)).toEqual([
-      'energy',
       'overview',
+      'energy',
       'coherence',
       'pipeline',
       'agreements',

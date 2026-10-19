@@ -84,8 +84,8 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * An energy community opens on Energy. Overview stays next to it so the space dashboard remains one step away.
- * Menu: Energy (when on) · Overview · Signals · Deals (when on) · Agreements · Members · Treasury · Space memory
+ * An energy community keeps Overview first. Energy sits directly under it.
+ * Menu: Overview · Energy (when on) · Signals · Deals (when on) · Agreements · Members · Treasury · Space memory
  * Calendar, rewards, and ecosystem stay on the space dashboard.
  */
 export function buildSpaceSectionNavItems({
@@ -109,15 +109,15 @@ export function buildSpaceSectionNavItems({
 
   const items: SpaceSectionNavItem[] = [];
 
-  if (energyEnabled) {
-    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
-  }
-
   const overview = navItem('overview', lang, spaceSlug, isActive('overview'));
   if (energyEnabled) {
     overview.href = `${overview.href}?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`;
   }
   items.push(overview);
+
+  if (energyEnabled) {
+    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
+  }
 
   if (coherenceEnabled) {
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
@@ -144,7 +144,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Energy, Overview, Signals, Agreements, Members, Treasury, and Space memory.
+ * Overview, Energy, Signals, Agreements, Members, Treasury, and Space memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];
