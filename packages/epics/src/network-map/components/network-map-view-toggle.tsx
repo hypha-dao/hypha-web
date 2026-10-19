@@ -2,7 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { LayoutList, ListOrdered, Map } from 'lucide-react';
+import { LayoutList, Map } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   segmentedListClass,
@@ -75,14 +75,6 @@ export function NetworkMapViewToggle({
         >
           <Map className="size-3.5 shrink-0" aria-hidden />
           {t('mapView')}
-        </TabsTrigger>
-        <TabsTrigger
-          value="ranking"
-          variant="switch"
-          className={segmentedTriggerClass}
-        >
-          <ListOrdered className="size-3.5 shrink-0" aria-hidden />
-          {t('rankingView')}
         </TabsTrigger>
       </TabsList>
     </Tabs>

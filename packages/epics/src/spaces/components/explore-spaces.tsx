@@ -276,7 +276,7 @@ export function ExploreSpaces({
 
   const viewFromUrl = (params: URLSearchParams): NetworkMapView => {
     const view = params.get('view');
-    if (view === 'list' || view === 'map' || view === 'ranking') {
+    if (view === 'list' || view === 'map') {
       return view;
     }
     return 'overview';
@@ -437,7 +437,8 @@ export function ExploreSpaces({
     !enableNetworkMap || view === 'list' || view === 'overview';
   const showMapStage = view === 'map' || view === 'overview';
   const showSpacesList = view === 'list' || view === 'overview';
-  const showRanking = !enableNetworkMap || view === 'ranking';
+  // Ranking stays in the data layer. The tab is hidden until it is ready to show.
+  const showRanking = false;
 
   const pageTitle = (
     <>
