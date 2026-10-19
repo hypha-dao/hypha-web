@@ -21,8 +21,27 @@
   }
 }
 
+.mycelium-zoom {
+  animation: mycelium-zoom-in 520ms cubic-bezier(0.16, 0.84, 0.24, 1);
+}
+
+@keyframes mycelium-zoom-in {
+  from {
+    opacity: 0.2;
+    transform: scale(0.42);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mycelium-flow {
+    animation: none;
+  }
+
+  .mycelium-zoom {
     animation: none;
   }
 }

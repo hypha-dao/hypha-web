@@ -35,6 +35,7 @@ export * from './hypha-network-feedback-dialog';
 export * from './ecosystem-navigation-shell';
 export * from './screen-toolbar';
 export * from './ai-panel';
+export { useOpenSpacePublicChat } from './use-open-space-public-chat';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
 export {
