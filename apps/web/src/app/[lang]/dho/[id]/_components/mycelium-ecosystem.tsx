@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import * as d3 from 'd3';
-import { useAuthentication } from '@hypha-platform/authentication';
+import { useAccessTokenReady } from '@hypha-platform/authentication';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   type Person,
@@ -743,7 +743,7 @@ export function MyceliumEcosystem({
   const t = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
   const format = useFormatter();
-  const { getAccessToken } = useAuthentication();
+  const { getAccessToken, accessTokenReady } = useAccessTokenReady();
   const clipPrefix = useId().replace(/:/g, '');
   const tree = useMemo(() => toSpaceNode(data), [data]);
   const [focusId, setFocusId] = useState(currentSpaceId ?? data.id);
@@ -779,27 +779,26 @@ export function MyceliumEcosystem({
   const { data: personSpaces = [], isLoading: personSpacesLoading } = useSWR<
     Space[]
   >(
-    personFocus?.slug ? ['mycelium-person-spaces', personFocus.slug] : null,
+    personFocus?.slug && accessTokenReady
+      ? ['mycelium-person-spaces', personFocus.slug]
+      : null,
     async ([, slug]: [string, string]) => {
       const token = await getAccessToken();
       if (!token) return [];
-      const res = await fetch(`/api/v1/people/${slug}/spaces`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const res = await fetch(
+        `/api/v1/people/${encodeURIComponent(slug)}/spaces`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
       if (!res.ok) return [];
-      return (await res.json()) as Space[];
+      const body = (await res.json()) as unknown;
+      return Array.isArray(body) ? (body as Space[]) : [];
     },
   );
-  const {
-    filteredSpaces: visiblePersonSpaces,
-    isLoading: personVisibilityLoading,
-  } = useFilterSpacesListWithDiscoverability({
-    spaces: personSpaces,
-    useGeneralState: true,
-  });
   const {
     transfers,
     isLoading: flowsLoading,
@@ -831,15 +830,22 @@ export function MyceliumEcosystem({
     parentNode?.id,
   ]);
 
-  const personSpaceNodes = useMemo(() => {
-    if (personVisibilityLoading) return [];
-    return visiblePersonSpaces.map((space) => ({
-      id: space.id,
-      name: space.title,
-      slug: space.slug,
-      logoUrl: space.logoUrl,
-    }));
-  }, [personVisibilityLoading, visiblePersonSpaces]);
+  const personSpaceNodes = useMemo(
+    () =>
+      personSpaces.flatMap((space) =>
+        space.title
+          ? [
+              {
+                id: space.id,
+                name: space.title,
+                slug: space.slug ?? undefined,
+                logoUrl: space.logoUrl,
+              },
+            ]
+          : [],
+      ),
+    [personSpaces],
+  );
 
   const people = persons.data ?? [];
   const joinedSpaces = memberSpaces.data ?? [];
@@ -2057,9 +2063,7 @@ export function MyceliumEcosystem({
                       : t('diagram.flowsEmpty')}
                   </p>
                 ) : null}
-                {lens === 'structure' &&
-                personFocus &&
-                (personSpacesLoading || personVisibilityLoading) ? (
+                {lens === 'structure' && personFocus && personSpacesLoading ? (
                   <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-1 text-neutral-11">
                     {t('navigation.loading')}
                   </p>
