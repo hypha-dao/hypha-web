@@ -26,11 +26,23 @@ describe('planBannerContentFit', () => {
     });
   });
 
-  it('sits on the banner when the next screen cannot hold the old offset', () => {
+  it('returns to the top when the next screen cannot hold the collapsed banner', () => {
     expect(
       planShortPageScroll({
         reservedTop: 1400,
         naturalMax: 80,
+        bannerTop: 360,
+        mobile: false,
+        loading: false,
+      }),
+    ).toEqual({ kind: 'top' });
+  });
+
+  it('sits on the banner when the next screen can hold that offset', () => {
+    expect(
+      planShortPageScroll({
+        reservedTop: 1400,
+        naturalMax: 500,
         bannerTop: 360,
         mobile: false,
         loading: false,
@@ -50,7 +62,7 @@ describe('planBannerContentFit', () => {
     ).toEqual({ kind: 'top' });
   });
 
-  it('pins the banner on mobile when the next screen cannot hold the offset', () => {
+  it('returns to the top on mobile when the next screen cannot hold the banner', () => {
     expect(
       planShortPageScroll({
         reservedTop: 1400,
@@ -59,7 +71,7 @@ describe('planBannerContentFit', () => {
         mobile: true,
         loading: false,
       }),
-    ).toEqual({ kind: 'banner', top: 360 });
+    ).toEqual({ kind: 'top' });
   });
 
   it('keeps a long screen where it was', () => {

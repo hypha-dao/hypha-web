@@ -224,8 +224,8 @@ export type ShortPageScrollPlan =
 
 /**
  * A route change can keep an offset from the previous screen. When the next
- * screen cannot hold it, a height hold paints an empty viewport. Sit on the
- * collapsed banner, or at the top when that banner cannot be measured.
+ * screen can hold the collapsed banner, sit there. When it cannot, go to the
+ * top — a height hold would paint an empty viewport under the content.
  * A loading skeleton is not a short screen.
  */
 export function planShortPageScroll(input: {
@@ -233,7 +233,7 @@ export function planShortPageScroll(input: {
   naturalMax: number;
   /** Collapsed-banner offset. Null when the banner cannot be measured. */
   bannerTop: number | null;
-  /** Kept for callers; mobile now pins the banner when measurable. */
+  /** Unused. Short screens release on every width. */
   mobile: boolean;
   loading: boolean;
 }): ShortPageScrollPlan {
@@ -244,12 +244,16 @@ export function planShortPageScroll(input: {
   if (planBannerContentFit(reserved, input.naturalMax).fillsBanner) {
     return { kind: 'keep', top: reserved };
   }
-  // Prefer the collapsed sticky banner whenever it can be measured — including
-  // on mobile — so tab changes do not flash the full cover again.
-  if (input.bannerTop == null || !Number.isFinite(input.bannerTop)) {
-    return { kind: 'top' };
+  const banner = Number.isFinite(input.bannerTop ?? NaN)
+    ? Math.max(0, input.bannerTop ?? 0)
+    : null;
+  if (
+    banner != null &&
+    planBannerContentFit(banner, input.naturalMax).fillsBanner
+  ) {
+    return { kind: 'banner', top: banner };
   }
-  return { kind: 'banner', top: Math.max(0, input.bannerTop) };
+  return { kind: 'top' };
 }
 
 /**
