@@ -26,6 +26,10 @@ import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import {
+  useAiPanel,
+  useHumanChatPanel,
+} from '../../common/human-chat-panel-context';
 import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
@@ -162,10 +166,28 @@ export function MobileTabBar({
   const [createOpen, setCreateOpen] = useState(false);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mounted, setMounted] = useState(false);
+  const [belowMd, setBelowMd] = useState(false);
   const unreadCount = useConversationUnreadCount();
+  const { open: isAiOpen } = useAiPanel();
+  const { open: isRightOpen } = useHumanChatPanel();
+  const spacesRail = shouldShowMobileSpacesRail(pathname);
+  // AI open: the icon rail already has section links, so the spaces column
+  // replaces the whole bottom menu (phones keep the section strip).
+  const aiReplacesMenu = isAiOpen && spacesRail;
+  // Right panel open: it already took a column, so the spaces rail replaces
+  // the app tabs. The section strip stays. Closed panel keeps both bars.
+  const rightReplacesAppMenu = isRightOpen && !isAiOpen && spacesRail;
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const sync = () => setBelowMd(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
   }, []);
 
   useEffect(() => {
@@ -366,8 +388,13 @@ export function MobileTabBar({
     tTreasury,
   ]);
 
+  const showSectionStrip =
+    secondLevel.length > 0 && (!aiReplacesMenu || belowMd);
+  const showAppMenu = !aiReplacesMenu && !rightReplacesAppMenu;
+
   useEffect(() => {
-    const px = TAB_BAR_PX + (secondLevel.length > 0 ? SUB_NAV_PX : 0);
+    const px =
+      (showAppMenu ? TAB_BAR_PX : 0) + (showSectionStrip ? SUB_NAV_PX : 0);
     document.documentElement.style.setProperty(
       '--mobile-tab-offset',
       `calc(${px}px + env(safe-area-inset-bottom, 0px))`,
@@ -375,7 +402,7 @@ export function MobileTabBar({
     return () => {
       document.documentElement.style.removeProperty('--mobile-tab-offset');
     };
-  }, [secondLevel.length]);
+  }, [showAppMenu, showSectionStrip]);
 
   const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/messages`;
@@ -398,6 +425,7 @@ export function MobileTabBar({
   const networkActive = !createOpen && segmentActive(pathname, 'network');
 
   if (!mounted) return null;
+  if (!showSectionStrip && !showAppMenu) return null;
 
   return createPortal(
     <>
@@ -462,7 +490,7 @@ export function MobileTabBar({
         }}
         aria-label={t('openMenu')}
       >
-        {secondLevel.length > 0 ? (
+        {showSectionStrip ? (
           <div
             className="flex justify-center gap-0.5 overflow-x-auto border-b border-border bg-background-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ height: SUB_NAV_PX }}
@@ -535,53 +563,55 @@ export function MobileTabBar({
             })}
           </div>
         ) : null}
-        <div
-          className="mx-auto grid max-w-lg items-end px-1"
-          style={{
-            height: TAB_BAR_PX,
-            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-          }}
-        >
-          <TabLink
-            href={dashboardHref}
-            label={t('myDashboard')}
-            active={dashboardActive}
-            onClick={() => setCreateOpen(false)}
-            icon={<House className={iconClass} strokeWidth={1.25} />}
-          />
-          <TabLink
-            href={connectionsHref}
-            label={t('chat')}
-            active={connectionsActive}
-            badge={unreadCount}
-            onClick={() => setCreateOpen(false)}
-            icon={<MessagesSquare className={iconClass} strokeWidth={1.25} />}
-          />
-          <TabLink
-            href={walletHref}
-            label={t('myWallet')}
-            active={walletActive}
-            center
-            onClick={() => setCreateOpen(false)}
-            icon={
-              <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
-            }
-          />
-          <TabLink
-            href={spacesHref}
-            label={t('mySpaces')}
-            active={spacesActive}
-            onClick={() => setCreateOpen(false)}
-            icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
-          />
-          <TabLink
-            href={networkHref}
-            label={t('network')}
-            active={networkActive}
-            onClick={() => setCreateOpen(false)}
-            icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
-          />
-        </div>
+        {showAppMenu ? (
+          <div
+            className="mx-auto grid max-w-lg items-end px-1"
+            style={{
+              height: TAB_BAR_PX,
+              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+            }}
+          >
+            <TabLink
+              href={dashboardHref}
+              label={t('myDashboard')}
+              active={dashboardActive}
+              onClick={() => setCreateOpen(false)}
+              icon={<House className={iconClass} strokeWidth={1.25} />}
+            />
+            <TabLink
+              href={connectionsHref}
+              label={t('chat')}
+              active={connectionsActive}
+              badge={unreadCount}
+              onClick={() => setCreateOpen(false)}
+              icon={<MessagesSquare className={iconClass} strokeWidth={1.25} />}
+            />
+            <TabLink
+              href={walletHref}
+              label={t('myWallet')}
+              active={walletActive}
+              center
+              onClick={() => setCreateOpen(false)}
+              icon={
+                <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
+              }
+            />
+            <TabLink
+              href={spacesHref}
+              label={t('mySpaces')}
+              active={spacesActive}
+              onClick={() => setCreateOpen(false)}
+              icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
+            />
+            <TabLink
+              href={networkHref}
+              label={t('network')}
+              active={networkActive}
+              onClick={() => setCreateOpen(false)}
+              icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
+            />
+          </div>
+        ) : null}
       </nav>
     </>,
     document.body,

@@ -3086,9 +3086,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       ) : null}
-      {recentSpaces.length > 0
-        ? renderRecentSpacesSection('collapsed', 'recent-collapsed')
-        : null}
+      {recentSpaces.length > 0 ? (
+        <div className="max-xl:hidden">
+          {renderRecentSpacesSection('collapsed', 'recent-collapsed')}
+        </div>
+      ) : null}
     </>
   );
   const renderCollapsedRail = (landmarks: boolean) => {
