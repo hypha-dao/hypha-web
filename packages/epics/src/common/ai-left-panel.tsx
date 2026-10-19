@@ -76,7 +76,6 @@ import {
   isWalletSectionNavActive,
 } from '../wallet/components/wallet-section-nav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
-import { useFundWallet } from '../treasury/hooks/use-fund-wallet';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
@@ -357,7 +356,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
   const tNetwork = useTranslations('NetworkExchange');
-  const tActions = useTranslations('ProfileActions');
+  const tMyWallet = useTranslations('MyWallet');
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -460,9 +459,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
-  const { fundWallet } = useFundWallet({
-    address: me?.address as `0x${string}` | undefined,
-  });
   const { data: spaceEnergyData } = useSpaceEnergy();
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -716,23 +712,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (spaceSlug || !lang) return [];
     if (!pathname.includes('/my-wallet')) return [];
     const base = `/${lang}/my-wallet`;
-    return buildWalletSectionNavItems(base, {
-      walletAddress: me?.address,
-    }).map((item) => ({
+    return buildWalletSectionNavItems(base).map((item) => ({
       key: item.key,
-      label: tActions(item.labelKey),
+      label: tMyWallet(item.labelKey),
       icon: item.icon,
-      href: item.href ?? '',
+      href: item.href,
       active: isWalletSectionNavActive(item, pathname),
-      external: item.external,
-      disabled: item.disabled,
-      onSelect: item.fundWallet
-        ? () => {
-            void fundWallet();
-          }
-        : undefined,
     }));
-  }, [fundWallet, lang, me?.address, pathname, spaceSlug, tActions]);
+  }, [lang, pathname, spaceSlug, tMyWallet]);
 
   const menuNavItems =
     sectionNavItems.length > 0

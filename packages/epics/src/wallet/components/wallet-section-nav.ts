@@ -1,104 +1,66 @@
 import type { ElementType } from 'react';
-import {
-  ArrowUpFromLine,
-  BadgePercent,
-  Boxes,
-  CirclePower,
-  Gem,
-  RefreshCcw,
-  WalletCards,
-} from 'lucide-react';
-
-const MIGRATE_HYPHA_TOKENS_URL =
-  process.env.NEXT_PUBLIC_MIGRATE_HYPHA_TOKENS_URL ??
-  'https://hypha-react-demo.vercel.app';
+import { ArrowLeftRight, Gift, Landmark, Layers, Wallet } from 'lucide-react';
 
 export type WalletSectionNavKey =
-  | 'deposit'
-  | 'transfer'
-  | 'redeem'
-  | 'buy-hypha'
-  | 'buy-space-tokens'
-  | 'activate'
-  | 'migrate';
+  | 'assets'
+  | 'transactions'
+  | 'wallet'
+  | 'banking'
+  | 'rewards';
 
-/** `ProfileActions` title for each wallet action. */
+/** `MyWallet.tabs` label for each wallet menu item. */
 export type WalletSectionLabelKey =
-  | 'actions.depositFunds.title'
-  | 'actions.transferFunds.title'
-  | 'actions.redeemTokens.title'
-  | 'actions.buyHyphaTokensRewards.title'
-  | 'actions.buySpaceTokens.title'
-  | 'actions.activateSpaces.title'
-  | 'actions.migrateHyphaTokens.title';
+  | 'tabs.assets'
+  | 'tabs.transactions'
+  | 'tabs.wallet'
+  | 'tabs.banking'
+  | 'tabs.rewards';
 
 export type WalletSectionNavItem = {
   key: WalletSectionNavKey;
   labelKey: WalletSectionLabelKey;
-  href?: string;
-  external?: boolean;
-  /** Opens the receive-funds modal instead of a route. */
-  fundWallet?: boolean;
-  disabled?: boolean;
+  href: string;
   icon: ElementType;
 };
 
 /**
- * Wallet secondary nav — left icon rail (desktop) and mobile secondary strip.
- * Same actions as the wallet actions list. The actions hub is not a menu item.
+ * Wallet left rail and mobile secondary strip.
+ * Wallet (the action shortcuts) is the default screen at `basePath`.
  */
 export function buildWalletSectionNavItems(
   basePath: string,
-  options?: { walletAddress?: string | null },
 ): WalletSectionNavItem[] {
   const base = basePath.replace(/\/$/, '');
-  const actions = `${base}/actions`;
-  const address = options?.walletAddress?.trim() ?? '';
   return [
     {
-      key: 'deposit',
-      labelKey: 'actions.depositFunds.title',
-      icon: WalletCards,
-      fundWallet: true,
-      disabled: address.length === 0,
+      key: 'assets',
+      labelKey: 'tabs.assets',
+      href: `${base}/assets`,
+      icon: Layers,
     },
     {
-      key: 'transfer',
-      labelKey: 'actions.transferFunds.title',
-      href: `${actions}/transfer-funds`,
-      icon: ArrowUpFromLine,
+      key: 'transactions',
+      labelKey: 'tabs.transactions',
+      href: `${base}/transactions`,
+      icon: ArrowLeftRight,
     },
     {
-      key: 'redeem',
-      labelKey: 'actions.redeemTokens.title',
-      href: `${actions}/redeem-tokens`,
-      icon: BadgePercent,
+      key: 'wallet',
+      labelKey: 'tabs.wallet',
+      href: base,
+      icon: Wallet,
     },
     {
-      key: 'buy-hypha',
-      labelKey: 'actions.buyHyphaTokensRewards.title',
-      href: `${actions}/purchase-hypha-tokens`,
-      icon: Gem,
+      key: 'banking',
+      labelKey: 'tabs.banking',
+      href: `${base}/banking`,
+      icon: Landmark,
     },
     {
-      key: 'buy-space-tokens',
-      labelKey: 'actions.buySpaceTokens.title',
-      href: `${actions}/buy-space-tokens`,
-      icon: Boxes,
-    },
-    {
-      key: 'activate',
-      labelKey: 'actions.activateSpaces.title',
-      href: `${actions}/activate-spaces`,
-      icon: CirclePower,
-    },
-    {
-      key: 'migrate',
-      labelKey: 'actions.migrateHyphaTokens.title',
-      href: address ? `${MIGRATE_HYPHA_TOKENS_URL}/${address}` : undefined,
-      external: true,
-      disabled: address.length === 0,
-      icon: RefreshCcw,
+      key: 'rewards',
+      labelKey: 'tabs.rewards',
+      href: `${base}/rewards`,
+      icon: Gift,
     },
   ];
 }
@@ -107,6 +69,12 @@ export function isWalletSectionNavActive(
   item: WalletSectionNavItem,
   pathname: string,
 ): boolean {
-  if (!item.href || item.external || item.fundWallet) return false;
+  if (item.key === 'wallet') {
+    return (
+      pathname === item.href ||
+      pathname === `${item.href}/` ||
+      pathname.startsWith(`${item.href}/actions`)
+    );
+  }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }

@@ -37,7 +37,6 @@ import {
   buildWalletSectionNavItems,
   isWalletSectionNavActive,
 } from '../../wallet/components/wallet-section-nav';
-import { useFundWallet } from '../../treasury/hooks/use-fund-wallet';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
 import { useMemberEnergyCommunities } from './member-home-energy-panel';
 import {
@@ -140,7 +139,7 @@ export function MobileTabBar({
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
   const tNetwork = useTranslations('NetworkExchange');
-  const tActions = useTranslations('ProfileActions');
+  const tMyWallet = useTranslations('MyWallet');
   const tHome = useTranslations('MemberHome');
   const tEnergy = useTranslations('MemberHome.energy');
   const tTreasury = useTranslations('TreasuryTab');
@@ -152,9 +151,6 @@ export function MobileTabBar({
   const { communities: energyCommunities } = useMemberEnergyCommunities(
     onHome ? person?.slug : null,
   );
-  const { fundWallet } = useFundWallet({
-    address: person?.address as `0x${string}` | undefined,
-  });
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
   const [createOpen, setCreateOpen] = useState(false);
@@ -287,22 +283,13 @@ export function MobileTabBar({
     }
     if (segmentActive(pathname, 'my-wallet')) {
       const base = `/${lang}/my-wallet`;
-      return buildWalletSectionNavItems(base, {
-        walletAddress: person?.address,
-      }).map((item) => {
+      return buildWalletSectionNavItems(base).map((item) => {
         const Icon = item.icon;
         return {
           key: item.key,
-          href: item.href ?? '',
-          label: tActions(item.labelKey),
+          href: item.href,
+          label: tMyWallet(item.labelKey),
           active: isWalletSectionNavActive(item, pathname),
-          external: item.external,
-          disabled: item.disabled,
-          onClick: item.fundWallet
-            ? () => {
-                void fundWallet();
-              }
-            : undefined,
           icon: <Icon className={subIconClass} strokeWidth={1.5} />,
         };
       });
@@ -354,17 +341,15 @@ export function MobileTabBar({
     }));
   }, [
     energyCommunities.length,
-    fundWallet,
     homeView,
     lang,
     networkRoute,
     pathname,
-    person?.address,
     space?.pipelineEnabled,
     spaceEnergy?.enabled,
     spaceMemoryEnabled,
     spaceSlug,
-    tActions,
+    tMyWallet,
     tCoherence,
     tEnergy,
     tHome,
