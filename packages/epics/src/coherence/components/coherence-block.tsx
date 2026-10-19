@@ -175,31 +175,6 @@ export function CoherenceBlock({
     () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
     [signals],
   );
-  const priorityCounts = React.useMemo(() => {
-    const items = signals ?? [];
-    return {
-      all: items.length,
-      critical: items.filter((signal) => signal.priority === 'critical').length,
-      high: items.filter((signal) => signal.priority === 'high').length,
-      medium: items.filter((signal) => signal.priority === 'medium').length,
-      low: items.filter((signal) => signal.priority === 'low').length,
-    };
-  }, [signals]);
-  const typeCounts = React.useMemo(() => {
-    const items = signals ?? [];
-    return {
-      all: items.length,
-      ...Object.fromEntries(
-        COHERENCE_SIGNAL_TYPES.map((type) => [
-          type,
-          items.filter((signal) => signal.type === type).length,
-        ]),
-      ),
-    } as { all: number } & Record<
-      (typeof COHERENCE_SIGNAL_TYPES)[number],
-      number
-    >;
-  }, [signals]);
 
   const refresh = React.useCallback(async () => {
     await refreshSignals();
@@ -346,8 +321,6 @@ export function CoherenceBlock({
       <SignalBoardFilters
         typeFilters={typeFilters}
         priorityFilters={priorityFilters}
-        typeCounts={typeCounts}
-        priorityCounts={priorityCounts}
         boardFilters={boardFilters}
         onBoardFiltersChange={handleBoardFiltersChange}
         existingTags={existingTags}

@@ -108,6 +108,11 @@ interface MultiSelectProps
   maxCount?: number;
 
   /**
+   * Show every selected chip at full width, and let the trigger grow to fit them.
+   */
+  showFullSelection?: boolean;
+
+  /**
    * The modality of the popover. When set to true, interaction with outside elements
    * will be disabled and only popover content will be visible to screen readers.
    * Optional, defaults to false.
@@ -230,6 +235,7 @@ export const MultiSelect = React.forwardRef<
       searchPlaceholder = 'Search...',
       animation = 0,
       maxCount = 3,
+      showFullSelection = false,
       modalPopover = false,
       asChild = false,
       value,
@@ -729,9 +735,17 @@ export const MultiSelect = React.forwardRef<
               )}
             >
               {selectedValues.length > 0 ? (
-                <div className="flex justify-between items-center w-full">
-                  <div className="flex flex-wrap items-center">
-                    {selectedValues.slice(0, maxCount).map((value) => {
+                <div
+                  className={cn(
+                    'flex w-full justify-between',
+                    showFullSelection ? 'items-start' : 'items-center',
+                  )}
+                >
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+                    {(showFullSelection
+                      ? selectedValues
+                      : selectedValues.slice(0, maxCount)
+                    ).map((value) => {
                       const option = options.find((o) => o.value === value);
                       const IconComponent = option?.icon;
                       return (
@@ -742,6 +756,8 @@ export const MultiSelect = React.forwardRef<
                           size={1}
                           className={cn(
                             multiSelectVariants({ variant }),
+                            showFullSelection &&
+                              'max-w-none shrink-0 overflow-visible whitespace-normal',
                             textClassName,
                           )}
                           style={{ animationDuration: `${animation}s` }}
@@ -749,7 +765,13 @@ export const MultiSelect = React.forwardRef<
                           {IconComponent && (
                             <IconComponent className="mr-1 h-3.5 w-3.5 shrink-0" />
                           )}
-                          <span className="min-w-0 truncate">
+                          <span
+                            className={
+                              showFullSelection
+                                ? 'whitespace-normal'
+                                : 'min-w-0 truncate'
+                            }
+                          >
                             {option?.label ?? value}
                           </span>
                           <button
@@ -766,7 +788,7 @@ export const MultiSelect = React.forwardRef<
                         </Badge>
                       );
                     })}
-                    {selectedValues.length > maxCount && (
+                    {!showFullSelection && selectedValues.length > maxCount && (
                       <Badge
                         size={1}
                         variant="outline"

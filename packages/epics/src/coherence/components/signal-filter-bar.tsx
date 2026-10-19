@@ -19,7 +19,10 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import { useDebouncedBoardTitle } from '../lib/use-debounced-board-title';
-import { SIGNAL_BOARD_SELECT_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
+import {
+  SIGNAL_BOARD_SELECT_TEXT_CLASS,
+  SIGNAL_FILTER_MULTI_SELECT_CLASS,
+} from '../utils/signal-tag-badge-styles';
 
 type SignalFilterBarProps = {
   filters: SignalBoardFilters;
@@ -248,13 +251,13 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
           value={filters.tags ?? []}
           allowCreate={false}
           allowToggleAll={false}
-          maxCount={2}
+          showFullSelection
           placeholder={t('filterTagsPlaceholder')}
           searchPlaceholder={t('searchOrCreateTag')}
           textClassName={SIGNAL_BOARD_SELECT_TEXT_CLASS}
           className={cn(
             SIGNAL_BOARD_SELECT_TEXT_CLASS,
-            'h-10 min-h-10 rounded-none border-border bg-neutral-1 px-3 py-2',
+            SIGNAL_FILTER_MULTI_SELECT_CLASS,
           )}
           onValueChange={(tags) =>
             onChange({
