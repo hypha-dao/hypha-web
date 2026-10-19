@@ -358,9 +358,7 @@ export function ExploreSpaces({
 
   const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';
   const spacesListContent = showSpacesSkeleton ? (
-    view === 'list' ? (
-      <NetworkLoadingGrid count={12} cardGridClassName={cardGridClassName} />
-    ) : null
+    <NetworkLoadingGrid count={12} cardGridClassName={cardGridClassName} />
   ) : (
     <SpaceCardList
       lang={lang}
@@ -554,6 +552,7 @@ export function ExploreSpaces({
               className={cn('w-full', showMapStage && 'mb-7')}
               isActive={showMapStage}
               showStage={showMapStage}
+              isResolving={showSpacesSkeleton}
               alignProjection={view === 'overview' ? 'flat' : undefined}
               onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
             />

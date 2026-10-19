@@ -69,7 +69,11 @@ function StatColumn({
         )}
       >
         {isLoading ? (
-          <Skeleton loading width={72} height={36} />
+          <Skeleton
+            loading
+            width={compact ? 56 : 112}
+            height={compact ? 28 : 48}
+          />
         ) : value == null ? (
           '—'
         ) : (

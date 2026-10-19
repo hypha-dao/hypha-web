@@ -395,6 +395,7 @@ export function NetworkGlobeMap({
   renderToolbar,
   isActive = true,
   showStage = true,
+  isResolving = false,
   alignProjection,
   onProjectionModeChange,
   onSpaceSelect,
@@ -959,13 +960,18 @@ export function NetworkGlobeMap({
         if (!space) {
           return;
         }
+        if (onSpaceSelectRef.current) {
+          onSpaceSelectRef.current(space);
+          return;
+        }
         updateHoveredPinRef.current(space.id, event);
       })
       .on('mousemove', function (event: MouseEvent, datum) {
         if (
           !canHoverRef.current ||
           isDraggingRef.current ||
-          clusterAnimatingRef.current
+          clusterAnimatingRef.current ||
+          onSpaceSelectRef.current
         ) {
           return;
         }
@@ -2003,7 +2009,7 @@ export function NetworkGlobeMap({
     : null;
 
   const hoverCard =
-    activeSpace && activePin && !clusterAnimating ? (
+    !onSpaceSelect && activeSpace && activePin && !clusterAnimating ? (
       <NetworkMapPinHoverCard
         lang={lang}
         space={activeSpace}
@@ -2152,7 +2158,10 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]"
+      className={cn(
+        'relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]',
+        isLoadingGeo && 'bg-neutral-2',
+      )}
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
@@ -2191,7 +2200,7 @@ export function NetworkGlobeMap({
       <div className={cn('flex min-w-0 flex-col gap-3', className)}>
         {toolbar}
         {showStage ? mapStage : null}
-        {showStage ? (
+        {showStage && !isResolving ? (
           <div className="px-0 py-2 text-center">
             <p className="text-4 text-neutral-11">
               {t('noSpacesWithLocation')}

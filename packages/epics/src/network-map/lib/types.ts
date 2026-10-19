@@ -20,6 +20,11 @@ export type NetworkGlobeMapProps = {
   /** When false, omit the map stage (toolbar stays mounted for chrome state). */
   showStage?: boolean;
   /**
+   * Directory is still settling. Keep the map frame and skip the empty-world
+   * message so the loader matches the overview that follows.
+   */
+  isResolving?: boolean;
+  /**
    * When set, the map moves to this projection. Overview uses `flat`.
    * Clearing it leaves the current projection alone.
    */
