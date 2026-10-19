@@ -47,12 +47,11 @@ export function resolveSignalPersonIds({
 
 /**
  * Assignee display for signal boards.
- * - `meta` (default): name only — sits in the person slot under the title.
- * - `full`: avatar + name for denser surfaces that still want a face.
+ * - `meta` (default): avatar + name in the person slot under the title.
+ * - `full`: larger avatar + name for denser surfaces.
  *
- * A single assignee reads as a name; teams collapse to an avatar row capped at
- * `maxVisible` plus a `+n` counter, so cards stay legible however many people
- * are on a signal.
+ * A single assignee shows avatar and name; teams collapse to an avatar row
+ * capped at `maxVisible` plus a `+n` counter.
  *
  * Pass `fallbackPersonId` (usually the creator) so cards always have a name
  * when no assignee was stored.
@@ -183,9 +182,19 @@ function SignalAssigneeSingle({
 
   return (
     <span
-      className={cn('inline-flex min-w-0 max-w-full items-center', className)}
+      className={cn(
+        'inline-flex min-w-0 max-w-full items-center gap-1',
+        className,
+      )}
       title={title}
     >
+      <PersonAvatar
+        size="sm"
+        shape="circle"
+        avatarSrc={avatarUrl}
+        userName={label}
+        className="h-4 w-4 shrink-0"
+      />
       <span className="truncate">{label}</span>
     </span>
   );
