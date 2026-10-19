@@ -10,7 +10,6 @@ import {
   Boxes,
   CirclePower,
   QrCode,
-  RefreshCcw,
   Wallet,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -18,10 +17,6 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useMe } from '@hypha-platform/core/client';
 import { useFundWallet } from '../../treasury/hooks';
 import { prepareWalletActionNavigation } from './open-wallet-action';
-
-const MIGRATE_HYPHA_TOKENS_URL =
-  process.env.NEXT_PUBLIC_MIGRATE_HYPHA_TOKENS_URL ??
-  'https://hypha-react-demo.vercel.app';
 
 const shortcutIconClass = 'size-6 shrink-0';
 
@@ -201,20 +196,6 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
         <Wallet className={shortcutIconClass} strokeWidth={1.5} aria-hidden />
       ),
       href: `${basePath}/actions/fund-a-space`,
-    },
-    {
-      key: 'migrate',
-      label: t('shortcuts.migrate'),
-      icon: (
-        <RefreshCcw
-          className={shortcutIconClass}
-          strokeWidth={1.5}
-          aria-hidden
-        />
-      ),
-      href: address ? `${MIGRATE_HYPHA_TOKENS_URL}/${address}` : undefined,
-      external: true,
-      disabled: !address,
     },
   ];
 

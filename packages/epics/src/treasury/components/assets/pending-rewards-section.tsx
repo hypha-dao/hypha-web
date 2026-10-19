@@ -11,6 +11,10 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../../common';
 import { useTranslations } from 'next-intl';
 
+const MIGRATE_HYPHA_TOKENS_URL =
+  process.env.NEXT_PUBLIC_MIGRATE_HYPHA_TOKENS_URL ??
+  'https://hypha-react-demo.vercel.app';
+
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
 
@@ -32,6 +36,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   isMyProfile,
 }) => {
   const tProfile = useTranslations('Profile');
+  const tWallet = useTranslations('MyWallet');
   const { isAuthenticated } = useAuthentication();
   const {
     filteredAssets,
@@ -89,6 +94,21 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     isClaiming ||
     pendingRewards === undefined;
 
+  const migrateHref = person.address?.trim()
+    ? `${MIGRATE_HYPHA_TOKENS_URL}/${person.address.trim()}`
+    : null;
+  const migrateLink =
+    isMyProfile && migrateHref ? (
+      <a
+        href={migrateHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-2 text-foreground underline underline-offset-4 hover:text-foreground/80"
+      >
+        {tWallet('shortcuts.migrate')}
+      </a>
+    ) : null;
+
   const onHandleClaim = useCallback(async () => {
     try {
       const txHash = await claim();
@@ -129,15 +149,16 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       </div>
       <div className="w-full">
         {isLoading ? (
-          <div className="mt-1 w-full max-w-sm">
+          <div className="mt-1 flex w-full max-w-sm flex-col items-start gap-3">
             <AssetCard isLoading layout="solo" />
+            {migrateLink}
           </div>
         ) : !isAuthenticated ? (
           <Empty>
             <p>{tProfile('noRewardsFoundForUser')}</p>
           </Empty>
         ) : (
-          <div className="mt-1 w-full max-w-sm">
+          <div className="mt-1 flex w-full max-w-sm flex-col items-start gap-3">
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,
@@ -147,6 +168,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
               isLoading={isLoadingAssets}
               layout="solo"
             />
+            {migrateLink}
           </div>
         )}
       </div>
