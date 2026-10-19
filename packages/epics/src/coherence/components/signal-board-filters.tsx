@@ -138,6 +138,41 @@ function FilterTag({
   );
 }
 
+function formatFilterDay(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return null;
+  const date = new Date(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+  );
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function deadlineChipLabel(
+  deadline: NonNullable<BoardFilters['deadline']>,
+  modeLabel: string,
+): string {
+  if (deadline.mode === 'before' || deadline.mode === 'after') {
+    const day = formatFilterDay(deadline.date);
+    return day ? `${modeLabel} ${day}` : modeLabel;
+  }
+  if (deadline.mode === 'between') {
+    const range = [deadline.from, deadline.to]
+      .map((iso) => formatFilterDay(iso))
+      .filter((day): day is string => day != null)
+      .join(' – ');
+    return range ? `${modeLabel} ${range}` : modeLabel;
+  }
+  return modeLabel;
+}
+
 export function SignalBoardFilters({
   typeFilters,
   priorityFilters,
@@ -198,7 +233,10 @@ export function SignalBoardFilters({
         })()
       : null;
   const deadlineLabel = boardFilters.deadline
-    ? t(`filterDeadline_${boardFilters.deadline.mode}`)
+    ? deadlineChipLabel(
+        boardFilters.deadline,
+        t(`filterDeadline_${boardFilters.deadline.mode}`),
+      )
     : null;
 
   return (
