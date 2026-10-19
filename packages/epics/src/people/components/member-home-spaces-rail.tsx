@@ -24,7 +24,8 @@ import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-dis
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 
-const RAIL_ICON = 40;
+/** Compact spaces bar. Marks fill a 44px column with a small gap. */
+const RAIL_ICON = 32;
 
 export function orderSpacesByRecentVisit<T extends { slug: string }>(
   spaces: readonly T[],
@@ -80,7 +81,7 @@ export function MemberHomeSpacesRail({
     <TooltipProvider delayDuration={200}>
       <nav
         aria-label={t('spacesRail')}
-        className="narrow-scrollbar flex h-full w-[3.75rem] shrink-0 flex-col items-center gap-2 overflow-y-auto border-r border-border bg-background py-3"
+        className="narrow-scrollbar flex h-full w-[44px] shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-border bg-background py-2"
       >
         {isLoading ? (
           <>
@@ -106,7 +107,11 @@ export function MemberHomeSpacesRail({
                 )}
                 style={{ width: RAIL_ICON, height: RAIL_ICON }}
               >
-                <LayoutGrid className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                <LayoutGrid
+                  className="h-3.5 w-3.5"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
@@ -142,7 +147,7 @@ export function MemberHomeSpacesRail({
                         />
                       ) : (
                         <span
-                          className="flex h-full w-full items-center justify-center text-2 font-medium text-foreground"
+                          className="flex h-full w-full items-center justify-center text-1 font-medium text-foreground"
                           aria-hidden
                         >
                           {space.title.trim().charAt(0).toUpperCase() || '?'}
@@ -166,7 +171,7 @@ export function MemberHomeSpacesRail({
                   style={{ width: RAIL_ICON, height: RAIL_ICON }}
                 >
                   <LayoutGrid
-                    className="h-4 w-4"
+                    className="h-3.5 w-3.5"
                     strokeWidth={1.5}
                     aria-hidden
                   />
