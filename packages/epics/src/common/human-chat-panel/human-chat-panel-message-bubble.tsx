@@ -1575,41 +1575,45 @@ export function HumanChatPanelMessageBubble({
       ? resolveSenderDisplayLabel?.(replyTo.sourceUserId)
       : undefined;
 
+  const senderMatrixId =
+    message.role === 'member' ? message.senderMatrixId?.trim() : undefined;
+  const replyMatrixId = replyTo?.sourceUserId?.trim() || undefined;
+
   const resolveSenderProfile =
-    message.role === 'member' &&
+    Boolean(senderMatrixId) &&
     needsHyphaProfileForMatrixLabel(
       rosterSenderLabel ?? message.senderName,
-      message.senderMatrixId,
+      senderMatrixId,
     );
   const resolveReplyProfile =
-    replyTo?.sourceUserId != null &&
+    Boolean(replyMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterReplyLabel ?? replyTo.authorLabel,
-      replyTo.sourceUserId,
+      rosterReplyLabel ?? replyTo?.authorLabel,
+      replyMatrixId,
     );
 
-  const senderCanonicalSub =
-    resolveSenderProfile && message.senderMatrixId
-      ? matrixUserIdToCanonicalPrivySub(message.senderMatrixId) ?? undefined
-      : undefined;
-  const replyCanonicalSub =
-    resolveReplyProfile && replyTo?.sourceUserId
-      ? matrixUserIdToCanonicalPrivySub(replyTo.sourceUserId) ?? undefined
-      : undefined;
+  /**
+   * Profile photos live on the Hypha person. A readable Matrix display name
+   * (typical in a PM) used to skip this lookup, so the timeline kept the
+   * generic icon even when the person has an avatar. Name skeletons stay
+   * gated on `resolveSenderProfile`.
+   */
+  const senderCanonicalSub = senderMatrixId
+    ? matrixUserIdToCanonicalPrivySub(senderMatrixId) ?? undefined
+    : undefined;
+  const replyCanonicalSub = replyMatrixId
+    ? matrixUserIdToCanonicalPrivySub(replyMatrixId) ?? undefined
+    : undefined;
 
   const { privyUserId: senderPrivySub, isLoading: isLoadingSenderLink } =
     useUserPrivyIdByMatrixId({
       matrixUserId:
-        resolveSenderProfile && !senderCanonicalSub
-          ? message.senderMatrixId
-          : undefined,
+        senderMatrixId && !senderCanonicalSub ? senderMatrixId : undefined,
     });
   const { privyUserId: replyPrivySub, isLoading: isLoadingReplyLink } =
     useUserPrivyIdByMatrixId({
       matrixUserId:
-        resolveReplyProfile && !replyCanonicalSub
-          ? replyTo?.sourceUserId
-          : undefined,
+        replyMatrixId && !replyCanonicalSub ? replyMatrixId : undefined,
     });
 
   const { person: senderPerson, isLoading: isLoadingSenderPerson } =
@@ -1721,6 +1725,13 @@ export function HumanChatPanelMessageBubble({
     message.role === 'user'
       ? currentUserAvatarUrl?.trim() || message.avatarUrl
       : senderPerson?.avatarUrl?.trim() || message.avatarUrl;
+  const mainAvatarLoading =
+    senderProfileLoading ||
+    (message.role === 'member' &&
+      !mainAvatarSrc?.trim() &&
+      (isLoadingSenderLink ||
+        (Boolean(senderPrivySub ?? senderCanonicalSub) &&
+          isLoadingSenderPerson)));
   const replyHeaderAvatarResolved =
     replyTo &&
     currentUserId &&
@@ -1728,6 +1739,12 @@ export function HumanChatPanelMessageBubble({
     replyTo.sourceUserId === currentUserId
       ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
       : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
+  const replyAvatarLoading =
+    replyProfileLoading ||
+    (Boolean(replyTo) &&
+      !replyHeaderAvatarResolved?.trim() &&
+      (isLoadingReplyLink ||
+        (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)));
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp, t)
     : undefined;
@@ -1844,7 +1861,7 @@ export function HumanChatPanelMessageBubble({
               className="rounded-full"
               avatarSrc={replyHeaderAvatarResolved}
               userName={replyAuthorLabelForUi}
-              isLoading={replyProfileLoading}
+              isLoading={replyAvatarLoading}
             />
           </div>
           <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
@@ -1888,7 +1905,7 @@ export function HumanChatPanelMessageBubble({
                 className="rounded-full"
                 avatarSrc={mainAvatarSrc}
                 userName={senderName}
-                isLoading={senderProfileLoading}
+                isLoading={mainAvatarLoading}
               />
             )}
           </div>
