@@ -82,7 +82,7 @@ function FilterTag({
       type="button"
       onClick={onRemove}
       aria-label={t('removeFilter', { label })}
-      className="inline-flex h-8 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
+      className="inline-flex h-6 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
     >
       <span>{label}</span>
       <X className="size-3 shrink-0" strokeWidth={1.25} aria-hidden />
@@ -204,7 +204,7 @@ export function SignalBoardFilters({
                 aria-label={t('filter')}
                 title={t('filter')}
                 className={cn(
-                  'inline-flex h-10 w-10 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
+                  'inline-flex h-6 w-6 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
                   active
                     ? 'border-foreground text-foreground'
                     : 'border-border/70',

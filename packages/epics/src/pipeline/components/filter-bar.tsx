@@ -101,7 +101,7 @@ function FilterTag({
       type="button"
       onClick={onRemove}
       aria-label={t('removeFilter', { label })}
-      className="inline-flex h-8 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
+      className="inline-flex h-6 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
     >
       <span>{label}</span>
       <X className="size-3 shrink-0" strokeWidth={1.25} aria-hidden />
@@ -171,7 +171,8 @@ export function FilterBar({
       <div className="flex min-w-0 items-center gap-2">
         <Input
           type="search"
-          className="h-10 min-w-0 flex-1"
+          rootClassName="min-h-6"
+          className="h-6 min-h-6 min-w-0 flex-1 py-1"
           placeholder={t('filters.search')}
           aria-label={t('filters.searchLabel')}
           value={filters.q ?? ''}
@@ -186,7 +187,7 @@ export function FilterBar({
               aria-label={t('filter')}
               title={t('filter')}
               className={cn(
-                'inline-flex h-10 w-10 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
+                'inline-flex h-6 w-6 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
                 active
                   ? 'border-foreground text-foreground'
                   : 'border-border/70',
@@ -229,7 +230,7 @@ export function FilterBar({
                     })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-6 w-full py-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -246,7 +247,7 @@ export function FilterBar({
               </MenuField>
               <MenuField label={t('filters.country')}>
                 <CountrySelect
-                  className="w-full"
+                  className="h-6 w-full py-1"
                   value={asList(filters.country)[0] ?? null}
                   countryFocus={countryFocus}
                   popoverModal
@@ -272,7 +273,7 @@ export function FilterBar({
                     })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-6 w-full py-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -289,7 +290,7 @@ export function FilterBar({
               </MenuField>
               <MenuField label={t('filters.accountManager')}>
                 <SpaceMemberSelect
-                  className="h-10 w-full"
+                  className="h-6 w-full py-1"
                   members={members}
                   value={
                     filters.accountManagerId != null
@@ -319,7 +320,7 @@ export function FilterBar({
                     })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-6 w-full py-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -345,7 +346,7 @@ export function FilterBar({
                     })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-6 w-full py-1">
                     <SelectValue>
                       {(() => {
                         const status = asList(filters.status)[0];
@@ -388,7 +389,7 @@ export function FilterBar({
                     })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-6 w-full py-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -406,7 +407,8 @@ export function FilterBar({
               </MenuField>
               <MenuField label={t('filters.tagLabel')}>
                 <Input
-                  className="h-10 w-full"
+                  rootClassName="min-h-6"
+                  className="h-6 min-h-6 w-full py-1"
                   placeholder={t('filters.tagPlaceholder')}
                   value={filters.tag ?? ''}
                   onChange={(event) =>

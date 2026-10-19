@@ -49,7 +49,8 @@ export const SignalTitleSearch = React.memo(function SignalTitleSearch({
       placeholder={t('filterTitlePlaceholder')}
       aria-label={t('filterTitle')}
       onChange={(event) => onTitleChange(event.target.value)}
-      className="h-10 min-w-0 flex-1"
+      rootClassName="min-h-6"
+      className="h-6 min-h-6 min-w-0 flex-1 py-1"
     />
   );
 });
@@ -96,7 +97,7 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
           {t('filterAssignee')}
         </span>
         <SpaceMemberSelect
-          className="h-10 w-full"
+          className="h-6 w-full py-1"
           members={members}
           value={assigneeValue}
           onChange={(id) => {
@@ -163,7 +164,7 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
             });
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="h-6 w-full py-1">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -185,6 +186,8 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
           </span>
           <Input
             type="date"
+            rootClassName="min-h-6"
+            className="h-6 min-h-6 py-1"
             value={deadlineMode === 'after' ? from : to}
             onChange={(event) => {
               const date = event.target.value;
@@ -206,6 +209,8 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
             </span>
             <Input
               type="date"
+              rootClassName="min-h-6"
+              className="h-6 min-h-6 py-1"
               value={from}
               onChange={(event) => {
                 const date = event.target.value;
@@ -226,6 +231,8 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
             </span>
             <Input
               type="date"
+              rootClassName="min-h-6"
+              className="h-6 min-h-6 py-1"
               value={to}
               onChange={(event) => {
                 const date = event.target.value;
