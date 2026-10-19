@@ -15,7 +15,7 @@ import type { WalletSectionNavKey } from './wallet-section-nav';
 
 type MyWalletDashboardProps = {
   lang: string;
-  /** Left-menu section. `wallet` is the action shortcuts and the default screen. */
+  /** Left-menu section. `wallet` is actions, assets, and transactions together. */
   section?: WalletSectionNavKey;
 };
 
@@ -47,32 +47,24 @@ export function MyWalletDashboard({
     return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
-  if (section === 'wallet') {
-    return (
-      <div className="flex w-full min-w-0 flex-col gap-4">
-        <WalletShortcutCards basePath={basePath} />
-      </div>
-    );
+  if (section === 'banking') {
+    return <ProfileBankingSection personSlug={personSlug} isMyProfile />;
   }
 
-  if (section === 'assets') {
-    return (
+  if (section === 'rewards') {
+    return <PendingRewardsSection person={person} isMyProfile />;
+  }
+
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-10">
+      <WalletShortcutCards basePath={basePath} />
       <UserAssetsSection
         personSlug={personSlug}
         basePath={basePath}
         isMyProfile
         showActionButtons={false}
       />
-    );
-  }
-
-  if (section === 'banking') {
-    return <ProfileBankingSection personSlug={personSlug} isMyProfile />;
-  }
-
-  if (section === 'transactions') {
-    return <UserTransactionsSection personSlug={personSlug} />;
-  }
-
-  return <PendingRewardsSection person={person} isMyProfile />;
+      <UserTransactionsSection personSlug={personSlug} />
+    </div>
+  );
 }

@@ -1,17 +1,10 @@
 import type { ElementType } from 'react';
-import { ArrowLeftRight, Gift, Landmark, Layers, Wallet } from 'lucide-react';
+import { Gift, Landmark, Wallet } from 'lucide-react';
 
-export type WalletSectionNavKey =
-  | 'assets'
-  | 'transactions'
-  | 'wallet'
-  | 'banking'
-  | 'rewards';
+export type WalletSectionNavKey = 'wallet' | 'banking' | 'rewards';
 
 /** `MyWallet.tabs` label for each wallet menu item. */
 export type WalletSectionLabelKey =
-  | 'tabs.assets'
-  | 'tabs.transactions'
   | 'tabs.wallet'
   | 'tabs.banking'
   | 'tabs.rewards';
@@ -25,25 +18,13 @@ export type WalletSectionNavItem = {
 
 /**
  * Wallet left rail and mobile secondary strip.
- * Wallet (the action shortcuts) is the default screen at `basePath`.
+ * Wallet holds the action shortcuts, assets, and transactions.
  */
 export function buildWalletSectionNavItems(
   basePath: string,
 ): WalletSectionNavItem[] {
   const base = basePath.replace(/\/$/, '');
   return [
-    {
-      key: 'assets',
-      labelKey: 'tabs.assets',
-      href: `${base}/assets`,
-      icon: Layers,
-    },
-    {
-      key: 'transactions',
-      labelKey: 'tabs.transactions',
-      href: `${base}/transactions`,
-      icon: ArrowLeftRight,
-    },
     {
       key: 'wallet',
       labelKey: 'tabs.wallet',

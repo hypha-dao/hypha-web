@@ -1,17 +1,9 @@
-import { MyWalletDashboard } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { WalletPageFrame } from '../_components/wallet-page-frame';
+import { redirect } from 'next/navigation';
 
-type PageProps = {
+export default async function MyWalletAssetsPage(props: {
   params: Promise<{ lang: Locale }>;
-};
-
-export default async function MyWalletAssetsPage(props: PageProps) {
+}) {
   const { lang } = await props.params;
-
-  return (
-    <WalletPageFrame lang={lang}>
-      <MyWalletDashboard lang={lang} section="assets" />
-    </WalletPageFrame>
-  );
+  redirect(`/${lang}/my-wallet`);
 }
