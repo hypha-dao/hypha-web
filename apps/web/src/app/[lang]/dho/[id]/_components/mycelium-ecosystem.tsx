@@ -979,13 +979,13 @@ export function MyceliumEcosystem({
   const { openChat } = useMemberDirectoryConnect(directoryPeople);
   const { openPublicChat } = useOpenSpacePublicChat();
 
-  const activatePerson = (
-    person: PersonFocus,
-    at?: { x: number; y: number },
-  ) => {
+  const focusPerson = (person: PersonFocus, at?: { x: number; y: number }) => {
     zoomFrom(at?.x, at?.y);
     setOutsideSpace(null);
     setPersonFocus(person);
+  };
+
+  const openPersonChat = (person: PersonFocus) => {
     const match = directoryPeople.find((row) => row.id === person.id);
     void openChat(
       match ?? {
@@ -1015,7 +1015,7 @@ export function MyceliumEcosystem({
     );
     if (!person?.slug) return;
     const personName = personLabel(person, t('navigation.unnamedMember'));
-    activatePerson({
+    focusPerson({
       id: person.id,
       slug: person.slug,
       label: personName,
@@ -1663,12 +1663,7 @@ export function MyceliumEcosystem({
                           Boolean(node.slug);
                         const openNode = () => {
                           if (isPerson) {
-                            if (personFocus) {
-                              activatePerson(personFocus, {
-                                x: node.x,
-                                y: node.y,
-                              });
-                            }
+                            if (personFocus) openPersonChat(personFocus);
                             return;
                           }
                           activateSpace(
@@ -1954,7 +1949,7 @@ export function MyceliumEcosystem({
                                 }
                                 onClick={() => {
                                   if (chip.focusPerson) {
-                                    activatePerson(chip.focusPerson, {
+                                    focusPerson(chip.focusPerson, {
                                       x: chip.x,
                                       y: chip.y,
                                     });
@@ -1985,7 +1980,7 @@ export function MyceliumEcosystem({
                                         ) {
                                           event.preventDefault();
                                           if (chip.focusPerson) {
-                                            activatePerson(chip.focusPerson, {
+                                            focusPerson(chip.focusPerson, {
                                               x: chip.x,
                                               y: chip.y,
                                             });
