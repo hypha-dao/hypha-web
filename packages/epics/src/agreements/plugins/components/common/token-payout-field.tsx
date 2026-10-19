@@ -57,6 +57,20 @@ interface TokenPayoutFieldProps {
   amountPresets?: number[];
 }
 
+/** Digits with at most one dot. Linear so a long paste cannot backtrack. */
+function isDecimalAmountDraft(value: string) {
+  let seenDot = false;
+  for (const char of value) {
+    if (char === '.') {
+      if (seenDot) return false;
+      seenDot = true;
+      continue;
+    }
+    if (char < '0' || char > '9') return false;
+  }
+  return true;
+}
+
 function TokenPayoutFieldInner({
   value,
   onChange,
@@ -101,7 +115,7 @@ function TokenPayoutFieldInner({
 
     const normalizedAmount = amount.replace(',', '.');
 
-    if (/^\d*\.?\d*$/.test(normalizedAmount)) {
+    if (isDecimalAmountDraft(normalizedAmount)) {
       onChange({
         amount: normalizedAmount,
         token: value.token,
