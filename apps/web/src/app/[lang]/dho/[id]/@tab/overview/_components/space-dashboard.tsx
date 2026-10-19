@@ -315,16 +315,23 @@ function Panel({
   openLabel,
   children,
   className,
+  bare = false,
 }: {
   title: string;
   href: string;
   openLabel: string;
   children: ReactNode;
   className?: string;
+  /** Title sits above the children. Each child supplies its own card. */
+  bare?: boolean;
 }) {
   return (
     <section
-      className={`craft-card flex min-w-0 flex-col p-4 ${className ?? ''}`}
+      className={
+        bare
+          ? `flex min-w-0 flex-col ${className ?? ''}`
+          : `craft-card flex min-w-0 flex-col p-4 ${className ?? ''}`
+      }
     >
       <div className="flex w-fit max-w-full flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
@@ -521,8 +528,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const treasuryBalance = treasury?.balance ?? 0;
   const spaceTokens = assets.filter((asset) => !isLiquidNonHypha(asset));
   const liquidTokens = assets.filter(isLiquidNonHypha);
-  const distributionTokens =
-    spaceTokens.length > 0 ? spaceTokens : liquidTokens;
+  const distributionTokens = assets;
   const assetTotal = distributionTokens.reduce(
     (sum, asset) => sum + asset.value,
     0,
@@ -878,6 +884,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
       </div>
 
       <Panel
+        bare
         title={t('governanceTitle')}
         href={`${home}/agreements`}
         openLabel={t('open')}

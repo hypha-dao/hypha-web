@@ -1613,18 +1613,11 @@ export function SpaceGovernanceCharts({ spaceSlug }: { spaceSlug: string }) {
       className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
       style={chartStyle}
     >
-      <div className="relative min-w-0">
-        <div className="flex min-h-0 flex-col lg:absolute lg:inset-0">
-          <MembersEvolutionWidget
-            embedded
-            monthly={activityData.members.monthly}
-            locale={locale}
-          />
-        </div>
-      </div>
-      <div className="flex min-h-0 min-w-0 flex-col lg:border-s lg:border-border lg:ps-4">
-        <ProposalsPieWidget embedded data={activityData.proposals} />
-      </div>
+      <MembersEvolutionWidget
+        monthly={activityData.members.monthly}
+        locale={locale}
+      />
+      <ProposalsPieWidget data={activityData.proposals} />
     </div>
   );
 }
