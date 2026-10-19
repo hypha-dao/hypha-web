@@ -89,7 +89,7 @@
     "peopleWidgetHint": "Primero quienes están en línea. Toca para chatear o llamar.",
     "peopleWidgetEmpty": "Las personas con las que compartes un espacio aparecen aquí.",
     "peopleWidgetShared": "{count} espacios compartidos",
-    "sendTokensTitle": "Enviar tokens",
+    "sendTokensTitle": "Enviar fondos",
     "sendTokensTo": "Para",
     "sendTokensYouHave": "Tienes {amount} {symbol}",
     "sendTokensPickFirst": "Elige a alguien primero",
@@ -99,6 +99,8 @@
     "sendTokensForTheWork": "por el trabajo",
     "sendTokensWithCare": "con cuidado",
     "sendTokensChangeNote": "toca para cambiar",
+    "sendTokensMemo": "Nota",
+    "sendTokensMemoPlaceholder": "Añade una nota",
     "sendTokensArrived": "{amount} {symbol} están con {name}",
     "sendTokensSigned": "Firmado por ti, visible para los miembros.",
     "sendTokensLeft": "quedan {amount} {symbol}",
@@ -1624,14 +1626,19 @@
     "backToWallet": "Volver a la billetera",
     "available": "Disponible",
     "shortcuts": {
+      "deposit": "Depositar fondos",
       "receive": "Recibir fondos",
-      "transfer": "Enviar tokens",
+      "transfer": "Enviar fondos",
       "redeem": "Canjear tokens",
       "buyHypha": "Comprar tokens Hypha",
       "buySpace": "Comprar tokens del espacio",
       "activate": "Activar espacio",
       "migrate": "Migrar tokens",
       "fundSpace": "Financiar un espacio"
+    },
+    "depositFunds": {
+      "title": "Depositar fondos",
+      "subtitle": "Añade fondos a esta billetera."
     },
     "receiveFunds": {
       "title": "Recibir fondos",

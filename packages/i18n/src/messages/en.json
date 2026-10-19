@@ -551,7 +551,7 @@
     "peopleWidgetHint": "People online first. Tap someone to chat or call.",
     "peopleWidgetEmpty": "People you share a space with show up here.",
     "peopleWidgetShared": "{count} shared spaces",
-    "sendTokensTitle": "Send tokens",
+    "sendTokensTitle": "Send funds",
     "sendTokensTo": "To",
     "sendTokensYouHave": "You have {amount} {symbol}",
     "sendTokensPickFirst": "Pick someone first",
@@ -561,6 +561,8 @@
     "sendTokensForTheWork": "for the work",
     "sendTokensWithCare": "with care",
     "sendTokensChangeNote": "tap to change",
+    "sendTokensMemo": "Memo",
+    "sendTokensMemoPlaceholder": "Add a note",
     "sendTokensArrived": "{amount} {symbol} is with {name}",
     "sendTokensSigned": "Signed by you, seen by the members.",
     "sendTokensLeft": "{amount} {symbol} left",
@@ -866,14 +868,19 @@
     "backToWallet": "Back to wallet",
     "available": "Available",
     "shortcuts": {
+      "deposit": "Deposit funds",
       "receive": "Receive funds",
-      "transfer": "Send tokens",
+      "transfer": "Send funds",
       "redeem": "Redeem tokens",
       "buyHypha": "Buy Hypha Tokens",
-      "buySpace": "Buy Space Tokens",
+      "buySpace": "Buy space tokens",
       "activate": "Activate space",
       "migrate": "Migrate tokens",
       "fundSpace": "Fund a Space"
+    },
+    "depositFunds": {
+      "title": "Deposit funds",
+      "subtitle": "Add funds to this wallet."
     },
     "receiveFunds": {
       "title": "Receive Funds",

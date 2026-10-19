@@ -89,7 +89,7 @@
     "peopleWidgetHint": "En ligne d’abord. Touchez pour discuter ou appeler.",
     "peopleWidgetEmpty": "Les personnes avec qui tu partages un espace apparaissent ici.",
     "peopleWidgetShared": "{count} espaces en commun",
-    "sendTokensTitle": "Envoyer des tokens",
+    "sendTokensTitle": "Envoyer des fonds",
     "sendTokensTo": "À",
     "sendTokensYouHave": "Tu as {amount} {symbol}",
     "sendTokensPickFirst": "Choisis d’abord quelqu’un",
@@ -99,6 +99,8 @@
     "sendTokensForTheWork": "pour le travail",
     "sendTokensWithCare": "avec soin",
     "sendTokensChangeNote": "touche pour changer",
+    "sendTokensMemo": "Note",
+    "sendTokensMemoPlaceholder": "Ajouter une note",
     "sendTokensArrived": "{amount} {symbol} sont avec {name}",
     "sendTokensSigned": "Signé par toi, visible par les membres.",
     "sendTokensLeft": "il reste {amount} {symbol}",
@@ -853,14 +855,19 @@
     "backToWallet": "Retour au portefeuille",
     "available": "Disponible",
     "shortcuts": {
+      "deposit": "Déposer des fonds",
       "receive": "Recevoir des fonds",
-      "transfer": "Envoyer des jetons",
+      "transfer": "Envoyer des fonds",
       "redeem": "Échanger des jetons",
       "buyHypha": "Acheter des jetons Hypha",
       "buySpace": "Acheter des jetons d'espace",
       "activate": "Activer l'espace",
       "migrate": "Migrer les jetons",
       "fundSpace": "Financer un espace"
+    },
+    "depositFunds": {
+      "title": "Déposer des fonds",
+      "subtitle": "Ajoutez des fonds à ce portefeuille."
     },
     "receiveFunds": {
       "title": "Recevoir des fonds",

@@ -6,8 +6,8 @@ import { getDhoPathDefaultLanding } from '@hypha-platform/epics';
 import { parseCapitalKey } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
+import { prepareWalletActionNavigation } from '../../../wallet/components/open-wallet-action';
 
 type AssetCardProps = {
   icon?: string;
@@ -75,7 +75,6 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tNetwork = useTranslations('NetworkExchange');
   const format = useFormatter();
-  const router = useRouter();
   const isSolo = layout === 'solo';
   const actionHref = href?.trim() || null;
   const tokenTypeLabel =
@@ -116,37 +115,30 @@ export const AssetCard: React.FC<AssetCardProps> = ({
 
   return (
     <Card
-      role={actionHref ? 'link' : undefined}
-      tabIndex={actionHref ? 0 : undefined}
-      aria-label={
-        actionHref && symbol
-          ? tTreasury('assetCard.openAction', { symbol })
-          : undefined
-      }
-      onClick={
-        actionHref
-          ? () => {
-              router.push(actionHref);
-            }
-          : undefined
-      }
-      onKeyDown={
-        actionHref
-          ? (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                router.push(actionHref);
-              }
-            }
-          : undefined
-      }
       className={cn(
-        'craft-card-interactive group flex w-full flex-col gap-3 p-3.5',
+        'craft-card-interactive group relative flex w-full flex-col gap-3 p-3.5',
         isSolo ? 'h-auto' : 'h-full min-h-[10.5rem]',
         actionHref && 'cursor-pointer',
       )}
     >
-      <div className="flex min-w-0 items-start gap-3">
+      {actionHref ? (
+        <Link
+          href={actionHref}
+          aria-label={
+            symbol
+              ? tTreasury('assetCard.openAction', { symbol })
+              : tTreasury('assetCard.openAction', { symbol: name ?? '' })
+          }
+          className="absolute inset-0 z-10"
+          onClick={() => prepareWalletActionNavigation(actionHref)}
+        />
+      ) : null}
+      <div
+        className={cn(
+          'flex min-w-0 items-start gap-3',
+          actionHref && 'pointer-events-none',
+        )}
+      >
         <Skeleton
           width="32px"
           height="32px"
@@ -240,6 +232,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           className={cn(
             'flex flex-col gap-0.5 text-1 text-muted-foreground',
             !isSolo && 'mt-auto min-h-[4.5rem] justify-end',
+            actionHref && 'pointer-events-none',
           )}
         >
           {isLoading || hasNameRow ? (
@@ -274,9 +267,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                 {space?.title ? (
                   <Link
                     href={getDhoPathDefaultLanding(lang as Locale, space.slug)}
-                    className="min-w-0 truncate text-muted-foreground transition-colors hover:text-foreground hover:underline"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
+                    className="pointer-events-auto relative z-20 min-w-0 truncate text-muted-foreground transition-colors hover:text-foreground hover:underline"
                   >
                     {tTreasury('assetCard.fromSpace', {
                       spaceTitle: space.title,

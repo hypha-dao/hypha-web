@@ -89,7 +89,7 @@
     "peopleWidgetHint": "Eerst wie online is. Tik om te chatten of te bellen.",
     "peopleWidgetEmpty": "Mensen met wie je een space deelt, verschijnen hier.",
     "peopleWidgetShared": "{count} gedeelde spaces",
-    "sendTokensTitle": "Tokens sturen",
+    "sendTokensTitle": "Geld versturen",
     "sendTokensTo": "Aan",
     "sendTokensYouHave": "Je hebt {amount} {symbol}",
     "sendTokensPickFirst": "Kies eerst iemand",
@@ -99,6 +99,8 @@
     "sendTokensForTheWork": "voor het werk",
     "sendTokensWithCare": "met zorg",
     "sendTokensChangeNote": "tik om te wisselen",
+    "sendTokensMemo": "Notitie",
+    "sendTokensMemoPlaceholder": "Voeg een notitie toe",
     "sendTokensArrived": "{amount} {symbol} is bij {name}",
     "sendTokensSigned": "Door jou ondertekend, zichtbaar voor de leden.",
     "sendTokensLeft": "nog {amount} {symbol}",
@@ -852,14 +854,19 @@
     "backToWallet": "Terug naar de portemonnee",
     "available": "Beschikbaar",
     "shortcuts": {
+      "deposit": "Geld storten",
       "receive": "Geld ontvangen",
-      "transfer": "Tokens versturen",
+      "transfer": "Geld versturen",
       "redeem": "Tokens inwisselen",
       "buyHypha": "Hypha-tokens kopen",
       "buySpace": "Space-tokens kopen",
       "activate": "Space activeren",
       "migrate": "Tokens migreren",
       "fundSpace": "Financier een space"
+    },
+    "depositFunds": {
+      "title": "Geld storten",
+      "subtitle": "Voeg geld toe aan deze portemonnee."
     },
     "receiveFunds": {
       "title": "Geld ontvangen",

@@ -89,7 +89,7 @@
     "peopleWidgetHint": "Online først. Trykk for å chatte eller ringe.",
     "peopleWidgetEmpty": "Folk du deler et space med, vises her.",
     "peopleWidgetShared": "{count} felles spaces",
-    "sendTokensTitle": "Send tokens",
+    "sendTokensTitle": "Send midler",
     "sendTokensTo": "Til",
     "sendTokensYouHave": "Du har {amount} {symbol}",
     "sendTokensPickFirst": "Velg noen først",
@@ -99,6 +99,8 @@
     "sendTokensForTheWork": "for arbeidet",
     "sendTokensWithCare": "med omtanke",
     "sendTokensChangeNote": "trykk for å bytte",
+    "sendTokensMemo": "Notat",
+    "sendTokensMemoPlaceholder": "Legg til et notat",
     "sendTokensArrived": "{amount} {symbol} er hos {name}",
     "sendTokensSigned": "Signert av deg, synlig for medlemmene.",
     "sendTokensLeft": "{amount} {symbol} igjen",
@@ -851,14 +853,19 @@
     "backToWallet": "Tilbake til lommeboken",
     "available": "Tilgjengelig",
     "shortcuts": {
+      "deposit": "Sett inn midler",
       "receive": "Motta midler",
-      "transfer": "Send tokens",
+      "transfer": "Send midler",
       "redeem": "Løs inn tokens",
       "buyHypha": "Kjøp Hypha-tokens",
       "buySpace": "Kjøp space-tokens",
       "activate": "Aktiver space",
       "migrate": "Migrer tokens",
       "fundSpace": "Finansier et space"
+    },
+    "depositFunds": {
+      "title": "Sett inn midler",
+      "subtitle": "Legg til midler i denne lommeboken."
     },
     "receiveFunds": {
       "title": "Motta midler",

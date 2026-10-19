@@ -27,6 +27,7 @@ export default function MyWalletSendTokensPage() {
         <p className="text-2 text-neutral-11">{t('loading')}</p>
       ) : (
         <MemberHomeSendTokensWidget
+          key={initialTokenAddress ?? 'send'}
           personSlug={person.slug}
           hasWallet={Boolean(person.address)}
           people={[]}

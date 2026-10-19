@@ -1,13 +1,14 @@
 'use client';
 
+import type { ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import type { LucideIcon } from 'lucide-react';
 import {
+  ArrowDownToLine,
   ArrowUpFromLine,
   BadgePercent,
   Boxes,
   CirclePower,
-  Gem,
   QrCode,
   RefreshCcw,
   Wallet,
@@ -16,41 +17,39 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMe } from '@hypha-platform/core/client';
 import { useFundWallet } from '../../treasury/hooks';
+import { prepareWalletActionNavigation } from './open-wallet-action';
 
 const MIGRATE_HYPHA_TOKENS_URL =
   process.env.NEXT_PUBLIC_MIGRATE_HYPHA_TOKENS_URL ??
   'https://hypha-react-demo.vercel.app';
 
+const shortcutIconClass = 'size-6 shrink-0';
+
 type Shortcut = {
   key: string;
   label: string;
-  icon: LucideIcon;
+  icon: ReactNode;
   href?: string;
   external?: boolean;
-  featured?: boolean;
   onClick?: () => void;
   disabled?: boolean;
 };
 
 function ShortcutCard({
   label,
-  icon: Icon,
+  icon,
   href,
   external,
-  featured,
   onClick,
   disabled,
 }: Omit<Shortcut, 'key'>) {
   const className = cn(
-    'flex aspect-square min-w-0 flex-col items-center justify-center gap-2 border px-2 text-center',
-    featured
-      ? 'border-foreground bg-foreground text-background'
-      : 'border-border bg-background text-foreground hover:bg-neutral-2',
+    'flex aspect-square min-w-0 flex-col items-center justify-center gap-2 border border-border bg-background px-2 text-center text-foreground hover:bg-neutral-2',
     disabled && 'pointer-events-none opacity-40',
   );
   const body = (
     <>
-      <Icon className="size-6" strokeWidth={1.5} aria-hidden />
+      {icon}
       <span className="max-w-full text-[11px] leading-tight">{label}</span>
     </>
   );
@@ -71,78 +70,148 @@ function ShortcutCard({
   return (
     <Link
       href={href}
-      scroll={external ? undefined : false}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
       className={className}
       aria-disabled={disabled || undefined}
+      onClick={
+        external
+          ? undefined
+          : () => {
+              prepareWalletActionNavigation(href);
+            }
+      }
     >
       {body}
     </Link>
   );
 }
 
+function HyphaHIcon() {
+  return (
+    <Image
+      src="/placeholder/hypha-tokens-icon.png"
+      alt=""
+      width={32}
+      height={32}
+      className={shortcutIconClass}
+      aria-hidden
+    />
+  );
+}
+
 export function WalletShortcutCards({ basePath }: { basePath: string }) {
   const t = useTranslations('MyWallet');
   const { person } = useMe();
-  const { fundWallet } = useFundWallet({
-    address: person?.address as `0x${string}` | undefined,
+  const fundAddress = person?.address as `0x${string}` | undefined;
+  const { fundWallet: depositFunds } = useFundWallet({
+    address: fundAddress,
+    title: t('depositFunds.title'),
+    subtitle: t('depositFunds.subtitle'),
+  });
+  const { fundWallet: receiveFunds } = useFundWallet({
+    address: fundAddress,
     title: t('receiveFunds.title'),
     subtitle: t('receiveFunds.subtitle'),
+    defaultFundingMethod: 'manual',
   });
   const address = person?.address?.trim();
 
   const shortcuts: Shortcut[] = [
     {
+      key: 'deposit',
+      label: t('shortcuts.deposit'),
+      icon: (
+        <ArrowDownToLine
+          className={shortcutIconClass}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      ),
+      onClick: () => {
+        depositFunds();
+      },
+      disabled: !address,
+    },
+    {
       key: 'receive',
       label: t('shortcuts.receive'),
-      icon: QrCode,
+      icon: (
+        <QrCode className={shortcutIconClass} strokeWidth={1.5} aria-hidden />
+      ),
       onClick: () => {
-        fundWallet();
+        receiveFunds();
       },
       disabled: !address,
     },
     {
       key: 'transfer',
       label: t('shortcuts.transfer'),
-      icon: ArrowUpFromLine,
+      icon: (
+        <ArrowUpFromLine
+          className={shortcutIconClass}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      ),
       href: `${basePath}/actions/transfer-funds`,
     },
     {
       key: 'redeem',
       label: t('shortcuts.redeem'),
-      icon: BadgePercent,
+      icon: (
+        <BadgePercent
+          className={shortcutIconClass}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      ),
       href: `${basePath}/actions/redeem-tokens`,
     },
     {
       key: 'buyHypha',
       label: t('shortcuts.buyHypha'),
-      icon: Gem,
+      icon: <HyphaHIcon />,
       href: `${basePath}/actions/purchase-hypha-tokens`,
-      featured: true,
     },
     {
       key: 'buySpace',
       label: t('shortcuts.buySpace'),
-      icon: Boxes,
+      icon: (
+        <Boxes className={shortcutIconClass} strokeWidth={1.5} aria-hidden />
+      ),
       href: `${basePath}/actions/buy-space-tokens`,
     },
     {
       key: 'activate',
       label: t('shortcuts.activate'),
-      icon: CirclePower,
+      icon: (
+        <CirclePower
+          className={shortcutIconClass}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      ),
       href: `${basePath}/actions/activate-spaces`,
     },
     {
       key: 'fundSpace',
       label: t('shortcuts.fundSpace'),
-      icon: Wallet,
+      icon: (
+        <Wallet className={shortcutIconClass} strokeWidth={1.5} aria-hidden />
+      ),
       href: `${basePath}/actions/fund-a-space`,
     },
     {
       key: 'migrate',
       label: t('shortcuts.migrate'),
-      icon: RefreshCcw,
+      icon: (
+        <RefreshCcw
+          className={shortcutIconClass}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      ),
       href: address ? `${MIGRATE_HYPHA_TOKENS_URL}/${address}` : undefined,
       external: true,
       disabled: !address,
@@ -152,7 +221,7 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   return (
     <nav
       aria-label={t('title')}
-      className="grid grid-cols-2 gap-1.5 py-5 sm:grid-cols-4 xl:grid-cols-8"
+      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"
     >
       {shortcuts.map(({ key, ...shortcut }) => (
         <ShortcutCard key={key} {...shortcut} />

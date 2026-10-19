@@ -143,6 +143,7 @@ export function WalletAmountBlock({
           id={id}
           inputMode={integer ? 'numeric' : 'decimal'}
           value={amount}
+          placeholder="0"
           onChange={(event) => {
             const next = integer
               ? event.target.value
@@ -151,7 +152,7 @@ export function WalletAmountBlock({
             if (next !== '' && !pattern.test(next)) return;
             onAmountChange(next);
           }}
-          className="w-36 min-w-[4.5rem] border-b-2 border-foreground bg-neutral-3 px-2 py-1 text-center outline-none focus:border-accent-9"
+          className="w-40 min-w-[5rem] border border-foreground bg-background px-3 py-2 text-center text-foreground outline-none placeholder:text-neutral-9 focus:bg-neutral-2"
         />
         {symbolNode ??
           (symbol ? (

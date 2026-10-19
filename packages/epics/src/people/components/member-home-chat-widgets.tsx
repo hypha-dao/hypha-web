@@ -74,27 +74,6 @@ const SPACE_PREVIEW = 5;
 /** Quick-pick strip: denser on larger screens. */
 const RECIPIENT_PREVIEW = 10;
 
-type NoteKey =
-  | 'sendTokensThanks'
-  | 'sendTokensForTheWork'
-  | 'sendTokensWithCare';
-
-const NOTES: NoteKey[] = [
-  'sendTokensThanks',
-  'sendTokensForTheWork',
-  'sendTokensWithCare',
-];
-
-function randomNoteIndex(exclude?: number) {
-  if (NOTES.length <= 1) return 0;
-  let next = Math.floor(Math.random() * NOTES.length);
-  if (exclude == null || NOTES.length < 2) return next;
-  while (next === exclude) {
-    next = Math.floor(Math.random() * NOTES.length);
-  }
-  return next;
-}
-
 function personName(
   person: {
     name: string | null;
@@ -669,8 +648,7 @@ export function MemberHomeSendTokensWidget({
   ]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
-  const [noteIndex, setNoteIndex] = useState(() => randomNoteIndex());
-  const [memoDraft, setMemoDraft] = useState<string | null>(null);
+  const [memoDraft, setMemoDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [fundingKind, setFundingKind] = useState<'funds' | 'hypha' | null>(
     null,
@@ -711,10 +689,11 @@ export function MemberHomeSendTokensWidget({
     const first = preferredMatch ?? tokens[0]?.address;
     if (!first) return;
     setLines((current) => {
-      if (
-        current[0]?.tokenAddress &&
-        (!preferred || current[0].tokenAddress.toLowerCase() === preferred)
-      ) {
+      const currentAddress = current[0]?.tokenAddress?.toLowerCase();
+      if (preferred) {
+        if (currentAddress === preferred) return current;
+        if (!preferredMatch) return current;
+      } else if (current[0]?.tokenAddress) {
         return current;
       }
       return current.map((line, index) =>
@@ -857,7 +836,7 @@ export function MemberHomeSendTokensWidget({
         .toLowerCase();
       if (full && !byName.has(full)) byName.set(full, entry);
     }
-    return conversationRows
+    const recent = conversationRows
       .filter(
         (room) =>
           room.kind === 'person' &&
@@ -888,6 +867,38 @@ export function MemberHomeSendTokensWidget({
         const first = list.findIndex((row) => row.id === item.id);
         return first === index;
       });
+    const seen = new Set(recent.map((item) => item.address.toLowerCase()));
+    const fromDirectory = directory.flatMap((entry) => {
+      const address = entry.address?.trim() ?? '';
+      if (seen.has(address.toLowerCase())) return [];
+      seen.add(address.toLowerCase());
+      const name =
+        [entry.name, entry.surname].filter(Boolean).join(' ').trim() ||
+        fallbackName;
+      return [
+        {
+          kind: 'person' as const,
+          id: `person-${entry.id}`,
+          name,
+          address,
+        },
+      ];
+    });
+    const fromSpaces = (directorySpaces ?? []).flatMap((space) => {
+      const address = space.address?.trim() ?? '';
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return [];
+      if (seen.has(address.toLowerCase())) return [];
+      seen.add(address.toLowerCase());
+      return [
+        {
+          kind: 'space' as const,
+          id: `space-${space.id}`,
+          name: space.title?.trim() || fallbackName,
+          address,
+        },
+      ];
+    });
+    return [...recent, ...fromDirectory, ...fromSpaces];
   }, [
     conversationRows,
     directoryPeople,
@@ -896,6 +907,7 @@ export function MemberHomeSendTokensWidget({
     person?.address,
     person?.id,
     person?.slug,
+    directorySpaces,
     personIdToMatrixUserId,
   ]);
   const visibleTargets = useMemo(() => {
@@ -919,8 +931,7 @@ export function MemberHomeSendTokensWidget({
     }
     return [target, ...preview].slice(0, RECIPIENT_PREVIEW);
   }, [target, visibleTargets]);
-  const noteKey: NoteKey = NOTES[noteIndex] ?? 'sendTokensThanks';
-  const memo = memoDraft ?? t(noteKey);
+  const memo = memoDraft.trim();
   const readyLines = lines.flatMap((line) => {
     const token = tokens.find((item) => item.address === line.tokenAddress);
     const amount = Number(line.amount);
@@ -1222,6 +1233,19 @@ export function MemberHomeSendTokensWidget({
             ) : null}
           </div>
 
+          <label className="flex flex-col gap-2" htmlFor="send-tokens-memo">
+            <span className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
+              {t('sendTokensMemo')}
+            </span>
+            <input
+              id="send-tokens-memo"
+              value={memoDraft}
+              placeholder={t('sendTokensMemoPlaceholder')}
+              onChange={(event) => setMemoDraft(event.target.value)}
+              className="h-10 w-full border border-border bg-background px-3 text-2 text-foreground outline-none placeholder:text-neutral-9 focus:border-foreground"
+            />
+          </label>
+
           <div className="flex flex-col gap-3">
             {lines.map((line) => {
               const selected =
@@ -1282,6 +1306,7 @@ export function MemberHomeSendTokensWidget({
                     />
                     {tokens.length > 1 ? (
                       <Popover
+                        modal={false}
                         open={menuOpen}
                         onOpenChange={(open) =>
                           setOpenMenuId(open ? line.id : null)
@@ -1428,27 +1453,6 @@ export function MemberHomeSendTokensWidget({
                   name: target.name,
                 })}
           </Button>
-          <div className="text-center text-1 text-neutral-11">
-            <label className="sr-only" htmlFor="send-tokens-memo">
-              {t(noteKey)}
-            </label>
-            <input
-              id="send-tokens-memo"
-              value={memo}
-              onChange={(event) => setMemoDraft(event.target.value)}
-              className="w-full bg-transparent text-center outline-none"
-            />
-            <button
-              type="button"
-              className="text-neutral-10"
-              onClick={() => {
-                setNoteIndex((index) => randomNoteIndex(index));
-                setMemoDraft(null);
-              }}
-            >
-              · {t('sendTokensChangeNote')}
-            </button>
-          </div>
           {error === 'insufficient' ? (
             <p className="text-2 text-foreground" role="alert">
               {t('sendTokensInsufficient')}{' '}

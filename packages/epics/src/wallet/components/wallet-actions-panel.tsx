@@ -6,6 +6,7 @@ import { SelectAction } from '../../common/select-action';
 import { ProposalOverlayShell } from '../../common/proposal-overlay-shell';
 import { useMe } from '@hypha-platform/core/client';
 import { useFundWallet } from '../../treasury/hooks';
+import { prepareWalletActionNavigation } from './open-wallet-action';
 import {
   ArrowUpFromLine,
   BadgePercent,
@@ -109,16 +110,23 @@ export function WalletActionsPanel({
           title={tProfile('actions')}
           content={tActions('content')}
           showTitle={false}
-          actions={WALLET_ACTIONS.map((action) => ({
-            ...action,
-            href:
+          actions={WALLET_ACTIONS.map((action) => {
+            const href =
               action.id === 'migrateHyphaTokens'
                 ? `${MIGRATE_HYPHA_TOKENS_URL}/${person?.address ?? ''}`
                 : action.href
                 ? `${basePath}/actions/${action.href}`
-                : undefined,
-            target: action.target || undefined,
-          }))}
+                : undefined;
+            return {
+              ...action,
+              href,
+              target: action.target || undefined,
+              onNavigate:
+                href && action.id !== 'migrateHyphaTokens'
+                  ? () => prepareWalletActionNavigation(href)
+                  : undefined,
+            };
+          })}
         />
       </div>
     </ProposalOverlayShell>

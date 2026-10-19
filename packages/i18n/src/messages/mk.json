@@ -89,7 +89,7 @@
     "peopleWidgetHint": "Прво онлајн. Допрете за разговор или повик.",
     "peopleWidgetEmpty": "Луѓето со кои делип простор се појавуваат тука.",
     "peopleWidgetShared": "{count} заеднички простори",
-    "sendTokensTitle": "Испрати токени",
+    "sendTokensTitle": "Испрати средства",
     "sendTokensTo": "До",
     "sendTokensYouHave": "Имаш {amount} {symbol}",
     "sendTokensPickFirst": "Прво избери некого",
@@ -99,6 +99,8 @@
     "sendTokensForTheWork": "за работата",
     "sendTokensWithCare": "со грижа",
     "sendTokensChangeNote": "допри за промена",
+    "sendTokensMemo": "Белешка",
+    "sendTokensMemoPlaceholder": "Додај белешка",
     "sendTokensArrived": "{amount} {symbol} се кај {name}",
     "sendTokensSigned": "Потпишано од тебе, видливо за членовите.",
     "sendTokensLeft": "остануваат {amount} {symbol}",
@@ -832,14 +834,19 @@
     "backToWallet": "Назад кон паричникот",
     "available": "Достапно",
     "shortcuts": {
+      "deposit": "Депонирај средства",
       "receive": "Прими средства",
-      "transfer": "Испрати токени",
+      "transfer": "Испрати средства",
       "redeem": "Откупи токени",
       "buyHypha": "Купи Hypha токени",
       "buySpace": "Купи токени на просторот",
       "activate": "Активирај простор",
       "migrate": "Мигрирај токени",
       "fundSpace": "Финансирај простор"
+    },
+    "depositFunds": {
+      "title": "Депонирај средства",
+      "subtitle": "Додај средства во овој паричник."
     },
     "receiveFunds": {
       "title": "Прими средства",

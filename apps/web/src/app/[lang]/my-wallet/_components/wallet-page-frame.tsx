@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 export type WalletPageTitleKey =
   | 'allYourAssets'
   | 'bankTransfers'
-  | 'allYourReward';
+  | 'allYourRewards';
 
 export async function WalletPageFrame({
   children,

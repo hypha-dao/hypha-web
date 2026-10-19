@@ -89,7 +89,7 @@
     "peopleWidgetHint": "Zuerst die Online. Tippe jemanden für Chat oder Anruf.",
     "peopleWidgetEmpty": "Menschen, mit denen du einen Space teilst, erscheinen hier.",
     "peopleWidgetShared": "{count} gemeinsame Spaces",
-    "sendTokensTitle": "Token senden",
+    "sendTokensTitle": "Guthaben senden",
     "sendTokensTo": "An",
     "sendTokensYouHave": "Du hast {amount} {symbol}",
     "sendTokensPickFirst": "Wähle zuerst jemanden",
@@ -99,6 +99,8 @@
     "sendTokensForTheWork": "für die Arbeit",
     "sendTokensWithCare": "mit Sorgfalt",
     "sendTokensChangeNote": "tippen zum Wechseln",
+    "sendTokensMemo": "Notiz",
+    "sendTokensMemoPlaceholder": "Notiz hinzufügen",
     "sendTokensArrived": "{amount} {symbol} sind bei {name}",
     "sendTokensSigned": "Von dir signiert, für die Mitglieder sichtbar.",
     "sendTokensLeft": "noch {amount} {symbol}",
@@ -853,14 +855,19 @@
     "backToWallet": "Zurück zum Wallet",
     "available": "Verfügbar",
     "shortcuts": {
+      "deposit": "Guthaben einzahlen",
       "receive": "Guthaben empfangen",
-      "transfer": "Token senden",
+      "transfer": "Guthaben senden",
       "redeem": "Token einlösen",
       "buyHypha": "Hypha-Token kaufen",
       "buySpace": "Space-Token kaufen",
       "activate": "Space aktivieren",
       "migrate": "Token migrieren",
       "fundSpace": "Einen Space finanzieren"
+    },
+    "depositFunds": {
+      "title": "Guthaben einzahlen",
+      "subtitle": "Füge dieser Wallet Guthaben hinzu."
     },
     "receiveFunds": {
       "title": "Guthaben empfangen",
