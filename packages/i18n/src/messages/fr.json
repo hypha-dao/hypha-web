@@ -818,7 +818,7 @@
       "unavailable": "Aucun espace n'est actuellement disponible pour rejoindre."
     },
     "deposit": {
-      "title": "Déposer des fonds dans un espace",
+      "title": "Financer un espace",
       "description": "Choisissez un espace avec une adresse de trésorerie.",
       "cta": "Afficher les détails du dépôt",
       "unavailable": "Aucun espace avec adresse de trésorerie n'est actuellement disponible."
@@ -828,6 +828,12 @@
       "description": "Alimentez la trésorerie de {spaceName} avec l'adresse ci-dessous.",
       "qrAriaLabel": "Code QR de l'adresse de trésorerie pour {spaceName}",
       "networkWarning": "Avertissement : transférez les fonds uniquement sur le réseau BASE.",
+      "share": "Partagez ce QR code ou l’adresse de trésorerie pour financer cet espace.",
+      "baseOnly": "Envoyez les fonds uniquement sur Base.",
+      "share": "Partagez ce QR code ou l’adresse de trésorerie pour financer cet espace.",
+      "baseOnly": "Envoyez les fonds uniquement sur Base.",
+      "share": "Partagez ce QR code ou l’adresse de trésorerie pour financer cet espace.",
+      "baseOnly": "Envoyez les fonds uniquement sur Base.",
       "addressLabel": "Adresse de trésorerie",
       "copy": "Copier l'adresse",
       "copied": "Adresse copiée",
@@ -848,7 +854,10 @@
       "buyHypha": "Acheter des jetons Hypha",
       "buySpace": "Acheter des jetons d'espace",
       "activate": "Activer l'espace",
-      "migrate": "Migrer les jetons"
+      "migrate": "Migrer les jetons",
+      "fundSpace": "Financer un espace",
+      "fundSpace": "Financer un espace",
+      "fundSpace": "Financer un espace"
     },
     "tabs": {
       "wallet": "Portefeuille",

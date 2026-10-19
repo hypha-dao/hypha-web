@@ -818,7 +818,7 @@
       "unavailable": "Derzeit sind keine Spaces zum Beitreten verfügbar."
     },
     "deposit": {
-      "title": "Mittel in einen Space einzahlen",
+      "title": "Einen Space finanzieren",
       "description": "Wähle einen Space mit Treasury-Adresse aus.",
       "cta": "Einzahlungsdetails anzeigen",
       "unavailable": "Derzeit sind keine Spaces mit Treasury-Adresse verfügbar."
@@ -828,6 +828,8 @@
       "description": "Finanziere die Treasury von {spaceName} mit der untenstehenden Adresse.",
       "qrAriaLabel": "QR-Code der Treasury-Adresse für {spaceName}",
       "networkWarning": "Warnung: Überweise Guthaben nur im BASE-Netzwerk.",
+      "share": "Teile diesen QR-Code oder die Treasury-Adresse, um diesen Space zu finanzieren.",
+      "baseOnly": "Sende Guthaben nur auf Base.",
       "addressLabel": "Treasury-Adresse",
       "copy": "Adresse kopieren",
       "copied": "Adresse kopiert",
@@ -848,7 +850,8 @@
       "buyHypha": "Hypha-Token kaufen",
       "buySpace": "Space-Token kaufen",
       "activate": "Space aktivieren",
-      "migrate": "Token migrieren"
+      "migrate": "Token migrieren",
+      "fundSpace": "Einen Space finanzieren"
     },
     "tabs": {
       "wallet": "Wallet",

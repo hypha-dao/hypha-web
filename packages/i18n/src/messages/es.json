@@ -1589,7 +1589,7 @@
       "unavailable": "No hay espacios disponibles para unirse en este momento."
     },
     "deposit": {
-      "title": "Depositar fondos en un espacio",
+      "title": "Financiar un espacio",
       "description": "Elige un espacio con dirección de tesorería para fondearlo.",
       "cta": "Mostrar detalles de depósito",
       "unavailable": "No hay espacios con dirección de tesorería disponibles."
@@ -1599,6 +1599,12 @@
       "description": "Financia la tesorería de {spaceName} con la dirección de abajo.",
       "qrAriaLabel": "Código QR de la dirección de tesorería de {spaceName}",
       "networkWarning": "Advertencia: transfiere fondos solo en la red BASE.",
+      "share": "Comparte este código QR o la dirección de tesorería para financiar este espacio.",
+      "baseOnly": "Asegúrate de enviar fondos en Base.",
+      "share": "Comparte este código QR o la dirección de tesorería para financiar este espacio.",
+      "baseOnly": "Asegúrate de enviar fondos en Base.",
+      "share": "Comparte este código QR o la dirección de tesorería para financiar este espacio.",
+      "baseOnly": "Asegúrate de enviar fondos en Base.",
       "addressLabel": "Dirección de tesorería",
       "copy": "Copiar dirección",
       "copied": "Dirección copiada",
@@ -1619,7 +1625,10 @@
       "buyHypha": "Comprar tokens Hypha",
       "buySpace": "Comprar tokens del espacio",
       "activate": "Activar espacio",
-      "migrate": "Migrar tokens"
+      "migrate": "Migrar tokens",
+      "fundSpace": "Financiar un espacio",
+      "fundSpace": "Financiar un espacio",
+      "fundSpace": "Financiar un espacio"
     },
     "tabs": {
       "wallet": "Billetera",

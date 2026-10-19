@@ -817,7 +817,7 @@
       "unavailable": "Er zijn momenteel geen plekken beschikbaar om mee te doen."
     },
     "deposit": {
-      "title": "Stort geld in een ruimte",
+      "title": "Financier een space",
       "description": "Kies een ruimte met een treasury-adres om deze te financieren.",
       "cta": "Toon stortingsgegevens",
       "unavailable": "Momenteel zijn er geen ruimtes met treasuryadressen beschikbaar."
@@ -827,6 +827,12 @@
       "description": "Fonds {spaceName} schatkist via het onderstaande adres.",
       "qrAriaLabel": "Treasury-adres QR-code voor {spaceName}",
       "networkWarning": "Opgelet: maak alleen geld over op het BASE Netwerk.",
+      "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
+      "baseOnly": "Stuur geld alleen op Base.",
+      "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
+      "baseOnly": "Stuur geld alleen op Base.",
+      "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
+      "baseOnly": "Stuur geld alleen op Base.",
       "addressLabel": "Adres van de schatkist",
       "copy": "Kopieer adres",
       "copied": "Adres gekopieerd",
@@ -847,7 +853,10 @@
       "buyHypha": "Hypha-tokens kopen",
       "buySpace": "Space-tokens kopen",
       "activate": "Space activeren",
-      "migrate": "Tokens migreren"
+      "migrate": "Tokens migreren",
+      "fundSpace": "Financier een space",
+      "fundSpace": "Financier een space",
+      "fundSpace": "Financier een space"
     },
     "tabs": {
       "wallet": "Portemonnee",

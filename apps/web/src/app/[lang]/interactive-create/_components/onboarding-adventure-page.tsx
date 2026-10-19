@@ -340,6 +340,14 @@ export function OnboardingAdventurePage({
   );
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.location.hash !== '#fund-a-space') return;
+    document.getElementById('fund-a-space')?.scrollIntoView({
+      block: 'start',
+    });
+  }, []);
+
+  useEffect(() => {
     if (seededPromptFromUrlRef.current) return;
     const promptFromUrl = searchParams.get('prompt')?.trim();
     if (!promptFromUrl) return;
@@ -626,36 +634,38 @@ export function OnboardingAdventurePage({
             t={t}
           />
 
-          <SelectorCard
-            icon={<Wallet className="size-5" aria-hidden />}
-            title={t('deposit.title')}
-            description={t('deposit.description')}
-            options={depositOptions}
-            query={depositQuery}
-            onQueryChange={(next) => {
-              setDepositQuery(next);
-              setDepositSpaceSlug('');
-              setDepositDetailsSpaceSlug('');
-              setCopiedAddress(false);
-            }}
-            value={depositSpaceSlug}
-            onChange={handleDepositSpaceChange}
-            actionLabel={t('deposit.cta')}
-            onAction={() => {
-              if (!depositSpaceSlug) return;
-              setCopiedAddress(false);
-              setDepositDetailsSpaceSlug(depositSpaceSlug);
-            }}
-            disabled={isLoading || !hasDepositChoices}
-            unavailableText={
-              isLoading
-                ? t('loadingSpaces')
-                : spacesError?.message
-                ? spacesError.message
-                : t('deposit.unavailable')
-            }
-            t={t}
-          />
+          <div id="fund-a-space">
+            <SelectorCard
+              icon={<Wallet className="size-5" aria-hidden />}
+              title={t('deposit.title')}
+              description={t('deposit.description')}
+              options={depositOptions}
+              query={depositQuery}
+              onQueryChange={(next) => {
+                setDepositQuery(next);
+                setDepositSpaceSlug('');
+                setDepositDetailsSpaceSlug('');
+                setCopiedAddress(false);
+              }}
+              value={depositSpaceSlug}
+              onChange={handleDepositSpaceChange}
+              actionLabel={t('deposit.cta')}
+              onAction={() => {
+                if (!depositSpaceSlug) return;
+                setCopiedAddress(false);
+                setDepositDetailsSpaceSlug(depositSpaceSlug);
+              }}
+              disabled={isLoading || !hasDepositChoices}
+              unavailableText={
+                isLoading
+                  ? t('loadingSpaces')
+                  : spacesError?.message
+                  ? spacesError.message
+                  : t('deposit.unavailable')
+              }
+              t={t}
+            />
+          </div>
         </section>
 
         {selectedDepositSpace?.address ? (
@@ -685,68 +695,22 @@ function DepositDetailsCard({
   const address = normalizeEvmAddress(space.address);
   if (!address) return null;
 
+  const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
   return (
-    <Card className={onboardingCardClass}>
-      <CardHeader>
-        <CardTitle className="text-5">{t('depositDetails.title')}</CardTitle>
-        <CardDescription>
-          {t('depositDetails.description', { spaceName: space.title })}
+    <Card className="mx-auto w-full max-w-md border border-border bg-background-2">
+      <CardHeader className="items-center space-y-2 text-center">
+        <CardTitle className="text-5">{space.title}</CardTitle>
+        <CardDescription className="text-2 text-neutral-11">
+          {t('depositDetails.share')}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto]">
-        <div className="space-y-4">
-          <div className="flex items-start gap-2 rounded-md border border-warning-8/60 bg-warning-3 px-3 py-2 text-warning-11">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <p className="text-1 font-medium">
-              {t('depositDetails.networkWarning')}
-            </p>
-          </div>
-
-          <div className="space-y-2 rounded-lg border border-border/70 bg-background/30 p-3">
-            <p className="text-1 text-muted-foreground">
-              {t('depositDetails.addressLabel')}
-            </p>
-            <p className="break-all font-mono text-2 text-foreground">
-              {address}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              onClick={() => onCopyAddress(address)}
-              className="inline-flex min-h-11 items-center gap-2"
-            >
-              <Copy className="size-4" aria-hidden />
-              {copiedAddress
-                ? t('depositDetails.copied')
-                : t('depositDetails.copy')}
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {EXCHANGE_LINKS.map((link) => (
-              <a
-                key={link.id}
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${exchangeButtonBaseClass} ${
-                  exchangeBrandStyles[link.id]
-                }`}
-                aria-label={link.label}
-              >
-                <ExchangeBrandLogo brand={link.id} />
-                {link.label}
-              </a>
-            ))}
-          </div>
-        </div>
-
-        <div className="mx-auto rounded-lg border border-border/70 bg-white p-3">
+      <CardContent className="flex flex-col items-center gap-4 pb-6">
+        <div className="rounded-lg bg-white p-4">
           {evmAddressPattern.test(address) ? (
             <QRCode
               value={address}
-              size={160}
+              size={220}
               aria-label={t('depositDetails.qrAriaLabel', {
                 spaceName: space.title,
               })}
@@ -756,6 +720,50 @@ function DepositDetailsCard({
               {t('depositDetails.invalidAddress')}
             </p>
           )}
+        </div>
+        <p className="w-full rounded-md bg-warning-3 px-3 py-2 text-center text-1 text-warning-11">
+          {t('depositDetails.baseOnly')}
+        </p>
+        <div className="flex w-full items-center justify-between gap-3 rounded-md border border-border px-3 py-3">
+          <div className="min-w-0 text-left">
+            <p className="text-1 text-neutral-11">
+              {t('depositDetails.addressLabel')}
+            </p>
+            <p className="truncate font-mono text-2 text-foreground">
+              {shortAddress}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            onClick={() => onCopyAddress(address)}
+            className="shrink-0 px-2"
+            aria-label={
+              copiedAddress
+                ? t('depositDetails.copied')
+                : t('depositDetails.copy')
+            }
+          >
+            <Copy className="size-4" aria-hidden />
+          </Button>
+        </div>
+        <div className="flex flex-wrap justify-center gap-2">
+          {EXCHANGE_LINKS.map((link) => (
+            <a
+              key={link.id}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${exchangeButtonBaseClass} ${
+                exchangeBrandStyles[link.id]
+              }`}
+              aria-label={link.label}
+            >
+              <ExchangeBrandLogo brand={link.id} />
+              {link.label}
+            </a>
+          ))}
         </div>
       </CardContent>
     </Card>

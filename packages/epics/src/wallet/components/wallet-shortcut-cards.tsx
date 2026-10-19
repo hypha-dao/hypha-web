@@ -8,6 +8,7 @@ import {
   Boxes,
   CirclePower,
   Gem,
+  QrCode,
   RefreshCcw,
   WalletCards,
 } from 'lucide-react';
@@ -131,6 +132,15 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
       href: `${basePath}/actions/activate-spaces`,
     },
     {
+      key: 'fundSpace',
+      label: t('shortcuts.fundSpace'),
+      icon: QrCode,
+      href: `${basePath.replace(
+        /\/my-wallet$/,
+        '',
+      )}/interactive-create#fund-a-space`,
+    },
+    {
       key: 'migrate',
       label: t('shortcuts.migrate'),
       icon: RefreshCcw,
@@ -143,7 +153,7 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   return (
     <nav
       aria-label={t('title')}
-      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7"
+      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"
     >
       {shortcuts.map(({ key, ...shortcut }) => (
         <ShortcutCard key={key} {...shortcut} />

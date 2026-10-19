@@ -816,7 +816,7 @@
       "unavailable": "Ingen rom er tilgjengelige å bli med i for øyeblikket."
     },
     "deposit": {
-      "title": "Sett inn midler i et rom",
+      "title": "Finansier et space",
       "description": "Velg et rom med kasseadresse for å finansiere det.",
       "cta": "Vis innskuddsdetaljer",
       "unavailable": "Ingen rom med kasseadresser er tilgjengelige for øyeblikket."
@@ -826,6 +826,12 @@
       "description": "Finansier kassen til {spaceName} ved å bruke adressen nedenfor.",
       "qrAriaLabel": "QR-kode for kasseadressen til {spaceName}",
       "networkWarning": "Advarsel: overfør kun midler på BASE-nettverket.",
+      "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
+      "baseOnly": "Send midler bare på Base.",
+      "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
+      "baseOnly": "Send midler bare på Base.",
+      "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
+      "baseOnly": "Send midler bare på Base.",
       "addressLabel": "Kasseadresse",
       "copy": "Kopier adresse",
       "copied": "Adresse kopiert",
@@ -846,7 +852,10 @@
       "buyHypha": "Kjøp Hypha-tokens",
       "buySpace": "Kjøp space-tokens",
       "activate": "Aktiver space",
-      "migrate": "Migrer tokens"
+      "migrate": "Migrer tokens",
+      "fundSpace": "Finansier et space",
+      "fundSpace": "Finansier et space",
+      "fundSpace": "Finansier et space"
     },
     "tabs": {
       "wallet": "Lommebok",
