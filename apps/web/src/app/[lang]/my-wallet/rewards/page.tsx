@@ -10,7 +10,7 @@ export default async function MyWalletRewardsPage(props: PageProps) {
   const { lang } = await props.params;
 
   return (
-    <WalletPageFrame lang={lang}>
+    <WalletPageFrame lang={lang} titleKey="allYourReward">
       <MyWalletDashboard lang={lang} section="rewards" />
     </WalletPageFrame>
   );

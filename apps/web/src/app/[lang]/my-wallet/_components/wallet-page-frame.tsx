@@ -3,11 +3,18 @@ import { Container, Heading } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
+export type WalletPageTitleKey =
+  | 'allYourAssets'
+  | 'bankTransfers'
+  | 'allYourReward';
+
 export async function WalletPageFrame({
   children,
+  titleKey = 'allYourAssets',
 }: {
   lang: Locale;
   children: ReactNode;
+  titleKey?: WalletPageTitleKey;
 }) {
   const t = await getTranslations('MyWallet');
 
@@ -16,7 +23,7 @@ export async function WalletPageFrame({
       <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5">
         <header className="xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
-            {t('allYourRewards')}
+            {t(titleKey)}
           </p>
           <h1
             className="text-7 leading-tight sm:text-8"
@@ -32,7 +39,7 @@ export async function WalletPageFrame({
           align="center"
           className="hidden flex-col leading-none xl:flex"
         >
-          <span>{t('allYourRewards')}</span>
+          <span>{t(titleKey)}</span>
           <span>{t('oneWallet')}</span>
         </Heading>
         {children}
