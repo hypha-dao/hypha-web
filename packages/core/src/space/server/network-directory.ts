@@ -22,6 +22,21 @@ function rowsOf(result: unknown): unknown[] {
   return [];
 }
 
+function rowField(row: object, names: string[]): unknown {
+  const record = row as Record<string, unknown>;
+  for (const name of names) {
+    if (record[name] != null) return record[name];
+  }
+  const lowered = new Map(
+    Object.entries(record).map(([key, value]) => [key.toLowerCase(), value]),
+  );
+  for (const name of names) {
+    const value = lowered.get(name.toLowerCase());
+    if (value != null) return value;
+  }
+  return undefined;
+}
+
 function asIdList(value: unknown): number[] {
   const entries = Array.isArray(value)
     ? value
@@ -52,47 +67,63 @@ export async function getNetworkDirectorySpaces(
   { db }: DbConfig,
   props: FindAllSpacesProps = {},
 ): Promise<Space[]> {
-  const [spaceRows, memberResult, agreementResult] = await Promise.all([
-    findAllSpaces({ db }, props),
-    db.execute(sql`
-      select ${memberships.spaceId} as space_id,
-             array_agg(${memberships.personId}) as person_ids
-      from ${memberships}
-      group by ${memberships.spaceId}
-    `),
-    db.execute(sql`
-      select ${documents.spaceId} as space_id,
-             count(*)::int as count
-      from ${documents}
-      where ${documents.state} = 'agreement'
-      group by ${documents.spaceId}
-    `),
-  ]);
+  const spaceRows = await findAllSpaces({ db }, props);
+
+  // Counts are optional. A failure here must not wipe the directory — the
+  // page treats an empty list as "no spaces", which is what the census and
+  // map were showing.
+  let memberResult: unknown = [];
+  let agreementResult: unknown = [];
+  try {
+    [memberResult, agreementResult] = await Promise.all([
+      db.execute(sql`
+        select ${memberships.spaceId} as space_id,
+               array_agg(${memberships.personId}) as person_ids
+        from ${memberships}
+        group by ${memberships.spaceId}
+      `),
+      db.execute(sql`
+        select ${documents.spaceId} as space_id,
+               count(*)::int as count
+        from ${documents}
+        where ${documents.state} = 'agreement'
+        group by ${documents.spaceId}
+      `),
+    ]);
+  } catch (error) {
+    console.error('[getNetworkDirectorySpaces] Failed to load counts', error);
+  }
 
   const peopleBySpace = new Map<number, number[]>();
   for (const row of rowsOf(memberResult)) {
     if (!row || typeof row !== 'object') continue;
-    const record = row as { space_id?: unknown; person_ids?: unknown };
-    const spaceId = Number(record.space_id);
+    const spaceId = Number(rowField(row, ['space_id', 'spaceId']));
     if (!Number.isInteger(spaceId)) continue;
-    peopleBySpace.set(spaceId, asIdList(record.person_ids));
+    peopleBySpace.set(
+      spaceId,
+      asIdList(rowField(row, ['person_ids', 'personIds'])),
+    );
   }
 
   const agreementsBySpace = new Map<number, number>();
   for (const row of rowsOf(agreementResult)) {
     if (!row || typeof row !== 'object') continue;
-    const record = row as { space_id?: unknown; count?: unknown };
-    const spaceId = Number(record.space_id);
+    const spaceId = Number(rowField(row, ['space_id', 'spaceId']));
     if (!Number.isInteger(spaceId)) continue;
-    agreementsBySpace.set(spaceId, asCount(record.count));
+    agreementsBySpace.set(spaceId, asCount(rowField(row, ['count'])));
   }
 
   return spaceRows.map((space) => {
-    const memberPersonIds = peopleBySpace.get(space.id) ?? [];
+    const memberPersonIds = peopleBySpace.get(space.id);
+    // `memberCount: 0` means archived on the client (`isSpaceArchived`).
+    // A space with no membership rows is still a space — leave the count off
+    // so it stays on the map and in the census.
+    const hasMembers = memberPersonIds != null && memberPersonIds.length > 0;
     return {
       ...mapDbSpaceToSpace(space),
-      memberCount: memberPersonIds.length,
-      memberPersonIds,
+      ...(hasMembers
+        ? { memberCount: memberPersonIds.length, memberPersonIds }
+        : {}),
       documentCount: agreementsBySpace.get(space.id) ?? 0,
     };
   });
