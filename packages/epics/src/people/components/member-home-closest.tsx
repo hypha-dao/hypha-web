@@ -381,7 +381,7 @@ export function MemberHomeClosest({
           {rest > 0 ? (
             <li>
               <Link
-                href={`/${lang}/connections`}
+                href={`/${lang}/messages`}
                 aria-label={t('seeMore')}
                 className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12 xl:hidden"
                 style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}

@@ -73,6 +73,11 @@ import {
   buildWalletSectionNavItems,
   isWalletSectionNavActive,
 } from '../wallet/components/wallet-section-nav';
+import {
+  buildMessagesSectionNavItems,
+  isMessagesSectionNavActive,
+  isMessagesSectionPath,
+} from '../people/components/messages-section-nav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -355,6 +360,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSpaces = useTranslations('Spaces');
   const tNetwork = useTranslations('NetworkExchange');
   const tMyWallet = useTranslations('MyWallet');
+  const tConnections = useTranslations('Connections');
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -707,12 +713,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }));
   }, [lang, pathname, spaceSlug, tMyWallet]);
 
+  const messagesNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !lang) return [];
+    if (!isMessagesSectionPath(pathname)) return [];
+    const base = `/${lang}/messages`;
+    return buildMessagesSectionNavItems(base).map((item) => ({
+      key: item.key,
+      label: tConnections(item.labelKey),
+      icon: item.icon,
+      href: item.href,
+      active: isMessagesSectionNavActive(item, pathname),
+    }));
+  }, [lang, pathname, spaceSlug, tConnections]);
+
   const menuNavItems =
     sectionNavItems.length > 0
       ? sectionNavItems
       : networkNavItems.length > 0
       ? networkNavItems
-      : walletNavItems;
+      : walletNavItems.length > 0
+      ? walletNavItems
+      : messagesNavItems;
 
   const isSpaceSettingsActive = useMemo(
     () =>

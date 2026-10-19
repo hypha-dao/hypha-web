@@ -662,6 +662,11 @@
   "Connections": {
     "titleLineOne": "Restez proche,",
     "titleLineTwo": "Partagez des messages",
+    "tabs": {
+      "messages": "Messages",
+      "suggestions": "Suggestions"
+    },
+    "suggestionsEmpty": "Aucune suggestion pour le moment.",
     "reachOut": "Hypha suggère",
     "longTimeNoSee": "Ça fait longtemps",
     "longTimeSentence": "Ça fait longtemps que vous ne vous êtes pas parlé.",

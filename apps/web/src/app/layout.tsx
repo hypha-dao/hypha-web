@@ -300,7 +300,7 @@ export default async function RootLayout({
                                         },
                                         {
                                           label: navMessagesLabel,
-                                          href: `/${locale}/connections`,
+                                          href: `/${locale}/messages`,
                                         },
                                         {
                                           label: navMyWalletLabel,
@@ -341,7 +341,7 @@ export default async function RootLayout({
                                       },
                                       {
                                         label: navMessagesLabel,
-                                        href: `/${locale}/connections`,
+                                        href: `/${locale}/messages`,
                                       },
                                       {
                                         label: navMyWalletLabel,

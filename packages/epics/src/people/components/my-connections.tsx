@@ -285,7 +285,12 @@ function formatWhen(ts: number, locale: string, justNow: string) {
   }).format(ts);
 }
 
-export function MyConnections() {
+export function MyConnections({
+  section = 'messages',
+}: {
+  /** Messages is the conversation list. Suggestions is its own screen. */
+  section?: 'messages' | 'suggestions';
+}) {
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
@@ -635,7 +640,7 @@ export function MyConnections() {
         }}
       />
 
-      {reachOut.length > 0 ? (
+      {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
           <div className="flex flex-col gap-1">
             <h2
@@ -648,196 +653,208 @@ export function MyConnections() {
               {t('suggestSentence')}
             </p>
           </div>
-          <div className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {reachOut.map((card) => (
-              <button
-                key={card.key}
-                type="button"
-                onClick={() => void openReachOut(card)}
-                className="flex w-40 shrink-0 flex-col items-start gap-2 border border-border p-3 text-left hover:bg-accent-2"
-              >
-                <PersonAvatar
-                  size="chat"
-                  shape="circle"
-                  avatarSrc={card.avatarUrl}
-                  userName={card.name}
-                  personId={card.person.id}
-                />
-                <span className="w-full truncate text-2 text-foreground">
-                  {card.name}
-                </span>
-                <span className="text-1 text-foreground">
-                  {card.kind === 'reconnect'
-                    ? t('longTimeNoSee')
-                    : t('worthMeeting')}
-                </span>
-                <span className="w-full truncate text-1 text-muted-foreground">
-                  {card.kind === 'reconnect'
-                    ? card.lastTs
-                      ? formatWhen(card.lastTs, locale, t('justNow'))
-                      : t('noMessage')
-                    : card.spaceTitle
-                    ? card.spaceTitle
-                    : card.sharedSpaceCount > 0
-                    ? t('sharedCount', { count: card.sharedSpaceCount })
-                    : t('noMessage')}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <label className="relative min-w-0 flex-1">
-            <span className="sr-only">{t('search')}</span>
-            <Search
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
-              strokeWidth={1.5}
-              aria-hidden
-            />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('search')}
-              className="h-10 w-full border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </label>
-          {picking ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className="shrink-0"
-              onClick={exitPicking}
-            >
-              {t('cancelPick')}
-            </Button>
+          {reachOut.length === 0 ? (
+            <p className="text-2 text-muted-foreground">
+              {t('suggestionsEmpty')}
+            </p>
           ) : (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className="shrink-0 gap-1.5"
-              disabled={!isMatrixAvailable || people.length < 2}
-              onClick={() => setPicking(true)}
-            >
-              <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
-              {t('groupCall')}
-            </Button>
-          )}
-        </div>
-
-        {picking && selectedPeople.length > 0 ? (
-          <div
-            className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            aria-label={t('selectedCount', { count: selectedPeople.length })}
-          >
-            {selectedPeople.map((row) => (
-              <button
-                key={row.person.id}
-                type="button"
-                className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
-                aria-label={t('removeSelected', { name: row.name })}
-                onClick={() => toggleSelected(row.person.id)}
-              >
-                <span className="relative inline-flex">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {reachOut.map((card) => (
+                <button
+                  key={card.key}
+                  type="button"
+                  onClick={() => void openReachOut(card)}
+                  className="flex min-w-0 flex-col items-start gap-2 border border-border p-3 text-left hover:bg-accent-2"
+                >
                   <PersonAvatar
                     size="chat"
                     shape="circle"
-                    avatarSrc={row.avatarUrl}
-                    userName={row.name}
-                    personId={row.person.id}
+                    avatarSrc={card.avatarUrl}
+                    userName={card.name}
+                    personId={card.person.id}
                   />
-                  <span
-                    className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
-                    aria-hidden
-                  >
-                    <X className="size-2.5" strokeWidth={2.5} />
+                  <span className="w-full truncate text-2 text-foreground">
+                    {card.name}
                   </span>
-                </span>
-                <span className="w-full truncate text-1 text-neutral-11">
-                  {row.name.split(' ')[0] || row.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : null}
+                  <span className="text-1 text-foreground">
+                    {card.kind === 'reconnect'
+                      ? t('longTimeNoSee')
+                      : t('worthMeeting')}
+                  </span>
+                  <span className="w-full truncate text-1 text-muted-foreground">
+                    {card.kind === 'reconnect'
+                      ? card.lastTs
+                        ? formatWhen(card.lastTs, locale, t('justNow'))
+                        : t('noMessage')
+                      : card.spaceTitle
+                      ? card.spaceTitle
+                      : card.sharedSpaceCount > 0
+                      ? t('sharedCount', { count: card.sharedSpaceCount })
+                      : t('noMessage')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
-        {picking ? (
-          <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
-              {selectedPeople.length > 0
-                ? t('selectedCount', { count: selectedPeople.length })
-                : t('pickMembers')}
+      {section === 'messages' ? (
+        <>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">{t('search')}</span>
+                <Search
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={t('search')}
+                  className="h-10 w-full border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </label>
+              {picking ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="shrink-0"
+                  onClick={exitPicking}
+                >
+                  {t('cancelPick')}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="shrink-0 gap-1.5"
+                  disabled={!isMatrixAvailable || people.length < 2}
+                  onClick={() => setPicking(true)}
+                >
+                  <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
+                  {t('groupCall')}
+                </Button>
+              )}
+            </div>
+
+            {picking && selectedPeople.length > 0 ? (
+              <div
+                className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                aria-label={t('selectedCount', {
+                  count: selectedPeople.length,
+                })}
+              >
+                {selectedPeople.map((row) => (
+                  <button
+                    key={row.person.id}
+                    type="button"
+                    className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
+                    aria-label={t('removeSelected', { name: row.name })}
+                    onClick={() => toggleSelected(row.person.id)}
+                  >
+                    <span className="relative inline-flex">
+                      <PersonAvatar
+                        size="chat"
+                        shape="circle"
+                        avatarSrc={row.avatarUrl}
+                        userName={row.name}
+                        personId={row.person.id}
+                      />
+                      <span
+                        className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                        aria-hidden
+                      >
+                        <X className="size-2.5" strokeWidth={2.5} />
+                      </span>
+                    </span>
+                    <span className="w-full truncate text-1 text-neutral-11">
+                      {row.name.split(' ')[0] || row.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {picking ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
+                  {selectedPeople.length > 0
+                    ? t('selectedCount', { count: selectedPeople.length })
+                    : t('pickMembers')}
+                </p>
+                <Button
+                  type="button"
+                  disabled={selectedPeople.length < 2 || calling}
+                  className="shrink-0 gap-1.5"
+                  onClick={() => void startGroupCall()}
+                >
+                  <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
+                  {t('startGroupCall')}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          {notice ? (
+            <p className="text-1 text-error-11" role="alert">
+              {notice}
             </p>
-            <Button
-              type="button"
-              disabled={selectedPeople.length < 2 || calling}
-              className="shrink-0 gap-1.5"
-              onClick={() => void startGroupCall()}
-            >
-              <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
-              {t('startGroupCall')}
-            </Button>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
 
-      {notice ? (
-        <p className="text-1 text-error-11" role="alert">
-          {notice}
-        </p>
-      ) : null}
+          {!isMatrixAvailable ? (
+            <p className="text-2 text-muted-foreground">
+              {tChat('matrixUnavailable')}
+            </p>
+          ) : null}
 
-      {!isMatrixAvailable ? (
-        <p className="text-2 text-muted-foreground">
-          {tChat('matrixUnavailable')}
-        </p>
-      ) : null}
+          {home != null && people.length === 0 && !searching ? (
+            <p className="text-2 text-muted-foreground">
+              {needle ? t('noMatches') : t('empty')}
+            </p>
+          ) : null}
 
-      {home != null && people.length === 0 && !searching ? (
-        <p className="text-2 text-muted-foreground">
-          {needle ? t('noMatches') : t('empty')}
-        </p>
-      ) : null}
+          {people.length > 0 ? (
+            <MemberList
+              title={t('people')}
+              rows={people}
+              presenceById={presenceById}
+              locale={locale}
+              justNow={t('justNow')}
+              noMessage={t('noMessage')}
+              youLabel={(message) => t('youWrote', { message })}
+              unreadLabel={(count) => t('unread', { count })}
+              selectLabel={(name) => t('selectMember', { name })}
+              picking={picking}
+              selected={selected}
+              onOpen={(row) => void openMember(row)}
+            />
+          ) : null}
 
-      {people.length > 0 ? (
-        <MemberList
-          title={t('people')}
-          rows={people}
-          presenceById={presenceById}
-          locale={locale}
-          justNow={t('justNow')}
-          noMessage={t('noMessage')}
-          youLabel={(message) => t('youWrote', { message })}
-          unreadLabel={(count) => t('unread', { count })}
-          selectLabel={(name) => t('selectMember', { name })}
-          picking={picking}
-          selected={selected}
-          onOpen={(row) => void openMember(row)}
-        />
-      ) : null}
+          {hasMorePeople && !needle ? (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                disabled={loadingMore}
+                onClick={() => void loadMorePeople()}
+              >
+                {tCommon('loadMore')}
+              </Button>
+            </div>
+          ) : null}
 
-      {hasMorePeople && !needle ? (
-        <div className="flex justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            disabled={loadingMore}
-            onClick={() => void loadMorePeople()}
-          >
-            {tCommon('loadMore')}
-          </Button>
-        </div>
-      ) : null}
-
-      {moreFailed ? (
-        <p className="text-center text-1 text-error-11" role="alert">
-          {t('loadMoreFailed')}
-        </p>
+          {moreFailed ? (
+            <p className="text-center text-1 text-error-11" role="alert">
+              {t('loadMoreFailed')}
+            </p>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

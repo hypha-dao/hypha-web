@@ -35,7 +35,7 @@ export function isMyWalletPath(pathname: string | null | undefined): boolean {
   return /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname);
 }
 
-/** Home, connections, my spaces, and my wallet, plus a space and the network. */
+/** Home, messages, my spaces, and my wallet, plus a space and the network. */
 export function showsHumanChatIcon(
   pathname: string | null | undefined,
   inSpace: boolean,
@@ -51,12 +51,12 @@ export function showsHumanChatIcon(
   );
 }
 
-/** `/{lang}/connections`. A space slug of "connections" does not match. */
+/** `/{lang}/messages`, and the old `/{lang}/connections` address. */
 export function isConnectionsPath(
   pathname: string | null | undefined,
 ): boolean {
   if (!pathname) return false;
-  return /^\/[^/]+\/connections(?:\/|$)/.test(pathname);
+  return /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname);
 }
 
 /** `/{lang}/network` and its sections. A space slug of "network" does not match. */

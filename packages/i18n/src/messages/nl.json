@@ -662,6 +662,11 @@
   "Connections": {
     "titleLineOne": "Blijf dichtbij,",
     "titleLineTwo": "Deel berichten",
+    "tabs": {
+      "messages": "Berichten",
+      "suggestions": "Suggesties"
+    },
+    "suggestionsEmpty": "Nu geen suggesties.",
     "reachOut": "Hypha stelt voor",
     "longTimeNoSee": "Lang niet gesproken",
     "longTimeSentence": "Het is lang geleden dat jullie contact hadden.",

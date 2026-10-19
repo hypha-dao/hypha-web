@@ -662,6 +662,11 @@
   "Connections": {
     "titleLineOne": "Bleib nah,",
     "titleLineTwo": "Teile Nachrichten",
+    "tabs": {
+      "messages": "Nachrichten",
+      "suggestions": "Vorschläge"
+    },
+    "suggestionsEmpty": "Gerade keine Vorschläge.",
     "reachOut": "Hypha schlägt vor",
     "longTimeNoSee": "Lange nicht gesehen",
     "longTimeSentence": "Es ist lange her, dass ihr verbunden wart.",

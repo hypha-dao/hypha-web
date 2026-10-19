@@ -35,5 +35,5 @@ export function buildDirectChatDeepLink({
   const params = new URLSearchParams();
   params.set('chat', roomId);
   params.set('msg', messageId);
-  return getAbsoluteAppUrl(`/en/connections?${params.toString()}`);
+  return getAbsoluteAppUrl(`/en/messages?${params.toString()}`);
 }

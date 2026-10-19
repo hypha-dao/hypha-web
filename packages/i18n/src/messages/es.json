@@ -1433,6 +1433,11 @@
   "Connections": {
     "titleLineOne": "Quédate cerca,",
     "titleLineTwo": "Comparte mensajes",
+    "tabs": {
+      "messages": "Mensajes",
+      "suggestions": "Sugerencias"
+    },
+    "suggestionsEmpty": "No hay sugerencias ahora.",
     "reachOut": "Hypha sugiere",
     "longTimeNoSee": "Cuánto tiempo",
     "longTimeSentence": "Hace mucho que no os conectáis.",

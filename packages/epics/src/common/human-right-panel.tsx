@@ -1031,7 +1031,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const params = useParams<{ id?: string }>();
   const pathname = usePathname() ?? '';
   const isMemberHome = /^\/[^/]+\/home(?:\/|$)/.test(pathname);
-  const isConnectionsPage = /^\/[^/]+\/connections(?:\/|$)/.test(pathname);
+  const isConnectionsPage = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
+    pathname,
+  );
   const router = useRouter();
   const searchParams = useSearchParams();
   const routeSpaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';

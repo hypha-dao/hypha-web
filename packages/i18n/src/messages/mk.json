@@ -662,6 +662,11 @@
   "Connections": {
     "titleLineOne": "Остани блиску,",
     "titleLineTwo": "Сподели пораки",
+    "tabs": {
+      "messages": "Пораки",
+      "suggestions": "Предлози"
+    },
+    "suggestionsEmpty": "Нема предлози во моментов.",
     "reachOut": "Хифа предлага",
     "longTimeNoSee": "Одамна не сме се чуле",
     "longTimeSentence": "Помина долго време откако не сте се поврзале.",

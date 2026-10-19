@@ -35,6 +35,11 @@ import {
   buildWalletSectionNavItems,
   isWalletSectionNavActive,
 } from '../../wallet/components/wallet-section-nav';
+import {
+  buildMessagesSectionNavItems,
+  isMessagesSectionNavActive,
+  isMessagesSectionPath,
+} from './messages-section-nav';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
 import { useMemberEnergyCommunities } from './member-home-energy-panel';
 import {
@@ -68,6 +73,7 @@ function shouldShowMobileSpacesRail(pathname: string) {
   if (segmentActive(pathname, 'home')) return false;
   return (
     segmentActive(pathname, 'connections') ||
+    segmentActive(pathname, 'messages') ||
     segmentActive(pathname, 'my-wallet') ||
     Boolean(getDhoSpaceSlugFromPathname(pathname)) ||
     isNetworkPath(pathname)
@@ -139,6 +145,7 @@ export function MobileTabBar({
   const tCoherence = useTranslations('CoherenceTab');
   const tNetwork = useTranslations('NetworkExchange');
   const tMyWallet = useTranslations('MyWallet');
+  const tConnections = useTranslations('Connections');
   const tHome = useTranslations('MemberHome');
   const tEnergy = useTranslations('MemberHome.energy');
   const tTreasury = useTranslations('TreasuryTab');
@@ -293,6 +300,19 @@ export function MobileTabBar({
         };
       });
     }
+    if (isMessagesSectionPath(pathname)) {
+      const base = `/${lang}/messages`;
+      return buildMessagesSectionNavItems(base).map((item) => {
+        const Icon = item.icon;
+        return {
+          key: item.key,
+          href: item.href,
+          label: tConnections(item.labelKey),
+          active: isMessagesSectionNavActive(item, pathname),
+          icon: <Icon className={subIconClass} strokeWidth={1.5} />,
+        };
+      });
+    }
     if (!networkRoute) return [];
     const base = `/${lang}/network`;
     const links = [
@@ -337,6 +357,7 @@ export function MobileTabBar({
     spaceMemoryEnabled,
     spaceSlug,
     tMyWallet,
+    tConnections,
     tCoherence,
     tEnergy,
     tHome,
@@ -357,7 +378,7 @@ export function MobileTabBar({
   }, [secondLevel.length]);
 
   const dashboardHref = `/${lang}/home`;
-  const connectionsHref = `/${lang}/connections`;
+  const connectionsHref = `/${lang}/messages`;
   const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
   const networkHref = `/${lang}/network`;
@@ -367,7 +388,9 @@ export function MobileTabBar({
 
   const dashboardActive = !createOpen && segmentActive(pathname, 'home');
   const connectionsActive =
-    !createOpen && segmentActive(pathname, 'connections');
+    !createOpen &&
+    (segmentActive(pathname, 'messages') ||
+      segmentActive(pathname, 'connections'));
   const spacesActive =
     !createOpen &&
     (segmentActive(pathname, 'my-spaces') || segmentActive(pathname, 'dho'));
@@ -443,7 +466,13 @@ export function MobileTabBar({
           <div
             className="flex justify-center gap-0.5 overflow-x-auto border-b border-border bg-background-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ height: SUB_NAV_PX }}
-            aria-label={spaceSlug ? t('mySpaces') : t('network')}
+            aria-label={
+              spaceSlug
+                ? t('mySpaces')
+                : isMessagesSectionPath(pathname)
+                ? tConnections('tabs.messages')
+                : t('network')
+            }
           >
             {secondLevel.map((item) => {
               const className = cn(

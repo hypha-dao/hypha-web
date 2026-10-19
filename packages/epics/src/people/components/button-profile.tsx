@@ -105,7 +105,7 @@ function resolveNavItemIcon(href?: string) {
   if (href.includes('/home')) {
     return <House className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
-  if (href.includes('/connections')) {
+  if (href.includes('/messages') || href.includes('/connections')) {
     return (
       <MessagesSquare className="craft-icon" strokeWidth={1.25} aria-hidden />
     );
@@ -145,7 +145,9 @@ export const ButtonProfile = ({
   const tConnections = useTranslations('Connections');
   const unreadMessages = useConversationUnreadCount();
   const messageBadge = (href?: string) =>
-    href?.includes('/connections') ? unreadMessages : 0;
+    href?.includes('/messages') || href?.includes('/connections')
+      ? unreadMessages
+      : 0;
   const messageAria = (href?: string, label?: string) => {
     const badge = messageBadge(href);
     if (!label || badge <= 0) return undefined;

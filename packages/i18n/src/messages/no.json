@@ -661,6 +661,11 @@
   "Connections": {
     "titleLineOne": "Hold deg nær,",
     "titleLineTwo": "Del meldinger",
+    "tabs": {
+      "messages": "Meldinger",
+      "suggestions": "Forslag"
+    },
+    "suggestionsEmpty": "Ingen forslag akkurat nå.",
     "reachOut": "Hypha foreslår",
     "longTimeNoSee": "Lenge siden sist",
     "longTimeSentence": "Det er lenge siden dere hadde kontakt.",

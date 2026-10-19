@@ -121,6 +121,11 @@
   "Connections": {
     "titleLineOne": "Stay close,",
     "titleLineTwo": "Share messages",
+    "tabs": {
+      "messages": "Messages",
+      "suggestions": "Suggestions"
+    },
+    "suggestionsEmpty": "No suggestions right now.",
     "reachOut": "Hypha suggests",
     "longTimeNoSee": "Long time no see",
     "longTimeSentence": "It has been a long time since you connected.",
