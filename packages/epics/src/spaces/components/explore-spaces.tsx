@@ -39,7 +39,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Heading, Skeleton } from '@hypha-platform/ui';
+import { Container, Heading, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -524,73 +524,82 @@ export function ExploreSpaces({
 
   const showSidePanel = Boolean(sidePanel) && !chatOpen;
 
+  const mainColumn = (
+    <>
+      <div className="flex min-w-0 flex-col gap-4">
+        {pageTitle}
+        {sharedControls}
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-4">
+        {enableNetworkMap ? (
+          <>
+            {renderMapToolbar()}
+            <div className="my-6">{networkCensus}</div>
+            <NetworkGlobeMap
+              lang={lang}
+              spaces={mapSpaces}
+              className={cn('w-full', showMapStage && 'mb-7')}
+              isActive={showMapStage}
+              showStage={showMapStage}
+              alignProjection={view === 'overview' ? 'flat' : undefined}
+              onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
+            />
+            {showRanking ? (
+              <div className="mt-6">
+                <NetworkRanking
+                  lang={lang}
+                  ranks={networkRanks}
+                  onSelect={selectRank}
+                />
+              </div>
+            ) : null}
+            <div className={cn(!showSpacesList && 'hidden')}>
+              {listMetaRow}
+              {spacesListContent}
+            </div>
+          </>
+        ) : (
+          <>
+            <CreateSpaceButton
+              lang={lang}
+              isAuthenticated={isAuthenticated}
+              className="w-fit"
+              buttonClassName={spaceToolbarPrimaryButtonClassName}
+            />
+            <div>
+              <NetworkRanking
+                lang={lang}
+                ranks={networkRanks}
+                onSelect={selectRank}
+              />
+            </div>
+            {listMetaRow}
+            {spacesListContent}
+          </>
+        )}
+      </div>
+    </>
+  );
+
+  // Closed: same Container gutters as My Spaces. Open: shell insets so the
+  // sticky right rail can sit flush with the needs / exchange layout.
+  if (showSidePanel) {
+    return (
+      <div className="@container min-w-0 px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
+        <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
+          <div className="flex min-w-0 flex-1 flex-col gap-4">{mainColumn}</div>
+          <aside className={NETWORK_RIGHT_PANEL_CLASS}>{sidePanel}</aside>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="@container min-w-0">
-      <div
-        className={cn(
-          'flex min-w-0 flex-col gap-4',
-          showSidePanel && '@4xl:flex-row @4xl:items-start',
-        )}
-      >
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <div className="flex min-w-0 flex-col gap-4">
-            {pageTitle}
-            {sharedControls}
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-4">
-            {enableNetworkMap ? (
-              <>
-                {renderMapToolbar()}
-                <div className="my-6">{networkCensus}</div>
-                <NetworkGlobeMap
-                  lang={lang}
-                  spaces={mapSpaces}
-                  className={cn('w-full', showMapStage && 'mb-7')}
-                  isActive={showMapStage}
-                  showStage={showMapStage}
-                  alignProjection={view === 'overview' ? 'flat' : undefined}
-                  onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
-                />
-                {showRanking ? (
-                  <div className="mt-6">
-                    <NetworkRanking
-                      lang={lang}
-                      ranks={networkRanks}
-                      onSelect={selectRank}
-                    />
-                  </div>
-                ) : null}
-                <div className={cn(!showSpacesList && 'hidden')}>
-                  {listMetaRow}
-                  {spacesListContent}
-                </div>
-              </>
-            ) : (
-              <>
-                <CreateSpaceButton
-                  lang={lang}
-                  isAuthenticated={isAuthenticated}
-                  className="w-fit"
-                  buttonClassName={spaceToolbarPrimaryButtonClassName}
-                />
-                <div>
-                  <NetworkRanking
-                    lang={lang}
-                    ranks={networkRanks}
-                    onSelect={selectRank}
-                  />
-                </div>
-                {listMetaRow}
-                {spacesListContent}
-              </>
-            )}
-          </div>
-        </div>
-        {showSidePanel ? (
-          <aside className={NETWORK_RIGHT_PANEL_CLASS}>{sidePanel}</aside>
-        ) : null}
-      </div>
+      <Container className="flex min-w-0 flex-col gap-9 py-3 sm:py-4 lg:py-5">
+        {mainColumn}
+      </Container>
     </div>
   );
 }
