@@ -80,31 +80,33 @@ export function IntegratedBoard({
 
   return (
     <div className="relative flex min-w-0 flex-col gap-4 pb-16">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-4 font-medium text-neutral-12">{t('title')}</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              void exportDealsToXlsx(
-                filtered,
-                `${spaceSlug}-deals`,
-                probabilities,
-              );
-            }}
-          >
-            <Download className="mr-1 size-3.5" />
-            {t('exportXlsx')}
-          </Button>
-          <SavedViewsMenu
-            spaceSlug={spaceSlug}
-            filters={filters}
-            onApply={setFilters}
-          />
+      <header className="craft-page-header">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <h1 className="craft-page-title text-6 font-medium">{t('title')}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void exportDealsToXlsx(
+                  filtered,
+                  `${spaceSlug}-deals`,
+                  probabilities,
+                );
+              }}
+            >
+              <Download className="mr-1 size-3.5" />
+              {t('exportXlsx')}
+            </Button>
+            <SavedViewsMenu
+              spaceSlug={spaceSlug}
+              filters={filters}
+              onApply={setFilters}
+            />
+          </div>
         </div>
-      </div>
+      </header>
 
       <FilterBar
         spaceSlug={spaceSlug}

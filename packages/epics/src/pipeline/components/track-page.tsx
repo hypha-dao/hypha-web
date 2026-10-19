@@ -82,9 +82,9 @@ export function TrackPage({
           >
             ← {t('backToBoard')}
           </Link>
-          <h2 className="text-4 font-medium text-neutral-12">
+          <h1 className="craft-page-title text-6 font-medium">
             {t('trackTitle', { swimlane })}
-          </h2>
+          </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
