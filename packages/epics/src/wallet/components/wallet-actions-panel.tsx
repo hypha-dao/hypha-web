@@ -7,13 +7,13 @@ import { ProposalOverlayShell } from '../../common/proposal-overlay-shell';
 import { useMe } from '@hypha-platform/core/client';
 import { useFundWallet } from '../../treasury/hooks';
 import {
-  ArrowLeftRight,
-  Gift,
-  HandCoins,
-  Rocket,
-  Send,
-  ShoppingBag,
-  Sparkles,
+  ArrowUpFromLine,
+  BadgePercent,
+  Boxes,
+  CirclePower,
+  Gem,
+  RefreshCcw,
+  WalletCards,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -45,7 +45,7 @@ export function WalletActionsPanel({
       id: 'depositFunds',
       title: tActions('actions.depositFunds.title'),
       description: tActions('actions.depositFunds.description'),
-      icon: <HandCoins className="craft-icon" strokeWidth={1.5} />,
+      icon: <WalletCards className="craft-icon" strokeWidth={1.5} />,
       onAction: () => {
         fundWallet();
       },
@@ -56,42 +56,42 @@ export function WalletActionsPanel({
       title: tActions('actions.transferFunds.title'),
       description: tActions('actions.transferFunds.description'),
       href: 'transfer-funds',
-      icon: <Send className="craft-icon" strokeWidth={1.5} />,
+      icon: <ArrowUpFromLine className="craft-icon" strokeWidth={1.5} />,
     },
     {
       id: 'redeemTokens',
       title: tActions('actions.redeemTokens.title'),
       description: tActions('actions.redeemTokens.description'),
       href: 'redeem-tokens',
-      icon: <Gift className="craft-icon" strokeWidth={1.5} />,
+      icon: <BadgePercent className="craft-icon" strokeWidth={1.5} />,
     },
     {
       id: 'buyHyphaTokensRewards',
       title: tActions('actions.buyHyphaTokensRewards.title'),
       description: tActions('actions.buyHyphaTokensRewards.description'),
       href: 'purchase-hypha-tokens',
-      icon: <Sparkles className="craft-icon" strokeWidth={1.5} />,
+      icon: <Gem className="craft-icon" strokeWidth={1.5} />,
     },
     {
       id: 'buySpaceTokens',
       title: tActions('actions.buySpaceTokens.title'),
       description: tActions('actions.buySpaceTokens.description'),
       href: 'buy-space-tokens',
-      icon: <ShoppingBag className="craft-icon" strokeWidth={1.5} />,
+      icon: <Boxes className="craft-icon" strokeWidth={1.5} />,
     },
     {
       id: 'activateSpaces',
       title: tActions('actions.activateSpaces.title'),
       description: tActions('actions.activateSpaces.description'),
       href: 'activate-spaces',
-      icon: <Rocket className="craft-icon" strokeWidth={1.5} />,
+      icon: <CirclePower className="craft-icon" strokeWidth={1.5} />,
     },
     {
       id: 'migrateHyphaTokens',
       title: tActions('actions.migrateHyphaTokens.title'),
       description: tActions('actions.migrateHyphaTokens.description'),
       href: 'migrate-hypha-tokens',
-      icon: <ArrowLeftRight className="craft-icon" strokeWidth={1.5} />,
+      icon: <RefreshCcw className="craft-icon" strokeWidth={1.5} />,
       disabled: !person?.address,
       target: '_blank',
     },

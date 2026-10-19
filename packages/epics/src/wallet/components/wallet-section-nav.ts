@@ -1,12 +1,12 @@
 import type { ElementType } from 'react';
 import {
-  ArrowLeftRight,
-  Gift,
-  HandCoins,
-  Rocket,
-  Send,
-  ShoppingBag,
-  Sparkles,
+  ArrowUpFromLine,
+  BadgePercent,
+  Boxes,
+  CirclePower,
+  Gem,
+  RefreshCcw,
+  WalletCards,
 } from 'lucide-react';
 
 const MIGRATE_HYPHA_TOKENS_URL =
@@ -58,7 +58,7 @@ export function buildWalletSectionNavItems(
     {
       key: 'deposit',
       labelKey: 'actions.depositFunds.title',
-      icon: HandCoins,
+      icon: WalletCards,
       fundWallet: true,
       disabled: address.length === 0,
     },
@@ -66,31 +66,31 @@ export function buildWalletSectionNavItems(
       key: 'transfer',
       labelKey: 'actions.transferFunds.title',
       href: `${actions}/transfer-funds`,
-      icon: Send,
+      icon: ArrowUpFromLine,
     },
     {
       key: 'redeem',
       labelKey: 'actions.redeemTokens.title',
       href: `${actions}/redeem-tokens`,
-      icon: Gift,
+      icon: BadgePercent,
     },
     {
       key: 'buy-hypha',
       labelKey: 'actions.buyHyphaTokensRewards.title',
       href: `${actions}/purchase-hypha-tokens`,
-      icon: Sparkles,
+      icon: Gem,
     },
     {
       key: 'buy-space-tokens',
       labelKey: 'actions.buySpaceTokens.title',
       href: `${actions}/buy-space-tokens`,
-      icon: ShoppingBag,
+      icon: Boxes,
     },
     {
       key: 'activate',
       labelKey: 'actions.activateSpaces.title',
       href: `${actions}/activate-spaces`,
-      icon: Rocket,
+      icon: CirclePower,
     },
     {
       key: 'migrate',
@@ -98,7 +98,7 @@ export function buildWalletSectionNavItems(
       href: address ? `${MIGRATE_HYPHA_TOKENS_URL}/${address}` : undefined,
       external: true,
       disabled: address.length === 0,
-      icon: ArrowLeftRight,
+      icon: RefreshCcw,
     },
   ];
 }

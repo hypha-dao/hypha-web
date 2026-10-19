@@ -107,59 +107,61 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
   }
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={setActiveTab}
-      className="flex w-full min-w-0 flex-col gap-4"
-    >
+    <div className="flex w-full min-w-0 flex-col gap-4">
       <WalletShortcutCards basePath={basePath} />
-      <ScrollableTabsList triggerVariant="switch">
-        <TabsTrigger value="wallet" variant="switch">
-          <WalletTabLabel
-            label={tMyWallet('tabs.wallet')}
-            count={walletCount}
-          />
-        </TabsTrigger>
-        <TabsTrigger value="banking" variant="switch">
-          <WalletTabLabel
-            label={tMyWallet('tabs.banking')}
-            count={bankingCount}
-          />
-        </TabsTrigger>
-        <TabsTrigger value="transactions" variant="switch">
-          <WalletTabLabel
-            label={tMyWallet('tabs.transactions')}
-            count={transactionCount}
-          />
-        </TabsTrigger>
-        <TabsTrigger value="rewards" variant="switch">
-          <WalletTabLabel
-            label={tMyWallet('tabs.rewards')}
-            count={rewardsCount}
-          />
-        </TabsTrigger>
-      </ScrollableTabsList>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex w-full min-w-0 flex-col gap-4"
+      >
+        <ScrollableTabsList triggerVariant="switch">
+          <TabsTrigger value="wallet" variant="switch">
+            <WalletTabLabel
+              label={tMyWallet('tabs.wallet')}
+              count={walletCount}
+            />
+          </TabsTrigger>
+          <TabsTrigger value="banking" variant="switch">
+            <WalletTabLabel
+              label={tMyWallet('tabs.banking')}
+              count={bankingCount}
+            />
+          </TabsTrigger>
+          <TabsTrigger value="transactions" variant="switch">
+            <WalletTabLabel
+              label={tMyWallet('tabs.transactions')}
+              count={transactionCount}
+            />
+          </TabsTrigger>
+          <TabsTrigger value="rewards" variant="switch">
+            <WalletTabLabel
+              label={tMyWallet('tabs.rewards')}
+              count={rewardsCount}
+            />
+          </TabsTrigger>
+        </ScrollableTabsList>
 
-      <TabsContent value="wallet" className="mt-0">
-        <UserAssetsSection
-          personSlug={personSlug}
-          basePath={basePath}
-          isMyProfile
-          showActionButtons={false}
-        />
-      </TabsContent>
+        <TabsContent value="wallet" className="mt-0">
+          <UserAssetsSection
+            personSlug={personSlug}
+            basePath={basePath}
+            isMyProfile
+            showActionButtons={false}
+          />
+        </TabsContent>
 
-      <TabsContent value="banking" className="mt-0">
-        <ProfileBankingSection personSlug={personSlug} isMyProfile />
-      </TabsContent>
+        <TabsContent value="banking" className="mt-0">
+          <ProfileBankingSection personSlug={personSlug} isMyProfile />
+        </TabsContent>
 
-      <TabsContent value="transactions" className="mt-0">
-        <UserTransactionsSection personSlug={personSlug} />
-      </TabsContent>
+        <TabsContent value="transactions" className="mt-0">
+          <UserTransactionsSection personSlug={personSlug} />
+        </TabsContent>
 
-      <TabsContent value="rewards" className="mt-0">
-        <PendingRewardsSection person={person} isMyProfile />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="rewards" className="mt-0">
+          <PendingRewardsSection person={person} isMyProfile />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

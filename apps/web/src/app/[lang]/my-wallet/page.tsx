@@ -30,7 +30,7 @@ export default async function MyWalletPage(props: PageProps) {
           color="secondary"
           weight="medium"
           align="center"
-          className="hidden flex-col xl:flex"
+          className="hidden flex-col leading-none xl:flex"
         >
           <span>{t('allYourRewards')}</span>
           <span>{t('oneWallet')}</span>

@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
-  ArrowLeftRight,
-  Gift,
-  HandCoins,
-  Rocket,
-  Send,
-  ShoppingBag,
-  Sparkles,
+  ArrowUpFromLine,
+  BadgePercent,
+  Boxes,
+  CirclePower,
+  Gem,
+  RefreshCcw,
+  WalletCards,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
@@ -41,7 +41,7 @@ function ShortcutCard({
   disabled,
 }: Omit<Shortcut, 'key'>) {
   const className = cn(
-    'flex aspect-square min-w-[7.5rem] flex-col items-center justify-center gap-3 border p-3 text-center',
+    'flex h-[4.5rem] min-w-0 flex-col items-center justify-center gap-1 border px-1.5 py-1.5 text-center',
     featured
       ? 'border-foreground bg-foreground text-background'
       : 'border-border bg-background text-foreground hover:bg-neutral-2',
@@ -49,8 +49,8 @@ function ShortcutCard({
   );
   const body = (
     <>
-      <Icon className="h-8 w-8" strokeWidth={1.25} aria-hidden />
-      <span className="text-1 leading-tight">{label}</span>
+      <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+      <span className="max-w-full text-[11px] leading-tight">{label}</span>
     </>
   );
 
@@ -93,7 +93,7 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
     {
       key: 'deposit',
       label: t('shortcuts.deposit'),
-      icon: HandCoins,
+      icon: WalletCards,
       onClick: () => {
         fundWallet();
       },
@@ -102,38 +102,38 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
     {
       key: 'transfer',
       label: t('shortcuts.transfer'),
-      icon: Send,
+      icon: ArrowUpFromLine,
       href: `${basePath}/actions/transfer-funds`,
     },
     {
       key: 'redeem',
       label: t('shortcuts.redeem'),
-      icon: Gift,
+      icon: BadgePercent,
       href: `${basePath}/actions/redeem-tokens`,
     },
     {
       key: 'buyHypha',
       label: t('shortcuts.buyHypha'),
-      icon: Sparkles,
+      icon: Gem,
       href: `${basePath}/actions/purchase-hypha-tokens`,
       featured: true,
     },
     {
       key: 'buySpace',
       label: t('shortcuts.buySpace'),
-      icon: ShoppingBag,
+      icon: Boxes,
       href: `${basePath}/actions/buy-space-tokens`,
     },
     {
       key: 'activate',
       label: t('shortcuts.activate'),
-      icon: Rocket,
+      icon: CirclePower,
       href: `${basePath}/actions/activate-spaces`,
     },
     {
       key: 'migrate',
       label: t('shortcuts.migrate'),
-      icon: ArrowLeftRight,
+      icon: RefreshCcw,
       href: address ? `${MIGRATE_HYPHA_TOKENS_URL}/${address}` : undefined,
       external: true,
       disabled: !address,
@@ -143,7 +143,7 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   return (
     <nav
       aria-label={t('title')}
-      className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7"
+      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7"
     >
       {shortcuts.map(({ key, ...shortcut }) => (
         <ShortcutCard key={key} {...shortcut} />
