@@ -1,11 +1,30 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { ArrowLeft, PanelRightClose, Settings } from 'lucide-react';
+import type { ComponentType, ReactNode } from 'react';
+import {
+  ArrowLeft,
+  Globe2,
+  Hexagon,
+  Network,
+  PanelRightClose,
+  Settings,
+} from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+
+type RoomChoiceIcon = ComponentType<{
+  className?: string;
+  strokeWidth?: number;
+  'aria-hidden'?: boolean;
+}>;
+
+const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
+  space: Hexagon,
+  ecosystem: Network,
+  public: Globe2,
+};
 
 type HumanChatPanelHeaderProps = {
   title?: string;
@@ -111,20 +130,27 @@ export function HumanChatPanelHeader({
           >
             {roomChoice.options.map((option) => {
               const selected = roomChoice.value === option.value;
+              const Icon = ROOM_CHOICE_ICONS[option.value];
               return (
                 <button
                   key={option.value}
                   type="button"
                   aria-pressed={selected}
+                  aria-label={option.label}
+                  title={option.label}
                   onClick={() => roomChoice.onChange(option.value)}
                   className={cn(
-                    'px-3 py-1 text-1',
+                    'inline-flex h-[36px] w-[36px] items-center justify-center',
                     selected
                       ? 'bg-foreground text-background'
                       : 'bg-background text-foreground',
                   )}
                 >
-                  {option.label}
+                  {Icon ? (
+                    <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                  ) : (
+                    <span className="px-2 text-1">{option.label}</span>
+                  )}
                 </button>
               );
             })}
