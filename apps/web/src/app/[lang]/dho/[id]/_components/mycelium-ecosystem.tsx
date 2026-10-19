@@ -1806,7 +1806,7 @@ export function MyceliumEcosystem({
                                 key={node.key}
                                 role="button"
                                 tabIndex={0}
-                                className="cursor-pointer"
+                                className="mycelium-node cursor-pointer"
                                 onMouseEnter={() => setHoveredFlowKey(node.key)}
                                 onMouseLeave={() => setHoveredFlowKey(null)}
                                 onClick={() =>
