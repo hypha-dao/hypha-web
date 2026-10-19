@@ -1,13 +1,17 @@
 import Link from 'next/link';
+import {
+  Coherence,
+  resolveEffectiveBoard,
+  type SignalWorkflowConfig,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
-import { SignalCard } from './signal-card';
-import { Coherence } from '@hypha-platform/core/client';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
 import { isSignalSlugActive } from '../utils/signal-active-styles';
 import {
   SIGNAL_GRID_CARD_WRAPPER_CLASS,
   SIGNAL_GRID_LAYOUT_CLASS,
 } from '../utils/signal-board-layout';
+import { SignalTaskCard } from './signal-task-card';
 
 type SignalGridProps = {
   isLoading: boolean;
@@ -16,31 +20,59 @@ type SignalGridProps = {
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
   activeSignalSlug?: string | null;
+  workflow?: SignalWorkflowConfig | null;
 };
 
 export function SignalGrid({
-  isLoading,
   basePath,
   signals,
   refresh,
   onSignalClick,
   activeSignalSlug,
+  workflow,
 }: SignalGridProps) {
   return (
     <div className={SIGNAL_GRID_LAYOUT_CLASS}>
       {signals.map((signal) => {
         const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
+        const board = workflow
+          ? workflow.boards.find(
+              (item) =>
+                item.slug === resolveEffectiveBoard(signal.board, workflow),
+            ) ?? null
+          : null;
+        const card = (
+          <SignalTaskCard
+            signal={signal}
+            className="h-full min-h-0 w-full"
+            isActive={isActive}
+            refresh={refresh}
+            showBoard={Boolean(workflow)}
+            board={board}
+          />
+        );
 
-        return signal.archived ? (
-          <div key={signal.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
-            <SignalCard
-              {...signal}
-              className="h-auto min-h-0 w-full"
-              isLoading={isLoading}
-              refresh={refresh}
-            />
-          </div>
-        ) : onSignalClick ? (
+        if (signal.archived || !onSignalClick) {
+          if (signal.archived) {
+            return (
+              <div key={signal.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
+                {card}
+              </div>
+            );
+          }
+          return (
+            <Link
+              key={signal.id}
+              href={`${basePath}/${signal.slug}`}
+              {...getSignalSlugDomProps(signal.slug)}
+              className={cn(SIGNAL_GRID_CARD_WRAPPER_CLASS, 'rounded-none')}
+            >
+              {card}
+            </Link>
+          );
+        }
+
+        return (
           <div
             key={signal.id}
             {...getSignalSlugDomProps(signal.slug)}
@@ -59,27 +91,8 @@ export function SignalGrid({
               }
             }}
           >
-            <SignalCard
-              {...signal}
-              className="h-auto min-h-0 w-full"
-              isLoading={isLoading}
-              refresh={refresh}
-            />
+            {card}
           </div>
-        ) : (
-          <Link
-            key={signal.id}
-            href={`${basePath}/${signal.slug}`}
-            {...getSignalSlugDomProps(signal.slug)}
-            className={cn(SIGNAL_GRID_CARD_WRAPPER_CLASS, 'rounded-none')}
-          >
-            <SignalCard
-              {...signal}
-              className="h-auto min-h-0 w-full"
-              isLoading={isLoading}
-              refresh={refresh}
-            />
-          </Link>
         );
       })}
     </div>

@@ -283,6 +283,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               refresh={refresh}
               onSignalClick={onSignalClick}
               activeSignalSlug={activeSignalSlug}
+              workflow={resolvedWorkflow}
             />
           )}
         </div>

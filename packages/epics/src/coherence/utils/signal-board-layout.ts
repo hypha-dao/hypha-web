@@ -1,12 +1,12 @@
 import { cn } from '@hypha-platform/ui-utils';
 
-/** Upvote/grid — each card is only as tall as its own content. */
+/** Upvote/grid — one row shares a height so short cards do not leave a gap. */
 export const SIGNAL_GRID_LAYOUT_CLASS = cn(
-  'grid w-full grid-cols-1 items-start gap-2 md:grid-cols-[repeat(auto-fill,minmax(min(100%,14.25rem),1fr))]',
+  'grid w-full grid-cols-1 items-stretch gap-2 md:grid-cols-[repeat(auto-fill,minmax(min(100%,14.25rem),1fr))]',
 );
 
 export const SIGNAL_GRID_CARD_WRAPPER_CLASS = cn(
-  'flex h-auto min-h-0 w-full flex-col',
+  'flex h-full min-h-0 w-full flex-col',
 );
 
 /** Kanban task cards — quiet density; grow when the title or footer wraps. */
