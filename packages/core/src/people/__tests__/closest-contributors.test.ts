@@ -126,6 +126,32 @@ describe('findNamedDirectRoomId', () => {
     ).toBe('!dm:hypha');
   });
 
+  it('reopens the named room that already has messages', () => {
+    expect(
+      findNamedDirectRoomId(
+        [
+          {
+            roomId: '!empty:hypha',
+            name: 'Bea',
+            joinedUserIds: [self, '@bea:hypha'],
+            messageCount: 0,
+            lastActiveTs: 80,
+          },
+          {
+            roomId: '!history:hypha',
+            name: 'Bea',
+            joinedUserIds: [self, '@bea:hypha'],
+            messageCount: 3,
+            lastActiveTs: 10,
+          },
+        ],
+        self,
+        '@bea:hypha',
+        'Bea',
+      ),
+    ).toBe('!history:hypha');
+  });
+
   it('reopens a direct chat even when the room title differs', () => {
     expect(
       findNamedDirectRoomId(

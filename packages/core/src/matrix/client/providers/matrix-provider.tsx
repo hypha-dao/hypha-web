@@ -1883,6 +1883,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const pageSize = Math.max(10, options?.pageSize ?? 50);
       const maxBatches = Math.max(1, options?.maxBatches ?? 10);
       const loadPromise = (async (): Promise<LoadRoomHistoryResult> => {
+        const liveEvents = room.getLiveTimeline().getEvents();
+        const hasVisibleMessage = liveEvents.some(
+          (event) => event.getType() === EventType.RoomMessage,
+        );
+        // A null pagination token means "already at the start" only after the
+        // timeline has arrived. An empty room that has not synced yet must stay
+        // retryable, or the chat paints as a brand-new conversation.
+        if (!hasVisibleMessage && room.oldState?.paginationToken == null) {
+          return { hasMoreOlder: true, addedEvents: 0 };
+        }
         let addedEvents = 0;
         let hasMoreOlder = true;
 

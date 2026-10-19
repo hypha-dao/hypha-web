@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ClientEvent, SyncState } from 'matrix-js-sdk';
 import {
-  findNamedDirectRoomId,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
@@ -12,7 +11,8 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { readJoinedPeopleRooms } from './member-home-closest';
+import { findDirectRoomId } from './member-home-closest';
+import { rememberDirectRoom } from './member-connections';
 
 type HomePerson = {
   id: number;
@@ -156,14 +156,11 @@ export function MemberHomePeople({
     }
     const mxid = await waitForMatrixUserId(person.id);
     if (!mxid || !selfId) return null;
-    const existing = findNamedDirectRoomId(
-      readJoinedPeopleRooms(client).named,
-      selfId,
-      mxid,
-      title,
-    );
+    const existing = findDirectRoomId(client, selfId, mxid, title);
     if (existing) return existing;
-    return openRoom(title, [person.id], ready);
+    const created = await openRoom(title, [person.id], ready);
+    if (created) rememberDirectRoom(selfId, mxid, created);
+    return created;
   }
 
   async function openPersonChat(person: HomePerson): Promise<boolean> {

@@ -99,12 +99,45 @@ function personName(person: ConnectionListPerson, fallback: string) {
 
 const signalThreadRoomIds = new Set<string>();
 const signalThreadRoomListeners = new Set<() => void>();
+const SIGNAL_THREAD_ROOMS_KEY = 'hypha.signal-thread-rooms';
+const DIRECT_ROOMS_KEY = 'hypha.direct-rooms';
+let signalThreadRoomsLoaded = false;
+
+function loadSignalThreadRooms() {
+  if (signalThreadRoomsLoaded || typeof window === 'undefined') return;
+  signalThreadRoomsLoaded = true;
+  try {
+    const raw = window.localStorage.getItem(SIGNAL_THREAD_ROOMS_KEY);
+    const ids = raw ? (JSON.parse(raw) as unknown) : [];
+    if (!Array.isArray(ids)) return;
+    for (const id of ids) {
+      if (typeof id === 'string' && id.trim()) {
+        signalThreadRoomIds.add(id.trim());
+      }
+    }
+  } catch {
+    // Ignore a broken cache. The live timeline can still mark a signal room.
+  }
+}
+
+function persistSignalThreadRooms() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      SIGNAL_THREAD_ROOMS_KEY,
+      JSON.stringify([...signalThreadRoomIds]),
+    );
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
+}
 
 /** Rooms already known to be signal threads, including ones loaded from Hypha. */
 export function rememberSignalThreadRooms(
   roomIds: Iterable<string | null | undefined>,
   options?: { quiet?: boolean },
 ) {
+  loadSignalThreadRooms();
   let changed = false;
   for (const roomId of roomIds) {
     const id = roomId?.trim();
@@ -112,12 +145,62 @@ export function rememberSignalThreadRooms(
     signalThreadRoomIds.add(id);
     changed = true;
   }
+  if (changed) persistSignalThreadRooms();
   if (!changed || options?.quiet) return;
   for (const listener of signalThreadRoomListeners) listener();
 }
 
 export function isRememberedSignalThreadRoom(roomId: string) {
+  loadSignalThreadRooms();
   return signalThreadRoomIds.has(roomId.trim());
+}
+
+function directRoomKey(selfUserId: string, otherUserId: string) {
+  return `${selfUserId.trim()}\n${otherUserId.trim()}`;
+}
+
+/** The last direct room opened with this person, including one they have not joined yet. */
+export function readRememberedDirectRoom(
+  selfUserId: string,
+  otherUserId: string,
+) {
+  if (typeof window === 'undefined') return null;
+  const self = selfUserId.trim();
+  const other = otherUserId.trim();
+  if (!self || !other) return null;
+  try {
+    const raw = window.localStorage.getItem(DIRECT_ROOMS_KEY);
+    const map = raw ? (JSON.parse(raw) as unknown) : null;
+    if (!map || typeof map !== 'object') return null;
+    const roomId = (map as Record<string, unknown>)[directRoomKey(self, other)];
+    return typeof roomId === 'string' && roomId.trim() ? roomId.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function rememberDirectRoom(
+  selfUserId: string,
+  otherUserId: string,
+  roomId: string,
+) {
+  if (typeof window === 'undefined') return;
+  const self = selfUserId.trim();
+  const other = otherUserId.trim();
+  const id = roomId.trim();
+  if (!self || !other || !id) return;
+  try {
+    const raw = window.localStorage.getItem(DIRECT_ROOMS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    const map =
+      parsed && typeof parsed === 'object'
+        ? (parsed as Record<string, string>)
+        : {};
+    map[directRoomKey(self, other)] = id;
+    window.localStorage.setItem(DIRECT_ROOMS_KEY, JSON.stringify(map));
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
 }
 
 export function subscribeSignalThreadRooms(listener: () => void) {

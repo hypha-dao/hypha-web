@@ -79,6 +79,7 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { Empty } from './empty';
 import { notifyConversationUnreadChanged } from '../people/components/conversation-unread-event';
+import { rememberSignalThreadRooms } from '../people/components/member-connections';
 import { getRootSpace } from './get-root-space';
 
 import {
@@ -580,6 +581,12 @@ function writePersistedChatHistory(
 ): void {
   if (typeof window === 'undefined') return;
   try {
+    if (messages.length === 0) {
+      const existing = window.sessionStorage.getItem(
+        `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
+      );
+      if (existing && existing !== '[]') return;
+    }
     const payload: PersistedUIMessage[] = messages
       .slice(-CHAT_HISTORY_MAX_ITEMS)
       .map((m) => ({
@@ -2447,11 +2454,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [resolveMentionMemberLabel, t],
   );
 
+  const messagesRoomIdRef = useRef<string | null>(null);
   const syncRoomMessages = useCallback((targetRoomId: string) => {
     const existing = matrixRef.current.getRoomMessages(targetRoomId);
     if (!existing) return;
-    setMessages(
-      existing.map((m) =>
+    setMessages((prev) => {
+      if (
+        existing.length === 0 &&
+        prev.length > 0 &&
+        messagesRoomIdRef.current === targetRoomId
+      ) {
+        return prev;
+      }
+      messagesRoomIdRef.current = targetRoomId;
+      return existing.map((m) =>
         toUIMessage(
           m,
           currentUserIdRef.current,
@@ -2463,8 +2479,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           formatSignalTeamNoticeRef.current,
           systemSenderLabelRef.current,
         ),
-      ),
-    );
+      );
+    });
   }, []);
 
   const handleLoadOlderMessages = useCallback(
@@ -3425,6 +3441,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
+        if (coherenceSlug?.trim()) {
+          rememberSignalThreadRooms([targetRoomId], { quiet: true });
+        }
 
         // First paint from the live timeline; history + description seed
         // continue in the background so the spinner does not wait on them.

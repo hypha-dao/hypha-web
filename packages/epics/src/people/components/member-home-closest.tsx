@@ -15,6 +15,7 @@ import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-r
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  findNamedDirectRoomId,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   messageCountsByMatrixUser,
@@ -30,6 +31,8 @@ import {
 import {
   eventContentIsSignalThread,
   isRememberedSignalThreadRoom,
+  readRememberedDirectRoom,
+  rememberDirectRoom,
   rememberSignalThreadRooms,
 } from './member-connections';
 import {
@@ -70,14 +73,20 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
   named: NamedRoomSnapshot[];
 } {
   const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
-  const selfId = client.getUserId();
   const conversations: ConversationSnapshot[] = [];
   const named: NamedRoomSnapshot[] = [];
 
   for (const room of client.getRooms()) {
     if (room.getMyMembership() !== 'join') continue;
-    const joinedUserIds = room
-      .getJoinedMembers()
+    const knownMembers = room
+      .getMembers()
+      .filter(
+        (member) =>
+          member.membership === 'join' || member.membership === 'invite',
+      );
+    const joinedUserIds = (
+      knownMembers.length > 0 ? knownMembers : room.getJoinedMembers()
+    )
       .map((member) => member.userId)
       .filter((id) => id && id !== botId && !isHyphaBotMatrixIdentity(id));
 
@@ -92,20 +101,8 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
       }
       messageSenderIds.push(sender);
     }
-    const others = joinedUserIds.filter((id) => id !== selfId);
-    const peer = others.length === 1 ? room.getMember(others[0]!) : null;
-    const peerLabel = (peer?.name || peer?.rawDisplayName || '').trim();
-    const roomLabel = (room.name || '').trim();
-    const namedUnlikePeer =
-      others.length === 1 &&
-      roomLabel.length > 0 &&
-      peerLabel.length > 0 &&
-      roomLabel.localeCompare(peerLabel, undefined, {
-        sensitivity: 'accent',
-      }) !== 0;
     const signalThread =
       isRememberedSignalThreadRoom(room.roomId) ||
-      namedUnlikePeer ||
       room
         .getLiveTimeline()
         .getEvents()
@@ -130,6 +127,27 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
   }
 
   return { conversations, named };
+}
+
+/** Reopen the direct room already used with this person instead of creating another. */
+export function findDirectRoomId(
+  client: MatrixClient,
+  selfUserId: string,
+  otherUserId: string,
+  roomName: string,
+) {
+  const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
+  const rememberedRoom = remembered ? client.getRoom(remembered) : null;
+  if (rememberedRoom?.getMyMembership() === 'join') return remembered;
+
+  const existing = findNamedDirectRoomId(
+    readJoinedPeopleRooms(client).named,
+    selfUserId,
+    otherUserId,
+    roomName,
+  );
+  if (existing) rememberDirectRoom(selfUserId, otherUserId, existing);
+  return existing;
 }
 
 function samePresence(

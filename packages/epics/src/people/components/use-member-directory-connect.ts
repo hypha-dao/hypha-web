@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ClientEvent, SyncState } from 'matrix-js-sdk';
 import {
-  findNamedDirectRoomId,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
@@ -12,7 +11,8 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { readJoinedPeopleRooms } from './member-home-closest';
+import { findDirectRoomId } from './member-home-closest';
+import { rememberDirectRoom } from './member-connections';
 
 export type DirectoryPerson = {
   id: number;
@@ -122,14 +122,10 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
       setNotice(t('matrixUnavailable'));
       return null;
     }
-    const existing = findNamedDirectRoomId(
-      readJoinedPeopleRooms(client).named,
-      selfId,
-      mxid,
-      title,
-    );
+    const existing = findDirectRoomId(client, selfId, mxid, title);
     if (existing) return existing;
     const { roomId } = await ready.createRoom(title);
+    rememberDirectRoom(selfId, mxid, roomId);
     await client.invite(roomId, mxid).catch(() => undefined);
     return roomId;
   }

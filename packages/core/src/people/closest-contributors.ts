@@ -146,10 +146,18 @@ export function findNamedDirectRoomId(
   });
   if (direct.length === 0) return null;
   const named = expected
-    ? direct.find((room) => room.name.trim().toLowerCase() === expected)
-    : undefined;
+    ? direct.filter((room) => room.name.trim().toLowerCase() === expected)
+    : [];
+  const namedWithHistory = named.filter((room) => (room.messageCount ?? 0) > 0);
   const withHistory = direct.filter((room) => (room.messageCount ?? 0) > 0);
-  const pool = named ? [named] : withHistory.length > 0 ? withHistory : direct;
+  const pool =
+    namedWithHistory.length > 0
+      ? namedWithHistory
+      : withHistory.length > 0
+      ? withHistory
+      : named.length > 0
+      ? named
+      : direct;
   const [latest] = [...pool].sort(
     (left, right) =>
       (right.messageCount ?? 0) - (left.messageCount ?? 0) ||
