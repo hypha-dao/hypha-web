@@ -150,7 +150,7 @@ export function NetworkSidePanel({
   const { openCoherenceChat, setFocusedSpaceChat } = useHumanChatPanel();
   const { assets, isLoading } = useSpaceTreasury(selectedSpace?.slug ?? null);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
-  const panelRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const seeks = parseCapitalKeys(capitals?.seeks);
   const offers = parseCapitalKeys(capitals?.offers);
   const summary = excerpt(selectedSpace?.description);
@@ -212,7 +212,7 @@ export function NetworkSidePanel({
   };
 
   return (
-    <aside
+    <div
       ref={panelRef}
       aria-label={t('navNetwork')}
       className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto border border-border bg-background"
@@ -390,6 +390,6 @@ export function NetworkSidePanel({
           <NetworkRanking lang={lang} ranks={ranks} onSelect={onSelectRank} />
         </section>
       ) : null}
-    </aside>
+    </div>
   );
 }

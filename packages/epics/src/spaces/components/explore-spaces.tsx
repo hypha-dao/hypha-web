@@ -22,7 +22,12 @@ import {
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
-import { NetworkRanking, NetworkSectionHeader } from '../../network-exchange';
+import {
+  NETWORK_RIGHT_PANEL_CLASS,
+  NetworkRanking,
+  NetworkSectionHeader,
+} from '../../network-exchange';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { CreateSpaceButton } from './create-space-button';
 import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
@@ -163,6 +168,7 @@ export function ExploreSpaces({
   spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
+  const { open: chatOpen } = useHumanChatPanel();
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -516,15 +522,17 @@ export function ExploreSpaces({
       />
     ) : null;
 
+  const showSidePanel = Boolean(sidePanel) && !chatOpen;
+
   return (
     <div className="@container min-w-0">
       <div
         className={cn(
-          'flex min-w-0 flex-col gap-9',
-          sidePanel && '@4xl:flex-row @4xl:items-start',
+          'flex min-w-0 flex-col gap-4',
+          showSidePanel && '@4xl:flex-row @4xl:items-start',
         )}
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-9">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex min-w-0 flex-col gap-4">
             {pageTitle}
             {sharedControls}
@@ -579,10 +587,8 @@ export function ExploreSpaces({
             )}
           </div>
         </div>
-        {sidePanel ? (
-          <div className="flex w-full shrink-0 flex-col @4xl:sticky @4xl:top-[var(--menu-top-height,70px)] @4xl:max-h-[calc(100dvh-var(--menu-top-height,70px)-1.25rem)] @4xl:w-[380px] @4xl:overflow-hidden">
-            {sidePanel}
-          </div>
+        {showSidePanel ? (
+          <aside className={NETWORK_RIGHT_PANEL_CLASS}>{sidePanel}</aside>
         ) : null}
       </div>
     </div>
