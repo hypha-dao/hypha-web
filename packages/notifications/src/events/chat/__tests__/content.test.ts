@@ -105,6 +105,27 @@ describe('buildChatContent — mention event, plain-message recipient', () => {
   });
 });
 
+describe('buildChatContent — private message treated as a mention', () => {
+  it('still requests email and desktop push, gated on the mentions preference', () => {
+    const result = buildChatContent(
+      makeEvent('chat.mention', { mentionedMatrixUserIds: ['@bob:hs'] }),
+      {
+        ...recipient,
+        role: 'chat.mention',
+        data: {
+          ...recipient.data,
+          messagePreview: '',
+          spaceTitle: 'a private message',
+        },
+      },
+    );
+    expect(result.channels).toEqual(['push', 'email']);
+    expect(result.requiredTags).toEqual([TAG_MENTION_CONSENT]);
+    const push = result.content.push as { contents: { en: string } };
+    expect(push.contents.en).toContain('a private message');
+  });
+});
+
 describe('buildChatContent — mention push without a preview', () => {
   it('names the space like the email preheader does', () => {
     const noPreview: Recipient = {

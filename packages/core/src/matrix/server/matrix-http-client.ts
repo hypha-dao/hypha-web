@@ -456,6 +456,37 @@ export async function matrixGetJoinedRoomMembers(
   return Object.keys(data.joined ?? {});
 }
 
+/**
+ * Joined and invited member MXIDs. A private message's recipient is often still
+ * `invite` when the first message arrives — `joined_members` would miss them.
+ */
+export async function matrixGetJoinOrInviteRoomMembers(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string[]> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/members`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{
+    chunk?: Array<{
+      state_key?: string;
+      content?: { membership?: string };
+    }>;
+  }>(res);
+  const ids = new Set<string>();
+  for (const event of data.chunk ?? []) {
+    const membership = event.content?.membership;
+    if (membership !== 'join' && membership !== 'invite') continue;
+    const id = event.state_key?.trim();
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,

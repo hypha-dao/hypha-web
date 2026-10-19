@@ -869,6 +869,7 @@
       "fundSpace": "Fund a Space"
     },
     "tabs": {
+      "assets": "Assets",
       "wallet": "Wallet",
       "banking": "Banking",
       "transactions": "Transactions",
@@ -924,7 +925,7 @@
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentions": {
         "title": "@mentions",
-        "description": "When someone @mentions you in a space or signal thread you belong to."
+        "description": "When someone @mentions you in a space or signal thread you belong to, or sends you a private message."
       },
       "meetings": {
         "title": "Meetings and calls",

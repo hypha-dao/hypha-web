@@ -23,3 +23,17 @@ export function buildChatDeepLink({
   params.set('msg', messageId);
   return getAbsoluteAppUrl(`/en/dho/${spaceSlug}?${params.toString()}`);
 }
+
+/** Opens the private conversation on Messages. `chat` is the Matrix room id. */
+export function buildDirectChatDeepLink({
+  roomId,
+  messageId,
+}: {
+  roomId: string;
+  messageId: string;
+}): string {
+  const params = new URLSearchParams();
+  params.set('chat', roomId);
+  params.set('msg', messageId);
+  return getAbsoluteAppUrl(`/en/connections?${params.toString()}`);
+}

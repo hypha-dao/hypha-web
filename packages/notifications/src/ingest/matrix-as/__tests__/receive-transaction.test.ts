@@ -2,8 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../dedupe', () => ({ claimProcessedEvent: vi.fn() }));
 vi.mock('../resolve-room-to-space', () => ({ resolveRoomToSpace: vi.fn() }));
+vi.mock('../resolve-direct-room', () => ({
+  resolveDirectRecipient: vi.fn().mockResolvedValue(null),
+}));
 
 import { claimProcessedEvent } from '../dedupe';
+import { resolveDirectRecipient } from '../resolve-direct-room';
 import { resolveRoomToSpace } from '../resolve-room-to-space';
 import { receiveTransaction } from '../receive-transaction';
 import type { MatrixEvent, RoomSpaceContext } from '../types';
@@ -12,6 +16,7 @@ import type { MatrixEvent, RoomSpaceContext } from '../types';
 const EVENT_TS = Date.now();
 const claimMock = vi.mocked(claimProcessedEvent);
 const resolveMock = vi.mocked(resolveRoomToSpace);
+const directMock = vi.mocked(resolveDirectRecipient);
 
 const SPACE_CTX: RoomSpaceContext = {
   kind: 'space',
@@ -47,6 +52,7 @@ function run(
 beforeEach(() => {
   vi.clearAllMocks();
   resolveMock.mockResolvedValue(SPACE_CTX);
+  directMock.mockResolvedValue(null);
   claimMock.mockResolvedValue(true);
 });
 
@@ -121,6 +127,45 @@ describe('receiveTransaction', () => {
     ]);
     expect(result).toMatchObject({ dispatched: 0, ignored: 2 });
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('treats a private message as a mention of the other person', async () => {
+    resolveMock.mockResolvedValue(null);
+    directMock.mockResolvedValue('@bob:hs');
+    const { result, dispatch } = await run([msg()]);
+
+    expect(result).toMatchObject({ dispatched: 1, ignored: 0 });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'chat.mention',
+        context: { kind: 'direct' },
+        payload: expect.objectContaining({
+          mentionedMatrixUserIds: ['@bob:hs'],
+        }),
+      }),
+    );
+  });
+
+  it('keeps an explicit mention and still includes the private-message recipient', async () => {
+    resolveMock.mockResolvedValue(null);
+    directMock.mockResolvedValue('@bob:hs');
+    const { dispatch } = await run([
+      msg({
+        content: {
+          msgtype: 'm.text',
+          body: 'hey',
+          ['m.mentions']: { user_ids: ['@cara:hs'] },
+        },
+      }),
+    ]);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'chat.mention',
+        payload: expect.objectContaining({
+          mentionedMatrixUserIds: ['@cara:hs', '@bob:hs'],
+        }),
+      }),
+    );
   });
 
   it('records an unmapped room as processed but does not dispatch', async () => {

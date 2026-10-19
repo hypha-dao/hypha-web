@@ -1,5 +1,6 @@
 import { claimProcessedEvent } from './dedupe';
 import { resolveMaxEventAgeMs } from './duration';
+import { resolveDirectRecipient } from './resolve-direct-room';
 import { resolveRoomToSpace } from './resolve-room-to-space';
 import type {
   ChatNotificationEvent,
@@ -67,19 +68,31 @@ export async function ingestParsedMessage(
     return 'ignored_stale';
   }
 
-  const context = await resolveRoomToSpace(parsed.roomId, db);
+  let context = await resolveRoomToSpace(parsed.roomId, db);
+  let directRecipient: string | null = null;
 
   if (!context) {
-    await claimProcessedEvent(
-      {
-        matrixEventId: parsed.matrixEventId,
-        roomId: parsed.roomId,
-        eventType: UNMAPPED_EVENT_TYPE,
-        txnId: source.txnId ?? null,
-      },
-      db,
+    // A 1:1 that is not a space or signal room is a private message. The other
+    // person is treated as mentioned so the @mentions preference sends email and
+    // desktop push. Larger unmapped rooms stay silent.
+    directRecipient = await resolveDirectRecipient(
+      parsed.roomId,
+      parsed.senderMxid,
+      botUserIds,
     );
-    return 'ignored_unmapped';
+    if (!directRecipient) {
+      await claimProcessedEvent(
+        {
+          matrixEventId: parsed.matrixEventId,
+          roomId: parsed.roomId,
+          eventType: UNMAPPED_EVENT_TYPE,
+          txnId: source.txnId ?? null,
+        },
+        db,
+      );
+      return 'ignored_unmapped';
+    }
+    context = { kind: 'direct' };
   }
 
   const claimed = await claimProcessedEvent(
@@ -96,9 +109,15 @@ export async function ingestParsedMessage(
   const mentionsForOthers = parsed.mentionedMatrixUserIds.filter(
     (id) => id !== parsed.senderMxid,
   );
+  if (directRecipient && !mentionsForOthers.includes(directRecipient)) {
+    mentionsForOthers.push(directRecipient);
+  }
 
   const event: ChatNotificationEvent = {
-    type: mentionsForOthers.length > 0 ? 'chat.mention' : 'chat.message',
+    type:
+      context.kind === 'direct' || mentionsForOthers.length > 0
+        ? 'chat.mention'
+        : 'chat.message',
     source: { kind: 'matrix', externalEventId: parsed.matrixEventId },
     roomId: parsed.roomId,
     actor: { externalUserId: parsed.senderMxid },

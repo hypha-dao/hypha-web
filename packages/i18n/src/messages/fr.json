@@ -860,6 +860,7 @@
       "fundSpace": "Financer un espace"
     },
     "tabs": {
+      "assets": "Actifs",
       "wallet": "Portefeuille",
       "banking": "Services bancaires",
       "transactions": "Transactions",
@@ -904,6 +905,10 @@
         "description": "Dans n’importe lequel des espaces dont vous êtes membre."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentions": {
+        "title": "@mentions",
+        "description": "Lorsque quelqu'un vous @mentionne dans un espace ou un fil signal dont vous faites partie, ou vous envoie un message privé."
+      },
       "mentionOnChatMessage": {
         "title": "Mentions @ et alertes d'appel",
         "description": "Lorsque quelqu'un vous @mentionne ou démarre un appel dans un espace ou un fil signal dont vous faites partie."

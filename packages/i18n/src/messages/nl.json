@@ -859,6 +859,7 @@
       "fundSpace": "Financier een space"
     },
     "tabs": {
+      "assets": "Activa",
       "wallet": "Portemonnee",
       "banking": "Bankieren",
       "transactions": "Transacties",
@@ -903,6 +904,10 @@
         "description": "In een van de ruimtes waar je lid van bent."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentions": {
+        "title": "@vermeldingen",
+        "description": "Wanneer iemand je @vermeldt in een ruimte of signaalthread waar je bij hoort, of je een privébericht stuurt."
+      },
       "mentionOnChatMessage": {
         "title": "Chat @vermeldingen en oproepwaarschuwingen",
         "description": "Wanneer iemand u @vermeldt of een gesprek start in een ruimte of signaalthread waartoe u behoort."

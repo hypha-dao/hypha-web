@@ -858,6 +858,7 @@
       "fundSpace": "Finansier et space"
     },
     "tabs": {
+      "assets": "Eiendeler",
       "wallet": "Lommebok",
       "banking": "Bank",
       "transactions": "Transaksjoner",
@@ -902,6 +903,10 @@
         "description": "I alle rommene du er medlem av."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentions": {
+        "title": "@omtaler",
+        "description": "Når noen @omtaler deg i et rom eller en signaltråd du tilhører, eller sender deg en privat melding."
+      },
       "mentionOnChatMessage": {
         "title": "@omtaler i chat og samtalevarsler",
         "description": "Når noen @omtaler deg eller starter en samtale i et rom eller en signaltråd du tilhører."

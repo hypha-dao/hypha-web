@@ -1631,6 +1631,7 @@
       "fundSpace": "Financiar um espaço"
     },
     "tabs": {
+      "assets": "Ativos",
       "wallet": "Carteira",
       "banking": "Banco",
       "transactions": "Transações",
@@ -1675,6 +1676,10 @@
         "description": "Em qualquer um dos espaços dos quais você é membro."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentions": {
+        "title": "@menções",
+        "description": "Quando alguém @menciona você em um espaço ou thread de sinal da qual você faz parte, ou envia uma mensagem privada."
+      },
       "mentionOnChatMessage": {
         "title": "Menções @ e alertas de chamada",
         "description": "Quando alguém @menciona você ou inicia uma chamada em um espaço ou thread de sinal da qual você faz parte."

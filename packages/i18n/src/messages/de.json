@@ -854,6 +854,7 @@
       "fundSpace": "Einen Space finanzieren"
     },
     "tabs": {
+      "assets": "Vermögen",
       "wallet": "Wallet",
       "banking": "Bankdienste",
       "transactions": "Transaktionen",
@@ -898,6 +899,10 @@
         "description": "In allen Spaces, in denen Sie Mitglied sind."
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentions": {
+        "title": "@Erwähnungen",
+        "description": "Wenn Sie jemand in einem Space oder Signal-Thread, dem Sie angehören, @erwähnt oder Ihnen eine private Nachricht sendet."
+      },
       "mentionOnChatMessage": {
         "title": "Chat-Erwähnungen @ und Anrufbenachrichtigungen",
         "description": "Wenn Sie jemand @erwähnt oder einen Anruf in einem Space oder Signal-Thread startet, dem Sie angehören."
