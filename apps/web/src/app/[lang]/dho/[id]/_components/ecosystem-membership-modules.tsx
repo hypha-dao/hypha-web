@@ -13,8 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import { useMembers } from '@web/hooks/use-members';
 
-/** `h-8` / `w-8` — theme `--spacing-8` is 48px, not the default 32px scale. */
-const AVATAR_SIZE_PX = 48;
+/** Same 32px circle as the “In this space” portraits (`PersonAvatar` size `md`). */
+const AVATAR_SIZE_PX = 32;
 /** `gap-2` — same 8px gap as the home portrait row. Theme `--spacing-2`. */
 const AVATAR_GAP_PX = 8;
 /**
@@ -70,7 +70,7 @@ function MembershipAvatarFace({ member }: { member: MembershipPreview }) {
     return (
       <div
         title={member.label}
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold ${member.accentClassName}`}
+        className={`flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full font-semibold ${member.accentClassName}`}
         aria-hidden={Boolean(member.onClick || member.href)}
       >
         {member.initials ?? member.label.slice(0, 2).toUpperCase()}
@@ -80,7 +80,7 @@ function MembershipAvatarFace({ member }: { member: MembershipPreview }) {
 
   return (
     <Avatar
-      className="h-8 w-8 shrink-0 rounded-full border border-border/70"
+      className="h-[32px] w-[32px] shrink-0 rounded-full border border-border/70"
       title={member.label}
     >
       <AvatarImage
@@ -183,7 +183,7 @@ function MembershipStack({
   return (
     <div
       ref={containerRef}
-      className="flex w-full min-h-8 min-w-0 items-center gap-3"
+      className="flex w-full min-h-[32px] min-w-0 items-center gap-3"
     >
       <div className="flex min-w-0 gap-2 overflow-hidden">
         {visible.map((member) => (
