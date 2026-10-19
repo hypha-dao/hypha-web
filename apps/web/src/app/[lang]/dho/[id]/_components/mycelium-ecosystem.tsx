@@ -2035,7 +2035,7 @@ export function MyceliumEcosystem({
                       return (
                         <div
                           role="tooltip"
-                          className="pointer-events-none absolute z-10 max-w-[16rem] border border-border bg-background px-3 py-2 text-1 text-foreground"
+                          className="pointer-events-none absolute z-10 w-max border border-border bg-background px-3 py-2 text-1 text-foreground"
                           style={{
                             left: `${(peer.x / size.width) * 100}%`,
                             top: `${(peer.y / size.height) * 100}%`,
@@ -2045,7 +2045,7 @@ export function MyceliumEcosystem({
                           }}
                         >
                           <p className="font-medium">{peer.label}</p>
-                          <ul className="mt-1 grid gap-0.5 text-neutral-11">
+                          <ul className="mt-1 grid gap-0.5 whitespace-nowrap text-neutral-11">
                             {lines.map((thread) => (
                               <li key={thread.key}>
                                 {thread.incoming ? '←' : '→'} {thread.label}
