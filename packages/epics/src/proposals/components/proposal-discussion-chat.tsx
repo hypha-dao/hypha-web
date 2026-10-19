@@ -19,10 +19,12 @@ import {
   useAgreementMutationsWeb2Rsc,
   useJwt,
   useMatrix,
+  useMe,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import type { MatrixClient } from 'matrix-js-sdk';
 
 import {
   HumanChatPanelChatBar,
@@ -46,6 +48,23 @@ import {
   wireComposerPlainForMatrixSend,
 } from '../../common/human-chat-panel/human-chat-display-mention';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+
+function matrixMemberAvatarSquare(
+  client: MatrixClient | null | undefined,
+  roomId: string | null | undefined,
+  userId: string | undefined,
+  px: number,
+): string | undefined {
+  if (!client || !roomId || !userId) return undefined;
+  const room = client.getRoom(roomId);
+  const member = room?.getMember(userId);
+  if (!member) return undefined;
+  const mxc = member.getMxcAvatarUrl();
+  if (!mxc || !mxc.startsWith('mxc://')) return undefined;
+  return (
+    client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
+  );
+}
 
 type PanelMessage = {
   id: string;
@@ -154,9 +173,15 @@ export function ProposalDiscussionChat({
   const tChat = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
   const { jwt: authToken } = useJwt();
+  const { person: me } = useMe();
   const { resolvedTheme } = useTheme();
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const { updateAgreementBySlug } = useAgreementMutationsWeb2Rsc(authToken);
+  const currentUserAvatarUrl = me?.avatarUrl?.trim() || undefined;
+  const agentAvatarUrl = resolveSpaceDisplayLogoUrl(
+    space,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
   const {
     isMatrixAvailable,
     client,
@@ -240,12 +265,39 @@ export function ProposalDiscussionChat({
     [agentLabel, tChat],
   );
 
+  const resolveMemberAvatar = React.useCallback(
+    (userId: string | undefined) => {
+      if (!userId) return undefined;
+      if (currentUserId && userId === currentUserId) {
+        return currentUserAvatarUrl;
+      }
+      if (isHyphaBotMatrixIdentity(userId)) {
+        return agentAvatarUrl || undefined;
+      }
+      return matrixMemberAvatarSquare(
+        clientRef.current,
+        roomIdRef.current,
+        userId,
+        96,
+      );
+    },
+    [agentAvatarUrl, currentUserAvatarUrl, currentUserId],
+  );
+
   const panelMessages = React.useMemo((): PanelMessage[] => {
     return messages.map((msg) => {
       const isCurrentUser = Boolean(
         currentUserId && msg.sender === currentUserId,
       );
       const replyAuthorId = msg.inReplyToSender;
+      const avatarUrl = isCurrentUser
+        ? currentUserAvatarUrl
+        : resolveMemberAvatar(msg.sender);
+      const replyAuthorAvatar = replyAuthorId
+        ? currentUserId && replyAuthorId === currentUserId
+          ? currentUserAvatarUrl
+          : resolveMemberAvatar(replyAuthorId)
+        : undefined;
       return {
         id: msg.id,
         role: isCurrentUser ? 'user' : 'member',
@@ -255,6 +307,7 @@ export function ProposalDiscussionChat({
         ...(msg.agentSpecialistId
           ? { agentSpecialistId: msg.agentSpecialistId }
           : {}),
+        ...(avatarUrl ? { avatarUrl } : {}),
         timestamp: msg.timestamp,
         formattedContentHtml: msg.formattedContentHtml,
         reactions: msg.reactions?.map((reaction) => ({
@@ -269,6 +322,9 @@ export function ProposalDiscussionChat({
                 authorLabel: resolveMemberLabel(replyAuthorId),
                 excerpt: msg.inReplyToBodyPreview,
                 sourceUserId: replyAuthorId,
+                ...(replyAuthorAvatar
+                  ? { authorAvatarUrl: replyAuthorAvatar }
+                  : {}),
               },
             }
           : {}),
@@ -277,7 +333,13 @@ export function ProposalDiscussionChat({
           : {}),
       };
     });
-  }, [currentUserId, messages, resolveMemberLabel]);
+  }, [
+    currentUserAvatarUrl,
+    currentUserId,
+    messages,
+    resolveMemberAvatar,
+    resolveMemberLabel,
+  ]);
 
   const ensureRoom = React.useCallback(async (): Promise<string | null> => {
     if (roomIdRef.current) return roomIdRef.current;
@@ -635,6 +697,8 @@ export function ProposalDiscussionChat({
       const authorLabel =
         target.role === 'user'
           ? tChat('you')
+          : isHyphaBotMatrixIdentity(target.senderMatrixId, target.senderName)
+          ? tChat('agentMentionLabel')
           : target.senderName ?? resolveMemberLabel(target.senderMatrixId);
       setEditDraft(null);
       setReplyDraft({
@@ -836,6 +900,7 @@ export function ProposalDiscussionChat({
               messages={panelMessages}
               roomId={roomId}
               currentUserId={currentUserId}
+              currentUserAvatarUrl={currentUserAvatarUrl}
               onReply={handleReplyToMessage}
               onEditMessage={handleEditMessage}
               onDeleteMessage={handleDeleteMessage}

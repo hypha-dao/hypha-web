@@ -119,6 +119,7 @@ import {
   computeHumanChatUnreadState,
 } from './human-chat-panel/matrix-chat-unread';
 import {
+  isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
@@ -2037,6 +2038,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
+      if (isHyphaBotMatrixIdentity(userId)) {
+        return t('agentMentionLabel');
+      }
       if (currentUserId && userId === currentUserId) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
         return full || t('you');
@@ -4503,6 +4507,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const authorLabel =
         target.role === 'user'
           ? t('you')
+          : isHyphaBotMatrixIdentity(target.senderMatrixId, target.senderName)
+          ? t('agentMentionLabel')
           : target.role === 'member' && target.senderMatrixId
           ? resolveMemberLabel(target.senderMatrixId)
           : target.senderName ?? t('unknownMember');

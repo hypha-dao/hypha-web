@@ -163,18 +163,23 @@ function ReplyPreviewAuthorName({
   isYou,
   youLabel,
   unknownMemberLabel,
+  agentMentionLabel,
 }: {
   authorLabel: string;
   sourceUserId?: string;
   isYou?: boolean;
   youLabel: string;
   unknownMemberLabel: string;
+  agentMentionLabel: string;
 }) {
   if (isYou) {
     return <>{youLabel}</>;
   }
 
   const matrixUserId = sourceUserId?.trim() ?? '';
+  if (isHyphaBotMatrixIdentity(matrixUserId, authorLabel)) {
+    return <>{agentMentionLabel}</>;
+  }
   const canonicalSub = matrixUserId
     ? matrixUserIdToCanonicalPrivySub(matrixUserId)
     : null;
@@ -2032,6 +2037,7 @@ export function HumanChatPanelChatBar({
                     isYou={replyPreview.isYou}
                     youLabel={t('you')}
                     unknownMemberLabel={t('unknownMember')}
+                    agentMentionLabel={t('agentMentionLabel')}
                   />
                 </span>
                 <span className="text-muted-foreground"> — </span>
