@@ -116,7 +116,8 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
       {showSpacesRail ? (
         <div
           className={cn(
-            'sticky top-0 z-10 flex shrink-0 self-start xl:hidden',
+            // Sit under the sticky MenuTop — top-0 clipped the first icons.
+            'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex shrink-0 self-start xl:hidden',
             'h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))]',
           )}
         >

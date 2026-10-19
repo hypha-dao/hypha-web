@@ -50,6 +50,18 @@ describe('planBannerContentFit', () => {
     ).toEqual({ kind: 'top' });
   });
 
+  it('pins the banner on mobile when the next screen cannot hold the offset', () => {
+    expect(
+      planShortPageScroll({
+        reservedTop: 1400,
+        naturalMax: 80,
+        bannerTop: 360,
+        mobile: true,
+        loading: false,
+      }),
+    ).toEqual({ kind: 'banner', top: 360 });
+  });
+
   it('keeps a long screen where it was', () => {
     expect(
       planShortPageScroll({

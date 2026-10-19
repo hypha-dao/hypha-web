@@ -10,6 +10,7 @@ import {
   animateMainColumnScrollBy,
   clearMainColumnScrollFreeze,
   freezeMainColumnScrollAt,
+  getActiveTabFromPath,
   getMainColumnNaturalMaxScroll,
   getMainColumnScrollElement,
   getMainColumnScrollY,
@@ -365,29 +366,21 @@ export function DhoStickySpaceChrome({
     const bar = stickyBarRef.current;
     if (!sentinel) return;
 
-    const mq = window.matchMedia('(min-width: 768px)');
     const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
     let raf = 0;
 
     const applyFade = (deltaPx: number, stuckNow: boolean) => {
       const barEl = stickyBarRef.current;
       if (!barEl) return;
-      const fade = mq.matches
-        ? coverFadeAmount(deltaPx, reduceMq.matches, stuckNow)
-        : 0;
-      barEl.style.opacity = fade.toFixed(3);
+      barEl.style.opacity = coverFadeAmount(
+        deltaPx,
+        reduceMq.matches,
+        stuckNow,
+      ).toFixed(3);
     };
 
     const tick = () => {
       raf = 0;
-      if (!mq.matches) {
-        if (stuckRef.current) {
-          stuckRef.current = false;
-          setStuck(false);
-        }
-        applyFade(COVER_FADE_PX, false);
-        return;
-      }
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
       const appearAt = stickyAppearLineY(readMenuTopPx(), stickyBarRef.current);
@@ -406,13 +399,13 @@ export function DhoStickySpaceChrome({
     };
 
     tick();
-    mq.addEventListener('change', onScroll);
+    reduceMq.addEventListener('change', onScroll);
     const unsubscribeScroll = subscribeMainColumnScroll(onScroll);
     window.addEventListener('resize', onScroll);
     const ro = bar ? new ResizeObserver(onScroll) : null;
     if (bar) ro?.observe(bar);
     return () => {
-      mq.removeEventListener('change', onScroll);
+      reduceMq.removeEventListener('change', onScroll);
       unsubscribeScroll();
       window.removeEventListener('resize', onScroll);
       ro?.disconnect();
@@ -1033,6 +1026,14 @@ export function DhoStickySpaceChrome({
     const mem = spaceEntryMemory(spaceSlug);
     mem.introduced = true;
 
+    const mobile = window.matchMedia('(max-width: 767px)').matches;
+    // Mobile overview keeps the full cover. Other tabs settle on the sticky row.
+    if (mobile && getActiveTabFromPath(pathname) === 'overview') {
+      releaseColumnToTop();
+      mem.headerInView = true;
+      return;
+    }
+
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
@@ -1080,9 +1081,15 @@ export function DhoStickySpaceChrome({
   // Short pages have no scroll range, so the cover never collapses on its
   // own. Hold the column and write the banner offset before paint. A loading
   // skeleton is ignored until the real screen is in the DOM.
+  // Mobile overview keeps the full cover; other mobile tabs collapse like md+.
   React.useLayoutEffect(() => {
     if (!spaceSlug) return;
-    if (window.matchMedia('(max-width: 767px)').matches) return;
+    if (
+      window.matchMedia('(max-width: 767px)').matches &&
+      getActiveTabFromPath(pathname) === 'overview'
+    ) {
+      return;
+    }
 
     const collapseShort = (): boolean => {
       if (isMainColumnScrollFrozen()) return false;
@@ -1302,6 +1309,14 @@ export function DhoStickySpaceChrome({
 
       const mem = spaceEntryMemory(spaceSlug);
       if (!mem.startPath) return;
+      // Mobile overview keeps the full cover — do not pin before the layout
+      // effect opens it. Other tabs settle on the sticky row like desktop.
+      if (
+        window.matchMedia('(max-width: 767px)').matches &&
+        getActiveTabFromPath(anchor.pathname) === 'overview'
+      ) {
+        return;
+      }
       // Decide before Next.js scrollIntoView and before loading.tsx shrinks
       // the tab slot. Settled scroll stays put. A visible cover eases straight
       // to the banner — the freeze follows, so the column cannot pass through 0.
@@ -1393,8 +1408,10 @@ export function DhoStickySpaceChrome({
           /*
            * Use live panel inset vars (non-animated) so sticky chrome stays physically attached
            * to panel edges while users drag-resize left/right sidebars.
+           * Mobile shows this one-line row on non-overview tabs (and when the
+           * cover is scrolled past on overview).
            */
-          'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
+          'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] block',
           /*
            * Stop 0.25rem short of the column edge — the same width as
            * `.narrow-scrollbar` — so this bar does not paint over the thumb.
@@ -1415,7 +1432,7 @@ export function DhoStickySpaceChrome({
         style={{ top: 'var(--menu-top-height, 70px)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex h-full max-w-container-2xl items-center gap-3 px-4 sm:px-6 md:px-8">
+        <div className="mx-auto flex h-full max-w-container-2xl items-center gap-3 px-3 sm:px-6 md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
               <AvatarImage

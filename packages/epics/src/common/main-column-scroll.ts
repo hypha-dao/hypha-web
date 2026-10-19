@@ -233,6 +233,7 @@ export function planShortPageScroll(input: {
   naturalMax: number;
   /** Collapsed-banner offset. Null when the banner cannot be measured. */
   bannerTop: number | null;
+  /** Kept for callers; mobile now pins the banner when measurable. */
   mobile: boolean;
   loading: boolean;
 }): ShortPageScrollPlan {
@@ -243,11 +244,9 @@ export function planShortPageScroll(input: {
   if (planBannerContentFit(reserved, input.naturalMax).fillsBanner) {
     return { kind: 'keep', top: reserved };
   }
-  if (
-    input.mobile ||
-    input.bannerTop == null ||
-    !Number.isFinite(input.bannerTop)
-  ) {
+  // Prefer the collapsed sticky banner whenever it can be measured — including
+  // on mobile — so tab changes do not flash the full cover again.
+  if (input.bannerTop == null || !Number.isFinite(input.bannerTop)) {
     return { kind: 'top' };
   }
   return { kind: 'banner', top: Math.max(0, input.bannerTop) };
