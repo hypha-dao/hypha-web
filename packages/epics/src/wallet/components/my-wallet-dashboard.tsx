@@ -8,9 +8,8 @@ import { UserTransactionsSection } from '../../treasury/components/requests/user
 import { ProfileBankingSection } from '../../banking/components/profile-banking-section';
 import { SpaceAccessDenied } from '../../spaces/components/space-access-denied';
 import { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
-import { SpaceAccentLoader } from '../../common/space-accent-loader';
+import { AssetCard } from '../../treasury/components/assets/asset-card';
 import { WalletShortcutCards } from './wallet-shortcut-cards';
-import { useTranslations } from 'next-intl';
 import type { WalletSectionNavKey } from './wallet-section-nav';
 
 type MyWalletDashboardProps = {
@@ -23,7 +22,6 @@ export function MyWalletDashboard({
   lang,
   section = 'wallet',
 }: MyWalletDashboardProps) {
-  const tMyWallet = useTranslations('MyWallet');
   const { isAuthenticated } = useAuthentication();
   const { person, isLoading } = useMe();
   const basePath = `/${lang}/my-wallet`;
@@ -33,18 +31,25 @@ export function MyWalletDashboard({
     return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
-  // Only block the page on the initial profile load. Background revalidation
-  // (JWT refresh, focus) must not tear the wallet down into a full-page spinner.
-  if (!personSlug && isLoading) {
-    return (
-      <div className="flex w-full min-h-[280px] items-center justify-center py-16">
-        <SpaceAccentLoader label={tMyWallet('loading')} />
-      </div>
-    );
+  if (!personSlug && !isLoading) {
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
+  // Profile and balances resolve after the shell. Keep the shortcut row and
+  // asset-shaped placeholders on screen instead of a blank spinner.
   if (!personSlug) {
-    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
+    return (
+      <div className="flex w-full min-w-0 flex-col gap-4">
+        {section === 'wallet' ? (
+          <WalletShortcutCards basePath={basePath} />
+        ) : null}
+        <div className="grid w-full grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <AssetCard isLoading />
+          <AssetCard isLoading />
+          <AssetCard isLoading />
+        </div>
+      </div>
+    );
   }
 
   if (section === 'banking') {
