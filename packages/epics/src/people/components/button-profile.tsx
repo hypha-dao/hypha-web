@@ -682,6 +682,7 @@ export const ButtonProfile = ({
                 userName={person?.nickname}
                 size="lg"
                 shape="rounded"
+                personId={person?.id}
               />
               <div className="flex flex-col items-center gap-0.5 text-center">
                 <p className="text-2 font-semibold leading-snug text-foreground">

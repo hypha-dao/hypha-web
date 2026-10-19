@@ -187,6 +187,7 @@ export function MemberHomeProposalBody({
                     userName={voter.name}
                     size="sm"
                     shape="circle"
+                    personId={voter.id}
                   />
                 ))}
               </span>

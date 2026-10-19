@@ -441,7 +441,7 @@ export function MemberHomePeopleWidgetCard({
               {tConnections('suggestSentence')}
             </p>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {suggestions.map((card) => (
               <button
                 key={card.key}

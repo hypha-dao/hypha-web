@@ -54,6 +54,7 @@ import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
+import { presenceFillClass } from './presence-dot';
 import {
   MemberHomePeopleWidgetCard,
   MemberHomeSendTokensWidget,
@@ -359,7 +360,9 @@ function homeMessageNodes(
               aria-hidden
               className={cn(
                 'inline-block size-1.5 shrink-0 rounded-full',
-                presence === 'active' ? 'bg-success-9' : 'bg-amber-9',
+                presence === 'active'
+                  ? presenceFillClass.active
+                  : presenceFillClass.idle,
               )}
             />
           ) : null}

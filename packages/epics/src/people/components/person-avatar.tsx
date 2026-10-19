@@ -56,13 +56,13 @@ export const PersonAvatar = ({
   size?: AvatarSize;
   /** `circle` = full round (default; survives `--radius-md: 0`); `squircle` ≈ superellipse; `rounded` = soft corners; `square` = website chrome */
   shape?: 'rounded' | 'squircle' | 'circle' | 'square';
-  /** When set on a circle portrait, registers for live Matrix presence lights. */
+  /** Registers the portrait for live Matrix presence lights. */
   personId?: number;
   /** Fallback when no personId (e.g. Matrix-only room members). */
   matrixUserId?: string;
   /** Explicit level — skips registry when set. */
   presence?: PresenceLevel;
-  /** Override auto light visibility (default: circle + known person/matrix id or presence). */
+  /** Override auto light visibility (default: known person/matrix id or presence, except square chrome). */
   showPresence?: boolean;
 }) => {
   const registeredPresence = useRegisteredPresence({
@@ -72,7 +72,7 @@ export const PersonAvatar = ({
   const presence = presenceProp ?? registeredPresence;
   const shouldShowPresence =
     showPresence ??
-    (shape === 'circle' &&
+    (shape !== 'square' &&
       presence != null &&
       (personId != null ||
         Boolean(matrixUserId?.trim()) ||

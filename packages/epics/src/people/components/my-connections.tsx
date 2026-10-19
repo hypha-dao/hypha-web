@@ -648,7 +648,7 @@ export function MyConnections() {
               {t('suggestSentence')}
             </p>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {reachOut.map((card) => (
               <button
                 key={card.key}
@@ -731,7 +731,7 @@ export function MyConnections() {
 
         {picking && selectedPeople.length > 0 ? (
           <div
-            className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label={t('selectedCount', { count: selectedPeople.length })}
           >
             {selectedPeople.map((row) => (

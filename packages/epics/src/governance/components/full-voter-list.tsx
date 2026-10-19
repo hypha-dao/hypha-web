@@ -23,6 +23,8 @@ export const FullVoterList = ({ documentSlug }: FullVoterListProps) => {
                 avatarSrc={voter.avatarUrl}
                 userName={voter.name}
                 className="w-7 h-7"
+                shape="circle"
+                personId={voter.id}
               />
               <div className="flex flex-col gap-1">
                 <div className="flex gap-2">
