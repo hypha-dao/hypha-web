@@ -94,6 +94,17 @@ const CountValue = ({
 };
 
 function countUniqueMemberAddresses(spaces: Space[]): number {
+  const personIds = new Set<number>();
+  let sawPersonIds = false;
+  for (const space of spaces) {
+    if (!space.memberPersonIds) continue;
+    sawPersonIds = true;
+    for (const personId of space.memberPersonIds) {
+      personIds.add(personId);
+    }
+  }
+  if (sawPersonIds) return personIds.size;
+
   const acc = new Set<Lowercase<`0x${string}`>>();
   for (const space of spaces) {
     if (!space.memberAddresses) continue;

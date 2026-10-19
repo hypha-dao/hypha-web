@@ -68,17 +68,22 @@ function safeJson(value: string): { seeks?: unknown; offers?: unknown } | null {
 
 export async function readSpaceCapitals(
   db: DatabaseInstance,
-  spaceIds: number[],
+  spaceIds?: number[],
 ): Promise<Map<number, SpaceCapitals>> {
   const capitals = new Map<number, SpaceCapitals>();
-  const ids = [...new Set(spaceIds.filter((id) => Number.isInteger(id)))];
-  if (ids.length === 0) return capitals;
+  const ids =
+    spaceIds == null
+      ? null
+      : [...new Set(spaceIds.filter((id) => Number.isInteger(id)))];
+  if (ids && ids.length === 0) return capitals;
   try {
     const result = await db.execute(
-      sql`select id, exchange_capitals from spaces where id in (${sql.join(
-        ids.map((id) => sql`${id}`),
-        sql`, `,
-      )})`,
+      ids
+        ? sql`select id, exchange_capitals from spaces where id in (${sql.join(
+            ids.map((id) => sql`${id}`),
+            sql`, `,
+          )})`
+        : sql`select id, exchange_capitals from spaces`,
     );
     for (const row of rowsOf(result)) {
       if (!row || typeof row !== 'object') continue;

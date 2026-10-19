@@ -1,10 +1,9 @@
 import { Locale } from '@hypha-platform/i18n';
 import {
-  getAllSpaces,
+  getNetworkDirectorySpaces,
   getNetworkGrowth,
   listNetworkSpaceRanks,
   readSpaceCapitals,
-  resolveCreatorMapCoordinates,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
   SPACE_ORDERS,
@@ -64,51 +63,47 @@ async function NetworkSpaces(props: PageProps) {
 
   let spaces: Space[] = [];
   let networkGrowth: NetworkGrowth | null = null;
-  const [spacesResult, growthResult, ranksResult] = await Promise.all([
-    getAllSpaces({
-      search: query?.trim() || undefined,
-      parentOnly: false,
-      omitArchived: true,
-    }).catch((error: unknown) => {
-      console.error('Failed to fetch spaces:', error);
-      return [] as Space[];
-    }),
-    enableNetworkMap
-      ? getNetworkGrowth({ db }).catch((error: unknown) => {
-          console.error('Failed to load network growth:', error);
-          return null;
-        })
-      : Promise.resolve(null),
-    listNetworkSpaceRanks({ db }).catch((error: unknown) => {
-      console.error('Failed to load network ranks:', error);
-      return [];
-    }),
-  ]);
+  const [spacesResult, growthResult, ranksResult, capitalsResult] =
+    await Promise.all([
+      getNetworkDirectorySpaces(
+        { db },
+        {
+          search: query?.trim() || undefined,
+          parentOnly: false,
+          omitArchived: true,
+        },
+      ).catch((error: unknown) => {
+        console.error('Failed to fetch spaces:', error);
+        return [] as Space[];
+      }),
+      enableNetworkMap
+        ? getNetworkGrowth({ db }).catch((error: unknown) => {
+            console.error('Failed to load network growth:', error);
+            return null;
+          })
+        : Promise.resolve(null),
+      listNetworkSpaceRanks({ db }).catch((error: unknown) => {
+        console.error('Failed to load network ranks:', error);
+        return [];
+      }),
+      enableNetworkMap
+        ? readSpaceCapitals(db).catch((error: unknown) => {
+            console.error('Failed to load space capitals:', error);
+            return new Map();
+          })
+        : Promise.resolve(new Map()),
+    ]);
   spaces = spacesResult;
   networkGrowth = growthResult;
 
-  const creatorMapPins = enableNetworkMap
-    ? await resolveCreatorMapCoordinates(spaces, { db }).catch(
-        (error: unknown) => {
-          console.error('Failed to resolve creator map pins:', error);
-          return {};
-        },
-      )
-    : {};
+  // Pins use each space's own coordinates. Geocoding every missing creator
+  // through Nominatim held this response for seconds after the directory
+  // was already loaded.
+  const creatorMapPins = {};
 
   const spaceCapitals = enableNetworkMap
     ? Object.fromEntries(
-        [
-          ...(
-            await readSpaceCapitals(
-              db,
-              spaces.map((space) => space.id),
-            ).catch((error: unknown) => {
-              console.error('Failed to load space capitals:', error);
-              return new Map();
-            })
-          ).entries(),
-        ].map(([id, value]) => [String(id), value]),
+        [...capitalsResult.entries()].map(([id, value]) => [String(id), value]),
       )
     : {};
 

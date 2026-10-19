@@ -19,6 +19,11 @@ export interface Space {
   subspaces?: Space[];
   members?: Person[];
   memberCount?: number;
+  /**
+   * Database membership person ids. The network directory uses these for the
+   * member census so the page does not wait on every on-chain member list.
+   */
+  memberPersonIds?: number[];
   /** True when on-chain enrichment failed for this space (distinct from zero counts). */
   onChainDataMissing?: boolean;
   memberAddresses?: `0x${string}`[];
