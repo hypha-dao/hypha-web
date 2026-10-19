@@ -302,6 +302,14 @@
     "filterInsight": "Insight",
     "filterAction": "Action",
     "filterImpact": "Impact",
+    "filterResource": "Resource",
+    "reciprocalTitle": "Reciprocal Exchange",
+    "shareExchangeTitle": "Share a {type}",
+    "shareExchangeBody": "Name what the network can meet. This {type} is shared with the network.",
+    "shareExchangePrompt": "Describe this {type} for the network.",
+    "signalTitle": "Title",
+    "signalTitleHint": "Short name for this signal",
+    "exchangeSummary": "{count, plural, one {# signal} other {# signals}} across {spaces, plural, one {# space} other {# spaces}}",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Nothing is shared with the network yet.",
     "storiesEmpty": "No stories are shared with the network yet.",
@@ -4640,7 +4648,8 @@
     "supportersCount": "{count, plural, =0 {No UpVoters yet} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Member",
     "signInToUpvote": "Sign in as a space member to upvote signals.",
-    "upvoteFailed": "Could not update your upvote. Try again."
+    "upvoteFailed": "Could not update your upvote. Try again.",
+    "sharedWithNetwork": "Shared with the network"
   },
   "Calendar": {
     "title": "Calendar",

@@ -568,7 +568,7 @@ export function MemberHome({
                 title={t('investorTitle')}
                 body={t('investorBody')}
                 action={t('investorAction')}
-                href={`/${lang}/network/needs`}
+                href={`/${lang}/network/exchange?type=Need`}
                 meta={t('investorCount', {
                   count: home.counts.capitalAsks,
                 })}

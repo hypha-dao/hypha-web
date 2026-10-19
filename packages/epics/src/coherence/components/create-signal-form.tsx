@@ -105,6 +105,7 @@ import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { TokenPayoutFieldArray } from '../../agreements';
 import { useTokens } from '../../treasury/hooks/use-tokens';
 import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
+import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -467,6 +468,19 @@ export const CreateSignalForm = ({
     const videoUrl = createMediaDraft.current?.videoUrl?.trim();
     if (mode === 'create' && videoUrl) {
       form.setValue('videoUrl', videoUrl);
+    }
+  }, [form, mode]);
+
+  React.useEffect(() => {
+    if (mode !== 'create' || typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem(EXCHANGE_SIGNAL_CAPITALS_KEY);
+    if (!raw) return;
+    window.sessionStorage.removeItem(EXCHANGE_SIGNAL_CAPITALS_KEY);
+    try {
+      const keys = parseCapitalKeys(JSON.parse(raw) as unknown);
+      if (keys.length > 0) form.setValue('capitals', keys);
+    } catch {
+      // Ignore malformed draft from a previous session.
     }
   }, [form, mode]);
 

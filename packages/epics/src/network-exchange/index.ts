@@ -6,3 +6,5 @@ export * from './network-field-board';
 export * from './network-right-cards';
 export * from './network-quick-create';
 export * from './network-impact-board';
+export * from './network-exchange-share-card';
+export * from './network-reciprocal-exchange';

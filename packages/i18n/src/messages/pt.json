@@ -528,7 +528,15 @@
     "addParty": "Adicionar outro espaço",
     "removeParty": "Remover",
     "openSignal": "Abrir o sinal",
-    "signals": "{count} partilhados"
+    "signals": "{count} partilhados",
+    "filterResource": "Recurso",
+    "reciprocalTitle": "Troca recíproca",
+    "shareExchangeTitle": "Partilhar um {type}",
+    "shareExchangeBody": "Nomeie o que a rede pode cobrir. Este {type} é partilhado com a rede.",
+    "shareExchangePrompt": "Descreva este {type} para a rede.",
+    "signalTitle": "Título",
+    "signalTitleHint": "Nome curto para este sinal",
+    "exchangeSummary": "{count, plural, one {# sinal} other {# sinais}} em {spaces, plural, one {# espaço} other {# espaços}}"
   },
   "Common": {
     "createdOn": "Criado em {date}",
@@ -1601,10 +1609,6 @@
       "networkWarning": "Aviso: transfira fundos somente na rede BASE.",
       "share": "Partilhe este QR code ou o endereço da tesouraria para financiar este espaço.",
       "baseOnly": "Envie fundos apenas na Base.",
-      "share": "Partilhe este QR code ou o endereço da tesouraria para financiar este espaço.",
-      "baseOnly": "Envie fundos apenas na Base.",
-      "share": "Partilhe este QR code ou o endereço da tesouraria para financiar este espaço.",
-      "baseOnly": "Envie fundos apenas na Base.",
       "addressLabel": "Endereço da tesouraria",
       "copy": "Copiar endereço",
       "copied": "Endereço copiado",
@@ -1626,8 +1630,6 @@
       "buySpace": "Comprar tokens do espaço",
       "activate": "Ativar espaço",
       "migrate": "Migrar tokens",
-      "fundSpace": "Financiar um espaço",
-      "fundSpace": "Financiar um espaço",
       "fundSpace": "Financiar um espaço"
     },
     "tabs": {
@@ -4033,7 +4035,8 @@
     "supportersCount": "{count, plural, =0 {Ainda sem UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membro",
     "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",
-    "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente."
+    "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente.",
+    "sharedWithNetwork": "Partilhado com a rede"
   },
   "BankingTab": {
     "title": "Banco",

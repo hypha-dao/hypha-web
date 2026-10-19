@@ -528,7 +528,15 @@
     "addParty": "Ajouter un autre espace",
     "removeParty": "Retirer",
     "openSignal": "Ouvrir le signal",
-    "signals": "{count} partagés"
+    "signals": "{count} partagés",
+    "filterResource": "Ressource",
+    "reciprocalTitle": "Échange réciproque",
+    "shareExchangeTitle": "Partager un {type}",
+    "shareExchangeBody": "Nommez ce que le réseau peut combler. Ce {type} est partagé avec le réseau.",
+    "shareExchangePrompt": "Décrivez ce {type} pour le réseau.",
+    "signalTitle": "Titre",
+    "signalTitleHint": "Nom court pour ce signal",
+    "exchangeSummary": "{count, plural, one {# signal} other {# signaux}} dans {spaces, plural, one {# espace} other {# espaces}}"
   },
   "Common": {
     "Assignments": "Affectations",
@@ -830,10 +838,6 @@
       "networkWarning": "Avertissement : transférez les fonds uniquement sur le réseau BASE.",
       "share": "Partagez ce QR code ou l’adresse de trésorerie pour financer cet espace.",
       "baseOnly": "Envoyez les fonds uniquement sur Base.",
-      "share": "Partagez ce QR code ou l’adresse de trésorerie pour financer cet espace.",
-      "baseOnly": "Envoyez les fonds uniquement sur Base.",
-      "share": "Partagez ce QR code ou l’adresse de trésorerie pour financer cet espace.",
-      "baseOnly": "Envoyez les fonds uniquement sur Base.",
       "addressLabel": "Adresse de trésorerie",
       "copy": "Copier l'adresse",
       "copied": "Adresse copiée",
@@ -855,8 +859,6 @@
       "buySpace": "Acheter des jetons d'espace",
       "activate": "Activer l'espace",
       "migrate": "Migrer les jetons",
-      "fundSpace": "Financer un espace",
-      "fundSpace": "Financer un espace",
       "fundSpace": "Financer un espace"
     },
     "tabs": {
@@ -4031,7 +4033,8 @@
     "supportersCount": "{count, plural, =0 {Aucun UpVoter pour l'instant} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membre",
     "signInToUpvote": "Connectez-vous en tant que membre de l'espace pour soutenir des signaux.",
-    "upvoteFailed": "Impossible de mettre à jour votre vote. Réessayez."
+    "upvoteFailed": "Impossible de mettre à jour votre vote. Réessayez.",
+    "sharedWithNetwork": "Partagé avec le réseau"
   },
   "BankingTab": {
     "title": "Banque",

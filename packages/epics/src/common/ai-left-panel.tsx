@@ -17,16 +17,14 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
-  ClipboardList,
+  ArrowLeftRight,
+  Globe2,
   Menu,
-  Network,
   PanelLeftClose,
   Plus,
   Settings,
-  Target,
   Volume2,
   VolumeX,
-  Waves,
 } from 'lucide-react';
 import {
   Category,
@@ -669,25 +667,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         key: 'network',
         label: tNetwork('navNetwork'),
         href: base,
-        icon: Network,
+        icon: Globe2,
       },
       {
-        key: 'needs',
-        label: tNetwork('navNeeds'),
-        href: `${base}/needs`,
-        icon: ClipboardList,
-      },
-      {
-        key: 'action',
-        label: tNetwork('navAction'),
-        href: `${base}/proof-of-action`,
-        icon: Waves,
-      },
-      {
-        key: 'impact',
-        label: tNetwork('navImpact'),
-        href: `${base}/proof-of-impact`,
-        icon: Target,
+        key: 'exchange',
+        label: tNetwork('navExchange'),
+        href: `${base}/exchange`,
+        icon: ArrowLeftRight,
       },
       {
         key: 'create',

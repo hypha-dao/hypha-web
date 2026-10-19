@@ -33,6 +33,7 @@ function kindLabel(
   t: ReturnType<typeof useTranslations<'NetworkExchange'>>,
 ) {
   if (kind === 'Need') return t('filterNeed');
+  if (kind === 'Resource') return t('filterResource');
   if (kind === 'Opportunity') return t('filterOpportunity');
   if (kind === 'Risk') return t('filterRisk');
   if (kind === 'Tension') return t('filterTension');
@@ -210,14 +211,14 @@ export function NetworkNeedsBoard({
                         </p>
                         <div className="flex gap-3 text-1">
                           <Link
-                            href={`/${lang}/network/proof-of-action`}
+                            href={`/${lang}/network/exchange?type=Action`}
                             className="underline-offset-2 hover:underline"
                             onClick={(event) => event.stopPropagation()}
                           >
                             {t('proofsOfAction', { count: need.actionCount })}
                           </Link>
                           <Link
-                            href={`/${lang}/network/proof-of-impact`}
+                            href={`/${lang}/network/exchange?type=Impact`}
                             className="underline-offset-2 hover:underline"
                             onClick={(event) => event.stopPropagation()}
                           >

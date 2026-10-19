@@ -528,7 +528,15 @@
     "addParty": "Legg til et rom til",
     "removeParty": "Fjern",
     "openSignal": "Åpne signalet",
-    "signals": "{count} delt"
+    "signals": "{count} delt",
+    "filterResource": "Ressurs",
+    "reciprocalTitle": "Gjensidig utveksling",
+    "shareExchangeTitle": "Del en {type}",
+    "shareExchangeBody": "Navngi det nettverket kan dekke. Denne {type} deles med nettverket.",
+    "shareExchangePrompt": "Beskriv denne {type} for nettverket.",
+    "signalTitle": "Tittel",
+    "signalTitleHint": "Kort navn for dette signalet",
+    "exchangeSummary": "{count, plural, one {# signal} other {# signaler}} på tvers av {spaces, plural, one {# space} other {# spaces}}"
   },
   "Common": {
     "Assignments": "Oppdrag",
@@ -828,10 +836,6 @@
       "networkWarning": "Advarsel: overfør kun midler på BASE-nettverket.",
       "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
       "baseOnly": "Send midler bare på Base.",
-      "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
-      "baseOnly": "Send midler bare på Base.",
-      "share": "Del denne QR-koden eller treasury-adressen for å finansiere dette spacet.",
-      "baseOnly": "Send midler bare på Base.",
       "addressLabel": "Kasseadresse",
       "copy": "Kopier adresse",
       "copied": "Adresse kopiert",
@@ -853,8 +857,6 @@
       "buySpace": "Kjøp space-tokens",
       "activate": "Aktiver space",
       "migrate": "Migrer tokens",
-      "fundSpace": "Finansier et space",
-      "fundSpace": "Finansier et space",
       "fundSpace": "Finansier et space"
     },
     "tabs": {
@@ -4612,7 +4614,8 @@
     "supportersCount": "{count, plural, =0 {Ingen upvotes ennå} one {# upvoter} other {# upvotere}}",
     "anonymousSupporter": "Medlem",
     "signInToUpvote": "Logg inn som medlem av rommet for å stemme opp signaler.",
-    "upvoteFailed": "Kunne ikke oppdatere upvoten din. Prøv igjen."
+    "upvoteFailed": "Kunne ikke oppdatere upvoten din. Prøv igjen.",
+    "sharedWithNetwork": "Delt med nettverket"
   },
   "Calendar": {
     "title": "Kalender",

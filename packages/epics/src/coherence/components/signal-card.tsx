@@ -30,6 +30,7 @@ import {
   ArchiveRestore,
   CalendarDays,
   FilePlus,
+  Globe2,
   Pencil,
 } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
@@ -87,6 +88,7 @@ function SignalCardComponent({
   onOpenConversation,
   className,
   leadImage,
+  sharedWithNetwork = false,
   isActive = false,
 }: SignalCardProps & Coherence) {
   const { jwt: authToken } = useJwt();
@@ -406,6 +408,15 @@ function SignalCardComponent({
 
             <div className="flex flex-wrap items-center gap-1.5 pl-3.5">
               <SignalCategoryTag type={type} />
+              {sharedWithNetwork ? (
+                <span
+                  className="inline-flex size-6 items-center justify-center border border-border text-muted-foreground"
+                  title={tSignalCard('sharedWithNetwork')}
+                  aria-label={tSignalCard('sharedWithNetwork')}
+                >
+                  <Globe2 className="size-3.5" strokeWidth={1.25} aria-hidden />
+                </span>
+              ) : null}
               <SignalIndicativeAmounts payouts={indicativePayouts} />
             </div>
 

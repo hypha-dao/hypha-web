@@ -528,7 +528,15 @@
     "addParty": "Weiteren Space hinzufügen",
     "removeParty": "Entfernen",
     "openSignal": "Signal öffnen",
-    "signals": "{count} geteilt"
+    "signals": "{count} geteilt",
+    "filterResource": "Ressource",
+    "reciprocalTitle": "Reziproker Tausch",
+    "shareExchangeTitle": "{type} teilen",
+    "shareExchangeBody": "Benenne, was das Netzwerk erfüllen kann. Dieses {type} wird mit dem Netzwerk geteilt.",
+    "shareExchangePrompt": "Beschreibe dieses {type} für das Netzwerk.",
+    "signalTitle": "Titel",
+    "signalTitleHint": "Kurzer Name für dieses Signal",
+    "exchangeSummary": "{count, plural, one {# Signal} other {# Signale}} in {spaces, plural, one {# Space} other {# Spaces}}"
   },
   "Common": {
     "Assignments": "Zuweisungen",
@@ -4601,7 +4609,8 @@
     "supportersCount": "{count, plural, =0 {Noch keine UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Mitglied",
     "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
-    "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen."
+    "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+    "sharedWithNetwork": "Mit dem Netzwerk geteilt"
   },
   "Calendar": {
     "title": "Kalender",

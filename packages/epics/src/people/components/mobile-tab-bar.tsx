@@ -7,7 +7,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
-  ClipboardList,
+  ArrowLeftRight,
   House,
   LayoutDashboard,
   LayoutGrid,
@@ -18,9 +18,7 @@ import {
   Settings,
   Sparkles,
   Zap,
-  Target,
   Wallet,
-  Waves,
 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe, useSpaceBySlug } from '@hypha-platform/core/client';
@@ -305,22 +303,10 @@ export function MobileTabBar({
         exact: true,
       },
       {
-        key: 'needs',
-        label: tNetwork('navNeeds'),
-        href: `${base}/needs`,
-        icon: ClipboardList,
-      },
-      {
-        key: 'action',
-        label: tNetwork('navAction'),
-        href: `${base}/proof-of-action`,
-        icon: Waves,
-      },
-      {
-        key: 'impact',
-        label: tNetwork('navImpact'),
-        href: `${base}/proof-of-impact`,
-        icon: Target,
+        key: 'exchange',
+        label: tNetwork('navExchange'),
+        href: `${base}/exchange`,
+        icon: ArrowLeftRight,
       },
       {
         key: 'create',

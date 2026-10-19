@@ -528,7 +528,15 @@
     "addParty": "Nog een ruimte toevoegen",
     "removeParty": "Verwijderen",
     "openSignal": "Open het signaal",
-    "signals": "{count} gedeeld"
+    "signals": "{count} gedeeld",
+    "filterResource": "Bron",
+    "reciprocalTitle": "Wederkerige uitwisseling",
+    "shareExchangeTitle": "Deel een {type}",
+    "shareExchangeBody": "Noem wat het netwerk kan invullen. Dit {type} wordt gedeeld met het netwerk.",
+    "shareExchangePrompt": "Beschrijf dit {type} voor het netwerk.",
+    "signalTitle": "Titel",
+    "signalTitleHint": "Korte naam voor dit signaal",
+    "exchangeSummary": "{count, plural, one {# signaal} other {# signalen}} in {spaces, plural, one {# space} other {# spaces}}"
   },
   "Common": {
     "Assignments": "Opdrachten",
@@ -829,10 +837,6 @@
       "networkWarning": "Opgelet: maak alleen geld over op het BASE Netwerk.",
       "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
       "baseOnly": "Stuur geld alleen op Base.",
-      "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
-      "baseOnly": "Stuur geld alleen op Base.",
-      "share": "Deel deze QR-code of het treasury-adres om deze space te financieren.",
-      "baseOnly": "Stuur geld alleen op Base.",
       "addressLabel": "Adres van de schatkist",
       "copy": "Kopieer adres",
       "copied": "Adres gekopieerd",
@@ -854,8 +858,6 @@
       "buySpace": "Space-tokens kopen",
       "activate": "Space activeren",
       "migrate": "Tokens migreren",
-      "fundSpace": "Financier een space",
-      "fundSpace": "Financier een space",
       "fundSpace": "Financier een space"
     },
     "tabs": {
@@ -4613,7 +4615,8 @@
     "supportersCount": "{count, plural, =0 {Nog geen UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Lid",
     "signInToUpvote": "Meld u aan als lid van de ruimte om signalen te stemmen.",
-    "upvoteFailed": "Kan uw upvote niet bijwerken. Probeer het opnieuw."
+    "upvoteFailed": "Kan uw upvote niet bijwerken. Probeer het opnieuw.",
+    "sharedWithNetwork": "Gedeeld met het netwerk"
   },
   "Calendar": {
     "title": "Kalender",

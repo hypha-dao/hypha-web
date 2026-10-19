@@ -29,6 +29,7 @@ function typeLabel(
   t: ReturnType<typeof useTranslations<'NetworkExchange'>>,
 ) {
   if (type === 'Need') return t('filterNeed');
+  if (type === 'Resource') return t('filterResource');
   if (type === 'Opportunity') return t('filterOpportunity');
   if (type === 'Risk') return t('filterRisk');
   if (type === 'Tension') return t('filterTension');

@@ -2,12 +2,14 @@ export type NetworkSignalKind = 'Need' | 'Action' | 'Impact';
 
 export type NetworkOpenNeedKind = 'Need' | 'Risk' | 'Tension';
 
+/** All eight space signal types that can be shared on the network exchange. */
 export const NETWORK_FIELD_KINDS = [
   'Need',
+  'Resource',
   'Opportunity',
-  'Risk',
-  'Tension',
   'Insight',
+  'Tension',
+  'Risk',
   'Action',
   'Impact',
 ] as const;
