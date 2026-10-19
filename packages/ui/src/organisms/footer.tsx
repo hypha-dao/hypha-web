@@ -56,14 +56,14 @@ export const Footer = ({
 
   return (
     <footer className="border-t border-border/60 bg-background-2">
-      <Container className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:gap-10">
+      <Container className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center">
         <div className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
           <span>{poweredByLabel}</span>
           <Logo width={92} />
         </div>
         <nav
           aria-label={poweredByLabel}
-          className="flex flex-1 flex-wrap items-center justify-between gap-x-6 gap-y-2"
+          className="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2"
         >
           {links.map((link) => (
             <Link

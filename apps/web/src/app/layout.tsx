@@ -374,6 +374,9 @@ export default async function RootLayout({
                             <NextSSRPlugin
                               routerConfig={extractRouterConfig(fileRouter)}
                             />
+                            {/* mb-auto is the gap under short pages. The footer stays a
+                                sibling so that gap sits above it, at the fold,
+                                and is not counted as column content. */}
                             <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
                               <div className="pb-8">
                                 <MobileContentFrame>
@@ -384,30 +387,26 @@ export default async function RootLayout({
                                   </div>
                                 </MobileContentFrame>
                               </div>
-                              <Suspense fallback={null}>
-                                {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
-                                <div className="hidden xl:block">
-                                  <DeferredFooter
-                                    poweredByLabel={footerPoweredByLabel}
-                                    hyphaServicesLabel={
-                                      footerHyphaServicesLabel
-                                    }
-                                    hyphaTokenomicsLabel={
-                                      footerHyphaTokenomicsLabel
-                                    }
-                                    licensingPolicyLabel={
-                                      footerLicensingPolicyLabel
-                                    }
-                                    termsAndConditionsLabel={
-                                      footerTermsAndConditionsLabel
-                                    }
-                                    privacyPolicyLabel={
-                                      footerPrivacyPolicyLabel
-                                    }
-                                  />
-                                </div>
-                              </Suspense>
                             </div>
+                            <Suspense fallback={null}>
+                              {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
+                              <div className="hidden shrink-0 xl:block">
+                                <DeferredFooter
+                                  poweredByLabel={footerPoweredByLabel}
+                                  hyphaServicesLabel={footerHyphaServicesLabel}
+                                  hyphaTokenomicsLabel={
+                                    footerHyphaTokenomicsLabel
+                                  }
+                                  licensingPolicyLabel={
+                                    footerLicensingPolicyLabel
+                                  }
+                                  termsAndConditionsLabel={
+                                    footerTermsAndConditionsLabel
+                                  }
+                                  privacyPolicyLabel={footerPrivacyPolicyLabel}
+                                />
+                              </div>
+                            </Suspense>
                             <MobileTabBar
                               spaceMemoryEnabled={spaceMemoryEnabled}
                             />
