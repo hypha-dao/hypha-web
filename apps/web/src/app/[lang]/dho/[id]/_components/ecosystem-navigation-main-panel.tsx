@@ -603,10 +603,7 @@ export function EcosystemNavigationMainPanel({
                 </div>
               }
             />
-            <div
-              ref={diagramStageRef}
-              className="relative w-full shrink-0 overflow-hidden"
-            >
+            <div ref={diagramStageRef} className="relative w-full shrink-0">
               {hierarchyData ? (
                 <MyceliumEcosystem
                   data={hierarchyData}

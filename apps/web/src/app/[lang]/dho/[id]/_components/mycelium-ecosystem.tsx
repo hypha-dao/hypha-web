@@ -185,29 +185,64 @@ function arrowOnCurve(
   return arrowHead(x - dx / len, y - dy / len, x, y);
 }
 
-function useFrameSize() {
+/**
+ * Height the diagram pane needs so the radial layout (nodes + outward labels)
+ * is not clipped. Driven by ring density / depth, not by a fixed CSS box.
+ */
+function estimateFrameHeight({
+  tree,
+  focusId,
+  width,
+  memberHint = 0,
+}: {
+  tree: SpaceNode;
+  focusId: number;
+  width: number;
+  /** Rough count of member/agent chips around the focus hub. */
+  memberHint?: number;
+}): number {
+  const focus = findNode(tree, focusId) ?? tree;
+  const ancestry = pathTo(tree, focus.id) ?? [focus];
+  const parent = ancestry.length > 1 ? ancestry[ancestry.length - 2] : null;
+  const childCount = focus.children.length;
+  const siblingCount = parent ? Math.max(0, parent.children.length - 1) : 0;
+  const grandchildCount = focus.children.reduce(
+    (sum, child) => sum + child.children.length,
+    0,
+  );
+  const ringCount = parent
+    ? 1 + siblingCount + childCount
+    : Math.max(childCount, 1);
+  const showDeeper = grandchildCount > 0 && childCount > 0 && childCount <= 12;
+  const slot = 72;
+  const baseRadius = Math.max(110, (ringCount * slot) / (Math.PI * 2));
+  const reach = baseRadius * (showDeeper ? 1.7 : 1.28);
+  const labelPad = 96;
+  const memberPad =
+    memberHint > 0 ? Math.min(96, 28 + Math.ceil(memberHint / 4) * 22) : 0;
+  const content = reach * 2 + labelPad + memberPad;
+  // Stay usable on narrow panes; grow for dense ecosystems; cap extremes.
+  const floor = Math.max(320, Math.min(width * 0.85, 420));
+  return Math.round(Math.min(820, Math.max(floor, content)));
+}
+
+/** Observe pane width; height is supplied by {@link estimateFrameHeight}. */
+function useFrameWidth() {
   const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 480, height: 360 });
+  const [width, setWidth] = useState(480);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
     const apply = () => {
-      const next = {
-        width: Math.max(240, Math.round(node.clientWidth)),
-        height: Math.max(220, Math.round(node.clientHeight)),
-      };
-      setSize((current) =>
-        current.width === next.width && current.height === next.height
-          ? current
-          : next,
-      );
+      const next = Math.max(240, Math.round(node.clientWidth));
+      setWidth((current) => (current === next ? current : next));
     };
     apply();
     const observer = new ResizeObserver(apply);
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  return { ref, size };
+  return { ref, width };
 }
 
 function curveControl(
@@ -273,10 +308,11 @@ function separateNodes(nodes: PlacedNode[], width: number, height: number) {
     }
     for (const node of nodes) {
       if (node.role === 'focus') continue;
-      const marginX = node.r + 64;
-      const marginY = node.r + 28;
+      // Leave room for outward name labels past the node edge.
+      const marginX = node.r + 72;
+      const marginY = node.r + 36;
       node.x = Math.min(width - marginX, Math.max(marginX, node.x));
-      node.y = Math.min(height - marginY, Math.max(node.r + 10, node.y));
+      node.y = Math.min(height - marginY, Math.max(marginY, node.y));
     }
   }
 }
@@ -718,8 +754,6 @@ export function MyceliumEcosystem({
   const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
   /** Counterparty key in the Flows lens — amount labels only show for this peer. */
   const [hoveredFlowKey, setHoveredFlowKey] = useState<string | null>(null);
-  const structureFrame = useFrameSize();
-  const flowsFrame = useFrameSize();
 
   useEffect(() => {
     if (currentSpaceId != null) {
@@ -809,6 +843,40 @@ export function MyceliumEcosystem({
 
   const people = persons.data ?? [];
   const joinedSpaces = memberSpaces.data ?? [];
+  const memberHint = people.length + (agents?.length ?? 0);
+  const structureWidth = useFrameWidth();
+  const flowsWidth = useFrameWidth();
+  const frameHeight = useMemo(
+    () =>
+      estimateFrameHeight({
+        tree,
+        focusId: personFocus || outsideSpace ? tree.id : focus.id,
+        width: structureWidth.width,
+        memberHint: personFocus || outsideSpace ? 0 : memberHint,
+      }),
+    [
+      focus.id,
+      memberHint,
+      outsideSpace,
+      personFocus,
+      structureWidth.width,
+      tree,
+    ],
+  );
+  const structureFrame = useMemo(
+    () => ({
+      ref: structureWidth.ref,
+      size: { width: structureWidth.width, height: frameHeight },
+    }),
+    [frameHeight, structureWidth.ref, structureWidth.width],
+  );
+  const flowsFrame = useMemo(
+    () => ({
+      ref: flowsWidth.ref,
+      size: { width: flowsWidth.width, height: frameHeight },
+    }),
+    [flowsWidth.ref, flowsWidth.width, frameHeight],
+  );
   const {
     filteredSpaces: visibleJoinedSpaces,
     isLoading: joinedVisibilityLoading,
@@ -1310,7 +1378,7 @@ export function MyceliumEcosystem({
     path.length > 1 || personFocus != null || outsideSpace != null;
 
   return (
-    <div className={cn('flex h-full min-h-0 flex-col', className)}>
+    <div className={cn('flex w-full flex-col', className)}>
       {showBreadcrumb ? (
         <div className="flex flex-wrap items-center justify-end gap-3 px-1 pb-2">
           <nav
@@ -1359,7 +1427,7 @@ export function MyceliumEcosystem({
           </nav>
         </div>
       ) : null}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {(
           [
             {
@@ -1384,16 +1452,14 @@ export function MyceliumEcosystem({
           const focusNode = pane.node;
           const showMembers = lens === 'structure' && !personFocus;
           return (
-            <section
-              key={lens}
-              className="craft-card flex min-h-0 flex-col overflow-hidden p-3"
-            >
+            <section key={lens} className="craft-card flex flex-col p-3">
               <h3 className="px-1 pb-2 text-1 tracking-[0.12em] text-neutral-11 uppercase">
                 {pane.title}
               </h3>
               <div
                 ref={pane.frame.ref}
-                className="relative min-h-[28rem] flex-1 md:min-h-[16rem]"
+                className="relative w-full"
+                style={{ height: size.height }}
               >
                 <div
                   key={lens === 'structure' ? `zoom-${zoomKey}` : 'flows'}

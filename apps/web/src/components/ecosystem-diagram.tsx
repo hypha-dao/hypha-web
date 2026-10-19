@@ -188,7 +188,7 @@ export function EcosystemDiagram({ spaceSlug }: { spaceSlug: string }) {
           </div>
         }
       />
-      <div className="relative h-[32rem] w-full">
+      <div className="relative w-full">
         <MyceliumEcosystem
           data={hierarchy}
           currentSpaceId={currentSpace?.id}
