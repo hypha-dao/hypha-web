@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
@@ -689,27 +696,129 @@ export function MemberHomeSendTokensWidget({
     };
   }, [client]);
 
+  const loadTransferRecipients = useCallback(async () => {
+    if (directoryPeople && directorySpaces) return true;
+    setDirectoryLoading(true);
+    try {
+      const response = await fetch('/api/v1/transfer-recipients');
+      if (!response.ok) {
+        throw new Error('recipients');
+      }
+      const body = (await response.json()) as {
+        people?: Array<{
+          id: number;
+          name: string;
+          surname: string;
+          avatarUrl?: string | null;
+          address: string;
+          slug: string;
+        }>;
+        spaces?: Array<{
+          id: number;
+          title: string;
+          slug: string;
+          address: string;
+          logoUrl?: string | null;
+          web3SpaceId?: number | null;
+          parentId?: number | null;
+          flags?: Space['flags'];
+        }>;
+      };
+      const peopleRows = Array.isArray(body.people) ? body.people : [];
+      const now = new Date(0);
+      setDirectoryPeople(
+        peopleRows.map((entry) => ({
+          id: entry.id,
+          name: entry.name,
+          surname: entry.surname,
+          avatarUrl: entry.avatarUrl ?? undefined,
+          address: entry.address,
+          slug: entry.slug,
+          createdAt: now,
+          updatedAt: now,
+        })),
+      );
+      setDirectorySpaces(
+        (Array.isArray(body.spaces) ? body.spaces : []).map((space) => ({
+          id: space.id,
+          title: space.title,
+          description: null,
+          slug: space.slug,
+          address: space.address,
+          logoUrl: space.logoUrl ?? null,
+          web3SpaceId: space.web3SpaceId ?? null,
+          parentId: space.parentId ?? null,
+          flags: space.flags ?? [],
+          links: [],
+          categories: [],
+          createdAt: now,
+          updatedAt: now,
+        })),
+      );
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setDirectoryLoading(false);
+    }
+  }, [directoryPeople, directorySpaces]);
+
+  /** Wallet send passes no connections — load the payable directory for the TO row. */
+  useEffect(() => {
+    if (people.length > 0) return;
+    void loadTransferRecipients();
+  }, [loadTransferRecipients, people.length]);
+
   const targets = useMemo(() => {
-    const recent = memberRowsForConnections(
-      people,
-      conversationRows,
-      personIdToMatrixUserId,
-      null,
-      fallbackName,
-    );
-    return recent.flatMap((row) => {
-      const address = row.person.address?.trim();
+    if (people.length > 0) {
+      const recent = memberRowsForConnections(
+        people,
+        conversationRows,
+        personIdToMatrixUserId,
+        null,
+        fallbackName,
+      );
+      return recent.flatMap((row) => {
+        const address = row.person.address?.trim();
+        if (!address) return [];
+        return [
+          {
+            kind: 'person' as const,
+            id: `person-${row.person.id}`,
+            name: row.name,
+            address,
+          },
+        ];
+      });
+    }
+    const selfAddress = person?.address?.trim().toLowerCase() ?? '';
+    const selfSlug = person?.slug?.trim() ?? '';
+    return (directoryPeople ?? []).flatMap((entry) => {
+      const address = entry.address?.trim();
       if (!address) return [];
+      if (selfAddress && address.toLowerCase() === selfAddress) return [];
+      if (selfSlug && entry.slug?.trim() === selfSlug) return [];
+      const name =
+        [entry.name, entry.surname].filter(Boolean).join(' ').trim() ||
+        fallbackName;
       return [
         {
           kind: 'person' as const,
-          id: `person-${row.person.id}`,
-          name: row.name,
+          id: `person-${entry.id}`,
+          name,
           address,
         },
       ];
     });
-  }, [conversationRows, fallbackName, people, personIdToMatrixUserId]);
+  }, [
+    conversationRows,
+    directoryPeople,
+    fallbackName,
+    people,
+    person?.address,
+    person?.slug,
+    personIdToMatrixUserId,
+  ]);
   const visibleTargets = useMemo(() => {
     if (
       picked &&
@@ -850,69 +959,10 @@ export function MemberHomeSendTokensWidget({
     }
     setDirectoryOpen(true);
     setError(null);
-    if (directoryPeople && directorySpaces) return;
-    setDirectoryLoading(true);
-    try {
-      const response = await fetch('/api/v1/transfer-recipients');
-      if (!response.ok) {
-        throw new Error('recipients');
-      }
-      const body = (await response.json()) as {
-        people?: Array<{
-          id: number;
-          name: string;
-          surname: string;
-          avatarUrl?: string | null;
-          address: string;
-          slug: string;
-        }>;
-        spaces?: Array<{
-          id: number;
-          title: string;
-          slug: string;
-          address: string;
-          logoUrl?: string | null;
-          web3SpaceId?: number | null;
-          parentId?: number | null;
-          flags?: Space['flags'];
-        }>;
-      };
-      const peopleRows = Array.isArray(body.people) ? body.people : [];
-      const now = new Date(0);
-      setDirectoryPeople(
-        peopleRows.map((person) => ({
-          id: person.id,
-          name: person.name,
-          surname: person.surname,
-          avatarUrl: person.avatarUrl ?? undefined,
-          address: person.address,
-          slug: person.slug,
-          createdAt: now,
-          updatedAt: now,
-        })),
-      );
-      setDirectorySpaces(
-        (Array.isArray(body.spaces) ? body.spaces : []).map((space) => ({
-          id: space.id,
-          title: space.title,
-          description: null,
-          slug: space.slug,
-          address: space.address,
-          logoUrl: space.logoUrl ?? null,
-          web3SpaceId: space.web3SpaceId ?? null,
-          parentId: space.parentId ?? null,
-          flags: space.flags ?? [],
-          links: [],
-          categories: [],
-          createdAt: now,
-          updatedAt: now,
-        })),
-      );
-    } catch {
+    const loaded = await loadTransferRecipients();
+    if (!loaded) {
       setDirectoryOpen(false);
       setError(t('sendTokensDirectoryFailed'));
-    } finally {
-      setDirectoryLoading(false);
     }
   }
 
@@ -996,18 +1046,24 @@ export function MemberHomeSendTokensWidget({
             </p>
             {previewTargets.length === 0 ? (
               <p className="mt-2 text-2 text-neutral-11">
-                {t('sendTokensNoOne')}
+                {directoryLoading && people.length === 0
+                  ? t('loading')
+                  : t('sendTokensNoOne')}
               </p>
             ) : (
               <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {previewTargets.map((item) => {
                   const active = item.id === target?.id;
-                  const person = people.find(
-                    (entry) => `person-${entry.id}` === item.id,
-                  );
-                  const space = spaces.find(
-                    (entry) => `space-${entry.id}` === item.id,
-                  );
+                  const person =
+                    people.find((entry) => `person-${entry.id}` === item.id) ??
+                    directoryPeople?.find(
+                      (entry) => `person-${entry.id}` === item.id,
+                    );
+                  const space =
+                    spaces.find((entry) => `space-${entry.id}` === item.id) ??
+                    directorySpaces?.find(
+                      (entry) => `space-${entry.id}` === item.id,
+                    );
                   const icon = space
                     ? resolveSpaceDisplayLogoUrl(space, logoVariant)
                     : null;
