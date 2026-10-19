@@ -1622,6 +1622,7 @@
     "loading": "Carregando...",
     "signInToViewWallet": "Faça login para ver sua carteira.",
     "backToWallet": "Voltar à carteira",
+    "available": "Disponível",
     "shortcuts": {
       "deposit": "Depositar fundos",
       "transfer": "Enviar tokens",
@@ -1638,7 +1639,10 @@
       "banking": "Banco",
       "transactions": "Transações",
       "rewards": "Recompensas"
-    }
+    },
+    "allYourAssets": "Todos os seus ativos,",
+    "bankTransfers": "Transferências bancárias,",
+    "allYourReward": "A sua recompensa,"
   },
   "NotificationCentre": {
     "signedOut": {
@@ -2151,7 +2155,8 @@
         "debtBadge": "Deve {amount} {symbol}",
         "netBadge": "Líquido {amount} {symbol}",
         "limit": "Limite de crédito: {limit} {symbol}"
-      }
+      },
+      "openAction": "Enviar {symbol}"
     },
     "transactionCard": {
       "tokenIconAlt": "Ícone de token",

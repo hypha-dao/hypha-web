@@ -36,6 +36,7 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
 import { useTranslations } from 'next-intl';
 import {
+  formatWalletAmount,
   WalletAmountBlock,
   WalletFlowCard,
   WalletFlowLabel,
@@ -63,13 +64,14 @@ export const PeoplePurchaseHyphaTokens = ({
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tModalAside = useTranslations('ModalAside');
+  const tWallet = useTranslations('MyWallet');
   const router = useRouter();
   const { lang } = useParams<{ lang: string }>();
   const { person, isLoading: isPersonLoading } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
-  const { manualUpdate } = useUserAssets({
+  const { assets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
   });
@@ -206,6 +208,18 @@ export const PeoplePurchaseHyphaTokens = ({
   const calculatedHypha = !isNaN(parsedAmount)
     ? parsedAmount / HYPHA_PRICE_USD
     : 0;
+  const paymentBalance = useMemo(() => {
+    const match = assets.find(
+      (asset) =>
+        asset.address?.toLowerCase() === PAYMENT_TOKEN?.address.toLowerCase() ||
+        asset.symbol.toUpperCase() === 'USDC',
+    );
+    return match?.value ?? 0;
+  }, [assets]);
+  const paymentEnough =
+    !Number.isFinite(parsedAmount) ||
+    parsedAmount <= 0 ||
+    parsedAmount <= paymentBalance + 1e-9;
 
   const handlePurchase = async (data: FormValues) => {
     try {
@@ -285,7 +299,7 @@ export const PeoplePurchaseHyphaTokens = ({
       </div>
     );
     return appearance === 'wallet' ? (
-      <WalletFlowCard title={tModalAside('buyHyphaTokens')}>
+      <WalletFlowCard title={tModalAside('buyHyphaTokens')} framed={false}>
         {empty}
       </WalletFlowCard>
     ) : (
@@ -328,6 +342,12 @@ export const PeoplePurchaseHyphaTokens = ({
                         )}
                         symbol={PAYMENT_TOKEN?.symbol ?? 'USDC'}
                         presets={[25, 50, 100, 250, 500]}
+                        holding={{
+                          label: tWallet('available'),
+                          amount: formatWalletAmount(paymentBalance),
+                          symbol: PAYMENT_TOKEN?.symbol ?? 'USDC',
+                          enough: paymentEnough,
+                        }}
                         hint={receiveLine}
                       />
                     </FormControl>
@@ -447,7 +467,7 @@ export const PeoplePurchaseHyphaTokens = ({
   if (!wallet) return formBody;
 
   return (
-    <WalletFlowCard title={tModalAside('buyHyphaTokens')}>
+    <WalletFlowCard title={tModalAside('buyHyphaTokens')} framed={false}>
       {formBody}
     </WalletFlowCard>
   );

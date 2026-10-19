@@ -12,7 +12,11 @@ export default function MyWalletRedeemTokensPage() {
   const { person, isLoading } = useMe();
 
   return (
-    <WalletActionFrame lang={lang} backLabel={t('backToWallet')}>
+    <WalletActionFrame
+      lang={lang}
+      backLabel={t('backToWallet')}
+      title={t('shortcuts.redeem')}
+    >
       {isLoading || !person?.slug ? (
         <p className="text-2 text-neutral-11">{t('loading')}</p>
       ) : (

@@ -39,6 +39,10 @@ import {
   PopoverTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import {
+  formatWalletAmount,
+  WalletHoldingLine,
+} from '../../common/wallet-flow-card';
 
 import { Recipient } from '../../agreements/plugins/components/common/recipient';
 import { useFundWallet, useUserAssets } from '../../treasury/hooks';
@@ -113,27 +117,38 @@ function WidgetFrame({
   title,
   aside,
   children,
+  framed = true,
 }: {
   title: string;
   aside?: string;
   children: ReactNode;
+  framed?: boolean;
 }) {
   return (
-    <section className="min-w-0 flex-1 border border-border bg-background">
-      <header className="flex items-baseline justify-between gap-3 px-4 pt-4">
-        <h2
-          className="text-4 leading-tight font-medium tracking-[-0.03em]"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {title}
-        </h2>
-        {aside ? (
-          <p className="shrink-0 text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
-            {aside}
-          </p>
-        ) : null}
-      </header>
-      <div className="px-4 pt-4 pb-4">{children}</div>
+    <section
+      className={cn(
+        'min-w-0 flex-1',
+        framed && 'border border-border bg-background',
+      )}
+    >
+      {framed ? (
+        <header className="flex items-baseline justify-between gap-3 px-4 pt-4">
+          <h2
+            className="text-4 leading-tight font-medium tracking-[-0.03em]"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {title}
+          </h2>
+          {aside ? (
+            <p className="shrink-0 text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
+              {aside}
+            </p>
+          ) : null}
+        </header>
+      ) : null}
+      <div className={cn(framed ? 'px-4 pt-4 pb-4' : undefined)}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -605,14 +620,21 @@ export function MemberHomeSendTokensWidget({
   people,
   spaces,
   fallbackName,
+  framed = true,
+  initialTokenAddress,
 }: {
   personSlug: string;
   hasWallet: boolean;
   people: HomeConnection[];
   spaces: HomeSpace[];
   fallbackName: string;
+  /** Home keeps the card. The wallet page is already the screen. */
+  framed?: boolean;
+  /** Prefill from a wallet asset card (`?token=`). */
+  initialTokenAddress?: string;
 }) {
   const t = useTranslations('MemberHome');
+  const tWallet = useTranslations('MyWallet');
   const { resolvedTheme } = useTheme();
   const { client } = useMatrix();
   const [conversationRows, setConversationRows] = useState<ConversationRow[]>(
@@ -681,15 +703,25 @@ export function MemberHomeSendTokensWidget({
   }, [assets]);
 
   useEffect(() => {
-    const first = tokens[0]?.address;
+    const preferred = initialTokenAddress?.trim().toLowerCase();
+    const preferredMatch = preferred
+      ? tokens.find((token) => token.address?.toLowerCase() === preferred)
+          ?.address
+      : undefined;
+    const first = preferredMatch ?? tokens[0]?.address;
     if (!first) return;
     setLines((current) => {
-      if (current[0]?.tokenAddress) return current;
+      if (
+        current[0]?.tokenAddress &&
+        (!preferred || current[0].tokenAddress.toLowerCase() === preferred)
+      ) {
+        return current;
+      }
       return current.map((line, index) =>
         index === 0 ? { ...line, tokenAddress: first } : line,
       );
     });
-  }, [tokens]);
+  }, [initialTokenAddress, tokens]);
 
   useEffect(() => {
     if (!client) {
@@ -1006,7 +1038,7 @@ export function MemberHomeSendTokensWidget({
 
   if (sent) {
     return (
-      <WidgetFrame title={t('sendTokensTitle')}>
+      <WidgetFrame title={t('sendTokensTitle')} framed={framed}>
         <div className="flex flex-col items-center px-2 py-6 text-center">
           <span className="flex h-14 w-14 items-center justify-center border border-border text-3">
             ✓
@@ -1041,7 +1073,7 @@ export function MemberHomeSendTokensWidget({
   }
 
   return (
-    <WidgetFrame title={t('sendTokensTitle')}>
+    <WidgetFrame title={t('sendTokensTitle')} framed={framed}>
       {isLoading ? (
         <p className="text-2 text-neutral-11">{t('loading')}</p>
       ) : tokens.length === 0 ? (
@@ -1157,13 +1189,23 @@ export function MemberHomeSendTokensWidget({
               const selected =
                 tokens.find((token) => token.address === line.tokenAddress) ??
                 null;
-              const balance = tokenSpendable(selected).balance;
+              const holding = tokenSpendable(selected);
+              const available =
+                holding.creditLeft > 0 ? holding.spendable : holding.balance;
               const numeric = Number(line.amount);
+              const enough =
+                !selected ||
+                !Number.isFinite(numeric) ||
+                numeric <= 0 ||
+                numeric <= available + 1e-9;
               const menuOpen = openMenuId === line.id;
               return (
                 <div
                   key={line.id}
-                  className="border border-border px-4 py-5 text-center"
+                  className={cn(
+                    'border px-4 py-5 text-center',
+                    enough ? 'border-border' : 'border-error-7',
+                  )}
                 >
                   {lines.length > 1 ? (
                     <div className="mb-2 flex justify-end">
@@ -1282,12 +1324,12 @@ export function MemberHomeSendTokensWidget({
                     )}
                   </div>
                   {selected ? (
-                    <p className="mt-2 text-1 text-neutral-11">
-                      {t('sendTokensYouHave', {
-                        amount: formatAmount(balance),
-                        symbol: selected.symbol,
-                      })}
-                    </p>
+                    <WalletHoldingLine
+                      label={tWallet('available')}
+                      amount={formatWalletAmount(available)}
+                      symbol={selected.symbol}
+                      enough={enough}
+                    />
                   ) : null}
                   <div className="mt-4 flex flex-wrap justify-center gap-2">
                     {AMOUNTS.map((value) => (

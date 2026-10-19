@@ -849,6 +849,7 @@
     "loading": "Laster inn...",
     "signInToViewWallet": "Logg inn for å se lommeboken din.",
     "backToWallet": "Tilbake til lommeboken",
+    "available": "Tilgjengelig",
     "shortcuts": {
       "deposit": "Sett inn midler",
       "transfer": "Send tokens",
@@ -865,7 +866,10 @@
       "banking": "Bank",
       "transactions": "Transaksjoner",
       "rewards": "Belønninger"
-    }
+    },
+    "allYourAssets": "Alle eiendelene dine,",
+    "bankTransfers": "Bankoverføringer,",
+    "allYourReward": "Belønningen din,"
   },
   "NotificationCentre": {
     "signedOut": {
@@ -1950,7 +1954,8 @@
         "debtBadge": "Skylder {amount} {symbol}",
         "netBadge": "Netto {amount} {symbol}",
         "limit": "Kredittgrense: {limit} {symbol}"
-      }
+      },
+      "openAction": "Send {symbol}"
     },
     "transactionCard": {
       "tokenIconAlt": "Tokenikon",

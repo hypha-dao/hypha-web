@@ -35,7 +35,11 @@ export default async function MyWalletActivateSpacesPage(props: PageProps) {
   );
 
   return (
-    <WalletActionFrame lang={lang} backLabel={t('backToWallet')}>
+    <WalletActionFrame
+      lang={lang}
+      backLabel={t('backToWallet')}
+      title={t('shortcuts.activate')}
+    >
       {hasError ? (
         <div className="text-error text-sm">
           {tActions('errors.loadSpaces')}

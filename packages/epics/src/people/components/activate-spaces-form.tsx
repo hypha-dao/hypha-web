@@ -26,13 +26,17 @@ import { RecipientField } from '../../agreements';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useFundWallet } from '../../treasury';
+import { useUserAssets } from '../../treasury/hooks/use-user-assets';
 import { z } from 'zod';
 import { isAddress } from 'ethers';
 import { useScrollToErrors } from '../../hooks';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 import {
+  formatWalletAmount,
   WalletFlowCard,
   WalletFlowLabel,
+  WalletHoldingLine,
   walletPresetClass,
 } from '../../common/wallet-flow-card';
 
@@ -61,7 +65,9 @@ export const ActivateSpacesForm = ({
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tModalAside = useTranslations('ModalAside');
   const tFooter = useTranslations('Footer');
+  const tWallet = useTranslations('MyWallet');
   const { person, isLoading: isPersonLoading } = useMe();
+  const { assets } = useUserAssets({ personSlug: person?.slug });
   const router = useRouter();
   const { lang, personSlug } = useParams<{
     lang: string;
@@ -266,6 +272,11 @@ export const ActivateSpacesForm = ({
     paymentToken === 'USDC'
       ? totalUSDC.toLocaleString(undefined, { minimumFractionDigits: 2 })
       : totalHYPHA.toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const paymentDue = paymentToken === 'USDC' ? totalUSDC : totalHYPHA;
+  const paymentHeld =
+    assets.find((asset) => asset.symbol.toUpperCase() === paymentToken)
+      ?.value ?? 0;
+  const paymentEnough = paymentDue <= 0 || paymentDue <= paymentHeld + 1e-9;
 
   if (!spaces || spaces.length === 0) {
     const empty = (
@@ -274,7 +285,10 @@ export const ActivateSpacesForm = ({
       </div>
     );
     return wallet ? (
-      <WalletFlowCard title={tModalAside('activateSpacesProfile')}>
+      <WalletFlowCard
+        title={tModalAside('activateSpacesProfile')}
+        framed={false}
+      >
         {empty}
       </WalletFlowCard>
     ) : (
@@ -329,7 +343,12 @@ export const ActivateSpacesForm = ({
             <WalletFlowLabel>
               {tAgreementFlow('plugins.activateSpaces.checkOut')}
             </WalletFlowLabel>
-            <div className="border border-border px-4 py-5 text-center">
+            <div
+              className={cn(
+                'border px-4 py-5 text-center',
+                paymentEnough ? 'border-border' : 'border-error-7',
+              )}
+            >
               <div
                 className="text-8 leading-none tabular-nums tracking-[-0.04em]"
                 style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -339,6 +358,12 @@ export const ActivateSpacesForm = ({
                   {paymentToken}
                 </span>
               </div>
+              <WalletHoldingLine
+                label={tWallet('available')}
+                amount={formatWalletAmount(paymentHeld)}
+                symbol={paymentToken}
+                enough={paymentEnough}
+              />
               <p className="mt-2 text-1 text-neutral-11">
                 {tAgreementFlow('plugins.activateSpaces.totalContribution')} $
                 {totalUSDC}
@@ -504,7 +529,7 @@ export const ActivateSpacesForm = ({
   if (!wallet) return formBody;
 
   return (
-    <WalletFlowCard title={tModalAside('activateSpacesProfile')}>
+    <WalletFlowCard title={tModalAside('activateSpacesProfile')} framed={false}>
       {formBody}
     </WalletFlowCard>
   );

@@ -32,7 +32,11 @@ export default async function MyWalletPurchaseHyphaTokensPage(
   );
 
   return (
-    <WalletActionFrame lang={lang} backLabel={t('backToWallet')}>
+    <WalletActionFrame
+      lang={lang}
+      backLabel={t('backToWallet')}
+      title={t('shortcuts.buyHypha')}
+    >
       {hasError ? (
         <div className="text-error text-sm">
           {tActions('errors.loadSpaces')}

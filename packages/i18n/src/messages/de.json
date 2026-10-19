@@ -851,6 +851,7 @@
     "loading": "Wird geladen...",
     "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen.",
     "backToWallet": "Zurück zum Wallet",
+    "available": "Verfügbar",
     "shortcuts": {
       "deposit": "Guthaben einzahlen",
       "transfer": "Token senden",
@@ -867,7 +868,10 @@
       "banking": "Bankdienste",
       "transactions": "Transaktionen",
       "rewards": "Belohnungen"
-    }
+    },
+    "allYourAssets": "Alle deine Assets,",
+    "bankTransfers": "Banküberweisungen,",
+    "allYourReward": "Deine Belohnung,"
   },
   "NotificationCentre": {
     "signedOut": {
@@ -1952,7 +1956,8 @@
         "debtBadge": "Schuldet {amount} {symbol}",
         "netBadge": "Netto {amount} {symbol}",
         "limit": "Kreditlimit: {limit} {symbol}"
-      }
+      },
+      "openAction": "Sende {symbol}"
     },
     "transactionCard": {
       "tokenIconAlt": "Token-Icon",

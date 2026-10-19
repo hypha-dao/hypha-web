@@ -112,6 +112,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
         <AssetsList
           assets={filteredAssets}
           activeFilter={activeFilter}
+          basePath={basePath}
           isLoading={isLoading}
         />
       )}

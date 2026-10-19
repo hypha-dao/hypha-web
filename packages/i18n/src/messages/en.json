@@ -471,7 +471,6 @@
     "builderTitle": "Shape a space on your vision",
     "builderBody": "Walk through the AI experience and bring a space into the network around what you want to build.",
     "builderAction": "Create space",
-
     "investorTitle": "Network marketplace",
     "investorBody": "Spaces publish what they are asking for. Read an ask, then deploy capital into it.",
     "investorAction": "See the asks",
@@ -634,7 +633,6 @@
     "outcomePassed": "It passed — {participation}% took part, with {unity}% unity.",
     "outcomeClosed": "It didn't pass this time. {participation}% took part, with {unity}% unity.",
     "onVoting": "On voting",
-
     "closesIn": "Closes in {time}",
     "fromTreasury": "from treasury",
     "yesCount": "{count} yes",
@@ -866,6 +864,7 @@
     "loading": "Loading...",
     "signInToViewWallet": "Sign in to view your wallet.",
     "backToWallet": "Back to wallet",
+    "available": "Available",
     "shortcuts": {
       "deposit": "Deposit funds",
       "transfer": "Send tokens",
@@ -882,7 +881,10 @@
       "banking": "Banking",
       "transactions": "Transactions",
       "rewards": "Rewards"
-    }
+    },
+    "allYourAssets": "All your Assets,",
+    "bankTransfers": "Bank Transfers,",
+    "allYourReward": "All your Reward,"
   },
   "NotificationCentre": {
     "signedOut": {
@@ -1977,6 +1979,7 @@
       "fromSpace": "from · {spaceTitle}",
       "totalIssuance": "Issuance · {value}",
       "createdOn": "Created on {date}",
+      "openAction": "Send {symbol}",
       "mutualCredit": {
         "debtBadge": "Owes {amount} {symbol}",
         "netBadge": "Net {amount} {symbol}",
@@ -3295,7 +3298,6 @@
       "showDetails": "Show",
       "hideDetails": "Hide"
     },
-
     "labels": {
       "unknown": "Unknown",
       "custom": "Custom",

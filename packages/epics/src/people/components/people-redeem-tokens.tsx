@@ -407,7 +407,7 @@ export const ProfileRedeemTokens = ({
         />
       )}
       {appearance === 'wallet' ? (
-        <WalletFlowCard title={tModalAside('redeemTokens')}>
+        <WalletFlowCard title={tModalAside('redeemTokens')} framed={false}>
           {redeemBody}
         </WalletFlowCard>
       ) : (

@@ -850,6 +850,7 @@
     "loading": "Laden...",
     "signInToViewWallet": "Log in om uw portemonnee te bekijken.",
     "backToWallet": "Terug naar de portemonnee",
+    "available": "Beschikbaar",
     "shortcuts": {
       "deposit": "Geld storten",
       "transfer": "Tokens versturen",
@@ -866,7 +867,10 @@
       "banking": "Bankieren",
       "transactions": "Transacties",
       "rewards": "Beloningen"
-    }
+    },
+    "allYourAssets": "Al uw assets,",
+    "bankTransfers": "Bankoverschrijvingen,",
+    "allYourReward": "Uw beloning,"
   },
   "NotificationCentre": {
     "signedOut": {
@@ -1951,7 +1955,8 @@
         "debtBadge": "Schulden {amount} {symbol}",
         "netBadge": "Netto {amount} {symbol}",
         "limit": "Kredietlimiet: {limit} {symbol}"
-      }
+      },
+      "openAction": "Stuur {symbol}"
     },
     "transactionCard": {
       "tokenIconAlt": "Token-pictogram",

@@ -36,7 +36,9 @@ import { TokenSelectDropdown } from '../../agreements/plugins/components/common/
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useUserAssets } from '../../treasury/hooks/use-user-assets';
 import {
+  formatWalletAmount,
   WalletAmountBlock,
   WalletFlowCard,
   WalletFlowLabel,
@@ -70,8 +72,10 @@ export const PeopleBuySpaceTokens = ({
 }: PeopleBuySpaceTokensProps) => {
   const t = useTranslations('PeopleBuySpaceTokens');
   const tModalAside = useTranslations('ModalAside');
+  const tWallet = useTranslations('MyWallet');
   const router = useRouter();
   const { person } = useMe();
+  const { assets } = useUserAssets({ personSlug: person?.slug });
   const { client } = useSmartWallets();
   const { tokens: dbTokens, isLoading: isTokensLoading } = useDbTokens();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -283,6 +287,18 @@ export const PeopleBuySpaceTokens = ({
     return formatUnits(sale.tokensLeftToSell, 18);
   }, [sale]);
 
+  const paymentBalance = useMemo(() => {
+    if (!sale) return null;
+    const address = sale.salePaymentToken.toLowerCase();
+    const match = assets.find(
+      (asset) =>
+        asset.address?.toLowerCase() === address ||
+        (paymentTokenMeta != null &&
+          asset.symbol.toUpperCase() === paymentTokenMeta.symbol.toUpperCase()),
+    );
+    return match?.value ?? 0;
+  }, [assets, paymentTokenMeta, sale]);
+
   const salePricePerToken = useMemo(() => {
     if (!sale) return 0;
     return Number(
@@ -348,7 +364,7 @@ export const PeopleBuySpaceTokens = ({
   const wallet = appearance === 'wallet';
   const wrap = (node: React.ReactNode) =>
     wallet ? (
-      <WalletFlowCard title={tModalAside('buySpaceTokens')}>
+      <WalletFlowCard title={tModalAside('buySpaceTokens')} framed={false}>
         {node}
       </WalletFlowCard>
     ) : (
@@ -424,6 +440,19 @@ export const PeopleBuySpaceTokens = ({
                       amountLabel={t('amount')}
                       integer
                       presets={[1, 5, 10, 25, 50]}
+                      holding={
+                        paymentBalance == null || !paymentTokenMeta
+                          ? undefined
+                          : {
+                              label: tWallet('available'),
+                              amount: formatWalletAmount(paymentBalance),
+                              symbol: paymentTokenMeta.symbol,
+                              enough:
+                                !(parsedAmount > 0) ||
+                                hasEnoughBalance ||
+                                totalCost <= paymentBalance + 1e-9,
+                            }
+                      }
                       hint={saleDetails}
                       symbolNode={
                         <TokenSelectDropdown

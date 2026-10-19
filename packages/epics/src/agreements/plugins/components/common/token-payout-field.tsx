@@ -14,7 +14,10 @@ import {
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
 import { useTranslations } from 'next-intl';
-import { WalletAmountBlock } from '../../../../common/wallet-flow-card';
+import {
+  formatWalletAmount,
+  WalletAmountBlock,
+} from '../../../../common/wallet-flow-card';
 
 interface Token {
   icon: string;
@@ -68,6 +71,7 @@ function TokenPayoutFieldInner({
   amountPresets,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tWallet = useTranslations('MyWallet');
   const selectedToken = value.token
     ? tokens.find(
         (t) =>
@@ -108,6 +112,13 @@ function TokenPayoutFieldInner({
 
   if (variant === 'wallet') {
     const showMenu = !readOnlyDropdown && tokens.length > 0;
+    const held =
+      selectedToken &&
+      typeof selectedToken.value === 'number' &&
+      Number.isFinite(selectedToken.value)
+        ? selectedToken.value
+        : null;
+    const spend = Number(value.amount);
     return (
       <WalletAmountBlock
         id={`token-payout-${value.token || 'amount'}`}
@@ -160,33 +171,25 @@ function TokenPayoutFieldInner({
             </DropdownMenu>
           ) : undefined
         }
+        holding={
+          held == null || !selectedToken
+            ? undefined
+            : {
+                label: tWallet('available'),
+                amount: formatWalletAmount(held),
+                symbol: selectedToken.symbol,
+                enough:
+                  !Number.isFinite(spend) || spend <= 0 || spend <= held + 1e-9,
+              }
+        }
         hint={
           isLoadingTokens ? (
             <span>
               {loadingTokensLabel ??
                 tAgreementFlow('plugins.exchangeStakesAndTokens.loadingTokens')}
             </span>
-          ) : showSelectedTokenBalanceHint &&
-            selectedToken &&
-            typeof selectedToken.value === 'number' &&
-            Number.isFinite(selectedToken.value) ? (
-            <span>
-              {tAgreementFlow(
-                useTreasuryBalanceLine
-                  ? 'plugins.tokenPayoutField.treasuryBalanceLine'
-                  : 'plugins.tokenPayoutField.walletBalanceLine',
-                {
-                  amount: String(selectedToken.value),
-                  symbol: selectedToken.symbol,
-                },
-              )}
-              {selectedTokenPriceHint
-                ? tAgreementFlow(
-                    'plugins.tokenPayoutField.tokenRedemptionPriceSuffix',
-                    { hint: selectedTokenPriceHint },
-                  )
-                : ''}
-            </span>
+          ) : selectedTokenPriceHint ? (
+            <span>{selectedTokenPriceHint}</span>
           ) : null
         }
       />

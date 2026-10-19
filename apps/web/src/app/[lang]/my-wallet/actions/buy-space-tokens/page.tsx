@@ -11,7 +11,11 @@ export default async function MyWalletBuySpaceTokensPage(props: PageProps) {
   const t = await getTranslations('MyWallet');
 
   return (
-    <WalletActionFrame lang={lang} backLabel={t('backToWallet')}>
+    <WalletActionFrame
+      lang={lang}
+      backLabel={t('backToWallet')}
+      title={t('shortcuts.buySpace')}
+    >
       <MyWalletBuySpaceTokensClient closeUrl={`/${lang}/my-wallet`} />
     </WalletActionFrame>
   );

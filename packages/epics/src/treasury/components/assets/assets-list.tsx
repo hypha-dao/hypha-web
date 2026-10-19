@@ -4,8 +4,8 @@ import { FC } from 'react';
 import { AssetCard } from './asset-card';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import Link from 'next/link';
 import type { AssetItem } from '../../hooks/use-user-assets';
+import { walletAssetActionHref } from '../../../wallet/components/wallet-asset-action';
 
 export type { AssetItem };
 
@@ -18,7 +18,7 @@ type AssetsListProps = {
 
 export const AssetsList: FC<AssetsListProps> = ({
   assets,
-  activeFilter,
+  basePath,
   isLoading,
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
@@ -26,18 +26,13 @@ export const AssetsList: FC<AssetsListProps> = ({
     <div className="w-full">
       <div className="mt-2 grid w-full grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {assets.map((asset, index) => (
-          // <Link
-          //   key={`${asset.slug}_${index}`}
-          //   href={`${basePath}/${asset.slug}`}
-          //   scroll={false}
-          // > // TODO: planned to be returned after adding correct data in asset details page
           <AssetCard
             key={`${asset.slug}_${index}`}
             {...asset}
             isLoading={isLoading}
             lang={lang}
+            href={basePath ? walletAssetActionHref(basePath, asset) : undefined}
           />
-          // </Link>
         ))}
       </div>
 
