@@ -42,7 +42,7 @@ function ShortcutCard({
   disabled,
 }: Omit<Shortcut, 'key'>) {
   const className = cn(
-    'flex h-[4.5rem] min-w-0 flex-col items-center justify-center gap-1 border px-1.5 py-1.5 text-center',
+    'flex aspect-square min-w-0 flex-col items-center justify-center gap-2 border px-2 text-center',
     featured
       ? 'border-foreground bg-foreground text-background'
       : 'border-border bg-background text-foreground hover:bg-neutral-2',
@@ -50,7 +50,7 @@ function ShortcutCard({
   );
   const body = (
     <>
-      <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+      <Icon className="size-6" strokeWidth={1.5} aria-hidden />
       <span className="max-w-full text-[11px] leading-tight">{label}</span>
     </>
   );
@@ -153,7 +153,7 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   return (
     <nav
       aria-label={t('title')}
-      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"
+      className="grid grid-cols-2 gap-1.5 py-5 sm:grid-cols-4 xl:grid-cols-8"
     >
       {shortcuts.map(({ key, ...shortcut }) => (
         <ShortcutCard key={key} {...shortcut} />
