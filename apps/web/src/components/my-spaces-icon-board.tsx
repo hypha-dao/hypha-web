@@ -11,12 +11,13 @@ import { Locale } from '@hypha-platform/i18n';
 
 import { EcosystemDiagram } from './ecosystem-diagram';
 
-function SpaceIconGrid({ lang, spaces }: { lang: Locale; spaces: Space[] }) {
+/** Compact mobile rows: avatar + name, not a tall icon grid. */
+function SpaceIconList({ lang, spaces }: { lang: Locale; spaces: Space[] }) {
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
 
   return (
-    <ul className="grid grid-cols-4 gap-3">
+    <ul className="divide-y divide-border border-y border-border">
       {spaces.map((space) => {
         const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);
         const initial = space.title.trim().charAt(0).toUpperCase();
@@ -24,9 +25,9 @@ function SpaceIconGrid({ lang, spaces }: { lang: Locale; spaces: Space[] }) {
           <li key={space.id} className="min-w-0">
             <Link
               href={`/${lang}/dho/${space.slug}/overview`}
-              className="flex flex-col items-center gap-2 px-1 py-2 text-center hover:bg-accent-2"
+              className="flex min-w-0 items-center gap-3 px-1 py-2.5 hover:bg-accent-2"
             >
-              <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2">
+              <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2">
                 {icon ? (
                   <img
                     src={icon}
@@ -35,14 +36,14 @@ function SpaceIconGrid({ lang, spaces }: { lang: Locale; spaces: Space[] }) {
                   />
                 ) : (
                   <span
-                    className="text-3"
+                    className="text-2"
                     style={{ fontFamily: 'var(--font-family-heading)' }}
                   >
                     {initial}
                   </span>
                 )}
               </span>
-              <span className="line-clamp-2 text-1 leading-snug">
+              <span className="min-w-0 flex-1 truncate text-2 text-foreground">
                 {space.title}
               </span>
             </Link>
@@ -53,7 +54,7 @@ function SpaceIconGrid({ lang, spaces }: { lang: Locale; spaces: Space[] }) {
   );
 }
 
-/** Same ecosystem groups and diagram toggle as My Spaces, with round icons. */
+/** Same ecosystem groups and diagram toggle as My Spaces, with compact rows. */
 export function MySpacesIconBoard({
   lang,
   spaces,
@@ -71,7 +72,7 @@ export function MySpacesIconBoard({
       spaces={spaces}
       order={order}
       query={query}
-      renderSpaces={(group) => <SpaceIconGrid lang={lang} spaces={group} />}
+      renderSpaces={(group) => <SpaceIconList lang={lang} spaces={group} />}
       renderDiagram={(root) =>
         root.slug ? <EcosystemDiagram spaceSlug={root.slug} /> : null
       }

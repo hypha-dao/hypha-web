@@ -234,9 +234,9 @@ export function MyFilteredSpaces({
               diagramRootIds.has(group.root.id);
             return (
               <section key={group.root.id} className="flex flex-col gap-3">
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
                   <h2 className="flex min-w-0 items-center gap-2.5">
-                    <Avatar className="size-8 shrink-0 rounded-none">
+                    <Avatar className="size-7 shrink-0 rounded-none sm:size-8">
                       {logo ? (
                         <AvatarImage
                           src={logo}
@@ -248,7 +248,7 @@ export function MyFilteredSpaces({
                         {initial}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="min-w-0 truncate text-4 font-medium">
+                    <span className="min-w-0 truncate text-3 font-medium sm:text-4">
                       {group.root.title}
                     </span>
                   </h2>
@@ -256,7 +256,7 @@ export function MyFilteredSpaces({
                     <div
                       role="group"
                       aria-label={tSpaces('viewToggleLabel')}
-                      className="inline-flex shrink-0 border border-foreground"
+                      className="inline-flex w-full shrink-0 border border-foreground sm:w-auto"
                     >
                       {(['spaces', 'diagram'] as const).map((option) => {
                         const selected =
@@ -278,7 +278,7 @@ export function MyFilteredSpaces({
                               });
                             }}
                             className={cn(
-                              'px-3 py-1 text-1 uppercase tracking-[0.12em]',
+                              'flex-1 px-3 py-1.5 text-center text-1 uppercase tracking-[0.12em] sm:flex-none sm:py-1',
                               selected
                                 ? 'bg-foreground text-background'
                                 : 'bg-background text-foreground',

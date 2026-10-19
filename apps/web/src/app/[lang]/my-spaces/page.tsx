@@ -42,10 +42,33 @@ export default async function Index(props: PageProps) {
 
   const t = await getTranslations('Spaces');
 
+  const title = (
+    <Heading
+      size="9"
+      color="secondary"
+      weight="medium"
+      align="center"
+      className="flex flex-col"
+      style={{ fontFamily: 'var(--font-family-heading)' }}
+    >
+      <span>{t('allYourSpaces')}</span>
+      <span>{t('inOnePlace')}</span>
+    </Heading>
+  );
+
   return (
     <div className="w-full min-w-0">
       <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9">
-        <div className="xl:hidden">
+        <div className="flex flex-col gap-4 xl:hidden">
+          {title}
+          <Suspense fallback={null}>
+            <MySpacesControls
+              lang={lang}
+              query={query}
+              order={order}
+              showCreateButton
+            />
+          </Suspense>
           <MySpacesIconBoard
             lang={lang}
             spaces={mySpaces}
@@ -55,16 +78,7 @@ export default async function Index(props: PageProps) {
         </div>
         <div className="hidden min-w-0 flex-col gap-9 xl:flex">
           <div className="flex min-w-0 flex-col gap-4">
-            <Heading
-              size="9"
-              color="secondary"
-              weight="medium"
-              align="center"
-              className="flex flex-col"
-            >
-              <span>{t('allYourSpaces')}</span>
-              <span>{t('inOnePlace')}</span>
-            </Heading>
+            {title}
             <Suspense fallback={null}>
               <MySpacesControls
                 lang={lang}
