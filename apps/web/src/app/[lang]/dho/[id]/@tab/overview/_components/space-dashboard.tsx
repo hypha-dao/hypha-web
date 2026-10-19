@@ -26,6 +26,7 @@ import {
   useSpaceDocumentsWithStatuses,
 } from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { EcosystemDiagram } from '@web/components/ecosystem-diagram';
 import { useMembers } from '@web/hooks/use-members';
 
@@ -183,34 +184,42 @@ function SpaceMemberCircles({
             const canChat = person.id !== me?.id;
             return (
               <li key={person.id} className="flex shrink-0 items-center">
-                <button
-                  type="button"
-                  disabled={!canChat}
-                  title={around ? `${name}. ${t('connectedNow')}` : name}
-                  aria-label={name}
-                  className="inline-flex rounded-full disabled:cursor-default"
-                  onClick={() => {
-                    if (!canChat) return;
-                    void openChat(person);
-                  }}
-                >
-                  <span
-                    className={
-                      index === 0
-                        ? 'inline-flex rounded-full ring-1 ring-foreground'
-                        : 'inline-flex rounded-full'
-                    }
-                  >
-                    <PersonAvatar
-                      avatarSrc={person.avatarUrl ?? undefined}
-                      userName={name}
-                      size="md"
-                      shape="circle"
-                      personId={person.id}
-                      presence={presence}
-                    />
-                  </span>
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <button
+                        type="button"
+                        disabled={!canChat}
+                        aria-label={name}
+                        className="inline-flex rounded-full disabled:cursor-default"
+                        onClick={() => {
+                          if (!canChat) return;
+                          void openChat(person);
+                        }}
+                      >
+                        <span
+                          className={
+                            index === 0
+                              ? 'inline-flex rounded-full ring-1 ring-foreground'
+                              : 'inline-flex rounded-full'
+                          }
+                        >
+                          <PersonAvatar
+                            avatarSrc={person.avatarUrl ?? undefined}
+                            userName={name}
+                            size="md"
+                            shape="circle"
+                            personId={person.id}
+                            presence={presence}
+                          />
+                        </span>
+                      </button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {around ? `${name}. ${t('connectedNow')}` : name}
+                  </TooltipContent>
+                </Tooltip>
               </li>
             );
           })}
