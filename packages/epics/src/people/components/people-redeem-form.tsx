@@ -85,6 +85,8 @@ interface PeopleRedeemFormType {
   tokens: Token[];
   updateAssets: () => Promise<void>;
   isLoadingTokens?: boolean;
+  appearance?: 'default' | 'wallet';
+  closeUrl?: string;
 }
 
 type TouchedConversion = {
@@ -115,6 +117,8 @@ export const PeopleRedeemForm = ({
   tokens,
   updateAssets,
   isLoadingTokens = false,
+  appearance = 'default',
+  closeUrl,
 }: PeopleRedeemFormType) => {
   const t = useTranslations('ProfileActions.redeemTokens');
   const PERCENT_SCALE = 100;
@@ -176,8 +180,8 @@ export const PeopleRedeemForm = ({
     personSlug: string;
   }>();
   const closePanelUrl = useMemo(
-    () => `/${lang}/profile/${personSlug}`,
-    [lang, personSlug],
+    () => closeUrl ?? `/${lang}/profile/${personSlug}`,
+    [closeUrl, lang, personSlug],
   );
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -694,7 +698,7 @@ export const PeopleRedeemForm = ({
         <form
           ref={formRef}
           onSubmit={form.handleSubmit(handleRedeem, handleInvalid)}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-4"
         >
           <TokenPayoutFieldArray
             label={t('form.redemptionAmountLabel')}
@@ -705,6 +709,10 @@ export const PeopleRedeemForm = ({
             selectedTokenPriceHint={selectedTokenPriceHint}
             isLoadingTokens={isLoadingTokens}
             loadingTokensLabel="Loading tokens..."
+            appearance={appearance}
+            amountPresets={
+              appearance === 'wallet' ? [5, 10, 25, 50, 100] : undefined
+            }
           />
           {isRequestedAmountExceedsBalance && (
             <div className="text-2 text-red-11 mt-1">
@@ -742,8 +750,14 @@ export const PeopleRedeemForm = ({
               {t('form.collateralInsufficient')}
             </div>
           )}
-          <Separator />
-          <div className="flex gap-2 justify-end">
+          {appearance === 'wallet' ? null : <Separator />}
+          <div
+            className={
+              appearance === 'wallet'
+                ? 'flex flex-col gap-2'
+                : 'flex gap-2 justify-end'
+            }
+          >
             {isRedeeming ? (
               <div className="flex items-center gap-2 text-sm text-neutral-10">
                 <Loader2 className="animate-spin w-4 h-4" />
@@ -756,6 +770,7 @@ export const PeopleRedeemForm = ({
             ) : (
               <Button
                 type="submit"
+                className={appearance === 'wallet' ? 'w-full' : undefined}
                 disabled={isRedeeming || isCollateralsLoading}
               >
                 {t('form.redeem')}

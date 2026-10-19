@@ -7,6 +7,7 @@ import {
   useUserAssets,
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
+import { WalletFlowCard } from '../../common/wallet-flow-card';
 import { Separator } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -40,6 +41,8 @@ interface ProfileRedeemTokensProps {
   backUrl?: string;
   /** Renders the form in the page column instead of the slide-over. */
   embedded?: boolean;
+  /** Wallet page uses the send-tokens card. Profile keeps the overlay form. */
+  appearance?: 'default' | 'wallet';
 }
 
 type SpaceSummary = {
@@ -78,6 +81,7 @@ export const ProfileRedeemTokens = ({
   closeUrl,
   backUrl,
   embedded = false,
+  appearance = 'default',
 }: ProfileRedeemTokensProps) => {
   const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const tActions = useTranslations('ProfileActions');
@@ -373,6 +377,25 @@ export const ProfileRedeemTokens = ({
   const resolvedCloseUrl = closeUrl ?? `/${lang}/profile/${personSlug}`;
   const resolvedBackUrl = backUrl ?? `/${lang}/profile/${personSlug}/actions`;
 
+  const redeemBody = (
+    <>
+      {isCoreLoading ? (
+        <div className="flex items-center gap-2 py-8 text-sm text-neutral-10">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          {tRedeem('loading')}
+        </div>
+      ) : (
+        <PeopleRedeemForm
+          tokens={tokens}
+          updateAssets={manualUpdate}
+          isLoadingTokens={isTokensLoading}
+          appearance={appearance}
+          closeUrl={appearance === 'wallet' ? resolvedCloseUrl : undefined}
+        />
+      )}
+    </>
+  );
+
   const form = (
     <div className="flex flex-col gap-5">
       {embedded ? null : (
@@ -383,19 +406,16 @@ export const ProfileRedeemTokens = ({
           backLabel={tActions('backToActions')}
         />
       )}
-      <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
-      <Separator />
-      {isCoreLoading ? (
-        <div className="flex items-center gap-2 text-sm text-neutral-10 py-8">
-          <Loader2 className="animate-spin w-5 h-5" />
-          {tRedeem('loading')}
-        </div>
+      {appearance === 'wallet' ? (
+        <WalletFlowCard title={tModalAside('redeemTokens')}>
+          {redeemBody}
+        </WalletFlowCard>
       ) : (
-        <PeopleRedeemForm
-          tokens={tokens}
-          updateAssets={manualUpdate}
-          isLoadingTokens={isTokensLoading}
-        />
+        <>
+          <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
+          <Separator />
+          {redeemBody}
+        </>
       )}
     </div>
   );

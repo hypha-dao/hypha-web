@@ -29,6 +29,8 @@ type TokenSelectDropdownProps = {
   placeholder: string;
   emptyMessage?: string;
   disabled?: boolean;
+  /** Compact symbol control used inside the wallet amount block. */
+  variant?: 'default' | 'inline';
 };
 
 export const TokenSelectDropdown = ({
@@ -38,11 +40,61 @@ export const TokenSelectDropdown = ({
   placeholder,
   emptyMessage,
   disabled,
+  variant = 'default',
 }: TokenSelectDropdownProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const selected = tokens.find(
     (t) => t.address.toLowerCase() === value.toLowerCase(),
   );
+
+  if (variant === 'inline') {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className="ml-2 inline-flex items-center gap-1 align-middle text-2 tracking-[0.14em] uppercase disabled:opacity-50"
+          >
+            {selected?.symbol ?? placeholder}
+            <ChevronDownIcon className="size-2" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="max-h-[280px] w-64 overflow-y-auto">
+          {tokens.length > 0 ? (
+            tokens.map((token) => (
+              <DropdownMenuItem
+                key={token.address}
+                onSelect={() => onValueChange(token.address)}
+              >
+                <Image
+                  src={token.iconUrl}
+                  width={24}
+                  height={24}
+                  alt={token.symbol}
+                  className="mr-2 h-5 w-5 shrink-0 rounded-full"
+                />
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="text-2 text-neutral-11">{token.symbol}</span>
+                  {token.spaceSubtitle ? (
+                    <span className="text-1 text-accent-11">
+                      {tAgreementFlow('plugins.tokenPayoutField.bySpace', {
+                        space: token.spaceSubtitle,
+                      })}
+                    </span>
+                  ) : null}
+                </div>
+              </DropdownMenuItem>
+            ))
+          ) : (
+            <span className="block px-2 py-1.5 text-2 text-neutral-11">
+              {emptyMessage ?? placeholder}
+            </span>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   return (
     <div className="flex w-full min-w-0 md:justify-end">

@@ -13,7 +13,6 @@ export default async function MyWalletPurchaseHyphaTokensPage(
   const { lang } = await props.params;
   const t = await getTranslations('MyWallet');
   const tActions = await getTranslations('ProfileActions');
-  const tModalAside = await getTranslations('ModalAside');
 
   let spaces = [] as Space[];
   let hasError = false;
@@ -33,14 +32,7 @@ export default async function MyWalletPurchaseHyphaTokensPage(
   );
 
   return (
-    <WalletActionFrame
-      lang={lang}
-      backLabel={t('backToWallet')}
-      title={tModalAside('buyHyphaTokens')}
-    >
-      <span className="text-2 text-neutral-11">
-        {tActions('purchaseHypha.content')}
-      </span>
+    <WalletActionFrame lang={lang} backLabel={t('backToWallet')}>
       {hasError ? (
         <div className="text-error text-sm">
           {tActions('errors.loadSpaces')}

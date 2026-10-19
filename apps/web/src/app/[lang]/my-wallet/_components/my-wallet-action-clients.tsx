@@ -23,6 +23,7 @@ export function MyWalletPurchaseHyphaTokensClient({
 
   return (
     <PeoplePurchaseHyphaTokens
+      appearance="wallet"
       spaces={spaces}
       personSlug={person.slug}
       closePanelUrl={closePanelUrl}
@@ -43,5 +44,11 @@ export function MyWalletBuySpaceTokensClient({
     return null;
   }
 
-  return <PeopleBuySpaceTokens personSlug={person.slug} closeUrl={closeUrl} />;
+  return (
+    <PeopleBuySpaceTokens
+      appearance="wallet"
+      personSlug={person.slug}
+      closeUrl={closeUrl}
+    />
+  );
 }

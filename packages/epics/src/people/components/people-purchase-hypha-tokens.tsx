@@ -35,11 +35,17 @@ import { TokenPayoutField } from '../../agreements/plugins/components/common/tok
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
 import { useTranslations } from 'next-intl';
+import {
+  WalletAmountBlock,
+  WalletFlowCard,
+  WalletFlowLabel,
+} from '../../common/wallet-flow-card';
 
 interface PeoplePurchaseHyphaTokensProps {
   personSlug: string;
   spaces: Space[];
   closePanelUrl?: string;
+  appearance?: 'default' | 'wallet';
 }
 
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -52,9 +58,11 @@ export const PeoplePurchaseHyphaTokens = ({
   personSlug,
   spaces,
   closePanelUrl,
+  appearance = 'default',
 }: PeoplePurchaseHyphaTokensProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tModalAside = useTranslations('ModalAside');
   const router = useRouter();
   const { lang } = useParams<{ lang: string }>();
   const { person, isLoading: isPersonLoading } = useMe();
@@ -271,58 +279,98 @@ export const PeoplePurchaseHyphaTokens = ({
   };
 
   if (!spaces || spaces.length === 0) {
-    return (
+    const empty = (
       <div className="text-error text-sm">
         {tActions('purchaseHypha.form.errors.noValidSpaces')}
       </div>
     );
+    return appearance === 'wallet' ? (
+      <WalletFlowCard title={tModalAside('buyHyphaTokens')}>
+        {empty}
+      </WalletFlowCard>
+    ) : (
+      empty
+    );
   }
 
-  return (
+  const wallet = appearance === 'wallet';
+  const receiveLine = tActions('purchaseHypha.form.receiveHyphaTokens', {
+    amount: formatCurrencyValue(calculatedHypha),
+    price: formatCurrencyValue(HYPHA_PRICE_USD),
+  });
+
+  const formBody = (
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={form.handleSubmit(handlePurchase)}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
       >
-        <div className="flex flex-col gap-5 w-full">
-          <Separator />
-          <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-            <div className="flex gap-1">
-              <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+        <div className="flex w-full flex-col gap-4">
+          {wallet ? null : <Separator />}
+          {wallet ? (
+            <div className="flex flex-col gap-3">
+              <WalletFlowLabel>
                 {tAgreementFlow('plugins.buyHyphaTokens.purchaseAmount')}
-              </label>
-              <RequirementMark className="text-2" />
+              </WalletFlowLabel>
+              <FormField
+                control={form.control}
+                name="payout.amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <WalletAmountBlock
+                        id="buy-hypha-amount"
+                        amount={field.value ?? ''}
+                        onAmountChange={field.onChange}
+                        amountLabel={tAgreementFlow(
+                          'plugins.buyHyphaTokens.purchaseAmount',
+                        )}
+                        symbol={PAYMENT_TOKEN?.symbol ?? 'USDC'}
+                        presets={[25, 50, 100, 250, 500]}
+                        hint={receiveLine}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div className="flex flex-col gap-2 grow min-w-0">
-              <div className="flex md:justify-end">
-                <FormField
-                  control={form.control}
-                  name="payout.amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <TokenPayoutField
-                          value={form.getValues('payout')}
-                          onChange={(val) => form.setValue('payout', val)}
-                          tokens={tokens}
-                          readOnlyDropdown={true}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          ) : (
+            <div className="flex w-full flex-col gap-4 md:flex-row md:items-start">
+              <div className="flex gap-1">
+                <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max md:items-center md:pt-1">
+                  {tAgreementFlow('plugins.buyHyphaTokens.purchaseAmount')}
+                </label>
+                <RequirementMark className="text-2" />
+              </div>
+              <div className="flex min-w-0 grow flex-col gap-2">
+                <div className="flex md:justify-end">
+                  <FormField
+                    control={form.control}
+                    name="payout.amount"
+                    render={() => (
+                      <FormItem>
+                        <FormControl>
+                          <TokenPayoutField
+                            value={form.getValues('payout')}
+                            onChange={(val) => form.setValue('payout', val)}
+                            tokens={tokens}
+                            readOnlyDropdown={true}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <div className="text-sm text-neutral-500">
-            {tActions('purchaseHypha.form.receiveHyphaTokens', {
-              amount: formatCurrencyValue(calculatedHypha),
-              price: formatCurrencyValue(HYPHA_PRICE_USD),
-            })}
-          </div>
-          <Separator />
+          )}
+          {wallet ? null : (
+            <div className="text-sm text-neutral-500">{receiveLine}</div>
+          )}
+          {wallet ? null : <Separator />}
           <RecipientField
             label={tAgreementFlow('plugins.buyHyphaTokens.hyphaSentTo')}
             members={buyerMember}
@@ -331,7 +379,7 @@ export const PeoplePurchaseHyphaTokens = ({
             showTabs={false}
             name="buyer"
           />
-          <Separator />
+          {wallet ? null : <Separator />}
           <RecipientField
             label={tAgreementFlow('plugins.buyHyphaTokens.usdcPaidTo')}
             members={[]}
@@ -341,8 +389,10 @@ export const PeoplePurchaseHyphaTokens = ({
             showTabs={false}
           />
         </div>
-        <Separator />
-        <div className="flex gap-2 justify-end">
+        {wallet ? null : <Separator />}
+        <div
+          className={wallet ? 'flex flex-col gap-2' : 'flex justify-end gap-2'}
+        >
           {isInvesting ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
@@ -353,7 +403,11 @@ export const PeoplePurchaseHyphaTokens = ({
               {tActions('purchaseHypha.form.success.purchased')}
             </div>
           ) : (
-            <Button type="submit" disabled={isInvesting}>
+            <Button
+              type="submit"
+              className={wallet ? 'w-full' : undefined}
+              disabled={isInvesting}
+            >
               {tActions('purchaseHypha.form.actions.buy')}
             </Button>
           )}
@@ -388,5 +442,13 @@ export const PeoplePurchaseHyphaTokens = ({
         )}
       </form>
     </Form>
+  );
+
+  if (!wallet) return formBody;
+
+  return (
+    <WalletFlowCard title={tModalAside('buyHyphaTokens')}>
+      {formBody}
+    </WalletFlowCard>
   );
 };

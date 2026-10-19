@@ -30,11 +30,18 @@ import { z } from 'zod';
 import { isAddress } from 'ethers';
 import { useScrollToErrors } from '../../hooks';
 import { useTranslations } from 'next-intl';
+import {
+  WalletFlowCard,
+  WalletFlowLabel,
+  walletPresetClass,
+} from '../../common/wallet-flow-card';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
   /** On-chain space id, when the member arrived from a space that is about to expire. */
   initialWeb3SpaceId?: number;
+  appearance?: 'default' | 'wallet';
+  closeUrl?: string;
 }
 
 const schema = activateSpacesSchema.extend({
@@ -47,9 +54,13 @@ const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 export const ActivateSpacesForm = ({
   spaces,
   initialWeb3SpaceId,
+  appearance = 'default',
+  closeUrl,
 }: ActivateSpacesFormProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tModalAside = useTranslations('ModalAside');
+  const tFooter = useTranslations('Footer');
   const { person, isLoading: isPersonLoading } = useMe();
   const router = useRouter();
   const { lang, personSlug } = useParams<{
@@ -187,8 +198,8 @@ export const ActivateSpacesForm = ({
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const closePanelUrl = useMemo(
-    () => `/${lang}/profile/${personSlug}`,
-    [lang, personSlug],
+    () => closeUrl ?? `/${lang}/profile/${personSlug}`,
+    [closeUrl, lang, personSlug],
   );
 
   useEffect(() => {
@@ -250,93 +261,169 @@ export const ActivateSpacesForm = ({
     }
   };
 
+  const wallet = appearance === 'wallet';
+  const payableAmount =
+    paymentToken === 'USDC'
+      ? totalUSDC.toLocaleString(undefined, { minimumFractionDigits: 2 })
+      : totalHYPHA.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
   if (!spaces || spaces.length === 0) {
-    return (
+    const empty = (
       <div className="text-error text-sm">
         {tActions('activateSpaces.form.errors.noValidSpaces')}
       </div>
     );
+    return wallet ? (
+      <WalletFlowCard title={tModalAside('activateSpacesProfile')}>
+        {empty}
+      </WalletFlowCard>
+    ) : (
+      empty
+    );
   }
 
-  return (
+  const formBody = (
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
       >
-        <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
-        <Separator />
-        <Label>{tAgreementFlow('plugins.activateSpaces.checkOut')}</Label>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">
-            {tAgreementFlow('plugins.activateSpaces.totalContribution')}
-          </span>
-          <span className="text-2 text-neutral-11 text-nowrap">
-            $ {totalUSDC}
-          </span>
-        </div>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11">
-            {tAgreementFlow('plugins.activateSpaces.payWith')}
-          </span>
-          <Tabs
-            value={paymentToken}
-            onValueChange={(value) =>
-              setValue('paymentToken', value as 'HYPHA' | 'USDC')
-            }
-          >
-            <TabsList triggerVariant="switch">
-              <TabsTrigger variant="switch" value="HYPHA">
-                HYPHA
-              </TabsTrigger>
-              <TabsTrigger variant="switch" value="USDC">
-                USDC
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">
-            {tAgreementFlow('plugins.activateSpaces.totalAmountIn', {
-              token: paymentToken,
-            })}
-          </span>
-          <span className="text-2 text-neutral-11 text-nowrap">
-            {paymentToken === 'USDC' ? (
-              <Input
-                leftIcon={
-                  <Image
-                    src="/placeholder/usdc-icon.svg"
-                    width={24}
-                    height={24}
-                    alt={tActions('activateSpaces.form.icons.usdcAlt')}
-                  />
-                }
-                value={totalUSDC.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-                disabled
-              />
-            ) : (
-              <Input
-                leftIcon={
-                  <Image
-                    src="/placeholder/space-avatar-image.svg"
-                    width={24}
-                    height={24}
-                    alt={tActions('activateSpaces.form.icons.hyphaAlt')}
-                  />
-                }
-                value={totalHYPHA.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-                disabled
-              />
-            )}
-          </span>
-        </div>
-        <Separator />
+        {wallet ? (
+          <p className="text-1 text-neutral-11">
+            {tActions('activateSpaces.contentPrefix')}{' '}
+            <Link
+              className="text-accent-9 underline"
+              href={
+                process.env.NEXT_PUBLIC_HYPHA_TOKENOMICS_DOCS_URL ??
+                'https://assets.hypha.earth/files/Tokenomics_Paper.pdf'
+              }
+              target="_blank"
+            >
+              {tFooter('hyphaTokenomics')}
+            </Link>
+            {tActions('activateSpaces.contentSuffix')}
+          </p>
+        ) : null}
+        <SpaceWithNumberOfMonthsFieldArray
+          spaces={spaces}
+          name="spaces"
+          appearance={appearance}
+        />
+        {wallet ? null : <Separator />}
+        {wallet ? null : (
+          <Label>{tAgreementFlow('plugins.activateSpaces.checkOut')}</Label>
+        )}
+        {wallet ? null : (
+          <div className="flex w-full items-center justify-between">
+            <span className="w-full text-2 text-neutral-11">
+              {tAgreementFlow('plugins.activateSpaces.totalContribution')}
+            </span>
+            <span className="text-2 text-nowrap text-neutral-11">
+              $ {totalUSDC}
+            </span>
+          </div>
+        )}
+        {wallet ? (
+          <div className="flex flex-col gap-3">
+            <WalletFlowLabel>
+              {tAgreementFlow('plugins.activateSpaces.checkOut')}
+            </WalletFlowLabel>
+            <div className="border border-border px-4 py-5 text-center">
+              <div
+                className="text-8 leading-none tabular-nums tracking-[-0.04em]"
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                <span>{payableAmount}</span>
+                <span className="ml-2 align-middle text-2 tracking-[0.14em] uppercase">
+                  {paymentToken}
+                </span>
+              </div>
+              <p className="mt-2 text-1 text-neutral-11">
+                {tAgreementFlow('plugins.activateSpaces.totalContribution')} $
+                {totalUSDC}
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {(['HYPHA', 'USDC'] as const).map((token) => (
+                  <button
+                    key={token}
+                    type="button"
+                    className={walletPresetClass(paymentToken === token)}
+                    onClick={() =>
+                      setValue('paymentToken', token, { shouldDirty: true })
+                    }
+                  >
+                    {token}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex w-full items-center justify-between">
+            <span className="text-2 text-neutral-11">
+              {tAgreementFlow('plugins.activateSpaces.payWith')}
+            </span>
+            <Tabs
+              value={paymentToken}
+              onValueChange={(value) =>
+                setValue('paymentToken', value as 'HYPHA' | 'USDC')
+              }
+            >
+              <TabsList triggerVariant="switch">
+                <TabsTrigger variant="switch" value="HYPHA">
+                  HYPHA
+                </TabsTrigger>
+                <TabsTrigger variant="switch" value="USDC">
+                  USDC
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
+        {wallet ? null : (
+          <div className="flex w-full items-center justify-between">
+            <span className="w-full text-2 text-neutral-11">
+              {tAgreementFlow('plugins.activateSpaces.totalAmountIn', {
+                token: paymentToken,
+              })}
+            </span>
+            <span className="text-2 text-neutral-11 text-nowrap">
+              {paymentToken === 'USDC' ? (
+                <Input
+                  leftIcon={
+                    <Image
+                      src="/placeholder/usdc-icon.svg"
+                      width={24}
+                      height={24}
+                      alt={tActions('activateSpaces.form.icons.usdcAlt')}
+                    />
+                  }
+                  value={totalUSDC.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                  disabled
+                />
+              ) : (
+                <Input
+                  leftIcon={
+                    <Image
+                      src="/placeholder/space-avatar-image.svg"
+                      width={24}
+                      height={24}
+                      alt={tActions('activateSpaces.form.icons.hyphaAlt')}
+                    />
+                  }
+                  value={totalHYPHA.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                  disabled
+                />
+              )}
+            </span>
+          </div>
+        )}
+        {wallet ? null : <Separator />}
         <RecipientField
           label={tAgreementFlow('plugins.activateSpaces.paidBy')}
           members={buyerMember}
@@ -345,7 +432,7 @@ export const ActivateSpacesForm = ({
           showTabs={false}
           name="buyer"
         />
-        <Separator />
+        {wallet ? null : <Separator />}
         <RecipientField
           label={tAgreementFlow('plugins.activateSpaces.paidTo')}
           members={[]}
@@ -354,8 +441,10 @@ export const ActivateSpacesForm = ({
           readOnly={true}
           showTabs={false}
         />
-        <Separator />
-        <div className="flex gap-2 justify-end">
+        {wallet ? null : <Separator />}
+        <div
+          className={wallet ? 'flex flex-col gap-2' : 'flex justify-end gap-2'}
+        >
           {isActivating ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
@@ -366,7 +455,11 @@ export const ActivateSpacesForm = ({
               {tActions('activateSpaces.form.success.activated')}
             </div>
           ) : (
-            <Button type="submit" disabled={isActivating}>
+            <Button
+              type="submit"
+              className={wallet ? 'w-full' : undefined}
+              disabled={isActivating}
+            >
               {tActions('activateSpaces.form.actions.activate')}
             </Button>
           )}
@@ -381,7 +474,11 @@ export const ActivateSpacesForm = ({
                     topUpLink: (chunks) =>
                       paymentToken === 'HYPHA' ? (
                         <Link
-                          href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
+                          href={
+                            wallet
+                              ? `/${lang}/my-wallet/actions/purchase-hypha-tokens`
+                              : `/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`
+                          }
                           className="font-bold cursor-pointer text-accent-9 underline"
                         >
                           {chunks}
@@ -402,5 +499,13 @@ export const ActivateSpacesForm = ({
         )}
       </form>
     </Form>
+  );
+
+  if (!wallet) return formBody;
+
+  return (
+    <WalletFlowCard title={tModalAside('activateSpacesProfile')}>
+      {formBody}
+    </WalletFlowCard>
   );
 };

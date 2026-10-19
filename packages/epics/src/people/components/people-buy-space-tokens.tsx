@@ -36,6 +36,11 @@ import { TokenSelectDropdown } from '../../agreements/plugins/components/common/
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import {
+  WalletAmountBlock,
+  WalletFlowCard,
+  WalletFlowLabel,
+} from '../../common/wallet-flow-card';
 
 type PurchasableToken = {
   id: number;
@@ -55,13 +60,16 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 interface PeopleBuySpaceTokensProps {
   personSlug: string;
   closeUrl: string;
+  appearance?: 'default' | 'wallet';
 }
 
 export const PeopleBuySpaceTokens = ({
   personSlug: _personSlug,
   closeUrl,
+  appearance = 'default',
 }: PeopleBuySpaceTokensProps) => {
   const t = useTranslations('PeopleBuySpaceTokens');
+  const tModalAside = useTranslations('ModalAside');
   const router = useRouter();
   const { person } = useMe();
   const { client } = useSmartWallets();
@@ -337,9 +345,19 @@ export const PeopleBuySpaceTokens = ({
     }
   };
 
+  const wallet = appearance === 'wallet';
+  const wrap = (node: React.ReactNode) =>
+    wallet ? (
+      <WalletFlowCard title={tModalAside('buySpaceTokens')}>
+        {node}
+      </WalletFlowCard>
+    ) : (
+      node
+    );
+
   if (eligibilityError && !isLoadingEligibility) {
-    return (
-      <div className="text-2 text-neutral-11">{t('eligibilityLoadError')}</div>
+    return wrap(
+      <div className="text-2 text-neutral-11">{t('eligibilityLoadError')}</div>,
     );
   }
 
@@ -348,56 +366,75 @@ export const PeopleBuySpaceTokens = ({
     !isLoadingEligibility &&
     purchasableTokens.length === 0
   ) {
-    return <div className="text-2 text-neutral-11">{t('empty')}</div>;
+    return wrap(<div className="text-2 text-neutral-11">{t('empty')}</div>);
   }
 
-  return (
+  const saleDetails =
+    selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && sale ? (
+      <div>
+        <div>
+          {t('pricePerToken', {
+            price: formatCurrencyValue(salePricePerToken),
+            currency: paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+          })}
+        </div>
+        <div>
+          {t('totalCost', {
+            amount: formatCurrencyValue(totalCost),
+            currency: paymentTokenMeta?.symbol ?? '',
+          })}
+        </div>
+        <div>{t('remainingInSale', { amount: remainingForSale })}</div>
+      </div>
+    ) : selectedToken && isLoadingSale ? (
+      <span className="inline-flex items-center justify-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {t('loadingSale')}
+      </span>
+    ) : selectedToken && !isLoadingSale && !sale ? (
+      <span>{t('unableToReadSale')}</span>
+    ) : selectedToken &&
+      sale &&
+      sale.salePaymentToken === '0x0000000000000000000000000000000000000000' ? (
+      <span>{t('saleDisabled')}</span>
+    ) : null;
+
+  return wrap(
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={form.handleSubmit(handlePurchase)}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
       >
-        <Separator />
+        {wallet ? null : <Separator />}
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-          <div className="flex gap-1">
-            <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              {t('amountAndToken')}
-            </label>
-            <RequirementMark className="text-2" />
-          </div>
-          <div className="flex flex-col gap-2 grow min-w-0">
-            <div className="flex md:justify-end">
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem className="flex-1 min-w-0 w-full m-0 space-y-0">
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          min="0"
-                          step="1"
-                          placeholder="0"
-                          aria-label={t('amount')}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tokenAddress"
-                  render={({ field }) => (
-                    <FormItem className="w-full sm:w-60 shrink-0 min-w-0 m-0 space-y-0">
-                      <FormControl>
+        {wallet ? (
+          <div className="flex flex-col gap-3">
+            <WalletFlowLabel>{t('amountAndToken')}</WalletFlowLabel>
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem className="m-0 space-y-0">
+                  <FormControl>
+                    <WalletAmountBlock
+                      id="buy-space-amount"
+                      amount={field.value ?? ''}
+                      onAmountChange={field.onChange}
+                      amountLabel={t('amount')}
+                      integer
+                      presets={[1, 5, 10, 25, 50]}
+                      hint={saleDetails}
+                      symbolNode={
                         <TokenSelectDropdown
-                          value={field.value}
-                          onValueChange={field.onChange}
+                          variant="inline"
+                          value={tokenAddress}
+                          onValueChange={(value) =>
+                            form.setValue('tokenAddress', value, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            })
+                          }
                           tokens={purchasableDropdownTokens}
                           placeholder={t('selectPlaceholder')}
                           disabled={
@@ -405,54 +442,135 @@ export const PeopleBuySpaceTokens = ({
                             purchasableDropdownTokens.length === 0
                           }
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tokenAddress"
+              render={({ field }) => (
+                <FormItem className="m-0 space-y-0">
+                  <input type="hidden" {...field} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        ) : (
+          <div className="flex w-full flex-col gap-4 md:flex-row md:items-start">
+            <div className="flex gap-1">
+              <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max md:items-center md:pt-1">
+                {t('amountAndToken')}
+              </label>
+              <RequirementMark className="text-2" />
+            </div>
+            <div className="flex min-w-0 grow flex-col gap-2">
+              <div className="flex md:justify-end">
+                <div className="flex w-full flex-col items-end gap-2 sm:flex-row sm:gap-4 md:justify-end">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem className="m-0 w-full min-w-0 flex-1 space-y-0">
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="0"
+                            aria-label={t('amount')}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tokenAddress"
+                    render={({ field }) => (
+                      <FormItem className="m-0 w-full min-w-0 shrink-0 space-y-0 sm:w-60">
+                        <FormControl>
+                          <TokenSelectDropdown
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            tokens={purchasableDropdownTokens}
+                            placeholder={t('selectPlaceholder')}
+                            disabled={
+                              isTokensLoading ||
+                              purchasableDropdownTokens.length === 0
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && sale && (
-          <div className="text-sm text-neutral-11">
-            <div>
-              {t('pricePerToken', {
-                price: formatCurrencyValue(salePricePerToken),
-                currency:
-                  paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
-              })}
-            </div>
-            <div>
-              {t('totalCost', {
-                amount: formatCurrencyValue(totalCost),
-                currency: paymentTokenMeta?.symbol ?? '',
-              })}
-            </div>
-            <div>{t('remainingInSale', { amount: remainingForSale })}</div>
-          </div>
         )}
 
-        {selectedToken && isLoadingSale && (
-          <div className="text-sm text-neutral-11 flex items-center gap-2">
-            <Loader2 className="animate-spin w-4 h-4" />
-            {t('loadingSale')}
-          </div>
-        )}
+        {wallet
+          ? null
+          : selectedToken &&
+            !isNaN(parsedAmount) &&
+            parsedAmount > 0 &&
+            sale && (
+              <div className="text-sm text-neutral-11">
+                <div>
+                  {t('pricePerToken', {
+                    price: formatCurrencyValue(salePricePerToken),
+                    currency:
+                      paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+                  })}
+                </div>
+                <div>
+                  {t('totalCost', {
+                    amount: formatCurrencyValue(totalCost),
+                    currency: paymentTokenMeta?.symbol ?? '',
+                  })}
+                </div>
+                <div>{t('remainingInSale', { amount: remainingForSale })}</div>
+              </div>
+            )}
 
-        {selectedToken && !isLoadingSale && !sale && (
-          <div className="text-sm text-neutral-11">{t('unableToReadSale')}</div>
-        )}
+        {wallet
+          ? null
+          : selectedToken &&
+            isLoadingSale && (
+              <div className="text-sm text-neutral-11 flex items-center gap-2">
+                <Loader2 className="animate-spin w-4 h-4" />
+                {t('loadingSale')}
+              </div>
+            )}
 
-        {selectedToken &&
-          sale &&
-          sale.salePaymentToken ===
-            '0x0000000000000000000000000000000000000000' && (
-            <div className="text-sm text-neutral-11">{t('saleDisabled')}</div>
-          )}
+        {wallet
+          ? null
+          : selectedToken &&
+            !isLoadingSale &&
+            !sale && (
+              <div className="text-sm text-neutral-11">
+                {t('unableToReadSale')}
+              </div>
+            )}
 
-        <Separator />
+        {wallet
+          ? null
+          : selectedToken &&
+            sale &&
+            sale.salePaymentToken ===
+              '0x0000000000000000000000000000000000000000' && (
+              <div className="text-sm text-neutral-11">{t('saleDisabled')}</div>
+            )}
+
+        {wallet ? null : <Separator />}
 
         <RecipientField
           label={t('recipientTokenSent', {
@@ -465,7 +583,7 @@ export const PeopleBuySpaceTokens = ({
           name="buyerAddress"
         />
 
-        <Separator />
+        {wallet ? null : <Separator />}
 
         <RecipientField
           label={t('recipientPaymentPaid', {
@@ -479,9 +597,11 @@ export const PeopleBuySpaceTokens = ({
           name="paymentRecipient"
         />
 
-        <Separator />
+        {wallet ? null : <Separator />}
 
-        <div className="flex gap-2 justify-end">
+        <div
+          className={wallet ? 'flex flex-col gap-2' : 'flex justify-end gap-2'}
+        >
           {isSubmitting || isApproving || isBuying ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
@@ -498,6 +618,7 @@ export const PeopleBuySpaceTokens = ({
           ) : (
             <Button
               type="submit"
+              className={wallet ? 'w-full' : undefined}
               disabled={
                 isSubmitting ||
                 !selectedToken ||
@@ -527,6 +648,6 @@ export const PeopleBuySpaceTokens = ({
           </div>
         )}
       </form>
-    </Form>
+    </Form>,
   );
 };

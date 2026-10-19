@@ -14,6 +14,7 @@ import {
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
 import { useTranslations } from 'next-intl';
+import { WalletAmountBlock } from '../../../../common/wallet-flow-card';
 
 interface Token {
   icon: string;
@@ -48,6 +49,9 @@ interface TokenPayoutFieldProps {
   selectedTokenPriceHint?: string;
   isLoadingTokens?: boolean;
   loadingTokensLabel?: string;
+  /** Send-tokens amount block. Profile and agreement forms keep the default row. */
+  variant?: 'default' | 'wallet';
+  amountPresets?: number[];
 }
 
 function TokenPayoutFieldInner({
@@ -60,6 +64,8 @@ function TokenPayoutFieldInner({
   selectedTokenPriceHint,
   isLoadingTokens = false,
   loadingTokensLabel,
+  variant = 'default',
+  amountPresets,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = value.token
@@ -99,6 +105,93 @@ function TokenPayoutFieldInner({
       });
     }
   };
+
+  if (variant === 'wallet') {
+    const showMenu = !readOnlyDropdown && tokens.length > 0;
+    return (
+      <WalletAmountBlock
+        id={`token-payout-${value.token || 'amount'}`}
+        amount={value.amount ?? ''}
+        onAmountChange={handleAmountChange}
+        amountLabel={tAgreementFlow('plugins.tokenPayoutField.amount')}
+        symbol={selectedToken?.symbol}
+        presets={amountPresets}
+        symbolNode={
+          showMenu ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="ml-2 inline-flex items-center gap-1 align-middle text-2 tracking-[0.14em] uppercase"
+                >
+                  {selectedToken?.symbol ??
+                    tAgreementFlow('plugins.tokenPayoutField.selectToken')}
+                  <ChevronDownIcon className="size-2" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="max-h-[200px] w-64 overflow-y-auto">
+                {tokens.map((token) => (
+                  <DropdownMenuItem
+                    key={`${token.space?.slug ?? ''}:${token.address}`}
+                    onSelect={() => handleTokenChange(token)}
+                  >
+                    <Image
+                      src={token.icon}
+                      width={24}
+                      height={24}
+                      alt={token.symbol}
+                      className="mr-2 h-5 w-5 rounded-full"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-2 text-neutral-11">
+                        {token.symbol}
+                      </span>
+                      {token?.space?.title ? (
+                        <span className="text-1 text-accent-11">
+                          {tAgreementFlow('plugins.tokenPayoutField.bySpace', {
+                            space: token.space.title,
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : undefined
+        }
+        hint={
+          isLoadingTokens ? (
+            <span>
+              {loadingTokensLabel ??
+                tAgreementFlow('plugins.exchangeStakesAndTokens.loadingTokens')}
+            </span>
+          ) : showSelectedTokenBalanceHint &&
+            selectedToken &&
+            typeof selectedToken.value === 'number' &&
+            Number.isFinite(selectedToken.value) ? (
+            <span>
+              {tAgreementFlow(
+                useTreasuryBalanceLine
+                  ? 'plugins.tokenPayoutField.treasuryBalanceLine'
+                  : 'plugins.tokenPayoutField.walletBalanceLine',
+                {
+                  amount: String(selectedToken.value),
+                  symbol: selectedToken.symbol,
+                },
+              )}
+              {selectedTokenPriceHint
+                ? tAgreementFlow(
+                    'plugins.tokenPayoutField.tokenRedemptionPriceSuffix',
+                    { hint: selectedTokenPriceHint },
+                  )
+                : ''}
+            </span>
+          ) : null
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-1 w-full">

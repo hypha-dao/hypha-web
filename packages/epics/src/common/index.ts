@@ -11,6 +11,7 @@ export * from './links';
 export * from './select-action';
 export * from './side-panel';
 export * from './proposal-overlay-shell';
+export * from './wallet-flow-card';
 export * from './web-links';
 export * from './get-active-tab-from-path';
 export * from './get-dho-space-context-path';
