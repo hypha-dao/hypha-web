@@ -226,6 +226,7 @@ export function HumanChatPanelMembers({
                 userName={member.displayName}
                 size="md"
                 className="rounded-full"
+                matrixUserId={member.userId}
               />
               <span className="truncate text-sm text-foreground">
                 {member.displayName}
@@ -252,6 +253,7 @@ export function HumanChatPanelMembers({
                   userName={displayName}
                   size="md"
                   className="rounded-full"
+                  personId={member.id}
                 />
                 <span className="truncate text-sm text-foreground">
                   {displayName}

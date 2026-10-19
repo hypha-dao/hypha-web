@@ -15,6 +15,7 @@ import {
   AiLeftPanel,
   AiPanelTrigger,
   GlobalCallDockProvider,
+  MemberPresenceProvider,
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
@@ -250,44 +251,86 @@ export default async function RootLayout({
                   serviceWorkerPath={serviceWorkerPath}
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                    <PanelProviders>
-                      <RecentSpaceHistoryTracker />
-                      <GlobalCallDockProvider>
-                        <PanelWrapLayout
-                          left={
-                            aiChatEnabled
-                              ? {
-                                  content: (
-                                    <AiLeftPanel
-                                      enableSpaceMemory={spaceMemoryEnabled}
-                                    />
-                                  ),
+                    <MemberPresenceProvider>
+                      <PanelProviders>
+                        <RecentSpaceHistoryTracker />
+                        <GlobalCallDockProvider>
+                          <PanelWrapLayout
+                            left={
+                              aiChatEnabled
+                                ? {
+                                    content: (
+                                      <AiLeftPanel
+                                        enableSpaceMemory={spaceMemoryEnabled}
+                                      />
+                                    ),
+                                  }
+                                : undefined
+                            }
+                            right={
+                              humanChatEnabled
+                                ? { content: <ConnectedHumanRightPanel /> }
+                                : undefined
+                            }
+                          >
+                            {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                            <div className="sticky top-0 z-40 shrink-0 bg-page-background">
+                              <ConnectedMenuTop
+                                aiChatEnabled={aiChatEnabled}
+                                logoHref={ROOT_URL}
+                                openMenuLabel={navOpenMenuLabel}
+                                closeMenuLabel={navCloseMenuLabel}
+                                leadingAction={
+                                  aiChatEnabled ? <AiPanelTrigger /> : undefined
                                 }
-                              : undefined
-                          }
-                          right={
-                            humanChatEnabled
-                              ? { content: <ConnectedHumanRightPanel /> }
-                              : undefined
-                          }
-                        >
-                          {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                          <div className="sticky top-0 z-40 shrink-0 bg-page-background">
-                            <ConnectedMenuTop
-                              aiChatEnabled={aiChatEnabled}
-                              logoHref={ROOT_URL}
-                              openMenuLabel={navOpenMenuLabel}
-                              closeMenuLabel={navCloseMenuLabel}
-                              leadingAction={
-                                aiChatEnabled ? <AiPanelTrigger /> : undefined
-                              }
-                              trailingAction={
-                                humanChatEnabled ? (
-                                  <HumanSidebarTrigger />
-                                ) : undefined
-                              }
-                              mobileAction={
-                                <>
+                                trailingAction={
+                                  humanChatEnabled ? (
+                                    <HumanSidebarTrigger />
+                                  ) : undefined
+                                }
+                                mobileAction={
+                                  <>
+                                    <ConnectedButtonProfile
+                                      newUserRedirectPath="/profile/signup"
+                                      baseRedirectPath={`/${locale}/home`}
+                                      navItems={[
+                                        {
+                                          label: navHomeLabel,
+                                          href: `/${locale}/home`,
+                                        },
+                                        {
+                                          label: navMessagesLabel,
+                                          href: `/${locale}/connections`,
+                                        },
+                                        {
+                                          label: navMyWalletLabel,
+                                          href: `/${locale}/my-wallet`,
+                                        },
+                                        {
+                                          label: navMySpacesLabel,
+                                          href: `/${locale}/my-spaces`,
+                                        },
+                                        {
+                                          label: navNetworkLabel,
+                                          href: `/${locale}/network`,
+                                        },
+                                      ]}
+                                      showNetworkFeedback
+                                      trailingBeforeProfile={
+                                        isLanguageSelectVisible ? (
+                                          <ConnectedLanguageSelect
+                                            selectLanguageLabel={
+                                              navSelectLanguageLabel
+                                            }
+                                          />
+                                        ) : undefined
+                                      }
+                                      compact
+                                    />
+                                  </>
+                                }
+                              >
+                                <div className="hidden xl:flex">
                                   <ConnectedButtonProfile
                                     newUserRedirectPath="/profile/signup"
                                     baseRedirectPath={`/${locale}/home`}
@@ -323,93 +366,57 @@ export default async function RootLayout({
                                         />
                                       ) : undefined
                                     }
-                                    compact
                                   />
-                                </>
-                              }
-                            >
-                              <div className="hidden xl:flex">
-                                <ConnectedButtonProfile
-                                  newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath={`/${locale}/home`}
-                                  navItems={[
-                                    {
-                                      label: navHomeLabel,
-                                      href: `/${locale}/home`,
-                                    },
-                                    {
-                                      label: navMessagesLabel,
-                                      href: `/${locale}/connections`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
-                                  showNetworkFeedback
-                                  trailingBeforeProfile={
-                                    isLanguageSelectVisible ? (
-                                      <ConnectedLanguageSelect
-                                        selectLanguageLabel={
-                                          navSelectLanguageLabel
-                                        }
-                                      />
-                                    ) : undefined
-                                  }
-                                />
-                              </div>
-                            </ConnectedMenuTop>
-                          </div>
-                          {/* Scrollable content area */}
-                          <NextSSRPlugin
-                            routerConfig={extractRouterConfig(fileRouter)}
-                          />
-                          <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
-                            <div className="pb-8">
-                              <MobileContentFrame>
-                                <div className="flex h-full justify-normal pt-4 md:pt-5">
-                                  <div className="w-full h-full">
-                                    {children}
-                                  </div>
                                 </div>
-                              </MobileContentFrame>
+                              </ConnectedMenuTop>
                             </div>
-                            <Suspense fallback={null}>
-                              {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
-                              <div className="hidden xl:block">
-                                <DeferredFooter
-                                  poweredByLabel={footerPoweredByLabel}
-                                  hyphaServicesLabel={footerHyphaServicesLabel}
-                                  hyphaTokenomicsLabel={
-                                    footerHyphaTokenomicsLabel
-                                  }
-                                  licensingPolicyLabel={
-                                    footerLicensingPolicyLabel
-                                  }
-                                  termsAndConditionsLabel={
-                                    footerTermsAndConditionsLabel
-                                  }
-                                  privacyPolicyLabel={footerPrivacyPolicyLabel}
-                                />
+                            {/* Scrollable content area */}
+                            <NextSSRPlugin
+                              routerConfig={extractRouterConfig(fileRouter)}
+                            />
+                            <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
+                              <div className="pb-8">
+                                <MobileContentFrame>
+                                  <div className="flex h-full justify-normal pt-4 md:pt-5">
+                                    <div className="w-full h-full">
+                                      {children}
+                                    </div>
+                                  </div>
+                                </MobileContentFrame>
                               </div>
-                            </Suspense>
-                          </div>
-                          <MobileTabBar
-                            spaceMemoryEnabled={spaceMemoryEnabled}
-                          />
-                        </PanelWrapLayout>
-                        {/* Outside capture root so tab screen share excludes the floating dock. */}
-                        {humanChatEnabled && <ConnectedGlobalCallDock />}
-                      </GlobalCallDockProvider>
-                    </PanelProviders>
+                              <Suspense fallback={null}>
+                                {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
+                                <div className="hidden xl:block">
+                                  <DeferredFooter
+                                    poweredByLabel={footerPoweredByLabel}
+                                    hyphaServicesLabel={
+                                      footerHyphaServicesLabel
+                                    }
+                                    hyphaTokenomicsLabel={
+                                      footerHyphaTokenomicsLabel
+                                    }
+                                    licensingPolicyLabel={
+                                      footerLicensingPolicyLabel
+                                    }
+                                    termsAndConditionsLabel={
+                                      footerTermsAndConditionsLabel
+                                    }
+                                    privacyPolicyLabel={
+                                      footerPrivacyPolicyLabel
+                                    }
+                                  />
+                                </div>
+                              </Suspense>
+                            </div>
+                            <MobileTabBar
+                              spaceMemoryEnabled={spaceMemoryEnabled}
+                            />
+                          </PanelWrapLayout>
+                          {/* Outside capture root so tab screen share excludes the floating dock. */}
+                          {humanChatEnabled && <ConnectedGlobalCallDock />}
+                        </GlobalCallDockProvider>
+                      </PanelProviders>
+                    </MemberPresenceProvider>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>

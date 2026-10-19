@@ -1134,11 +1134,13 @@ export const CreateSignalForm = ({
             <div className="flex flex-grow gap-3 px-4 pb-4 pt-5 lg:px-7">
               <PersonAvatar
                 size="lg"
+                shape="circle"
                 isLoading={isMutating}
                 avatarSrc={person?.avatarUrl || ''}
                 userName={[person?.name, person?.surname]
                   .filter(Boolean)
                   .join(' ')}
+                personId={person?.id}
               />
               <div className="flex w-full min-w-0 flex-col gap-1.5 sm:gap-2">
                 <FormField

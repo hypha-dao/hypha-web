@@ -77,6 +77,7 @@ export function HumanChatMentionCandidateRow({
         size="sm"
         className="shrink-0 rounded-full"
         isLoading={busy}
+        matrixUserId={matrixUserId}
       />
       <span className="min-w-0 flex-1 truncate font-medium leading-snug">
         {resolvedName}

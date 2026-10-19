@@ -14,6 +14,10 @@ export * from './person-avatar';
 export { presenceRank, readMemberPresence } from './member-presence';
 export { PresenceDot } from './presence-dot';
 export { useMemberPresence } from './use-member-presence';
+export {
+  MemberPresenceProvider,
+  useRegisteredPresence,
+} from './member-presence-provider';
 export * from './person-head';
 export * from './person-label';
 export * from './signup-panel';

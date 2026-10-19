@@ -1862,6 +1862,8 @@ export function HumanChatPanelMessageBubble({
               avatarSrc={replyHeaderAvatarResolved}
               userName={replyAuthorLabelForUi}
               isLoading={replyAvatarLoading}
+              personId={replyPerson?.id}
+              matrixUserId={replyTo?.sourceUserId}
             />
           </div>
           <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
@@ -1906,6 +1908,8 @@ export function HumanChatPanelMessageBubble({
                 avatarSrc={mainAvatarSrc}
                 userName={senderName}
                 isLoading={mainAvatarLoading}
+                personId={senderPerson?.id}
+                matrixUserId={senderMatrixId}
               />
             )}
           </div>

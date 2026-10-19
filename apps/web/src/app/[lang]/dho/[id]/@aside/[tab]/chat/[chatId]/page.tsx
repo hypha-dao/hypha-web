@@ -32,6 +32,7 @@ export default function ChatPage() {
       ) : (
         <ChatDetail
           creator={{
+            id: creator?.id ?? conversation?.creatorId,
             avatar: creator?.avatarUrl || '',
             name: creator?.name || '',
             surname: creator?.surname || '',

@@ -16,7 +16,6 @@ import {
 } from '@hypha-platform/core/client';
 import {
   PersonAvatar,
-  PresenceDot,
   presenceRank,
   useMemberDirectoryConnect,
   useMemberPresence,
@@ -195,22 +194,21 @@ function SpaceMemberCircles({
                     void openChat(person);
                   }}
                 >
-                  <span className="relative inline-flex">
-                    <span
-                      className={
-                        index === 0
-                          ? 'inline-flex rounded-full ring-1 ring-foreground'
-                          : 'inline-flex rounded-full'
-                      }
-                    >
-                      <PersonAvatar
-                        avatarSrc={person.avatarUrl ?? undefined}
-                        userName={name}
-                        size="md"
-                        shape="circle"
-                      />
-                    </span>
-                    <PresenceDot level={presence} size="sm" />
+                  <span
+                    className={
+                      index === 0
+                        ? 'inline-flex rounded-full ring-1 ring-foreground'
+                        : 'inline-flex rounded-full'
+                    }
+                  >
+                    <PersonAvatar
+                      avatarSrc={person.avatarUrl ?? undefined}
+                      userName={name}
+                      size="md"
+                      shape="circle"
+                      personId={person.id}
+                      presence={presence}
+                    />
                   </span>
                 </button>
               </li>

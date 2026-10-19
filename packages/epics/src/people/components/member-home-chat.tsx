@@ -1044,6 +1044,7 @@ export function MemberHomeChat({
                         size="md"
                         shape="circle"
                         className={cn('shrink-0', !oneLine && 'mt-0.5')}
+                        personId={intelligence.person.id}
                       />
                     ) : null}
                   </article>

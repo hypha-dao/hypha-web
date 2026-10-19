@@ -332,6 +332,7 @@ export function MemberHomeConnectionsWidget({
                       size="md"
                       shape="circle"
                       className="shrink-0"
+                      personId={person.id}
                     />
                     <span className="flex min-w-0 flex-1 flex-col items-stretch gap-1 overflow-hidden">
                       <span className="block truncate text-1">{name}</span>

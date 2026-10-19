@@ -14,6 +14,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import React from 'react';
 
 export type CreatorType = {
+  id?: number;
   avatar?: string;
   name?: string;
   surname?: string;
@@ -122,6 +123,7 @@ export const ProposalHead = ({
           isLoading={isLoading}
           avatarSrc={creator?.avatar}
           userName={displayName}
+          personId={creator?.type === 'space' ? undefined : creator?.id}
         />
         <div className="flex justify-between items-center w-full">
           <div className="grid">

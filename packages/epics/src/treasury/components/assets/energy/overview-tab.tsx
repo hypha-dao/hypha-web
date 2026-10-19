@@ -76,6 +76,7 @@ export const EnergyOverviewTab = ({
                   address={address}
                   displayName={display.displayName}
                   avatarUrl={display.avatarUrl}
+                  personId={people[address.toLowerCase()]?.id}
                   subtitle={display.subtitle}
                   isLoading={energyAvatarLoading(
                     address,

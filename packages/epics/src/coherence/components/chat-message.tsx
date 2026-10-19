@@ -48,9 +48,12 @@ export const ChatMessage = ({
       <div>
         <PersonAvatar
           size="sm"
+          shape="circle"
           isLoading={isLoading || isLoadingPrivyUserId || isLoadingPerson}
           avatarSrc={person?.avatarUrl}
           userName={displayName}
+          personId={person?.id}
+          matrixUserId={isAgent ? undefined : message.sender}
         />
       </div>
       <div className="flex flex-col gap-y-2 grow">

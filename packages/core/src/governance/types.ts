@@ -2,6 +2,7 @@ import { TokenType } from '../common/web3/tokens';
 import type { CapitalKey } from '../network/capitals';
 
 export type Creator = {
+  id?: number;
   avatarUrl?: string;
   name?: string;
   surname?: string;

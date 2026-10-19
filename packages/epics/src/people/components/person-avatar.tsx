@@ -1,7 +1,13 @@
+'use client';
+
 import { Avatar, AvatarImage, AvatarFallback } from '@hypha-platform/ui';
 import { UserIcon } from 'lucide-react';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+
+import type { PresenceLevel } from './member-presence';
+import { useRegisteredPresence } from './member-presence-provider';
+import { PresenceDot } from './presence-dot';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'chat' | 'reply' | 'toolbar';
 
@@ -21,6 +27,16 @@ const sizeMap: Record<AvatarSize, { avatar: string; skeleton: string }> = {
   },
 };
 
+function presenceDotSize(size: AvatarSize): 'sm' | 'md' {
+  return size === 'xs' ||
+    size === 'sm' ||
+    size === 'reply' ||
+    size === 'md' ||
+    size === 'toolbar'
+    ? 'sm'
+    : 'md';
+}
+
 export const PersonAvatar = ({
   avatarSrc,
   userName,
@@ -28,6 +44,10 @@ export const PersonAvatar = ({
   isLoading = false,
   size = 'md',
   shape = 'circle',
+  personId,
+  matrixUserId,
+  presence: presenceProp,
+  showPresence,
 }: {
   avatarSrc?: string;
   userName?: string;
@@ -36,7 +56,28 @@ export const PersonAvatar = ({
   size?: AvatarSize;
   /** `circle` = full round (default; survives `--radius-md: 0`); `squircle` ≈ superellipse; `rounded` = soft corners; `square` = website chrome */
   shape?: 'rounded' | 'squircle' | 'circle' | 'square';
+  /** When set on a circle portrait, registers for live Matrix presence lights. */
+  personId?: number;
+  /** Fallback when no personId (e.g. Matrix-only room members). */
+  matrixUserId?: string;
+  /** Explicit level — skips registry when set. */
+  presence?: PresenceLevel;
+  /** Override auto light visibility (default: circle + known person/matrix id or presence). */
+  showPresence?: boolean;
 }) => {
+  const registeredPresence = useRegisteredPresence({
+    personId: presenceProp == null ? personId : undefined,
+    matrixUserId: presenceProp == null ? matrixUserId : undefined,
+  });
+  const presence = presenceProp ?? registeredPresence;
+  const shouldShowPresence =
+    showPresence ??
+    (shape === 'circle' &&
+      presence != null &&
+      (personId != null ||
+        Boolean(matrixUserId?.trim()) ||
+        presenceProp != null));
+
   const getFallbackContent = () => (
     // Quiet icon fallback — letter initials read as broken/missing photos in chat.
     <UserIcon className="h-[45%] w-[45%]" aria-hidden />
@@ -52,7 +93,7 @@ export const PersonAvatar = ({
       ? 'rounded-none'
       : 'rounded-md';
 
-  return (
+  const portrait = (
     <Skeleton
       width={skeletonSize}
       height={skeletonSize}
@@ -72,5 +113,16 @@ export const PersonAvatar = ({
         <AvatarFallback>{getFallbackContent()}</AvatarFallback>
       </Avatar>
     </Skeleton>
+  );
+
+  if (!shouldShowPresence || presence == null) {
+    return portrait;
+  }
+
+  return (
+    <span className="relative inline-flex shrink-0">
+      {portrait}
+      <PresenceDot level={presence} size={presenceDotSize(size)} />
+    </span>
   );
 };

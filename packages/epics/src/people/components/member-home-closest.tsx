@@ -38,7 +38,6 @@ import {
   type PresenceLevel,
 } from './member-presence';
 import { PersonAvatar } from './person-avatar';
-import { PresenceDot } from './presence-dot';
 
 type ClosestPerson = MemberIntelligence['connections'][number];
 
@@ -316,21 +315,20 @@ export function MemberHomeClosest({
             const opening = openingId === person.id;
             const presence = presenceById.get(person.id) ?? 'offline';
             const portrait = (
-              <span className="relative inline-flex">
-                <span
-                  className={cn(
-                    'inline-flex rounded-full',
-                    index === 0 && 'ring-1 ring-foreground',
-                  )}
-                >
-                  <PersonAvatar
-                    avatarSrc={person.avatarUrl ?? undefined}
-                    userName={name}
-                    size="md"
-                    shape="circle"
-                  />
-                </span>
-                <PresenceDot level={presence} size="sm" />
+              <span
+                className={cn(
+                  'inline-flex rounded-full',
+                  index === 0 && 'ring-1 ring-foreground',
+                )}
+              >
+                <PersonAvatar
+                  avatarSrc={person.avatarUrl ?? undefined}
+                  userName={name}
+                  size="md"
+                  shape="circle"
+                  personId={person.id}
+                  presence={presence}
+                />
               </span>
             );
 

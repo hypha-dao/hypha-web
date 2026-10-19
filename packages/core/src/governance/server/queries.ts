@@ -24,6 +24,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { personColumns } from '../../people/server/queries';
 
 type CreatorType = {
+  id?: number;
   avatarUrl?: string;
   name?: string;
   surname?: string;
@@ -32,6 +33,7 @@ type CreatorType = {
 };
 
 type PersonCreatorFields = {
+  id?: number;
   avatarUrl?: string | null;
   name?: string | null;
   surname?: string | null;
@@ -57,6 +59,7 @@ export const mapToDocument = (
     };
   } else if (personCreator) {
     actualCreator = {
+      id: personCreator.id,
       avatarUrl: personCreator.avatarUrl || '',
       name: personCreator.name || '',
       surname: personCreator.surname || '',

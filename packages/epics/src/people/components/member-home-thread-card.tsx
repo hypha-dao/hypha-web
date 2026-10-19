@@ -386,6 +386,7 @@ export function MemberHomeThreadCard({
               userName={creator.name ?? undefined}
               size="sm"
               shape="circle"
+              personId={creator.id}
             />
             <p
               className={

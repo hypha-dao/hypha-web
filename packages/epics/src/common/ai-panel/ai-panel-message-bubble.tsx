@@ -54,6 +54,7 @@ type AiPanelMessageBubbleProps = {
   /** Signed-in Hypha profile photo for user bubbles. */
   userAvatarUrl?: string | null;
   userDisplayName?: string | null;
+  userPersonId?: number;
   /** Space logo (or other brand mark) for assistant bubbles — not letter initials. */
   assistantAvatarUrl?: string | null;
 };
@@ -556,6 +557,7 @@ export function AiPanelMessageBubble({
   suppressWalletSignaturePrompt = false,
   userAvatarUrl,
   userDisplayName,
+  userPersonId,
   assistantAvatarUrl,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
@@ -907,6 +909,7 @@ export function AiPanelMessageBubble({
               avatarSrc={userAvatarUrl?.trim() || undefined}
               userName={userDisplayName?.trim() || undefined}
               className="h-full w-full rounded-full"
+              personId={userPersonId}
             />
           </div>
         )

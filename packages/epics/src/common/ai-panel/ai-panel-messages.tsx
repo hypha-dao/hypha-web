@@ -60,6 +60,7 @@ type AiPanelMessagesProps = {
   /** Signed-in profile photo for user bubbles. */
   userAvatarUrl?: string | null;
   userDisplayName?: string | null;
+  userPersonId?: number;
   /** Active space logo for assistant bubbles. */
   assistantAvatarUrl?: string | null;
   isStreaming?: boolean;
@@ -91,6 +92,7 @@ export function AiPanelMessages({
   onSuggestionSelect,
   userAvatarUrl,
   userDisplayName,
+  userPersonId,
   assistantAvatarUrl,
   isStreaming = false,
   onActionReplySelect,
@@ -188,6 +190,7 @@ export function AiPanelMessages({
             message={msg}
             userAvatarUrl={userAvatarUrl}
             userDisplayName={userDisplayName}
+            userPersonId={userPersonId}
             assistantAvatarUrl={assistantAvatarUrl}
             mobilizedAgents={
               msg.role === 'assistant' && msg.id !== 'welcome'

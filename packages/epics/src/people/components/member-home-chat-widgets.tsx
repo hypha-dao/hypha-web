@@ -62,7 +62,6 @@ import {
 } from './member-connections';
 import { sortByPresenceThenShared } from './member-presence';
 import { PersonAvatar } from './person-avatar';
-import { PresenceDot } from './presence-dot';
 import { readConversationRows } from './my-connections';
 import { useMemberPresence } from './use-member-presence';
 
@@ -476,6 +475,7 @@ export function MemberHomePeopleWidgetCard({
                   shape="circle"
                   avatarSrc={card.avatarUrl}
                   userName={card.name}
+                  personId={card.person.id}
                 />
                 <span className="w-full truncate text-2 text-foreground">
                   {card.name}
@@ -526,15 +526,14 @@ export function MemberHomePeopleWidgetCard({
                   aria-label={t('chatPerson', { name })}
                   onClick={() => onChat(person)}
                 >
-                  <span className="relative inline-flex shrink-0">
-                    <PersonAvatar
-                      avatarSrc={person.avatarUrl ?? undefined}
-                      userName={name}
-                      size="md"
-                      shape="circle"
-                    />
-                    <PresenceDot level={presence} size="sm" />
-                  </span>
+                  <PersonAvatar
+                    avatarSrc={person.avatarUrl ?? undefined}
+                    userName={name}
+                    size="md"
+                    shape="circle"
+                    personId={person.id}
+                    presence={presence}
+                  />
                   <span className="min-w-0">
                     <span className="block truncate text-2 hover:underline">
                       {name}
@@ -1167,6 +1166,7 @@ export function MemberHomeSendTokensWidget({
                               userName={item.name}
                               size="md"
                               shape="circle"
+                              personId={person.id}
                             />
                           ) : (
                             <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2 text-1 text-foreground">

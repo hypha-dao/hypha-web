@@ -3319,6 +3319,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           activeSpaceName={activeSpaceName}
           userAvatarUrl={userAvatarUrl}
           userDisplayName={userDisplayName}
+          userPersonId={me?.id}
           assistantAvatarUrl={assistantAvatarUrl}
           isStreaming={isStreaming}
           onboardingContext={onboardingContext}

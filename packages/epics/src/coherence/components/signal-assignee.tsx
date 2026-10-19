@@ -136,6 +136,7 @@ function SignalAssigneeAvatar({
         shape="circle"
         avatarSrc={avatarUrl}
         userName={label}
+        personId={personId}
         className={cn(
           'shrink-0 ring-1 ring-background',
           variant === 'full' ? 'h-5 w-5' : 'h-4 w-4',
@@ -174,6 +175,7 @@ function SignalAssigneeSingle({
           avatarSrc={avatarUrl}
           userName={label}
           className="shrink-0"
+          personId={personId}
         />
         <span className="truncate">{label}</span>
       </span>
@@ -194,6 +196,7 @@ function SignalAssigneeSingle({
         avatarSrc={avatarUrl}
         userName={label}
         className="h-4 w-4 shrink-0"
+        personId={personId}
       />
       <span className="truncate">{label}</span>
     </span>

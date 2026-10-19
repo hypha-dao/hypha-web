@@ -53,7 +53,6 @@ import {
   type PresenceLevel,
 } from './member-presence';
 import { PersonAvatar } from './person-avatar';
-import { PresenceDot } from './presence-dot';
 import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
@@ -662,6 +661,7 @@ export function MyConnections() {
                   shape="circle"
                   avatarSrc={card.avatarUrl}
                   userName={card.name}
+                  personId={card.person.id}
                 />
                 <span className="w-full truncate text-2 text-foreground">
                   {card.name}
@@ -748,6 +748,7 @@ export function MyConnections() {
                     shape="circle"
                     avatarSrc={row.avatarUrl}
                     userName={row.name}
+                    personId={row.person.id}
                   />
                   <span
                     className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
@@ -914,15 +915,14 @@ function MemberList({
                     ) : null}
                   </span>
                 ) : null}
-                <span className="relative inline-flex shrink-0">
-                  <PersonAvatar
-                    size="chat"
-                    shape="circle"
-                    avatarSrc={row.avatarUrl}
-                    userName={row.name}
-                  />
-                  <PresenceDot level={presence} />
-                </span>
+                <PersonAvatar
+                  size="chat"
+                  shape="circle"
+                  avatarSrc={row.avatarUrl}
+                  userName={row.name}
+                  personId={row.person.id}
+                  presence={presence}
+                />
                 <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
                     <span

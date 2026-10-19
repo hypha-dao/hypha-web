@@ -7,6 +7,7 @@ import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 
 export interface Creator {
+  id?: number;
   name?: string;
   surname?: string;
   avatarUrl?: string;
@@ -39,6 +40,7 @@ export const PersonLabel = ({
           size="sm"
           avatarSrc={creator?.avatarUrl}
           userName={`${creator?.name} ${creator?.surname}`}
+          personId={creator?.type === 'space' ? undefined : creator?.id}
         />
       ) : null}
 
