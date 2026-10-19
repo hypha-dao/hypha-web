@@ -71,6 +71,7 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
   named: NamedRoomSnapshot[];
 } {
   const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+  const selfId = client.getUserId();
   const conversations: ConversationSnapshot[] = [];
   const named: NamedRoomSnapshot[] = [];
 
@@ -92,8 +93,20 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
       }
       messageSenderIds.push(sender);
     }
+    const others = joinedUserIds.filter((id) => id !== selfId);
+    const peer = others.length === 1 ? room.getMember(others[0]!) : null;
+    const peerLabel = (peer?.name || peer?.rawDisplayName || '').trim();
+    const roomLabel = (room.name || '').trim();
+    const namedUnlikePeer =
+      others.length === 1 &&
+      roomLabel.length > 0 &&
+      peerLabel.length > 0 &&
+      roomLabel.localeCompare(peerLabel, undefined, {
+        sensitivity: 'accent',
+      }) !== 0;
     const signalThread =
       isRememberedSignalThreadRoom(room.roomId) ||
+      namedUnlikePeer ||
       room
         .getLiveTimeline()
         .getEvents()

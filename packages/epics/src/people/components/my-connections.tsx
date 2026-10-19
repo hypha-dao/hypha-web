@@ -175,15 +175,32 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
         ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
         : room.getMxcAvatarUrl();
     const timeline = room.getLiveTimeline().getEvents();
+    const signalMarkerInTimeline = timeline.some(
+      (event) =>
+        event.getType() === EventType.RoomMessage &&
+        eventContentIsSignalThread(
+          event.getContent() as Record<string, unknown> | null,
+        ),
+    );
+    /**
+     * 1:1 signal rooms look like DMs (`kind: person`) when only the creator
+     * and one teammate are joined. Markers can scroll out of the live
+     * timeline, so also treat a room whose Matrix title is not the peer’s
+     * display name as a signal thread (real PMs use the peer name or none).
+     */
+    const peerLabel = (other?.name || other?.rawDisplayName || '').trim();
+    const roomLabel = (room.name || '').trim();
+    const namedUnlikePeer =
+      kind === 'person' &&
+      roomLabel.length > 0 &&
+      peerLabel.length > 0 &&
+      roomLabel.localeCompare(peerLabel, undefined, {
+        sensitivity: 'accent',
+      }) !== 0;
     const signalThread =
       isRememberedSignalThreadRoom(room.roomId) ||
-      timeline.some(
-        (event) =>
-          event.getType() === EventType.RoomMessage &&
-          eventContentIsSignalThread(
-            event.getContent() as Record<string, unknown> | null,
-          ),
-      );
+      signalMarkerInTimeline ||
+      namedUnlikePeer;
     if (signalThread) {
       rememberSignalThreadRooms([room.roomId], { quiet: true });
       continue;
