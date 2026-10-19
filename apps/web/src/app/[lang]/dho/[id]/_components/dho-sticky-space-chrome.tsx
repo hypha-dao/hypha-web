@@ -1141,6 +1141,43 @@ export function DhoStickySpaceChrome({
     return () => observer.disconnect();
   }, [pathname, spaceSlug]);
 
+  // A height hold left over from the previous screen paints an empty band
+  // under treasury, rewards, and other short tabs, and that band is what
+  // forces the scroll. Once the real tab is in, drop the hold. If the
+  // content cannot keep the old offset, sit at the end of the real content.
+  React.useLayoutEffect(() => {
+    if (!spaceSlug) return;
+    let frames = 0;
+    let raf = 0;
+    const tick = () => {
+      if (isSpaceTabLoading()) {
+        frames = 0;
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      frames += 1;
+      if (frames < 2) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const held = getComputedStyle(document.documentElement)
+        .getPropertyValue('--hypha-space-scroll-hold')
+        .trim();
+      if (!held || held === '0px') return;
+      const naturalMax = getMainColumnNaturalMaxScroll();
+      const y = getMainColumnScrollY();
+      if (y > naturalMax + 2) {
+        clearMainColumnScrollFreeze();
+        releaseMainColumnScrollHeightHold();
+        scrollMainColumnTo(naturalMax, 'auto');
+        return;
+      }
+      releaseMainColumnScrollHeightHold();
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [pathname, spaceSlug]);
+
   // Recently Visited landed on this space. Ease straight to the banner.
   // The long first-entry hold stays for other arrivals.
   React.useLayoutEffect(() => {
