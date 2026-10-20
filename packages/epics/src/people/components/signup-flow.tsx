@@ -72,6 +72,9 @@ const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
 const primaryActionClassName =
   '!bg-foreground !text-background hover:!bg-foreground hover:!text-background';
 
+/** Same open surface as the orientation cards: border only, mycelium shows through. */
+const signupFieldClassName = 'bg-transparent';
+
 export function SignupFlow({
   email,
   walletAddress,
@@ -255,6 +258,7 @@ export function SignupFlow({
                         value={name}
                         autoComplete="given-name"
                         required
+                        className={signupFieldClassName}
                         onChange={(event) => setName(event.target.value)}
                       />
                     </Field>
@@ -263,6 +267,7 @@ export function SignupFlow({
                         value={surname}
                         autoComplete="family-name"
                         required
+                        className={signupFieldClassName}
                         onChange={(event) => setSurname(event.target.value)}
                       />
                     </Field>
@@ -275,6 +280,7 @@ export function SignupFlow({
                         maxLength={12}
                         autoComplete="username"
                         required
+                        className={signupFieldClassName}
                         onChange={(event) => setNickname(event.target.value)}
                       />
                     </Field>
@@ -294,6 +300,7 @@ export function SignupFlow({
                     maxLength={300}
                     rows={3}
                     placeholder={t('description.passionPlaceholder')}
+                    className={signupFieldClassName}
                     onChange={(event) => setDescription(event.target.value)}
                   />
                 </Field>
@@ -302,6 +309,7 @@ export function SignupFlow({
                     value={location}
                     maxLength={100}
                     placeholder={t('description.locationPlaceholder')}
+                    className={signupFieldClassName}
                     onChange={(event) => setLocation(event.target.value)}
                   />
                 </Field>
