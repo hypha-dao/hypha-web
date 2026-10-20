@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   STALE_CONNECTION_MS,
+  facesWithProfiles,
   groupRowsForConnections,
   memberRowsForConnections,
   suggestConnections,
@@ -344,6 +345,41 @@ describe('suggestConnections', () => {
     expect(picked.map((card) => [card.name, card.kind])).toEqual([
       ['Near', 'reconnect'],
       ['Far', 'reconnect'],
+    ]);
+  });
+});
+
+describe('facesWithProfiles', () => {
+  it('uses the Hypha photo when Matrix only has an id', () => {
+    const faces = facesWithProfiles(
+      [
+        { name: '@gerardo:matrix', userId: '@Gerardo:matrix' },
+        {
+          name: '@vlad:matrix',
+          userId: '@vlad:matrix',
+          avatarUrl: 'https://matrix/v.png',
+        },
+      ],
+      new Map([
+        [
+          '@gerardo:matrix',
+          { name: 'Gerardo Roza', avatarUrl: 'https://hypha/g.png' },
+        ],
+        ['@vlad:matrix', { name: 'Vlad Hramtsov' }],
+      ]),
+    );
+
+    expect(faces).toEqual([
+      {
+        name: 'Gerardo Roza',
+        userId: '@Gerardo:matrix',
+        avatarUrl: 'https://hypha/g.png',
+      },
+      {
+        name: 'Vlad Hramtsov',
+        userId: '@vlad:matrix',
+        avatarUrl: 'https://matrix/v.png',
+      },
     ]);
   });
 });

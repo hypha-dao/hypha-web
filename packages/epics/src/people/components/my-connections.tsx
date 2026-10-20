@@ -39,6 +39,7 @@ import {
   isHyphaBot,
   isRememberedSignalThreadRoom,
   looksLikeHyphaBot,
+  facesWithProfiles,
   groupRowsForConnections,
   isRememberedGroupChatRoom,
   memberRowsForConnections,
@@ -200,7 +201,12 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
             name:
               (member.name || member.rawDisplayName || '').trim() ||
               member.userId,
-            avatarUrl: avatarHttp(client, member.getMxcAvatarUrl()),
+            userId: member.userId,
+            avatarUrl: avatarHttp(
+              client,
+              member.getMxcAvatarUrl() ||
+                client.getUser(member.userId)?.avatarUrl,
+            ),
           }))
         : undefined;
     const timeline = room.getLiveTimeline().getEvents();
@@ -502,6 +508,16 @@ export function MyConnections({
   );
 
   const people = useMemo(() => {
+    const profiles = new Map<string, { name: string; avatarUrl?: string }>();
+    for (const row of members) {
+      const mxid = personIdToMatrixUserId[row.person.id];
+      if (!mxid) continue;
+      const avatar = row.avatarUrl || row.person.avatarUrl || undefined;
+      profiles.set(mxid.toLowerCase(), {
+        name: row.name,
+        avatarUrl: avatar || undefined,
+      });
+    }
     const liveGroupIds = new Set(
       rows.filter((row) => row.kind === 'group').map((row) => row.roomId),
     );
@@ -511,15 +527,21 @@ export function MyConnections({
         const pending = pendingGroups.find(
           (group) => group.roomId === row.roomId,
         );
-        if (!pending) return row;
+        const faces =
+          row.faces && row.faces.length >= 2 ? row.faces : pending?.faces;
         return {
           ...row,
-          name: row.name.trim() || pending.name,
-          faces: row.faces && row.faces.length >= 2 ? row.faces : pending.faces,
-          lastTs: row.lastTs ?? pending.lastTs,
+          name: row.name.trim() || pending?.name || row.name,
+          faces: facesWithProfiles(faces, profiles),
+          lastTs: row.lastTs ?? pending?.lastTs ?? row.lastTs,
         };
       }),
-      ...pendingGroups.filter((group) => !liveGroupIds.has(group.roomId)),
+      ...pendingGroups
+        .filter((group) => !liveGroupIds.has(group.roomId))
+        .map((group) => ({
+          ...group,
+          faces: facesWithProfiles(group.faces, profiles),
+        })),
     ];
     const groups = picking
       ? []
@@ -535,7 +557,16 @@ export function MyConnections({
         })
       : source;
     return sortByRecencyThenPresence(filtered, presenceById);
-  }, [members, needle, pendingGroups, picking, presenceById, rows, t]);
+  }, [
+    members,
+    needle,
+    pendingGroups,
+    personIdToMatrixUserId,
+    picking,
+    presenceById,
+    rows,
+    t,
+  ]);
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
 
   async function loadMorePeople() {
@@ -917,7 +948,8 @@ function GroupFaces({ faces }: { faces: GroupFace[] }) {
             />
           ) : (
             <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
-              {face.name.trim().charAt(0).toUpperCase() || '?'}
+              {face.name.replace(/^@/, '').trim().charAt(0).toUpperCase() ||
+                '?'}
             </span>
           )}
         </span>

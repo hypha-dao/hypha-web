@@ -12,6 +12,8 @@ export type ConnectionListPerson = {
 export type GroupFace = {
   name: string;
   avatarUrl?: string;
+  /** Matrix user id, so a Hypha profile photo can replace an empty Matrix avatar. */
+  userId?: string;
 };
 
 export type ConversationRow = {
@@ -320,6 +322,26 @@ function groupPersonId(roomId: string) {
   }
   const id = -Math.abs(hash);
   return id === 0 ? -1 : id;
+}
+
+/** Prefer the Hypha profile photo and name when Matrix only has an id. */
+export function facesWithProfiles(
+  faces: readonly GroupFace[] | undefined,
+  profiles: ReadonlyMap<string, { name: string; avatarUrl?: string }>,
+): GroupFace[] | undefined {
+  if (!faces || faces.length === 0) return faces ? [...faces] : undefined;
+  return faces.map((face) => {
+    const profile = face.userId
+      ? profiles.get(face.userId.toLowerCase())
+      : undefined;
+    if (!profile) return face;
+    const name = profile.name.trim();
+    return {
+      ...face,
+      name: name || face.name,
+      avatarUrl: profile.avatarUrl || face.avatarUrl,
+    };
+  });
 }
 
 function twoGroupFaces(room: ConversationRow): GroupFace[] {
