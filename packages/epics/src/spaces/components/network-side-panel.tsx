@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
-import { ArrowUpRight, ChevronDown, Users, Wallet, X } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, Users, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { RxCross1 } from 'react-icons/rx';
 import { Button, Skeleton } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type { Locale } from '@hypha-platform/i18n';
@@ -229,9 +230,9 @@ export function NetworkSidePanel({
               type="button"
               onClick={onClose}
               aria-label={tCommon('close')}
-              className="absolute right-3 top-3 z-10 grid size-8 place-items-center border border-border bg-background-2 text-foreground hover:bg-background-3"
+              className="craft-icon-box absolute right-3 top-3 z-10 border-white/45 bg-background/70 text-foreground hover:border-white/70 hover:bg-background/90 hover:text-foreground"
             >
-              <X className="size-4" strokeWidth={1.5} aria-hidden />
+              <RxCross1 aria-hidden />
             </button>
           </div>
           <div className="px-4 pt-4">
