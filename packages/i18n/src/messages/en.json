@@ -4542,5 +4542,33 @@
     "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
     "errorGenericTitle": "Something went wrong",
     "errorGenericDescription": "We could not confirm this email. Please try again later."
+  },
+  "ApproveAction": {
+    "loadingTitle": "Loading the request…",
+    "signInTitle": "Sign in to review this request",
+    "signInDescription": "An application asked you to approve an action. Sign in with your Hypha account to see it.",
+    "signInButton": "Sign in",
+    "notFoundTitle": "Request not found",
+    "notFoundDescription": "This request does not exist or belongs to another account. If you have several accounts, sign out and sign in with the one you used in the application.",
+    "signOutButton": "Sign out",
+    "reviewTitle": "Review this request",
+    "reviewDescription": "Nothing happens until you approve. You sign with your own Hypha wallet.",
+    "approveButton": "Approve and sign",
+    "rejectButton": "Reject",
+    "signingTitle": "Signing with your wallet…",
+    "signingDescription": "Keep this window open until it finishes.",
+    "submittedTitle": "Done",
+    "submittedDescription": "Your vote was recorded. You can close this window and return to the application.",
+    "rejectedTitle": "Request rejected",
+    "rejectedDescription": "Nothing was signed. You can close this window.",
+    "expiredTitle": "This request expired",
+    "expiredDescription": "Go back to the application and start again.",
+    "usedTitle": "This request was already answered",
+    "usedDescription": "Each request can be answered once. Go back to the application to see the result.",
+    "failedTitle": "The vote could not be submitted",
+    "failedDescription": "Nothing was recorded. Go back to the application and start again.",
+    "errorTitle": "Something went wrong",
+    "errorDescription": "We could not load this request. Please try again later.",
+    "closeButton": "Close window"
   }
 }
