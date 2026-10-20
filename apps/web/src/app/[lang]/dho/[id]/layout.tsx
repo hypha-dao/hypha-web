@@ -156,6 +156,11 @@ export default async function DhoLayout({
           className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5"
           style={{ minHeight: 'var(--hypha-space-scroll-hold, 0px)' }}
         >
+          {/* Overview portals the mycelium here so it covers the viewport, including under the banner. */}
+          <div
+            data-space-ground=""
+            className="pointer-events-none sticky top-0 z-0 h-0"
+          />
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
