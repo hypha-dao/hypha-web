@@ -1,15 +1,8 @@
 'use client';
 
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { ChevronsRight, LayoutGrid } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -33,8 +26,9 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 
 /** Compact spaces bar. Marks fill a 44px column with a small gap. */
 const RAIL_ICON = 32;
-/** Collapsed handle. Wide enough to hit, narrow enough to stay quiet. */
-const HANDLE_WIDTH = 28;
+/** Resting cue. Wide enough to notice, narrow enough to stay out of the way. */
+const CUE_ICON = 14;
+const CUE_WIDTH = 22;
 
 export function orderSpacesByRecentVisit<T extends { slug: string }>(
   spaces: readonly T[],
@@ -88,26 +82,30 @@ export function MemberHomeSpacesRail({
     () => orderSpacesByRecentVisit(spaces, recentSlugs),
     [recentSlugs, spaces],
   );
-  const canToggle = !embedded && (isLoading || orderedSpaces.length > 0);
+  const revealOnHover = !embedded && !isLoading && orderedSpaces.length > 0;
+  const slimColumn = !embedded && !revealOnHover;
 
   const rail = (
     <TooltipProvider delayDuration={200}>
       <nav
         aria-label={t('spacesRail')}
-        tabIndex={-1}
         className={cn(
-          'narrow-scrollbar flex h-full shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-border bg-background py-2 outline-none',
-          embedded ? 'w-full border-r-0 bg-transparent' : 'w-[44px]',
+          'narrow-scrollbar flex h-full shrink-0 flex-col items-center gap-1 overflow-y-auto py-2',
+          embedded
+            ? 'w-full bg-transparent'
+            : 'border-r border-border bg-background',
+          !embedded && !slimColumn && 'w-[44px]',
         )}
+        style={slimColumn ? { width: CUE_WIDTH } : undefined}
       >
         {isLoading ? (
           <>
-            {Array.from({ length: 5 }, (_, index) => (
+            {Array.from({ length: slimColumn ? 3 : 5 }, (_, index) => (
               <Skeleton
                 key={index}
                 loading
-                width={`${RAIL_ICON}px`}
-                height={`${RAIL_ICON}px`}
+                width={`${slimColumn ? CUE_ICON : RAIL_ICON}px`}
+                height={`${slimColumn ? CUE_ICON : RAIL_ICON}px`}
                 className="shrink-0 rounded-full bg-foreground/10"
               />
             ))}
@@ -122,7 +120,10 @@ export function MemberHomeSpacesRail({
                   'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
                   'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 )}
-                style={{ width: RAIL_ICON, height: RAIL_ICON }}
+                style={{
+                  width: slimColumn ? CUE_ICON : RAIL_ICON,
+                  height: slimColumn ? CUE_ICON : RAIL_ICON,
+                }}
               >
                 <LayoutGrid
                   className="h-3.5 w-3.5"
@@ -202,41 +203,54 @@ export function MemberHomeSpacesRail({
     </TooltipProvider>
   );
 
-  if (!canToggle) return rail;
+  if (!revealOnHover) return rail;
 
-  return <SpacesRailHandle label={t('spacesRail')}>{rail}</SpacesRailHandle>;
+  return (
+    <SpacesRailHoverCue
+      label={t('spacesRail')}
+      spaces={orderedSpaces}
+      logoVariant={logoVariant}
+    >
+      {rail}
+    </SpacesRailHoverCue>
+  );
 }
 
-function SpacesRailHandle({
+function SpacesRailHoverCue({
   label,
+  spaces,
+  logoVariant,
   children,
 }: {
   label: string;
+  spaces: HomeSpace[];
+  logoVariant: 'dark' | 'light';
   children: ReactNode;
 }) {
-  const railId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const returnFocusRef = useRef(false);
-  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const shown = hovered || pinned;
+  const cueSpaces = spaces.slice(0, spaces.length > 4 ? 3 : 4);
+  const extra = spaces.length - cueSpaces.length;
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (!open) {
-      if (!returnFocusRef.current) return;
-      returnFocusRef.current = false;
-      buttonRef.current?.focus();
-      return;
-    }
-
-    rootRef.current?.querySelector('nav')?.focus();
-
+    if (!shown) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) setPinned(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      returnFocusRef.current = true;
-      setOpen(false);
+      setPinned(false);
+      setHovered(false);
     };
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
@@ -244,42 +258,75 @@ function SpacesRailHandle({
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [open]);
+  }, [shown]);
 
-  if (!open) {
-    return (
-      <button
-        ref={buttonRef}
-        type="button"
-        aria-label={label}
-        aria-expanded={false}
-        aria-controls={railId}
-        title={label}
-        onClick={() => setOpen(true)}
-        className="flex h-full shrink-0 items-start justify-center border-r border-border bg-background pt-2 text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
-        style={{ width: HANDLE_WIDTH }}
-      >
-        <ChevronsRight
-          className="block size-4"
-          strokeWidth={1.25}
-          aria-hidden
-        />
-      </button>
-    );
-  }
+  const show = () => {
+    if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    setHovered(true);
+  };
+  const hideSoon = () => {
+    if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setHovered(false), 140);
+  };
 
   return (
     <div
       ref={rootRef}
-      id={railId}
-      className="h-full shrink-0"
-      onClick={(event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        if (target.closest('a')) setOpen(false);
+      className="relative z-20 h-full shrink-0"
+      style={{ width: CUE_WIDTH }}
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') show();
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === 'mouse') hideSoon();
       }}
     >
-      {children}
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={shown}
+        onClick={() => setPinned((open) => !open)}
+        className="flex h-full w-full flex-col items-center gap-1 border-r border-border bg-background py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        {cueSpaces.map((space) => {
+          const iconUrl = resolveSpaceDisplayLogoUrl(space, logoVariant);
+          return (
+            <span
+              key={space.id}
+              className="shrink-0 overflow-hidden rounded-full bg-neutral-3 ring-1 ring-border"
+              style={{ width: CUE_ICON, height: CUE_ICON }}
+            >
+              {iconUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={iconUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[8px] leading-none text-foreground">
+                  {space.title.trim().charAt(0).toUpperCase() || '?'}
+                </span>
+              )}
+            </span>
+          );
+        })}
+        {extra > 0 ? (
+          <span className="text-[8px] leading-none text-neutral-11">
+            +{extra}
+          </span>
+        ) : null}
+      </button>
+      <div
+        className={cn(
+          'absolute top-0 left-0 z-30 h-full transition-opacity duration-150',
+          shown
+            ? 'visible opacity-100'
+            : 'pointer-events-none invisible opacity-0',
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
