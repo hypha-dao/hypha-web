@@ -110,7 +110,7 @@ export function resolveAccountEntryPath({
 }
 
 function accountHomePath(lang?: string): string {
-  return lang ? `/${lang}/home` : '/home';
+  return lang ? `/${lang}/my-dashboard` : '/my-dashboard';
 }
 
 function accountSignupPath(lang?: string): string {

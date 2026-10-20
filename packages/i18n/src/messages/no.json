@@ -285,7 +285,7 @@
     "signInBody": "Logg inn for å se hvor du kan være til nytte.",
     "signIn": "Logg inn",
     "loading": "Samler hjemmet ditt…",
-    "metaTitle": "Hjem | Hypha",
+    "metaTitle": "Mitt dashbord | Hypha",
     "metaDescription": "Hvor du kan være til nytte: rommene dine, folk, forslag og lommebok.",
     "fallbackName": "du",
     "fallbackMember": "Medlem",
@@ -631,7 +631,7 @@
   },
   "Navigation": {
     "network": "Nettverk",
-    "myDashboard": "Hjem",
+    "myDashboard": "Mitt dashbord",
     "mySpaces": "Rom",
     "myConnections": "Forbindelser",
     "chat": "Meldinger",
@@ -5355,6 +5355,6 @@
     "deploy": "Sett inn kapital",
     "proposal": "Forslag",
     "agreement": "Avtale",
-    "backHome": "Tilbake til hjem"
+    "backHome": "Tilbake til mitt dashbord"
   }
 }

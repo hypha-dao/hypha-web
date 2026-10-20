@@ -106,7 +106,7 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
-  let navHomeLabel = 'Home';
+  let navHomeLabel = 'My dashboard';
   let navMessagesLabel = 'Messages';
   let navMyWalletLabel = 'Wallet';
   let navMySpacesLabel = 'Spaces';
@@ -292,11 +292,11 @@ export default async function RootLayout({
                                   <>
                                     <ConnectedButtonProfile
                                       newUserRedirectPath="/profile/signup"
-                                      baseRedirectPath={`/${locale}/home`}
+                                      baseRedirectPath={`/${locale}/my-dashboard`}
                                       navItems={[
                                         {
                                           label: navHomeLabel,
-                                          href: `/${locale}/home`,
+                                          href: `/${locale}/my-dashboard`,
                                         },
                                         {
                                           label: navMessagesLabel,
@@ -333,11 +333,11 @@ export default async function RootLayout({
                                 <div className="hidden xl:flex">
                                   <ConnectedButtonProfile
                                     newUserRedirectPath="/profile/signup"
-                                    baseRedirectPath={`/${locale}/home`}
+                                    baseRedirectPath={`/${locale}/my-dashboard`}
                                     navItems={[
                                       {
                                         label: navHomeLabel,
-                                        href: `/${locale}/home`,
+                                        href: `/${locale}/my-dashboard`,
                                       },
                                       {
                                         label: navMessagesLabel,

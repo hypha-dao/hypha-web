@@ -285,7 +285,7 @@
     "signInBody": "Inicia sesión para ver dónde puedes ser útil.",
     "signIn": "Iniciar sesión",
     "loading": "Reuniendo tu inicio…",
-    "metaTitle": "Inicio | Hypha",
+    "metaTitle": "Mi panel | Hypha",
     "metaDescription": "Dónde puedes ser útil: tus espacios, personas, propuestas y cartera.",
     "fallbackName": "tú",
     "fallbackMember": "Miembro",
@@ -1403,7 +1403,7 @@
   },
   "Navigation": {
     "network": "Red",
-    "myDashboard": "Inicio",
+    "myDashboard": "Mi panel",
     "mySpaces": "Espacios",
     "myConnections": "Conexiones",
     "chat": "Mensajes",
@@ -5364,6 +5364,6 @@
     "deploy": "Desplegar capital",
     "proposal": "Propuesta",
     "agreement": "Acuerdo",
-    "backHome": "Volver al inicio"
+    "backHome": "Volver a mi panel"
   }
 }

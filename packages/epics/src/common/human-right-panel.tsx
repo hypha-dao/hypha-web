@@ -1043,7 +1043,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
   const params = useParams<{ id?: string }>();
   const pathname = usePathname() ?? '';
-  const isMemberHome = /^\/[^/]+\/home(?:\/|$)/.test(pathname);
+  const isMemberHome = /^\/[^/]+\/(?:my-dashboard|home)(?:\/|$)/.test(pathname);
   const isConnectionsPage = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
     pathname,
   );

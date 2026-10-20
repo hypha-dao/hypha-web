@@ -71,7 +71,11 @@ function segmentActive(pathname: string, segment: string) {
 }
 
 function shouldShowMobileSpacesRail(pathname: string) {
-  if (segmentActive(pathname, 'home')) return false;
+  if (
+    segmentActive(pathname, 'my-dashboard') ||
+    segmentActive(pathname, 'home')
+  )
+    return false;
   return (
     segmentActive(pathname, 'connections') ||
     segmentActive(pathname, 'messages') ||
@@ -156,7 +160,11 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
-  const onHome = pathname === `/${lang}/home` || pathname === `/${lang}/home/`;
+  const onHome =
+    pathname === `/${lang}/my-dashboard` ||
+    pathname === `/${lang}/my-dashboard/` ||
+    pathname === `/${lang}/home` ||
+    pathname === `/${lang}/home/`;
   const { communities: energyCommunities } = useMemberEnergyCommunities(
     onHome ? person?.slug : null,
   );
@@ -209,7 +217,10 @@ export function MobileTabBar({
     disabled?: boolean;
   }> => {
     const homeRoute =
-      pathname === `/${lang}/home` || pathname === `/${lang}/home/`;
+      pathname === `/${lang}/my-dashboard` ||
+      pathname === `/${lang}/my-dashboard/` ||
+      pathname === `/${lang}/home` ||
+      pathname === `/${lang}/home/`;
     if (homeRoute) {
       const views: Array<{
         key: HomeView;
@@ -384,7 +395,7 @@ export function MobileTabBar({
     };
   }, [showAppMenu, showSectionStrip]);
 
-  const dashboardHref = `/${lang}/home`;
+  const dashboardHref = `/${lang}/my-dashboard`;
   const connectionsHref = `/${lang}/messages`;
   const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
@@ -393,7 +404,10 @@ export function MobileTabBar({
     ? `/${lang}/profile/${person.slug}`
     : `/${lang}/profile/signup`;
 
-  const dashboardActive = !createOpen && segmentActive(pathname, 'home');
+  const dashboardActive =
+    !createOpen &&
+    (segmentActive(pathname, 'my-dashboard') ||
+      segmentActive(pathname, 'home'));
   const connectionsActive =
     !createOpen &&
     (segmentActive(pathname, 'messages') ||

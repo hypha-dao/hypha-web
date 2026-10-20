@@ -102,7 +102,7 @@ function resolveNavItemIcon(href?: string) {
   if (!href) {
     return null;
   }
-  if (href.includes('/home')) {
+  if (href.includes('/my-dashboard') || href.includes('/home')) {
     return <House className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
   if (href.includes('/messages') || href.includes('/connections')) {

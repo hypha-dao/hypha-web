@@ -119,9 +119,9 @@ describe('resolveAccountEntryPath', () => {
     );
   });
 
-  it('opens home when a profile already exists', () => {
+  it('opens My dashboard when a profile already exists', () => {
     expect(resolveAccountEntryPath({ lang: 'en', hasProfile: true })).toBe(
-      '/en/home',
+      '/en/my-dashboard',
     );
   });
 });

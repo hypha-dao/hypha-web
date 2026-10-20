@@ -13,7 +13,7 @@ function isNetworkMapView(pathname: string, view: string | null): boolean {
 
 /** Member home fills the viewport. The site footer sits under that frame. */
 function isMemberHome(pathname: string): boolean {
-  return /^\/[^/]+\/home\/?$/.test(pathname);
+  return /^\/[^/]+\/(?:my-dashboard|home)\/?$/.test(pathname);
 }
 
 export function DeferredFooter(props: FooterProps) {

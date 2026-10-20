@@ -17,10 +17,10 @@ export function useIsSpaceContext(): boolean {
   return Boolean(params?.id ?? getDhoSpaceSlugFromPathname(pathname));
 }
 
-/** `/{lang}/home`. */
+/** `/{lang}/my-dashboard`, and the old `/{lang}/home` address. */
 export function isMemberHomePath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
-  return /^\/[^/]+\/home\/?$/.test(pathname);
+  return /^\/[^/]+\/(?:my-dashboard|home)\/?$/.test(pathname);
 }
 
 /** `/{lang}/my-spaces`. A space slug of "my-spaces" does not match. */

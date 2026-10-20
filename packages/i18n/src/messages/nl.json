@@ -285,7 +285,7 @@
     "signInBody": "Meld je aan om te zien waar je van nut kunt zijn.",
     "signIn": "Aanmelden",
     "loading": "Je startpagina wordt verzameld…",
-    "metaTitle": "Start | Hypha",
+    "metaTitle": "Mijn dashboard | Hypha",
     "metaDescription": "Waar je van nut kunt zijn: je ruimtes, mensen, voorstellen en wallet.",
     "fallbackName": "jij",
     "fallbackMember": "Lid",
@@ -632,7 +632,7 @@
   },
   "Navigation": {
     "network": "Netwerk",
-    "myDashboard": "Home",
+    "myDashboard": "Mijn dashboard",
     "mySpaces": "Ruimtes",
     "myConnections": "Connecties",
     "chat": "Berichten",
@@ -5356,6 +5356,6 @@
     "deploy": "Kapitaal inzetten",
     "proposal": "Voorstel",
     "agreement": "Overeenkomst",
-    "backHome": "Terug naar start"
+    "backHome": "Terug naar mijn dashboard"
   }
 }
