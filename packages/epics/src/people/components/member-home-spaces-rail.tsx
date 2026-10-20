@@ -8,9 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ChevronsLeft, ChevronsRight, LayoutGrid } from 'lucide-react';
+import { LayoutGrid, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -35,8 +34,8 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 /** Compact spaces bar. Marks fill a 44px column with a small gap. */
 const RAIL_ICON = 32;
 const RAIL_WIDTH = 44;
-/** Collapsed chevron. It hangs on the screen edge and takes no column. */
-const HANDLE_WIDTH = 28;
+/** Toggle stays this size so opening the list does not shift it. */
+const HANDLE_WIDTH = 36;
 
 export function orderSpacesByRecentVisit<T extends { slug: string }>(
   spaces: readonly T[],
@@ -203,14 +202,20 @@ export function MemberHomeSpacesRail({
     </TooltipProvider>
   );
 
+  if (embedded) {
+    return (
+      <div className="h-full w-full shrink-0 border-r-0 bg-transparent">
+        {rail}
+      </div>
+    );
+  }
+
+  // Same breakpoint as the bottom menu (`xl:hidden`). Never on the web layout.
   if (!canToggle) {
     return (
       <div
-        className={cn(
-          'h-full shrink-0 border-r border-border bg-background',
-          embedded && 'w-full border-r-0 bg-transparent',
-        )}
-        style={embedded ? undefined : { width: RAIL_WIDTH }}
+        className="h-full shrink-0 border-r border-border bg-background xl:hidden"
+        style={{ width: RAIL_WIDTH }}
       >
         {rail}
       </div>
@@ -232,10 +237,16 @@ function SpacesRailHandle({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef(false);
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const Icon = open ? ChevronsLeft : ChevronsRight;
+  const [canHover, setCanHover] = useState(false);
+  const Icon = open ? PanelLeftClose : PanelLeftOpen;
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const query = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const update = () => setCanHover(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -245,38 +256,47 @@ function SpacesRailHandle({
       return;
     }
 
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       returnFocusRef.current = true;
       setOpen(false);
     };
-    document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
-  if (!mounted) return null;
+  useEffect(() => {
+    if (!open || canHover) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [canHover, open]);
 
-  return createPortal(
+  return (
     <div
       ref={rootRef}
-      className={cn(
-        'fixed left-0 z-20 flex flex-col bg-background',
-        open && 'border-r border-border',
-      )}
-      style={{
-        top: 'var(--menu-top-height, 70px)',
-        width: open ? RAIL_WIDTH : HANDLE_WIDTH,
-        height: open
-          ? 'calc(100dvh - var(--menu-top-height, 70px) - var(--mobile-tab-offset, 0px))'
-          : 36,
+      onMouseEnter={() => {
+        if (canHover) setOpen(true);
       }}
+      onMouseLeave={() => {
+        if (!canHover) return;
+        if (rootRef.current?.contains(document.activeElement)) return;
+        setOpen(false);
+      }}
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Node && rootRef.current?.contains(next)) return;
+        setOpen(false);
+      }}
+      className={cn(
+        'flex shrink-0 flex-col bg-background xl:hidden',
+        open
+          ? 'h-full border-r border-border'
+          : 'self-start border-r border-border',
+      )}
+      style={{ width: RAIL_WIDTH }}
     >
       <button
         ref={buttonRef}
@@ -286,21 +306,24 @@ function SpacesRailHandle({
         aria-expanded={open}
         aria-controls={railId}
         title={label}
-        onClick={() => setOpen((current) => !current)}
+        onFocus={() => setOpen(true)}
+        onClick={() => {
+          if (canHover) return;
+          setOpen((current) => !current);
+        }}
         className={cn(
-          'flex w-full shrink-0 items-center justify-center text-foreground',
+          'flex w-full shrink-0 items-center justify-center border-b border-border text-foreground',
           'hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
-          open ? 'h-[36px]' : 'h-full border-b border-r border-border',
         )}
+        style={{ height: HANDLE_WIDTH }}
       >
         <Icon className="block size-4" strokeWidth={1.25} aria-hidden />
       </button>
       {open ? (
-        <div id={railId} className="min-h-0 flex-1 overflow-hidden">
+        <div id={railId} className="min-h-0 w-full flex-1 overflow-hidden">
           {children}
         </div>
       ) : null}
-    </div>,
-    document.body,
+    </div>
   );
 }
