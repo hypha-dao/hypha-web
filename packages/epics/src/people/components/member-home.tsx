@@ -305,6 +305,7 @@ export function MemberHome({
             lang={lang}
             spaces={home?.spaces ?? []}
             isLoading={home == null}
+            persistOnWide
           />
         )}
         <div

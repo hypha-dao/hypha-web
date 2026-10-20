@@ -66,6 +66,7 @@ export function MemberHomeSpacesRail({
   isLoading,
   activeSlug,
   embedded = false,
+  persistOnWide = false,
 }: {
   lang: Locale;
   spaces: HomeSpace[];
@@ -73,6 +74,11 @@ export function MemberHomeSpacesRail({
   activeSlug?: string | null;
   /** Fill the left menu column instead of sitting as its own rail. */
   embedded?: boolean;
+  /**
+   * Home only. Below `xl` the column still follows the bottom menu.
+   * On the wide layout, where that menu is gone, the column stays open.
+   */
+  persistOnWide?: boolean;
 }) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
@@ -208,11 +214,13 @@ export function MemberHomeSpacesRail({
     );
   }
 
-  // Same breakpoint as the bottom menu (`xl:hidden`). Never on the web layout.
+  // Same breakpoint as the bottom menu (`xl`). Other screens hide this
+  // column once that menu is gone. Home passes `persistOnWide` so the
+  // column stays on the wide layout too.
   if (!canToggle) {
     return (
       <div
-        className="h-full shrink-0 border-r border-border bg-background xl:hidden"
+        className={railShellClass(persistOnWide, true)}
         style={{ width: RAIL_WIDTH }}
       >
         {rail}
@@ -220,17 +228,33 @@ export function MemberHomeSpacesRail({
     );
   }
 
-  return <SpacesRailHandle>{rail}</SpacesRailHandle>;
+  return (
+    <SpacesRailHandle persistOnWide={persistOnWide}>{rail}</SpacesRailHandle>
+  );
 }
 
-function SpacesRailHandle({ children }: { children: ReactNode }) {
+function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
+  return cn(
+    'h-full shrink-0 flex-col overflow-hidden border-r border-border bg-background',
+    visibleOnNarrow ? 'flex' : 'hidden',
+    persistOnWide ? 'xl:flex' : 'xl:hidden',
+  );
+}
+
+function SpacesRailHandle({
+  children,
+  persistOnWide = false,
+}: {
+  children: ReactNode;
+  persistOnWide?: boolean;
+}) {
   const { open, register } = useSpacesRailControl();
   useLayoutEffect(() => register(), [register]);
-  if (!open) return null;
+  if (!open && !persistOnWide) return null;
   return (
     <div
       id={SPACES_RAIL_ID}
-      className="flex h-full shrink-0 flex-col overflow-hidden border-r border-border bg-background xl:hidden"
+      className={railShellClass(persistOnWide, open)}
       style={{ width: RAIL_WIDTH }}
     >
       {children}
