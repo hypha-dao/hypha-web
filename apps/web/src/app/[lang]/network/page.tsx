@@ -2,6 +2,7 @@ import { Locale } from '@hypha-platform/i18n';
 import {
   getNetworkDirectorySpaces,
   getNetworkGrowth,
+  resolveCreatorMapCoordinates,
   listNetworkSpaceRanks,
   readSpaceCapitals,
   parseCategoryGroupFilterParam,
@@ -98,10 +99,16 @@ async function NetworkSpaces(props: PageProps) {
   spaces = spacesResult;
   networkGrowth = growthResult;
 
-  // Pins use each space's own coordinates. Geocoding every missing creator
-  // through Nominatim held this response for seconds after the directory
-  // was already loaded.
-  const creatorMapPins = {};
+  // A space keeps its own coordinates. One with none uses its creator's
+  // location. Geocoding is capped so a slow lookup cannot hold the page.
+  const creatorMapPins = enableNetworkMap
+    ? await resolveCreatorMapCoordinates(spaces, { db }).catch(
+        (error: unknown) => {
+          console.error('Failed to resolve creator map pins:', error);
+          return {};
+        },
+      )
+    : {};
 
   const spaceCapitals = enableNetworkMap
     ? Object.fromEntries(

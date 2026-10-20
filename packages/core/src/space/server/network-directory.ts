@@ -35,10 +35,24 @@ function acceptedCountFrom(result: unknown): number | null {
   return Array.isArray(accepted) ? accepted.length : null;
 }
 
+/** Creator is the 9th getSpaceDetails field. A zero address is not a person. */
+function creatorAddressFrom(result: unknown): string | null {
+  if (!Array.isArray(result) || result.length < 9) return null;
+  const creator = result[8];
+  if (typeof creator !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(creator)) {
+    return null;
+  }
+  if (creator.toLowerCase() === '0x0000000000000000000000000000000000000000') {
+    return null;
+  }
+  return creator;
+}
+
 async function readChainChunk(
   web3SpaceIds: number[],
   membersByWeb3Id: Map<number, `0x${string}`[]>,
   agreementsByWeb3Id: Map<number, number>,
+  creatorsByWeb3Id: Map<number, string>,
 ) {
   const contracts = web3SpaceIds.flatMap((web3SpaceId) => [
     getSpaceDetails({ spaceId: BigInt(web3SpaceId) }),
@@ -55,6 +69,8 @@ async function readChainChunk(
     const proposals = results[index * 2 + 1];
     if (details?.status === 'success') {
       membersByWeb3Id.set(web3SpaceId, memberAddressesFrom(details.result));
+      const creator = creatorAddressFrom(details.result);
+      if (creator) creatorsByWeb3Id.set(web3SpaceId, creator);
     }
     if (proposals?.status === 'success') {
       const accepted = acceptedCountFrom(proposals.result);
@@ -74,6 +90,7 @@ async function readChainChunk(
 async function readChainCensus(web3SpaceIds: number[]) {
   const membersByWeb3Id = new Map<number, `0x${string}`[]>();
   const agreementsByWeb3Id = new Map<number, number>();
+  const creatorsByWeb3Id = new Map<number, string>();
   const chunks: number[][] = [];
   for (let index = 0; index < web3SpaceIds.length; index += CHAIN_CHUNK) {
     chunks.push(web3SpaceIds.slice(index, index + CHAIN_CHUNK));
@@ -84,7 +101,12 @@ async function readChainCensus(web3SpaceIds: number[]) {
     await Promise.all(
       wave.map(async (chunk) => {
         try {
-          await readChainChunk(chunk, membersByWeb3Id, agreementsByWeb3Id);
+          await readChainChunk(
+            chunk,
+            membersByWeb3Id,
+            agreementsByWeb3Id,
+            creatorsByWeb3Id,
+          );
         } catch (error) {
           console.error(
             '[getNetworkDirectorySpaces] Failed to load chain census chunk',
@@ -95,7 +117,7 @@ async function readChainCensus(web3SpaceIds: number[]) {
     );
   }
 
-  return { membersByWeb3Id, agreementsByWeb3Id };
+  return { membersByWeb3Id, agreementsByWeb3Id, creatorsByWeb3Id };
 }
 
 /**
@@ -121,8 +143,16 @@ export async function getNetworkDirectorySpaces(
 
   if (web3SpaceIds.length === 0) return spaces;
 
-  const { membersByWeb3Id, agreementsByWeb3Id } = await readChainCensus(
-    web3SpaceIds,
-  );
-  return attachNetworkCensusCounts(spaces, membersByWeb3Id, agreementsByWeb3Id);
+  const { membersByWeb3Id, agreementsByWeb3Id, creatorsByWeb3Id } =
+    await readChainCensus(web3SpaceIds);
+  return attachNetworkCensusCounts(
+    spaces,
+    membersByWeb3Id,
+    agreementsByWeb3Id,
+  ).map((space) => {
+    const web3SpaceId = space.web3SpaceId;
+    if (typeof web3SpaceId !== 'number') return space;
+    const creatorAddress = creatorsByWeb3Id.get(web3SpaceId);
+    return creatorAddress ? { ...space, creatorAddress } : space;
+  });
 }

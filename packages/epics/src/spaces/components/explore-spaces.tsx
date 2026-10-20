@@ -337,21 +337,24 @@ export function ExploreSpaces({
 
   const mapSpaces = React.useMemo(
     () =>
-      selectedSpaces.map((space) => {
+      selectedSpaces.flatMap((space) => {
         const pin = resolveSpaceMapPin({
           spaceId: space.id,
           latitude: space.latitude,
           longitude: space.longitude,
           creatorCoordinates: creatorMapPins?.[space.id] ?? null,
         });
-        if (pin.source === 'space') {
-          return space;
-        }
-        return {
-          ...space,
-          latitude: pin.latitude,
-          longitude: pin.longitude,
-        };
+        // No place of its own and no creator place: leave it off the map.
+        // The directory list still includes it.
+        if (pin.source === 'fallback') return [];
+        if (pin.source === 'space') return [space];
+        return [
+          {
+            ...space,
+            latitude: pin.latitude,
+            longitude: pin.longitude,
+          },
+        ];
       }),
     [creatorMapPins, selectedSpaces],
   );
