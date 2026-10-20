@@ -29,7 +29,7 @@ export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
       {groundHost
         ? createPortal(
             <div aria-hidden className={GROUND_FRAME_CLASS}>
-              <MemberHomeBanner />
+              <MemberHomeBanner className="member-home-banner--under-plate" />
             </div>,
             groundHost,
           )

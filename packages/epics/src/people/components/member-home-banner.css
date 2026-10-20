@@ -69,6 +69,36 @@
   );
 }
 
+/*
+ * Space overview. The plate covers the top of the frame, and the pale
+ * canopy was reading as a gap under it. Lift the field so the threads
+ * meet the plate, and keep the veil off that edge.
+ */
+.member-home-banner--under-plate .member-home-banner-image {
+  top: -14rem;
+  height: calc(100% + 14rem);
+}
+
+.member-home-banner--under-plate .member-home-banner-veil {
+  background: radial-gradient(
+    ellipse 84% 74% at 50% 62%,
+    oklch(from var(--hypha-paper) l c h / 0.58),
+    oklch(from var(--hypha-paper) l c h / 0.22) 60%,
+    oklch(from var(--hypha-paper) l c h / 0.08)
+  );
+}
+
+:is(.dark, .dark-theme, [data-theme='dark'])
+  .member-home-banner--under-plate
+  .member-home-banner-veil {
+  background: radial-gradient(
+    ellipse 84% 74% at 50% 62%,
+    oklch(from var(--hypha-ink) l c h / 0.55),
+    oklch(from var(--hypha-ink) l c h / 0.22) 60%,
+    oklch(from var(--hypha-ink) l c h / 0.08)
+  );
+}
+
 /* Side lists sit on paper, thin enough that the threads continue under them. */
 .member-home-pane {
   background: oklch(from var(--hypha-paper) l c h / 0.86);
