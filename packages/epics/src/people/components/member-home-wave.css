@@ -1,0 +1,38 @@
+/* A light band travels through each bar, staggered so the page ondulates. */
+.home-wave {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.home-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 55%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--foreground) 28%, transparent),
+    transparent
+  );
+  animation: home-wave-sweep 1.6s ease-in-out infinite;
+  animation-delay: var(--home-wave-delay, 0ms);
+}
+
+@keyframes home-wave-sweep {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-wave::after {
+    animation: none;
+  }
+}

@@ -21,7 +21,6 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -55,6 +54,7 @@ export { HOME_REFRESH_EVENT } from './member-home-resume';
 import { MemberHomeBanner } from './member-home-banner';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
+import { HomeWave } from './member-home-wave';
 import { PersonRoleBadge } from './person-badges';
 import { MemberHomeInviteBanners } from './member-home-invite-banner';
 import { MemberHomeClosest } from './member-home-closest';
@@ -581,6 +581,20 @@ export function MemberHome({
                 <MemberHomeEnergyPanel personSlug={home.person.slug} />
               </div>
             ) : null}
+            {home == null ? (
+              <section
+                className="border border-border bg-background p-4"
+                aria-hidden
+              >
+                <HomeWave className="h-5 w-40" />
+                <HomeWave className="mt-3 h-3 w-full max-w-sm" delayMs={60} />
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <HomeWave className="h-10" delayMs={120} />
+                  <HomeWave className="h-10" delayMs={180} />
+                  <HomeWave className="h-10" delayMs={240} />
+                </div>
+              </section>
+            ) : null}
             {home != null && orientation == null ? (
               <section className="border border-border bg-background p-4">
                 <h2
@@ -866,7 +880,7 @@ function ClassicBoard({
   );
 }
 
-/** Same pulse as the signals board: square, a tenth of the ink, staggered. */
+/** A sweep travels through the bar, a little later on each one down the page. */
 function HomePulse({
   className,
   delayMs = 0,
@@ -876,16 +890,7 @@ function HomePulse({
   delayMs?: number;
   style?: CSSProperties;
 }) {
-  return (
-    <div
-      className={cn('animate-pulse rounded-none bg-foreground/10', className)}
-      style={{
-        ...style,
-        ...(delayMs ? { animationDelay: `${delayMs}ms` } : {}),
-      }}
-      aria-hidden
-    />
-  );
+  return <HomeWave className={className} delayMs={delayMs} style={style} />;
 }
 
 function CardSkeleton({
@@ -924,10 +929,10 @@ function CardSkeleton({
   );
 }
 
-/** Useful card, chip row, and composer stay on screen while intelligence loads. */
+/** The center column, drawn as the pieces that will land there. */
 function ChatSkeleton() {
   const t = useTranslations('MemberHome');
-  const chipWidths = [88, 72, 96, 80, 104];
+  const chipWidths = [148, 132, 156, 168, 112];
   return (
     <div className="flex min-h-0 flex-1 flex-col" aria-busy="true">
       <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -937,8 +942,9 @@ function ChatSkeleton() {
             'grid w-full gap-4 px-5 py-4 md:px-4',
           )}
         >
+          <ArrivalShape />
           <Tile title={t('useful')} busy>
-            <CardSkeleton lines={4} />
+            <CardSkeleton lines={3} />
           </Tile>
         </div>
       </div>
@@ -947,16 +953,43 @@ function ChatSkeleton() {
           {chipWidths.map((width, index) => (
             <HomePulse
               key={width}
-              className="h-8 shrink-0 border border-foreground/15 bg-transparent"
-              delayMs={index * 60}
+              className="h-8 shrink-0"
+              delayMs={index * 70}
               style={{ width }}
             />
           ))}
         </div>
-        <div className="mx-5 flex h-11 items-center gap-2 border border-border px-3 md:mx-4">
-          <HomePulse className="h-3 min-w-0 flex-1" delayMs={80} />
-          <HomePulse className="h-8 w-8 shrink-0" delayMs={120} />
+        <div className="mx-5 flex h-[4.5rem] items-end gap-2 border border-border px-3 py-3 md:mx-4">
+          <HomePulse className="h-8 w-8 shrink-0" />
+          <HomePulse className="h-8 w-8 shrink-0" delayMs={40} />
+          <HomePulse className="h-8 w-8 shrink-0" delayMs={80} />
+          <HomePulse className="mb-1 h-3 min-w-0 flex-1" delayMs={120} />
           <HomePulse className="h-8 w-8 shrink-0" delayMs={160} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Paragraph, then a card, the way the first home answer arrives. */
+function ArrivalShape() {
+  return (
+    <div className="flex gap-3" aria-hidden>
+      <HomePulse className="mt-0.5 h-8 w-8 shrink-0" />
+      <div className="grid min-w-0 flex-1 gap-4">
+        <div className="grid gap-2">
+          <HomePulse className="h-3 w-11/12" delayMs={40} />
+          <HomePulse className="h-3 w-4/5" delayMs={90} />
+          <HomePulse className="h-3 w-2/3" delayMs={140} />
+        </div>
+        <div className="border border-border bg-background p-3">
+          <HomePulse className="w-full" delayMs={80} style={{ height: 96 }} />
+          <HomePulse className="mt-3 h-4 w-1/2" delayMs={150} />
+          <HomePulse className="mt-2 h-3 w-2/5" delayMs={200} />
+          <div className="mt-4 flex gap-2">
+            <HomePulse className="h-10 w-28" delayMs={240} />
+            <HomePulse className="h-10 w-24" delayMs={290} />
+          </div>
         </div>
       </div>
     </div>
@@ -981,14 +1014,11 @@ function Stat({
         className="mt-1 text-2 leading-none tabular-nums"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
-        <Skeleton
-          loading={isLoading}
-          width="2.25rem"
-          height="18px"
-          className="rounded-none bg-foreground/10"
-        >
-          {value.toLocaleString()}
-        </Skeleton>
+        {isLoading ? (
+          <HomePulse className="h-[18px] w-9" />
+        ) : (
+          value.toLocaleString()
+        )}
       </dd>
     </div>
   );

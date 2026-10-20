@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { MessageSquare, Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { Button, Skeleton } from '@hypha-platform/ui';
+import { Button } from '@hypha-platform/ui';
 import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 import { useDisplayCurrency, useUserAssets } from '../../treasury/hooks';
 import type { AssetItem } from '../../treasury/hooks/use-user-assets';
 import { PersonAvatar } from './person-avatar';
+import { HomeWave } from './member-home-wave';
 import { isPersonRole, PersonRoleBadge } from './person-badges';
 
 type HomeConnection = MemberIntelligence['connections'][number];
@@ -45,12 +46,7 @@ function Widget({
       </h2>
       <div className="mt-3">{children}</div>
       {busy && action ? (
-        <Skeleton
-          loading
-          height="40px"
-          width="100%"
-          className="mt-4 rounded-none bg-foreground/10"
-        />
+        <HomeWave className="mt-4 h-10 w-full" delayMs={80} />
       ) : (
         action
       )}
@@ -159,32 +155,18 @@ export function MemberHomeWalletWidget({
     >
       {isHomeLoading ? (
         <div aria-hidden>
-          <Skeleton
-            loading
-            height="28px"
-            width="9rem"
-            className="rounded-none bg-foreground/10"
-          />
+          <HomeWave style={{ height: 28, width: '9rem' }} />
           <ul className="mt-4 flex flex-col gap-2">
             {Array.from({ length: 3 }, (_, index) => (
               <li key={index} className="flex items-center gap-2">
-                <Skeleton
-                  loading
-                  height="20px"
-                  width="20px"
-                  className="shrink-0 rounded-full bg-foreground/10"
+                <HomeWave
+                  className="h-5 w-5 shrink-0 rounded-full"
+                  delayMs={index * 70}
                 />
-                <Skeleton
-                  loading
-                  height="12px"
-                  width="4rem"
-                  className="rounded-none bg-foreground/10"
-                />
-                <Skeleton
-                  loading
-                  height="12px"
-                  width="3rem"
-                  className="ml-auto rounded-none bg-foreground/10"
+                <HomeWave className="h-3 w-16" delayMs={index * 70 + 40} />
+                <HomeWave
+                  className="ml-auto h-3 w-12"
+                  delayMs={index * 70 + 80}
                 />
               </li>
             ))}
@@ -201,12 +183,7 @@ export function MemberHomeWalletWidget({
           <MainAssets assets={assets} lang={lang} />
         </div>
       ) : hasAddress ? (
-        <Skeleton
-          loading
-          height="36px"
-          width="9rem"
-          className="rounded-none bg-foreground/10"
-        />
+        <HomeWave delayMs={40} style={{ height: 36, width: '9rem' }} />
       ) : (
         <p className="text-1 text-neutral-11">{t('walletEmpty')}</p>
       )}
@@ -268,34 +245,20 @@ export function MemberHomeConnectionsWidget({
         <ul className="flex flex-col gap-3" aria-hidden>
           {Array.from({ length: 3 }, (_, index) => (
             <li key={index} className="flex items-center gap-2">
-              <Skeleton
-                loading
-                height="32px"
-                width="32px"
-                className="shrink-0 rounded-full bg-foreground/10"
+              <HomeWave
+                className="h-8 w-8 shrink-0 rounded-full"
+                delayMs={index * 80}
               />
               <div className="grid min-w-0 flex-1 gap-1.5">
-                <Skeleton
-                  loading
-                  height="12px"
-                  width="7rem"
-                  className="rounded-none bg-foreground/10"
-                />
-                <Skeleton
-                  loading
-                  height="10px"
-                  width="4.5rem"
-                  className="rounded-none bg-foreground/10"
-                />
+                <HomeWave className="h-3 w-28" delayMs={index * 80 + 40} />
+                <HomeWave className="h-3 w-16" delayMs={index * 80 + 80} />
               </div>
               <div className="flex shrink-0 gap-1">
                 {Array.from({ length: 3 }, (__, action) => (
-                  <Skeleton
+                  <HomeWave
                     key={action}
-                    loading
-                    height="32px"
-                    width="32px"
-                    className="rounded-none bg-foreground/10"
+                    className="h-8 w-8"
+                    delayMs={index * 80 + action * 40}
                   />
                 ))}
               </div>

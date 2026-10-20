@@ -12,7 +12,6 @@ import { LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
-  Skeleton,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -28,6 +27,7 @@ import {
 } from '../../common/recent-space-history';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
+import { HomeWave } from './member-home-wave';
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 
@@ -107,12 +107,11 @@ export function MemberHomeSpacesRail({
         {isLoading ? (
           <>
             {Array.from({ length: 5 }, (_, index) => (
-              <Skeleton
+              <HomeWave
                 key={index}
-                loading
-                width={`${RAIL_ICON}px`}
-                height={`${RAIL_ICON}px`}
-                className="shrink-0 rounded-full bg-foreground/10"
+                className="shrink-0 rounded-full"
+                delayMs={index * 70}
+                style={{ width: RAIL_ICON, height: RAIL_ICON }}
               />
             ))}
           </>

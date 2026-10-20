@@ -52,6 +52,7 @@ import {
 } from './member-home-resume';
 import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeMark } from './member-home-mark';
+import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
 import { presenceFillClass } from './presence-dot';
@@ -833,6 +834,16 @@ export function MemberHomeChat({
     }
     return true;
   }, [homeMessages, isStreaming, threadItems]);
+  const showArrivalMask = useMemo(() => {
+    if (error) return false;
+    const hasVisible = homeMessages.some((message) => {
+      if (message.metadata?.homeArrival) return false;
+      if (message.role === 'user') return true;
+      return Boolean(messageText(message));
+    });
+    if (hasVisible && !showSensing) return false;
+    return true;
+  }, [error, homeMessages, showSensing]);
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
@@ -864,7 +875,7 @@ export function MemberHomeChat({
       return;
     }
     node.scrollTop = top;
-  }, [focusedItem, homeMessages, isStreaming, showSensing, widgets]);
+  }, [focusedItem, homeMessages, isStreaming, showArrivalMask, widgets]);
 
   const chips = [
     { key: 'useful', ask: t('chipUseful') },
@@ -1069,12 +1080,39 @@ export function MemberHomeChat({
                 {renderWidget(widget)}
               </article>
             ))}
-          {showSensing ? (
-            <article className="home-send-settle flex gap-3" aria-live="polite">
+          {showArrivalMask ? (
+            <article
+              className="home-send-settle flex gap-3"
+              aria-live="polite"
+              aria-busy="true"
+            >
               <MemberHomeMark className="home-send-breathe mt-0.5 h-8 w-8" />
-              <p className="text-2 leading-relaxed text-neutral-11">
-                {t('thinking')}
-              </p>
+              <div className="grid min-w-0 flex-1 gap-4">
+                <p className="text-2 leading-relaxed text-neutral-11">
+                  {t('thinking')}
+                </p>
+                <div className="grid gap-2" aria-hidden>
+                  <HomeWave className="h-3 w-11/12" delayMs={40} />
+                  <HomeWave className="h-3 w-4/5" delayMs={90} />
+                  <HomeWave className="h-3 w-2/3" delayMs={140} />
+                </div>
+                <div
+                  className="border border-border bg-background p-3"
+                  aria-hidden
+                >
+                  <HomeWave
+                    className="w-full"
+                    delayMs={80}
+                    style={{ height: 96 }}
+                  />
+                  <HomeWave className="mt-3 h-4 w-1/2" delayMs={160} />
+                  <HomeWave className="mt-2 h-3 w-2/5" delayMs={210} />
+                  <div className="mt-4 flex gap-2">
+                    <HomeWave className="h-10 w-28" delayMs={250} />
+                    <HomeWave className="h-10 w-24" delayMs={300} />
+                  </div>
+                </div>
+              </div>
             </article>
           ) : null}
         </div>
