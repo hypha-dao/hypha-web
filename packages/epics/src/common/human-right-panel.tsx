@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ClientEvent,
+  MatrixEventEvent,
   RoomStateEvent,
   type MatrixClient,
   type MatrixEvent,
@@ -1077,6 +1078,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSpaceSlug,
     coherencePublic,
     coherencePeerPerson,
+    open,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
@@ -4181,6 +4183,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (!id || !ev.getSender()) continue;
         if (isRedactedRoomMessageEvent(ev)) continue;
         if (getMessageReplaceTargetEventId(ev) != null) continue;
+        const readUpTo = room.getEventReadUpTo(currentUserId, false);
+        if (readUpTo) {
+          const order = room.compareEventOrdering(readUpTo, id);
+          if (order !== null && order >= 0) return;
+        }
         try {
           await markRoomRead(targetRoomId, id);
           notifyConversationUnreadChanged();
@@ -4214,12 +4221,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [client, currentUserId, markRoomTimelineRead]);
 
   const handleReachedTimelineBottom = useCallback(() => {
-    if (!unreadChatState.firstUnreadMessageId) return;
     const now = Date.now();
     if (now - lastAutoMarkReadAtRef.current < 800) return;
     lastAutoMarkReadAtRef.current = now;
     void markChatTimelineRead();
-  }, [markChatTimelineRead, unreadChatState.firstUnreadMessageId]);
+  }, [markChatTimelineRead]);
+
+  // Viewing the open chat is reading it. The messages screen never sent a
+  // receipt, so the nav badge kept every message that had arrived.
+  useEffect(() => {
+    if (!open || !roomId || !client) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (timer != null) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void markRoomTimelineRead(roomId);
+      }, 400);
+    };
+    schedule();
+    const room = client.getRoom(roomId);
+    const onTimeline = () => schedule();
+    const onDecrypted = (event: MatrixEvent) => {
+      if (event.getRoomId() === roomId) schedule();
+    };
+    room?.on(RoomEvent.Timeline, onTimeline);
+    client.on(MatrixEventEvent.Decrypted, onDecrypted);
+    return () => {
+      if (timer != null) clearTimeout(timer);
+      room?.off(RoomEvent.Timeline, onTimeline);
+      client.removeListener(MatrixEventEvent.Decrypted, onDecrypted);
+    };
+  }, [client, markRoomTimelineRead, open, roomId]);
 
   const handleMarkAsReadFromBanner = useCallback(() => {
     void markChatTimelineRead();
