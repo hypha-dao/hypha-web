@@ -20,6 +20,8 @@ import { Suspense } from 'react';
 
 import { NetworkIndexFallback } from './_components/network-index-fallback';
 
+export const maxDuration = 60;
+
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{

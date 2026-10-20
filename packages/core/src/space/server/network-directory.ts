@@ -1,9 +1,10 @@
-import { sql } from 'drizzle-orm';
-import { documents, memberships } from '@hypha-platform/storage-postgres';
-
 import type { DbConfig } from '../../common/server/types';
+import { web3Client } from '../../common/server/web3-rpc/client';
+import { getSpaceProposals } from '../client/web3/dao-space-factory/get-space-proposals';
+import { getSpaceDetails } from '../shared/web3/get-space-details';
 import type { Space } from '../types';
 import { mapDbSpaceToSpace } from './map-db-space';
+import { attachNetworkCensusCounts } from './network-directory-census';
 import { findAllSpaces } from './queries';
 
 type FindAllSpacesProps = {
@@ -13,118 +14,115 @@ type FindAllSpacesProps = {
   omitArchived?: boolean;
 };
 
-function rowsOf(result: unknown): unknown[] {
-  if (Array.isArray(result)) return result;
-  if (result && typeof result === 'object' && 'rows' in result) {
-    const rows = (result as { rows?: unknown }).rows;
-    return Array.isArray(rows) ? rows : [];
-  }
-  return [];
+/** Spaces per multicall. Each space is two calls (members + accepted proposals). */
+const CHAIN_CHUNK = 80;
+const CHAIN_CONCURRENCY = 3;
+
+function memberAddressesFrom(result: unknown): `0x${string}`[] {
+  if (!Array.isArray(result) || result.length < 5) return [];
+  const members = result[4];
+  if (!Array.isArray(members)) return [];
+  return members.flatMap((value) => {
+    if (typeof value !== 'string') return [];
+    const address = value.toLowerCase();
+    return /^0x[0-9a-f]{40}$/.test(address) ? [address as `0x${string}`] : [];
+  });
 }
 
-function rowField(row: object, names: string[]): unknown {
-  const record = row as Record<string, unknown>;
-  for (const name of names) {
-    if (record[name] != null) return record[name];
-  }
-  const lowered = new Map(
-    Object.entries(record).map(([key, value]) => [key.toLowerCase(), value]),
-  );
-  for (const name of names) {
-    const value = lowered.get(name.toLowerCase());
-    if (value != null) return value;
-  }
-  return undefined;
+function acceptedCountFrom(result: unknown): number | null {
+  if (!Array.isArray(result) || result.length < 1) return null;
+  const accepted = result[0];
+  return Array.isArray(accepted) ? accepted.length : null;
 }
 
-function asIdList(value: unknown): number[] {
-  const entries = Array.isArray(value)
-    ? value
-    : typeof value === 'string'
-    ? value
-        .replace(/^\{|\}$/g, '')
-        .split(',')
-        .filter(Boolean)
-    : [];
-  return entries
-    .map((entry) => Number(entry))
-    .filter((id) => Number.isInteger(id));
-}
+async function readChainChunk(
+  web3SpaceIds: number[],
+  membersByWeb3Id: Map<number, `0x${string}`[]>,
+  agreementsByWeb3Id: Map<number, number>,
+) {
+  const contracts = web3SpaceIds.flatMap((web3SpaceId) => [
+    getSpaceDetails({ spaceId: BigInt(web3SpaceId) }),
+    getSpaceProposals({ spaceId: BigInt(web3SpaceId) }),
+  ]);
+  const results = await web3Client.multicall({
+    allowFailure: true,
+    blockTag: 'safe',
+    contracts,
+  });
 
-function asCount(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  web3SpaceIds.forEach((web3SpaceId, index) => {
+    const details = results[index * 2];
+    const proposals = results[index * 2 + 1];
+    if (details?.status === 'success') {
+      membersByWeb3Id.set(web3SpaceId, memberAddressesFrom(details.result));
+    }
+    if (proposals?.status === 'success') {
+      const accepted = acceptedCountFrom(proposals.result);
+      if (accepted != null) agreementsByWeb3Id.set(web3SpaceId, accepted);
+    }
+  });
 }
 
 /**
- * Spaces for the network page from Postgres only.
+ * Members and agreements for the network census.
  *
- * `getAllSpaces` also multicalls every space's on-chain member list. That
- * response is what made this page wait. Counts here come from memberships
- * and agreement documents.
+ * Postgres `memberships` is not written by this app, and `documents.state`
+ * is not the accepted-agreement list. Both queries returned empty maps, so
+ * the census showed 0 while spaces and tokens still loaded. The live figures
+ * are the on-chain member list and accepted proposal ids.
+ */
+async function readChainCensus(web3SpaceIds: number[]) {
+  const membersByWeb3Id = new Map<number, `0x${string}`[]>();
+  const agreementsByWeb3Id = new Map<number, number>();
+  const chunks: number[][] = [];
+  for (let index = 0; index < web3SpaceIds.length; index += CHAIN_CHUNK) {
+    chunks.push(web3SpaceIds.slice(index, index + CHAIN_CHUNK));
+  }
+
+  for (let index = 0; index < chunks.length; index += CHAIN_CONCURRENCY) {
+    const wave = chunks.slice(index, index + CHAIN_CONCURRENCY);
+    await Promise.all(
+      wave.map(async (chunk) => {
+        try {
+          await readChainChunk(chunk, membersByWeb3Id, agreementsByWeb3Id);
+        } catch (error) {
+          console.error(
+            '[getNetworkDirectorySpaces] Failed to load chain census chunk',
+            error,
+          );
+        }
+      }),
+    );
+  }
+
+  return { membersByWeb3Id, agreementsByWeb3Id };
+}
+
+/**
+ * Spaces for the network page from Postgres, with member and agreement
+ * counts from the chain. A failed chain read leaves those counts off. It
+ * must not drop the directory or mark every space archived.
  */
 export async function getNetworkDirectorySpaces(
   { db }: DbConfig,
   props: FindAllSpacesProps = {},
 ): Promise<Space[]> {
   const spaceRows = await findAllSpaces({ db }, props);
+  const spaces = spaceRows.map((space) => mapDbSpaceToSpace(space));
+  const web3SpaceIds = [
+    ...new Set(
+      spaces.flatMap((space) =>
+        typeof space.web3SpaceId === 'number' && space.web3SpaceId > 0
+          ? [space.web3SpaceId]
+          : [],
+      ),
+    ),
+  ];
 
-  // Counts are optional. A failure here must not wipe the directory — the
-  // page treats an empty list as "no spaces", which is what the census and
-  // map were showing.
-  let memberResult: unknown = [];
-  let agreementResult: unknown = [];
-  try {
-    [memberResult, agreementResult] = await Promise.all([
-      db.execute(sql`
-        select ${memberships.spaceId} as space_id,
-               array_agg(${memberships.personId}) as person_ids
-        from ${memberships}
-        group by ${memberships.spaceId}
-      `),
-      db.execute(sql`
-        select ${documents.spaceId} as space_id,
-               count(*)::int as count
-        from ${documents}
-        where ${documents.state} = 'agreement'
-        group by ${documents.spaceId}
-      `),
-    ]);
-  } catch (error) {
-    console.error('[getNetworkDirectorySpaces] Failed to load counts', error);
-  }
+  if (web3SpaceIds.length === 0) return spaces;
 
-  const peopleBySpace = new Map<number, number[]>();
-  for (const row of rowsOf(memberResult)) {
-    if (!row || typeof row !== 'object') continue;
-    const spaceId = Number(rowField(row, ['space_id', 'spaceId']));
-    if (!Number.isInteger(spaceId)) continue;
-    peopleBySpace.set(
-      spaceId,
-      asIdList(rowField(row, ['person_ids', 'personIds'])),
-    );
-  }
-
-  const agreementsBySpace = new Map<number, number>();
-  for (const row of rowsOf(agreementResult)) {
-    if (!row || typeof row !== 'object') continue;
-    const spaceId = Number(rowField(row, ['space_id', 'spaceId']));
-    if (!Number.isInteger(spaceId)) continue;
-    agreementsBySpace.set(spaceId, asCount(rowField(row, ['count'])));
-  }
-
-  return spaceRows.map((space) => {
-    const memberPersonIds = peopleBySpace.get(space.id);
-    // `memberCount: 0` means archived on the client (`isSpaceArchived`).
-    // A space with no membership rows is still a space — leave the count off
-    // so it stays on the map and in the census.
-    const hasMembers = memberPersonIds != null && memberPersonIds.length > 0;
-    return {
-      ...mapDbSpaceToSpace(space),
-      ...(hasMembers
-        ? { memberCount: memberPersonIds.length, memberPersonIds }
-        : {}),
-      documentCount: agreementsBySpace.get(space.id) ?? 0,
-    };
-  });
+  const { membersByWeb3Id, agreementsByWeb3Id } = await readChainCensus(
+    web3SpaceIds,
+  );
+  return attachNetworkCensusCounts(spaces, membersByWeb3Id, agreementsByWeb3Id);
 }
