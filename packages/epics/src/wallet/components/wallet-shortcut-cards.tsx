@@ -18,7 +18,7 @@ import { useMe } from '@hypha-platform/core/client';
 import { useFundWallet } from '../../treasury/hooks';
 import { prepareWalletActionNavigation } from './open-wallet-action';
 
-const shortcutIconClass = 'size-6 shrink-0';
+const shortcutIconClass = 'size-5 shrink-0';
 
 type Shortcut = {
   key: string;
@@ -30,7 +30,7 @@ type Shortcut = {
   disabled?: boolean;
 };
 
-function ShortcutCard({
+function ShortcutRow({
   label,
   icon,
   href,
@@ -39,13 +39,13 @@ function ShortcutCard({
   disabled,
 }: Omit<Shortcut, 'key'>) {
   const className = cn(
-    'flex aspect-square min-w-0 flex-col items-center justify-center gap-2 border border-border bg-background px-2 text-center text-foreground hover:bg-neutral-2',
+    'flex w-full min-w-0 items-center gap-3 border border-border bg-background px-4 py-3 text-left text-2 text-foreground hover:bg-neutral-2',
     disabled && 'pointer-events-none opacity-40',
   );
   const body = (
     <>
       {icon}
-      <span className="max-w-full text-[11px] leading-tight">{label}</span>
+      <span className="min-w-0 flex-1 leading-snug">{label}</span>
     </>
   );
 
@@ -87,8 +87,8 @@ function HyphaHIcon() {
     <Image
       src="/placeholder/hypha-tokens-icon.png"
       alt=""
-      width={32}
-      height={32}
+      width={20}
+      height={20}
       className={shortcutIconClass}
       aria-hidden
     />
@@ -114,6 +114,17 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
 
   const shortcuts: Shortcut[] = [
     {
+      key: 'receive',
+      label: t('shortcuts.receive'),
+      icon: (
+        <QrCode className={shortcutIconClass} strokeWidth={1.5} aria-hidden />
+      ),
+      onClick: () => {
+        receiveFunds();
+      },
+      disabled: !address,
+    },
+    {
       key: 'deposit',
       label: t('shortcuts.deposit'),
       icon: (
@@ -125,17 +136,6 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
       ),
       onClick: () => {
         depositFunds();
-      },
-      disabled: !address,
-    },
-    {
-      key: 'receive',
-      label: t('shortcuts.receive'),
-      icon: (
-        <QrCode className={shortcutIconClass} strokeWidth={1.5} aria-hidden />
-      ),
-      onClick: () => {
-        receiveFunds();
       },
       disabled: !address,
     },
@@ -202,10 +202,10 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   return (
     <nav
       aria-label={t('title')}
-      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"
+      className="flex w-full min-w-0 flex-col gap-1.5"
     >
       {shortcuts.map(({ key, ...shortcut }) => (
-        <ShortcutCard key={key} {...shortcut} />
+        <ShortcutRow key={key} {...shortcut} />
       ))}
     </nav>
   );
