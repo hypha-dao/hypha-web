@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Person, schemaSignupPerson } from '@hypha-platform/core/client';
-import { createPerson, getDb } from '@hypha-platform/core/server';
+import {
+  saveSignupProfile,
+  verifyPrivyAuthToken,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +25,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const verified = await verifyPrivyAuthToken(authToken);
+    if (!verified.ok) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const validatedData = validationResult.data;
 
-    // Use the PeopleService to create the profile
-    const newProfile = await createPerson(validatedData as Person, {
-      db: getDb({ authToken }),
-    });
+    // Profile pages read `db` (the service connection). Writing through the
+    // authenticated Neon role stored the row where that page could not see
+    // it, and the SQL default for `sub` never ran there either.
+    const newProfile = await saveSignupProfile(
+      { ...(validatedData as Person), sub: verified.userId },
+      { db },
+    );
 
     return NextResponse.json({ profile: newProfile }, { status: 201 });
   } catch (error) {

@@ -10,6 +10,7 @@ import type { DatabaseInstance } from '../../common/server/types';
 type PersonWrite = {
   slug: string;
   email: string | null;
+  sub?: string;
   name?: string;
   surname?: string;
   nickname?: string;
@@ -73,10 +74,11 @@ async function insertPersonWithoutOrientation(
 ) {
   const result = await db.execute(sql`
     insert into people (
-      slug, avatar_url, lead_image_url, description, email, location,
+      slug, sub, avatar_url, lead_image_url, description, email, location,
       name, surname, nickname, web3_address, preferred_currency, links
     ) values (
       ${person.slug},
+      ${person.sub ?? null},
       ${person.avatarUrl ?? null},
       ${person.leadImageUrl ?? null},
       ${person.description ?? null},
@@ -124,10 +126,12 @@ export const createPerson = async (
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
   const { primaryOrientation, networkOffer, ...profile } = person;
+  const accountId = person.sub?.trim();
   const insertData = {
     ...profile,
     email: person.email || null,
     slug,
+    ...(accountId ? { sub: accountId } : {}),
   };
   let created: Person;
   try {
@@ -142,6 +146,7 @@ export const createPerson = async (
     if (!isMissingPrimaryOrientationColumn(error)) throw error;
     created = await insertPersonWithoutOrientation(db, {
       slug,
+      sub: accountId,
       email: person.email || null,
       name: person.name,
       surname: person.surname,
@@ -177,6 +182,76 @@ export const createPerson = async (
     throw error;
   }
 };
+
+/**
+ * Write the welcome form onto the same database the profile page reads.
+ * `sub` comes from the verified Privy token, not the SQL default, so the
+ * row stays attached to this account. A second submit fills that row
+ * instead of leaving an empty profile behind a unique-email error.
+ */
+export async function saveSignupProfile(
+  person: Person & { sub: string },
+  config: CreatePersonConfig,
+) {
+  const { db } = config;
+  const sub = person.sub.trim();
+  if (!sub) throw new Error('Missing account id');
+
+  const [bySub] = await db
+    .select({ id: people.id, sub: people.sub })
+    .from(people)
+    .where(eq(people.sub, sub))
+    .limit(1);
+
+  let existingId = bySub?.id ?? null;
+  const email = person.email?.trim().toLowerCase();
+  if (existingId == null && email) {
+    const [byEmail] = await db
+      .select({ id: people.id, sub: people.sub })
+      .from(people)
+      .where(eq(sql`lower(${people.email})`, email))
+      .limit(1);
+    if (byEmail?.sub && byEmail.sub !== sub) {
+      throw new Error('people_email_unique');
+    }
+    existingId = byEmail?.id ?? null;
+  }
+
+  if (existingId == null) {
+    return createPerson({ ...person, sub }, config);
+  }
+
+  const [current] = await db
+    .select(personColumns())
+    .from(people)
+    .where(eq(people.id, existingId))
+    .limit(1);
+  if (!current) {
+    return createPerson({ ...person, sub }, config);
+  }
+
+  const kept = mapToDomainPerson(current);
+  return updatePerson(
+    {
+      ...kept,
+      name: person.name,
+      surname: person.surname,
+      nickname: person.nickname,
+      description: person.description || kept.description,
+      email: person.email || kept.email,
+      location: person.location || kept.location,
+      address: person.address || kept.address,
+      avatarUrl: person.avatarUrl || kept.avatarUrl,
+      leadImageUrl: person.leadImageUrl || kept.leadImageUrl,
+      links: person.links?.length ? person.links : kept.links,
+      primaryOrientation: person.primaryOrientation,
+      networkOffer: person.networkOffer,
+      sub,
+      id: existingId,
+    },
+    config,
+  );
+}
 
 export const updatePerson = async (
   person: Person,

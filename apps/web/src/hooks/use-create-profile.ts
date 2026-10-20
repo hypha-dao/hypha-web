@@ -46,15 +46,23 @@ export const useCreateProfile = (
           uploadedFiles = await upload(filesToUpload);
         }
 
+        const httpUrl = (value: unknown) =>
+          typeof value === 'string' && /^https?:\/\//.test(value) ? value : '';
         const payload = {
           ...data,
-          avatarUrl: uploadedFiles.avatarUrl || data.avatarUrl || '',
-          leadImageUrl: uploadedFiles.leadImageUrl || data.leadImageUrl || '',
+          // A File becomes `{}` in JSON and the whole profile is rejected.
+          avatarUrl:
+            httpUrl(uploadedFiles.avatarUrl) || httpUrl(data.avatarUrl),
+          leadImageUrl:
+            httpUrl(uploadedFiles.leadImageUrl) || httpUrl(data.leadImageUrl),
         };
 
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers,
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(payload),
         });
 
