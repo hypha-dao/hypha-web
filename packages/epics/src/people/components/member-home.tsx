@@ -825,7 +825,7 @@ function ClassicBoard({
         {queue.length === 0 ? (
           <p className="mt-4 text-1 text-neutral-11">{t('quiet')}</p>
         ) : (
-          <div className="mt-4 grid w-full grid-cols-1 items-start gap-4 @min-[48rem]:grid-cols-2">
+          <div className="mt-4 grid w-full grid-cols-1 items-start gap-4">
             {queue.map((item, index) => {
               const key = itemKey(item);
               const lead = index === 0;
@@ -835,7 +835,6 @@ function ClassicBoard({
                   data-home-focus={key}
                   className={cn(
                     'min-w-0',
-                    lead && '@min-[48rem]:col-span-2',
                     focusKey === key && 'ring-1 ring-foreground',
                   )}
                 >
