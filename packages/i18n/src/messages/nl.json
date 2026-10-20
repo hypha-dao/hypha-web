@@ -3677,6 +3677,8 @@
     "spaceRoomTitle": "Ruimte",
     "messagesLabel": "Berichten",
     "spaceRoomsLabel": "Ruimte, ecosysteem of openbaar",
+    "channelUnreadAria": "{channel}, {count, plural, one {# ongelezen bericht} other {# ongelezen berichten}}",
+    "channelUnreadCappedAria": "{channel}, 99 of meer ongelezen berichten",
     "networkWelcome": "Zeg hallo. Deze kamer is voor het hele netwerk.",
     "ecosystemRoomTitle": "Ecosysteem",
     "ecosystemWelcome": "Deze kamer is voor het hele ecosysteem. Noem AI Agents als je hulp wilt bij het werk.",

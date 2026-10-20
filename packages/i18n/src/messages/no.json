@@ -3676,6 +3676,8 @@
     "spaceRoomTitle": "Rom",
     "messagesLabel": "Meldinger",
     "spaceRoomsLabel": "Rom, økosystem eller offentlig",
+    "channelUnreadAria": "{channel}, {count, plural, one {# ulest melding} other {# uleste meldinger}}",
+    "channelUnreadCappedAria": "{channel}, 99 eller flere uleste meldinger",
     "networkWelcome": "Si hei. Dette rommet er for hele nettverket.",
     "ecosystemRoomTitle": "Økosystem",
     "ecosystemWelcome": "Dette rommet er for hele økosystemet. Nevn AI Agents når du vil ha hjelp med arbeidet.",

@@ -115,8 +115,13 @@ import {
   usePersonMemberSpaces,
 } from '../people/components/member-space-icons';
 import {
+  chatRoomAliasLocalpart,
   computeAggregateUnreadMentionCount,
   computeHumanChatUnreadState,
+  ECOSYSTEM_CHAT_ALIAS_PREFIX,
+  findJoinedRoomIdByAliasLocalpart,
+  PUBLIC_CHAT_ALIAS_PREFIX,
+  unreadNotificationBadgeForRoom,
 } from './human-chat-panel/matrix-chat-unread';
 import {
   isHyphaBotMatrixIdentity,
@@ -4084,6 +4089,49 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
   }, [client, roomId, currentUserId, unreadBump]);
 
+  /** Unread badges on Space / Ecosystem / Public — joined rooms only. */
+  const spaceChannelUnread = useMemo(() => {
+    const empty = { count: 0, capped: false };
+    if (!client || !currentUserId || mode !== 'space' || !spaceSlug?.trim()) {
+      return { space: empty, ecosystem: empty, public: empty };
+    }
+    const spaceRoomId = space?.chatRoomId?.trim() || null;
+    const ecosystemSlug =
+      (rootSpace?.slug?.trim() || spaceSlug).trim() || spaceSlug;
+    const ecosystemRoomId = findJoinedRoomIdByAliasLocalpart(
+      client,
+      chatRoomAliasLocalpart(ECOSYSTEM_CHAT_ALIAS_PREFIX, ecosystemSlug),
+    );
+    const publicRoomId = findJoinedRoomIdByAliasLocalpart(
+      client,
+      chatRoomAliasLocalpart(PUBLIC_CHAT_ALIAS_PREFIX, spaceSlug),
+    );
+    return {
+      space: unreadNotificationBadgeForRoom(
+        spaceRoomId ? client.getRoom(spaceRoomId) ?? undefined : undefined,
+        currentUserId,
+      ),
+      ecosystem: unreadNotificationBadgeForRoom(
+        ecosystemRoomId
+          ? client.getRoom(ecosystemRoomId) ?? undefined
+          : undefined,
+        currentUserId,
+      ),
+      public: unreadNotificationBadgeForRoom(
+        publicRoomId ? client.getRoom(publicRoomId) ?? undefined : undefined,
+        currentUserId,
+      ),
+    };
+  }, [
+    client,
+    currentUserId,
+    mode,
+    spaceSlug,
+    space?.chatRoomId,
+    rootSpace?.slug,
+    unreadBump,
+  ]);
+
   /** `unreadBump` intentionally omitted — it was re-running the all-rooms scan on every timeline event. */
   const aggregateMentionBadge = useMemo(() => {
     if (!client || !currentUserId) {
@@ -4919,9 +4967,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   value: spaceRoom,
                   ariaLabel: t('spaceRoomsLabel'),
                   options: [
-                    { value: 'space', label: t('spaceRoomTitle') },
-                    { value: 'ecosystem', label: t('ecosystemRoomTitle') },
-                    { value: 'public', label: t('publicRoomTitle') },
+                    {
+                      value: 'space',
+                      label: t('spaceRoomTitle'),
+                      unreadCount: spaceChannelUnread.space.count,
+                      unreadCountIsCapped: spaceChannelUnread.space.capped,
+                    },
+                    {
+                      value: 'ecosystem',
+                      label: t('ecosystemRoomTitle'),
+                      unreadCount: spaceChannelUnread.ecosystem.count,
+                      unreadCountIsCapped: spaceChannelUnread.ecosystem.capped,
+                    },
+                    {
+                      value: 'public',
+                      label: t('publicRoomTitle'),
+                      unreadCount: spaceChannelUnread.public.count,
+                      unreadCountIsCapped: spaceChannelUnread.public.capped,
+                    },
                   ],
                   onChange: (next) => {
                     if (

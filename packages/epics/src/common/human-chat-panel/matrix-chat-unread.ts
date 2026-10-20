@@ -333,3 +333,57 @@ export function gatherAggregatedMentionPreviews(
 
   return rows;
 }
+
+/** Same localpart rules as `matrixAliasLocalpart` (server) — kept client-side. */
+export function chatRoomAliasLocalpart(prefix: string, slug: string): string {
+  let body = '';
+  for (const char of slug.trim().toLowerCase()) {
+    const ok =
+      (char >= 'a' && char <= 'z') ||
+      (char >= '0' && char <= '9') ||
+      char === '.' ||
+      char === '_' ||
+      char === '=' ||
+      char === '-';
+    body += ok ? char : '-';
+  }
+  let start = 0;
+  let end = body.length;
+  while (start < end && body[start] === '-') start += 1;
+  while (end > start && body[end - 1] === '-') end -= 1;
+  const safe = body.slice(start, end).slice(0, 180);
+  return safe ? `${prefix}-${safe}` : prefix;
+}
+
+export const ECOSYSTEM_CHAT_ALIAS_PREFIX = 'hypha-ecosystem';
+export const PUBLIC_CHAT_ALIAS_PREFIX = 'hypha-public';
+
+/** Joined room whose canonical/alt alias matches `#localpart:…`. */
+export function findJoinedRoomIdByAliasLocalpart(
+  client: MatrixClient,
+  localpart: string,
+): string | null {
+  const needle = `#${localpart.toLowerCase()}:`;
+  for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
+    const aliases = [
+      room.getCanonicalAlias(),
+      ...(room.getAltAliases() ?? []),
+    ].filter((alias): alias is string => typeof alias === 'string');
+    if (aliases.some((alias) => alias.toLowerCase().startsWith(needle))) {
+      return room.roomId;
+    }
+  }
+  return null;
+}
+
+export function unreadNotificationBadgeForRoom(
+  room: Room | undefined,
+  userId: string | null,
+): { count: number; capped: boolean } {
+  const state = computeHumanChatUnreadState(room, userId);
+  return {
+    count: state.unreadNotificationCount,
+    capped: state.unreadCountIsCapped,
+  };
+}

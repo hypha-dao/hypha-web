@@ -9,7 +9,14 @@ import {
   PanelRightClose,
   Settings,
 } from 'lucide-react';
-import { useSidebar } from '@hypha-platform/ui';
+import {
+  CountBadge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  useSidebar,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -24,6 +31,14 @@ const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
   space: Hexagon,
   ecosystem: Network,
   public: Globe2,
+};
+
+type RoomChoiceOption = {
+  value: string;
+  label: string;
+  /** Unread message count for this channel. */
+  unreadCount?: number;
+  unreadCountIsCapped?: boolean;
 };
 
 type HumanChatPanelHeaderProps = {
@@ -44,7 +59,7 @@ type HumanChatPanelHeaderProps = {
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
   roomChoice?: {
     value: string;
-    options: { value: string; label: string }[];
+    options: RoomChoiceOption[];
     ariaLabel: string;
     onChange: (next: string) => void;
   };
@@ -123,38 +138,67 @@ export function HumanChatPanelHeader({
           </span>
         ) : null}
         {roomChoice ? (
-          <div
-            role="group"
-            aria-label={roomChoice.ariaLabel}
-            className="inline-flex shrink-0 border border-foreground"
-          >
-            {roomChoice.options.map((option) => {
-              const selected = roomChoice.value === option.value;
-              const Icon = ROOM_CHOICE_ICONS[option.value];
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  aria-pressed={selected}
-                  aria-label={option.label}
-                  title={option.label}
-                  onClick={() => roomChoice.onChange(option.value)}
-                  className={cn(
-                    'inline-flex h-[36px] w-[36px] items-center justify-center',
-                    selected
-                      ? 'bg-foreground text-background'
-                      : 'bg-background text-foreground',
-                  )}
-                >
-                  {Icon ? (
-                    <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-                  ) : (
-                    <span className="px-2 text-1">{option.label}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <TooltipProvider delayDuration={200}>
+            <div
+              role="group"
+              aria-label={roomChoice.ariaLabel}
+              className="inline-flex shrink-0 border border-foreground"
+            >
+              {roomChoice.options.map((option) => {
+                const selected = roomChoice.value === option.value;
+                const Icon = ROOM_CHOICE_ICONS[option.value];
+                const unread = option.unreadCount ?? 0;
+                const unreadLabel =
+                  unread > 0
+                    ? option.unreadCountIsCapped || unread >= 100
+                      ? t('channelUnreadCappedAria', { channel: option.label })
+                      : t('channelUnreadAria', {
+                          channel: option.label,
+                          count: unread,
+                        })
+                    : option.label;
+                return (
+                  <Tooltip key={option.value}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-pressed={selected}
+                        aria-label={unreadLabel}
+                        onClick={() => roomChoice.onChange(option.value)}
+                        className={cn(
+                          'relative inline-flex h-[36px] w-[36px] items-center justify-center',
+                          selected
+                            ? 'bg-foreground text-background'
+                            : 'bg-background text-foreground',
+                        )}
+                      >
+                        {Icon ? (
+                          <Icon
+                            className="h-4 w-4"
+                            strokeWidth={1.5}
+                            aria-hidden
+                          />
+                        ) : (
+                          <span className="px-2 text-1">{option.label}</span>
+                        )}
+                        {unread > 0 ? (
+                          <CountBadge
+                            count={unread}
+                            capped={option.unreadCountIsCapped}
+                            size="sm"
+                            className="absolute -right-1 -top-1 z-10"
+                          />
+                        ) : null}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {option.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
         ) : displayTitle ? (
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
             {displayTitle}

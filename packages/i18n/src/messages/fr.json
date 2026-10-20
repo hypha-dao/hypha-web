@@ -3103,6 +3103,8 @@
     "spaceRoomTitle": "Espace",
     "messagesLabel": "Messages",
     "spaceRoomsLabel": "Espace, écosystème ou public",
+    "channelUnreadAria": "{channel}, {count, plural, one {# message non lu} other {# messages non lus}}",
+    "channelUnreadCappedAria": "{channel}, 99 messages non lus ou plus",
     "networkWelcome": "Dis bonjour. Cette salle est pour tout le réseau.",
     "ecosystemRoomTitle": "Écosystème",
     "ecosystemWelcome": "Cette salle est pour tout l'écosystème. Mentionne AI Agents quand tu veux un coup de main.",

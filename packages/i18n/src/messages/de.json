@@ -3675,6 +3675,8 @@
     "spaceRoomTitle": "Space",
     "messagesLabel": "Nachrichten",
     "spaceRoomsLabel": "Space, Ökosystem oder öffentlich",
+    "channelUnreadAria": "{channel}, {count, plural, one {# ungelesene Nachricht} other {# ungelesene Nachrichten}}",
+    "channelUnreadCappedAria": "{channel}, 99 oder mehr ungelesene Nachrichten",
     "networkWelcome": "Sag hallo. Dieser Raum ist für das ganze Netzwerk.",
     "ecosystemRoomTitle": "Ökosystem",
     "ecosystemWelcome": "Dieser Raum ist für das ganze Ökosystem. Erwähne AI Agents, wenn du Hilfe bei der Arbeit brauchst.",

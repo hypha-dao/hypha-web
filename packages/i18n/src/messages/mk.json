@@ -3657,6 +3657,8 @@
     "spaceRoomTitle": "Простор",
     "messagesLabel": "Пораки",
     "spaceRoomsLabel": "Простор, екосистем или јавно",
+    "channelUnreadAria": "{channel}, {count, plural, one {# непрочитана порака} other {# непрочитани пораки}}",
+    "channelUnreadCappedAria": "{channel}, 99 или повеќе непрочитани пораки",
     "networkWelcome": "Кажи здраво. Оваа соба е за целата мрежа.",
     "ecosystemRoomTitle": "Екосистем",
     "ecosystemWelcome": "Оваа соба е за целиот екосистем. Спомни го AI Agents кога сакаш помош со работата.",
