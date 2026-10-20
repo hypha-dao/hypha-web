@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { ChevronsLeft, ChevronsRight, LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -34,7 +35,7 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 /** Compact spaces bar. Marks fill a 44px column with a small gap. */
 const RAIL_ICON = 32;
 const RAIL_WIDTH = 44;
-/** Collapsed handle. The chevron is the only mark. */
+/** Collapsed chevron. It hangs on the screen edge and takes no column. */
 const HANDLE_WIDTH = 28;
 
 export function orderSpacesByRecentVisit<T extends { slug: string }>(
@@ -231,7 +232,10 @@ function SpacesRailHandle({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef(false);
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const Icon = open ? ChevronsLeft : ChevronsRight;
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) {
@@ -257,11 +261,22 @@ function SpacesRailHandle({
     };
   }, [open]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       ref={rootRef}
-      className="flex h-full shrink-0 flex-col border-r border-border bg-background"
-      style={{ width: open ? RAIL_WIDTH : HANDLE_WIDTH }}
+      className={cn(
+        'fixed left-0 z-20 flex flex-col bg-background',
+        open && 'border-r border-border',
+      )}
+      style={{
+        top: 'var(--menu-top-height, 70px)',
+        width: open ? RAIL_WIDTH : HANDLE_WIDTH,
+        height: open
+          ? 'calc(100dvh - var(--menu-top-height, 70px) - var(--mobile-tab-offset, 0px))'
+          : 36,
+      }}
     >
       <button
         ref={buttonRef}
@@ -273,18 +288,19 @@ function SpacesRailHandle({
         title={label}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          'flex w-full shrink-0 justify-center text-foreground',
+          'flex w-full shrink-0 items-center justify-center text-foreground',
           'hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
-          open ? 'h-[36px] items-center' : 'h-full items-start pt-[10px]',
+          open ? 'h-[36px]' : 'h-full border-b border-r border-border',
         )}
       >
         <Icon className="block size-4" strokeWidth={1.25} aria-hidden />
       </button>
       {open ? (
-        <div id={railId} className="min-h-0 flex-1">
+        <div id={railId} className="min-h-0 flex-1 overflow-hidden">
           {children}
         </div>
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
