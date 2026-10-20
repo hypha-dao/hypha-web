@@ -2,8 +2,17 @@ import type { ReactNode } from 'react';
 import { Container, Heading } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 
-export async function MessagesPageFrame({ children }: { children: ReactNode }) {
+export async function MessagesPageFrame({
+  children,
+  heading = 'messages',
+}: {
+  children: ReactNode;
+  /** Suggestions uses its own title. The messages screen keeps "Share messages". */
+  heading?: 'messages' | 'suggestions';
+}) {
   const t = await getTranslations('Connections');
+  const titleLineTwo =
+    heading === 'suggestions' ? t('reachOut') : t('titleLineTwo');
 
   return (
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
@@ -16,7 +25,7 @@ export async function MessagesPageFrame({ children }: { children: ReactNode }) {
             className="text-7 leading-tight sm:text-8"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
-            {t('titleLineTwo')}
+            {titleLineTwo}
           </h1>
         </header>
         <Heading
@@ -27,7 +36,7 @@ export async function MessagesPageFrame({ children }: { children: ReactNode }) {
           className="hidden flex-col xl:flex"
         >
           <span>{t('titleLineOne')}</span>
-          <span>{t('titleLineTwo')}</span>
+          <span>{titleLineTwo}</span>
         </Heading>
         {children}
       </Container>

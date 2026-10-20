@@ -633,17 +633,7 @@ export function MyConnections({
 
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
-          <div className="flex flex-col gap-1">
-            <h2
-              className="text-4 text-foreground"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {t('reachOut')}
-            </h2>
-            <p className="text-2 text-muted-foreground">
-              {t('suggestSentence')}
-            </p>
-          </div>
+          <p className="text-2 text-muted-foreground">{t('suggestSentence')}</p>
           {reachOut.length === 0 ? (
             <p className="text-2 text-muted-foreground">
               {t('suggestionsEmpty')}

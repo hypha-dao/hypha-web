@@ -5,7 +5,7 @@ import { MessagesPageFrame } from '../_components/messages-page-frame';
 
 export default function MessageSuggestionsPage() {
   return (
-    <MessagesPageFrame>
+    <MessagesPageFrame heading="suggestions">
       <Suspense fallback={null}>
         <MyConnections section="suggestions" />
       </Suspense>
