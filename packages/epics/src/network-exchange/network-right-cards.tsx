@@ -965,7 +965,7 @@ export function NetworkRightColumn({
   if (variant === 'exchange' && !selected && !children) return null;
   const action = variant === 'action';
   return (
-    <aside className={NETWORK_RIGHT_PANEL_CLASS}>
+    <aside className={cn(NETWORK_RIGHT_PANEL_CLASS, '@4xl:!w-[320px]')}>
       {children ? (
         children
       ) : selected && !action && variant !== 'needs' ? (

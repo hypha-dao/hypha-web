@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import { CAPITAL_MARK } from './capital-marks';
 import { NetworkRightColumn } from './network-right-cards';
@@ -88,7 +89,8 @@ export function NetworkNeedsBoard({
 }) {
   const t = useTranslations('NetworkExchange');
   const dateLocale = resolveDateFnsLocale(useLocale());
-  const { open, openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const { open } = useHumanChatPanel();
+  const { openPublicChat, opening } = useOpenSpacePublicChat();
   const [query, setQuery] = useState('');
   const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
   const [selectedSlug, setSelectedSlug] = useState(needs[0]?.slug ?? '');
@@ -122,21 +124,18 @@ export function NetworkNeedsBoard({
   );
 
   const openRoom = (need: NetworkOpenNeed) => {
-    if (!need.spaceChatRoomId) return;
-    openCoherenceChat(
-      need.spaceChatRoomId,
-      need.spaceTitle,
-      need.slug,
-      need.description,
-      need.spaceSlug,
-    );
-    openHumanChatPanel();
+    if (!need.spaceSlug || opening) return;
+    void openPublicChat({
+      slug: need.spaceSlug,
+      title: need.spaceTitle,
+      description: need.spaceDescription,
+    });
   };
 
   return (
     <div className="@container min-w-0">
       <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className="@container flex min-w-0 flex-1 flex-col gap-4">
           <NetworkSectionHeader
             eyebrow={t('readFromSignals')}
             title={t('needsTitle')}
@@ -238,8 +237,7 @@ export function NetworkNeedsBoard({
                         </button>
                         <button
                           type="button"
-                          disabled={!need.spaceChatRoomId}
-                          title={need.spaceChatRoomId ? undefined : t('noRoom')}
+                          disabled={opening || !need.spaceSlug}
                           onClick={(event) => {
                             event.stopPropagation();
                             openRoom(need);

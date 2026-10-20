@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@hypha-platform/i18n';
 import type { NetworkSharedSignal } from '@hypha-platform/core/client';
-import { useHumanChatPanel } from '../common/human-chat-panel-context';
+import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 
 export function NetworkSignalList({
   lang,
@@ -16,7 +16,7 @@ export function NetworkSignalList({
   empty: string;
 }) {
   const t = useTranslations('NetworkExchange');
-  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const { openPublicChat, opening } = useOpenSpacePublicChat();
 
   if (signals.length === 0) {
     return <p className="text-2 text-neutral-11">{empty}</p>;
@@ -44,21 +44,18 @@ export function NetworkSignalList({
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
-              className="border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background"
+              className="border border-foreground bg-foreground px-3 py-2 text-1 uppercase tracking-[0.12em] text-background disabled:opacity-40"
               onClick={() => {
-                if (!signal.spaceChatRoomId) return;
-                openCoherenceChat(
-                  signal.spaceChatRoomId,
-                  signal.spaceTitle,
-                  signal.slug,
-                  signal.description,
-                  signal.spaceSlug,
-                );
-                openHumanChatPanel();
+                if (!signal.spaceSlug || opening) return;
+                void openPublicChat({
+                  slug: signal.spaceSlug,
+                  title: signal.spaceTitle,
+                  description: signal.description,
+                });
               }}
-              disabled={!signal.spaceChatRoomId}
+              disabled={opening || !signal.spaceSlug}
             >
-              {signal.spaceChatRoomId ? t('openRoom') : t('noRoom')}
+              {t('connect')}
             </button>
             <Link
               href={`/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`}
