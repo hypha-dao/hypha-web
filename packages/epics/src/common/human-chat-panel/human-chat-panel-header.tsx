@@ -4,10 +4,9 @@ import type { ComponentType, ReactNode } from 'react';
 import {
   ArrowLeft,
   Globe2,
-  Hexagon,
-  Network,
   PanelRightClose,
   Settings,
+  Target,
 } from 'lucide-react';
 import {
   CountBadge,
@@ -27,9 +26,35 @@ type RoomChoiceIcon = ComponentType<{
   'aria-hidden'?: boolean;
 }>;
 
+/** Soft hexagon — space mark with rounded corners instead of sharp points. */
+function RoundedHexagonIcon({
+  className,
+  strokeWidth = 1.5,
+  'aria-hidden': ariaHidden,
+}: {
+  className?: string;
+  strokeWidth?: number;
+  'aria-hidden'?: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden={ariaHidden}
+    >
+      <path d="M12 3.2 19.2 7.4v9.2L12 20.8 4.8 16.6V7.4Z" />
+    </svg>
+  );
+}
+
 const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
-  space: Hexagon,
-  ecosystem: Network,
+  space: RoundedHexagonIcon,
+  ecosystem: Target,
   public: Globe2,
 };
 
@@ -54,6 +79,8 @@ type HumanChatPanelHeaderProps = {
   notificationSettingsHref?: string | null;
   /** One room name, in the same box as the space and ecosystem choice. */
   mark?: string;
+  /** Icon-only title. Hover shows the label (network room). */
+  iconTitle?: string;
   /** Sits before the title — e.g. peer space icons on a direct chat. */
   titleStart?: ReactNode;
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
@@ -72,6 +99,7 @@ export function HumanChatPanelHeader({
   trailingStart,
   notificationSettingsHref,
   mark,
+  iconTitle,
   titleStart,
   roomChoice,
 }: HumanChatPanelHeaderProps) {
@@ -198,6 +226,20 @@ export function HumanChatPanelHeader({
                 );
               })}
             </div>
+          </TooltipProvider>
+        ) : iconTitle ? (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="inline-flex h-[36px] w-[36px] items-center justify-center border border-foreground bg-foreground text-background"
+                  aria-label={iconTitle}
+                >
+                  <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{iconTitle}</TooltipContent>
+            </Tooltip>
           </TooltipProvider>
         ) : displayTitle ? (
           <span className="min-w-0 truncate text-sm font-medium text-foreground">

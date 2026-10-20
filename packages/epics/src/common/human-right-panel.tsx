@@ -4943,12 +4943,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
-          title={
-            mode === 'coherence'
-              ? coherenceTitle ?? undefined
-              : mode === 'space' && !spaceSlug?.trim()
+          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
+          iconTitle={
+            mode === 'space' && !spaceSlug?.trim()
               ? t('networkRoomTitle')
-              : ''
+              : undefined
           }
           titleStart={
             isDirectConversation &&
