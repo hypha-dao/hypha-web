@@ -90,7 +90,7 @@ export default async function Index(props: PageProps) {
           />
         </div>
         <div className="hidden min-w-0 flex-col gap-9 xl:flex">
-          <div className="flex min-w-0 flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-9">
             {title}
             <Suspense fallback={null}>
               <MySpacesControls

@@ -539,7 +539,7 @@ export function ExploreSpaces({
 
   const mainColumn = (
     <>
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4 xl:gap-9">
         {pageTitle}
         {sharedControls}
       </div>
