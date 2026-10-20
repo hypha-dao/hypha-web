@@ -23,6 +23,8 @@ type NetworkMapPinHoverCardProps = {
   compact?: boolean;
   left?: number;
   top?: number;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
 export function NetworkMapPinHoverCard({
@@ -31,6 +33,8 @@ export function NetworkMapPinHoverCard({
   compact = false,
   left = 0,
   top = 0,
+  onMouseEnter,
+  onMouseLeave,
 }: NetworkMapPinHoverCardProps) {
   const href = getDhoPathAgreements(lang, space.slug);
   const tCommon = useTranslations('Common');
@@ -47,8 +51,10 @@ export function NetworkMapPinHoverCard({
   if (compact) {
     return (
       <div
-        className="pointer-events-none absolute inset-x-2 bottom-2 z-20"
+        className="pointer-events-auto absolute inset-x-2 bottom-2 z-20"
         data-network-map-hover-card
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
         <Link href={href} className="pointer-events-auto block">
           <Card className="flex items-center gap-3 border border-border bg-background p-3 shadow-sm">
@@ -95,10 +101,12 @@ export function NetworkMapPinHoverCard({
   return (
     <div
       className={cn(
-        'pointer-events-none absolute z-20 w-[min(100%,280px)] shadow-sm',
+        'pointer-events-auto absolute z-20 w-[min(100%,280px)] shadow-sm',
       )}
       data-network-map-hover-card
       style={{ left, top }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <Link href={href} className="pointer-events-auto block">
         <SpaceCard
