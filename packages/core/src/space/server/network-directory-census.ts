@@ -7,11 +7,10 @@ export type NetworkCensusAttachment = {
 /**
  * Attaches on-chain census figures onto directory spaces.
  *
- * `memberCount: 0` is treated as archived by `isSpaceArchived`, which hid the
- * whole directory when the count source was empty. A space whose chain read
- * returned no members stays listed; only a positive member list is attached.
- * Agreement totals are the accepted proposal counts. A missing chain read
- * leaves `documentCount` unset rather than claiming zero.
+ * A successful chain read with no members sets `memberCount: 0`, which
+ * `isSpaceArchived` drops from the network page — the same rule as live.
+ * A missing read does not: that used to archive every space when the count
+ * source failed. Agreement totals are accepted proposal counts.
  */
 export function attachNetworkCensusCounts<
   T extends { web3SpaceId?: number | null },
@@ -22,11 +21,14 @@ export function attachNetworkCensusCounts<
 ): Array<T & NetworkCensusAttachment> {
   return spaces.map((space) => {
     const web3SpaceId = space.web3SpaceId;
-    if (web3SpaceId == null) return space;
+    if (web3SpaceId == null) {
+      return { ...space, memberCount: 0 };
+    }
 
     const members = membersByWeb3Id.get(web3SpaceId);
     const agreements = agreementsByWeb3Id.get(web3SpaceId);
     const hasMembers = members != null && members.length > 0;
+    const confirmedEmpty = members != null && members.length === 0;
 
     return {
       ...space,
@@ -35,6 +37,8 @@ export function attachNetworkCensusCounts<
             memberCount: members.length,
             memberAddresses: [...members],
           }
+        : confirmedEmpty
+        ? { memberCount: 0 }
         : {}),
       ...(agreements != null ? { documentCount: agreements } : {}),
     };

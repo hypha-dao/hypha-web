@@ -13,7 +13,7 @@ describe('attachNetworkCensusCounts', () => {
     { id: 4, web3SpaceId: 40 },
   ];
 
-  it('keeps spaces with an empty member list visible and counts accepted agreements', () => {
+  it('archives spaces with no members and counts accepted agreements', () => {
     const attached = attachNetworkCensusCounts(
       spaces,
       new Map([
@@ -32,12 +32,13 @@ describe('attachNetworkCensusCounts', () => {
       memberAddresses: [address('aa'), address('bb')],
       documentCount: 4,
     });
-    expect(attached[1]).not.toHaveProperty('memberCount');
+    expect(attached[1]).toMatchObject({ memberCount: 0, documentCount: 0 });
     expect(attached[1]).not.toHaveProperty('memberAddresses');
-    expect(attached[1]?.documentCount).toBe(0);
-    expect(isSpaceArchived(attached[1]!)).toBe(false);
-    expect(attached[2]).toEqual({ id: 3, web3SpaceId: null });
+    expect(isSpaceArchived(attached[1]!)).toBe(true);
+    expect(attached[2]).toMatchObject({ memberCount: 0 });
+    expect(isSpaceArchived(attached[2]!)).toBe(true);
     expect(attached[3]).toMatchObject({ documentCount: 2 });
     expect(attached[3]).not.toHaveProperty('memberCount');
+    expect(isSpaceArchived(attached[3]!)).toBe(false);
   });
 });
