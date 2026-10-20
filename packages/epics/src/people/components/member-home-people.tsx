@@ -68,16 +68,21 @@ export function MemberHomePeople({
     for (const person of people) ids.add(person.id);
     return [...ids];
   }, [extraPersonIds, people]);
-  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
-    useMatrixUserIdsByPersonIds({
-      personIds,
-    });
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
+    personIds,
+  });
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
-  const matrixIdsLoadingRef = useRef(matrixIdsLoading);
-  matrixIdsLoadingRef.current = matrixIdsLoading;
+  const knownMatrixIdsRef = useRef<Record<number, string>>({});
+  if (Object.keys(personIdToMatrixUserId).length > 0) {
+    knownMatrixIdsRef.current = {
+      ...knownMatrixIdsRef.current,
+      ...personIdToMatrixUserId,
+    };
+  }
+  const openChainRef = useRef(Promise.resolve());
 
   function showRoom(roomId: string | null, title: string, person?: HomePerson) {
     // PM / group rooms are private — never attach a space slug or the AI and
@@ -123,12 +128,16 @@ export function MemberHomePeople({
 
   async function waitForMatrixUserId(personId: number) {
     for (let attempt = 0; attempt < 40; attempt += 1) {
-      const mxid = matrixIdsRef.current[personId];
+      const mxid =
+        matrixIdsRef.current[personId] ?? knownMatrixIdsRef.current[personId];
       if (mxid) return mxid;
-      if (!matrixIdsLoadingRef.current && attempt > 2) return null;
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
-    return matrixIdsRef.current[personId] ?? null;
+    return (
+      matrixIdsRef.current[personId] ??
+      knownMatrixIdsRef.current[personId] ??
+      null
+    );
   }
 
   async function openRoom(
@@ -155,7 +164,11 @@ export function MemberHomePeople({
       return null;
     }
     const mxid = await waitForMatrixUserId(person.id);
-    if (!mxid || !selfId) return null;
+    if (!selfId) return null;
+    if (!mxid) {
+      setNotice(t('matrixFailed'));
+      return null;
+    }
     const existing = findDirectRoomId(client, selfId, mxid, title);
     if (existing) return existing;
     const created = await openRoom(title, [person.id], ready);
@@ -164,12 +177,21 @@ export function MemberHomePeople({
   }
 
   async function openPersonChat(person: HomePerson): Promise<boolean> {
+    const run = openChainRef.current.then(() => openPersonChatNow(person));
+    openChainRef.current = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
+
+  async function openPersonChatNow(person: HomePerson): Promise<boolean> {
     setNotice(null);
     const title = labelOf(person, fallbackName);
     try {
       const roomId = await resolvePersonRoom(person, title);
       if (!roomId) {
-        setNotice(t('matrixUnavailable'));
+        setNotice((current) => current ?? t('matrixUnavailable'));
         return false;
       }
       showRoom(roomId, title, person);
