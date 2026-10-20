@@ -37,7 +37,7 @@ export const ButtonNavItem = ({
         <span className="relative mr-1.5 inline-flex shrink-0 items-center overflow-visible text-current [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]">
           {icon}
           {badge > 0 ? (
-            <span className="absolute -top-1.5 -right-2 grid h-4 min-w-4 place-items-center bg-foreground px-0.5 text-[9px] leading-none text-background">
+            <span className="absolute -top-1 -right-1.5 grid h-2.5 min-w-2.5 place-items-center bg-foreground px-0.5 text-[8px] leading-none text-background">
               {badgeLabel}
             </span>
           ) : null}
