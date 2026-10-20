@@ -29,6 +29,7 @@ export * from './member-spaces-entry';
 export * from './member-home-attention';
 export * from './member-home-notifications';
 export * from './mobile-tab-bar';
+export * from './spaces-rail-control';
 export * from './my-connections';
 export * from './member-home-phase';
 export { MemberHomeSendTokensWidget } from './member-home-chat-widgets';

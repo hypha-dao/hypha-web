@@ -51,6 +51,7 @@ import {
 } from './member-home-view';
 import { useConversationUnreadCount } from './my-connections';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
+import { useSpacesRailControl } from './spaces-rail-control';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 
@@ -90,6 +91,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
+  const { open: spacesRailOpen } = useSpacesRailControl();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
   const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
@@ -130,8 +132,10 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
         <div
           className={cn(
             // Sit under the sticky MenuTop — top-0 clipped the first icons.
-            'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex shrink-0 self-start xl:hidden',
-            'h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))]',
+            // Stay mounted while closed so the top-bar control can open it.
+            spacesRailOpen
+              ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] shrink-0 self-start xl:hidden'
+              : 'hidden',
           )}
         >
           <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} />

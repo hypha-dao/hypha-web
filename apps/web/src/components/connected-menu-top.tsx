@@ -11,6 +11,8 @@ import {
   isSafeImageUrl,
   useAiPanel,
   AiPanelTrigger,
+  SpacesRailTopToggle,
+  useSpacesRailControl,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { Space } from '@hypha-platform/core/client';
@@ -136,13 +138,19 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
-  const resolvedLeadingAction = aiChatEnabled ? (
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      <AiPanelTrigger />
-    </div>
-  ) : (
-    leadingAction
-  );
+  const secondaryLeading = aiChatEnabled ? <AiPanelTrigger /> : leadingAction;
+  const { active: spacesRailActive } = useSpacesRailControl();
+  const resolvedLeadingAction =
+    spacesRailActive || secondaryLeading ? (
+      <div
+        className={`flex items-center gap-1.5 sm:gap-2${
+          secondaryLeading ? '' : ' xl:hidden'
+        }`}
+      >
+        <SpacesRailTopToggle />
+        {secondaryLeading}
+      </div>
+    ) : undefined;
 
   const canRenderSpaceLogoNode = suppressDefaultLogo && Boolean(rootSpace);
   const logoNode =

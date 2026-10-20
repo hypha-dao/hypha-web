@@ -2,14 +2,13 @@
 
 import {
   useEffect,
-  useId,
+  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { LayoutGrid, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -28,14 +27,13 @@ import {
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 
 /** Compact spaces bar. Marks fill a 44px column with a small gap. */
 const RAIL_ICON = 32;
 const RAIL_WIDTH = 44;
-/** Toggle stays this size so opening the list does not shift it. */
-const HANDLE_WIDTH = 36;
 
 export function orderSpacesByRecentVisit<T extends { slug: string }>(
   spaces: readonly T[],
@@ -222,108 +220,20 @@ export function MemberHomeSpacesRail({
     );
   }
 
-  return <SpacesRailHandle label={t('spacesRail')}>{rail}</SpacesRailHandle>;
+  return <SpacesRailHandle>{rail}</SpacesRailHandle>;
 }
 
-function SpacesRailHandle({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  const railId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const returnFocusRef = useRef(false);
-  const [open, setOpen] = useState(false);
-  const [canHover, setCanHover] = useState(false);
-  const Icon = open ? PanelLeftClose : PanelLeftOpen;
-
-  useEffect(() => {
-    const query = window.matchMedia('(hover: hover) and (pointer: fine)');
-    const update = () => setCanHover(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-
-  useEffect(() => {
-    if (!open) {
-      if (!returnFocusRef.current) return;
-      returnFocusRef.current = false;
-      buttonRef.current?.focus();
-      return;
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      returnFocusRef.current = true;
-      setOpen(false);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || canHover) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [canHover, open]);
-
+function SpacesRailHandle({ children }: { children: ReactNode }) {
+  const { open, register } = useSpacesRailControl();
+  useLayoutEffect(() => register(), [register]);
+  if (!open) return null;
   return (
     <div
-      ref={rootRef}
-      onMouseEnter={() => {
-        if (canHover) setOpen(true);
-      }}
-      onMouseLeave={() => {
-        if (!canHover) return;
-        if (rootRef.current?.contains(document.activeElement)) return;
-        setOpen(false);
-      }}
-      onBlur={(event) => {
-        const next = event.relatedTarget;
-        if (next instanceof Node && rootRef.current?.contains(next)) return;
-        setOpen(false);
-      }}
-      className={cn(
-        'flex shrink-0 flex-col bg-background xl:hidden',
-        open
-          ? 'h-full border-r border-border'
-          : 'self-start border-r border-border',
-      )}
+      id={SPACES_RAIL_ID}
+      className="flex h-full shrink-0 flex-col overflow-hidden border-r border-border bg-background xl:hidden"
       style={{ width: RAIL_WIDTH }}
     >
-      <button
-        ref={buttonRef}
-        type="button"
-        id={`${railId}-toggle`}
-        aria-label={label}
-        aria-expanded={open}
-        aria-controls={railId}
-        title={label}
-        onFocus={() => setOpen(true)}
-        onClick={() => {
-          if (canHover) return;
-          setOpen((current) => !current);
-        }}
-        className={cn(
-          'flex w-full shrink-0 items-center justify-center border-b border-border text-foreground',
-          'hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
-        )}
-        style={{ height: HANDLE_WIDTH }}
-      >
-        <Icon className="block size-4" strokeWidth={1.25} aria-hidden />
-      </button>
-      {open ? (
-        <div id={railId} className="min-h-0 w-full flex-1 overflow-hidden">
-          {children}
-        </div>
-      ) : null}
+      {children}
     </div>
   );
 }

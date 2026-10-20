@@ -22,6 +22,7 @@ import {
   MobileContentFrame,
   MobileTabBar,
   RecentSpaceHistoryTracker,
+  SpacesRailProvider,
 } from '@hypha-platform/epics';
 
 import { DeferredFooter } from '@web/components/deferred-footer';
@@ -253,43 +254,87 @@ export default async function RootLayout({
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <MemberPresenceProvider>
                       <PanelProviders>
-                        <RecentSpaceHistoryTracker />
-                        <GlobalCallDockProvider>
-                          <PanelWrapLayout
-                            left={
-                              aiChatEnabled
-                                ? {
-                                    content: (
-                                      <AiLeftPanel
-                                        enableSpaceMemory={spaceMemoryEnabled}
-                                      />
-                                    ),
+                        <SpacesRailProvider>
+                          <RecentSpaceHistoryTracker />
+                          <GlobalCallDockProvider>
+                            <PanelWrapLayout
+                              left={
+                                aiChatEnabled
+                                  ? {
+                                      content: (
+                                        <AiLeftPanel
+                                          enableSpaceMemory={spaceMemoryEnabled}
+                                        />
+                                      ),
+                                    }
+                                  : undefined
+                              }
+                              right={
+                                humanChatEnabled
+                                  ? { content: <ConnectedHumanRightPanel /> }
+                                  : undefined
+                              }
+                            >
+                              {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                              <div className="sticky top-0 z-40 shrink-0 bg-page-background">
+                                <ConnectedMenuTop
+                                  aiChatEnabled={aiChatEnabled}
+                                  logoHref={ROOT_URL}
+                                  openMenuLabel={navOpenMenuLabel}
+                                  closeMenuLabel={navCloseMenuLabel}
+                                  leadingAction={
+                                    aiChatEnabled ? (
+                                      <AiPanelTrigger />
+                                    ) : undefined
                                   }
-                                : undefined
-                            }
-                            right={
-                              humanChatEnabled
-                                ? { content: <ConnectedHumanRightPanel /> }
-                                : undefined
-                            }
-                          >
-                            {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                            <div className="sticky top-0 z-40 shrink-0 bg-page-background">
-                              <ConnectedMenuTop
-                                aiChatEnabled={aiChatEnabled}
-                                logoHref={ROOT_URL}
-                                openMenuLabel={navOpenMenuLabel}
-                                closeMenuLabel={navCloseMenuLabel}
-                                leadingAction={
-                                  aiChatEnabled ? <AiPanelTrigger /> : undefined
-                                }
-                                trailingAction={
-                                  humanChatEnabled ? (
-                                    <HumanSidebarTrigger />
-                                  ) : undefined
-                                }
-                                mobileAction={
-                                  <>
+                                  trailingAction={
+                                    humanChatEnabled ? (
+                                      <HumanSidebarTrigger />
+                                    ) : undefined
+                                  }
+                                  mobileAction={
+                                    <>
+                                      <ConnectedButtonProfile
+                                        newUserRedirectPath="/profile/signup"
+                                        baseRedirectPath={`/${locale}/home`}
+                                        navItems={[
+                                          {
+                                            label: navHomeLabel,
+                                            href: `/${locale}/home`,
+                                          },
+                                          {
+                                            label: navMessagesLabel,
+                                            href: `/${locale}/messages`,
+                                          },
+                                          {
+                                            label: navMyWalletLabel,
+                                            href: `/${locale}/my-wallet`,
+                                          },
+                                          {
+                                            label: navMySpacesLabel,
+                                            href: `/${locale}/my-spaces`,
+                                          },
+                                          {
+                                            label: navNetworkLabel,
+                                            href: `/${locale}/network`,
+                                          },
+                                        ]}
+                                        showNetworkFeedback
+                                        trailingBeforeProfile={
+                                          isLanguageSelectVisible ? (
+                                            <ConnectedLanguageSelect
+                                              selectLanguageLabel={
+                                                navSelectLanguageLabel
+                                              }
+                                            />
+                                          ) : undefined
+                                        }
+                                        compact
+                                      />
+                                    </>
+                                  }
+                                >
+                                  <div className="hidden xl:flex">
                                     <ConnectedButtonProfile
                                       newUserRedirectPath="/profile/signup"
                                       baseRedirectPath={`/${locale}/home`}
@@ -325,95 +370,59 @@ export default async function RootLayout({
                                           />
                                         ) : undefined
                                       }
-                                      compact
                                     />
-                                  </>
-                                }
-                              >
-                                <div className="hidden xl:flex">
-                                  <ConnectedButtonProfile
-                                    newUserRedirectPath="/profile/signup"
-                                    baseRedirectPath={`/${locale}/home`}
-                                    navItems={[
-                                      {
-                                        label: navHomeLabel,
-                                        href: `/${locale}/home`,
-                                      },
-                                      {
-                                        label: navMessagesLabel,
-                                        href: `/${locale}/messages`,
-                                      },
-                                      {
-                                        label: navMyWalletLabel,
-                                        href: `/${locale}/my-wallet`,
-                                      },
-                                      {
-                                        label: navMySpacesLabel,
-                                        href: `/${locale}/my-spaces`,
-                                      },
-                                      {
-                                        label: navNetworkLabel,
-                                        href: `/${locale}/network`,
-                                      },
-                                    ]}
-                                    showNetworkFeedback
-                                    trailingBeforeProfile={
-                                      isLanguageSelectVisible ? (
-                                        <ConnectedLanguageSelect
-                                          selectLanguageLabel={
-                                            navSelectLanguageLabel
-                                          }
-                                        />
-                                      ) : undefined
+                                  </div>
+                                </ConnectedMenuTop>
+                              </div>
+                              {/* Scrollable content area */}
+                              <NextSSRPlugin
+                                routerConfig={extractRouterConfig(fileRouter)}
+                              />
+                              {/* mb-auto is the gap under short pages. The footer stays a
+                                sibling so that gap sits above it, at the fold,
+                                and is not counted as column content. */}
+                              <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
+                                <div className="pb-8">
+                                  <MobileContentFrame>
+                                    <div className="flex h-full justify-normal pt-4 md:pt-5">
+                                      <div className="w-full h-full">
+                                        {children}
+                                      </div>
+                                    </div>
+                                  </MobileContentFrame>
+                                </div>
+                              </div>
+                              <Suspense fallback={null}>
+                                {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
+                                <div className="hidden shrink-0 xl:block">
+                                  <DeferredFooter
+                                    poweredByLabel={footerPoweredByLabel}
+                                    hyphaServicesLabel={
+                                      footerHyphaServicesLabel
+                                    }
+                                    hyphaTokenomicsLabel={
+                                      footerHyphaTokenomicsLabel
+                                    }
+                                    licensingPolicyLabel={
+                                      footerLicensingPolicyLabel
+                                    }
+                                    termsAndConditionsLabel={
+                                      footerTermsAndConditionsLabel
+                                    }
+                                    privacyPolicyLabel={
+                                      footerPrivacyPolicyLabel
                                     }
                                   />
                                 </div>
-                              </ConnectedMenuTop>
-                            </div>
-                            {/* Scrollable content area */}
-                            <NextSSRPlugin
-                              routerConfig={extractRouterConfig(fileRouter)}
-                            />
-                            {/* mb-auto is the gap under short pages. The footer stays a
-                                sibling so that gap sits above it, at the fold,
-                                and is not counted as column content. */}
-                            <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
-                              <div className="pb-8">
-                                <MobileContentFrame>
-                                  <div className="flex h-full justify-normal pt-4 md:pt-5">
-                                    <div className="w-full h-full">
-                                      {children}
-                                    </div>
-                                  </div>
-                                </MobileContentFrame>
-                              </div>
-                            </div>
-                            <Suspense fallback={null}>
-                              {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
-                              <div className="hidden shrink-0 xl:block">
-                                <DeferredFooter
-                                  poweredByLabel={footerPoweredByLabel}
-                                  hyphaServicesLabel={footerHyphaServicesLabel}
-                                  hyphaTokenomicsLabel={
-                                    footerHyphaTokenomicsLabel
-                                  }
-                                  licensingPolicyLabel={
-                                    footerLicensingPolicyLabel
-                                  }
-                                  termsAndConditionsLabel={
-                                    footerTermsAndConditionsLabel
-                                  }
-                                  privacyPolicyLabel={footerPrivacyPolicyLabel}
-                                />
-                              </div>
-                            </Suspense>
-                            <MobileTabBar
-                              spaceMemoryEnabled={spaceMemoryEnabled}
-                            />
-                          </PanelWrapLayout>
-                          {/* Outside capture root so tab screen share excludes the floating dock. */}
-                          {humanChatEnabled && <ConnectedGlobalCallDock />}
-                        </GlobalCallDockProvider>
+                              </Suspense>
+                              <MobileTabBar
+                                spaceMemoryEnabled={spaceMemoryEnabled}
+                              />
+                            </PanelWrapLayout>
+                            {/* Outside capture root so tab screen share excludes the floating dock. */}
+                            {humanChatEnabled && <ConnectedGlobalCallDock />}
+                          </GlobalCallDockProvider>
+                        </SpacesRailProvider>
                       </PanelProviders>
                     </MemberPresenceProvider>
                   </ConditionalMatrixProvider>
