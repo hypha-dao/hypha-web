@@ -238,6 +238,16 @@ const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
 
+/** Room id when this client is already a member. Opening that room must not wait on a re-join. */
+function alreadyJoinedRoomId(
+  client: MatrixSdk.MatrixClient,
+  roomIdOrAlias: string,
+): string | null {
+  const room = client.getRoom(roomIdOrAlias);
+  if (!room || room.getMyMembership() !== 'join') return null;
+  return room.roomId;
+}
+
 function myRoomPowerLevel(
   client: MatrixSdk.MatrixClient,
   roomId: string,
@@ -1888,9 +1898,14 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           (event) => event.getType() === EventType.RoomMessage,
         );
         // A null pagination token means "already at the start" only after the
-        // timeline has arrived. An empty room that has not synced yet must stay
-        // retryable, or the chat paints as a brand-new conversation.
-        if (!hasVisibleMessage && room.oldState?.paginationToken == null) {
+        // timeline has arrived. No events at all means /sync has not delivered
+        // this room yet — keep it retryable instead of painting a new conversation.
+        // State events with no messages means the room really is empty.
+        if (
+          !hasVisibleMessage &&
+          liveEvents.length === 0 &&
+          room.oldState?.paginationToken == null
+        ) {
           return { hasMoreOlder: true, addedEvents: 0 };
         }
         let addedEvents = 0;
@@ -2037,6 +2052,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Client should be specified');
       }
 
+      const alreadyJoinedId = alreadyJoinedRoomId(client, roomIdOrAlias);
+      if (alreadyJoinedId) {
+        // Call permissions are not needed to show the thread. A failed state
+        // write used to fail the whole open, which a refresh then "fixed".
+        void ensureRoomCallPowerLevels(client, alreadyJoinedId).catch(
+          (error) => {
+            console.warn('Cannot ensure Matrix call power levels:', error);
+          },
+        );
+        return alreadyJoinedId;
+      }
+
       try {
         // Get the AS to invite+puppet-accept us first (#2428) — required for bot-owned
         // invite-only rooms; a no-op/soft-fail on legacy open-join rooms, where the plain
@@ -2050,21 +2077,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         }
         const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
-        await ensureRoomCallPowerLevels(client, resolvedId);
-        // `joinRoom` resolves before the lazy room store always exposes `getRoom`
-        // (race with sync / canonical id). On hard page reload the SDK must re-sync
-        // all room state from scratch, which can take several seconds — wait up to 10s.
-        for (let i = 0; i < 200; i++) {
-          if (client.getRoom(resolvedId)) {
-            return resolvedId;
-          }
+        void ensureRoomCallPowerLevels(client, resolvedId).catch((error) => {
+          console.warn('Cannot ensure Matrix call power levels:', error);
+        });
+        // The store can lag the join by a moment. Don't hold the thread open
+        // for the old 10s poll, and don't report that lag as a failed join.
+        for (let i = 0; i < 20; i++) {
+          if (client.getRoom(resolvedId)) return resolvedId;
           await new Promise((r) => setTimeout(r, 50));
         }
-        if (!client.getRoom(resolvedId)) {
-          throw new Error('Room not available in Matrix client after join');
-        }
-        return resolvedId;
+        return alreadyJoinedRoomId(client, resolvedId) ?? resolvedId;
       } catch (error) {
+        const recovered = alreadyJoinedRoomId(client, roomIdOrAlias);
+        if (recovered) return recovered;
         console.warn('Cannot join to room:', error);
         throw error;
       }

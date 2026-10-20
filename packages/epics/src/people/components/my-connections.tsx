@@ -94,24 +94,68 @@ function avatarHttp(client: MatrixClient, mxc: string | null | undefined) {
   return client.mxcUrlToHttp(mxc, 80, 80, 'crop') ?? undefined;
 }
 
-/** Messages from the other person that this member has not read yet. */
+function isCountableRoomMessage(event: {
+  getType: () => string;
+  isRedacted: () => boolean;
+  getContent: () => { 'm.relates_to'?: { rel_type?: string } };
+  getSender: () => string | undefined;
+  getId: () => string | undefined;
+}) {
+  if (event.getType() !== EventType.RoomMessage) return false;
+  if (event.isRedacted()) return false;
+  const relates = event.getContent()?.['m.relates_to'];
+  if (relates?.rel_type === 'm.replace') return false;
+  return Boolean(event.getSender() && event.getId());
+}
+
+/** The later of two timeline events. Sending a message counts as having read up to it. */
+function laterTimelineEventId(
+  room: Room,
+  left: string | null,
+  right: string | null,
+) {
+  if (!left) return right;
+  if (!right) return left;
+  const order = room.compareEventOrdering(left, right);
+  if (order === null) {
+    const leftTs = room.findEventById(left)?.getTs() ?? 0;
+    const rightTs = room.findEventById(right)?.getTs() ?? 0;
+    return rightTs >= leftTs ? right : left;
+  }
+  return order >= 0 ? left : right;
+}
+
+/** Messages from someone else that arrived after this member last read or wrote. */
 function countNewMessages(room: Room, selfId: string | null) {
   if (!selfId) return 0;
-  const readUpToId = room.getEventReadUpTo(selfId, false);
+  const events = room.getLiveTimeline().getEvents();
+  let ownLatestId: string | null = null;
+  for (const event of events) {
+    if (!isCountableRoomMessage(event)) continue;
+    if (event.getSender() !== selfId) continue;
+    ownLatestId = event.getId() ?? ownLatestId;
+  }
+  const cursor = laterTimelineEventId(
+    room,
+    room.getEventReadUpTo(selfId, false),
+    ownLatestId,
+  );
   let count = 0;
-  for (const event of room.getLiveTimeline().getEvents()) {
-    if (event.getType() !== EventType.RoomMessage) continue;
-    if (event.isRedacted()) continue;
-    const relates = event.getContent()?.['m.relates_to'] as
-      | { rel_type?: string }
-      | undefined;
-    if (relates?.rel_type === 'm.replace') continue;
+  for (const event of events) {
+    if (!isCountableRoomMessage(event)) continue;
     const sender = event.getSender();
     const id = event.getId();
     if (!sender || !id || sender === selfId) continue;
-    if (readUpToId) {
-      const order = room.compareEventOrdering(readUpToId, id);
+    if (isHyphaBot(sender, event.sender?.name)) continue;
+    if (cursor) {
+      const order = room.compareEventOrdering(cursor, id);
       if (order !== null && order >= 0) continue;
+      if (
+        order === null &&
+        event.getTs() <= (room.findEventById(cursor)?.getTs() ?? 0)
+      ) {
+        continue;
+      }
     }
     if (
       typeof room.hasUserReadEvent === 'function' &&
@@ -549,16 +593,9 @@ export function MyConnections({
     setNotice(null);
     if (row.roomId) {
       const peerSlug = row.person.slug?.trim();
-      openCoherenceChat(
-        row.roomId,
-        row.name,
-        '',
-        null,
-        home?.chatSpaceSlug ?? null,
-        {
-          peerPerson: peerSlug ? { slug: peerSlug } : null,
-        },
-      );
+      openCoherenceChat(row.roomId, row.name, '', null, null, {
+        peerPerson: peerSlug ? { slug: peerSlug } : null,
+      });
       return;
     }
     const opened = await openChatRef.current?.({

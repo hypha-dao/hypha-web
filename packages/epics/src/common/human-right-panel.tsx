@@ -2492,6 +2492,73 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     });
   }, []);
 
+  /**
+   * Paint whatever timeline we already have, then fill history without leaving
+   * the "start a conversation" welcome up while /sync or scrollback is still due.
+   */
+  const revealRoomTimeline = useCallback(
+    async (targetRoomId: string, isCancelled: () => boolean) => {
+      const messageCount = () => {
+        try {
+          return matrixRef.current.getRoomMessages(targetRoomId)?.length ?? 0;
+        } catch {
+          return 0;
+        }
+      };
+      const paint = () => {
+        try {
+          syncRoomMessages(targetRoomId);
+        } catch (error) {
+          console.warn('[HumanRightPanel] Timeline not ready to paint:', error);
+        }
+      };
+
+      paint();
+      if (messageCount() > 0) {
+        if (!isCancelled()) setIsJoining(false);
+        try {
+          const historyResult = await matrixRef.current.loadRoomHistory(
+            targetRoomId,
+            { pageSize: 30, maxBatches: 1 },
+          );
+          if (isCancelled()) return;
+          setHasMoreOlderMessages(historyResult.hasMoreOlder);
+          paint();
+        } catch (error) {
+          if (!isCancelled()) {
+            console.warn(
+              '[HumanRightPanel] Background chat history load failed:',
+              error,
+            );
+          }
+        }
+        return;
+      }
+
+      const deadline = Date.now() + 8000;
+      let hasMoreOlder = true;
+      while (!isCancelled() && Date.now() < deadline) {
+        try {
+          const historyResult = await matrixRef.current.loadRoomHistory(
+            targetRoomId,
+            { pageSize: 30, maxBatches: 1 },
+          );
+          hasMoreOlder = historyResult.hasMoreOlder;
+          paint();
+          if (messageCount() > 0 || !hasMoreOlder) break;
+        } catch (error) {
+          if (messageCount() > 0) break;
+          console.warn('[HumanRightPanel] Waiting for chat history:', error);
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 300));
+      }
+      if (isCancelled()) return;
+      setHasMoreOlderMessages(hasMoreOlder);
+      setIsJoining(false);
+    },
+    [syncRoomMessages],
+  );
+
   const handleLoadOlderMessages = useCallback(
     async (source: 'auto' | 'manual' = 'manual') => {
       const targetRoomId = roomId?.trim();
@@ -3064,7 +3131,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const {
       joinRoom,
       createRoom,
-      loadRoomHistory,
       client,
       ensureEcosystemRoom,
       ensurePublicRoom,
@@ -3155,31 +3221,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (cancelled || !targetRoomId) return;
         joinedRef.current = joinedKey;
         setRoomId(targetRoomId);
-
-        // Paint immediately from the live timeline — don't block the UI on
-        // multi-batch scrollback (up to ~500 events + stagger delays).
-        syncRoomMessages(targetRoomId);
-        setHasMoreOlderMessages(true);
-        setIsJoining(false);
-
-        void (async () => {
-          try {
-            const historyResult = await loadRoomHistory(targetRoomId, {
-              pageSize: 30,
-              maxBatches: 1,
-            });
-            if (cancelled) return;
-            setHasMoreOlderMessages(historyResult.hasMoreOlder);
-            syncRoomMessages(targetRoomId);
-          } catch (historyErr) {
-            if (!cancelled) {
-              console.warn(
-                '[HumanRightPanel] Background space chat history load failed:',
-                historyErr,
-              );
-            }
-          }
-        })();
+        void revealRoomTimeline(targetRoomId, () => cancelled);
       } catch (err) {
         if (!cancelled) {
           console.error('[HumanRightPanel] Failed to join room:', err);
@@ -3209,7 +3251,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     rootSpace?.slug,
     isOrganisationLoading,
     blockSpaceChatForMembership,
-    syncRoomMessages,
+    revealRoomTimeline,
   ]);
 
   // The network page has one room. An ecosystem is a root space, so that
@@ -3222,7 +3264,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
 
     let cancelled = false;
-    const { ensureNetworkRoom, loadRoomHistory } = matrixRef.current;
+    const { ensureNetworkRoom } = matrixRef.current;
 
     const initSharedRoom = async () => {
       setIsJoining(true);
@@ -3232,28 +3274,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (cancelled) return;
         joinedRef.current = NETWORK_JOINED_SENTINEL;
         setRoomId(targetRoomId);
-        syncRoomMessages(targetRoomId);
-        setHasMoreOlderMessages(true);
-        setIsJoining(false);
-
-        void (async () => {
-          try {
-            const historyResult = await loadRoomHistory(targetRoomId, {
-              pageSize: 30,
-              maxBatches: 1,
-            });
-            if (cancelled) return;
-            setHasMoreOlderMessages(historyResult.hasMoreOlder);
-            syncRoomMessages(targetRoomId);
-          } catch (historyErr) {
-            if (!cancelled) {
-              console.warn(
-                '[HumanRightPanel] Background network chat history load failed:',
-                historyErr,
-              );
-            }
-          }
-        })();
+        void revealRoomTimeline(targetRoomId, () => cancelled);
       } catch (err) {
         if (!cancelled) {
           console.error('[HumanRightPanel] Failed to join shared room:', err);
@@ -3275,7 +3296,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMemberHome,
     isMatrixAvailable,
     isMatrixAuthenticated,
-    syncRoomMessages,
+    revealRoomTimeline,
   ]);
 
   // Track previous mode to detect actual transitions (not initial mount)
@@ -3454,78 +3475,67 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           rememberSignalThreadRooms([targetRoomId], { quiet: true });
         }
 
-        // First paint from the live timeline; history + description seed
-        // continue in the background so the spinner does not wait on them.
-        syncRoomMessages(targetRoomId);
-        setHasMoreOlderMessages(true);
-        setIsJoining(false);
-
         void (async () => {
+          await revealRoomTimeline(targetRoomId, () => cancelled);
+          if (cancelled || openingSpaceSlug) return;
           try {
-            const historyResult = await matrixRef.current.loadRoomHistory(
-              targetRoomId,
-              { pageSize: 30, maxBatches: 1 },
+            let description = coherenceDescription?.trim() || null;
+            if (!description && coherenceSlug?.trim()) {
+              const signal = await getCoherenceBySlug({
+                slug: coherenceSlug.trim(),
+              });
+              description = signal?.description?.trim() || null;
+            }
+            if (description) {
+              await upsertSignalDescriptionInRoom({
+                roomId: targetRoomId,
+                description,
+                mode: 'safe',
+                matrix: {
+                  joinRoom: (id) => matrixRef.current.joinRoom(id),
+                  loadRoomHistory: (id) =>
+                    matrixRef.current.loadRoomHistory(id, {
+                      pageSize: 30,
+                      maxBatches: 1,
+                    }),
+                  getRoomMessages: (id) =>
+                    matrixRef.current.getRoomMessages(id),
+                  sendMessage: (params) =>
+                    matrixRef.current.sendMessage(params),
+                  editRoomMessage: (params) =>
+                    matrixRef.current.editRoomMessage(params),
+                },
+              });
+              if (!cancelled) {
+                await matrixRef.current.loadRoomHistory(targetRoomId, {
+                  force: true,
+                  pageSize: 30,
+                  maxBatches: 1,
+                });
+                syncRoomMessages(targetRoomId);
+              }
+            }
+          } catch (seedError) {
+            console.warn(
+              '[HumanRightPanel] Failed to seed signal description in chat:',
+              seedError,
             );
-            if (cancelled) return;
-            setHasMoreOlderMessages(historyResult.hasMoreOlder);
-            syncRoomMessages(targetRoomId);
-
-            if (openingSpaceSlug) {
-              return;
-            }
-            try {
-              let description = coherenceDescription?.trim() || null;
-              if (!description && coherenceSlug?.trim()) {
-                const signal = await getCoherenceBySlug({
-                  slug: coherenceSlug.trim(),
-                });
-                description = signal?.description?.trim() || null;
-              }
-              if (description) {
-                await upsertSignalDescriptionInRoom({
-                  roomId: targetRoomId,
-                  description,
-                  mode: 'safe',
-                  matrix: {
-                    joinRoom: (id) => matrixRef.current.joinRoom(id),
-                    loadRoomHistory: (id) =>
-                      matrixRef.current.loadRoomHistory(id, {
-                        pageSize: 30,
-                        maxBatches: 1,
-                      }),
-                    getRoomMessages: (id) =>
-                      matrixRef.current.getRoomMessages(id),
-                    sendMessage: (params) =>
-                      matrixRef.current.sendMessage(params),
-                    editRoomMessage: (params) =>
-                      matrixRef.current.editRoomMessage(params),
-                  },
-                });
-                if (!cancelled) {
-                  await matrixRef.current.loadRoomHistory(targetRoomId, {
-                    force: true,
-                    pageSize: 30,
-                    maxBatches: 1,
-                  });
-                  syncRoomMessages(targetRoomId);
-                }
-              }
-            } catch (seedError) {
-              console.warn(
-                '[HumanRightPanel] Failed to seed signal description in chat:',
-                seedError,
-              );
-            }
-          } catch (historyErr) {
-            if (!cancelled) {
-              console.warn(
-                '[HumanRightPanel] Background coherence chat history load failed:',
-                historyErr,
-              );
-            }
           }
         })();
       } catch (err) {
+        const knownId = coherenceRoomId?.trim();
+        const recovered = knownId
+          ? matrixRef.current.client?.getRoom(knownId)
+          : null;
+        if (!cancelled && recovered && recovered.getMyMembership() === 'join') {
+          console.warn(
+            '[HumanRightPanel] Join reported a failure after the room was already open:',
+            err,
+          );
+          setRoomId(recovered.roomId);
+          void revealRoomTimeline(recovered.roomId, () => cancelled);
+          return;
+        }
         if (!cancelled) {
           console.error(
             '[HumanRightPanel] Failed to join coherence room:',
@@ -3558,6 +3568,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAuthenticated,
     blockSpaceChatForMembership,
     getOrCreateCoherenceRoom,
+    revealRoomTimeline,
     syncRoomMessages,
   ]);
 
