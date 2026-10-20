@@ -19,6 +19,7 @@ import {
 
 import { useInviteStatus } from '../../spaces/hooks/use-invite-status';
 import { useJoinSpace } from '../../spaces/hooks/use-join-space';
+import { requestHomeRefresh } from './member-home-resume';
 
 const EMPTY_WEB3_IDS: readonly bigint[] = [];
 const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
@@ -121,13 +122,18 @@ function MemberHomeInviteBanner({
         revalidateInviteStatus();
       } else {
         await joinSpace();
-        await createEvent({
-          type: 'joinSpace',
-          referenceEntity: 'space',
-          referenceId: invite.spaceId,
-          parameters: { memberAddress: person.address },
-        });
         setJustJoined(true);
+        requestHomeRefresh();
+        try {
+          await createEvent({
+            type: 'joinSpace',
+            referenceEntity: 'space',
+            referenceId: invite.spaceId,
+            parameters: { memberAddress: person.address },
+          });
+        } catch (eventError) {
+          console.error('[space-member-invite] join event failed', eventError);
+        }
       }
     } catch (error) {
       if (isBaseError(error)) {
@@ -155,13 +161,9 @@ function MemberHomeInviteBanner({
     web3SpaceId,
   ]);
 
+  if (justJoined) return null;
   const showLoader = isProcessing || isJoiningSpace || isCreating;
-  const settled = justJoined || isInvitePending;
-  const label = justJoined
-    ? t('inviteJoined')
-    : isInvitePending
-    ? t('inviteSent')
-    : t('inviteAccept');
+  const label = isInvitePending ? t('inviteSent') : t('inviteAccept');
 
   return (
     <div className="flex flex-col items-stretch gap-3 border border-border bg-background-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -199,7 +201,7 @@ function MemberHomeInviteBanner({
         type="button"
         className="shrink-0"
         disabled={
-          settled ||
+          isInvitePending ||
           showLoader ||
           isInviteLoading ||
           isSpaceLoading ||
