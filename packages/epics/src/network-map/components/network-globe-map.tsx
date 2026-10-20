@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { Loader2, Minus } from 'lucide-react';
+import { Minus } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
 import type {
   NetworkGlobeMapProps,
@@ -2158,13 +2158,24 @@ export function NetworkGlobeMap({
       ref={containerRef}
       className={cn(
         'relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]',
-        isLoadingGeo && 'bg-neutral-2',
+        (isLoadingGeo || isResolving) && 'bg-neutral-2',
       )}
     >
-      {isLoadingGeo ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-          <Loader2 className="size-5 animate-spin" />
-          <span>{t('loadingMap')}</span>
+      {isLoadingGeo || isResolving ? (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center"
+          role="status"
+        >
+          <span className="sr-only">{t('loadingMap')}</span>
+          <span
+            aria-hidden
+            className="relative size-[min(42%,16rem)] motion-safe:animate-pulse motion-reduce:animate-none"
+          >
+            <span className="absolute inset-0 rounded-full border border-neutral-6 bg-neutral-4" />
+            <span className="absolute left-[28%] top-[36%] size-2 rounded-full bg-neutral-8" />
+            <span className="absolute left-[48%] top-[28%] size-2 rounded-full bg-neutral-8" />
+            <span className="absolute right-[30%] top-[48%] size-2 rounded-full bg-neutral-8" />
+          </span>
         </div>
       ) : null}
       {loadError ? (
@@ -2181,7 +2192,7 @@ export function NetworkGlobeMap({
           projectionMode === 'globe'
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-default',
-          isLoadingGeo ? 'invisible' : undefined,
+          isLoadingGeo || isResolving ? 'invisible' : undefined,
         )}
         role="img"
         aria-label={t('mapAriaLabel')}
