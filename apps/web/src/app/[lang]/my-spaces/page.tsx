@@ -42,6 +42,19 @@ export default async function Index(props: PageProps) {
 
   const t = await getTranslations('Spaces');
 
+  const mobileTitle = (
+    <header>
+      <p className="mb-2 text-1 font-bold uppercase text-foreground">
+        {t('allYourSpaces')}
+      </p>
+      <h1
+        className="text-7 leading-tight sm:text-8"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {t('inOnePlace')}
+      </h1>
+    </header>
+  );
   const title = (
     <Heading
       size="9"
@@ -60,7 +73,7 @@ export default async function Index(props: PageProps) {
     <div className="w-full min-w-0">
       <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9">
         <div className="flex flex-col gap-4 xl:hidden">
-          {title}
+          {mobileTitle}
           <Suspense fallback={null}>
             <MySpacesControls
               lang={lang}
