@@ -960,18 +960,16 @@ export function NetworkGlobeMap({
         if (!space) {
           return;
         }
-        if (onSpaceSelectRef.current) {
-          onSpaceSelectRef.current(space);
-          return;
-        }
+        // Hover stays on the small pin card. Opening the side panel is click
+        // only — otherwise the cursor crosses other pins on the way to the
+        // panel and never reaches the intended space.
         updateHoveredPinRef.current(space.id, event);
       })
       .on('mousemove', function (event: MouseEvent, datum) {
         if (
           !canHoverRef.current ||
           isDraggingRef.current ||
-          clusterAnimatingRef.current ||
-          onSpaceSelectRef.current
+          clusterAnimatingRef.current
         ) {
           return;
         }
@@ -2009,7 +2007,7 @@ export function NetworkGlobeMap({
     : null;
 
   const hoverCard =
-    !onSpaceSelect && activeSpace && activePin && !clusterAnimating ? (
+    activeSpace && activePin && !clusterAnimating ? (
       <NetworkMapPinHoverCard
         lang={lang}
         space={activeSpace}
