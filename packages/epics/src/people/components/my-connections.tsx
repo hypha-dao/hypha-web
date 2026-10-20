@@ -101,8 +101,16 @@ function messagePreview(body: string) {
   return `${text.slice(0, 47).trimEnd()}…`;
 }
 
+/** Sidebar snippets only need the recent window, the way a DM list does. */
+const PREVIEW_TAIL = 24;
+/** People on screen are built before the browser paints. */
+const SYNC_ROOM_BUDGET = 16;
+/** Everyone else fills while the browser is idle. */
+const IDLE_ROOM_CHUNK = 8;
+
 function eventsForPreview(room: Room): MatrixEvent[] {
   const live = room.getLiveTimeline().getEvents();
+  const tail = live.length > PREVIEW_TAIL ? live.slice(-PREVIEW_TAIL) : live;
   let pending: MatrixEvent[] = [];
   try {
     if (typeof room.getPendingEvents === 'function') {
@@ -111,14 +119,14 @@ function eventsForPreview(room: Room): MatrixEvent[] {
   } catch {
     pending = [];
   }
-  if (pending.length === 0) return live;
+  if (pending.length === 0) return tail;
   const seen = new Set(
-    live
+    tail
       .map((event) => event.getId())
       .filter((id): id is string => Boolean(id)),
   );
   return [
-    ...live,
+    ...tail,
     ...pending.filter((event) => {
       const id = event.getId();
       return !id || !seen.has(id);
@@ -158,102 +166,479 @@ function lastRoomMessage(room: Room, selfId: string | null) {
   };
 }
 
-export function readConversationRows(client: MatrixClient): ConversationRow[] {
+function conversationRowFromRoom(
+  client: MatrixClient,
+  room: Room,
+): ConversationRow | null {
+  if (room.getMyMembership() !== 'join') return null;
   const botId = botUserId();
   const selfId = client.getUserId();
-  const rows: ConversationRow[] = [];
-
-  for (const room of client.getRooms()) {
-    if (room.getMyMembership() !== 'join') continue;
-    const knownMembers = room
-      .getMembers()
-      .filter(
-        (member) =>
-          member.membership === 'join' || member.membership === 'invite',
-      );
-    const members = (
-      knownMembers.length > 0 ? knownMembers : room.getJoinedMembers()
-    ).filter((member) => {
-      if (!member.userId) return false;
-      if (member.userId === botId) return false;
-      return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
-    });
-    const others = members.filter((member) => member.userId !== selfId);
-    if (others.length === 0) continue;
-
-    const kind = others.length === 1 ? 'person' : 'group';
-    const other = others.length === 1 ? others[0] : undefined;
-    const name =
-      (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
-      room.name ||
-      '';
-    if (
-      isHyphaBot(other?.userId, name) ||
-      looksLikeHyphaBot(room.name) ||
-      looksLikeHyphaBot(name)
-    ) {
-      continue;
-    }
-    const mxc =
-      kind === 'person'
-        ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
-        : room.getMxcAvatarUrl();
-    const faces =
-      kind === 'group'
-        ? others.slice(0, 2).map((member) => ({
-            name:
-              (member.name || member.rawDisplayName || '').trim() ||
-              member.userId,
-            userId: member.userId,
-            avatarUrl: avatarHttp(
-              client,
-              member.getMxcAvatarUrl() ||
-                client.getUser(member.userId)?.avatarUrl,
-            ),
-          }))
-        : undefined;
-    const timeline = room.getLiveTimeline().getEvents();
-    const signalMarkerInTimeline = timeline.some(
-      (event) =>
-        event.getType() === EventType.RoomMessage &&
-        eventContentIsSignalThread(
-          event.getContent() as Record<string, unknown> | null,
-        ),
+  const knownMembers = room
+    .getMembers()
+    .filter(
+      (member) =>
+        member.membership === 'join' || member.membership === 'invite',
     );
-    const signalThread =
-      isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
-    if (signalThread) {
-      rememberSignalThreadRooms([room.roomId], { quiet: true });
-      continue;
-    }
-    const last = lastRoomMessage(room, selfId);
+  const members = (
+    knownMembers.length > 0 ? knownMembers : room.getJoinedMembers()
+  ).filter((member) => {
+    if (!member.userId) return false;
+    if (member.userId === botId) return false;
+    return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
+  });
+  const others = members.filter((member) => member.userId !== selfId);
+  if (others.length === 0) return null;
 
-    rows.push({
-      roomId: room.roomId,
-      name: name.trim(),
-      avatarUrl: avatarHttp(client, mxc),
-      preview: last.preview,
-      mine: last.mine,
-      lastTs: last.ts,
-      unread: countIncomingUnreadMessages(room, selfId, isHyphaBot),
-      memberCount: members.length,
-      otherUserId: other?.userId ?? null,
-      faces,
-      groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
-      kind,
-    });
+  const kind = others.length === 1 ? 'person' : 'group';
+  const other = others.length === 1 ? others[0] : undefined;
+  const name =
+    (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
+    room.name ||
+    '';
+  if (
+    isHyphaBot(other?.userId, name) ||
+    looksLikeHyphaBot(room.name) ||
+    looksLikeHyphaBot(name)
+  ) {
+    return null;
   }
+  const mxc =
+    kind === 'person'
+      ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
+      : room.getMxcAvatarUrl();
+  const faces =
+    kind === 'group'
+      ? others.slice(0, 2).map((member) => ({
+          name:
+            (member.name || member.rawDisplayName || '').trim() ||
+            member.userId,
+          userId: member.userId,
+          avatarUrl: avatarHttp(
+            client,
+            member.getMxcAvatarUrl() ||
+              client.getUser(member.userId)?.avatarUrl,
+          ),
+        }))
+      : undefined;
+  // The signal marker sits on a recent message. The older history is not
+  // needed to decide whether this room belongs in the people list.
+  const timeline = room.getLiveTimeline().getEvents();
+  const tail =
+    timeline.length > PREVIEW_TAIL ? timeline.slice(-PREVIEW_TAIL) : timeline;
+  const signalMarkerInTimeline = tail.some(
+    (event) =>
+      event.getType() === EventType.RoomMessage &&
+      eventContentIsSignalThread(
+        event.getContent() as Record<string, unknown> | null,
+      ),
+  );
+  const signalThread =
+    isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
+  if (signalThread) {
+    rememberSignalThreadRooms([room.roomId], { quiet: true });
+    return null;
+  }
+  const last = lastRoomMessage(room, selfId);
+  // A long timeline means this room was already opened. The sync payload
+  // already carries its unread total; walking every event blocks the list.
+  const unread =
+    timeline.length > 80 &&
+    typeof room.getUnreadNotificationCount === 'function'
+      ? room.getUnreadNotificationCount()
+      : countIncomingUnreadMessages(room, selfId, isHyphaBot);
 
+  return {
+    roomId: room.roomId,
+    name: name.trim(),
+    avatarUrl: avatarHttp(client, mxc),
+    preview: last.preview,
+    mine: last.mine,
+    lastTs: last.ts,
+    unread,
+    memberCount: members.length,
+    otherUserId: other?.userId ?? null,
+    faces,
+    groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
+    kind,
+  };
+}
+
+function sortConversationRows(rows: ConversationRow[]) {
   rows.sort((left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0));
   return rows;
 }
 
+function sameConversationRows(
+  left: readonly ConversationRow[],
+  right: readonly ConversationRow[],
+) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    const current = left[index];
+    const next = right[index];
+    if (!current || !next) return false;
+    if (
+      current.roomId !== next.roomId ||
+      current.preview !== next.preview ||
+      current.lastTs !== next.lastTs ||
+      current.unread !== next.unread ||
+      current.mine !== next.mine ||
+      current.name !== next.name
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+type CachedConversation = { stamp: string; row: ConversationRow | null };
+
+/**
+ * One summary per room, shared by the people list and the nav badge.
+ * Discord and Element keep the sidebar on that summary: they do not walk
+ * every channel's history, and a new message rewrites only that one row.
+ * The people currently listed are summarised first; the rest wait for idle time.
+ */
+const conversationCache = new Map<string, CachedConversation>();
+const conversationListeners = new Set<() => void>();
+let conversationClient: MatrixClient | null = null;
+let listeningClient: MatrixClient | null = null;
+let conversationQueue: string[] = [];
+let conversationPump: number | null = null;
+let conversationPumpIdle = false;
+let conversationNotifyQueued = false;
+let releaseSignalRooms: (() => void) | null = null;
+
+function roomStamp(room: Room, selfId: string | null) {
+  const events = room.getLiveTimeline().getEvents();
+  const last = events[events.length - 1];
+  let clear = 0;
+  const start = Math.max(0, events.length - PREVIEW_TAIL);
+  for (let index = start; index < events.length; index += 1) {
+    if (events[index]?.getType() === EventType.RoomMessage) clear += 1;
+  }
+  const receipt = selfId ? room.getEventReadUpTo(selfId, false) ?? '' : '';
+  return [
+    room.getMyMembership(),
+    events.length,
+    last?.getId() ?? '',
+    last?.getTs() ?? 0,
+    clear,
+    receipt,
+  ].join(':');
+}
+
+function cachedConversation(client: MatrixClient, room: Room) {
+  const stamp = roomStamp(room, client.getUserId());
+  const hit = conversationCache.get(room.roomId);
+  if (hit?.stamp === stamp) return hit;
+  const row = conversationRowFromRoom(client, room);
+  const entry = { stamp, row };
+  conversationCache.set(room.roomId, entry);
+  return entry;
+}
+
+function conversationIsFresh(client: MatrixClient, room: Room) {
+  const hit = conversationCache.get(room.roomId);
+  if (!hit) return false;
+  return hit.stamp === roomStamp(room, client.getUserId());
+}
+
+function priorityRoomIds(
+  client: MatrixClient,
+  matrixUserIds: readonly string[],
+) {
+  const wanted = new Set(matrixUserIds.map((id) => id.toLowerCase()));
+  const found = new Map<string, string>();
+  const direct = client.getAccountData(EventType.Direct)?.getContent() as
+    | Record<string, string[] | undefined>
+    | undefined;
+  if (direct) {
+    for (const matrixUserId of matrixUserIds) {
+      const roomIds = direct[matrixUserId];
+      if (!Array.isArray(roomIds)) continue;
+      for (let index = roomIds.length - 1; index >= 0; index -= 1) {
+        const room = client.getRoom(roomIds[index] ?? '');
+        if (room?.getMyMembership() !== 'join') continue;
+        found.set(matrixUserId.toLowerCase(), room.roomId);
+        break;
+      }
+    }
+  }
+  if (found.size < wanted.size) {
+    const selfId = client.getUserId();
+    for (const room of client.getRooms()) {
+      if (room.getMyMembership() !== 'join') continue;
+      const joined =
+        typeof room.getJoinedMemberCount === 'function'
+          ? room.getJoinedMemberCount()
+          : null;
+      if (joined != null && joined > 2) continue;
+      let members: { userId: string }[] = [];
+      try {
+        members = room.getJoinedMembers();
+      } catch {
+        continue;
+      }
+      const others = members.filter(
+        (member) => member.userId && member.userId !== selfId,
+      );
+      if (others.length !== 1) continue;
+      const key = others[0]?.userId.toLowerCase();
+      if (!key || !wanted.has(key) || found.has(key)) continue;
+      found.set(key, room.roomId);
+    }
+  }
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+  for (const matrixUserId of matrixUserIds) {
+    const roomId = found.get(matrixUserId.toLowerCase());
+    if (!roomId || seen.has(roomId)) continue;
+    seen.add(roomId);
+    ordered.push(roomId);
+  }
+  return ordered;
+}
+
+function cancelConversationPump() {
+  if (conversationPump == null) return;
+  if (conversationPumpIdle && typeof cancelIdleCallback === 'function') {
+    cancelIdleCallback(conversationPump);
+  } else {
+    window.clearTimeout(conversationPump);
+  }
+  conversationPump = null;
+}
+
+function notifyConversationListeners() {
+  if (conversationNotifyQueued) return;
+  conversationNotifyQueued = true;
+  queueMicrotask(() => {
+    conversationNotifyQueued = false;
+    for (const listener of conversationListeners) listener();
+  });
+}
+
+function enqueueConversationRooms(
+  client: MatrixClient,
+  front: readonly string[],
+) {
+  const needed: string[] = [];
+  for (const roomId of front) {
+    const room = client.getRoom(roomId);
+    if (!room || conversationIsFresh(client, room)) continue;
+    needed.push(roomId);
+  }
+  const neededSet = new Set(needed);
+  const rest = conversationQueue.filter((roomId) => !neededSet.has(roomId));
+  const queued = new Set<string>([...needed, ...rest]);
+  const pending: { id: string; ts: number }[] = [];
+  for (const room of client.getRooms()) {
+    if (queued.has(room.roomId)) continue;
+    if (conversationIsFresh(client, room)) continue;
+    pending.push({
+      id: room.roomId,
+      ts:
+        typeof room.getLastActiveTimestamp === 'function'
+          ? room.getLastActiveTimestamp()
+          : 0,
+    });
+  }
+  pending.sort((left, right) => right.ts - left.ts);
+  conversationQueue = [...needed, ...rest, ...pending.map((item) => item.id)];
+}
+
+function scheduleConversationPump() {
+  if (conversationPump != null || conversationQueue.length === 0) return;
+  if (typeof window === 'undefined') return;
+  const run = () => {
+    conversationPump = null;
+    pumpConversationRooms(IDLE_ROOM_CHUNK);
+  };
+  if (typeof requestIdleCallback === 'function') {
+    conversationPumpIdle = true;
+    conversationPump = requestIdleCallback(run, { timeout: 400 });
+  } else {
+    conversationPumpIdle = false;
+    conversationPump = window.setTimeout(run, 32);
+  }
+}
+
+function pumpConversationRooms(limit: number) {
+  const client = conversationClient;
+  if (!client) return;
+  let done = 0;
+  while (limit > 0 && conversationQueue.length > 0 && done < limit) {
+    const roomId = conversationQueue.shift();
+    if (!roomId) break;
+    const room = client.getRoom(roomId);
+    if (!room || conversationIsFresh(client, room)) continue;
+    cachedConversation(client, room);
+    done += 1;
+  }
+  if (done > 0) notifyConversationListeners();
+  scheduleConversationPump();
+}
+
+function refreshConversationRoom(room: Room | undefined) {
+  const client = conversationClient;
+  if (!client || !room) return;
+  conversationQueue = conversationQueue.filter((id) => id !== room.roomId);
+  conversationCache.delete(room.roomId);
+  cachedConversation(client, room);
+  notifyConversationListeners();
+}
+
+function onConversationSync() {
+  const client = conversationClient;
+  if (!client) return;
+  enqueueConversationRooms(client, []);
+  scheduleConversationPump();
+  notifyConversationListeners();
+}
+
+function onConversationTimeline(
+  _event: MatrixEvent,
+  room?: Room,
+  toStartOfTimeline?: boolean,
+) {
+  if (toStartOfTimeline) return;
+  refreshConversationRoom(room);
+}
+
+function onConversationReceipt(_event: MatrixEvent, room?: Room) {
+  refreshConversationRoom(room);
+}
+
+function onConversationMembership(room?: Room) {
+  refreshConversationRoom(room);
+}
+
+function onConversationDecrypted(event: MatrixEvent) {
+  const roomId = event.getRoomId();
+  if (!roomId || !conversationClient) return;
+  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+}
+
+function onConversationSignals() {
+  const client = conversationClient;
+  if (!client) return;
+  for (const room of client.getRooms()) {
+    if (!isRememberedSignalThreadRoom(room.roomId)) continue;
+    conversationCache.delete(room.roomId);
+    cachedConversation(client, room);
+  }
+  notifyConversationListeners();
+}
+
+function onConversationUnreadEvent() {
+  const client = conversationClient;
+  if (!client) return;
+  enqueueConversationRooms(client, []);
+  pumpConversationRooms(IDLE_ROOM_CHUNK);
+}
+
+function listenForConversationRows(client: MatrixClient) {
+  if (listeningClient === client) return;
+  if (listeningClient) stopListeningForConversationRows(listeningClient);
+  listeningClient = client;
+  client.on(ClientEvent.Sync, onConversationSync);
+  client.on(RoomEvent.Timeline, onConversationTimeline);
+  client.on(RoomEvent.Receipt, onConversationReceipt);
+  client.on(RoomEvent.MyMembership, onConversationMembership);
+  client.on(MatrixEventEvent.Decrypted, onConversationDecrypted);
+  window.addEventListener(CONVERSATION_UNREAD_EVENT, onConversationUnreadEvent);
+  releaseSignalRooms = subscribeSignalThreadRooms(onConversationSignals);
+}
+
+function stopListeningForConversationRows(client: MatrixClient) {
+  client.removeListener(ClientEvent.Sync, onConversationSync);
+  client.removeListener(RoomEvent.Timeline, onConversationTimeline);
+  client.removeListener(RoomEvent.Receipt, onConversationReceipt);
+  client.removeListener(RoomEvent.MyMembership, onConversationMembership);
+  client.removeListener(MatrixEventEvent.Decrypted, onConversationDecrypted);
+  window.removeEventListener(
+    CONVERSATION_UNREAD_EVENT,
+    onConversationUnreadEvent,
+  );
+  releaseSignalRooms?.();
+  releaseSignalRooms = null;
+  cancelConversationPump();
+  if (listeningClient === client) listeningClient = null;
+}
+
+function useConversationClient(client: MatrixClient) {
+  if (conversationClient === client) return;
+  if (listeningClient) stopListeningForConversationRows(listeningClient);
+  conversationClient = client;
+  conversationCache.clear();
+  conversationQueue = [];
+  cancelConversationPump();
+}
+
+export function conversationRowsSnapshot(client: MatrixClient) {
+  const rows: ConversationRow[] = [];
+  for (const room of client.getRooms()) {
+    const row = conversationCache.get(room.roomId)?.row;
+    if (row) rows.push(row);
+  }
+  return sortConversationRows(rows);
+}
+
+export function conversationUnreadSnapshot(client: MatrixClient) {
+  let total = 0;
+  for (const room of client.getRooms()) {
+    total += conversationCache.get(room.roomId)?.row?.unread ?? 0;
+  }
+  return total;
+}
+
+/** Keep a listener on the shared room summaries and fill any room still missing. */
+export function attachConversationList(
+  client: MatrixClient,
+  onChange: () => void,
+) {
+  useConversationClient(client);
+  conversationListeners.add(onChange);
+  listenForConversationRows(client);
+  enqueueConversationRooms(client, []);
+  scheduleConversationPump();
+  onChange();
+  return () => {
+    conversationListeners.delete(onChange);
+    if (conversationListeners.size === 0 && listeningClient) {
+      stopListeningForConversationRows(listeningClient);
+    }
+  };
+}
+
+/** Move these people's direct rooms to the front and build them immediately. */
+export function prioritizeConversationRooms(
+  client: MatrixClient,
+  matrixUserIds: readonly string[],
+) {
+  if (matrixUserIds.length === 0) return;
+  useConversationClient(client);
+  const roomIds = priorityRoomIds(client, matrixUserIds);
+  enqueueConversationRooms(client, roomIds);
+  pumpConversationRooms(
+    Math.min(SYNC_ROOM_BUDGET, Math.max(roomIds.length, 1)),
+  );
+}
+
+export function readConversationRows(client: MatrixClient): ConversationRow[] {
+  useConversationClient(client);
+  const rows: ConversationRow[] = [];
+  for (const room of client.getRooms()) {
+    const row = cachedConversation(client, room).row;
+    if (row) rows.push(row);
+  }
+  return sortConversationRows(rows);
+}
+
 export function sumConversationUnread(client: MatrixClient | null) {
   if (!client) return 0;
-  return readConversationRows(client).reduce(
-    (total, row) => total + row.unread,
-    0,
-  );
+  return conversationUnreadSnapshot(client);
 }
 
 export { notifyConversationUnreadChanged };
@@ -267,22 +652,26 @@ export function useConversationUnreadCount() {
       setCount(0);
       return;
     }
-    const refresh = () => {
-      const next = sumConversationUnread(client);
+    let timer = 0;
+    let stopped = false;
+    const publish = () => {
+      timer = 0;
+      if (stopped) return;
+      const next = conversationUnreadSnapshot(client);
       setCount((prev) => (prev === next ? prev : next));
     };
-    refresh();
-    client.on(ClientEvent.Sync, refresh);
-    client.on(RoomEvent.Timeline, refresh);
-    client.on(RoomEvent.Receipt, refresh);
-    client.on(RoomEvent.AccountData, refresh);
-    window.addEventListener(CONVERSATION_UNREAD_EVENT, refresh);
+    // Coalesce, but do not keep postponing: the total should climb as each
+    // chunk of rooms is summarised, not after the last person in the backlog.
+    const schedule = () => {
+      if (timer) return;
+      timer = window.setTimeout(publish, 150);
+    };
+    const unsubscribe = attachConversationList(client, schedule);
+    publish();
     return () => {
-      client.removeListener(ClientEvent.Sync, refresh);
-      client.removeListener(RoomEvent.Timeline, refresh);
-      client.removeListener(RoomEvent.Receipt, refresh);
-      client.removeListener(RoomEvent.AccountData, refresh);
-      window.removeEventListener(CONVERSATION_UNREAD_EVENT, refresh);
+      stopped = true;
+      window.clearTimeout(timer);
+      unsubscribe();
     };
   }, [client]);
 
@@ -365,6 +754,16 @@ export function MyConnections({
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds: listed.map((person) => person.id),
   });
+  const matrixIdsRef = useRef(personIdToMatrixUserId);
+  matrixIdsRef.current = personIdToMatrixUserId;
+  const visibleMatrixKey = useMemo(
+    () =>
+      Object.values(personIdToMatrixUserId)
+        .filter((id): id is string => Boolean(id))
+        .sort()
+        .join('\n'),
+    [personIdToMatrixUserId],
+  );
 
   useEffect(() => {
     const chat = searchParams.get('chat')?.trim();
@@ -457,36 +856,25 @@ export function MyConnections({
       setSynced(false);
       return;
     }
-    const refresh = () => {
-      setRows(readConversationRows(client));
+    return attachConversationList(client, () => {
+      setRows((current) => {
+        const next = conversationRowsSnapshot(client);
+        return sameConversationRows(current, next) ? current : next;
+      });
       const state = client.getSyncState();
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
       }
-    };
-    refresh();
-    const onSync = () => {
-      refresh();
-      setSynced(true);
-    };
-    client.on(ClientEvent.Sync, onSync);
-    client.on(RoomEvent.Timeline, refresh);
-    client.on(RoomEvent.Receipt, refresh);
-    client.on(RoomEvent.MyMembership, refresh);
-    // Decryption updates the event in place and does not emit Timeline again.
-    client.on(MatrixEventEvent.Decrypted, refresh);
-    window.addEventListener(CONVERSATION_UNREAD_EVENT, refresh);
-    const unsubscribeSignalRooms = subscribeSignalThreadRooms(refresh);
-    return () => {
-      unsubscribeSignalRooms();
-      window.removeEventListener(CONVERSATION_UNREAD_EVENT, refresh);
-      client.removeListener(ClientEvent.Sync, onSync);
-      client.removeListener(RoomEvent.Timeline, refresh);
-      client.removeListener(RoomEvent.Receipt, refresh);
-      client.removeListener(RoomEvent.MyMembership, refresh);
-      client.removeListener(MatrixEventEvent.Decrypted, refresh);
-    };
+    });
   }, [client]);
+
+  useEffect(() => {
+    if (!client) return;
+    const ids = Object.values(matrixIdsRef.current).filter((id): id is string =>
+      Boolean(id),
+    );
+    prioritizeConversationRooms(client, ids);
+  }, [client, visibleMatrixKey]);
 
   useEffect(() => {
     rememberSignalThreadRooms(

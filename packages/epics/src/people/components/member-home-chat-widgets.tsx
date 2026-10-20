@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
-import { ClientEvent, RoomEvent, SyncState } from 'matrix-js-sdk';
+import { SyncState } from 'matrix-js-sdk';
 import {
   Check,
   ChevronDown,
@@ -62,7 +62,11 @@ import {
 } from './member-connections';
 import { sortByPresenceThenShared } from './member-presence';
 import { PersonAvatar } from './person-avatar';
-import { readConversationRows } from './my-connections';
+import {
+  attachConversationList,
+  conversationRowsSnapshot,
+  prioritizeConversationRooms,
+} from './my-connections';
 import { useMemberPresence } from './use-member-presence';
 
 type HomeConnection = MemberIntelligence['connections'][number];
@@ -320,6 +324,16 @@ export function MemberHomePeopleWidgetCard({
   const personIds = useMemo(() => people.map((person) => person.id), [people]);
   const { presenceById } = useMemberPresence(personIds);
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({ personIds });
+  const matrixIdsRef = useRef(personIdToMatrixUserId);
+  matrixIdsRef.current = personIdToMatrixUserId;
+  const visibleMatrixKey = useMemo(
+    () =>
+      Object.values(personIdToMatrixUserId)
+        .filter((id): id is string => Boolean(id))
+        .sort()
+        .join('\n'),
+    [personIdToMatrixUserId],
+  );
   const ranked = useMemo(
     () => sortByPresenceThenShared(people, presenceById),
     [people, presenceById],
@@ -331,29 +345,31 @@ export function MemberHomePeopleWidgetCard({
       setSynced(false);
       return;
     }
-    const refresh = () => {
-      setRows(readConversationRows(client));
+    return attachConversationList(client, () => {
+      setRows((current) => {
+        const next = conversationRowsSnapshot(client);
+        if (
+          current.length === next.length &&
+          current.every((row, index) => row === next[index])
+        ) {
+          return current;
+        }
+        return next;
+      });
       const state = client.getSyncState();
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
       }
-    };
-    refresh();
-    const onSync = () => {
-      refresh();
-      setSynced(true);
-    };
-    client.on(ClientEvent.Sync, onSync);
-    client.on(RoomEvent.Timeline, refresh);
-    client.on(RoomEvent.Receipt, refresh);
-    client.on(RoomEvent.MyMembership, refresh);
-    return () => {
-      client.removeListener(ClientEvent.Sync, onSync);
-      client.removeListener(RoomEvent.Timeline, refresh);
-      client.removeListener(RoomEvent.Receipt, refresh);
-      client.removeListener(RoomEvent.MyMembership, refresh);
-    };
+    });
   }, [client]);
+
+  useEffect(() => {
+    if (!client) return;
+    const ids = Object.values(matrixIdsRef.current).filter((id): id is string =>
+      Boolean(id),
+    );
+    prioritizeConversationRooms(client, ids);
+  }, [client, visibleMatrixKey]);
 
   const suggestions = useMemo(() => {
     const newcomers = newcomersFromSignals(networkSignals, selfId ?? null);
@@ -707,14 +723,18 @@ export function MemberHomeSendTokensWidget({
       setConversationRows([]);
       return;
     }
-    const refresh = () => setConversationRows(readConversationRows(client));
-    refresh();
-    client.on(ClientEvent.Sync, refresh);
-    client.on(RoomEvent.Timeline, refresh);
-    return () => {
-      client.removeListener(ClientEvent.Sync, refresh);
-      client.removeListener(RoomEvent.Timeline, refresh);
-    };
+    return attachConversationList(client, () => {
+      setConversationRows((current) => {
+        const next = conversationRowsSnapshot(client);
+        if (
+          current.length === next.length &&
+          current.every((row, index) => row === next[index])
+        ) {
+          return current;
+        }
+        return next;
+      });
+    });
   }, [client]);
 
   const loadTransferRecipients = useCallback(async () => {
