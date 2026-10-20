@@ -52,6 +52,7 @@ import {
 } from './member-home-resume';
 
 export { HOME_REFRESH_EVENT } from './member-home-resume';
+import { MemberHomeBanner } from './member-home-banner';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonRoleBadge } from './person-badges';
@@ -297,14 +298,7 @@ export function MemberHome({
 
   return (
     <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden pt-4 md:-mt-5 md:pt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]">
-      <div className="member-home-banner" aria-hidden>
-        <img
-          alt=""
-          className="member-home-banner-image"
-          src="/brand/strategy-mycelium.png"
-        />
-        <div className="member-home-banner-veil" />
-      </div>
+      <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
         {isAiOpen ? null : (
           <MemberHomeSpacesRail

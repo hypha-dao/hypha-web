@@ -21,7 +21,7 @@ import {
   readHomeActed,
   readHomeChoices,
 } from './member-home-resume';
-import './member-home-banner.css';
+import { MemberHomeBanner } from './member-home-banner';
 
 function AttentionMark({
   kind,
@@ -89,14 +89,7 @@ export function MemberHomeAttention({
 
   return (
     <div className="relative min-h-[calc(100dvh-4.5rem)]">
-      <div className="member-home-banner" aria-hidden>
-        <img
-          alt=""
-          className="member-home-banner-image"
-          src="/brand/strategy-mycelium.png"
-        />
-        <div className="member-home-banner-veil" />
-      </div>
+      <MemberHomeBanner />
       <div className="relative mx-auto w-full max-w-xl px-4 py-6 md:py-10">
         <Link
           href={`/${lang}/home`}

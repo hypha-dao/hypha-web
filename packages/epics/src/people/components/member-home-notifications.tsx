@@ -11,7 +11,7 @@ import type { MemberIntelligence } from '@hypha-platform/core/client';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
-import './member-home-banner.css';
+import { MemberHomeBanner } from './member-home-banner';
 
 type NotificationItem = MemberIntelligence['notifications'][number];
 
@@ -75,14 +75,7 @@ export function MemberHomeNotifications({
 
   return (
     <div className="relative min-h-[calc(100dvh-4.5rem)]">
-      <div className="member-home-banner" aria-hidden>
-        <img
-          alt=""
-          className="member-home-banner-image"
-          src="/brand/strategy-mycelium.png"
-        />
-        <div className="member-home-banner-veil" />
-      </div>
+      <MemberHomeBanner />
       <div className="relative mx-auto w-full max-w-xl px-4 py-6 md:py-10">
         <Link
           href={`/${lang}/home`}
