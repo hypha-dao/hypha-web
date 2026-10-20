@@ -486,7 +486,7 @@ export function MyConnections({
     ];
     const groups = picking
       ? []
-      : groupRowsForConnections(conversations, t('someone'));
+      : groupRowsForConnections<ConnectionPerson>(conversations, t('someone'));
     const source = [...groups, ...members];
     const filtered = needle
       ? source.filter((row) => {
