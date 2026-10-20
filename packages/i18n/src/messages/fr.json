@@ -285,7 +285,7 @@
     "signInBody": "Connecte-toi pour voir où tu peux être utile.",
     "signIn": "Se connecter",
     "loading": "On rassemble ton accueil…",
-    "metaTitle": "Mon tableau de bord | Hypha",
+    "metaTitle": "Accueil | Hypha",
     "metaDescription": "Où tu peux être utile : tes espaces, tes personnes, tes propositions et ton portefeuille.",
     "fallbackName": "toi",
     "fallbackMember": "Membre",
@@ -632,7 +632,7 @@
   },
   "Navigation": {
     "network": "Réseau",
-    "myDashboard": "Mon tableau de bord",
+    "myDashboard": "Accueil",
     "mySpaces": "Espaces",
     "myConnections": "Connexions",
     "chat": "Messages",
@@ -5346,6 +5346,6 @@
     "deploy": "Déployer du capital",
     "proposal": "Proposition",
     "agreement": "Accord",
-    "backHome": "Retour à mon tableau de bord"
+    "backHome": "Retour à l'accueil"
   }
 }

@@ -15,7 +15,12 @@ import {
   type ReactNode,
 } from 'react';
 import type { Locale } from '@hypha-platform/i18n';
-import { resolveAccountEntryPath } from '@hypha-platform/authentication';
+import {
+  consumeAuthReturnPath,
+  peekAuthReturnPath,
+  resolveAccountEntryPath,
+  saveAuthReturnPath,
+} from '@hypha-platform/authentication';
 import {
   getOnboardingPath,
   isInteractiveCreatePath,
@@ -111,6 +116,7 @@ export const ConnectedButtonProfile = ({
         pathname !== signupPath &&
         !pathname.includes('/profile/signup')
       ) {
+        saveAuthReturnPath(pathname);
         router.replace(signupPath);
       }
       return;
@@ -132,6 +138,30 @@ export const ConnectedButtonProfile = ({
         router.replace(isInteractiveCreatePath(nextPath) ? homePath : nextPath);
       }
       setLoggingIn(false);
+      return;
+    }
+    const storedSpacePath = peekAuthReturnPath();
+    const spaceSlug = pathname.match(/\/dho\/([^/]+)/)?.[1];
+    if (
+      storedSpacePath &&
+      spaceSlug &&
+      storedSpacePath.includes(`/dho/${spaceSlug}`)
+    ) {
+      consumeAuthReturnPath();
+      return;
+    }
+    const onHome =
+      locale != null &&
+      (pathname === `/${locale}/home` || pathname === `/${locale}/home/`);
+    if (storedSpacePath && onHome) {
+      const nextPath = resolvePostAuthRedirectPathOrDefault({
+        pathname,
+        lang: locale,
+        baseRedirectPath: homePath,
+      });
+      if (nextPath !== pathname) {
+        router.replace(nextPath);
+      }
     }
   }, [
     isPersonLoading,

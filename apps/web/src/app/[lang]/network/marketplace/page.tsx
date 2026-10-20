@@ -47,7 +47,7 @@ export default async function NetworkMarketplacePage(props: PageProps) {
         {t('body')}
       </p>
       <Link
-        href={`/${lang}/my-dashboard`}
+        href={`/${lang}/home`}
         className="mt-6 inline-block text-2 text-accent-11 underline-offset-4 hover:underline"
       >
         {t('backHome')}

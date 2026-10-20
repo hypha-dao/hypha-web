@@ -96,7 +96,7 @@ export function resolvePostAuthRedirectPathOrDefault(
 
 /**
  * Authenticated entry. A Privy session with no `people` row opens the welcome
- * flow. A session that already has a profile opens My dashboard.
+ * flow. A session that already has a profile opens Home.
  * Never `/interactive-create` (space AI) and never `/my-spaces`.
  */
 export function resolveAccountEntryPath({
@@ -110,7 +110,7 @@ export function resolveAccountEntryPath({
 }
 
 function accountHomePath(lang?: string): string {
-  return lang ? `/${lang}/my-dashboard` : '/my-dashboard';
+  return lang ? `/${lang}/home` : '/home';
 }
 
 function accountSignupPath(lang?: string): string {

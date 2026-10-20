@@ -285,7 +285,7 @@
     "signInBody": "Melde dich an, um zu sehen, wo du nützlich sein kannst.",
     "signIn": "Anmelden",
     "loading": "Dein Zuhause wird zusammengestellt…",
-    "metaTitle": "Mein Dashboard | Hypha",
+    "metaTitle": "Zuhause | Hypha",
     "metaDescription": "Wo du nützlich sein kannst: deine Spaces, Menschen, Vorschläge und deine Wallet.",
     "fallbackName": "du",
     "fallbackMember": "Mitglied",
@@ -632,7 +632,7 @@
   },
   "Navigation": {
     "network": "Netzwerk",
-    "myDashboard": "Mein Dashboard",
+    "myDashboard": "Start",
     "mySpaces": "Spaces",
     "myConnections": "Verbindungen",
     "chat": "Nachrichten",
@@ -5350,6 +5350,6 @@
     "deploy": "Kapital einsetzen",
     "proposal": "Vorschlag",
     "agreement": "Vereinbarung",
-    "backHome": "Zurück zu meinem Dashboard"
+    "backHome": "Zurück nach Hause"
   }
 }

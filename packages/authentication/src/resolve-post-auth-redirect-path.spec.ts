@@ -41,10 +41,10 @@ describe('auth-return-path', () => {
     expect(peekAuthReturnPath()).toBeNull();
   });
 
-  it('ignores non-DHO paths', () => {
+  it('keeps a space link when a later page is not a space', () => {
     saveAuthReturnPath('/en/dho/hypha/coherence');
     saveAuthReturnPath('/en/network');
-    expect(peekAuthReturnPath()).toBeNull();
+    expect(peekAuthReturnPath()).toBe('/en/dho/hypha/coherence');
   });
 });
 
@@ -119,9 +119,9 @@ describe('resolveAccountEntryPath', () => {
     );
   });
 
-  it('opens My dashboard when a profile already exists', () => {
+  it('opens Home when a profile already exists', () => {
     expect(resolveAccountEntryPath({ lang: 'en', hasProfile: true })).toBe(
-      '/en/my-dashboard',
+      '/en/home',
     );
   });
 });

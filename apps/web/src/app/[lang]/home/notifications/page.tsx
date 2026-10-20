@@ -1,5 +1,14 @@
 import { Locale } from '@hypha-platform/i18n';
-import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+
+import { MemberHomeNotificationsRoute } from '../../my-dashboard/notifications/notifications-route';
+
+export async function generateMetadata() {
+  const t = await getTranslations('MemberHome');
+  return {
+    title: t('notifications'),
+  };
+}
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
@@ -7,5 +16,5 @@ type PageProps = {
 
 export default async function NotificationsPage(props: PageProps) {
   const { lang } = await props.params;
-  redirect(`/${lang}/my-dashboard/notifications`);
+  return <MemberHomeNotificationsRoute lang={lang} />;
 }

@@ -1,12 +1,21 @@
 import { Locale } from '@hypha-platform/i18n';
-import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+
+import { MemberHomePage } from '../my-dashboard/member-home-page';
+
+export async function generateMetadata() {
+  const t = await getTranslations('MemberHome');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
 };
 
-/** Old address for My dashboard. */
 export default async function HomePage(props: PageProps) {
   const { lang } = await props.params;
-  redirect(`/${lang}/my-dashboard`);
+  return <MemberHomePage lang={lang} />;
 }

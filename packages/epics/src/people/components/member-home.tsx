@@ -451,7 +451,7 @@ export function MemberHome({
                 />
                 {home && home.notifications.length > 5 ? (
                   <Button asChild className="mt-4 w-full text-sm">
-                    <Link href={`/${lang}/my-dashboard/notifications`}>
+                    <Link href={`/${lang}/home/notifications`}>
                       {t('seeMoreNotifications')}
                     </Link>
                   </Button>
@@ -1079,7 +1079,7 @@ function AttentionNeeded({
       />
       {items.length > ATTENTION_PAGE ? (
         <Button asChild className="mt-4 w-full text-sm">
-          <Link href={`/${lang}/my-dashboard/attention`}>{t('seeMore')}</Link>
+          <Link href={`/${lang}/home/attention`}>{t('seeMore')}</Link>
         </Button>
       ) : null}
     </Tile>

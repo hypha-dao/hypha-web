@@ -285,7 +285,7 @@
     "signInBody": "Најави се за да видиш каде можеш да бидеш корисен.",
     "signIn": "Најави се",
     "loading": "Се собира твојот дом…",
-    "metaTitle": "Мојата табла | Hypha",
+    "metaTitle": "Дом | Hypha",
     "metaDescription": "Каде можеш да бидеш корисен: твоите простори, луѓе, предлози и паричник.",
     "fallbackName": "ти",
     "fallbackMember": "Член",
@@ -632,7 +632,7 @@
   },
   "Navigation": {
     "network": "Мрежа",
-    "myDashboard": "Мојата табла",
+    "myDashboard": "Дома",
     "mySpaces": "Простори",
     "myConnections": "Врски",
     "chat": "Пораки",
@@ -5337,6 +5337,6 @@
     "deploy": "Вложи капитал",
     "proposal": "Предлог",
     "agreement": "Договор",
-    "backHome": "Назад кон мојата табла"
+    "backHome": "Назад кон домот"
   }
 }

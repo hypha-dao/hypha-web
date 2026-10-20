@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   resolveAccountEntryPath,
+  resolvePostAuthRedirectPathOrDefault,
   useAuthentication,
 } from '@hypha-platform/authentication';
 import { useMe } from '@hypha-platform/core/client';
@@ -13,26 +14,51 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import '../_shared/landing-marketing.css';
 
+/** Home, unless this tab still remembers a space link from before sign-in. */
+function entryPath({
+  lang,
+  hasProfile,
+}: {
+  lang: Locale;
+  hasProfile: boolean;
+}): string {
+  return resolvePostAuthRedirectPathOrDefault({
+    pathname: typeof window !== 'undefined' ? window.location.pathname : '',
+    lang,
+    baseRedirectPath: resolveAccountEntryPath({ lang, hasProfile }),
+    consume: false,
+  });
+}
+
 export function LandingPage({ lang }: { lang: Locale }) {
   const t = useTranslations('Landing');
-  const { isAuthenticated, isLoading, login } = useAuthentication();
+  const { isAuthenticated, isLoading, isLoggingIn, login } =
+    useAuthentication();
   const { person, isLoading: isPersonLoading, meError } = useMe();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading || !isAuthenticated || isPersonLoading || meError) return;
+    if (
+      isLoading ||
+      !isAuthenticated ||
+      isPersonLoading ||
+      meError ||
+      isLoggingIn
+    )
+      return;
     if (person === null) {
       router.replace(resolveAccountEntryPath({ lang, hasProfile: false }));
       return;
     }
     if (person) {
-      router.replace(resolveAccountEntryPath({ lang, hasProfile: true }));
+      router.replace(entryPath({ lang, hasProfile: true }));
     }
   }, [
     isLoading,
     isAuthenticated,
     isPersonLoading,
     meError,
+    isLoggingIn,
     person,
     lang,
     router,
@@ -75,9 +101,7 @@ export function LandingPage({ lang }: { lang: Locale }) {
                 return;
               }
               if (person) {
-                router.push(
-                  resolveAccountEntryPath({ lang, hasProfile: true }),
-                );
+                router.push(entryPath({ lang, hasProfile: true }));
               }
             }}
           >

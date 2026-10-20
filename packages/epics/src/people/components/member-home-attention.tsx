@@ -92,7 +92,7 @@ export function MemberHomeAttention({
       <MemberHomeBanner />
       <div className="relative mx-auto w-full max-w-xl px-4 py-6 md:py-10">
         <Link
-          href={`/${lang}/my-dashboard`}
+          href={`/${lang}/home`}
           className="text-1 text-neutral-11 underline-offset-4 hover:text-foreground hover:underline"
         >
           {tCommon('back')}

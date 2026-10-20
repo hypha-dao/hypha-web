@@ -81,24 +81,13 @@ export const useCreateProfile = (
           pathname:
             typeof window !== 'undefined' ? window.location.pathname : '',
           lang: typeof lang === 'string' ? lang : undefined,
-          baseRedirectPath: lang ? `/${lang}/my-dashboard` : '/en/my-dashboard',
+          baseRedirectPath: lang ? `/${lang}/home` : '/en/home',
         });
-        const homePath = lang ? `/${lang}/my-dashboard` : '/en/my-dashboard';
-        const orientation = data.primaryOrientation;
-        const orientationPath =
-          orientation === 'builder'
-            ? lang
-              ? `/${lang}/interactive-create`
-              : '/en/interactive-create'
-            : orientation === 'investor'
-            ? lang
-              ? `/${lang}/network`
-              : '/en/network'
-            : homePath;
+        const homePath = lang ? `/${lang}/home` : '/en/home';
         const nextPath =
           spaceContextReturnPath && spaceContextReturnPath !== homePath
             ? spaceContextReturnPath
-            : orientationPath;
+            : homePath;
 
         // Prevent post-signup redirect guards from briefly treating the user
         // as profile-less on the next route transition.

@@ -17,7 +17,7 @@ export function useIsSpaceContext(): boolean {
   return Boolean(params?.id ?? getDhoSpaceSlugFromPathname(pathname));
 }
 
-/** `/{lang}/my-dashboard`, and the old `/{lang}/home` address. */
+/** `/{lang}/home`, including the earlier `/{lang}/my-dashboard` address. */
 export function isMemberHomePath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
   return /^\/[^/]+\/(?:my-dashboard|home)\/?$/.test(pathname);

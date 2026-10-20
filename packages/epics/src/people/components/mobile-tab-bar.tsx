@@ -395,7 +395,7 @@ export function MobileTabBar({
     };
   }, [showAppMenu, showSectionStrip]);
 
-  const dashboardHref = `/${lang}/my-dashboard`;
+  const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/messages`;
   const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
