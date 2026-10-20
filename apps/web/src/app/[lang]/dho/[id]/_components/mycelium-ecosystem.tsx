@@ -13,8 +13,8 @@ import {
 import {
   getAgentAvatarInitials,
   useFilterSpacesListWithDiscoverability,
-  useMemberDirectoryConnect,
   useMobilizedAiAgents,
+  usePersonMemberSpaces,
   useOpenSpacePublicChat,
   useTransfers,
   type TransferWithEntity,
@@ -74,6 +74,7 @@ type PersonFocus = {
   label: string;
   imageUrl?: string | null;
   initials: string;
+  address?: string | null;
 };
 
 type OutsideSpace = {
@@ -799,6 +800,19 @@ export function MyceliumEcosystem({
       return Array.isArray(body) ? (body as Space[]) : [];
     },
   );
+  const { spaces: chainPersonSpaces, isLoading: chainPersonSpacesLoading } =
+    usePersonMemberSpaces({
+      personAddress: personFocus?.address?.trim() || null,
+      personSlug: personFocus?.slug,
+    });
+  const memberSpaceList = useMemo(() => {
+    const byId = new Map<number, Space>();
+    for (const space of [...personSpaces, ...chainPersonSpaces]) {
+      if (space?.id == null) continue;
+      byId.set(space.id, space);
+    }
+    return [...byId.values()];
+  }, [chainPersonSpaces, personSpaces]);
   const {
     transfers,
     isLoading: flowsLoading,
@@ -829,23 +843,6 @@ export function MyceliumEcosystem({
     onVisibleSpacesChange,
     parentNode?.id,
   ]);
-
-  const personSpaceNodes = useMemo(
-    () =>
-      personSpaces.flatMap((space) =>
-        space.title
-          ? [
-              {
-                id: space.id,
-                name: space.title,
-                slug: space.slug ?? undefined,
-                logoUrl: space.logoUrl,
-              },
-            ]
-          : [],
-      ),
-    [personSpaces],
-  );
 
   const people = persons.data ?? [];
   const joinedSpaces = memberSpaces.data ?? [];
@@ -901,6 +898,35 @@ export function MyceliumEcosystem({
         logoUrl: space.logoUrl,
       }));
   }, [joinedVisibilityLoading, outsideSpace, visibleJoinedSpaces]);
+
+  const {
+    filteredSpaces: visiblePersonSpaces,
+    isLoading: personVisibilityLoading,
+  } = useFilterSpacesListWithDiscoverability({
+    spaces: memberSpaceList,
+    useGeneralState: true,
+  });
+  const personSpacesReady =
+    !personSpacesLoading &&
+    !chainPersonSpacesLoading &&
+    !personVisibilityLoading;
+  const personSpaceNodes = useMemo(() => {
+    if (!personFocus || !personSpacesReady) return [];
+    const visibleIds = new Set(visiblePersonSpaces.map((space) => space.id));
+    return memberSpaceList.flatMap((space) => {
+      if (!space.title) return [];
+      const visible = space.web3SpaceId == null || visibleIds.has(space.id);
+      if (!visible) return [];
+      return [
+        {
+          id: space.id,
+          name: space.title,
+          slug: space.slug ?? undefined,
+          logoUrl: space.logoUrl,
+        },
+      ];
+    });
+  }, [memberSpaceList, personFocus, personSpacesReady, visiblePersonSpaces]);
 
   const structureField = useMemo(() => {
     if (personFocus) {
@@ -958,42 +984,12 @@ export function MyceliumEcosystem({
     setFocusId(spaceId);
   };
 
-  const directoryPeople = useMemo(
-    () =>
-      people.flatMap((person) =>
-        person.slug
-          ? [
-              {
-                id: person.id,
-                name: person.name,
-                surname: person.surname,
-                nickname: person.nickname,
-                slug: person.slug,
-                address: person.address,
-              },
-            ]
-          : [],
-      ),
-    [people],
-  );
-  const { openChat } = useMemberDirectoryConnect(directoryPeople);
   const { openPublicChat } = useOpenSpacePublicChat();
 
   const focusPerson = (person: PersonFocus, at?: { x: number; y: number }) => {
     zoomFrom(at?.x, at?.y);
     setOutsideSpace(null);
     setPersonFocus(person);
-  };
-
-  const openPersonChat = (person: PersonFocus) => {
-    const match = directoryPeople.find((row) => row.id === person.id);
-    void openChat(
-      match ?? {
-        id: person.id,
-        slug: person.slug,
-        name: person.label,
-      },
-    );
   };
 
   const activateFlowCounterparty = (
@@ -1021,6 +1017,7 @@ export function MyceliumEcosystem({
       label: personName,
       imageUrl: person.avatarUrl,
       initials: personName.slice(0, 2),
+      address: person.address,
     });
   };
 
@@ -1290,6 +1287,7 @@ export function MyceliumEcosystem({
                 label,
                 imageUrl: person.avatarUrl,
                 initials: label.slice(0, 2),
+                address: person.address,
               },
               initials: label.slice(0, 2),
               imageUrl: person.avatarUrl,
@@ -1658,14 +1656,10 @@ export function MyceliumEcosystem({
                           ? portrait
                           : portrait || DEFAULT_SPACE_AVATAR_IMAGE;
                         const canOpen =
-                          isPerson ||
-                          findNode(tree, node.id) != null ||
-                          Boolean(node.slug);
+                          !isPerson &&
+                          (findNode(tree, node.id) != null ||
+                            Boolean(node.slug));
                         const openNode = () => {
-                          if (isPerson) {
-                            if (personFocus) openPersonChat(personFocus);
-                            return;
-                          }
                           activateSpace(
                             {
                               id: node.id,
@@ -2058,7 +2052,7 @@ export function MyceliumEcosystem({
                       : t('diagram.flowsEmpty')}
                   </p>
                 ) : null}
-                {lens === 'structure' && personFocus && personSpacesLoading ? (
+                {lens === 'structure' && personFocus && !personSpacesReady ? (
                   <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-1 text-neutral-11">
                     {t('navigation.loading')}
                   </p>
