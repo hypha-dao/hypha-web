@@ -314,7 +314,7 @@
     "continue": "Fortsett",
     "back": "Tilbake",
     "begin": "Begynn",
-    "thisIsMe": "Dette er meg",
+    "enterHypha": "Gå inn i Hypha",
     "saving": "Åpner hjemmet ditt…",
     "walletWait": "Kobler til lommeboken din…",
     "signedInAs": "Logget inn som {email}",
@@ -334,14 +334,16 @@
     },
     "description": {
       "eyebrow": "Beskrivelse",
-      "title": "Lidenskapen din og hvor du er",
+      "title": "Lidenskapen din og hvor du holder til",
       "body": "Begge kan stå tomme. Du kan legge dem til senere.",
       "passion": "Lidenskap",
-      "passionPlaceholder": "En linje om hva du er her for å gjøre"
+      "passionPlaceholder": "En linje om hva du er her for å gjøre",
+      "location": "Hvor holder du til",
+      "locationPlaceholder": "Hvor holder du til"
     },
     "orientation": {
       "eyebrow": "Din plass",
-      "title": "Hvem er du her som, først og fremst?",
+      "title": "Hva bringer deg først og fremst hit?",
       "body": "Dette setter hjemmet som møter deg. Du kan endre det senere.",
       "member": {
         "title": "Medlem",

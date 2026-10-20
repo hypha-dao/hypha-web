@@ -314,7 +314,7 @@
     "continue": "Continuar",
     "back": "Voltar",
     "begin": "Começar",
-    "thisIsMe": "Sou eu",
+    "enterHypha": "Entra na Hypha",
     "saving": "A abrir a tua página inicial…",
     "walletWait": "A ligar a tua carteira…",
     "signedInAs": "Sessão iniciada como {email}",
@@ -334,14 +334,16 @@
     },
     "description": {
       "eyebrow": "Descrição",
-      "title": "A tua paixão e onde estás",
+      "title": "A tua paixão e onde estás baseado",
       "body": "Ambos podem ficar vazios. Podes acrescentá-los mais tarde.",
       "passion": "Paixão",
-      "passionPlaceholder": "Uma linha sobre o que vens fazer"
+      "passionPlaceholder": "Uma linha sobre o que vens fazer",
+      "location": "Onde estás baseado",
+      "locationPlaceholder": "Onde estás baseado"
     },
     "orientation": {
       "eyebrow": "O teu lugar",
-      "title": "Quem és aqui, principalmente?",
+      "title": "O que te traz principalmente aqui?",
       "body": "Isto define a página inicial que te recebe. Podes mudá-la mais tarde.",
       "member": {
         "title": "Membro",

@@ -157,7 +157,7 @@
     "continue": "Continue",
     "back": "Back",
     "begin": "Begin",
-    "thisIsMe": "This is me",
+    "enterHypha": "Enter Hypha",
     "saving": "Opening your home…",
     "walletWait": "Connecting your wallet…",
     "signedInAs": "Signed in as {email}",
@@ -177,14 +177,16 @@
     },
     "description": {
       "eyebrow": "Description",
-      "title": "Your passion and where you are",
+      "title": "Your passion and where you are based",
       "body": "Both can be empty. You can add them later.",
       "passion": "Passion",
-      "passionPlaceholder": "A line about what you are here to do"
+      "passionPlaceholder": "A line about what you are here to do",
+      "location": "Where are you based",
+      "locationPlaceholder": "Where are you based"
     },
     "orientation": {
       "eyebrow": "Your place",
-      "title": "Who are you here as, primarily?",
+      "title": "What primarily brings you here?",
       "body": "This sets the home that greets you. You can change it later.",
       "member": {
         "title": "Member",

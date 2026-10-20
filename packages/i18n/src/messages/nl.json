@@ -314,7 +314,7 @@
     "continue": "Verder",
     "back": "Terug",
     "begin": "Beginnen",
-    "thisIsMe": "Dit ben ik",
+    "enterHypha": "Betreed Hypha",
     "saving": "Je startpagina wordt geopend…",
     "walletWait": "Je wallet wordt verbonden…",
     "signedInAs": "Aangemeld als {email}",
@@ -334,14 +334,16 @@
     },
     "description": {
       "eyebrow": "Beschrijving",
-      "title": "Je passie en waar je bent",
+      "title": "Je passie en waar je gevestigd bent",
       "body": "Beide mogen leeg blijven. Je kunt ze later toevoegen.",
       "passion": "Passie",
-      "passionPlaceholder": "Een regel over wat je hier komt doen"
+      "passionPlaceholder": "Een regel over wat je hier komt doen",
+      "location": "Waar ben je gevestigd",
+      "locationPlaceholder": "Waar ben je gevestigd"
     },
     "orientation": {
       "eyebrow": "Jouw plek",
-      "title": "Als wie ben je hier vooral?",
+      "title": "Wat brengt je hier vooral?",
       "body": "Dit bepaalt de startpagina die je begroet. Je kunt het later wijzigen.",
       "member": {
         "title": "Lid",

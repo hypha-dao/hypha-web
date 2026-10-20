@@ -228,7 +228,7 @@ export function SignupFlow({
             ) : null}
 
             {step === 'you' ? (
-              <Screen eyebrow={t('you.eyebrow')} title={t('you.title')} compact>
+              <Screen title={t('you.title')} compact>
                 <div className="flex items-start gap-4">
                   <div className="grid shrink-0 justify-items-center gap-2">
                     <span className="text-1 text-neutral-11">
@@ -275,7 +275,6 @@ export function SignupFlow({
 
             {step === 'description' ? (
               <Screen
-                eyebrow={t('description.eyebrow')}
                 title={t('description.title')}
                 body={t('description.body')}
               >
@@ -288,11 +287,11 @@ export function SignupFlow({
                     onChange={(event) => setDescription(event.target.value)}
                   />
                 </Field>
-                <Field label={tProfile('editForm.labels.location')}>
+                <Field label={t('description.location')}>
                   <Input
                     value={location}
                     maxLength={100}
-                    placeholder={tProfile('editForm.placeholders.location')}
+                    placeholder={t('description.locationPlaceholder')}
                     onChange={(event) => setLocation(event.target.value)}
                   />
                 </Field>
@@ -301,7 +300,6 @@ export function SignupFlow({
 
             {step === 'orientation' ? (
               <Screen
-                eyebrow={t('orientation.eyebrow')}
                 title={t('orientation.title')}
                 body={t('orientation.body')}
               >
@@ -403,7 +401,7 @@ export function SignupFlow({
                   ? t('saving')
                   : authLoading
                   ? t('walletWait')
-                  : t('thisIsMe')}
+                  : t('enterHypha')}
               </Button>
             ) : null}
           </div>
@@ -420,7 +418,7 @@ function Screen({
   children,
   compact = false,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   body?: string;
   children?: ReactNode;
@@ -428,13 +426,16 @@ function Screen({
 }) {
   return (
     <div className="w-full">
-      <p className="text-1 tracking-[0.16em] text-neutral-11 uppercase">
-        {eyebrow}
-      </p>
+      {eyebrow ? (
+        <p className="text-1 tracking-[0.16em] text-neutral-11 uppercase">
+          {eyebrow}
+        </p>
+      ) : null}
       <h1
         className={cn(
           'text-balance font-medium tracking-[-0.03em]',
-          compact ? 'mt-2 text-5 leading-tight' : 'mt-3 text-7 leading-[1.05]',
+          compact ? 'text-5 leading-tight' : 'text-7 leading-[1.05]',
+          eyebrow && (compact ? 'mt-2' : 'mt-3'),
         )}
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
