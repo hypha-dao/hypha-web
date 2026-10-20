@@ -4,9 +4,10 @@ import type { ComponentType, ReactNode } from 'react';
 import {
   ArrowLeft,
   Globe2,
+  Hexagon,
+  Network,
   PanelRightClose,
   Settings,
-  Target,
 } from 'lucide-react';
 import {
   CountBadge,
@@ -26,35 +27,9 @@ type RoomChoiceIcon = ComponentType<{
   'aria-hidden'?: boolean;
 }>;
 
-/** Soft hexagon — space mark with rounded corners instead of sharp points. */
-function RoundedHexagonIcon({
-  className,
-  strokeWidth = 1.5,
-  'aria-hidden': ariaHidden,
-}: {
-  className?: string;
-  strokeWidth?: number;
-  'aria-hidden'?: boolean;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden={ariaHidden}
-    >
-      <path d="M12 3.2 19.2 7.4v9.2L12 20.8 4.8 16.6V7.4Z" />
-    </svg>
-  );
-}
-
 const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
-  space: RoundedHexagonIcon,
-  ecosystem: Target,
+  space: Hexagon,
+  ecosystem: Network,
   public: Globe2,
 };
 
