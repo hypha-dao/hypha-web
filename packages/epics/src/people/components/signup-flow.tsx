@@ -56,13 +56,7 @@ function profileCreateErrorText(
   }
 }
 
-const STEPS = [
-  'welcome',
-  'you',
-  'description',
-  'orientation',
-  'offer',
-] as const;
+const STEPS = ['welcome', 'you', 'description', 'orientation'] as const;
 type Step = (typeof STEPS)[number];
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
@@ -91,7 +85,6 @@ export function SignupFlow({
   const [orientation, setOrientation] = useState<SignupOrientation | null>(
     null,
   );
-  const [offer, setOffer] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const index = STEPS.indexOf(step);
@@ -131,14 +124,12 @@ export function SignupFlow({
         return;
       }
     }
-    if (step === 'orientation' && !orientation) return;
     const next = STEPS[index + 1];
     if (next) setStep(next);
   };
 
   const finish = async () => {
-    if (!orientation || authLoading) return;
-    if (!offer.trim()) return;
+    if (!orientation || authLoading || isCreating) return;
     const identityError = youError();
     if (identityError) {
       setFieldError(identityError);
@@ -167,7 +158,7 @@ export function SignupFlow({
         location: trimmedLocation || undefined,
         avatarUrl: avatarUrl ?? undefined,
         primaryOrientation: orientation,
-        networkOffer: offer.trim(),
+        networkOffer: '',
       });
     } catch (err) {
       setFieldError(err instanceof Error ? err.message : String(err));
@@ -176,8 +167,15 @@ export function SignupFlow({
 
   const shownError = fieldError || error;
 
+  const youStep = step === 'you';
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background text-foreground">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 bg-background text-foreground',
+        youStep ? 'overflow-hidden' : 'overflow-y-auto',
+      )}
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-cover bg-[center_right] opacity-50 dark:opacity-30"
@@ -187,10 +185,25 @@ export function SignupFlow({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/35"
       />
-      <div className="relative flex min-h-dvh w-full flex-col">
-        <div className="mx-auto my-auto flex w-full max-w-xl flex-col items-center px-6 py-8 text-center">
+      <div
+        className={cn(
+          'relative flex w-full flex-col',
+          youStep ? 'h-dvh' : 'min-h-dvh',
+        )}
+      >
+        <div
+          className={cn(
+            'mx-auto my-auto flex w-full max-w-xl flex-col items-center px-6 text-center',
+            youStep ? 'py-4' : 'py-8',
+          )}
+        >
           <Logo width={96} />
-          <p className="mt-4 w-full text-1 text-neutral-11">
+          <p
+            className={cn(
+              'w-full text-1 text-neutral-11',
+              youStep ? 'mt-3' : 'mt-4',
+            )}
+          >
             {t('step', { current: index + 1, total: STEPS.length })}
           </p>
           <div className="mt-2 flex w-full justify-center gap-1" aria-hidden>
@@ -205,7 +218,7 @@ export function SignupFlow({
             ))}
           </div>
 
-          <div className={cn('w-full', step === 'you' ? 'mt-6' : 'mt-10')}>
+          <div className={cn('w-full', youStep ? 'mt-4' : 'mt-10')}>
             {step === 'welcome' ? (
               <Screen
                 eyebrow={t('welcome.eyebrow')}
@@ -226,7 +239,7 @@ export function SignupFlow({
                       className="!h-16 !min-h-16 !w-16 !min-w-16 !rounded-none"
                     />
                   </div>
-                  <div className="grid min-w-0 flex-1 gap-3">
+                  <div className="grid min-w-0 flex-1 gap-2">
                     <Field label={t('you.firstName')}>
                       <Input
                         value={name}
@@ -324,29 +337,8 @@ export function SignupFlow({
                 </div>
               </Screen>
             ) : null}
-
-            {step === 'offer' && orientation ? (
-              <Screen
-                eyebrow={t('offer.eyebrow')}
-                title={t(`offer.${orientation}`)}
-              >
-                <Textarea
-                  value={offer}
-                  maxLength={500}
-                  rows={4}
-                  aria-label={t(`offer.${orientation}`)}
-                  placeholder={t('offer.placeholder')}
-                  onChange={(event) => setOffer(event.target.value)}
-                />
-              </Screen>
-            ) : null}
           </div>
 
-          {email ? (
-            <p className="mt-6 w-full text-1 text-neutral-11">
-              {t('signedInAs', { email })}
-            </p>
-          ) : null}
           {authLoading ? (
             <p className="mt-3 w-full text-1 text-neutral-11">
               {t('walletWait')}
@@ -358,7 +350,12 @@ export function SignupFlow({
             </p>
           ) : null}
 
-          <div className="mt-6 flex w-full items-center justify-center gap-3">
+          <div
+            className={cn(
+              'flex w-full items-center justify-center gap-3',
+              youStep ? 'mt-4' : 'mt-6',
+            )}
+          >
             {index > 0 ? (
               <Button
                 type="button"
@@ -397,17 +394,7 @@ export function SignupFlow({
               <Button
                 type="button"
                 className={primaryActionClassName}
-                disabled={!orientation}
-                onClick={goNext}
-              >
-                {t('continue')}
-              </Button>
-            ) : null}
-            {step === 'offer' ? (
-              <Button
-                type="button"
-                className={primaryActionClassName}
-                disabled={isCreating || authLoading || !offer.trim()}
+                disabled={!orientation || isCreating || authLoading}
                 onClick={() => {
                   void finish();
                 }}
