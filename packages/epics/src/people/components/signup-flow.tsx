@@ -1,14 +1,21 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Button,
   Input,
+  LanguageSelect,
   Logo,
   Textarea,
   UploadAvatar,
 } from '@hypha-platform/ui';
+import {
+  localeMetadata,
+  routing,
+  type Locale,
+} from '@hypha-platform/i18n/client';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { PersonRoleBadge } from './person-badges';
@@ -191,6 +198,9 @@ export function SignupFlow({
           youStep ? 'h-dvh' : 'min-h-dvh',
         )}
       >
+        <div className="absolute top-4 right-4 z-10">
+          <SignupLanguageSelect />
+        </div>
         <div
           className={cn(
             'mx-auto my-auto flex w-full max-w-xl flex-col items-center px-6 text-center',
@@ -408,6 +418,45 @@ export function SignupFlow({
         </div>
       </div>
     </div>
+  );
+}
+
+function SignupLanguageSelect() {
+  const tCommon = useTranslations('Common');
+  const pathname = usePathname();
+  const intlLocale = useLocale();
+  const pathLocale = useMemo(() => {
+    const first = pathname.split('/').filter(Boolean)[0];
+    return first && routing.locales.includes(first as Locale) ? first : null;
+  }, [pathname]);
+  const urlLocale = pathLocale ?? intlLocale;
+  const [pendingLocale, setPendingLocale] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pendingLocale != null && pathLocale === pendingLocale) {
+      setPendingLocale(null);
+    }
+  }, [pathLocale, pendingLocale]);
+
+  const locales = routing.locales.map((code) => localeMetadata[code]);
+
+  function handleLocaleChange(nextLocale: string) {
+    if (nextLocale === urlLocale) return;
+    setPendingLocale(nextLocale);
+    const newPathname = pathname.replace(
+      new RegExp(`^/${urlLocale}(?=/|$)`),
+      `/${nextLocale}`,
+    );
+    window.location.href = newPathname;
+  }
+
+  return (
+    <LanguageSelect
+      currentLocale={pendingLocale ?? urlLocale}
+      locales={locales}
+      onLocaleChange={handleLocaleChange}
+      ariaLabel={tCommon('selectLanguage')}
+    />
   );
 }
 
