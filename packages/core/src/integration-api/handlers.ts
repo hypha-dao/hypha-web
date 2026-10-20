@@ -89,12 +89,12 @@ type Json = Record<string, unknown>;
 
 const unauthorized = () =>
   integrationJson({ error: 'Unauthorized' }, { status: 401 });
-const serverError = (error: string) =>
+export const serverError = (error: string) =>
   integrationJson({ error }, { status: 500 });
-const invalidJson = () =>
+export const invalidJson = () =>
   integrationJson({ error: 'Invalid JSON body' }, { status: 400 });
 
-function logFailure(what: string, context: Json, error: unknown) {
+export function logFailure(what: string, context: Json, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`Failed to ${what}:`, { ...context, message });
 }
@@ -106,14 +106,14 @@ function clientAuthFailure(auth: Extract<ClientAuthResult, { ok: false }>) {
   );
 }
 
-function userAuthFailure(auth: Extract<UserAuthResult, { ok: false }>) {
+export function userAuthFailure(auth: Extract<UserAuthResult, { ok: false }>) {
   return auth.status === 401
     ? unauthorized()
     : integrationJson({ error: auth.error }, { status: auth.status });
 }
 
 /** An absent or blank body is `{}`; anything else must parse as JSON. */
-async function readOptionalJson(
+export async function readOptionalJson(
   request: Request,
 ): Promise<{ ok: true; body: unknown } | { ok: false }> {
   const raw = await request.text();
@@ -220,9 +220,9 @@ type ClientAndUser =
   | { ok: false; response: Response };
 
 /** Client key first, then the user token: both are required on clients/me/grants. */
-async function authenticateClientAndUser(
+export async function authenticateClientAndUser(
   request: Request,
-  deps: IntegrationApiDeps,
+  deps: Pick<IntegrationApiDeps, 'authenticateClient' | 'authenticateUser'>,
 ): Promise<ClientAndUser> {
   const clientAuth = await deps.authenticateClient(request);
   if (!clientAuth.ok) {
