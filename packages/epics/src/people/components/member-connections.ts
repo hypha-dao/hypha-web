@@ -64,7 +64,7 @@ export function isHyphaBot(userId: string | undefined, name?: string | null) {
 }
 
 export const STALE_CONNECTION_MS = 14 * 24 * 60 * 60 * 1000;
-export const REACH_OUT_LIMIT = 6;
+export const REACH_OUT_LIMIT = 12;
 const MEET_SLOTS = 3;
 const RECONNECT_SLOTS = 3;
 
@@ -505,6 +505,15 @@ function fillSlots<T>(primary: T[], spare: T[], limit: number): T[] {
     picked.push(item);
   }
   return picked;
+}
+
+/** A room with no readable line is not a conversation yet. */
+export function connectionActivityTs(
+  lastTs: number | null | undefined,
+  preview: string | null | undefined,
+) {
+  if (!preview?.trim()) return null;
+  return lastTs ?? null;
 }
 
 function suggestionForMember(

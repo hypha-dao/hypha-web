@@ -48,6 +48,7 @@ import {
   subscribeSignalThreadRooms,
   unreadRoomsMissingFromMembers,
   STALE_CONNECTION_MS,
+  connectionActivityTs,
   suggestConnections,
   type ConnectionSuggestion,
   type ConversationRow,
@@ -64,6 +65,8 @@ import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
+/** Suggestions look past the first page, up to the intelligence cap. */
+const SUGGESTION_POOL = 120;
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 type ConnectionMemberRow = MemberRow<ConnectionPerson>;
@@ -333,6 +336,7 @@ export function MyConnections({
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreFailed, setMoreFailed] = useState(false);
   const [directoryComplete, setDirectoryComplete] = useState(false);
+  const suggestionPoolRequested = useRef(false);
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -409,6 +413,43 @@ export function MyConnections({
       controller.abort();
     };
   }, [jwt, query]);
+
+  useEffect(() => {
+    if (section !== 'suggestions' || !jwt || suggestionPoolRequested.current) {
+      return;
+    }
+    suggestionPoolRequested.current = true;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch(
+          `/api/v1/people/me/intelligence?connections=${SUGGESTION_POOL}`,
+          {
+            headers: { Authorization: `Bearer ${jwt}` },
+            signal: controller.signal,
+          },
+        );
+        if (!response.ok) return;
+        const body = (await response.json()) as MemberIntelligence;
+        if (controller.signal.aborted) return;
+        const page = body.connections ?? [];
+        if (page.length === 0) return;
+        setDirectory(page);
+        if (page.length >= (body.counts?.connections ?? page.length)) {
+          setDirectoryComplete(true);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        suggestionPoolRequested.current = false;
+      }
+    })();
+    return () => {
+      controller.abort();
+      suggestionPoolRequested.current = false;
+    };
+  }, [jwt, section]);
 
   useEffect(() => {
     if (!client) {
@@ -496,7 +537,10 @@ export function MyConnections({
       });
     }
     return suggestConnections(
-      members,
+      members.map((row) => ({
+        ...row,
+        lastTs: connectionActivityTs(row.lastTs, row.preview),
+      })),
       newcomers,
       Date.now(),
       STALE_CONNECTION_MS,

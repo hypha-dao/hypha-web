@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   STALE_CONNECTION_MS,
+  connectionActivityTs,
   facesWithProfiles,
   groupRowsForConnections,
   memberRowsForConnections,
@@ -333,6 +334,12 @@ describe('suggestConnections', () => {
     expect(picked).toHaveLength(1);
     expect(picked[0]?.kind).toBe('reconnect');
     expect(picked[0]?.key).toBe('person-2');
+  });
+
+  it('ignores a room that has no readable message', () => {
+    expect(connectionActivityTs(Date.now(), '')).toBeNull();
+    expect(connectionActivityTs(Date.now(), '  ')).toBeNull();
+    expect(connectionActivityTs(50, 'Hello')).toBe(50);
   });
 
   it('keeps people you already share a space with out of worth meeting', () => {
