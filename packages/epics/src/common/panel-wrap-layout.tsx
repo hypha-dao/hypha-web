@@ -33,6 +33,7 @@ import {
 } from './human-chat-panel-context';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
+  isConnectionsPath,
   isMyWalletPath,
   showsHumanChatIcon,
   useIsNetworkContext,
@@ -129,10 +130,11 @@ export function AiSidebarTrigger() {
   const isNetwork = useIsNetworkContext();
   const pathname = usePathname();
   const isWallet = isMyWalletPath(pathname);
+  const isMessages = isConnectionsPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace && !isNetwork && !isWallet) return null;
+  if (!isSpace && !isNetwork && !isWallet && !isMessages) return null;
 
   const isMenuOpen = overlayVisible;
 
@@ -173,10 +175,11 @@ export function AiPanelTrigger() {
   const isNetwork = useIsNetworkContext();
   const pathname = usePathname();
   const isWallet = isMyWalletPath(pathname);
+  const isMessages = isConnectionsPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace && !isNetwork && !isWallet) return null;
+  if (!isSpace && !isNetwork && !isWallet && !isMessages) return null;
 
   return (
     <button
@@ -381,9 +384,10 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const isWallet = isMyWalletPath(pathname);
+  const isMessages = isConnectionsPath(pathname);
   const isOnboarding = isInteractiveCreatePath(pathname);
-  /** Space, network, and member wallet (member AI — not a space panel). */
-  const showAiPanel = isSpace || isNetwork || isWallet;
+  /** Space, network, wallet, and messages. Messages uses the same icon rail. */
+  const showAiPanel = isSpace || isNetwork || isWallet || isMessages;
   const effectiveLeft = showAiPanel ? left : undefined;
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
   const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);

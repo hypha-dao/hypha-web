@@ -612,7 +612,7 @@ export function MyConnections({
                   key={card.key}
                   type="button"
                   onClick={() => void openReachOut(card)}
-                  className="flex min-w-0 flex-col items-start gap-2 border border-border p-3 text-left hover:bg-accent-2"
+                  className="flex min-w-0 flex-col items-start gap-2 rounded-none border border-border p-3 text-left hover:bg-accent-2"
                 >
                   <PersonAvatar
                     size="chat"
@@ -662,7 +662,7 @@ export function MyConnections({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={t('search')}
-                  className="h-10 w-full border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                  className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </label>
               {picking ? (
@@ -836,7 +836,7 @@ function MemberList({
   onOpen: (row: ConnectionMemberRow) => void;
 }) {
   return (
-    <section className="overflow-hidden border border-border bg-background">
+    <section className="overflow-hidden rounded-none border border-border bg-background">
       <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
