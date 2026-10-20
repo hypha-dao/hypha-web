@@ -18,7 +18,7 @@ import { useMe } from '@hypha-platform/core/client';
 import { useFundWallet } from '../../treasury/hooks';
 import { prepareWalletActionNavigation } from './open-wallet-action';
 
-const shortcutIconClass = 'size-5 shrink-0';
+const shortcutIconClass = 'size-6 shrink-0';
 
 type Shortcut = {
   key: string;
@@ -30,7 +30,7 @@ type Shortcut = {
   disabled?: boolean;
 };
 
-function ShortcutRow({
+function ShortcutCard({
   label,
   icon,
   href,
@@ -39,13 +39,13 @@ function ShortcutRow({
   disabled,
 }: Omit<Shortcut, 'key'>) {
   const className = cn(
-    'flex w-full min-w-0 items-center gap-3 border border-border bg-background px-4 py-3 text-left text-2 text-foreground hover:bg-neutral-2',
+    'flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-none border border-border bg-background px-2 text-center text-foreground hover:bg-neutral-2',
     disabled && 'pointer-events-none opacity-40',
   );
   const body = (
     <>
       {icon}
-      <span className="min-w-0 flex-1 leading-snug">{label}</span>
+      <span className="max-w-full text-[11px] leading-tight">{label}</span>
     </>
   );
 
@@ -87,8 +87,8 @@ function HyphaHIcon() {
     <Image
       src="/placeholder/hypha-tokens-icon.png"
       alt=""
-      width={20}
-      height={20}
+      width={32}
+      height={32}
       className={shortcutIconClass}
       aria-hidden
     />
@@ -202,10 +202,10 @@ export function WalletShortcutCards({ basePath }: { basePath: string }) {
   return (
     <nav
       aria-label={t('title')}
-      className="flex w-full min-w-0 flex-col gap-1.5"
+      className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"
     >
       {shortcuts.map(({ key, ...shortcut }) => (
-        <ShortcutRow key={key} {...shortcut} />
+        <ShortcutCard key={key} {...shortcut} />
       ))}
     </nav>
   );
