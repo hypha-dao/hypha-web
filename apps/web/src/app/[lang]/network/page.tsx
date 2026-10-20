@@ -38,7 +38,7 @@ export default async function Index(props: PageProps) {
     <div className="w-full min-w-0">
       <Suspense
         fallback={
-          <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5">
+          <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:py-9">
             <NetworkIndexFallback view={searchParams?.view} />
           </Container>
         }

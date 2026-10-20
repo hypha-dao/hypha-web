@@ -20,7 +20,7 @@ export async function WalletPageFrame({
 
   return (
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
-      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5">
+      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:py-9">
         <header className="xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
             {t(titleKey)}

@@ -597,7 +597,7 @@ export function ExploreSpaces({
   // sticky right rail can sit flush with the needs / exchange layout.
   if (showSidePanel) {
     return (
-      <div className="@container min-w-0 px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
+      <div className="@container min-w-0 px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5 xl:py-9">
         <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-4">{mainColumn}</div>
           <aside className={NETWORK_RIGHT_PANEL_CLASS}>{sidePanel}</aside>
@@ -608,7 +608,7 @@ export function ExploreSpaces({
 
   return (
     <div className="@container min-w-0">
-      <Container className="flex min-w-0 flex-col gap-9 py-3 sm:py-4 lg:py-5">
+      <Container className="flex min-w-0 flex-col gap-9 py-3 sm:py-4 lg:py-5 xl:py-9">
         {mainColumn}
       </Container>
     </div>
