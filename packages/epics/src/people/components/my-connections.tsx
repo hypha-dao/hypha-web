@@ -7,9 +7,11 @@ import useSWR from 'swr';
 import {
   ClientEvent,
   EventType,
+  MatrixEventEvent,
   RoomEvent,
   SyncState,
   type MatrixClient,
+  type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
 import {
@@ -86,11 +88,38 @@ function messagePreview(body: string) {
         return 'link';
       }
     })
-    .replace(/<?@[A-Za-z0-9._=\-/]+:[A-Za-z0-9.-]+(?::\d+)?>?/g, ' ')
+    // Keep the localpart so a mention-only line still previews as "@name".
+    .replace(/<@([A-Za-z0-9._=\-/]+):[A-Za-z0-9.-]+(?::\d+)?>/g, '@$1')
+    .replace(/@([A-Za-z0-9._=\-/]+):[A-Za-z0-9.-]+(?::\d+)?/g, '@$1')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= 48) return text;
   return `${text.slice(0, 47).trimEnd()}…`;
+}
+
+function eventsForPreview(room: Room): MatrixEvent[] {
+  const live = room.getLiveTimeline().getEvents();
+  let pending: MatrixEvent[] = [];
+  try {
+    if (typeof room.getPendingEvents === 'function') {
+      pending = room.getPendingEvents();
+    }
+  } catch {
+    pending = [];
+  }
+  if (pending.length === 0) return live;
+  const seen = new Set(
+    live
+      .map((event) => event.getId())
+      .filter((id): id is string => Boolean(id)),
+  );
+  return [
+    ...live,
+    ...pending.filter((event) => {
+      const id = event.getId();
+      return !id || !seen.has(id);
+    }),
+  ];
 }
 
 function avatarHttp(client: MatrixClient, mxc: string | null | undefined) {
@@ -99,15 +128,20 @@ function avatarHttp(client: MatrixClient, mxc: string | null | undefined) {
 }
 
 function lastRoomMessage(room: Room, selfId: string | null) {
-  const events = room.getLiveTimeline().getEvents();
+  const events = eventsForPreview(room);
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
-    if (!event || event.getType() !== EventType.RoomMessage) continue;
-    if (event.isRedacted()) continue;
-    const body = String(event.getContent()?.body ?? '');
+    if (!event || event.isRedacted()) continue;
+    // Encrypted events stay `m.room.encrypted` until decrypt. Skip them and
+    // keep walking so an older clear message still previews.
+    if (event.getType() !== EventType.RoomMessage) continue;
+    const content = event.getContent() as { body?: unknown } | undefined;
+    const body = typeof content?.body === 'string' ? content.body : '';
+    const preview = messagePreview(body);
+    if (!preview) continue;
     const sender = event.getSender();
     return {
-      preview: messagePreview(body),
+      preview,
       mine: Boolean(selfId && sender === selfId),
       ts: event.getTs(),
     };
@@ -392,6 +426,8 @@ export function MyConnections({
     client.on(RoomEvent.Timeline, refresh);
     client.on(RoomEvent.Receipt, refresh);
     client.on(RoomEvent.MyMembership, refresh);
+    // Decryption updates the event in place and does not emit Timeline again.
+    client.on(MatrixEventEvent.Decrypted, refresh);
     window.addEventListener(CONVERSATION_UNREAD_EVENT, refresh);
     const unsubscribeSignalRooms = subscribeSignalThreadRooms(refresh);
     return () => {
@@ -401,6 +437,7 @@ export function MyConnections({
       client.removeListener(RoomEvent.Timeline, refresh);
       client.removeListener(RoomEvent.Receipt, refresh);
       client.removeListener(RoomEvent.MyMembership, refresh);
+      client.removeListener(MatrixEventEvent.Decrypted, refresh);
     };
   }, [client]);
 
