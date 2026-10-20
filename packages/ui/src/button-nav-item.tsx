@@ -37,8 +37,8 @@ export const ButtonNavItem = ({
         <span className="relative mr-1.5 inline-flex shrink-0 items-center overflow-visible text-current [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]">
           {icon}
           {badge > 0 ? (
-            <span className="absolute -top-1 -right-1.5 flex h-[14px] min-w-[14px] items-center justify-center bg-foreground px-[3px] text-[9px] font-medium leading-none text-background">
-              <span className="translate-y-[1px]">{badgeLabel}</span>
+            <span className="absolute -top-2 -right-2 grid h-3 min-w-3 place-items-center bg-foreground px-0.5 text-[9px] font-medium leading-none text-background">
+              <span className="translate-y-px">{badgeLabel}</span>
             </span>
           ) : null}
         </span>
