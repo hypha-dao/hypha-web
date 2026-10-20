@@ -60,8 +60,16 @@ function countsAsReadCursor(event: MatrixEvent) {
 
 function eventsInRoom(room: Room) {
   const live = room.getLiveTimeline().getEvents();
-  const pending =
-    typeof room.getPendingEvents === 'function' ? room.getPendingEvents() : [];
+  // Chronological pending order throws here. Those echoes are already in the
+  // live timeline, so a failed lookup must not take down the page.
+  let pending: MatrixEvent[] = [];
+  if (typeof room.getPendingEvents === 'function') {
+    try {
+      pending = room.getPendingEvents();
+    } catch {
+      pending = [];
+    }
+  }
   if (pending.length === 0) return live;
   const seen = new Set(
     live

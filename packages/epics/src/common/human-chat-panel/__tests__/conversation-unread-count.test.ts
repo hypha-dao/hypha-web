@@ -178,4 +178,16 @@ describe('countIncomingUnreadMessages', () => {
     );
     expect(count).toBe(1);
   });
+
+  it('still counts when pending events cannot be listed', () => {
+    const room = roomFor([
+      message({ id: '$in', sender: OTHER, ts: 1_000, body: 'hi' }),
+    ]);
+    room.getPendingEvents = () => {
+      throw new Error(
+        'Cannot call getPendingEvents with pendingEventOrdering == chronological',
+      );
+    };
+    expect(countIncomingUnreadMessages(room, SELF, ignoreNobody)).toBe(1);
+  });
 });
