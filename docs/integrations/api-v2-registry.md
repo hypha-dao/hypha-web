@@ -286,7 +286,9 @@ test fails when a route skips the wrapper or the values drift.
 ### Prepared actions (spike: user-approved operations)
 
 > Status: **spike**, for the approval-flow evaluation (#2515, #2546). Shapes may change; do not build on them
-> yet. One operation only: `vote`. Nothing here is a decision about the write model.
+> yet. One operation only: `vote`. Direction (2026-10-20, to be confirmed by the manual sign-in tests):
+> third-party writes are user-approved operations with the user's own wallet executing; a server executor
+> may be added per operation later; a delegated signer stays for first-party apps.
 
 A client asks for an operation on behalf of a person (`POST actions`); Hypha validates it with the same logic
 as `voting/me`, stores the exact operation and returns an approval URL on a Hypha origin. The person signs in
@@ -313,6 +315,11 @@ signs, gas sponsored as in the app) or rejects. The client polls `GET actions/{i
   profile, `400` validation, `404` unknown space or proposal, `409 cannot_vote` with the `voting/me` reason
   (not a member, closed, ...), `429 too_many_pending` (5 open actions per client and person).
 - Same cache headers as the rest of the namespace.
+- Planned shape (not built): a per-operation descriptor (parameter schema, eligibility check, summary text,
+  call plan of target, function, args and value), an executor seam (browser wallet now, server signer later,
+  per operation) behind the same routes and states, verification of the reported transaction against the
+  call plan, and an optional server-side step after a verified transaction for operations with web2 side
+  effects. The routes, table and states stay as they are.
 - Known gaps (spike): the tx hash is reported by the page and not verified on chain; an `approved` action whose
   page was closed stays `approved`; no return-URL redirect or `postMessage`; one operation.
 
