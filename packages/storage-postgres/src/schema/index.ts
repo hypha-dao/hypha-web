@@ -40,6 +40,7 @@ import { pipelineUserSettings } from './pipeline-user-settings';
 import { spaceApiKeys } from './space-api-key';
 import { integrationClients } from './integration-client';
 import { integrationGrants } from './integration-grant';
+import { integrationActions } from './integration-action';
 import { notificationProcessedEvents } from './notification-processed-events';
 
 export { SPACE_FLAGS } from './flags';
@@ -69,6 +70,7 @@ export * from './pipeline-user-settings';
 export * from './space-api-key';
 export * from './integration-client';
 export * from './integration-grant';
+export * from './integration-action';
 export * from './notification-processed-events';
 
 export const schema = {
@@ -108,5 +110,6 @@ export const schema = {
   spaceApiKeys,
   integrationClients,
   integrationGrants,
+  integrationActions,
   notificationProcessedEvents,
 };
