@@ -644,8 +644,8 @@ function TabLink({
           {icon}
         </TabGlyph>
         {badge > 0 ? (
-          <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center bg-foreground px-0.5 text-[9px] leading-none text-background">
-            {badge > 99 ? '99+' : badge}
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center bg-foreground px-0.5 text-[9px] font-medium leading-none text-background">
+            <span className="translate-y-px">{badge > 99 ? '99+' : badge}</span>
           </span>
         ) : null}
       </span>
