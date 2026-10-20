@@ -23,11 +23,12 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Phone, Search, X } from 'lucide-react';
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
+import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   CONVERSATION_UNREAD_EVENT,
   notifyConversationUnreadChanged,
 } from './conversation-unread-event';
-import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   MemberHomePeople,
   type MemberHomeOpenChat,
@@ -92,80 +93,6 @@ function messagePreview(body: string) {
 function avatarHttp(client: MatrixClient, mxc: string | null | undefined) {
   if (!mxc) return undefined;
   return client.mxcUrlToHttp(mxc, 80, 80, 'crop') ?? undefined;
-}
-
-function isCountableRoomMessage(event: {
-  getType: () => string;
-  isRedacted: () => boolean;
-  getContent: () => { 'm.relates_to'?: { rel_type?: string } };
-  getSender: () => string | undefined;
-  getId: () => string | undefined;
-}) {
-  if (event.getType() !== EventType.RoomMessage) return false;
-  if (event.isRedacted()) return false;
-  const relates = event.getContent()?.['m.relates_to'];
-  if (relates?.rel_type === 'm.replace') return false;
-  return Boolean(event.getSender() && event.getId());
-}
-
-/** The later of two timeline events. Sending a message counts as having read up to it. */
-function laterTimelineEventId(
-  room: Room,
-  left: string | null,
-  right: string | null,
-) {
-  if (!left) return right;
-  if (!right) return left;
-  const order = room.compareEventOrdering(left, right);
-  if (order === null) {
-    const leftTs = room.findEventById(left)?.getTs() ?? 0;
-    const rightTs = room.findEventById(right)?.getTs() ?? 0;
-    return rightTs >= leftTs ? right : left;
-  }
-  return order >= 0 ? left : right;
-}
-
-/** Messages from someone else that arrived after this member last read or wrote. */
-function countNewMessages(room: Room, selfId: string | null) {
-  if (!selfId) return 0;
-  const events = room.getLiveTimeline().getEvents();
-  let ownLatestId: string | null = null;
-  for (const event of events) {
-    if (!isCountableRoomMessage(event)) continue;
-    if (event.getSender() !== selfId) continue;
-    ownLatestId = event.getId() ?? ownLatestId;
-  }
-  const cursor = laterTimelineEventId(
-    room,
-    room.getEventReadUpTo(selfId, false),
-    ownLatestId,
-  );
-  let count = 0;
-  for (const event of events) {
-    if (!isCountableRoomMessage(event)) continue;
-    const sender = event.getSender();
-    const id = event.getId();
-    if (!sender || !id || sender === selfId) continue;
-    if (isHyphaBot(sender, event.sender?.name)) continue;
-    if (cursor) {
-      const order = room.compareEventOrdering(cursor, id);
-      if (order !== null && order >= 0) continue;
-      if (
-        order === null &&
-        event.getTs() <= (room.findEventById(cursor)?.getTs() ?? 0)
-      ) {
-        continue;
-      }
-    }
-    if (
-      typeof room.hasUserReadEvent === 'function' &&
-      room.hasUserReadEvent(selfId, id)
-    ) {
-      continue;
-    }
-    count += 1;
-  }
-  return count;
 }
 
 function lastRoomMessage(room: Room, selfId: string | null) {
@@ -253,7 +180,10 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
       preview: last.preview,
       mine: last.mine,
       lastTs: last.ts,
-      unread: kind === 'person' ? countNewMessages(room, selfId) : 0,
+      unread:
+        kind === 'person'
+          ? countIncomingUnreadMessages(room, selfId, isHyphaBot)
+          : 0,
       memberCount: members.length,
       otherUserId: other?.userId ?? null,
       kind,
