@@ -65,6 +65,7 @@ import {
   MemberHomeConnectionsWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
+import { useAiPanel } from '../../common/human-chat-panel-context';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 import {
   MemberHomeEnergyPanel,
@@ -173,6 +174,7 @@ export function MemberHome({
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
+  const { open: isAiOpen } = useAiPanel();
   useLayoutEffect(() => {
     const root = getMainColumnScrollRoot() ?? document.documentElement;
     const previousOverflow = root.style.overflowY;
@@ -304,11 +306,13 @@ export function MemberHome({
         <div className="member-home-banner-veil" />
       </div>
       <div className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
-        <MemberHomeSpacesRail
-          lang={lang}
-          spaces={home?.spaces ?? []}
-          isLoading={home == null}
-        />
+        {isAiOpen ? null : (
+          <MemberHomeSpacesRail
+            lang={lang}
+            spaces={home?.spaces ?? []}
+            isLoading={home == null}
+          />
+        )}
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]',

@@ -78,6 +78,7 @@ import {
   isMessagesSectionNavActive,
   isMessagesSectionPath,
 } from '../people/components/messages-section-nav';
+import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -3061,7 +3062,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const collapsedRailHeaderClass = `flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border px-4 py-2 ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
-  const collapsedRailBody = (
+  const collapsedRailBody = isAiOpen ? (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} embedded />
+    </div>
+  ) : (
     <>
       <SidebarGroup className="p-2 pt-4">
         <SidebarGroupContent>
@@ -3087,7 +3092,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarGroup>
       ) : null}
       {recentSpaces.length > 0 ? (
-        <div className="max-xl:hidden">
+        <div
+          className={
+            spaceSettingsItem ? 'max-xl:hidden' : 'mt-auto max-xl:hidden'
+          }
+        >
           {renderRecentSpacesSection('collapsed', 'recent-collapsed')}
         </div>
       ) : null}

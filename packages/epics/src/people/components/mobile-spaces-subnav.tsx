@@ -21,9 +21,11 @@ import {
 export function MobileSpacesSubnav({
   lang,
   activeSlug,
+  embedded = false,
 }: {
   lang: Locale;
   activeSlug?: string | null;
+  embedded?: boolean;
 }) {
   const { jwt } = useJwt();
   const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
@@ -54,6 +56,7 @@ export function MobileSpacesSubnav({
       spaces={orderedSpaces}
       isLoading={isLoading && orderedSpaces.length === 0}
       activeSlug={activeSlug}
+      embedded={embedded}
     />
   );
 }

@@ -26,10 +26,7 @@ import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
-import {
-  useAiPanel,
-  useHumanChatPanel,
-} from '../../common/human-chat-panel-context';
+import { useAiPanel } from '../../common/human-chat-panel-context';
 import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
@@ -88,8 +85,10 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? '';
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
+  const { open: isAiOpen } = useAiPanel();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
-  const showSpacesRail = shouldShowMobileSpacesRail(pathname);
+  // While the AI panel is open the spaces list takes the left menu slot.
+  const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -166,28 +165,10 @@ export function MobileTabBar({
   const [createOpen, setCreateOpen] = useState(false);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mounted, setMounted] = useState(false);
-  const [belowMd, setBelowMd] = useState(false);
   const unreadCount = useConversationUnreadCount();
-  const { open: isAiOpen } = useAiPanel();
-  const { open: isRightOpen } = useHumanChatPanel();
-  const spacesRail = shouldShowMobileSpacesRail(pathname);
-  // AI open: the icon rail already has section links, so the spaces column
-  // replaces the whole bottom menu (phones keep the section strip).
-  const aiReplacesMenu = isAiOpen && spacesRail;
-  // Right panel open: it already took a column, so the spaces rail replaces
-  // the app tabs. The section strip stays. Closed panel keeps both bars.
-  const rightReplacesAppMenu = isRightOpen && !isAiOpen && spacesRail;
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const query = window.matchMedia('(max-width: 767px)');
-    const sync = () => setBelowMd(query.matches);
-    sync();
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
   }, []);
 
   useEffect(() => {
@@ -388,9 +369,8 @@ export function MobileTabBar({
     tTreasury,
   ]);
 
-  const showSectionStrip =
-    secondLevel.length > 0 && (!aiReplacesMenu || belowMd);
-  const showAppMenu = !aiReplacesMenu && !rightReplacesAppMenu;
+  const showSectionStrip = secondLevel.length > 0;
+  const showAppMenu = true;
 
   useEffect(() => {
     const px =

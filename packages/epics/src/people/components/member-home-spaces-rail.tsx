@@ -57,11 +57,14 @@ export function MemberHomeSpacesRail({
   spaces,
   isLoading,
   activeSlug,
+  embedded = false,
 }: {
   lang: Locale;
   spaces: HomeSpace[];
   isLoading?: boolean;
   activeSlug?: string | null;
+  /** Fill the left menu column instead of sitting as its own rail. */
+  embedded?: boolean;
 }) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
@@ -81,7 +84,12 @@ export function MemberHomeSpacesRail({
     <TooltipProvider delayDuration={200}>
       <nav
         aria-label={t('spacesRail')}
-        className="narrow-scrollbar flex h-full w-[44px] shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-border bg-background py-2"
+        className={cn(
+          'narrow-scrollbar flex h-full shrink-0 flex-col items-center gap-1 overflow-y-auto py-2',
+          embedded
+            ? 'w-full bg-transparent'
+            : 'w-[44px] border-r border-border bg-background',
+        )}
       >
         {isLoading ? (
           <>
