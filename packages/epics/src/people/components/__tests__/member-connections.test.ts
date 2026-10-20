@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   STALE_CONNECTION_MS,
+  groupRowsForConnections,
   memberRowsForConnections,
   suggestConnections,
   unreadRoomsMissingFromMembers,
@@ -343,6 +344,88 @@ describe('suggestConnections', () => {
     expect(picked.map((card) => [card.name, card.kind])).toEqual([
       ['Near', 'reconnect'],
       ['Far', 'reconnect'],
+    ]);
+  });
+});
+
+describe('groupRowsForConnections', () => {
+  it('keeps a group chat as one row with two member faces', () => {
+    const rows = groupRowsForConnections(
+      [
+        room({
+          roomId: '!trio',
+          kind: 'group',
+          name: 'Gerardo Roza, Vlad Hramtsov, Kate Bennett',
+          faces: [
+            { name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' },
+            { name: 'Vlad Hramtsov', avatarUrl: 'https://example/v.png' },
+            { name: 'Kate Bennett' },
+          ],
+          preview: 'Hey guys',
+          lastTs: 900,
+          memberCount: 4,
+        }),
+        room({
+          roomId: '!signal',
+          kind: 'group',
+          name: 'Local scale signal',
+          signalThread: true,
+          memberCount: 6,
+        }),
+        room({
+          roomId: '!direct',
+          kind: 'person',
+          name: 'Kate Bennett',
+          otherUserId: '@kate:matrix',
+        }),
+      ],
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.name).toBe('Gerardo Roza, Vlad Hramtsov, Kate Bennett');
+    expect(rows[0]?.roomId).toBe('!trio');
+    expect(rows[0]?.faces).toEqual([
+      { name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' },
+      { name: 'Vlad Hramtsov', avatarUrl: 'https://example/v.png' },
+    ]);
+    expect(rows[0]?.person.id).toBeLessThan(0);
+  });
+
+  it('leaves a space channel out of the people list', () => {
+    const rows = groupRowsForConnections(
+      [
+        room({
+          roomId: '!space',
+          kind: 'group',
+          name: 'Hypha',
+          memberCount: 40,
+          lastTs: 900,
+        }),
+      ],
+      'Someone',
+    );
+
+    expect(rows).toEqual([]);
+  });
+
+  it('fills the second face from the room title when only one portrait is known', () => {
+    const rows = groupRowsForConnections(
+      [
+        room({
+          roomId: '!pair',
+          kind: 'group',
+          name: 'Gerardo Roza, Vlad Hramtsov',
+          faces: [{ name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' }],
+          memberCount: 3,
+        }),
+      ],
+      'Someone',
+    );
+
+    expect(rows[0]?.faces).toEqual([
+      { name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' },
+      { name: 'Vlad Hramtsov' },
     ]);
   });
 });

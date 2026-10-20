@@ -20,9 +20,8 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Phone, Search, X } from 'lucide-react';
+import { Search, Users, X } from 'lucide-react';
 
-import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
@@ -38,7 +37,10 @@ import {
   isHyphaBot,
   isRememberedSignalThreadRoom,
   looksLikeHyphaBot,
+  groupRowsForConnections,
+  isRememberedGroupChatRoom,
   memberRowsForConnections,
+  rememberGroupChatRooms,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
   unreadRoomsMissingFromMembers,
@@ -46,6 +48,7 @@ import {
   suggestConnections,
   type ConnectionSuggestion,
   type ConversationRow,
+  type GroupFace,
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
@@ -157,6 +160,15 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
       kind === 'person'
         ? other?.getMxcAvatarUrl() || room.getMxcAvatarUrl()
         : room.getMxcAvatarUrl();
+    const faces =
+      kind === 'group'
+        ? others.slice(0, 2).map((member) => ({
+            name:
+              (member.name || member.rawDisplayName || '').trim() ||
+              member.userId,
+            avatarUrl: avatarHttp(client, member.getMxcAvatarUrl()),
+          }))
+        : undefined;
     const timeline = room.getLiveTimeline().getEvents();
     const signalMarkerInTimeline = timeline.some(
       (event) =>
@@ -180,12 +192,11 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
       preview: last.preview,
       mine: last.mine,
       lastTs: last.ts,
-      unread:
-        kind === 'person'
-          ? countIncomingUnreadMessages(room, selfId, isHyphaBot)
-          : 0,
+      unread: countIncomingUnreadMessages(room, selfId, isHyphaBot),
       memberCount: members.length,
       otherUserId: other?.userId ?? null,
+      faces,
+      groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
       kind,
     });
   }
@@ -262,7 +273,6 @@ export function MyConnections({
   const locale = useLocale();
   const { jwt } = useJwt();
   const { client, isMatrixAvailable, createRoom } = useMatrix();
-  const { startAudioForRoom } = useGlobalCallDock();
   const { openCoherenceChat } = useHumanChatPanel();
   const searchParams = useSearchParams();
   const openedDirectChatRef = useRef<string | null>(null);
@@ -273,7 +283,8 @@ export function MyConnections({
   const [notice, setNotice] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [picking, setPicking] = useState(false);
-  const [calling, setCalling] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [pendingGroups, setPendingGroups] = useState<ConversationRow[]>([]);
   const [directory, setDirectory] = useState<ConnectionPerson[] | null>(null);
   const [searchDirectory, setSearchDirectory] = useState<
     ConnectionPerson[] | null
@@ -454,17 +465,40 @@ export function MyConnections({
   );
 
   const people = useMemo(() => {
+    const liveGroupIds = new Set(
+      rows.filter((row) => row.kind === 'group').map((row) => row.roomId),
+    );
+    const conversations = [
+      ...rows.map((row) => {
+        if (row.kind !== 'group') return row;
+        const pending = pendingGroups.find(
+          (group) => group.roomId === row.roomId,
+        );
+        if (!pending) return row;
+        return {
+          ...row,
+          name: row.name.trim() || pending.name,
+          faces: row.faces && row.faces.length >= 2 ? row.faces : pending.faces,
+          lastTs: row.lastTs ?? pending.lastTs,
+        };
+      }),
+      ...pendingGroups.filter((group) => !liveGroupIds.has(group.roomId)),
+    ];
+    const groups = picking
+      ? []
+      : groupRowsForConnections(conversations, t('someone'));
+    const source = [...groups, ...members];
     const filtered = needle
-      ? members.filter((row) => {
+      ? source.filter((row) => {
           const haystack = [row.name, row.person.nickname, row.person.slug]
             .filter(Boolean)
             .join(' ')
             .toLowerCase();
           return haystack.includes(needle);
         })
-      : members;
+      : source;
     return sortByRecencyThenPresence(filtered, presenceById);
-  }, [members, needle, presenceById]);
+  }, [members, needle, pendingGroups, picking, presenceById, rows, t]);
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
 
   async function loadMorePeople() {
@@ -539,11 +573,15 @@ export function MyConnections({
     if (!opened) setNotice(tChat('matrixUnavailable'));
   }
 
-  async function startGroupCall() {
-    if (selectedPeople.length < 2 || calling) return;
-    setCalling(true);
+  async function startGroupChat() {
+    if (selectedPeople.length < 2 || starting) return;
+    setStarting(true);
     setNotice(null);
     const title = selectedPeople.map((row) => row.name).join(', ');
+    const faces = selectedPeople.slice(0, 2).map((row) => ({
+      name: row.name,
+      avatarUrl: row.avatarUrl,
+    }));
     try {
       const { roomId } = await createRoom(title);
       if (client) {
@@ -553,15 +591,29 @@ export function MyConnections({
           await client.invite(roomId, mxid).catch(() => undefined);
         }
       }
+      setPendingGroups((current) => [
+        {
+          roomId,
+          name: title,
+          preview: '',
+          mine: false,
+          lastTs: Date.now(),
+          unread: 0,
+          memberCount: selectedPeople.length + 1,
+          otherUserId: null,
+          kind: 'group',
+          groupChat: true,
+          faces,
+        },
+        ...current.filter((group) => group.roomId !== roomId),
+      ]);
+      rememberGroupChatRooms([roomId]);
       openCoherenceChat(roomId, title, '', null, null);
-      await startAudioForRoom(roomId, null, undefined, jwt, {
-        roomTitle: title,
-      });
       exitPicking();
     } catch {
-      setNotice(tChat('callFailed'));
+      setNotice(tChat('matrixFailed'));
     } finally {
-      setCalling(false);
+      setStarting(false);
     }
   }
 
@@ -684,7 +736,7 @@ export function MyConnections({
                   disabled={!isMatrixAvailable || people.length < 2}
                   onClick={() => setPicking(true)}
                 >
-                  <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
+                  <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
                   {t('groupCall')}
                 </Button>
               )}
@@ -737,11 +789,11 @@ export function MyConnections({
                 </p>
                 <Button
                   type="button"
-                  disabled={selectedPeople.length < 2 || calling}
+                  disabled={selectedPeople.length < 2 || starting}
                   className="shrink-0 gap-1.5"
-                  onClick={() => void startGroupCall()}
+                  onClick={() => void startGroupChat()}
                 >
-                  <Phone className="size-3.5" strokeWidth={1.5} aria-hidden />
+                  <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
                   {t('startGroupCall')}
                 </Button>
               </div>
@@ -808,6 +860,35 @@ export function MyConnections({
   );
 }
 
+function GroupFaces({ faces }: { faces: GroupFace[] }) {
+  const shown = faces.slice(0, 2);
+  return (
+    <span className="relative block h-10 w-10 shrink-0" aria-hidden>
+      {shown.map((face, index) => (
+        <span
+          key={`${face.name}-${index}`}
+          className={cn(
+            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2',
+            index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
+          )}
+        >
+          {face.avatarUrl ? (
+            <img
+              src={face.avatarUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
+              {face.name.trim().charAt(0).toUpperCase() || '?'}
+            </span>
+          )}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function MemberList({
   title,
   rows,
@@ -854,7 +935,7 @@ function MemberList({
           const presence = presenceById.get(row.person.id) ?? 'offline';
           return (
             <li
-              key={row.person.id}
+              key={row.roomId ?? row.person.id}
               className="border-b border-border last:border-b-0"
             >
               <button
@@ -863,7 +944,7 @@ function MemberList({
                 aria-pressed={picking ? checked : undefined}
                 aria-label={picking ? selectLabel(row.name) : undefined}
                 className={cn(
-                  'flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
+                  'group/row flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
                   picking && checked && 'bg-accent-2/60',
                 )}
               >
@@ -880,14 +961,18 @@ function MemberList({
                     ) : null}
                   </span>
                 ) : null}
-                <PersonAvatar
-                  size="chat"
-                  shape="circle"
-                  avatarSrc={row.avatarUrl}
-                  userName={row.name}
-                  personId={row.person.id}
-                  presence={presence}
-                />
+                {row.faces && row.faces.length > 0 ? (
+                  <GroupFaces faces={row.faces} />
+                ) : (
+                  <PersonAvatar
+                    size="chat"
+                    shape="circle"
+                    avatarSrc={row.avatarUrl}
+                    userName={row.name}
+                    personId={row.person.id}
+                    presence={presence}
+                  />
+                )}
                 <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
                     <span

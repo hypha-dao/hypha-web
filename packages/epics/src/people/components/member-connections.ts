@@ -8,6 +8,12 @@ export type ConnectionListPerson = {
   sharedSpaceCount?: number;
 };
 
+/** Two faces on a group row, the way a Discord group shows who is in it. */
+export type GroupFace = {
+  name: string;
+  avatarUrl?: string;
+};
+
 export type ConversationRow = {
   roomId: string;
   name: string;
@@ -19,6 +25,10 @@ export type ConversationRow = {
   memberCount: number;
   otherUserId: string | null;
   kind: 'person' | 'group';
+  /** Up to two other members, used as the group icon. */
+  faces?: GroupFace[];
+  /** Remembered as a group chat, even if the room was later renamed. */
+  groupChat?: boolean;
   /** A signal thread that happens to have one other person. Not a private message. */
   signalThread?: boolean;
 };
@@ -32,6 +42,8 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
   lastTs: number | null;
   unread: number;
   roomId: string | null;
+  /** Set on a group chat. Two faces mean the row is a group. */
+  faces?: GroupFace[];
 };
 
 function botUserId() {
@@ -299,6 +311,126 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
     syntheticId -= 1;
   }
   return extras;
+}
+
+function groupPersonId(roomId: string) {
+  let hash = 0;
+  for (let index = 0; index < roomId.length; index += 1) {
+    hash = (Math.imul(hash, 31) + roomId.charCodeAt(index)) | 0;
+  }
+  const id = -Math.abs(hash);
+  return id === 0 ? -1 : id;
+}
+
+function twoGroupFaces(room: ConversationRow): GroupFace[] {
+  const faces = [...(room.faces ?? [])].slice(0, 2);
+  if (faces.length >= 2) return faces;
+  const names = room.name
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  for (const name of names) {
+    if (faces.length >= 2) break;
+    if (faces.some((face) => face.name === name)) continue;
+    faces.push({ name });
+  }
+  return faces.slice(0, 2);
+}
+
+const groupChatRoomIds = new Set<string>();
+const GROUP_CHAT_ROOMS_KEY = 'hypha.group-chat-rooms';
+let groupChatRoomsLoaded = false;
+
+function loadGroupChatRooms() {
+  if (groupChatRoomsLoaded || typeof window === 'undefined') return;
+  groupChatRoomsLoaded = true;
+  try {
+    const raw = window.localStorage.getItem(GROUP_CHAT_ROOMS_KEY);
+    const ids = raw ? (JSON.parse(raw) as unknown) : [];
+    if (!Array.isArray(ids)) return;
+    for (const id of ids) {
+      if (typeof id === 'string' && id.trim()) {
+        groupChatRoomIds.add(id.trim());
+      }
+    }
+  } catch {
+    // Ignore a broken cache. A comma-separated room title still marks a group chat.
+  }
+}
+
+function persistGroupChatRooms() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      GROUP_CHAT_ROOMS_KEY,
+      JSON.stringify([...groupChatRoomIds]),
+    );
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
+}
+
+/** Rooms this member started as a group chat, so they stay in People around. */
+export function rememberGroupChatRooms(
+  roomIds: Iterable<string | null | undefined>,
+) {
+  loadGroupChatRooms();
+  let changed = false;
+  for (const roomId of roomIds) {
+    const id = roomId?.trim();
+    if (!id || groupChatRoomIds.has(id)) continue;
+    groupChatRoomIds.add(id);
+    changed = true;
+  }
+  if (changed) persistGroupChatRooms();
+}
+
+export function isRememberedGroupChatRoom(roomId: string) {
+  loadGroupChatRooms();
+  return groupChatRoomIds.has(roomId.trim());
+}
+
+/**
+ * A private group chat, not a space channel.
+ * Space rooms share the Matrix account but are named for the space.
+ * A group chat is titled with the people in it, or remembered from here.
+ */
+export function isPeopleListGroup(room: ConversationRow) {
+  if (room.kind !== 'group' || room.signalThread) return false;
+  if (room.groupChat || isRememberedGroupChatRoom(room.roomId)) return true;
+  return room.name.includes(',');
+}
+
+/** Group chats mixed into the people list. One row per room, with two faces. */
+export function groupRowsForConnections<T extends ConnectionListPerson>(
+  rooms: readonly ConversationRow[],
+  fallback: string,
+): MemberRow<T>[] {
+  return rooms
+    .filter((room) => isPeopleListGroup(room))
+    .map((room) => {
+      const faces = twoGroupFaces(room);
+      const name = room.name.trim() || fallback;
+      return {
+        person: {
+          id: groupPersonId(room.roomId),
+          name,
+          surname: null,
+          nickname: null,
+          avatarUrl: null,
+          slug: null,
+          sharedSpaceCount: 0,
+        } as T,
+        name,
+        avatarUrl: room.avatarUrl,
+        faces,
+        preview: room.preview,
+        mine: room.mine,
+        lastTs: room.lastTs,
+        unread: room.unread,
+        roomId: room.roomId,
+      };
+    });
 }
 
 /** Members this person connects with. Signal rooms stay out of the list. */
