@@ -21,7 +21,6 @@ import {
   Globe2,
   Menu,
   PanelLeftClose,
-  Plus,
   Settings,
   Volume2,
   VolumeX,
@@ -681,12 +680,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         label: tNetwork('navExchange'),
         href: `${base}/exchange`,
         icon: ArrowLeftRight,
-      },
-      {
-        key: 'create',
-        label: tNetwork('navCreate'),
-        href: `${base}/create`,
-        icon: Plus,
       },
     ] as const;
     return links.map((link) => ({

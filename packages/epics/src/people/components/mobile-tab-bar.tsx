@@ -348,12 +348,6 @@ export function MobileTabBar({
         href: `${base}/exchange`,
         icon: ArrowLeftRight,
       },
-      {
-        key: 'create',
-        label: tNetwork('navCreate'),
-        href: `${base}/create`,
-        icon: Plus,
-      },
     ] as const;
     return links.map((link) => ({
       key: link.key,
