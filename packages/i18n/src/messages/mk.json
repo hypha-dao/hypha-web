@@ -111,6 +111,7 @@
     "sendTokensArrived": "{amount} {symbol} се кај {name}",
     "sendTokensSigned": "Веднаш, без провизии, без посредник.",
     "sendTokensLeft": "остануваат {amount} {symbol}",
+    "sendTokensDone": "Готово",
     "sendTokensFailed": "Преносот не помина. Можеш да пробаш повторно.",
     "sendTokensNoWallet": "Поврзи го паричникот за да испратиш токени.",
     "sendTokensNone": "Сè уште немаш токени за испраќање.",

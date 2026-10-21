@@ -25,6 +25,10 @@ import { useScrollToErrors } from '../../hooks';
 import { useFundWallet, useVaults } from '../../treasury/hooks';
 import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
+import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
 
 const USD_FEED_ADDRESS = '0x0000000000000000000000000000000000000000';
 const CURRENCY_CODE_BY_FEED = Object.fromEntries(
@@ -684,6 +688,8 @@ export const PeopleRedeemForm = ({
               : t('form.errors.contractFailed');
         } else if (error.message.includes('user rejected')) {
           errorMessage = t('form.errors.transactionRejected');
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
       }
       form.setError('root', { message: errorMessage });
@@ -794,7 +800,9 @@ export const PeopleRedeemForm = ({
                   {t('form.insufficientFundsTrail')}
                 </>
               ) : (
-                form.formState.errors.root.message
+                <BlockchainErrorText
+                  message={form.formState.errors.root.message ?? ''}
+                />
               )}
             </div>
           )}

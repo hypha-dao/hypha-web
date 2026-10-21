@@ -23,6 +23,10 @@ import { useUserAssets } from '../../treasury/hooks';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
 
 interface Token {
   icon: string;
@@ -179,6 +183,8 @@ export const PeopleTransferForm = ({
         } else if (error.message.includes('user rejected')) {
           errorMessage =
             'Transaction was rejected. Please approve the transaction to proceed.';
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
       }
       form.setError('root', { message: errorMessage });
@@ -249,7 +255,9 @@ export const PeopleTransferForm = ({
                   to proceed.
                 </>
               ) : (
-                form.formState.errors.root.message
+                <BlockchainErrorText
+                  message={form.formState.errors.root.message ?? ''}
+                />
               )}
             </div>
           )}

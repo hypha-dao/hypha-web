@@ -111,6 +111,7 @@
     "sendTokensArrived": "{amount} {symbol} están con {name}",
     "sendTokensSigned": "Al instante, sin comisiones, sin intermediario.",
     "sendTokensLeft": "quedan {amount} {symbol}",
+    "sendTokensDone": "Listo",
     "sendTokensFailed": "La transferencia no se completó. Puedes intentarlo de nuevo.",
     "sendTokensNoWallet": "Conecta tu cartera para enviar tokens.",
     "sendTokensNone": "Todavía no tienes tokens para enviar.",

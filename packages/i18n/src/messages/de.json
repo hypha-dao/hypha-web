@@ -111,6 +111,7 @@
     "sendTokensArrived": "{amount} {symbol} sind bei {name}",
     "sendTokensSigned": "Sofort, ohne Gebühren, ohne Vermittler.",
     "sendTokensLeft": "noch {amount} {symbol}",
+    "sendTokensDone": "Fertig",
     "sendTokensFailed": "Die Übertragung ist nicht durchgegangen. Du kannst es noch einmal versuchen.",
     "sendTokensNoWallet": "Verbinde deine Wallet, um Token zu senden.",
     "sendTokensNone": "Du hast noch keine Token zum Senden.",

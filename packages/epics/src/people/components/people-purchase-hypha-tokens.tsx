@@ -36,6 +36,10 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
 import { useTranslations } from 'next-intl';
 import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
+import {
   formatWalletAmount,
   WalletAmountBlock,
   WalletFlowCard,
@@ -290,6 +294,8 @@ export const PeoplePurchaseHyphaTokens = ({
           errorMessage = tActions(
             'purchaseHypha.form.errors.transactionRejected',
           );
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
       }
       form.setError('root', { message: errorMessage });
@@ -485,7 +491,9 @@ export const PeoplePurchaseHyphaTokens = ({
                 )}
               </>
             ) : (
-              form.formState.errors.root.message
+              <BlockchainErrorText
+                message={form.formState.errors.root.message ?? ''}
+              />
             )}
           </div>
         )}

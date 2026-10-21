@@ -36,6 +36,7 @@ import { TokenSelectDropdown } from '../../agreements/plugins/components/common/
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { BlockchainErrorText } from '../../common/format-blockchain-error';
 import { useUserAssets } from '../../treasury/hooks/use-user-assets';
 import {
   formatWalletAmount,
@@ -627,15 +628,15 @@ export const PeopleBuySpaceTokens = ({
           )}
         </div>
 
-        {form.formState.errors.root && (
-          <div className="text-2 text-foreground">
-            {form.formState.errors.root.message}
-          </div>
-        )}
+        {form.formState.errors.root?.message ? (
+          <BlockchainErrorText message={form.formState.errors.root.message} />
+        ) : null}
         {(approveError || buyError) && !form.formState.errors.root && (
-          <div className="text-2 text-foreground">
-            {(approveError || buyError)?.message ?? t('transactionFailed')}
-          </div>
+          <BlockchainErrorText
+            message={
+              (approveError || buyError)?.message ?? t('transactionFailed')
+            }
+          />
         )}
       </form>
     </Form>,

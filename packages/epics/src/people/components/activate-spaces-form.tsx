@@ -18,6 +18,10 @@ import {
   ActivateSpacesFormValues,
 } from '../hooks/validation';
 import { extractRevertReason, Space, useMe } from '@hypha-platform/core/client';
+import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
@@ -261,6 +265,8 @@ export const ActivateSpacesForm = ({
           errorMessage = tActions(
             'activateSpaces.form.errors.transactionRejected',
           );
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
       }
       setError('root', { message: errorMessage });
@@ -491,35 +497,37 @@ export const ActivateSpacesForm = ({
         </div>
         {errors.root && (
           <div className="text-2 text-foreground">
-            {errors.root.message === 'insufficient_funds'
-              ? tAgreementFlow.rich(
-                  'activateSpacesForm.insufficientFunds.fullMessage',
-                  {
-                    token: paymentToken,
-                    topUpLink: (chunks) =>
-                      paymentToken === 'HYPHA' ? (
-                        <Link
-                          href={
-                            wallet
-                              ? `/${lang}/my-wallet/actions/purchase-hypha-tokens`
-                              : `/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`
-                          }
-                          className="font-bold cursor-pointer text-accent-9 underline"
-                        >
-                          {chunks}
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={fundWallet}
-                          className="font-bold cursor-pointer text-accent-9 underline"
-                        >
-                          {chunks}
-                        </button>
-                      ),
-                  },
-                )
-              : errors.root.message}
+            {errors.root.message === 'insufficient_funds' ? (
+              tAgreementFlow.rich(
+                'activateSpacesForm.insufficientFunds.fullMessage',
+                {
+                  token: paymentToken,
+                  topUpLink: (chunks) =>
+                    paymentToken === 'HYPHA' ? (
+                      <Link
+                        href={
+                          wallet
+                            ? `/${lang}/my-wallet/actions/purchase-hypha-tokens`
+                            : `/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`
+                        }
+                        className="font-bold cursor-pointer text-accent-9 underline"
+                      >
+                        {chunks}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={fundWallet}
+                        className="font-bold cursor-pointer text-accent-9 underline"
+                      >
+                        {chunks}
+                      </button>
+                    ),
+                },
+              )
+            ) : (
+              <BlockchainErrorText message={errors.root.message ?? ''} />
+            )}
           </div>
         )}
       </form>

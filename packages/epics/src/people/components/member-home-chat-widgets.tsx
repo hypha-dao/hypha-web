@@ -46,6 +46,10 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
+import {
   formatWalletAmount,
   WalletHoldingLine,
 } from '../../common/wallet-flow-card';
@@ -731,7 +735,7 @@ export function MemberHomeSendTokensWidget({
   const lineSeq = useRef(1);
   const recipientTouched = useRef(false);
   const [lines, setLines] = useState<TokenLine[]>([
-    { id: 'line-1', tokenAddress: null, amount: '' },
+    { id: 'line-1', tokenAddress: null, amount: '1' },
   ]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -1141,6 +1145,8 @@ export function MemberHomeSendTokensWidget({
         const hypha = readyLines.some((item) => item.token.symbol === 'HYPHA');
         setFundingKind(hypha ? 'hypha' : 'funds');
         setError('insufficient');
+      } else if (isBlockchainErrorMessage(message)) {
+        setError(message);
       } else {
         setError(t('sendTokensFailed'));
       }
@@ -1219,6 +1225,13 @@ export function MemberHomeSendTokensWidget({
               })}
             </p>
           ) : null}
+          <Button
+            type="button"
+            className="mt-6 w-full"
+            onClick={() => setSent(null)}
+          >
+            {t('sendTokensDone')}
+          </Button>
         </div>
       </WidgetFrame>
     );
@@ -1400,7 +1413,7 @@ export function MemberHomeSendTokensWidget({
                         }
                         updateLine(line.id, { amount: next });
                       }}
-                      className="w-28 bg-transparent text-center outline-none"
+                      className="box-border w-40 max-w-full min-w-[5rem] border border-neutral-7 bg-background px-3 py-2 text-center text-8 leading-none tracking-[-0.04em] text-foreground tabular-nums outline-none focus:border-neutral-8 dark:border-border dark:focus:border-white/40"
                     />
                     {tokens.length > 1 ? (
                       <Popover
@@ -1587,9 +1600,7 @@ export function MemberHomeSendTokensWidget({
               )}
             </p>
           ) : error ? (
-            <p className="text-2 text-error-11" role="alert">
-              {error}
-            </p>
+            <BlockchainErrorText message={error} />
           ) : null}
         </div>
       )}

@@ -111,6 +111,7 @@
     "sendTokensArrived": "{amount} {symbol} sont avec {name}",
     "sendTokensSigned": "Instantané, sans frais, sans intermédiaire.",
     "sendTokensLeft": "il reste {amount} {symbol}",
+    "sendTokensDone": "Terminé",
     "sendTokensFailed": "Le transfert n’est pas passé. Tu peux réessayer.",
     "sendTokensNoWallet": "Connecte ton portefeuille pour envoyer des tokens.",
     "sendTokensNone": "Tu n’as pas encore de tokens à envoyer.",

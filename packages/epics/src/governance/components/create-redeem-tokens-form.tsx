@@ -16,6 +16,10 @@ import { useCreateRedeemTokensOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useTranslations } from 'next-intl';
+import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
 import { useConfig } from 'wagmi';
 import {
   useClearResubmitOnSuccess,
@@ -194,6 +198,8 @@ const CreateRedeemTokensFormInner = ({
             match && match[1]
               ? extractRevertReason(match[1])
               : 'Contract execution failed.';
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
 
         console.error(errorMessage);
@@ -214,11 +220,12 @@ const CreateRedeemTokensFormInner = ({
         isError ? (
           <div className="flex flex-col">
             <div>{tAgreementFlow('loadingBackdrop.errorTitle')}</div>
-            {form.formState.errors.root?.message && (
-              <div className="text-destructive">
-                {form.formState.errors.root.message}
-              </div>
-            )}
+            {form.formState.errors.root?.message ? (
+              <BlockchainErrorText
+                className="text-destructive"
+                message={form.formState.errors.root.message}
+              />
+            ) : null}
             <Button onClick={reset}>
               {tAgreementFlow('loadingBackdrop.resetButton')}
             </Button>

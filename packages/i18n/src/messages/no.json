@@ -111,6 +111,7 @@
     "sendTokensArrived": "{amount} {symbol} er hos {name}",
     "sendTokensSigned": "Umiddelbart, uten gebyrer, uten mellomledd.",
     "sendTokensLeft": "{amount} {symbol} igjen",
+    "sendTokensDone": "Ferdig",
     "sendTokensFailed": "Overføringen gikk ikke gjennom. Du kan prøve igjen.",
     "sendTokensNoWallet": "Koble til lommeboken for å sende tokens.",
     "sendTokensNone": "Du har ingen tokens å sende ennå.",

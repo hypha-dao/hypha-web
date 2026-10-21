@@ -587,6 +587,7 @@
     "sendTokensArrived": "{amount} {symbol} is with {name}",
     "sendTokensSigned": "Instant, no fees, no intermediary.",
     "sendTokensLeft": "{amount} {symbol} left",
+    "sendTokensDone": "Done",
     "sendTokensFailed": "The transfer did not go through. You can try again.",
     "sendTokensNoWallet": "Connect your wallet to send tokens.",
     "sendTokensNone": "You have no tokens to send yet.",
