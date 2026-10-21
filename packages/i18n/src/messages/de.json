@@ -2054,7 +2054,7 @@
     "buyHypha": "HYPHA kaufen",
     "buySpaceTokens": "Space-Tokens kaufen",
     "actions": "Aktionen",
-    "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden",
+    "noAssetsFoundForUser": "Sie haben noch keine Assets.",
     "editForm": {
       "uploadLeadImageLabel": "<accent>Bild</accent> hochladen",
       "labels": {

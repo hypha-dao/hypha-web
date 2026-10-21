@@ -2052,7 +2052,7 @@
     "buyHypha": "Kjøp HYPHA",
     "buySpaceTokens": "Kjøp rom-tokener",
     "actions": "Handlinger",
-    "noAssetsFoundForUser": "Ingen eiendeler funnet for denne brukeren",
+    "noAssetsFoundForUser": "Du har ingen eiendeler ennå.",
     "editForm": {
       "uploadLeadImageLabel": "<accent>Last opp</accent> et bilde",
       "labels": {

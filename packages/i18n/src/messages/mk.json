@@ -2033,7 +2033,7 @@
     "buyHypha": "Купи HYPHA",
     "buySpaceTokens": "Купи токени на просторот",
     "actions": "Дејства",
-    "noAssetsFoundForUser": "Не се пронајдени средства за овој корисник",
+    "noAssetsFoundForUser": "Сè уште немаш средства.",
     "editForm": {
       "uploadLeadImageLabel": "<accent>Прикачи</accent> слика",
       "labels": {

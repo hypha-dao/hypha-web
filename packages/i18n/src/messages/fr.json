@@ -1482,7 +1482,7 @@
     "buyHypha": "Acheter HYPHA",
     "buySpaceTokens": "Acheter des tokens d'espace",
     "actions": "Actions",
-    "noAssetsFoundForUser": "Aucun actif trouvé pour cet utilisateur",
+    "noAssetsFoundForUser": "Vous n'avez pas encore d'actifs.",
     "editForm": {
       "uploadLeadImageLabel": "<accent>Téléverser</accent> une image",
       "labels": {

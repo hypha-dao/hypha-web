@@ -2053,7 +2053,7 @@
     "buyHypha": "Koop HYPHA",
     "buySpaceTokens": "Ruimtetokens kopen",
     "actions": "Acties",
-    "noAssetsFoundForUser": "Er zijn geen items gevonden voor deze gebruiker",
+    "noAssetsFoundForUser": "U heeft nog geen assets.",
     "editForm": {
       "uploadLeadImageLabel": "<accent>Upload</accent> een afbeelding",
       "labels": {
