@@ -573,7 +573,10 @@ interface MatrixContextType {
   /** Join this ecosystem’s shared room (not the root space member room). */
   ensureEcosystemRoom: (ecosystemSlug: string) => Promise<{ roomId: string }>;
   /** Join this space’s public room (network connect); not the member room. */
-  ensurePublicRoom: (spaceSlug: string) => Promise<{ roomId: string }>;
+  ensurePublicRoom: (
+    spaceSlug: string,
+    memberRoomId?: string | null,
+  ) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
@@ -1175,7 +1178,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const ensurePublicRoom = React.useCallback(
-    async (spaceSlug: string) => {
+    async (spaceSlug: string, memberRoomId?: string | null) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
@@ -1186,6 +1189,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const ensured = await ensurePublicChatRoomAction({
         matrixUserId: userId,
         spaceSlug,
+        memberRoomId,
       });
       if (!ensured) {
         throw new Error('Failed to open the public room');

@@ -3159,7 +3159,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           targetRoomId = ecosystemRoomId;
         } else if (openingPublic) {
-          const { roomId: publicRoomId } = await ensurePublicRoom(spaceSlug);
+          const memberRoomId =
+            space?.chatRoomId?.trim() || getStoredRoomId(spaceSlug) || null;
+          const { roomId: publicRoomId } = await ensurePublicRoom(
+            spaceSlug,
+            memberRoomId,
+          );
+          if (memberRoomId && publicRoomId === memberRoomId) {
+            throw new Error('Public channel resolved to the space channel');
+          }
           targetRoomId = publicRoomId;
         } else {
           const canonicalRoomId = space?.chatRoomId?.trim() || null;
@@ -3591,6 +3599,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (timelineFlushRafRef.current != null) return;
       timelineFlushRafRef.current = requestAnimationFrame(() => {
         timelineFlushRafRef.current = null;
+        if (roomIdRef.current !== roomId) {
+          pendingTimelineRedactIdsRef.current = new Set();
+          pendingTimelineMessagesRef.current = new Map();
+          return;
+        }
 
         const redacts = pendingTimelineRedactIdsRef.current;
         pendingTimelineRedactIdsRef.current = new Set();
@@ -5067,6 +5080,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     // Ecosystem / public rooms are alias-backed — never reuse
                     // the member space room id when switching.
                     joinedRef.current = null;
+                    messagesRoomIdRef.current = null;
+                    if (timelineFlushRafRef.current != null) {
+                      cancelAnimationFrame(timelineFlushRafRef.current);
+                      timelineFlushRafRef.current = null;
+                    }
+                    pendingTimelineRedactIdsRef.current = new Set();
+                    pendingTimelineMessagesRef.current = new Map();
                     if (roomId) {
                       matrixRef.current.unregisterRoomListener(roomId);
                     }

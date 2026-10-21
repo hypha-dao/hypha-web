@@ -368,6 +368,24 @@ export async function matrixResolveRoomAlias(
   return data.room_id?.trim() || null;
 }
 
+/** Remove a directory alias so it can be published on a different room. */
+export async function matrixDeleteRoomAlias(
+  roomAlias: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      roomAlias,
+    )}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
+}
+
 /**
  * Create a private room and publish a single alias (`#localpart:server`).
  * Space rooms keep using `matrixCreateRoom`, which does not set an alias.

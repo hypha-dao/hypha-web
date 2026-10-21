@@ -23,6 +23,7 @@ import {
   findMatrixUserIdsByPrivyUserIds,
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
+import { distinctPublicRoomId } from '../public-room-id';
 import { Environment } from '../../coherence/types';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
@@ -36,6 +37,7 @@ import {
   matrixApplyRoomPowerLevels,
   matrixCreateAliasedRoom,
   matrixCreateRoom,
+  matrixDeleteRoomAlias,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
@@ -269,10 +271,16 @@ async function ensureAliasedChatRoomAction({
   matrixUserId,
   aliasLocalpart,
   roomName,
+  memberRoomIds,
 }: {
   matrixUserId: string;
   aliasLocalpart: string;
   roomName: string;
+  /**
+   * Room ids that belong to the space member channel. If the alias already
+   * points at one of them, detach it and create a separate room.
+   */
+  memberRoomIds?: string[];
 }): Promise<{ roomId: string } | null> {
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
@@ -309,6 +317,20 @@ async function ensureAliasedChatRoomAction({
     return null;
   }
 
+  if (pointsAtMemberRoom(roomId, memberRoomIds)) {
+    try {
+      await matrixDeleteRoomAlias(alias, botToken, homeserver);
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Refusing to reuse the member room as a shared room:',
+        alias,
+        error instanceof Error ? error.message : error,
+      );
+      return null;
+    }
+    roomId = null;
+  }
+
   if (!roomId) {
     try {
       roomId = await matrixCreateAliasedRoom(
@@ -343,7 +365,15 @@ async function ensureAliasedChatRoomAction({
     }
   }
 
-  if (!roomId) return null;
+  if (!roomId || pointsAtMemberRoom(roomId, memberRoomIds)) {
+    if (roomId) {
+      console.warn(
+        '[MatrixBot] Shared room alias still points at the member room:',
+        alias,
+      );
+    }
+    return null;
+  }
 
   const additionalBotUserIds = await joinAdditionalBotsToRoom(
     roomId,
@@ -410,17 +440,48 @@ export async function ensureEcosystemChatRoomAction({
 export async function ensurePublicChatRoomAction({
   matrixUserId,
   spaceSlug,
+  memberRoomId,
 }: {
   matrixUserId: string;
   spaceSlug: string;
+  /** Member room the client is showing, when it is not yet stored on the space. */
+  memberRoomId?: string | null;
 }): Promise<{ roomId: string } | null> {
   const slug = spaceSlug.trim();
   if (!slug) return null;
+  const memberRoomIds = new Set<string>();
+  const hinted = memberRoomId?.trim();
+  if (hinted) memberRoomIds.add(hinted);
+  try {
+    const row = await db.query.spaces.findFirst({
+      columns: { chatRoomId: true },
+      where: (table, { eq }) => eq(table.slug, slug),
+    });
+    const stored = row?.chatRoomId?.trim();
+    if (stored) memberRoomIds.add(stored);
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to read the space member room:',
+      slug,
+      error instanceof Error ? error.message : error,
+    );
+  }
   return ensureAliasedChatRoomAction({
     matrixUserId,
     aliasLocalpart: matrixAliasLocalpart(PUBLIC_ROOM_ALIAS_PREFIX, slug),
     roomName: `Public · ${slug}`,
+    memberRoomIds: [...memberRoomIds],
   });
+}
+
+function pointsAtMemberRoom(
+  roomId: string | null,
+  memberRoomIds: string[] | undefined,
+): boolean {
+  if (!roomId || !memberRoomIds?.length) return false;
+  return memberRoomIds.some(
+    (memberRoomId) => distinctPublicRoomId(roomId, memberRoomId) == null,
+  );
 }
 
 export async function ensureMemberJoinedRoomAction({
