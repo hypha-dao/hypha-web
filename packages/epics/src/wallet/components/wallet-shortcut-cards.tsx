@@ -73,7 +73,7 @@ function ShortcutCard({
         external
           ? undefined
           : () => {
-              prepareWalletActionNavigation(href);
+              prepareWalletActionNavigation();
             }
       }
     >

@@ -133,7 +133,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
               : tTreasury('assetCard.openAction', { symbol: name ?? '' })
           }
           className="absolute inset-0 z-10"
-          onClick={() => prepareWalletActionNavigation(actionHref)}
+          onClick={() => prepareWalletActionNavigation()}
         />
       ) : null}
       <div

@@ -151,7 +151,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
               <Link
                 href={buyHyphaHref}
                 scroll={false}
-                onClick={() => prepareWalletActionNavigation(buyHyphaHref)}
+                onClick={() => prepareWalletActionNavigation()}
               >
                 {tWallet('shortcuts.buyHypha')}
               </Link>

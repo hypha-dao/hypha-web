@@ -123,7 +123,7 @@ export function WalletActionsPanel({
               target: action.target || undefined,
               onNavigate:
                 href && action.id !== 'migrateHyphaTokens'
-                  ? () => prepareWalletActionNavigation(href)
+                  ? () => prepareWalletActionNavigation()
                   : undefined,
             };
           })}

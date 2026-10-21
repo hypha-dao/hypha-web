@@ -5,6 +5,7 @@ import {
   PeopleBuySpaceTokens,
   PeoplePurchaseHyphaTokens,
 } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 type MyWalletPurchaseHyphaTokensClientProps = {
   spaces: Space[];
@@ -16,9 +17,10 @@ export function MyWalletPurchaseHyphaTokensClient({
   closePanelUrl,
 }: MyWalletPurchaseHyphaTokensClientProps) {
   const { person, isLoading } = useMe();
+  const t = useTranslations('MyWallet');
 
   if (isLoading || !person?.slug) {
-    return null;
+    return <p className="text-2 text-neutral-11">{t('loading')}</p>;
   }
 
   return (
@@ -39,9 +41,10 @@ export function MyWalletBuySpaceTokensClient({
   closeUrl,
 }: MyWalletBuySpaceTokensClientProps) {
   const { person, isLoading } = useMe();
+  const t = useTranslations('MyWallet');
 
   if (isLoading || !person?.slug) {
-    return null;
+    return <p className="text-2 text-neutral-11">{t('loading')}</p>;
   }
 
   return (

@@ -332,7 +332,7 @@ function DepositDetailsCard({
             <Link
               href={walletHref}
               scroll={false}
-              onClick={() => prepareWalletActionNavigation(walletHref)}
+              onClick={() => prepareWalletActionNavigation()}
               className="flex w-full items-center gap-4 px-4 py-4 hover:bg-neutral-2"
             >
               <span className="min-w-0 flex-1">
