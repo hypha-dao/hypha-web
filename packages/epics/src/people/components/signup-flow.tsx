@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import {
   Button,
   Input,
@@ -18,7 +20,7 @@ import {
 } from '@hypha-platform/i18n/client';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { PersonRoleBadge } from './person-badges';
+import { RoleGlyph } from './person-badges';
 
 export type SignupOrientation = 'member' | 'builder' | 'investor';
 
@@ -205,12 +207,7 @@ export function SignupFlow({
   const youStep = step === 'you';
 
   return (
-    <div
-      className={cn(
-        'fixed inset-0 z-50 bg-background text-foreground',
-        youStep ? 'overflow-hidden' : 'overflow-y-auto',
-      )}
-    >
+    <div className="fixed inset-0 z-50 overflow-hidden bg-background text-foreground">
       <style>{`
         @keyframes signup-opening-dot {
           0%, 70%, 100% { opacity: 0.25; transform: translateY(0); }
@@ -219,247 +216,288 @@ export function SignupFlow({
       `}</style>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-cover bg-[center_right] opacity-50 dark:opacity-30"
+        className="pointer-events-none fixed inset-0 bg-cover bg-[center_right] opacity-50 dark:opacity-30"
         style={{ backgroundImage: 'url(/brand/mycelium.jpg)' }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/35"
+        className="pointer-events-none fixed inset-0 bg-gradient-to-r from-background via-background/92 to-background/35"
       />
+      <div className="fixed top-4 right-4 z-[60] flex items-center gap-1">
+        <SignupThemeToggle />
+        <SignupLanguageSelect />
+      </div>
       <div
         className={cn(
-          'relative flex w-full flex-col',
-          youStep ? 'h-dvh' : 'min-h-dvh',
+          'relative h-dvh',
+          youStep ? 'overflow-hidden' : 'overflow-y-auto',
         )}
       >
-        <div className="absolute top-4 right-4 z-10">
-          <SignupLanguageSelect />
-        </div>
-        <div
-          className={cn(
-            'mx-auto my-auto flex w-full max-w-xl flex-col items-center px-6 text-center',
-            youStep ? 'py-4' : 'py-8',
-          )}
-        >
-          <Logo width={96} />
-          <p
-            className={cn(
-              'w-full text-1 text-neutral-11',
-              youStep ? 'mt-3' : 'mt-4',
-            )}
-          >
-            {t('step', { current: index + 1, total: STEPS.length })}
-          </p>
-          <div className="mt-2 flex w-full justify-center gap-1" aria-hidden>
-            {STEPS.map((item, itemIndex) => (
-              <span
-                key={item}
-                className={cn(
-                  'h-0.5 w-8 bg-neutral-6',
-                  itemIndex <= index && 'bg-foreground',
-                )}
-              />
-            ))}
-          </div>
-
-          <div className={cn('w-full', youStep ? 'mt-4' : 'mt-10')}>
-            {step === 'welcome' ? (
-              <Screen
-                eyebrow={t('welcome.eyebrow')}
-                title={t('welcome.title')}
-                body={t('welcome.body')}
-              />
-            ) : null}
-
-            {step === 'you' ? (
-              <Screen title={t('you.title')} compact>
-                <div className="flex items-start gap-4">
-                  <div className="grid shrink-0 justify-items-center gap-2">
-                    <span className="text-1 text-neutral-11">
-                      {t('you.icon')}
-                    </span>
-                    <UploadAvatar
-                      onChange={setAvatarUrl}
-                      className="!h-16 !min-h-16 !w-16 !min-w-16 !rounded-none"
-                    />
-                  </div>
-                  <div className="grid min-w-0 flex-1 gap-2">
-                    <Field label={t('you.firstName')}>
-                      <Input
-                        value={name}
-                        autoComplete="given-name"
-                        required
-                        className={signupFieldClassName}
-                        onChange={(event) => setName(event.target.value)}
-                      />
-                    </Field>
-                    <Field label={t('you.lastName')}>
-                      <Input
-                        value={surname}
-                        autoComplete="family-name"
-                        required
-                        className={signupFieldClassName}
-                        onChange={(event) => setSurname(event.target.value)}
-                      />
-                    </Field>
-                    <Field
-                      label={t('you.nickname')}
-                      hint={t('you.nicknameHint')}
-                    >
-                      <Input
-                        value={nickname}
-                        maxLength={12}
-                        autoComplete="username"
-                        required
-                        className={signupFieldClassName}
-                        onChange={(event) => setNickname(event.target.value)}
-                      />
-                    </Field>
-                  </div>
-                </div>
-              </Screen>
-            ) : null}
-
-            {step === 'description' ? (
-              <Screen
-                title={t('description.title')}
-                body={t('description.body')}
-              >
-                <Field label={t('description.passion')}>
-                  <Textarea
-                    value={description}
-                    maxLength={300}
-                    rows={3}
-                    placeholder={t('description.passionPlaceholder')}
-                    className={signupFieldClassName}
-                    onChange={(event) => setDescription(event.target.value)}
-                  />
-                </Field>
-                <Field label={t('description.location')}>
-                  <Input
-                    value={location}
-                    maxLength={100}
-                    placeholder={t('description.locationPlaceholder')}
-                    className={signupFieldClassName}
-                    onChange={(event) => setLocation(event.target.value)}
-                  />
-                </Field>
-              </Screen>
-            ) : null}
-
-            {step === 'orientation' ? (
-              <Screen
-                title={t('orientation.title')}
-                body={t('orientation.body')}
-              >
-                <div className="grid w-full gap-3">
-                  {ORIENTATIONS.map((option) => {
-                    const selected = orientation === option;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => setOrientation(option)}
-                        className={cn(
-                          'border px-4 py-4 text-left transition-colors',
-                          selected
-                            ? 'border-foreground'
-                            : 'border-border hover:border-neutral-8',
-                        )}
-                      >
-                        <PersonRoleBadge role={option} />
-                        <span
-                          className="mt-3 block text-3"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {t(`orientation.${option}.title`)}
-                        </span>
-                        <span className="mt-1 block text-2 leading-relaxed text-neutral-11">
-                          {t(`orientation.${option}.body`)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Screen>
-            ) : null}
-          </div>
-
-          {authLoading ? (
-            <p className="mt-3 w-full text-1 text-neutral-11">
-              {t('walletWait')}
-            </p>
-          ) : null}
-          {shownError ? (
-            <p className="mt-4 w-full text-2 text-error-11" role="alert">
-              {profileCreateErrorText(shownError, t)}
-            </p>
-          ) : null}
-
+        <div className="flex min-h-full w-full flex-col">
           <div
             className={cn(
-              'flex w-full flex-nowrap items-center gap-3',
-              youStep ? 'mt-4' : 'mt-6',
+              'mx-auto my-auto flex w-full max-w-xl flex-col items-center px-6 text-center',
+              youStep ? 'py-4' : 'py-8',
             )}
           >
-            {index > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                className="shrink-0"
-                disabled={isCreating}
-                onClick={() => {
-                  setFieldError(null);
-                  const previous = STEPS[index - 1];
-                  if (previous) setStep(previous);
-                }}
-              >
-                {t('back')}
-              </Button>
+            <Logo width={96} />
+            <p
+              className={cn(
+                'w-full text-1 text-neutral-11',
+                youStep ? 'mt-3' : 'mt-4',
+              )}
+            >
+              {t('step', { current: index + 1, total: STEPS.length })}
+            </p>
+            <div className="mt-2 flex w-full justify-center gap-1" aria-hidden>
+              {STEPS.map((item, itemIndex) => (
+                <span
+                  key={item}
+                  className={cn(
+                    'h-0.5 w-8 bg-neutral-6',
+                    itemIndex <= index && 'bg-foreground',
+                  )}
+                />
+              ))}
+            </div>
+
+            <div className={cn('w-full', youStep ? 'mt-4' : 'mt-10')}>
+              {step === 'welcome' ? (
+                <Screen
+                  eyebrow={t('welcome.eyebrow')}
+                  title={t('welcome.title')}
+                  body={t('welcome.body')}
+                />
+              ) : null}
+
+              {step === 'you' ? (
+                <Screen title={t('you.title')} compact>
+                  <div className="flex items-start gap-4">
+                    <div className="grid shrink-0 justify-items-center gap-2">
+                      <span className="text-1 text-neutral-11">
+                        {t('you.icon')}
+                      </span>
+                      <UploadAvatar
+                        onChange={setAvatarUrl}
+                        className="!h-16 !min-h-16 !w-16 !min-w-16 !rounded-none"
+                      />
+                    </div>
+                    <div className="grid min-w-0 flex-1 gap-2">
+                      <Field label={t('you.firstName')}>
+                        <Input
+                          value={name}
+                          autoComplete="given-name"
+                          required
+                          className={signupFieldClassName}
+                          onChange={(event) => setName(event.target.value)}
+                        />
+                      </Field>
+                      <Field label={t('you.lastName')}>
+                        <Input
+                          value={surname}
+                          autoComplete="family-name"
+                          required
+                          className={signupFieldClassName}
+                          onChange={(event) => setSurname(event.target.value)}
+                        />
+                      </Field>
+                      <Field
+                        label={t('you.nickname')}
+                        hint={t('you.nicknameHint')}
+                      >
+                        <Input
+                          value={nickname}
+                          maxLength={12}
+                          autoComplete="username"
+                          required
+                          className={signupFieldClassName}
+                          onChange={(event) => setNickname(event.target.value)}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </Screen>
+              ) : null}
+
+              {step === 'description' ? (
+                <Screen
+                  title={t('description.title')}
+                  body={t('description.body')}
+                >
+                  <Field label={t('description.passion')}>
+                    <Textarea
+                      value={description}
+                      maxLength={300}
+                      rows={3}
+                      placeholder={t('description.passionPlaceholder')}
+                      className={signupFieldClassName}
+                      onChange={(event) => setDescription(event.target.value)}
+                    />
+                  </Field>
+                  <Field label={t('description.location')}>
+                    <Input
+                      value={location}
+                      maxLength={100}
+                      placeholder={t('description.locationPlaceholder')}
+                      className={signupFieldClassName}
+                      onChange={(event) => setLocation(event.target.value)}
+                    />
+                  </Field>
+                </Screen>
+              ) : null}
+
+              {step === 'orientation' ? (
+                <Screen
+                  title={t('orientation.title')}
+                  body={t('orientation.body')}
+                >
+                  <div className="grid w-full gap-3">
+                    {ORIENTATIONS.map((option) => {
+                      const selected = orientation === option;
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => setOrientation(option)}
+                          className={cn(
+                            'border px-4 py-4 text-left transition-colors',
+                            selected
+                              ? 'border-foreground'
+                              : 'border-border hover:border-neutral-8',
+                          )}
+                        >
+                          <span className="flex items-center gap-3">
+                            <RoleGlyph role={option} size={28} />
+                            <span
+                              className="text-3"
+                              style={{
+                                fontFamily: 'var(--font-family-heading)',
+                              }}
+                            >
+                              {t(`orientation.${option}.title`)}
+                            </span>
+                          </span>
+                          <span className="mt-1 block pl-[40px] text-2 leading-relaxed text-neutral-11">
+                            {t(`orientation.${option}.body`)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Screen>
+              ) : null}
+            </div>
+
+            {authLoading ? (
+              <p className="mt-3 w-full text-1 text-neutral-11">
+                {t('walletWait')}
+              </p>
             ) : null}
-            {step === 'welcome' ? (
-              <Button
-                type="button"
-                className={cn(primaryActionClassName, 'min-w-0 flex-1')}
-                disabled={authLoading}
-                onClick={goNext}
-              >
-                {authLoading ? t('walletWait') : t('begin')}
-              </Button>
+            {shownError ? (
+              <p className="mt-4 w-full text-2 text-error-11" role="alert">
+                {profileCreateErrorText(shownError, t)}
+              </p>
             ) : null}
-            {step === 'you' || step === 'description' ? (
-              <Button
-                type="button"
-                className={cn(primaryActionClassName, 'min-w-0 flex-1')}
-                onClick={goNext}
-              >
-                {t('continue')}
-              </Button>
-            ) : null}
-            {step === 'orientation' ? (
-              <Button
-                type="button"
-                className={cn(primaryActionClassName, 'min-w-0 flex-1')}
-                disabled={!orientation || isCreating || authLoading}
-                onClick={() => {
-                  void finish();
-                }}
-              >
-                {isCreating ? (
-                  <OpeningHomeLabel label={t('saving')} />
-                ) : authLoading ? (
-                  t('walletWait')
-                ) : (
-                  t('enterHypha')
-                )}
-              </Button>
-            ) : null}
+
+            <div
+              className={cn(
+                'flex w-full flex-nowrap items-center gap-3',
+                youStep ? 'mt-4' : 'mt-6',
+              )}
+            >
+              {index > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="shrink-0"
+                  disabled={isCreating}
+                  onClick={() => {
+                    setFieldError(null);
+                    const previous = STEPS[index - 1];
+                    if (previous) setStep(previous);
+                  }}
+                >
+                  {t('back')}
+                </Button>
+              ) : null}
+              {step === 'welcome' ? (
+                <Button
+                  type="button"
+                  className={cn(primaryActionClassName, 'min-w-0 flex-1')}
+                  disabled={authLoading}
+                  onClick={goNext}
+                >
+                  {authLoading ? t('walletWait') : t('begin')}
+                </Button>
+              ) : null}
+              {step === 'you' || step === 'description' ? (
+                <Button
+                  type="button"
+                  className={cn(primaryActionClassName, 'min-w-0 flex-1')}
+                  onClick={goNext}
+                >
+                  {t('continue')}
+                </Button>
+              ) : null}
+              {step === 'orientation' ? (
+                <Button
+                  type="button"
+                  className={cn(primaryActionClassName, 'min-w-0 flex-1')}
+                  disabled={!orientation || isCreating || authLoading}
+                  onClick={() => {
+                    void finish();
+                  }}
+                >
+                  {isCreating ? (
+                    <OpeningHomeLabel label={t('saving')} />
+                  ) : authLoading ? (
+                    t('walletWait')
+                  ) : (
+                    t('enterHypha')
+                  )}
+                </Button>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+const signupChromeButtonClassName =
+  'box-border flex h-[36px] min-h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-none bg-transparent text-neutral-11 outline-none transition-colors duration-150 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring';
+
+function SignupThemeToggle() {
+  const tCommon = useTranslations('Common');
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const dark = resolvedTheme === 'dark';
+
+  return (
+    <button
+      type="button"
+      aria-label={
+        dark ? tCommon('switchToLightMode') : tCommon('switchToDarkMode')
+      }
+      className={signupChromeButtonClassName}
+      onClick={() => setTheme(dark ? 'light' : 'dark')}
+    >
+      {mounted ? (
+        dark ? (
+          <Sun className="size-3.5" strokeWidth={1.25} aria-hidden />
+        ) : (
+          <Moon className="size-3.5" strokeWidth={1.25} aria-hidden />
+        )
+      ) : (
+        <span className="size-3.5" aria-hidden />
+      )}
+    </button>
   );
 }
 
