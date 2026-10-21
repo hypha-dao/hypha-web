@@ -532,6 +532,10 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   }, [openSignals]);
 
   const people = persons.data ?? [];
+  const viewerBelongs =
+    !membersLoading &&
+    person?.id != null &&
+    people.some((member) => member.id === person.id);
   const spaces = memberSpaces.data ?? [];
   const assets = treasury?.assets ?? [];
   const treasuryBalance = treasury?.balance ?? 0;
@@ -556,7 +560,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   ).length;
   const situation: Situation = longAway
     ? 'back'
-    : documents.onVoting.length > 0
+    : viewerBelongs && documents.onVoting.length > 0
     ? 'vote'
     : riskCount > 0 && riskCount >= tensionCount
     ? 'risk'
