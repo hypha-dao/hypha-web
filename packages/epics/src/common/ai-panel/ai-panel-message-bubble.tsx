@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
-import { Copy, Sparkles, User } from 'lucide-react';
+import { Copy, User } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
@@ -913,28 +914,25 @@ export function AiPanelMessageBubble({
             />
           </div>
         )
-      ) : (
+      ) : assistantAvatarSrc && !assistantImageFailed ? (
         <div
           className={cn(
             'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-full border-0 bg-transparent',
             alignSingleLine ? 'mt-0' : 'mt-px',
           )}
         >
-          {assistantAvatarSrc && !assistantImageFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN
-            <img
-              src={assistantAvatarSrc}
-              alt=""
-              className="h-full w-full object-cover"
-              onError={() => setAssistantImageFailed(true)}
-            />
-          ) : (
-            <Sparkles
-              className="size-3.5 text-muted-foreground"
-              strokeWidth={1.25}
-            />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN */}
+          <img
+            src={assistantAvatarSrc}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={() => setAssistantImageFailed(true)}
+          />
         </div>
+      ) : (
+        <MemberHomeMark
+          className={cn('h-8 w-8', alignSingleLine ? 'mt-0' : 'mt-px')}
+        />
       )}
       <div
         className={cn(

@@ -1587,6 +1587,7 @@
       "ariaLabel": "Prompt de onboarding con AI",
       "flow": {
         "badge": "Simple. Powerful. By design.",
+        "createManually": "Crear manualmente",
         "reviewingTitle": "Revisando tu solicitud",
         "reviewingDescription": "La AI está trazando la mejor ruta para tu objetivo.",
         "reviewingDescriptionPersonalized": "{firstName}, la AI está trazando la mejor ruta para tu objetivo.",

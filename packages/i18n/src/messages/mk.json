@@ -796,6 +796,7 @@
       "ariaLabel": "Порака за AI воведување",
       "flow": {
         "badge": "Едноставно. Моќно. Намерно.",
+        "createManually": "Создај рачно",
         "reviewingTitle": "Го разгледуваме вашето барање",
         "reviewingDescription": "AI ја одредува најдобрата патека за вашата цел.",
         "reviewingDescriptionPersonalized": "{firstName}, AI ја одредува најдобрата патека за вашата цел.",

@@ -815,6 +815,7 @@
       "ariaLabel": "AI-onboardingforespørsel",
       "flow": {
         "badge": "Enkelt. Kraftfullt. Med hensikt.",
+        "createManually": "Opprett manuelt",
         "reviewingTitle": "Gjennomgår forespørselen din",
         "reviewingDescription": "AI kartlegger den beste veien mot målet ditt.",
         "reviewingDescriptionPersonalized": "{firstName}, AI kartlegger den beste veien mot målet ditt.",
