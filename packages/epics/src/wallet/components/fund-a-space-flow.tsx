@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
-import { Copy } from 'lucide-react';
+import { ChevronRight, Copy } from 'lucide-react';
 import {
   Button,
   Card,
@@ -16,6 +18,11 @@ import {
 } from '@hypha-platform/ui';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { Space, useJwt } from '@hypha-platform/core/client';
+import { BankAccountDetailsDialog } from '../../banking/components/bank-account-details-dialog';
+import { getCardDepositIdentifiers } from '../../banking/deposit-instruction-display';
+import { useVirtualAccounts } from '../../banking/hooks/use-virtual-accounts';
+import type { BankVirtualAccountPublic } from '../../banking/hooks/types';
+import { prepareWalletActionNavigation } from './open-wallet-action';
 
 const EXCHANGE_LINKS = [
   { id: 'coinbase', label: 'Coinbase', href: 'https://www.coinbase.com' },
@@ -23,18 +30,38 @@ const EXCHANGE_LINKS = [
   { id: 'kraken', label: 'Kraken', href: 'https://www.kraken.com' },
 ] as const;
 
-const exchangeButtonBaseClass =
-  'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-
-const exchangeBrandStyles = {
-  coinbase:
-    'border border-transparent bg-[#0052FF] text-white hover:bg-[#0048e0]',
-  wirex: 'border border-transparent bg-[#1973F6] text-white hover:bg-[#155fd0]',
-  kraken:
-    'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
-} as const;
-
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
+
+const RAIL_LABELS: Record<string, string> = {
+  sepa: 'SEPA',
+  ach: 'ACH',
+  ach_push: 'ACH',
+  wire: 'Wire',
+  faster_payments: 'Faster Payments',
+  spei: 'SPEI',
+  pix: 'Pix',
+  swift: 'SWIFT',
+};
+
+function railLabel(paymentRail: string) {
+  return (
+    RAIL_LABELS[paymentRail] ??
+    paymentRail
+      .replaceAll('_', ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+  );
+}
+
+function accountEnding(account: BankVirtualAccountPublic) {
+  const identifiers = getCardDepositIdentifiers(
+    account.paymentRail,
+    account.depositInstructions,
+  );
+  const value = identifiers.at(-1)?.value ?? '';
+  const compact = value.replace(/\s+/g, '');
+  if (compact.length < 4) return '';
+  return compact.slice(-4);
+}
 
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
@@ -141,7 +168,7 @@ export function FundASpaceFlow() {
           placeholder={t('searchPlaceholder')}
           aria-label={t('description')}
           disabled={disabled}
-          className="h-10 rounded-xl border-border/70 bg-background/80"
+          className="h-10 rounded-none border-border bg-background"
         />
 
         {!disabled && !query.trim() ? (
@@ -153,7 +180,7 @@ export function FundASpaceFlow() {
         ) : null}
 
         {!disabled && filteredOptions.length > 0 ? (
-          <div className="max-h-44 space-y-1 overflow-auto rounded-xl border border-border/70 bg-background/65 p-1.5">
+          <div className="max-h-44 space-y-1 overflow-auto border border-border bg-background p-1.5">
             {filteredOptions.map((option) => (
               <button
                 key={option.value}
@@ -163,7 +190,7 @@ export function FundASpaceFlow() {
                   setDetailsSlug('');
                   setCopiedAddress(false);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
+                className="flex w-full items-center justify-between px-2 py-1.5 text-left text-2 text-foreground hover:bg-neutral-2"
               >
                 <span>{option.label}</span>
                 {selectedSlug === option.value ? (
@@ -178,7 +205,7 @@ export function FundASpaceFlow() {
 
         <Button
           type="button"
-          className="h-10 w-full rounded-xl border border-foreground bg-foreground text-background uppercase tracking-wide hover:bg-foreground/90"
+          className="h-10 w-full rounded-none"
           onClick={() => {
             if (!selectedSlug) return;
             setCopiedAddress(false);
@@ -221,132 +248,192 @@ function DepositDetailsCard({
   onCopyAddress: (address: string) => void;
 }) {
   const t = useTranslations('MyWallet.fundSpace.details');
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const { accounts, isLoading: accountsLoading } = useVirtualAccounts({
+    basePath: space.slug ? `/api/v1/spaces/${space.slug}/funding` : undefined,
+    enabled: Boolean(space.slug),
+  });
+  const [openAccount, setOpenAccount] =
+    useState<BankVirtualAccountPublic | null>(null);
   const address = normalizeEvmAddress(space.address);
+  const walletHref = address
+    ? `/${lang}/my-wallet/actions/transfer-funds?${new URLSearchParams({
+        to: address,
+        name: space.title ?? '',
+      }).toString()}`
+    : '';
+
+  useEffect(() => {
+    setOpenAccount(null);
+  }, [space.slug]);
+
   if (!address) return null;
 
   const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const showBank = accountsLoading || accounts.length > 0;
 
   return (
-    <Card className="mx-auto w-full max-w-md border border-border bg-background-2">
-      <CardHeader className="items-center space-y-2 text-center">
-        <CardTitle className="text-5">{space.title}</CardTitle>
-        <CardDescription className="text-2 text-neutral-11">
-          {t('share')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center gap-4 pb-6">
-        <div className="rounded-lg bg-white p-4">
-          {evmAddressPattern.test(address) ? (
-            <QRCodeSVG
-              value={address}
-              size={220}
-              bgColor="#ffffff"
-              fgColor="#111111"
-              level="M"
-              aria-label={t('qrAriaLabel', { spaceName: space.title })}
-            />
-          ) : (
-            <p className="max-w-40 text-1 text-muted-foreground">
-              {t('invalidAddress')}
-            </p>
-          )}
-        </div>
-        <p className="w-full rounded-md bg-warning-3 px-3 py-2 text-center text-1 text-warning-11">
-          {t('baseOnly')}
-        </p>
-        <div className="flex w-full items-center justify-between gap-3 rounded-md border border-border px-3 py-3">
-          <div className="min-w-0 text-left">
-            <p className="text-1 text-neutral-11">{t('addressLabel')}</p>
-            <p className="truncate font-mono text-2 text-foreground">
-              {shortAddress}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            colorVariant="neutral"
-            onClick={() => onCopyAddress(address)}
-            className="shrink-0 px-2"
-            aria-label={copiedAddress ? t('copied') : t('copy')}
+    <>
+      <Card className="mx-auto w-full max-w-md rounded-none border border-border bg-background shadow-none">
+        <CardHeader className="items-center space-y-2 px-6 pt-8 text-center">
+          <CardTitle
+            className="text-4"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
           >
-            <Copy className="size-4" aria-hidden />
-          </Button>
-        </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          {EXCHANGE_LINKS.map((link) => (
-            <a
-              key={link.id}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${exchangeButtonBaseClass} ${
-                exchangeBrandStyles[link.id]
-              }`}
-              aria-label={link.label}
+            {space.title}
+          </CardTitle>
+          <CardDescription className="max-w-[36ch] text-2 leading-relaxed text-neutral-11">
+            {t('share')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-8 px-6 pb-8">
+          {showBank ? (
+            <FundOptionGroup label={t('bank')}>
+              {accountsLoading && accounts.length === 0 ? (
+                <p className="px-4 py-4 text-2 text-neutral-11">
+                  {t('loadingAccounts')}
+                </p>
+              ) : (
+                accounts.map((account) => {
+                  const ending = accountEnding(account);
+                  return (
+                    <button
+                      key={account.id}
+                      type="button"
+                      className="flex w-full items-center gap-4 px-4 py-4 text-left hover:bg-neutral-2"
+                      onClick={() => setOpenAccount(account)}
+                    >
+                      <span className="w-12 shrink-0 text-2 tracking-[0.08em] text-foreground uppercase">
+                        {account.currency}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-2 text-foreground">
+                          {railLabel(account.paymentRail)}
+                        </span>
+                        {ending ? (
+                          <span className="mt-0.5 block font-mono text-1 text-neutral-11">
+                            ···· {ending}
+                          </span>
+                        ) : null}
+                      </span>
+                      <ChevronRight
+                        className="size-4 shrink-0 text-neutral-9"
+                        aria-hidden
+                      />
+                    </button>
+                  );
+                })
+              )}
+            </FundOptionGroup>
+          ) : null}
+
+          <FundOptionGroup label={t('wallet')}>
+            <Link
+              href={walletHref}
+              scroll={false}
+              onClick={() => prepareWalletActionNavigation(walletHref)}
+              className="flex w-full items-center gap-4 px-4 py-4 hover:bg-neutral-2"
             >
-              <ExchangeBrandLogo brand={link.id} />
-              {link.label}
-            </a>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+              <span className="min-w-0 flex-1">
+                <span className="block text-2 text-foreground">
+                  {t('sendFromWallet')}
+                </span>
+                <span className="mt-0.5 block text-1 text-neutral-11">
+                  {t('sendFromWalletHint')}
+                </span>
+              </span>
+              <ChevronRight
+                className="size-4 shrink-0 text-neutral-9"
+                aria-hidden
+              />
+            </Link>
+          </FundOptionGroup>
+
+          <FundOptionGroup label={t('onBase')}>
+            <div className="flex flex-col items-center gap-4 px-4 py-5">
+              <div className="border border-border bg-white p-4">
+                {evmAddressPattern.test(address) ? (
+                  <QRCodeSVG
+                    value={address}
+                    size={180}
+                    bgColor="#ffffff"
+                    fgColor="#111111"
+                    level="M"
+                    aria-label={t('qrAriaLabel', { spaceName: space.title })}
+                  />
+                ) : (
+                  <p className="max-w-40 text-1 text-neutral-11">
+                    {t('invalidAddress')}
+                  </p>
+                )}
+              </div>
+              <div className="flex w-full items-center justify-between gap-3">
+                <div className="min-w-0 text-left">
+                  <p className="text-1 text-neutral-11">{t('addressLabel')}</p>
+                  <p className="truncate font-mono text-2 text-foreground">
+                    {shortAddress}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  onClick={() => onCopyAddress(address)}
+                  className="shrink-0 rounded-none px-2"
+                  aria-label={copiedAddress ? t('copied') : t('copy')}
+                >
+                  <Copy className="size-4" aria-hidden />
+                </Button>
+              </div>
+              <p className="text-center text-1 text-neutral-11">
+                {t('baseOnly')}
+              </p>
+              <p className="text-center text-1 text-neutral-11">
+                {EXCHANGE_LINKS.map((link, index) => (
+                  <span key={link.id}>
+                    {index > 0 ? <span className="px-1.5">·</span> : null}
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline decoration-neutral-7 underline-offset-4 hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            </div>
+          </FundOptionGroup>
+        </CardContent>
+      </Card>
+      <BankAccountDetailsDialog
+        account={openAccount}
+        open={openAccount != null}
+        onOpenChange={(open) => {
+          if (!open) setOpenAccount(null);
+        }}
+      />
+    </>
   );
 }
 
-function ExchangeBrandLogo({
-  brand,
+function FundOptionGroup({
+  label,
+  children,
 }: {
-  brand: (typeof EXCHANGE_LINKS)[number]['id'];
+  label: string;
+  children: ReactNode;
 }) {
-  if (brand === 'coinbase') {
-    return (
-      <svg
-        aria-hidden
-        viewBox="0 0 20 20"
-        className="size-4"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <circle cx="10" cy="10" r="10" fill="white" />
-        <circle cx="10" cy="10" r="6.3" fill="#0052FF" />
-        <circle cx="10" cy="10" r="3.8" fill="white" />
-      </svg>
-    );
-  }
-
-  if (brand === 'wirex') {
-    return (
-      <svg
-        aria-hidden
-        viewBox="0 0 20 20"
-        className="size-4"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <rect x="1.5" y="1.5" width="17" height="17" rx="4.5" fill="white" />
-        <path
-          d="M5 6.25H8.15L10 8.85L11.85 6.25H15L11.6 10L15 13.75H11.85L10 11.15L8.15 13.75H5L8.4 10L5 6.25Z"
-          fill="#1973F6"
-        />
-      </svg>
-    );
-  }
-
   return (
-    <svg
-      aria-hidden
-      viewBox="0 0 20 20"
-      className="size-4"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M3 4.8C3 3.81 3.81 3 4.8 3H15.2C16.19 3 17 3.81 17 4.8V8.3C17 9.29 16.19 10.1 15.2 10.1H4.8C3.81 10.1 3 9.29 3 8.3V4.8Z"
-        fill="white"
-      />
-      <circle cx="7" cy="14.7" r="1.8" fill="white" />
-      <circle cx="13" cy="14.7" r="1.8" fill="white" />
-    </svg>
+    <section className="flex flex-col gap-2">
+      <h3 className="text-1 tracking-[0.16em] text-neutral-11 uppercase">
+        {label}
+      </h3>
+      <div className="divide-y divide-border border border-border">
+        {children}
+      </div>
+    </section>
   );
 }
