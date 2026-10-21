@@ -159,7 +159,16 @@ export function AiPanelMessages({
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
-  }, [messages, isStreaming]);
+  }, [
+    messages,
+    isStreaming,
+    showSetupJourneyPicker,
+    showLocationPicker,
+    showActivationPicker,
+    showTransparencyPicker,
+    showEntryMethodPicker,
+    showVotingMethodPicker,
+  ]);
 
   const displayMessages =
     messages.length > 0
