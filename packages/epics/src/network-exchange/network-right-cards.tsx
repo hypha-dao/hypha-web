@@ -665,38 +665,6 @@ function WeaveCard({
   );
 }
 
-function ShareCard({
-  lang,
-  kind,
-}: {
-  lang: Locale;
-  kind: 'need' | 'signal' | 'story';
-}) {
-  const t = useTranslations('NetworkExchange');
-  const title =
-    kind === 'need'
-      ? t('shareNeedTitle')
-      : kind === 'story'
-      ? t('shareStoryTitle')
-      : t('shareSignalTitle');
-  const body =
-    kind === 'need'
-      ? t('shareNeedBody')
-      : kind === 'story'
-      ? t('shareStoryBody')
-      : t('shareSignalBody');
-
-  return (
-    <Shell title={title} body={body}>
-      <Button asChild className="w-full">
-        <Link href={`/${lang}/network/create`}>
-          {kind === 'story' ? t('post') : t('share')}
-        </Link>
-      </Button>
-    </Shell>
-  );
-}
-
 const SHARE_KIND = {
   need: 'Need',
   action: 'Action',
@@ -955,7 +923,6 @@ export function NetworkRightColumn({
   impactCount?: number;
   children?: ReactNode;
 }) {
-  const tExchange = useTranslations('NetworkExchange');
   const { open } = useHumanChatPanel();
   const selected = useMemo(
     () => spaces.find((space) => space.slug === selectedSlug) ?? spaces[0],
@@ -972,26 +939,7 @@ export function NetworkRightColumn({
         <SpaceCard lang={lang} space={selected} />
       ) : null}
       {!children && variant === 'exchange' && selected ? (
-        <>
-          <WeaveCard lang={lang} spaces={spaces} initialSlug={selected.slug} />
-          <section className="border border-border p-4">
-            <h3
-              className="text-3"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
-              {tExchange('shareProject')}
-            </h3>
-            <p className="mt-2 text-1 leading-relaxed text-neutral-11">
-              {tExchange('shareProjectForm')}
-            </p>
-            <Link
-              href={`/${lang}/network/create`}
-              className="mt-3 inline-flex h-10 items-center border border-foreground bg-foreground px-3 text-1 uppercase tracking-[0.12em] text-background"
-            >
-              {tExchange('createSpace')}
-            </Link>
-          </section>
-        </>
+        <WeaveCard lang={lang} spaces={spaces} initialSlug={selected.slug} />
       ) : null}
       {!children && variant === 'needs' ? (
         <ActionShareCard
