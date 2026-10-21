@@ -109,7 +109,7 @@
     "sendTokensMemo": "Белешка",
     "sendTokensMemoPlaceholder": "Додај белешка",
     "sendTokensArrived": "{amount} {symbol} се кај {name}",
-    "sendTokensSigned": "Потпишано од тебе, видливо за членовите.",
+    "sendTokensSigned": "Веднаш, без провизии, без посредник.",
     "sendTokensLeft": "остануваат {amount} {symbol}",
     "sendTokensFailed": "Преносот не помина. Можеш да пробаш повторно.",
     "sendTokensNoWallet": "Поврзи го паричникот за да испратиш токени.",

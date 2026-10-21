@@ -20,6 +20,7 @@ import {
   Plus,
   Video,
 } from 'lucide-react';
+import './member-home-sent-tick.css';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
@@ -658,6 +659,17 @@ function tokenSpendable(
   return { balance, creditLeft, spendable: balance + creditLeft };
 }
 
+function SentTick() {
+  return (
+    <span className="sent-tick text-foreground" aria-hidden>
+      <svg viewBox="0 0 48 48">
+        <circle className="sent-tick-ring" cx="24" cy="24" r="18" />
+        <path className="sent-tick-mark" d="M15.5 24.5 L21.2 30.2 L33 17.5" />
+      </svg>
+    </span>
+  );
+}
+
 export function MemberHomeSendTokensWidget({
   personSlug,
   hasWallet,
@@ -1182,9 +1194,7 @@ export function MemberHomeSendTokensWidget({
     return (
       <WidgetFrame title={t('sendTokensTitle')} framed={framed}>
         <div className="flex flex-col items-center px-2 py-6 text-center">
-          <span className="flex h-14 w-14 items-center justify-center border border-border text-3">
-            ✓
-          </span>
+          <SentTick />
           <p
             className="mt-4 text-4 font-medium tracking-[-0.03em]"
             style={{ fontFamily: 'var(--font-family-heading)' }}

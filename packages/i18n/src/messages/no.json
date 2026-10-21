@@ -109,7 +109,7 @@
     "sendTokensMemo": "Notat",
     "sendTokensMemoPlaceholder": "Legg til et notat",
     "sendTokensArrived": "{amount} {symbol} er hos {name}",
-    "sendTokensSigned": "Signert av deg, synlig for medlemmene.",
+    "sendTokensSigned": "Umiddelbart, uten gebyrer, uten mellomledd.",
     "sendTokensLeft": "{amount} {symbol} igjen",
     "sendTokensFailed": "Overføringen gikk ikke gjennom. Du kan prøve igjen.",
     "sendTokensNoWallet": "Koble til lommeboken for å sende tokens.",

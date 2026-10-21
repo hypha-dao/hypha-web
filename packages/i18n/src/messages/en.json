@@ -585,7 +585,7 @@
     "sendTokensMemo": "Memo",
     "sendTokensMemoPlaceholder": "Add a note",
     "sendTokensArrived": "{amount} {symbol} is with {name}",
-    "sendTokensSigned": "Signed by you, seen by the members.",
+    "sendTokensSigned": "Instant, no fees, no intermediary.",
     "sendTokensLeft": "{amount} {symbol} left",
     "sendTokensFailed": "The transfer did not go through. You can try again.",
     "sendTokensNoWallet": "Connect your wallet to send tokens.",

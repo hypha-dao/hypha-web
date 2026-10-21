@@ -109,7 +109,7 @@
     "sendTokensMemo": "Notitie",
     "sendTokensMemoPlaceholder": "Voeg een notitie toe",
     "sendTokensArrived": "{amount} {symbol} is bij {name}",
-    "sendTokensSigned": "Door jou ondertekend, zichtbaar voor de leden.",
+    "sendTokensSigned": "Direct, zonder kosten, zonder tussenpersoon.",
     "sendTokensLeft": "nog {amount} {symbol}",
     "sendTokensFailed": "De overdracht is niet gelukt. Je kunt het opnieuw proberen.",
     "sendTokensNoWallet": "Verbind je wallet om tokens te sturen.",

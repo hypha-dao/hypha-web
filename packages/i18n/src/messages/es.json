@@ -109,7 +109,7 @@
     "sendTokensMemo": "Nota",
     "sendTokensMemoPlaceholder": "Añade una nota",
     "sendTokensArrived": "{amount} {symbol} están con {name}",
-    "sendTokensSigned": "Firmado por ti, visible para los miembros.",
+    "sendTokensSigned": "Al instante, sin comisiones, sin intermediario.",
     "sendTokensLeft": "quedan {amount} {symbol}",
     "sendTokensFailed": "La transferencia no se completó. Puedes intentarlo de nuevo.",
     "sendTokensNoWallet": "Conecta tu cartera para enviar tokens.",

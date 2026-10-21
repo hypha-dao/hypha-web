@@ -109,7 +109,7 @@
     "sendTokensMemo": "Notiz",
     "sendTokensMemoPlaceholder": "Notiz hinzufügen",
     "sendTokensArrived": "{amount} {symbol} sind bei {name}",
-    "sendTokensSigned": "Von dir signiert, für die Mitglieder sichtbar.",
+    "sendTokensSigned": "Sofort, ohne Gebühren, ohne Vermittler.",
     "sendTokensLeft": "noch {amount} {symbol}",
     "sendTokensFailed": "Die Übertragung ist nicht durchgegangen. Du kannst es noch einmal versuchen.",
     "sendTokensNoWallet": "Verbinde deine Wallet, um Token zu senden.",
