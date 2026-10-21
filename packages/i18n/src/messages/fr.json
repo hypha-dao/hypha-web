@@ -401,7 +401,7 @@
     },
     "formsOfCapital": "Formes de capital",
     "formOfCapital": "Forme de capital",
-    "capitalHintMany": "Nomme chaque forme que ce signal porte.",
+    "capitalHintMany": "Sélectionne chaque forme de capital que ce signal porte.",
     "capitalHintOne": "Nomme la forme que ce jeton porte.",
     "exchangeTitle": "Échange réciproque de ressources",
     "sharingEconomy": "Économie du partage",
