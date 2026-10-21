@@ -2,6 +2,7 @@
 
 import { FC } from 'react';
 import { useTranslations } from 'next-intl';
+import { Wave } from '@hypha-platform/ui';
 
 import { TREASURY_CARD_GRID_CLASS } from '../banking-ui';
 
@@ -11,9 +12,9 @@ function SkeletonCard() {
       className="flex min-h-[8.5rem] flex-col gap-3 rounded-lg border border-border bg-card p-4"
       aria-hidden
     >
-      <div className="h-5 w-28 animate-pulse rounded-md bg-muted" />
-      <div className="h-4 w-full animate-pulse rounded-md bg-muted" />
-      <div className="h-4 w-3/4 animate-pulse rounded-md bg-muted" />
+      <Wave className="h-5 w-28" />
+      <Wave className="h-4 w-full" delayMs={40} />
+      <Wave className="h-4 w-3/4" delayMs={80} />
     </div>
   );
 }
@@ -29,19 +30,10 @@ function SkeletonSection({
     <section className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div
-            className={`h-6 animate-pulse rounded-md bg-muted ${titleWidth}`}
-            aria-hidden
-          />
-          <div
-            className="mt-2 h-4 max-w-xl animate-pulse rounded-md bg-muted"
-            aria-hidden
-          />
+          <Wave className={`h-6 ${titleWidth}`} />
+          <Wave className="mt-2 h-4 max-w-xl" delayMs={40} />
         </div>
-        <div
-          className="h-9 w-36 animate-pulse rounded-md bg-muted"
-          aria-hidden
-        />
+        <Wave className="h-9 w-36" delayMs={80} />
       </div>
       <div className={TREASURY_CARD_GRID_CLASS}>
         {Array.from({ length: cardCount }, (_, index) => (
@@ -63,14 +55,8 @@ export const BankingPageSkeleton: FC = () => {
       aria-label={t('loading')}
     >
       <div className="flex items-center justify-between gap-2">
-        <div
-          className="h-9 w-52 animate-pulse rounded-md bg-muted"
-          aria-hidden
-        />
-        <div
-          className="h-9 w-9 animate-pulse rounded-md bg-muted"
-          aria-hidden
-        />
+        <Wave className="h-9 w-52" />
+        <Wave className="h-9 w-9" delayMs={40} />
       </div>
       <div className="flex flex-col gap-8">
         <SkeletonSection titleWidth="w-40" cardCount={3} />

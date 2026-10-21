@@ -1,3 +1,4 @@
+import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 type TabLoadingLayout =
@@ -16,29 +17,31 @@ type TabLoadingSkeletonProps = {
 function Pulse({
   className,
   delayMs = 0,
+  text,
 }: {
   className?: string;
   delayMs?: number;
+  text?: boolean;
 }) {
   return (
-    <div
-      className={cn('animate-pulse rounded-none bg-foreground/10', className)}
-      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
-      aria-hidden
+    <Wave
+      text={text}
+      className={cn('rounded-none', className)}
+      delayMs={delayMs}
     />
   );
 }
 
 function Title({ show }: { show: boolean }) {
   if (!show) return null;
-  return <Pulse className="h-7 w-44" />;
+  return <Pulse text className="h-7 w-44" />;
 }
 
 function OverviewSkeleton() {
   return (
     <div className="flex flex-col gap-6" aria-hidden>
       <div className="flex flex-col gap-2 border-t-2 border-foreground/15 pt-3">
-        <Pulse className="h-8 w-72 max-w-full" />
+        <Pulse text className="h-8 w-72 max-w-full" />
         <Pulse className="h-3 w-48" delayMs={40} />
       </div>
       <div className="flex gap-2">

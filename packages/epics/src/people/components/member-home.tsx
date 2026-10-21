@@ -477,7 +477,7 @@ export function MemberHome({
                   </span>
                   <div className="min-w-0 flex-1">
                     {greetingPending ? (
-                      <HomePulse className="h-9 w-56 max-w-full" />
+                      <HomePulse text className="h-[28px] w-56 max-w-full" />
                     ) : (
                       <h1
                         className="truncate text-7"
@@ -885,12 +885,21 @@ function HomePulse({
   className,
   delayMs = 0,
   style,
+  text,
 }: {
   className?: string;
   delayMs?: number;
   style?: CSSProperties;
+  text?: boolean;
 }) {
-  return <HomeWave className={className} delayMs={delayMs} style={style} />;
+  return (
+    <HomeWave
+      className={className}
+      delayMs={delayMs}
+      style={style}
+      text={text}
+    />
+  );
 }
 
 function CardSkeleton({
@@ -983,7 +992,7 @@ function ArrivalShape() {
           <HomePulse className="h-3 w-2/3" delayMs={140} />
         </div>
         <div className="border border-border bg-background p-3">
-          <HomePulse className="w-full" delayMs={80} style={{ height: 96 }} />
+          <HomePulse className="w-full" delayMs={80} style={{ height: 56 }} />
           <HomePulse className="mt-3 h-4 w-1/2" delayMs={150} />
           <HomePulse className="mt-2 h-3 w-2/5" delayMs={200} />
           <div className="mt-4 flex gap-2">

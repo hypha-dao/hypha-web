@@ -14,6 +14,7 @@ import {
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
 import type { Locale } from '@hypha-platform/i18n';
+import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   findNamedDirectRoomId,
@@ -406,9 +407,10 @@ export function MemberHomeClosest({
           {Array.from(
             { length: Math.min(VISIBLE_PEOPLE, people.length) },
             (_, index) => (
-              <span
+              <Wave
                 key={index}
-                className="animate-pulse rounded-full bg-neutral-3"
+                className="rounded-full"
+                delayMs={index * 70}
                 style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
               />
             ),

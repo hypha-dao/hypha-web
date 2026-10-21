@@ -1,26 +1,20 @@
 import type { CSSProperties } from 'react';
-import { cn } from '@hypha-platform/ui-utils';
-
-import './member-home-wave.css';
+import { Wave } from '@hypha-platform/ui';
 
 /** One bar of the home loading mask. Delays stagger so the sweep travels down. */
 export function HomeWave({
   className,
   delayMs = 0,
   style,
+  text,
 }: {
   className?: string;
   delayMs?: number;
   style?: CSSProperties;
+  /** Light only the top edge of a text line. */
+  text?: boolean;
 }) {
   return (
-    <div
-      className={cn('home-wave', className)}
-      style={{
-        ...style,
-        ['--home-wave-delay' as string]: `${delayMs}ms`,
-      }}
-      aria-hidden
-    />
+    <Wave className={className} delayMs={delayMs} style={style} text={text} />
   );
 }

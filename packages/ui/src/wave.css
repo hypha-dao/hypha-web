@@ -1,0 +1,44 @@
+/* A quiet light band. Text lines only light the top edge. */
+.hypha-wave {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.hypha-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 38%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--foreground) 14%, transparent),
+    transparent
+  );
+  animation: hypha-wave-sweep 2s ease-in-out infinite;
+  animation-delay: var(--hypha-wave-delay, 0ms);
+}
+
+.hypha-wave-text::after {
+  bottom: auto;
+  height: 3px;
+}
+
+@keyframes hypha-wave-sweep {
+  0% {
+    transform: translateX(-140%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hypha-wave::after {
+    animation: none;
+    opacity: 0.4;
+  }
+}

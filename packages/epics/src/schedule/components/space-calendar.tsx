@@ -3,6 +3,7 @@
 import './space-calendar.css';
 
 import * as React from 'react';
+import { Wave } from '@hypha-platform/ui';
 import dynamic from 'next/dynamic';
 import type {
   CalendarApi,
@@ -60,12 +61,7 @@ import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
 const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
   ssr: false,
-  loading: () => (
-    <div
-      aria-hidden
-      className="h-full min-h-[20rem] animate-pulse bg-foreground/5"
-    />
-  ),
+  loading: () => <Wave className="h-full min-h-[20rem] w-full" />,
 });
 
 const TYPE_LEGEND: {
