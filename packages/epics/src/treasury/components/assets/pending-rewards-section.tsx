@@ -1,6 +1,8 @@
 'use client';
 
 import { FC, useCallback, useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { type Person, usePendingRewards } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
 import { useUserAssetsSection } from '../../hooks';
@@ -9,6 +11,7 @@ import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../../common';
+import { prepareWalletActionNavigation } from '../../../wallet/components/open-wallet-action';
 import { useTranslations } from 'next-intl';
 
 const MIGRATE_HYPHA_TOKENS_URL =
@@ -37,6 +40,9 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
 }) => {
   const tProfile = useTranslations('Profile');
   const tWallet = useTranslations('MyWallet');
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const buyHyphaHref = `/${lang}/my-wallet/actions/purchase-hypha-tokens`;
   const { isAuthenticated } = useAuthentication();
   const {
     filteredAssets,
@@ -109,19 +115,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       </a>
     ) : null;
 
-  const rewardsNote = (
-    <p className="max-w-[46ch] border-l border-border pl-4 text-2 leading-relaxed text-neutral-11">
-      {tProfile('rewardsExplanation')}
-    </p>
-  );
-
   const rewardsColumn = (card: ReactNode) => (
-    <div className="mt-1 flex w-full flex-col items-start gap-5 lg:flex-row lg:items-center lg:gap-8">
-      <div className="flex w-full max-w-sm shrink-0 flex-col items-start gap-3">
-        {card}
-        {migrateLink}
-      </div>
-      {rewardsNote}
+    <div className="mt-1 flex w-full max-w-xl flex-col items-start gap-3">
+      {card}
+      {migrateLink}
     </div>
   );
 
@@ -148,20 +145,33 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
             </span>
           </h2>
         </header>
-        <Button
-          title={
-            !isMyProfile
-              ? tProfile('claimOnlyOnPersonalPage')
-              : disableClaimButton
-              ? tProfile('rewardValueMustBeGreaterThanZero')
-              : ''
-          }
-          disabled={!isMyProfile || disableClaimButton}
-          onClick={onHandleClaim}
-        >
-          {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-          {tProfile('claim')}
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {isMyProfile ? (
+            <Button variant="outline" asChild>
+              <Link
+                href={buyHyphaHref}
+                scroll={false}
+                onClick={() => prepareWalletActionNavigation(buyHyphaHref)}
+              >
+                {tWallet('shortcuts.buyHypha')}
+              </Link>
+            </Button>
+          ) : null}
+          <Button
+            title={
+              !isMyProfile
+                ? tProfile('claimOnlyOnPersonalPage')
+                : disableClaimButton
+                ? tProfile('rewardValueMustBeGreaterThanZero')
+                : ''
+            }
+            disabled={!isMyProfile || disableClaimButton}
+            onClick={onHandleClaim}
+          >
+            {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
+            {tProfile('claim')}
+          </Button>
+        </div>
       </div>
       <div className="w-full">
         {isLoading
@@ -181,6 +191,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
                 })}
                 isLoading={isLoadingAssets}
                 layout="solo"
+                note={tProfile('rewardsExplanation')}
               />,
             )}
       </div>

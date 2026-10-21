@@ -868,7 +868,7 @@
       "buyHypha": "Hypha-tokens kopen",
       "buySpace": "Space-tokens kopen",
       "activate": "Space activeren",
-      "migrate": "Tokens migreren",
+      "migrate": "Hypha-tokens migreren vanaf TELOS",
       "fundSpace": "Financier een space"
     },
     "depositFunds": {
@@ -2049,7 +2049,7 @@
     "claimOnlyOnPersonalPage": "Claimen is alleen mogelijk op uw persoonlijke pagina",
     "rewardValueMustBeGreaterThanZero": "De beloningswaarde moet groter zijn dan 0",
     "noRewardsFoundForUser": "Er zijn geen beloningen gevonden voor deze gebruiker",
-    "rewardsExplanation": "Wanneer u HYPHA-tokens koopt en in uw wallet houdt, verdient u beloningen telkens wanneer een Space zijn netwerkbijdrage in HYPHA betaalt. Hoe meer Spaces bijdragen terwijl het Hypha-netwerk groeit, hoe meer beloningen er ontstaan voor houders van Hypha-tokens.",
+    "rewardsExplanation": "Houd HYPHA in uw wallet om beloningen te verdienen wanneer Spaces hun netwerkbijdragen in HYPHA betalen. Naarmate het netwerk groeit en meer Spaces bijdragen, groeien ook de beloningen voor tokenhouders.",
     "buyHypha": "Koop HYPHA",
     "buySpaceTokens": "Ruimtetokens kopen",
     "actions": "Acties",

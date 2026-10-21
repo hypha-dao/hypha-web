@@ -40,6 +40,8 @@ type AssetCardProps = {
   layout?: 'grid' | 'solo';
   /** When set, the card opens this wallet action (token prefilled). */
   href?: string | null;
+  /** Short note kept inside the card, so it stays with this token when more cards appear. */
+  note?: string | null;
   /**
    * Mutual credit info — only rendered when the underlying token has mutual
    * credit enabled. `netBalance < 0` indicates the holder is in debt.
@@ -70,6 +72,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   layout = 'grid',
   href,
   mutualCredit,
+  note,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -334,6 +337,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </div>
           ) : null}
         </div>
+      ) : null}
+      {note?.trim() ? (
+        <p className="text-2 leading-relaxed text-neutral-11">{note.trim()}</p>
       ) : null}
     </Card>
   );

@@ -869,7 +869,7 @@
       "buyHypha": "Hypha-Token kaufen",
       "buySpace": "Space-Token kaufen",
       "activate": "Space aktivieren",
-      "migrate": "Token migrieren",
+      "migrate": "Hypha-Token von TELOS migrieren",
       "fundSpace": "Einen Space finanzieren"
     },
     "depositFunds": {
@@ -2050,7 +2050,7 @@
     "claimOnlyOnPersonalPage": "Das Einlösen ist nur auf Ihrer persönlichen Seite verfügbar",
     "rewardValueMustBeGreaterThanZero": "Der Belohnungswert muss größer als 0 sein",
     "noRewardsFoundForUser": "Für diesen Benutzer wurden keine Belohnungen gefunden",
-    "rewardsExplanation": "Wenn Sie HYPHA-Token kaufen und in Ihrer Wallet halten, erhalten Sie Belohnungen, sobald ein Space seinen Netzwerkbeitrag in HYPHA zahlt. Je mehr Spaces beitragen, während das Hypha-Netzwerk wächst, desto mehr Belohnungen entstehen für Inhaber von Hypha-Token.",
+    "rewardsExplanation": "Halten Sie HYPHA in Ihrer Wallet, um Belohnungen zu erhalten, wenn Spaces ihre Netzwerkbeiträge in HYPHA zahlen. Wenn das Netzwerk wächst und mehr Spaces beitragen, wachsen auch die Belohnungen für Token-Inhaber.",
     "buyHypha": "HYPHA kaufen",
     "buySpaceTokens": "Space-Tokens kaufen",
     "actions": "Aktionen",
