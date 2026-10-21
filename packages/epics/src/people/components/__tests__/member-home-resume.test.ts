@@ -86,6 +86,42 @@ describe('home thread resume', () => {
     expect(readHomeThread()).toEqual([]);
   });
 
+  it('keeps the onboarding card that belongs under the reply', () => {
+    writeHomeThread([
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: 'Drop a pin on the map below.' },
+          {
+            type: 'tool-onboarding_guidance',
+            state: 'output-available',
+            output: {
+              ok: true,
+              next_field: 'space_location',
+              requires_location_picker: true,
+              search_results: [{ name: 'too big to keep' }],
+            },
+          },
+        ],
+      } as never,
+    ]);
+
+    const [message] = readHomeThread();
+    const guidance = message?.parts?.find(
+      (part) => part.type === 'tool-onboarding_guidance',
+    ) as
+      | {
+          output?: {
+            requires_location_picker?: boolean;
+            search_results?: unknown;
+          };
+        }
+      | undefined;
+    expect(guidance?.output?.requires_location_picker).toBe(true);
+    expect(guidance?.output?.search_results).toBeUndefined();
+  });
+
   it('carries a return across sessions and only once', () => {
     rememberHomeAction('proposal:garden', 'Garden proposal');
     window.sessionStorage.clear();

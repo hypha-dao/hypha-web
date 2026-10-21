@@ -16,20 +16,34 @@ export type OnboardingGuidancePickerOutput = {
   transparency_picker_step?: 'discoverability' | 'activity' | null;
   requires_entry_method_picker?: boolean;
   requires_location_picker?: boolean;
+  /** Already collected, so the next card can keep the same choice. */
+  answered_activation_method?: string | null;
+  answered_transparency_discoverability?: number | null;
 };
+
+function isOnboardingGuidancePart(part: {
+  type: string;
+  [key: string]: unknown;
+}) {
+  if (part.type === 'tool-onboarding_guidance') return true;
+  return (
+    part.type === 'dynamic-tool' && part.toolName === 'onboarding_guidance'
+  );
+}
 
 function findGuidanceOutputOnMessage(
   message: ChatUiMessage,
 ): OnboardingGuidancePickerOutput | null {
+  let found: OnboardingGuidancePickerOutput | null = null;
   for (const part of message.parts ?? []) {
-    if (part.type !== 'tool-onboarding_guidance') continue;
+    if (!isOnboardingGuidancePart(part)) continue;
     if (part.state !== 'output-available') continue;
 
     const output = part.output as OnboardingGuidancePickerOutput | undefined;
-    if (output?.ok) return output;
+    if (output?.ok) found = output;
   }
 
-  return null;
+  return found;
 }
 
 export function findLatestOnboardingGuidanceOutput(

@@ -182,6 +182,68 @@ export function consumeHomeReturn() {
   }
 }
 
+const GUIDANCE_FLAGS = [
+  'requires_setup_journey_picker',
+  'requires_activation_picker',
+  'requires_transparency_picker',
+  'requires_transparency_discoverability_picker',
+  'requires_transparency_activity_picker',
+  'requires_entry_method_picker',
+  'requires_location_picker',
+] as const;
+
+function isGuidancePart(part: { type?: unknown; toolName?: unknown }) {
+  if (part.type === 'tool-onboarding_guidance') return true;
+  return (
+    part.type === 'dynamic-tool' && part.toolName === 'onboarding_guidance'
+  );
+}
+
+/** Keep the picker flags. The full tool payload is too large for the thread store. */
+function guidancePartForStorage(part: UIMessage['parts'][number]) {
+  if (!isGuidancePart(part)) return null;
+  const record = part as {
+    state?: unknown;
+    output?: unknown;
+  };
+  if (record.state !== 'output-available') return null;
+  const output = record.output;
+  if (!output || typeof output !== 'object') return null;
+  const row = output as Record<string, unknown>;
+  if (row.ok !== true) return null;
+  const slim: Record<string, unknown> = { ok: true };
+  if (typeof row.next_field === 'string') slim.next_field = row.next_field;
+  if (
+    row.transparency_picker_step === 'discoverability' ||
+    row.transparency_picker_step === 'activity'
+  ) {
+    slim.transparency_picker_step = row.transparency_picker_step;
+  }
+  for (const flag of GUIDANCE_FLAGS) {
+    if (row[flag] === true) slim[flag] = true;
+  }
+  if (typeof row.answered_activation_method === 'string') {
+    slim.answered_activation_method = row.answered_activation_method;
+  }
+  if (
+    typeof row.answered_transparency_discoverability === 'number' &&
+    Number.isInteger(row.answered_transparency_discoverability)
+  ) {
+    slim.answered_transparency_discoverability =
+      row.answered_transparency_discoverability;
+  }
+  return {
+    type: 'tool-onboarding_guidance' as const,
+    state: 'output-available' as const,
+    output: slim,
+  };
+}
+
+function guidancePartFromStored(part: object) {
+  const stored = guidancePartForStorage(part as UIMessage['parts'][number]);
+  return stored;
+}
+
 export function readHomeThread(): UIMessage[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -207,8 +269,11 @@ export function readHomeThread(): UIMessage[] {
       const parts = row.parts.flatMap((part) => {
         if (!part || typeof part !== 'object') return [];
         const text = part as { type?: unknown; text?: unknown };
-        if (text.type !== 'text' || typeof text.text !== 'string') return [];
-        return [{ type: 'text' as const, text: text.text }];
+        if (text.type === 'text' && typeof text.text === 'string') {
+          return [{ type: 'text' as const, text: text.text }];
+        }
+        const guidance = guidancePartFromStored(part);
+        return guidance ? [guidance] : [];
       });
       if (parts.length === 0) return [];
       return [
@@ -220,7 +285,7 @@ export function readHomeThread(): UIMessage[] {
             row.metadata && typeof row.metadata === 'object'
               ? (row.metadata as UIMessage['metadata'])
               : undefined,
-        },
+        } as UIMessage,
       ];
     });
   } catch {
@@ -235,11 +300,13 @@ export function writeHomeThread(messages: readonly UIMessage[]) {
       id: message.id,
       role: message.role,
       metadata: message.metadata,
-      parts: (message.parts ?? []).flatMap((part) =>
-        part.type === 'text'
-          ? [{ type: 'text' as const, text: part.text }]
-          : [],
-      ),
+      parts: (message.parts ?? []).flatMap((part) => {
+        if (part.type === 'text') {
+          return [{ type: 'text' as const, text: part.text }];
+        }
+        const guidance = guidancePartForStorage(part);
+        return guidance ? [guidance] : [];
+      }),
     }));
     writeStored(THREAD_KEY, JSON.stringify(stored));
   } catch {

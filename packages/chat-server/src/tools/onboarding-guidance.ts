@@ -725,6 +725,15 @@ export function createOnboardingGuidanceTool(locale?: string | null) {
         })),
         suggested_categories: expandCategoryGroups(assignedCategoryGroups),
         requires_location_picker: requiresLocationPicker,
+        answered_activation_method:
+          typeof answers.activation_method === 'string'
+            ? answers.activation_method
+            : null,
+        answered_transparency_discoverability: isAnsweredTransparencyLevel(
+          answers.transparency_discoverability,
+        )
+          ? answers.transparency_discoverability
+          : null,
         requires_activation_picker: requiresActivationPicker,
         requires_transparency_picker: requiresTransparencyPicker,
         requires_transparency_discoverability_picker:

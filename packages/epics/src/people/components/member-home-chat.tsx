@@ -51,6 +51,7 @@ import {
   writeHomeThread,
 } from './member-home-resume';
 import { MemberHomeActivationCard } from './member-home-activation-card';
+import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { MemberHomeMark } from './member-home-mark';
 import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
@@ -1080,6 +1081,13 @@ export function MemberHomeChat({
                 {renderWidget(widget)}
               </article>
             ))}
+          <MemberHomeOnboardingCards
+            messages={homeMessages}
+            isStreaming={isStreaming}
+            onSend={(text) => {
+              void send(text);
+            }}
+          />
           {showArrivalMask ? (
             <article
               className="home-send-settle flex gap-3"
