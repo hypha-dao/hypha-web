@@ -186,7 +186,7 @@ Hypha space category tags (same list as network map + create space form):
 export const VISUAL_ASSET_GENERATION_GUIDELINES = `
 AI image generation (logos, banners, icons, placeholders):
 - HARD PRINCIPLE: generated visuals are always text-free — no words, letters, numbers, initials, monograms, labels, slogans, or the space name in the image. AI-generated text is usually misspelled or fake; never request wording for rendering. If the user asks for on-image text, explain that generated assets stay text-free and offer mood/symbol direction instead.
-- Quality bar: mature, inspirational, and visually striking. Logos/icons should feel mindblowing and emblematic — not basic flat clipart, generic geometric badges, or stock-icon silhouettes. Banners should feel cinematic and purposeful.
+- Quality bar: a real photograph or a quiet physical emblem. Logos should feel like an object or a printed mark — not fantasy concept art, glowing trees, or cinematic CGI. Banners should feel like a documentary photograph of a real place.
 - When calling generate_space_visual_assets, put craft direction in visual_vibe: mood, symbolism, light, materials, palette, composition. Never instruct the generator to render the space name or slogans as typography.`;
 
 export const ECOSYSTEM_NESTED_SPACES_GUIDELINES = `

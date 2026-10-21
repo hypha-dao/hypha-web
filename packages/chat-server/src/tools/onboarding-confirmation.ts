@@ -84,7 +84,7 @@ export function inferVisualVibe(args: {
 
   // Intentionally ignore title: seeding the space name into visual_vibe often
   // causes image models to render it as on-image text.
-  return 'mature, inspirational, luminous symbolism, cinematic depth, premium craft';
+  return 'a real place in ordinary daylight, natural materials, one quiet subject';
 }
 
 export function hasExplicitConfirmation(

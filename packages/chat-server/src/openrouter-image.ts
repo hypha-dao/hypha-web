@@ -1,8 +1,9 @@
 import 'server-only';
 
 const DEFAULT_OPENROUTER_IMAGE_MODEL =
-  process.env.OPENROUTER_IMAGE_MODEL?.trim() ||
-  'black-forest-labs/flux.2-klein-4b';
+  process.env.OPENROUTER_IMAGE_MODEL?.trim() || 'black-forest-labs/flux.2-pro';
+
+export type OpenRouterImageAspectRatio = '1:1' | '16:9';
 
 function buildOpenRouterAppHeaders(): Record<string, string> {
   const referer =
@@ -54,17 +55,39 @@ function extractImageDataUrl(payload: unknown): string | null {
   return null;
 }
 
-export async function generateOpenRouterImage(prompt: string): Promise<string> {
+function imageDataUrlFromImagesApi(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const data = (payload as { data?: unknown[] }).data;
+  if (!Array.isArray(data)) return null;
+  for (const item of data) {
+    if (!item || typeof item !== 'object') continue;
+    const row = item as { b64_json?: unknown; media_type?: unknown };
+    if (typeof row.b64_json !== 'string' || !row.b64_json.trim()) continue;
+    const encoded = row.b64_json.trim();
+    if (encoded.startsWith('data:image/')) return encoded;
+    const mediaType =
+      typeof row.media_type === 'string' && row.media_type.startsWith('image/')
+        ? row.media_type
+        : 'image/png';
+    return `data:${mediaType};base64,${encoded}`;
+  }
+  return null;
+}
+
+export async function generateOpenRouterImage(
+  prompt: string,
+  options?: { aspectRatio?: OpenRouterImageAspectRatio },
+): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY is missing.');
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
   let response: Response;
   try {
-    response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    response = await fetch('https://openrouter.ai/api/v1/images', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -73,9 +96,9 @@ export async function generateOpenRouterImage(prompt: string): Promise<string> {
       },
       body: JSON.stringify({
         model: DEFAULT_OPENROUTER_IMAGE_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        modalities: ['image'],
-        stream: false,
+        prompt,
+        aspect_ratio: options?.aspectRatio ?? '1:1',
+        output_format: 'png',
       }),
       signal: controller.signal,
     });
@@ -93,7 +116,8 @@ export async function generateOpenRouterImage(prompt: string): Promise<string> {
   }
 
   const payload: unknown = await response.json();
-  const dataUrl = extractImageDataUrl(payload);
+  const dataUrl =
+    imageDataUrlFromImagesApi(payload) ?? extractImageDataUrl(payload);
   if (!dataUrl) {
     throw new Error('Image generation returned no image data.');
   }

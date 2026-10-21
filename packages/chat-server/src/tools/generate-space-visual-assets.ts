@@ -44,9 +44,10 @@ export async function generateSpaceVisualAssets(
       prompt: string,
       name: string,
       label: string,
+      aspectRatio: '1:1' | '16:9',
     ): Promise<string | null> => {
       try {
-        const dataUrl = await generateOpenRouterImage(prompt);
+        const dataUrl = await generateOpenRouterImage(prompt, { aspectRatio });
         return await uploadGeneratedImageDataUrl(dataUrl, name);
       } catch (error) {
         failures.push(
@@ -60,10 +61,15 @@ export async function generateSpaceVisualAssets(
 
     const [logoUrl, leadImageUrl] = await Promise.all([
       shouldGenerateLogo
-        ? generateOne(buildLogoPrompt(data), `${slugStem}-logo`, 'Logo')
+        ? generateOne(buildLogoPrompt(data), `${slugStem}-logo`, 'Logo', '1:1')
         : Promise.resolve(null),
       shouldGenerateBanner
-        ? generateOne(buildBannerPrompt(data), `${slugStem}-banner`, 'Banner')
+        ? generateOne(
+            buildBannerPrompt(data),
+            `${slugStem}-banner`,
+            'Banner',
+            '16:9',
+          )
         : Promise.resolve(null),
     ]);
 
@@ -95,7 +101,7 @@ export async function generateSpaceVisualAssets(
 export function createGenerateSpaceVisualAssetsTool() {
   return {
     description:
-      'Generate Hypha space visual assets (square icon/logo and/or wide banner) from the space purpose and desired vibe. HARD RULE: images must be text-free — never put words, letters, or the space name in the image. Aim for mature, inspirational, mindblowing craft (not basic flat icons). Pass rich visual_vibe (mood, symbols, light, materials, composition) — never slogans to render. Returns hosted https URLs suitable for create_space_from_onboarding. Always use this when the user asks to generate images, logos, banners, or placeholders — never say images must wait until after creation.',
+      'Generate Hypha space visual assets (square icon/logo and/or wide banner) from the space purpose and desired vibe. HARD RULE: images must be text-free — never put words, letters, or the space name in the image. visual_vibe must describe a real photograph or a quiet physical emblem: place, material, daylight, one subject. Never request neon, glowing roots, god rays, fantasy CGI, or a magical cinematic tree. Returns hosted https URLs suitable for create_space_from_onboarding. Always use this when the user asks to generate images, logos, banners, or placeholders — never say images must wait until after creation.',
     inputSchema,
     execute: async (args) => generateSpaceVisualAssets(args),
   } satisfies ChatRouteTool<typeof inputSchema>;
