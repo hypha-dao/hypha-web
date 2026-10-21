@@ -271,7 +271,7 @@ export function SignupFlow({
               ) : null}
 
               {step === 'you' ? (
-                <Screen title={t('you.title')} compact>
+                <Screen title={t('you.title')}>
                   <div className="flex items-start gap-4">
                     <div className="grid shrink-0 justify-items-center gap-2">
                       <span className="text-1 text-neutral-11">
@@ -350,6 +350,7 @@ export function SignupFlow({
                 <Screen
                   title={t('orientation.title')}
                   body={t('orientation.body')}
+                  bodyClassName="text-pretty lg:max-w-none"
                 >
                   <div className="grid w-full gap-3">
                     {ORIENTATIONS.map((option) => {
@@ -544,14 +545,14 @@ function Screen({
   eyebrow,
   title,
   body,
+  bodyClassName,
   children,
-  compact = false,
 }: {
   eyebrow?: string;
   title: string;
   body?: string;
+  bodyClassName?: string;
   children?: ReactNode;
-  compact?: boolean;
 }) {
   return (
     <div className="w-full">
@@ -562,28 +563,25 @@ function Screen({
       ) : null}
       <h1
         className={cn(
-          'text-balance font-medium tracking-[-0.03em]',
-          compact ? 'text-5 leading-tight' : 'text-7 leading-[1.05]',
-          eyebrow && (compact ? 'mt-2' : 'mt-3'),
+          'text-balance text-7 leading-[1.05] font-medium tracking-[-0.03em]',
+          eyebrow && 'mt-3',
         )}
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         {title}
       </h1>
       {body ? (
-        <p className="mx-auto mt-4 max-w-[42ch] text-2 leading-relaxed text-neutral-11">
+        <p
+          className={cn(
+            'mx-auto mt-4 max-w-[42ch] text-2 leading-relaxed text-neutral-11',
+            bodyClassName,
+          )}
+        >
           {body}
         </p>
       ) : null}
       {children ? (
-        <div
-          className={cn(
-            'grid w-full text-left',
-            compact ? 'mt-5 gap-0' : 'mt-8 gap-5',
-          )}
-        >
-          {children}
-        </div>
+        <div className="mt-8 grid w-full gap-5 text-left">{children}</div>
       ) : null}
     </div>
   );

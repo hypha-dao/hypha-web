@@ -19,14 +19,18 @@ export const usePeopleFileUploads = ({
 }: UsePeopleFileUploadsParams) => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { upload: uploadImage } = useImageUpload({
+  const { upload: uploadImage, setAuthorizationToken } = useImageUpload({
     authorizationToken: authToken ?? undefined,
   });
 
   const upload = useCallback(
-    async (fileInput: Partial<PersonFiles>): Promise<Partial<PersonFiles>> => {
+    async (
+      fileInput: Partial<PersonFiles>,
+      tokenOverride?: string | null,
+    ): Promise<Partial<PersonFiles>> => {
       setIsUploading(true);
       setError(null);
+      if (tokenOverride) setAuthorizationToken(tokenOverride);
 
       try {
         const uploadedFiles: Partial<PersonFiles> = {};
@@ -53,10 +57,11 @@ export const usePeopleFileUploads = ({
         setError('Failed to upload files');
         throw err;
       } finally {
+        setAuthorizationToken(null);
         setIsUploading(false);
       }
     },
-    [uploadImage],
+    [setAuthorizationToken, uploadImage],
   );
 
   return {

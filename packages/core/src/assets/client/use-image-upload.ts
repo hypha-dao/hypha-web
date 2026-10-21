@@ -23,9 +23,19 @@ const normalizeSvgMime = (file: File): File => {
 };
 
 export const useImageUpload = ({ authorizationToken }: FileUploadProps) => {
-  const headers = authorizationToken
-    ? new Headers({ Authorization: `Bearer ${authorizationToken}` })
-    : new Headers();
+  const tokenRef = React.useRef(authorizationToken);
+  tokenRef.current = authorizationToken;
+  const overrideRef = React.useRef<string | null>(null);
+
+  const headers = React.useCallback(() => {
+    const token = (overrideRef.current ?? tokenRef.current)?.trim();
+    if (!token) return {};
+    return { Authorization: `Bearer ${token}` };
+  }, []);
+
+  const setAuthorizationToken = React.useCallback((token?: string | null) => {
+    overrideRef.current = token?.trim() || null;
+  }, []);
 
   const { useUploadThing } = generateReactHelpers<CoreFileRouter>();
 
@@ -44,5 +54,6 @@ export const useImageUpload = ({ authorizationToken }: FileUploadProps) => {
   return {
     upload,
     isUploading,
+    setAuthorizationToken,
   };
 };
