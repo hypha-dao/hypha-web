@@ -75,6 +75,31 @@ const primaryActionClassName =
 /** Same open surface as the orientation cards: border only, mycelium shows through. */
 const signupFieldClassName = 'bg-transparent';
 
+/** Profile creation takes a few seconds. The static ellipsis in copy is replaced by these dots. */
+function OpeningHomeLabel({ label }: { label: string }) {
+  const text = label.replace(/[\s.…]+$/u, '');
+  return (
+    <span className="inline-flex items-center" aria-label={label}>
+      <span aria-hidden>{text}</span>
+      <span
+        aria-hidden
+        className="ml-[0.45em] inline-flex items-end gap-[0.22em]"
+      >
+        {[0, 1, 2].map((index) => (
+          <span
+            key={index}
+            className="inline-block size-[3px] rounded-full bg-current"
+            style={{
+              animation: 'signup-opening-dot 1.1s ease-in-out infinite',
+              animationDelay: `${index * 160}ms`,
+            }}
+          />
+        ))}
+      </span>
+    </span>
+  );
+}
+
 export function SignupFlow({
   email,
   walletAddress,
@@ -186,6 +211,12 @@ export function SignupFlow({
         youStep ? 'overflow-hidden' : 'overflow-y-auto',
       )}
     >
+      <style>{`
+        @keyframes signup-opening-dot {
+          0%, 70%, 100% { opacity: 0.25; transform: translateY(0); }
+          35% { opacity: 1; transform: translateY(-3px); }
+        }
+      `}</style>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-cover bg-[center_right] opacity-50 dark:opacity-30"
@@ -416,11 +447,13 @@ export function SignupFlow({
                   void finish();
                 }}
               >
-                {isCreating
-                  ? t('saving')
-                  : authLoading
-                  ? t('walletWait')
-                  : t('enterHypha')}
+                {isCreating ? (
+                  <OpeningHomeLabel label={t('saving')} />
+                ) : authLoading ? (
+                  t('walletWait')
+                ) : (
+                  t('enterHypha')
+                )}
               </Button>
             ) : null}
           </div>
