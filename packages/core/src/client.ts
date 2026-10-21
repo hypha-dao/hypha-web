@@ -28,6 +28,14 @@ export {
   BANK_VIRTUAL_ACCOUNT_CURRENCIES,
 } from './banking/constants';
 export * from './integration-action/result-message';
+export {
+  INTEGRATION_CLIENT_SCOPES,
+  type IntegrationClientScope,
+} from './integration-client/types';
+export {
+  CLIENT_LOGO_MAX_BYTES,
+  CLIENT_LOGO_REJECTION_MESSAGE,
+} from './integration-client/logo';
 export type { BankProvider } from './banking/types';
 export {
   isBypassEligible,

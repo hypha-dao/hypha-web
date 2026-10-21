@@ -15,6 +15,8 @@ export type IntegrationClientSummary = {
   scopes: IntegrationClientScope[];
   allowedOrigins: string[];
   keyPrefix: string | null;
+  /** Stored logo URL, whatever its review state: never hand this to ordinary users. */
+  logoUrl: string | null;
   requestedByPersonId: number | null;
   approvedAt: Date | null;
   revokedAt: Date | null;

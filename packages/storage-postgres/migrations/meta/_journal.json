@@ -589,6 +589,13 @@
       "when": 1784000000014,
       "tag": "0083_integration_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1784000000015,
+      "tag": "0084_integration_client_logo",
+      "breakpoints": true
     }
   ]
 }

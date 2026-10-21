@@ -88,4 +88,6 @@ export type IntegrationActionWithClient = IntegrationActionRecord & {
   clientName: string;
   /** The client's registered origins (`allowedOrigins`), as ops approved them. */
   clientOrigins: string[];
+  /** The client's logo URL, only when the client is approved (see `visibleClientLogoUrl`); else null. */
+  clientLogoUrl: string | null;
 };

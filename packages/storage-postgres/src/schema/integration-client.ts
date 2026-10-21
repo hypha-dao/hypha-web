@@ -52,6 +52,11 @@ export const integrationClients = pgTable(
     /** Leading segment of the plaintext key; null until approved. */
     keyPrefix: varchar('key_prefix', { length: 16 }),
     keyHash: text('key_hash'),
+    /**
+     * Public URL of the logo in Hypha's file storage. Shown only once the
+     * client is approved (approving the client approves the logo).
+     */
+    logoUrl: text('logo_url'),
     /** Hypha person who filed the request (requests require a logged-in user). */
     requestedByPersonId: integer('requested_by_person_id').references(
       () => people.id,

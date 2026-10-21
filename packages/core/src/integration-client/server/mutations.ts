@@ -165,3 +165,31 @@ export const revokeIntegrationClient = async (
     .returning();
   return rows.length > 0;
 };
+
+/**
+ * Attach the stored logo to a client its requester still has pending. The
+ * conditional update is what keeps the review honest: once a client is
+ * approved its logo cannot change underneath the approval.
+ * @returns false when the client is not this person's, or is no longer pending.
+ */
+export const setIntegrationClientLogo = async (
+  {
+    slug,
+    requestedByPersonId,
+    logoUrl,
+  }: { slug: string; requestedByPersonId: number; logoUrl: string },
+  { db }: DbConfig,
+): Promise<boolean> => {
+  const rows = await db
+    .update(integrationClients)
+    .set({ logoUrl, updatedAt: new Date() })
+    .where(
+      and(
+        eq(integrationClients.slug, slug),
+        eq(integrationClients.requestedByPersonId, requestedByPersonId),
+        eq(integrationClients.status, 'pending'),
+      ),
+    )
+    .returning();
+  return rows.length > 0;
+};

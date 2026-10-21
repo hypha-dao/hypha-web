@@ -85,6 +85,7 @@ const clientSummary = (
   scopes: ['agreements:vote'],
   allowedOrigins: [],
   keyPrefix: null,
+  logoUrl: null,
   requestedByPersonId: USER.id,
   approvedAt: null,
   revokedAt: null,

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type {
-  IntegrationActionRecord,
+  IntegrationActionWithClient,
   VoteActionContext,
 } from '../../integration-action/types';
 import {
@@ -54,7 +54,7 @@ function makeDeps(
     target?: Awaited<ReturnType<IntegrationActionDeps['resolveVoteTarget']>>;
   } = {},
 ) {
-  const rows: (IntegrationActionRecord & { clientName: string })[] = [];
+  const rows: IntegrationActionWithClient[] = [];
   const clock = over.now ?? { value: T0 };
   const names = new Map([
     [CLIENT.id, CLIENT.name],
@@ -112,6 +112,7 @@ function makeDeps(
         createdAt: clock.value,
         clientName: names.get(args.clientId) ?? 'unknown',
         clientOrigins: origins.get(args.clientId) ?? [],
+        clientLogoUrl: null,
       };
       rows.push(row);
       return row;
@@ -438,6 +439,7 @@ describe('summary shown on the approval page', () => {
     expect(body.client).toEqual({
       name: 'Acme Voting',
       origins: ['https://acme.example'],
+      logoUrl: null,
     });
     expect(body.summary.headline).toContain('Acme Voting');
     expect(body.summary.lines).toEqual([

@@ -18,6 +18,7 @@ export const clientSummaryColumns = {
   scopes: integrationClients.scopes,
   allowedOrigins: integrationClients.allowedOrigins,
   keyPrefix: integrationClients.keyPrefix,
+  logoUrl: integrationClients.logoUrl,
   requestedByPersonId: integrationClients.requestedByPersonId,
   approvedAt: integrationClients.approvedAt,
   revokedAt: integrationClients.revokedAt,
@@ -38,6 +39,7 @@ export function toClientSummary(
     scopes: row.scopes as IntegrationClientScope[],
     allowedOrigins: row.allowedOrigins,
     keyPrefix: row.keyPrefix,
+    logoUrl: row.logoUrl,
     requestedByPersonId: row.requestedByPersonId,
     approvedAt: row.approvedAt,
     revokedAt: row.revokedAt,
@@ -80,6 +82,19 @@ export const listIntegrationClients = async ({
   const rows = await db
     .select(clientSummaryColumns)
     .from(integrationClients)
+    .orderBy(desc(integrationClients.createdAt));
+  return rows.map(toClientSummary);
+};
+
+/** The clients one person requested, newest first. */
+export const listIntegrationClientsForPerson = async (
+  { personId }: { personId: number },
+  { db }: DbConfig,
+): Promise<IntegrationClientSummary[]> => {
+  const rows = await db
+    .select(clientSummaryColumns)
+    .from(integrationClients)
+    .where(eq(integrationClients.requestedByPersonId, personId))
     .orderBy(desc(integrationClients.createdAt));
   return rows.map(toClientSummary);
 };

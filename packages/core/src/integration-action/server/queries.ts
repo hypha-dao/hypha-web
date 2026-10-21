@@ -5,6 +5,7 @@ import {
 import { and, eq, gt, sql } from 'drizzle-orm';
 
 import type { DbConfig } from '../../server';
+import { visibleClientLogoUrl } from '../../integration-client/logo';
 import type {
   IntegrationActionRecord,
   IntegrationActionWithClient,
@@ -42,6 +43,8 @@ export const findActionForPerson = async (
       action: integrationActions,
       clientName: integrationClients.name,
       clientOrigins: integrationClients.allowedOrigins,
+      clientStatus: integrationClients.status,
+      clientLogoUrl: integrationClients.logoUrl,
     })
     .from(integrationActions)
     .innerJoin(
@@ -60,6 +63,10 @@ export const findActionForPerson = async (
         ...toActionRecord(row.action),
         clientName: row.clientName,
         clientOrigins: row.clientOrigins,
+        clientLogoUrl: visibleClientLogoUrl({
+          status: row.clientStatus,
+          logoUrl: row.clientLogoUrl,
+        }),
       }
     : null;
 };
