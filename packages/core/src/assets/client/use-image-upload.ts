@@ -27,7 +27,7 @@ export const useImageUpload = ({ authorizationToken }: FileUploadProps) => {
   tokenRef.current = authorizationToken;
   const overrideRef = React.useRef<string | null>(null);
 
-  const headers = React.useCallback(() => {
+  const headers = React.useCallback((): Record<string, string> => {
     const token = (overrideRef.current ?? tokenRef.current)?.trim();
     if (!token) return {};
     return { Authorization: `Bearer ${token}` };
