@@ -54,7 +54,6 @@ import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
 import { MemberHomeMark } from './member-home-mark';
-import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
 import { presenceFillClass } from './presence-dot';
@@ -845,11 +844,8 @@ export function MemberHomeChat({
   );
   const freshStart = threadItems.length === 0 && !hasSpoken;
   const promptName =
-    [intelligence.person.name, intelligence.person.surname]
-      .filter(Boolean)
-      .join(' ')
-      .trim() ||
-    intelligence.person.nickname ||
+    intelligence.person.name?.trim() ||
+    intelligence.person.nickname?.trim() ||
     t('fallbackName');
   const orientation = intelligence.person.primaryOrientation;
   const firstPromptLine =
@@ -1154,37 +1150,14 @@ export function MemberHomeChat({
           />
           {showArrivalMask ? (
             <article
-              className="home-send-settle flex gap-3"
+              className="flex items-start gap-3"
               aria-live="polite"
               aria-busy="true"
             >
-              <MemberHomeMark className="home-send-breathe mt-0.5 h-8 w-8" />
-              <div className="grid min-w-0 flex-1 gap-4">
-                <p className="text-2 leading-relaxed text-neutral-11">
-                  {t('thinking')}
-                </p>
-                <div className="grid gap-2" aria-hidden>
-                  <HomeWave className="h-3 w-11/12" delayMs={40} />
-                  <HomeWave className="h-3 w-4/5" delayMs={90} />
-                  <HomeWave className="h-3 w-2/3" delayMs={140} />
-                </div>
-                <div
-                  className="border border-border bg-background p-3"
-                  aria-hidden
-                >
-                  <HomeWave
-                    className="w-full"
-                    delayMs={80}
-                    style={{ height: 96 }}
-                  />
-                  <HomeWave className="mt-3 h-4 w-1/2" delayMs={160} />
-                  <HomeWave className="mt-2 h-3 w-2/5" delayMs={210} />
-                  <div className="mt-4 flex gap-2">
-                    <HomeWave className="h-10 w-28" delayMs={250} />
-                    <HomeWave className="h-10 w-24" delayMs={300} />
-                  </div>
-                </div>
-              </div>
+              <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
+              <p className="text-2 leading-relaxed text-neutral-11">
+                {t('thinking')}
+              </p>
             </article>
           ) : null}
         </div>
