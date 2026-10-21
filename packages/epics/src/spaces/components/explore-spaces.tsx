@@ -343,10 +343,9 @@ export function ExploreSpaces({
           longitude: space.longitude,
           creatorCoordinates: creatorMapPins?.[space.id] ?? null,
         });
-        // No place of its own and no creator place: leave it off the map.
-        // The directory list still includes it.
-        if (pin.source === 'fallback') return [];
         if (pin.source === 'space') return [space];
+        // A public space with no place of its own is still drawn. The point is
+        // a stable scatter on land, or the creator's geocode. It is not saved.
         return [
           {
             ...space,
