@@ -1,0 +1,42 @@
+.exchange-stage {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.exchange-stage > img,
+.exchange-stage > video,
+.exchange-stage > .exchange-embed {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.exchange-play {
+  position: absolute;
+  z-index: 1;
+  left: 12px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.exchange-play svg {
+  width: 14px;
+  height: 14px;
+}
+
+.exchange-title {
+  letter-spacing: -0.02em;
+}

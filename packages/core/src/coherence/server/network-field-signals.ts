@@ -57,6 +57,25 @@ function asPayouts(value: unknown): NetworkFieldPayout[] {
   return payouts;
 }
 
+/** UploadThing URLs often have no extension. The file name still does. */
+function isImageAttachment(url: string, name: string) {
+  const hint = `${name} ${url}`.split(/[?#]/)[0] ?? '';
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(hint);
+}
+
+function firstImageAttachment(value: unknown): string | null {
+  const parsed = typeof value === 'string' ? asTags(value) : value;
+  if (!Array.isArray(parsed)) return null;
+  for (const entry of parsed) {
+    if (!entry || typeof entry !== 'object') continue;
+    const url = asText((entry as { url?: unknown }).url);
+    const name = asText((entry as { name?: unknown }).name);
+    if (!url || !isImageAttachment(url, name)) continue;
+    return url;
+  }
+  return null;
+}
+
 function isFieldKind(value: unknown): value is NetworkFieldSignalKind {
   return (
     typeof value === 'string' &&
@@ -72,7 +91,7 @@ export async function listNetworkFieldSignals(
   if (allowed.length === 0) return [];
   const result = await db.execute(sql`
     select c.slug, c.title, c.description, c.type, c.lead_image, c.video_url,
-           c.updated_at, c.tags, c.indicative_payouts,
+           c.attachments, c.updated_at, c.tags, c.indicative_payouts,
            s.id as space_id, s.slug as space_slug, s.title as space_title,
            s.location_label, s.chat_room_id, s.description as space_description,
            s.lead_image as space_lead_image,
@@ -120,7 +139,10 @@ export async function listNetworkFieldSignals(
       place: asText(record.location_label),
       creatorName: asText(record.creator_name) || null,
       spaceChatRoomId: asText(record.chat_room_id) || null,
-      leadImage: asText(record.lead_image) || null,
+      leadImage:
+        asText(record.lead_image) ||
+        firstImageAttachment(record.attachments) ||
+        null,
       videoUrl: asText(record.video_url) || null,
       updatedAt: asIso(record.updated_at),
       payouts: asPayouts(record.indicative_payouts),

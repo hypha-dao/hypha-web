@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { ListFilter } from 'lucide-react';
+import { ListFilter, Play } from 'lucide-react';
+import './network-exchange-card.css';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   CAPITALS,
@@ -79,37 +80,84 @@ function whenLabel(
   return formatDistanceToNowStrict(date, { addSuffix: true, locale });
 }
 
-function FieldPhoto({
+function plainText(value: string) {
+  let out = '';
+  let index = 0;
+  while (index < value.length) {
+    const open = value.indexOf('<', index);
+    if (open === -1) {
+      out += value.slice(index);
+      break;
+    }
+    out += value.slice(index, open);
+    const close = value.indexOf('>', open + 1);
+    if (close === -1) {
+      out += value.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out.replace(/\s+/g, ' ').trim();
+}
+
+function ExchangeMedia({
   src,
   videoUrl,
   alt,
+  playLabel,
 }: {
   src: string | null;
   videoUrl: string | null;
   alt: string;
+  playLabel: string;
 }) {
+  const fileRef = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const video = resolveSignalVideo(videoUrl);
-  if (video) {
-    return (
-      <div
-        className="relative aspect-[2/1] w-full overflow-hidden bg-neutral-3"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <SignalVideoPlayer video={video} title={alt} />
-      </div>
-    );
-  }
-  if (!src || failed) {
-    return <div className="aspect-[2/1] w-full bg-neutral-3" />;
-  }
+  const image = !failed && src ? src : null;
+  if (!video && !image) return null;
+
+  const play = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setPlaying(true);
+    if (video?.kind === 'file') void fileRef.current?.play();
+  };
+
   return (
-    <img
-      src={src}
-      alt={alt}
-      className="aspect-[2/1] w-full object-cover"
-      onError={() => setFailed(true)}
-    />
+    <div className="exchange-stage">
+      {video?.kind === 'file' ? (
+        <video
+          ref={fileRef}
+          src={video.src}
+          poster={image ?? undefined}
+          playsInline
+          preload="metadata"
+          controls={playing}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ) : video && playing ? (
+        <SignalVideoPlayer
+          video={video}
+          title={alt}
+          className="exchange-embed object-cover"
+        />
+      ) : image ? (
+        <img src={image} alt={alt} onError={() => setFailed(true)} />
+      ) : null}
+      {video && !playing ? (
+        <button
+          type="button"
+          className="exchange-play"
+          aria-label={playLabel}
+          onClick={play}
+        >
+          <Play aria-hidden />
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -359,41 +407,47 @@ export function NetworkReciprocalExchange({
                   action: 0,
                   impact: 0,
                 };
+                const story = plainText(signal.description);
+                const chosen = signal.slug === selected?.slug;
                 return (
                   <li key={signal.slug} className="flex">
                     <article
-                      className="flex w-full flex-col border border-border bg-background"
+                      className={cn(
+                        'flex w-full cursor-pointer flex-col border bg-background',
+                        chosen ? 'border-foreground' : 'border-border',
+                      )}
                       onClick={() => setSelectedSlug(signal.slug)}
                     >
-                      <div className="flex items-center justify-between gap-3 px-4 py-2">
-                        <span
-                          className={cn(
-                            'px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
-                            badgeClass(signal.type),
-                          )}
-                        >
-                          {typeLabel(signal.type, t)}
-                        </span>
-                        <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
-                          {picked ? (
-                            <span aria-hidden>{CAPITAL_MARK[picked]}</span>
-                          ) : null}
-                          {picked
-                            ? t('capitalStatus', {
-                                capital: t(`capitals.${picked}`),
-                                status: when,
-                              })
-                            : when}
-                        </span>
-                      </div>
-                      <FieldPhoto
-                        src={signal.leadImage}
+                      <ExchangeMedia
+                        src={signal.leadImage || signal.spaceLeadImage}
                         videoUrl={signal.videoUrl}
                         alt={signal.title}
+                        playLabel={t('fieldVideo')}
                       />
-                      <div className="flex flex-1 flex-col gap-2 px-4 py-3">
+                      <div className="flex flex-1 flex-col gap-3 px-4 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <span
+                            className={cn(
+                              'px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
+                              badgeClass(signal.type),
+                            )}
+                          >
+                            {typeLabel(signal.type, t)}
+                          </span>
+                          <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
+                            {picked ? (
+                              <span aria-hidden>{CAPITAL_MARK[picked]}</span>
+                            ) : null}
+                            {picked
+                              ? t('capitalStatus', {
+                                  capital: t(`capitals.${picked}`),
+                                  status: when,
+                                })
+                              : when}
+                          </span>
+                        </div>
                         <h2
-                          className="text-4 font-medium leading-snug"
+                          className="exchange-title text-4 font-medium leading-snug"
                           style={{ fontFamily: 'var(--font-family-heading)' }}
                         >
                           {signal.title}
@@ -401,8 +455,13 @@ export function NetworkReciprocalExchange({
                         <p className="text-1 uppercase tracking-[0.14em] text-neutral-11">
                           {signal.spaceTitle}
                         </p>
+                        {story ? (
+                          <p className="line-clamp-2 text-2 leading-relaxed text-neutral-11">
+                            {story}
+                          </p>
+                        ) : null}
                         {impactCard ? (
-                          <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-1 text-neutral-11">
+                          <p className="flex flex-wrap gap-x-4 gap-y-1 text-1 text-neutral-11">
                             <Link
                               href={`/${lang}/network/exchange?type=Action`}
                               className="hover:text-foreground"
@@ -418,24 +477,20 @@ export function NetworkReciprocalExchange({
                               {t('proofsOfImpact', { count: proofs.impact })}
                             </Link>
                           </p>
-                        ) : (
-                          <>
-                            {payout ? (
-                              <p className="font-mono text-1 text-foreground">
-                                {payout}
-                              </p>
-                            ) : null}
-                            <Link
-                              href={`/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`}
-                              className="mt-auto self-start pt-2 text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {t('openSignal')}
-                            </Link>
-                          </>
-                        )}
+                        ) : payout ? (
+                          <p className="font-mono text-2 text-foreground">
+                            {payout}
+                          </p>
+                        ) : null}
+                        <Link
+                          href={`/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`}
+                          className="mt-auto self-start text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {t('openSignal')}
+                        </Link>
                       </div>
-                      <div className="mt-auto flex gap-2 px-4 pb-4">
+                      <div className="mt-auto grid grid-cols-2 border-t border-border">
                         {impactCard ? (
                           <button
                             type="button"
@@ -448,14 +503,14 @@ export function NetworkReciprocalExchange({
                               event.preventDefault();
                               event.stopPropagation();
                             }}
-                            className="inline-flex h-10 cursor-default items-center justify-center border border-foreground bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
+                            className="inline-flex h-10 cursor-default items-center justify-center bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
                           >
                             {t('resource')}
                           </button>
                         ) : (
                           <Link
                             href={`/${lang}/dho/${signal.spaceSlug}`}
-                            className="inline-flex h-10 items-center justify-center border border-foreground bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
+                            className="inline-flex h-10 items-center justify-center bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
                             onClick={(event) => event.stopPropagation()}
                           >
                             {t('visit')}
@@ -468,7 +523,7 @@ export function NetworkReciprocalExchange({
                             event.stopPropagation();
                             openRoom(signal);
                           }}
-                          className="inline-flex h-10 items-center justify-center border border-border bg-background px-3 text-1 font-medium uppercase tracking-[0.14em] hover:bg-neutral-2 disabled:opacity-40"
+                          className="inline-flex h-10 items-center justify-center border-l border-border bg-background px-3 text-1 font-medium uppercase tracking-[0.14em] hover:bg-neutral-2 disabled:opacity-40"
                         >
                           {t('connect')}
                         </button>
