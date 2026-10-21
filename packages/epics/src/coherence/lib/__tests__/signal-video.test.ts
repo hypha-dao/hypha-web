@@ -12,9 +12,9 @@ describe('resolveSignalVideo', () => {
   });
 
   it('embeds a vimeo link', () => {
-    expect(resolveSignalVideo('https://vimeo.com/123456789')).toEqual({
+    expect(resolveSignalVideo('https://vimeo.com/1231830761')).toEqual({
       kind: 'vimeo',
-      src: 'https://player.vimeo.com/video/123456789',
+      src: 'https://player.vimeo.com/video/1231830761',
     });
   });
 

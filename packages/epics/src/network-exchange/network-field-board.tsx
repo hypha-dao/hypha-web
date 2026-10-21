@@ -13,6 +13,8 @@ import {
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import { compactIndicativeAmount } from '../coherence/components/signal-indicative-amounts';
+import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
+import { resolveSignalVideo } from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import {
   NetworkRightColumn,
@@ -71,8 +73,27 @@ function whenLabel(
   return formatDistanceToNowStrict(date, { addSuffix: true, locale });
 }
 
-function FieldPhoto({ src, alt }: { src: string | null; alt: string }) {
+function FieldPhoto({
+  src,
+  videoUrl,
+  alt,
+}: {
+  src: string | null;
+  videoUrl: string | null;
+  alt: string;
+}) {
   const [failed, setFailed] = useState(false);
+  const video = resolveSignalVideo(videoUrl);
+  if (video) {
+    return (
+      <div
+        className="relative aspect-video w-full overflow-hidden bg-neutral-3"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <SignalVideoPlayer video={video} title={alt} />
+      </div>
+    );
+  }
   if (!src || failed) {
     return <div className="aspect-video w-full bg-neutral-3" />;
   }
@@ -275,12 +296,10 @@ export function NetworkFieldBoard({
                 const picked = signal.slug === selected?.slug;
                 return (
                   <li key={signal.slug} className="flex">
-                    <button
-                      type="button"
-                      aria-pressed={picked}
+                    <article
                       onClick={() => setSelectedSlug(signal.slug)}
                       className={cn(
-                        'flex w-full flex-col border bg-background text-left hover:border-foreground',
+                        'flex w-full cursor-pointer flex-col border bg-background text-left hover:border-foreground',
                         picked
                           ? 'border-foreground bg-neutral-2 ring-1 ring-foreground'
                           : 'border-border',
@@ -300,7 +319,11 @@ export function NetworkFieldBoard({
                         </span>
                       </div>
                       <div className="border-b border-border">
-                        <FieldPhoto src={signal.leadImage} alt="" />
+                        <FieldPhoto
+                          src={signal.leadImage}
+                          videoUrl={signal.videoUrl}
+                          alt={signal.title}
+                        />
                       </div>
                       <div className="flex flex-1 flex-col gap-2 p-4">
                         <h2
@@ -323,7 +346,7 @@ export function NetworkFieldBoard({
                       >
                         {payoutText(signal, t)}
                       </div>
-                    </button>
+                    </article>
                   </li>
                 );
               })}
@@ -361,6 +384,7 @@ function StoryCard({
   t: ReturnType<typeof useTranslations<'NetworkExchange'>>;
 }) {
   const [failed, setFailed] = useState(false);
+  const video = resolveSignalVideo(signal.videoUrl);
   const image = !failed && signal.leadImage ? signal.leadImage : null;
   const media = signal.videoUrl
     ? t('fieldVideo')
@@ -378,13 +402,19 @@ function StoryCard({
         selected ? 'border-foreground' : 'border-border',
       )}
     >
-      <button
-        type="button"
-        onClick={onSelect}
-        className="absolute inset-0 z-[1]"
-        aria-label={signal.title}
-      />
-      {image ? (
+      {video ? (
+        <div className="absolute inset-0">
+          <SignalVideoPlayer video={video} title={signal.title} />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onSelect}
+          className="absolute inset-0 z-[1]"
+          aria-label={signal.title}
+        />
+      )}
+      {image && !video ? (
         <img
           src={image}
           alt=""
@@ -395,17 +425,20 @@ function StoryCard({
       {media ? (
         <span
           className={cn(
-            'absolute left-3 top-3 px-2 py-0.5 text-1 uppercase tracking-[0.12em]',
-            image ? 'bg-black/70 text-white' : 'bg-foreground text-background',
+            'absolute left-3 top-3 z-10 px-2 py-0.5 text-1 uppercase tracking-[0.12em]',
+            video || image
+              ? 'bg-black/70 text-white'
+              : 'bg-foreground text-background',
           )}
         >
           {media}
         </span>
       ) : null}
       <div
+        onClick={video ? onSelect : undefined}
         className={cn(
-          'relative mt-auto flex w-full flex-col gap-1 p-4',
-          image
+          'relative z-10 mt-auto flex w-full flex-col gap-1 p-4',
+          video || image
             ? 'bg-gradient-to-t from-black/75 via-black/25 to-transparent text-white'
             : 'text-foreground',
         )}
@@ -417,7 +450,10 @@ function StoryCard({
           {signal.title}
         </h2>
         <p
-          className={cn('text-1', image ? 'text-white/85' : 'text-neutral-11')}
+          className={cn(
+            'text-1',
+            video || image ? 'text-white/85' : 'text-neutral-11',
+          )}
         >
           {byline}
         </p>

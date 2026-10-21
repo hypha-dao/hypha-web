@@ -22,6 +22,10 @@ const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
  */
 const UPLOADTHING_INGEST_HOST = 'https://*.ingest.uploadthing.com';
 
+/** Signal videos pasted as a YouTube or Vimeo link. `frame-src` blocks the embed otherwise. */
+const SIGNAL_VIDEO_FRAME_HOSTS =
+  'https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com';
+
 /** OpenAI Realtime API (WebRTC / client secrets) — onboarding voice discovery Phase 2. */
 const OPENAI_REALTIME_CONNECT_SOURCES =
   'https://api.openai.com wss://api.openai.com';
@@ -106,8 +110,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
-      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_UFS_HOST}`,
-      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${UPLOADTHING_UFS_HOST}`,
+      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_UFS_HOST}`,
+      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_UFS_HOST}`,
       `connect-src 'self' ${connectSrc}`,
       // pdf.js may spawn workers from blob URLs in some builds
       "worker-src 'self' blob:",

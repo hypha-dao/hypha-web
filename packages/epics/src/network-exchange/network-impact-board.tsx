@@ -22,6 +22,7 @@ import {
   NetworkSectionHeader,
 } from './network-section-header';
 import { ActionShareCard, NetworkRightColumn } from './network-right-cards';
+import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 
 const SLUG = /^[a-z0-9_-]{1,80}$/i;
@@ -77,17 +78,27 @@ function StoryTile({
   const video = resolveSignalVideo(signal.videoUrl);
   const image = !failed && signal.leadImage ? signal.leadImage : null;
   const fileVideo = video?.kind === 'file' ? video.src : null;
-  const showVideo = Boolean(fileVideo && (featured || !image));
-  const hasVisual = Boolean(showVideo || image);
+  const embed = video && video.kind !== 'file' ? video : null;
+  const showFile = Boolean(fileVideo && (featured || !image));
+  const showEmbed = Boolean(embed && (featured || !image));
+  const hasVisual = Boolean(showFile || showEmbed || image);
   const badge = signal.videoUrl ? videoLabel : image ? photoLabel : null;
   const byline = [signal.creatorName, signal.spaceTitle]
     .filter((part): part is string => Boolean(part && part.trim()))
     .join(' · ');
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
       aria-pressed={selected}
       className={cn(
         'relative flex h-full min-h-[180px] w-full flex-col justify-between overflow-hidden p-4 text-left',
@@ -95,7 +106,14 @@ function StoryTile({
         selected && 'outline outline-2 -outline-offset-2 outline-foreground',
       )}
     >
-      {showVideo ? (
+      {showEmbed && embed ? (
+        <div
+          className="absolute inset-0"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <SignalVideoPlayer video={embed} title={signal.title} />
+        </div>
+      ) : showFile ? (
         <video
           src={fileVideo ?? undefined}
           poster={image ?? undefined}
@@ -114,7 +132,11 @@ function StoryTile({
         />
       ) : null}
       {hasVisual ? (
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/20" />
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/20',
+          )}
+        />
       ) : null}
       {badge ? (
         <span
@@ -151,7 +173,7 @@ function StoryTile({
           </span>
         ) : null}
       </span>
-    </button>
+    </div>
   );
 }
 

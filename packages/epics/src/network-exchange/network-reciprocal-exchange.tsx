@@ -16,6 +16,8 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { compactIndicativeAmount } from '../coherence/components/signal-indicative-amounts';
+import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
+import { resolveSignalVideo } from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import { CAPITAL_MARK } from './capital-marks';
 import { NetworkExchangeShareCard } from './network-exchange-share-card';
@@ -75,8 +77,27 @@ function whenLabel(
   return formatDistanceToNowStrict(date, { addSuffix: true, locale });
 }
 
-function FieldPhoto({ src, alt }: { src: string | null; alt: string }) {
+function FieldPhoto({
+  src,
+  videoUrl,
+  alt,
+}: {
+  src: string | null;
+  videoUrl: string | null;
+  alt: string;
+}) {
   const [failed, setFailed] = useState(false);
+  const video = resolveSignalVideo(videoUrl);
+  if (video) {
+    return (
+      <div
+        className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-3"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <SignalVideoPlayer video={video} title={alt} />
+      </div>
+    );
+  }
   if (!src || failed) {
     return <div className="aspect-[4/3] w-full bg-neutral-3" />;
   }
@@ -287,7 +308,11 @@ export function NetworkReciprocalExchange({
                             : when}
                         </span>
                       </div>
-                      <FieldPhoto src={signal.leadImage} alt={signal.title} />
+                      <FieldPhoto
+                        src={signal.leadImage}
+                        videoUrl={signal.videoUrl}
+                        alt={signal.title}
+                      />
                       <div className="flex flex-1 flex-col gap-2 px-4 py-4">
                         <h2
                           className="text-4 font-medium leading-snug"
