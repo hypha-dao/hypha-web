@@ -41,6 +41,7 @@ import {
   spiderfyRadiusPx,
   type MapPinDatum,
 } from '../lib/pin-clusters';
+import { NetworkMapWave } from '../../spaces/components/network-loading-grid';
 
 const PROJECTION_ANIMATION_MS = 1200;
 /** Slow idle yaw (~8°/s) so the globe visibly turns on mobile and desktop. */
@@ -2093,6 +2094,11 @@ export function NetworkGlobeMap({
         lang={lang}
         space={activeSpace}
         compact={useCompactCard}
+        onOpenProject={(space) => {
+          onSpaceSelectRef.current?.(space);
+          setSelectedPin(null);
+          setHoveredPin(null);
+        }}
         onMouseEnter={() => cancelHoverHideRef.current()}
         onMouseLeave={() => {
           if (useCompactCard || !canHover) return;
@@ -2253,12 +2259,12 @@ export function NetworkGlobeMap({
       }}
       className={cn(
         'relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]',
-        isLoadingGeo && 'bg-[var(--hypha-paper)] dark:bg-[var(--hypha-ink)]',
       )}
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10" role="status">
           <span className="sr-only">{t('loadingMap')}</span>
+          <NetworkMapWave className="absolute inset-0 aspect-auto h-full border-0" />
         </div>
       ) : null}
       {loadError ? (

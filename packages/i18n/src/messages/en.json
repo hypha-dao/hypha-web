@@ -228,7 +228,6 @@
     "byAction": "Action",
     "byImpact": "Impact",
     "emptyRank": "Nothing shared with the network yet.",
-    "openRoom": "Open room",
     "visit": "Visit space",
     "projectSpace": "Project space",
     "treasuryLive": "Treasury · live",
@@ -402,7 +401,8 @@
     "addParty": "Add another space",
     "removeParty": "Remove",
     "openSignal": "Open the signal",
-    "signals": "{count} shared"
+    "signals": "{count} shared",
+    "openProject": "Open project"
   },
   "MemberHome": {
     "greetingMorning": "Good morning, {name}.",

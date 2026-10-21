@@ -383,7 +383,6 @@
     "byAction": "Дејство",
     "byImpact": "Влијание",
     "emptyRank": "Сè уште ништо не е споделено со мрежата.",
-    "openRoom": "Отвори ја собата",
     "visit": "Отвори го просторот",
     "projectSpace": "Проектен простор",
     "treasuryLive": "Ризница · во живо",
@@ -557,7 +556,8 @@
     "signalTypes": "Типови на сигнал",
     "signalTitle": "Наслов",
     "signalTitleHint": "Кратко име за овој сигнал",
-    "exchangeSummary": "{count, plural, one {# сигнал} other {# сигнали}} низ {spaces, plural, one {# простор} other {# простори}}"
+    "exchangeSummary": "{count, plural, one {# сигнал} other {# сигнали}} низ {spaces, plural, one {# простор} other {# простори}}",
+    "openProject": "Отвори го проектот"
   },
   "Common": {
     "Assignments": "Задачи",

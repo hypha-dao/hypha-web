@@ -383,7 +383,6 @@
     "byAction": "Actie",
     "byImpact": "Impact",
     "emptyRank": "Nog niets gedeeld met het netwerk.",
-    "openRoom": "Ruimte openen",
     "visit": "Space openen",
     "projectSpace": "Projectruimte",
     "treasuryLive": "Treasury · live",
@@ -557,7 +556,8 @@
     "signalTypes": "Signaaltypen",
     "signalTitle": "Titel",
     "signalTitleHint": "Korte naam voor dit signaal",
-    "exchangeSummary": "{count, plural, one {# signaal} other {# signalen}} in {spaces, plural, one {# space} other {# spaces}}"
+    "exchangeSummary": "{count, plural, one {# signaal} other {# signalen}} in {spaces, plural, one {# space} other {# spaces}}",
+    "openProject": "Project openen"
   },
   "Common": {
     "Assignments": "Opdrachten",

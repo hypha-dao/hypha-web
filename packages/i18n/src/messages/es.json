@@ -383,7 +383,6 @@
     "byAction": "Acción",
     "byImpact": "Impacto",
     "emptyRank": "Todavía no hay nada compartido con la red.",
-    "openRoom": "Abrir sala",
     "visit": "Visitar el espacio",
     "projectSpace": "Espacio de proyecto",
     "treasuryLive": "Tesorería · en vivo",
@@ -557,7 +556,8 @@
     "signalTypes": "Tipos de señal",
     "signalTitle": "Título",
     "signalTitleHint": "Nombre corto para esta señal",
-    "exchangeSummary": "{count, plural, one {# señal} other {# señales}} en {spaces, plural, one {# espacio} other {# espacios}}"
+    "exchangeSummary": "{count, plural, one {# señal} other {# señales}} en {spaces, plural, one {# espacio} other {# espacios}}",
+    "openProject": "Abrir proyecto"
   },
   "Common": {
     "createdOn": "Creado el {date}",
