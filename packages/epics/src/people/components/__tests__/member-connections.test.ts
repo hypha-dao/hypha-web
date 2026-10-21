@@ -6,6 +6,8 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   memberRowsForConnections,
+  messagePreview,
+  previewWithNames,
   suggestConnections,
   unreadRoomsMissingFromMembers,
   type NewcomerCandidate,
@@ -470,5 +472,48 @@ describe('groupRowsForConnections', () => {
       { name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' },
       { name: 'Vlad Hramtsov' },
     ]);
+  });
+});
+
+const GERARDO =
+  '@prod_privy_did_privy_cmceozhp9017hjx0mjq0aets5:matrix.example';
+
+describe('messagePreview', () => {
+  it('keeps a privy mention id so a later pass can match the person', () => {
+    expect(messagePreview(`Hey ${GERARDO}`)).toBe(`Hey ${GERARDO}`);
+  });
+
+  it('uses the room member name when Matrix already has one', () => {
+    expect(
+      messagePreview(`Hey ${GERARDO}`, (id) =>
+        id === GERARDO ? 'Gerardo Roza' : '',
+      ),
+    ).toBe('Hey @Gerardo Roza');
+  });
+
+  it('still shortens an ordinary mention and a long note', () => {
+    expect(messagePreview('See you @alice:matrix.org')).toBe('See you @alice');
+    const long = messagePreview(`${'word '.repeat(20).trimEnd()}`);
+    expect(long.endsWith('…')).toBe(true);
+    expect(long.length).toBeLessThanOrEqual(48);
+  });
+});
+
+describe('previewWithNames', () => {
+  it('shows the person name instead of the privy id', () => {
+    const names = new Map<string, string>([
+      [GERARDO.toLowerCase(), 'Gerardo Roza'],
+    ]);
+    expect(previewWithNames(`Hey ${GERARDO}`, names)).toBe('Hey @Gerardo Roza');
+  });
+
+  it('matches a bare privy localpart', () => {
+    const local = GERARDO.slice(1, GERARDO.indexOf(':'));
+    const names = new Map<string, string>([
+      [local.toLowerCase(), 'Vlad Hramtsov'],
+    ]);
+    expect(previewWithNames(`You wrote @${local}`, names)).toBe(
+      'You wrote @Vlad Hramtsov',
+    );
   });
 });

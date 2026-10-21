@@ -15,6 +15,8 @@ import {
   type Room,
 } from 'matrix-js-sdk';
 import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixMemberDisplayLabel,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
@@ -43,6 +45,8 @@ import {
   groupRowsForConnections,
   isRememberedGroupChatRoom,
   memberRowsForConnections,
+  messagePreview,
+  previewWithNames,
   rememberGroupChatRooms,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
@@ -73,32 +77,6 @@ type ConnectionMemberRow = MemberRow<ConnectionPerson>;
 
 function botUserId() {
   return process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
-}
-
-function messagePreview(body: string) {
-  const kept = body
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('>'));
-  const text = (kept.at(-1) ?? body)
-    .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')
-    .replace(/https?:\/\/\S+/gi, (url) => {
-      try {
-        return new URL(url.replace(/[),.;]+$/, '')).hostname.replace(
-          /^www\./,
-          '',
-        );
-      } catch {
-        return 'link';
-      }
-    })
-    // Keep the localpart so a mention-only line still previews as "@name".
-    .replace(/<@([A-Za-z0-9._=\-/]+):[A-Za-z0-9.-]+(?::\d+)?>/g, '@$1')
-    .replace(/@([A-Za-z0-9._=\-/]+):[A-Za-z0-9.-]+(?::\d+)?/g, '@$1')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (text.length <= 48) return text;
-  return `${text.slice(0, 47).trimEnd()}…`;
 }
 
 /** Sidebar snippets only need the recent window, the way a DM list does. */
@@ -149,7 +127,11 @@ function lastRoomMessage(room: Room, selfId: string | null) {
     if (event.getType() !== EventType.RoomMessage) continue;
     const content = event.getContent() as { body?: unknown } | undefined;
     const body = typeof content?.body === 'string' ? content.body : '';
-    const preview = messagePreview(body);
+    const preview = messagePreview(body, (matrixUserId) => {
+      const member = room.getMember(matrixUserId);
+      if (!member) return '';
+      return matrixMemberDisplayLabel(member, matrixUserId);
+    });
     if (!preview) continue;
     const sender = event.getSender();
     return {
@@ -752,7 +734,10 @@ export function MyConnections({
   const listed =
     needle && searchDirectory != null ? searchDirectory : connections;
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: listed.map((person) => person.id),
+    personIds: [
+      ...listed.map((person) => person.id),
+      ...(home?.person.id != null ? [home.person.id] : []),
+    ],
   });
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
@@ -941,6 +926,16 @@ export function MyConnections({
 
   const people = useMemo(() => {
     const profiles = new Map<string, { name: string; avatarUrl?: string }>();
+    const mentionNames = new Map<string, string>();
+    const rememberName = (mxid: string, name: string) => {
+      const clean = name.trim();
+      const id = mxid.trim();
+      if (!id || !clean) return;
+      if (looksLikeTechnicalMatrixDisplayName(clean, id)) return;
+      mentionNames.set(id.toLowerCase(), clean);
+      const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
+      if (local) mentionNames.set(local, clean);
+    };
     for (const row of members) {
       const mxid = personIdToMatrixUserId[row.person.id];
       if (!mxid) continue;
@@ -949,6 +944,15 @@ export function MyConnections({
         name: row.name,
         avatarUrl: avatar || undefined,
       });
+      rememberName(mxid, row.name);
+    }
+    if (home?.person) {
+      const mxid = personIdToMatrixUserId[home.person.id];
+      const selfName = [home.person.name, home.person.surname]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      if (mxid && selfName) rememberName(mxid, selfName);
     }
     const liveGroupIds = new Set(
       rows.filter((row) => row.kind === 'group').map((row) => row.roomId),
@@ -975,6 +979,11 @@ export function MyConnections({
           faces: facesWithProfiles(group.faces, profiles),
         })),
     ];
+    for (const row of conversations) {
+      for (const face of row.faces ?? []) {
+        if (face.userId && face.name) rememberName(face.userId, face.name);
+      }
+    }
     const groups = picking
       ? []
       : groupRowsForConnections<ConnectionPerson>(conversations, t('someone'));
@@ -988,8 +997,13 @@ export function MyConnections({
           return haystack.includes(needle);
         })
       : source;
-    return sortByRecencyThenPresence(filtered, presenceById);
+    const named = filtered.map((row) => ({
+      ...row,
+      preview: previewWithNames(row.preview, mentionNames),
+    }));
+    return sortByRecencyThenPresence(named, presenceById);
   }, [
+    home?.person,
     members,
     needle,
     pendingGroups,

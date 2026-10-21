@@ -1,3 +1,6 @@
+import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
+import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
+
 export type ConnectionListPerson = {
   id: number;
   name: string | null;
@@ -109,6 +112,93 @@ export type NewcomerCandidate = {
 function personName(person: ConnectionListPerson, fallback: string) {
   const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
   return full || person.nickname || fallback;
+}
+
+const PREVIEW_LENGTH = 48;
+
+function truncateMessagePreview(text: string) {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= PREVIEW_LENGTH) return clean;
+  return `${clean.slice(0, PREVIEW_LENGTH - 1).trimEnd()}…`;
+}
+
+function mentionName(
+  matrixUserId: string,
+  namesByMatrixId: ReadonlyMap<string, string> | undefined,
+  labelForMxid?: (matrixUserId: string) => string,
+) {
+  const id = matrixUserId.trim();
+  const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase() ?? '';
+  const raw = (
+    namesByMatrixId?.get(id.toLowerCase()) ??
+    namesByMatrixId?.get(local) ??
+    labelForMxid?.(id) ??
+    ''
+  )
+    .replace(/^@/, '')
+    .trim();
+  if (!raw || looksLikeTechnicalMatrixDisplayName(raw, id)) return '';
+  return `@${raw}`;
+}
+
+/** Sidebar line. Mentions stay as Matrix ids until a real name is known. */
+export function messagePreview(
+  body: string,
+  labelForMxid?: (matrixUserId: string) => string,
+) {
+  return previewLine(body, undefined, labelForMxid);
+}
+
+/**
+ * Swap mention ids for people already on the list, then shorten the line.
+ * Call this where profile names are known. `messagePreview` keeps the id intact
+ * so a later pass can still match it.
+ */
+export function previewWithNames(
+  preview: string,
+  namesByMatrixId: ReadonlyMap<string, string>,
+) {
+  return previewLine(preview, namesByMatrixId);
+}
+
+function previewLine(
+  body: string,
+  namesByMatrixId?: ReadonlyMap<string, string>,
+  labelForMxid?: (matrixUserId: string) => string,
+) {
+  const unwrapped = body.replace(/<(@[^>\s]+)>/g, '$1');
+  const named = replacePlainTextMatrixMxidsWithLabels(unwrapped, (id) =>
+    mentionName(id, namesByMatrixId, labelForMxid),
+  ).replace(
+    /@((?:dev|prev|prod)_privy_did_privy_[A-Za-z0-9]+)/gi,
+    (token, local: string) =>
+      mentionName(local, namesByMatrixId, labelForMxid) || token,
+  );
+  const kept = named
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('>'));
+  const text = (kept.at(-1) ?? named)
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/gi, (url) => {
+      try {
+        return new URL(url.replace(/[),.;]+$/, '')).hostname.replace(
+          /^www\./,
+          '',
+        );
+      } catch {
+        return 'link';
+      }
+    })
+    .replace(
+      /@([A-Za-z0-9._=\-/]+):[A-Za-z0-9.\-:[\]]+(?::\d+)?/g,
+      (full, local: string) =>
+        /privy|did_privy|^prod_|^prev_|^dev_/i.test(local) ? full : `@${local}`,
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (/privy_did_privy/i.test(text)) return text;
+  return truncateMessagePreview(text);
 }
 
 const signalThreadRoomIds = new Set<string>();
