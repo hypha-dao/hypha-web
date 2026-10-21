@@ -385,35 +385,11 @@ export const PeopleBuySpaceTokens = ({
     return wrap(<div className="text-2 text-neutral-11">{t('empty')}</div>);
   }
 
-  const saleDetails =
-    selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && sale ? (
-      <div>
-        <div>
-          {t('pricePerToken', {
-            price: formatCurrencyValue(salePricePerToken),
-            currency: paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
-          })}
-        </div>
-        <div>
-          {t('totalCost', {
-            amount: formatCurrencyValue(totalCost),
-            currency: paymentTokenMeta?.symbol ?? '',
-          })}
-        </div>
-        <div>{t('remainingInSale', { amount: remainingForSale })}</div>
-      </div>
-    ) : selectedToken && isLoadingSale ? (
-      <span className="inline-flex items-center justify-center gap-2">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t('loadingSale')}
-      </span>
-    ) : selectedToken && !isLoadingSale && !sale ? (
-      <span>{t('unableToReadSale')}</span>
-    ) : selectedToken &&
-      sale &&
-      sale.salePaymentToken === '0x0000000000000000000000000000000000000000' ? (
-      <span>{t('saleDisabled')}</span>
-    ) : null;
+  const showTotalCost = !isNaN(parsedAmount) && parsedAmount > 0;
+  const salePriceKnown =
+    Boolean(selectedToken) &&
+    Boolean(sale) &&
+    sale?.salePaymentToken?.toLowerCase() !== ZERO_ADDRESS;
 
   return wrap(
     <Form {...form}>
@@ -453,7 +429,6 @@ export const PeopleBuySpaceTokens = ({
                                 totalCost <= paymentBalance + 1e-9,
                             }
                       }
-                      hint={saleDetails}
                       symbolNode={
                         <TokenSelectDropdown
                           variant="inline"
@@ -546,58 +521,41 @@ export const PeopleBuySpaceTokens = ({
           </div>
         )}
 
-        {wallet
-          ? null
-          : selectedToken &&
-            !isNaN(parsedAmount) &&
-            parsedAmount > 0 &&
-            sale && (
-              <div className="text-sm text-neutral-11">
-                <div>
-                  {t('pricePerToken', {
-                    price: formatCurrencyValue(salePricePerToken),
-                    currency:
-                      paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
-                  })}
-                </div>
-                <div>
-                  {t('totalCost', {
-                    amount: formatCurrencyValue(totalCost),
-                    currency: paymentTokenMeta?.symbol ?? '',
-                  })}
-                </div>
-                <div>{t('remainingInSale', { amount: remainingForSale })}</div>
-              </div>
-            )}
+        {selectedToken && isLoadingSale && !sale ? (
+          <div className="flex items-center gap-2 text-2 text-neutral-11">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t('loadingSale')}
+          </div>
+        ) : null}
 
-        {wallet
-          ? null
-          : selectedToken &&
-            isLoadingSale && (
-              <div className="text-sm text-neutral-11 flex items-center gap-2">
-                <Loader2 className="animate-spin w-4 h-4" />
-                {t('loadingSale')}
-              </div>
-            )}
+        {selectedToken && !isLoadingSale && !sale ? (
+          <div className="text-2 text-neutral-11">{t('unableToReadSale')}</div>
+        ) : null}
 
-        {wallet
-          ? null
-          : selectedToken &&
-            !isLoadingSale &&
-            !sale && (
-              <div className="text-sm text-neutral-11">
-                {t('unableToReadSale')}
-              </div>
-            )}
+        {selectedToken && sale?.salePaymentToken === ZERO_ADDRESS ? (
+          <div className="text-2 text-neutral-11">{t('saleDisabled')}</div>
+        ) : null}
 
-        {wallet
-          ? null
-          : selectedToken &&
-            sale &&
-            sale.salePaymentToken ===
-              '0x0000000000000000000000000000000000000000' && (
-              <div className="text-sm text-neutral-11">{t('saleDisabled')}</div>
-            )}
+        {salePriceKnown ? (
+          <div className="flex flex-col gap-1 text-2 text-neutral-11">
+            <div>
+              {t('pricePerToken', {
+                price: formatCurrencyValue(salePricePerToken),
+                currency:
+                  paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+              })}
+            </div>
+            {showTotalCost ? (
+              <div>
+                {t('totalCost', {
+                  amount: formatCurrencyValue(totalCost),
+                  currency: paymentTokenMeta?.symbol ?? '',
+                })}
+              </div>
+            ) : null}
+            <div>{t('remainingInSale', { amount: remainingForSale })}</div>
+          </div>
+        ) : null}
 
         {wallet ? null : <Separator />}
 
