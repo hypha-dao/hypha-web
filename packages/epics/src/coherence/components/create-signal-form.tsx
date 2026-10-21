@@ -155,10 +155,7 @@ function SignalFormRootError({ control }: { control: Control<FormValues> }) {
   const { errors } = useFormState({ control });
   if (!errors.root?.message) return null;
   return (
-    <p
-      role="alert"
-      className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
-    >
+    <p role="alert" className="w-full text-left text-sm text-destructive">
       {errors.root.message}
     </p>
   );
@@ -207,6 +204,10 @@ function dueDateFromInputValue(value: string): Date | null {
 }
 
 function resolveMutationErrorMessage(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    const issue = error.issues.find((item) => item.message.trim().length > 0);
+    if (issue?.message) return issue.message;
+  }
   if (!(error instanceof Error)) return '';
   const message = error.message.trim();
   if (message) return message;
@@ -214,6 +215,45 @@ function resolveMutationErrorMessage(error: unknown): string {
     return error.cause.message.trim();
   }
   return '';
+}
+
+function firstSignalFieldIssue(
+  errors: unknown,
+  path = '',
+): { field: string; message: string } | null {
+  if (!errors || typeof errors !== 'object') return null;
+  const record = errors as Record<string, unknown>;
+  if (typeof record.message === 'string' && record.message.trim().length > 0) {
+    return { field: path, message: record.message };
+  }
+  for (const [key, value] of Object.entries(record)) {
+    if (key === 'ref' || key === 'type' || key === 'types') continue;
+    const nextPath = path ? `${path}.${key}` : key;
+    const found = firstSignalFieldIssue(value, nextPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+function scrollSignalField(form: HTMLFormElement | null, fieldPath: string) {
+  if (!form || !fieldPath) return;
+  const root = fieldPath.split('.')[0] ?? fieldPath;
+  const target =
+    form.querySelector(`[data-signal-field="${root}"]`) ??
+    form.querySelector(`[name="${fieldPath}"]`) ??
+    form.querySelector(`[name="${root}"]`);
+  if (!(target instanceof HTMLElement)) return;
+  const scroller = target.closest('#proposal-overlay-panel');
+  if (scroller instanceof HTMLElement) {
+    const top =
+      target.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      scroller.scrollTop -
+      24;
+    scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    return;
+  }
+  target.scrollIntoView({ block: 'center' });
 }
 
 export const CreateSignalForm = ({
@@ -387,7 +427,9 @@ export const CreateSignalForm = ({
     ],
   );
 
+  const [isPublishing, setIsPublishing] = React.useState(false);
   const isMutating =
+    isPublishing ||
     isCreatingCoherence ||
     isUpdatingCoherenceSignal ||
     isTogglingArchiveState ||
@@ -464,6 +506,11 @@ export const CreateSignalForm = ({
     if (mode !== 'edit') return;
     form.reset(formDefaults);
   }, [form, formDefaults, mode, signalSlug]);
+  React.useEffect(() => {
+    if (mode === 'edit' || !person?.id) return;
+    if (form.getValues('creatorId') === person.id) return;
+    form.setValue('creatorId', person.id);
+  }, [form, mode, person?.id]);
   React.useEffect(() => {
     const videoUrl = createMediaDraft.current?.videoUrl?.trim();
     if (mode === 'create' && videoUrl) {
@@ -804,10 +851,66 @@ export const CreateSignalForm = ({
     [documentFiles, imageFiles, keptDocuments, keptImages, t, uploadAttachment],
   );
 
+  const reportPublishFailure = React.useCallback(
+    (error: unknown, fallback: string) => {
+      const raw = resolveMutationErrorMessage(error);
+      const uploadFailed =
+        raw === 'upload' || raw.toLowerCase().includes('could not upload');
+      const missingSession =
+        raw.includes('missing key') ||
+        raw.includes('authToken is required') ||
+        raw.includes('Could not resolve authenticated user');
+      const message = uploadFailed
+        ? t.has('signalFormUploadFailed')
+          ? t('signalFormUploadFailed')
+          : 'Could not upload the file. Try again.'
+        : missingSession
+        ? t.has('editSignalMissingAuth')
+          ? t('editSignalMissingAuth')
+          : 'Your session expired. Please sign in again before saving.'
+        : raw || fallback;
+      form.setError('root', { type: 'manual', message });
+    },
+    [form, t],
+  );
+
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
-      const parsed = schemaCreateCoherenceForm.parse(data);
       form.clearErrors('root');
+      const creatorId =
+        typeof data.creatorId === 'number' && data.creatorId > 0
+          ? data.creatorId
+          : person?.id;
+      if (!creatorId) {
+        reportPublishFailure(
+          new Error('authToken is required'),
+          'Your session expired. Please sign in again before saving.',
+        );
+        return;
+      }
+      if (!authToken?.trim()) {
+        reportPublishFailure(
+          new Error('authToken is required'),
+          'Your session expired. Please sign in again before saving.',
+        );
+        return;
+      }
+      let parsed: FormValues;
+      try {
+        parsed = schemaCreateCoherenceForm.parse({
+          ...data,
+          creatorId,
+          spaceId: data.spaceId > 0 ? data.spaceId : spaceId,
+        });
+      } catch (error) {
+        reportPublishFailure(
+          error,
+          t.has('editSignalSaveFailed')
+            ? t('editSignalSaveFailed')
+            : 'Could not save signal changes. Please try again.',
+        );
+        return;
+      }
       if (mode === 'edit') {
         if (!authToken?.trim()) {
           form.setError('root', {
@@ -836,6 +939,7 @@ export const CreateSignalForm = ({
           });
           return;
         }
+        setIsPublishing(true);
         try {
           const media = await resolveSignalMedia(data.videoUrl ?? null);
           const updatedSignal = await updateCoherenceSignalBySlug({
@@ -910,9 +1014,12 @@ export const CreateSignalForm = ({
             type: 'manual',
             message,
           });
+        } finally {
+          setIsPublishing(false);
         }
         return;
       }
+      setIsPublishing(true);
       try {
         const media = await resolveSignalMedia(data.videoUrl ?? null);
         const coherence = await createCoherence({ ...parsed, ...media });
@@ -1009,6 +1116,14 @@ export const CreateSignalForm = ({
         }
       } catch (error) {
         console.warn('Could not create conversation:', error);
+        reportPublishFailure(
+          error,
+          t.has('editSignalSaveFailed')
+            ? t('editSignalSaveFailed')
+            : 'Could not save signal changes. Please try again.',
+        );
+      } finally {
+        setIsPublishing(false);
       }
     },
     [
@@ -1033,6 +1148,9 @@ export const CreateSignalForm = ({
       successfulUrl,
       revalidateCoherences,
       resolveSignalMedia,
+      person?.id,
+      reportPublishFailure,
+      spaceId,
     ],
   );
 
@@ -1049,8 +1167,19 @@ export const CreateSignalForm = ({
     );
   };
 
-  const handleInvalid = async (err?: Record<string, unknown>) => {
-    console.warn('form errors:', err);
+  const handleInvalid = (errors?: Record<string, unknown>) => {
+    const issue = firstSignalFieldIssue(errors);
+    const field = issue?.field.split('.')[0] ?? '';
+    const hiddenField =
+      field === 'creatorId' || field === 'spaceId' || field === 'archived';
+    const fallback = t.has('editSignalSaveFailed')
+      ? t('editSignalSaveFailed')
+      : 'Could not save signal changes. Please try again.';
+    form.setError('root', {
+      type: 'manual',
+      message: hiddenField ? fallback : issue?.message || fallback,
+    });
+    if (!hiddenField) scrollSignalField(formRef.current, issue?.field ?? '');
   };
 
   const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
@@ -1147,7 +1276,7 @@ export const CreateSignalForm = ({
                   control={form.control}
                   name="title"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem data-signal-field="title">
                       <FormControl>
                         <Input
                           rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
@@ -1179,7 +1308,7 @@ export const CreateSignalForm = ({
                 control={form.control}
                 name="type"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem data-signal-field="type">
                     <div className="flex w-full flex-col gap-3">
                       <FormLabel className="text-foreground">
                         {t('type')} <RequirementMark />
@@ -1243,7 +1372,10 @@ export const CreateSignalForm = ({
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
-                  <FormItem className="border-t border-border pt-6">
+                  <FormItem
+                    className="border-t border-border pt-6"
+                    data-signal-field="priority"
+                  >
                     <div className="flex w-full flex-col gap-3">
                       <FormLabel className="text-foreground">
                         {t('priority')} <RequirementMark />
@@ -1302,7 +1434,7 @@ export const CreateSignalForm = ({
                 render={({ field }) => {
                   const descriptionValue = field.value || '';
                   return (
-                    <FormItem>
+                    <FormItem data-signal-field="description">
                       <FormLabel className="gap-1 text-foreground">
                         {t('description')} <RequirementMark />
                       </FormLabel>
@@ -1570,7 +1702,7 @@ export const CreateSignalForm = ({
                 control={form.control}
                 name="videoUrl"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem data-signal-field="videoUrl">
                     <FormLabel className="text-foreground">
                       {t('signalFormVideo')}
                     </FormLabel>
@@ -1612,7 +1744,10 @@ export const CreateSignalForm = ({
               </div>
             </section>
 
-            <section className="flex flex-col gap-6 border-t border-border pt-8">
+            <section
+              className="flex flex-col gap-6 border-t border-border pt-8"
+              data-signal-field="indicativePayouts"
+            >
               <Skeleton loading={isLoadingTokens} width="100%" height={90}>
                 <TokenPayoutFieldArray
                   tokens={tokens}
@@ -1627,135 +1762,142 @@ export const CreateSignalForm = ({
               </p>
             </section>
 
-            <div className="flex w-full justify-end gap-2 pt-8">
+            <div className="flex w-full flex-col items-end gap-3 pt-8">
               <SignalFormRootError control={form.control} />
-              {mode === 'edit' && signalSlug ? (
-                <ConfirmDialog
-                  title={
-                    isSignalArchived
-                      ? t.has('unarchiveSignal')
-                        ? t('unarchiveSignal')
-                        : 'Unarchive signal'
-                      : t.has('archiveSignal')
-                      ? t('archiveSignal')
-                      : 'Archive signal'
-                  }
-                  description={
-                    isSignalArchived
-                      ? t.has('unarchiveSignalConfirm')
-                        ? t('unarchiveSignalConfirm')
-                        : 'Restore this signal to active views. Continue?'
-                      : t.has('archiveSignalConfirm')
-                      ? t('archiveSignalConfirm')
-                      : 'This hides the signal from active views. You can unarchive it later. Continue?'
-                  }
-                  customAcceptButtonText={
-                    isSignalArchived
-                      ? t.has('yesUnarchive')
-                        ? t('yesUnarchive')
-                        : 'Yes, unarchive'
-                      : t.has('yesArchive')
-                      ? t('yesArchive')
-                      : 'Yes, archive'
-                  }
-                  customRejectButtonText={t('noLeave')}
-                  onAcceptClicked={async () => {
-                    form.clearErrors('root');
-                    if (!authToken?.trim()) {
-                      form.setError('root', {
-                        type: 'manual',
-                        message: t.has('editSignalMissingAuth')
-                          ? t('editSignalMissingAuth')
-                          : isSignalArchived
-                          ? 'Your session expired. Please sign in again before unarchiving.'
-                          : 'Your session expired. Please sign in again before archiving.',
-                      });
-                      return;
+              <div className="flex w-full justify-end gap-2">
+                {mode === 'edit' && signalSlug ? (
+                  <ConfirmDialog
+                    title={
+                      isSignalArchived
+                        ? t.has('unarchiveSignal')
+                          ? t('unarchiveSignal')
+                          : 'Unarchive signal'
+                        : t.has('archiveSignal')
+                        ? t('archiveSignal')
+                        : 'Archive signal'
                     }
-                    if (!isEditAuthorized) {
-                      form.setError('root', {
-                        type: 'manual',
-                        message: t.has('editSignalNoPermission')
-                          ? t('editSignalNoPermission')
-                          : 'Only space members and delegates can edit this signal.',
-                      });
-                      return;
+                    description={
+                      isSignalArchived
+                        ? t.has('unarchiveSignalConfirm')
+                          ? t('unarchiveSignalConfirm')
+                          : 'Restore this signal to active views. Continue?'
+                        : t.has('archiveSignalConfirm')
+                        ? t('archiveSignalConfirm')
+                        : 'This hides the signal from active views. You can unarchive it later. Continue?'
                     }
-                    setIsTogglingArchiveState(true);
-                    const nextArchivedState = !isSignalArchived;
-                    try {
-                      await updateCoherenceBySlug({
-                        slug: signalSlug,
-                        archived: nextArchivedState,
-                      });
-                      if (spaceSlug) {
-                        await revalidateCoherences(spaceSlug);
-                      }
-                      if (nextArchivedState) {
-                        router.push(successfulUrl);
+                    customAcceptButtonText={
+                      isSignalArchived
+                        ? t.has('yesUnarchive')
+                          ? t('yesUnarchive')
+                          : 'Yes, unarchive'
+                        : t.has('yesArchive')
+                        ? t('yesArchive')
+                        : 'Yes, archive'
+                    }
+                    customRejectButtonText={t('noLeave')}
+                    onAcceptClicked={async () => {
+                      form.clearErrors('root');
+                      if (!authToken?.trim()) {
+                        form.setError('root', {
+                          type: 'manual',
+                          message: t.has('editSignalMissingAuth')
+                            ? t('editSignalMissingAuth')
+                            : isSignalArchived
+                            ? 'Your session expired. Please sign in again before unarchiving.'
+                            : 'Your session expired. Please sign in again before archiving.',
+                        });
                         return;
                       }
-                      setIsSignalArchived(false);
-                      form.setValue('archived', false);
-                    } catch (error) {
-                      const message =
-                        error instanceof Error &&
-                        error.message.trim().length > 0
-                          ? error.message
-                          : isSignalArchived
-                          ? t.has('unarchiveFailed')
-                            ? t('unarchiveFailed')
-                            : 'Could not unarchive signal. Please try again.'
-                          : t.has('archiveFailed')
-                          ? t('archiveFailed')
-                          : 'Could not archive signal. Please try again.';
-                      form.setError('root', {
-                        type: 'manual',
-                        message,
-                      });
-                    } finally {
-                      setIsTogglingArchiveState(false);
-                    }
-                  }}
-                >
+                      if (!isEditAuthorized) {
+                        form.setError('root', {
+                          type: 'manual',
+                          message: t.has('editSignalNoPermission')
+                            ? t('editSignalNoPermission')
+                            : 'Only space members and delegates can edit this signal.',
+                        });
+                        return;
+                      }
+                      setIsTogglingArchiveState(true);
+                      const nextArchivedState = !isSignalArchived;
+                      try {
+                        await updateCoherenceBySlug({
+                          slug: signalSlug,
+                          archived: nextArchivedState,
+                        });
+                        if (spaceSlug) {
+                          await revalidateCoherences(spaceSlug);
+                        }
+                        if (nextArchivedState) {
+                          router.push(successfulUrl);
+                          return;
+                        }
+                        setIsSignalArchived(false);
+                        form.setValue('archived', false);
+                      } catch (error) {
+                        const message =
+                          error instanceof Error &&
+                          error.message.trim().length > 0
+                            ? error.message
+                            : isSignalArchived
+                            ? t.has('unarchiveFailed')
+                              ? t('unarchiveFailed')
+                              : 'Could not unarchive signal. Please try again.'
+                            : t.has('archiveFailed')
+                            ? t('archiveFailed')
+                            : 'Could not archive signal. Please try again.';
+                        form.setError('root', {
+                          type: 'manual',
+                          message,
+                        });
+                      } finally {
+                        setIsTogglingArchiveState(false);
+                      }
+                    }}
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={
+                        isTogglingArchiveState ||
+                        isMutating ||
+                        !isEditAuthorized
+                      }
+                    >
+                      {isSignalArchived
+                        ? t.has('unarchiveAction')
+                          ? t('unarchiveAction')
+                          : t.has('unarchive')
+                          ? t('unarchive')
+                          : 'Unarchive'
+                        : t.has('archiveAction')
+                        ? t('archiveAction')
+                        : 'Archive'}
+                    </Button>
+                  </ConfirmDialog>
+                ) : null}
+                {mode === 'edit' ? (
                   <Button
                     type="button"
                     variant="outline"
                     colorVariant="neutral"
-                    disabled={
-                      isTogglingArchiveState || isMutating || !isEditAuthorized
-                    }
+                    disabled={isMutating || !spaceSlug}
+                    onClick={handleTurnIntoProposal}
                   >
-                    {isSignalArchived
-                      ? t.has('unarchiveAction')
-                        ? t('unarchiveAction')
-                        : t.has('unarchive')
-                        ? t('unarchive')
-                        : 'Unarchive'
-                      : t.has('archiveAction')
-                      ? t('archiveAction')
-                      : 'Archive'}
+                    {t('turnIntoProposal')}
                   </Button>
-                </ConfirmDialog>
-              ) : null}
-              {mode === 'edit' ? (
+                ) : null}
                 <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  disabled={isMutating || !spaceSlug}
-                  onClick={handleTurnIntoProposal}
+                  type="submit"
+                  disabled={isMutating || !isEditAuthorized}
                 >
-                  {t('turnIntoProposal')}
+                  {mode === 'edit'
+                    ? t.has('saveChanges')
+                      ? t('saveChanges')
+                      : 'Save changes'
+                    : tAgreementFlow('buttons.publish')}
                 </Button>
-              ) : null}
-              <Button type="submit" disabled={isMutating || !isEditAuthorized}>
-                {mode === 'edit'
-                  ? t.has('saveChanges')
-                    ? t('saveChanges')
-                    : 'Save changes'
-                  : tAgreementFlow('buttons.publish')}
-              </Button>
+              </div>
             </div>
           </div>
         </form>
