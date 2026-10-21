@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ChevronRightIcon } from '@radix-ui/react-icons';
-import { Container } from '@hypha-platform/ui';
 
 export function WalletActionFrame({
   lang,
@@ -16,7 +15,7 @@ export function WalletActionFrame({
 }) {
   return (
     <div className="w-full min-w-0 overflow-y-auto">
-      <Container className="flex max-w-2xl flex-col gap-5 py-6">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-5 py-6 xl:gap-9 xl:px-9 xl:py-9">
         <header className="flex items-start justify-between gap-4">
           <h1
             className="min-w-0 text-6 font-medium tracking-[-0.03em]"
@@ -33,7 +32,7 @@ export function WalletActionFrame({
           </Link>
         </header>
         {children}
-      </Container>
+      </div>
     </div>
   );
 }
