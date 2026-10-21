@@ -51,6 +51,8 @@ import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
+import { SignalVideoPlayer } from './signal-video-player';
+import { resolveSignalVideo } from '../utils/signal-video';
 
 /**
  * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
@@ -88,6 +90,7 @@ function SignalCardComponent({
   onOpenConversation,
   className,
   leadImage,
+  videoUrl,
   sharedWithNetwork = false,
   isActive = false,
 }: SignalCardProps & Coherence) {
@@ -234,6 +237,8 @@ function SignalCardComponent({
     });
   }
 
+  const video = resolveSignalVideo(videoUrl);
+
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -256,7 +261,24 @@ function SignalCardComponent({
       )}
     >
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
-        <div className="flex flex-1 flex-col px-3.5 pb-3 pt-3">
+        {video ? (
+          <div className="relative aspect-video w-full overflow-hidden bg-neutral-3">
+            <SignalVideoPlayer video={video} title={title} />
+          </div>
+        ) : leadImage ? (
+          <img
+            src={leadImage}
+            alt=""
+            className="block w-full object-cover"
+            style={{ height: 160 }}
+          />
+        ) : null}
+        <div
+          className={cn(
+            'flex flex-1 flex-col px-3.5 pb-3',
+            video || leadImage ? 'pt-2.5' : 'pt-3',
+          )}
+        >
           {/* Own row above the title. Collapsed until hover, focus, or selection
               so the buttons never paint over the type. */}
           <div
@@ -351,13 +373,6 @@ function SignalCardComponent({
           </div>
 
           <div className="flex flex-col gap-2.5">
-            {leadImage ? (
-              <img
-                src={leadImage}
-                alt=""
-                className="max-h-24 w-full object-cover"
-              />
-            ) : null}
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex min-w-0 items-start gap-2">
                 <span

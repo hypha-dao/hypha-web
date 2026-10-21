@@ -23,6 +23,8 @@ import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import { resolveSignalVideo } from '../utils/signal-video';
+import { SignalVideoPlayer } from './signal-video-player';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import {
   PRIORITY_DOT_MARK_CLASS,
@@ -134,6 +136,8 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
     });
   }
 
+  const video = resolveSignalVideo(signal.videoUrl);
+
   return (
     <div
       {...getSignalSlugDomProps(signal.slug)}
@@ -163,14 +167,27 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
         className,
       )}
     >
-      <div className="flex flex-1 flex-col px-3 py-3">
-        {signal.leadImage ? (
-          <img
-            src={signal.leadImage}
-            alt=""
-            className="mb-2 max-h-24 w-full object-cover"
-          />
-        ) : null}
+      {video ? (
+        <div
+          className="relative aspect-video w-full overflow-hidden bg-neutral-3"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <SignalVideoPlayer video={video} title={signal.title} />
+        </div>
+      ) : signal.leadImage ? (
+        <img
+          src={signal.leadImage}
+          alt=""
+          className="block w-full object-cover"
+          style={{ height: 160 }}
+        />
+      ) : null}
+      <div
+        className={cn(
+          'flex flex-1 flex-col px-3 pb-3',
+          video || signal.leadImage ? 'pt-2.5' : 'pt-3',
+        )}
+      >
         {/* Own row above the title. Collapsed until hover, focus, or selection
             so the buttons never paint over the type. */}
         <div
