@@ -17,6 +17,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
+import { getDhoPathOverview } from '../common/get-path-function';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { compactIndicativeAmount } from '../coherence/components/signal-indicative-amounts';
@@ -509,7 +510,7 @@ export function NetworkReciprocalExchange({
                           </button>
                         ) : (
                           <Link
-                            href={`/${lang}/dho/${signal.spaceSlug}`}
+                            href={getDhoPathOverview(lang, signal.spaceSlug)}
                             className="inline-flex h-10 items-center justify-center bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
                             onClick={(event) => event.stopPropagation()}
                           >

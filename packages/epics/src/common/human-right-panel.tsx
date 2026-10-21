@@ -135,6 +135,7 @@ import {
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
+import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
   useCallJoinChime,
   buildCallJoinHref,
@@ -1580,10 +1581,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const lang = getLocaleFromPath(pathname);
       const target =
         entry.kind === 'signal' && entry.signalSlug
-          ? `/${lang}/dho/${entry.spaceSlug}?signal=${encodeURIComponent(
-              entry.signalSlug,
-            )}`
-          : `/${lang}/dho/${entry.spaceSlug}`;
+          ? getSignalPath(lang, entry.spaceSlug, entry.signalSlug)
+          : getDhoPathOverview(lang, entry.spaceSlug);
       router.push(target);
       openHumanChatPanel();
       setActiveTab('chat');

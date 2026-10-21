@@ -135,6 +135,11 @@ function spaceSlugFromPath(pathname: string): string | null {
   return match?.[1] ?? null;
 }
 
+/** `/dho/[slug]` with no tab. The index page redirects onward from here. */
+function isBareSpacePath(pathname: string): boolean {
+  return /\/dho\/[^/]+\/?$/.test(pathname);
+}
+
 /** In-flight first-entry hold. Tab changes cancel it so it cannot scroll again. */
 let cancelActiveIntro: (() => void) | null = null;
 
@@ -1001,6 +1006,12 @@ export function DhoStickySpaceChrome({
     if (!spaceSlug || !prev || prev === pathname) return;
 
     const prevSpace = spaceSlugFromPath(prev);
+    // Network "Visit" lands on the bare space URL, which redirects to the
+    // dashboard. That is still the same arrival. Planning it as a tab change
+    // pins the column on the cover, and every scroll is pulled back to the top.
+    if (prevSpace === spaceSlug && isBareSpacePath(prev)) {
+      return;
+    }
     if (!prevSpace || prevSpace !== spaceSlug) {
       // Recently Visited: ease to this space's banner. Do not drop the click
       // freeze or clamp to the cover — that is the screen-change path.
