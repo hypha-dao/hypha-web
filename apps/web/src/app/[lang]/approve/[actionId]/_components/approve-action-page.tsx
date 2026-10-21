@@ -10,6 +10,7 @@ import {
   useVote,
 } from '@hypha-platform/core/client';
 import { Button, Container } from '@hypha-platform/ui';
+import { setPopupClient } from '@web/components/popup-route-gate';
 
 type ActionView = {
   status:
@@ -20,7 +21,7 @@ type ActionView = {
     | 'expired'
     | 'failed';
   summary: { headline: string; lines: { label: string; value: string }[] };
-  client: { name: string; origins: string[] };
+  client: { name: string; origins: string[]; logoUrl: string | null };
   txHash: string | null;
 };
 
@@ -141,6 +142,9 @@ export const ApproveActionPage: FC<{
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [closeBlocked, setCloseBlocked] = useState(false);
 
+  // The header shows the client only while this page is open.
+  useEffect(() => () => setPopupClient(null), []);
+
   const call = useCallback(
     async (path: string, init?: RequestInit) => {
       const accessToken = await getAccessToken();
@@ -173,6 +177,10 @@ export const ApproveActionPage: FC<{
         if (!res.ok) return setState({ step: 'error' });
         const action = (await res.json()) as ActionView;
         origins.current = action.client.origins;
+        setPopupClient({
+          name: action.client.name,
+          logoUrl: action.client.logoUrl,
+        });
         txHash.current = action.txHash;
         if (action.status === 'pending') {
           setState({ step: 'review', action });

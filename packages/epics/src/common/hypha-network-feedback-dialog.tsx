@@ -1,7 +1,13 @@
 'use client';
 
 import clsx from 'clsx';
-import { ChevronRight, HeartHandshake, Radio, Scale } from 'lucide-react';
+import {
+  ChevronRight,
+  Code2,
+  HeartHandshake,
+  Radio,
+  Scale,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -37,6 +43,7 @@ type FeedbackOptionProps = {
   onNavigate: () => void;
   /** When true, card uses router navigation so inline links can stop propagation. */
   hasInlineLink?: boolean;
+  className?: string;
 };
 
 function FeedbackOption({
@@ -48,6 +55,7 @@ function FeedbackOption({
   actionHref,
   onNavigate,
   hasInlineLink = false,
+  className,
 }: FeedbackOptionProps) {
   const router = useRouter();
 
@@ -93,7 +101,7 @@ function FeedbackOption({
       <Card
         role="link"
         tabIndex={0}
-        className={cardClassName}
+        className={cn(cardClassName, className)}
         onClick={navigate}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -108,7 +116,11 @@ function FeedbackOption({
   }
 
   return (
-    <Link href={actionHref} onClick={onNavigate} className="block h-full">
+    <Link
+      href={actionHref}
+      onClick={onNavigate}
+      className={cn('block h-full', className)}
+    >
       <Card className={cardClassName}>{cardBody}</Card>
     </Link>
   );
@@ -182,6 +194,16 @@ export function HyphaNetworkFeedbackDialog({
               }
               actionLabel={t('governance.action')}
               actionHref={`/${locale}/dho/hypha-tokenomics/coherence`}
+              onNavigate={close}
+            />
+            <FeedbackOption
+              className="md:col-span-2"
+              icon={<Code2 className="craft-icon" strokeWidth={1.5} />}
+              title={t('developers.title')}
+              tagline={t('developers.tagline')}
+              description={t('developers.description')}
+              actionLabel={t('developers.action')}
+              actionHref={`/${locale}/developers`}
               onNavigate={close}
             />
           </div>

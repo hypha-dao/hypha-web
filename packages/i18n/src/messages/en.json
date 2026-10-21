@@ -128,6 +128,12 @@
       "description": "Hold at least one HYPHA token to participate in governance, vote on proposals, and help guide the future of the network.",
       "learnMore": "Learn about HYPHA tokenomics.",
       "action": "Open governance"
+    },
+    "developers": {
+      "title": "Integrate with Hypha",
+      "tagline": "Build on Hypha.",
+      "description": "Register an application, get a key, and let people act in Hypha from your product. Work in progress.",
+      "action": "Open developer area"
     }
   },
   "OnboardingAdventure": {
