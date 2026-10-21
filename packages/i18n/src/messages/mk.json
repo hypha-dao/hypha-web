@@ -218,6 +218,8 @@
     "askProposerChosen": "Сакам да го прашам {name} за {title}.",
     "proposedBy": "Предложено од {name}",
     "threadDropped": "Нишката за миг се прекина.",
+    "generatedLogo": "Лого",
+    "generatedBanner": "Банер",
     "tryAgain": "Обиди се повторно",
     "dismiss": "Затвори",
     "openMyWallet": "Отвори го паричникот",

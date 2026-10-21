@@ -685,6 +685,8 @@
     "askProposerChosen": "I'd like to ask {name} about {title}.",
     "proposedBy": "Proposed by {name}",
     "threadDropped": "The thread dropped for a moment.",
+    "generatedLogo": "Logo",
+    "generatedBanner": "Banner",
     "tryAgain": "Try again",
     "dismiss": "Dismiss",
     "orientationSaveError": "That choice could not be saved. Try again.",

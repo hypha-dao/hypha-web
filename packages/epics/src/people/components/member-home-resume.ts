@@ -244,6 +244,61 @@ function guidancePartFromStored(part: object) {
   return stored;
 }
 
+function isHttpImageUrl(value: unknown): value is string {
+  return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+}
+
+function isVisualPart(part: { type?: unknown; toolName?: unknown }) {
+  if (part.type === 'tool-generate_space_visual_assets') return true;
+  if (part.type === 'tool-create_space_from_onboarding') return true;
+  return (
+    part.type === 'dynamic-tool' &&
+    part.toolName === 'generate_space_visual_assets'
+  );
+}
+
+function imageUrl(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    if (isHttpImageUrl(record[key])) return record[key].trim();
+  }
+  return null;
+}
+
+/** Keep the hosted logo and banner. Drop everything else from the tool payload. */
+function visualPartForStorage(part: UIMessage['parts'][number]) {
+  if (!isVisualPart(part)) return null;
+  const record = part as { state?: unknown; output?: unknown };
+  if (record.state !== 'output-available') return null;
+  if (!record.output || typeof record.output !== 'object') return null;
+  const output = record.output as Record<string, unknown> & {
+    preview?: Record<string, unknown>;
+    create_payload?: Record<string, unknown>;
+  };
+  if (output.ok === false) return null;
+  const roots = [output, output.preview, output.create_payload].filter(
+    (root): root is Record<string, unknown> =>
+      Boolean(root) && typeof root === 'object',
+  );
+  let logoUrl: string | null = null;
+  let bannerUrl: string | null = null;
+  for (const root of roots) {
+    logoUrl = logoUrl ?? imageUrl(root, ['logo_url', 'logoUrl']);
+    bannerUrl =
+      bannerUrl ??
+      imageUrl(root, ['lead_image_url', 'leadImageUrl', 'leadImage']);
+  }
+  if (!logoUrl && !bannerUrl) return null;
+  return {
+    type: 'tool-generate_space_visual_assets' as const,
+    state: 'output-available' as const,
+    output: {
+      ok: true,
+      ...(logoUrl ? { logo_url: logoUrl } : {}),
+      ...(bannerUrl ? { lead_image_url: bannerUrl } : {}),
+    },
+  };
+}
+
 export function readHomeThread(): UIMessage[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -273,7 +328,11 @@ export function readHomeThread(): UIMessage[] {
           return [{ type: 'text' as const, text: text.text }];
         }
         const guidance = guidancePartFromStored(part);
-        return guidance ? [guidance] : [];
+        if (guidance) return [guidance];
+        const visuals = visualPartForStorage(
+          part as UIMessage['parts'][number],
+        );
+        return visuals ? [visuals] : [];
       });
       if (parts.length === 0) return [];
       return [
@@ -305,7 +364,9 @@ export function writeHomeThread(messages: readonly UIMessage[]) {
           return [{ type: 'text' as const, text: part.text }];
         }
         const guidance = guidancePartForStorage(part);
-        return guidance ? [guidance] : [];
+        if (guidance) return [guidance];
+        const visuals = visualPartForStorage(part);
+        return visuals ? [visuals] : [];
       }),
     }));
     writeStored(THREAD_KEY, JSON.stringify(stored));

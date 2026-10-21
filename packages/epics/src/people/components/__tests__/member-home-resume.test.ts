@@ -122,6 +122,35 @@ describe('home thread resume', () => {
     expect(guidance?.output?.search_results).toBeUndefined();
   });
 
+  it('keeps a generated logo and banner under the reply', () => {
+    writeHomeThread([
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: 'Here is Treetop.' },
+          {
+            type: 'tool-generate_space_visual_assets',
+            state: 'output-available',
+            output: {
+              ok: true,
+              logo_url: 'https://cdn.example/logo.png',
+              lead_image_url: 'https://cdn.example/banner.png',
+              next_step: 'ask',
+            },
+          },
+        ],
+      } as never,
+    ]);
+
+    const [message] = readHomeThread();
+    const visuals = message?.parts?.find(
+      (part) => part.type === 'tool-generate_space_visual_assets',
+    ) as { output?: { logo_url?: string; next_step?: string } } | undefined;
+    expect(visuals?.output?.logo_url).toBe('https://cdn.example/logo.png');
+    expect(visuals?.output?.next_step).toBeUndefined();
+  });
+
   it('carries a return across sessions and only once', () => {
     rememberHomeAction('proposal:garden', 'Garden proposal');
     window.sessionStorage.clear();

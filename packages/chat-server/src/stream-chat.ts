@@ -52,7 +52,10 @@ import {
   VOICE_TOOL_ACK_GUIDELINE,
   sanitizeSlug,
 } from './system-prompt';
-import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
+import {
+  agreedToGeneratedVisuals,
+  resolveLatestVisualGenerationIntent,
+} from './tools/onboarding-confirmation';
 import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
 import { buildActiveGovernanceProposalDirective } from './tools/active-governance-proposal-directive';
 import { buildProposalFormStateDirective } from './tools/proposal-form-state';
@@ -1604,11 +1607,18 @@ export async function createChatStreamResult(
     throw new Error(MISSING_OPENROUTER_KEY_MESSAGE);
   }
 
+  const homeVisualDirective =
+    memberHomeRecord &&
+    (resolveLatestVisualGenerationIntent(recentUserTexts) ||
+      agreedToGeneratedVisuals(lastUserText, lastAssistantText))
+      ? 'The member wants a logo and a banner generated now. You MUST call generate_space_visual_assets in this turn before describing any image. Do not say the images exist until that tool returns logo_url and lead_image_url. Describe them only after the tool succeeds. Never paste the URLs.'
+      : '';
+
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: memberHomeFacts
-      ? `${systemPrompt}\n\n${memberHomeFacts}`
-      : systemPrompt,
+    system: [systemPrompt, memberHomeFacts, homeVisualDirective]
+      .filter(Boolean)
+      .join('\n\n'),
     messages:
       modelMessages.length > 0
         ? modelMessages

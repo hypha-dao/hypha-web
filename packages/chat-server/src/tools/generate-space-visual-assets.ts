@@ -39,41 +39,33 @@ export async function generateSpaceVisualAssets(
     const shouldGenerateBanner =
       data.asset_kind === 'banner' || data.asset_kind === 'both';
 
-    let logoUrl: string | null = null;
-    let leadImageUrl: string | null = null;
     const failures: string[] = [];
-
-    if (shouldGenerateLogo) {
+    const generateOne = async (
+      prompt: string,
+      name: string,
+      label: string,
+    ): Promise<string | null> => {
       try {
-        const logoDataUrl = await generateOpenRouterImage(
-          buildLogoPrompt(data),
-        );
-        logoUrl = await uploadGeneratedImageDataUrl(
-          logoDataUrl,
-          `${slugStem}-logo`,
-        );
+        const dataUrl = await generateOpenRouterImage(prompt);
+        return await uploadGeneratedImageDataUrl(dataUrl, name);
       } catch (error) {
         failures.push(
-          error instanceof Error ? error.message : 'Logo generation failed.',
+          error instanceof Error
+            ? error.message
+            : `${label} generation failed.`,
         );
+        return null;
       }
-    }
+    };
 
-    if (shouldGenerateBanner) {
-      try {
-        const bannerDataUrl = await generateOpenRouterImage(
-          buildBannerPrompt(data),
-        );
-        leadImageUrl = await uploadGeneratedImageDataUrl(
-          bannerDataUrl,
-          `${slugStem}-banner`,
-        );
-      } catch (error) {
-        failures.push(
-          error instanceof Error ? error.message : 'Banner generation failed.',
-        );
-      }
-    }
+    const [logoUrl, leadImageUrl] = await Promise.all([
+      shouldGenerateLogo
+        ? generateOne(buildLogoPrompt(data), `${slugStem}-logo`, 'Logo')
+        : Promise.resolve(null),
+      shouldGenerateBanner
+        ? generateOne(buildBannerPrompt(data), `${slugStem}-banner`, 'Banner')
+        : Promise.resolve(null),
+    ]);
 
     if (!logoUrl && !leadImageUrl) {
       return {

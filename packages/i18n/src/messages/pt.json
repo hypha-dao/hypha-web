@@ -218,6 +218,8 @@
     "askProposerChosen": "Quero perguntar a {name} sobre {title}.",
     "proposedBy": "Proposto por {name}",
     "threadDropped": "O fio caiu por um momento.",
+    "generatedLogo": "Logotipo",
+    "generatedBanner": "Banner",
     "tryAgain": "Tentar de novo",
     "dismiss": "Fechar",
     "openMyWallet": "Abrir a carteira",

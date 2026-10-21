@@ -218,6 +218,8 @@
     "askProposerChosen": "Jeg vil spørre {name} om {title}.",
     "proposedBy": "Foreslått av {name}",
     "threadDropped": "Tråden falt ut et øyeblikk.",
+    "generatedLogo": "Logo",
+    "generatedBanner": "Banner",
     "tryAgain": "Prøv igjen",
     "dismiss": "Lukk",
     "openMyWallet": "Åpne lommeboken",

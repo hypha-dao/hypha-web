@@ -52,6 +52,7 @@ import {
 } from './member-home-resume';
 import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
+import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
 import { MemberHomeMark } from './member-home-mark';
 import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
@@ -969,13 +970,20 @@ export function MemberHomeChat({
               message.role === 'assistant'
                 ? cardsByMessageId.get(message.id) ?? null
                 : null;
+            const visuals =
+              message.role === 'assistant'
+                ? generatedVisualsFromParts(message.parts)
+                : null;
             const keepsCard = pinnedItem != null;
             const showMessage =
-              (!message.metadata?.homeArrival && Boolean(text)) || keepsCard;
+              (!message.metadata?.homeArrival && Boolean(text)) ||
+              keepsCard ||
+              Boolean(visuals);
             if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
             const oneLine =
               text.length > 0 &&
+              !visuals &&
               (mine || (!board && !pinnedItem)) &&
               homeTextIsOneLine(text);
             const memberName =
@@ -1019,6 +1027,25 @@ export function MemberHomeChat({
                             presenceById,
                           })}
                         </p>
+                      ) : null}
+                      {visuals ? (
+                        <div className="grid gap-3">
+                          {visuals.logoUrl ? (
+                            <img
+                              src={visuals.logoUrl}
+                              alt={t('generatedLogo')}
+                              className="h-24 w-24 border border-border object-cover"
+                            />
+                          ) : null}
+                          {visuals.bannerUrl ? (
+                            <img
+                              src={visuals.bannerUrl}
+                              alt={t('generatedBanner')}
+                              className="w-full max-w-md border border-border object-cover"
+                              style={{ maxHeight: 160 }}
+                            />
+                          ) : null}
+                        </div>
                       ) : null}
                       {!mine && board ? (
                         <Link

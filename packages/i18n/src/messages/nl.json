@@ -218,6 +218,8 @@
     "askProposerChosen": "Ik wil {name} iets vragen over {title}.",
     "proposedBy": "Voorgesteld door {name}",
     "threadDropped": "De draad viel even weg.",
+    "generatedLogo": "Logo",
+    "generatedBanner": "Banner",
     "tryAgain": "Opnieuw proberen",
     "dismiss": "Sluiten",
     "openMyWallet": "Open portemonnee",

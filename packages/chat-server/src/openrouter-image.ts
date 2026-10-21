@@ -61,7 +61,7 @@ export async function generateOpenRouterImage(prompt: string): Promise<string> {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 45_000);
   let response: Response;
   try {
     response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
