@@ -4470,7 +4470,7 @@
     "indicativeTokens": "Indicatief bedrag",
     "indicativeTokensHint": "Deze bedragen benoemen de vraag of de bron. Er wordt geen geld verplaatst. Pas een voorstel kan ze versturen.",
     "shareWithNetwork": "Delen met het netwerk",
-    "shareWithNetworkHint": "Staat dit aan, dan kan de AI deze behoefte of kans voorstellen aan leden buiten deze space.",
+    "shareWithNetworkHint": "Staat dit aan, dan is het signaal zichtbaar voor netwerkleden buiten deze space.",
     "turnIntoProposal": "Omzetten naar een voorstel",
     "proposal": "Voorstel",
     "signalFormImage": "Afbeeldingen",

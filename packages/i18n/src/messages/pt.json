@@ -3894,7 +3894,7 @@
     "indicativeTokens": "Montante indicativo",
     "indicativeTokensHint": "Estes montantes nomeiam o pedido ou o recurso. Não movem fundos. Transformá-lo numa proposta é o que pode enviá-los.",
     "shareWithNetwork": "Partilhar com a rede",
-    "shareWithNetworkHint": "Quando está ativo, a IA pode propor esta necessidade ou oportunidade a membros fora deste espaço.",
+    "shareWithNetworkHint": "Quando está ativo, o sinal fica visível para membros da rede fora deste espaço.",
     "turnIntoProposal": "Transformar numa proposta",
     "proposal": "Proposta",
     "signalFormImage": "Imagens",

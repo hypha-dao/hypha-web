@@ -4500,7 +4500,7 @@
     "indicativeTokens": "Indicative amount",
     "indicativeTokensHint": "These amounts name the ask or the resource. They do not move any funds. Turning this into a proposal is what can send them.",
     "shareWithNetwork": "Share with the network",
-    "shareWithNetworkHint": "When this is on, the AI can offer this need or opportunity to members outside this space.",
+    "shareWithNetworkHint": "When this is on, the signal is visible to network members outside this space.",
     "turnIntoProposal": "Turn into a proposal",
     "proposal": "Proposal",
     "signalFormImage": "Images",

@@ -4469,7 +4469,7 @@
     "indicativeTokens": "Indikativt beløp",
     "indicativeTokensHint": "Disse beløpene navngir forespørselen eller ressursen. De flytter ingen midler. Å gjøre det om til et forslag er det som kan sende dem.",
     "shareWithNetwork": "Del med nettverket",
-    "shareWithNetworkHint": "Når dette er på, kan KI-en foreslå dette behovet eller denne muligheten til medlemmer utenfor dette spacet.",
+    "shareWithNetworkHint": "Når dette er på, er signalet synlig for nettverksmedlemmer utenfor dette spacet.",
     "turnIntoProposal": "Gjør om til et forslag",
     "proposal": "Forslag",
     "signalFormImage": "Bilder",

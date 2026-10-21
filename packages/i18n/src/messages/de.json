@@ -4468,7 +4468,7 @@
     "indicativeTokens": "Indikativer Betrag",
     "indicativeTokensHint": "Diese Beträge benennen die Anfrage oder die Ressource. Es werden keine Mittel bewegt. Erst ein Vorschlag kann sie senden.",
     "shareWithNetwork": "Mit dem Netzwerk teilen",
-    "shareWithNetworkHint": "Wenn das an ist, kann die KI dieses Bedürfnis oder diese Möglichkeit Mitgliedern außerhalb dieses Space anbieten.",
+    "shareWithNetworkHint": "Wenn das an ist, ist das Signal für Netzwerkmitglieder außerhalb dieses Space sichtbar.",
     "turnIntoProposal": "In einen Vorschlag umwandeln",
     "proposal": "Vorschlag",
     "signalFormImage": "Bilder",
