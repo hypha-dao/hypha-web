@@ -80,8 +80,37 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
 const AMOUNT_INPUT = /^\d*\.?\d{0,2}$/;
 const SPACE_PREVIEW = 5;
-/** Quick-pick strip: denser on larger screens. */
+/** Quick picks. A wide screen wraps these into rows instead of one strip. */
 const RECIPIENT_PREVIEW = 10;
+
+function recipientProfileRank(person: {
+  name?: string | null;
+  surname?: string | null;
+  avatarUrl?: string | null;
+}) {
+  const named = Boolean(person.name?.trim() && person.surname?.trim());
+  const photo = Boolean(person.avatarUrl?.trim());
+  if (named && photo) return 2;
+  if (named) return 1;
+  return 0;
+}
+
+/** Stable shuffle so a fallback row does not jump on every render. */
+function shuffleWithSeed<T>(items: readonly T[], seed: number): T[] {
+  const copy = [...items];
+  let state = seed >>> 0 || 1;
+  const next = () => {
+    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(next() * (index + 1));
+    const current = copy[index];
+    copy[index] = copy[swap] as T;
+    copy[swap] = current as T;
+  }
+  return copy;
+}
 
 function personName(
   person: {
@@ -662,6 +691,12 @@ export function MemberHomeSendTokensWidget({
   const [directoryPeople, setDirectoryPeople] = useState<Person[] | null>(null);
   const [directorySpaces, setDirectorySpaces] = useState<Space[] | null>(null);
   const [directoryLoading, setDirectoryLoading] = useState(false);
+  const [closestPeople, setClosestPeople] = useState<HomeConnection[] | null>(
+    null,
+  );
+  const directoryShuffleSeed = useRef(
+    Math.floor(Math.random() * 0x7fffffff) + 1,
+  );
   const connectionIds = useMemo(
     () => people.map((entry) => entry.id),
     [people],
@@ -669,7 +704,7 @@ export function MemberHomeSendTokensWidget({
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds: connectionIds,
   });
-  const { jwt: authToken } = useJwt();
+  const { jwt: authToken, isLoadingJwt } = useJwt();
   const locale = useLocale();
   const { person } = useMe();
   const { fundWallet } = useFundWallet({
@@ -835,40 +870,83 @@ export function MemberHomeSendTokensWidget({
     }
   }, [directoryPeople, directorySpaces]);
 
-  /** Wallet send passes no connections — load the payable directory for the TO row. */
+  /** Wallet send passes no connections — load the payable directory for "see more". */
   useEffect(() => {
     if (people.length > 0) return;
     void loadTransferRecipients();
   }, [loadTransferRecipients, people.length]);
 
-  const targets = useMemo(() => {
-    const now = Date.now();
-    // Quick pick is only people you've spoken with recently — not the full
-    // directory. Stale contacts stay available under "see more".
+  /** Closest people are shared-space connections. The wallet page does not pass them. */
+  useEffect(() => {
     if (people.length > 0) {
-      const recent = memberRowsForConnections(
-        people,
-        conversationRows,
-        personIdToMatrixUserId,
-        person?.id ?? null,
-        fallbackName,
-      );
-      return recent.flatMap((row) => {
+      setClosestPeople(null);
+      return;
+    }
+    if (isLoadingJwt) return;
+    if (!authToken) {
+      setClosestPeople([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(
+          '/api/v1/people/me/intelligence?connections=40',
+          { headers: { Authorization: `Bearer ${authToken}` } },
+        );
+        if (!response.ok) throw new Error('intelligence');
+        const body = (await response.json()) as MemberIntelligence;
+        if (!cancelled) setClosestPeople(body.connections ?? []);
+      } catch {
+        if (!cancelled) setClosestPeople([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken, isLoadingJwt, people.length]);
+
+  const targets = useMemo(() => {
+    const passedConnections = people.length > 0;
+    const source = passedConnections ? people : closestPeople;
+    // Wallet has not heard back yet. Don't flash the whole directory.
+    if (!source) return [];
+
+    const closest = memberRowsForConnections(
+      source,
+      conversationRows,
+      personIdToMatrixUserId,
+      person?.id ?? null,
+      fallbackName,
+    )
+      .flatMap((row) => {
         const address = row.person.address?.trim();
         if (!address) return [];
-        if (row.lastTs == null || now - row.lastTs > STALE_CONNECTION_MS) {
-          return [];
-        }
         return [
           {
             kind: 'person' as const,
             id: `person-${row.person.id}`,
             name: row.name,
             address,
+            sharedSpaceCount: row.person.sharedSpaceCount ?? 0,
+            lastTs: row.lastTs ?? 0,
           },
         ];
-      });
-    }
+      })
+      .sort((left, right) => {
+        const bySpaces = right.sharedSpaceCount - left.sharedSpaceCount;
+        if (bySpaces !== 0) return bySpaces;
+        return right.lastTs - left.lastTs;
+      })
+      .map((row) => ({
+        kind: row.kind,
+        id: row.id,
+        name: row.name,
+        address: row.address,
+      }));
+
+    if (closest.length > 0) return closest;
+
     const selfAddress = person?.address?.trim().toLowerCase() ?? '';
     const selfSlug = person?.slug?.trim() ?? '';
     const directory = (directoryPeople ?? []).filter((entry) => {
@@ -878,79 +956,25 @@ export function MemberHomeSendTokensWidget({
       if (selfSlug && entry.slug?.trim() === selfSlug) return false;
       return true;
     });
-    const byName = new Map<string, (typeof directory)[number]>();
-    for (const entry of directory) {
-      const full = [entry.name, entry.surname]
-        .filter(Boolean)
-        .join(' ')
-        .trim()
-        .toLowerCase();
-      if (full && !byName.has(full)) byName.set(full, entry);
-    }
-    const recent = conversationRows
-      .filter(
-        (room) =>
-          room.kind === 'person' &&
-          !room.signalThread &&
-          room.lastTs != null &&
-          now - room.lastTs <= STALE_CONNECTION_MS,
+    return shuffleWithSeed(directory, directoryShuffleSeed.current)
+      .sort(
+        (left, right) =>
+          recipientProfileRank(right) - recipientProfileRank(left),
       )
-      .sort((left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0))
-      .flatMap((room) => {
-        const key = room.name.trim().toLowerCase();
-        const match = key ? byName.get(key) : undefined;
-        const address = match?.address?.trim();
-        if (!match || !address) return [];
+      .map((entry) => {
+        const address = entry.address?.trim() ?? '';
         const name =
-          [match.name, match.surname].filter(Boolean).join(' ').trim() ||
-          room.name.trim() ||
+          [entry.name, entry.surname].filter(Boolean).join(' ').trim() ||
           fallbackName;
-        return [
-          {
-            kind: 'person' as const,
-            id: `person-${match.id}`,
-            name,
-            address,
-          },
-        ];
-      })
-      .filter((item, index, list) => {
-        const first = list.findIndex((row) => row.id === item.id);
-        return first === index;
-      });
-    const seen = new Set(recent.map((item) => item.address.toLowerCase()));
-    const fromDirectory = directory.flatMap((entry) => {
-      const address = entry.address?.trim() ?? '';
-      if (seen.has(address.toLowerCase())) return [];
-      seen.add(address.toLowerCase());
-      const name =
-        [entry.name, entry.surname].filter(Boolean).join(' ').trim() ||
-        fallbackName;
-      return [
-        {
+        return {
           kind: 'person' as const,
           id: `person-${entry.id}`,
           name,
           address,
-        },
-      ];
-    });
-    const fromSpaces = (directorySpaces ?? []).flatMap((space) => {
-      const address = space.address?.trim() ?? '';
-      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return [];
-      if (seen.has(address.toLowerCase())) return [];
-      seen.add(address.toLowerCase());
-      return [
-        {
-          kind: 'space' as const,
-          id: `space-${space.id}`,
-          name: space.title?.trim() || fallbackName,
-          address,
-        },
-      ];
-    });
-    return [...recent, ...fromDirectory, ...fromSpaces];
+        };
+      });
   }, [
+    closestPeople,
     conversationRows,
     directoryPeople,
     fallbackName,
@@ -958,7 +982,6 @@ export function MemberHomeSendTokensWidget({
     person?.address,
     person?.id,
     person?.slug,
-    directorySpaces,
     personIdToMatrixUserId,
   ]);
   const visibleTargets = useMemo(() => {
@@ -1200,23 +1223,27 @@ export function MemberHomeSendTokensWidget({
           {hasWallet ? t('sendTokensNone') : t('sendTokensNoWallet')}
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5 xl:gap-6">
           <div>
             <p className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
               {t('sendTokensTo')}
             </p>
             {previewTargets.length === 0 ? (
               <p className="mt-2 text-2 text-neutral-11">
-                {directoryLoading && people.length === 0
+                {people.length === 0 &&
+                (directoryLoading || closestPeople == null)
                   ? t('loading')
                   : t('sendTokensNoOne')}
               </p>
             ) : (
-              <ul className="mt-2 grid grid-cols-4 gap-1 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+              <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 md:grid-cols-4">
                 {previewTargets.map((item) => {
                   const active = item.id === target?.id;
                   const person =
                     people.find((entry) => `person-${entry.id}` === item.id) ??
+                    closestPeople?.find(
+                      (entry) => `person-${entry.id}` === item.id,
+                    ) ??
                     directoryPeople?.find(
                       (entry) => `person-${entry.id}` === item.id,
                     );
@@ -1234,7 +1261,7 @@ export function MemberHomeSendTokensWidget({
                         type="button"
                         aria-pressed={active}
                         className={cn(
-                          'flex w-full flex-col items-center gap-1 border px-1 py-2',
+                          'flex w-full flex-col items-center gap-2 border px-2 py-2',
                           active
                             ? 'border-foreground bg-foreground text-background'
                             : 'border-transparent hover:bg-accent-2',
