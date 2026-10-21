@@ -91,7 +91,7 @@ function FieldPhoto({
   if (video) {
     return (
       <div
-        className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-3"
+        className="relative aspect-[2/1] w-full overflow-hidden bg-neutral-3"
         onClick={(event) => event.stopPropagation()}
       >
         <SignalVideoPlayer video={video} title={alt} />
@@ -99,13 +99,13 @@ function FieldPhoto({
     );
   }
   if (!src || failed) {
-    return <div className="aspect-[4/3] w-full bg-neutral-3" />;
+    return <div className="aspect-[2/1] w-full bg-neutral-3" />;
   }
   return (
     <img
       src={src}
       alt={alt}
-      className="aspect-[4/3] w-full object-cover"
+      className="aspect-[2/1] w-full object-cover"
       onError={() => setFailed(true)}
     />
   );
@@ -270,7 +270,6 @@ export function NetworkReciprocalExchange({
                   dateLocale,
                   t('ongoing'),
                 );
-                const selectedCard = signal.slug === selected?.slug;
                 const payout = payoutText(signal, t);
                 const impactCard =
                   signal.type === 'Impact' || signal.type === 'Action';
@@ -281,13 +280,10 @@ export function NetworkReciprocalExchange({
                 return (
                   <li key={signal.slug} className="flex">
                     <article
-                      className={cn(
-                        'flex w-full flex-col border bg-background',
-                        selectedCard ? 'border-foreground' : 'border-border',
-                      )}
+                      className="flex w-full flex-col border border-border bg-background"
                       onClick={() => setSelectedSlug(signal.slug)}
                     >
-                      <div className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 px-4 py-2">
                         <span
                           className={cn(
                             'px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
@@ -313,7 +309,7 @@ export function NetworkReciprocalExchange({
                         videoUrl={signal.videoUrl}
                         alt={signal.title}
                       />
-                      <div className="flex flex-1 flex-col gap-2 px-4 py-4">
+                      <div className="flex flex-1 flex-col gap-2 px-4 py-3">
                         <h2
                           className="text-4 font-medium leading-snug"
                           style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -357,7 +353,7 @@ export function NetworkReciprocalExchange({
                           </>
                         )}
                       </div>
-                      <div className="mt-auto grid grid-cols-2 border-t border-border">
+                      <div className="mt-auto flex gap-2 px-4 pb-4">
                         {impactCard ? (
                           <button
                             type="button"
@@ -370,14 +366,14 @@ export function NetworkReciprocalExchange({
                               event.preventDefault();
                               event.stopPropagation();
                             }}
-                            className="flex h-11 cursor-default items-center justify-center bg-foreground text-1 font-medium uppercase tracking-[0.14em] text-background"
+                            className="inline-flex h-10 cursor-default items-center justify-center border border-foreground bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
                           >
                             {t('resource')}
                           </button>
                         ) : (
                           <Link
                             href={`/${lang}/dho/${signal.spaceSlug}`}
-                            className="flex h-11 items-center justify-center bg-foreground text-1 font-medium uppercase tracking-[0.14em] text-background"
+                            className="inline-flex h-10 items-center justify-center border border-foreground bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
                             onClick={(event) => event.stopPropagation()}
                           >
                             {t('visit')}
@@ -390,7 +386,7 @@ export function NetworkReciprocalExchange({
                             event.stopPropagation();
                             openRoom(signal);
                           }}
-                          className="flex h-11 items-center justify-center text-1 font-medium uppercase tracking-[0.14em] hover:bg-neutral-2 disabled:opacity-40"
+                          className="inline-flex h-10 items-center justify-center border border-border bg-background px-3 text-1 font-medium uppercase tracking-[0.14em] hover:bg-neutral-2 disabled:opacity-40"
                         >
                           {t('connect')}
                         </button>
