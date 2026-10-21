@@ -10,7 +10,6 @@ import {
   readApiError,
   useDeveloperApi,
 } from '../_lib/api';
-import { KeyReveal } from './key-reveal';
 
 const STATUS_LABEL = {
   pending: 'Pending review',
@@ -30,7 +29,7 @@ function ClientCard({
   return (
     <li className="flex flex-col gap-2 border border-border p-4">
       <div className="flex items-center gap-3">
-        {/* The owner only gets an approved logo; a reviewer also gets the pending one. */}
+        {/* The owner only gets an approved logo. */}
         {client.logo.url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -99,16 +98,12 @@ function ClientCard({
   );
 }
 
-/** The signed-in user's clients, plus the review step when they are a reviewer. */
+/** The signed-in user's clients. Approval is manual (ops routes) for now. */
 export function ClientList() {
   const { lang } = useParams<{ lang: string }>();
   const api = useDeveloperApi();
   const [mine, setMine] = useState<DeveloperClient[] | null>(null);
-  const [reviewer, setReviewer] = useState(false);
-  const [queue, setQueue] = useState<DeveloperClient[]>([]);
-  const [revealed, setRevealed] = useState<{ name: string; key: string }>();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -116,16 +111,8 @@ export function ClientList() {
       if (!res.ok) return setError(await readApiError(res));
       const body = (await res.json()) as {
         items: DeveloperClient[];
-        reviewer: boolean;
       };
       setMine(body.items);
-      setReviewer(body.reviewer);
-      if (body.reviewer) {
-        const all = await api('/reviewer/clients');
-        if (all.ok) {
-          setQueue(((await all.json()) as { items: DeveloperClient[] }).items);
-        }
-      }
       setError(null);
     } catch {
       setError('Could not reach the server.');
@@ -135,27 +122,6 @@ export function ClientList() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const review = async (
-    client: DeveloperClient,
-    action: 'approve' | 'revoke' | 'rotate-key',
-  ) => {
-    setBusy(true);
-    try {
-      const res = await api(
-        `/reviewer/clients/${encodeURIComponent(client.slug)}/${action}`,
-        { method: 'POST' },
-      );
-      if (!res.ok) return setError(await readApiError(res));
-      const body = (await res.json()) as { clientKey?: string };
-      if (body.clientKey) {
-        setRevealed({ name: client.name, key: body.clientKey });
-      }
-      await load();
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const uploadLogo = async (client: DeveloperClient, file?: File) => {
     if (!file) return;
@@ -175,13 +141,6 @@ export function ClientList() {
         <p role="alert" className="text-2 text-destructive">
           {error}
         </p>
-      )}
-      {revealed && (
-        <KeyReveal
-          clientName={revealed.name}
-          clientKey={revealed.key}
-          onClose={() => setRevealed(undefined)}
-        />
       )}
 
       <section className="flex flex-col gap-3">
@@ -225,56 +184,6 @@ export function ClientList() {
           ))}
         </ul>
       </section>
-
-      {reviewer && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-4 font-semibold text-foreground">
-            Review requests
-          </h2>
-          <p className="text-2 text-muted-foreground">
-            Approving a client also approves its logo. The key appears once,
-            here; pass it to the integrator securely. It is not stored.
-          </p>
-          <ul className="flex flex-col gap-3">
-            {queue.map((client) => (
-              <ClientCard
-                key={client.slug}
-                client={client}
-                actions={
-                  client.status !== 'revoked' && (
-                    <div className="flex gap-2">
-                      {client.status === 'pending' && (
-                        <Button
-                          disabled={busy}
-                          onClick={() => void review(client, 'approve')}
-                        >
-                          Approve
-                        </Button>
-                      )}
-                      {client.status === 'approved' && (
-                        <Button
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => void review(client, 'rotate-key')}
-                        >
-                          Rotate key
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => void review(client, 'revoke')}
-                      >
-                        {client.status === 'pending' ? 'Reject' : 'Revoke'}
-                      </Button>
-                    </div>
-                  )
-                }
-              />
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }

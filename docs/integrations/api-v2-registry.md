@@ -241,40 +241,35 @@ test fails when a route skips the wrapper or the values drift.
 
 ### Routes
 
-| Route                                                         | Kind | Replaces (removed, no redirect)                          | Status    | Auth                            |
-| ------------------------------------------------------------- | ---- | -------------------------------------------------------- | --------- | ------------------------------- |
-| `POST /api/integration/v1/clients/requests`                   | new  | `POST /api/v1/integration-clients/requests`              | **built** | user token                      |
-| `GET /api/integration/v1/clients/me`                          | new  | none                                                     | **built** | client key                      |
-| `POST /api/integration/v1/clients/me/grants`                  | new  | `POST /api/v1/integration-grants`                        | **built** | client key + user token         |
-| `GET /api/integration/v1/clients/me/grants`                   | new  | `GET /api/v1/integration-grants` (client view)           | **built** | client key + user token         |
-| `DELETE /api/integration/v1/clients/me/grants/{id}`           | new  | `DELETE /api/v1/integration-grants/{id}` (client)        | **built** | client key + user token         |
-| `GET /api/integration/v1/users/me/grants`                     | new  | `GET /api/v1/integration-grants` (user view)             | **built** | user token                      |
-| `DELETE /api/integration/v1/users/me/grants/{id}`             | new  | `DELETE /api/v1/integration-grants/{id}` (user)          | **built** | user token                      |
-| `GET /api/integration/v1/ops/clients`                         | new  | `GET /api/v1/ops/integration-clients`                    | **built** | ops secret                      |
-| `POST /api/integration/v1/ops/clients/{slug}/approve`         | new  | `POST /api/v1/ops/integration-clients/{slug}/approve`    | **built** | ops secret                      |
-| `POST /api/integration/v1/ops/clients/{slug}/revoke`          | new  | `POST /api/v1/ops/integration-clients/{slug}/revoke`     | **built** | ops secret                      |
-| `POST /api/integration/v1/ops/clients/{slug}/rotate-key`      | new  | `POST /api/v1/ops/integration-clients/{slug}/rotate-key` | **built** | ops secret                      |
-| `GET /api/integration/v1/users/me/clients`                    | new  | none (developer area)                                    | **built** | user token                      |
-| `POST /api/integration/v1/users/me/clients/{slug}/logo`       | new  | none (developer area)                                    | **built** | user token, the requester       |
-| `GET /api/integration/v1/reviewer/clients`                    | new  | none (developer area review step)                        | **built** | user token + reviewer allowlist |
-| `POST /api/integration/v1/reviewer/clients/{slug}/approve`    | new  | same effect as `ops/.../approve`                         | **built** | user token + reviewer allowlist |
-| `POST /api/integration/v1/reviewer/clients/{slug}/revoke`     | new  | same effect as `ops/.../revoke`                          | **built** | user token + reviewer allowlist |
-| `POST /api/integration/v1/reviewer/clients/{slug}/rotate-key` | new  | same effect as `ops/.../rotate-key`                      | **built** | user token + reviewer allowlist |
-| signer state of the user's wallet (opt-in or sub-resource)    | new  | none                                                     | `planned` | client key + user token (M4/M5) |
-| `POST /api/integration/v1/actions`                            | new  | none                                                     | **spike** | client key + user token         |
-| `GET /api/integration/v1/actions/{id}`                        | new  | none                                                     | **spike** | client key + user token         |
-| `GET /api/integration/v1/users/me/actions/{id}`               | new  | none                                                     | **spike** | user token                      |
-| `POST /api/integration/v1/users/me/actions/{id}/approve`      | new  | none                                                     | **spike** | user token                      |
-| `POST /api/integration/v1/users/me/actions/{id}/reject`       | new  | none                                                     | **spike** | user token                      |
-| `POST /api/integration/v1/users/me/actions/{id}/result`       | new  | none                                                     | **spike** | user token                      |
+| Route                                                      | Kind | Replaces (removed, no redirect)                          | Status    | Auth                            |
+| ---------------------------------------------------------- | ---- | -------------------------------------------------------- | --------- | ------------------------------- |
+| `POST /api/integration/v1/clients/requests`                | new  | `POST /api/v1/integration-clients/requests`              | **built** | user token                      |
+| `GET /api/integration/v1/clients/me`                       | new  | none                                                     | **built** | client key                      |
+| `POST /api/integration/v1/clients/me/grants`               | new  | `POST /api/v1/integration-grants`                        | **built** | client key + user token         |
+| `GET /api/integration/v1/clients/me/grants`                | new  | `GET /api/v1/integration-grants` (client view)           | **built** | client key + user token         |
+| `DELETE /api/integration/v1/clients/me/grants/{id}`        | new  | `DELETE /api/v1/integration-grants/{id}` (client)        | **built** | client key + user token         |
+| `GET /api/integration/v1/users/me/grants`                  | new  | `GET /api/v1/integration-grants` (user view)             | **built** | user token                      |
+| `DELETE /api/integration/v1/users/me/grants/{id}`          | new  | `DELETE /api/v1/integration-grants/{id}` (user)          | **built** | user token                      |
+| `GET /api/integration/v1/ops/clients`                      | new  | `GET /api/v1/ops/integration-clients`                    | **built** | ops secret                      |
+| `POST /api/integration/v1/ops/clients/{slug}/approve`      | new  | `POST /api/v1/ops/integration-clients/{slug}/approve`    | **built** | ops secret                      |
+| `POST /api/integration/v1/ops/clients/{slug}/revoke`       | new  | `POST /api/v1/ops/integration-clients/{slug}/revoke`     | **built** | ops secret                      |
+| `POST /api/integration/v1/ops/clients/{slug}/rotate-key`   | new  | `POST /api/v1/ops/integration-clients/{slug}/rotate-key` | **built** | ops secret                      |
+| `GET /api/integration/v1/users/me/clients`                 | new  | none (developer area)                                    | **built** | user token                      |
+| `POST /api/integration/v1/users/me/clients/{slug}/logo`    | new  | none (developer area)                                    | **built** | user token, the requester       |
+| signer state of the user's wallet (opt-in or sub-resource) | new  | none                                                     | `planned` | client key + user token (M4/M5) |
+| `POST /api/integration/v1/actions`                         | new  | none                                                     | **spike** | client key + user token         |
+| `GET /api/integration/v1/actions/{id}`                     | new  | none                                                     | **spike** | client key + user token         |
+| `GET /api/integration/v1/users/me/actions/{id}`            | new  | none                                                     | **spike** | user token                      |
+| `POST /api/integration/v1/users/me/actions/{id}/approve`   | new  | none                                                     | **spike** | user token                      |
+| `POST /api/integration/v1/users/me/actions/{id}/reject`    | new  | none                                                     | **spike** | user token                      |
+| `POST /api/integration/v1/users/me/actions/{id}/result`    | new  | none                                                     | **spike** | user token                      |
 
 **Developer area (client registration page, `/{lang}/developers`).** The page registers through the one existing route
 (`POST clients/requests`); the extra routes only serve it. `users/me/clients` lists the caller's requests (an unapproved logo is
 reported as `in_review` with no address). `users/me/clients/{slug}/logo` takes one multipart `logo` (PNG, JPEG or WebP, at most
 512 KB, roughly square; judged by its bytes, SVG refused) while the request is pending, and stores it in the platform file storage.
-`reviewer/*` does what `ops/*` does for people named in `INTEGRATION_CLIENT_REVIEWER_SLUGS`; the key is returned by approve and
-rotate only, once. A client's logo is shown to people only when the client is `approved` (approving the client approves the logo);
-the approval page returns it as `client.logoUrl`, else `null`.
+Approval stays manual through `ops/*` (which lists the pending logo address for review). A client's logo is shown to people only
+when the client is `approved` (approving the client approves the logo); the approval page returns it as `client.logoUrl`, else `null`.
 
 ### Shapes and status codes
 
