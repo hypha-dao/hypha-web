@@ -3,14 +3,17 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { ListFilter } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
+  CAPITALS,
   NETWORK_FIELD_KINDS,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkFieldSignal,
   type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
+import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
@@ -23,7 +26,6 @@ import { CAPITAL_MARK } from './capital-marks';
 import { NetworkExchangeShareCard } from './network-exchange-share-card';
 import { NETWORK_RIGHT_PANEL_CLASS } from './network-right-cards';
 import {
-  NetworkCapitalFilters,
   NetworkLiveSearch,
   NetworkSectionHeader,
 } from './network-section-header';
@@ -132,6 +134,108 @@ function isFieldKind(
   );
 }
 
+function toggleValue<T>(list: T[], value: T) {
+  return list.includes(value)
+    ? list.filter((item) => item !== value)
+    : [...list, value];
+}
+
+function ExchangeFilters({
+  types,
+  capitals,
+  onTypes,
+  onCapitals,
+}: {
+  types: NetworkFieldSignalKind[];
+  capitals: CapitalKey[];
+  onTypes: (next: NetworkFieldSignalKind[]) => void;
+  onCapitals: (next: CapitalKey[]) => void;
+}) {
+  const t = useTranslations('NetworkExchange');
+  const active = types.length > 0 || capitals.length > 0;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('filterSignals')}
+          title={t('filterSignals')}
+          aria-pressed={active}
+          className={cn(
+            'inline-flex h-10 w-10 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
+            active ? 'border-foreground text-foreground' : 'border-border',
+          )}
+        >
+          <ListFilter className="craft-icon" strokeWidth={1.25} aria-hidden />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-80 rounded-none p-3"
+        collisionPadding={16}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <p className="text-1 font-medium uppercase tracking-[0.12em] text-neutral-11">
+              {t('signalTypes')}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {NETWORK_FIELD_KINDS.map((kind) => {
+                const selected = types.includes(kind);
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onTypes(toggleValue(types, kind))}
+                    className={cn(
+                      'border px-2 py-1 text-1 uppercase tracking-[0.08em]',
+                      selected
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border bg-background text-foreground hover:border-foreground',
+                    )}
+                  >
+                    {typeLabel(kind, t)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-1 font-medium uppercase tracking-[0.12em] text-neutral-11">
+              {t('formOfCapital')}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {CAPITALS.map((key) => {
+                const selected = capitals.includes(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onCapitals(toggleValue(capitals, key))}
+                    className={cn(
+                      'border px-2 py-1 text-1 uppercase tracking-[0.08em]',
+                      selected
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border bg-background text-foreground hover:border-foreground',
+                    )}
+                  >
+                    <span aria-hidden className="mr-1">
+                      {CAPITAL_MARK[key]}
+                    </span>
+                    {t(`capitals.${key}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function NetworkReciprocalExchange({
   lang,
   signals,
@@ -148,17 +252,21 @@ export function NetworkReciprocalExchange({
   const { open } = useHumanChatPanel();
   const { openPublicChat, opening } = useOpenSpacePublicChat();
   const [query, setQuery] = useState('');
-  const [capital, setCapital] = useState<CapitalKey | 'all'>('all');
-  const [type, setType] = useState<NetworkFieldSignalKind>(
-    isFieldKind(initialType) ? initialType : 'Need',
+  const [capitals, setCapitals] = useState<CapitalKey[]>([]);
+  const [types, setTypes] = useState<NetworkFieldSignalKind[]>(
+    isFieldKind(initialType) ? [initialType] : [],
   );
   const [selectedSlug, setSelectedSlug] = useState(signals[0]?.slug ?? '');
   const needle = query.trim().toLowerCase();
 
   const visible = useMemo(() => {
     return signals.filter((signal) => {
-      if (signal.type !== type) return false;
-      if (capital !== 'all' && capitalKey(signal.capital) !== capital) {
+      if (types.length > 0 && !types.includes(signal.type)) return false;
+      const signalCapital = capitalKey(signal.capital);
+      if (
+        capitals.length > 0 &&
+        (!signalCapital || !capitals.includes(signalCapital))
+      ) {
         return false;
       }
       if (!needle) return true;
@@ -173,7 +281,7 @@ export function NetworkReciprocalExchange({
         .toLowerCase()
         .includes(needle);
     });
-  }, [capital, needle, signals, type]);
+  }, [capitals, needle, signals, types]);
 
   const selected =
     visible.find((signal) => signal.slug === selectedSlug) ?? visible[0];
@@ -210,42 +318,18 @@ export function NetworkReciprocalExchange({
             eyebrow={t('signalsFromTheField')}
             title={t('reciprocalTitle')}
           />
-          <div
-            className="flex flex-wrap gap-1 sm:flex-nowrap sm:overflow-x-auto sm:pb-1"
-            role="tablist"
-            aria-label={t('reciprocalTitle')}
-          >
-            {NETWORK_FIELD_KINDS.map((kind) => {
-              const selectedTab = kind === type;
-              return (
-                <button
-                  key={kind}
-                  type="button"
-                  role="tab"
-                  aria-selected={selectedTab}
-                  onClick={() => setType(kind)}
-                  className={cn(
-                    'shrink-0 border px-3 py-1.5 text-1 uppercase tracking-[0.1em]',
-                    selectedTab
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border bg-background text-foreground hover:border-foreground',
-                  )}
-                >
-                  {typeLabel(kind, t)}
-                </button>
-              );
-            })}
-          </div>
           <NetworkLiveSearch
             value={query}
             onChange={setQuery}
             placeholder={t('searchPlaceholder')}
-          />
-          <NetworkCapitalFilters
-            value={capital}
-            onChange={setCapital}
-            allLabel={t('allSpaces')}
-            labelFor={(key) => t(`capitals.${key}`)}
+            end={
+              <ExchangeFilters
+                types={types}
+                capitals={capitals}
+                onTypes={setTypes}
+                onCapitals={setCapitals}
+              />
+            }
           />
           {visible.length > 0 ? (
             <p className="text-1 text-neutral-11">
@@ -257,9 +341,7 @@ export function NetworkReciprocalExchange({
           ) : null}
           {visible.length === 0 ? (
             <p className="text-2 text-neutral-11">
-              {signals.some((signal) => signal.type === type)
-                ? t('needsFilterEmpty')
-                : empty}
+              {signals.length > 0 ? t('needsFilterEmpty') : empty}
             </p>
           ) : (
             <ul className="grid content-start grid-cols-1 gap-4 @3xl:grid-cols-2 @6xl:grid-cols-3">
@@ -407,7 +489,7 @@ export function NetworkReciprocalExchange({
         >
           <NetworkExchangeShareCard
             lang={lang}
-            type={type}
+            type={types.length === 1 ? types[0] : null}
             preferredSlug={selected?.spaceSlug}
           />
         </aside>

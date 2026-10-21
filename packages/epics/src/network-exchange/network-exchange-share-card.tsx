@@ -14,6 +14,7 @@ import {
   Megaphone,
   Receipt,
   TriangleAlert,
+  Video,
 } from 'lucide-react';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from './exchange-draft-keys';
 import { useTranslations } from 'next-intl';
@@ -60,6 +61,21 @@ function typeLabel(
   return t('filterImpact');
 }
 
+function startsWithVowel(label: string) {
+  return /^[aeiou]/i.test(label.trim());
+}
+
+function shareHeading(
+  kind: NetworkFieldSignalKind | null,
+  t: ReturnType<typeof useTranslations<'NetworkExchange'>>,
+) {
+  if (!kind) return t('shareExchangeSignal');
+  const label = typeLabel(kind, t);
+  return startsWithVowel(label)
+    ? t('shareExchangeTitleAn', { type: label })
+    : t('shareExchangeTitle', { type: label });
+}
+
 function TypeIcon({ type }: { type: NetworkFieldSignalKind }) {
   const className = 'size-4 shrink-0';
   if (type === 'Need') return <Megaphone className={className} aria-hidden />;
@@ -88,7 +104,8 @@ export function NetworkExchangeShareCard({
   preferredSlug,
 }: {
   lang: Locale;
-  type: NetworkFieldSignalKind;
+  /** Set when exactly one signal type is filtered. Otherwise the form asks. */
+  type: NetworkFieldSignalKind | null;
   preferredSlug?: string;
 }) {
   const t = useTranslations('NetworkExchange');
@@ -107,11 +124,23 @@ export function NetworkExchangeShareCard({
   const [amount, setAmount] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
+  const [mediaKind, setMediaKind] = useState<'images' | 'video' | null>(null);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [chosenType, setChosenType] = useState<NetworkFieldSignalKind | null>(
+    null,
+  );
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const kind = (NETWORK_FIELD_KINDS as readonly string[]).includes(type)
+  const lockedType = (NETWORK_FIELD_KINDS as readonly string[]).includes(
+    type ?? '',
+  )
     ? type
-    : 'Need';
+    : null;
+  const kind = lockedType ?? chosenType;
+
+  useEffect(() => {
+    setChosenType(null);
+  }, [lockedType]);
 
   useEffect(() => {
     if (touched.current) return;
@@ -133,24 +162,45 @@ export function NetworkExchangeShareCard({
   const share = async () => {
     const body = text.trim();
     const headline = title.trim() || body.slice(0, 50);
-    if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !body) return;
+    const video = videoUrl.trim();
+    if (
+      !kind ||
+      !spaceSlug ||
+      !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) ||
+      !body
+    ) {
+      return;
+    }
+    if (mediaKind === 'video' && video && !/^https?:\/\//i.test(video)) {
+      setNote(tSignals('signalFormVideoHint'));
+      return;
+    }
     setSaving(true);
     setNote(null);
     try {
-      const uploadedImages = await uploadSignalFiles(images, uploadSignalMedia);
+      const uploadedImages =
+        mediaKind === 'images'
+          ? await uploadSignalFiles(images, uploadSignalMedia)
+          : [];
       const uploadedDocuments = await uploadSignalFiles(
         documents,
         uploadSignalMedia,
       );
+      const linkedVideo =
+        mediaKind === 'video' && /^https?:\/\//i.test(video)
+          ? video.slice(0, 2000)
+          : '';
       writeSignalCreateMedia({
         images: uploadedImages,
         documents: uploadedDocuments,
+        ...(linkedVideo ? { videoUrl: linkedVideo } : {}),
       });
       const params = new URLSearchParams();
       params.set('type', kind);
       params.set('sharedWithNetwork', '1');
       params.set('title', headline.slice(0, 50));
       params.set('description', body.slice(0, 4000));
+      if (linkedVideo) params.set('video', linkedVideo);
       if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
         params.set('amount', amount);
       }
@@ -169,14 +219,49 @@ export function NetworkExchangeShareCard({
     }
   };
 
+  const kindLabel = kind ? typeLabel(kind, t) : '';
+
   return (
-    <WalletFlowCard
-      title={t('shareExchangeTitle', { type: typeLabel(kind, t) })}
-    >
+    <WalletFlowCard title={shareHeading(kind, t)}>
       <p className="flex items-start gap-2 text-1 leading-relaxed text-neutral-11">
-        <TypeIcon type={kind} />
-        <span>{t('shareExchangeBody', { type: typeLabel(kind, t) })}</span>
+        {kind ? <TypeIcon type={kind} /> : null}
+        <span>
+          {kind
+            ? t('shareExchangeBody', { type: kindLabel })
+            : t('shareExchangeBodySignal')}
+        </span>
       </p>
+
+      {lockedType ? null : (
+        <div className="flex flex-col gap-2">
+          <WalletFlowLabel>{t('chooseSignalType')}</WalletFlowLabel>
+          <div
+            className="flex flex-wrap gap-1"
+            role="group"
+            aria-label={t('chooseSignalType')}
+          >
+            {NETWORK_FIELD_KINDS.map((option) => {
+              const selected = kind === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setChosenType(option)}
+                  className={cn(
+                    'border px-2 py-1 text-1 uppercase tracking-[0.08em]',
+                    selected
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border bg-background text-foreground hover:border-foreground',
+                  )}
+                >
+                  {typeLabel(option, t)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <WalletFlowLabel>{t('chooseSpace')}</WalletFlowLabel>
@@ -210,8 +295,16 @@ export function NetworkExchangeShareCard({
           value={text}
           maxLength={4000}
           rows={3}
-          placeholder={t('shareExchangePrompt', { type: typeLabel(kind, t) })}
-          aria-label={t('shareExchangePrompt', { type: typeLabel(kind, t) })}
+          placeholder={
+            kind
+              ? t('shareExchangePrompt', { type: kindLabel })
+              : t('shareExchangePromptSignal')
+          }
+          aria-label={
+            kind
+              ? t('shareExchangePrompt', { type: kindLabel })
+              : t('shareExchangePromptSignal')
+          }
           onChange={(event) => setText(event.target.value)}
           className="w-full resize-none border border-border bg-background p-3 text-2 outline-none"
         />
@@ -236,21 +329,77 @@ export function NetworkExchangeShareCard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>
-          <span className="inline-flex items-center gap-1.5">
-            <Camera className="size-3.5" aria-hidden />
-            {tSignals('signalFormImage')}
-          </span>
-        </WalletFlowLabel>
-        <AddAttachment
-          accept={SIGNAL_IMAGE_ACCEPT}
-          maxFiles={SIGNAL_IMAGE_LIMIT}
-          maxBytes={SIGNAL_MEDIA_MAX_BYTES}
-          label={tSignals('signalFormImageHint')}
-          value={images}
-          onChange={setImages}
-        />
+      <div className="flex flex-col gap-3">
+        <div
+          role="group"
+          aria-label={`${tSignals('signalFormImage')}, ${tSignals(
+            'signalFormMediaVideo',
+          )}`}
+          className="flex gap-2"
+        >
+          {(
+            [
+              {
+                kind: 'images' as const,
+                label: tSignals('signalFormImage'),
+                Icon: Camera,
+              },
+              {
+                kind: 'video' as const,
+                label: tSignals('signalFormMediaVideo'),
+                Icon: Video,
+              },
+            ] as const
+          ).map(({ kind: option, label, Icon }) => {
+            const selected = mediaKind === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setMediaKind(option)}
+                style={{ width: 112, height: 112 }}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-2 border px-2',
+                  selected
+                    ? 'border-foreground bg-foreground text-background'
+                    : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                )}
+              >
+                <Icon className="size-5" strokeWidth={1.5} aria-hidden />
+                <span className="text-center text-1 leading-tight">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {mediaKind === 'images' ? (
+          <AddAttachment
+            accept={SIGNAL_IMAGE_ACCEPT}
+            maxFiles={SIGNAL_IMAGE_LIMIT}
+            maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+            label={tSignals('signalFormImageHint')}
+            value={images}
+            onChange={setImages}
+          />
+        ) : null}
+        {mediaKind === 'video' ? (
+          <div className="flex flex-col gap-2">
+            <WalletFlowLabel>{tSignals('signalFormVideo')}</WalletFlowLabel>
+            <input
+              type="url"
+              value={videoUrl}
+              placeholder="https://"
+              aria-label={tSignals('signalFormVideo')}
+              onChange={(event) => setVideoUrl(event.target.value)}
+              className="h-11 w-full border border-border bg-background px-3 text-2 outline-none"
+            />
+            <p className="text-1 leading-relaxed text-neutral-11">
+              {tSignals('signalFormVideoHint')}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -296,7 +445,7 @@ export function NetworkExchangeShareCard({
 
       <Button
         type="button"
-        disabled={!spaceSlug || !text.trim() || saving}
+        disabled={!kind || !spaceSlug || !text.trim() || saving}
         onClick={() => {
           void share();
         }}

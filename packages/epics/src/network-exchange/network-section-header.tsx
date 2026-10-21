@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Input } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
 import { CAPITALS, type CapitalKey } from '@hypha-platform/core/client';
@@ -37,12 +38,15 @@ export function NetworkLiveSearch({
   value,
   onChange,
   placeholder,
+  end,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+  /** Sits at the end of the search row. Omitted on sections that have no extra control. */
+  end?: ReactNode;
 }) {
-  return (
+  const field = (
     <Input
       type="search"
       value={value}
@@ -53,6 +57,13 @@ export function NetworkLiveSearch({
       rootClassName={spaceToolbarInputRootClassName}
       className={spaceToolbarInputClassName}
     />
+  );
+  if (!end) return field;
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <div className="min-w-0 flex-1">{field}</div>
+      {end}
+    </div>
   );
 }
 
