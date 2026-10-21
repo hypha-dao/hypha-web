@@ -239,11 +239,6 @@ function guidancePartForStorage(part: UIMessage['parts'][number]) {
   };
 }
 
-function guidancePartFromStored(part: object) {
-  const stored = guidancePartForStorage(part as UIMessage['parts'][number]);
-  return stored;
-}
-
 function isHttpImageUrl(value: unknown): value is string {
   return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
 }
@@ -299,6 +294,26 @@ function visualPartForStorage(part: UIMessage['parts'][number]) {
   };
 }
 
+type StoredThreadPart =
+  | { type: 'text'; text: string }
+  | NonNullable<ReturnType<typeof guidancePartForStorage>>
+  | NonNullable<ReturnType<typeof visualPartForStorage>>;
+
+/** One array type. A union of arrays is not a valid `flatMap` result. */
+function storedThreadParts(
+  part: UIMessage['parts'][number] | object,
+): StoredThreadPart[] {
+  const text = part as { type?: unknown; text?: unknown };
+  if (text.type === 'text' && typeof text.text === 'string') {
+    return [{ type: 'text', text: text.text }];
+  }
+  const messagePart = part as UIMessage['parts'][number];
+  const guidance = guidancePartForStorage(messagePart);
+  if (guidance) return [guidance];
+  const visuals = visualPartForStorage(messagePart);
+  return visuals ? [visuals] : [];
+}
+
 export function readHomeThread(): UIMessage[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -321,19 +336,9 @@ export function readHomeThread(): UIMessage[] {
       ) {
         return [];
       }
-      const parts = row.parts.flatMap((part) => {
-        if (!part || typeof part !== 'object') return [];
-        const text = part as { type?: unknown; text?: unknown };
-        if (text.type === 'text' && typeof text.text === 'string') {
-          return [{ type: 'text' as const, text: text.text }];
-        }
-        const guidance = guidancePartFromStored(part);
-        if (guidance) return [guidance];
-        const visuals = visualPartForStorage(
-          part as UIMessage['parts'][number],
-        );
-        return visuals ? [visuals] : [];
-      });
+      const parts = row.parts.flatMap((part) =>
+        part && typeof part === 'object' ? storedThreadParts(part) : [],
+      );
       if (parts.length === 0) return [];
       return [
         {
@@ -359,15 +364,7 @@ export function writeHomeThread(messages: readonly UIMessage[]) {
       id: message.id,
       role: message.role,
       metadata: message.metadata,
-      parts: (message.parts ?? []).flatMap((part) => {
-        if (part.type === 'text') {
-          return [{ type: 'text' as const, text: part.text }];
-        }
-        const guidance = guidancePartForStorage(part);
-        if (guidance) return [guidance];
-        const visuals = visualPartForStorage(part);
-        return visuals ? [visuals] : [];
-      }),
+      parts: (message.parts ?? []).flatMap((part) => storedThreadParts(part)),
     }));
     writeStored(THREAD_KEY, JSON.stringify(stored));
   } catch {
