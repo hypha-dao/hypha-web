@@ -4466,7 +4466,7 @@
     "signalFormAssigneeSearch": "Leden zoeken…",
     "signalFormAssigneeEmpty": "Geen leden gevonden.",
     "signalFormVotingPower": "Jouw stemkracht",
-    "signalFormVotingPowerHint": "Een deel van uw stemrecht steunt dit signaal. Maakt standaard gebruik van uw volledige stemrecht; je kunt het later aanpassen of verwijderen.",
+    "signalFormVotingPowerHint": "Kies hoeveel van je stemkracht dit signaal steunt. Standaard is 100%, maar je kunt het op elk moment aanpassen of verwijderen.",
     "indicativeTokens": "Indicatief bedrag",
     "indicativeTokensHint": "Deze bedragen benoemen de vraag of de bron. Er wordt geen geld verplaatst. Pas een voorstel kan ze versturen.",
     "shareWithNetwork": "Delen met het netwerk",

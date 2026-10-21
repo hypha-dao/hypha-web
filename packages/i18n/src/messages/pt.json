@@ -3890,7 +3890,7 @@
     "signalFormAssigneeSearch": "Procurar membros…",
     "signalFormAssigneeEmpty": "Nenhum membro encontrado.",
     "signalFormVotingPower": "Seu poder de voto",
-    "signalFormVotingPowerHint": "Parcela do seu poder de voto que apoia este sinal. Por padrão, todo o seu poder de voto é usado; você pode ajustar ou remover depois.",
+    "signalFormVotingPowerHint": "Escolha quanto do seu poder de voto apoia este sinal. O padrão é 100%, mas você pode ajustar ou remover a qualquer momento.",
     "indicativeTokens": "Montante indicativo",
     "indicativeTokensHint": "Estes montantes nomeiam o pedido ou o recurso. Não movem fundos. Transformá-lo numa proposta é o que pode enviá-los.",
     "shareWithNetwork": "Partilhar com a rede",

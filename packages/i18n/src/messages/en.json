@@ -4496,7 +4496,7 @@
     "signalFormAssigneeSearch": "Search members…",
     "signalFormAssigneeEmpty": "No members found.",
     "signalFormVotingPower": "Your voting power",
-    "signalFormVotingPowerHint": "Share of your voting power backing this signal. Uses your full voting power by default; you can adjust or remove it later.",
+    "signalFormVotingPowerHint": "Choose how much of your voting power to back this signal. Defaults to 100%, but you can adjust or remove it anytime.",
     "indicativeTokens": "Indicative amount",
     "indicativeTokensHint": "These amounts name the ask or the resource. They do not move any funds. Turning this into a proposal is what can send them.",
     "shareWithNetwork": "Share with the network",
