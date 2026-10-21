@@ -394,22 +394,14 @@ export function ExploreSpaces({
           />
         }
         trailing={
-          <div className="flex min-w-0 items-center gap-2">
-            <CreateSpaceButton
+          view === 'map' || view === 'overview' ? (
+            <NetworkAddLocationButton
               lang={lang}
+              spaces={spaces}
               isAuthenticated={isAuthenticated}
-              className="min-w-0 shrink-0"
-              buttonClassName={spaceToolbarPrimaryButtonClassName}
+              className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
             />
-            {view === 'map' || view === 'overview' ? (
-              <NetworkAddLocationButton
-                lang={lang}
-                spaces={spaces}
-                isAuthenticated={isAuthenticated}
-                className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
-              />
-            ) : null}
-          </div>
+          ) : null
         }
       />
     ),
@@ -475,7 +467,15 @@ export function ExploreSpaces({
 
   const sharedControls = (
     <div className="flex flex-col gap-4">
-      <SpaceSearch value={query} className="w-full min-w-0" />
+      <div className="flex w-full min-w-0 flex-row items-center gap-3">
+        <SpaceSearch value={query} className="min-w-0 flex-1" />
+        <CreateSpaceButton
+          lang={lang}
+          isAuthenticated={isAuthenticated}
+          className="min-w-0 shrink-0"
+          buttonClassName={spaceToolbarPrimaryButtonClassName}
+        />
+      </div>
       {categoryFilters}
     </div>
   );
@@ -575,12 +575,6 @@ export function ExploreSpaces({
           </>
         ) : (
           <>
-            <CreateSpaceButton
-              lang={lang}
-              isAuthenticated={isAuthenticated}
-              className="w-fit"
-              buttonClassName={spaceToolbarPrimaryButtonClassName}
-            />
             <div>
               <NetworkRanking
                 lang={lang}
