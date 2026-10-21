@@ -1,0 +1,99 @@
+/*
+ * Regen Sydney campaign theme.
+ *
+ * Palette and type are lifted from the Squarespace theme on regen.sydney so the
+ * campaign reads as an extension of their site rather than a Hypha page.
+ * Everything is scoped under `.rs-root` so none of it reaches Hypha's own UI.
+ */
+
+.rs-root {
+  --rs-cream: hsl(36.67 45% 92.16%);
+  --rs-cream-deep: hsl(36.67 40% 86%);
+  --rs-sand: hsl(36 42% 96%);
+  --rs-peach: hsl(29.46 77.78% 71.76%);
+  --rs-peach-soft: hsl(29.46 78% 88%);
+  --rs-clay: hsl(24 62% 48%);
+  --rs-aqua: hsl(182.55 41.59% 77.84%);
+  --rs-aqua-soft: hsl(182.55 42% 91%);
+  --rs-teal: hsl(186 46% 32%);
+  --rs-ink: hsl(0 0% 7%);
+  --rs-ink-soft: hsl(0 0% 34%);
+  --rs-ink-faint: hsl(0 0% 52%);
+  --rs-line: hsl(30 18% 80%);
+  --rs-white: hsl(0 0% 100%);
+
+  background-color: var(--rs-cream);
+  color: var(--rs-ink);
+  font-family: var(--font-rs-body), Georgia, serif;
+  font-weight: 600;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Oswald 500 uppercase with a hair of negative tracking — their heading rule verbatim. */
+.rs-heading {
+  font-family: var(--font-rs-heading), 'Arial Narrow', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+/* Small UI text: labels, buttons, table headers, numbers. */
+.rs-ui {
+  font-family: var(--font-rs-ui), system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.rs-eyebrow {
+  font-family: var(--font-rs-ui), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Their body copy is a serif at weight 600, which is unusual and very recognisable. */
+.rs-prose {
+  font-family: var(--font-rs-body), Georgia, serif;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.rs-focus:focus-visible {
+  outline: 2px solid var(--rs-teal);
+  outline-offset: 2px;
+}
+
+.rs-root ::selection {
+  background: var(--rs-peach);
+  color: var(--rs-ink);
+}
+
+/* Number readouts (balances, tallies) line up in columns. */
+.rs-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes rs-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rs-enter {
+  animation: rs-fade-up 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-enter {
+    animation: none;
+  }
+}
