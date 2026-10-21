@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
-import { Button } from '@hypha-platform/ui';
+import { Button, Dialog, DialogContent, DialogTitle } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   collapseCategoriesToGroups,
@@ -17,6 +17,7 @@ import {
 } from '@hypha-platform/core/client';
 import { NetworkRanking } from '../../network-exchange';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { FundASpaceFlow } from '../../wallet/components/fund-a-space-flow';
 
 function stripTags(value: string) {
   let out = '';
@@ -108,8 +109,10 @@ export function NetworkSidePanel({
 }) {
   const t = useTranslations('NetworkExchange');
   const tCommon = useTranslations('Common');
+  const tWallet = useTranslations('MyWallet');
   const { openCoherenceChat, setFocusedSpaceChat } = useHumanChatPanel();
   const panelRef = useRef<HTMLDivElement>(null);
+  const [fundOpen, setFundOpen] = useState(false);
   const seeks = parseCapitalKeys(capitals?.seeks);
   const offers = parseCapitalKeys(capitals?.offers);
   const summary = excerpt(selectedSpace?.description);
@@ -268,12 +271,8 @@ export function NetworkSidePanel({
             ) : null}
             <Button
               type="button"
-              disabled
-              variant="outline"
-              colorVariant="neutral"
-              title={t('resourceLater')}
-              aria-label={`${t('resource')}. ${t('resourceLater')}`}
               className="h-10 w-fit"
+              onClick={() => setFundOpen(true)}
             >
               {t('resource')}
             </Button>
@@ -285,6 +284,22 @@ export function NetworkSidePanel({
           <NetworkRanking lang={lang} ranks={ranks} onSelect={onSelectRank} />
         </section>
       ) : null}
+      <Dialog open={fundOpen} onOpenChange={setFundOpen}>
+        <DialogContent className="max-w-lg gap-4">
+          <DialogTitle
+            className="pr-8 text-4"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {tWallet('shortcuts.fundSpace')}
+          </DialogTitle>
+          {fundOpen ? (
+            <FundASpaceFlow
+              initialSpaceSlug={selectedSpace?.slug ?? null}
+              initialSpaceTitle={selectedSpace?.title ?? null}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

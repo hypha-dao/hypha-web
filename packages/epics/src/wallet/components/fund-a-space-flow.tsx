@@ -112,7 +112,15 @@ function useDepositEligibleSpaces() {
   return { spaces, isLoading, error };
 }
 
-export function FundASpaceFlow() {
+export function FundASpaceFlow({
+  initialSpaceSlug,
+  initialSpaceTitle,
+}: {
+  /** When set, that space is selected and deposit details open at once. */
+  initialSpaceSlug?: string | null;
+  /** Used to seed search when the slug is not deposit-eligible yet. */
+  initialSpaceTitle?: string | null;
+} = {}) {
   const t = useTranslations('MyWallet.fundSpace');
   const { spaces, isLoading, error } = useDepositEligibleSpaces();
   const [query, setQuery] = useState('');
@@ -120,6 +128,7 @@ export function FundASpaceFlow() {
   const [detailsSlug, setDetailsSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
+  const appliedInitialKey = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -128,6 +137,30 @@ export function FundASpaceFlow() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const slug = initialSpaceSlug?.trim() ?? '';
+    const title = initialSpaceTitle?.trim() ?? '';
+    const key = `${slug}\n${title}`;
+    if (!slug && !title) return;
+    if (appliedInitialKey.current === key) return;
+
+    if (slug && spaces.length > 0) {
+      const space = spaces.find((row) => row.slug === slug);
+      if (space) {
+        appliedInitialKey.current = key;
+        setQuery(space.title);
+        setSelectedSlug(space.slug);
+        setDetailsSlug(space.slug);
+        setCopiedAddress(false);
+        return;
+      }
+    }
+
+    if (isLoading) return;
+    appliedInitialKey.current = key;
+    if (title) setQuery(title);
+  }, [initialSpaceSlug, initialSpaceTitle, isLoading, spaces]);
 
   const options = useMemo(
     () =>
