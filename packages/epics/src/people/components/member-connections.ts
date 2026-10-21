@@ -518,6 +518,57 @@ export function isRememberedGroupChatRoom(roomId: string) {
   return groupChatRoomIds.has(roomId.trim());
 }
 
+const GROUP_CHAT_MEMBERS_KEY = 'hypha.group-chat-members';
+
+function readGroupChatMembers(): Record<string, string[]> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(GROUP_CHAT_MEMBERS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const members: Record<string, string[]> = {};
+    for (const [roomId, ids] of Object.entries(parsed)) {
+      if (!roomId.trim() || !Array.isArray(ids)) continue;
+      const matrixUserIds = ids.filter(
+        (id): id is string => typeof id === 'string' && Boolean(id.trim()),
+      );
+      if (matrixUserIds.length > 0) members[roomId.trim()] = matrixUserIds;
+    }
+    return members;
+  } catch {
+    return {};
+  }
+}
+
+/** People chosen for a group, so a later visit can join anyone still missing. */
+export function rememberGroupChatMembers(
+  roomId: string,
+  matrixUserIds: readonly string[],
+) {
+  if (typeof window === 'undefined') return;
+  const id = roomId.trim();
+  const ids = [
+    ...new Set(matrixUserIds.map((userId) => userId.trim()).filter(Boolean)),
+  ];
+  if (!id || ids.length === 0) return;
+  try {
+    const members = readGroupChatMembers();
+    members[id] = ids;
+    window.localStorage.setItem(
+      GROUP_CHAT_MEMBERS_KEY,
+      JSON.stringify(members),
+    );
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
+}
+
+export function rememberedGroupChatMemberIds(roomId: string): string[] {
+  return readGroupChatMembers()[roomId.trim()] ?? [];
+}
+
 /**
  * A private group chat, not a space channel.
  * Space rooms share the Matrix account but are named for the space.

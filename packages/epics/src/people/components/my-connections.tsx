@@ -43,11 +43,14 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
+  isPeopleListGroup,
   isRememberedGroupChatRoom,
   memberRowsForConnections,
   messagePreview,
   previewWithNames,
+  rememberGroupChatMembers,
   rememberGroupChatRooms,
+  rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
   unreadRoomsMissingFromMembers,
@@ -744,7 +747,8 @@ export function MyConnections({
   const tCommon = useTranslations('Common');
   const locale = useLocale();
   const { jwt } = useJwt();
-  const { client, isMatrixAvailable, createRoom } = useMatrix();
+  const { client, isMatrixAvailable, createRoom, ensureRoomMembers } =
+    useMatrix();
   const { openCoherenceChat } = useHumanChatPanel();
   const searchParams = useSearchParams();
   const openedDirectChatRef = useRef<string | null>(null);
@@ -816,6 +820,50 @@ export function MyConnections({
     openedDirectChatRef.current = key;
     openCoherenceChat(chat, '', '', null, null);
   }, [openCoherenceChat, searchParams]);
+
+  const ensuredGroupRoomsRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (!client) return;
+    const targets = new Map<string, string[]>();
+    const add = (roomId: string, extra: readonly (string | undefined)[]) => {
+      const id = roomId.trim();
+      if (!id) return;
+      const known = targets.get(id) ?? rememberedGroupChatMemberIds(id);
+      targets.set(id, [
+        ...known,
+        ...extra.flatMap((userId) => {
+          const trimmed = userId?.trim();
+          return trimmed ? [trimmed] : [];
+        }),
+      ]);
+    };
+    for (const row of rows) {
+      if (!isPeopleListGroup(row)) continue;
+      if (client.getRoom(row.roomId)?.getCanonicalAlias()?.trim()) continue;
+      add(
+        row.roomId,
+        (row.faces ?? []).map((face) => face.userId),
+      );
+    }
+    for (const group of pendingGroups) {
+      add(
+        group.roomId,
+        (group.faces ?? []).map((face) => face.userId),
+      );
+    }
+    let cancelled = false;
+    void (async () => {
+      for (const [roomId, memberIds] of targets) {
+        if (cancelled || ensuredGroupRoomsRef.current.has(roomId)) continue;
+        ensuredGroupRoomsRef.current.add(roomId);
+        await ensureRoomMembers(roomId, memberIds);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client, ensureRoomMembers, pendingGroups, rows]);
 
   useEffect(() => {
     const term = query.trim();
@@ -1153,13 +1201,12 @@ export function MyConnections({
     }));
     try {
       const { roomId } = await createRoom(title);
-      if (client) {
-        for (const row of selectedPeople) {
-          const mxid = personIdToMatrixUserId[row.person.id];
-          if (!mxid) continue;
-          await client.invite(roomId, mxid).catch(() => undefined);
-        }
-      }
+      const memberIds = selectedPeople.flatMap((row) => {
+        const mxid = personIdToMatrixUserId[row.person.id]?.trim();
+        return mxid ? [mxid] : [];
+      });
+      rememberGroupChatMembers(roomId, memberIds);
+      await ensureRoomMembers(roomId, memberIds);
       setPendingGroups((current) => [
         {
           roomId,

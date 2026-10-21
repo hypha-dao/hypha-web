@@ -52,6 +52,7 @@ import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
+import { isAutoJoinGroupInvite } from '../../group-room';
 import {
   createBotOwnedRoomAction,
   ensureDirectPairRoomAction,
@@ -613,6 +614,14 @@ interface MatrixContextType {
     title: string,
     candidateRoomIds: string[],
   ) => Promise<{ roomId: string }>;
+  /**
+   * Join these people into an existing group room. Invite-only rooms stay
+   * invisible until the bot puppet-accepts each member.
+   */
+  ensureRoomMembers: (
+    roomId: string,
+    matrixUserIds: readonly string[],
+  ) => Promise<void>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
   /** Join this ecosystem’s shared room (not the root space member room). */
@@ -1117,6 +1126,56 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     };
   }, [client, connectionStatus, recoverMatrixSync]);
 
+  const acceptedGroupInvitesRef = React.useRef(new Set<string>());
+
+  React.useEffect(() => {
+    if (!client) return;
+    const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+    const acceptGroupInvites = () => {
+      const selfId = client.getUserId();
+      if (!selfId) return;
+      for (const room of client.getRooms()) {
+        if (acceptedGroupInvitesRef.current.has(room.roomId)) continue;
+        const createEvent = room.currentState.getStateEvents(
+          MatrixSdk.EventType.RoomCreate,
+          '',
+        );
+        const createContent = (
+          Array.isArray(createEvent) ? null : createEvent?.getContent()
+        ) as { creator?: unknown } | null;
+        const creator = Array.isArray(createEvent)
+          ? null
+          : createEvent?.getSender() ||
+            (typeof createContent?.creator === 'string'
+              ? createContent.creator
+              : null);
+        if (
+          !isAutoJoinGroupInvite({
+            membership: room.getMyMembership(),
+            canonicalAlias: room.getCanonicalAlias(),
+            roomName: room.name,
+            creatorUserId: creator,
+            botUserId: botId,
+          })
+        ) {
+          continue;
+        }
+        acceptedGroupInvitesRef.current.add(room.roomId);
+        void ensureMemberJoinedRoomAction({
+          roomId: room.roomId,
+          matrixUserId: selfId,
+        }).then(({ joined }) => {
+          if (!joined) acceptedGroupInvitesRef.current.delete(room.roomId);
+        });
+      }
+    };
+    acceptGroupInvites();
+    client.on(MatrixSdk.ClientEvent.Sync, acceptGroupInvites);
+    return () => {
+      client.removeListener(MatrixSdk.ClientEvent.Sync, acceptGroupInvites);
+    };
+  }, [client]);
+
   React.useEffect(() => {
     return () => {
       if (client) {
@@ -1166,6 +1225,48 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         await new Promise((r) => setTimeout(r, 50));
       }
       throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
+
+  const ensureRoomMembers = React.useCallback(
+    async (roomId: string, matrixUserIds: readonly string[]) => {
+      if (!client) return;
+      const trimmedRoomId = roomId.trim();
+      if (!trimmedRoomId) return;
+      const selfId = client.getUserId();
+      const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+      const room = client.getRoom(trimmedRoomId);
+      const ids = new Set<string>();
+      for (const matrixUserId of matrixUserIds) {
+        const id = matrixUserId.trim();
+        if (!id || id === selfId || id === botId) continue;
+        ids.add(id);
+      }
+      // A space room publishes an alias. Only a group chat should pull in
+      // people who are still sitting on an invite.
+      if (room && !room.getCanonicalAlias()?.trim()) {
+        for (const member of room.getMembers()) {
+          const id = member.userId?.trim();
+          if (!id || id === selfId || id === botId) continue;
+          if (member.membership !== 'invite') continue;
+          ids.add(id);
+        }
+      }
+      for (const matrixUserId of ids) {
+        try {
+          await ensureMemberJoinedRoomAction({
+            roomId: trimmedRoomId,
+            matrixUserId,
+          });
+        } catch (error) {
+          console.warn(
+            '[Matrix] Failed to include a group member:',
+            trimmedRoomId,
+            error instanceof Error ? error.message : error,
+          );
+        }
+      }
     },
     [client],
   );
@@ -2458,6 +2559,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     connectionRetryFailed,
     createRoom,
     ensureDirectRoom,
+    ensureRoomMembers,
     ensureNetworkRoom,
     ensureEcosystemRoom,
     ensurePublicRoom,
@@ -2496,6 +2598,7 @@ const noopMatrixContext: MatrixContextType = {
   ensureDirectRoom: async () => {
     throw new Error('Matrix unavailable');
   },
+  ensureRoomMembers: async () => {},
   ensureNetworkRoom: async () => {
     throw new Error('Matrix unavailable');
   },
