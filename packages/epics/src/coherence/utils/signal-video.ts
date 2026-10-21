@@ -37,7 +37,7 @@ function isDirectVideo(url: URL): boolean {
 export function resolveSignalVideo(
   raw: string | null | undefined,
 ): SignalVideoEmbed | null {
-  const trimmed = raw?.trim() ?? '';
+  const trimmed = typeof raw === 'string' ? raw.trim() : '';
   if (!trimmed) return null;
   let url: URL;
   try {

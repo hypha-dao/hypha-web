@@ -35,9 +35,9 @@ export function resolveSignalPersonIds({
   assigneeIds?: number[] | null;
   fallbackPersonId?: number | null;
 }): number[] {
-  const assignees = (assigneeIds ?? []).filter(
-    (id) => Number.isInteger(id) && id > 0,
-  );
+  const assignees = (Array.isArray(assigneeIds) ? assigneeIds : [])
+    .map((id) => (typeof id === 'number' ? id : Number(id)))
+    .filter((id) => Number.isInteger(id) && id > 0);
   if (assignees.length > 0) return assignees;
   if (fallbackPersonId != null && fallbackPersonId > 0) {
     return [fallbackPersonId];

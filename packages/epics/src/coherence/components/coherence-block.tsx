@@ -207,7 +207,9 @@ export function CoherenceBlock({
       if (
         !slug ||
         !person?.id ||
-        !(signal.assigneeIds ?? []).includes(person.id)
+        !(Array.isArray(signal.assigneeIds) ? signal.assigneeIds : []).includes(
+          person.id,
+        )
       ) {
         return;
       }

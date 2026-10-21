@@ -498,12 +498,12 @@ function persistDockGeometry(next: DockGeometry): void {
 }
 
 type GlobalCallDockOverlayProps = {
-  useMembers?: UseMembers;
+  useMembers: UseMembers;
 };
 
 export function GlobalCallDockOverlay({
   useMembers,
-}: GlobalCallDockOverlayProps = {}) {
+}: GlobalCallDockOverlayProps) {
   const t = useTranslations('GlobalCallDock');
   const tCapture = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;

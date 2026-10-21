@@ -20,6 +20,25 @@ type SignalIndicativeAmountsProps = {
 
 const VISIBLE_CHIPS = 2;
 
+function payoutField(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return '';
+}
+
+function payoutRows(value: unknown): Payout[] {
+  if (!Array.isArray(value)) return [];
+  const rows: Payout[] = [];
+  for (const row of value) {
+    if (!row || typeof row !== 'object') continue;
+    const amount = payoutField((row as { amount?: unknown }).amount);
+    const token = payoutField((row as { token?: unknown }).token);
+    if (!amount || !token) continue;
+    rows.push({ amount, token });
+  }
+  return rows;
+}
+
 /** 2400000 → 2.4M. Small amounts stay as typed numbers. */
 export function compactIndicativeAmount(raw: string): string {
   const trimmed = raw.trim();
@@ -60,9 +79,7 @@ export function SignalIndicativeAmounts({
     shouldLoad ? ['signal-indicative-payouts', signalSlug] : null,
     async () => getCoherenceBySlug({ slug: signalSlug }),
   );
-  const rows = (payouts ?? data?.indicativePayouts ?? []).filter(
-    (payout) => payout.amount.trim() && payout.token.trim(),
-  );
+  const rows = payoutRows(payouts ?? data?.indicativePayouts);
 
   const chips = React.useMemo(
     () =>
