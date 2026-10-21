@@ -738,6 +738,9 @@ export function MemberHomeChat({
       return;
     }
     if (stored.length > 0) return;
+    // Nothing is waiting yet. A fixed prompt starts the conversation
+    // instead of asking the model to greet an empty home.
+    if (threadItems.length === 0) return;
     void send(t('homeArrival'), true);
   }, [
     intelligence.person.slug,
@@ -747,6 +750,7 @@ export function MemberHomeChat({
     setMessages,
     soundReady,
     t,
+    threadItems.length,
   ]);
 
   useEffect(() => {
@@ -836,7 +840,32 @@ export function MemberHomeChat({
     }
     return true;
   }, [homeMessages, isStreaming, threadItems]);
+  const hasSpoken = homeMessages.some(
+    (message) => message.role === 'user' && !message.metadata?.homeArrival,
+  );
+  const freshStart = threadItems.length === 0 && !hasSpoken;
+  const promptName =
+    [intelligence.person.name, intelligence.person.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim() ||
+    intelligence.person.nickname ||
+    t('fallbackName');
+  const orientation = intelligence.person.primaryOrientation;
+  const firstPromptLine =
+    orientation === 'builder'
+      ? t('firstPromptBuilder', { name: promptName })
+      : orientation === 'investor'
+      ? t('firstPromptInvestor', { name: promptName })
+      : t('firstPromptMember', { name: promptName });
+  const firstPromptAsk =
+    orientation === 'builder'
+      ? t('firstPromptAskBuilder')
+      : orientation === 'investor'
+      ? t('firstPromptAskInvestor')
+      : t('firstPromptAskMember');
   const showArrivalMask = useMemo(() => {
+    if (freshStart) return false;
     if (error) return false;
     const hasVisible = homeMessages.some((message) => {
       if (message.metadata?.homeArrival) return false;
@@ -845,7 +874,7 @@ export function MemberHomeChat({
     });
     if (hasVisible && !showSensing) return false;
     return true;
-  }, [error, homeMessages, showSensing]);
+  }, [error, freshStart, homeMessages, showSensing]);
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
@@ -938,6 +967,14 @@ export function MemberHomeChat({
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
           />
+          {freshStart ? (
+            <article className="flex items-start gap-3">
+              <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
+              <p className="text-2 leading-relaxed text-foreground">
+                {firstPromptLine}
+              </p>
+            </article>
+          ) : null}
           {homeMessages.map((message, index) => {
             const attached = widgets.filter(
               (widget) => widget.after === index + 1,
@@ -1193,19 +1230,33 @@ export function MemberHomeChat({
 
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
         <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] md:mx-4 [&::-webkit-scrollbar]:hidden">
-          {chips.map((chip) => (
+          {freshStart ? (
             <button
-              key={chip.key}
               type="button"
               disabled={isStreaming}
-              className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
+              className="shrink-0 rounded-none border border-foreground bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
               onClick={() => {
-                void send(chip.ask);
+                void send(firstPromptAsk);
               }}
             >
-              {chip.ask}
+              {firstPromptAsk}
             </button>
-          ))}
+          ) : null}
+          {chips
+            .filter((chip) => !freshStart || chip.ask !== firstPromptAsk)
+            .map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                disabled={isStreaming}
+                className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
+                onClick={() => {
+                  void send(chip.ask);
+                }}
+              >
+                {chip.ask}
+              </button>
+            ))}
         </div>
         {micOn && voiceInterview.liveTranscript ? (
           <p className="px-5 pb-1 text-1 text-neutral-11 md:px-4">
