@@ -4,6 +4,7 @@ import type { IntegrationClientSummary } from '../../integration-client/types';
 import { png } from '../../integration-client/__tests__/logo-fixtures';
 import {
   handleListMyClients,
+  handleRotateMyClientKey,
   handleUploadClientLogo,
   type IntegrationDeveloperDeps,
 } from '../developer-handlers';
@@ -48,6 +49,10 @@ function makeDeps(over: Partial<IntegrationDeveloperDeps> = {}) {
     findClientBySlug: vi.fn(async () => client()),
     storeLogo: vi.fn(async () => LOGO_URL),
     setLogo: vi.fn(async () => true),
+    rotateClientKey: vi.fn(async () => ({
+      client: client({ status: 'approved', keyPrefix: 'hyp_new' }),
+      plaintext: 'hyp_new_secret_value',
+    })),
     ...over,
   } satisfies IntegrationDeveloperDeps;
 }
@@ -167,7 +172,7 @@ describe('POST users/me/clients/{slug}/logo', () => {
     ['an SVG, even named .png', '<svg xmlns="http://www.w3.org/2000/svg"/>'],
     ['a text file', 'not an image at all'],
     ['a PNG that is far from square', png(400, 64)],
-    ['a PNG over the size cap', png(64, 64, 600 * 1024)],
+    ['a PNG over the size cap', png(64, 64, 5 * 1024 * 1024)],
   ])('refuses %s before storing anything', async (_label, content) => {
     const deps = makeDeps();
     const res = await handleUploadClientLogo(upload(content), params, deps);
@@ -221,6 +226,59 @@ describe('POST users/me/clients/{slug}/logo', () => {
     });
     const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const res = await handleUploadClientLogo(upload(png(64, 64)), params, deps);
+    spy.mockRestore();
+    expect(res.status).toBe(500);
+    expect(await res.text()).not.toContain('abc123');
+  });
+});
+
+describe('POST users/me/clients/{slug}/rotate-key', () => {
+  const approved = () => client({ status: 'approved' });
+  const post = () =>
+    new Request('http://x.test/rotate', {
+      method: 'POST',
+      headers: { authorization: 'Bearer t' },
+    });
+
+  it('needs a user token', async () => {
+    const deps = makeDeps({ authenticateUser: vi.fn(async () => userNone) });
+    const res = await handleRotateMyClientKey(post(), params, deps);
+    expect(res.status).toBe(401);
+    expect(deps.rotateClientKey).not.toHaveBeenCalled();
+  });
+
+  it('gives the owner of an approved client a new key, once', async () => {
+    const deps = makeDeps({ findClientBySlug: vi.fn(async () => approved()) });
+    const res = await handleRotateMyClientKey(post(), params, deps);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.clientKey).toBe('hyp_new_secret_value');
+    expect(deps.rotateClientKey).toHaveBeenCalledWith({ slug: 'acme' });
+  });
+
+  it('is a 404 for someone else’s client, a pending, revoked or unknown one', async () => {
+    for (const found of [
+      { ...approved(), requestedByPersonId: 999 },
+      client({ status: 'pending' }),
+      client({ status: 'revoked' }),
+      null,
+    ]) {
+      const deps = makeDeps({ findClientBySlug: vi.fn(async () => found) });
+      const res = await handleRotateMyClientKey(post(), params, deps);
+      expect(res.status).toBe(404);
+      expect(deps.rotateClientKey).not.toHaveBeenCalled();
+    }
+  });
+
+  it('answers a failure with no detail and does not log the key', async () => {
+    const deps = makeDeps({
+      findClientBySlug: vi.fn(async () => approved()),
+      rotateClientKey: vi.fn(async () => {
+        throw new Error('db password abc123');
+      }),
+    });
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const res = await handleRotateMyClientKey(post(), params, deps);
     spy.mockRestore();
     expect(res.status).toBe(500);
     expect(await res.text()).not.toContain('abc123');

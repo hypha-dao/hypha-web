@@ -256,6 +256,7 @@ test fails when a route skips the wrapper or the values drift.
 | `POST /api/integration/v1/ops/clients/{slug}/rotate-key`   | new  | `POST /api/v1/ops/integration-clients/{slug}/rotate-key` | **built** | ops secret                      |
 | `GET /api/integration/v1/users/me/clients`                 | new  | none (developer area)                                    | **built** | user token                      |
 | `POST /api/integration/v1/users/me/clients/{slug}/logo`    | new  | none (developer area)                                    | **built** | user token, the requester       |
+| `POST /api/integration/v1/users/me/clients/{slug}/rotate-key` | new  | none (developer area)                                    | **built** | user token, the requester of an approved client; new key returned once |
 | signer state of the user's wallet (opt-in or sub-resource) | new  | none                                                     | `planned` | client key + user token (M4/M5) |
 | `POST /api/integration/v1/actions`                         | new  | none                                                     | **spike** | client key + user token         |
 | `GET /api/integration/v1/actions/{id}`                     | new  | none                                                     | **spike** | client key + user token         |
@@ -267,7 +268,7 @@ test fails when a route skips the wrapper or the values drift.
 **Developer area (client registration page, `/{lang}/developers`).** The page registers through the one existing route
 (`POST clients/requests`); the extra routes only serve it. `users/me/clients` lists the caller's requests (an unapproved logo is
 reported as `in_review` with no address). `users/me/clients/{slug}/logo` takes one multipart `logo` (PNG, JPEG or WebP, at most
-512 KB, roughly square; judged by its bytes, SVG refused) while the request is pending, and stores it in the platform file storage.
+4 MB, roughly square; judged by its bytes, SVG refused) while the request is pending, and stores it in the platform file storage.
 Approval stays manual through `ops/*` (which lists the pending logo address for review). A client's logo is shown to people only
 when the client is `approved` (approving the client approves the logo); the approval page returns it as `client.logoUrl`, else `null`.
 

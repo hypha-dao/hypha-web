@@ -6,9 +6,13 @@
  * declared content type. SVG is refused on purpose: it can carry script.
  */
 
-export const CLIENT_LOGO_MAX_BYTES = 512 * 1024;
+/**
+ * 4 MB: the upload goes through our own route, and serverless request bodies
+ * are capped at 4.5 MB. (Space images go straight to storage, hence 16 MB.)
+ */
+export const CLIENT_LOGO_MAX_BYTES = 4 * 1024 * 1024;
 export const CLIENT_LOGO_MIN_SIDE = 32;
-export const CLIENT_LOGO_MAX_SIDE = 2048;
+export const CLIENT_LOGO_MAX_SIDE = 4096;
 /** "Square-ish": the long side may be at most this many times the short side. */
 export const CLIENT_LOGO_MAX_ASPECT = 2;
 
@@ -156,11 +160,11 @@ export const CLIENT_LOGO_REJECTION_MESSAGE: Record<
   string
 > = {
   empty: 'The logo file is empty.',
-  too_large: 'The logo must be 512 KB or smaller.',
+  too_large: 'The logo must be 4 MB or smaller.',
   unsupported_type: 'The logo must be a PNG, JPEG or WebP image (no SVG).',
   unreadable: 'The logo image could not be read.',
   bad_dimensions:
-    'The logo must be roughly square, between 32 and 2048 pixels on each side.',
+    'The logo must be roughly square, between 32 and 4096 pixels on each side.',
 };
 
 /**

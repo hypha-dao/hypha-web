@@ -10,6 +10,7 @@ import {
   readApiError,
   useDeveloperApi,
 } from '../_lib/api';
+import { RotateKeyButton } from './key-dialogs';
 
 const STATUS_LABEL = {
   pending: 'Pending review',
@@ -164,20 +165,28 @@ export function ClientList() {
               key={client.slug}
               client={client}
               actions={
-                client.status === 'pending' && (
-                  <label className="text-1 text-muted-foreground">
-                    {client.logo.state === 'none'
-                      ? 'Add a logo'
-                      : 'Replace the logo'}{' '}
-                    (reviewed before it appears):{' '}
-                    <input
-                      type="file"
-                      accept={LOGO_ACCEPT}
-                      onChange={(e) =>
-                        void uploadLogo(client, e.target.files?.[0])
-                      }
-                    />
-                  </label>
+                client.status === 'approved' ? (
+                  <RotateKeyButton
+                    slug={client.slug}
+                    clientName={client.name}
+                    onRotated={() => void load()}
+                  />
+                ) : (
+                  client.status === 'pending' && (
+                    <label className="text-1 text-muted-foreground">
+                      {client.logo.state === 'none'
+                        ? 'Add a logo'
+                        : 'Replace the logo'}{' '}
+                      (reviewed before it appears):{' '}
+                      <input
+                        type="file"
+                        accept={LOGO_ACCEPT}
+                        onChange={(e) =>
+                          void uploadLogo(client, e.target.files?.[0])
+                        }
+                      />
+                    </label>
+                  )
                 )
               }
             />

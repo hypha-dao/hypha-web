@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * auth: user token (Bearer), the requester of a pending client
- * Multipart field `logo`: PNG, JPEG or WebP, up to 512 KB, roughly square. Checked by content, stored in Hypha file storage.
+ * Multipart field `logo`: PNG, JPEG or WebP, up to 4 MB, roughly square. Checked by content, stored in Hypha file storage.
  */
 export const POST = integrationRoute(
   async (request: Request, { params }: { params: Promise<{ slug: string }> }) =>

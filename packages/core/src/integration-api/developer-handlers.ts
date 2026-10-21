@@ -9,6 +9,7 @@ import type { IntegrationClientSummary } from '../integration-client/types';
 import {
   logFailure,
   serverError,
+  type IssuedKey,
   userAuthFailure,
   type UserAuthResult,
 } from './handlers';
@@ -39,6 +40,8 @@ export type IntegrationDeveloperDeps = {
     requestedByPersonId: number;
     logoUrl: string;
   }): Promise<boolean>;
+  /** Same core function as `ops/.../rotate-key`; null when not approved. */
+  rotateClientKey(args: { slug: string }): Promise<IssuedKey | null>;
 };
 
 type LogoState = 'none' | 'in_review' | 'approved';
@@ -164,5 +167,43 @@ export async function handleUploadClientLogo(
   } catch (error) {
     logFailure('store integration client logo', { slug }, error);
     return serverError('Failed to store the logo');
+  }
+}
+
+/**
+ * POST users/me/clients/{slug}/rotate-key (user token): the requester of an
+ * approved client gets a new key; the old one stops working at once. The key is
+ * returned by this call only (only its digest is stored).
+ */
+export async function handleRotateMyClientKey(
+  request: Request,
+  { slug }: { slug: string },
+  deps: IntegrationDeveloperDeps,
+): Promise<Response> {
+  const auth = await deps.authenticateUser(request);
+  if (!auth.ok) return userAuthFailure(auth);
+
+  try {
+    const client = await deps.findClientBySlug({ slug });
+    // Unknown, someone else's, pending or revoked: all look the same.
+    if (
+      !client ||
+      client.requestedByPersonId !== auth.user.id ||
+      client.status !== 'approved'
+    ) {
+      return notFound();
+    }
+    const issued = await deps.rotateClientKey({ slug });
+    if (!issued) return notFound();
+    return integrationJson({
+      slug,
+      keyPrefix: issued.client.keyPrefix,
+      clientKey: issued.plaintext,
+      warning:
+        'Store this key now - it is not recoverable. The previous key no longer works.',
+    });
+  } catch (error) {
+    logFailure('rotate own integration client key', { slug }, error);
+    return serverError('Failed to rotate the key');
   }
 }

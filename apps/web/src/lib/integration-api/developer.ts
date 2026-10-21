@@ -4,6 +4,7 @@ import {
   listIntegrationClientsForPerson,
   authenticateIntegrationUser,
   setIntegrationClientLogo,
+  rotateIntegrationClientKey,
   type IntegrationDeveloperDeps,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -17,4 +18,5 @@ export const integrationDeveloperDeps: IntegrationDeveloperDeps = {
   findClientBySlug: (args) => findIntegrationClientBySlug(args, { db }),
   storeLogo: storeClientLogo,
   setLogo: (args) => setIntegrationClientLogo(args, { db }),
+  rotateClientKey: (args) => rotateIntegrationClientKey(args, { db }),
 };

@@ -27,7 +27,9 @@ type Outcome =
 export function ClientRegistrationForm() {
   const { lang } = useParams<{ lang: string }>();
   const api = useDeveloperApi();
-  const [scopes, setScopes] = useState<string[]>([]);
+  const [scopes, setScopes] = useState<string[]>([
+    ...INTEGRATION_CLIENT_SCOPES,
+  ]);
   const [logo, setLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
@@ -220,8 +222,8 @@ export function ClientRegistrationForm() {
           onChange={(e) => pickLogo(e.target.files?.[0] ?? null)}
         />
         <p className="text-1 text-muted-foreground">
-          PNG, JPEG or WebP (no SVG), up to 512 KB, roughly square. It is shown
-          at about 40 px next to the Hypha mark on the confirmation page, and is
+          PNG, JPEG or WebP (no SVG), up to 4 MB, roughly square. It is shown at
+          about 40 px next to the Hypha mark on the confirmation page, and is
           reviewed before it appears: nobody sees it until the client is
           approved.
         </p>

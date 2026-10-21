@@ -77,7 +77,7 @@ describe('inspectClientLogo', () => {
       png(400, 100),
       png(100, 400),
       png(16, 16),
-      png(4000, 4000),
+      png(5000, 5000),
     ]) {
       expect(inspectClientLogo(bytes)).toEqual({
         ok: false,
