@@ -3055,11 +3055,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const collapsedRailHeaderClass = `flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border px-4 py-2 ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
-  const collapsedRailBody = isAiOpen ? (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} embedded />
-    </div>
-  ) : (
+  const collapsedMenu = (
     <>
       <SidebarGroup className="p-2 pt-4">
         <SidebarGroupContent>
@@ -3093,6 +3089,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           {renderRecentSpacesSection('collapsed', 'recent-collapsed')}
         </div>
       ) : null}
+    </>
+  );
+  // Below xl the bottom menu is the chrome, so the open conversation can
+  // show spaces in this column. On the wide layout the icon menu stays.
+  const collapsedRailBody = (
+    <>
+      {isAiOpen ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden">
+          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} embedded />
+        </div>
+      ) : null}
+      <div
+        className={
+          isAiOpen ? 'hidden min-h-0 flex-1 flex-col xl:flex' : 'contents'
+        }
+      >
+        {collapsedMenu}
+      </div>
     </>
   );
   const renderCollapsedRail = (landmarks: boolean) => {
