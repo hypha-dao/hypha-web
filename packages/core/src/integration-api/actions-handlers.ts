@@ -45,6 +45,14 @@ export type IntegrationActionDeps = Pick<
     personId: number;
     now: Date;
   }): Promise<number>;
+  /** Closes the open actions of this client and person for the same proposal. */
+  supersedePendingActions(args: {
+    clientId: number;
+    personId: number;
+    spaceSlug: string;
+    proposalSlug: string;
+    now: Date;
+  }): Promise<number>;
   createAction(args: {
     clientId: number;
     personId: number;
@@ -118,21 +126,6 @@ export async function handlePrepareAction(
   const now = deps.now();
 
   try {
-    const pending = await deps.countPendingActions({
-      clientId: auth.client.id,
-      personId: auth.user.id,
-      now,
-    });
-    if (pending >= INTEGRATION_ACTION_MAX_PENDING) {
-      return integrationJson(
-        {
-          error: 'Too many pending actions for this person',
-          code: 'too_many_pending',
-        },
-        { status: 429 },
-      );
-    }
-
     const target = await deps.resolveVoteTarget({
       authorization: request.headers.get('authorization'),
       spaceSlug: input.spaceSlug,
@@ -146,6 +139,31 @@ export async function handlePrepareAction(
           ...(target.reason && { reason: target.reason }),
         },
         { status: target.status },
+      );
+    }
+
+    // Only a request that would be accepted replaces the open ones, so a
+    // refused prepare never kills a link the person may still use.
+    await deps.supersedePendingActions({
+      clientId: auth.client.id,
+      personId: auth.user.id,
+      spaceSlug: input.spaceSlug,
+      proposalSlug: input.proposalSlug,
+      now,
+    });
+
+    const pending = await deps.countPendingActions({
+      clientId: auth.client.id,
+      personId: auth.user.id,
+      now,
+    });
+    if (pending >= INTEGRATION_ACTION_MAX_PENDING) {
+      return integrationJson(
+        {
+          error: 'Too many pending actions for this person',
+          code: 'too_many_pending',
+        },
+        { status: 429 },
       );
     }
 

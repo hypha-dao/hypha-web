@@ -35,9 +35,14 @@ export type IntegrationUser = {
   slug?: string;
 };
 
+export type UserAuthErrorCode =
+  | 'missing_token'
+  | 'invalid_token'
+  | 'profile_required';
+
 export type UserAuthResult =
   | { ok: true; user: IntegrationUser }
-  | { ok: false; status: 401 | 403; error: string };
+  | { ok: false; status: 401 | 403; code: UserAuthErrorCode; error: string };
 
 export type IssuedKey = { client: IntegrationClientSummary; plaintext: string };
 
@@ -87,8 +92,6 @@ export type IntegrationApiDeps = {
 
 type Json = Record<string, unknown>;
 
-const unauthorized = () =>
-  integrationJson({ error: 'Unauthorized' }, { status: 401 });
 export const serverError = (error: string) =>
   integrationJson({ error }, { status: 500 });
 export const invalidJson = () =>
@@ -107,9 +110,10 @@ function clientAuthFailure(auth: Extract<ClientAuthResult, { ok: false }>) {
 }
 
 export function userAuthFailure(auth: Extract<UserAuthResult, { ok: false }>) {
-  return auth.status === 401
-    ? unauthorized()
-    : integrationJson({ error: auth.error }, { status: auth.status });
+  return integrationJson(
+    { error: auth.error, code: auth.code },
+    { status: auth.status },
+  );
 }
 
 /** An absent or blank body is `{}`; anything else must parse as JSON. */

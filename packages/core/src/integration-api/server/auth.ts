@@ -21,16 +21,31 @@ export async function authenticateIntegrationUser(
     .get('authorization')
     ?.match(/^Bearer\s+(.+)$/i)?.[1]
     ?.trim();
-  if (!token) return { ok: false, status: 401, error: 'Unauthorized' };
+  if (!token) {
+    return {
+      ok: false,
+      status: 401,
+      code: 'missing_token',
+      error: 'Unauthorized',
+    };
+  }
 
   const auth = await verifyPrivyAuthToken(token);
-  if (!auth.ok) return { ok: false, status: 401, error: 'Unauthorized' };
+  if (!auth.ok) {
+    return {
+      ok: false,
+      status: 401,
+      code: 'invalid_token',
+      error: 'Unauthorized',
+    };
+  }
 
   const person = await findPersonBySub({ sub: auth.userId }, { db });
   if (!person) {
     return {
       ok: false,
       status: 403,
+      code: 'profile_required',
       error: 'A Hypha profile is required',
     };
   }

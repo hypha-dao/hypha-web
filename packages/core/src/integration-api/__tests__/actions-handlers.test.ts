@@ -77,6 +77,23 @@ function makeDeps(
             r.expiresAt > now,
         ).length,
     ),
+    supersedePendingActions: vi.fn(
+      async ({ clientId, personId, spaceSlug, proposalSlug, now }) => {
+        const open = rows.filter(
+          (r) =>
+            r.clientId === clientId &&
+            r.personId === personId &&
+            r.status === 'pending' &&
+            r.expiresAt > now &&
+            r.parameters.spaceSlug === spaceSlug &&
+            r.parameters.proposalSlug === proposalSlug,
+        );
+        open.forEach((r) => {
+          r.expiresAt = now;
+        });
+        return open.length;
+      },
+    ),
     createAction: vi.fn(async (args) => {
       const row = {
         ...args,
@@ -155,8 +172,11 @@ function expectHeaders(response: Response) {
   );
 }
 
-async function prepared(deps: IntegrationActionDeps) {
-  const response = await handlePrepareAction(post(PREPARE_BODY), deps);
+async function prepared(
+  deps: IntegrationActionDeps,
+  body: Record<string, unknown> = PREPARE_BODY,
+) {
+  const response = await handlePrepareAction(post(body), deps);
   expect(response.status).toBe(202);
   return (await response.json()) as {
     actionId: string;
@@ -217,7 +237,12 @@ describe('POST actions (prepare)', () => {
       (await handlePrepareAction(post(PREPARE_BODY), noKey.deps)).status,
     ).toBe(401);
     const noUser = makeDeps({
-      user: { ok: false, status: 401, error: 'Unauthorized' },
+      user: {
+        ok: false,
+        status: 401,
+        code: 'invalid_token',
+        error: 'Unauthorized',
+      },
     });
     const response = await handlePrepareAction(post(PREPARE_BODY), noUser.deps);
     expect(response.status).toBe(401);
@@ -282,7 +307,7 @@ describe('POST actions (prepare)', () => {
   it('429 after too many open actions for the same person and client', async () => {
     const { deps, rows } = makeDeps();
     for (let i = 0; i < INTEGRATION_ACTION_MAX_PENDING; i++) {
-      await prepared(deps);
+      await prepared(deps, { ...PREPARE_BODY, proposalSlug: `proposal-${i}` });
     }
     const response = await handlePrepareAction(post(PREPARE_BODY), deps);
     expect(response.status).toBe(429);
@@ -345,7 +370,12 @@ describe('GET actions/{id} (client polling): binding', () => {
       ).status,
     ).toBe(404);
     const anonymous = makeDeps({
-      user: { ok: false, status: 401, error: 'Unauthorized' },
+      user: {
+        ok: false,
+        status: 401,
+        code: 'invalid_token',
+        error: 'Unauthorized',
+      },
     });
     expect(
       (await handleGetClientAction(get(), anonymous.deps, 'x')).status,
@@ -379,7 +409,12 @@ describe('approval page routes: binding to the person', () => {
 
   it('401 without a user token', async () => {
     const { deps } = makeDeps({
-      user: { ok: false, status: 401, error: 'Unauthorized' },
+      user: {
+        ok: false,
+        status: 401,
+        code: 'invalid_token',
+        error: 'Unauthorized',
+      },
     });
     const response = await handleGetUserAction(get(), deps, 'x');
     expect(response.status).toBe(401);
@@ -579,7 +614,7 @@ describe('expiry', () => {
   it('expired actions do not count towards the pending cap', async () => {
     const { deps, clock } = makeDeps();
     for (let i = 0; i < INTEGRATION_ACTION_MAX_PENDING; i++) {
-      await prepared(deps);
+      await prepared(deps, { ...PREPARE_BODY, proposalSlug: `proposal-${i}` });
     }
     clock.value = new Date(
       T0.getTime() + INTEGRATION_ACTION_TTL_SECONDS * 1000 + 1,
@@ -587,5 +622,85 @@ describe('expiry', () => {
     expect((await handlePrepareAction(post(PREPARE_BODY), deps)).status).toBe(
       202,
     );
+  });
+});
+
+describe('POST actions: a new prepare supersedes the open ones', () => {
+  it('the older link for the same proposal reads expired and cannot be answered', async () => {
+    const { deps } = makeDeps();
+    const first = await prepared(deps);
+    const second = await prepared(deps);
+    expect(second.actionId).not.toBe(first.actionId);
+
+    const poll = await handleGetClientAction(get(), deps, first.actionId);
+    expect((await poll.json()).status).toBe('expired');
+    const approve = await handleApproveAction(post(), deps, first.actionId);
+    expect(approve.status).toBe(409);
+    expect((await approve.json()).status).toBe('expired');
+    expect(
+      (await handleApproveAction(post(), deps, second.actionId)).status,
+    ).toBe(200);
+  });
+
+  it('leaves other proposals, other clients and other people alone', async () => {
+    const { deps } = makeDeps();
+    const other = await prepared(deps, {
+      ...PREPARE_BODY,
+      proposalSlug: 'another-proposal',
+    });
+    await prepared(deps);
+    const stillOpen = await handleGetUserAction(get(), deps, other.actionId);
+    expect((await stillOpen.json()).status).toBe('pending');
+
+    const otherClient = makeDeps({ client: clientOk(OTHER_CLIENT) });
+    const kept = await prepared(deps);
+    await prepared(otherClient.deps);
+    expect(
+      (await (await handleGetUserAction(get(), deps, kept.actionId)).json())
+        .status,
+    ).toBe('pending');
+  });
+
+  it('a refused prepare does not close the open link', async () => {
+    const { deps } = makeDeps();
+    const first = await prepared(deps);
+    const refusing = {
+      ...deps,
+      resolveVoteTarget: vi.fn(async () => ({
+        ok: false as const,
+        status: 409 as const,
+        error: 'This person cannot vote on this proposal right now',
+        code: 'cannot_vote',
+        reason: 'proposal_closed',
+      })),
+    };
+    expect(
+      (await handlePrepareAction(post(PREPARE_BODY), refusing)).status,
+    ).toBe(409);
+    const poll = await handleGetClientAction(get(), deps, first.actionId);
+    expect((await poll.json()).status).toBe('pending');
+  });
+});
+
+describe('user-token failures carry a machine-readable code', () => {
+  it.each([
+    ['missing_token', 401],
+    ['invalid_token', 401],
+    ['profile_required', 403],
+  ] as const)('%s on the approval page routes', async (code, status) => {
+    const { deps } = makeDeps({
+      user: { ok: false, status, code, error: 'x' },
+    });
+    const id = '00000000-0000-4000-8000-000000000001';
+    for (const response of [
+      await handleGetUserAction(get(), deps, id),
+      await handleApproveAction(post(), deps, id),
+      await handleRejectAction(post(), deps, id),
+      await handleActionResult(post({ outcome: 'failed' }), deps, id),
+    ]) {
+      expect(response.status).toBe(status);
+      expect((await response.json()).code).toBe(code);
+      expectHeaders(response);
+    }
   });
 });

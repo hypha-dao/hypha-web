@@ -10,6 +10,7 @@ import {
   getAbsoluteAppUrl,
   recordActionResult,
   resolveVoteTarget,
+  supersedePendingActions,
   type IntegrationActionDeps,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -25,6 +26,7 @@ export const integrationActionDeps: IntegrationActionDeps = {
   authenticateUser: (request) => authenticateIntegrationUser(request, { db }),
   resolveVoteTarget: (args) => resolveVoteTarget(args, { db }),
   countPendingActions: (args) => countPendingActions(args, { db }),
+  supersedePendingActions: (args) => supersedePendingActions(args, { db }),
   createAction: (args) => createIntegrationAction(args, { db }),
   findActionForClientPerson: (args) => findActionForClientPerson(args, { db }),
   findActionForPerson: (args) => findActionForPerson(args, { db }),

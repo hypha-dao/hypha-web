@@ -51,11 +51,13 @@ const userOk: UserAuthResult = { ok: true, user: USER };
 const userNone: UserAuthResult = {
   ok: false,
   status: 401,
+  code: 'missing_token',
   error: 'Unauthorized',
 };
 const userNoProfile: UserAuthResult = {
   ok: false,
   status: 403,
+  code: 'profile_required',
   error: 'A Hypha profile is required',
 };
 
@@ -186,7 +188,10 @@ describe('auth matrix: client key + user token routes', () => {
       const deps = makeDeps({ authenticateUser: vi.fn(async () => userNone) });
       const response = await run(deps);
       expect(response.status).toBe(401);
-      expect(await response.json()).toEqual({ error: 'Unauthorized' });
+      expect(await response.json()).toEqual({
+        error: 'Unauthorized',
+        code: 'missing_token',
+      });
       expect(deps.registerGrant).not.toHaveBeenCalled();
       expect(deps.revokeGrant).not.toHaveBeenCalled();
       expectHeaders(response);
@@ -203,6 +208,7 @@ describe('auth matrix: client key + user token routes', () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({
         error: 'A Hypha profile is required',
+        code: 'profile_required',
       });
       expectHeaders(response);
     },

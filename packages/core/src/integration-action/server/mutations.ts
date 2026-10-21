@@ -1,5 +1,5 @@
 import { integrationActions } from '@hypha-platform/storage-postgres';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 
 import type { DbConfig } from '../../server';
 import type {
@@ -90,4 +90,42 @@ export const recordActionResult = async (
     )
     .returning();
   return row ? toActionRecord(row) : null;
+};
+
+/**
+ * Preparing a new action for the same client, person and proposal replaces the
+ * open ones: their expiry moves to `now`, so they read as `expired` and can no
+ * longer be answered (a stale link cannot also vote). Returns how many closed.
+ */
+export const supersedePendingActions = async (
+  {
+    clientId,
+    personId,
+    spaceSlug,
+    proposalSlug,
+    now,
+  }: {
+    clientId: number;
+    personId: number;
+    spaceSlug: string;
+    proposalSlug: string;
+    now: Date;
+  },
+  { db }: DbConfig,
+): Promise<number> => {
+  const rows = await db
+    .update(integrationActions)
+    .set({ expiresAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(integrationActions.clientId, clientId),
+        eq(integrationActions.personId, personId),
+        eq(integrationActions.status, 'pending'),
+        gt(integrationActions.expiresAt, now),
+        sql`${integrationActions.parameters}->>'spaceSlug' = ${spaceSlug}`,
+        sql`${integrationActions.parameters}->>'proposalSlug' = ${proposalSlug}`,
+      ),
+    )
+    .returning({ id: integrationActions.id });
+  return rows.length;
 };
