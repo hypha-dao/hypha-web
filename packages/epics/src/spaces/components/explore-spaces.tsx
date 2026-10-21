@@ -176,6 +176,7 @@ export function ExploreSpaces({
   networkGrowth = null,
   creatorMapPins,
   networkRanks = [],
+  spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
   const { open: chatOpen } = useHumanChatPanel();
@@ -519,6 +520,15 @@ export function ExploreSpaces({
         lang={lang}
         selectedSpace={selectedSpace}
         onClose={() => setSelectedSpaceId(null)}
+        circles={nonArchivedSpaces.filter(
+          (space) => space.parentId === selectedSpace.id,
+        )}
+        capitals={
+          spaceCapitals?.[String(selectedSpace.id)] ?? {
+            seeks: [],
+            offers: [],
+          }
+        }
         onSelectRank={selectRank}
         ranks={showRanking ? [] : networkRanks}
       />

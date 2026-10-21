@@ -1,29 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import useSWR from 'swr';
-import { ArrowUpRight, ChevronDown, Wallet } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { ArrowUpRight, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
-import { Button, Skeleton } from '@hypha-platform/ui';
-import { useAuthentication } from '@hypha-platform/authentication';
+import { Button } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   collapseCategoriesToGroups,
   DEFAULT_SPACE_LEAD_IMAGE,
   getCategoryGroupLabel,
+  parseCapitalKeys,
   type Space,
   type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
-import { cn } from '@hypha-platform/ui-utils';
 import { NetworkRanking } from '../../network-exchange';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-
-type TreasuryAsset = {
-  symbol: string;
-  value: number;
-};
 
 function stripTags(value: string) {
   let out = '';
@@ -73,47 +66,42 @@ function readablePlace(label: string) {
   ).toFixed(2)}° ${east}`;
 }
 
-function formatAmount(value: number, lang: string) {
-  return new Intl.NumberFormat(lang, {
-    maximumFractionDigits: value >= 100 ? 0 : 2,
-  }).format(value);
-}
-
-function useSpaceTreasury(slug: string | null) {
-  const { getAccessToken } = useAuthentication();
-  const { data, isLoading } = useSWR(
-    slug ? [`/api/v1/spaces/${slug}/assets?bestEffort=true`] : null,
-    async ([endpoint]) => {
-      const token = await getAccessToken();
-      const headers: HeadersInit = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
-      const response = await fetch(endpoint, { headers });
-      if (!response.ok) return [] as TreasuryAsset[];
-      const body = (await response.json()) as {
-        assets?: { symbol?: string; value?: number }[];
-      };
-      return (body.assets ?? []).flatMap((asset) => {
-        if (!asset.symbol || !(asset.value && asset.value > 0)) return [];
-        return [{ symbol: asset.symbol, value: asset.value }];
-      });
-    },
-    { revalidateOnFocus: false },
+function CapitalList({
+  keys,
+  empty,
+}: {
+  keys: ReturnType<typeof parseCapitalKeys>;
+  empty: string;
+}) {
+  const t = useTranslations('NetworkExchange');
+  if (keys.length === 0) {
+    return <p className="mt-2 text-2 text-neutral-11">{empty}</p>;
+  }
+  return (
+    <ul className="mt-2 grid gap-1.5">
+      {keys.map((key) => (
+        <li key={key} className="flex items-center gap-2 text-1">
+          <span className="size-1.5 shrink-0 bg-foreground" aria-hidden />
+          {t(`capitals.${key}`)}
+        </li>
+      ))}
+    </ul>
   );
-  return {
-    assets: data ?? [],
-    isLoading: Boolean(slug) && isLoading,
-  };
 }
 
 export function NetworkSidePanel({
   lang,
   selectedSpace,
+  circles = [],
+  capitals,
   onClose,
   onSelectRank,
   ranks,
 }: {
   lang: Locale;
   selectedSpace: Space | null;
+  circles?: Space[];
+  capitals?: { seeks: string[]; offers: string[] } | null;
   onClose: () => void;
   onSelectRank: (rank: NetworkSpaceRank) => void;
   ranks: NetworkSpaceRank[];
@@ -121,9 +109,9 @@ export function NetworkSidePanel({
   const t = useTranslations('NetworkExchange');
   const tCommon = useTranslations('Common');
   const { openCoherenceChat, setFocusedSpaceChat } = useHumanChatPanel();
-  const { assets, isLoading } = useSpaceTreasury(selectedSpace?.slug ?? null);
-  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const seeks = parseCapitalKeys(capitals?.seeks);
+  const offers = parseCapitalKeys(capitals?.offers);
   const summary = excerpt(selectedSpace?.description);
   const place = readablePlace(selectedSpace?.locationLabel?.trim() ?? '');
   const groups = collapseCategoriesToGroups(selectedSpace?.categories ?? []);
@@ -135,9 +123,6 @@ export function NetworkSidePanel({
   const spaceHref = selectedSpace?.slug
     ? `/${lang}/dho/${selectedSpace.slug}/overview`
     : null;
-  const expanded = expandedSlug === selectedSpace?.slug;
-  const visibleAssets = expanded ? assets : assets.slice(0, 4);
-  const hiddenCount = Math.max(0, assets.length - visibleAssets.length);
   const focusedRoomId = selectedSpace?.chatRoomId?.trim() || null;
   const focusedSlug = selectedSpace?.slug?.trim() || '';
   const focusedTitle = selectedSpace?.title ?? '';
@@ -210,7 +195,7 @@ export function NetworkSidePanel({
               {eyebrow}
             </p>
             <h2
-              className="mt-1 text-3 leading-tight tracking-[-0.02em] text-foreground"
+              className="mt-1 text-4 leading-tight tracking-[-0.02em] text-foreground"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {selectedSpace.title}
@@ -218,72 +203,52 @@ export function NetworkSidePanel({
             {place ? (
               <p className="mt-1 text-1 text-neutral-11">{place}</p>
             ) : null}
-            {summary ? (
-              <p className="pt-4 text-1 leading-relaxed text-neutral-11">
-                {summary}
-              </p>
-            ) : null}
           </div>
-          <div className="mt-4 border-t border-border px-4 py-4">
-            {isLoading || visibleAssets.length > 0 ? (
+          {summary ? (
+            <p className="px-4 pt-3 text-2 leading-relaxed text-neutral-11">
+              {summary}
+            </p>
+          ) : null}
+          {circles.length > 0 ? (
+            <div className="mt-4 border-t border-border px-4 py-4">
               <p className="flex items-center gap-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
-                <Wallet className="size-3.5" aria-hidden />
-                {t('treasuryLive')}
+                <Users className="size-3.5" aria-hidden />
+                {t('governanceCircles')}
               </p>
-            ) : (
-              <p className="text-1 text-neutral-11">{t('noTreasuryLink')}</p>
-            )}
-            {isLoading ? (
-              <div className="mt-3 grid grid-cols-2 border border-border">
-                {Array.from({ length: 4 }, (_, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      'px-3 py-3',
-                      index % 2 === 1 && 'border-l border-border',
-                      index >= 2 && 'border-t border-border',
+              <ul className="mt-2">
+                {circles.map((circle) => (
+                  <li
+                    key={circle.id}
+                    className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-b-0"
+                  >
+                    <span className="min-w-0 truncate text-2">
+                      {circle.title}
+                    </span>
+                    {circle.onChainDataMissing ? null : (
+                      <span className="shrink-0 text-1 text-neutral-11">
+                        {t('circleMembers', {
+                          count: circle.memberCount ?? 0,
+                        })}
+                      </span>
                     )}
-                  >
-                    <Skeleton loading height="22px" width="4.5rem" />
-                  </div>
+                  </li>
                 ))}
-              </div>
-            ) : visibleAssets.length > 0 ? (
-              <>
-                <div className="mt-3 grid grid-cols-2 border border-border">
-                  {visibleAssets.map((asset, index) => (
-                    <div
-                      key={`${asset.symbol}:${index}`}
-                      className={cn(
-                        'px-3 py-3',
-                        index % 2 === 1 && 'border-l border-border',
-                        index >= 2 && 'border-t border-border',
-                      )}
-                    >
-                      <p
-                        className="text-4 tabular-nums"
-                        style={{ fontFamily: 'var(--font-family-heading)' }}
-                      >
-                        {formatAmount(asset.value, lang)}
-                      </p>
-                      <p className="mt-1 text-1 uppercase tracking-[0.08em] text-neutral-11">
-                        {asset.symbol}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                {hiddenCount > 0 ? (
-                  <button
-                    type="button"
-                    className="mt-3 inline-flex items-center gap-1 text-1 uppercase tracking-[0.12em]"
-                    onClick={() => setExpandedSlug(selectedSpace.slug)}
-                  >
-                    {t('showMoreCount', { count: hiddenCount })}
-                    <ChevronDown className="size-3.5" aria-hidden />
-                  </button>
-                ) : null}
-              </>
-            ) : null}
+              </ul>
+            </div>
+          ) : null}
+          <div className="grid grid-cols-2 border-t border-border">
+            <div className="px-4 py-4">
+              <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                {t('seeks')}
+              </p>
+              <CapitalList keys={seeks} empty={t('noneYet')} />
+            </div>
+            <div className="border-l border-border px-4 py-4">
+              <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                {t('offers')}
+              </p>
+              <CapitalList keys={offers} empty={t('noneYet')} />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4">
             <Button
