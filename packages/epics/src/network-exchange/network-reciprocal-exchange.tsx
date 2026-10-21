@@ -489,7 +489,7 @@ export function NetworkReciprocalExchange({
         >
           <NetworkExchangeShareCard
             lang={lang}
-            type={types.length === 1 ? types[0] : null}
+            type={types.length === 1 ? types[0] ?? null : null}
             preferredSlug={selected?.spaceSlug}
           />
         </aside>
