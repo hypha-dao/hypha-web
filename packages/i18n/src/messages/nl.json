@@ -4468,7 +4468,7 @@
     "signalFormVotingPower": "Jouw stemkracht",
     "signalFormVotingPowerHint": "Kies hoeveel van je stemkracht dit signaal steunt. Standaard is 100%, maar je kunt het op elk moment aanpassen of verwijderen.",
     "indicativeTokens": "Indicatief bedrag",
-    "indicativeTokensHint": "Deze bedragen benoemen de vraag of de bron. Er wordt geen geld verplaatst. Pas een voorstel kan ze versturen.",
+    "indicativeTokensHint": "Deze bedragen bepalen het verzoek of de bron. Er wordt geen geld verplaatst tot een voorstel is gemaakt en goedgekeurd.",
     "shareWithNetwork": "Delen met het netwerk",
     "shareWithNetworkHint": "Staat dit aan, dan is het signaal zichtbaar voor netwerkleden buiten deze space.",
     "turnIntoProposal": "Omzetten naar een voorstel",

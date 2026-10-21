@@ -3890,7 +3890,7 @@
     "signalFormVotingPower": "Votre pouvoir de vote",
     "signalFormVotingPowerHint": "Choisissez quelle part de votre pouvoir de vote soutient ce signal. La valeur par défaut est 100 %, mais vous pouvez l'ajuster ou la retirer à tout moment.",
     "indicativeTokens": "Montant indicatif",
-    "indicativeTokensHint": "Ces montants nomment la demande ou la ressource. Ils ne déplacent aucun fonds. Les transformer en proposition est ce qui peut les envoyer.",
+    "indicativeTokensHint": "Ces montants définissent la demande ou la ressource. Aucun fonds n'est déplacé tant qu'une proposition n'est pas créée et approuvée.",
     "shareWithNetwork": "Partager avec le réseau",
     "shareWithNetworkHint": "Quand c'est activé, le signal est visible pour les membres du réseau hors de cet espace.",
     "turnIntoProposal": "Transformer en proposition",

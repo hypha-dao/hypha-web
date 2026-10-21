@@ -4466,7 +4466,7 @@
     "signalFormVotingPower": "Deine Stimmkraft",
     "signalFormVotingPowerHint": "Wähle, wie viel von deiner Stimmkraft dieses Signal stützen soll. Standard ist 100 %, du kannst es aber jederzeit anpassen oder entfernen.",
     "indicativeTokens": "Indikativer Betrag",
-    "indicativeTokensHint": "Diese Beträge benennen die Anfrage oder die Ressource. Es werden keine Mittel bewegt. Erst ein Vorschlag kann sie senden.",
+    "indicativeTokensHint": "Diese Beträge legen die Anfrage oder die Ressource fest. Es werden keine Mittel bewegt, bis ein Vorschlag erstellt und angenommen wurde.",
     "shareWithNetwork": "Mit dem Netzwerk teilen",
     "shareWithNetworkHint": "Wenn das an ist, ist das Signal für Netzwerkmitglieder außerhalb dieses Space sichtbar.",
     "turnIntoProposal": "In einen Vorschlag umwandeln",

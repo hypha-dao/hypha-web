@@ -4498,7 +4498,7 @@
     "signalFormVotingPower": "Your voting power",
     "signalFormVotingPowerHint": "Choose how much of your voting power to back this signal. Defaults to 100%, but you can adjust or remove it anytime.",
     "indicativeTokens": "Indicative amount",
-    "indicativeTokensHint": "These amounts name the ask or the resource. They do not move any funds. Turning this into a proposal is what can send them.",
+    "indicativeTokensHint": "These amounts define the request or resource. No funds move until a proposal is created and approved.",
     "shareWithNetwork": "Share with the network",
     "shareWithNetworkHint": "When this is on, the signal is visible to network members outside this space.",
     "turnIntoProposal": "Turn into a proposal",

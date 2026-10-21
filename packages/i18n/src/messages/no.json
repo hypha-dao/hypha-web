@@ -4467,7 +4467,7 @@
     "signalFormVotingPower": "Din stemmekraft",
     "signalFormVotingPowerHint": "Velg hvor mye av stemmekraften din som skal støtte dette signalet. Standard er 100 %, men du kan justere eller fjerne den når som helst.",
     "indicativeTokens": "Indikativt beløp",
-    "indicativeTokensHint": "Disse beløpene navngir forespørselen eller ressursen. De flytter ingen midler. Å gjøre det om til et forslag er det som kan sende dem.",
+    "indicativeTokensHint": "Disse beløpene definerer forespørselen eller ressursen. Ingen midler flyttes før et forslag er opprettet og godkjent.",
     "shareWithNetwork": "Del med nettverket",
     "shareWithNetworkHint": "Når dette er på, er signalet synlig for nettverksmedlemmer utenfor dette spacet.",
     "turnIntoProposal": "Gjør om til et forslag",

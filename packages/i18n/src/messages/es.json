@@ -3908,7 +3908,7 @@
     "signalFormVotingPower": "Tu poder de voto",
     "signalFormVotingPowerHint": "Elige cuánto de tu poder de voto respalda esta señal. El valor predeterminado es el 100 %, pero puedes ajustarlo o quitarlo en cualquier momento.",
     "indicativeTokens": "Importe indicativo",
-    "indicativeTokensHint": "Estos importes nombran la petición o el recurso. No mueven fondos. Convertirlo en una propuesta es lo que puede enviarlos.",
+    "indicativeTokensHint": "Estos importes definen la petición o el recurso. No se mueve ningún fondo hasta que se cree y apruebe una propuesta.",
     "shareWithNetwork": "Compartir con la red",
     "shareWithNetworkHint": "Cuando está activo, la señal es visible para los miembros de la red fuera de este espacio.",
     "turnIntoProposal": "Convertir en propuesta",
