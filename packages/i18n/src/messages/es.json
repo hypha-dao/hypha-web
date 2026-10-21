@@ -3916,6 +3916,7 @@
     "signalFormImage": "Imágenes",
     "signalFormImageHint": "JPEG, PNG, WebP o GIF. Varias a la vez. 16 MB cada una.",
     "signalFormVideo": "Enlace de vídeo",
+    "signalFormMediaVideo": "Vídeo",
     "signalFormVideoHint": "Pega un enlace de YouTube, Vimeo o un vídeo directo. El archivo se queda donde está y la señal lo reproduce.",
     "signalFormAttachments": "Documentos",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint o texto. Varios a la vez. 16 MB cada uno.",

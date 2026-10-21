@@ -4506,6 +4506,7 @@
     "signalFormImage": "Images",
     "signalFormImageHint": "JPEG, PNG, WebP, or GIF. Add several. 16 MB each.",
     "signalFormVideo": "Video link",
+    "signalFormMediaVideo": "Video",
     "signalFormVideoHint": "Paste a YouTube, Vimeo, or direct video link. The file stays where it is, and the signal plays it.",
     "signalFormAttachments": "Documents",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint, or text. Add several. 16 MB each.",

@@ -29,7 +29,8 @@ import {
   AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { RefreshCw } from 'lucide-react';
+import { Camera, RefreshCw, Video } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { CapitalChoice } from '../../spaces/components/capital-choice';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
@@ -307,6 +308,14 @@ export const CreateSignalForm = ({
   const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
     openingMedia.documents,
   );
+  const [mediaKind, setMediaKind] = React.useState<'images' | 'video' | null>(
+    () => {
+      if (openingMedia.images.length > 0) return 'images';
+      if (initialValues?.videoUrl?.trim()) return 'video';
+      return null;
+    },
+  );
+  const mediaChoiceTouched = React.useRef(false);
 
   const createMediaDraft = React.useRef<SignalMediaDraft | null>(null);
   const createMediaLoaded = React.useRef(false);
@@ -517,6 +526,18 @@ export const CreateSignalForm = ({
       form.setValue('videoUrl', videoUrl);
     }
   }, [form, mode]);
+  const watchedVideoUrl = useWatch({
+    control: form.control,
+    name: 'videoUrl',
+  });
+  React.useEffect(() => {
+    if (mediaChoiceTouched.current) return;
+    if (keptImages.length > 0 || imageFiles.length > 0) {
+      setMediaKind('images');
+      return;
+    }
+    if (watchedVideoUrl?.trim()) setMediaKind('video');
+  }, [imageFiles.length, keptImages.length, watchedVideoUrl]);
 
   React.useEffect(() => {
     if (mode !== 'create' || typeof window === 'undefined') return;
@@ -1681,47 +1702,102 @@ export const CreateSignalForm = ({
             ) : null}
 
             <section className="flex flex-col gap-6 border-t border-border pt-8">
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-foreground">
-                  {t('signalFormImage')}
-                </p>
-                <AddAttachment
-                  accept={SIGNAL_IMAGE_ACCEPT}
-                  maxFiles={Math.max(0, SIGNAL_IMAGE_LIMIT - keptImages.length)}
-                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
-                  label={t('signalFormImageHint')}
-                  value={[...keptImages, ...imageFiles]}
-                  defaultAttachments={keptImages}
-                  onChange={setImageFiles}
-                  onExistingAttachmentsChange={(updated) =>
-                    setKeptImages(asMediaItems(updated))
-                  }
-                />
+              <div
+                role="group"
+                aria-label={`${t('signalFormImage')}, ${t(
+                  'signalFormMediaVideo',
+                )}`}
+                className="flex gap-2"
+              >
+                {(
+                  [
+                    {
+                      kind: 'images' as const,
+                      label: t('signalFormImage'),
+                      Icon: Camera,
+                    },
+                    {
+                      kind: 'video' as const,
+                      label: t('signalFormMediaVideo'),
+                      Icon: Video,
+                    },
+                  ] as const
+                ).map(({ kind, label, Icon }) => {
+                  const selected = mediaKind === kind;
+                  return (
+                    <button
+                      key={kind}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={isMutating}
+                      onClick={() => {
+                        mediaChoiceTouched.current = true;
+                        setMediaKind(kind);
+                      }}
+                      style={{ width: 112, height: 112 }}
+                      className={cn(
+                        'flex flex-col items-center justify-center gap-2 border px-2',
+                        selected
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                      )}
+                    >
+                      <Icon className="size-5" strokeWidth={1.5} aria-hidden />
+                      <span className="text-center text-1 leading-tight">
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              <FormField
-                control={form.control}
-                name="videoUrl"
-                render={({ field }) => (
-                  <FormItem data-signal-field="videoUrl">
-                    <FormLabel className="text-foreground">
-                      {t('signalFormVideo')}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="url"
-                        disabled={isMutating}
-                        placeholder="https://"
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {t('signalFormVideoHint')}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {mediaKind === 'images' ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-foreground">
+                    {t('signalFormImage')}
+                  </p>
+                  <AddAttachment
+                    accept={SIGNAL_IMAGE_ACCEPT}
+                    maxFiles={Math.max(
+                      0,
+                      SIGNAL_IMAGE_LIMIT - keptImages.length,
+                    )}
+                    maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                    label={t('signalFormImageHint')}
+                    value={[...keptImages, ...imageFiles]}
+                    defaultAttachments={keptImages}
+                    onChange={setImageFiles}
+                    onExistingAttachmentsChange={(updated) =>
+                      setKeptImages(asMediaItems(updated))
+                    }
+                  />
+                </div>
+              ) : null}
+              {mediaKind === 'video' ? (
+                <FormField
+                  control={form.control}
+                  name="videoUrl"
+                  render={({ field }) => (
+                    <FormItem data-signal-field="videoUrl">
+                      <FormLabel className="text-foreground">
+                        {t('signalFormVideo')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="url"
+                          disabled={isMutating}
+                          placeholder="https://"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('signalFormVideoHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">
                   {t('signalFormAttachments')}
