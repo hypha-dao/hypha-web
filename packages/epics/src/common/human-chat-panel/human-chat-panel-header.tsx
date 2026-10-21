@@ -3,11 +3,11 @@
 import type { ComponentType, ReactNode } from 'react';
 import {
   ArrowLeft,
+  Circle,
   Globe2,
-  Hexagon,
-  Network,
   PanelRightClose,
   Settings,
+  Target,
 } from 'lucide-react';
 import {
   CountBadge,
@@ -28,8 +28,8 @@ type RoomChoiceIcon = ComponentType<{
 }>;
 
 const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
-  space: Hexagon,
-  ecosystem: Network,
+  space: Circle,
+  ecosystem: Target,
   public: Globe2,
 };
 
