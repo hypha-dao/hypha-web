@@ -16,6 +16,11 @@ export default function MyWalletSendTokensPage() {
   const initialTokenAddress = /^0x[a-fA-F0-9]{40}$/.test(token)
     ? token
     : undefined;
+  const recipientAddress = searchParams.get('to')?.trim() ?? '';
+  const recipientName = searchParams.get('name')?.trim() ?? '';
+  const initialRecipient = /^0x[a-fA-F0-9]{40}$/.test(recipientAddress)
+    ? { address: recipientAddress, name: recipientName }
+    : undefined;
 
   return (
     <WalletActionFrame
@@ -27,7 +32,9 @@ export default function MyWalletSendTokensPage() {
         <p className="text-2 text-neutral-11">{t('loading')}</p>
       ) : (
         <MemberHomeSendTokensWidget
-          key={initialTokenAddress ?? 'send'}
+          key={`${initialTokenAddress ?? 'send'}:${
+            initialRecipient?.address ?? ''
+          }`}
           personSlug={person.slug}
           hasWallet={Boolean(person.address)}
           people={[]}
@@ -35,6 +42,7 @@ export default function MyWalletSendTokensPage() {
           fallbackName={tHome('fallbackMember')}
           framed={false}
           initialTokenAddress={initialTokenAddress}
+          initialRecipient={initialRecipient}
         />
       )}
     </WalletActionFrame>

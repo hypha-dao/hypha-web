@@ -31,6 +31,11 @@ import {
   type Person,
   type Space,
 } from '@hypha-platform/core/client';
+import type { AssetItem } from '../../treasury/hooks/use-user-assets';
+import {
+  HYPHA_TOKEN_ADDRESS,
+  isHyphaAsset,
+} from '../../wallet/components/wallet-asset-action';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   Button,
@@ -588,6 +593,21 @@ type TokenLine = {
   amount: string;
 };
 
+/** Everyone can send HYPHA. A zero balance still belongs on the form. */
+const HYPHA_SEND_TOKEN: AssetItem = {
+  icon: '/placeholder/hypha-token-icon.svg',
+  name: 'Hypha',
+  symbol: 'HYPHA',
+  value: 0,
+  usdEqual: 0,
+  type: 'utility',
+  chartData: [],
+  transactions: [],
+  closeUrl: '',
+  slug: 'hypha',
+  address: HYPHA_TOKEN_ADDRESS,
+};
+
 function tokenSpendable(
   token:
     | {
@@ -617,6 +637,7 @@ export function MemberHomeSendTokensWidget({
   fallbackName,
   framed = true,
   initialTokenAddress,
+  initialRecipient,
 }: {
   personSlug: string;
   hasWallet: boolean;
@@ -627,6 +648,8 @@ export function MemberHomeSendTokensWidget({
   framed?: boolean;
   /** Prefill from a wallet asset card (`?token=`). */
   initialTokenAddress?: string;
+  /** Prefill the space being funded (`?to=` + `?name=`). */
+  initialRecipient?: { address: string; name: string };
 }) {
   const t = useTranslations('MemberHome');
   const tWallet = useTranslations('MyWallet');
@@ -659,8 +682,9 @@ export function MemberHomeSendTokensWidget({
     authToken,
   });
   const lineSeq = useRef(1);
+  const recipientTouched = useRef(false);
   const [lines, setLines] = useState<TokenLine[]>([
-    { id: 'line-1', tokenAddress: null, amount: '25' },
+    { id: 'line-1', tokenAddress: null, amount: '' },
   ]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -680,13 +704,16 @@ export function MemberHomeSendTokensWidget({
 
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const tokens = useMemo(() => {
-    return assets.filter((asset) => {
+    const listed = assets.filter((asset) => {
+      const hypha = isHyphaAsset(asset);
       const isTransferableType =
         (asset.type != null && !['ownership', 'voice'].includes(asset.type)) ||
         (asset.type == null &&
           asset.address !== undefined &&
-          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address));
+          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address)) ||
+        hypha;
       if (!isTransferableType || !asset.address) return false;
+      if (hypha) return true;
       const hasBalance = (asset.value ?? 0) > 0;
       const canDrawCredit = Boolean(
         asset.mutualCredit?.creditEligible &&
@@ -694,7 +721,11 @@ export function MemberHomeSendTokensWidget({
       );
       return hasBalance || canDrawCredit;
     });
-  }, [assets]);
+    if (!hasWallet || listed.some((asset) => isHyphaAsset(asset))) {
+      return listed;
+    }
+    return [HYPHA_SEND_TOKEN, ...listed];
+  }, [assets, hasWallet]);
 
   useEffect(() => {
     const preferred = initialTokenAddress?.trim().toLowerCase();
@@ -941,6 +972,25 @@ export function MemberHomeSendTokensWidget({
     }
     return targets;
   }, [picked, targets]);
+
+  useEffect(() => {
+    const address = initialRecipient?.address?.trim() ?? '';
+    const name = initialRecipient?.name?.trim() ?? '';
+    if (recipientTouched.current) return;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return;
+    const match = targets.find(
+      (item) => item.address.toLowerCase() === address.toLowerCase(),
+    );
+    const next: TokenTarget = match ?? {
+      kind: 'space',
+      id: `space-address-${address.toLowerCase()}`,
+      name: name || fallbackName,
+      address,
+    };
+    setPicked(next);
+    setTargetId(next.id);
+  }, [fallbackName, initialRecipient, targets]);
+
   const target =
     targets.find((item) => item.id === targetId) ??
     (picked?.id === targetId ? picked : null);
@@ -1077,6 +1127,7 @@ export function MemberHomeSendTokensWidget({
   }
 
   function chooseFromDirectory(choice: Person | Space | { address: string }) {
+    recipientTouched.current = true;
     const address = choice.address?.trim() ?? '';
     if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return;
     const known = targets.find(
@@ -1188,7 +1239,10 @@ export function MemberHomeSendTokensWidget({
                             ? 'border-foreground bg-foreground text-background'
                             : 'border-transparent hover:bg-accent-2',
                         )}
-                        onClick={() => setTargetId(item.id)}
+                        onClick={() => {
+                          recipientTouched.current = true;
+                          setTargetId(item.id);
+                        }}
                       >
                         <span className="relative inline-flex">
                           {person ? (
