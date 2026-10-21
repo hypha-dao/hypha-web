@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
-import { ArrowUpRight, ChevronDown, Users, Wallet } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
 import { Button, Skeleton } from '@hypha-platform/ui';
@@ -13,7 +13,6 @@ import {
   collapseCategoriesToGroups,
   DEFAULT_SPACE_LEAD_IMAGE,
   getCategoryGroupLabel,
-  parseCapitalKeys,
   type Space,
   type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
@@ -106,42 +105,15 @@ function useSpaceTreasury(slug: string | null) {
   };
 }
 
-function CapitalList({
-  keys,
-  empty,
-}: {
-  keys: ReturnType<typeof parseCapitalKeys>;
-  empty: string;
-}) {
-  const t = useTranslations('NetworkExchange');
-  if (keys.length === 0) {
-    return <p className="mt-2 text-2 text-neutral-11">{empty}</p>;
-  }
-  return (
-    <ul className="mt-2 grid gap-1.5">
-      {keys.map((key) => (
-        <li key={key} className="flex items-center gap-2 text-1">
-          <span className="size-1.5 shrink-0 bg-foreground" aria-hidden />
-          {t(`capitals.${key}`)}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export function NetworkSidePanel({
   lang,
   selectedSpace,
-  circles = [],
-  capitals,
   onClose,
   onSelectRank,
   ranks,
 }: {
   lang: Locale;
   selectedSpace: Space | null;
-  circles?: Space[];
-  capitals?: { seeks: string[]; offers: string[] } | null;
   onClose: () => void;
   onSelectRank: (rank: NetworkSpaceRank) => void;
   ranks: NetworkSpaceRank[];
@@ -152,8 +124,6 @@ export function NetworkSidePanel({
   const { assets, isLoading } = useSpaceTreasury(selectedSpace?.slug ?? null);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const seeks = parseCapitalKeys(capitals?.seeks);
-  const offers = parseCapitalKeys(capitals?.offers);
   const summary = excerpt(selectedSpace?.description);
   const place = readablePlace(selectedSpace?.locationLabel?.trim() ?? '');
   const groups = collapseCategoriesToGroups(selectedSpace?.categories ?? []);
@@ -240,7 +210,7 @@ export function NetworkSidePanel({
               {eyebrow}
             </p>
             <h2
-              className="mt-1 text-4 leading-tight tracking-[-0.02em] text-foreground"
+              className="mt-1 text-3 leading-tight tracking-[-0.02em] text-foreground"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {selectedSpace.title}
@@ -248,12 +218,12 @@ export function NetworkSidePanel({
             {place ? (
               <p className="mt-1 text-1 text-neutral-11">{place}</p>
             ) : null}
+            {summary ? (
+              <p className="pt-4 text-1 leading-relaxed text-neutral-11">
+                {summary}
+              </p>
+            ) : null}
           </div>
-          {summary ? (
-            <p className="px-4 pt-3 text-2 leading-relaxed text-neutral-11">
-              {summary}
-            </p>
-          ) : null}
           <div className="mt-4 border-t border-border px-4 py-4">
             {isLoading || visibleAssets.length > 0 ? (
               <p className="flex items-center gap-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
@@ -261,7 +231,7 @@ export function NetworkSidePanel({
                 {t('treasuryLive')}
               </p>
             ) : (
-              <p className="text-2 text-neutral-11">{t('noTreasuryLink')}</p>
+              <p className="text-1 text-neutral-11">{t('noTreasuryLink')}</p>
             )}
             {isLoading ? (
               <div className="mt-3 grid grid-cols-2 border border-border">
@@ -314,47 +284,6 @@ export function NetworkSidePanel({
                 ) : null}
               </>
             ) : null}
-          </div>
-          {circles.length > 0 ? (
-            <div className="border-t border-border px-4 py-4">
-              <p className="flex items-center gap-2 text-1 uppercase tracking-[0.12em] text-neutral-11">
-                <Users className="size-3.5" aria-hidden />
-                {t('governanceCircles')}
-              </p>
-              <ul className="mt-2">
-                {circles.map((circle) => (
-                  <li
-                    key={circle.id}
-                    className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-b-0"
-                  >
-                    <span className="min-w-0 truncate text-2">
-                      {circle.title}
-                    </span>
-                    {circle.onChainDataMissing ? null : (
-                      <span className="shrink-0 text-1 text-neutral-11">
-                        {t('circleMembers', {
-                          count: circle.memberCount ?? 0,
-                        })}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          <div className="grid grid-cols-2 border-t border-border">
-            <div className="px-4 py-4">
-              <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                {t('seeks')}
-              </p>
-              <CapitalList keys={seeks} empty={t('noneYet')} />
-            </div>
-            <div className="border-l border-border px-4 py-4">
-              <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                {t('offers')}
-              </p>
-              <CapitalList keys={offers} empty={t('noneYet')} />
-            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4">
             <Button

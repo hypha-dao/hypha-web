@@ -176,7 +176,6 @@ export function ExploreSpaces({
   networkGrowth = null,
   creatorMapPins,
   networkRanks = [],
-  spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
   const { open: chatOpen } = useHumanChatPanel();
@@ -521,15 +520,6 @@ export function ExploreSpaces({
         lang={lang}
         selectedSpace={selectedSpace}
         onClose={() => setSelectedSpaceId(null)}
-        circles={nonArchivedSpaces.filter(
-          (space) => space.parentId === selectedSpace.id,
-        )}
-        capitals={
-          spaceCapitals?.[String(selectedSpace.id)] ?? {
-            seeks: [],
-            offers: [],
-          }
-        }
         onSelectRank={selectRank}
         ranks={showRanking ? [] : networkRanks}
       />
@@ -597,7 +587,9 @@ export function ExploreSpaces({
       <div className="@container min-w-0 px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5 xl:py-9">
         <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-4">{mainColumn}</div>
-          <aside className={NETWORK_RIGHT_PANEL_CLASS}>{sidePanel}</aside>
+          <aside className={cn(NETWORK_RIGHT_PANEL_CLASS, '@4xl:!w-[320px]')}>
+            {sidePanel}
+          </aside>
         </div>
       </div>
     );
