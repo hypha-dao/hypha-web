@@ -24,6 +24,7 @@ export * from './person-label';
 export * from './signup-panel';
 export * from './signup-flow';
 export * from './member-home';
+export { writeHomeView } from './member-home-view';
 export * from './member-home-banner';
 export * from './member-spaces-entry';
 export * from './member-home-attention';

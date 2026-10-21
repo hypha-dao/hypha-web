@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
+import { writeHomeView } from '@hypha-platform/epics';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import type { ProfileFormData } from './profile-form-data';
 import { useSWRConfig } from 'swr';
@@ -121,26 +122,23 @@ export const useCreateProfile = (
         }
 
         const lang = params?.lang;
-        // Resolve before mutating SWR — ConnectedButtonProfile reacts to person.id
-        // on the signup page and would consume the stored DHO path first.
-        const spaceContextReturnPath = resolvePostAuthRedirectPath({
+        const homePath = lang ? `/${lang}/home` : '/en/home';
+        // Consume a stored space return so it does not pull a new member
+        // onto a space dashboard. Orientation opens the AI home.
+        resolvePostAuthRedirectPath({
           pathname:
             typeof window !== 'undefined' ? window.location.pathname : '',
           lang: typeof lang === 'string' ? lang : undefined,
-          baseRedirectPath: lang ? `/${lang}/home` : '/en/home',
+          baseRedirectPath: homePath,
         });
-        const homePath = lang ? `/${lang}/home` : '/en/home';
-        const nextPath =
-          spaceContextReturnPath && spaceContextReturnPath !== homePath
-            ? spaceContextReturnPath
-            : homePath;
 
         // Prevent post-signup redirect guards from briefly treating the user
         // as profile-less on the next route transition.
         await mutate(['/api/v1/people/me', token], createdProfile, {
           revalidate: false,
         });
-        router.replace(nextPath);
+        writeHomeView('ai');
+        router.replace(homePath);
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);
