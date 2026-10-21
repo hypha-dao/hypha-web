@@ -18,6 +18,9 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useMe,
 } from '@hypha-platform/core/client';
+
+/** Same field the member home and space dashboards use when there is no banner yet. */
+const DEFAULT_PROFILE_LEAD_IMAGE = '/brand/strategy-mycelium.png';
 import { useParams } from 'next/navigation';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { isPersonRole, PersonRoleBadge } from './person-badges';
@@ -145,7 +148,9 @@ export const PersonHead = ({
 
   const rawLead = self.background?.trim();
   const heroBannerHref =
-    rawLead && isSafeImageUrl(rawLead) ? rawLead : DEFAULT_SPACE_LEAD_IMAGE;
+    rawLead && isSafeImageUrl(rawLead) && rawLead !== DEFAULT_SPACE_LEAD_IMAGE
+      ? rawLead
+      : DEFAULT_PROFILE_LEAD_IMAGE;
 
   const rawAvatar = self.avatar?.trim();
   const accentLogoHref =
@@ -201,7 +206,7 @@ export const PersonHead = ({
             defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
             links={self.links}
             leadImageUrl={heroBannerHref}
-            defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+            defaultLeadImageSrc={DEFAULT_PROFILE_LEAD_IMAGE}
             descriptionLabel={tCommon('spaceBannerDescriptionAria', {
               title: displayName,
             })}
