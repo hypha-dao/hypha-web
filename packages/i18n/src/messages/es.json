@@ -553,6 +553,8 @@
     "shareExchangePromptSignal": "Describe esta señal para la red.",
     "chooseSignalType": "Tipo de señal",
     "filterSignals": "Filtrar",
+    "removeFilter": "Quitar {label}",
+    "resetFilters": "Restablecer",
     "signalTypes": "Tipos de señal",
     "signalTitle": "Título",
     "signalTitleHint": "Nombre corto para esta señal",

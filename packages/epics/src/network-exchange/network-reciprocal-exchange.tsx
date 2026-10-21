@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { ListFilter, Play } from 'lucide-react';
+import { ArrowUpRight, FileText, ListFilter, Play, X } from 'lucide-react';
 import './network-exchange-card.css';
 import { useLocale, useTranslations } from 'next-intl';
 import {
@@ -14,7 +14,15 @@ import {
   type NetworkFieldSignal,
   type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
-import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import { getDhoPathOverview } from '../common/get-path-function';
@@ -24,6 +32,7 @@ import { compactIndicativeAmount } from '../coherence/components/signal-indicati
 import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
+import { FundASpaceFlow } from '../wallet/components/fund-a-space-flow';
 import { CAPITAL_MARK } from './capital-marks';
 import { NetworkExchangeShareCard } from './network-exchange-share-card';
 import { NETWORK_RIGHT_PANEL_CLASS } from './network-right-cards';
@@ -105,11 +114,13 @@ function plainText(value: string) {
 function ExchangeMedia({
   src,
   videoUrl,
+  document,
   alt,
   playLabel,
 }: {
   src: string | null;
   videoUrl: string | null;
+  document: { url: string; name: string } | null;
   alt: string;
   playLabel: string;
 }) {
@@ -118,7 +129,7 @@ function ExchangeMedia({
   const [playing, setPlaying] = useState(false);
   const video = resolveSignalVideo(videoUrl);
   const image = !failed && src ? src : null;
-  if (!video && !image) return null;
+  if (!video && !image && !document) return null;
 
   const play = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -147,6 +158,21 @@ function ExchangeMedia({
         />
       ) : image ? (
         <img src={image} alt={alt} onError={() => setFailed(true)} />
+      ) : document ? (
+        <a
+          href={document.url}
+          target="_blank"
+          rel="noreferrer"
+          className="exchange-doc"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <FileText className="size-7 text-foreground" strokeWidth={1.25} />
+          <span className="line-clamp-2 text-2 font-medium text-foreground">
+            {document.name}
+          </span>
+        </a>
+      ) : video ? (
+        <div className="absolute inset-0 bg-neutral-3" aria-hidden />
       ) : null}
       {video && !playing ? (
         <button
@@ -189,6 +215,27 @@ function toggleValue<T>(list: T[], value: T) {
     : [...list, value];
 }
 
+function FilterTag({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  const t = useTranslations('NetworkExchange');
+  return (
+    <button
+      type="button"
+      onClick={onRemove}
+      aria-label={t('removeFilter', { label })}
+      className="inline-flex h-6 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
+    >
+      <span>{label}</span>
+      <X className="size-3 shrink-0" strokeWidth={1.25} aria-hidden />
+    </button>
+  );
+}
+
 function ExchangeFilters({
   types,
   capitals,
@@ -220,10 +267,10 @@ function ExchangeFilters({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-80 rounded-none p-3"
         collisionPadding={16}
+        className="w-80 rounded-none border-border bg-background p-0 text-foreground shadow-none"
       >
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-3 py-3">
           <div className="flex flex-col gap-2">
             <p className="text-1 font-medium uppercase tracking-[0.12em] text-neutral-11">
               {t('signalTypes')}
@@ -280,6 +327,20 @@ function ExchangeFilters({
             </div>
           </div>
         </div>
+        {active ? (
+          <div className="flex justify-end border-t border-border px-3 py-2">
+            <button
+              type="button"
+              onClick={() => {
+                onTypes([]);
+                onCapitals([]);
+              }}
+              className="text-1 text-neutral-11 hover:text-foreground"
+            >
+              {t('resetFilters')}
+            </button>
+          </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );
@@ -297,6 +358,7 @@ export function NetworkReciprocalExchange({
   initialType?: string;
 }) {
   const t = useTranslations('NetworkExchange');
+  const tWallet = useTranslations('MyWallet');
   const dateLocale = resolveDateFnsLocale(useLocale());
   const { open } = useHumanChatPanel();
   const { openPublicChat, opening } = useOpenSpacePublicChat();
@@ -306,6 +368,10 @@ export function NetworkReciprocalExchange({
     isFieldKind(initialType) ? [initialType] : [],
   );
   const [selectedSlug, setSelectedSlug] = useState(signals[0]?.slug ?? '');
+  const [fundSpace, setFundSpace] = useState<{
+    slug: string;
+    title: string;
+  } | null>(null);
   const needle = query.trim().toLowerCase();
 
   const visible = useMemo(() => {
@@ -367,19 +433,43 @@ export function NetworkReciprocalExchange({
             eyebrow={t('signalsFromTheField')}
             title={t('reciprocalTitle')}
           />
-          <NetworkLiveSearch
-            value={query}
-            onChange={setQuery}
-            placeholder={t('searchPlaceholder')}
-            end={
-              <ExchangeFilters
-                types={types}
-                capitals={capitals}
-                onTypes={setTypes}
-                onCapitals={setCapitals}
-              />
-            }
-          />
+          <div className="flex min-w-0 flex-col gap-2">
+            <NetworkLiveSearch
+              value={query}
+              onChange={setQuery}
+              placeholder={t('searchPlaceholder')}
+              end={
+                <ExchangeFilters
+                  types={types}
+                  capitals={capitals}
+                  onTypes={setTypes}
+                  onCapitals={setCapitals}
+                />
+              }
+            />
+            {types.length > 0 || capitals.length > 0 ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                {types.map((kind) => (
+                  <FilterTag
+                    key={kind}
+                    label={typeLabel(kind, t)}
+                    onRemove={() =>
+                      setTypes(types.filter((value) => value !== kind))
+                    }
+                  />
+                ))}
+                {capitals.map((key) => (
+                  <FilterTag
+                    key={key}
+                    label={`${CAPITAL_MARK[key]} ${t(`capitals.${key}`)}`}
+                    onRemove={() =>
+                      setCapitals(capitals.filter((value) => value !== key))
+                    }
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
           {visible.length > 0 ? (
             <p className="text-1 text-neutral-11">
               {t('exchangeSummary', {
@@ -410,124 +500,167 @@ export function NetworkReciprocalExchange({
                 };
                 const story = plainText(signal.description);
                 const chosen = signal.slug === selected?.slug;
+                const hasMedia = Boolean(
+                  resolveSignalVideo(signal.videoUrl) ||
+                    signal.leadImage ||
+                    signal.document,
+                );
+                const signalHref = `/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`;
                 return (
                   <li key={signal.slug} className="flex">
                     <article
                       className={cn(
-                        'flex w-full cursor-pointer flex-col border bg-background',
+                        'exchange-card flex w-full cursor-pointer flex-col border bg-background',
                         chosen ? 'border-foreground' : 'border-border',
                       )}
                       onClick={() => setSelectedSlug(signal.slug)}
                     >
                       <ExchangeMedia
-                        src={signal.leadImage || signal.spaceLeadImage}
+                        src={signal.leadImage}
                         videoUrl={signal.videoUrl}
+                        document={signal.document}
                         alt={signal.title}
                         playLabel={t('fieldVideo')}
                       />
-                      <div className="flex flex-1 flex-col gap-3 px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <span
+                      <div
+                        className={cn(
+                          'exchange-body',
+                          hasMedia
+                            ? 'exchange-body-media'
+                            : 'exchange-body-text',
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'flex min-h-0 flex-1 flex-col gap-1.5 px-3',
+                            hasMedia ? 'pt-2.5' : 'pt-3',
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={cn(
+                                'shrink-0 px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
+                                badgeClass(signal.type),
+                              )}
+                            >
+                              {typeLabel(signal.type, t)}
+                            </span>
+                            <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
+                              {picked ? (
+                                <span aria-hidden>{CAPITAL_MARK[picked]}</span>
+                              ) : null}
+                              {picked
+                                ? t('capitalStatus', {
+                                    capital: t(`capitals.${picked}`),
+                                    status: when,
+                                  })
+                                : when}
+                            </span>
+                          </div>
+                          <h2
                             className={cn(
-                              'px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
-                              badgeClass(signal.type),
+                              'exchange-title font-medium leading-snug',
+                              hasMedia
+                                ? 'line-clamp-1 text-3'
+                                : 'line-clamp-2 text-4',
                             )}
-                          >
-                            {typeLabel(signal.type, t)}
-                          </span>
-                          <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
-                            {picked ? (
-                              <span aria-hidden>{CAPITAL_MARK[picked]}</span>
-                            ) : null}
-                            {picked
-                              ? t('capitalStatus', {
-                                  capital: t(`capitals.${picked}`),
-                                  status: when,
-                                })
-                              : when}
-                          </span>
-                        </div>
-                        <h2
-                          className="exchange-title text-4 font-medium leading-snug"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
-                        >
-                          {signal.title}
-                        </h2>
-                        <p className="text-1 uppercase tracking-[0.14em] text-neutral-11">
-                          {signal.spaceTitle}
-                        </p>
-                        {story ? (
-                          <p className="line-clamp-2 text-2 leading-relaxed text-neutral-11">
-                            {story}
-                          </p>
-                        ) : null}
-                        {impactCard ? (
-                          <p className="flex flex-wrap gap-x-4 gap-y-1 text-1 text-neutral-11">
-                            <Link
-                              href={`/${lang}/network/exchange?type=Action`}
-                              className="hover:text-foreground"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {t('proofsOfAction', { count: proofs.action })}
-                            </Link>
-                            <Link
-                              href={`/${lang}/network/exchange?type=Impact`}
-                              className="hover:text-foreground"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {t('proofsOfImpact', { count: proofs.impact })}
-                            </Link>
-                          </p>
-                        ) : payout ? (
-                          <p className="font-mono text-2 text-foreground">
-                            {payout}
-                          </p>
-                        ) : null}
-                        <Link
-                          href={`/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`}
-                          className="mt-auto self-start text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          {t('openSignal')}
-                        </Link>
-                      </div>
-                      <div className="mt-auto grid grid-cols-2 border-t border-border">
-                        {impactCard ? (
-                          <button
-                            type="button"
-                            aria-disabled="true"
-                            title={t('resourceLater')}
-                            aria-label={`${t('resource')}. ${t(
-                              'resourceLater',
-                            )}`}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
+                            style={{
+                              fontFamily: 'var(--font-family-heading)',
                             }}
-                            className="inline-flex h-10 cursor-default items-center justify-center bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
+                          >
+                            {hasMedia ? (
+                              <Link
+                                href={signalHref}
+                                className="hover:underline"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {signal.title}
+                              </Link>
+                            ) : (
+                              signal.title
+                            )}
+                          </h2>
+                          <p className="truncate text-1 uppercase tracking-[0.14em] text-neutral-11">
+                            {signal.spaceTitle}
+                          </p>
+                          {story ? (
+                            <p
+                              className={cn(
+                                'text-2 leading-relaxed text-neutral-11',
+                                hasMedia ? 'line-clamp-1' : 'line-clamp-4',
+                              )}
+                            >
+                              {story}
+                            </p>
+                          ) : null}
+                          {!hasMedia && impactCard ? (
+                            <p className="flex flex-wrap gap-x-4 gap-y-1 text-1 text-neutral-11">
+                              <Link
+                                href={`/${lang}/network/exchange?type=Action`}
+                                className="hover:text-foreground"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {t('proofsOfAction', { count: proofs.action })}
+                              </Link>
+                              <Link
+                                href={`/${lang}/network/exchange?type=Impact`}
+                                className="hover:text-foreground"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {t('proofsOfImpact', { count: proofs.impact })}
+                              </Link>
+                            </p>
+                          ) : null}
+                          {!hasMedia && !impactCard && payout ? (
+                            <p className="font-mono text-2 text-foreground">
+                              {payout}
+                            </p>
+                          ) : null}
+                          {!hasMedia ? (
+                            <Link
+                              href={signalHref}
+                              className="mt-auto self-start text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {t('openSignal')}
+                            </Link>
+                          ) : null}
+                        </div>
+                        <div className="mt-auto flex shrink-0 flex-wrap items-center gap-2 px-3 pb-3 pt-2">
+                          <Button
+                            type="button"
+                            className="h-10 w-fit"
+                            disabled={opening || !signal.spaceSlug}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openRoom(signal);
+                            }}
+                          >
+                            {t('connect')}
+                          </Button>
+                          <Button asChild className="h-10 w-fit">
+                            <Link
+                              href={getDhoPathOverview(lang, signal.spaceSlug)}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {t('visit')}
+                              <ArrowUpRight className="size-3.5" aria-hidden />
+                            </Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            className="h-10 w-fit"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setFundSpace({
+                                slug: signal.spaceSlug,
+                                title: signal.spaceTitle,
+                              });
+                            }}
                           >
                             {t('resource')}
-                          </button>
-                        ) : (
-                          <Link
-                            href={getDhoPathOverview(lang, signal.spaceSlug)}
-                            className="inline-flex h-10 items-center justify-center bg-foreground px-3 text-1 font-medium uppercase tracking-[0.14em] text-background"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            {t('visit')}
-                          </Link>
-                        )}
-                        <button
-                          type="button"
-                          disabled={opening || !signal.spaceSlug}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openRoom(signal);
-                          }}
-                          className="inline-flex h-10 items-center justify-center border-l border-border bg-background px-3 text-1 font-medium uppercase tracking-[0.14em] hover:bg-neutral-2 disabled:opacity-40"
-                        >
-                          {t('connect')}
-                        </button>
+                          </Button>
+                        </div>
                       </div>
                     </article>
                   </li>
@@ -550,6 +683,27 @@ export function NetworkReciprocalExchange({
           />
         </aside>
       </div>
+      <Dialog
+        open={fundSpace != null}
+        onOpenChange={(next) => {
+          if (!next) setFundSpace(null);
+        }}
+      >
+        <DialogContent className="max-w-lg gap-4">
+          <DialogTitle
+            className="pr-8 text-4"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {tWallet('shortcuts.fundSpace')}
+          </DialogTitle>
+          {fundSpace ? (
+            <FundASpaceFlow
+              initialSpaceSlug={fundSpace.slug}
+              initialSpaceTitle={fundSpace.title}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

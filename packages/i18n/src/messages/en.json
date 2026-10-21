@@ -319,6 +319,8 @@
     "shareExchangePromptSignal": "Describe this signal for the network.",
     "chooseSignalType": "Signal type",
     "filterSignals": "Filter",
+    "removeFilter": "Remove {label}",
+    "resetFilters": "Reset",
     "signalTypes": "Signal types",
     "signalTitle": "Title",
     "signalTitleHint": "Short name for this signal",

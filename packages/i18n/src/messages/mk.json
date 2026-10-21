@@ -553,6 +553,8 @@
     "shareExchangePromptSignal": "Опиши го овој сигнал за мрежата.",
     "chooseSignalType": "Тип на сигнал",
     "filterSignals": "Филтер",
+    "removeFilter": "Отстрани {label}",
+    "resetFilters": "Ресетирај",
     "signalTypes": "Типови на сигнал",
     "signalTitle": "Наслов",
     "signalTitleHint": "Кратко име за овој сигнал",

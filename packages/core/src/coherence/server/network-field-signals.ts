@@ -76,6 +76,21 @@ function firstImageAttachment(value: unknown): string | null {
   return null;
 }
 
+function firstDocumentAttachment(
+  value: unknown,
+): { url: string; name: string } | null {
+  const parsed = typeof value === 'string' ? asTags(value) : value;
+  if (!Array.isArray(parsed)) return null;
+  for (const entry of parsed) {
+    if (!entry || typeof entry !== 'object') continue;
+    const url = asText((entry as { url?: unknown }).url);
+    const name = asText((entry as { name?: unknown }).name);
+    if (!url || isImageAttachment(url, name)) continue;
+    return { url, name: name || url.split('/').pop() || 'Document' };
+  }
+  return null;
+}
+
 function isFieldKind(value: unknown): value is NetworkFieldSignalKind {
   return (
     typeof value === 'string' &&
@@ -144,6 +159,7 @@ export async function listNetworkFieldSignals(
         firstImageAttachment(record.attachments) ||
         null,
       videoUrl: asText(record.video_url) || null,
+      document: firstDocumentAttachment(record.attachments),
       updatedAt: asIso(record.updated_at),
       payouts: asPayouts(record.indicative_payouts),
       spaceDescription: asText(record.space_description),

@@ -33,6 +33,8 @@ export type NetworkFieldSignal = {
   spaceChatRoomId: string | null;
   leadImage: string | null;
   videoUrl: string | null;
+  /** First non-image attachment when there is no photo or video. */
+  document: { url: string; name: string } | null;
   updatedAt: string | null;
   /** Stored form of capital, else the first capital in tags, else the first capital the space seeks. */
   capital: string | null;
