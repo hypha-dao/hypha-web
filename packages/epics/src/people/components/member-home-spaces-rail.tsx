@@ -233,9 +233,10 @@ export function MemberHomeSpacesRail({
 
 function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
   return cn(
-    // Below xl the icons share one row. A vertical column there scrolls.
-    'h-[44px] w-full shrink-0 flex-row overflow-hidden border-b border-border bg-background',
-    'xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
+    // Below xl the icons share one row, stuck to the top of the dashboard.
+    // The row paints over the mycelium so the field stays underneath it.
+    'sticky top-0 z-10 h-[44px] w-full shrink-0 flex-row overflow-hidden border-b border-border bg-background',
+    'xl:static xl:z-auto xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
     visibleOnNarrow ? 'flex' : 'hidden',
     persistOnWide ? 'xl:flex' : 'xl:hidden',
   );
