@@ -11,7 +11,7 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { findDirectRoomId } from './member-home-closest';
+import { directPairRoomCandidates } from './member-home-closest';
 import { rememberDirectRoom } from './member-connections';
 
 type HomePerson = {
@@ -140,21 +140,6 @@ export function MemberHomePeople({
     );
   }
 
-  async function openRoom(
-    title: string,
-    ids: number[],
-    ready: Awaited<ReturnType<typeof waitForMatrix>>,
-  ) {
-    if (!ready.isAuthenticated || !ready.client) return null;
-    const { roomId } = await ready.createRoom(title);
-    for (const id of ids) {
-      const mxid = await waitForMatrixUserId(id);
-      if (!mxid) continue;
-      await ready.client.invite(roomId, mxid).catch(() => undefined);
-    }
-    return roomId;
-  }
-
   async function resolvePersonRoom(person: HomePerson, title: string) {
     const ready = await waitForMatrix();
     const client = ready.client;
@@ -169,11 +154,13 @@ export function MemberHomePeople({
       setNotice(t('matrixFailed'));
       return null;
     }
-    const existing = findDirectRoomId(client, selfId, mxid, title);
-    if (existing) return existing;
-    const created = await openRoom(title, [person.id], ready);
-    if (created) rememberDirectRoom(selfId, mxid, created);
-    return created;
+    const { roomId } = await ready.ensureDirectRoom(
+      mxid,
+      title,
+      directPairRoomCandidates(client, selfId, mxid),
+    );
+    rememberDirectRoom(selfId, mxid, roomId);
+    return roomId;
   }
 
   async function openPersonChat(person: HomePerson): Promise<boolean> {

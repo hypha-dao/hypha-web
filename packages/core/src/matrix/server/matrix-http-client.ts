@@ -368,6 +368,29 @@ export async function matrixResolveRoomAlias(
   return data.room_id?.trim() || null;
 }
 
+/** Point a directory alias at an existing room so both people resolve the same one. */
+export async function matrixPublishRoomAlias(
+  roomAlias: string,
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      roomAlias,
+    )}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ room_id: roomId }),
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
+}
+
 /** Remove a directory alias so it can be published on a different room. */
 export async function matrixDeleteRoomAlias(
   roomAlias: string,

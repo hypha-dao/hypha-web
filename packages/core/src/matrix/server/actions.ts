@@ -24,6 +24,13 @@ import {
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
+import {
+  directPairAliasLocalpart,
+  isDirectPairRoom,
+  isSignalThreadMessageContent,
+  pickDirectPairRoom,
+} from '../direct-pair-room';
+import { isHyphaBotMatrixIdentity } from '../matrix-member-display';
 import { Environment } from '../../coherence/types';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
@@ -38,9 +45,12 @@ import {
   matrixCreateAliasedRoom,
   matrixCreateRoom,
   matrixDeleteRoomAlias,
+  matrixGetJoinOrInviteRoomMembers,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
+  matrixListRoomMessages,
+  matrixPublishRoomAlias,
   matrixResolveRoomAlias,
   matrixServerNameFromUserId,
   matrixWhoAmI,
@@ -472,6 +482,235 @@ export async function ensurePublicChatRoomAction({
     roomName: `Public · ${slug}`,
     memberRoomIds: [...memberRoomIds],
   });
+}
+
+const DIRECT_PAIR_CANDIDATE_LIMIT = 8;
+
+function isMatrixUserId(value: string) {
+  return value.startsWith('@') && value.includes(':');
+}
+
+function isMatrixRoomId(value: string) {
+  return value.startsWith('!') && value.includes(':') && value.length < 255;
+}
+
+async function knownBotIds(primaryToken: string, homeserver: string) {
+  const ids = new Set<string>();
+  const configured = getMatrixBotUserId()?.trim().toLowerCase();
+  if (configured) ids.add(configured);
+  for (const token of [primaryToken, ...getMatrixAdditionalBotAsTokens()]) {
+    try {
+      const id = (await matrixWhoAmI(token, homeserver)).trim().toLowerCase();
+      if (id) ids.add(id);
+    } catch {
+      // Another token may still identify the bot.
+    }
+  }
+  return ids;
+}
+
+function chunkHasSignalThread(chunk: unknown[]) {
+  for (const event of chunk) {
+    if (!event || typeof event !== 'object') continue;
+    const content = (event as { content?: unknown }).content;
+    if (isSignalThreadMessageContent(content)) return true;
+  }
+  return false;
+}
+
+function latestMessageTs(chunk: unknown[]) {
+  let latest = 0;
+  for (const event of chunk) {
+    if (!event || typeof event !== 'object') continue;
+    const row = event as { type?: unknown; origin_server_ts?: unknown };
+    if (row.type !== 'm.room.message') continue;
+    if (typeof row.origin_server_ts !== 'number') continue;
+    if (row.origin_server_ts > latest) latest = row.origin_server_ts;
+  }
+  return latest;
+}
+
+/**
+ * One direct room for a pair. An existing room is kept — the one with the
+ * later message — and both people are puppet-joined into it. A new room is
+ * created only when the pair has none. The directory alias is the shared name,
+ * so the next open cannot create a second room.
+ */
+export async function ensureDirectPairRoomAction({
+  matrixUserId,
+  otherMatrixUserId,
+  candidateRoomIds,
+  title,
+}: {
+  matrixUserId: string;
+  otherMatrixUserId: string;
+  candidateRoomIds?: string[];
+  title?: string;
+}): Promise<{ roomId: string } | null> {
+  const self = matrixUserId?.trim() ?? '';
+  const other = otherMatrixUserId?.trim() ?? '';
+  if (!isMatrixUserId(self) || !isMatrixUserId(other) || self === other) {
+    return null;
+  }
+  const homeserver = getMatrixHomeserverUrl();
+  const botToken = getMatrixBotAsToken();
+  const localpart = directPairAliasLocalpart(self, other);
+  if (!homeserver || !botToken || !localpart) return null;
+
+  let serverName = matrixServerNameFromUserId(getMatrixBotUserId() ?? '');
+  if (!serverName) {
+    try {
+      serverName = matrixServerNameFromUserId(
+        await matrixWhoAmI(botToken, homeserver),
+      );
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Failed to resolve homeserver name for the direct room:',
+        error instanceof Error ? error.message : error,
+      );
+      return null;
+    }
+  }
+  if (!serverName) return null;
+
+  const alias = `#${localpart}:${serverName}`;
+  let aliasedRoomId: string | null = null;
+  try {
+    aliasedRoomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to look up the direct room:',
+      alias,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+
+  const bots = await knownBotIds(botToken, homeserver);
+  const isBot = (userId: string) =>
+    bots.has(userId.trim().toLowerCase()) || isHyphaBotMatrixIdentity(userId);
+  const seen = new Set<string>();
+  const roomIds: string[] = [];
+  if (aliasedRoomId && isMatrixRoomId(aliasedRoomId)) {
+    seen.add(aliasedRoomId);
+    roomIds.push(aliasedRoomId);
+  }
+  for (const candidate of candidateRoomIds ?? []) {
+    const roomId = candidate?.trim() ?? '';
+    if (!isMatrixRoomId(roomId) || seen.has(roomId)) continue;
+    seen.add(roomId);
+    roomIds.push(roomId);
+    if (roomIds.length >= DIRECT_PAIR_CANDIDATE_LIMIT) break;
+  }
+
+  const viable: { roomId: string; lastMessageTs: number }[] = [];
+  await Promise.all(
+    roomIds.map(async (candidateRoomId) => {
+      let members: string[];
+      try {
+        members = await matrixGetJoinOrInviteRoomMembers(
+          candidateRoomId,
+          botToken,
+          homeserver,
+        );
+      } catch (error) {
+        console.warn(
+          '[MatrixBot] Skipping a direct-room candidate:',
+          candidateRoomId,
+          error instanceof Error ? error.message : error,
+        );
+        return;
+      }
+      if (!isDirectPairRoom(members, self, other, isBot)) return;
+      let lastMessageTs = 0;
+      try {
+        const messages = await matrixListRoomMessages(
+          candidateRoomId,
+          botToken,
+          homeserver,
+          { limit: 30 },
+        );
+        if (chunkHasSignalThread(messages.chunk)) return;
+        lastMessageTs = latestMessageTs(messages.chunk);
+      } catch (error) {
+        console.warn(
+          '[MatrixBot] Direct room kept without its message time:',
+          candidateRoomId,
+          error instanceof Error ? error.message : error,
+        );
+      }
+      viable.push({ roomId: candidateRoomId, lastMessageTs });
+    }),
+  );
+
+  let roomId = pickDirectPairRoom(viable);
+  let created = false;
+  if (!roomId) {
+    try {
+      roomId = await matrixCreateAliasedRoom(
+        title?.trim() || 'Conversation',
+        localpart,
+        botToken,
+        homeserver,
+      );
+      created = true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const aliasTaken =
+        message.includes('M_ROOM_IN_USE') ||
+        message.toLowerCase().includes('already in use');
+      if (!aliasTaken) {
+        console.warn(
+          '[MatrixBot] Failed to create the direct room:',
+          alias,
+          message,
+        );
+        return null;
+      }
+      try {
+        roomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
+      } catch (lookupError) {
+        console.warn(
+          '[MatrixBot] Direct room alias is taken but could not be resolved:',
+          alias,
+          lookupError instanceof Error ? lookupError.message : lookupError,
+        );
+        return null;
+      }
+    }
+  }
+  if (!roomId) return null;
+
+  if (!created && roomId !== aliasedRoomId) {
+    try {
+      if (aliasedRoomId)
+        await matrixDeleteRoomAlias(alias, botToken, homeserver);
+      await matrixPublishRoomAlias(alias, roomId, botToken, homeserver);
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Failed to publish the direct room alias:',
+        alias,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  const joinedSelf = await ensureMemberJoinedRoomAction({
+    roomId,
+    matrixUserId: self,
+  });
+  if (!joinedSelf.joined) return null;
+  const joinedOther = await ensureMemberJoinedRoomAction({
+    roomId,
+    matrixUserId: other,
+  });
+  if (!joinedOther.joined) {
+    console.warn(
+      '[MatrixBot] Direct room is open but the other person was not joined:',
+      roomId,
+    );
+  }
+  return { roomId };
 }
 
 function pointsAtMemberRoom(

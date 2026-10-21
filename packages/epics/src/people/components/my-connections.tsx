@@ -1069,11 +1069,8 @@ export function MyConnections({
       return;
     }
     setNotice(null);
-    if (row.roomId) {
-      const peerSlug = row.person.slug?.trim();
-      openCoherenceChat(row.roomId, row.name, '', null, null, {
-        peerPerson: peerSlug ? { slug: peerSlug } : null,
-      });
+    if (row.person.id < 0 && row.roomId) {
+      openCoherenceChat(row.roomId, row.name, '', null, null);
       return;
     }
     const opened = await openChatRef.current?.({
@@ -1133,14 +1130,11 @@ export function MyConnections({
 
   async function openReachOut(card: ConnectionSuggestion) {
     setNotice(null);
-    if (card.roomId) {
-      const peerSlug = card.person?.slug?.trim();
-      openCoherenceChat(card.roomId, card.name, '', null, null, {
-        peerPerson: peerSlug ? { slug: peerSlug } : null,
-      });
+    if (!card.person) {
+      if (!card.roomId) return;
+      openCoherenceChat(card.roomId, card.name, '', null, null);
       return;
     }
-    if (!card.person) return;
     const opened = await openChatRef.current?.({
       id: card.person.id,
       slug: card.person.slug,

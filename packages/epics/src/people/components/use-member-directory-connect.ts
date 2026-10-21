@@ -11,7 +11,7 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { findDirectRoomId } from './member-home-closest';
+import { directPairRoomCandidates } from './member-home-closest';
 import { rememberDirectRoom } from './member-connections';
 
 export type DirectoryPerson = {
@@ -122,11 +122,12 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
       setNotice(t('matrixUnavailable'));
       return null;
     }
-    const existing = findDirectRoomId(client, selfId, mxid, title);
-    if (existing) return existing;
-    const { roomId } = await ready.createRoom(title);
+    const { roomId } = await ready.ensureDirectRoom(
+      mxid,
+      title,
+      directPairRoomCandidates(client, selfId, mxid),
+    );
     rememberDirectRoom(selfId, mxid, roomId);
-    await client.invite(roomId, mxid).catch(() => undefined);
     return roomId;
   }
 

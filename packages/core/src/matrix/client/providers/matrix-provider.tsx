@@ -54,6 +54,7 @@ import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
 import {
   createBotOwnedRoomAction,
+  ensureDirectPairRoomAction,
   ensureEcosystemChatRoomAction,
   ensureMemberJoinedRoomAction,
   ensureNetworkChatRoomAction,
@@ -567,6 +568,16 @@ interface MatrixContextType {
   createRoom: (
     title: string,
     options?: { grantCreatorPl100?: boolean },
+  ) => Promise<{ roomId: string }>;
+  /**
+   * Open the one direct room for this pair. Both people are joined into the
+   * room that already has the later message. A room is created only when
+   * the pair has none.
+   */
+  ensureDirectRoom: (
+    otherUserId: string,
+    title: string,
+    candidateRoomIds: string[],
   ) => Promise<{ roomId: string }>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
@@ -1114,6 +1125,36 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       // the next sync, so `getRoom` can still return null for a few seconds after the puppet
       // join above resolves. Wait for it the same way `joinRoom` does, so callers that
       // immediately act on `roomId` (e.g. syncRoomMessages) don't hit "Room not found".
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          return { roomId };
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
+
+  const ensureDirectRoom = React.useCallback(
+    async (otherUserId: string, title: string, candidateRoomIds: string[]) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
+      const ensured = await ensureDirectPairRoomAction({
+        matrixUserId: userId,
+        otherMatrixUserId: otherUserId,
+        candidateRoomIds,
+        title,
+      });
+      if (!ensured) {
+        throw new Error('Failed to open the direct room');
+      }
+      const { roomId } = ensured;
       for (let i = 0; i < 200; i++) {
         if (client.getRoom(roomId)) {
           return { roomId };
@@ -2381,6 +2422,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     retryMatrixConnection,
     connectionRetryFailed,
     createRoom,
+    ensureDirectRoom,
     ensureNetworkRoom,
     ensureEcosystemRoom,
     ensurePublicRoom,
@@ -2414,6 +2456,9 @@ const noopMatrixContext: MatrixContextType = {
   retryMatrixConnection: async () => {},
   connectionRetryFailed: false,
   createRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensureDirectRoom: async () => {
     throw new Error('Matrix unavailable');
   },
   ensureNetworkRoom: async () => {

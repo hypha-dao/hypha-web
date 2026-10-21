@@ -9,6 +9,7 @@ import {
   EventType,
   UserEvent,
   type MatrixClient,
+  type Room,
 } from 'matrix-js-sdk';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
@@ -129,6 +130,76 @@ export function readJoinedPeopleRooms(client: MatrixClient): {
   return { conversations, named };
 }
 
+const DIRECT_PAIR_CANDIDATE_LIMIT = 8;
+
+function roomIsSignalThread(room: Room) {
+  if (isRememberedSignalThreadRoom(room.roomId)) return true;
+  return room
+    .getLiveTimeline()
+    .getEvents()
+    .some((event) => {
+      if (event.getType() !== EventType.RoomMessage) return false;
+      return eventContentIsSignalThread(
+        event.getContent() as Record<string, unknown> | null,
+      );
+    });
+}
+
+function otherHumans(room: Room, selfUserId: string) {
+  const self = selfUserId.trim().toLowerCase();
+  const ids = new Set<string>();
+  for (const member of room.getMembers()) {
+    if (member.membership !== 'join' && member.membership !== 'invite') {
+      continue;
+    }
+    const id = member.userId?.trim();
+    if (!id || isHyphaBotMatrixIdentity(id)) continue;
+    if (id.toLowerCase() === self) continue;
+    ids.add(id);
+  }
+  return [...ids];
+}
+
+/**
+ * Rooms this client already has with one person. The remembered room is
+ * included even when the other person has not joined it yet, so the shared
+ * room can be the one that already holds the conversation.
+ */
+export function directPairRoomCandidates(
+  client: MatrixClient,
+  selfUserId: string,
+  otherUserId: string,
+) {
+  const other = otherUserId.trim().toLowerCase();
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const push = (roomId: string | null | undefined) => {
+    const id = roomId?.trim();
+    if (!id || seen.has(id) || ids.length >= DIRECT_PAIR_CANDIDATE_LIMIT) {
+      return;
+    }
+    seen.add(id);
+    ids.push(id);
+  };
+
+  const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
+  if (remembered && !isRememberedSignalThreadRoom(remembered)) {
+    push(remembered);
+  }
+  if (!other) return ids;
+
+  for (const room of client.getRooms()) {
+    const membership = room.getMyMembership();
+    if (membership !== 'join' && membership !== 'invite') continue;
+    if (roomIsSignalThread(room)) continue;
+    const humans = otherHumans(room, selfUserId);
+    if (humans.length === 1 && humans[0]?.toLowerCase() === other) {
+      push(room.roomId);
+    }
+  }
+  return ids;
+}
+
 /** Reopen the direct room already used with this person instead of creating another. */
 export function findDirectRoomId(
   client: MatrixClient,
@@ -136,18 +207,44 @@ export function findDirectRoomId(
   otherUserId: string,
   roomName: string,
 ) {
-  const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
-  const rememberedRoom = remembered ? client.getRoom(remembered) : null;
-  if (rememberedRoom?.getMyMembership() === 'join') return remembered;
-
+  const named: NamedRoomSnapshot[] = [];
+  for (const room of client.getRooms()) {
+    const membership = room.getMyMembership();
+    if (membership !== 'join' && membership !== 'invite') continue;
+    if (roomIsSignalThread(room)) continue;
+    const joinedUserIds = room
+      .getMembers()
+      .filter(
+        (member) =>
+          member.membership === 'join' || member.membership === 'invite',
+      )
+      .map((member) => member.userId)
+      .filter((id) => id && !isHyphaBotMatrixIdentity(id));
+    named.push({
+      roomId: room.roomId,
+      name: room.name ?? '',
+      joinedUserIds,
+      lastActiveTs: room.getLastActiveTimestamp(),
+    });
+  }
   const existing = findNamedDirectRoomId(
-    readJoinedPeopleRooms(client).named,
+    named,
     selfUserId,
     otherUserId,
     roomName,
   );
-  if (existing) rememberDirectRoom(selfUserId, otherUserId, existing);
-  return existing;
+  if (existing) {
+    rememberDirectRoom(selfUserId, otherUserId, existing);
+    return existing;
+  }
+
+  const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
+  const rememberedRoom = remembered ? client.getRoom(remembered) : null;
+  const rememberedMembership = rememberedRoom?.getMyMembership();
+  if (rememberedMembership === 'join' || rememberedMembership === 'invite') {
+    return remembered;
+  }
+  return null;
 }
 
 function samePresence(
