@@ -4,6 +4,7 @@ import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Coherence } from '@hypha-platform/core/client';
 import {
+  pickSignalDeepLinkTarget,
   readLiveSignalSlugFromUrl,
   scrollToSignalCardWithRetry,
 } from '../lib/signal-deep-link-dom';
@@ -27,24 +28,10 @@ type UseCoherenceSignalDeepLinkOptions = {
   onRefreshSignals?: () => void | Promise<void>;
 };
 
-function resolveDeepLinkTargetSlug(
-  humanChatEnabled: boolean,
-  activeCoherenceSlug: string | null | undefined,
-): string | null {
-  const chatSlug = activeCoherenceSlug?.trim() ?? null;
-  if (humanChatEnabled && chatSlug) {
-    return chatSlug;
-  }
-  return readLiveSignalSlugFromUrl();
-}
-
 /**
- * When `?signal=<slug>` is present on a coherence route, scroll the matching
- * card into view and optionally open its chat thread.
- *
- * Chat opening for human-chat spaces is owned by `HumanRightPanel`; this hook
- * only scrolls/highlights. When a coherence chat is active, the live chat slug
- * wins over a lagging `?signal=` param so selection does not flash between cards.
+ * When `?signal=<slug>` is present, scroll the matching card into view and
+ * open its chat. A new signal in the URL replaces the one already open.
+ * A chat that just changed still wins over a URL that has not caught up.
  */
 export function useCoherenceSignalDeepLink({
   signals,
@@ -65,11 +52,29 @@ export function useCoherenceSignalDeepLink({
   const refreshAttemptForSlugRef = React.useRef<string | null>(null);
   const scrolledForSlugRef = React.useRef<string | null>(null);
   const lastTargetSlugRef = React.useRef<string | null>(null);
-
-  const targetSlug = React.useMemo(
-    () => resolveDeepLinkTargetSlug(humanChatEnabled, activeCoherenceSlug),
-    [activeCoherenceSlug, humanChatEnabled, searchParams],
+  const previousChatSlugRef = React.useRef<string | null | undefined>(
+    undefined,
   );
+  const previousUrlSlugRef = React.useRef<string | null | undefined>(undefined);
+  const previousChoiceRef = React.useRef<string | null>(null);
+
+  const searchParamSlug = searchParams.get('signal')?.trim() || null;
+  const urlSlug =
+    typeof window !== 'undefined'
+      ? readLiveSignalSlugFromUrl()
+      : searchParamSlug;
+  const chatSlug = activeCoherenceSlug?.trim() || null;
+  const targetSlug = pickSignalDeepLinkTarget({
+    humanChatEnabled,
+    chatSlug,
+    urlSlug,
+    previousChatSlug: previousChatSlugRef.current,
+    previousUrlSlug: previousUrlSlugRef.current,
+    previousChoice: previousChoiceRef.current,
+  });
+  previousChatSlugRef.current = chatSlug;
+  previousUrlSlugRef.current = urlSlug;
+  previousChoiceRef.current = targetSlug;
 
   React.useEffect(() => {
     if (lastTargetSlugRef.current !== targetSlug) {

@@ -160,7 +160,11 @@ import {
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
 import { setSignalSearchParam } from './human-chat-panel/human-chat-message-link';
-import { readLiveSignalSlugFromUrl } from '../coherence/lib/signal-deep-link-dom';
+import {
+  readLiveSignalSlugFromUrl,
+  pickSignalDeepLinkTarget,
+  shouldWriteOpenChatToSignalUrl,
+} from '../coherence/lib/signal-deep-link-dom';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
@@ -1711,6 +1715,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     string | null
   >(null);
   const signalDeepLinkEpochRef = useRef(0);
+  const previousSignalChatSlugRef = useRef<string | null | undefined>(
+    undefined,
+  );
+  const previousSignalUrlSlugRef = useRef<string | null | undefined>(undefined);
+  const previousSignalChoiceRef = useRef<string | null>(null);
 
   /** Leave signal/coherence chat without the deep-link effect re-opening from `?signal=`. */
   const exitCoherenceChat = useCallback(() => {
@@ -4364,7 +4373,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           return;
         }
       }
-      if (readSignalDeepLinkSlug(searchParams) === slug) return;
+      if (readSignalDeepLinkSlug(searchParams) === slug) {
+        previousSignalChatSlugRef.current = slug;
+        previousSignalUrlSlugRef.current = slug;
+        previousSignalChoiceRef.current = slug;
+        return;
+      }
+      const urlSignal = readSignalDeepLinkSlug(searchParams);
+      const choice = pickSignalDeepLinkTarget({
+        humanChatEnabled: true,
+        chatSlug: slug,
+        urlSlug: urlSignal,
+        previousChatSlug: previousSignalChatSlugRef.current,
+        previousUrlSlug: previousSignalUrlSlugRef.current,
+        previousChoice: previousSignalChoiceRef.current,
+      });
+      previousSignalChatSlugRef.current = slug;
+      previousSignalUrlSlugRef.current = urlSignal;
+      previousSignalChoiceRef.current = choice;
+      if (!shouldWriteOpenChatToSignalUrl(choice, slug, urlSignal)) {
+        return;
+      }
       const href = setSignalSearchParam(
         pathname,
         typeof window !== 'undefined'
@@ -4426,9 +4455,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
     }
 
-    const onCoherenceRoute = pathname.includes('/coherence');
-    if (mode !== 'space' && !onCoherenceRoute) return;
-
     let cancelled = false;
     const epochAtStart = signalDeepLinkEpochRef.current;
     const expectedSpaceSlug = spaceSlug.trim();
@@ -4462,7 +4488,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (cancelled) return;
       if (epochAtStart !== signalDeepLinkEpochRef.current) return;
       if (spaceSlug?.trim() !== expectedSpaceSlug) return;
-      if (!readLiveSearchParam('signal')) return;
+      if (readLiveSearchParam('signal') !== qpSignal) return;
 
       if (!result.ok) {
         const messageKey =
