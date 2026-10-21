@@ -280,8 +280,27 @@ test fails when a route skips the wrapper or the values drift.
   `409` name already used; `400` validation.
 - `ops/...`: `503` secret not configured, `401` wrong secret, `404` unknown slug for the state; approve and
   rotate return `clientKey` once.
-- Everywhere: `401` missing/invalid credentials (client-key failures carry a `code`: `missing_key`,
-  `invalid_key`, `client_not_approved`), `403` no Hypha profile, `500` unexpected (no detail).
+- Everywhere: `401` missing/invalid credentials, `403` no Hypha profile, `500` unexpected (no detail). Both
+  kinds of credential failure carry a machine-readable `code` next to `error` (list below).
+
+#### Error codes
+
+| `code`                | Status | Meaning                                                                                  |
+| --------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| `missing_key`         | 401    | no `x-hypha-client-key` header                                                           |
+| `invalid_key`         | 401    | the key is unknown or was rotated                                                        |
+| `client_not_approved` | 403    | the client is pending or revoked                                                         |
+| `missing_scope`       | 403    | the client lacks the scope this route needs (for example `agreements:vote` on `actions`) |
+| `missing_token`       | 401    | no `Authorization: Bearer` user token                                                    |
+| `invalid_token`       | 401    | the user token is expired, malformed or not for this app                                 |
+| `profile_required`    | 403    | the token is valid but the account has no Hypha profile                                  |
+| `cannot_vote`         | 409    | `POST actions`: the person cannot vote now; `reason` says why (see Prepared actions)     |
+| `too_many_pending`    | 429    | `POST actions`: 5 open actions already for this client and person                        |
+
+Key codes are checked first, so a request with a bad key never reaches the token check. Other errors
+(`400` validation, `404`, `409 { status }` on a request that was already answered, `500`) have no `code`.
+A client can tell "the user must sign in again" (`missing_token`, `invalid_token`) from "this person
+cannot use Hypha yet" (`profile_required`) and from its own key problems without parsing the message.
 
 ### Prepared actions (spike: user-approved operations)
 
@@ -311,17 +330,96 @@ signs, gas sponsored as in the app) or rejects. The client polls `GET actions/{i
 - Summary: built by `describeIntegrationAction` from the stored parameters, the titles the server resolved at
   request time and the client's registered name. No client-supplied text is stored or shown. The signing
   parameters (proposal id, support) are returned only by `approve`, from the stored row.
-- Errors on `POST actions`: `401` credentials, `403` `missing_scope` (client lacks `agreements:vote`) or no
-  profile, `400` validation, `404` unknown space or proposal, `409 cannot_vote` with the `voting/me` reason
-  (not a member, closed, ...), `429 too_many_pending` (5 open actions per client and person).
+- Errors on `POST actions`: `401` credentials (`missing_key`, `invalid_key`, `missing_token`,
+  `invalid_token`), `403` (`client_not_approved`, `missing_scope` when the client lacks `agreements:vote`,
+  `profile_required`), `400` validation, `404` unknown space or proposal, `409 cannot_vote` with a `reason`,
+  `429 too_many_pending`.
+- `409 cannot_vote` reasons (the `voting/me` reasons, same function): `proposal_withdrawn`, `proposal_closed`
+  (executed or expired), `voting_not_started`, `voting_ended`, `not_member_or_delegate`, `no_voting_power`.
+  These are the necessary conditions only; the contract also needs an active space subscription, so an
+  accepted prepare can still end `failed` if the wallet's transaction reverts.
+- `409 { error, status }` on the page routes (`approve`, `reject`, `result`) means the action is no longer
+  answerable; `status` is what it is now (`approved`, `rejected`, `submitted`, `failed` or `expired`).
+- A person who has **already voted** can vote again: `decideCanVote` does not look at `hasVoted`, so
+  `POST actions` answers `202` like for a first vote (no `409`, no hint in the response that a vote exists).
+  A changed vote prepares, is confirmed and is signed exactly like a first vote: the same
+  `vote(proposalId, support)` call. The contract removes the previous vote, emits `VoteChanged` and
+  `VoteCast`, and counts the new one with the voting power at that moment. Voting the same choice again is
+  accepted too (a re-count, no change of side). The summary does not say "change"; an application that wants
+  to show it reads `voting/me` (`hasVoted`, the current choice) before it prepares.
+- A new prepare **supersedes** the open ones: preparing for the same client, person, space and proposal moves
+  the older pending actions to `expired` (their expiry becomes "now"), so a stale link or a second tab cannot
+  also vote; its page shows "expired" and the poll answers `expired`. Only a prepare that would be accepted
+  does this (a `409`, `404` or `400` leaves the open link alone). Other proposals, clients and people are not
+  affected. The cap is checked after superseding, so retrying the same proposal never trips it.
 - Same cache headers as the rest of the namespace.
+
+#### The approval page
+
+- Route `/{lang}/approve/{actionId}` (the `approvalUrl`). It renders a minimal Hypha header (the mark, not a
+  link) and none of the app chrome (menu bar, footer), so it reads as Hypha and not as the integrating site
+  when it opens in a small popup. Same page when opened as a tab or by redirect.
+- It shows the client's registered name and its registered origins (`allowedOrigins`), next to the
+  server-generated summary. With no registered origin it says so. Both come from the stored client, never from
+  the request.
+- After a confirmed or cancelled request it shows "Going back to the application in N…" and closes its window
+  at zero. The wait is `INTEGRATION_APPROVAL_CLOSE_SECONDS` (default `5`, `0` turns it off, at most `60`). The
+  "Close window" button stays, because `window.close()` only works on windows opened by a script; when the
+  window refuses to close, the page says it can be closed. No countdown after `expired`, `failed` or `used`
+  (the person should read those).
+
+#### Result delivery
+
+Three ways were agreed; two exist:
+
+1. **Polling** `GET actions/{id}`: the source of truth, always available.
+2. **`postMessage` to the opener** (built): when the request ends (`submitted`, `rejected`, `failed`,
+   `expired`; also when an already-ended request is opened) the page posts once to `window.opener`, before any
+   closing:
+
+   ```json
+   {
+     "type": "hypha:integration-action",
+     "version": 1,
+     "actionId": "<uuid>",
+     "status": "submitted",
+     "txHash": "0x..."
+   }
+   ```
+
+   `status` is `submitted`, `rejected`, `failed` or `expired`; `txHash` only with `submitted`. The target origin
+   is each of the client's registered `allowedOrigins`, one `postMessage` per origin, never `*`; the browser
+   delivers it only where the opener's origin matches, so the other targets are dropped silently. No registered
+   origin or no opener: nothing is sent. The receiver must check `event.origin` against the Hypha origin and
+   `event.data.type`, and then treat the message as a hint: re-read `GET actions/{id}` (the message carries no
+   proof).
+
+3. **Return-URL redirect**: **not built.** It needs a stored `returnUrl` (one column plus a hand-authored
+   migration), validated at prepare against the allowlist, and a final button/redirect on the page. Nothing in
+   the current flow blocks it.
+
+The allowlist today is `integration_clients.allowedOrigins`: validated as bare origins at registration
+(`https`, or `http` for `localhost`), shown to ops, and **informational** for the API (not enforced on any
+route). For `postMessage` it is already the only place a message can go, so a wrong entry cannot send the
+result anywhere unregistered, but the entry itself is only as good as the ops review. To make it **binding**:
+ops would have to review and edit origins on approval (today `approve` edits scopes only), a client with write
+scopes would need at least one origin, `POST actions` could take an `origin` that must be in the list and is
+stored with the action (a column and migration) so the page posts to exactly that origin and a redirect only
+goes there, and the Privy dashboard's allowed origins must be kept in step by hand.
+
 - Planned shape (not built): a per-operation descriptor (parameter schema, eligibility check, summary text,
   call plan of target, function, args and value), an executor seam (browser wallet now, server signer later,
   per operation) behind the same routes and states, verification of the reported transaction against the
   call plan, and an optional server-side step after a verified transaction for operations with web2 side
   effects. The routes, table and states stay as they are.
 - Known gaps (spike): the tx hash is reported by the page and not verified on chain; an `approved` action whose
-  page was closed stays `approved`; no return-URL redirect or `postMessage`; one operation.
+  page was closed stays `approved`; no return-URL redirect (`postMessage` exists, see above); one operation.
+  The early hash report, the server-side receipt check and "no hash after a grace period ends `failed`" are not
+  built: the smart-wallet client returns a hash only after the transaction is included (so "early" is the same
+  moment as the receipt), the hash would have to travel through the shared voting hook, the server would need
+  a chain client and a retry for RPC lag, and the smart wallet's address is not stored to match the voter. The
+  cheap part, deriving `failed` for an `approved` action with no result after a grace period, would flip a late
+  genuine result from `failed` to `submitted`, so the result route has to decide first.
 
 ### Extraction notes
 
