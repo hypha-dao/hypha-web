@@ -86,4 +86,6 @@ export function toClientAction(action: IntegrationActionRecord, now: Date) {
 /** An action plus the registered name of the client that asked for it. */
 export type IntegrationActionWithClient = IntegrationActionRecord & {
   clientName: string;
+  /** The client's registered origins (`allowedOrigins`), as ops approved them. */
+  clientOrigins: string[];
 };

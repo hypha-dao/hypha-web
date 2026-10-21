@@ -4,7 +4,11 @@ import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useVote } from '@hypha-platform/core/client';
+import {
+  buildIntegrationActionMessage,
+  notifyOpener,
+  useVote,
+} from '@hypha-platform/core/client';
 import { Button, Container } from '@hypha-platform/ui';
 
 type ActionView = {
@@ -16,6 +20,8 @@ type ActionView = {
     | 'expired'
     | 'failed';
   summary: { headline: string; lines: { label: string; value: string }[] };
+  client: { name: string; origins: string[] };
+  txHash: string | null;
 };
 
 type SignRequest = { web3ProposalId: number; support: boolean };
@@ -31,6 +37,21 @@ type PageState =
       step: 'final';
       outcome: 'submitted' | 'rejected' | 'expired' | 'used' | 'failed';
     };
+
+type FinalOutcome = Extract<PageState, { step: 'final' }>['outcome'];
+
+/** Outcomes the application is told about; `used` has no result of its own. */
+const REPORTED: Partial<
+  Record<FinalOutcome, 'submitted' | 'rejected' | 'failed' | 'expired'>
+> = {
+  submitted: 'submitted',
+  rejected: 'rejected',
+  failed: 'failed',
+  expired: 'expired',
+};
+
+/** After these the window goes back to the application by itself. */
+const AUTO_CLOSE: FinalOutcome[] = ['submitted', 'rejected'];
 
 const API = '/api/integration/v1/users/me/actions';
 
@@ -101,7 +122,11 @@ const SignVote: FC<SignVoteProps> = ({ sign, authToken, onDone }) => {
  * server (built from the stored action); this page never shows text taken from
  * the URL or from the client application.
  */
-export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
+export const ApproveActionPage: FC<{
+  actionId: string;
+  /** Wait before the window closes itself after done or cancel; 0 disables. */
+  closeAfterSeconds: number;
+}> = ({ actionId, closeAfterSeconds }) => {
   const t = useTranslations('ApproveAction');
   const { isAuthenticated, isLoading, getAccessToken, login, logout } =
     useAuthentication();
@@ -109,6 +134,12 @@ export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const loaded = useRef(false);
+  // What the application is told when the request ends (see `notifyOpener`).
+  const origins = useRef<string[]>([]);
+  const txHash = useRef<string | null>(null);
+  const notified = useRef(false);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [closeBlocked, setCloseBlocked] = useState(false);
 
   const call = useCallback(
     async (path: string, init?: RequestInit) => {
@@ -141,6 +172,8 @@ export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
         if (res.status === 404) return setState({ step: 'not-found' });
         if (!res.ok) return setState({ step: 'error' });
         const action = (await res.json()) as ActionView;
+        origins.current = action.client.origins;
+        txHash.current = action.txHash;
         if (action.status === 'pending') {
           setState({ step: 'review', action });
         } else if (action.status === 'expired') {
@@ -195,6 +228,7 @@ export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
       const body = hash
         ? { outcome: 'submitted', txHash: hash }
         : { outcome: 'failed' };
+      txHash.current = hash;
       try {
         await call('/result', { method: 'POST', body: JSON.stringify(body) });
       } catch {
@@ -204,6 +238,43 @@ export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
     },
     [call],
   );
+
+  const finalOutcome = state.step === 'final' ? state.outcome : null;
+
+  // Tell the application first (once), then, if configured, count down and close.
+  useEffect(() => {
+    if (!finalOutcome || notified.current) return;
+    const status = REPORTED[finalOutcome];
+    if (!status) return;
+    notified.current = true;
+    notifyOpener(
+      typeof window === 'undefined' ? null : window.opener,
+      buildIntegrationActionMessage({
+        actionId,
+        status,
+        txHash: txHash.current,
+      }),
+      origins.current,
+    );
+  }, [finalOutcome, actionId]);
+
+  useEffect(() => {
+    if (!finalOutcome || !AUTO_CLOSE.includes(finalOutcome)) return;
+    if (closeAfterSeconds <= 0) return;
+    setSecondsLeft(closeAfterSeconds);
+    const timer = setInterval(
+      () => setSecondsLeft((left) => (left === null ? left : left - 1)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [finalOutcome, closeAfterSeconds]);
+
+  useEffect(() => {
+    if (secondsLeft !== 0) return;
+    // Only a window opened by a script can close itself; otherwise say so.
+    window.close();
+    setCloseBlocked(true);
+  }, [secondsLeft]);
 
   const finalCopy = {
     submitted: { title: t('submittedTitle'), text: t('submittedDescription') },
@@ -267,6 +338,16 @@ export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
           <p className="max-w-md text-2 text-muted-foreground">
             {state.action.summary.headline}
           </p>
+          <p className="max-w-md text-1 text-muted-foreground">
+            {state.action.client.origins.length > 0
+              ? t('requestedFrom', {
+                  name: state.action.client.name,
+                  origins: state.action.client.origins.join(', '),
+                })
+              : t('requestedFromUnregistered', {
+                  name: state.action.client.name,
+                })}
+          </p>
           <dl className="w-full max-w-md divide-y divide-border rounded-md border border-border text-left">
             {state.action.summary.lines.map((line) => (
               <div key={line.label} className="flex justify-between gap-4 p-3">
@@ -310,6 +391,16 @@ export const ApproveActionPage: FC<{ actionId: string }> = ({ actionId }) => {
           <p className="max-w-md text-2 text-muted-foreground">
             {finalCopy[state.outcome].text}
           </p>
+          {secondsLeft !== null && secondsLeft > 0 && (
+            <p className="text-2 text-muted-foreground">
+              {t('closeCountdown', { seconds: secondsLeft })}
+            </p>
+          )}
+          {closeBlocked && (
+            <p className="max-w-md text-2 text-muted-foreground">
+              {t('closeBlocked')}
+            </p>
+          )}
           <Button variant="outline" onClick={() => window.close()}>
             {t('closeButton')}
           </Button>

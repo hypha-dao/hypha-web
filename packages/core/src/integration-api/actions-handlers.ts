@@ -260,7 +260,8 @@ export async function handleGetUserAction(
       operation: found.operation,
       status: effectiveActionStatus(found, now),
       expiresAt: found.expiresAt.toISOString(),
-      client: { name: found.clientName },
+      client: { name: found.clientName, origins: found.clientOrigins },
+      txHash: found.txHash,
       summary: describeIntegrationAction(found, found.clientName),
     });
   } catch (error) {

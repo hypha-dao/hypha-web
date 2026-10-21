@@ -61,6 +61,11 @@ function makeDeps(
     [OTHER_CLIENT.id, OTHER_CLIENT.name],
   ]);
 
+  const origins = new Map([
+    [CLIENT.id, ['https://acme.example']],
+    [OTHER_CLIENT.id, []],
+  ]);
+
   const deps = {
     authenticateClient: vi.fn(async () => over.client ?? clientOk()),
     authenticateUser: vi.fn(async () => over.user ?? userOk()),
@@ -106,6 +111,7 @@ function makeDeps(
         txHash: null,
         createdAt: clock.value,
         clientName: names.get(args.clientId) ?? 'unknown',
+        clientOrigins: origins.get(args.clientId) ?? [],
       };
       rows.push(row);
       return row;
@@ -429,7 +435,10 @@ describe('summary shown on the approval page', () => {
     // Whatever the client sent as free text, only the stored fields count.
     const response = await handleGetUserAction(get(), deps, actionId);
     const body = await response.json();
-    expect(body.client).toEqual({ name: 'Acme Voting' });
+    expect(body.client).toEqual({
+      name: 'Acme Voting',
+      origins: ['https://acme.example'],
+    });
     expect(body.summary.headline).toContain('Acme Voting');
     expect(body.summary.lines).toEqual([
       { label: 'Application', value: 'Acme Voting' },

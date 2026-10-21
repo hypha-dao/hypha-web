@@ -27,6 +27,7 @@ export {
   BANK_PAYOUT_RAILS,
   BANK_VIRTUAL_ACCOUNT_CURRENCIES,
 } from './banking/constants';
+export * from './integration-action/result-message';
 export type { BankProvider } from './banking/types';
 export {
   isBypassEligible,

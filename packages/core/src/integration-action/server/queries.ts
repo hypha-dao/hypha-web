@@ -41,6 +41,7 @@ export const findActionForPerson = async (
     .select({
       action: integrationActions,
       clientName: integrationClients.name,
+      clientOrigins: integrationClients.allowedOrigins,
     })
     .from(integrationActions)
     .innerJoin(
@@ -55,7 +56,11 @@ export const findActionForPerson = async (
     )
     .limit(1);
   return row
-    ? { ...toActionRecord(row.action), clientName: row.clientName }
+    ? {
+        ...toActionRecord(row.action),
+        clientName: row.clientName,
+        clientOrigins: row.clientOrigins,
+      }
     : null;
 };
 

@@ -4569,6 +4569,10 @@
     "failedDescription": "Nothing was recorded. Go back to the application and start again.",
     "errorTitle": "Something went wrong",
     "errorDescription": "We could not load this request. Please try again later.",
-    "closeButton": "Close window"
+    "closeButton": "Close window",
+    "closeCountdown": "Going back to the application in {seconds}…",
+    "closeBlocked": "You can close this window now.",
+    "requestedFrom": "Requested by {name} from {origins}.",
+    "requestedFromUnregistered": "Requested by {name}. No website is registered for this application."
   }
 }

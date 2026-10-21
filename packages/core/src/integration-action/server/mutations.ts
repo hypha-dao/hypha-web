@@ -126,6 +126,6 @@ export const supersedePendingActions = async (
         sql`${integrationActions.parameters}->>'proposalSlug' = ${proposalSlug}`,
       ),
     )
-    .returning({ id: integrationActions.id });
+    .returning();
   return rows.length;
 };
