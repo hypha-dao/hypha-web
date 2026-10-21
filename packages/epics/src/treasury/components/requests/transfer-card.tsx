@@ -66,7 +66,11 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   const hasValidDate =
     parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime());
   const formattedDate = hasValidDate
-    ? format.dateTime(parsedDate, LOCAL_DATE_SHORT_FORMAT_OPTIONS)
+    ? format.dateTime(parsedDate, {
+        ...LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+        hour: 'numeric',
+        minute: '2-digit',
+      })
     : date || null;
 
   return (
@@ -138,7 +142,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 </Skeleton>
               ) : null}
             </div>
-            <Skeleton width="96px" height="16px" loading={isLoading}>
+            <Skeleton width="152px" height="16px" loading={isLoading}>
               <div className="craft-meta flex shrink-0 items-center">
                 <CalendarIcon className="mr-1 size-3.5" />
                 <span className="whitespace-nowrap text-1">
