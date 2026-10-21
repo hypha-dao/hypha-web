@@ -39,7 +39,7 @@ export function MyWalletDashboard({
   // asset-shaped placeholders on screen instead of a blank spinner.
   if (!personSlug) {
     return (
-      <div className="flex w-full min-w-0 flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-5">
         {section === 'wallet' ? (
           <WalletShortcutCards basePath={basePath} />
         ) : null}
@@ -61,7 +61,7 @@ export function MyWalletDashboard({
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
+    <div className="flex w-full min-w-0 flex-col gap-5">
       <WalletShortcutCards basePath={basePath} />
       <UserAssetsSection
         personSlug={personSlug}
