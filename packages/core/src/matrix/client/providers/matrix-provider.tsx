@@ -90,6 +90,40 @@ function retryMatrixClientSync(client: MatrixSdk.MatrixClient): void {
   }
 }
 
+function latestReceiptEvent(room: MatrixSdk.Room) {
+  const events = room.getLiveTimeline().getEvents();
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (!event) continue;
+    const id = event.getId();
+    if (!id || id.startsWith('~')) continue;
+    if (event.status) continue;
+    return event;
+  }
+  return null;
+}
+
+/** Read receipts are per user. The earlier pair room stays, but it stops counting. */
+function markEarlierDirectRoomsRead(
+  client: MatrixSdk.MatrixClient,
+  candidateRoomIds: readonly string[],
+  winnerRoomId: string,
+) {
+  const seen = new Set<string>();
+  for (const roomId of candidateRoomIds) {
+    if (!roomId || roomId === winnerRoomId || seen.has(roomId)) continue;
+    seen.add(roomId);
+    const room = client.getRoom(roomId);
+    if (!room || room.getMyMembership() !== 'join') continue;
+    const event = latestReceiptEvent(room);
+    const eventId = event?.getId();
+    if (!event || !eventId) continue;
+    void client.setRoomReadMarkers(roomId, eventId, event).catch((error) => {
+      console.warn('Failed to mark an earlier direct room read', error);
+    });
+  }
+}
+
 function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
   if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
   const content = event.getContent() as {
@@ -1155,6 +1189,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Failed to open the direct room');
       }
       const { roomId } = ensured;
+      markEarlierDirectRoomsRead(client, candidateRoomIds, roomId);
       for (let i = 0; i < 200; i++) {
         if (client.getRoom(roomId)) {
           return { roomId };

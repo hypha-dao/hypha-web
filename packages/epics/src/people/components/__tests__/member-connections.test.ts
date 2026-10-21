@@ -9,6 +9,7 @@ import {
   messagePreview,
   previewWithNames,
   suggestConnections,
+  supersededDirectRoomIds,
   unreadRoomsMissingFromMembers,
   type NewcomerCandidate,
 } from '../member-connections';
@@ -188,6 +189,57 @@ describe('memberRowsForConnections', () => {
       unread: 1,
       preview: 'hello',
     });
+  });
+});
+
+describe('supersededDirectRoomIds', () => {
+  it('keeps the later room for a person and returns the earlier one', () => {
+    const losers = supersededDirectRoomIds([
+      room({
+        roomId: '!older',
+        kind: 'person',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 10,
+        unread: 4,
+      }),
+      room({
+        roomId: '!later',
+        kind: 'person',
+        otherUserId: '@Gerardo:matrix',
+        lastTs: 20,
+        unread: 1,
+      }),
+      room({
+        roomId: '!group',
+        kind: 'group',
+        lastTs: 30,
+        unread: 2,
+      }),
+    ]);
+
+    expect(losers).toEqual(['!older']);
+  });
+
+  it('leaves a single direct room and signal threads alone', () => {
+    const losers = supersededDirectRoomIds([
+      room({
+        roomId: '!only',
+        kind: 'person',
+        otherUserId: '@kate:matrix',
+        lastTs: 10,
+        unread: 3,
+      }),
+      room({
+        roomId: '!signal',
+        kind: 'person',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 5,
+        unread: 2,
+        signalThread: true,
+      }),
+    ]);
+
+    expect(losers).toEqual([]);
   });
 });
 

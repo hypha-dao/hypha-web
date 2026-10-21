@@ -354,6 +354,22 @@ function directRoomByMatrixId(rows: readonly ConversationRow[]) {
 }
 
 /**
+ * Direct rooms that lost the one-conversation-per-person pick.
+ * Their history stays, but they are not the conversation the badge should count.
+ */
+export function supersededDirectRoomIds(rows: readonly ConversationRow[]) {
+  const keep = new Set<string>();
+  for (const row of directRoomByMatrixId(rows).values()) keep.add(row.roomId);
+  const losers: string[] = [];
+  for (const row of rows) {
+    if (row.signalThread || row.kind !== 'person' || !row.otherUserId) continue;
+    if (keep.has(row.roomId)) continue;
+    losers.push(row.roomId);
+  }
+  return losers;
+}
+
+/**
  * Unread 1:1 rooms that do not map onto the loaded member directory yet.
  * Keeps the Chat tab badge and the people list in step.
  */

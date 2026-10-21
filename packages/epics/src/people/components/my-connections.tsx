@@ -54,6 +54,7 @@ import {
   STALE_CONNECTION_MS,
   connectionActivityTs,
   suggestConnections,
+  supersededDirectRoomIds,
   type ConnectionSuggestion,
   type ConversationRow,
   type GroupFace,
@@ -290,6 +291,57 @@ let conversationPump: number | null = null;
 let conversationPumpIdle = false;
 let conversationNotifyQueued = false;
 let releaseSignalRooms: (() => void) | null = null;
+/** Event already receipted in an earlier pair room, so a refresh does not send it again. */
+const supersededReadEventIds = new Map<string, string>();
+let supersededReadTimer = 0;
+
+function latestReceiptEvent(room: Room) {
+  const events = room.getLiveTimeline().getEvents();
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (!event) continue;
+    const id = event.getId();
+    if (!id || id.startsWith('~')) continue;
+    if (event.status) continue;
+    return event;
+  }
+  return null;
+}
+
+function scheduleSupersededDirectRead() {
+  if (typeof window === 'undefined' || supersededReadTimer) return;
+  supersededReadTimer = window.setTimeout(() => {
+    supersededReadTimer = 0;
+    void markSupersededDirectRoomsRead();
+  }, 400);
+}
+
+async function markSupersededDirectRoomsRead() {
+  const client = conversationClient;
+  if (!client) return;
+  const rows: ConversationRow[] = [];
+  for (const room of client.getRooms()) {
+    const row = conversationCache.get(room.roomId)?.row;
+    if (row) rows.push(row);
+  }
+  for (const roomId of supersededDirectRoomIds(rows)) {
+    const unread = conversationCache.get(roomId)?.row?.unread ?? 0;
+    if (unread <= 0) continue;
+    const room = client.getRoom(roomId);
+    if (!room || room.getMyMembership() !== 'join') continue;
+    const event = latestReceiptEvent(room);
+    const eventId = event?.getId();
+    if (!event || !eventId) continue;
+    if (supersededReadEventIds.get(roomId) === eventId) continue;
+    supersededReadEventIds.set(roomId, eventId);
+    try {
+      await client.setRoomReadMarkers(roomId, eventId, event);
+    } catch (error) {
+      supersededReadEventIds.delete(roomId);
+      console.warn('Failed to mark an earlier direct room read', error);
+    }
+  }
+}
 
 function roomStamp(room: Room, selfId: string | null) {
   const events = room.getLiveTimeline().getEvents();
@@ -398,6 +450,7 @@ function notifyConversationListeners() {
   queueMicrotask(() => {
     conversationNotifyQueued = false;
     for (const listener of conversationListeners) listener();
+    scheduleSupersededDirectRead();
   });
 }
 
@@ -554,6 +607,11 @@ function useConversationClient(client: MatrixClient) {
   if (listeningClient) stopListeningForConversationRows(listeningClient);
   conversationClient = client;
   conversationCache.clear();
+  supersededReadEventIds.clear();
+  if (supersededReadTimer) {
+    window.clearTimeout(supersededReadTimer);
+    supersededReadTimer = 0;
+  }
   conversationQueue = [];
   cancelConversationPump();
 }
