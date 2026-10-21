@@ -35,6 +35,11 @@ import {
   walletPresetClass,
 } from '../common/wallet-flow-card';
 import { CAPITAL_MARK } from './capital-marks';
+import {
+  appendIndicativePayoutParams,
+  LinkedTreasuryAmountField,
+  type LinkedTreasuryPayout,
+} from './linked-treasury-amount';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
 import {
@@ -121,7 +126,10 @@ export function NetworkExchangeShareCard({
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [capitals, setCapitals] = useState<CapitalKey[]>([]);
-  const [amount, setAmount] = useState('');
+  const [payout, setPayout] = useState<LinkedTreasuryPayout>({
+    amount: '',
+    token: '',
+  });
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
   const [mediaKind, setMediaKind] = useState<'images' | 'video' | null>(null);
@@ -201,9 +209,7 @@ export function NetworkExchangeShareCard({
       params.set('title', headline.slice(0, 50));
       params.set('description', body.slice(0, 4000));
       if (linkedVideo) params.set('video', linkedVideo);
-      if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
-        params.set('amount', amount);
-      }
+      appendIndicativePayoutParams(params, payout);
       if (capitals.length > 0 && typeof window !== 'undefined') {
         window.sessionStorage.setItem(
           EXCHANGE_SIGNAL_CAPITALS_KEY,
@@ -426,14 +432,10 @@ export function NetworkExchangeShareCard({
             {t('linkedAmountHint')}
           </span>
         </WalletFlowLabel>
-        <input
-          value={amount}
-          inputMode="decimal"
-          maxLength={12}
-          placeholder="0"
-          aria-label={t('linkedAmountHint')}
-          onChange={(event) => setAmount(event.target.value)}
-          className="h-11 w-full border border-border bg-background px-3 text-2 tabular-nums outline-none"
+        <LinkedTreasuryAmountField
+          spaceSlug={spaceSlug}
+          value={payout}
+          onChange={setPayout}
         />
       </div>
 

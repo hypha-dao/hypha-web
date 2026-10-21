@@ -18,6 +18,11 @@ import {
 import { AddAttachment, Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { getLegacyCreateSpacePath } from '../common/get-path-function';
+import {
+  appendIndicativePayoutParams,
+  LinkedTreasuryAmountField,
+  type LinkedTreasuryPayout,
+} from './linked-treasury-amount';
 import { MemberSpaceSelect } from './member-space-select';
 import {
   SIGNAL_DOCUMENT_ACCEPT,
@@ -152,7 +157,10 @@ export function NetworkQuickCreate({
   const [signalText, setSignalText] = useState('');
   const [signalImages, setSignalImages] = useState<File[]>([]);
   const [signalDocuments, setSignalDocuments] = useState<File[]>([]);
-  const [linkedAmount, setLinkedAmount] = useState('');
+  const [linkedPayout, setLinkedPayout] = useState<LinkedTreasuryPayout>({
+    amount: '',
+    token: '',
+  });
   const [storyMedia, setStoryMedia] = useState<StoryMedia>('photo');
   const [storyTitle, setStoryTitle] = useState('');
   const [parties, setParties] = useState<Party[]>([
@@ -287,16 +295,18 @@ export function NetworkQuickCreate({
     }
   };
 
-  const openSignal = (type: string, title: string, amount?: string) => {
+  const openSignal = (
+    type: string,
+    title: string,
+    payout?: LinkedTreasuryPayout,
+  ) => {
     if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !title.trim()) {
       return;
     }
     const params = new URLSearchParams();
     params.set('type', type);
     params.set('title', title.trim().slice(0, 120));
-    if (amount && /^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
-      params.set('amount', amount);
-    }
+    if (payout) appendIndicativePayoutParams(params, payout);
     router.push(
       `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
     );
@@ -573,15 +583,14 @@ export function NetworkQuickCreate({
                 onChange={setSignalDocuments}
               />
             </div>
-            <label className="grid gap-1 text-1 text-neutral-11">
-              {t('linkedAmountHint')}
-              <Input
-                value={linkedAmount}
-                inputMode="decimal"
-                maxLength={12}
-                onChange={(event) => setLinkedAmount(event.target.value)}
+            <div className="grid gap-1">
+              <p className="text-1 text-neutral-11">{t('linkedAmountHint')}</p>
+              <LinkedTreasuryAmountField
+                spaceSlug={spaceSlug}
+                value={linkedPayout}
+                onChange={setLinkedPayout}
               />
-            </label>
+            </div>
             {note ? (
               <p className="text-2 text-neutral-11" role="alert">
                 {note}
@@ -604,7 +613,7 @@ export function NetworkQuickCreate({
                       uploadSignalMedia,
                     );
                     writeSignalCreateMedia({ images, documents });
-                    openSignal(signalType, signalText, linkedAmount);
+                    openSignal(signalType, signalText, linkedPayout);
                   } catch {
                     setNote(tSignals('signalFormUploadFailed'));
                   } finally {

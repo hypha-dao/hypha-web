@@ -19,6 +19,7 @@ type PageProps = {
     title?: string;
     description?: string;
     amount?: string;
+    token?: string;
     video?: string;
     sharedWithNetwork?: string;
   }>;
@@ -35,6 +36,7 @@ export default async function NewSignalPage({
     title,
     description,
     amount,
+    token,
     video,
     sharedWithNetwork,
   } = await searchParams;
@@ -71,6 +73,10 @@ export default async function NewSignalPage({
     Number(amount) > 0
       ? amount.trim()
       : '';
+  const payoutToken =
+    typeof token === 'string' && /^0x[a-fA-F0-9]{40}$/.test(token.trim())
+      ? token.trim()
+      : '';
   const shareOnNetwork =
     sharedWithNetwork === '1' || sharedWithNetwork === 'true';
 
@@ -93,6 +99,7 @@ export default async function NewSignalPage({
             signalDescription ||
             signalVideo ||
             payoutAmount ||
+            payoutToken ||
             shareOnNetwork
               ? {
                   ...(inheritedBoardTags.length > 0
@@ -104,10 +111,10 @@ export default async function NewSignalPage({
                     ? { description: signalDescription }
                     : {}),
                   ...(signalVideo ? { videoUrl: signalVideo } : {}),
-                  ...(payoutAmount
+                  ...(payoutAmount || payoutToken
                     ? {
                         indicativePayouts: [
-                          { amount: payoutAmount, token: '' },
+                          { amount: payoutAmount, token: payoutToken },
                         ],
                       }
                     : {}),

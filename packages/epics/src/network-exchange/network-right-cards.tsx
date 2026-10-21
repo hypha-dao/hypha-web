@@ -26,6 +26,11 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { CAPITAL_MARK } from './capital-marks';
+import {
+  appendIndicativePayoutParams,
+  LinkedTreasuryAmountField,
+  type LinkedTreasuryPayout,
+} from './linked-treasury-amount';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
 import {
@@ -691,7 +696,10 @@ export function ActionShareCard({
   const spaces = useMemberNamedSpaces();
   const [spaceSlug, setSpaceSlug] = useState('');
   const [text, setText] = useState('');
-  const [amount, setAmount] = useState('');
+  const [payout, setPayout] = useState<LinkedTreasuryPayout>({
+    amount: '',
+    token: '',
+  });
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
@@ -732,9 +740,7 @@ export function ActionShareCard({
       params.set('sharedWithNetwork', '1');
       params.set('title', body.slice(0, 50));
       params.set('description', body.slice(0, 4000));
-      if (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0) {
-        params.set('amount', amount);
-      }
+      appendIndicativePayoutParams(params, payout);
       router.push(
         `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
       );
@@ -817,15 +823,14 @@ export function ActionShareCard({
           onChange={setVideos}
         />
       </div>
-      <input
-        value={amount}
-        inputMode="decimal"
-        maxLength={12}
-        placeholder={t('linkedAmountHint')}
-        aria-label={t('linkedAmountHint')}
-        onChange={(event) => setAmount(event.target.value)}
-        className="h-11 w-full border border-border bg-neutral-2 px-3 text-2 outline-none"
-      />
+      <div className="flex flex-col gap-2">
+        <p className="text-1 text-neutral-11">{t('linkedAmountHint')}</p>
+        <LinkedTreasuryAmountField
+          spaceSlug={spaceSlug}
+          value={payout}
+          onChange={setPayout}
+        />
+      </div>
       {note ? (
         <p className="text-1 text-neutral-11" role="alert">
           {note}
