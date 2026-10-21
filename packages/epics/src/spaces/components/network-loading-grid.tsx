@@ -31,6 +31,38 @@ function SpaceCardPlaceholder({ delayMs = 0 }: { delayMs?: number }) {
   );
 }
 
+/**
+ * Map wait mark: a globe with a few pins. Same sweep as home, different shape.
+ */
+export function NetworkMapWave({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'relative flex aspect-[2/1] w-full items-center justify-center overflow-hidden border border-border',
+        className,
+      )}
+      aria-hidden
+    >
+      <Wave className="absolute inset-0" />
+      <span className="relative size-[min(42%,16rem)]">
+        <Wave className="absolute inset-0 rounded-full" delayMs={80} />
+        <Wave
+          className="absolute top-[36%] left-[28%] size-2 rounded-full"
+          delayMs={160}
+        />
+        <Wave
+          className="absolute top-[28%] left-[48%] size-2 rounded-full"
+          delayMs={220}
+        />
+        <Wave
+          className="absolute top-[48%] right-[30%] size-2 rounded-full"
+          delayMs={280}
+        />
+      </span>
+    </div>
+  );
+}
+
 /** Loading grid shaped like the space cards on the explore page. */
 export function NetworkLoadingGrid({
   count = 12,

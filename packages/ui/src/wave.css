@@ -2,7 +2,7 @@
 .hypha-wave {
   position: relative;
   overflow: hidden;
-  background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+  background-color: color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .hypha-wave::after {
@@ -11,11 +11,11 @@
   top: 0;
   bottom: 0;
   left: 0;
-  width: 38%;
+  width: 42%;
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--foreground) 14%, transparent),
+    color-mix(in srgb, var(--foreground) 18%, transparent),
     transparent
   );
   animation: hypha-wave-sweep 2s ease-in-out infinite;
