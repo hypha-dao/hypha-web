@@ -45,7 +45,7 @@ export const SpaceWithNumberOfMonthsField = ({
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const [selected, setSelected] = useState<Space | null>(null);
-  const [months, setMonths] = useState<string>('');
+  const [months, setMonths] = useState<string>('1');
 
   const { setValue, trigger } = useFormContext();
 

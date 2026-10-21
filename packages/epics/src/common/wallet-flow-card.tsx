@@ -133,7 +133,7 @@ export function WalletAmountBlock({
       )}
     >
       <div
-        className="text-8 leading-none tabular-nums tracking-[-0.04em]"
+        className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
         style={{ fontFamily: 'var(--font-family-heading)' }}
       >
         <label className="sr-only" htmlFor={id}>
@@ -143,7 +143,7 @@ export function WalletAmountBlock({
           id={id}
           inputMode={integer ? 'numeric' : 'decimal'}
           value={amount}
-          placeholder="0"
+          placeholder="1"
           onChange={(event) => {
             const next = integer
               ? event.target.value
@@ -152,11 +152,11 @@ export function WalletAmountBlock({
             if (next !== '' && !pattern.test(next)) return;
             onAmountChange(next);
           }}
-          className="w-40 min-w-[5rem] border border-foreground bg-background px-3 py-2 text-center text-foreground outline-none placeholder:text-neutral-9 focus:bg-neutral-2"
+          className="box-border w-40 max-w-full min-w-[5rem] border border-neutral-7 bg-background px-3 py-2 text-center text-8 leading-none tracking-[-0.04em] text-foreground tabular-nums outline-none placeholder:text-neutral-9 focus:border-neutral-8 dark:border-border dark:focus:border-white/40"
         />
         {symbolNode ??
           (symbol ? (
-            <span className="ml-2 align-middle text-2 tracking-[0.14em] uppercase">
+            <span className="inline-flex items-center text-2 tracking-[0.14em] uppercase">
               {symbol}
             </span>
           ) : null)}

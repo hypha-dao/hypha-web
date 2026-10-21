@@ -912,6 +912,7 @@
         "sendFromWallet": "Send from your wallet",
         "sendFromWalletHint": "HYPHA or any token you hold",
         "loadingAccounts": "Loading bank accounts…",
+        "accountsUnavailable": "Bank transfer details could not be loaded.",
         "qrAriaLabel": "Treasury address QR code for {spaceName}",
         "baseOnly": "Make sure to send funds on Base.",
         "addressLabel": "Treasury address",
@@ -2237,6 +2238,7 @@
       "content": "Convert your tokens into their equivalent fiat value held in the vault.",
       "form": {
         "redemptionAmountLabel": "Redemption Amount",
+        "redeemableAt": "Redeemable at {price} each",
         "convertedIntoLabel": "Converted into",
         "redeem": "Redeem",
         "redeeming": "Redeeming",

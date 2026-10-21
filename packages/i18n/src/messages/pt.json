@@ -1670,6 +1670,7 @@
         "sendFromWallet": "Enviar da sua carteira",
         "sendFromWalletHint": "HYPHA ou qualquer token que tenha",
         "loadingAccounts": "A carregar contas bancárias…",
+        "accountsUnavailable": "Não foi possível carregar os dados da transferência bancária.",
         "qrAriaLabel": "Código QR do endereço de tesouraria de {spaceName}",
         "baseOnly": "Certifique-se de enviar fundos na Base.",
         "addressLabel": "Endereço de tesouraria",
@@ -2409,6 +2410,7 @@
       "content": "Converta seus tokens no valor fiduciário equivalente mantido no cofre.",
       "form": {
         "redemptionAmountLabel": "Valor do resgate",
+        "redeemableAt": "Resgatável a {price} cada",
         "convertedIntoLabel": "Convertido em",
         "redeem": "Resgatar",
         "redeeming": "Resgatando",

@@ -31,9 +31,8 @@ import { HomeWave } from './member-home-wave';
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 
-/** Compact spaces bar. Marks fill a 44px column with a small gap. */
+/** Compact spaces bar. Marks are 32px inside a 44px row or column. */
 const RAIL_ICON = 32;
-const RAIL_WIDTH = 44;
 
 export function orderSpacesByRecentVisit<T extends { slug: string }>(
   spaces: readonly T[],
@@ -95,13 +94,16 @@ export function MemberHomeSpacesRail({
   );
   const canToggle = !embedded && (isLoading || orderedSpaces.length > 0);
 
-  const rail = (
+  const rail = (rowOnNarrow: boolean) => (
     <TooltipProvider delayDuration={200}>
       <nav
         aria-label={t('spacesRail')}
         tabIndex={-1}
         className={cn(
-          'narrow-scrollbar flex h-full min-h-0 w-full shrink-0 flex-col items-center gap-1 overflow-y-auto py-2 outline-none',
+          'narrow-scrollbar flex h-full min-h-0 w-full min-w-0 shrink-0 items-center gap-1 outline-none',
+          rowOnNarrow
+            ? 'flex-row overflow-x-auto px-2 py-1 xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto xl:px-0 xl:py-2'
+            : 'flex-col overflow-y-auto py-2',
         )}
       >
         {isLoading ? (
@@ -185,7 +187,7 @@ export function MemberHomeSpacesRail({
                   href={`/${lang}/my-spaces`}
                   aria-label={t('openMySpaces')}
                   className={cn(
-                    'mt-1 grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
+                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11 xl:mt-1',
                     'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   )}
                   style={{ width: RAIL_ICON, height: RAIL_ICON }}
@@ -208,7 +210,7 @@ export function MemberHomeSpacesRail({
   if (embedded) {
     return (
       <div className="h-full w-full shrink-0 border-r-0 bg-transparent">
-        {rail}
+        {rail(false)}
       </div>
     );
   }
@@ -218,23 +220,22 @@ export function MemberHomeSpacesRail({
   // column stays on the wide layout too.
   if (!canToggle) {
     return (
-      <div
-        className={railShellClass(persistOnWide, true)}
-        style={{ width: RAIL_WIDTH }}
-      >
-        {rail}
-      </div>
+      <div className={railShellClass(persistOnWide, true)}>{rail(true)}</div>
     );
   }
 
   return (
-    <SpacesRailHandle persistOnWide={persistOnWide}>{rail}</SpacesRailHandle>
+    <SpacesRailHandle persistOnWide={persistOnWide}>
+      {rail(true)}
+    </SpacesRailHandle>
   );
 }
 
 function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
   return cn(
-    'h-full shrink-0 flex-col overflow-hidden border-r border-border bg-background',
+    // Below xl the icons share one row. A vertical column there scrolls.
+    'h-[44px] w-full shrink-0 flex-row overflow-hidden border-b border-border bg-background',
+    'xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
     visibleOnNarrow ? 'flex' : 'hidden',
     persistOnWide ? 'xl:flex' : 'xl:hidden',
   );
@@ -251,11 +252,7 @@ function SpacesRailHandle({
   useLayoutEffect(() => register(), [register]);
   if (!open && !persistOnWide) return null;
   return (
-    <div
-      id={SPACES_RAIL_ID}
-      className={railShellClass(persistOnWide, open)}
-      style={{ width: RAIL_WIDTH }}
-    >
+    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide, open)}>
       {children}
     </div>
   );

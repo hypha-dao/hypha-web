@@ -123,7 +123,8 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        showSpacesRail && 'max-xl:flex max-xl:w-full max-xl:min-w-0',
+        showSpacesRail &&
+          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
@@ -134,7 +135,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
             // Sit under the sticky MenuTop — top-0 clipped the first icons.
             // Stay mounted while closed so the top-bar control can open it.
             spacesRailOpen
-              ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex h-[calc(100dvh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] shrink-0 self-start xl:hidden'
+              ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex w-full shrink-0 xl:hidden'
               : 'hidden',
           )}
         >

@@ -898,6 +898,7 @@
         "sendFromWallet": "Verstuur vanuit uw wallet",
         "sendFromWalletHint": "HYPHA of een token die u bezit",
         "loadingAccounts": "Bankrekeningen laden…",
+        "accountsUnavailable": "Bankoverschrijvingsgegevens konden niet worden geladen.",
         "qrAriaLabel": "QR-code van het treasury-adres voor {spaceName}",
         "baseOnly": "Stuur fondsen alleen op Base.",
         "addressLabel": "Treasury-adres",
@@ -2209,6 +2210,7 @@
       "content": "Converteer uw tokens naar hun equivalente fiatwaarde in de kluis.",
       "form": {
         "redemptionAmountLabel": "Inwisselingsbedrag",
+        "redeemableAt": "Inwisselbaar voor {price} per stuk",
         "convertedIntoLabel": "Omgezet in",
         "redeem": "Inwisselen",
         "redeeming": "Inwisselen",

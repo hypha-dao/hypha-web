@@ -307,8 +307,10 @@ export function MemberHomeThreadCard({
 
   const summary = item.summary ? plainSummary(item.summary) : '';
   const leadImage = proposal?.leadImage?.trim() ?? '';
-  const actionClass = compact ? 'w-full' : 'w-fit';
+  const actionClass = 'h-full w-full whitespace-normal';
   const primaryCtas = ctas.filter((cta) => cta !== 'later');
+  const leadCta = primaryCtas[0] ?? null;
+  const companionCta = primaryCtas[1] ?? null;
 
   function choiceProps(id: string, primary = false) {
     const picked = chosen === id;
@@ -446,15 +448,7 @@ export function MemberHomeThreadCard({
             })}
           </p>
         ) : null}
-        <div
-          className={
-            chat
-              ? 'mt-2 flex flex-wrap items-center gap-2'
-              : compact
-              ? 'mt-3 grid w-full grid-cols-1 gap-2'
-              : 'mt-3 flex flex-wrap items-center gap-2'
-          }
-        >
+        <div className={cn('flex flex-col gap-2', chat ? 'mt-2' : 'mt-3')}>
           {outcome ? (
             <Button
               type="button"
@@ -490,109 +484,120 @@ export function MemberHomeThreadCard({
               </Link>
             </Button>
           ) : null}
-          {!outcome &&
-            primaryCtas.map((cta, index) => (
-              <Button
-                key={cta}
-                type="button"
-                {...choiceProps(cta, index === 0)}
-                onClick={() => {
-                  if (!confirm(cta)) return;
-                  onCta(cta);
-                }}
-              >
-                {labelFor(cta)}
-              </Button>
-            ))}
-          {!outcome && assistant && !isSignal && creator ? (
+          {!outcome && leadCta ? (
             <Button
               type="button"
-              {...choiceProps('ask')}
+              {...choiceProps(leadCta, true)}
               onClick={() => {
-                if (!confirm('ask')) return;
-                void reach('chat');
+                if (!confirm(leadCta)) return;
+                onCta(leadCta);
               }}
             >
-              {t('askProposer', { name: givenName(creator.name) })}
+              {labelFor(leadCta)}
             </Button>
           ) : null}
-          {!outcome && assistant && !isSignal ? (
-            <Button
-              type="button"
-              {...choiceProps('think')}
-              onClick={() => {
-                if (!confirm('think')) return;
-                ask(
-                  item.creatorName
-                    ? t('thinkChosenBy', {
-                        title: item.title,
-                        space: item.spaceTitle,
-                        name: item.creatorName,
-                      })
-                    : t('thinkChosen', {
-                        title: item.title,
-                        space: item.spaceTitle,
-                      }),
-                );
-              }}
-            >
-              {t('helpMeThink')}
-            </Button>
-          ) : null}
-          {!outcome && assistant ? (
+          {!outcome && !isSignal && assistant ? (
             <div
-              className={
-                compact
-                  ? 'contents'
-                  : 'flex max-w-full flex-wrap items-center gap-2'
-              }
+              className={cn(
+                'grid gap-2',
+                compact || !creator ? 'grid-cols-1' : 'grid-cols-2',
+              )}
             >
+              {creator ? (
+                <Button
+                  type="button"
+                  {...choiceProps('ask', true)}
+                  onClick={() => {
+                    if (!confirm('ask')) return;
+                    void reach('chat');
+                  }}
+                >
+                  {t('askProposer', { name: givenName(creator.name) })}
+                </Button>
+              ) : null}
               <Button
                 type="button"
-                {...choiceProps('later')}
+                {...choiceProps('think', !creator)}
                 onClick={() => {
-                  if (!confirm('later')) return;
-                  ask(t('laterChosen', { title: item.title }));
+                  if (!confirm('think')) return;
+                  ask(
+                    item.creatorName
+                      ? t('thinkChosenBy', {
+                          title: item.title,
+                          space: item.spaceTitle,
+                          name: item.creatorName,
+                        })
+                      : t('thinkChosen', {
+                          title: item.title,
+                          space: item.spaceTitle,
+                        }),
+                  );
                 }}
               >
-                {t('notNow')}
+                {t('helpMeThink')}
               </Button>
-              <Button
+            </div>
+          ) : null}
+          {!outcome && (companionCta || assistant) ? (
+            <div
+              className={cn(
+                'grid gap-2',
+                compact || !(companionCta && assistant)
+                  ? 'grid-cols-1'
+                  : 'grid-cols-2',
+              )}
+            >
+              {companionCta ? (
+                <Button
+                  type="button"
+                  {...choiceProps(companionCta)}
+                  onClick={() => {
+                    if (!confirm(companionCta)) return;
+                    onCta(companionCta);
+                  }}
+                >
+                  {labelFor(companionCta)}
+                </Button>
+              ) : null}
+              {assistant ? (
+                <Button
+                  type="button"
+                  {...choiceProps('later')}
+                  onClick={() => {
+                    if (!confirm('later')) return;
+                    ask(t('laterChosen', { title: item.title }));
+                  }}
+                >
+                  {t('notNow')}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {!outcome && assistant ? (
+              <button
                 type="button"
-                {...choiceProps('no')}
+                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
                 onClick={() => {
                   if (!confirm('no')) return;
                   ask(t('noChosen', { title: item.title }));
                 }}
               >
                 {t('noThanks')}
-              </Button>
-            </div>
-          ) : null}
-          {!isProposal ? (
-            <Button asChild {...choiceProps('visit')}>
-              <Link
-                href={visitHref}
-                onClick={() => {
-                  if (!confirm('visit')) return;
-                  if (isSignal) moveOn(true);
-                  else noteAction();
-                }}
-              >
-                {t('visitSpace')}
-              </Link>
-            </Button>
-          ) : null}
+              </button>
+            ) : null}
+            <Link
+              href={visitHref}
+              onClick={() => {
+                if (isSignal) moveOn(true);
+                else noteAction();
+              }}
+              className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {t('visitSpace')}
+            </Link>
+          </div>
         </div>
-        {isProposal ? (
-          <Link
-            href={visitHref}
-            onClick={noteAction}
-            className="mt-3 inline-block text-1 text-neutral-11 underline-offset-2 hover:underline"
-          >
-            {t('visitSpace')}
-          </Link>
-        ) : null}
       </div>
     </section>
   );

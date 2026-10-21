@@ -897,6 +897,7 @@
         "sendFromWallet": "Send fra lommeboken din",
         "sendFromWalletHint": "HYPHA eller et token du eier",
         "loadingAccounts": "Laster bankkontoer…",
+        "accountsUnavailable": "Kunne ikke laste bankoverføringsdetaljene.",
         "qrAriaLabel": "QR-kode for treasury-adresse til {spaceName}",
         "baseOnly": "Sørg for å sende midler på Base.",
         "addressLabel": "Treasury-adresse",
@@ -2208,6 +2209,7 @@
       "content": "Konverter tokenene dine til tilsvarende fiat-verdi som holdes i hvelvet.",
       "form": {
         "redemptionAmountLabel": "Innløsningsbeløp",
+        "redeemableAt": "Innløsbart til {price} per stykk",
         "convertedIntoLabel": "Konvertert til",
         "redeem": "Løs inn",
         "redeeming": "Løser inn",

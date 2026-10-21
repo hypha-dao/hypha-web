@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ChevronRightIcon } from '@radix-ui/react-icons';
+import { ChevronLeftIcon } from '@radix-ui/react-icons';
 
 export function WalletActionFrame({
   lang,
@@ -27,8 +27,8 @@ export function WalletActionFrame({
             href={`/${lang}/my-wallet`}
             className="inline-flex shrink-0 items-center gap-1 pt-1 text-1 text-neutral-11 hover:text-foreground"
           >
+            <ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
             {backLabel}
-            <ChevronRightIcon className="size-4 shrink-0" aria-hidden />
           </Link>
         </header>
         {children}

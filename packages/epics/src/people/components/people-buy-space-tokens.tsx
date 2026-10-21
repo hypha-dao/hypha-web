@@ -230,7 +230,7 @@ export const PeopleBuySpaceTokens = ({
     resolver,
     defaultValues: {
       tokenAddress: '',
-      amount: '',
+      amount: '1',
       buyerAddress: person?.address ?? '',
       paymentRecipient: '',
     },
@@ -347,7 +347,7 @@ export const PeopleBuySpaceTokens = ({
         setShowSuccessMessage(false);
         router.push(closeUrl);
       }, 3000);
-      form.setValue('amount', '');
+      form.setValue('amount', '1');
       reset();
     } catch (error) {
       console.error('Purchase failed', error);
@@ -390,6 +390,25 @@ export const PeopleBuySpaceTokens = ({
     Boolean(selectedToken) &&
     Boolean(sale) &&
     sale?.salePaymentToken?.toLowerCase() !== ZERO_ADDRESS;
+  const saleDetails = salePriceKnown ? (
+    <div className="flex flex-col gap-1">
+      <div>
+        {t('pricePerToken', {
+          price: formatCurrencyValue(salePricePerToken),
+          currency: paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+        })}
+      </div>
+      {showTotalCost ? (
+        <div>
+          {t('totalCost', {
+            amount: formatCurrencyValue(totalCost),
+            currency: paymentTokenMeta?.symbol ?? '',
+          })}
+        </div>
+      ) : null}
+      <div>{t('remainingInSale', { amount: remainingForSale })}</div>
+    </div>
+  ) : null;
 
   return wrap(
     <Form {...form}>
@@ -429,6 +448,7 @@ export const PeopleBuySpaceTokens = ({
                                 totalCost <= paymentBalance + 1e-9,
                             }
                       }
+                      hint={saleDetails}
                       symbolNode={
                         <TokenSelectDropdown
                           variant="inline"
@@ -536,25 +556,8 @@ export const PeopleBuySpaceTokens = ({
           <div className="text-2 text-neutral-11">{t('saleDisabled')}</div>
         ) : null}
 
-        {salePriceKnown ? (
-          <div className="flex flex-col gap-1 text-2 text-neutral-11">
-            <div>
-              {t('pricePerToken', {
-                price: formatCurrencyValue(salePricePerToken),
-                currency:
-                  paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
-              })}
-            </div>
-            {showTotalCost ? (
-              <div>
-                {t('totalCost', {
-                  amount: formatCurrencyValue(totalCost),
-                  currency: paymentTokenMeta?.symbol ?? '',
-                })}
-              </div>
-            ) : null}
-            <div>{t('remainingInSale', { amount: remainingForSale })}</div>
-          </div>
+        {!wallet && saleDetails ? (
+          <div className="text-2 text-neutral-11">{saleDetails}</div>
         ) : null}
 
         {wallet ? null : <Separator />}

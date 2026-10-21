@@ -899,6 +899,7 @@
         "sendFromWallet": "Envoyer depuis votre portefeuille",
         "sendFromWalletHint": "HYPHA ou tout jeton que vous détenez",
         "loadingAccounts": "Chargement des comptes bancaires…",
+        "accountsUnavailable": "Les instructions de virement n'ont pas pu être chargées.",
         "qrAriaLabel": "QR code de l'adresse de trésorerie pour {spaceName}",
         "baseOnly": "Assurez-vous d'envoyer les fonds sur Base.",
         "addressLabel": "Adresse de trésorerie",
@@ -1638,6 +1639,7 @@
       "content": "Convertissez vos tokens en valeur fiduciaire équivalente détenue dans le coffre.",
       "form": {
         "redemptionAmountLabel": "Montant à échanger",
+        "redeemableAt": "Rachetable à {price} l'unité",
         "convertedIntoLabel": "Converti en",
         "redeem": "Échanger",
         "redeeming": "Échange en cours",

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronDownIcon } from '@radix-ui/themes';
+import { ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,11 +148,17 @@ function TokenPayoutFieldInner({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="ml-2 inline-flex items-center gap-1 align-middle text-2 tracking-[0.14em] uppercase"
+                  className="inline-flex max-w-full items-center gap-1 text-2 leading-5 tracking-[0.14em] uppercase"
                 >
-                  {selectedToken?.symbol ??
-                    tAgreementFlow('plugins.tokenPayoutField.selectToken')}
-                  <ChevronDownIcon className="size-2" />
+                  <span className="truncate">
+                    {selectedToken?.symbol ??
+                      tAgreementFlow('plugins.tokenPayoutField.selectToken')}
+                  </span>
+                  <ChevronDown
+                    aria-hidden
+                    strokeWidth={1.5}
+                    className="size-3.5 shrink-0 text-neutral-10"
+                  />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="max-h-[200px] w-64 overflow-y-auto">

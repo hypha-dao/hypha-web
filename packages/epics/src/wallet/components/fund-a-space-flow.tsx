@@ -19,7 +19,11 @@ import {
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { Space, useJwt } from '@hypha-platform/core/client';
 import { BankAccountDetailsDialog } from '../../banking/components/bank-account-details-dialog';
-import { getCardDepositIdentifiers } from '../../banking/deposit-instruction-display';
+import { InlineCopyRow } from '../../banking/components/inline-copy-row';
+import {
+  getCardDepositCopyBlock,
+  getCardDepositIdentifiers,
+} from '../../banking/deposit-instruction-display';
 import { useVirtualAccounts } from '../../banking/hooks/use-virtual-accounts';
 import type { BankVirtualAccountPublic } from '../../banking/hooks/types';
 import { prepareWalletActionNavigation } from './open-wallet-action';
@@ -248,15 +252,23 @@ function DepositDetailsCard({
   onCopyAddress: (address: string) => void;
 }) {
   const t = useTranslations('MyWallet.fundSpace.details');
+  const tFields = useTranslations('BankingTab.depositInstructions');
   const params = useParams<{ lang?: string }>();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
-  const { accounts, isLoading: accountsLoading } = useVirtualAccounts({
+  const { jwt, isLoadingJwt } = useJwt();
+  const {
+    accounts,
+    isLoading: accountsLoading,
+    error: accountsError,
+  } = useVirtualAccounts({
     basePath: space.slug ? `/api/v1/spaces/${space.slug}/funding` : undefined,
-    enabled: Boolean(space.slug),
+    enabled: Boolean(space.slug) && Boolean(jwt),
   });
   const [openAccount, setOpenAccount] =
     useState<BankVirtualAccountPublic | null>(null);
   const address = normalizeEvmAddress(space.address);
+  const bankPending = isLoadingJwt || accountsLoading;
+  const showBank = bankPending || accounts.length > 0 || Boolean(accountsError);
   const walletHref = address
     ? `/${lang}/my-wallet/actions/transfer-funds?${new URLSearchParams({
         to: address,
@@ -271,7 +283,6 @@ function DepositDetailsCard({
   if (!address) return null;
 
   const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
-  const showBank = accountsLoading || accounts.length > 0;
 
   return (
     <>
@@ -290,38 +301,58 @@ function DepositDetailsCard({
         <CardContent className="flex flex-col gap-8 px-6 pb-8">
           {showBank ? (
             <FundOptionGroup label={t('bank')}>
-              {accountsLoading && accounts.length === 0 ? (
+              {bankPending && accounts.length === 0 ? (
                 <p className="px-4 py-4 text-2 text-neutral-11">
                   {t('loadingAccounts')}
+                </p>
+              ) : accountsError && accounts.length === 0 ? (
+                <p className="px-4 py-4 text-2 text-neutral-11">
+                  {t('accountsUnavailable')}
                 </p>
               ) : (
                 accounts.map((account) => {
                   const ending = accountEnding(account);
+                  const copyBlock = getCardDepositCopyBlock(
+                    account.paymentRail,
+                    account.depositInstructions,
+                    (key) => tFields(key),
+                  );
                   return (
-                    <button
+                    <div
                       key={account.id}
-                      type="button"
-                      className="flex w-full items-center gap-4 px-4 py-4 text-left hover:bg-neutral-2"
-                      onClick={() => setOpenAccount(account)}
+                      className="flex flex-col gap-3 px-4 py-4"
                     >
-                      <span className="w-12 shrink-0 text-2 tracking-[0.08em] text-foreground uppercase">
-                        {account.currency}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-2 text-foreground">
-                          {railLabel(account.paymentRail)}
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-4 text-left"
+                        onClick={() => setOpenAccount(account)}
+                      >
+                        <span className="w-12 shrink-0 text-2 tracking-[0.08em] text-foreground uppercase">
+                          {account.currency}
                         </span>
-                        {ending ? (
-                          <span className="mt-0.5 block font-mono text-1 text-neutral-11">
-                            ···· {ending}
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-2 text-foreground">
+                            {railLabel(account.paymentRail)}
                           </span>
-                        ) : null}
-                      </span>
-                      <ChevronRight
-                        className="size-4 shrink-0 text-neutral-9"
-                        aria-hidden
-                      />
-                    </button>
+                          {ending ? (
+                            <span className="mt-0.5 block font-mono text-1 text-neutral-11">
+                              ···· {ending}
+                            </span>
+                          ) : null}
+                        </span>
+                        <ChevronRight
+                          className="size-4 shrink-0 text-neutral-9"
+                          aria-hidden
+                        />
+                      </button>
+                      {copyBlock ? (
+                        <InlineCopyRow
+                          label={copyBlock.label}
+                          value={copyBlock.copyText}
+                          multiline={copyBlock.multiline}
+                        />
+                      ) : null}
+                    </div>
                   );
                 })
               )}

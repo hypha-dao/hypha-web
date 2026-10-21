@@ -1670,6 +1670,7 @@
         "sendFromWallet": "Enviar desde tu billetera",
         "sendFromWalletHint": "HYPHA o cualquier token que tengas",
         "loadingAccounts": "Cargando cuentas bancarias…",
+        "accountsUnavailable": "No se pudieron cargar los datos de la transferencia bancaria.",
         "qrAriaLabel": "Código QR de la dirección de tesorería de {spaceName}",
         "baseOnly": "Asegúrate de enviar fondos en Base.",
         "addressLabel": "Dirección de tesorería",
@@ -2423,6 +2424,7 @@
       "content": "Convierte tus tokens en su valor fiduciario equivalente retenido en la bóveda.",
       "form": {
         "redemptionAmountLabel": "Monto a canjear",
+        "redeemableAt": "Canjeable a {price} cada uno",
         "convertedIntoLabel": "Convertido en",
         "redeem": "Canjear",
         "redeeming": "Canjeando",

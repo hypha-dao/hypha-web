@@ -368,7 +368,7 @@ export function SignupFlow({
 
           <div
             className={cn(
-              'flex w-full items-center justify-center gap-3',
+              'flex w-full flex-nowrap items-center gap-3',
               youStep ? 'mt-4' : 'mt-6',
             )}
           >
@@ -377,6 +377,7 @@ export function SignupFlow({
                 type="button"
                 variant="outline"
                 colorVariant="neutral"
+                className="shrink-0"
                 disabled={isCreating}
                 onClick={() => {
                   setFieldError(null);
@@ -390,7 +391,7 @@ export function SignupFlow({
             {step === 'welcome' ? (
               <Button
                 type="button"
-                className={primaryActionClassName}
+                className={cn(primaryActionClassName, 'min-w-0 flex-1')}
                 disabled={authLoading}
                 onClick={goNext}
               >
@@ -400,7 +401,7 @@ export function SignupFlow({
             {step === 'you' || step === 'description' ? (
               <Button
                 type="button"
-                className={primaryActionClassName}
+                className={cn(primaryActionClassName, 'min-w-0 flex-1')}
                 onClick={goNext}
               >
                 {t('continue')}
@@ -409,7 +410,7 @@ export function SignupFlow({
             {step === 'orientation' ? (
               <Button
                 type="button"
-                className={primaryActionClassName}
+                className={cn(primaryActionClassName, 'min-w-0 flex-1')}
                 disabled={!orientation || isCreating || authLoading}
                 onClick={() => {
                   void finish();

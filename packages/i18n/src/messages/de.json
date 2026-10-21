@@ -899,6 +899,7 @@
         "sendFromWallet": "Aus der Wallet senden",
         "sendFromWalletHint": "HYPHA oder ein Token, das du hältst",
         "loadingAccounts": "Bankkonten werden geladen…",
+        "accountsUnavailable": "Banküberweisungsdaten konnten nicht geladen werden.",
         "qrAriaLabel": "QR-Code der Treasury-Adresse für {spaceName}",
         "baseOnly": "Sende Guthaben nur im Base-Netzwerk.",
         "addressLabel": "Treasury-Adresse",
@@ -2210,6 +2211,7 @@
       "content": "Tauschen Sie Ihre Tokens in den entsprechenden Fiat-Wert ein, der im Vault verwahrt ist.",
       "form": {
         "redemptionAmountLabel": "Einlösebetrag",
+        "redeemableAt": "Einlösbar zu {price} pro Stück",
         "convertedIntoLabel": "Umgewandelt in",
         "redeem": "Einlösen",
         "redeeming": "Wird eingelöst",

@@ -201,7 +201,7 @@ export const PeopleRedeemForm = ({
       redemptions: [
         {
           spaceSlug: '',
-          amount: '',
+          amount: '1',
           token: '',
         },
       ],
@@ -380,10 +380,12 @@ export const PeopleRedeemForm = ({
     ) {
       return undefined;
     }
-    return `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(
-      2,
-    )}`;
-  }, [selectedToken, selectedTokenCurrencySymbol]);
+    return t('form.redeemableAt', {
+      price: `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(
+        2,
+      )}`,
+    });
+  }, [selectedToken, selectedTokenCurrencySymbol, t]);
 
   const selectedTokenUsdValue = React.useMemo(() => {
     if (
