@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { APP_CHROME_ICON_TRIGGER } from '../../common/chrome-radius';
@@ -85,7 +85,6 @@ export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
   const t = useTranslations('MemberHome');
   if (!active) return null;
-  const Icon = open ? PanelLeftClose : PanelLeftOpen;
   return (
     <button
       type="button"
@@ -96,7 +95,7 @@ export function SpacesRailTopToggle() {
       title={t('spacesRail')}
       onClick={toggle}
     >
-      <Icon aria-hidden />
+      <Circle aria-hidden />
     </button>
   );
 }
