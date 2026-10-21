@@ -4,15 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowUpRight,
+  BookOpen,
   Camera,
   FileText,
   Flame,
-  HandHelping,
   Landmark,
+  Layers,
   Lightbulb,
-  ListChecks,
-  Package,
-  Sprout,
+  Megaphone,
+  Receipt,
   TriangleAlert,
 } from 'lucide-react';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from './exchange-draft-keys';
@@ -62,8 +62,8 @@ function typeLabel(
 
 function TypeIcon({ type }: { type: NetworkFieldSignalKind }) {
   const className = 'size-4 shrink-0';
-  if (type === 'Need') return <HandHelping className={className} aria-hidden />;
-  if (type === 'Resource') return <Package className={className} aria-hidden />;
+  if (type === 'Need') return <Megaphone className={className} aria-hidden />;
+  if (type === 'Resource') return <Layers className={className} aria-hidden />;
   if (type === 'Opportunity') {
     return <ArrowUpRight className={className} aria-hidden />;
   }
@@ -73,9 +73,8 @@ function TypeIcon({ type }: { type: NetworkFieldSignalKind }) {
   if (type === 'Risk') {
     return <TriangleAlert className={className} aria-hidden />;
   }
-  if (type === 'Action')
-    return <ListChecks className={className} aria-hidden />;
-  return <Sprout className={className} aria-hidden />;
+  if (type === 'Action') return <Receipt className={className} aria-hidden />;
+  return <BookOpen className={className} aria-hidden />;
 }
 
 /**

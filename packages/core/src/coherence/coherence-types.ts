@@ -27,14 +27,14 @@ export const COHERENCE_TYPE_OPTIONS: {
   description: string;
 }[] = [
   {
-    icon: 'HandHelping',
+    icon: 'Megaphone',
     colorVariant: 'success',
     type: 'Need',
     title: 'Need',
     description: 'Someone is asking for a hand',
   },
   {
-    icon: 'Package',
+    icon: 'Layers',
     colorVariant: 'neutral',
     type: 'Resource',
     title: 'Resource',
@@ -69,18 +69,18 @@ export const COHERENCE_TYPE_OPTIONS: {
     description: 'Threat, concern or danger ahead',
   },
   {
-    icon: 'ListChecks',
+    icon: 'Receipt',
     colorVariant: 'neutral',
     type: 'Action',
-    title: 'Action',
-    description: 'A concrete step someone can take',
+    title: 'Proof of Action',
+    description: 'Where the money went',
   },
   {
-    icon: 'Sprout',
+    icon: 'BookOpen',
     colorVariant: 'success',
     type: 'Impact',
-    title: 'Impact',
-    description: 'What changed because people acted',
+    title: 'Impact Evidence',
+    description: 'Stories and real-world outcomes',
   },
   {
     icon: 'TrendingUp',
