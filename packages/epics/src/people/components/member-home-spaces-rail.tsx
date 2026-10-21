@@ -28,6 +28,7 @@ import {
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
 import { HomeWave } from './member-home-wave';
+import './member-home-spaces-rail.css';
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 
@@ -102,7 +103,7 @@ export function MemberHomeSpacesRail({
         className={cn(
           'narrow-scrollbar flex h-full min-h-0 w-full min-w-0 shrink-0 items-center gap-1 outline-none',
           rowOnNarrow
-            ? 'flex-row overflow-x-auto px-2 py-1 xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto xl:px-0 xl:py-2'
+            ? 'member-spaces-rail-row flex-row overflow-x-auto px-2 py-1 xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto xl:px-0 xl:py-2'
             : 'flex-col overflow-y-auto py-2',
         )}
       >

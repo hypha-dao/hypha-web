@@ -1,0 +1,10 @@
+/*
+ * Short rows sit in the middle of the screen. `safe` keeps a long row
+ * left-aligned, so the first space stays reachable when the row scrolls.
+ * The wide layout is a vertical column and stays top-aligned.
+ */
+@media (max-width: 1279px) {
+  .member-spaces-rail-row {
+    justify-content: safe center;
+  }
+}
