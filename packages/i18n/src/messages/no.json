@@ -43,6 +43,7 @@
     "inviteBannerBody": "Godta, så sendes en forespørsel om å bli med til rommet.",
     "inviteAccept": "Godta",
     "inviteSent": "Forespørsel sendt",
+    "inviteUpForVoting": "Invitasjonen din til rommet {space} er oppe til avstemning i det rommet.",
     "inviteJoined": "Du er med",
     "inviteOpenSpace": "Åpne rommet",
     "inviteDetail": "En lenke for å bli med",
@@ -1382,7 +1383,9 @@
     "inviteAlreadyMember": "Personen er allerede i dette området.",
     "inviteSelf": "Du kan ikke invitere deg selv.",
     "inviteNotMember": "Bare et medlem av dette området kan sende en invitasjon.",
-    "invitePick": "Velg noen å invitere."
+    "invitePick": "Velg noen å invitere.",
+    "inviteTitle": "Inviter noen",
+    "inviteNone": "Ingen samsvarer med det navnet."
   },
   "BankingTab": {
     "title": "Bank",

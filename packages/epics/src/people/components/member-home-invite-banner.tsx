@@ -182,7 +182,9 @@ function MemberHomeInviteBanner({
             {t('inviteBannerTitle', { space: invite.spaceTitle })}
           </p>
           <p className="mt-1 text-1 leading-relaxed text-neutral-11">
-            {t('inviteBannerBody')}
+            {isInviteOnly && isInvitePending
+              ? t('inviteUpForVoting', { space: invite.spaceTitle })
+              : t('inviteBannerBody')}
           </p>
           <Link
             href={spaceHref}

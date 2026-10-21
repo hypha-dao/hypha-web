@@ -43,6 +43,7 @@
     "inviteBannerBody": "Accepteer, en een verzoek om lid te worden gaat naar de ruimte.",
     "inviteAccept": "Accepteren",
     "inviteSent": "Verzoek verstuurd",
+    "inviteUpForVoting": "Je uitnodiging voor de space {space} staat in die space ter stemming.",
     "inviteJoined": "Je doet mee",
     "inviteOpenSpace": "Ruimte openen",
     "inviteDetail": "Een link om lid te worden",
@@ -1383,7 +1384,9 @@
     "inviteAlreadyMember": "Die persoon zit al in deze space.",
     "inviteSelf": "Je kunt jezelf niet uitnodigen.",
     "inviteNotMember": "Alleen een lid van deze space kan een uitnodiging sturen.",
-    "invitePick": "Kies iemand om uit te nodigen."
+    "invitePick": "Kies iemand om uit te nodigen.",
+    "inviteTitle": "Iemand uitnodigen",
+    "inviteNone": "Niemand komt overeen met die naam."
   },
   "BankingTab": {
     "title": "Bankieren",

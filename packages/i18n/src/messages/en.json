@@ -512,6 +512,7 @@
     "inviteBannerBody": "Accept, and a join request is submitted to the space.",
     "inviteAccept": "Accept",
     "inviteSent": "Request sent",
+    "inviteUpForVoting": "Your invitation to the {space} space is up for voting in that space.",
     "inviteJoined": "You are in",
     "inviteOpenSpace": "Open space",
     "inviteDetail": "A link to join",
@@ -1411,7 +1412,9 @@
     "inviteAlreadyMember": "They are already in this space.",
     "inviteSelf": "You cannot invite yourself.",
     "inviteNotMember": "Only a member of this space can send an invite.",
-    "invitePick": "Pick someone to invite."
+    "invitePick": "Pick someone to invite.",
+    "inviteTitle": "Invite someone",
+    "inviteNone": "No one matches that name."
   },
   "BankingTab": {
     "title": "Banking",

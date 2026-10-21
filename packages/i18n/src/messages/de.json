@@ -43,6 +43,7 @@
     "inviteBannerBody": "Nimm an, und eine Beitrittsanfrage geht an den Space.",
     "inviteAccept": "Annehmen",
     "inviteSent": "Anfrage gesendet",
+    "inviteUpForVoting": "Deine Einladung in den Space {space} steht in diesem Space zur Abstimmung.",
     "inviteJoined": "Du bist dabei",
     "inviteOpenSpace": "Space öffnen",
     "inviteDetail": "Ein Link zum Beitreten",
@@ -1384,7 +1385,9 @@
     "inviteAlreadyMember": "Diese Person ist schon in diesem Space.",
     "inviteSelf": "Du kannst dich nicht selbst einladen.",
     "inviteNotMember": "Nur ein Mitglied dieses Space kann eine Einladung senden.",
-    "invitePick": "Wähle jemanden zum Einladen."
+    "invitePick": "Wähle jemanden zum Einladen.",
+    "inviteTitle": "Jemanden einladen",
+    "inviteNone": "Niemand passt zu diesem Namen."
   },
   "BankingTab": {
     "title": "Bankdienste",

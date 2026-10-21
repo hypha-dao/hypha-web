@@ -2,14 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@hypha-platform/ui';
+import { Check } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Input,
+} from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { useJwt } from '@hypha-platform/core/client';
+
+import { PersonAvatar } from './person-avatar';
 
 type PersonHit = {
   id: number;
   name: string | null;
   surname: string | null;
   nickname: string | null;
+  avatarUrl: string | null;
 };
 
 function personLabel(person: PersonHit) {
@@ -54,9 +65,20 @@ export function SpaceMemberInviteButton({
         })
         .then((next) => {
           setPeople(next);
+          setSelectedId((current) => {
+            if (next.length === 1) return next[0]?.id ?? null;
+            if (
+              current != null &&
+              next.some((person) => person.id === current)
+            ) {
+              return current;
+            }
+            return null;
+          });
         })
         .catch(() => {
           setPeople([]);
+          setSelectedId(null);
         })
         .finally(() => {
           setSearching(false);
@@ -64,6 +86,17 @@ export function SpaceMemberInviteButton({
     }, 250);
     return () => window.clearTimeout(handle);
   }, [jwt, open, query]);
+
+  function closeDialog(next: boolean) {
+    setOpen(next);
+    if (next) return;
+    setQuery('');
+    setPeople([]);
+    setSelectedId(null);
+    setSearching(false);
+    setMessage(null);
+    setMessageError(false);
+  }
 
   async function sendInvite() {
     if (!jwt || selectedId == null) return;
@@ -110,62 +143,90 @@ export function SpaceMemberInviteButton({
     }
   }
 
+  const showEmpty =
+    !searching && query.trim().length >= 2 && people.length === 0 && !message;
+
   return (
-    <div className="flex flex-col items-end gap-2">
+    <>
       <Button
         type="button"
         variant="outline"
         colorVariant="neutral"
-        onClick={() => {
-          setOpen((value) => !value);
-          setMessage(null);
-        }}
+        onClick={() => setOpen(true)}
       >
-        {open ? t('inviteClose') : t('inviteMember')}
+        {t('inviteMember')}
       </Button>
-      {open ? (
-        <div className="w-full min-w-64 border border-border bg-background p-3 lg:w-72">
-          <label className="grid gap-2">
-            <span className="text-1 text-neutral-11">{t('inviteSearch')}</span>
-            <input
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setSelectedId(null);
-                setMessage(null);
-              }}
-              className="h-10 border border-border bg-background px-3 text-2 outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </label>
+      <Dialog open={open} onOpenChange={closeDialog}>
+        <DialogContent className="gap-5 sm:max-w-md">
+          <DialogTitle
+            className="pr-8 text-3"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {t('inviteTitle')}
+          </DialogTitle>
+          <Input
+            type="search"
+            value={query}
+            placeholder={t('inviteSearch')}
+            aria-label={t('inviteSearch')}
+            autoFocus
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedId(null);
+              setMessage(null);
+            }}
+          />
           {searching ? (
-            <p className="mt-2 text-1 text-neutral-11">{t('loading')}</p>
+            <p className="text-1 text-neutral-11">{t('loading')}</p>
           ) : null}
           {people.length > 0 ? (
-            <ul className="mt-2 grid max-h-40 gap-1 overflow-y-auto">
+            <ul className="grid max-h-64 gap-1 overflow-y-auto">
               {people.map((person) => {
                 const selected = person.id === selectedId;
+                const label = personLabel(person);
                 return (
                   <li key={person.id}>
                     <button
                       type="button"
                       aria-pressed={selected}
-                      onClick={() => setSelectedId(person.id)}
-                      className={
-                        selected
-                          ? 'w-full border border-foreground px-2 py-2 text-left text-2'
-                          : 'w-full border border-transparent px-2 py-2 text-left text-2 hover:border-border'
-                      }
+                      onClick={() => {
+                        setSelectedId(person.id);
+                        setMessage(null);
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-2 py-2 text-left',
+                        selected ? 'bg-accent-2' : 'hover:bg-accent-2',
+                      )}
                     >
-                      {personLabel(person)}
+                      <PersonAvatar
+                        avatarSrc={person.avatarUrl ?? undefined}
+                        userName={label}
+                        size="sm"
+                        shape="circle"
+                        personId={person.id}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-2">
+                        {label}
+                      </span>
+                      <Check
+                        aria-hidden
+                        className={cn(
+                          'size-4 shrink-0',
+                          selected ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
                     </button>
                   </li>
                 );
               })}
             </ul>
           ) : null}
+          {showEmpty ? (
+            <p className="text-1 text-neutral-11">{t('inviteNone')}</p>
+          ) : null}
           <Button
             type="button"
-            className="mt-3"
+            className="w-full"
             disabled={selectedId == null || sending || !jwt}
             onClick={() => {
               void sendInvite();
@@ -173,23 +234,21 @@ export function SpaceMemberInviteButton({
           >
             {t('inviteSend')}
           </Button>
-          {selectedId == null ? (
-            <p className="mt-2 text-1 text-neutral-11">{t('invitePick')}</p>
+          {people.length > 1 && selectedId == null ? (
+            <p className="text-1 text-neutral-11">{t('invitePick')}</p>
           ) : null}
           {message ? (
             <p
               className={
-                messageError
-                  ? 'mt-2 text-1 text-error-11'
-                  : 'mt-2 text-1 text-neutral-11'
+                messageError ? 'text-1 text-error-11' : 'text-1 text-neutral-11'
               }
               role={messageError ? 'alert' : 'status'}
             >
               {message}
             </p>
           ) : null}
-        </div>
-      ) : null}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

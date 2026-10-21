@@ -43,6 +43,7 @@
     "inviteBannerBody": "Aceita e um pedido de entrada é enviado ao espaço.",
     "inviteAccept": "Aceitar",
     "inviteSent": "Pedido enviado",
+    "inviteUpForVoting": "O teu convite para o espaço {space} está em votação nesse espaço.",
     "inviteJoined": "Já estás dentro",
     "inviteOpenSpace": "Abrir espaço",
     "inviteDetail": "Uma ligação para entrar",
@@ -2155,7 +2156,9 @@
     "inviteAlreadyMember": "Essa pessoa já está neste espaço.",
     "inviteSelf": "Não podes convidar-te a ti mesmo.",
     "inviteNotMember": "Só um membro deste espaço pode enviar um convite.",
-    "invitePick": "Escolhe alguém para convidar."
+    "invitePick": "Escolhe alguém para convidar.",
+    "inviteTitle": "Convidar alguém",
+    "inviteNone": "Ninguém corresponde a esse nome."
   },
   "TreasuryTab": {
     "bankingRoutes": "Banco",

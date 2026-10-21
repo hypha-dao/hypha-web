@@ -43,6 +43,7 @@
     "inviteBannerBody": "Accepte, et une demande d'entrée est envoyée à l'espace.",
     "inviteAccept": "Accepter",
     "inviteSent": "Demande envoyée",
+    "inviteUpForVoting": "Ton invitation à l'espace {space} est soumise au vote dans cet espace.",
     "inviteJoined": "Tu en fais partie",
     "inviteOpenSpace": "Ouvrir l'espace",
     "inviteDetail": "Un lien pour rejoindre",
@@ -1384,7 +1385,9 @@
     "inviteAlreadyMember": "Cette personne est déjà dans cet espace.",
     "inviteSelf": "Vous ne pouvez pas vous inviter vous-même.",
     "inviteNotMember": "Seul un membre de cet espace peut envoyer une invitation.",
-    "invitePick": "Choisissez quelqu'un à inviter."
+    "invitePick": "Choisissez quelqu'un à inviter.",
+    "inviteTitle": "Inviter quelqu'un",
+    "inviteNone": "Personne ne correspond à ce nom."
   },
   "TreasuryTab": {
     "bankingRoutes": "Banque",
