@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { shouldShowOnboardingTransparencyPicker } from '../onboarding-transparency-ui';
 
 const activityReply = {
-  id: 'a1',
   role: 'assistant',
   parts: [
     {
@@ -28,7 +27,6 @@ describe('onboarding transparency picker', () => {
       shouldShowOnboardingTransparencyPicker({
         messages: [
           {
-            id: 'tool',
             role: 'assistant',
             parts: [
               { type: 'text', text: 'Pick who can find the space.' },
@@ -45,7 +43,6 @@ describe('onboarding transparency picker', () => {
             ],
           },
           {
-            id: 'echo',
             role: 'assistant',
             parts: [{ type: 'text', text: 'Take your time.' }],
           },
