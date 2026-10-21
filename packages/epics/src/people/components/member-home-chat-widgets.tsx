@@ -1334,19 +1334,6 @@ export function MemberHomeSendTokensWidget({
             ) : null}
           </div>
 
-          <label className="flex flex-col gap-2" htmlFor="send-tokens-memo">
-            <span className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
-              {t('sendTokensMemo')}
-            </span>
-            <input
-              id="send-tokens-memo"
-              value={memoDraft}
-              placeholder={t('sendTokensMemoPlaceholder')}
-              onChange={(event) => setMemoDraft(event.target.value)}
-              className="h-10 w-full border border-border bg-background px-3 text-2 text-foreground outline-none placeholder:text-neutral-9 focus:border-foreground"
-            />
-          </label>
-
           <div className="flex flex-col gap-3">
             {lines.map((line) => {
               const selected =
@@ -1528,6 +1515,19 @@ export function MemberHomeSendTokensWidget({
               </button>
             ) : null}
           </div>
+
+          <label className="flex flex-col gap-2" htmlFor="send-tokens-memo">
+            <span className="text-[11px] tracking-[0.16em] text-neutral-11 uppercase">
+              {t('sendTokensMemo')}
+            </span>
+            <input
+              id="send-tokens-memo"
+              value={memoDraft}
+              placeholder={t('sendTokensMemoPlaceholder')}
+              onChange={(event) => setMemoDraft(event.target.value)}
+              className="h-10 w-full border border-border bg-background px-3 text-2 text-foreground outline-none placeholder:text-neutral-9 focus:border-foreground"
+            />
+          </label>
 
           <Button
             type="button"
