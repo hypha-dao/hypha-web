@@ -80,7 +80,10 @@ export function SpacesRailProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Collapse / expand for the spaces list. Top bar, left side, below the wide layout only. */
+/**
+ * Collapse / expand for the spaces list on non-home screens.
+ * Home keeps a permanent vertical rail with the same mark in the column.
+ */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
   const t = useTranslations('MemberHome');

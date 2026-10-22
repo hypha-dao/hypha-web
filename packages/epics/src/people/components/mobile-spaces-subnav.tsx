@@ -1,18 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { useJwt, type MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import useSWR from 'swr';
 
-import {
-  readRecentSpaceSlugs,
-  subscribeRecentSpaceSlugs,
-} from '../../common/recent-space-history';
-import {
-  MemberHomeSpacesRail,
-  orderSpacesByRecentVisit,
-} from './member-home-spaces-rail';
+import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 
 /**
  * Vertical spaces rail (same as home) for messages, wallet, space, and network.
@@ -28,11 +20,6 @@ export function MobileSpacesSubnav({
   embedded?: boolean;
 }) {
   const { jwt } = useJwt();
-  const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
-    readRecentSpaceSlugs(),
-  );
-
-  useEffect(() => subscribeRecentSpaceSlugs(setRecentSlugs), []);
 
   const { data: home, isLoading } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -45,16 +32,13 @@ export function MobileSpacesSubnav({
     },
   );
 
-  const orderedSpaces = useMemo(
-    () => orderSpacesByRecentVisit(home?.spaces ?? [], recentSlugs),
-    [home?.spaces, recentSlugs],
-  );
+  const spaces = home?.spaces ?? [];
 
   return (
     <MemberHomeSpacesRail
       lang={lang}
-      spaces={orderedSpaces}
-      isLoading={isLoading && orderedSpaces.length === 0}
+      spaces={spaces}
+      isLoading={isLoading && spaces.length === 0}
       activeSlug={activeSlug}
       embedded={embedded}
     />
