@@ -104,10 +104,14 @@ function useDepositEligibleSpaces() {
   return { spaces, isLoading, error };
 }
 
-/** Dialog shell for Fund a Space — horizontally centered under MenuTop. */
+/** Full-screen scrim on phones. The left rail width is still set there and otherwise leaves a dark strip. */
+export const FUND_SPACE_DIALOG_OVERLAY_CLASS = 'max-md:left-0 max-md:right-0';
+
+/** Dialog shell for Fund a Space — under MenuTop, centered on the phone screen. */
 export const FUND_SPACE_DIALOG_CONTENT_CLASS = cn(
-  'max-w-md gap-0 overflow-y-auto p-0',
+  'flex max-h-[min(92dvh,calc(100dvh-var(--menu-top-height,70px)-1rem))] max-w-md flex-col gap-0 overflow-hidden p-0',
   'top-[max(0.5rem,calc(var(--menu-top-height,70px)+0.5rem))]! translate-y-0!',
+  'max-md:left-1/2 max-md:w-[min(28rem,calc(100vw-1.5rem))]',
 );
 
 export function FundASpaceFlow({
@@ -513,9 +517,9 @@ function DepositDetailsCard({
   return (
     <>
       {embedded ? (
-        <div className="flex flex-col">
-          {header}
-          {body}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="shrink-0">{header}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
         </div>
       ) : (
         <div className="mx-auto w-full max-w-md rounded-none border border-border bg-background">

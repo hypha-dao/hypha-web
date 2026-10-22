@@ -17,6 +17,7 @@ import {
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   FUND_SPACE_DIALOG_CONTENT_CLASS,
+  FUND_SPACE_DIALOG_OVERLAY_CLASS,
   FundASpaceFlow,
 } from '../../wallet/components/fund-a-space-flow';
 
@@ -282,7 +283,10 @@ export function NetworkSidePanel({
         </section>
       ) : null}
       <Dialog open={fundOpen} onOpenChange={setFundOpen}>
-        <DialogContent className={FUND_SPACE_DIALOG_CONTENT_CLASS}>
+        <DialogContent
+          overlayClassName={FUND_SPACE_DIALOG_OVERLAY_CLASS}
+          className={FUND_SPACE_DIALOG_CONTENT_CLASS}
+        >
           <DialogTitle className="sr-only">
             {tWallet('shortcuts.fundSpace')}
           </DialogTitle>

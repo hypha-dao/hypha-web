@@ -39,6 +39,7 @@ import { resolveSignalVideo } from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import {
   FUND_SPACE_DIALOG_CONTENT_CLASS,
+  FUND_SPACE_DIALOG_OVERLAY_CLASS,
   FundASpaceFlow,
 } from '../wallet/components/fund-a-space-flow';
 import { CAPITAL_MARK } from './capital-marks';
@@ -686,7 +687,10 @@ export function NetworkReciprocalExchange({
           if (!next) setFundSpace(null);
         }}
       >
-        <DialogContent className={FUND_SPACE_DIALOG_CONTENT_CLASS}>
+        <DialogContent
+          overlayClassName={FUND_SPACE_DIALOG_OVERLAY_CLASS}
+          className={FUND_SPACE_DIALOG_CONTENT_CLASS}
+        >
           <DialogTitle className="sr-only">
             {tWallet('shortcuts.fundSpace')}
           </DialogTitle>
