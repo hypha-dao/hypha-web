@@ -1,172 +1,75 @@
 'use client';
 
-import * as React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useMe, usePendingRewards } from '@hypha-platform/core/client';
-import { usePayoutAccounts } from '../../banking/hooks';
+import { useMe } from '@hypha-platform/core/client';
 import { PendingRewardsSection } from '../../treasury/components/assets/pending-rewards-section';
 import { UserAssetsSection } from '../../treasury/components/assets/user-assets-section';
 import { UserTransactionsSection } from '../../treasury/components/requests/user-transactions-section';
-import { useUserAssets, useUserTransfers } from '../../treasury/hooks';
 import { ProfileBankingSection } from '../../banking/components/profile-banking-section';
 import { SpaceAccessDenied } from '../../spaces/components/space-access-denied';
 import { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
-import { SpaceAccentLoader } from '../../common/space-accent-loader';
-import {
-  Tabs,
-  TabsContent,
-  ScrollableTabsList,
-  TabsTrigger,
-} from '@hypha-platform/ui';
-import { useFormatter, useTranslations } from 'next-intl';
-import { WalletActionsToolbar } from './wallet-actions-toolbar';
-
-const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
-const MIN_REWARD_CLAIM_VALUE = 0.01;
+import { AssetCard } from '../../treasury/components/assets/asset-card';
+import { WalletShortcutCards } from './wallet-shortcut-cards';
+import type { WalletSectionNavKey } from './wallet-section-nav';
 
 type MyWalletDashboardProps = {
   lang: string;
+  /** Left-menu section. `wallet` is actions, assets, and transactions together. */
+  section?: WalletSectionNavKey;
 };
 
-type WalletTabLabelProps = {
-  label: string;
-  count: number;
-};
-
-function WalletTabLabel({ label, count }: WalletTabLabelProps) {
-  const format = useFormatter();
-
-  return (
-    <span className="inline-flex items-center gap-1">
-      <span>{label}</span>
-      <span className="text-xs text-muted-foreground">
-        ({format.number(count)})
-      </span>
-    </span>
-  );
-}
-
-export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
-  const tMyWallet = useTranslations('MyWallet');
+export function MyWalletDashboard({
+  lang,
+  section = 'wallet',
+}: MyWalletDashboardProps) {
   const { isAuthenticated } = useAuthentication();
   const { person, isLoading } = useMe();
-  const [activeTab, setActiveTab] = React.useState('wallet');
-
   const basePath = `/${lang}/my-wallet`;
   const personSlug = person?.slug;
-  const bankingBasePath = personSlug
-    ? `/api/v1/people/${personSlug}/banking`
-    : undefined;
-
-  const { assets } = useUserAssets({
-    personSlug,
-  });
-  const { transfers } = useUserTransfers({
-    personSlug,
-  });
-  const { accounts: payoutAccounts } = usePayoutAccounts({
-    basePath: bankingBasePath,
-    enabled: isAuthenticated && Boolean(personSlug),
-  });
-
-  const hyphaTokenAddress =
-    assets.find(
-      (asset) =>
-        asset.symbol === 'HYPHA' ||
-        asset.address?.toLowerCase() === HYPHA_TOKEN_ADDRESS.toLowerCase(),
-    )?.address ?? HYPHA_TOKEN_ADDRESS;
-
-  const { pendingRewards } = usePendingRewards({
-    user: person?.address as `0x${string}` | undefined,
-    hyphaTokenAddress: hyphaTokenAddress as `0x${string}`,
-  });
-
-  const walletCount = assets.filter((asset) => asset.value > 0).length;
-  const transactionCount = transfers.length;
-  const bankingCount = payoutAccounts.length;
-  const parsedRewardValue =
-    pendingRewards !== undefined ? Number(pendingRewards) / 1e18 : 0;
-  const rewardsCount = parsedRewardValue >= MIN_REWARD_CLAIM_VALUE ? 1 : 0;
 
   if (!isAuthenticated) {
     return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
-  // Only block the page on the initial profile load. Background revalidation
-  // (JWT refresh, focus) must not tear the wallet down into a full-page spinner.
-  if (!personSlug && isLoading) {
+  if (!personSlug && !isLoading) {
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
+  }
+
+  // Profile and balances resolve after the shell. Keep the shortcut row and
+  // asset-shaped placeholders on screen instead of a blank spinner.
+  if (!personSlug) {
     return (
-      <div className="flex w-full min-h-[280px] items-center justify-center py-16">
-        <SpaceAccentLoader label={tMyWallet('loading')} />
+      <div className="flex w-full min-w-0 flex-col gap-5">
+        {section === 'wallet' ? (
+          <WalletShortcutCards basePath={basePath} />
+        ) : null}
+        <div className="grid w-full grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <AssetCard isLoading />
+          <AssetCard isLoading />
+          <AssetCard isLoading />
+        </div>
       </div>
     );
   }
 
-  if (!personSlug) {
-    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
+  if (section === 'banking') {
+    return <ProfileBankingSection personSlug={personSlug} isMyProfile />;
+  }
+
+  if (section === 'rewards') {
+    return <PendingRewardsSection person={person} isMyProfile />;
   }
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={setActiveTab}
-      className="flex w-full min-w-0 flex-col gap-4"
-    >
-      <div className="@container/wallet-toolbar w-full min-w-0">
-        <div className="flex w-full min-w-0 flex-col gap-2 @[52rem]:flex-row @[52rem]:items-center @[52rem]:justify-between @[52rem]:gap-3">
-          <ScrollableTabsList triggerVariant="switch">
-            <TabsTrigger value="wallet" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.wallet')}
-                count={walletCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="banking" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.banking')}
-                count={bankingCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="transactions" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.transactions')}
-                count={transactionCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="rewards" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.rewards')}
-                count={rewardsCount}
-              />
-            </TabsTrigger>
-          </ScrollableTabsList>
-          <WalletActionsToolbar
-            basePath={basePath}
-            className="w-full @[52rem]:w-auto @[52rem]:shrink-0"
-          />
-        </div>
-      </div>
-
-      <TabsContent value="wallet" className="mt-0">
-        <UserAssetsSection
-          personSlug={personSlug}
-          basePath={basePath}
-          isMyProfile
-          showActionButtons={false}
-        />
-      </TabsContent>
-
-      <TabsContent value="banking" className="mt-0">
-        <ProfileBankingSection personSlug={personSlug} isMyProfile />
-      </TabsContent>
-
-      <TabsContent value="transactions" className="mt-0">
-        <UserTransactionsSection personSlug={personSlug} />
-      </TabsContent>
-
-      <TabsContent value="rewards" className="mt-0">
-        <PendingRewardsSection person={person} isMyProfile />
-      </TabsContent>
-    </Tabs>
+    <div className="flex w-full min-w-0 flex-col gap-5">
+      <WalletShortcutCards basePath={basePath} />
+      <UserAssetsSection
+        personSlug={personSlug}
+        basePath={basePath}
+        isMyProfile
+        showActionButtons={false}
+      />
+      <UserTransactionsSection personSlug={personSlug} />
+    </div>
   );
 }

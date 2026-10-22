@@ -1,0 +1,47 @@
+.frame {
+  container-type: inline-size;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.title {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.title h2 {
+  overflow-wrap: break-word;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+@container (min-width: 52rem) {
+  .header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .title {
+    flex: 1 1 auto;
+  }
+
+  .actions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
+}

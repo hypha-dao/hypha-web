@@ -298,6 +298,148 @@ export async function matrixCreateRoom(
   return roomId;
 }
 
+/** Stable alias localpart for the single network-wide room. */
+export const NETWORK_ROOM_ALIAS_LOCALPART = 'hypha-network';
+
+/** Prefix for per-ecosystem rooms (`hypha-ecosystem-{rootSlug}`). */
+export const ECOSYSTEM_ROOM_ALIAS_PREFIX = 'hypha-ecosystem';
+
+/** Prefix for per-space public rooms (`hypha-public-{spaceSlug}`). */
+export const PUBLIC_ROOM_ALIAS_PREFIX = 'hypha-public';
+
+function isAliasLocalpartChar(char: string): boolean {
+  return (
+    (char >= 'a' && char <= 'z') ||
+    (char >= '0' && char <= '9') ||
+    char === '.' ||
+    char === '_' ||
+    char === '=' ||
+    char === '-'
+  );
+}
+
+/**
+ * Matrix room alias localparts: lowercase ascii, hyphen-safe.
+ * Character scan instead of a regex so long hyphen runs cannot stall.
+ */
+export function matrixAliasLocalpart(prefix: string, slug: string): string {
+  let body = '';
+  for (const char of slug.trim().toLowerCase()) {
+    body += isAliasLocalpartChar(char) ? char : '-';
+  }
+  let start = 0;
+  let end = body.length;
+  while (start < end && body[start] === '-') start += 1;
+  while (end > start && body[end - 1] === '-') end -= 1;
+  const safe = body.slice(start, end).slice(0, 180);
+  return safe ? `${prefix}-${safe}` : prefix;
+}
+
+/** Server name from a Matrix user id (`@user:server` → `server`). */
+export function matrixServerNameFromUserId(userId: string): string | null {
+  const trimmed = userId.trim();
+  const colon = trimmed.lastIndexOf(':');
+  if (!trimmed.startsWith('@') || colon <= 1 || colon === trimmed.length - 1) {
+    return null;
+  }
+  return trimmed.slice(colon + 1);
+}
+
+/** Directory lookup. A missing alias returns null; other failures throw. */
+export async function matrixResolveRoomAlias(
+  roomAlias: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string | null> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      roomAlias,
+    )}`,
+    {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+  if (res.status === 404) {
+    await res.text().catch(() => '');
+    return null;
+  }
+  const data = await readMatrixJson<{ room_id?: string }>(res);
+  return data.room_id?.trim() || null;
+}
+
+/** Point a directory alias at an existing room so both people resolve the same one. */
+export async function matrixPublishRoomAlias(
+  roomAlias: string,
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      roomAlias,
+    )}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ room_id: roomId }),
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
+}
+
+/** Remove a directory alias so it can be published on a different room. */
+export async function matrixDeleteRoomAlias(
+  roomAlias: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/directory/room/${encodeURIComponent(
+      roomAlias,
+    )}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
+}
+
+/**
+ * Create a private room and publish a single alias (`#localpart:server`).
+ * Space rooms keep using `matrixCreateRoom`, which does not set an alias.
+ */
+export async function matrixCreateAliasedRoom(
+  name: string,
+  roomAliasName: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string> {
+  const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: name.trim().slice(0, 120) || 'Conversation',
+      preset: 'private_chat',
+      visibility: 'private',
+      room_alias_name: roomAliasName,
+    }),
+  });
+  const data = await readMatrixJson<{ room_id?: string }>(res);
+  const roomId = data.room_id?.trim();
+  if (!roomId) {
+    throw new Error('Matrix createRoom returned no room_id');
+  }
+  return roomId;
+}
+
 /**
  * Read a room's recent timeline backwards (`dir=b`). Used by the notification reconciler
  * (#2483) as a bounded backstop for events that bypassed the AS endpoint — walk the last
@@ -355,11 +497,43 @@ export async function matrixGetJoinedRoomMembers(
   return Object.keys(data.joined ?? {});
 }
 
+/**
+ * Joined and invited member MXIDs. A private message's recipient is often still
+ * `invite` when the first message arrives — `joined_members` would miss them.
+ */
+export async function matrixGetJoinOrInviteRoomMembers(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string[]> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/members`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{
+    chunk?: Array<{
+      state_key?: string;
+      content?: { membership?: string };
+    }>;
+  }>(res);
+  const ids = new Set<string>();
+  for (const event of data.chunk ?? []) {
+    const membership = event.content?.membership;
+    if (membership !== 'join' && membership !== 'invite') continue;
+    const id = event.state_key?.trim();
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,
   accessToken: string,
   homeserver: string,
+  extraContent?: Record<string, string>,
 ): Promise<string> {
   const txnId = `hypha.${Date.now()}.${Math.random()
     .toString(36)
@@ -377,6 +551,7 @@ export async function matrixSendTextMessage(
       body: JSON.stringify({
         msgtype: 'm.text',
         body: message,
+        ...(extraContent ?? {}),
       }),
     },
   );

@@ -1,10 +1,13 @@
-import { FC } from 'react';
+import { FC, useMemo } from 'react';
 import { MemberCard } from './member-card';
 import Link from 'next/link';
 import { type UseMembers, SpaceMemberCard } from '@hypha-platform/epics';
 import { getDhoSpaceContextPath } from '@hypha-platform/epics';
 import { useParams, usePathname } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
+import { useMe } from '@hypha-platform/core/client';
+import { useMemberDirectoryConnect } from './use-member-directory-connect';
+import { MEMBER_DIRECTORY_PAGE_SIZE } from '../hooks/use-members-section';
 
 type MembersListProps = {
   page: number;
@@ -22,7 +25,6 @@ type MembersListProps = {
 export const MembersList: FC<MembersListProps> = ({
   page,
   minimize,
-  basePath,
   useMembers,
   spaceId,
   spaceSlug,
@@ -33,31 +35,64 @@ export const MembersList: FC<MembersListProps> = ({
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
   const pathname = usePathname();
+  const { person: me } = useMe();
   const { persons, spaces, isLoading } = useMembers({
     page,
+    pageSize: MEMBER_DIRECTORY_PAGE_SIZE,
     spaceSlug,
     searchTerm,
     refreshInterval,
     energySharingOnly,
   });
+  const people = useMemo(
+    () => (entityFilter === 'space' ? [] : persons?.data ?? []),
+    [entityFilter, persons?.data],
+  );
+  const { openChat, openCall, openVideo, notice } =
+    useMemberDirectoryConnect(people);
   return (
-    <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+    <>
+      {notice ? (
+        <p className="col-span-full text-1 text-error-11" role="alert">
+          {notice}
+        </p>
+      ) : null}
       {entityFilter !== 'space' &&
-        persons?.data?.map((member) => (
-          <Link
-            href={`${basePath}/${member.slug}`}
-            key={member.slug}
-            scroll={false}
-            className="block h-full"
-          >
-            <MemberCard
-              spaceId={spaceId}
-              minimize={minimize}
-              {...member}
-              isLoading={isLoading}
-            />
-          </Link>
-        ))}
+        people.map((member) => {
+          const connectable = member.id !== me?.id;
+          return (
+            <div
+              key={member.slug}
+              role={connectable ? 'button' : undefined}
+              tabIndex={connectable ? 0 : undefined}
+              className={
+                connectable ? 'block h-full cursor-pointer' : 'block h-full'
+              }
+              onClick={() => {
+                if (!connectable) return;
+                void openChat(member);
+              }}
+              onKeyDown={(event) => {
+                if (!connectable || event.target !== event.currentTarget) {
+                  return;
+                }
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                void openChat(member);
+              }}
+            >
+              <MemberCard
+                spaceId={spaceId}
+                minimize={minimize}
+                {...member}
+                isLoading={isLoading}
+                onChat={connectable ? () => void openChat(member) : undefined}
+                onCall={connectable ? () => void openCall(member) : undefined}
+                onVideo={connectable ? () => void openVideo(member) : undefined}
+              />
+            </div>
+          );
+        })}
       {entityFilter !== 'member' &&
         spaces.data.map((space) => {
           const href =
@@ -90,6 +125,6 @@ export const MembersList: FC<MembersListProps> = ({
           <MemberCard isLoading={isLoading} />
         </>
       )}
-    </div>
+    </>
   );
 };

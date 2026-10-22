@@ -9,8 +9,6 @@ import { ErrorAlert } from '@hypha-platform/ui';
 import {
   Coherence,
   DEFAULT_SIGNAL_WORKFLOW,
-  type Person,
-  type SignalBoardFilters,
   applyPendingCoherenceTaskPatch,
   clearPendingCoherenceTaskPatch,
   setPendingCoherenceTaskPatch,
@@ -31,7 +29,6 @@ import { SignalSwimlaneView } from './signal-swimlane-view';
 import { SignalListView } from './signal-list-view';
 import { SignalGrid } from './signal-grid';
 import { SignalSectionSkeleton } from './signal-section-skeleton';
-import { SignalFilterBar } from './signal-filter-bar';
 import { SignalCreateFab } from './signal-create-fab';
 
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
@@ -42,35 +39,23 @@ type SignalSectionProps = {
   basePath: string;
   web3SpaceId: number;
   signals: Coherence[];
-  leadImage?: string;
   isLoading: boolean;
   viewMode: SignalViewMode;
   order?: string;
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
   activeSignalSlug?: string | null;
-  boardFilters?: SignalBoardFilters;
-  onBoardFiltersChange?: (filters: SignalBoardFilters) => void;
-  existingTags?: string[];
-  members?: Person[];
-  currentPersonId?: number | null;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   web3SpaceId,
   signals,
-  leadImage,
   isLoading,
   viewMode,
   refresh,
   onSignalClick,
   activeSignalSlug,
-  boardFilters,
-  onBoardFiltersChange,
-  existingTags = [],
-  members = [],
-  currentPersonId,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
@@ -243,21 +228,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }
 
   return (
-    <div className="relative flex w-full flex-col gap-4 pb-24">
-      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="min-w-0 flex-1">
-          {onBoardFiltersChange ? (
-            <SignalFilterBar
-              filters={boardFilters ?? {}}
-              onChange={onBoardFiltersChange}
-              existingTags={existingTags}
-              members={members}
-              currentPersonId={currentPersonId}
-            />
-          ) : null}
-        </div>
-      </div>
-
+    <div className="relative flex w-full flex-col gap-4 pb-16">
       {provisioningNoticeLines.length > 0 ? (
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
       ) : null}
@@ -308,11 +279,11 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalGrid
               isLoading={false}
               basePath={basePath}
-              leadImage={leadImage}
               signals={visibleSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}
               activeSignalSlug={activeSignalSlug}
+              workflow={resolvedWorkflow}
             />
           )}
         </div>

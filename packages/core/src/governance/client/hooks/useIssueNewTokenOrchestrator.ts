@@ -22,6 +22,7 @@ import { encodeOnChainTokenPrice } from '../../../common/web3/token-backing-vaul
 import type { TokenType } from '../../../common';
 import type { Space } from '../../../space/types';
 import { splitWhitelistFormToTargets } from './whitelist-address-diff';
+import { parseCapitalKey } from '../../../network/capitals';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -116,6 +117,8 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   web3SpaceId: number;
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
+  /** One form of capital. Empty when the token does not name one. */
+  capital?: string | null;
   maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
   enableProposalAutoMinting?: boolean;
   enableAdvancedTransferControls?: boolean;
@@ -232,6 +235,7 @@ export const useCreateIssueTokenOrchestrator = ({
       const createdToken = await web2TokenMutations.createToken({
         ...arg,
         agreementId: createdAgreement.id,
+        capital: parseCapitalKey(arg.capital),
         iconUrl,
         referencePrice: arg.referencePrice,
         referenceCurrency: arg.referenceCurrency,

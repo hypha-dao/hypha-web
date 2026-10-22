@@ -148,6 +148,7 @@ export const CreateProposeAContributionForm = ({
           <CreateAgreementBaseFields
             key={resubmitKey}
             creator={{
+              id: person?.id,
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
               surname: person?.surname || '',

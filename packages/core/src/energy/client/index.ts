@@ -1,4 +1,5 @@
 export * from './contracts';
+export * from '../member-home-energy';
 export {
   getEnergyCommunityTokensForSpace,
   getAllEnergyCommunityTokens,

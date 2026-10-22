@@ -32,6 +32,23 @@ export function wantsGeneratedVisualsFromText(
   return VISUAL_GENERATION_PATTERN.test(text);
 }
 
+const AFFIRMATIVE_REPLY =
+  /^(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|please do)[.!]?$/i;
+
+/** "Yes" after the assistant offered a logo or banner. */
+export function agreedToGeneratedVisuals(
+  lastUserText: string | null | undefined,
+  lastAssistantText: string | null | undefined,
+): boolean {
+  const user = lastUserText?.trim() ?? '';
+  const assistant = lastAssistantText?.trim() ?? '';
+  if (!AFFIRMATIVE_REPLY.test(user)) return false;
+  return (
+    /\b(logo|banner|icon)\b/i.test(assistant) &&
+    /\b(create|generate|make|design)\b/i.test(assistant)
+  );
+}
+
 export function resolveLatestVisualGenerationIntent(
   texts: string[] | null | undefined,
 ): boolean {
@@ -67,7 +84,7 @@ export function inferVisualVibe(args: {
 
   // Intentionally ignore title: seeding the space name into visual_vibe often
   // causes image models to render it as on-image text.
-  return 'mature, inspirational, luminous symbolism, cinematic depth, premium craft';
+  return 'a real place in ordinary daylight, natural materials, one quiet subject';
 }
 
 export function hasExplicitConfirmation(

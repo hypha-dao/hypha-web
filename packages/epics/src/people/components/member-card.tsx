@@ -2,7 +2,9 @@
 
 import { Card, StatusBadge, Skeleton, Button, Badge } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+import { MessageSquare, Phone, Video } from 'lucide-react';
 import { PersonAvatar } from './person-avatar';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
@@ -17,19 +19,31 @@ import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
 import { mutate as mutateCache, type Key } from 'swr';
 import { useFormatter, useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
 import { LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
+import {
+  MemberSpaceIcons,
+  memberProfileAsideHref,
+  usePersonMemberSpaces,
+} from './member-space-icons';
 
 export type MemberCardProps = {
   spaceId?: number;
   name?: string;
   surname?: string;
   nickname?: string;
+  slug?: string;
   location?: string;
   avatarUrl?: string;
   status?: string;
   isLoading?: boolean;
   minimize?: boolean;
   address?: string;
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
+  id?: number;
+  onChat?: () => void;
+  onCall?: () => void;
+  onVideo?: () => void;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
@@ -37,17 +51,35 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   name,
   surname,
   nickname,
+  slug,
   location,
   avatarUrl,
   status,
   isLoading,
   minimize,
   address,
+  primaryOrientation,
+  id,
+  onChat,
+  onCall,
+  onVideo,
 }) => {
   const tCommon = useTranslations('Common');
+  const tHome = useTranslations('MemberHome');
   const format = useFormatter();
-  const { id: spaceSlug } = useParams();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { space } = useSpaceBySlug(spaceSlug as string);
+  const { spaces: memberSpaces, isLoading: spacesLoading } =
+    usePersonMemberSpaces({
+      personAddress: address,
+      personSlug: slug,
+    });
+  const overflowHref = memberProfileAsideHref({
+    lang,
+    hostSpaceSlug: typeof spaceSlug === 'string' ? spaceSlug : null,
+    personSlug: slug,
+    fallbackSpaceSlug: memberSpaces[0]?.slug,
+  });
   const { undelegate, isUndelegating } = useUndelegateWeb3Rpc();
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
@@ -97,8 +129,14 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     setLocalIsDelegate(isDelegate);
   }, [isDelegate]);
 
+  const displayName =
+    [name, surname].filter(Boolean).join(' ').trim() ||
+    nickname ||
+    tCommon('memberRoleLabel');
+  const showConnect = Boolean(onChat || onCall || onVideo);
+
   return (
-    <Card className="craft-card-interactive flex h-full w-full flex-col gap-2 p-3">
+    <Card className="craft-card-interactive @container/member flex h-full w-full flex-col gap-2 p-3">
       <div className="flex items-start gap-2.5">
         <PersonAvatar
           avatarSrc={avatarUrl}
@@ -107,18 +145,23 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           isLoading={isLoading}
           shape="rounded"
           className="shrink-0"
+          personId={id}
         />
 
         <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <Badge
-              className="w-fit"
-              size={1}
-              variant="outline"
-              colorVariant="neutral"
-            >
-              {tCommon('memberRoleLabel')}
-            </Badge>
+            {isPersonRole(primaryOrientation) ? (
+              <PersonRoleBadge role={primaryOrientation} />
+            ) : (
+              <Badge
+                className="w-fit"
+                size={1}
+                variant="outline"
+                colorVariant="neutral"
+              >
+                {tCommon('memberRoleLabel')}
+              </Badge>
+            )}
             {!minimize ? (
               <StatusBadge isLoading={isLoading} status={status} />
             ) : null}
@@ -139,7 +182,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             </Skeleton>
           </div>
 
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex w-[7.75rem] shrink-0 flex-col items-end gap-2 @min-[24rem]/member:w-auto @min-[24rem]/member:max-w-[16rem]">
             {localIsDelegate ? (
               <Skeleton width="96px" height="32px" loading={isLoading}>
                 <Button
@@ -167,13 +210,21 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                   {isUndelegating ? 'Undelegating...' : 'Undelegate'}
                 </Button>
               </Skeleton>
-            ) : (
-              <div className="h-8 w-[7.5rem]" aria-hidden />
-            )}
+            ) : null}
+            {showConnect ? (
+              <MemberConnectActions
+                chatLabel={tHome('chatPerson', { name: displayName })}
+                callLabel={tHome('callPerson', { name: displayName })}
+                videoLabel={tHome('videoPerson', { name: displayName })}
+                onChat={onChat}
+                onCall={onCall}
+                onVideo={onVideo}
+              />
+            ) : null}
             <Skeleton width="96px" height="16px" loading={isLoading}>
-              <div className="craft-meta flex items-center">
-                <SewingPinFilledIcon className="mr-1 size-3.5" />
-                <span className="text-1">{location}</span>
+              <div className="craft-meta flex min-w-0 max-w-full items-center">
+                <SewingPinFilledIcon className="mr-1 size-3.5 shrink-0" />
+                <span className="truncate text-1">{location}</span>
               </div>
             </Skeleton>
             <Skeleton
@@ -181,10 +232,10 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               height="16px"
               loading={isLoading || isLoadingEvents}
             >
-              <div className="flex h-4 items-center">
+              <div className="flex h-4 min-w-0 max-w-full items-center">
                 {joinEvent ? (
                   <span
-                    className="craft-meta whitespace-nowrap"
+                    className="craft-meta block max-w-full truncate"
                     title={format.dateTime(new Date(joinEvent.createdAt), {
                       year: 'numeric',
                       month: 'long',
@@ -206,13 +257,96 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           </div>
         </div>
       </div>
-      <div className="min-h-5">
+      <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
         {localIsDelegate ? (
           <span className="craft-meta font-medium">
             {tCommon('delegatedVotingMemberLabel')}
           </span>
-        ) : null}
+        ) : (
+          <span />
+        )}
+        <MemberSpaceIcons
+          spaces={memberSpaces}
+          overflowHref={overflowHref}
+          isLoading={Boolean(address) && (isLoading || spacesLoading)}
+          size={minimize ? 24 : 28}
+          className="justify-end"
+        />
       </div>
     </Card>
   );
 };
+
+function stopCardNavigation(event: React.MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function MemberConnectActions({
+  chatLabel,
+  callLabel,
+  videoLabel,
+  onChat,
+  onCall,
+  onVideo,
+}: {
+  chatLabel: string;
+  callLabel: string;
+  videoLabel: string;
+  onChat?: () => void;
+  onCall?: () => void;
+  onVideo?: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 gap-1">
+      {onCall ? (
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          colorVariant="neutral"
+          aria-label={callLabel}
+          title={callLabel}
+          onClick={(event) => {
+            stopCardNavigation(event);
+            onCall();
+          }}
+        >
+          <Phone className="h-4 w-4" />
+        </Button>
+      ) : null}
+      {onVideo ? (
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          colorVariant="neutral"
+          aria-label={videoLabel}
+          title={videoLabel}
+          onClick={(event) => {
+            stopCardNavigation(event);
+            onVideo();
+          }}
+        >
+          <Video className="h-4 w-4" />
+        </Button>
+      ) : null}
+      {onChat ? (
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          colorVariant="neutral"
+          aria-label={chatLabel}
+          title={chatLabel}
+          onClick={(event) => {
+            stopCardNavigation(event);
+            onChat();
+          }}
+        >
+          <MessageSquare className="h-4 w-4" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}

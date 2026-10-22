@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import type { SignalViewMode } from './signal-section';
 
@@ -12,27 +13,20 @@ function SkeletonBlock({
   className?: string;
   delayMs?: number;
 }) {
-  return (
-    <div
-      className={cn('animate-pulse rounded-none bg-foreground/10', className)}
-      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
-      aria-hidden
-    />
-  );
+  return <Wave className={cn('rounded-none', className)} delayMs={delayMs} />;
 }
 
 function SkeletonCard({ delayMs = 0 }: { delayMs?: number }) {
   return (
     <div
-      className="animate-pulse rounded-none border border-border/50 bg-transparent p-3"
-      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
+      className="rounded-none border border-border/50 bg-transparent p-3"
       aria-hidden
     >
-      <div className="h-3 w-3/4 bg-foreground/10" />
-      <div className="mt-2 h-3 w-1/2 bg-foreground/10" />
+      <Wave className="h-3 w-3/4" delayMs={delayMs} />
+      <Wave className="mt-2 h-3 w-1/2" delayMs={delayMs + 40} />
       <div className="mt-4 flex items-center gap-2">
-        <div className="h-3 w-14 bg-foreground/10" />
-        <div className="h-3 w-9 bg-foreground/10" />
+        <Wave className="h-3 w-14" delayMs={delayMs + 80} />
+        <Wave className="h-3 w-9" delayMs={delayMs + 120} />
       </div>
     </div>
   );

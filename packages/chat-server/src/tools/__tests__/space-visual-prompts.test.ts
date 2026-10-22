@@ -8,20 +8,28 @@ const sample = {
 };
 
 describe('space visual asset prompts', () => {
-  it('forbids on-image text and avoids basic flat logo language', () => {
+  it('forbids on-image text and asks for a physical mark', () => {
     const prompt = buildLogoPrompt(sample);
 
     expect(prompt).toMatch(/ZERO TEXT|Pure imagery/i);
-    expect(prompt).not.toMatch(/minimal flat vector/i);
-    expect(prompt).toMatch(/mindblowing|emblematic|sculptural/i);
+    expect(prompt).toMatch(/printed emblem|real object/i);
+    expect(prompt).toMatch(/no neon|no fantasy CGI/i);
     expect(prompt).toContain(sample.space_purpose);
-    expect(prompt).toContain(sample.visual_vibe);
+    expect(prompt).toContain('luminous tidepools');
   });
 
-  it('asks for mature cinematic banners without typography', () => {
-    const prompt = buildBannerPrompt(sample);
+  it('asks for a documentary photograph and drops synthetic directions', () => {
+    const prompt = buildBannerPrompt({
+      ...sample,
+      visual_vibe:
+        'glowing magical tree, neon energy roots, god rays, warm gold light',
+    });
 
     expect(prompt).toMatch(/ZERO TEXT|Pure imagery/i);
-    expect(prompt).toMatch(/cinematic|inspirational|mature/i);
+    expect(prompt).toMatch(/documentary photograph/i);
+    expect(prompt).toContain('warm gold light');
+    expect(prompt).not.toContain('magical tree');
+    expect(prompt).not.toContain('neon energy');
+    expect(prompt).toContain('no god rays');
   });
 });

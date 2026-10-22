@@ -92,7 +92,12 @@ export const WhitelistAddressItem = ({
         {diffIcon}
         {person ? (
           <>
-            <PersonAvatar avatarSrc={person?.avatarUrl} size="sm" />
+            <PersonAvatar
+              avatarSrc={person?.avatarUrl}
+              size="sm"
+              shape="circle"
+              personId={person?.id}
+            />
             <div className="text-1">
               {person?.name} {person?.surname}
             </div>

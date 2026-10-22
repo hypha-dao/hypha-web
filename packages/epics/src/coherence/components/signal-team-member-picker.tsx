@@ -30,6 +30,7 @@ function normalizeMatrixUserIds(ids: string[]): string[] {
 
 function SignalTeamPickerRow({
   matrixUserId,
+  personId,
   displayLabel,
   privySub,
   avatarUrl,
@@ -40,6 +41,7 @@ function SignalTeamPickerRow({
   onToggle,
 }: {
   matrixUserId: string;
+  personId?: number;
   displayLabel: string;
   privySub?: string;
   avatarUrl?: string | null;
@@ -70,7 +72,14 @@ function SignalTeamPickerRow({
       onClick={onToggle}
     >
       <span className="flex min-w-0 items-center gap-2">
-        <PersonAvatar size="sm" avatarSrc={avatarUrl || ''} userName={label} />
+        <PersonAvatar
+          size="sm"
+          shape="circle"
+          avatarSrc={avatarUrl || ''}
+          userName={label}
+          personId={personId}
+          matrixUserId={matrixUserId}
+        />
         <span className="truncate">{label}</span>
       </span>
       <span className="inline-flex shrink-0 items-center gap-1 pl-2 text-xs text-muted-foreground">
@@ -218,6 +227,7 @@ export function SignalTeamMemberPicker({
               <SignalTeamPickerRow
                 key={member.personId}
                 matrixUserId={matrixUserId ?? ''}
+                personId={member.personId > 0 ? member.personId : undefined}
                 displayLabel={member.displayLabel}
                 privySub={undefined}
                 avatarUrl={member.avatarUrl}

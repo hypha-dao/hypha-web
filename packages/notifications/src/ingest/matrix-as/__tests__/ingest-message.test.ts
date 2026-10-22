@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../dedupe', () => ({ claimProcessedEvent: vi.fn() }));
 vi.mock('../resolve-room-to-space', () => ({ resolveRoomToSpace: vi.fn() }));
+vi.mock('../resolve-direct-room', () => ({
+  resolveDirectRecipient: vi.fn().mockResolvedValue(null),
+}));
 
 import { claimProcessedEvent } from '../dedupe';
 import { resolveRoomToSpace } from '../resolve-room-to-space';

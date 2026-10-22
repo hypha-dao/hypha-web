@@ -55,6 +55,7 @@ export const findAllSpaces = async (
       updatedAt: spaces.updatedAt,
       address: spaces.address,
       flags: spaces.flags,
+      chatRoomId: spaces.chatRoomId,
       latitude: spaces.latitude,
       longitude: spaces.longitude,
       locationLabel: spaces.locationLabel,

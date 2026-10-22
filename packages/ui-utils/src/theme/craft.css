@@ -49,44 +49,45 @@
 }
 
 /*
- * Live space palette — softened mixes from --space-accent (already crafted).
+ * Live space palette — softened mixes from --space-spot (the space hue).
+ * Buttons stay on the monochrome accent scale.
  * Wider luminance steps so series stay distinct without neon chroma.
  */
 [data-space-accent-scope] {
   --craft-chart-accent-1: color-mix(
     in oklab,
-    var(--space-accent) 20%,
+    var(--space-spot, var(--space-accent)) 20%,
     white 80%
   );
   --craft-chart-accent-2: color-mix(
     in oklab,
-    var(--space-accent) 34%,
+    var(--space-spot, var(--space-accent)) 34%,
     white 66%
   );
   --craft-chart-accent-3: color-mix(
     in oklab,
-    var(--space-accent) 50%,
+    var(--space-spot, var(--space-accent)) 50%,
     white 50%
   );
   --craft-chart-accent-4: color-mix(
     in oklab,
-    var(--space-accent) 68%,
+    var(--space-spot, var(--space-accent)) 68%,
     white 32%
   );
-  --craft-chart-accent-5: var(--space-accent);
+  --craft-chart-accent-5: var(--space-spot, var(--space-accent));
   --craft-chart-accent-6: color-mix(
     in oklab,
-    var(--space-accent) 76%,
+    var(--space-spot, var(--space-accent)) 76%,
     black 24%
   );
   --craft-chart-accent-7: color-mix(
     in oklab,
-    var(--space-accent) 58%,
+    var(--space-spot, var(--space-accent)) 58%,
     black 42%
   );
   --craft-chart-accent-8: color-mix(
     in oklab,
-    var(--space-accent) 40%,
+    var(--space-spot, var(--space-accent)) 40%,
     black 60%
   );
 }

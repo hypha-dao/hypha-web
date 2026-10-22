@@ -44,6 +44,31 @@ function firstSentence(text: string, maxLen = 120): string {
   return (stop > 40 ? cut.slice(0, stop + 1) : `${cut}…`).trim();
 }
 
+/**
+ * Discussion summaries are markdown, but Matrix reply fallbacks land in them
+ * as `<@user:server>` mentions and `>` quotes. Keep the sentences.
+ */
+export function humanizeMemoryExcerpt(source: string): string {
+  const trimmed = source.replace(/\r\n/g, '\n').trim();
+  if (!trimmed) return '';
+  const mention = /<?@[A-Za-z0-9._=\-/]+:[A-Za-z0-9.\-]+(?::\d+)?>?/;
+  if (!mention.test(trimmed) && !/(?:^|\s)>+/.test(trimmed)) {
+    return trimmed;
+  }
+  const withoutMentions = trimmed.replace(new RegExp(mention.source, 'g'), ' ');
+  const lines = withoutMentions
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^(?:>\s*)+/g, '')
+        .replace(/(?:^|\s)>+(?:[ \t]*>)*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
+    .filter(Boolean);
+  return lines.join(' ');
+}
+
 /** Strip a technical speaker prefix from a transcript excerpt line. */
 export function stripTechnicalSpeakerFromExcerpt(excerpt: string): string {
   const trimmed = excerpt.trim();

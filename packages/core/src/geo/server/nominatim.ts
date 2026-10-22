@@ -60,6 +60,7 @@ function dedupeGeocodeResults(results: GeocodeResult[]): GeocodeResult[] {
 async function fetchNominatimOnce(
   query: string,
   limit: number,
+  signal?: AbortSignal,
 ): Promise<GeocodeResult[]> {
   const url = new URL(NOMINATIM_SEARCH_URL);
   url.searchParams.set('q', query);
@@ -69,6 +70,9 @@ async function fetchNominatimOnce(
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const onParentAbort = () => controller.abort();
+  signal?.addEventListener('abort', onParentAbort);
+  if (signal?.aborted) controller.abort();
 
   let response: Response;
   try {
@@ -80,12 +84,14 @@ async function fetchNominatimOnce(
       signal: controller.signal,
     });
   } catch (error) {
+    if (signal?.aborted) return [];
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Nominatim request timed out');
     }
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onParentAbort);
   }
 
   if (!response.ok) {
@@ -103,6 +109,7 @@ async function fetchNominatimOnce(
 export async function searchNominatim(
   query: string,
   limit = DEFAULT_LIMIT,
+  signal?: AbortSignal,
 ): Promise<GeocodeResult[]> {
   const now = Date.now();
   pruneGeocodeCache(now);
@@ -123,7 +130,8 @@ export async function searchNominatim(
 
   let mergedResults: GeocodeResult[] = [];
   for (const variant of queryVariants) {
-    const batch = await fetchNominatimOnce(variant, safeLimit);
+    if (signal?.aborted) break;
+    const batch = await fetchNominatimOnce(variant, safeLimit, signal);
     mergedResults = dedupeGeocodeResults([...mergedResults, ...batch]);
     if (mergedResults.length > 0) {
       break;

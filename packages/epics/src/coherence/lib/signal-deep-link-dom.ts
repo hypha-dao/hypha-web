@@ -1,5 +1,60 @@
 export const SIGNAL_SLUG_SELECTOR_ATTR = 'data-signal-slug';
 
+export type SignalDeepLinkChoiceInput = {
+  humanChatEnabled: boolean;
+  chatSlug: string | null;
+  urlSlug: string | null;
+  /** `undefined` until this picker has seen one render. */
+  previousChatSlug: string | null | undefined;
+  previousUrlSlug: string | null | undefined;
+  previousChoice: string | null;
+};
+
+/**
+ * Which signal should be open.
+ * A new `?signal=` wins over a chat that is already open, so clicking a second
+ * card replaces the first. A chat that just changed still wins over a URL that
+ * has not caught up, so the address bar does not flash the previous signal.
+ */
+export function pickSignalDeepLinkTarget({
+  humanChatEnabled,
+  chatSlug,
+  urlSlug,
+  previousChatSlug,
+  previousUrlSlug,
+  previousChoice,
+}: SignalDeepLinkChoiceInput): string | null {
+  const chat = chatSlug?.trim() || null;
+  const url = urlSlug?.trim() || null;
+  if (!humanChatEnabled || !chat) return url;
+  if (!url || url === chat) return chat;
+
+  const hadPrevious =
+    previousChatSlug !== undefined || previousUrlSlug !== undefined;
+  const urlMoved = hadPrevious && url !== (previousUrlSlug?.trim() || null);
+  const chatMoved = hadPrevious && chat !== (previousChatSlug?.trim() || null);
+
+  if (chatMoved && !urlMoved) return chat;
+  if (urlMoved && !chatMoved) return url;
+  if (!hadPrevious) return url;
+
+  const previous = previousChoice?.trim() || null;
+  if (previous === url || previous === chat) return previous;
+  return url;
+}
+
+/** True when the open chat should be written into `?signal=`. */
+export function shouldWriteOpenChatToSignalUrl(
+  choice: string | null,
+  chatSlug: string | null,
+  urlSlug: string | null,
+): boolean {
+  const chat = chatSlug?.trim() || null;
+  const url = urlSlug?.trim() || null;
+  if (!chat || choice !== chat) return false;
+  return url !== chat;
+}
+
 /** Live `?signal=` — `useSearchParams()` can lag behind `history.replaceState`. */
 export function readLiveSignalSlugFromUrl(): string | null {
   if (typeof window === 'undefined') return null;

@@ -455,6 +455,7 @@ export const UpdateIssuedTokenPlugin = ({
       archived: selectedToken.archived,
       referenceCurrency: selectedToken.referenceCurrency,
       referencePrice: selectedToken.referencePrice,
+      capital: selectedToken.capital ?? null,
     });
   }, [selectedToken]);
 
@@ -480,6 +481,12 @@ export const UpdateIssuedTokenPlugin = ({
       return;
     }
     const d = pendingTokenUpdateForSpace.data;
+    if (d.capital !== undefined) {
+      setValue('capital', d.capital ?? '', {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
+    }
     if (d.transferable !== undefined) {
       setValue('transferable', d.transferable, {
         shouldDirty: false,
@@ -607,6 +614,7 @@ export const UpdateIssuedTokenPlugin = ({
           iconUrl: iconFromDb,
           initialIconUrl: iconFromDb,
           type: selectedToken.type,
+          capital: selectedToken.capital ?? '',
           enableLimitedSupply: max > 0,
           maxSupply: max,
           maxSupplyType: undefined,
@@ -660,6 +668,7 @@ export const UpdateIssuedTokenPlugin = ({
       }
     }
     setIfClean('type', selectedToken.type);
+    setIfClean('capital', selectedToken.capital ?? '');
     setIfClean('enableLimitedSupply', max > 0, { shouldDirty: false });
     setIfClean('maxSupply', max, { shouldDirty: false });
     if (max <= 0 && !(dirtyFields as Record<string, unknown>)?.maxSupplyType) {

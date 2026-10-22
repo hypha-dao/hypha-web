@@ -70,6 +70,14 @@ function parseApiPerson(raw: unknown): Person | null {
     location: optStringField(p.location),
     nickname: optStringField(p.nickname),
     address: optEthAddressField(p.address),
+    preferredCurrency: optStringField(p.preferredCurrency),
+    primaryOrientation:
+      p.primaryOrientation === 'member' ||
+      p.primaryOrientation === 'builder' ||
+      p.primaryOrientation === 'investor'
+        ? p.primaryOrientation
+        : null,
+    networkOffer: typeof p.networkOffer === 'string' ? p.networkOffer : null,
     links: optStringArrayField(p.links),
     createdAt: toDate(p.createdAt),
     updatedAt: toDate(p.updatedAt),

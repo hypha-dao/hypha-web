@@ -48,6 +48,7 @@ export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 export {
   HumanChatPanelChatBar,
   type ChatDraftAttachment,
+  type ChatMentionAgentIcon,
   type ChatMentionCandidate,
 } from './human-chat-panel-chat-bar';
 export {

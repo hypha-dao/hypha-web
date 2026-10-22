@@ -54,6 +54,10 @@ function attachScrollTarget() {
  * Called from the scrollable `SidebarInset` ref (or `null` on unmount).
  * When panels are off, root stays `null` and we fall back to `window`.
  */
+export function getMainColumnScrollRoot() {
+  return scrollRoot;
+}
+
 export function setMainColumnScrollRoot(el: HTMLElement | null) {
   if (scrollRoot === el) return;
   const prev: HTMLElement | Window | null =
@@ -212,6 +216,45 @@ export type BannerContentFit = {
    */
   fillsBanner: boolean;
 };
+
+export type ShortPageScrollPlan =
+  | { kind: 'keep'; top: number }
+  | { kind: 'banner'; top: number }
+  | { kind: 'top' };
+
+/**
+ * A route change can keep an offset from the previous screen. When the next
+ * screen can hold the collapsed banner, sit there. When it cannot, go to the
+ * top — a height hold would paint an empty viewport under the content.
+ * A loading skeleton is not a short screen.
+ */
+export function planShortPageScroll(input: {
+  reservedTop: number;
+  naturalMax: number;
+  /** Collapsed-banner offset. Null when the banner cannot be measured. */
+  bannerTop: number | null;
+  /** Unused. Short screens release on every width. */
+  mobile: boolean;
+  loading: boolean;
+}): ShortPageScrollPlan {
+  const reserved = Number.isFinite(input.reservedTop)
+    ? Math.max(0, input.reservedTop)
+    : 0;
+  if (input.loading) return { kind: 'keep', top: reserved };
+  if (planBannerContentFit(reserved, input.naturalMax).fillsBanner) {
+    return { kind: 'keep', top: reserved };
+  }
+  const banner = Number.isFinite(input.bannerTop ?? NaN)
+    ? Math.max(0, input.bannerTop ?? 0)
+    : null;
+  if (
+    banner != null &&
+    planBannerContentFit(banner, input.naturalMax).fillsBanner
+  ) {
+    return { kind: 'banner', top: banner };
+  }
+  return { kind: 'top' };
+}
 
 /**
  * Banner settle for the main column.

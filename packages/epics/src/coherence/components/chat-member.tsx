@@ -33,9 +33,12 @@ export const ChatMember: React.FC<ChatMemberProps> = ({
       <div>
         <PersonAvatar
           size="sm"
+          shape="circle"
           isLoading={isLoading || isLoadingPrivyUserId || isLoadingPerson}
           avatarSrc={person?.avatarUrl}
           userName={displayName}
+          personId={person?.id}
+          matrixUserId={memberId}
         />
       </div>
       <div className="flex flex-col items-center">

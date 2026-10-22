@@ -46,6 +46,7 @@ export async function GET(
     );
 
     const peopleWithVotes = people.map((person) => ({
+      id: person.id,
       name: `${person.name} ${person.surname}`,
       avatarUrl: person.avatarUrl,
       vote: yesVoters.includes(person.address as `0x${string}`) ? 'yes' : 'no',

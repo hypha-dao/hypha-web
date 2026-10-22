@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { encodeFunctionData } from 'viem';
 import { useAccount } from 'wagmi';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
@@ -14,24 +15,32 @@ export const useProposalVoting = ({
 }) => {
   const chainId = getGovernanceChainId();
   const { address } = useAccount();
-  const { client } = useSmartWallets();
+  const { client, getClientForChain } = useSmartWallets();
   const [isVoting, setIsVoting] = useState(false);
   const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
 
   const vote = useCallback(
     async (support: boolean) => {
-      if (!client) throw new Error('Smart wallet not connected');
-      if (!address) throw new Error('Wallet not connected');
       if (proposalId == null) throw new Error('Proposal ID is required');
 
       setIsVoting(true);
       try {
+        // The default smart-wallet client follows whichever chain was last
+        // active. A vote has to be signed on the governance chain, and
+        // `sendTransaction` is the method that opens the wallet signature.
+        // `writeContract` closes over the raw client and skips that prompt.
+        const votingClient =
+          (await getClientForChain({ id: chainId })) ?? client;
+        if (!votingClient) throw new Error('Smart wallet not connected');
+
         const governancePublicClient = createGovernancePublicClient();
-        const hash = await client.writeContract({
-          address: daoProposalsImplementationConfig.address[chainId],
-          abi: daoProposalsImplementationConfig.abi,
-          functionName: 'vote',
-          args: [BigInt(proposalId), support],
+        const hash = await votingClient.sendTransaction({
+          to: daoProposalsImplementationConfig.address[chainId],
+          data: encodeFunctionData({
+            abi: daoProposalsImplementationConfig.abi,
+            functionName: 'vote',
+            args: [BigInt(proposalId), support],
+          }),
         });
         await governancePublicClient.waitForTransactionReceipt({ hash });
         return hash;
@@ -39,7 +48,7 @@ export const useProposalVoting = ({
         setIsVoting(false);
       }
     },
-    [address, chainId, client, proposalId],
+    [chainId, client, getClientForChain, proposalId],
   );
 
   const checkProposalExpiration = useCallback(async () => {

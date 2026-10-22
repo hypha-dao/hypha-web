@@ -213,6 +213,7 @@ export default function Agreements() {
           isVoting={isVoting}
           content={document?.description}
           creator={{
+            id: document?.creator?.id ?? document?.creatorId,
             avatar: document?.creator?.avatarUrl || '',
             name: document?.creator?.name || '',
             surname: document?.creator?.surname || '',
@@ -228,6 +229,8 @@ export default function Agreements() {
           spaceSlug={space?.slug || ''}
           label={document?.label || ''}
           documentSlug={documentSlug}
+          chatRoomId={document?.chatRoomId}
+          chatRoomResolved={!isLoading}
           dbTokens={tokens || []}
           onWithdrawSuccess={async () => {
             await update();

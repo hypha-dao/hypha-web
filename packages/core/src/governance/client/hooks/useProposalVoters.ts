@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 
 type Voter = {
+  id?: number;
   name: string;
   avatarUrl: string;
   vote: 'yes' | 'no';

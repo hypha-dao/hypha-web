@@ -59,7 +59,12 @@ export type ResubmitFormData = {
   applied?: boolean;
 };
 
-type Creator = { avatar: string; name: string; surname: string };
+type Creator = {
+  id?: number;
+  avatar: string;
+  name: string;
+  surname: string;
+};
 
 const schemaCreateAgreementForm =
   schemaCreateAgreement.extend(createAgreementFiles);
@@ -429,6 +434,7 @@ export function CreateAgreementBaseFields({
                 isLoading={isLoading}
                 avatarSrc={creator?.avatar}
                 userName={`${creator?.name} ${creator?.surname}`}
+                personId={creator?.id}
               />
               <div className="flex w-full min-w-0">
                 <div className="flex flex-col w-full justify-between gap-4">

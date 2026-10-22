@@ -215,10 +215,10 @@ function resolveAppScreenPath(
   lang: string,
   screen: z.infer<typeof appScreenSchema>,
 ): string {
-  if (screen === 'onboarding') return `/${lang}/onboarding`;
+  if (screen === 'onboarding') return `/${lang}/interactive-create`;
   if (screen === 'network') return `/${lang}/network`;
   if (screen === 'my_spaces') return `/${lang}/my-spaces`;
-  if (screen === 'create_space') return `/${lang}/onboarding`;
+  if (screen === 'create_space') return `/${lang}/interactive-create`;
   return `/${lang}/profile/signup`;
 }
 

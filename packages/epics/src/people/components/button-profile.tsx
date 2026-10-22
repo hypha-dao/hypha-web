@@ -21,9 +21,11 @@ import {
   Bell,
   ChevronRight,
   Compass,
-  Globe2,
+  House,
   LayoutGrid,
   Loader2,
+  MessagesSquare,
+  Globe2,
   LogOutIcon,
   Repeat,
   Shield,
@@ -34,6 +36,7 @@ import {
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
+import { useConversationUnreadCount } from './my-connections';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -45,7 +48,6 @@ import { useFundWallet } from '../../treasury/hooks';
 import {
   HyphaNetworkFeedbackDialog,
   HyphaNetworkFeedbackMenuItem,
-  HyphaNetworkFeedbackTrigger,
 } from '../../common/hypha-network-feedback-dialog';
 
 export type ButtonProfileProps = {
@@ -65,7 +67,7 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
-  /** When true, show Shape Hypha after the main nav links. */
+  /** When true, show Shape Hypha inside the profile menu. */
   showNetworkFeedback?: boolean;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
@@ -100,6 +102,14 @@ function resolveNavItemIcon(href?: string) {
   if (!href) {
     return null;
   }
+  if (href.includes('/my-dashboard') || href.includes('/home')) {
+    return <House className="craft-icon" strokeWidth={1.25} aria-hidden />;
+  }
+  if (href.includes('/messages') || href.includes('/connections')) {
+    return (
+      <MessagesSquare className="craft-icon" strokeWidth={1.25} aria-hidden />
+    );
+  }
   if (href.includes('/my-spaces')) {
     return <LayoutGrid className="craft-icon" strokeWidth={1.25} aria-hidden />;
   }
@@ -132,6 +142,17 @@ export const ButtonProfile = ({
 }: ButtonProfileProps) => {
   const t = useTranslations('Navigation');
   const tCommon = useTranslations('Common');
+  const tConnections = useTranslations('Connections');
+  const unreadMessages = useConversationUnreadCount();
+  const messageBadge = (href?: string) =>
+    href?.includes('/messages') || href?.includes('/connections')
+      ? unreadMessages
+      : 0;
+  const messageAria = (href?: string, label?: string) => {
+    const badge = messageBadge(href);
+    if (!label || badge <= 0) return undefined;
+    return `${label}, ${tConnections('unread', { count: badge })}`;
+  };
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [networkFeedbackOpen, setNetworkFeedbackOpen] = useState(false);
@@ -663,6 +684,7 @@ export const ButtonProfile = ({
                 userName={person?.nickname}
                 size="lg"
                 shape="rounded"
+                personId={person?.id}
               />
               <div className="flex flex-col items-center gap-0.5 text-center">
                 <p className="text-2 font-semibold leading-snug text-foreground">
@@ -681,15 +703,22 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
-            {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
             {navItems.map((item) => (
               <ButtonNavItem
                 key={item.href ?? item.label}
                 href={item.href}
                 label={item.label}
                 icon={resolveNavItemIcon(item.href)}
+                badge={messageBadge(item.href)}
+                ariaLabel={messageAria(item.href, item.label)}
               />
             ))}
+            {showNetworkFeedback ? (
+              <HyphaNetworkFeedbackMenuItem
+                variant="sheet"
+                onOpen={openNetworkFeedbackFromProfileMenu}
+              />
+            ) : null}
 
             {trailingBeforeProfile ? (
               <div className="flex w-full justify-center">
@@ -752,13 +781,14 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden items-center gap-2 md:flex">
             <div className="flex items-center gap-2">
-              {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
               {navItems.map((item) => (
                 <ButtonNavItem
                   key={item.href ?? item.label}
                   href={item.href}
                   label={item.label}
                   icon={resolveNavItemIcon(item.href)}
+                  badge={messageBadge(item.href)}
+                  ariaLabel={messageAria(item.href, item.label)}
                 />
               ))}
             </div>
@@ -816,6 +846,20 @@ export const ButtonProfile = ({
                   <div className={profileMenuWalletClass}>
                     <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
+                ) : null}
+
+                {showNetworkFeedback ? (
+                  <>
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
+                    />
+                    <DropdownMenuGroup>
+                      <HyphaNetworkFeedbackMenuItem
+                        variant="menu"
+                        onOpen={openNetworkFeedbackFromProfileMenu}
+                      />
+                    </DropdownMenuGroup>
+                  </>
                 ) : null}
 
                 {(profileUrl || onboardingUrl || notificationCentrePath) && (
@@ -934,6 +978,10 @@ export const ButtonProfile = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <HyphaNetworkFeedbackDialog
+            open={networkFeedbackOpen}
+            onOpenChange={setNetworkFeedbackOpen}
+          />
         </>
       ) : (
         <div className="flex flex-col md:flex-row gap-8 md:gap-2">

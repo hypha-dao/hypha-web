@@ -1,7 +1,9 @@
 'use client';
 
 import {
+  clearMainColumnScrollFreeze,
   isMainColumnScrollFrozen,
+  releaseMainColumnScrollHeightHold,
   scrollMainColumnTo,
 } from '@hypha-platform/epics';
 import { usePathname } from 'next/navigation';
@@ -35,8 +37,20 @@ export default function ScrollUp() {
     if (prevSpace && nextSpace && prevSpace === nextSpace) {
       return;
     }
-    if (isMainColumnScrollFrozen()) return;
-
+    const mobile =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 767px)').matches;
+    // Desktop space-to-space settles on the banner in the space chrome.
+    // A frozen offset there is the handoff, not a stuck page.
+    if (prevSpace && nextSpace && !mobile) {
+      if (isMainColumnScrollFrozen()) return;
+      scrollMainColumnTo(0, 'auto');
+      return;
+    }
+    // Leaving a space, or changing space on a phone: a leftover freeze or
+    // height hold keeps the previous offset and paints an empty screen.
+    clearMainColumnScrollFreeze();
+    releaseMainColumnScrollHeightHold();
     scrollMainColumnTo(0, 'auto');
   }, [pathname]);
   return <></>;

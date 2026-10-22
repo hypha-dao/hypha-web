@@ -37,6 +37,8 @@ type UIMessage = {
   senderName?: string;
   /** Matrix author MXID when known. */
   senderMatrixId?: string;
+  /** Specialist who answered an @AI Agents mention. */
+  agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
   formattedContentHtml?: string;
@@ -134,6 +136,9 @@ type HumanChatPanelMessagesProps = {
   roomId?: string | null;
   currentUserId?: string | null;
   currentUserAvatarUrl?: string | null;
+  /** Replaces the default space welcome. Space chat leaves both unset. */
+  welcomeText?: string;
+  welcomeSenderName?: string;
   onReply?: (messageId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
@@ -153,6 +158,8 @@ type HumanChatPanelMessagesProps = {
   unreadNotificationCount?: number;
   /** Called when the scroll viewport reaches the bottom (mark read). */
   onReachedTimelineBottom?: () => void;
+  /** When false the thread is off-screen, so reaching the bottom must not count as read. */
+  viewportActive?: boolean;
   /** User clicked “Mark as read” in the banner. */
   onMarkAsReadFromBanner?: () => void;
   /** Scroll this Matrix event id into view when set (e.g. mention inbox). */
@@ -175,6 +182,8 @@ export function HumanChatPanelMessages({
   roomId,
   currentUserId,
   currentUserAvatarUrl,
+  welcomeText,
+  welcomeSenderName,
   onReply,
   onEditMessage,
   onDeleteMessage,
@@ -187,6 +196,7 @@ export function HumanChatPanelMessages({
   unreadCountIsCapped = false,
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
+  viewportActive = true,
   onMarkAsReadFromBanner,
   scrollTargetEventId,
   onConsumedScrollTarget,
@@ -203,8 +213,8 @@ export function HumanChatPanelMessages({
     id: 'welcome',
     role: 'member',
     isSynthetic: true,
-    parts: [{ type: 'text', text: t('welcome') }],
-    senderName: t('chatRoomTitle'),
+    parts: [{ type: 'text', text: welcomeText ?? t('welcome') }],
+    senderName: welcomeSenderName ?? t('chatRoomTitle'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(0);
@@ -461,21 +471,36 @@ export function HumanChatPanelMessages({
   useEffect(() => {
     const root = containerRef.current;
     const sentinel = bottomSentinelRef.current;
-    if (!root || !sentinel || !onReachedTimelineBottom) return;
+    if (!viewportActive || !root || !sentinel || !onReachedTimelineBottom) {
+      return;
+    }
 
+    const bottomIsVisible = () => {
+      const rootRect = root.getBoundingClientRect();
+      if (rootRect.height < 8 || rootRect.width < 8) return false;
+      const rect = sentinel.getBoundingClientRect();
+      return rect.top <= rootRect.bottom && rect.bottom >= rootRect.top;
+    };
+    const markIfSeen = () => {
+      if (bottomIsVisible()) onReachedTimelineBottom();
+    };
+
+    markIfSeen();
+    const frame = requestAnimationFrame(markIfSeen);
     const io = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            onReachedTimelineBottom();
-          }
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onReachedTimelineBottom();
         }
       },
-      { root, threshold: 0.25 },
+      { root, threshold: 0.01 },
     );
     io.observe(sentinel);
-    return () => io.disconnect();
-  }, [onReachedTimelineBottom, timelineRows.length]);
+    return () => {
+      cancelAnimationFrame(frame);
+      io.disconnect();
+    };
+  }, [onReachedTimelineBottom, timelineRows.length, viewportActive]);
 
   const messageIndexForStreaming = displayMessages.length - 1;
 
@@ -532,9 +557,10 @@ export function HumanChatPanelMessages({
             el.scrollHeight - el.scrollTop - el.clientHeight;
           stickToBottomRef.current = distanceFromBottom <= threshold;
         }}
-        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-3"
       >
-        <div className="flex flex-col gap-2">
+        {/* Top padding keeps the floating action bar from clipping at the edge. */}
+        <div className="flex flex-col gap-2 pt-3">
           {messages.length > 0 || hasMoreOlderMessages ? (
             <div
               ref={topSentinelRef}

@@ -3,9 +3,11 @@
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathDefaultLanding } from '@hypha-platform/epics';
+import { parseCapitalKey } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
+import { prepareWalletActionNavigation } from '../../../wallet/components/open-wallet-action';
 
 type AssetCardProps = {
   icon?: string;
@@ -19,6 +21,8 @@ type AssetCardProps = {
   referenceCurrency?: string | null;
   usdEqual?: number;
   type?: string;
+  /** One form of capital, when the token names one. */
+  capital?: string | null;
   isLoading?: boolean;
   supply?: {
     total: number;
@@ -34,6 +38,10 @@ type AssetCardProps = {
    * `solo` — single Rewards card: auto height, filled composition, demoted meta.
    */
   layout?: 'grid' | 'solo';
+  /** When set, the card opens this wallet action (token prefilled). */
+  href?: string | null;
+  /** Short note kept inside the card, so it stays with this token when more cards appear. */
+  note?: string | null;
   /**
    * Mutual credit info — only rendered when the underlying token has mutual
    * credit enabled. `netBalance < 0` indicates the holder is in debt.
@@ -59,14 +67,19 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   space,
   lang,
   type,
+  capital,
   createdAt,
   layout = 'grid',
+  href,
   mutualCredit,
+  note,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tNetwork = useTranslations('NetworkExchange');
   const format = useFormatter();
   const isSolo = layout === 'solo';
+  const actionHref = href?.trim() || null;
   const tokenTypeLabel =
     type &&
     tAgreementFlow.has(
@@ -80,6 +93,8 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           >[0],
         )
       : type;
+  const capitalKey = parseCapitalKey(capital);
+  const capitalLabel = capitalKey ? tNetwork(`capitals.${capitalKey}`) : null;
 
   const hasPrice = tokenPrice !== undefined && tokenPrice > 0;
   const hasSupply = supply?.total !== undefined;
@@ -104,11 +119,29 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   return (
     <Card
       className={cn(
-        'craft-card-interactive group flex w-full flex-col gap-3 p-3.5',
+        'craft-card-interactive group relative flex w-full flex-col gap-3 p-3.5',
         isSolo ? 'h-auto' : 'h-full min-h-[10.5rem]',
+        actionHref && 'cursor-pointer',
       )}
     >
-      <div className="flex min-w-0 items-start gap-3">
+      {actionHref ? (
+        <Link
+          href={actionHref}
+          aria-label={
+            symbol
+              ? tTreasury('assetCard.openAction', { symbol })
+              : tTreasury('assetCard.openAction', { symbol: name ?? '' })
+          }
+          className="absolute inset-0 z-10"
+          onClick={() => prepareWalletActionNavigation()}
+        />
+      ) : null}
+      <div
+        className={cn(
+          'flex min-w-0 items-start gap-3',
+          actionHref && 'pointer-events-none',
+        )}
+      >
         <Skeleton
           width="32px"
           height="32px"
@@ -142,7 +175,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Skeleton>
           {!isSolo ? (
             <Skeleton width="88px" height="16px" loading={isLoading}>
-              <div className="flex min-w-0 items-center gap-1.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="truncate text-1 text-muted-foreground">
                   {symbol}
                 </span>
@@ -156,18 +189,42 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                     {tokenTypeLabel}
                   </Badge>
                 ) : null}
+                {capitalLabel ? (
+                  <Badge
+                    size={1}
+                    colorVariant="neutral"
+                    variant="soft"
+                    className="h-fit w-fit shrink-0 font-normal"
+                  >
+                    {capitalLabel}
+                  </Badge>
+                ) : null}
               </div>
             </Skeleton>
-          ) : type ? (
+          ) : type || capitalLabel ? (
             <Skeleton width="72px" height="16px" loading={isLoading}>
-              <Badge
-                size={1}
-                colorVariant="neutral"
-                variant="soft"
-                className="h-fit w-fit shrink-0 font-normal"
-              >
-                {tokenTypeLabel}
-              </Badge>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                {type ? (
+                  <Badge
+                    size={1}
+                    colorVariant="neutral"
+                    variant="soft"
+                    className="h-fit w-fit shrink-0 font-normal"
+                  >
+                    {tokenTypeLabel}
+                  </Badge>
+                ) : null}
+                {capitalLabel ? (
+                  <Badge
+                    size={1}
+                    colorVariant="neutral"
+                    variant="soft"
+                    className="h-fit w-fit shrink-0 font-normal"
+                  >
+                    {capitalLabel}
+                  </Badge>
+                ) : null}
+              </div>
             </Skeleton>
           ) : null}
         </div>
@@ -178,6 +235,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           className={cn(
             'flex flex-col gap-0.5 text-1 text-muted-foreground',
             !isSolo && 'mt-auto min-h-[4.5rem] justify-end',
+            actionHref && 'pointer-events-none',
           )}
         >
           {isLoading || hasNameRow ? (
@@ -212,7 +270,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                 {space?.title ? (
                   <Link
                     href={getDhoPathDefaultLanding(lang as Locale, space.slug)}
-                    className="min-w-0 truncate text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                    className="pointer-events-auto relative z-20 min-w-0 truncate text-muted-foreground transition-colors hover:text-foreground hover:underline"
                   >
                     {tTreasury('assetCard.fromSpace', {
                       spaceTitle: space.title,
@@ -279,6 +337,11 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </div>
           ) : null}
         </div>
+      ) : null}
+      {note?.trim() ? (
+        <p className="mt-0.5 border-l border-border pl-2 text-1 leading-snug text-muted-foreground">
+          {note.trim()}
+        </p>
       ) : null}
     </Card>
   );

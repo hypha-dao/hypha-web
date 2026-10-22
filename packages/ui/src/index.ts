@@ -41,6 +41,7 @@ export * from './scroll-area';
 export * from './select';
 export * from './separator';
 export * from './skeleton';
+export * from './wave';
 export * from './slider';
 export * from './status-badge';
 export * from './switch';

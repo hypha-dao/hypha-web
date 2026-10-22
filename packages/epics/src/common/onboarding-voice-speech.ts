@@ -7,8 +7,18 @@ import {
   stripMarkdown,
 } from '@hypha-platform/ui-utils';
 
-/** Spoken voice replies are capped to this many sentences (matches server prompts). */
-export const MAX_VOICE_SPOKEN_SENTENCES = 4;
+/**
+ * Spoken voice replies stay short, but the closing sentence is the ask.
+ * A hard cut at four was dropping that question.
+ */
+export const MAX_VOICE_SPOKEN_SENTENCES = 5;
+
+/** Keep the opening and always the last sentence when a reply runs long. */
+function takeSpokenSentences(sentences: string[]): string[] {
+  if (sentences.length <= MAX_VOICE_SPOKEN_SENTENCES) return sentences;
+  const headCount = MAX_VOICE_SPOKEN_SENTENCES - 1;
+  return [...sentences.slice(0, headCount), sentences[sentences.length - 1]!];
+}
 
 const VOICE_INTERIM_ACK_PHRASES_BY_LOCALE: Record<string, readonly string[]> = {
   en: [
@@ -137,7 +147,7 @@ export function prepareAssistantTextForSpeech(text: string): string {
   );
 
   if (spoken.length > 0) {
-    return spoken.slice(0, MAX_VOICE_SPOKEN_SENTENCES).join(' ').trim();
+    return takeSpokenSentences(spoken).join(' ').trim();
   }
 
   // Don't read bare list fragments left after stripping form labels.

@@ -23,29 +23,24 @@ export function shouldBlockDuplicateRootSpaceCreation(
   }
 
   const createdRootSlug = data.onboarding_created_space_slug?.trim();
-  const setupPhase = data.onboarding_setup_phase?.trim();
-  const isPostRootPhase = setupPhase === 'execute' || setupPhase === 'verify';
   const slug = normalizedSlug?.trim();
 
-  if (
-    createdRootSlug &&
-    slug &&
-    slug === createdRootSlug &&
-    !hasParentReference
-  ) {
+  // Execute/verify without a created slug means the wallet signature has not
+  // finished. Do not treat that as a live space — the signature step must run.
+  if (!createdRootSlug) {
+    return { block: false };
+  }
+
+  if (slug && slug === createdRootSlug && !hasParentReference) {
     return {
       block: true,
       reason: `Root space "${createdRootSlug}" was already created in this session.`,
     };
   }
 
-  if (isPostRootPhase || createdRootSlug) {
-    return {
-      block: true,
-      reason:
-        'The root space is already live in this onboarding session. Use create_space_from_onboarding with parent_space_slug set to the root slug to create each nested on-chain space.',
-    };
-  }
-
-  return { block: false };
+  return {
+    block: true,
+    reason:
+      'The root space is already live in this onboarding session. Use create_space_from_onboarding with parent_space_slug set to the root slug to create each nested on-chain space.',
+  };
 }

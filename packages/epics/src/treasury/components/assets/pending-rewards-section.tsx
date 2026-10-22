@@ -1,6 +1,8 @@
 'use client';
 
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { type Person, usePendingRewards } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
 import { useUserAssetsSection } from '../../hooks';
@@ -9,7 +11,12 @@ import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../../common';
+import { prepareWalletActionNavigation } from '../../../wallet/components/open-wallet-action';
 import { useTranslations } from 'next-intl';
+
+const MIGRATE_HYPHA_TOKENS_URL =
+  process.env.NEXT_PUBLIC_MIGRATE_HYPHA_TOKENS_URL ??
+  'https://hypha-react-demo.vercel.app';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
@@ -32,6 +39,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   isMyProfile,
 }) => {
   const tProfile = useTranslations('Profile');
+  const tWallet = useTranslations('MyWallet');
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const buyHyphaHref = `/${lang}/my-wallet/actions/purchase-hypha-tokens`;
   const { isAuthenticated } = useAuthentication();
   const {
     filteredAssets,
@@ -89,6 +100,28 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     isClaiming ||
     pendingRewards === undefined;
 
+  const migrateHref = person.address?.trim()
+    ? `${MIGRATE_HYPHA_TOKENS_URL}/${person.address.trim()}`
+    : null;
+  const migrateLink =
+    isMyProfile && migrateHref ? (
+      <a
+        href={migrateHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-2 text-foreground underline underline-offset-4 hover:text-foreground/80"
+      >
+        {tWallet('shortcuts.migrate')}
+      </a>
+    ) : null;
+
+  const rewardsColumn = (card: ReactNode) => (
+    <div className="mt-1 flex w-full max-w-xl flex-col items-start gap-3">
+      {card}
+      {migrateLink}
+    </div>
+  );
+
   const onHandleClaim = useCallback(async () => {
     try {
       const txHash = await claim();
@@ -112,43 +145,55 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
             </span>
           </h2>
         </header>
-        <Button
-          title={
-            !isMyProfile
-              ? tProfile('claimOnlyOnPersonalPage')
-              : disableClaimButton
-              ? tProfile('rewardValueMustBeGreaterThanZero')
-              : ''
-          }
-          disabled={!isMyProfile || disableClaimButton}
-          onClick={onHandleClaim}
-        >
-          {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-          {tProfile('claim')}
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {isMyProfile ? (
+            <Button variant="outline" asChild>
+              <Link
+                href={buyHyphaHref}
+                scroll={false}
+                onClick={() => prepareWalletActionNavigation()}
+              >
+                {tWallet('shortcuts.buyHypha')}
+              </Link>
+            </Button>
+          ) : null}
+          <Button
+            title={
+              !isMyProfile
+                ? tProfile('claimOnlyOnPersonalPage')
+                : disableClaimButton
+                ? tProfile('rewardValueMustBeGreaterThanZero')
+                : ''
+            }
+            disabled={!isMyProfile || disableClaimButton}
+            onClick={onHandleClaim}
+          >
+            {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
+            {tProfile('claim')}
+          </Button>
+        </div>
       </div>
       <div className="w-full">
-        {isLoading ? (
-          <div className="mt-1 w-full max-w-sm">
-            <AssetCard isLoading layout="solo" />
-          </div>
-        ) : !isAuthenticated ? (
-          <Empty>
-            <p>{tProfile('noRewardsFoundForUser')}</p>
-          </Empty>
-        ) : (
-          <div className="mt-1 w-full max-w-sm">
-            <AssetCard
-              {...(hyphaTokenAsset ?? {
-                ...HYPHA_REWARDS_FALLBACK,
-                address: hyphaTokenAddress,
-                value: 0,
-              })}
-              isLoading={isLoadingAssets}
-              layout="solo"
-            />
-          </div>
-        )}
+        {isLoading
+          ? rewardsColumn(<AssetCard isLoading layout="solo" />)
+          : !isAuthenticated
+          ? rewardsColumn(
+              <Empty>
+                <p>{tProfile('noRewardsFoundForUser')}</p>
+              </Empty>,
+            )
+          : rewardsColumn(
+              <AssetCard
+                {...(hyphaTokenAsset ?? {
+                  ...HYPHA_REWARDS_FALLBACK,
+                  address: hyphaTokenAddress,
+                  value: 0,
+                })}
+                isLoading={isLoadingAssets}
+                layout="solo"
+                note={tProfile('rewardsExplanation')}
+              />,
+            )}
       </div>
     </div>
   );

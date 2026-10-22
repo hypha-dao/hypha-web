@@ -75,7 +75,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const session = await createRealtimeVoiceSession(parsed.data);
+    const session = await createRealtimeVoiceSession(parsed.data, {
+      authToken,
+    });
     return NextResponse.json(
       {
         clientSecret: session.clientSecret,

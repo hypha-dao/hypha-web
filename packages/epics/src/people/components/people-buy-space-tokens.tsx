@@ -34,8 +34,24 @@ import { formatUnits } from 'viem';
 import { RecipientField } from '../../agreements/plugins/components/common/recipient-field';
 import { TokenSelectDropdown } from '../../agreements/plugins/components/common/token-select-dropdown';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import {
+  BlockchainErrorText,
+  isInsufficientBalanceErrorMessage,
+} from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
+import { useFundWallet } from '../../treasury';
+import { useUserAssets } from '../../treasury/hooks/use-user-assets';
+import {
+  formatWalletAmount,
+  WalletAmountBlock,
+  WalletFlowCard,
+  WalletFlowLabel,
+} from '../../common/wallet-flow-card';
 
 type PurchasableToken = {
   id: number;
@@ -55,15 +71,24 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 interface PeopleBuySpaceTokensProps {
   personSlug: string;
   closeUrl: string;
+  appearance?: 'default' | 'wallet';
 }
 
 export const PeopleBuySpaceTokens = ({
   personSlug: _personSlug,
   closeUrl,
+  appearance = 'default',
 }: PeopleBuySpaceTokensProps) => {
   const t = useTranslations('PeopleBuySpaceTokens');
+  const tModalAside = useTranslations('ModalAside');
+  const tWallet = useTranslations('MyWallet');
   const router = useRouter();
+  const { lang } = useParams<{ lang: string }>();
   const { person } = useMe();
+  const { assets } = useUserAssets({ personSlug: person?.slug });
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}`,
+  });
   const { client } = useSmartWallets();
   const { tokens: dbTokens, isLoading: isTokensLoading } = useDbTokens();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -218,7 +243,7 @@ export const PeopleBuySpaceTokens = ({
     resolver,
     defaultValues: {
       tokenAddress: '',
-      amount: '',
+      amount: '1',
       buyerAddress: person?.address ?? '',
       paymentRecipient: '',
     },
@@ -275,6 +300,18 @@ export const PeopleBuySpaceTokens = ({
     return formatUnits(sale.tokensLeftToSell, 18);
   }, [sale]);
 
+  const paymentBalance = useMemo(() => {
+    if (!sale) return null;
+    const address = sale.salePaymentToken.toLowerCase();
+    const match = assets.find(
+      (asset) =>
+        asset.address?.toLowerCase() === address ||
+        (paymentTokenMeta != null &&
+          asset.symbol.toUpperCase() === paymentTokenMeta.symbol.toUpperCase()),
+    );
+    return match?.value ?? 0;
+  }, [assets, paymentTokenMeta, sale]);
+
   const salePricePerToken = useMemo(() => {
     if (!sale) return 0;
     return Number(
@@ -323,23 +360,35 @@ export const PeopleBuySpaceTokens = ({
         setShowSuccessMessage(false);
         router.push(closeUrl);
       }, 3000);
-      form.setValue('amount', '');
+      form.setValue('amount', '1');
       reset();
     } catch (error) {
       console.error('Purchase failed', error);
-      const message =
+      const raw =
         error instanceof Error ? error.message : t('purchaseFailedGeneric');
       form.setError('root', {
-        message,
+        message: isInsufficientBalanceErrorMessage(raw)
+          ? 'insufficient_funds'
+          : raw,
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const wallet = appearance === 'wallet';
+  const wrap = (node: React.ReactNode) =>
+    wallet ? (
+      <WalletFlowCard title={tModalAside('buySpaceTokens')} framed={false}>
+        {node}
+      </WalletFlowCard>
+    ) : (
+      node
+    );
+
   if (eligibilityError && !isLoadingEligibility) {
-    return (
-      <div className="text-2 text-neutral-11">{t('eligibilityLoadError')}</div>
+    return wrap(
+      <div className="text-2 text-neutral-11">{t('eligibilityLoadError')}</div>,
     );
   }
 
@@ -348,56 +397,83 @@ export const PeopleBuySpaceTokens = ({
     !isLoadingEligibility &&
     purchasableTokens.length === 0
   ) {
-    return <div className="text-2 text-neutral-11">{t('empty')}</div>;
+    return wrap(<div className="text-2 text-neutral-11">{t('empty')}</div>);
   }
 
-  return (
+  const showTotalCost = !isNaN(parsedAmount) && parsedAmount > 0;
+  const salePriceKnown =
+    Boolean(selectedToken) &&
+    Boolean(sale) &&
+    sale?.salePaymentToken?.toLowerCase() !== ZERO_ADDRESS;
+  const saleDetails = salePriceKnown ? (
+    <div className="flex flex-col gap-1">
+      <div>
+        {t('pricePerToken', {
+          price: formatCurrencyValue(salePricePerToken),
+          currency: paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+        })}
+      </div>
+      {showTotalCost ? (
+        <div>
+          {t('totalCost', {
+            amount: formatCurrencyValue(totalCost),
+            currency: paymentTokenMeta?.symbol ?? '',
+          })}
+        </div>
+      ) : null}
+      <div>{t('remainingInSale', { amount: remainingForSale })}</div>
+    </div>
+  ) : null;
+
+  return wrap(
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={form.handleSubmit(handlePurchase)}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
       >
-        <Separator />
+        {wallet ? null : <Separator />}
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-          <div className="flex gap-1">
-            <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              {t('amountAndToken')}
-            </label>
-            <RequirementMark className="text-2" />
-          </div>
-          <div className="flex flex-col gap-2 grow min-w-0">
-            <div className="flex md:justify-end">
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem className="flex-1 min-w-0 w-full m-0 space-y-0">
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          min="0"
-                          step="1"
-                          placeholder="0"
-                          aria-label={t('amount')}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tokenAddress"
-                  render={({ field }) => (
-                    <FormItem className="w-full sm:w-60 shrink-0 min-w-0 m-0 space-y-0">
-                      <FormControl>
+        {wallet ? (
+          <div className="flex flex-col gap-3">
+            <WalletFlowLabel>{t('amountAndToken')}</WalletFlowLabel>
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem className="m-0 space-y-0">
+                  <FormControl>
+                    <WalletAmountBlock
+                      id="buy-space-amount"
+                      amount={field.value ?? ''}
+                      onAmountChange={field.onChange}
+                      amountLabel={t('amount')}
+                      integer
+                      presets={[1, 5, 10, 25, 50]}
+                      holding={
+                        paymentBalance == null || !paymentTokenMeta
+                          ? undefined
+                          : {
+                              label: tWallet('available'),
+                              amount: formatWalletAmount(paymentBalance),
+                              symbol: paymentTokenMeta.symbol,
+                              enough:
+                                !(parsedAmount > 0) ||
+                                hasEnoughBalance ||
+                                totalCost <= paymentBalance + 1e-9,
+                            }
+                      }
+                      hint={saleDetails}
+                      symbolNode={
                         <TokenSelectDropdown
-                          value={field.value}
-                          onValueChange={field.onChange}
+                          variant="inline"
+                          value={tokenAddress}
+                          onValueChange={(value) =>
+                            form.setValue('tokenAddress', value, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            })
+                          }
                           tokens={purchasableDropdownTokens}
                           placeholder={t('selectPlaceholder')}
                           disabled={
@@ -405,54 +481,101 @@ export const PeopleBuySpaceTokens = ({
                             purchasableDropdownTokens.length === 0
                           }
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tokenAddress"
+              render={({ field }) => (
+                <FormItem className="m-0 space-y-0">
+                  <input type="hidden" {...field} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        ) : (
+          <div className="flex w-full flex-col gap-4 md:flex-row md:items-start">
+            <div className="flex gap-1">
+              <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max md:items-center md:pt-1">
+                {t('amountAndToken')}
+              </label>
+              <RequirementMark className="text-2" />
+            </div>
+            <div className="flex min-w-0 grow flex-col gap-2">
+              <div className="flex md:justify-end">
+                <div className="flex w-full flex-col items-end gap-2 sm:flex-row sm:gap-4 md:justify-end">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem className="m-0 w-full min-w-0 flex-1 space-y-0">
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="0"
+                            aria-label={t('amount')}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tokenAddress"
+                    render={({ field }) => (
+                      <FormItem className="m-0 w-full min-w-0 shrink-0 space-y-0 sm:w-60">
+                        <FormControl>
+                          <TokenSelectDropdown
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            tokens={purchasableDropdownTokens}
+                            placeholder={t('selectPlaceholder')}
+                            disabled={
+                              isTokensLoading ||
+                              purchasableDropdownTokens.length === 0
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && sale && (
-          <div className="text-sm text-neutral-11">
-            <div>
-              {t('pricePerToken', {
-                price: formatCurrencyValue(salePricePerToken),
-                currency:
-                  paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
-              })}
-            </div>
-            <div>
-              {t('totalCost', {
-                amount: formatCurrencyValue(totalCost),
-                currency: paymentTokenMeta?.symbol ?? '',
-              })}
-            </div>
-            <div>{t('remainingInSale', { amount: remainingForSale })}</div>
-          </div>
         )}
 
-        {selectedToken && isLoadingSale && (
-          <div className="text-sm text-neutral-11 flex items-center gap-2">
-            <Loader2 className="animate-spin w-4 h-4" />
+        {selectedToken && isLoadingSale && !sale ? (
+          <div className="flex items-center gap-2 text-2 text-neutral-11">
+            <Loader2 className="h-4 w-4 animate-spin" />
             {t('loadingSale')}
           </div>
-        )}
+        ) : null}
 
-        {selectedToken && !isLoadingSale && !sale && (
-          <div className="text-sm text-neutral-11">{t('unableToReadSale')}</div>
-        )}
+        {selectedToken && !isLoadingSale && !sale ? (
+          <div className="text-2 text-neutral-11">{t('unableToReadSale')}</div>
+        ) : null}
 
-        {selectedToken &&
-          sale &&
-          sale.salePaymentToken ===
-            '0x0000000000000000000000000000000000000000' && (
-            <div className="text-sm text-neutral-11">{t('saleDisabled')}</div>
-          )}
+        {selectedToken && sale?.salePaymentToken === ZERO_ADDRESS ? (
+          <div className="text-2 text-neutral-11">{t('saleDisabled')}</div>
+        ) : null}
 
-        <Separator />
+        {!wallet && saleDetails ? (
+          <div className="text-2 text-neutral-11">{saleDetails}</div>
+        ) : null}
+
+        {wallet ? null : <Separator />}
 
         <RecipientField
           label={t('recipientTokenSent', {
@@ -465,7 +588,7 @@ export const PeopleBuySpaceTokens = ({
           name="buyerAddress"
         />
 
-        <Separator />
+        {wallet ? null : <Separator />}
 
         <RecipientField
           label={t('recipientPaymentPaid', {
@@ -479,9 +602,11 @@ export const PeopleBuySpaceTokens = ({
           name="paymentRecipient"
         />
 
-        <Separator />
+        {wallet ? null : <Separator />}
 
-        <div className="flex gap-2 justify-end">
+        <div
+          className={wallet ? 'flex flex-col gap-2' : 'flex justify-end gap-2'}
+        >
           {isSubmitting || isApproving || isBuying ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
@@ -498,6 +623,7 @@ export const PeopleBuySpaceTokens = ({
           ) : (
             <Button
               type="submit"
+              className={wallet ? 'w-full' : undefined}
               disabled={
                 isSubmitting ||
                 !selectedToken ||
@@ -516,17 +642,31 @@ export const PeopleBuySpaceTokens = ({
           )}
         </div>
 
-        {form.formState.errors.root && (
-          <div className="text-2 text-foreground">
-            {form.formState.errors.root.message}
-          </div>
-        )}
-        {(approveError || buyError) && !form.formState.errors.root && (
-          <div className="text-2 text-foreground">
-            {(approveError || buyError)?.message ?? t('transactionFailed')}
-          </div>
-        )}
+        {form.formState.errors.root?.message === 'insufficient_funds' ||
+        ((approveError || buyError) &&
+          isInsufficientBalanceErrorMessage(
+            (approveError || buyError)?.message ?? '',
+          )) ? (
+          <InsufficientFundsHint
+            onBuyUsdc={() => {
+              void fundWallet();
+            }}
+            buyHyphaHref={buyHyphaTokensHref({
+              lang,
+              appearance,
+              personSlug: person?.slug ?? _personSlug,
+            })}
+          />
+        ) : form.formState.errors.root?.message ? (
+          <BlockchainErrorText message={form.formState.errors.root.message} />
+        ) : (approveError || buyError) && !form.formState.errors.root ? (
+          <BlockchainErrorText
+            message={
+              (approveError || buyError)?.message ?? t('transactionFailed')
+            }
+          />
+        ) : null}
       </form>
-    </Form>
+    </Form>,
   );
 };

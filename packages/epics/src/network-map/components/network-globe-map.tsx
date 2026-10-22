@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { Loader2, Minus } from 'lucide-react';
+import { Minus } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
 import type {
   NetworkGlobeMapProps,
@@ -41,6 +41,7 @@ import {
   spiderfyRadiusPx,
   type MapPinDatum,
 } from '../lib/pin-clusters';
+import { NetworkMapWave } from '../../spaces/components/network-loading-grid';
 
 const PROJECTION_ANIMATION_MS = 1200;
 /** Slow idle yaw (~8°/s) so the globe visibly turns on mobile and desktop. */
@@ -335,6 +336,17 @@ function canUseHover(): boolean {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+/** Below this stage width the floating card covers the pin and blinks. */
+const COMPACT_PIN_CARD_MAX_WIDTH = 640;
+
+function prefersCompactPinCard(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return window.matchMedia(`(max-width: ${COMPACT_PIN_CARD_MAX_WIDTH - 1}px)`)
+    .matches;
+}
+
 function buildProjection(
   width: number,
   height: number,
@@ -395,8 +407,10 @@ export function NetworkGlobeMap({
   renderToolbar,
   isActive = true,
   showStage = true,
+  isResolving = false,
   alignProjection,
   onProjectionModeChange,
+  onSpaceSelect,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -443,7 +457,37 @@ export function NetworkGlobeMap({
   setHoveredPinRef.current = setHoveredPin;
   const setSelectedPinRef = React.useRef(setSelectedPin);
   setSelectedPinRef.current = setSelectedPin;
+  const onSpaceSelectRef = React.useRef(onSpaceSelect);
+  onSpaceSelectRef.current = onSpaceSelect;
   const canHoverRef = React.useRef(canUseHover());
+  const compactCardRef = React.useRef(prefersCompactPinCard());
+  const hoverHideTimerRef = React.useRef<number | null>(null);
+  const lastPointerRef = React.useRef({ x: 0, y: 0 });
+  const cancelHoverHideRef = React.useRef(() => {});
+  const scheduleHoverHideRef = React.useRef(() => {});
+
+  cancelHoverHideRef.current = () => {
+    if (hoverHideTimerRef.current == null) {
+      return;
+    }
+    window.clearTimeout(hoverHideTimerRef.current);
+    hoverHideTimerRef.current = null;
+  };
+  scheduleHoverHideRef.current = () => {
+    cancelHoverHideRef.current();
+    hoverHideTimerRef.current = window.setTimeout(() => {
+      hoverHideTimerRef.current = null;
+      const { x, y } = lastPointerRef.current;
+      const target = document.elementFromPoint(x, y);
+      if (
+        target instanceof Element &&
+        target.closest('.map-pin, [data-network-map-hover-card]')
+      ) {
+        return;
+      }
+      setHoveredPinRef.current(null);
+    }, 160);
+  };
 
   const layers = DEFAULT_LAYER_VISIBILITY;
   const [projectionMode, setProjectionMode] =
@@ -536,6 +580,9 @@ export function NetworkGlobeMap({
   }, []);
 
   const [canHover, setCanHover] = React.useState(() => canUseHover());
+  const [compactStage, setCompactStage] = React.useState(prefersCompactPinCard);
+  const useCompactCard = !canHover || compactStage;
+  compactCardRef.current = useCompactCard;
 
   React.useEffect(() => {
     const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -904,7 +951,11 @@ export function NetworkGlobeMap({
         if (!space) {
           return;
         }
-        if (canHoverRef.current) {
+        if (onSpaceSelectRef.current && !compactCardRef.current) {
+          onSpaceSelectRef.current(space);
+          return;
+        }
+        if (canHoverRef.current && !compactCardRef.current) {
           router.push(`/${lang}/dho/${space.slug}/agreements`);
           return;
         }
@@ -933,7 +984,19 @@ export function NetworkGlobeMap({
         }
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          router.push(`/${lang}/dho/${space.slug}/agreements`);
+          if (onSpaceSelectRef.current && !compactCardRef.current) {
+            onSpaceSelectRef.current(space);
+            return;
+          }
+          if (!compactCardRef.current) {
+            router.push(`/${lang}/dho/${space.slug}/agreements`);
+            return;
+          }
+          const position = parsePinTransform(event.currentTarget as Element);
+          if (!position) {
+            return;
+          }
+          setSelectedPinRef.current({ spaceId: space.id, ...position });
         }
       })
       .on('mouseenter', function (event: MouseEvent, datum) {
@@ -948,6 +1011,19 @@ export function NetworkGlobeMap({
         if (!space) {
           return;
         }
+        // Hover stays on the small pin card. Opening the side panel is click
+        // only — otherwise the cursor crosses other pins on the way to the
+        // panel and never reaches the intended space.
+        lastPointerRef.current = { x: event.clientX, y: event.clientY };
+        cancelHoverHideRef.current();
+        if (compactCardRef.current) {
+          setHoveredPinRef.current((current) =>
+            current?.spaceId === space.id
+              ? current
+              : { spaceId: space.id, x: 0, y: 0 },
+          );
+          return;
+        }
         updateHoveredPinRef.current(space.id, event);
       })
       .on('mousemove', function (event: MouseEvent, datum) {
@@ -958,17 +1034,27 @@ export function NetworkGlobeMap({
         ) {
           return;
         }
+        lastPointerRef.current = { x: event.clientX, y: event.clientY };
+        if (compactCardRef.current) {
+          return;
+        }
         const space = pinDatumSpace(datum);
         if (!space) {
           return;
         }
         updateHoveredPinRef.current(space.id, event);
       })
-      .on('mouseleave', () => {
+      .on('mouseleave', (event: MouseEvent) => {
         if (!canHoverRef.current || isDraggingRef.current) {
           return;
         }
-        clearHoveredPinRef.current();
+        lastPointerRef.current = { x: event.clientX, y: event.clientY };
+        // The anchored card sits on top of nearby pins. Clearing on pin
+        // leave makes it unmount, the pin is hovered again, and it blinks.
+        if (compactCardRef.current) {
+          return;
+        }
+        scheduleHoverHideRef.current();
       });
 
     const pinNodes = pins.merge(pinsEnter);
@@ -1581,7 +1667,16 @@ export function NetworkGlobeMap({
       return;
     }
 
+    const syncCompactStage = () => {
+      const narrow =
+        container.clientWidth > 0 &&
+        container.clientWidth < COMPACT_PIN_CARD_MAX_WIDTH;
+      setCompactStage((current) => (current === narrow ? current : narrow));
+    };
+    syncCompactStage();
+
     const resizeObserver = new ResizeObserver(() => {
+      syncCompactStage();
       requestRender();
     });
     resizeObserver.observe(container);
@@ -1944,6 +2039,7 @@ export function NetworkGlobeMap({
         }
         animatingTargetRef.current = null;
       }, 0);
+      cancelHoverHideRef.current();
     };
   }, []);
 
@@ -1966,8 +2062,9 @@ export function NetworkGlobeMap({
         if (focusedClusterIdRef.current) {
           clearClusterFocusRef.current();
         }
-        if (!canHoverRef.current) {
+        if (!canHoverRef.current || compactCardRef.current) {
           clearSelectedPinRef.current();
+          clearHoveredPinRef.current();
         }
       }
     }
@@ -1996,8 +2093,18 @@ export function NetworkGlobeMap({
       <NetworkMapPinHoverCard
         lang={lang}
         space={activeSpace}
-        compact={!canHover}
-        {...(canHover
+        compact={useCompactCard}
+        onOpenProject={(space) => {
+          onSpaceSelectRef.current?.(space);
+          setSelectedPin(null);
+          setHoveredPin(null);
+        }}
+        onMouseEnter={() => cancelHoverHideRef.current()}
+        onMouseLeave={() => {
+          if (useCompactCard || !canHover) return;
+          scheduleHoverHideRef.current();
+        }}
+        {...(!useCompactCard
           ? clampHoverPosition(
               activePin.x,
               activePin.y,
@@ -2141,12 +2248,23 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]"
+      onMouseLeave={(event) => {
+        if (!useCompactCard || !canHover) return;
+        const next = event.relatedTarget;
+        if (next instanceof Node && event.currentTarget.contains(next)) {
+          return;
+        }
+        cancelHoverHideRef.current();
+        clearHoveredPin();
+      }}
+      className={cn(
+        'relative aspect-[2/1] w-full overflow-hidden bg-transparent [--map-legend-bottom:0.75rem] [--map-legend-left:0.75rem] [--map-nav-bottom:0.75rem] [--map-nav-right:0.75rem] [--map-zoom-bottom:0.75rem]',
+      )}
     >
       {isLoadingGeo ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-          <Loader2 className="size-5 animate-spin" />
-          <span>{t('loadingMap')}</span>
+        <div className="absolute inset-0 z-10" role="status">
+          <span className="sr-only">{t('loadingMap')}</span>
+          <NetworkMapWave className="absolute inset-0 aspect-auto h-full border-0" />
         </div>
       ) : null}
       {loadError ? (
@@ -2180,7 +2298,7 @@ export function NetworkGlobeMap({
       <div className={cn('flex min-w-0 flex-col gap-3', className)}>
         {toolbar}
         {showStage ? mapStage : null}
-        {showStage ? (
+        {showStage && !isResolving ? (
           <div className="px-0 py-2 text-center">
             <p className="text-4 text-neutral-11">
               {t('noSpacesWithLocation')}

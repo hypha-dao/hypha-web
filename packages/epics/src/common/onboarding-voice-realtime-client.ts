@@ -1,6 +1,10 @@
 'use client';
 
-import { acquireWarmMicStream, isWarmMicStream } from './onboarding-voice-mic';
+import {
+  acquireWarmMicStream,
+  createSilentAudioStream,
+  releaseSilentAudioStream,
+} from './onboarding-voice-mic';
 
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
 
@@ -79,6 +83,37 @@ export function extractRealtimeErrorInfo(
 }
 
 /** OpenAI emits these when cancel races completion — safe to ignore. */
+/** Browser mic failures. These do not clear by retrying off a timer. */
+export function microphoneCaptureErrorCode(
+  error: unknown,
+): 'not-allowed' | 'audio-capture' | null {
+  if (!error || typeof error !== 'object') return null;
+  const name =
+    'name' in error && typeof (error as { name?: unknown }).name === 'string'
+      ? (error as { name: string }).name
+      : '';
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  if (
+    name === 'NotAllowedError' ||
+    name === 'PermissionDeniedError' ||
+    name === 'SecurityError' ||
+    message.includes('permission denied') ||
+    message.includes('not allowed')
+  ) {
+    return 'not-allowed';
+  }
+  if (
+    name === 'NotFoundError' ||
+    name === 'NotReadableError' ||
+    name === 'OverconstrainedError' ||
+    message.includes('requested device not found') ||
+    message.includes('could not start audio')
+  ) {
+    return 'audio-capture';
+  }
+  return null;
+}
+
 export function isIgnorableRealtimeError(error: RealtimeErrorInfo): boolean {
   if (error.code === 'response_cancel_not_active') return true;
   const message = error.message?.toLowerCase() ?? '';
@@ -120,6 +155,8 @@ export type RealtimeVoiceConnection = {
   dataChannel: RTCDataChannel;
   localStream: MediaStream;
   remoteAudio: HTMLAudioElement;
+  /** Voice chosen when the session was created. Spoken replies reuse it. */
+  voice: string;
   sendEvent: (event: Record<string, unknown>) => void;
   close: () => void;
 };
@@ -132,12 +169,20 @@ function buildRealtimeSpeakLanguageDirective(): string {
 
 function buildRealtimeSpeakInstructions(text: string): string {
   return [
+    'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
+    'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
     'You are a voice output relay only. Do not call tools or add new information.',
-    'Speak the following assistant reply aloud in a warm, natural conversational tone.',
-    'Do not add, remove, or change words. Do not ask follow-up questions.',
+    'Your only job is text-to-speech of the SCRIPT below.',
+    'Speak the SCRIPT verbatim — every word, in order, with a warm natural tone.',
+    'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
+    'Do not add greetings, fillers, questions, or closings that are not in the SCRIPT.',
+    'Do not ask follow-up questions. Do not return to a previous signal or topic.',
     buildRealtimeSpeakLanguageDirective(),
     '',
+    'SCRIPT (read aloud exactly):',
+    '"""',
     text,
+    '"""',
   ].join('\n');
 }
 
@@ -216,23 +261,23 @@ export function speakAssistantTextViaRealtime(
   }
 
   const instructions = buildRealtimeSpeakInstructions(speakable);
+  const voice = connection.voice.trim();
 
   cancelActiveRealtimeResponse(connection, options?.activeResponseId);
 
+  // Out-of-band replies (conversation "none") never reach the WebRTC speaker.
+  // The default conversation is what the remote audio track plays.
   connection.sendEvent({
     type: 'response.create',
     response: {
-      conversation: 'none',
       output_modalities: ['audio'],
       instructions,
+      ...(voice ? { audio: { output: { voice } } } : {}),
       metadata: { purpose: 'hypha_assistant_speak' },
     },
   });
 
-  setRealtimeRemoteAudioMuted(connection, false);
-  void connection.remoteAudio.play().catch(() => {
-    // Autoplay may be blocked until user gesture; WebRTC track usually still plays.
-  });
+  playRemoteAudio(connection.remoteAudio);
 
   return true;
 }
@@ -290,9 +335,19 @@ export async function fetchRealtimeVoiceSession(params: {
   };
 }
 
+function playRemoteAudio(audio: HTMLAudioElement): void {
+  audio.muted = false;
+  audio.volume = 1;
+  void audio.play().catch(() => {
+    // Autoplay can wait for a click. The next pointerdown asks again.
+  });
+}
+
 export async function connectOpenAiRealtimeCall(params: {
   clientSecret: string;
   audioInput?: RealtimeAudioInputConfig;
+  /** Spoken back on each reply so the WebRTC track keeps this voice. */
+  voice?: string;
   onEvent: (event: RealtimeServerEvent) => void;
   onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
   /** Suppress Realtime model audio when assistant replies come from /api/chat. */
@@ -304,16 +359,15 @@ export async function connectOpenAiRealtimeCall(params: {
   if (!window.isSecureContext) {
     throw new Error('Microphone access requires a secure context (HTTPS).');
   }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('Microphone capture is not supported in this browser.');
-  }
 
   const peerConnection = new RTCPeerConnection();
   const remoteAudio = document.createElement('audio');
   remoteAudio.autoplay = true;
   remoteAudio.setAttribute('playsinline', 'true');
-  remoteAudio.muted = true;
-  remoteAudio.volume = 0;
+  // Start audible. A muted element can stay silent: browsers ignore a later
+  // unmute that is not inside the click that allowed the microphone.
+  remoteAudio.muted = false;
+  remoteAudio.volume = 1;
   remoteAudio.style.display = 'none';
   document.body?.appendChild(remoteAudio);
 
@@ -321,7 +375,10 @@ export async function connectOpenAiRealtimeCall(params: {
     const [stream] = event.streams;
     if (stream) {
       remoteAudio.srcObject = stream;
+    } else if (event.track) {
+      remoteAudio.srcObject = new MediaStream([event.track]);
     }
+    playRemoteAudio(remoteAudio);
   };
 
   if (params.onConnectionStateChange) {
@@ -331,110 +388,125 @@ export async function connectOpenAiRealtimeCall(params: {
   }
 
   const warmStream = await acquireWarmMicStream();
-  const localStream =
-    warmStream ??
-    (await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    }));
-  const usesWarmMic = isWarmMicStream(localStream);
-  for (const track of localStream.getTracks()) {
-    peerConnection.addTrack(track, localStream);
-  }
-
-  const dataChannel = peerConnection.createDataChannel('oai-events');
-  dataChannel.onmessage = (messageEvent) => {
+  let localStream: MediaStream;
+  let streamKind: 'warm' | 'owned' | 'silent';
+  if (warmStream) {
+    localStream = warmStream;
+    streamKind = 'warm';
+  } else {
     try {
-      const parsed = JSON.parse(
-        String(messageEvent.data),
-      ) as RealtimeServerEvent;
-      params.onEvent(parsed);
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Microphone capture is not supported in this browser.');
+      }
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      streamKind = 'owned';
     } catch {
-      // ignore malformed events
+      // Hearing the reply does not depend on a microphone.
+      localStream = createSilentAudioStream();
+      streamKind = 'silent';
+    }
+  }
+  const releaseCapturedStream = () => {
+    if (streamKind === 'silent') {
+      releaseSilentAudioStream(localStream);
+    } else if (streamKind === 'owned') {
+      for (const track of localStream.getTracks()) {
+        track.stop();
+      }
     }
   };
 
-  const sendEvent = (event: Record<string, unknown>) => {
-    if (dataChannel.readyState !== 'open') return;
-    dataChannel.send(JSON.stringify(event));
-  };
+  try {
+    for (const track of localStream.getTracks()) {
+      peerConnection.addTrack(track, localStream);
+    }
 
-  const audioInput = params.audioInput ?? DEFAULT_REALTIME_AUDIO_INPUT;
+    const dataChannel = peerConnection.createDataChannel('oai-events');
+    dataChannel.onmessage = (messageEvent) => {
+      try {
+        const parsed = JSON.parse(
+          String(messageEvent.data),
+        ) as RealtimeServerEvent;
+        params.onEvent(parsed);
+      } catch {
+        // ignore malformed events
+      }
+    };
 
-  dataChannel.addEventListener('open', () => {
-    sendEvent({
-      type: 'session.update',
-      session: {
-        type: 'realtime',
-        audio: {
-          input: {
-            transcription: audioInput.transcription,
-            turn_detection: audioInput.turnDetection,
-            ...(audioInput.noiseReduction
-              ? { noise_reduction: audioInput.noiseReduction }
-              : {}),
-          },
-        },
+    const sendEvent = (event: Record<string, unknown>) => {
+      if (dataChannel.readyState !== 'open') return;
+      dataChannel.send(JSON.stringify(event));
+    };
+
+    const voice = params.voice?.trim() ?? '';
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    const sdpResponse = await fetch(OPENAI_REALTIME_CALLS_URL, {
+      method: 'POST',
+      body: offer.sdp ?? '',
+      headers: {
+        Authorization: `Bearer ${params.clientSecret}`,
+        'Content-Type': 'application/sdp',
       },
     });
-  });
 
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
-  const sdpResponse = await fetch(OPENAI_REALTIME_CALLS_URL, {
-    method: 'POST',
-    body: offer.sdp ?? '',
-    headers: {
-      Authorization: `Bearer ${params.clientSecret}`,
-      'Content-Type': 'application/sdp',
-    },
-  });
-
-  if (!sdpResponse.ok) {
-    const detail = await sdpResponse.text().catch(() => '');
-    throw new Error(
-      `OpenAI Realtime call failed (${sdpResponse.status}).${
-        detail ? ` ${detail.slice(0, 180)}` : ''
-      }`,
-    );
-  }
-
-  const answerSdp = await sdpResponse.text();
-  await peerConnection.setRemoteDescription({
-    type: 'answer',
-    sdp: answerSdp,
-  });
-
-  const close = () => {
-    try {
-      dataChannel.close();
-    } catch {
-      // ignore
+    if (!sdpResponse.ok) {
+      const detail = await sdpResponse.text().catch(() => '');
+      throw new Error(
+        `OpenAI Realtime call failed (${sdpResponse.status}).${
+          detail ? ` ${detail.slice(0, 180)}` : ''
+        }`,
+      );
     }
+
+    const answerSdp = await sdpResponse.text();
+    await peerConnection.setRemoteDescription({
+      type: 'answer',
+      sdp: answerSdp,
+    });
+
+    const close = () => {
+      try {
+        dataChannel.close();
+      } catch {
+        // ignore
+      }
+      try {
+        peerConnection.close();
+      } catch {
+        // ignore
+      }
+      releaseCapturedStream();
+      remoteAudio.srcObject = null;
+      remoteAudio.remove();
+    };
+
+    return {
+      peerConnection,
+      dataChannel,
+      localStream,
+      remoteAudio,
+      voice,
+      sendEvent,
+      close,
+    };
+  } catch (error) {
+    releaseCapturedStream();
     try {
       peerConnection.close();
     } catch {
       // ignore
     }
-    if (!usesWarmMic) {
-      for (const track of localStream.getTracks()) {
-        track.stop();
-      }
-    }
     remoteAudio.srcObject = null;
     remoteAudio.remove();
-  };
-
-  return {
-    peerConnection,
-    dataChannel,
-    localStream,
-    remoteAudio,
-    sendEvent,
-    close,
-  };
+    throw error;
+  }
 }

@@ -15,7 +15,8 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import { Plus } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
+import { DealCreateFab } from './deal-create-fab';
 import { FilterBar } from './filter-bar';
 import { SavedViewsMenu } from './saved-views-menu';
 import { PipelineSummary } from './pipeline-summary';
@@ -78,20 +79,34 @@ export function IntegratedBoard({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-4 font-medium text-neutral-12">{t('title')}</h2>
-        <Button
-          type="button"
-          onClick={() => {
-            setNewSwimlane('Sales');
-            setNewOpen(true);
-          }}
-        >
-          <Plus className="mr-1 size-4" />
-          {t('newDeal.create')}
-        </Button>
-      </div>
+    <div className="relative flex min-w-0 flex-col gap-4 pb-16">
+      <header className="craft-page-header">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <h1 className="craft-page-title text-6 font-medium">{t('title')}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void exportDealsToXlsx(
+                  filtered,
+                  `${spaceSlug}-deals`,
+                  probabilities,
+                );
+              }}
+            >
+              <Download className="mr-1 size-3.5" />
+              {t('exportXlsx')}
+            </Button>
+            <SavedViewsMenu
+              spaceSlug={spaceSlug}
+              filters={filters}
+              onApply={setFilters}
+            />
+          </div>
+        </div>
+      </header>
 
       <FilterBar
         spaceSlug={spaceSlug}
@@ -99,16 +114,6 @@ export function IntegratedBoard({
         onChange={setFilters}
         useMembers={useMembers}
         countryFocus={countryFocus}
-        onExport={() => {
-          void exportDealsToXlsx(filtered, `${spaceSlug}-deals`, probabilities);
-        }}
-        savedViewsSlot={
-          <SavedViewsMenu
-            spaceSlug={spaceSlug}
-            filters={filters}
-            onApply={setFilters}
-          />
-        }
       />
 
       <PipelineSummary deals={filtered} probabilities={probabilities} />
@@ -164,6 +169,12 @@ export function IntegratedBoard({
         </div>
       )}
 
+      <DealCreateFab
+        onClick={() => {
+          setNewSwimlane('Sales');
+          setNewOpen(true);
+        }}
+      />
       <NewDealDialog
         spaceSlug={spaceSlug}
         useMembers={useMembers}

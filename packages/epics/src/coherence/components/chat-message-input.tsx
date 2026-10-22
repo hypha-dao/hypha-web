@@ -16,6 +16,12 @@ import { Button, ConfirmDialog } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  inviteMatrixAgentIfNeeded,
+  requestMatrixAgentReply,
+  matrixAgentSkills,
+  withMatrixAgentMention,
+} from '../../common/human-chat-panel/matrix-agent-mention';
+import {
   HumanChatPanelChatBar,
   type ChatMentionCandidate,
 } from '../../common/human-chat-panel';
@@ -67,13 +73,18 @@ function disambiguatedMentionTokenKey(
 export const ChatMessageInput = ({
   roomId,
   coherenceSlug,
+  coherenceTitle,
+  spaceSlug,
   closeUrl,
 }: {
   roomId: string;
   coherenceSlug: string;
+  coherenceTitle?: string | null;
+  spaceSlug?: string | null;
   closeUrl: string;
 }) => {
   const t = useTranslations('CoherenceTab');
+  const tChat = useTranslations('HumanChatPanel');
   const { client, sendMessage: sendMatrixMessage } = useMatrix();
   const [input, setInput] = React.useState('');
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
@@ -101,8 +112,13 @@ export const ChatMessageInput = ({
         sensitivity: 'base',
       }),
     );
-    return list;
-  }, [client, roomId, mentionMembershipEpoch]);
+    return withMatrixAgentMention(
+      list,
+      tChat('agentMentionLabel'),
+      matrixAgentSkills(tChat),
+      { kind: 'space' },
+    );
+  }, [client, roomId, mentionMembershipEpoch, tChat]);
 
   const mentionLabelByUserId = React.useMemo(
     () =>
@@ -187,11 +203,33 @@ export const ChatMessageInput = ({
         message: wirePlain,
         mentionUserIds,
       });
+      await inviteMatrixAgentIfNeeded(client, roomId, mentionUserIds);
+      requestMatrixAgentReply({
+        authToken,
+        roomId,
+        mentionUserIds,
+        context: {
+          kind: 'signal',
+          spaceSlug,
+          signalSlug: coherenceSlug,
+          signalTitle: coherenceTitle,
+        },
+      });
       setInput('');
     } catch (error) {
       console.warn(error);
     }
-  }, [input, mentionSanitizedLabelToUserId, roomId, sendMatrixMessage]);
+  }, [
+    authToken,
+    client,
+    coherenceSlug,
+    coherenceTitle,
+    input,
+    mentionSanitizedLabelToUserId,
+    roomId,
+    sendMatrixMessage,
+    spaceSlug,
+  ]);
 
   const handleArchive = React.useCallback(async () => {
     try {

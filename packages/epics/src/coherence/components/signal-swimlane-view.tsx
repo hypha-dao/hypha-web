@@ -205,7 +205,7 @@ export function SignalSwimlaneView({
                       key={dropKey}
                       className={cn(
                         SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
-                        'min-h-[6rem] border-r border-border/50 last:border-r-0',
+                        'min-h-0 border-r border-border/50 last:border-r-0',
                         isDropTarget && 'bg-foreground/[0.03]',
                       )}
                       onWheel={handleSignalColumnShellWheel}

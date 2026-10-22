@@ -6,6 +6,7 @@ import {
   streamText,
 } from 'ai';
 import type {
+  LanguageModel,
   StreamTextTransform,
   TextStreamPart,
   ToolSet,
@@ -13,6 +14,20 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import {
+  listMemberHomeThreadItems,
+  SHOW_MEMBER_HOME_ITEM_TOOL,
+  memberHomeItemMemory,
+  mergeMemberHomeMemory,
+  shownMemberHomeItemKeys,
+} from '@hypha-platform/core/client';
+import { formatMemberHomeFacts } from './member-home-facts';
+import { loadMemberHomeFacts } from './load-member-home-facts';
+import {
+  buildSpaceContextSnapshot,
+  loadSignedInMemberBrief,
+} from './presence-brief';
+import { createShowMemberHomeItemTool } from './tools/show-member-home-item';
 import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { resolveChatLocale } from './locale-ui-labels';
@@ -37,13 +52,17 @@ import {
   VOICE_TOOL_ACK_GUIDELINE,
   sanitizeSlug,
 } from './system-prompt';
-import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
+import {
+  agreedToGeneratedVisuals,
+  resolveLatestVisualGenerationIntent,
+} from './tools/onboarding-confirmation';
 import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
 import { buildActiveGovernanceProposalDirective } from './tools/active-governance-proposal-directive';
 import { buildProposalFormStateDirective } from './tools/proposal-form-state';
 import { buildProposalAcceptanceDirective } from './tools/proposal-acceptance-directive';
 import {
   createChatTools,
+  safeChatTool,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
@@ -69,7 +88,8 @@ export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
-const DEFAULT_OPENROUTER_CHAT_MODEL = 'openai/gpt-4o-mini';
+/** Default chat model. A small model drops the home instructions. */
+const DEFAULT_OPENROUTER_CHAT_MODEL = 'deepseek/deepseek-v4.1-flash';
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
@@ -289,6 +309,11 @@ function resolveOpenRouterChatModelId(): string {
   }
 
   return fromEnv;
+}
+
+/** The chat model used by the member home and by a mentioned agent in Matrix. */
+export function getHyphaChatModel(): LanguageModel {
+  return openrouterWithHyphaHeaders(resolveOpenRouterChatModelId());
 }
 
 function messageFromUnknownError(error: unknown): string {
@@ -1048,6 +1073,14 @@ export type ChatStreamCallbacks = {
   locale?: ChatRequestPayload['locale'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
+  /** Personal home: same Hypha AI voice, plus this member's records. */
+  memberHome?: boolean;
+  memberHomeMemory?: {
+    passed?: string[];
+    deferred?: string[];
+    settled?: string[];
+    acted?: string[];
+  };
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1124,6 +1157,20 @@ function sanitizeMessagesToTextOnly(
       };
     })
     .filter((message) => message.parts.length > 0);
+}
+
+function lastUserAttachedFile(
+  messages: ChatRequestPayload['messages'],
+): boolean {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+    return (message.parts ?? []).some((part) => {
+      if (part == null || typeof part !== 'object') return false;
+      return (part as { type?: unknown }).type === 'file';
+    });
+  }
+  return false;
 }
 
 function extractLastUserText(
@@ -1233,11 +1280,14 @@ function buildEffectiveSystemPrompt(
   lastUserText: string | null,
   conversationContext: ChatRequestPayload['conversationContext'],
   spaceContextSnapshot: string | null,
+  memberBrief: string | null,
 ): string {
   const basePrompt = buildSystemPrompt(spaceSlug);
   const parts = [basePrompt];
   if (spaceContextSnapshot) {
     parts.push(`\n\n${spaceContextSnapshot}`);
+  } else if (memberBrief) {
+    parts.push(`\n\n${memberBrief}`);
   }
   const inOnboarding = conversationContext?.mode === 'onboarding_setup';
   const postCreateOnboardingPhase =
@@ -1251,79 +1301,6 @@ function buildEffectiveSystemPrompt(
     parts.push(`\n\n${competencyDirective}`);
   }
   return parts.join('');
-}
-
-async function buildSpaceContextSnapshot(
-  spaceSlug: string,
-  clientTitle?: string | null,
-): Promise<string | null> {
-  const safe = sanitizeSlug(spaceSlug);
-  if (!safe) return null;
-
-  try {
-    const result = await getSpaceBySlugTool.execute({ slug: safe });
-    if (
-      !result ||
-      typeof result !== 'object' ||
-      !('found' in result) ||
-      result.found !== true ||
-      !('space' in result) ||
-      !result.space ||
-      typeof result.space !== 'object'
-    ) {
-      return null;
-    }
-
-    const space = result.space as {
-      title?: string;
-      description?: string | null;
-      memberCount?: number;
-      documentCount?: number;
-    };
-    const title = typeof space.title === 'string' ? space.title : safe;
-    const description =
-      typeof space.description === 'string' && space.description.trim()
-        ? space.description.trim()
-        : null;
-
-    return [
-      'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):',
-      `- Active space slug for tools: ${safe}`,
-      `- Display name: ${title}`,
-      ...(clientTitle && clientTitle !== title
-        ? [`- Client-reported title: ${clientTitle}`]
-        : []),
-      ...(description ? [`- Purpose: ${description}`] : []),
-      ...(typeof space.memberCount === 'number'
-        ? [`- Members: ${space.memberCount}`]
-        : []),
-      ...(typeof space.documentCount === 'number'
-        ? [`- Documents: ${space.documentCount}`]
-        : []),
-      ...(typeof (space as { activationMode?: string }).activationMode ===
-      'string'
-        ? [
-            `- Activation mode: ${
-              (space as { activationMode: string }).activationMode
-            }`,
-          ]
-        : []),
-      ...((
-        space as { privacy?: { isAlreadyPrivate?: boolean; summary?: string } }
-      ).privacy?.summary
-        ? [
-            `- Privacy: ${
-              (space as { privacy: { summary: string } }).privacy.summary
-            }`,
-          ]
-        : []),
-      `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
-      `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
-      `- Privacy/transparency changes on existing spaces require create_space_setup_proposal (proposal_type space_transparency) and member vote — never claim updates via update_space_settings.`,
-    ].join('\n');
-  } catch {
-    return null;
-  }
 }
 
 async function convertMessagesSafely(
@@ -1372,8 +1349,45 @@ export async function createChatStreamResult(
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
     locale,
+    memberHome,
+    memberHomeMemory,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
+  const memberHomeRecord = memberHome
+    ? await loadMemberHomeFacts(authToken)
+    : null;
+  const memberHomeItems = memberHomeRecord
+    ? listMemberHomeThreadItems(memberHomeRecord.home)
+    : [];
+  const memberHomeMemoryFromMessages = memberHomeRecord
+    ? memberHomeItemMemory(memberHomeItems, messages)
+    : null;
+  const memberHomeChoices = memberHomeMemoryFromMessages
+    ? mergeMemberHomeMemory(memberHomeMemoryFromMessages, memberHomeMemory)
+    : null;
+  const memberHomeLastUserText = memberHomeRecord
+    ? extractLastUserText(messages)
+    : null;
+  const memberHomeFacts = memberHomeRecord
+    ? formatMemberHomeFacts(memberHomeRecord.home, {
+        alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
+        passed: memberHomeChoices?.passed,
+        deferred: memberHomeChoices?.deferred,
+        recalled: memberHomeMemoryFromMessages?.recalled,
+        settled: memberHomeChoices?.settled,
+        held: memberHomeMemoryFromMessages?.held,
+        acted: memberHomeMemory?.acted,
+        resumed: /carried out the recommended action/i.test(
+          memberHomeLastUserText ?? '',
+        ),
+        notADecision: /not a proposal|nothing to decide/i.test(
+          memberHomeLastUserText ?? '',
+        ),
+        asked: memberHomeLastUserText,
+        prior: extractLastAssistantText(messages),
+        attached: lastUserAttachedFile(messages),
+      })
+    : null;
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
@@ -1398,20 +1412,37 @@ export async function createChatStreamResult(
     activeProposalFormSnapshot,
     chatLocale,
   );
+  if (memberHomeRecord) {
+    tools[SHOW_MEMBER_HOME_ITEM_TOOL] = safeChatTool(
+      SHOW_MEMBER_HOME_ITEM_TOOL,
+      createShowMemberHomeItemTool(memberHomeItems),
+    );
+  }
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
     spaceSlug,
     authToken,
     debugRequestId,
   });
-  const spaceContextSnapshot = spaceSlug?.trim()
-    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
+  const requestedSpaceSlug = spaceSlug?.trim() || '';
+  const voiceSpaceSlug =
+    requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
+  const spaceContextSnapshot = requestedSpaceSlug
+    ? await buildSpaceContextSnapshot(
+        requestedSpaceSlug,
+        activeSpaceTitle,
+        authToken,
+      )
     : null;
+  const memberBrief = spaceContextSnapshot
+    ? null
+    : await loadSignedInMemberBrief(authToken);
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
-    spaceSlug,
+    voiceSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
+    memberBrief,
   );
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1494,7 +1525,7 @@ export async function createChatStreamResult(
           normalizedConversationContext.setupPhase ?? 'discover'
         }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time on-chain with create_space_from_onboarding and parent_space_slug.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
           resolveLatestVisualGenerationIntent(recentUserTexts)
-            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. HARD RULE: generated visuals are always text-free — no words, letters, or space name in the image; do not request wording for rendering. Aim for mature, inspirational, striking craft in visual_vibe (not basic flat logos).'
+            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. HARD RULE: generated visuals are always text-free — no words, letters, or space name in the image; do not request wording for rendering. visual_vibe must describe a real photograph or a quiet physical emblem: place, material, daylight. Never request neon, glowing roots, god rays, or fantasy CGI.'
             : ''
         }${
           (normalizedConversationContext.setupPhase === 'execute' ||
@@ -1520,7 +1551,7 @@ export async function createChatStreamResult(
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           voiceDiscoveryActive
-            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
           localizedEntryMethodGuidelines
@@ -1576,9 +1607,18 @@ export async function createChatStreamResult(
     throw new Error(MISSING_OPENROUTER_KEY_MESSAGE);
   }
 
+  const homeVisualDirective =
+    memberHomeRecord &&
+    (resolveLatestVisualGenerationIntent(recentUserTexts) ||
+      agreedToGeneratedVisuals(lastUserText, lastAssistantText))
+      ? 'The member wants a logo and a banner generated now. You MUST call generate_space_visual_assets in this turn before describing any image. Do not say the images exist until that tool returns logo_url and lead_image_url. Describe them only after the tool succeeds. Never paste the URLs.'
+      : '';
+
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: systemPrompt,
+    system: [systemPrompt, memberHomeFacts, homeVisualDirective]
+      .filter(Boolean)
+      .join('\n\n'),
     messages:
       modelMessages.length > 0
         ? modelMessages

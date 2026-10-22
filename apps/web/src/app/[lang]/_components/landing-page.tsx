@@ -2,23 +2,67 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useAuthentication } from '@hypha-platform/authentication';
+import {
+  resolveAccountEntryPath,
+  resolvePostAuthRedirectPathOrDefault,
+  useAuthentication,
+} from '@hypha-platform/authentication';
+import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import '../_shared/landing-marketing.css';
 
+/** Home, unless this tab still remembers a space link from before sign-in. */
+function entryPath({
+  lang,
+  hasProfile,
+}: {
+  lang: Locale;
+  hasProfile: boolean;
+}): string {
+  return resolvePostAuthRedirectPathOrDefault({
+    pathname: typeof window !== 'undefined' ? window.location.pathname : '',
+    lang,
+    baseRedirectPath: resolveAccountEntryPath({ lang, hasProfile }),
+    consume: false,
+  });
+}
+
 export function LandingPage({ lang }: { lang: Locale }) {
   const t = useTranslations('Landing');
-  const { isAuthenticated, isLoading, login } = useAuthentication();
+  const { isAuthenticated, isLoading, isLoggingIn, login } =
+    useAuthentication();
+  const { person, isLoading: isPersonLoading, meError } = useMe();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace(`/${lang}/my-spaces`);
+    if (
+      isLoading ||
+      !isAuthenticated ||
+      isPersonLoading ||
+      meError ||
+      isLoggingIn
+    )
+      return;
+    if (person === null) {
+      router.replace(resolveAccountEntryPath({ lang, hasProfile: false }));
+      return;
     }
-  }, [isLoading, isAuthenticated, lang, router]);
+    if (person) {
+      router.replace(entryPath({ lang, hasProfile: true }));
+    }
+  }, [
+    isLoading,
+    isAuthenticated,
+    isPersonLoading,
+    meError,
+    isLoggingIn,
+    person,
+    lang,
+    router,
+  ]);
 
   return (
     <div
@@ -45,11 +89,20 @@ export function LandingPage({ lang }: { lang: Locale }) {
           <Button
             size="lg"
             onClick={() => {
-              if (isAuthenticated) {
-                router.push(`/${lang}/my-spaces`);
+              if (!isAuthenticated) {
+                void login?.();
                 return;
               }
-              void login?.();
+              if (isPersonLoading || meError) return;
+              if (person === null) {
+                router.push(
+                  resolveAccountEntryPath({ lang, hasProfile: false }),
+                );
+                return;
+              }
+              if (person) {
+                router.push(entryPath({ lang, hasProfile: true }));
+              }
             }}
           >
             {t('ctaEnter')}

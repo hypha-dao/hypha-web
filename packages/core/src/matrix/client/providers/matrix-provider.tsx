@@ -52,9 +52,14 @@ import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
+import { isAutoJoinGroupInvite } from '../../group-room';
 import {
   createBotOwnedRoomAction,
+  ensureDirectPairRoomAction,
+  ensureEcosystemChatRoomAction,
   ensureMemberJoinedRoomAction,
+  ensureNetworkChatRoomAction,
+  ensurePublicChatRoomAction,
 } from '../../server/actions';
 import {
   parseSignalTeamNoticeFromWireContent,
@@ -86,6 +91,102 @@ function retryMatrixClientSync(client: MatrixSdk.MatrixClient): void {
   }
 }
 
+function latestReceiptEvent(room: MatrixSdk.Room) {
+  const events = room.getLiveTimeline().getEvents();
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (!event) continue;
+    if (event.getType() !== MatrixSdk.EventType.RoomMessage) continue;
+    const id = event.getId();
+    if (!id || id.startsWith('~')) continue;
+    if (event.status) continue;
+    return event;
+  }
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (!event) continue;
+    const id = event.getId();
+    if (!id || id.startsWith('~')) continue;
+    if (event.status) continue;
+    return event;
+  }
+  return null;
+}
+
+function siblingDirectRoomIds(
+  client: MatrixSdk.MatrixClient,
+  otherUserId: string,
+  winnerRoomId: string,
+) {
+  const selfId = client.getUserId();
+  const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+  const otherKey = otherUserId.trim().toLowerCase();
+  if (!selfId || !otherKey) return [] as string[];
+  const siblings: string[] = [];
+  for (const room of client.getRooms()) {
+    if (room.roomId === winnerRoomId) continue;
+    if (room.getMyMembership() !== 'join') continue;
+    let members: { userId: string }[] = [];
+    try {
+      members = room.getJoinedMembers();
+    } catch {
+      continue;
+    }
+    const others = members.filter((member) => {
+      if (!member.userId || member.userId === selfId) return false;
+      if (botId && member.userId === botId) return false;
+      const local = member.userId.replace(/^@/, '').split(':')[0] ?? '';
+      return !/hypha[_-]bot/i.test(local);
+    });
+    if (others.length !== 1) continue;
+    if ((others[0]?.userId ?? '').toLowerCase() !== otherKey) continue;
+    siblings.push(room.roomId);
+  }
+  return siblings;
+}
+
+/** Read receipts are per user. The earlier pair room stays, but it stops counting. */
+function markEarlierDirectRoomsRead(
+  client: MatrixSdk.MatrixClient,
+  candidateRoomIds: readonly string[],
+  winnerRoomId: string,
+  otherUserId?: string,
+) {
+  const seen = new Set<string>();
+  const roomIds = [
+    ...candidateRoomIds,
+    ...(otherUserId
+      ? siblingDirectRoomIds(client, otherUserId, winnerRoomId)
+      : []),
+  ];
+  for (const roomId of roomIds) {
+    if (!roomId || roomId === winnerRoomId || seen.has(roomId)) continue;
+    seen.add(roomId);
+    const room = client.getRoom(roomId);
+    if (!room || room.getMyMembership() !== 'join') continue;
+    const event = latestReceiptEvent(room);
+    const eventId = event?.getId();
+    if (!event || !eventId) continue;
+    void client
+      .setRoomReadMarkers(roomId, eventId, event)
+      .then(() => {
+        if (typeof room.setUnreadNotificationCount === 'function') {
+          room.setUnreadNotificationCount(
+            MatrixSdk.NotificationCountType.Total,
+            0,
+          );
+          room.setUnreadNotificationCount(
+            MatrixSdk.NotificationCountType.Highlight,
+            0,
+          );
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to mark an earlier direct room read', error);
+      });
+  }
+}
+
 function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
   if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
   const content = event.getContent() as {
@@ -108,6 +209,12 @@ function isHiddenHumanChatRoomMessage(event: MatrixSdk.MatrixEvent): boolean {
     return true;
   }
   return false;
+}
+
+/** Keep this session online on every sync. A one-off presence update is dropped. */
+async function markMatrixPresenceOnline(client: MatrixSdk.MatrixClient) {
+  await client.setSyncPresence(MatrixSdk.SetPresence.Online);
+  await client.setPresence({ presence: 'online' });
 }
 
 export interface SendAttachmentInput {
@@ -228,6 +335,16 @@ const MATRIX_SCROLLBACK_RATE_LIMIT_MAX_ATTEMPTS = 4;
 const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
+
+/** Room id when this client is already a member. Opening that room must not wait on a re-join. */
+function alreadyJoinedRoomId(
+  client: MatrixSdk.MatrixClient,
+  roomIdOrAlias: string,
+): string | null {
+  const room = client.getRoom(roomIdOrAlias);
+  if (!room || room.getMyMembership() !== 'join') return null;
+  return room.roomId;
+}
 
 function myRoomPowerLevel(
   client: MatrixSdk.MatrixClient,
@@ -549,6 +666,33 @@ interface MatrixContextType {
     title: string,
     options?: { grantCreatorPl100?: boolean },
   ) => Promise<{ roomId: string }>;
+  /**
+   * Open the one direct room for this pair. Both people are joined into the
+   * room that already has the later message. A room is created only when
+   * the pair has none.
+   */
+  ensureDirectRoom: (
+    otherUserId: string,
+    title: string,
+    candidateRoomIds: string[],
+  ) => Promise<{ roomId: string }>;
+  /**
+   * Join these people into an existing group room. Invite-only rooms stay
+   * invisible until the bot puppet-accepts each member.
+   */
+  ensureRoomMembers: (
+    roomId: string,
+    matrixUserIds: readonly string[],
+  ) => Promise<void>;
+  /** Join the single network-wide room, creating it on first use. */
+  ensureNetworkRoom: () => Promise<{ roomId: string }>;
+  /** Join this ecosystem’s shared room (not the root space member room). */
+  ensureEcosystemRoom: (ecosystemSlug: string) => Promise<{ roomId: string }>;
+  /** Join this space’s public room (network connect); not the member room. */
+  ensurePublicRoom: (
+    spaceSlug: string,
+    memberRoomId?: string | null,
+  ) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
@@ -686,7 +830,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
         void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
 
-        await matrixClient.setPresence({ presence: 'online' });
+        await markMatrixPresenceOnline(matrixClient);
 
         clientRef.current = matrixClient;
         setClient(matrixClient);
@@ -729,7 +873,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         } else {
           retryMatrixClientSync(existingClient);
         }
-        await existingClient.setPresence({ presence: 'online' });
+        await markMatrixPresenceOnline(existingClient);
         setConnectionStatus('connected');
         setConnectionRetryFailed(false);
         return true;
@@ -790,7 +934,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             try {
               existingClient.setAccessToken(freshToken.accessToken);
               retryMatrixClientSync(existingClient);
-              await existingClient.setPresence({ presence: 'online' });
+              await markMatrixPresenceOnline(existingClient);
               recordMatrixCallTokenRefreshSuccess();
               setSessionRefreshFailedDuringCall(false);
               setConnectionStatus('connected');
@@ -1044,6 +1188,56 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     };
   }, [client, connectionStatus, recoverMatrixSync]);
 
+  const acceptedGroupInvitesRef = React.useRef(new Set<string>());
+
+  React.useEffect(() => {
+    if (!client) return;
+    const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+    const acceptGroupInvites = () => {
+      const selfId = client.getUserId();
+      if (!selfId) return;
+      for (const room of client.getRooms()) {
+        if (acceptedGroupInvitesRef.current.has(room.roomId)) continue;
+        const createEvent = room.currentState.getStateEvents(
+          MatrixSdk.EventType.RoomCreate,
+          '',
+        );
+        const createContent = (
+          Array.isArray(createEvent) ? null : createEvent?.getContent()
+        ) as { creator?: unknown } | null;
+        const creator = Array.isArray(createEvent)
+          ? null
+          : createEvent?.getSender() ||
+            (typeof createContent?.creator === 'string'
+              ? createContent.creator
+              : null);
+        if (
+          !isAutoJoinGroupInvite({
+            membership: room.getMyMembership(),
+            canonicalAlias: room.getCanonicalAlias(),
+            roomName: room.name,
+            creatorUserId: creator,
+            botUserId: botId,
+          })
+        ) {
+          continue;
+        }
+        acceptedGroupInvitesRef.current.add(room.roomId);
+        void ensureMemberJoinedRoomAction({
+          roomId: room.roomId,
+          matrixUserId: selfId,
+        }).then(({ joined }) => {
+          if (!joined) acceptedGroupInvitesRef.current.delete(room.roomId);
+        });
+      }
+    };
+    acceptGroupInvites();
+    client.on(MatrixSdk.ClientEvent.Sync, acceptGroupInvites);
+    return () => {
+      client.removeListener(MatrixSdk.ClientEvent.Sync, acceptGroupInvites);
+    };
+  }, [client]);
+
   React.useEffect(() => {
     return () => {
       if (client) {
@@ -1086,6 +1280,160 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       // the next sync, so `getRoom` can still return null for a few seconds after the puppet
       // join above resolves. Wait for it the same way `joinRoom` does, so callers that
       // immediately act on `roomId` (e.g. syncRoomMessages) don't hit "Room not found".
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          return { roomId };
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
+
+  const ensureRoomMembers = React.useCallback(
+    async (roomId: string, matrixUserIds: readonly string[]) => {
+      if (!client) return;
+      const trimmedRoomId = roomId.trim();
+      if (!trimmedRoomId) return;
+      const selfId = client.getUserId();
+      const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+      const room = client.getRoom(trimmedRoomId);
+      const ids = new Set<string>();
+      for (const matrixUserId of matrixUserIds) {
+        const id = matrixUserId.trim();
+        if (!id || id === selfId || id === botId) continue;
+        ids.add(id);
+      }
+      // A space room publishes an alias. Only a group chat should pull in
+      // people who are still sitting on an invite.
+      if (room && !room.getCanonicalAlias()?.trim()) {
+        for (const member of room.getMembers()) {
+          const id = member.userId?.trim();
+          if (!id || id === selfId || id === botId) continue;
+          if (member.membership !== 'invite') continue;
+          ids.add(id);
+        }
+      }
+      for (const matrixUserId of ids) {
+        try {
+          await ensureMemberJoinedRoomAction({
+            roomId: trimmedRoomId,
+            matrixUserId,
+          });
+        } catch (error) {
+          console.warn(
+            '[Matrix] Failed to include a group member:',
+            trimmedRoomId,
+            error instanceof Error ? error.message : error,
+          );
+        }
+      }
+    },
+    [client],
+  );
+
+  const ensureDirectRoom = React.useCallback(
+    async (otherUserId: string, title: string, candidateRoomIds: string[]) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
+      const ensured = await ensureDirectPairRoomAction({
+        matrixUserId: userId,
+        otherMatrixUserId: otherUserId,
+        candidateRoomIds,
+        title,
+      });
+      if (!ensured) {
+        throw new Error('Failed to open the direct room');
+      }
+      const { roomId } = ensured;
+      markEarlierDirectRoomsRead(client, candidateRoomIds, roomId, otherUserId);
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          return { roomId };
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
+
+  const ensureNetworkRoom = React.useCallback(async () => {
+    if (!client) {
+      throw new Error('Client should be specified');
+    }
+    const userId = client.getUserId();
+    if (!userId) {
+      throw new Error('Matrix user id is not available');
+    }
+    const ensured = await ensureNetworkChatRoomAction({
+      matrixUserId: userId,
+    });
+    if (!ensured) {
+      throw new Error('Failed to open the network room');
+    }
+    const { roomId } = ensured;
+    for (let i = 0; i < 200; i++) {
+      if (client.getRoom(roomId)) {
+        return { roomId };
+      }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    throw new Error('Room not available in Matrix client after creation');
+  }, [client]);
+
+  const ensureEcosystemRoom = React.useCallback(
+    async (ecosystemSlug: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
+      const ensured = await ensureEcosystemChatRoomAction({
+        matrixUserId: userId,
+        ecosystemSlug,
+      });
+      if (!ensured) {
+        throw new Error('Failed to open the ecosystem room');
+      }
+      const { roomId } = ensured;
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          return { roomId };
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error('Room not available in Matrix client after creation');
+    },
+    [client],
+  );
+
+  const ensurePublicRoom = React.useCallback(
+    async (spaceSlug: string, memberRoomId?: string | null) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
+      const ensured = await ensurePublicChatRoomAction({
+        matrixUserId: userId,
+        spaceSlug,
+        memberRoomId,
+      });
+      if (!ensured) {
+        throw new Error('Failed to open the public room');
+      }
+      const { roomId } = ensured;
       for (let i = 0; i < 200; i++) {
         if (client.getRoom(roomId)) {
           return { roomId };
@@ -1788,6 +2136,21 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const pageSize = Math.max(10, options?.pageSize ?? 50);
       const maxBatches = Math.max(1, options?.maxBatches ?? 10);
       const loadPromise = (async (): Promise<LoadRoomHistoryResult> => {
+        const liveEvents = room.getLiveTimeline().getEvents();
+        const hasVisibleMessage = liveEvents.some(
+          (event) => event.getType() === EventType.RoomMessage,
+        );
+        // A null pagination token means "already at the start" only after the
+        // timeline has arrived. No events at all means /sync has not delivered
+        // this room yet — keep it retryable instead of painting a new conversation.
+        // State events with no messages means the room really is empty.
+        if (
+          !hasVisibleMessage &&
+          liveEvents.length === 0 &&
+          room.oldState?.paginationToken == null
+        ) {
+          return { hasMoreOlder: true, addedEvents: 0 };
+        }
         let addedEvents = 0;
         let hasMoreOlder = true;
 
@@ -1932,6 +2295,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Client should be specified');
       }
 
+      const alreadyJoinedId = alreadyJoinedRoomId(client, roomIdOrAlias);
+      if (alreadyJoinedId) {
+        // Call permissions are not needed to show the thread. A failed state
+        // write used to fail the whole open, which a refresh then "fixed".
+        void ensureRoomCallPowerLevels(client, alreadyJoinedId).catch(
+          (error) => {
+            console.warn('Cannot ensure Matrix call power levels:', error);
+          },
+        );
+        return alreadyJoinedId;
+      }
+
       try {
         // Get the AS to invite+puppet-accept us first (#2428) — required for bot-owned
         // invite-only rooms; a no-op/soft-fail on legacy open-join rooms, where the plain
@@ -1945,21 +2320,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         }
         const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
-        await ensureRoomCallPowerLevels(client, resolvedId);
-        // `joinRoom` resolves before the lazy room store always exposes `getRoom`
-        // (race with sync / canonical id). On hard page reload the SDK must re-sync
-        // all room state from scratch, which can take several seconds — wait up to 10s.
-        for (let i = 0; i < 200; i++) {
-          if (client.getRoom(resolvedId)) {
-            return resolvedId;
-          }
+        void ensureRoomCallPowerLevels(client, resolvedId).catch((error) => {
+          console.warn('Cannot ensure Matrix call power levels:', error);
+        });
+        // The store can lag the join by a moment. Don't hold the thread open
+        // for the old 10s poll, and don't report that lag as a failed join.
+        for (let i = 0; i < 20; i++) {
+          if (client.getRoom(resolvedId)) return resolvedId;
           await new Promise((r) => setTimeout(r, 50));
         }
-        if (!client.getRoom(resolvedId)) {
-          throw new Error('Room not available in Matrix client after join');
-        }
-        return resolvedId;
+        return alreadyJoinedRoomId(client, resolvedId) ?? resolvedId;
       } catch (error) {
+        const recovered = alreadyJoinedRoomId(client, roomIdOrAlias);
+        if (recovered) return recovered;
         console.warn('Cannot join to room:', error);
         throw error;
       }
@@ -2247,6 +2620,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     retryMatrixConnection,
     connectionRetryFailed,
     createRoom,
+    ensureDirectRoom,
+    ensureRoomMembers,
+    ensureNetworkRoom,
+    ensureEcosystemRoom,
+    ensurePublicRoom,
     sendMessage,
     editRoomMessage,
     redactRoomEvent,
@@ -2277,6 +2655,19 @@ const noopMatrixContext: MatrixContextType = {
   retryMatrixConnection: async () => {},
   connectionRetryFailed: false,
   createRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensureDirectRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensureRoomMembers: async () => {},
+  ensureNetworkRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensureEcosystemRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  ensurePublicRoom: async () => {
     throw new Error('Matrix unavailable');
   },
   sendMessage: async () => {

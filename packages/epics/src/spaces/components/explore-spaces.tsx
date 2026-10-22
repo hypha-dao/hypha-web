@@ -6,8 +6,8 @@ import {
   SpaceOrder,
   CATEGORY_GROUPS,
   getCategoryGroupLabel,
-  hasSpaceMapLocation,
   isSpaceArchived,
+  resolveSpaceMapPin,
   sortSpacesByOrder,
   spaceMatchesCategoryGroups,
   splitTokensByNetworkSpaces,
@@ -21,7 +21,13 @@ import {
   loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
+import {
+  NETWORK_RIGHT_PANEL_CLASS,
+  NetworkSectionHeader,
+} from '../../network-exchange';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { CreateSpaceButton } from './create-space-button';
+import { NetworkSidePanel } from './network-side-panel';
 import { NetworkCensus } from './network-census';
 import { NetworkLoadingGrid } from './network-loading-grid';
 import { SpaceCardList } from './space-card-list';
@@ -31,13 +37,18 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Heading, Skeleton } from '@hypha-platform/ui';
+import { Container, Heading, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { readClientSearchParams } from '../read-client-search-params';
+import {
+  applyDirectoryCensus,
+  useDeferredDirectoryCensus,
+} from './use-deferred-directory-census';
+import { useDeferredMapPins } from './use-deferred-map-pins';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -48,6 +59,15 @@ interface ExploreSpacesProps {
   uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
   networkGrowth?: NetworkGrowth | null;
+  /**
+   * Display-only pins already resolved before paint. Later creator and
+   * member places arrive from `useDeferredMapPins` and are not written
+   * onto the space.
+   */
+  creatorMapPins?: Readonly<
+    Record<number, { latitude: number; longitude: number }>
+  >;
+  spaceCapitals?: Record<string, { seeks: string[]; offers: string[] }>;
 }
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
@@ -77,6 +97,17 @@ const CountValue = ({
 };
 
 function countUniqueMemberAddresses(spaces: Space[]): number {
+  const personIds = new Set<number>();
+  let sawPersonIds = false;
+  for (const space of spaces) {
+    if (!space.memberPersonIds) continue;
+    sawPersonIds = true;
+    for (const personId of space.memberPersonIds) {
+      personIds.add(personId);
+    }
+  }
+  if (sawPersonIds) return personIds.size;
+
   const acc = new Set<Lowercase<`0x${string}`>>();
   for (const space of spaces) {
     if (!space.memberAddresses) continue;
@@ -146,8 +177,11 @@ export function ExploreSpaces({
   uniqueCategoryGroups,
   enableNetworkMap = false,
   networkGrowth = null,
+  creatorMapPins,
+  spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
+  const { open: chatOpen } = useHumanChatPanel();
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -159,12 +193,32 @@ export function ExploreSpaces({
     }
   }, [enableNetworkMap]);
 
-  const nonArchivedSpaces = React.useMemo(
-    () => spaces.filter((space) => !isSpaceArchived(space)),
-    [spaces],
+  const { byWeb3Id: directoryCensus, settled: censusSettled } =
+    useDeferredDirectoryCensus(spaces);
+  const directorySpaces = React.useMemo(
+    () =>
+      spaces.map((space) =>
+        applyDirectoryCensus(
+          space,
+          typeof space.web3SpaceId === 'number'
+            ? directoryCensus[space.web3SpaceId]
+            : undefined,
+        ),
+      ),
+    [directoryCensus, spaces],
+  );
+  const deferredMapPins = useDeferredMapPins(directorySpaces, enableNetworkMap);
+  const resolvedMapPins = React.useMemo(
+    () => ({ ...creatorMapPins, ...deferredMapPins }),
+    [creatorMapPins, deferredMapPins],
   );
 
-  const categoryFilteredSpaces = React.useMemo(
+  const nonArchivedSpaces = React.useMemo(
+    () => directorySpaces.filter((space) => !isSpaceArchived(space)),
+    [directorySpaces],
+  );
+
+  const listedSpaces = React.useMemo(
     () =>
       categoryGroups && categoryGroups.length > 0
         ? nonArchivedSpaces.filter((space) =>
@@ -179,7 +233,7 @@ export function ExploreSpaces({
     privateSpaces,
     isLoading: isFilterLoading,
   } = useFilterSpacesListWithDiscoverability({
-    spaces: categoryFilteredSpaces,
+    spaces: listedSpaces,
     useGeneralState: true,
     excludeSpaceLevelFromNetwork: true,
   });
@@ -298,14 +352,36 @@ export function ExploreSpaces({
     [pathname],
   );
 
-  const sortedSpaces = React.useMemo(
-    () => sortSpacesByOrder(selectedSpaces, order ?? 'mostmembers'),
-    [selectedSpaces, order],
-  );
+  const sortedSpaces = React.useMemo(() => {
+    const rank = order ?? 'mostmembers';
+    // Member and agreement order waits until the census finishes, so cards
+    // do not jump to the top as each batch arrives.
+    if (!censusSettled && rank !== 'mostrecent') return selectedSpaces;
+    return sortSpacesByOrder(selectedSpaces, rank);
+  }, [censusSettled, order, selectedSpaces]);
 
   const mapSpaces = React.useMemo(
-    () => selectedSpaces.filter(hasSpaceMapLocation),
-    [selectedSpaces],
+    () =>
+      selectedSpaces.flatMap((space) => {
+        const pin = resolveSpaceMapPin({
+          spaceId: space.id,
+          latitude: space.latitude,
+          longitude: space.longitude,
+          creatorCoordinates: resolvedMapPins[space.id] ?? null,
+        });
+        // Only real places: the space, then its creator, then another member.
+        // No hashed / random scatter — empty locations stay off the map.
+        if (!pin) return [];
+        if (pin.source === 'space') return [space];
+        return [
+          {
+            ...space,
+            latitude: pin.latitude,
+            longitude: pin.longitude,
+          },
+        ];
+      }),
+    [resolvedMapPins, selectedSpaces],
   );
 
   const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';
@@ -321,7 +397,13 @@ export function ExploreSpaces({
   );
 
   const { isAuthenticated } = useAuthentication();
-
+  const [selectedSpaceId, setSelectedSpaceId] = React.useState<number | null>(
+    null,
+  );
+  const selectedSpace = React.useMemo(
+    () => directorySpaces.find((space) => space.id === selectedSpaceId) ?? null,
+    [directorySpaces, selectedSpaceId],
+  );
   const renderMapToolbar = React.useCallback(
     () => (
       <NetworkControlStrip
@@ -336,64 +418,82 @@ export function ExploreSpaces({
           view === 'map' || view === 'overview' ? (
             <NetworkAddLocationButton
               lang={lang}
-              spaces={spaces}
+              spaces={directorySpaces}
               isAuthenticated={isAuthenticated}
-              className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
+              className="!h-8 !min-h-8 gap-1.5 !px-2.5 !text-xs !leading-none font-medium shadow-none"
             />
-          ) : undefined
+          ) : null
         }
       />
     ),
-    [lang, spaces, isAuthenticated, view, setView],
+    [lang, directorySpaces, isAuthenticated, view, setView],
   );
 
-  const categoryFilters = (
-    <div className="flex flex-wrap justify-center gap-2">
-      {tags.map((tag) => {
-        const isSelected = categoryGroups?.includes(tag.id) ?? false;
-        return (
-          <Badge
-            key={tag.id}
-            variant="outline"
-            colorVariant={isSelected ? 'accent' : 'neutral'}
-            size={1}
-            className={cn(
-              'craft-chip craft-chip-interactive shrink-0 cursor-pointer',
-              isSelected &&
-                'border-accent-8/55 bg-accent-2/35 text-foreground hover:bg-accent-3/40',
-            )}
-            onClick={() => {
-              const nextCategoryGroups = isSelected ? [] : [tag.id];
-              setCategoryGroups(nextCategoryGroups);
-            }}
-          >
-            {tag.label}
-          </Badge>
-        );
-      })}
-    </div>
-  );
+  const categoryFilters =
+    tags.length === 0 ? null : (
+      <div
+        className="flex flex-wrap justify-center gap-2"
+        role="group"
+        aria-label={t('all')}
+      >
+        {tags.map((tag) => {
+          const isSelected = categoryGroups?.includes(tag.id) ?? false;
+          return (
+            <button
+              key={tag.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => setCategoryGroups(isSelected ? [] : [tag.id])}
+              className={cn(
+                'shrink-0 border px-2.5 py-1 text-1',
+                isSelected
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-background text-neutral-11',
+              )}
+            >
+              {tag.label}
+            </button>
+          );
+        })}
+      </div>
+    );
 
   const showSortControl =
     !enableNetworkMap || view === 'list' || view === 'overview';
   const showMapStage = view === 'map' || view === 'overview';
   const showSpacesList = view === 'list' || view === 'overview';
-
-  const searchActionsRow = (
-    <div className="flex w-full min-w-0 flex-row items-center gap-3">
-      <SpaceSearch value={query} className="min-w-0 flex-1" />
-      <CreateSpaceButton
-        lang={lang}
-        isAuthenticated={isAuthenticated}
-        className="min-w-0 shrink-0"
-        buttonClassName={spaceToolbarPrimaryButtonClassName}
-      />
-    </div>
+  const pageTitle = (
+    <>
+      <div className="xl:hidden">
+        <NetworkSectionHeader
+          eyebrow={t('manySpaces')}
+          title={t('oneVibrantNetwork')}
+        />
+      </div>
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="hidden flex-col xl:flex"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
+    </>
   );
 
-  const sharedHeader = (
-    <div className="mb-6 flex flex-col gap-4">
-      {searchActionsRow}
+  const sharedControls = (
+    <div className="flex flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-row items-center gap-3">
+        <SpaceSearch value={query} className="min-w-0 flex-1" />
+        <CreateSpaceButton
+          lang={lang}
+          isAuthenticated={isAuthenticated}
+          className="min-w-0 shrink-0"
+          buttonClassName={spaceToolbarPrimaryButtonClassName}
+        />
+      </div>
       {categoryFilters}
     </div>
   );
@@ -414,6 +514,7 @@ export function ExploreSpaces({
     <NetworkCensus
       lang={lang}
       isLoading={showSpacesSkeleton}
+      figuresLoading={!censusSettled}
       spaces={{
         total: selectedSpaces.length + privateSpaces.length,
         publicCount: selectedSpaces.length,
@@ -433,22 +534,34 @@ export function ExploreSpaces({
     />
   ) : null;
 
-  return (
-    <div className="flex min-w-0 flex-col gap-9">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex flex-col"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
+  const sidePanel =
+    enableNetworkMap && selectedSpace ? (
+      <NetworkSidePanel
+        lang={lang}
+        selectedSpace={selectedSpace}
+        onClose={() => setSelectedSpaceId(null)}
+        circles={nonArchivedSpaces.filter(
+          (space) => space.parentId === selectedSpace.id,
+        )}
+        capitals={
+          spaceCapitals?.[String(selectedSpace.id)] ?? {
+            seeks: [],
+            offers: [],
+          }
+        }
+      />
+    ) : null;
 
-      <div className="flex min-w-0 flex-col">
-        {sharedHeader}
+  const showSidePanel = Boolean(sidePanel) && !chatOpen;
 
+  const mainColumn = (
+    <>
+      <div className="flex min-w-0 flex-col gap-4 xl:gap-9">
+        {pageTitle}
+        {sharedControls}
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-4">
         {enableNetworkMap ? (
           <>
             {renderMapToolbar()}
@@ -459,7 +572,9 @@ export function ExploreSpaces({
               className={cn('w-full', showMapStage && 'mb-7')}
               isActive={showMapStage}
               showStage={showMapStage}
+              isResolving={showSpacesSkeleton}
               alignProjection={view === 'overview' ? 'flat' : undefined}
+              onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
             />
             <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
@@ -473,6 +588,29 @@ export function ExploreSpaces({
           </>
         )}
       </div>
+    </>
+  );
+
+  // Closed: same Container gutters as My Spaces. Open: shell insets so the
+  // sticky right rail can sit flush with the needs / exchange layout.
+  if (showSidePanel) {
+    return (
+      <div className="@container min-w-0 px-3 pt-2 pb-3 sm:px-4 sm:pt-3 sm:pb-4 lg:px-5 lg:pt-3 lg:pb-5">
+        <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
+          <div className="flex min-w-0 flex-1 flex-col gap-4">{mainColumn}</div>
+          <aside className={cn(NETWORK_RIGHT_PANEL_CLASS, '@4xl:!w-[320px]')}>
+            {sidePanel}
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="@container min-w-0">
+      <Container className="flex min-w-0 flex-col gap-4 pt-2 pb-3 sm:pt-3 sm:pb-4 lg:pt-3 lg:pb-5">
+        {mainColumn}
+      </Container>
     </div>
   );
 }

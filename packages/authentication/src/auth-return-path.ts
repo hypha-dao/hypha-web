@@ -9,8 +9,9 @@ export function isDhoSpaceContextPath(pathname: string): boolean {
 }
 
 export function saveAuthReturnPath(pathname: string): void {
+  // A later sign-in from Home or signup must not forget the space link
+  // that brought this person here.
   if (!isDhoSpaceContextPath(pathname)) {
-    clearAuthReturnPath();
     return;
   }
 

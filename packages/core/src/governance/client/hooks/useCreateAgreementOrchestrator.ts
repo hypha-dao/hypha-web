@@ -257,6 +257,7 @@ export const useCreateAgreementOrchestrator = ({
         }
         throw err;
       }
+      return createdAgreement;
     },
   );
 

@@ -34,10 +34,11 @@ export function OnboardingDiscoveryModeToggle({
           type="button"
           variant={mode === 'chat' ? 'default' : 'outline'}
           colorVariant="accent"
+          size="sm"
           disabled={disabled}
           aria-pressed={mode === 'chat'}
           onClick={() => onChange('chat')}
-          className="shadow-none"
+          className="h-[36px] min-h-[36px] px-3 shadow-none"
         >
           <MessageSquareText
             className="size-3.5"
@@ -50,10 +51,11 @@ export function OnboardingDiscoveryModeToggle({
           type="button"
           variant={mode === 'voice_interview' ? 'default' : 'outline'}
           colorVariant="accent"
+          size="sm"
           disabled={disabled}
           aria-pressed={mode === 'voice_interview'}
           onClick={() => onChange('voice_interview')}
-          className="shadow-none"
+          className="h-[36px] min-h-[36px] px-3 shadow-none"
         >
           <LiveVoiceMicIcon size="sm" />
           {t('onboardingDiscoveryModeVoice')}

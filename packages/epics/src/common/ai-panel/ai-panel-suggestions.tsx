@@ -26,20 +26,17 @@ export function AiPanelSuggestions({
   if (variant === 'tags') {
     return (
       <div
-        className="bg-transparent px-3 py-2"
+        className="bg-transparent px-6 pt-2 pb-1"
         data-testid="ai-panel-suggestion-tags"
       >
-        <div className="narrow-scrollbar flex gap-1.5 overflow-x-auto pb-0.5">
+        <div className="narrow-scrollbar flex gap-1.5 overflow-x-auto">
           {items.map((item) => (
             <button
               key={item.id}
               type="button"
               title={item.prompt}
               onClick={() => onSelect(item.prompt)}
-              className={cn(
-                'shrink-0 rounded-none border border-border/70 bg-transparent px-2.5 py-1 text-[11px] font-medium leading-tight text-muted-foreground',
-                'transition-colors duration-200 hover:border-foreground/30 hover:text-foreground',
-              )}
+              className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-1 text-[11px] font-medium leading-none text-foreground"
             >
               {item.tagLabel}
             </button>

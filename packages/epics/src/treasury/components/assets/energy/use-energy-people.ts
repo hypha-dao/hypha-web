@@ -4,6 +4,7 @@ import React from 'react';
 import useSWR from 'swr';
 
 export type EnergyPerson = {
+  id?: number;
   slug: string;
   name?: string | null;
   surname?: string | null;

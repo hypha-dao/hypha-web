@@ -2,24 +2,54 @@
 
 import { useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { z } from 'zod';
-import {
-  Person,
-  schemaSignupPerson,
-  PersonFiles,
-  useJwt,
-} from '@hypha-platform/core/client';
+import { Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
+import { writeHomeView } from '@hypha-platform/epics';
 import { usePeopleFileUploads } from './use-people-file-uploads';
-import { useAuthHeader } from './use-auth-header';
 import type { ProfileFormData } from './profile-form-data';
 import { useSWRConfig } from 'swr';
-import { resolvePostAuthRedirectPath } from '@hypha-platform/authentication';
+import {
+  resolvePostAuthRedirectPath,
+  useAuthentication,
+} from '@hypha-platform/authentication';
+
+/**
+ * The signup form can sit open longer than the cached Bearer token. Privy
+ * still has the session; the SWR copy may be empty because an early
+ * "token not ready" fetch gave up. Ask Privy again at submit, and keep the
+ * cached token when Privy is briefly empty.
+ */
+async function resolveAccessToken(
+  cached: string | undefined,
+  getAccessToken: () => Promise<string | null>,
+): Promise<string | null> {
+  const readFresh = async () => {
+    try {
+      const fresh = await getAccessToken();
+      return fresh?.trim() || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const fresh = await readFresh();
+  if (fresh) return fresh;
+  const cachedToken = cached?.trim();
+  if (cachedToken) return cachedToken;
+
+  for (let attempt = 0; attempt < 7; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+    const retry = await readFresh();
+    if (retry) return retry;
+  }
+
+  return null;
+}
 
 export const useCreateProfile = (
   endpoint = '/api/v1/people/create-profile',
 ) => {
   const { jwt } = useJwt();
-  const { headers } = useAuthHeader();
+  const { getAccessToken, user } = useAuthentication();
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const { mutate } = useSWRConfig();
@@ -30,14 +60,17 @@ export const useCreateProfile = (
 
   const createProfile = useCallback(
     async (data: ProfileFormData) => {
-      if (!headers) {
-        throw new Error('No auth headers available');
-      }
-
       setIsCreating(true);
       setError(null);
 
       try {
+        const token = await resolveAccessToken(jwt, getAccessToken);
+        if (!token) {
+          throw new Error('No auth headers available');
+        }
+        if (user?.id && token !== jwt) {
+          await mutate([user.id, 'jwt'], token, { revalidate: false });
+        }
         let uploadedFiles: Partial<PersonFiles> = {
           avatarUrl: undefined,
           leadImageUrl: undefined,
@@ -49,24 +82,32 @@ export const useCreateProfile = (
         };
 
         if (filesToUpload.avatarUrl || filesToUpload.leadImageUrl) {
-          uploadedFiles = await upload(filesToUpload);
+          uploadedFiles = await upload(filesToUpload, token);
         }
 
+        const httpUrl = (value: unknown) =>
+          typeof value === 'string' && /^https?:\/\//.test(value) ? value : '';
         const payload = {
           ...data,
-          avatarUrl: uploadedFiles.avatarUrl || data.avatarUrl || '',
-          leadImageUrl: uploadedFiles.leadImageUrl || data.leadImageUrl || '',
+          // A File becomes `{}` in JSON and the whole profile is rejected.
+          avatarUrl:
+            httpUrl(uploadedFiles.avatarUrl) || httpUrl(data.avatarUrl),
+          leadImageUrl:
+            httpUrl(uploadedFiles.leadImageUrl) || httpUrl(data.leadImageUrl),
         };
 
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create profile');
+          throw new Error(errorData.error || 'profile_create_failed');
         }
 
         const createdProfileResponse = (await response.json()) as
@@ -81,35 +122,23 @@ export const useCreateProfile = (
         }
 
         const lang = params?.lang;
-        // Resolve before mutating SWR — ConnectedButtonProfile reacts to person.id
-        // on the signup page and would consume the stored DHO path first.
-        const spaceContextReturnPath = resolvePostAuthRedirectPath({
+        const homePath = lang ? `/${lang}/home` : '/en/home';
+        // Consume a stored space return so it does not pull a new member
+        // onto a space dashboard. Orientation opens the AI home.
+        resolvePostAuthRedirectPath({
           pathname:
             typeof window !== 'undefined' ? window.location.pathname : '',
           lang: typeof lang === 'string' ? lang : undefined,
-          baseRedirectPath: lang ? `/${lang}/onboarding` : '/en/profile',
+          baseRedirectPath: homePath,
         });
-        const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
-        const nextPath = spaceContextReturnPath ?? onboardingPath;
 
         // Prevent post-signup redirect guards from briefly treating the user
         // as profile-less on the next route transition.
-        if (jwt) {
-          await mutate(['/api/v1/people/me', jwt], createdProfile, {
-            revalidate: false,
-          });
-        }
-        if (!spaceContextReturnPath) {
-          try {
-            window.sessionStorage.setItem(
-              'hypha:onboarding-adventure:just-signed-up:v1',
-              'true',
-            );
-          } catch {
-            // Ignore storage failures; onboarding falls back to existing logic.
-          }
-        }
-        router.replace(nextPath);
+        await mutate(['/api/v1/people/me', token], createdProfile, {
+          revalidate: false,
+        });
+        writeHomeView('ai');
+        router.replace(homePath);
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);
@@ -119,7 +148,16 @@ export const useCreateProfile = (
         setIsCreating(false);
       }
     },
-    [endpoint, headers, jwt, mutate, params?.lang, router, upload],
+    [
+      endpoint,
+      getAccessToken,
+      jwt,
+      mutate,
+      params?.lang,
+      router,
+      upload,
+      user?.id,
+    ],
   );
 
   return {

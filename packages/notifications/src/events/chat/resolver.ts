@@ -9,13 +9,14 @@ import {
 import {
   getMatrixBotAsToken,
   getMatrixHomeserverUrl,
+  matrixGetJoinOrInviteRoomMembers,
   matrixGetJoinedRoomMembers,
   normalizeAssigneeIds,
 } from '@hypha-platform/core/server';
 import { buildNotificationSettingsUrl } from '../../core/notification-settings-url';
 import type { RecipientResolver } from '../../core/recipient-resolver';
 import type { ChatNotificationEvent, Recipient } from '../../core/types';
-import { buildChatDeepLink } from './deep-link';
+import { buildChatDeepLink, buildDirectChatDeepLink } from './deep-link';
 import { humanizeMessageBody } from './humanize-message-body';
 import { isChatMessageNotificationsDisabled } from './kill-switch';
 
@@ -59,6 +60,22 @@ async function fetchJoinedRoomMatrixUserIds(roomId: string): Promise<string[]> {
   }
 }
 
+/** Join + invite, so a private-message recipient who has not opened the room yet still qualifies. */
+async function fetchDirectParticipantIds(roomId: string): Promise<string[]> {
+  const asToken = getMatrixBotAsToken();
+  const homeserver = getMatrixHomeserverUrl();
+  if (!asToken || !homeserver) return [];
+  try {
+    return await matrixGetJoinOrInviteRoomMembers(roomId, asToken, homeserver);
+  } catch (error) {
+    console.error(
+      '[notifications] chat: failed to fetch private-message participants',
+      { roomId, error },
+    );
+    return [];
+  }
+}
+
 async function resolveSlugsForMatrixUserIds(
   matrixUserIds: string[],
 ): Promise<string[]> {
@@ -96,6 +113,7 @@ async function resolveAllMessagesRecipientSlugs(
   getJoined: () => Promise<string[]>,
 ): Promise<string[]> {
   const { context } = event;
+  if (context.kind === 'direct') return [];
   if (context.kind === 'space') {
     return resolveSlugsForMatrixUserIds(await getJoined());
   }
@@ -135,17 +153,22 @@ export const resolveChatRecipients: RecipientResolver<
   }
 
   const [spaceRow, actorPerson, signalSlug] = await Promise.all([
-    db
-      .select({ title: spaces.title })
-      .from(spaces)
-      .where(eq(spaces.id, context.spaceId))
-      .limit(1),
+    context.kind === 'direct'
+      ? Promise.resolve([] as { title: string | null }[])
+      : db
+          .select({ title: spaces.title })
+          .from(spaces)
+          .where(eq(spaces.id, context.spaceId))
+          .limit(1),
     findPersonByMatrixUserId(actor.externalUserId),
     context.kind === 'signal'
       ? resolveSignalSlug(context.coherenceId)
       : Promise.resolve(null),
   ]);
-  const spaceTitle = spaceRow[0]?.title ?? undefined;
+  const spaceTitle =
+    context.kind === 'direct'
+      ? 'a private message'
+      : spaceRow[0]?.title ?? undefined;
 
   // A message that mentions someone is one `chat.mention` event, but it is still a message for the
   // rest of the room: mentioned users get the mention (push + email, supersedes the plain message
@@ -153,7 +176,10 @@ export const resolveChatRecipients: RecipientResolver<
   // One Matrix member fetch per event, shared by the mention and all-messages paths.
   let joinedPromise: Promise<string[]> | undefined;
   const getJoined = () =>
-    (joinedPromise ??= fetchJoinedRoomMatrixUserIds(event.roomId));
+    (joinedPromise ??=
+      context.kind === 'direct'
+        ? fetchDirectParticipantIds(event.roomId)
+        : fetchJoinedRoomMatrixUserIds(event.roomId));
   const mentionedSlugs =
     event.type === 'chat.mention'
       ? await resolveMentionRecipientSlugs(event, getJoined)
@@ -180,11 +206,17 @@ export const resolveChatRecipients: RecipientResolver<
   const messagePreview = (await humanizeMessageBody(event.payload.body, { db }))
     .trim()
     .slice(0, 220);
-  const url = buildChatDeepLink({
-    spaceSlug: context.spaceSlug,
-    messageId: event.source.externalEventId,
-    signalSlug,
-  });
+  const url =
+    context.kind === 'direct'
+      ? buildDirectChatDeepLink({
+          roomId: event.roomId,
+          messageId: event.source.externalEventId,
+        })
+      : buildChatDeepLink({
+          spaceSlug: context.spaceSlug,
+          messageId: event.source.externalEventId,
+          signalSlug,
+        });
 
   const data = {
     actorDisplayName,

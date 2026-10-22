@@ -39,6 +39,8 @@ type AssetItem = {
   referenceCurrency?: string | null;
   usdEqual: number;
   type: string;
+  /** One form of capital, when the token names one. */
+  capital?: string | null;
   chartData: OneChartPoint[];
   transactions: TransactionCardProps[];
   closeUrl: string;

@@ -9,6 +9,9 @@ type UseOrganisationSpacesBySingleSlugReturn = {
   isLoading: boolean;
 };
 
+/** Stable fallback. `data ?? []` was a new array each render and retriggered the diagram. */
+const EMPTY_SPACES: Space[] = [];
+
 export const useOrganisationSpacesBySingleSlug = (
   spaceSlug: string,
 ): UseOrganisationSpacesBySingleSlugReturn => {
@@ -38,7 +41,7 @@ export const useOrganisationSpacesBySingleSlug = (
     },
   );
   return {
-    spaces: spaces ?? [],
+    spaces: spaces ?? EMPTY_SPACES,
     isLoading,
   };
 };

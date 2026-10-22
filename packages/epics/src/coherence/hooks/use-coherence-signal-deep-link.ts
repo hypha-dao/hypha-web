@@ -4,6 +4,7 @@ import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Coherence } from '@hypha-platform/core/client';
 import {
+  pickSignalDeepLinkTarget,
   readLiveSignalSlugFromUrl,
   scrollToSignalCardWithRetry,
 } from '../lib/signal-deep-link-dom';
@@ -15,7 +16,10 @@ type UseCoherenceSignalDeepLinkOptions = {
   /** When human chat is enabled, skip scroll/actions after the user closed the panel. */
   humanChatOpen?: boolean;
   hideArchived: boolean;
-  priorityFilter: 'all' | 'critical' | 'high' | 'medium' | 'low';
+  /** Empty means every priority is visible. */
+  priorityFilters?: readonly string[];
+  /** Empty means every type is visible. */
+  typeFilters?: readonly string[];
   /** When set, skip re-opening chat / scroll if the user is already on this signal. */
   activeCoherenceSlug?: string | null;
   onOpenSignalChat?: (signal: Coherence) => void;
@@ -24,24 +28,10 @@ type UseCoherenceSignalDeepLinkOptions = {
   onRefreshSignals?: () => void | Promise<void>;
 };
 
-function resolveDeepLinkTargetSlug(
-  humanChatEnabled: boolean,
-  activeCoherenceSlug: string | null | undefined,
-): string | null {
-  const chatSlug = activeCoherenceSlug?.trim() ?? null;
-  if (humanChatEnabled && chatSlug) {
-    return chatSlug;
-  }
-  return readLiveSignalSlugFromUrl();
-}
-
 /**
- * When `?signal=<slug>` is present on a coherence route, scroll the matching
- * card into view and optionally open its chat thread.
- *
- * Chat opening for human-chat spaces is owned by `HumanRightPanel`; this hook
- * only scrolls/highlights. When a coherence chat is active, the live chat slug
- * wins over a lagging `?signal=` param so selection does not flash between cards.
+ * When `?signal=<slug>` is present, scroll the matching card into view and
+ * open its chat. A new signal in the URL replaces the one already open.
+ * A chat that just changed still wins over a URL that has not caught up.
  */
 export function useCoherenceSignalDeepLink({
   signals,
@@ -49,7 +39,8 @@ export function useCoherenceSignalDeepLink({
   humanChatEnabled,
   humanChatOpen = false,
   hideArchived,
-  priorityFilter,
+  priorityFilters = [],
+  typeFilters = [],
   activeCoherenceSlug,
   onOpenSignalChat,
   onRevealArchivedSignal,
@@ -61,11 +52,29 @@ export function useCoherenceSignalDeepLink({
   const refreshAttemptForSlugRef = React.useRef<string | null>(null);
   const scrolledForSlugRef = React.useRef<string | null>(null);
   const lastTargetSlugRef = React.useRef<string | null>(null);
-
-  const targetSlug = React.useMemo(
-    () => resolveDeepLinkTargetSlug(humanChatEnabled, activeCoherenceSlug),
-    [activeCoherenceSlug, humanChatEnabled, searchParams],
+  const previousChatSlugRef = React.useRef<string | null | undefined>(
+    undefined,
   );
+  const previousUrlSlugRef = React.useRef<string | null | undefined>(undefined);
+  const previousChoiceRef = React.useRef<string | null>(null);
+
+  const searchParamSlug = searchParams.get('signal')?.trim() || null;
+  const urlSlug =
+    typeof window !== 'undefined'
+      ? readLiveSignalSlugFromUrl()
+      : searchParamSlug;
+  const chatSlug = activeCoherenceSlug?.trim() || null;
+  const targetSlug = pickSignalDeepLinkTarget({
+    humanChatEnabled,
+    chatSlug,
+    urlSlug,
+    previousChatSlug: previousChatSlugRef.current,
+    previousUrlSlug: previousUrlSlugRef.current,
+    previousChoice: previousChoiceRef.current,
+  });
+  previousChatSlugRef.current = chatSlug;
+  previousUrlSlugRef.current = urlSlug;
+  previousChoiceRef.current = targetSlug;
 
   React.useEffect(() => {
     if (lastTargetSlugRef.current !== targetSlug) {
@@ -78,10 +87,6 @@ export function useCoherenceSignalDeepLink({
 
   React.useEffect(() => {
     if (!targetSlug || isLoading) return;
-
-    if (humanChatEnabled && !humanChatOpen && !activeCoherenceSlug?.trim()) {
-      return;
-    }
 
     const signal = (signals ?? []).find(
       (item) => item.slug?.trim() === targetSlug,
@@ -103,7 +108,11 @@ export function useCoherenceSignalDeepLink({
       return;
     }
 
-    if (priorityFilter !== 'all' && signal.priority !== priorityFilter) {
+    if (
+      (priorityFilters.length > 0 &&
+        !priorityFilters.includes(signal.priority ?? '')) ||
+      (typeFilters.length > 0 && !typeFilters.includes(signal.type))
+    ) {
       onClearPriorityFilter?.();
       return;
     }
@@ -112,7 +121,7 @@ export function useCoherenceSignalDeepLink({
     const alreadyViewingSignal =
       chatSlug === targetSlug || openedChatForSlugRef.current === targetSlug;
 
-    if (!humanChatEnabled && onOpenSignalChat && !alreadyViewingSignal) {
+    if (onOpenSignalChat && !alreadyViewingSignal) {
       openedChatForSlugRef.current = targetSlug;
       onOpenSignalChat(signal);
     } else if (alreadyViewingSignal) {
@@ -144,7 +153,8 @@ export function useCoherenceSignalDeepLink({
     onOpenSignalChat,
     onRefreshSignals,
     onRevealArchivedSignal,
-    priorityFilter,
+    priorityFilters,
+    typeFilters,
     signals,
     targetSlug,
   ]);

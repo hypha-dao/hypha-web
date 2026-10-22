@@ -36,7 +36,7 @@ export function SignalTagBadges({
   className,
 }: SignalTagBadgesProps) {
   const t = useTranslations('CoherenceTab');
-  const list = tags ?? [];
+  const list = Array.isArray(tags) ? tags : [];
   if (list.length === 0) return null;
 
   const visible = list.slice(0, maxVisible);

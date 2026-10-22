@@ -1,5 +1,6 @@
 export * from './create-space';
 export * from './get-member-spaces';
+export * from './get-space-members';
 export * from './get-ownership-tokens-voting-power';
 export * from './get-space-created-event';
 export * from './get-space-decaying-tokens';

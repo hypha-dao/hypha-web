@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import useSWR from 'swr';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
+import { ChevronsUpDown, PanelLeftClose } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +25,8 @@ import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
+import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -38,7 +39,8 @@ function getDisplayIcon(
 
 /** Labeled identity control stays 40px inside the 70px bar. Icon chrome stays 36px. */
 const SPACE_SWITCHER_CLASS =
-  'inline-flex h-[40px] w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-lg font-medium leading-none tracking-tight text-foreground';
+  'inline-flex h-[40px] w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-2 font-medium leading-snug tracking-tight text-foreground';
+
 /** 32px circle — larger than the previous 24px mark, still inside the 40px control. */
 const SPACE_SWITCHER_AVATAR_CLASS =
   'h-6 w-6 shrink-0 overflow-hidden rounded-full';
@@ -136,7 +138,7 @@ export function AiPanelHeader({
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const currentTitle =
-    activeSpace?.title?.trim() || activeSpaceSlug?.trim() || t('title');
+    activeSpace?.title?.trim() || activeSpaceSlug?.trim() || t('networkTitle');
   const currentIcon = getDisplayIcon(activeSpace, logoVariant);
   const hasSpaces =
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
@@ -159,7 +161,7 @@ export function AiPanelHeader({
       filteredGroupedSpaces.others.length >
     0;
   const fallbackTitle =
-    activeSpace?.title?.trim() || activeSpaceSlug?.trim() || t('title');
+    activeSpace?.title?.trim() || activeSpaceSlug?.trim() || t('networkTitle');
   const canOpenSpaceMenu =
     Boolean(person?.address) &&
     !isAllSpacesLoading &&
@@ -194,7 +196,7 @@ export function AiPanelHeader({
       asChild
       className="rounded-lg py-1.5 hover:bg-background-4/70"
     >
-      <Link
+      <SpaceSwitcherOption
         href={
           getDhoSpaceContextPath({
             pathname,
@@ -202,28 +204,9 @@ export function AiPanelHeader({
             spaceSlug: space.slug,
           }) ?? `/${lang}/dho/${space.slug}/agreements`
         }
-        className="flex min-w-0 items-center gap-2"
-      >
-        <span className="h-5 w-5 overflow-hidden rounded-full">
-          {getDisplayIcon(space, logoVariant) ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getDisplayIcon(space, logoVariant) ?? undefined}
-                alt={space.title}
-                className="h-full w-full object-cover"
-              />
-            </>
-          ) : (
-            <span className="flex h-full w-full items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-            </span>
-          )}
-        </span>
-        <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
-          {space.title}
-        </span>
-      </Link>
+        title={space.title}
+        iconUrl={getDisplayIcon(space, logoVariant)}
+      />
     </DropdownMenuItem>
   );
 
@@ -271,25 +254,22 @@ export function AiPanelHeader({
                   )}
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className={SPACE_SWITCHER_AVATAR_CLASS}>
-                    {currentIcon ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={currentIcon}
-                          alt={currentTitle}
-                          className="h-full w-full object-cover"
-                        />
-                      </>
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center">
-                        <Sparkles className="craft-icon text-muted-foreground" />
-                      </span>
-                    )}
-                  </span>
-                  <span className="min-w-0 truncate text-center">
+                  {currentIcon ? (
+                    <span className={SPACE_SWITCHER_AVATAR_CLASS}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={currentIcon}
+                        alt={currentTitle}
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                  ) : (
+                    <MemberHomeMark className="h-6 w-6" />
+                  )}
+                  <span className="min-w-0 truncate text-center leading-snug">
                     {currentTitle}
                   </span>
+
                   <ChevronsUpDown className="craft-icon shrink-0 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
@@ -356,23 +336,19 @@ export function AiPanelHeader({
             </DropdownMenu>
           ) : (
             <div className={SPACE_SWITCHER_CLASS}>
-              <span className={SPACE_SWITCHER_AVATAR_CLASS}>
-                {currentIcon ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={currentIcon}
-                      alt={fallbackTitle}
-                      className="h-full w-full object-cover"
-                    />
-                  </>
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center">
-                    <Sparkles className="craft-icon text-muted-foreground" />
-                  </span>
-                )}
-              </span>
-              <span className="min-w-0 truncate text-center">
+              {currentIcon ? (
+                <span className={SPACE_SWITCHER_AVATAR_CLASS}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentIcon}
+                    alt={fallbackTitle}
+                    className="h-full w-full object-cover"
+                  />
+                </span>
+              ) : (
+                <MemberHomeMark className="h-6 w-6" />
+              )}
+              <span className="min-w-0 truncate text-center leading-snug">
                 {fallbackTitle}
               </span>
             </div>

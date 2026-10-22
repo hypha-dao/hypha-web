@@ -14,8 +14,23 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { Locale } from '@hypha-platform/i18n';
+import {
+  consumeAuthReturnPath,
+  peekAuthReturnPath,
+  resolveAccountEntryPath,
+  saveAuthReturnPath,
+} from '@hypha-platform/authentication';
+import {
+  getOnboardingPath,
+  isInteractiveCreatePath,
+} from '../../common/get-path-function';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+import {
+  isMessagesOrSpacesNavHref,
+  shouldShowMessagesAndSpacesNav,
+} from './app-nav-visibility';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: ProfileUseAuthentication;
@@ -55,10 +70,19 @@ export const ConnectedButtonProfile = ({
   const pathname = usePathname();
   const { lang, id } = useParams();
   const { resolvedTheme, setTheme } = useTheme();
-  const onboardingUrl =
-    typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
-  const localizedSignupPath =
-    typeof lang === 'string' ? `/${lang}/profile/signup` : newUserRedirectPath;
+  const locale = typeof lang === 'string' ? lang : undefined;
+  const onboardingUrl = locale
+    ? getOnboardingPath(locale as Locale)
+    : undefined;
+  const signupPath = resolveAccountEntryPath({
+    lang: locale,
+    hasProfile: false,
+  });
+  const homePath =
+    baseRedirectPath.includes('/home') ||
+    baseRedirectPath.includes('/my-dashboard')
+      ? baseRedirectPath
+      : resolveAccountEntryPath({ lang: locale, hasProfile: true });
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -93,10 +117,11 @@ export const ConnectedButtonProfile = ({
     if (person === null) {
       if (
         pathname !== newUserRedirectPath &&
-        pathname !== localizedSignupPath &&
+        pathname !== signupPath &&
         !pathname.includes('/profile/signup')
       ) {
-        router.push(localizedSignupPath);
+        saveAuthReturnPath(pathname);
+        router.replace(signupPath);
       }
       return;
     }
@@ -104,18 +129,43 @@ export const ConnectedButtonProfile = ({
       person &&
       isLoggingIn &&
       pathname !== newUserRedirectPath &&
-      pathname !== localizedSignupPath
+      pathname !== signupPath
     ) {
-      if (!pathname.includes('/onboarding')) {
-        router.push(
-          resolvePostAuthRedirectPathOrDefault({
-            pathname,
-            lang: typeof lang === 'string' ? lang : undefined,
-            baseRedirectPath,
-          }),
-        );
+      // Space AI onboarding is not the account entry. A profile goes Home
+      // (or back to the space they were already in).
+      if (!isInteractiveCreatePath(pathname)) {
+        const nextPath = resolvePostAuthRedirectPathOrDefault({
+          pathname,
+          lang: locale,
+          baseRedirectPath: homePath,
+        });
+        router.replace(isInteractiveCreatePath(nextPath) ? homePath : nextPath);
       }
       setLoggingIn(false);
+      return;
+    }
+    const storedSpacePath = peekAuthReturnPath();
+    const spaceSlug = pathname.match(/\/dho\/([^/]+)/)?.[1];
+    if (
+      storedSpacePath &&
+      spaceSlug &&
+      storedSpacePath.includes(`/dho/${spaceSlug}`)
+    ) {
+      consumeAuthReturnPath();
+      return;
+    }
+    const onHome =
+      locale != null &&
+      (pathname === `/${locale}/home` || pathname === `/${locale}/home/`);
+    if (storedSpacePath && onHome) {
+      const nextPath = resolvePostAuthRedirectPathOrDefault({
+        pathname,
+        lang: locale,
+        baseRedirectPath: homePath,
+      });
+      if (nextPath !== pathname) {
+        router.replace(nextPath);
+      }
     }
   }, [
     isPersonLoading,
@@ -125,13 +175,13 @@ export const ConnectedButtonProfile = ({
     person,
     user,
     router,
-    baseRedirectPath,
+    homePath,
     newUserRedirectPath,
     isLoggingIn,
     setLoggingIn,
     pathname,
-    localizedSignupPath,
-    lang,
+    signupPath,
+    locale,
     resolvePostAuthRedirectPathOrDefault,
   ]);
 
@@ -165,6 +215,13 @@ export const ConnectedButtonProfile = ({
     console.log('Delete profile');
   };
 
+  const visibleNavItems = useMemo(() => {
+    if (shouldShowMessagesAndSpacesNav(person?.primaryOrientation)) {
+      return navItems;
+    }
+    return navItems.filter((item) => !isMessagesOrSpacesNavHref(item.href));
+  }, [navItems, person?.primaryOrientation]);
+
   return (
     <ButtonProfile
       address={user?.wallet?.address}
@@ -177,13 +234,15 @@ export const ConnectedButtonProfile = ({
       onChangeThemeMode={handleThemeChange}
       resolvedTheme={resolvedTheme}
       profileUrl={
-        person?.slug
-          ? `/${lang}/profile/${person?.slug ?? ''}`
-          : newUserRedirectPath
+        meError
+          ? undefined
+          : person?.slug
+          ? `/${lang}/profile/${person.slug}`
+          : signupPath
       }
       onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
-      navItems={navItems}
+      navItems={visibleNavItems}
       showNetworkFeedback={showNetworkFeedback}
       trailingBeforeProfile={trailingBeforeProfile}
       compact={compact}

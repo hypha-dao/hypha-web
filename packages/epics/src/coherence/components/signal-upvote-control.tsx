@@ -393,6 +393,7 @@ export function SignalUpvoteControl({
                             shape="circle"
                             avatarSrc={voter.avatarUrl ?? ''}
                             userName={voter.name ?? undefined}
+                            personId={voter.personId}
                           />
                           <span className="truncate text-1 font-medium text-foreground">
                             {voter.name || t('anonymousSupporter')}

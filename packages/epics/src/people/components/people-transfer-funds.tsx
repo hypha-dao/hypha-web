@@ -11,6 +11,10 @@ import { Person } from '../../../../core/src/people';
 import { Space } from '../../../../core/src/space';
 import { Separator } from '@hypha-platform/ui';
 import { ERC20_TOKEN_TRANSFER_ADDRESSES } from '@hypha-platform/core/client';
+import {
+  HYPHA_TOKEN_ADDRESS,
+  isHyphaAsset,
+} from '../../wallet/components/wallet-asset-action';
 import { useTranslations } from 'next-intl';
 
 interface Token {
@@ -52,14 +56,17 @@ export const ProfileTransferFunds = ({
    * are eligible to draw on (member of any whitelisted space) — so credit-eligible
    * tokens appear in the dropdown even when the on-chain balance is zero.
    */
-  const tokens: Token[] = assets
+  const heldTokens: Token[] = assets
     .filter((asset) => {
+      const hypha = isHyphaAsset(asset);
       const isTransferableType =
         (asset.type != null && !['ownership', 'voice'].includes(asset.type)) ||
         (asset.type == null &&
           asset.address !== undefined &&
-          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address));
-      if (!isTransferableType) return false;
+          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address)) ||
+        hypha;
+      if (!isTransferableType || !asset.address) return false;
+      if (hypha) return true;
       const hasBalance = (asset.value ?? 0) > 0;
       /**
        * `creditEligible` only means the user belongs to a whitelisted space; it
@@ -80,6 +87,17 @@ export const ProfileTransferFunds = ({
       type: asset.type,
       space: asset.space,
     }));
+  const tokens: Token[] = heldTokens.some((token) => isHyphaAsset(token))
+    ? heldTokens
+    : [
+        {
+          icon: '/placeholder/hypha-token-icon.svg',
+          symbol: 'HYPHA',
+          address: HYPHA_TOKEN_ADDRESS,
+          type: 'utility',
+        },
+        ...heldTokens,
+      ];
 
   const resolvedCloseUrl = closeUrl ?? `/${lang}/profile/${personSlug}`;
   const resolvedBackUrl = backUrl ?? `/${lang}/profile/${personSlug}/actions`;

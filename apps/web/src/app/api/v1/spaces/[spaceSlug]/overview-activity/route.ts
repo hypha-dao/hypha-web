@@ -18,6 +18,19 @@ type MonthBucket = {
   spaces: number;
 };
 
+async function loadSlice<T>(
+  label: string,
+  fallback: T,
+  load: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await load();
+  } catch (error) {
+    console.error(label, error);
+    return fallback;
+  }
+}
+
 function toIsoIfValid(value: unknown): string | null {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(String(value));
@@ -131,10 +144,15 @@ export async function GET(
     const bearer = bearerMatch?.[1]?.trim() || undefined;
 
     const [signals, proposalOutcomes] = await Promise.all([
-      getAllCoherences({
-        spaceId: space.id,
-        includeArchived: false,
-      }),
+      loadSlice(
+        'overview activity signals',
+        [] as Awaited<ReturnType<typeof getAllCoherences>>,
+        () =>
+          getAllCoherences({
+            spaceId: space.id,
+            includeArchived: false,
+          }),
+      ),
       web3SpaceIdNum == null
         ? Promise.resolve(null)
         : fetchProposalOutcomeSetsForSpace(web3SpaceIdNum),
@@ -147,34 +165,38 @@ export async function GET(
     }> = [];
     let proposalsPage = 1;
 
-    while (true) {
-      const proposalsResult = await getDocumentsBySpaceSlug(
-        {
-          spaceSlug,
-          page: proposalsPage,
-          pageSize: 100,
-          state: 'proposal',
-        },
-        { db, authToken: bearer },
-      );
-
-      if (proposalsResult.access === 'denied') {
-        return NextResponse.json(
-          { error: proposalsResult.message },
-          { status: 403 },
+    try {
+      while (true) {
+        const proposalsResult = await getDocumentsBySpaceSlug(
+          {
+            spaceSlug,
+            page: proposalsPage,
+            pageSize: 100,
+            state: 'proposal',
+          },
+          { db, authToken: bearer },
         );
-      }
 
-      if (!proposalsResult.result.found) {
-        break;
-      }
+        if (proposalsResult.access === 'denied') {
+          return NextResponse.json(
+            { error: proposalsResult.message },
+            { status: 403 },
+          );
+        }
 
-      allProposals.push(...proposalsResult.result.documents);
+        if (!proposalsResult.result.found) {
+          break;
+        }
 
-      if (!proposalsResult.result.pagination.has_next_page) {
-        break;
+        allProposals.push(...proposalsResult.result.documents);
+
+        if (!proposalsResult.result.pagination.has_next_page) {
+          break;
+        }
+        proposalsPage += 1;
       }
-      proposalsPage += 1;
+    } catch (error) {
+      console.error('overview activity proposals', error);
     }
 
     const proposalCounts = {
@@ -244,29 +266,33 @@ export async function GET(
     const hostSpaceCreatedAt = toIsoIfValid(space.createdAt);
 
     let rosterPage = 1;
-    while (true) {
-      const roster = await getSpaceMembersRoster(
-        {
-          spaceSlug,
-          page: rosterPage,
-          pageSize: 100,
-        },
-        { db },
-      );
-      if (!roster.found) break;
-      memberEntries.push(
-        ...roster.members.map((member) => ({
-          member_kind: member.member_kind,
-          resolved_joined_at:
-            member.joined_at ??
-            (member.member_kind === 'space'
-              ? toIsoIfValid(member.space.createdAt)
-              : hostSpaceCreatedAt),
-        })),
-      );
+    try {
+      while (true) {
+        const roster = await getSpaceMembersRoster(
+          {
+            spaceSlug,
+            page: rosterPage,
+            pageSize: 100,
+          },
+          { db },
+        );
+        if (!roster.found) break;
+        memberEntries.push(
+          ...roster.members.map((member) => ({
+            member_kind: member.member_kind,
+            resolved_joined_at:
+              member.joined_at ??
+              (member.member_kind === 'space'
+                ? toIsoIfValid(member.space.createdAt)
+                : hostSpaceCreatedAt),
+          })),
+        );
 
-      if (!roster.pagination.has_next_page) break;
-      rosterPage += 1;
+        if (!roster.pagination.has_next_page) break;
+        rosterPage += 1;
+      }
+    } catch (error) {
+      console.error('overview activity members', error);
     }
 
     // Build the series from the current roster only. Do not subtract accepted
@@ -340,13 +366,19 @@ export async function GET(
         priorities: signalPriorities,
         types: signalTypes,
         tags: signalTags,
-        items: signals.map((signal) => ({
-          id: signal.id,
-          priority: signal.priority,
-          type: signal.type,
-          tags: signal.tags ?? [],
-          created_at: signal.createdAt.toISOString(),
-        })),
+        items: signals.flatMap((signal) => {
+          const createdAt = toIsoIfValid(signal.createdAt);
+          if (!createdAt) return [];
+          return [
+            {
+              id: signal.id,
+              priority: signal.priority,
+              type: signal.type,
+              tags: signal.tags ?? [],
+              created_at: createdAt,
+            },
+          ];
+        }),
       },
       members: {
         monthly: months,

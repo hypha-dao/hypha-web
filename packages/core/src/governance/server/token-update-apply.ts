@@ -1,4 +1,5 @@
 import type { TokenUpdateData, UpdateTokenInput } from '../types';
+import { parseCapitalKey } from '../../network/capitals';
 
 /**
  * `token_updates.data` may duplicate `type` / `isVotingToken` for UI; those columns
@@ -56,6 +57,10 @@ export function buildUpdateTokenInputPatchFromTokenUpdateData(
 
   if (Object.hasOwn(data, 'iconUrl')) {
     out.iconUrl = data.iconUrl;
+  }
+
+  if (Object.hasOwn(data, 'capital')) {
+    out.capital = parseCapitalKey(data.capital);
   }
 
   return out;

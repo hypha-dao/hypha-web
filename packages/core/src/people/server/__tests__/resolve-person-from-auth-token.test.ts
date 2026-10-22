@@ -24,7 +24,10 @@ vi.mock('@hypha-platform/storage-postgres', () => ({
   db: {},
 }));
 
-import { resolvePersonFromAuthToken } from '../resolve-person-from-auth-token';
+import {
+  resolveMemberCaller,
+  resolvePersonFromAuthToken,
+} from '../resolve-person-from-auth-token';
 
 describe('resolvePersonFromAuthToken', () => {
   beforeEach(() => {
@@ -71,6 +74,47 @@ describe('resolvePersonFromAuthToken', () => {
     const person = await resolvePersonFromAuthToken('token');
     expect(person?.slug).toBe('fallback');
     expect(findSelf).toHaveBeenCalledOnce();
+  });
+
+  it('resolves the member MCP caller from Privy sub on the service database', async () => {
+    verifyPrivyAuthToken.mockResolvedValue({
+      ok: true,
+      userId: 'did:privy:alex',
+    });
+    findPersonBySub.mockResolvedValue({
+      id: 7,
+      slug: 'alex',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const caller = await resolveMemberCaller('token');
+    expect(caller?.person.id).toBe(7);
+    expect(findPersonBySub).toHaveBeenCalledWith(
+      { sub: 'did:privy:alex' },
+      expect.anything(),
+    );
+    expect(findSelf).not.toHaveBeenCalled();
+  });
+
+  it('keeps the authenticated database when the service row is missing', async () => {
+    verifyPrivyAuthToken.mockResolvedValue({
+      ok: true,
+      userId: 'did:privy:new',
+    });
+    findPersonBySub.mockResolvedValue(null);
+    const authDb = { auth: true };
+    getDb.mockReturnValue(authDb);
+    findSelf.mockResolvedValue({
+      id: 3,
+      slug: 'new',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const caller = await resolveMemberCaller('token');
+    expect(caller?.person.id).toBe(3);
+    expect(caller?.db).toBe(authDb);
   });
 
   it('returns null when both lookups fail', async () => {

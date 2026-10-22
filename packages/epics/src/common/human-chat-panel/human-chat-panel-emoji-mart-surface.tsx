@@ -45,16 +45,11 @@ export function HumanChatPanelEmojiMartSurface({
       aria-label={ariaLabel}
       className={cn(
         /**
-         * emoji-mart's `<em-emoji-picker>` defaults to `dynamicWidth: false`,
-         * so its shadow-DOM grid computes its own fixed pixel width from
-         * `perLine * emojiButtonSize` — it never reads *any* CSS width or
-         * max-width we put on this wrapper. `dynamicWidth` below makes it
-         * size itself from this element's actual rendered width instead, so
-         * `w-full` here is load-bearing, not decorative — without it the
-         * picker still ignores whatever space its container actually has
-         * (e.g. inside a narrow Document PiP window).
+         * emoji-mart sizes its grid from this element's rendered width
+         * (`dynamicWidth`). The width has to be a definite size: `w-full`
+         * inside an auto-width popover collapses the picker.
          */
-        'max-h-[min(420px,70vh)] w-full max-w-[min(100vw-2rem,352px)] min-h-[180px] overflow-hidden [&>em-emoji-picker]:w-full',
+        'h-[min(420px,70vh)] w-[min(100vw-2rem,352px)] min-w-[280px] overflow-hidden [&>em-emoji-picker]:h-full [&>em-emoji-picker]:w-full',
         className,
       )}
     >

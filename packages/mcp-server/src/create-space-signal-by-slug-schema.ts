@@ -16,7 +16,18 @@ export const createSpaceSignalBySlugInputSchema = z.object({
   title: z.string().trim().min(3).max(160),
   description: z.string().trim().min(20).max(5000),
   type: z
-    .enum(['Opportunity', 'Risk', 'Tension', 'Insight', 'Trend', 'Proposal'])
+    .enum([
+      'Need',
+      'Resource',
+      'Opportunity',
+      'Insight',
+      'Tension',
+      'Risk',
+      'Action',
+      'Impact',
+      'Trend',
+      'Proposal',
+    ])
     .optional()
     .default('Insight'),
   priority: z

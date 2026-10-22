@@ -362,6 +362,7 @@ export const IssueNewTokenForm = ({
       symbol: '',
       iconUrl: undefined,
       type: undefined,
+      capital: '',
       maxSupply: 0,
       decaySettings: {
         decayInterval: 2592000,
@@ -544,6 +545,7 @@ export const IssueNewTokenForm = ({
           <CreateAgreementBaseFields
             key={resubmitKey}
             creator={{
+              id: person?.id,
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
               surname: person?.surname || '',

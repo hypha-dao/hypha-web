@@ -40,7 +40,7 @@ export function HumanChatPanelEmojiPicker({
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="w-auto max-w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
+        className="w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >

@@ -28,6 +28,8 @@ export type TokenUpdateDataJson = {
   referencePrice?: number;
   referenceCurrency?: string;
   archiveToken?: boolean;
+  /** One form of capital. Null clears it. Mirrors core `TokenUpdateData`. */
+  capital?: string | null;
   enableProposalAutoMinting?: boolean;
   enableAdvancedTransferControls?: boolean;
   useTransferWhitelist?: boolean;

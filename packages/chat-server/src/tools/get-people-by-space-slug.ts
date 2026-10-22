@@ -29,7 +29,7 @@ export function createGetPeopleBySpaceSlugTool(authToken: string) {
 
   return {
     description:
-      'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Join times use memberships when present, else joinSpace events (joined_at and join_source in the result). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and when someone joined. Not for listing child subspaces by parent_id.',
+      'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Join times use memberships when present, else joinSpace events (joined_at and join_source in the result). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and when someone joined. Not for listing child subspaces by parent_id. The signed-in member may be in this list. Never recommend they connect with, meet, or look up themselves. Skip their row when suggesting people.',
     inputSchema,
     execute: async (args) => {
       const parsedArgs = inputSchema.safeParse(args);

@@ -22,6 +22,16 @@ export const people = pgTable(
     address: text('web3_address'),
     /** ISO 4217 code the member wants balances shown in. Null means USD. */
     preferredCurrency: text('preferred_currency'),
+    /**
+     * How this person primarily shows up in the network.
+     * `member` | `builder` | `investor`. Null until they choose.
+     */
+    primaryOrientation: text('primary_orientation'),
+    /**
+     * `spaces` keeps the home on spaces this person belongs to.
+     * `network` also listens for needs and opportunities other spaces shared.
+     */
+    networkHorizon: text('network_horizon').notNull().default('spaces'),
     links: jsonb('links').$type<string[]>().notNull().default([]),
     ...commonDateFields,
   },

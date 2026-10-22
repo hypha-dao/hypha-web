@@ -10,9 +10,17 @@ export type SpaceAdvisorVoiceSessionContext = {
   locale?: string;
 };
 
+/** Member home has no single space, but it still uses the live voice. */
+export type MemberHomeVoiceSessionContext = {
+  mode: 'member_home';
+  discoveryMode: 'voice_interview';
+  locale?: string;
+};
+
 export type VoiceSessionContext =
   | OnboardingConversationContext
-  | SpaceAdvisorVoiceSessionContext;
+  | SpaceAdvisorVoiceSessionContext
+  | MemberHomeVoiceSessionContext;
 
 export function buildSpaceAdvisorVoiceSessionContext(input: {
   spaceSlug: string;
@@ -23,6 +31,17 @@ export function buildSpaceAdvisorVoiceSessionContext(input: {
     discoveryMode: 'voice_interview',
     spaceSlug: input.spaceSlug.trim(),
     ...(input.locale?.trim() ? { locale: input.locale.trim() } : {}),
+  };
+}
+
+export function buildMemberHomeVoiceSessionContext(input?: {
+  locale?: string;
+}): MemberHomeVoiceSessionContext {
+  const locale = input?.locale?.trim();
+  return {
+    mode: 'member_home',
+    discoveryMode: 'voice_interview',
+    ...(locale ? { locale } : {}),
   };
 }
 

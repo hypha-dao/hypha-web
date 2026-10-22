@@ -9,6 +9,7 @@ import {
   spaceDiscussionSummaries,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../server';
+import { humanizeMemoryExcerpt } from '../../org-memory/space-memory-display';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 
 export type IngestSpaceCallArtifactsInput = {
@@ -180,7 +181,7 @@ function extractPlainMessageText(content: Record<string, unknown> | undefined) {
   if (msgtype !== 'm.text' && msgtype !== 'm.notice') return null;
   const body = content.body;
   if (typeof body !== 'string') return null;
-  const cleaned = body.replace(/\s+/g, ' ').trim();
+  const cleaned = humanizeMemoryExcerpt(body).replace(/\s+/g, ' ').trim();
   return cleaned.length > 0 ? cleaned : null;
 }
 

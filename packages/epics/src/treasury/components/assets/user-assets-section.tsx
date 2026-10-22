@@ -6,6 +6,7 @@ import { Empty } from '../../../common';
 import { useUserAssetsSection } from '../../hooks/use-user-assets-section';
 import Link from 'next/link';
 import { AssetsList } from './assets-list';
+import { AssetCard } from './asset-card';
 import { Button, Checkbox } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
@@ -104,7 +105,21 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
           </div>
         ) : null}
       </div>
-      {filteredAssets.length === 0 && !isLoading ? (
+      {filteredAssets.length === 0 && !isLoading && !searchTerm.trim() ? (
+        <div className="grid w-full grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <AssetCard
+            icon="/placeholder/hypha-token-icon.svg"
+            name="Hypha"
+            symbol="HYPHA"
+            value={0}
+            href={
+              basePath
+                ? `${basePath.replace(/\/$/, '')}/actions/purchase-hypha-tokens`
+                : undefined
+            }
+          />
+        </div>
+      ) : filteredAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>{tProfile('noAssetsFoundForUser')}</p>
         </Empty>
@@ -112,6 +127,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
         <AssetsList
           assets={filteredAssets}
           activeFilter={activeFilter}
+          basePath={basePath}
           isLoading={isLoading}
         />
       )}

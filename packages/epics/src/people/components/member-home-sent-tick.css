@@ -1,0 +1,66 @@
+.sent-tick {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  color: var(--foreground);
+  animation: sent-tick-in 640ms cubic-bezier(0.16, 0.84, 0.24, 1) both;
+}
+
+.sent-tick svg {
+  width: 56px;
+  height: 56px;
+  overflow: visible;
+}
+
+.sent-tick-ring,
+.sent-tick-mark {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sent-tick-ring {
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 113.1;
+  animation: sent-tick-draw 720ms cubic-bezier(0.16, 0.84, 0.24, 1) 80ms
+    forwards;
+}
+
+.sent-tick-mark {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  animation: sent-tick-draw 420ms cubic-bezier(0.16, 0.84, 0.24, 1) 520ms
+    forwards;
+}
+
+@keyframes sent-tick-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sent-tick-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sent-tick,
+  .sent-tick-ring,
+  .sent-tick-mark {
+    animation: none;
+  }
+
+  .sent-tick-ring,
+  .sent-tick-mark {
+    stroke-dashoffset: 0;
+  }
+}

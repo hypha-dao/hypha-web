@@ -6,11 +6,34 @@ export * from './edit-person-section';
 export * from './eth-address';
 export * from './export-embedded-wallet-button';
 export * from './member-detail';
+export * from './use-member-directory-connect';
 export * from './member-spaces';
+export * from './member-space-icons';
 export * from './members-section';
+export * from './space-invite-arrival';
+export * from './person-avatar';
+export { presenceRank, readMemberPresence } from './member-presence';
+export { PresenceDot } from './presence-dot';
+export { useMemberPresence } from './use-member-presence';
+export {
+  MemberPresenceProvider,
+  useRegisteredPresence,
+} from './member-presence-provider';
 export * from './person-head';
 export * from './person-label';
 export * from './signup-panel';
+export * from './signup-flow';
+export * from './member-home';
+export { writeHomeView } from './member-home-view';
+export * from './member-home-banner';
+export * from './member-spaces-entry';
+export * from './member-home-attention';
+export * from './member-home-notifications';
+export * from './mobile-tab-bar';
+export * from './spaces-rail-control';
+export * from './my-connections';
+export * from './member-home-phase';
+export { MemberHomeSendTokensWidget } from './member-home-chat-widgets';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';
 export * from './people-redeem-form';

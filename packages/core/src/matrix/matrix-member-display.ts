@@ -1,5 +1,17 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
+/** Production and preview org-bot accounts. People meet them as AI Agents. */
+export function isHyphaBotMatrixIdentity(
+  userId?: string | null,
+  label?: string | null,
+): boolean {
+  const configured = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
+  const id = userId?.trim();
+  if (configured && id && id === configured) return true;
+  const local = id?.replace(/^@/, '').split(':')[0] ?? '';
+  return /hypha[_-]bot/i.test(local) || /hypha[_-]bot/i.test(label ?? '');
+}
+
 /** Matrix often prefixes displaynames with `@` — strip for localpart-style checks. */
 function displayNameStem(label: string): string {
   const t = label.trim();
@@ -42,6 +54,7 @@ export function looksLikeTechnicalMatrixDisplayName(
 ): boolean {
   const l = label?.trim() ?? '';
   if (!l || l === matrixUserId) return true;
+  if (isHyphaBotMatrixIdentity(matrixUserId, l)) return true;
   const stem = displayNameStem(l);
   if (/^did:privy:/i.test(stem) || /^did:privy:/i.test(l)) return true;
   if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
@@ -138,6 +151,7 @@ export function looksLikeTechnicalSpeakerLabel(label: string): boolean {
 
 /** Shorten ugly synthetic MXIDs for UI when no display name exists. */
 export function shortenMatrixIdForDisplay(mxid: string): string {
+  if (isHyphaBotMatrixIdentity(mxid)) return '';
   if (!mxid.startsWith('@')) return mxid;
   const rest = mxid.slice(1);
   const colonIdx = rest.indexOf(':');

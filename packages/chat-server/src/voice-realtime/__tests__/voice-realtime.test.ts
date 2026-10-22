@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildOnboardingRealtimeInstructions } from '../system-instructions';
-import { buildSpaceAdvisorRealtimeInstructions } from '../system-instructions';
+import {
+  buildMemberHomeRealtimeInstructions,
+  buildOnboardingRealtimeInstructions,
+  buildSpaceAdvisorRealtimeInstructions,
+} from '../system-instructions';
 import {
   assertVoiceDiscoverySessionContext,
   RealtimeVoiceSessionContextError,
@@ -27,6 +30,17 @@ describe('realtimeVoiceSessionRequestSchema', () => {
     });
     expect(parsed.success).toBe(true);
   });
+  it('accepts member home voice discovery context', () => {
+    const parsed = realtimeVoiceSessionRequestSchema.safeParse({
+      conversationContext: {
+        mode: 'member_home',
+        discoveryMode: 'voice_interview',
+      },
+      locale: 'en',
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   it('accepts space advisor voice discovery context', () => {
     const parsed = realtimeVoiceSessionRequestSchema.safeParse({
       conversationContext: {
@@ -97,5 +111,20 @@ describe('buildSpaceAdvisorRealtimeInstructions', () => {
     expect(instructions).toContain('Do NOT call onboarding_guidance');
     expect(instructions).toContain('organisational gaps');
     expect(instructions).toContain('get_space_by_slug');
+  });
+});
+
+describe('buildMemberHomeRealtimeInstructions', () => {
+  it('keeps Realtime as a chat-script relay, not a second briefer', () => {
+    const instructions = buildMemberHomeRealtimeInstructions({
+      locale: 'en',
+      recentTranscriptSummary:
+        'Assistant: Edgar in Hypha Energy needs projects.',
+    });
+    expect(instructions).toContain('voice relay');
+    expect(instructions).toContain('SCRIPT');
+    expect(instructions).toContain('listening context only');
+    expect(instructions).not.toContain('Speak from those records');
+    expect(instructions).not.toContain('member home facts are attached');
   });
 });

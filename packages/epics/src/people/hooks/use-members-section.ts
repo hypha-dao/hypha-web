@@ -6,6 +6,9 @@ import { useDebouncedCallback } from 'use-debounce';
 
 const filterOptions = FILTER_OPTIONS_MEMBERS;
 
+/** Fills a 2-column and a 3-column directory without a short row while more people exist. */
+export const MEMBER_DIRECTORY_PAGE_SIZE = 12;
+
 type UseMembersSectionProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
@@ -31,6 +34,7 @@ export const useMembersSection = ({
 
   const { isLoading, persons, spaces } = useMembers({
     ...(activeFilter !== undefined && { filter: activeFilter }),
+    pageSize: MEMBER_DIRECTORY_PAGE_SIZE,
     spaceSlug: spaceSlug,
     searchTerm,
     refreshInterval,

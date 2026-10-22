@@ -25,6 +25,14 @@ import { useScrollToErrors } from '../../hooks';
 import { useFundWallet, useVaults } from '../../treasury/hooks';
 import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
+import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+} from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
 
 const USD_FEED_ADDRESS = '0x0000000000000000000000000000000000000000';
 const CURRENCY_CODE_BY_FEED = Object.fromEntries(
@@ -85,6 +93,8 @@ interface PeopleRedeemFormType {
   tokens: Token[];
   updateAssets: () => Promise<void>;
   isLoadingTokens?: boolean;
+  appearance?: 'default' | 'wallet';
+  closeUrl?: string;
 }
 
 type TouchedConversion = {
@@ -115,6 +125,8 @@ export const PeopleRedeemForm = ({
   tokens,
   updateAssets,
   isLoadingTokens = false,
+  appearance = 'default',
+  closeUrl,
 }: PeopleRedeemFormType) => {
   const t = useTranslations('ProfileActions.redeemTokens');
   const PERCENT_SCALE = 100;
@@ -176,8 +188,8 @@ export const PeopleRedeemForm = ({
     personSlug: string;
   }>();
   const closePanelUrl = useMemo(
-    () => `/${lang}/profile/${personSlug}`,
-    [lang, personSlug],
+    () => closeUrl ?? `/${lang}/profile/${personSlug}`,
+    [closeUrl, lang, personSlug],
   );
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -197,7 +209,7 @@ export const PeopleRedeemForm = ({
       redemptions: [
         {
           spaceSlug: '',
-          amount: '',
+          amount: '1',
           token: '',
         },
       ],
@@ -376,10 +388,12 @@ export const PeopleRedeemForm = ({
     ) {
       return undefined;
     }
-    return `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(
-      2,
-    )}`;
-  }, [selectedToken, selectedTokenCurrencySymbol]);
+    return t('form.redeemableAt', {
+      price: `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(
+        2,
+      )}`,
+    });
+  }, [selectedToken, selectedTokenCurrencySymbol, t]);
 
   const selectedTokenUsdValue = React.useMemo(() => {
     if (
@@ -678,6 +692,8 @@ export const PeopleRedeemForm = ({
               : t('form.errors.contractFailed');
         } else if (error.message.includes('user rejected')) {
           errorMessage = t('form.errors.transactionRejected');
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
       }
       form.setError('root', { message: errorMessage });
@@ -694,7 +710,7 @@ export const PeopleRedeemForm = ({
         <form
           ref={formRef}
           onSubmit={form.handleSubmit(handleRedeem, handleInvalid)}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-4"
         >
           <TokenPayoutFieldArray
             label={t('form.redemptionAmountLabel')}
@@ -704,7 +720,12 @@ export const PeopleRedeemForm = ({
             showSelectedTokenBalanceHint
             selectedTokenPriceHint={selectedTokenPriceHint}
             isLoadingTokens={isLoadingTokens}
-            loadingTokensLabel="Loading tokens..."
+            loadingTokensLabel={t('form.loadingTokens')}
+            emptyTokensLabel={t('form.noRedeemableTokens')}
+            appearance={appearance}
+            amountPresets={
+              appearance === 'wallet' ? [5, 10, 25, 50, 100] : undefined
+            }
           />
           {isRequestedAmountExceedsBalance && (
             <div className="text-2 text-red-11 mt-1">
@@ -742,8 +763,14 @@ export const PeopleRedeemForm = ({
               {t('form.collateralInsufficient')}
             </div>
           )}
-          <Separator />
-          <div className="flex gap-2 justify-end">
+          {appearance === 'wallet' ? null : <Separator />}
+          <div
+            className={
+              appearance === 'wallet'
+                ? 'flex flex-col gap-2'
+                : 'flex gap-2 justify-end'
+            }
+          >
             {isRedeeming ? (
               <div className="flex items-center gap-2 text-sm text-neutral-10">
                 <Loader2 className="animate-spin w-4 h-4" />
@@ -756,7 +783,13 @@ export const PeopleRedeemForm = ({
             ) : (
               <Button
                 type="submit"
-                disabled={isRedeeming || isCollateralsLoading}
+                className={appearance === 'wallet' ? 'w-full' : undefined}
+                disabled={
+                  isRedeeming ||
+                  isCollateralsLoading ||
+                  isLoadingTokens ||
+                  tokens.length === 0
+                }
               >
                 {t('form.redeem')}
               </Button>
@@ -765,19 +798,18 @@ export const PeopleRedeemForm = ({
           {form.formState.errors.root && (
             <div className="text-2 text-foreground">
               {form.formState.errors.root.message === 'insufficient_funds' ? (
-                <>
-                  {t('form.insufficientFundsLead')}{' '}
-                  <button
-                    type="button"
-                    onClick={fundWallet}
-                    className="font-bold cursor-pointer text-accent-9 underline bg-transparent border-0 p-0"
-                  >
-                    {t('form.insufficientFundsTopUp')}
-                  </button>{' '}
-                  {t('form.insufficientFundsTrail')}
-                </>
+                <InsufficientFundsHint
+                  onBuyUsdc={() => void fundWallet()}
+                  buyHyphaHref={buyHyphaTokensHref({
+                    lang,
+                    appearance,
+                    personSlug: person?.slug ?? personSlug,
+                  })}
+                />
               ) : (
-                form.formState.errors.root.message
+                <BlockchainErrorText
+                  message={form.formState.errors.root.message ?? ''}
+                />
               )}
             </div>
           )}

@@ -45,6 +45,26 @@ describe('buildUpdateTokenInputPatchFromTokenUpdateData', () => {
     ).not.toHaveProperty('iconUrl');
   });
 
+  it('applies a named form of capital and clears it when the key is null', () => {
+    expect(
+      buildUpdateTokenInputPatchFromTokenUpdateData({
+        name: 'A',
+        capital: 'social',
+      }),
+    ).toMatchObject({ name: 'A', capital: 'social' });
+
+    expect(
+      buildUpdateTokenInputPatchFromTokenUpdateData({
+        name: 'B',
+        capital: null,
+      }),
+    ).toMatchObject({ name: 'B', capital: null });
+
+    expect(
+      buildUpdateTokenInputPatchFromTokenUpdateData({ name: 'C' }),
+    ).not.toHaveProperty('capital');
+  });
+
   it('does not inherit prototype keys', () => {
     const data = Object.create({ name: 'proto' });
     data.symbol = 'S';

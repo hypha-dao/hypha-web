@@ -523,7 +523,7 @@ export function HumanChatPanelMentionBell({
     <button
       type="button"
       className={cn(
-        'relative flex size-9 shrink-0 items-center justify-center rounded-none border-0 bg-transparent text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        'relative flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
         mentionsTabActive
           ? 'text-accent-11'
           : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',

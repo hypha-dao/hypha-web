@@ -14,12 +14,17 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   AiPanelTrigger,
-  AiSidebarTrigger,
   GlobalCallDockProvider,
+  MemberPresenceProvider,
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
+  MobileContentFrame,
+  MobileTabBar,
+  RecentSpaceHistoryTracker,
+  SpacesRailProvider,
 } from '@hypha-platform/epics';
+
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
@@ -102,20 +107,20 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
-  let navMySpacesLabel = 'My Spaces';
-  let navMyWalletLabel = 'My Wallet';
+  let navHomeLabel = 'Home';
+  let navMessagesLabel = 'Messages';
+  let navMyWalletLabel = 'Wallet';
+  let navMySpacesLabel = 'Spaces';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
   let navSelectLanguageLabel = 'Select language';
-  let footerNetworkLabel = 'Network';
-  let footerLegalLabel = 'Legal';
+  let footerPoweredByLabel = 'Powered by';
   let footerHyphaServicesLabel = 'Hypha Services';
   let footerHyphaTokenomicsLabel = 'Hypha Tokenomics';
   let footerLicensingPolicyLabel = 'Licensing Policy';
   let footerTermsAndConditionsLabel = 'Terms and Conditions';
   let footerPrivacyPolicyLabel = 'Privacy Policy';
-  let footerCopyrightLabel = `© ${new Date().getFullYear()} Hypha`;
 
   const [
     languageSelectResult,
@@ -163,8 +168,10 @@ export default async function RootLayout({
 
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
-    navMySpacesLabel = tNav('mySpaces');
+    navHomeLabel = tNav('myDashboard');
+    navMessagesLabel = tNav('chat');
     navMyWalletLabel = tNav('myWallet');
+    navMySpacesLabel = tNav('mySpaces');
     navNetworkLabel = tNav('network');
     navOpenMenuLabel = tNav('openMenu');
     navCloseMenuLabel = tNav('closeMenu');
@@ -178,16 +185,12 @@ export default async function RootLayout({
 
   if (footerTranslationsResult.status === 'fulfilled') {
     const tFooter = footerTranslationsResult.value;
-    footerNetworkLabel = tFooter('network');
-    footerLegalLabel = tFooter('legal');
+    footerPoweredByLabel = tFooter('poweredBy');
     footerHyphaServicesLabel = tFooter('hyphaServices');
     footerHyphaTokenomicsLabel = tFooter('hyphaTokenomics');
     footerLicensingPolicyLabel = tFooter('licensingPolicy');
     footerTermsAndConditionsLabel = tFooter('termsAndConditions');
     footerPrivacyPolicyLabel = tFooter('privacyPolicy');
-    footerCopyrightLabel = tFooter('copyright', {
-      year: new Date().getFullYear(),
-    });
   } else {
     console.error(
       '[app/layout] Failed to resolve Footer translations',
@@ -249,140 +252,179 @@ export default async function RootLayout({
                   serviceWorkerPath={serviceWorkerPath}
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                    <PanelProviders>
-                      <GlobalCallDockProvider>
-                        <PanelWrapLayout
-                          left={
-                            aiChatEnabled
-                              ? {
-                                  content: (
-                                    <AiLeftPanel
-                                      enableSpaceMemory={spaceMemoryEnabled}
-                                    />
-                                  ),
-                                }
-                              : undefined
-                          }
-                          right={
-                            humanChatEnabled
-                              ? { content: <ConnectedHumanRightPanel /> }
-                              : undefined
-                          }
-                        >
-                          {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                          <div className="sticky top-0 z-30 shrink-0">
-                            <ConnectedMenuTop
-                              aiChatEnabled={aiChatEnabled}
-                              logoHref={ROOT_URL}
-                              openMenuLabel={navOpenMenuLabel}
-                              closeMenuLabel={navCloseMenuLabel}
-                              leadingAction={
-                                aiChatEnabled ? (
-                                  <div className="flex items-center gap-1.5 sm:gap-2">
-                                    <div className="md:hidden">
-                                      <AiSidebarTrigger />
-                                    </div>
-                                    <AiPanelTrigger />
-                                  </div>
-                                ) : undefined
+                    <MemberPresenceProvider>
+                      <PanelProviders>
+                        <SpacesRailProvider>
+                          <RecentSpaceHistoryTracker />
+                          <GlobalCallDockProvider>
+                            <PanelWrapLayout
+                              left={
+                                aiChatEnabled
+                                  ? {
+                                      content: (
+                                        <AiLeftPanel
+                                          enableSpaceMemory={spaceMemoryEnabled}
+                                        />
+                                      ),
+                                    }
+                                  : undefined
                               }
-                              trailingAction={
-                                humanChatEnabled ? (
-                                  <HumanSidebarTrigger />
-                                ) : undefined
-                              }
-                              mobileAction={
-                                <ConnectedButtonProfile
-                                  newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
-                                  navItems={[
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
-                                  showNetworkFeedback
-                                  trailingBeforeProfile={
-                                    isLanguageSelectVisible ? (
-                                      <ConnectedLanguageSelect
-                                        selectLanguageLabel={
-                                          navSelectLanguageLabel
-                                        }
-                                      />
-                                    ) : undefined
-                                  }
-                                  compact
-                                />
+                              right={
+                                humanChatEnabled
+                                  ? { content: <ConnectedHumanRightPanel /> }
+                                  : undefined
                               }
                             >
-                              <div className="hidden md:flex">
-                                <ConnectedButtonProfile
-                                  newUserRedirectPath="/profile/signup"
-                                  baseRedirectPath="/my-spaces"
-                                  navItems={[
-                                    {
-                                      label: navMySpacesLabel,
-                                      href: `/${locale}/my-spaces`,
-                                    },
-                                    {
-                                      label: navMyWalletLabel,
-                                      href: `/${locale}/my-wallet`,
-                                    },
-                                    {
-                                      label: navNetworkLabel,
-                                      href: `/${locale}/network`,
-                                    },
-                                  ]}
-                                  showNetworkFeedback
-                                  trailingBeforeProfile={
-                                    isLanguageSelectVisible ? (
-                                      <ConnectedLanguageSelect
-                                        selectLanguageLabel={
-                                          navSelectLanguageLabel
-                                        }
-                                      />
+                              {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                              <div className="sticky top-0 z-40 shrink-0 bg-page-background">
+                                <ConnectedMenuTop
+                                  aiChatEnabled={aiChatEnabled}
+                                  logoHref={ROOT_URL}
+                                  openMenuLabel={navOpenMenuLabel}
+                                  closeMenuLabel={navCloseMenuLabel}
+                                  leadingAction={
+                                    aiChatEnabled ? (
+                                      <AiPanelTrigger />
                                     ) : undefined
                                   }
-                                />
+                                  trailingAction={
+                                    humanChatEnabled ? (
+                                      <HumanSidebarTrigger />
+                                    ) : undefined
+                                  }
+                                  mobileAction={
+                                    <>
+                                      <ConnectedButtonProfile
+                                        newUserRedirectPath="/profile/signup"
+                                        baseRedirectPath={`/${locale}/home`}
+                                        navItems={[
+                                          {
+                                            label: navHomeLabel,
+                                            href: `/${locale}/home`,
+                                          },
+                                          {
+                                            label: navMessagesLabel,
+                                            href: `/${locale}/messages`,
+                                          },
+                                          {
+                                            label: navMyWalletLabel,
+                                            href: `/${locale}/my-wallet`,
+                                          },
+                                          {
+                                            label: navMySpacesLabel,
+                                            href: `/${locale}/my-spaces`,
+                                          },
+                                          {
+                                            label: navNetworkLabel,
+                                            href: `/${locale}/network`,
+                                          },
+                                        ]}
+                                        showNetworkFeedback
+                                        trailingBeforeProfile={
+                                          isLanguageSelectVisible ? (
+                                            <ConnectedLanguageSelect
+                                              selectLanguageLabel={
+                                                navSelectLanguageLabel
+                                              }
+                                            />
+                                          ) : undefined
+                                        }
+                                        compact
+                                      />
+                                    </>
+                                  }
+                                >
+                                  <div className="hidden xl:flex">
+                                    <ConnectedButtonProfile
+                                      newUserRedirectPath="/profile/signup"
+                                      baseRedirectPath={`/${locale}/home`}
+                                      navItems={[
+                                        {
+                                          label: navHomeLabel,
+                                          href: `/${locale}/home`,
+                                        },
+                                        {
+                                          label: navMessagesLabel,
+                                          href: `/${locale}/messages`,
+                                        },
+                                        {
+                                          label: navMyWalletLabel,
+                                          href: `/${locale}/my-wallet`,
+                                        },
+                                        {
+                                          label: navMySpacesLabel,
+                                          href: `/${locale}/my-spaces`,
+                                        },
+                                        {
+                                          label: navNetworkLabel,
+                                          href: `/${locale}/network`,
+                                        },
+                                      ]}
+                                      showNetworkFeedback
+                                      trailingBeforeProfile={
+                                        isLanguageSelectVisible ? (
+                                          <ConnectedLanguageSelect
+                                            selectLanguageLabel={
+                                              navSelectLanguageLabel
+                                            }
+                                          />
+                                        ) : undefined
+                                      }
+                                    />
+                                  </div>
+                                </ConnectedMenuTop>
                               </div>
-                            </ConnectedMenuTop>
-                          </div>
-                          {/* Scrollable content area */}
-                          <NextSSRPlugin
-                            routerConfig={extractRouterConfig(fileRouter)}
-                          />
-                          <div className="mb-auto pb-8">
-                            <div className="flex h-full justify-normal pt-4 md:pt-5">
-                              <div className="w-full h-full">{children}</div>
-                            </div>
-                          </div>
-                          <Suspense fallback={null}>
-                            <DeferredFooter
-                              networkLabel={footerNetworkLabel}
-                              legalLabel={footerLegalLabel}
-                              hyphaServicesLabel={footerHyphaServicesLabel}
-                              hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                              licensingPolicyLabel={footerLicensingPolicyLabel}
-                              termsAndConditionsLabel={
-                                footerTermsAndConditionsLabel
-                              }
-                              privacyPolicyLabel={footerPrivacyPolicyLabel}
-                              copyrightLabel={footerCopyrightLabel}
-                            />
-                          </Suspense>
-                        </PanelWrapLayout>
-                        {/* Outside capture root so tab screen share excludes the floating dock. */}
-                        {humanChatEnabled && <ConnectedGlobalCallDock />}
-                      </GlobalCallDockProvider>
-                    </PanelProviders>
+                              {/* Scrollable content area */}
+                              <NextSSRPlugin
+                                routerConfig={extractRouterConfig(fileRouter)}
+                              />
+                              {/* mb-auto is the gap under short pages. The footer stays a
+                                sibling so that gap sits above it, at the fold,
+                                and is not counted as column content. */}
+                              <div className="mb-auto max-xl:pb-[var(--mobile-tab-offset,6rem)]">
+                                <div className="pb-8">
+                                  <MobileContentFrame>
+                                    <div className="flex h-full justify-normal pt-4 md:pt-5">
+                                      <div className="w-full h-full">
+                                        {children}
+                                      </div>
+                                    </div>
+                                  </MobileContentFrame>
+                                </div>
+                              </div>
+                              <Suspense fallback={null}>
+                                {/* Match MobileTabBar (`xl:hidden`): site footer only on desktop. */}
+                                <div className="hidden shrink-0 xl:block">
+                                  <DeferredFooter
+                                    poweredByLabel={footerPoweredByLabel}
+                                    hyphaServicesLabel={
+                                      footerHyphaServicesLabel
+                                    }
+                                    hyphaTokenomicsLabel={
+                                      footerHyphaTokenomicsLabel
+                                    }
+                                    licensingPolicyLabel={
+                                      footerLicensingPolicyLabel
+                                    }
+                                    termsAndConditionsLabel={
+                                      footerTermsAndConditionsLabel
+                                    }
+                                    privacyPolicyLabel={
+                                      footerPrivacyPolicyLabel
+                                    }
+                                  />
+                                </div>
+                              </Suspense>
+                              <MobileTabBar
+                                spaceMemoryEnabled={spaceMemoryEnabled}
+                              />
+                            </PanelWrapLayout>
+                            {/* Outside capture root so tab screen share excludes the floating dock. */}
+                            {humanChatEnabled && <ConnectedGlobalCallDock />}
+                          </GlobalCallDockProvider>
+                        </SpacesRailProvider>
+                      </PanelProviders>
+                    </MemberPresenceProvider>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>

@@ -66,31 +66,10 @@ export function buildSpaceScopeStyle(input: {
     0.45,
   );
   const palette = buildAccentPaletteFromHex(accent);
-  palette['--color-accent'] = accent;
-  palette['--color-accent-9'] = accent;
-  palette['--color-accent-10'] = mixHexColors(stops.deep, accent, 0.42);
-  palette['--color-accent-contrast'] = foreground;
-
-  const accentAliases: Record<string, string> = {};
-  for (let step = 1; step <= 12; step++) {
-    const colorToken = palette[`--color-accent-${step}`];
-    if (colorToken) {
-      accentAliases[`--accent-${step}`] = colorToken;
-    }
-  }
-  if (palette['--color-accent']) {
-    accentAliases['--accent'] = palette['--color-accent'];
-  }
-  if (palette['--color-accent-foreground']) {
-    accentAliases['--accent-foreground'] = palette['--color-accent-foreground'];
-  }
-  accentAliases['--accent-contrast'] =
-    palette['--color-accent-contrast'] ?? foreground;
 
   return {
     ...overlayVars,
-    ...palette,
-    ...accentAliases,
+    '--space-spot': accent,
     '--space-accent': accent,
     '--space-accent-deep': stops.deep,
     '--space-accent-luminous': stops.luminous,
@@ -98,8 +77,7 @@ export function buildSpaceScopeStyle(input: {
      * Readable accent-colored text on light surfaces (tabs, outline labels, links).
      * Solid-on-accent ink lives in `--space-accent-contrast` — do not reuse that here.
      */
-    '--space-accent-foreground':
-      palette['--color-accent-11'] ?? palette['--color-accent-12'] ?? accent,
+    '--space-accent-foreground': palette['--color-accent-11'] ?? accent,
     '--space-accent-muted': muted,
     '--space-accent-contrast': foreground,
     '--space-tab-active-border': accent,

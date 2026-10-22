@@ -4,6 +4,19 @@ import {
 } from './coherence-priorities';
 import { CoherenceTag } from './coherence-tags';
 import { CoherenceType } from './coherence-types';
+import type { CapitalKey } from '../network/capitals';
+
+/** Indicative amount on a signal. `token` is the token address, same as a proposal payout. */
+export type IndicativePayout = {
+  amount: string;
+  token: string;
+};
+
+/** A document linked on a signal. Same shape as a proposal attachment. */
+export type SignalAttachment = {
+  name: string;
+  url: string;
+};
 
 export interface CreateCoherenceInput {
   /** Null for system/automated signals with no attributable requesting user. */
@@ -23,10 +36,22 @@ export interface CreateCoherenceInput {
   progressStatus?: string | null;
   board?: string | null;
   assigneeIds?: number[];
+  /** Amounts that name the ask. Omitted means none. Never a transfer. */
+  indicativePayouts?: IndicativePayout[];
+  leadImage?: string | null;
+  videoUrl?: string | null;
+  attachments?: SignalAttachment[];
+  /**
+   * Share this signal beyond its space so it can be offered to other members.
+   * Omitted means no.
+   */
+  sharedWithNetwork?: boolean;
   /** `space_api_keys.source` when written by a community app integration. */
   source?: string | null;
   /** The integration's own identifier for the record, used for idempotency. */
   externalId?: string | null;
+  /** Forms of capital this signal carries. Omitted means none. */
+  capitals?: CapitalKey[];
 }
 
 export interface UpdateCoherenceInput {
@@ -50,8 +75,16 @@ export interface UpdateCoherenceSignalInput {
   progressStatus?: string | null;
   board?: string | null;
   assigneeIds?: number[];
+  indicativePayouts?: IndicativePayout[];
+  leadImage?: string | null;
+  videoUrl?: string | null;
+  attachments?: SignalAttachment[];
+  /** Omit to leave sharing alone. */
+  sharedWithNetwork?: boolean;
   /** Omit to leave the archived state alone; set it to change it in the same write. */
   archived?: boolean;
+  /** Omit to leave the named forms of capital alone. */
+  capitals?: CapitalKey[];
 }
 
 export type UpdateCoherenceSignalBySlugInput = {
@@ -116,10 +149,19 @@ export type Coherence = {
     reminderSentAt?: string | null;
     overdueSentAt?: string | null;
   };
+  /** Amounts that name the ask or resource. They do not move funds. */
+  indicativePayouts: IndicativePayout[];
+  leadImage: string | null;
+  videoUrl: string | null;
+  attachments: SignalAttachment[];
+  /** True when members outside this space may be offered this signal. */
+  sharedWithNetwork: boolean;
   /** `space_api_keys.source` when written by a community app integration. */
   source: string | null;
   /** The integration's own identifier for the record. */
   externalId: string | null;
+  /** Forms of capital named on this signal. Empty when none are named. */
+  capitals: CapitalKey[];
   /** Present on list/detail API responses; not stored on the row itself. */
   upvotes?: CoherenceUpvoteSummary;
 };

@@ -131,7 +131,7 @@ function buildVisualAssetsSteps(): GuidanceStep[] {
     {
       field: 'visual_vibe',
       question:
-        'No problem — I can generate a logo and hero banner that fit your space. What mood and visual world should they evoke? For example: luminous and regenerative, grounded earth materials, quiet futurism, cinematic and hopeful — symbols and atmosphere only, no words in the images.',
+        'No problem — I can generate a logo and hero banner that fit your space. What should they look like? For example: a real forest in daylight, a printed ink mark, stone and paper, a quiet workshop — a place or a material, no words in the images.',
       requiredWhen: (stepAnswers) =>
         wantsGeneratedPlaceholders(stepAnswers.visual_assets_choice),
       isAnswered: (value) => isAnsweredText(value, 3),
@@ -666,7 +666,7 @@ export function createOnboardingGuidanceTool(locale?: string | null) {
       const visualAssetsAssistantInstruction = requiresVisualAssetsPicker
         ? 'Ask only the next_question in one warm sentence. First ask whether they have a logo and hero banner to upload—if not, reassure them you can generate both. Never trigger wallet signing or create_space_from_onboarding until logo_url and lead_image_url are set.'
         : nextStep?.field === 'visual_vibe'
-        ? 'Ask only the next_question. After they share the vibe, call generate_space_visual_assets in the same or next turn and show thumbnail previews before asking for confirmation. HARD RULE: text-free images — describe mood, symbols, light, and materials in visual_vibe; never ask for the space name or slogans rendered in the image. Aim for mature, inspirational, striking craft (not basic flat logos).'
+        ? 'Ask only the next_question. After they share the vibe, call generate_space_visual_assets in the same or next turn and show thumbnail previews before asking for confirmation. HARD RULE: text-free images — visual_vibe must be a real place, material, and daylight, never neon, glowing roots, god rays, or fantasy CGI. Never ask for the space name or slogans rendered in the image.'
         : nextStep?.field === 'visual_assets_confirmed'
         ? 'Show the generated logo and banner previews if not already visible, then ask only the next_question. Do not proceed to create_space_from_onboarding until they confirm.'
         : null;
@@ -725,6 +725,15 @@ export function createOnboardingGuidanceTool(locale?: string | null) {
         })),
         suggested_categories: expandCategoryGroups(assignedCategoryGroups),
         requires_location_picker: requiresLocationPicker,
+        answered_activation_method:
+          typeof answers.activation_method === 'string'
+            ? answers.activation_method
+            : null,
+        answered_transparency_discoverability: isAnsweredTransparencyLevel(
+          answers.transparency_discoverability,
+        )
+          ? answers.transparency_discoverability
+          : null,
         requires_activation_picker: requiresActivationPicker,
         requires_transparency_picker: requiresTransparencyPicker,
         requires_transparency_discoverability_picker:
