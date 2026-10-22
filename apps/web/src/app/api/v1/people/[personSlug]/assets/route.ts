@@ -6,9 +6,7 @@ import {
   getTokenBalancesByAddress,
   findAllTokens,
   findAllSpacesByWeb3SpaceIds,
-  getBalance,
   getTokenMeta,
-  getSupply,
   getMutualCreditInfo,
   getUsdRates,
   convertToUsd,
@@ -18,7 +16,6 @@ import {
   Token,
   validTokenTypes,
   TokenType,
-  getTokenDecimals,
   getEnergyBalances,
   getMemberSpaces,
   isHiddenToken,
@@ -34,6 +31,61 @@ import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { web3Client } from '@hypha-platform/core/server';
+import { erc20Abi } from 'viem';
+
+type HoldingRead = {
+  /** Null when balanceOf failed. The row stays at zero, matching the old per-token catch. */
+  amount: bigint | null;
+  decimals: number;
+  totalSupply: bigint | null;
+};
+
+function unitsFromRaw(raw: bigint, decimals: number): number {
+  const scale = 10n ** BigInt(decimals);
+  return Number(raw / scale) + Number(raw % scale) / 10 ** decimals;
+}
+
+/** One multicall wave for balance, decimals, and supply instead of a round trip per token. */
+async function readHoldings(
+  tokens: { address: `0x${string}` }[],
+  owner: `0x${string}`,
+): Promise<Map<string, HoldingRead>> {
+  const out = new Map<string, HoldingRead>();
+  const chunkSize = 40;
+  for (let start = 0; start < tokens.length; start += chunkSize) {
+    const slice = tokens.slice(start, start + chunkSize);
+    const contracts = slice.flatMap((token) => {
+      const base = { address: token.address, abi: erc20Abi } as const;
+      return [
+        {
+          ...base,
+          functionName: 'balanceOf' as const,
+          args: [owner] as const,
+        },
+        { ...base, functionName: 'decimals' as const },
+        { ...base, functionName: 'totalSupply' as const },
+      ];
+    });
+    const results = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts,
+    });
+    slice.forEach((token, index) => {
+      const balance = results[index * 3];
+      const decimals = results[index * 3 + 1];
+      const supply = results[index * 3 + 2];
+      out.set(token.address.toLowerCase(), {
+        amount:
+          balance?.status === 'success' ? (balance.result as bigint) : null,
+        decimals: decimals?.status === 'success' ? Number(decimals.result) : 18,
+        totalSupply:
+          supply?.status === 'success' ? (supply.result as bigint) : null,
+      });
+    });
+  }
+  return out;
+}
 
 type SourceResult<T> = { ok: true; value: T } | { ok: false; value: T };
 
@@ -196,32 +248,36 @@ export async function GET(
         let name = 'Unnamed';
         let symbol = 'UNKNOWN';
         try {
-          name = await web3Client.readContract({
-            address: energyTokenAddress,
-            abi: [
-              {
-                type: 'function',
-                inputs: [],
-                name: 'name',
-                outputs: [{ internalType: 'string', type: 'string' }],
-                stateMutability: 'view',
-              },
-            ],
-            functionName: 'name',
-          });
-          symbol = await web3Client.readContract({
-            address: energyTokenAddress,
-            abi: [
-              {
-                type: 'function',
-                inputs: [],
-                name: 'symbol',
-                outputs: [{ internalType: 'string', type: 'string' }],
-                stateMutability: 'view',
-              },
-            ],
-            functionName: 'symbol',
-          });
+          const erc20NameAbi = [
+            {
+              type: 'function',
+              inputs: [],
+              name: 'name',
+              outputs: [{ internalType: 'string', type: 'string' }],
+              stateMutability: 'view',
+            },
+          ] as const;
+          const erc20SymbolAbi = [
+            {
+              type: 'function',
+              inputs: [],
+              name: 'symbol',
+              outputs: [{ internalType: 'string', type: 'string' }],
+              stateMutability: 'view',
+            },
+          ] as const;
+          [name, symbol] = await Promise.all([
+            web3Client.readContract({
+              address: energyTokenAddress,
+              abi: erc20NameAbi,
+              functionName: 'name',
+            }),
+            web3Client.readContract({
+              address: energyTokenAddress,
+              abi: erc20SymbolAbi,
+              functionName: 'symbol',
+            }),
+          ]);
         } catch (error) {
           console.warn('Failed to fetch energy token metadata:', error);
         }
@@ -334,6 +390,7 @@ export async function GET(
 
     const referencePriceByAddress: Record<string, number> = {};
     const referenceCurrencyByAddress: Record<string, string> = {};
+    const capitalByAddress: Record<string, string> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
@@ -345,13 +402,19 @@ export async function GET(
         referenceCurrencyByAddress[t.address.toLowerCase()] =
           t.referenceCurrency;
       }
+      if (t.address && t.capital) {
+        capitalByAddress[t.address.toLowerCase()] = t.capital;
+      }
     });
+
+    const holdings = await readHoldings(allTokens, address);
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
           const isEnergyToken =
             token.address.toLowerCase() === energyTokenAddress?.toLowerCase();
+          const holding = holdings.get(token.address.toLowerCase());
           /**
            * Mutual credit only exists on RegularSpaceToken instances issued through the
            * platform. Skipping the multicall for the energy token and for tokens that
@@ -361,44 +424,28 @@ export async function GET(
           const shouldFetchCredit =
             !isEnergyToken && dbTokenAddresses.has(token.address.toLowerCase());
 
-          /** Run the per-token reads in parallel so each token costs ~1 RPC RTT. */
-          const [meta, decimals, balanceRes, supplyRes, mutualCredit] =
-            await Promise.all([
-              getTokenMeta(token.address, dbTokens),
-              getTokenDecimals(token.address),
-              isEnergyToken
-                ? Promise.resolve(null)
-                : getBalance(token.address, address).catch((err) => {
-                    console.warn(
-                      `Failed to fetch balance for token ${token.address}: ${err}`,
-                    );
-                    return null;
-                  }),
-              getSupply(token.address).catch((err) => {
-                console.warn(
-                  `Failed to fetch supply for token ${token.address}: ${err}`,
-                );
-                return null;
-              }),
-              shouldFetchCredit
-                ? getMutualCreditInfo(token.address, address)
-                : Promise.resolve(null),
-            ]);
+          const [meta, mutualCredit] = await Promise.all([
+            getTokenMeta(token.address, dbTokens),
+            shouldFetchCredit
+              ? getMutualCreditInfo(token.address, address)
+              : Promise.resolve(null),
+          ]);
 
-          let amount: number;
-          if (isEnergyToken) {
-            amount =
-              Number(energyBalanceRaw / 10n ** BigInt(decimals)) +
-              Number(energyBalanceRaw % 10n ** BigInt(decimals)) /
-                10 ** decimals;
-          } else {
-            amount = balanceRes ? balanceRes.amount : 0;
-          }
-          const totalSupply = supplyRes?.totalSupply;
+          const chainDecimals = holding?.decimals ?? 18;
           const displayDecimals = getEnergyCommunityDisplayDecimals(
             token.address,
-            decimals,
+            chainDecimals,
           );
+          let amount: number;
+          if (isEnergyToken) {
+            amount = unitsFromRaw(energyBalanceRaw, chainDecimals);
+          } else {
+            amount =
+              holding?.amount == null
+                ? 0
+                : unitsFromRaw(holding.amount, displayDecimals);
+          }
+          const totalSupply = holding?.totalSupply ?? null;
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
           /**
            * Currency `rate` is denominated in. Market feeds and the fixed HYPHA
@@ -430,6 +477,7 @@ export async function GET(
             value: amount,
             tokenPrice: rate,
             referenceCurrency: rateCurrency,
+            capital: capitalByAddress[token.address.toLowerCase()] ?? null,
             usdEqual: convertToUsd(rate * amount, rateCurrency, usdRates),
             chartData: [],
             transactions: [],

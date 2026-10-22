@@ -69,7 +69,7 @@ function signalHasTag(signal: FilterableSignal, tag: string): boolean {
   );
 }
 
-function matchesDeadline(
+export function matchesDeadline(
   dueAt: Date | null,
   filter: SignalDeadlineFilter,
   now: Date,

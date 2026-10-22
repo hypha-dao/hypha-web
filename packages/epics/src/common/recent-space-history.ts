@@ -1,8 +1,8 @@
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const RECENT_SPACE_HISTORY_EVENT = 'hypha:recent-space-slugs:changed';
 const LAST_ACTIVE_SPACE_STORAGE_KEY = 'hypha:last-active-space-slug';
-export const MAX_VISIBLE_RECENT_SPACES = 4;
-// Strict rolling queue of 4 visited (exited) spaces.
+export const MAX_VISIBLE_RECENT_SPACES = 5;
+/** Rolling MRU queue of spaces the member opened (most recent first). */
 export const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES;
 
 function normalizeSlug(slug?: string | null): string | null {
@@ -17,16 +17,24 @@ function normalizeQueue(
 ): string[] {
   const exclude = normalizeSlug(options?.excludeSlug);
   const queue: string[] = [];
+  const seen = new Set<string>();
 
   for (const candidate of slugs) {
     const slug = normalizeSlug(candidate);
     if (!slug) continue;
     if (exclude && slug === exclude) continue;
+    if (seen.has(slug)) continue;
+    seen.add(slug);
     queue.push(slug);
     if (queue.length >= MAX_RECENT_SPACE_HISTORY) break;
   }
 
   return queue;
+}
+
+function sameQueue(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((slug, index) => slug === b[index]);
 }
 
 export function readRecentSpaceSlugs(): string[] {
@@ -45,6 +53,7 @@ export function readRecentSpaceSlugs(): string[] {
 export function writeRecentSpaceSlugs(slugs: string[]): void {
   if (typeof window === 'undefined') return;
   const normalized = normalizeQueue(slugs);
+  if (sameQueue(normalized, readRecentSpaceSlugs())) return;
   try {
     window.localStorage.setItem(
       RECENT_SPACE_STORAGE_KEY,
@@ -65,10 +74,24 @@ export function sanitizeRecentSpaceSlugs(activeSlug?: string | null): string[] {
 }
 
 /**
+ * Mark a space as visited (MRU): move it to the front of the queue.
+ */
+export function recordRecentSpaceVisit(slug?: string | null): string[] {
+  const visited = normalizeSlug(slug);
+  if (!visited) return readRecentSpaceSlugs();
+  const current = readRecentSpaceSlugs();
+  const next = normalizeQueue([visited, ...current]);
+  writeRecentSpaceSlugs(next);
+  return next;
+}
+
+/**
  * Route transition queue update (from -> to):
  * - prepend exited space (`from`) to top
  * - remove active destination (`to`) from queue
- * - keep max 4 unique entries
+ * - keep the last 5 entries
+ *
+ * @deprecated Prefer `recordRecentSpaceVisit` / `syncRecentSpacesForActiveSlug`.
  */
 export function recordRecentSpaceTransition(
   fromSlug?: string | null,
@@ -133,21 +156,27 @@ function writeLastActiveSpaceSlug(slug?: string | null): void {
 /**
  * Remount-safe recents updater.
  *
- * Uses a persisted "last active space" to infer transitions even when
- * the sidebar unmounts between route changes.
+ * Records each distinct space the member opens (visit-on-enter). Persists
+ * "last active space" so transitions still work when panels remount.
  */
 export function syncRecentSpacesForActiveSlug(
   activeSlug?: string | null,
 ): string[] {
   const active = normalizeSlug(activeSlug);
-  if (!active) return readRecentSpaceSlugs();
-
   const previousActive = readLastActiveSpaceSlug();
-  const next =
-    previousActive && previousActive !== active
-      ? recordRecentSpaceTransition(previousActive, active)
-      : sanitizeRecentSpaceSlugs(active);
 
+  if (!active) {
+    writeLastActiveSpaceSlug(null);
+    return readRecentSpaceSlugs();
+  }
+
+  if (previousActive === active) {
+    const current = readRecentSpaceSlugs();
+    if (current[0] === active) return current;
+    return recordRecentSpaceVisit(active);
+  }
+
+  const next = recordRecentSpaceVisit(active);
   writeLastActiveSpaceSlug(active);
   return next;
 }

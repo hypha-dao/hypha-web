@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronDownIcon } from '@radix-ui/themes';
+import { ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,10 @@ import {
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
 import { useTranslations } from 'next-intl';
+import {
+  formatWalletAmount,
+  WalletAmountBlock,
+} from '../../../../common/wallet-flow-card';
 
 interface Token {
   icon: string;
@@ -48,6 +53,27 @@ interface TokenPayoutFieldProps {
   selectedTokenPriceHint?: string;
   isLoadingTokens?: boolean;
   loadingTokensLabel?: string;
+  /** Shown when discovery finished and the list is empty. */
+  emptyTokensLabel?: string;
+  /** Send-tokens amount block. Profile and agreement forms keep the default row. */
+  variant?: 'default' | 'wallet';
+  amountPresets?: number[];
+  /** Stack amount and token. A side-by-side row clips the token label in a narrow rail. */
+  stacked?: boolean;
+}
+
+/** Digits with at most one dot. Linear so a long paste cannot backtrack. */
+function isDecimalAmountDraft(value: string) {
+  let seenDot = false;
+  for (const char of value) {
+    if (char === '.') {
+      if (seenDot) return false;
+      seenDot = true;
+      continue;
+    }
+    if (char < '0' || char > '9') return false;
+  }
+  return true;
 }
 
 function TokenPayoutFieldInner({
@@ -60,8 +86,13 @@ function TokenPayoutFieldInner({
   selectedTokenPriceHint,
   isLoadingTokens = false,
   loadingTokensLabel,
+  emptyTokensLabel,
+  variant = 'default',
+  amountPresets,
+  stacked = false,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tWallet = useTranslations('MyWallet');
   const selectedToken = value.token
     ? tokens.find(
         (t) =>
@@ -91,7 +122,7 @@ function TokenPayoutFieldInner({
 
     const normalizedAmount = amount.replace(',', '.');
 
-    if (/^\d*\.?\d*$/.test(normalizedAmount)) {
+    if (isDecimalAmountDraft(normalizedAmount)) {
       onChange({
         amount: normalizedAmount,
         token: value.token,
@@ -100,9 +131,114 @@ function TokenPayoutFieldInner({
     }
   };
 
+  if (variant === 'wallet') {
+    const showMenu = !readOnlyDropdown && tokens.length > 0;
+    const held =
+      selectedToken &&
+      typeof selectedToken.value === 'number' &&
+      Number.isFinite(selectedToken.value)
+        ? selectedToken.value
+        : null;
+    const spend = Number(value.amount);
+    return (
+      <WalletAmountBlock
+        id={`token-payout-${value.token || 'amount'}`}
+        amount={value.amount ?? ''}
+        onAmountChange={handleAmountChange}
+        amountLabel={tAgreementFlow('plugins.tokenPayoutField.amount')}
+        symbol={selectedToken?.symbol}
+        presets={
+          isLoadingTokens || tokens.length === 0 ? undefined : amountPresets
+        }
+        symbolNode={
+          showMenu ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex max-w-full items-center gap-1 text-2 leading-5 tracking-[0.14em] uppercase"
+                >
+                  <span className="truncate">
+                    {selectedToken?.symbol ??
+                      tAgreementFlow('plugins.tokenPayoutField.selectToken')}
+                  </span>
+                  <ChevronDown
+                    aria-hidden
+                    strokeWidth={1.5}
+                    className="size-3.5 shrink-0 text-neutral-10"
+                  />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="max-h-[200px] w-64 overflow-y-auto">
+                {tokens.map((token) => (
+                  <DropdownMenuItem
+                    key={`${token.space?.slug ?? ''}:${token.address}`}
+                    onSelect={() => handleTokenChange(token)}
+                  >
+                    <Image
+                      src={token.icon}
+                      width={24}
+                      height={24}
+                      alt={token.symbol}
+                      className="mr-2 h-5 w-5 rounded-full"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-2 text-neutral-11">
+                        {token.symbol}
+                      </span>
+                      {token?.space?.title ? (
+                        <span className="text-1 text-accent-11">
+                          {tAgreementFlow('plugins.tokenPayoutField.bySpace', {
+                            space: token.space.title,
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : undefined
+        }
+        holding={
+          held == null || !selectedToken
+            ? undefined
+            : {
+                label: tWallet('available'),
+                amount: formatWalletAmount(held),
+                symbol: selectedToken.symbol,
+                enough:
+                  !Number.isFinite(spend) || spend <= 0 || spend <= held + 1e-9,
+              }
+        }
+        hint={
+          isLoadingTokens ? (
+            <span>
+              {loadingTokensLabel ??
+                tAgreementFlow('plugins.exchangeStakesAndTokens.loadingTokens')}
+            </span>
+          ) : tokens.length === 0 ? (
+            <span>
+              {emptyTokensLabel ??
+                tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
+            </span>
+          ) : selectedTokenPriceHint ? (
+            <span>{selectedTokenPriceHint}</span>
+          ) : null
+        }
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1 w-full">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3 w-full">
+      <div
+        className={
+          stacked
+            ? 'flex w-full flex-col gap-2'
+            : 'flex w-full flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3'
+        }
+      >
         <div className="flex min-w-0 flex-1">
           <Input
             rootClassName="min-h-10 w-full items-stretch"
@@ -114,16 +250,22 @@ function TokenPayoutFieldInner({
             className="h-10 min-h-10"
           />
         </div>
-        <div className="flex w-full min-w-0 shrink-0 sm:max-w-[min(18rem,42%)]">
+        <div
+          className={
+            stacked
+              ? 'flex w-full min-w-0'
+              : 'flex w-full min-w-0 shrink-0 sm:max-w-[min(18rem,42%)]'
+          }
+        >
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 colorVariant="neutral"
                 role="combobox"
-                className="h-10 min-h-10 w-full justify-between px-3 py-0 text-sm font-normal"
+                className="h-10 min-h-10 w-full min-w-0 justify-between overflow-hidden px-3 py-0 text-sm font-normal"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                   {selectedToken ? (
                     <>
                       <Image
@@ -131,19 +273,19 @@ function TokenPayoutFieldInner({
                         width={20}
                         height={20}
                         alt={selectedToken.symbol}
-                        className="mr-2 rounded-full h-4 w-4"
+                        className="h-4 w-4 shrink-0 rounded-full"
                       />
-                      <span className="text-2 text-neutral-11">
+                      <span className="min-w-0 truncate text-2 text-neutral-11">
                         {selectedToken.symbol}
                       </span>
                     </>
                   ) : (
-                    <span className="text-2 text-neutral-11 whitespace-nowrap">
+                    <span className="min-w-0 truncate text-2 text-neutral-11">
                       {tAgreementFlow('plugins.tokenPayoutField.selectToken')}
                     </span>
                   )}
                 </div>
-                <ChevronDownIcon className="size-2" />
+                <ChevronDownIcon className="size-2 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
@@ -188,7 +330,8 @@ function TokenPayoutFieldInner({
                       tAgreementFlow(
                         'plugins.exchangeStakesAndTokens.loadingTokens',
                       )
-                    : tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
+                    : emptyTokensLabel ??
+                      tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
                 </span>
               )}
             </DropdownMenuContent>

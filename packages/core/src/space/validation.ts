@@ -113,6 +113,12 @@ const createSpaceWeb2Props = {
   longitude: spaceLongitudeSchema.nullable().optional(),
   locationLabel: spaceLocationLabelSchema.nullable().optional(),
   locationSource: spaceLocationSourceSchema.nullable().optional(),
+  exchangeCapitals: z
+    .object({
+      seeks: z.array(z.string()).max(11),
+      offers: z.array(z.string()).max(11),
+    })
+    .optional(),
 };
 
 export function refineSpaceLocationCoords(

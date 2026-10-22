@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { shouldBlockDuplicateRootSpaceCreation } from '../tools/create-space-from-onboarding-redirect';
 
 describe('shouldBlockDuplicateRootSpaceCreation', () => {
-  it('blocks another root during execute phase', () => {
+  it('does not block while execute is waiting on the wallet signature', () => {
     const result = shouldBlockDuplicateRootSpaceCreation({
       onboarding_setup_phase: 'execute',
     });
-    expect(result.block).toBe(true);
+    expect(result.block).toBe(false);
   });
 
   it('allows nested on-chain create with parent', () => {
@@ -23,10 +23,22 @@ describe('shouldBlockDuplicateRootSpaceCreation', () => {
     expect(result.block).toBe(false);
   });
 
-  it('blocks another root during verify phase', () => {
+  it('does not block during verify when no root slug was saved', () => {
     const result = shouldBlockDuplicateRootSpaceCreation({
       onboarding_setup_phase: 'verify',
     });
+    expect(result.block).toBe(false);
+  });
+
+  it('blocks another root once the created slug is known', () => {
+    const result = shouldBlockDuplicateRootSpaceCreation(
+      {
+        onboarding_setup_phase: 'execute',
+        onboarding_created_space_slug: 'my-root',
+      },
+      null,
+      'another-root',
+    );
     expect(result.block).toBe(true);
   });
 

@@ -23,11 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  Skeleton,
   Slider,
+  Switch,
+  AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { RefreshCw } from 'lucide-react';
+import { Camera, RefreshCw, Video } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
+import { CapitalChoice } from '../../spaces/components/capital-choice';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
 import type { Control, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
@@ -42,11 +47,14 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  parseCapitalKeys,
+  type CapitalKey,
   collectExistingTags,
   mergeTagInList,
   normalizeTagKey,
   personProfileHref,
   wouldCreateNearDuplicate,
+  useAttachmentUpload,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useFindCoherences,
@@ -59,6 +67,20 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import React from 'react';
+import {
+  asMediaItems,
+  mergeMedia,
+  SIGNAL_DOCUMENT_ACCEPT,
+  SIGNAL_DOCUMENT_LIMIT,
+  SIGNAL_IMAGE_ACCEPT,
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_MEDIA_MAX_BYTES,
+  splitSignalMedia,
+  takeSignalCreateMedia,
+  uploadSignalFiles,
+  type SignalMediaDraft,
+  type SignalMediaItem,
+} from '../utils/signal-media';
 import { useScrollToErrors } from '../../hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -81,6 +103,10 @@ import { SpaceMemberSelect } from '../../pipeline/components/space-member-select
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
+import { TokenPayoutFieldArray } from '../../agreements';
+import { useTokens } from '../../treasury/hooks/use-tokens';
+import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
+import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -130,10 +156,7 @@ function SignalFormRootError({ control }: { control: Control<FormValues> }) {
   const { errors } = useFormState({ control });
   if (!errors.root?.message) return null;
   return (
-    <p
-      role="alert"
-      className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
-    >
+    <p role="alert" className="w-full text-left text-sm text-destructive">
       {errors.root.message}
     </p>
   );
@@ -182,6 +205,10 @@ function dueDateFromInputValue(value: string): Date | null {
 }
 
 function resolveMutationErrorMessage(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    const issue = error.issues.find((item) => item.message.trim().length > 0);
+    if (issue?.message) return issue.message;
+  }
   if (!(error instanceof Error)) return '';
   const message = error.message.trim();
   if (message) return message;
@@ -189,6 +216,45 @@ function resolveMutationErrorMessage(error: unknown): string {
     return error.cause.message.trim();
   }
   return '';
+}
+
+function firstSignalFieldIssue(
+  errors: unknown,
+  path = '',
+): { field: string; message: string } | null {
+  if (!errors || typeof errors !== 'object') return null;
+  const record = errors as Record<string, unknown>;
+  if (typeof record.message === 'string' && record.message.trim().length > 0) {
+    return { field: path, message: record.message };
+  }
+  for (const [key, value] of Object.entries(record)) {
+    if (key === 'ref' || key === 'type' || key === 'types') continue;
+    const nextPath = path ? `${path}.${key}` : key;
+    const found = firstSignalFieldIssue(value, nextPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+function scrollSignalField(form: HTMLFormElement | null, fieldPath: string) {
+  if (!form || !fieldPath) return;
+  const root = fieldPath.split('.')[0] ?? fieldPath;
+  const target =
+    form.querySelector(`[data-signal-field="${root}"]`) ??
+    form.querySelector(`[name="${fieldPath}"]`) ??
+    form.querySelector(`[name="${root}"]`);
+  if (!(target instanceof HTMLElement)) return;
+  const scroller = target.closest('#proposal-overlay-panel');
+  if (scroller instanceof HTMLElement) {
+    const top =
+      target.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      scroller.scrollTop -
+      24;
+    scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    return;
+  }
+  target.scrollIntoView({ block: 'center' });
 }
 
 export const CreateSignalForm = ({
@@ -207,6 +273,7 @@ export const CreateSignalForm = ({
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
+  const tCapitals = useTranslations('NetworkExchange');
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -228,6 +295,52 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
+  const { tokens, isLoading: isLoadingTokens } = useTokens({ spaceSlug });
+  const { upload: uploadAttachment } = useAttachmentUpload({
+    authorizationToken: authToken ?? undefined,
+  });
+  const openingMedia = splitSignalMedia(initialValues);
+  const [imageFiles, setImageFiles] = React.useState<File[]>([]);
+  const [keptImages, setKeptImages] = React.useState<SignalMediaItem[]>(
+    openingMedia.images,
+  );
+  const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
+  const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
+    openingMedia.documents,
+  );
+  const [mediaKind, setMediaKind] = React.useState<'images' | 'video' | null>(
+    () => {
+      if (openingMedia.images.length > 0) return 'images';
+      if (initialValues?.videoUrl?.trim()) return 'video';
+      return null;
+    },
+  );
+  const mediaChoiceTouched = React.useRef(false);
+
+  const createMediaDraft = React.useRef<SignalMediaDraft | null>(null);
+  const createMediaLoaded = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!createMediaLoaded.current) {
+      createMediaLoaded.current = true;
+      createMediaDraft.current =
+        mode === 'create' ? takeSignalCreateMedia() : null;
+    }
+    const split = splitSignalMedia(initialValues);
+    const draft = createMediaDraft.current;
+    setImageFiles([]);
+    setDocumentFiles([]);
+    setKeptImages(
+      mergeMedia(split.images, draft?.images ?? [], SIGNAL_IMAGE_LIMIT),
+    );
+    setKeptDocuments(
+      mergeMedia(
+        split.documents,
+        draft?.documents ?? [],
+        SIGNAL_DOCUMENT_LIMIT,
+      ),
+    );
+  }, [initialValues, mode, signalSlug]);
   const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
     useMembers({
       spaceSlug,
@@ -323,7 +436,9 @@ export const CreateSignalForm = ({
     ],
   );
 
+  const [isPublishing, setIsPublishing] = React.useState(false);
   const isMutating =
+    isPublishing ||
     isCreatingCoherence ||
     isUpdatingCoherenceSignal ||
     isTogglingArchiveState ||
@@ -357,6 +472,7 @@ export const CreateSignalForm = ({
           ? initialValues.type
           : 'Opportunity',
       priority: initialValues?.priority ?? 'medium',
+      capitals: parseCapitalKeys(initialValues?.capitals),
       tags: Array.isArray(initialValues?.tags)
         ? (initialValues.tags.filter(
             (tag): tag is CoherenceTag =>
@@ -374,6 +490,15 @@ export const CreateSignalForm = ({
       assigneeIds:
         initialValues?.assigneeIds ??
         (mode === 'create' && person?.id ? [person.id] : []),
+      indicativePayouts:
+        initialValues?.indicativePayouts &&
+        initialValues.indicativePayouts.length > 0
+          ? initialValues.indicativePayouts
+          : [{ amount: '', token: '' }],
+      leadImage: initialValues?.leadImage ?? null,
+      videoUrl: initialValues?.videoUrl ?? '',
+      attachments: initialValues?.attachments ?? [],
+      sharedWithNetwork: initialValues?.sharedWithNetwork ?? false,
     }),
     [initialValues, mode, person?.id, spaceId, workflow],
   );
@@ -390,6 +515,42 @@ export const CreateSignalForm = ({
     if (mode !== 'edit') return;
     form.reset(formDefaults);
   }, [form, formDefaults, mode, signalSlug]);
+  React.useEffect(() => {
+    if (mode === 'edit' || !person?.id) return;
+    if (form.getValues('creatorId') === person.id) return;
+    form.setValue('creatorId', person.id);
+  }, [form, mode, person?.id]);
+  React.useEffect(() => {
+    const videoUrl = createMediaDraft.current?.videoUrl?.trim();
+    if (mode === 'create' && videoUrl) {
+      form.setValue('videoUrl', videoUrl);
+    }
+  }, [form, mode]);
+  const watchedVideoUrl = useWatch({
+    control: form.control,
+    name: 'videoUrl',
+  });
+  React.useEffect(() => {
+    if (mediaChoiceTouched.current) return;
+    if (keptImages.length > 0 || imageFiles.length > 0) {
+      setMediaKind('images');
+      return;
+    }
+    if (watchedVideoUrl?.trim()) setMediaKind('video');
+  }, [imageFiles.length, keptImages.length, watchedVideoUrl]);
+
+  React.useEffect(() => {
+    if (mode !== 'create' || typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem(EXCHANGE_SIGNAL_CAPITALS_KEY);
+    if (!raw) return;
+    window.sessionStorage.removeItem(EXCHANGE_SIGNAL_CAPITALS_KEY);
+    try {
+      const keys = parseCapitalKeys(JSON.parse(raw) as unknown);
+      if (keys.length > 0) form.setValue('capitals', keys);
+    } catch {
+      // Ignore malformed draft from a previous session.
+    }
+  }, [form, mode]);
 
   useScrollToErrors(form, formRef);
 
@@ -675,10 +836,102 @@ export const CreateSignalForm = ({
   // `updateCoherenceSignalBySlugAction` themselves, right after the assignee list is persisted —
   // no client trigger needed here.
 
+  const resolveSignalMedia = React.useCallback(
+    async (videoUrl: string | null) => {
+      const fail = () => {
+        throw new Error(
+          t.has('signalFormUploadFailed')
+            ? t('signalFormUploadFailed')
+            : 'Could not upload the file. Try again.',
+        );
+      };
+      let images = keptImages;
+      let documents = keptDocuments;
+      try {
+        if (imageFiles.length > 0) {
+          images = [
+            ...keptImages,
+            ...(await uploadSignalFiles(imageFiles, uploadAttachment)),
+          ].slice(0, SIGNAL_IMAGE_LIMIT);
+        }
+        if (documentFiles.length > 0) {
+          documents = [
+            ...keptDocuments,
+            ...(await uploadSignalFiles(documentFiles, uploadAttachment)),
+          ].slice(0, SIGNAL_DOCUMENT_LIMIT);
+        }
+      } catch {
+        fail();
+      }
+      return {
+        leadImage: images[0]?.url ?? null,
+        videoUrl,
+        attachments: [...images, ...documents],
+      };
+    },
+    [documentFiles, imageFiles, keptDocuments, keptImages, t, uploadAttachment],
+  );
+
+  const reportPublishFailure = React.useCallback(
+    (error: unknown, fallback: string) => {
+      const raw = resolveMutationErrorMessage(error);
+      const uploadFailed =
+        raw === 'upload' || raw.toLowerCase().includes('could not upload');
+      const missingSession =
+        raw.includes('missing key') ||
+        raw.includes('authToken is required') ||
+        raw.includes('Could not resolve authenticated user');
+      const message = uploadFailed
+        ? t.has('signalFormUploadFailed')
+          ? t('signalFormUploadFailed')
+          : 'Could not upload the file. Try again.'
+        : missingSession
+        ? t.has('editSignalMissingAuth')
+          ? t('editSignalMissingAuth')
+          : 'Your session expired. Please sign in again before saving.'
+        : raw || fallback;
+      form.setError('root', { type: 'manual', message });
+    },
+    [form, t],
+  );
+
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
-      const parsed = schemaCreateCoherenceForm.parse(data);
       form.clearErrors('root');
+      const creatorId =
+        typeof data.creatorId === 'number' && data.creatorId > 0
+          ? data.creatorId
+          : person?.id;
+      if (!creatorId) {
+        reportPublishFailure(
+          new Error('authToken is required'),
+          'Your session expired. Please sign in again before saving.',
+        );
+        return;
+      }
+      if (!authToken?.trim()) {
+        reportPublishFailure(
+          new Error('authToken is required'),
+          'Your session expired. Please sign in again before saving.',
+        );
+        return;
+      }
+      let parsed: FormValues;
+      try {
+        parsed = schemaCreateCoherenceForm.parse({
+          ...data,
+          creatorId,
+          spaceId: data.spaceId > 0 ? data.spaceId : spaceId,
+        });
+      } catch (error) {
+        reportPublishFailure(
+          error,
+          t.has('editSignalSaveFailed')
+            ? t('editSignalSaveFailed')
+            : 'Could not save signal changes. Please try again.',
+        );
+        return;
+      }
       if (mode === 'edit') {
         if (!authToken?.trim()) {
           form.setError('root', {
@@ -707,7 +960,9 @@ export const CreateSignalForm = ({
           });
           return;
         }
+        setIsPublishing(true);
         try {
+          const media = await resolveSignalMedia(data.videoUrl ?? null);
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
             title: parsed.title,
@@ -721,6 +976,10 @@ export const CreateSignalForm = ({
             board:
               parsed.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: parsed.assigneeIds,
+            indicativePayouts: data.indicativePayouts,
+            capitals: parsed.capitals,
+            sharedWithNetwork: data.sharedWithNetwork ?? false,
+            ...media,
           });
           // The signal is saved — close now and let the chat sync and the
           // list refresh finish in the background.
@@ -776,11 +1035,15 @@ export const CreateSignalForm = ({
             type: 'manual',
             message,
           });
+        } finally {
+          setIsPublishing(false);
         }
         return;
       }
+      setIsPublishing(true);
       try {
-        const coherence = await createCoherence({ ...parsed });
+        const media = await resolveSignalMedia(data.videoUrl ?? null);
+        const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         // Close the panel as soon as the signal exists — everything below is
@@ -874,6 +1137,14 @@ export const CreateSignalForm = ({
         }
       } catch (error) {
         console.warn('Could not create conversation:', error);
+        reportPublishFailure(
+          error,
+          t.has('editSignalSaveFailed')
+            ? t('editSignalSaveFailed')
+            : 'Could not save signal changes. Please try again.',
+        );
+      } finally {
+        setIsPublishing(false);
       }
     },
     [
@@ -897,11 +1168,39 @@ export const CreateSignalForm = ({
       router,
       successfulUrl,
       revalidateCoherences,
+      resolveSignalMedia,
+      person?.id,
+      reportPublishFailure,
+      spaceId,
     ],
   );
 
-  const handleInvalid = async (err?: Record<string, unknown>) => {
-    console.warn('form errors:', err);
+  const handleTurnIntoProposal = () => {
+    const values = form.getValues();
+    stageSignalAsContributionProposal({
+      title: values.title,
+      description: values.description,
+      payouts: values.indicativePayouts ?? [],
+    });
+    if (!lang || !spaceSlug) return;
+    router.push(
+      `/${lang}/dho/${spaceSlug}/agreements/create/propose-contribution`,
+    );
+  };
+
+  const handleInvalid = (errors?: Record<string, unknown>) => {
+    const issue = firstSignalFieldIssue(errors);
+    const field = issue?.field.split('.')[0] ?? '';
+    const hiddenField =
+      field === 'creatorId' || field === 'spaceId' || field === 'archived';
+    const fallback = t.has('editSignalSaveFailed')
+      ? t('editSignalSaveFailed')
+      : 'Could not save signal changes. Please try again.';
+    form.setError('root', {
+      type: 'manual',
+      message: hiddenField ? fallback : issue?.message || fallback,
+    });
+    if (!hiddenField) scrollSignalField(formRef.current, issue?.field ?? '');
   };
 
   const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
@@ -985,18 +1284,20 @@ export const CreateSignalForm = ({
             <div className="flex flex-grow gap-3 px-4 pb-4 pt-5 lg:px-7">
               <PersonAvatar
                 size="lg"
+                shape="circle"
                 isLoading={isMutating}
                 avatarSrc={person?.avatarUrl || ''}
                 userName={[person?.name, person?.surname]
                   .filter(Boolean)
                   .join(' ')}
+                personId={person?.id}
               />
               <div className="flex w-full min-w-0 flex-col gap-1.5 sm:gap-2">
                 <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem data-signal-field="title">
                       <FormControl>
                         <Input
                           rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
@@ -1022,13 +1323,13 @@ export const CreateSignalForm = ({
             <Separator className="bg-border" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-6 px-0 pt-5">
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pt-5 lg:px-7">
+            <section className="flex flex-col gap-6">
               <FormField
                 control={form.control}
                 name="type"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem data-signal-field="type">
                     <div className="flex w-full flex-col gap-3">
                       <FormLabel className="text-foreground">
                         {t('type')} <RequirementMark />
@@ -1061,13 +1362,41 @@ export const CreateSignalForm = ({
                   </FormItem>
                 )}
               />
-            </section>
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              <FormField
+                control={form.control}
+                name="sharedWithNetwork"
+                render={({ field }) => (
+                  <FormItem className="border-t border-border pt-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <FormLabel className="text-sm font-medium text-foreground">
+                          {t('shareWithNetwork')}
+                        </FormLabel>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {t('shareWithNetworkHint')}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === true}
+                          onCheckedChange={field.onChange}
+                          disabled={isMutating}
+                          aria-label={t('shareWithNetwork')}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem
+                    className="border-t border-border pt-6"
+                    data-signal-field="priority"
+                  >
                     <div className="flex w-full flex-col gap-3">
                       <FormLabel className="text-foreground">
                         {t('priority')} <RequirementMark />
@@ -1098,11 +1427,113 @@ export const CreateSignalForm = ({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="capitals"
+                render={({ field }) => (
+                  <FormItem className="border-t border-border pt-6">
+                    <FormLabel className="text-foreground">
+                      {tCapitals('formsOfCapital')}
+                    </FormLabel>
+                    <FormDescription>
+                      {tCapitals('capitalHintMany')}
+                    </FormDescription>
+                    <CapitalChoice
+                      mode="many"
+                      selected={parseCapitalKeys(field.value)}
+                      onChange={(next: CapitalKey[]) => field.onChange(next)}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </section>
-            {mode === 'create' ? (
-              <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
-                {/* creatorVotePercent is local state, not a form field, so
-                    avoid the FormField-context-bound components here. */}
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => {
+                  const descriptionValue = field.value || '';
+                  return (
+                    <FormItem data-signal-field="description">
+                      <FormLabel className="gap-1 text-foreground">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
+                          <RichTextEditor
+                            editorRef={null}
+                            bordered={false}
+                            markdown={descriptionValue}
+                            translation={translateEditor}
+                            placeholder={t('descriptionPlaceholder')}
+                            onChange={(markdown) => field.onChange(markdown)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        placeholder={t('selectOneOrMore')}
+                        searchPlaceholder={
+                          t.has('searchOrCreateTag')
+                            ? t('searchOrCreateTag')
+                            : 'Type to search or create a tag'
+                        }
+                        options={tagOptions}
+                        value={field.value}
+                        allowToggleAll={false}
+                        allowCreate={true}
+                        maxCount={2}
+                        uiStyle="tag-picker"
+                        labels={{
+                          more: (count) =>
+                            t.has('tagsMore' as never)
+                              ? `${t('tagsMore' as never)} ${count}`
+                              : `+ ${count} more`,
+                          noRecentTags: t.has('noRecentTags' as never)
+                            ? t('noRecentTags' as never)
+                            : 'No recent tags yet. Start typing to search tags.',
+                          noResults: t.has('noResults' as never)
+                            ? t('noResults' as never)
+                            : 'No results found.',
+                          mostUsed: t.has('mostUsedTagsHeading' as never)
+                            ? t('mostUsedTagsHeading' as never)
+                            : '--- Most used tags ---',
+                          create: (term) =>
+                            t.has('createTag' as never)
+                              ? `${t('createTag' as never)} "${term}"`
+                              : `Create "${term}"`,
+                          clear: t.has('clear' as never)
+                            ? t('clear' as never)
+                            : 'Clear',
+                          close: t.has('close' as never)
+                            ? t('close' as never)
+                            : 'Close',
+                        }}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </section>
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              {mode === 'create' ? (
                 <div className="flex w-full flex-col gap-3">
                   <Label className="text-foreground">
                     {t('signalFormVotingPower')}
@@ -1122,9 +1553,7 @@ export const CreateSignalForm = ({
                     {t('signalFormVotingPowerHint')}
                   </p>
                 </div>
-              </section>
-            ) : null}
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+              ) : null}
               <div className="grid gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -1271,276 +1700,284 @@ export const CreateSignalForm = ({
                 initialTitle={initialValues?.title}
               />
             ) : null}
-            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => {
-                  const descriptionValue = field.value || '';
-                  return (
-                    <FormItem>
-                      <FormLabel className="gap-1 text-foreground">
-                        {t('description')} <RequirementMark />
+
+            <section className="flex flex-col gap-6 border-t border-border pt-8">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormMedia')}
+                </p>
+                <div
+                  role="group"
+                  aria-label={t('signalFormMedia')}
+                  className="flex gap-2"
+                >
+                  {(
+                    [
+                      {
+                        kind: 'images' as const,
+                        label: t('signalFormImage'),
+                        Icon: Camera,
+                      },
+                      {
+                        kind: 'video' as const,
+                        label: t('signalFormMediaVideo'),
+                        Icon: Video,
+                      },
+                    ] as const
+                  ).map(({ kind, label, Icon }) => {
+                    const selected = mediaKind === kind;
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={isMutating}
+                        onClick={() => {
+                          mediaChoiceTouched.current = true;
+                          setMediaKind(kind);
+                        }}
+                        style={{ width: 112, height: 112 }}
+                        className={cn(
+                          'flex flex-col items-center justify-center gap-2 border px-2',
+                          selected
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                        )}
+                      >
+                        <Icon
+                          className="size-5"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
+                        <span className="text-center text-1 leading-tight">
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {mediaKind === 'images' ? (
+                <div className="flex flex-col gap-2">
+                  <AddAttachment
+                    accept={SIGNAL_IMAGE_ACCEPT}
+                    maxFiles={Math.max(
+                      0,
+                      SIGNAL_IMAGE_LIMIT - keptImages.length,
+                    )}
+                    maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                    label={t('signalFormImageHint')}
+                    value={[...keptImages, ...imageFiles]}
+                    defaultAttachments={keptImages}
+                    onChange={setImageFiles}
+                    onExistingAttachmentsChange={(updated) =>
+                      setKeptImages(asMediaItems(updated))
+                    }
+                  />
+                </div>
+              ) : null}
+              {mediaKind === 'video' ? (
+                <FormField
+                  control={form.control}
+                  name="videoUrl"
+                  render={({ field }) => (
+                    <FormItem data-signal-field="videoUrl">
+                      <FormLabel className="text-foreground">
+                        {t('signalFormVideo')}
                       </FormLabel>
                       <FormControl>
-                        <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">
-                          <RichTextEditor
-                            editorRef={null}
-                            bordered={false}
-                            markdown={descriptionValue}
-                            translation={translateEditor}
-                            placeholder={t('descriptionPlaceholder')}
-                            mentionCandidates={spaceMembers.data.flatMap(
-                              (member) => {
-                                const slug = member.slug?.trim();
-                                if (!slug) return [];
-                                return [
-                                  {
-                                    id: slug,
-                                    label:
-                                      [member.name, member.surname]
-                                        .filter(Boolean)
-                                        .join(' ') ||
-                                      member.nickname ||
-                                      slug,
-                                    href: personProfileHref(slug, lang),
-                                  },
-                                ];
-                              },
-                            )}
-                            onChange={(markdown) => field.onChange(markdown)}
-                          />
-                        </div>
+                        <Input
+                          type="url"
+                          disabled={isMutating}
+                          placeholder="https://"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
-                      <FormDescription />
+                      <FormDescription>
+                        {t('signalFormVideoHint')}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem className="mt-6">
-                    <FormLabel className="text-foreground">
-                      {t('tags')}
-                    </FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        placeholder={t('selectOneOrMore')}
-                        searchPlaceholder={
-                          t.has('searchOrCreateTag')
-                            ? t('searchOrCreateTag')
-                            : 'Type to search or create a tag'
-                        }
-                        options={tagOptions}
-                        value={field.value}
-                        allowToggleAll={false}
-                        allowCreate={true}
-                        maxCount={2}
-                        uiStyle="tag-picker"
-                        textClassName={SIGNAL_BOARD_META_TEXT_CLASS}
-                        headingClassName={SIGNAL_BOARD_META_TEXT_CLASS}
-                        getCreateWarning={(term) =>
-                          wouldCreateNearDuplicate(
-                            term,
-                            existingBoardTags,
-                            field.value ?? [],
-                          )
-                            ? t('tagNearDuplicateWarning', {
-                                tag:
-                                  existingBoardTags.find(
-                                    (tag) =>
-                                      normalizeTagKey(tag) ===
-                                      normalizeTagKey(term),
-                                  ) ?? term,
-                              })
-                            : null
-                        }
-                        labels={{
-                          more: (count) =>
-                            t.has('tagsMore' as never)
-                              ? `${t('tagsMore' as never)} ${count}`
-                              : `+ ${count} more`,
-                          noRecentTags: t.has('noRecentTags' as never)
-                            ? t('noRecentTags' as never)
-                            : 'No recent tags yet. Start typing to search tags.',
-                          noResults: t.has('noResults' as never)
-                            ? t('noResults' as never)
-                            : 'No results found.',
-                          mostUsed: t.has('mostUsedTagsHeading' as never)
-                            ? t('mostUsedTagsHeading' as never)
-                            : '--- Most used tags ---',
-                          create: (term) =>
-                            t.has('createTag' as never)
-                              ? `${t('createTag' as never)} "${term}"`
-                              : `Create "${term}"`,
-                          clear: t.has('clear' as never)
-                            ? t('clear' as never)
-                            : 'Clear',
-                          close: t.has('close' as never)
-                            ? t('close' as never)
-                            : 'Close',
-                        }}
-                        onValueChange={field.onChange}
-                      />
-                    </FormControl>
-                    {canManageSignal && existingBoardTags.length > 1 ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        colorVariant="neutral"
-                        size="sm"
-                        className="mt-2 h-8 px-2 text-muted-foreground"
-                        onClick={() => setMergeTagsOpen(true)}
-                      >
-                        {t('mergeTagsAction')}
-                      </Button>
-                    ) : null}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <SignalTagMergeDialog
-                open={mergeTagsOpen}
-                onOpenChange={setMergeTagsOpen}
-                existingTags={existingBoardTags}
-                onMerge={async (fromTag, toTag) => {
-                  if (!spaceSlug) return;
-                  await mergeCoherenceTags({ spaceSlug, fromTag, toTag });
-                  const mergedTags = mergeTagInList(
-                    form.getValues('tags') ?? [],
-                    fromTag,
-                    toTag,
-                  );
-                  form.resetField('tags', {
-                    defaultValue: mergedTags,
-                    keepDirty: true,
-                  });
-                  await revalidateCoherences(spaceSlug);
-                }}
-              />
+                  )}
+                />
+              ) : null}
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormAttachments')}
+                </p>
+                <AddAttachment
+                  accept={SIGNAL_DOCUMENT_ACCEPT}
+                  maxFiles={Math.max(
+                    0,
+                    SIGNAL_DOCUMENT_LIMIT - keptDocuments.length,
+                  )}
+                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                  label={t('signalFormAttachmentsHint')}
+                  value={[...keptDocuments, ...documentFiles]}
+                  defaultAttachments={keptDocuments}
+                  onChange={setDocumentFiles}
+                  onExistingAttachmentsChange={(updated) =>
+                    setKeptDocuments(asMediaItems(updated))
+                  }
+                />
+              </div>
             </section>
 
-            <div className="flex w-full justify-end gap-2">
+            <section
+              className="flex flex-col gap-6 border-t border-border pt-8"
+              data-signal-field="indicativePayouts"
+            >
+              <Skeleton loading={isLoadingTokens} width="100%" height={90}>
+                <TokenPayoutFieldArray
+                  tokens={tokens}
+                  name="indicativePayouts"
+                  label={t('indicativeTokens')}
+                  markRequired={false}
+                  isLoadingTokens={isLoadingTokens}
+                />
+              </Skeleton>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t('indicativeTokensHint')}
+              </p>
+            </section>
+
+            <div className="flex w-full flex-col items-end gap-3 pt-8">
               <SignalFormRootError control={form.control} />
-              {mode === 'edit' && signalSlug ? (
-                <ConfirmDialog
-                  title={
-                    isSignalArchived
-                      ? t.has('unarchiveSignal')
-                        ? t('unarchiveSignal')
-                        : 'Unarchive signal'
-                      : t.has('archiveSignal')
-                      ? t('archiveSignal')
-                      : 'Archive signal'
-                  }
-                  description={
-                    isSignalArchived
-                      ? t.has('unarchiveSignalConfirm')
-                        ? t('unarchiveSignalConfirm')
-                        : 'Restore this signal to active views. Continue?'
-                      : t.has('archiveSignalConfirm')
-                      ? t('archiveSignalConfirm')
-                      : 'This hides the signal from active views. You can unarchive it later. Continue?'
-                  }
-                  customAcceptButtonText={
-                    isSignalArchived
-                      ? t.has('yesUnarchive')
-                        ? t('yesUnarchive')
-                        : 'Yes, unarchive'
-                      : t.has('yesArchive')
-                      ? t('yesArchive')
-                      : 'Yes, archive'
-                  }
-                  customRejectButtonText={t('noLeave')}
-                  onAcceptClicked={async () => {
-                    form.clearErrors('root');
-                    if (!authToken?.trim()) {
-                      form.setError('root', {
-                        type: 'manual',
-                        message: t.has('editSignalMissingAuth')
-                          ? t('editSignalMissingAuth')
-                          : isSignalArchived
-                          ? 'Your session expired. Please sign in again before unarchiving.'
-                          : 'Your session expired. Please sign in again before archiving.',
-                      });
-                      return;
+              <div className="flex w-full justify-end gap-2">
+                {mode === 'edit' && signalSlug ? (
+                  <ConfirmDialog
+                    title={
+                      isSignalArchived
+                        ? t.has('unarchiveSignal')
+                          ? t('unarchiveSignal')
+                          : 'Unarchive signal'
+                        : t.has('archiveSignal')
+                        ? t('archiveSignal')
+                        : 'Archive signal'
                     }
-                    if (!isEditAuthorized) {
-                      form.setError('root', {
-                        type: 'manual',
-                        message: t.has('editSignalNoPermission')
-                          ? t('editSignalNoPermission')
-                          : 'Only space members and delegates can edit this signal.',
-                      });
-                      return;
+                    description={
+                      isSignalArchived
+                        ? t.has('unarchiveSignalConfirm')
+                          ? t('unarchiveSignalConfirm')
+                          : 'Restore this signal to active views. Continue?'
+                        : t.has('archiveSignalConfirm')
+                        ? t('archiveSignalConfirm')
+                        : 'This hides the signal from active views. You can unarchive it later. Continue?'
                     }
-                    setIsTogglingArchiveState(true);
-                    const nextArchivedState = !isSignalArchived;
-                    try {
-                      await updateCoherenceBySlug({
-                        slug: signalSlug,
-                        archived: nextArchivedState,
-                      });
-                      if (spaceSlug) {
-                        await revalidateCoherences(spaceSlug);
-                      }
-                      if (nextArchivedState) {
-                        router.push(successfulUrl);
+                    customAcceptButtonText={
+                      isSignalArchived
+                        ? t.has('yesUnarchive')
+                          ? t('yesUnarchive')
+                          : 'Yes, unarchive'
+                        : t.has('yesArchive')
+                        ? t('yesArchive')
+                        : 'Yes, archive'
+                    }
+                    customRejectButtonText={t('noLeave')}
+                    onAcceptClicked={async () => {
+                      form.clearErrors('root');
+                      if (!authToken?.trim()) {
+                        form.setError('root', {
+                          type: 'manual',
+                          message: t.has('editSignalMissingAuth')
+                            ? t('editSignalMissingAuth')
+                            : isSignalArchived
+                            ? 'Your session expired. Please sign in again before unarchiving.'
+                            : 'Your session expired. Please sign in again before archiving.',
+                        });
                         return;
                       }
-                      setIsSignalArchived(false);
-                      form.setValue('archived', false);
-                    } catch (error) {
-                      const message =
-                        error instanceof Error &&
-                        error.message.trim().length > 0
-                          ? error.message
-                          : isSignalArchived
-                          ? t.has('unarchiveFailed')
-                            ? t('unarchiveFailed')
-                            : 'Could not unarchive signal. Please try again.'
-                          : t.has('archiveFailed')
-                          ? t('archiveFailed')
-                          : 'Could not archive signal. Please try again.';
-                      form.setError('root', {
-                        type: 'manual',
-                        message,
-                      });
-                    } finally {
-                      setIsTogglingArchiveState(false);
-                    }
-                  }}
-                >
+                      if (!isEditAuthorized) {
+                        form.setError('root', {
+                          type: 'manual',
+                          message: t.has('editSignalNoPermission')
+                            ? t('editSignalNoPermission')
+                            : 'Only space members and delegates can edit this signal.',
+                        });
+                        return;
+                      }
+                      setIsTogglingArchiveState(true);
+                      const nextArchivedState = !isSignalArchived;
+                      try {
+                        await updateCoherenceBySlug({
+                          slug: signalSlug,
+                          archived: nextArchivedState,
+                        });
+                        if (spaceSlug) {
+                          await revalidateCoherences(spaceSlug);
+                        }
+                        if (nextArchivedState) {
+                          router.push(successfulUrl);
+                          return;
+                        }
+                        setIsSignalArchived(false);
+                        form.setValue('archived', false);
+                      } catch (error) {
+                        const message =
+                          error instanceof Error &&
+                          error.message.trim().length > 0
+                            ? error.message
+                            : isSignalArchived
+                            ? t.has('unarchiveFailed')
+                              ? t('unarchiveFailed')
+                              : 'Could not unarchive signal. Please try again.'
+                            : t.has('archiveFailed')
+                            ? t('archiveFailed')
+                            : 'Could not archive signal. Please try again.';
+                        form.setError('root', {
+                          type: 'manual',
+                          message,
+                        });
+                      } finally {
+                        setIsTogglingArchiveState(false);
+                      }
+                    }}
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={
+                        isTogglingArchiveState ||
+                        isMutating ||
+                        !isEditAuthorized
+                      }
+                    >
+                      {isSignalArchived
+                        ? t.has('unarchiveAction')
+                          ? t('unarchiveAction')
+                          : t.has('unarchive')
+                          ? t('unarchive')
+                          : 'Unarchive'
+                        : t.has('archiveAction')
+                        ? t('archiveAction')
+                        : 'Archive'}
+                    </Button>
+                  </ConfirmDialog>
+                ) : null}
+                {mode === 'edit' ? (
                   <Button
                     type="button"
                     variant="outline"
                     colorVariant="neutral"
-                    disabled={
-                      isTogglingArchiveState || isMutating || !isEditAuthorized
-                    }
+                    disabled={isMutating || !spaceSlug}
+                    onClick={handleTurnIntoProposal}
                   >
-                    {isSignalArchived
-                      ? t.has('unarchiveAction')
-                        ? t('unarchiveAction')
-                        : t.has('unarchive')
-                        ? t('unarchive')
-                        : 'Unarchive'
-                      : t.has('archiveAction')
-                      ? t('archiveAction')
-                      : 'Archive'}
+                    {t('turnIntoProposal')}
                   </Button>
-                </ConfirmDialog>
-              ) : null}
-              <Button type="submit" disabled={isMutating || !isEditAuthorized}>
-                {mode === 'edit'
-                  ? t.has('saveChanges')
-                    ? t('saveChanges')
-                    : 'Save changes'
-                  : tAgreementFlow('buttons.publish')}
-              </Button>
+                ) : null}
+                <Button
+                  type="submit"
+                  disabled={isMutating || !isEditAuthorized}
+                >
+                  {mode === 'edit'
+                    ? t.has('saveChanges')
+                      ? t('saveChanges')
+                      : 'Save changes'
+                    : tAgreementFlow('buttons.publish')}
+                </Button>
+              </div>
             </div>
           </div>
         </form>

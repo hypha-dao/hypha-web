@@ -42,6 +42,8 @@ export const VoterList = ({ documentSlug }: { documentSlug: string }) => {
                   key={voter.name}
                   avatarSrc={voter.avatarUrl}
                   userName={voter.name}
+                  shape="circle"
+                  personId={voter.id}
                 />
               </TooltipTrigger>
             </Tooltip>

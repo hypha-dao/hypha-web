@@ -15,6 +15,8 @@ interface ProgressLineProps {
   hideTargets?: boolean;
   /** When true, label the value as the user’s vote context instead of “Current”. */
   hasUserVoted?: boolean;
+  /** Shorter labels and a thinner bar, for a card inside the chat. */
+  dense?: boolean;
 }
 
 /** Threshold marker stays inside [4%, 96%] so labels don't clip at the rails. */
@@ -29,16 +31,22 @@ export function ProgressLine({
   target = 0,
   hideTargets,
   hasUserVoted = false,
+  dense = false,
 }: ProgressLineProps) {
   const tProposalDetails = useTranslations('ProposalDetails');
   const current = Math.min(100, Math.max(0, value));
   const markerLeft = clampThresholdMarker(target);
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className={cn('flex flex-col', dense ? 'gap-1' : 'gap-2.5')}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="text-1 font-medium text-foreground">{label}</span>
-        <div className="flex flex-wrap items-baseline gap-x-4 text-sm tabular-nums">
+        <div
+          className={cn(
+            'flex flex-wrap items-baseline gap-x-4 tabular-nums',
+            dense ? 'text-1' : 'text-sm',
+          )}
+        >
           <span className="text-muted-foreground">
             <span className="font-normal">
               {tProposalDetails(
@@ -61,11 +69,12 @@ export function ProgressLine({
         </div>
       </div>
 
-      <div className="relative pt-1">
+      <div className={dense ? 'relative' : 'relative pt-1'}>
         {/* Track */}
         <div
           className={cn(
-            'relative h-3 w-full overflow-hidden rounded-full',
+            'relative w-full overflow-hidden rounded-full',
+            dense ? 'h-1.5' : 'h-3',
             'bg-muted/80 ring-1 ring-inset ring-border/60',
           )}
           aria-hidden

@@ -119,6 +119,7 @@ export const ConsumerConsumptionCard = ({
   address,
   displayName,
   avatarUrl,
+  personId,
   subtitle,
   isLoading,
   deviceIds,
@@ -126,6 +127,7 @@ export const ConsumerConsumptionCard = ({
   address: string;
   displayName: string;
   avatarUrl?: string;
+  personId?: number;
   subtitle?: string;
   isLoading?: boolean;
   deviceIds: number[] | null;
@@ -146,6 +148,7 @@ export const ConsumerConsumptionCard = ({
           size="md"
           shape="circle"
           isLoading={isLoading}
+          personId={personId}
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>

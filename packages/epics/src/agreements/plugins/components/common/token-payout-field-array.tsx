@@ -14,6 +14,7 @@ import {
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { TokenType } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
+import { WalletFlowLabel } from '../../../../common/wallet-flow-card';
 
 export interface Token {
   icon: string;
@@ -41,6 +42,11 @@ interface TokenPayoutFieldArrayProps {
   selectedTokenPriceHint?: string;
   isLoadingTokens?: boolean;
   loadingTokensLabel?: string;
+  emptyTokensLabel?: string;
+  /** Proposal payouts are required. A signal amount is indicative, so the mark can be hidden. */
+  markRequired?: boolean;
+  appearance?: 'default' | 'wallet';
+  amountPresets?: number[];
 }
 
 function TokenPayoutFieldArrayInner({
@@ -54,6 +60,10 @@ function TokenPayoutFieldArrayInner({
   selectedTokenPriceHint,
   isLoadingTokens = false,
   loadingTokensLabel,
+  emptyTokensLabel,
+  markRequired = true,
+  appearance = 'default',
+  amountPresets,
 }: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
@@ -82,7 +92,7 @@ function TokenPayoutFieldArrayInner({
 
   const fieldRows = fields.map((field, index) => (
     <div key={field.id} className="flex md:justify-end gap-2">
-      <div className="">
+      <div className={appearance === 'wallet' ? 'w-full' : ''}>
         <FormField
           control={control}
           name={`${name}.${index}`}
@@ -100,6 +110,9 @@ function TokenPayoutFieldArrayInner({
                   selectedTokenPriceHint={selectedTokenPriceHint}
                   isLoadingTokens={isLoadingTokens}
                   loadingTokensLabel={loadingTokensLabel}
+                  emptyTokensLabel={emptyTokensLabel}
+                  variant={appearance === 'wallet' ? 'wallet' : 'default'}
+                  amountPresets={amountPresets}
                 />
               </FormControl>
               {/*
@@ -130,6 +143,19 @@ function TokenPayoutFieldArrayInner({
     </div>
   ));
 
+  if (appearance === 'wallet') {
+    return (
+      <div className="flex w-full flex-col gap-3">
+        <WalletFlowLabel>
+          {useTwoLineLabel
+            ? `${labelLines![0]} ${labelLines![1]}`
+            : resolvedLabel}
+        </WalletFlowLabel>
+        {fieldRows}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
@@ -144,12 +170,12 @@ function TokenPayoutFieldArrayInner({
             <>
               <span className="block">{labelLines![0]}</span>
               <span className="block">
-                {labelLines![1]} <RequirementMark />
+                {labelLines![1]} {markRequired ? <RequirementMark /> : null}
               </span>
             </>
           ) : (
             <>
-              {resolvedLabel} <RequirementMark />
+              {resolvedLabel} {markRequired ? <RequirementMark /> : null}
             </>
           )}
         </label>

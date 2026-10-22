@@ -16,7 +16,7 @@ type SpaceBreadcrumb = {
 export function SpaceBreadcrumb({
   children,
   rootHref = '/my-spaces',
-  rootLabel = 'My Spaces',
+  rootLabel = 'Spaces',
 }: {
   children: React.ReactNode;
   rootHref?: string;

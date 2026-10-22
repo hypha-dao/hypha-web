@@ -13,6 +13,8 @@ const CONNECT_SOURCES =
  * - object-src: `<object type="application/pdf">` fallback when canvas render fails
  */
 const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
+/** Older UploadThing links use utfs.io. PDF iframes need them in frame-src. */
+const UPLOADTHING_FILE_HOSTS = `${UPLOADTHING_UFS_HOST} https://utfs.io https://*.utfs.io`;
 /**
  * UploadThing v7 uploads go to a region-prefixed ingest host
  * (`<region>.ingest.uploadthing.com`), which is distinct from the `*.ufs.sh`
@@ -21,6 +23,13 @@ const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
  * (like `*.ufs.sh`) so uploads work regardless of per-env `NEXT_PUBLIC_CONNECT_SOURCES`.
  */
 const UPLOADTHING_INGEST_HOST = 'https://*.ingest.uploadthing.com';
+
+/** Signal videos pasted as a YouTube or Vimeo link. `frame-src` blocks the embed otherwise. */
+const SIGNAL_VIDEO_FRAME_HOSTS =
+  'https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com';
+/** Still frames shown before play. Without these, the card stays a black box. */
+const SIGNAL_VIDEO_POSTER_HOSTS =
+  'https://i.ytimg.com https://img.youtube.com https://i.vimeocdn.com';
 
 /** OpenAI Realtime API (WebRTC / client secrets) — onboarding voice discovery Phase 2. */
 const OPENAI_REALTIME_CONNECT_SOURCES =
@@ -52,6 +61,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     'data:',
     'blob:',
     UPLOADTHING_UFS_HOST,
+    'https://utfs.io',
+    'https://*.utfs.io',
     ...(matrixImg ? [matrixImg] : []),
     'https://*.googleusercontent.com',
     'https://*.ggpht.com',
@@ -63,6 +74,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     'data:',
     'blob:',
     UPLOADTHING_UFS_HOST,
+    'https://utfs.io',
+    'https://*.utfs.io',
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
@@ -84,6 +97,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     'https://oauth2.googleapis.com',
     'https://content.googleapis.com',
     UPLOADTHING_UFS_HOST,
+    'https://utfs.io',
+    'https://*.utfs.io',
     UPLOADTHING_INGEST_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
@@ -98,16 +113,16 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "default-src 'self'",
       `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live https://apis.google.com https://accounts.google.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com",
-      `img-src 'self' ${imageSrc}`,
+      `img-src 'self' ${imageSrc} ${SIGNAL_VIDEO_POSTER_HOSTS}`,
       `media-src ${mediaSrc}`,
       "font-src 'self' https://fonts.gstatic.com https://vercel.live",
       // Allow PDF previews for Space Memory (UploadThing URLs); 'none' blocks <object> and triggers console CSP noise.
-      `object-src 'self' blob: ${UPLOADTHING_UFS_HOST}`,
+      `object-src 'self' blob: ${UPLOADTHING_FILE_HOSTS}`,
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
-      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_UFS_HOST}`,
-      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${UPLOADTHING_UFS_HOST}`,
+      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
+      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
       `connect-src 'self' ${connectSrc}`,
       // pdf.js may spawn workers from blob URLs in some builds
       "worker-src 'self' blob:",

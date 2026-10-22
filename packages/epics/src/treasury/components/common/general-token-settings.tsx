@@ -9,6 +9,7 @@ import {
 import { TokenNameField } from './token-name-field';
 import { TokenSymbolField } from './token-symbol-field';
 import { TokenIconField } from './token-icon-field';
+import { TokenCapitalField } from './token-capital-field';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
@@ -56,6 +57,7 @@ export const GeneralTokenSettings = ({
       <TokenNameField />
       <TokenSymbolField />
       <TokenIconField />
+      <TokenCapitalField />
     </>
   );
 };

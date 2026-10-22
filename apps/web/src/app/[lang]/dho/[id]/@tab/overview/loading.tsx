@@ -1,5 +1,5 @@
 import { TabLoadingSkeleton } from '../_components/tab-loading-skeleton';
 
 export default function Loading() {
-  return <TabLoadingSkeleton showTitle={false} />;
+  return <TabLoadingSkeleton layout="overview" showTitle={false} />;
 }

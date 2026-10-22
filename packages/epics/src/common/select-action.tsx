@@ -22,6 +22,8 @@ export type ActionProps = {
   target?: string;
   defaultDurationDays?: number;
   onAction?: () => void;
+  /** Runs with the link navigation. Used to recover a repeat visit. */
+  onNavigate?: () => void;
 };
 
 type SelectActionProps = {
@@ -188,7 +190,10 @@ export const SelectAction = ({
                     <Link
                       href={action.href!}
                       target={action.target}
-                      onClick={handleClick}
+                      onClick={(event) => {
+                        handleClick(event);
+                        if (!action.disabled) action.onNavigate?.();
+                      }}
                       key={action.title}
                       aria-disabled={action.disabled}
                       className="block h-full w-full min-w-0 rounded-none outline-none focus-visible:outline-none"

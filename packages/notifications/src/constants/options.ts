@@ -51,7 +51,7 @@ export const NOTIFICATION_SUBSCRIPTIONS: {
   {
     title: '@mentions',
     description:
-      'When someone @mentions you in a space or signal thread you belong to.',
+      'When someone @mentions you in a space or signal thread you belong to, or sends you a private message.',
     tagName: TAG_MENTION_CONSENT,
     tagValue: true,
     group: 'conversations',

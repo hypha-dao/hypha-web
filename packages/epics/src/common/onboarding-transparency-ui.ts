@@ -65,6 +65,7 @@ export function resolveOnboardingTransparencyPickerStep(
 ): OnboardingTransparencyPickerStep | null {
   if (onboardingContext?.transparencyMatrix) return null;
 
+  const spokenStep = transparencyStepFromAssistantText(messages);
   const output = findLatestOnboardingGuidanceOutput(messages);
   if (output?.transparency_picker_step === 'activity') {
     return 'activity';
@@ -84,7 +85,36 @@ export function resolveOnboardingTransparencyPickerStep(
   ) {
     return 'discoverability';
   }
-  return null;
+  return spokenStep;
+}
+
+function assistantMessageText(message: ChatUiMessage | undefined): string {
+  if (!message || message.role !== 'assistant') return '';
+  return (message.parts ?? [])
+    .map((part) => (typeof part.text === 'string' ? part.text : ''))
+    .join(' ')
+    .toLowerCase();
+}
+
+/** The reply pointed at the card even when the tool part did not travel with it. */
+function transparencyStepFromAssistantText(
+  messages: ChatUiMessage[],
+): OnboardingTransparencyPickerStep | null {
+  const latest = messages[messages.length - 1];
+  const text = assistantMessageText(latest);
+  if (!text) return null;
+  const namesTheLevels =
+    text.includes('public') &&
+    text.includes('network') &&
+    (text.includes('organisation') || text.includes('organization')) &&
+    text.includes('space');
+  const pointsAtCard =
+    text.includes('card below') || text.includes('pick on the card');
+  if (!namesTheLevels && !pointsAtCard) return null;
+  if (/activit|proposals|treasury|what goes on inside|shared work/.test(text)) {
+    return 'activity';
+  }
+  return 'discoverability';
 }
 
 export function shouldShowOnboardingTransparencyPicker({
@@ -107,6 +137,7 @@ export function shouldShowOnboardingTransparencyPicker({
 
   const latestMessage = messages[messages.length - 1];
   if (latestMessage?.role !== 'assistant') return false;
+  if (transparencyStepFromAssistantText(messages) === step) return true;
 
   return shouldShowOnboardingGuidancePicker({
     messages,

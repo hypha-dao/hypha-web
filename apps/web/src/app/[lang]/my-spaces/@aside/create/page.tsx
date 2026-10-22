@@ -4,7 +4,9 @@ import {
   SpaceForm,
   ProposalOverlayShell,
   getDhoPathDefaultLanding,
+  type SpaceCapitalSelection,
 } from '@hypha-platform/epics';
+import { readExchangeCapitalsDraft } from '@hypha-platform/core/client';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
 import { Locale } from '@hypha-platform/i18n';
@@ -44,6 +46,15 @@ export default function AsideCreateSpacePage() {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tCommon = useTranslations('Common');
+  const [capitals, setCapitals] = React.useState<SpaceCapitalSelection>({
+    seeks: [],
+    offers: [],
+  });
+  const capitalsTouchedRef = React.useRef(false);
+  React.useEffect(() => {
+    const draft = readExchangeCapitalsDraft();
+    if (!capitalsTouchedRef.current && draft) setCapitals(draft);
+  }, []);
 
   const closeUrl = pathname.split('/').slice(0, -1).join('/') || '/';
 
@@ -74,7 +85,14 @@ export default function AsideCreateSpacePage() {
           closeUrl={closeUrl}
           backUrl={closeUrl}
           backLabel={tCommon('back')}
-          onSubmit={(values) => createSpace(values)}
+          onSubmit={(values) =>
+            createSpace({ ...values, exchangeCapitals: capitals })
+          }
+          capitals={capitals}
+          onCapitalsChange={(next) => {
+            capitalsTouchedRef.current = true;
+            setCapitals(next);
+          }}
           isLoading={isLoadingJwt}
           label="create"
           slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}

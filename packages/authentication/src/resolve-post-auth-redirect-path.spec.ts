@@ -8,6 +8,7 @@ import {
   saveAuthReturnPath,
 } from './auth-return-path';
 import {
+  resolveAccountEntryPath,
   resolvePostAuthRedirectPath,
   resolvePostAuthRedirectPathOrDefault,
 } from './resolve-post-auth-redirect-path';
@@ -40,10 +41,10 @@ describe('auth-return-path', () => {
     expect(peekAuthReturnPath()).toBeNull();
   });
 
-  it('ignores non-DHO paths', () => {
+  it('keeps a space link when a later page is not a space', () => {
     saveAuthReturnPath('/en/dho/hypha/coherence');
     saveAuthReturnPath('/en/network');
-    expect(peekAuthReturnPath()).toBeNull();
+    expect(peekAuthReturnPath()).toBe('/en/dho/hypha/coherence');
   });
 });
 
@@ -105,5 +106,22 @@ describe('resolvePostAuthRedirectPath', () => {
         baseRedirectPath: '/my-spaces',
       }),
     ).toBe('/my-spaces');
+  });
+});
+
+describe('resolveAccountEntryPath', () => {
+  it('opens the welcome flow when there is no profile', () => {
+    expect(resolveAccountEntryPath({ lang: 'en', hasProfile: false })).toBe(
+      '/en/profile/signup',
+    );
+    expect(resolveAccountEntryPath({ lang: 'pt', hasProfile: false })).toBe(
+      '/pt/profile/signup',
+    );
+  });
+
+  it('opens Home when a profile already exists', () => {
+    expect(resolveAccountEntryPath({ lang: 'en', hasProfile: true })).toBe(
+      '/en/home',
+    );
   });
 });

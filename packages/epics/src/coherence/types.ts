@@ -1,6 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 
 export type ChatCreatorType = {
+  id?: number;
   avatar?: string;
   name?: string;
   surname?: string;

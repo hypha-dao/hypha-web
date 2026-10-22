@@ -45,6 +45,12 @@ export default async function ProfilePage(props: PageProps) {
   const tProfile = await getTranslations('Profile');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
+  // /profile/signup is the welcome flow, not a person. Looking that word up
+  // rendered "Person not found" behind the form.
+  if (personSlug === 'signup') {
+    return null;
+  }
+
   const person = await findPersonBySlug({ slug: personSlug }, { db });
   const rawLead = person?.leadImageUrl?.trim();
   const profileBannerPreload =
@@ -99,6 +105,7 @@ export default async function ProfilePage(props: PageProps) {
             email={person?.email ?? ''}
             slug={person?.slug ?? ''}
             createdAt={person?.createdAt}
+            primaryOrientation={person?.primaryOrientation}
             exportEmbeddedWallet={true}
           />
           <Separator />

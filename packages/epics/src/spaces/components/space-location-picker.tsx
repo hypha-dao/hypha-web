@@ -321,7 +321,7 @@ export const SpaceLocationPicker = React.forwardRef<
         ) : null}
         {isResultsOpen && results.length > 0 ? (
           <ul
-            className="border border-border rounded-md bg-background max-h-48 overflow-y-auto"
+            className="max-h-48 overflow-y-auto border border-border bg-background"
             aria-label={t('resultsLabel')}
           >
             {results.map((result, index) => (
@@ -373,7 +373,7 @@ export const SpaceLocationPicker = React.forwardRef<
             );
           }}
           className={cn(
-            'relative overflow-hidden rounded-md border border-border',
+            'relative overflow-hidden border border-border',
             'bg-[var(--hypha-paper)] dark:bg-[var(--hypha-ink)]',
             disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-crosshair',
           )}

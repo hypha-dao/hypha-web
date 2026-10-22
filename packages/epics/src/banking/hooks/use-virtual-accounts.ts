@@ -3,6 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useJwt } from '@hypha-platform/core/client';
 
 import type { PaginatedBankVirtualAccounts } from './types';
 import { resolveBankingBasePath } from './banking-endpoints';
@@ -33,6 +34,7 @@ export const useVirtualAccounts = ({
   enabled = true,
 }: UseVirtualAccountsOptions): UseVirtualAccountsReturn => {
   const { getAccessToken, isAuthenticated } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
 
   const endpoint = React.useMemo(() => {
     const base = resolveBankingBasePath({ spaceSlug, basePath });
@@ -41,10 +43,10 @@ export const useVirtualAccounts = ({
 
   const swrKey = React.useMemo(
     () =>
-      endpoint && isAuthenticated && enabled
+      endpoint && isAuthenticated && enabled && jwt
         ? [endpoint, 'virtual-accounts']
         : null,
-    [endpoint, isAuthenticated, enabled],
+    [endpoint, isAuthenticated, enabled, jwt],
   );
 
   const { data, error, isLoading, mutate } =
@@ -80,7 +82,9 @@ export const useVirtualAccounts = ({
     accounts: data?.accounts ?? [],
     hasMore: data?.hasMore ?? false,
     nextCursor: data?.nextCursor ?? null,
-    isLoading: isAuthenticated && enabled && isLoading,
+    isLoading:
+      enabled &&
+      (isLoadingJwt || (Boolean(jwt) && isAuthenticated && isLoading)),
     error,
     refresh,
   };

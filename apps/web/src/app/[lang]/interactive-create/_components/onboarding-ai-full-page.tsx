@@ -1,8 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styles from './onboarding-ai-full-page.module.css';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { Volume2, VolumeX } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -10,8 +13,6 @@ import { useConfig } from 'wagmi';
 import {
   AiPanelChatBar,
   AiPanelMessages,
-  OnboardingDiscoveryModeToggle,
-  OnboardingVoiceInterviewBar,
   type AiPanelDraftAttachment,
   applyOnboardingContextForUserText,
   applyOnboardingLocationToContext,
@@ -43,11 +44,11 @@ import {
   buildRecentTranscriptSummaryFromChatMessages,
   toStoredOnboardingChatMessages,
   convertFilesToParts,
+  getLegacyCreateSpacePath,
   getPostOnboardingLandingPath,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
   useOnboardingVoiceDiscovery,
-  type OnboardingDiscoveryMode,
   type OnboardingEntryMethod,
   type OnboardingActivationMethod,
   type OnboardingSetupJourney,
@@ -61,7 +62,10 @@ import {
   SpaceFlags,
   useCreateSpaceOrchestrator,
   useJwt,
+  useMe,
 } from '@hypha-platform/core/client';
+import type { Locale } from '@hypha-platform/i18n';
+import { cn } from '@hypha-platform/ui-utils';
 import { Button } from '@hypha-platform/ui';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 
@@ -99,10 +103,23 @@ export function OnboardingAiFullPage({
   onExit,
 }: OnboardingAiFullPageProps) {
   const t = useTranslations('OnboardingAdventure');
+  const tAi = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const routeLocale = useLocale();
-  const { getAccessToken } = useAuthentication();
+  const {
+    getAccessToken,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
+  const [micOn, setMicOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(true);
   const { jwt } = useJwt();
+  const { person: me } = useMe();
+  const userAvatarUrl = me?.avatarUrl?.trim() || null;
+  const userDisplayName =
+    [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+    me?.nickname?.trim() ||
+    null;
   const config = useConfig();
   const router = useRouter();
   const [input, setInput] = useState('');
@@ -916,9 +933,7 @@ export function OnboardingAiFullPage({
     [t],
   );
   const hasUserMessage = messages.some((message) => message.role === 'user');
-  const discoveryMode: OnboardingDiscoveryMode =
-    onboardingContext.discoveryMode ?? 'chat';
-  const isVoiceInterview = discoveryMode === 'voice_interview';
+  const dialogue = micOn || soundOn;
 
   const lastAssistantText = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -977,72 +992,97 @@ export function OnboardingAiFullPage({
   );
 
   const voiceLocale = onboardingContext.locale ?? context.locale ?? routeLocale;
+  const voiceSessionContext = useMemo(
+    () =>
+      dialogue
+        ? { ...onboardingContext, discoveryMode: 'voice_interview' as const }
+        : undefined,
+    [dialogue, onboardingContext],
+  );
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: isVoiceInterview,
+    enabled: dialogue && !isAuthLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
     locale: voiceLocale,
-    conversationContext: onboardingContext,
+    conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
     onStopChat: stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
+    captureMicrophone: micOn,
+    speakReplies: soundOn,
   });
 
-  const handleDiscoveryModeChange = useCallback(
-    (mode: OnboardingDiscoveryMode) => {
-      if (mode === discoveryMode) return;
-      if (mode === 'chat') {
-        voiceInterview.stopListening();
-        voiceInterview.stopSpeaking();
-        if (messages.length) {
-          saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
-        }
-      }
-      setOnboardingContext((prev) => {
-        const next = { ...prev, discoveryMode: mode };
-        saveOnboardingConversationContext(next);
-        return next;
-      });
-    },
-    [discoveryMode, messages, voiceInterview],
-  );
+  const toggleSound = useCallback(() => {
+    setSoundOn((current) => {
+      const next = !current;
+      if (next) void voiceInterview.startListening();
+      else voiceInterview.stopSpeaking();
+      return next;
+    });
+  }, [voiceInterview.startListening, voiceInterview.stopSpeaking]);
+
+  const toggleMic = useCallback(() => {
+    const micNeedsGrant =
+      voiceInterview.voiceError === 'not-allowed' ||
+      voiceInterview.voiceError === 'audio-capture';
+    if (micOn && micNeedsGrant) {
+      void voiceInterview.startListening();
+      return;
+    }
+    setMicOn((current) => {
+      const next = !current;
+      if (next) void voiceInterview.startListening();
+      return next;
+    });
+  }, [micOn, voiceInterview.startListening, voiceInterview.voiceError]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 md:px-8 lg:px-12">
-      <div className="relative flex h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden rounded-none border border-foreground/15 bg-background-2 p-4 shadow-none md:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="craft-page-header min-w-0">
+      <div
+        className={`relative flex h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden rounded-none border border-foreground/15 bg-background-2 p-4 shadow-none md:p-6 ${styles.frame}`}
+      >
+        <div className={styles.header}>
+          <div className={`craft-page-header min-w-0 ${styles.title}`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {t('aiHero.flow.badge')}
             </p>
             <h2 className="craft-page-title text-7">{t('aiHero.title')}</h2>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className={styles.actions}>
             <Button
               type="button"
               variant="outline"
               colorVariant="accent"
               size="sm"
               onClick={onExit}
-              className="shadow-none"
+              className="h-[36px] min-h-[36px] px-3 shadow-none"
             >
               <ChevronLeftIcon className="size-3.5" strokeWidth={1.25} />
               {tCommon('back')}
             </Button>
-            <OnboardingDiscoveryModeToggle
-              mode={discoveryMode}
-              disabled={isStreaming}
-              onChange={handleDiscoveryModeChange}
-            />
+            <Button
+              asChild
+              variant="outline"
+              colorVariant="accent"
+              size="sm"
+              className="h-[36px] min-h-[36px] px-3 shadow-none"
+            >
+              <Link href={getLegacyCreateSpacePath(routeLocale as Locale)}>
+                {t('aiHero.flow.createManually')}
+              </Link>
+            </Button>
           </div>
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
           <AiPanelMessages
             chrome="quiet"
             messages={messages as ChatMessage[]}
+            userAvatarUrl={userAvatarUrl}
+            userDisplayName={userDisplayName}
+            userPersonId={me?.id}
             suggestionItems={suggestionItems}
             showInlineSuggestions={!isStreaming && !hasUserMessage}
             onSuggestionSelect={(text) => setInput(text)}
@@ -1061,32 +1101,69 @@ export function OnboardingAiFullPage({
             }
             onOnboardingEntryMethodConfirm={handleOnboardingEntryMethodConfirm}
           />
-          {isVoiceInterview ? (
-            <OnboardingVoiceInterviewBar
-              phase={voiceInterview.phase}
-              liveTranscript={voiceInterview.liveTranscript}
-              voiceError={voiceInterview.voiceError}
-              disabled={isStreaming}
-              isConnecting={voiceInterview.isConnecting}
-              isRealtimeConnected={voiceInterview.isRealtimeConnected}
-              transport={voiceInterview.transport}
-              realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
-              usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
-              onToggleListening={voiceInterview.toggleListening}
-            />
-          ) : (
-            <AiPanelChatBar
-              variant="quiet"
-              value={input}
-              onChange={setInput}
-              onSend={handleSend}
-              onStop={() => void stop()}
-              isStreaming={isStreaming}
-              draftAttachments={draftAttachments}
-              onDraftAttachmentsChange={setDraftAttachments}
-              placeholder={t('aiHero.placeholder')}
-            />
-          )}
+          {micOn && voiceInterview.liveTranscript ? (
+            <p className="px-2 pb-1 text-1 text-neutral-11">
+              “{voiceInterview.liveTranscript}”
+            </p>
+          ) : null}
+          {dialogue && voiceInterview.voiceError ? (
+            <p className="px-2 pb-1 text-1 text-neutral-11">
+              {voiceInterview.voiceError === 'unsupported'
+                ? tAi('onboardingVoiceUnsupported')
+                : voiceInterview.voiceError === 'not-allowed'
+                ? tAi('onboardingVoicePermissionDenied')
+                : voiceInterview.voiceError === 'audio-capture'
+                ? tAi('onboardingVoiceMicUnavailable')
+                : voiceInterview.voiceError === 'network'
+                ? tAi('onboardingVoiceNetworkError')
+                : tAi('onboardingVoiceSessionError')}
+            </p>
+          ) : null}
+          <AiPanelChatBar
+            variant="quiet"
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+            onStop={() => void stop()}
+            isStreaming={isStreaming}
+            draftAttachments={draftAttachments}
+            onDraftAttachmentsChange={setDraftAttachments}
+            placeholder={t('aiHero.placeholder')}
+            conversationMicrophone={{
+              active: micOn,
+              hearing: micOn && voiceInterview.userSpeaking,
+              onToggle: toggleMic,
+              muteLabel: tAi('conversationMicMute'),
+              unmuteLabel: tAi('conversationMicUnmute'),
+            }}
+            accessory={
+              <button
+                type="button"
+                aria-pressed={soundOn}
+                aria-label={
+                  soundOn
+                    ? tAi('conversationSoundMute')
+                    : tAi('conversationSoundUnmute')
+                }
+                title={
+                  soundOn
+                    ? tAi('conversationSoundMute')
+                    : tAi('conversationSoundUnmute')
+                }
+                onClick={toggleSound}
+                className={cn(
+                  'box-border inline-grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] place-items-center bg-transparent p-0 text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  soundOn && 'text-foreground',
+                )}
+              >
+                {soundOn ? (
+                  <Volume2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                ) : (
+                  <VolumeX className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+              </button>
+            }
+          />
         </div>
         {error ? (
           <p className="mt-2 px-2 text-1 text-destructive">

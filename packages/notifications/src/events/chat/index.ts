@@ -14,7 +14,7 @@ import type { NotificationDispatch } from '../../ingest/matrix-as/types';
 import { buildChatContent } from './content';
 import { resolveChatRecipients } from './resolver';
 
-export { buildChatDeepLink } from './deep-link';
+export { buildChatDeepLink, buildDirectChatDeepLink } from './deep-link';
 export { buildChatContent } from './content';
 export { resolveChatRecipients } from './resolver';
 

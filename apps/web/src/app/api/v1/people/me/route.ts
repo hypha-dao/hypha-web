@@ -1,4 +1,4 @@
-import { findSelf, getDb } from '@hypha-platform/core/server';
+import { resolvePersonFromAuthToken } from '@hypha-platform/core/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -15,7 +15,7 @@ export async function GET() {
       );
     }
 
-    const user = await findSelf({ db: getDb({ authToken }) });
+    const user = await resolvePersonFromAuthToken(authToken);
 
     if (!user) {
       return NextResponse.json(

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { ChevronDownIcon } from '@radix-ui/themes';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -20,16 +19,14 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-10 w-full items-center justify-between rounded-none border border-border bg-neutral-1 px-3 py-2 text-2 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:border-foreground focus-visible:outline-none data-[state=open]:border-foreground disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 cursor-pointer',
+      'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-neutral-1 px-3 py-2 text-2 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:border-foreground focus-visible:outline-none data-[state=open]:border-foreground disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 cursor-pointer',
       className,
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <div className="w-2">
-        <ChevronDownIcon className="size-2" />
-      </div>
+      <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -42,12 +39,12 @@ const SelectScrollUpButton = React.forwardRef<
   <SelectPrimitive.ScrollUpButton
     ref={ref}
     className={cn(
-      'flex cursor-default items-center justify-center py-1',
+      'flex cursor-default items-center justify-center py-1 text-muted-foreground',
       className,
     )}
     {...props}
   >
-    <ChevronUp className="h-4 w-4" />
+    <ChevronUp className="size-4" />
   </SelectPrimitive.ScrollUpButton>
 ));
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
@@ -59,12 +56,12 @@ const SelectScrollDownButton = React.forwardRef<
   <SelectPrimitive.ScrollDownButton
     ref={ref}
     className={cn(
-      'flex cursor-default items-center justify-center py-1',
+      'flex cursor-default items-center justify-center py-1 text-muted-foreground',
       className,
     )}
     {...props}
   >
-    <ChevronDown className="h-4 w-4" />
+    <ChevronDown className="size-4" />
   </SelectPrimitive.ScrollDownButton>
 ));
 SelectScrollDownButton.displayName =
@@ -89,9 +86,9 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          'p-1 bg-popover',
+          'max-h-72 overflow-y-auto p-1 bg-popover',
           position === 'popper' &&
-            'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
+            'w-full min-w-[var(--radix-select-trigger-width)]',
         )}
       >
         {children}

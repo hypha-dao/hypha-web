@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Person, schemaSignupPerson } from '@hypha-platform/core/client';
-import { createPerson, getDb } from '@hypha-platform/core/server';
+import {
+  saveSignupProfile,
+  verifyPrivyAuthToken,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,34 +25,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const verified = await verifyPrivyAuthToken(authToken);
+    if (!verified.ok) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const validatedData = validationResult.data;
 
-    // Use the PeopleService to create the profile
-    const newProfile = await createPerson(validatedData as Person, {
-      db: getDb({ authToken }),
-    });
+    // Profile pages read `db` (the service connection). Writing through the
+    // authenticated Neon role stored the row where that page could not see
+    // it, and the SQL default for `sub` never ran there either.
+    const newProfile = await saveSignupProfile(
+      { ...(validatedData as Person), sub: verified.userId },
+      { db },
+    );
 
     return NextResponse.json({ profile: newProfile }, { status: 201 });
   } catch (error) {
     console.error('Error creating profile:', error);
 
-    let errorMessage = 'Failed to create profile';
-    if (error instanceof Error) {
-      if (error.message.includes('people_slug_unique')) {
-        errorMessage =
-          'Profile with this nickname already exists. Please choose a different one.';
-      } else if (error.message.includes('people_email_unique')) {
-        errorMessage =
-          'An account with this email already exists. Try signing in or use a different email.';
-      }
-    }
-
     return NextResponse.json(
       {
-        error: errorMessage,
+        error: profileCreateErrorMessage(error),
         details: error instanceof Error ? error.message : undefined,
       },
       { status: 400 },
     );
   }
+}
+
+function errorChainMessages(error: unknown): string[] {
+  const messages: string[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    if (current instanceof Error && current.message) {
+      messages.push(current.message);
+    } else if (typeof current === 'string' && current) {
+      messages.push(current);
+    }
+
+    if (typeof current === 'object' && current && 'cause' in current) {
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+
+  return messages;
+}
+
+function profileCreateErrorMessage(error: unknown): string {
+  // Constraint names are matched server-side. Other cause text stays in the log.
+  const combined = errorChainMessages(error).join('\n');
+
+  if (combined.includes('people_slug_unique')) {
+    return 'nickname_taken';
+  }
+  if (combined.includes('people_email_unique')) {
+    return 'email_taken';
+  }
+
+  return 'profile_create_failed';
 }

@@ -17,10 +17,14 @@ import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalOwnerSeen } from './signal-owner-seen';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import { resolveSignalVideo } from '../utils/signal-video';
+import { SignalVideoPlayer } from './signal-video-player';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import {
   PRIORITY_DOT_MARK_CLASS,
@@ -41,7 +45,39 @@ type SignalTaskCardProps = {
   onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
   refresh?: () => Promise<void>;
   className?: string;
+  /**
+   * UpVote (grid) only: show a short description when the card has no media.
+   * Keep off for board / swimlane / list so those layouts stay dense.
+   */
+  showDescriptionPreview?: boolean;
 };
+
+/** Linear HTML-ish strip — avoid `/<[^>]*>/` (CodeQL ReDoS on uncontrolled copy). */
+function plainSignalDescription(value: string | null | undefined) {
+  const raw = value ?? '';
+  let out = '';
+  let index = 0;
+  while (index < raw.length) {
+    const open = raw.indexOf('<', index);
+    if (open === -1) {
+      out += raw.slice(index);
+      break;
+    }
+    out += raw.slice(index, open);
+    const close = raw.indexOf('>', open + 1);
+    if (close === -1) {
+      out += raw.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&NBSP;', ' ')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
+}
 
 export const SignalTaskCard = React.memo(function SignalTaskCard({
   signal,
@@ -57,6 +93,7 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
   onDragOver,
   refresh,
   className,
+  showDescriptionPreview = false,
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
   const intlFormat = useFormatter();
@@ -132,6 +169,15 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
     });
   }
 
+  const video = resolveSignalVideo(signal.videoUrl);
+  const hasCardMedia = Boolean(
+    video || signal.leadImage?.trim() || (signal.attachments?.length ?? 0) > 0,
+  );
+  const descriptionPreview =
+    showDescriptionPreview && !hasCardMedia
+      ? plainSignalDescription(signal.description)
+      : '';
+
   return (
     <div
       {...getSignalSlugDomProps(signal.slug)}
@@ -161,7 +207,27 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
         className,
       )}
     >
-      <div className="flex flex-1 flex-col px-3 py-3">
+      {video ? (
+        <div
+          className="relative aspect-video w-full overflow-hidden bg-neutral-3"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <SignalVideoPlayer video={video} title={signal.title} />
+        </div>
+      ) : signal.leadImage ? (
+        <img
+          src={signal.leadImage}
+          alt=""
+          className="block w-full object-cover"
+          style={{ height: 160 }}
+        />
+      ) : null}
+      <div
+        className={cn(
+          'flex flex-1 flex-col px-3 pb-3',
+          video || signal.leadImage ? 'pt-2.5' : 'pt-3',
+        )}
+      >
         {/* Own row above the title. Collapsed until hover, focus, or selection
             so the buttons never paint over the type. */}
         <div
@@ -220,6 +286,8 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
                 {signal.title}
               </p>
 
+              <SignalIndicativeAmounts payouts={signal.indicativePayouts} />
+
               {metaParts.length > 0 ? (
                 <p className="flex min-w-0 items-center text-1 text-muted-foreground">
                   {metaParts.map((part, index) => (
@@ -237,10 +305,17 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
                   ))}
                 </p>
               ) : null}
+
+              {descriptionPreview ? (
+                <p className="mt-1 line-clamp-4 text-1 leading-relaxed text-neutral-11">
+                  {descriptionPreview}
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <SignalCategoryTag type={signal.type} />
                 <SignalUpvoteControl
                   slug={signal.slug}
                   upvotes={signal.upvotes}

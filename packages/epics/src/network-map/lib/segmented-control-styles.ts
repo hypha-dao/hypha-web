@@ -8,15 +8,15 @@ import { cn } from '@hypha-platform/ui-utils';
 
 /** Track behind exclusive projection / view switches. */
 export const segmentedListClass =
-  'inline-flex h-8 w-fit max-w-full shrink-0 items-center gap-0.5 rounded-lg bg-neutral-3 p-0.5';
+  'inline-flex !h-8 w-fit max-w-full shrink-0 items-center gap-0.5 rounded-lg bg-neutral-3 p-0.5';
 
 /** Exclusive TabsTrigger inside a switch track. */
 export const segmentedTriggerClass = cn(
-  'flex h-7 flex-initial items-center justify-center gap-1 rounded-md px-2.5 py-0 text-xs font-medium shadow-none',
+  'flex !h-7 !min-h-0 flex-initial items-center justify-center gap-1 rounded-md px-2.5 !py-0 !text-xs !leading-none font-medium shadow-none',
   'text-neutral-11 transition-colors hover:text-foreground',
   'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
   'data-[state=inactive]:bg-transparent',
-  'sm:gap-1.5 sm:px-3 sm:text-sm',
+  'sm:gap-1.5 sm:px-3',
 );
 
 /** Track for independent layer toggles (Land / Water / Grid). */
@@ -29,7 +29,7 @@ export const segmentedLayerGroupClass =
  */
 export function segmentedButtonClass(active: boolean) {
   return cn(
-    'inline-flex h-7 min-w-0 flex-initial items-center justify-center gap-1 rounded-md px-2.5 py-0 text-xs font-medium sm:gap-1.5 sm:px-3 sm:text-sm',
+    'inline-flex h-7 min-h-0 min-w-0 flex-initial items-center justify-center gap-1 rounded-md px-2.5 py-0 text-xs leading-none font-medium sm:gap-1.5 sm:px-3',
     'border transition-[background-color,border-color,color,box-shadow] duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
     active

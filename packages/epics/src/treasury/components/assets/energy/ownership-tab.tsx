@@ -191,6 +191,7 @@ const OwnerEarningsRow = ({
   owner,
   displayName,
   avatarUrl,
+  personId,
   isLoading,
   accent,
   totalEarned,
@@ -201,6 +202,7 @@ const OwnerEarningsRow = ({
   owner: Owner;
   displayName: string;
   avatarUrl?: string;
+  personId?: number;
   isLoading?: boolean;
   accent: string;
   totalEarned: number;
@@ -224,6 +226,7 @@ const OwnerEarningsRow = ({
           size="md"
           shape="circle"
           isLoading={isLoading}
+          personId={personId}
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
@@ -309,6 +312,7 @@ const SourceOwnershipCard = ({
               owner={owner}
               displayName={display.displayName}
               avatarUrl={display.avatarUrl}
+              personId={people[owner.address.toLowerCase()]?.id}
               isLoading={energyAvatarLoading(
                 owner.address,
                 peopleLoading,

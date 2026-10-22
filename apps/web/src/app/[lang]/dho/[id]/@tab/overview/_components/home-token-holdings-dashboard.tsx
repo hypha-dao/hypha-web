@@ -4,6 +4,7 @@ import * as React from 'react';
 import useSWR from 'swr';
 import * as d3 from 'd3';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
+import { isPayingSpacesDashboardEnabled } from '@hypha-platform/core/client';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
 import {
@@ -11,14 +12,10 @@ import {
   CardDescription,
   CardTitle,
   Skeleton,
-  Tabs,
-  ScrollableTabsList,
-  TabsTrigger,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@hypha-platform/ui';
-import { isPayingSpacesDashboardEnabled } from '@hypha-platform/core/client';
 import { useSpaceAccentPortalStyles } from '@hypha-platform/epics';
 import {
   withMembersChartBaseline,
@@ -93,12 +90,6 @@ type DistributionHistoryResponse = {
   }>;
 };
 
-type HomeSectionFilter =
-  | 'energy'
-  | 'activity'
-  | 'distribution'
-  | 'payingSpaces';
-
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
  * Overview charts render in the space tab, outside the hero accent scope.
@@ -106,7 +97,8 @@ const PERCENTAGE_FORMATTER = d3.format('.1f');
  * of that one hue. With no accent they stay a quiet neutral — never the
  * generic chart blue.
  */
-const CHART_HUE = 'var(--space-accent, var(--muted-foreground))';
+const CHART_HUE =
+  'var(--space-spot, var(--space-accent, var(--muted-foreground)))';
 const SPACE_CHART_PALETTE_STYLE = {
   '--craft-chart-accent-1': `color-mix(in oklab, ${CHART_HUE} 20%, white 80%)`,
   '--craft-chart-accent-2': `color-mix(in oklab, ${CHART_HUE} 34%, white 66%)`,
@@ -147,8 +139,19 @@ const DONUT_SEGMENT_STROKE = 'var(--background)';
 const DONUT_SEGMENT_STROKE_WIDTH = 0.5;
 const DONUT_PAD_ANGLE = 0;
 const DONUT_CORNER_RADIUS = 0;
-/** Charts sit on the page ground: no frame, no panel, no shadow. */
-const CHART_SECTION_CLASS = 'flex min-w-0 flex-col bg-transparent';
+/** Chart panels use the same card as the rest of the space dashboard. */
+const CHART_SECTION_CLASS = 'craft-card flex min-w-0 flex-col p-4';
+
+function DashboardSectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      className="text-3 text-foreground"
+      style={{ fontFamily: 'var(--font-family-heading)' }}
+    >
+      {children}
+    </h2>
+  );
+}
 
 function toNumericValue(raw: string): number {
   const parsed = Number.parseFloat(raw);
@@ -770,7 +773,13 @@ function DistributionOverTimeChart({
   );
 }
 
-function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
+function ProposalsPieWidget({
+  data,
+  embedded = false,
+}: {
+  data: ActivityResponse['proposals'];
+  embedded?: boolean;
+}) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const pieData = React.useMemo(
     () => [
@@ -817,19 +826,25 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .padAngle(DONUT_PAD_ANGLE);
 
   return (
-    <section className={`${CHART_SECTION_CLASS} h-full`}>
-      <div className="flex flex-col gap-1 pb-3">
-        <CardTitle className="text-4 font-medium tracking-tight">
+    <section
+      className={
+        embedded
+          ? 'flex h-full min-h-0 min-w-0 flex-col'
+          : `${CHART_SECTION_CLASS} h-full`
+      }
+    >
+      <div className="flex flex-col gap-0.5 pb-2">
+        <CardTitle className="text-3 font-medium tracking-tight">
           {tTokenHoldings('proposals.title')}
         </CardTitle>
         <CardDescription className="text-1 text-muted-foreground">
           {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </div>
-      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2">
         <svg
           viewBox="-120 -120 240 240"
-          className="h-[200px] w-full max-w-[220px] sm:h-[220px]"
+          className="h-[132px] w-full max-w-[160px]"
           aria-label={tTokenHoldings('proposals.ariaLabel')}
         >
           {arcs.map((slice, index) => (
@@ -889,9 +904,11 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
 function MembersEvolutionWidget({
   monthly,
   locale,
+  embedded = false,
 }: {
   monthly: ActivityResponse['members']['monthly'];
   locale: string;
+  embedded?: boolean;
 }) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const chartMonthly = React.useMemo(
@@ -918,8 +935,8 @@ function MembersEvolutionWidget({
   }, [chartMonthly]);
 
   const width = 760;
-  const height = 340;
-  const margin = { top: 18, right: 22, bottom: 56, left: 44 };
+  const height = 210;
+  const margin = { top: 8, right: 16, bottom: 36, left: 36 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -956,15 +973,21 @@ function MembersEvolutionWidget({
     .curve(d3.curveMonotoneX);
 
   return (
-    <section className={`${CHART_SECTION_CLASS} h-full`}>
-      <div className="flex flex-col gap-1 pb-3">
-        <CardTitle className="text-4 font-medium tracking-tight">
+    <section
+      className={
+        embedded
+          ? 'flex h-full min-h-0 min-w-0 flex-col'
+          : `${CHART_SECTION_CLASS} h-full min-h-0`
+      }
+    >
+      <div className="flex flex-col gap-0.5 pb-2">
+        <CardTitle className="text-3 font-medium tracking-tight">
           {tTokenHoldings('members.title')}
         </CardTitle>
         <CardDescription className="text-1 text-muted-foreground">
           {tTokenHoldings('members.subtitle')}
         </CardDescription>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 text-1 text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-1 text-muted-foreground">
           <span className="tabular-nums">
             <span className="text-foreground">{totals.people}</span>{' '}
             {tTokenHoldings('members.people')}
@@ -983,11 +1006,12 @@ function MembersEvolutionWidget({
           </span>
         </div>
       </div>
-      <div className="flex flex-1 flex-col space-y-3">
-        <div className="overflow-x-auto">
+      <div className="flex min-h-0 flex-1 flex-col space-y-3">
+        <div className="min-h-0 flex-1 overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="min-w-[620px] w-full"
+            preserveAspectRatio="xMidYMid meet"
+            className="h-[150px] w-full lg:h-full"
           >
             <g transform={`translate(${margin.left},${margin.top})`}>
               {memberAxisTicks.map((tick) => (
@@ -1053,7 +1077,7 @@ function MembersEvolutionWidget({
                     />
                     <text
                       x={monthX}
-                      y={innerHeight + 20}
+                      y={innerHeight + 16}
                       textAnchor="middle"
                       className="fill-muted-foreground text-[10px]"
                     >
@@ -1196,7 +1220,7 @@ function SignalsPulseMapWidget({
   const x = d3
     .scaleBand<number>()
     .domain(d3.range(bucketCount))
-    .range([0, innerWidth])
+    .range([innerWidth, 0])
     .paddingInner(0.14)
     .paddingOuter(0.02);
   const y = d3
@@ -1375,15 +1399,6 @@ function SignalsPulseMapWidget({
                   </g>
                 );
               })}
-
-              <text
-                x={innerWidth / 2}
-                y={innerHeight + 38}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[11px]"
-              >
-                {tTokenHoldings('signals.recency')}
-              </text>
             </g>
           </svg>
         </div>
@@ -1398,11 +1413,7 @@ function SignalsPulseMapWidget({
   );
 }
 
-export function HomeTokenHoldingsDashboard({
-  spaceSlug,
-}: {
-  spaceSlug: string;
-}) {
+export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
   const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
     useAccessTokenReady();
   const locale = useLocale();
@@ -1419,8 +1430,6 @@ export function HomeTokenHoldingsDashboard({
       ? { '--space-accent': spaceAccent }
       : null),
   } as React.CSSProperties;
-  // Network-gated overview APIs need a Bearer token. Wait for Privy + token
-  // and key SWR by auth so we don't cache a premature 401 as a sticky error.
   const authReady = !isAuthLoading && accessTokenReady;
   const authKey = isAuthenticated ? 'auth' : 'anon';
   const { data, error, isLoading } = useSWR(
@@ -1428,22 +1437,7 @@ export function HomeTokenHoldingsDashboard({
     createTokenHoldingsFetcher(spaceSlug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 60_000 },
   );
-  const {
-    data: activityData,
-    error: activityError,
-    isLoading: activityLoadingRaw,
-  } = useSWR(
-    authReady ? ['space-overview-activity-home', spaceSlug, authKey] : null,
-    fetchOverviewActivity(spaceSlug, getAccessToken),
-    { revalidateOnFocus: true, refreshInterval: 120_000 },
-  );
-  // SWR reports isLoading=false when the key is null — treat auth wait as loading.
-  const activityLoading = !authReady || activityLoadingRaw;
   const holdingsLoading = !authReady || isLoading;
-
-  const [activeFilter, setActiveFilter] =
-    React.useState<HomeSectionFilter>('activity');
-
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
       const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`;
@@ -1459,269 +1453,191 @@ export function HomeTokenHoldingsDashboard({
     },
     [tModalAside],
   );
-  const hasEnergyData = Boolean(activityData?.energy.available);
-  // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
-  const showEnergyWidget = false && hasEnergyData;
-  const showPayingSpaces = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
-  const filterItems = React.useMemo(
-    () =>
-      [
-        ...(showEnergyWidget
-          ? [{ value: 'energy', label: tTokenHoldings('filters.energy') }]
-          : []),
-        { value: 'activity', label: tTokenHoldings('filters.activity') },
-        {
-          value: 'distribution',
-          label: tTokenHoldings('filters.distribution'),
-        },
-        ...(showPayingSpaces
-          ? [
-              {
-                value: 'payingSpaces',
-                label: tTokenHoldings('filters.payingSpaces'),
-              },
-            ]
-          : []),
-      ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [showEnergyWidget, showPayingSpaces, tTokenHoldings],
-  );
-  const showActivity = activeFilter === 'activity';
-  const showDistribution = activeFilter === 'distribution';
-  const showPayingSpacesTab = activeFilter === 'payingSpaces';
-  // Temporarily hidden for deployment; keep components wired for quick re-enable.
-  const showSignalsWidget = false;
-  const showDistributionHistoryWidget = false;
 
-  React.useEffect(() => {
-    if (activeFilter === 'energy' && !showEnergyWidget) {
-      setActiveFilter('activity');
-    }
-    if (activeFilter === 'payingSpaces' && !showPayingSpaces) {
-      setActiveFilter('activity');
-    }
-  }, [activeFilter, showEnergyWidget, showPayingSpaces]);
+  if (holdingsLoading) return null;
+  if (error) {
+    return (
+      <section className={`${CHART_SECTION_CLASS} gap-1`}>
+        <CardTitle>
+          {error instanceof TokenHoldingsFetchError &&
+          (error.code === 'access_denied' || error.status === 401)
+            ? tTokenHoldings('error.accessDeniedTitle')
+            : tTokenHoldings('error.title')}
+        </CardTitle>
+        <CardDescription>
+          {error instanceof TokenHoldingsFetchError &&
+          (error.code === 'access_denied' || error.status === 401)
+            ? tTokenHoldings('error.accessDeniedDescription')
+            : tTokenHoldings('error.description')}
+        </CardDescription>
+      </section>
+    );
+  }
+  if (!data || data.tokens.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-4" style={chartStyle}>
-      <Tabs
-        value={activeFilter}
-        onValueChange={(value) => setActiveFilter(value as HomeSectionFilter)}
-      >
-        <ScrollableTabsList triggerVariant="switch">
-          {filterItems.map((item) => (
-            <TabsTrigger key={item.value} value={item.value} variant="switch">
-              {item.label}
-            </TabsTrigger>
-          ))}
-        </ScrollableTabsList>
-      </Tabs>
-
-      {showActivity ? (
-        <>
-          {!activityLoading && activityError ? (
-            <section className="flex flex-col gap-1">
-              <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
-              <CardDescription>
-                {tTokenHoldings('activity.error')}
-              </CardDescription>
-            </section>
-          ) : null}
-
-          {!activityLoading && !activityError && activityData ? (
-            <div
-              className={
-                showSignalsWidget
-                  ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
-              }
+    <div className="mt-4 flex flex-col gap-4" style={chartStyle}>
+      <div className="flex justify-end">
+        <ExportTokenHoldersButton
+          spaceSlug={spaceSlug}
+          getAccessToken={getAccessToken}
+        />
+      </div>
+      <div className="grid min-w-0 items-stretch gap-4 md:grid-cols-2">
+        {data.tokens.map((token) => {
+          const showSymbolSubtitle =
+            token.symbol.trim().toLowerCase() !==
+            token.name.trim().toLowerCase();
+          return (
+            <section
+              key={token.token_address}
+              className={`${CHART_SECTION_CLASS} h-full`}
             >
-              <div className="grid min-w-0 content-start gap-4">
-                {showSignalsWidget ? (
-                  <SignalsPulseMapWidget signals={activityData.signals} />
-                ) : null}
-                <MembersEvolutionWidget
-                  monthly={activityData.members.monthly}
-                  locale={locale}
-                />
-              </div>
-              <div className="flex min-h-0 min-w-0 flex-col">
-                <ProposalsPieWidget data={activityData.proposals} />
-              </div>
-            </div>
-          ) : null}
-        </>
-      ) : null}
-
-      {showDistribution ? (
-        <>
-          {!holdingsLoading && error ? (
-            <section className="flex flex-col gap-1">
-              <CardTitle>
-                {error instanceof TokenHoldingsFetchError &&
-                (error.code === 'access_denied' || error.status === 401)
-                  ? tTokenHoldings('error.accessDeniedTitle')
-                  : tTokenHoldings('error.title')}
-              </CardTitle>
-              <CardDescription>
-                {error instanceof TokenHoldingsFetchError &&
-                (error.code === 'access_denied' || error.status === 401)
-                  ? tTokenHoldings('error.accessDeniedDescription')
-                  : tTokenHoldings('error.description')}
-              </CardDescription>
-            </section>
-          ) : null}
-
-          {!holdingsLoading && !error && data && data.tokens.length === 0 ? (
-            <section className="flex flex-col gap-1">
-              <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
-              <CardDescription>
-                {tTokenHoldings('empty.description')}
-              </CardDescription>
-            </section>
-          ) : null}
-
-          {!holdingsLoading && !error && data && data.tokens.length > 0 ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-end">
-                <ExportTokenHoldersButton
-                  spaceSlug={spaceSlug}
-                  getAccessToken={getAccessToken}
-                />
-              </div>
-              <div
-                className={
-                  showDistributionHistoryWidget
-                    ? 'grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                    : 'grid items-stretch gap-4'
-                }
-              >
-                {showDistributionHistoryWidget ? (
-                  <DistributionOverTimeChart
-                    spaceSlug={spaceSlug}
-                    tokens={data.tokens}
-                    getAccessToken={getAccessToken}
-                  />
-                ) : null}
-                <div
-                  className={
-                    showDistributionHistoryWidget
-                      ? 'grid min-w-0 items-stretch gap-12'
-                      : 'grid min-w-0 items-stretch gap-12 md:grid-cols-2'
-                  }
-                >
-                  {data.tokens.map((token) => {
-                    const showSymbolSubtitle =
-                      token.symbol.trim().toLowerCase() !==
-                      token.name.trim().toLowerCase();
-                    return (
-                      <section
-                        key={token.token_address}
-                        className={`${CHART_SECTION_CLASS} h-full`}
-                      >
-                        <div className="flex flex-col gap-2 pb-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <CardTitle className="truncate text-4 font-medium tracking-tight">
-                                  {token.name}
-                                </CardTitle>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      aria-label={tTokenHoldings(
-                                        'tokenDetailsAria',
-                                        {
-                                          tokenName: token.name,
-                                        },
-                                      )}
-                                      className="inline-flex h-5 w-5 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    >
-                                      <CircleHelp className="h-3.5 w-3.5" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent
-                                    side="top"
-                                    className="max-w-xs text-xs leading-relaxed"
-                                  >
-                                    <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
-                                      <span className="text-muted-foreground">
-                                        {tTokenHoldings('tooltip.totalSupply')}
-                                      </span>
-                                      <span>
-                                        {formatAmount(
-                                          token.total_supply,
-                                          locale,
-                                        )}
-                                      </span>
-                                      <span className="text-muted-foreground">
-                                        {tCommon('Treasury')}
-                                      </span>
-                                      <span>
-                                        {formatAmount(
-                                          token.treasury_balance,
-                                          locale,
-                                        )}
-                                      </span>
-                                      <span className="text-muted-foreground">
-                                        {tTokenHoldings('tooltip.other')}
-                                      </span>
-                                      <span>
-                                        {formatAmount(
-                                          token.other_balance,
-                                          locale,
-                                        )}
-                                      </span>
-                                      <span className="text-muted-foreground">
-                                        {tTokenHoldings('tooltip.address')}
-                                      </span>
-                                      <span className="break-all font-mono">
-                                        {token.token_address}
-                                      </span>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                              {showSymbolSubtitle ? (
-                                <CardDescription className="text-1 uppercase tracking-wide text-muted-foreground">
-                                  {token.symbol}
-                                </CardDescription>
-                              ) : null}
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 rounded-none border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"
-                            >
-                              {getTokenTypeLabel(token.type)}
-                            </Badge>
+              <div className="flex flex-col gap-2 pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <CardTitle className="truncate text-4 font-medium tracking-tight">
+                        {token.name}
+                      </CardTitle>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={tTokenHoldings('tokenDetailsAria', {
+                              tokenName: token.name,
+                            })}
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <CircleHelp className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="max-w-xs text-xs leading-relaxed"
+                        >
+                          <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
+                            <span className="text-muted-foreground">
+                              {tTokenHoldings('tooltip.totalSupply')}
+                            </span>
+                            <span>
+                              {formatAmount(token.total_supply, locale)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {tCommon('Treasury')}
+                            </span>
+                            <span>
+                              {formatAmount(token.treasury_balance, locale)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {tTokenHoldings('tooltip.other')}
+                            </span>
+                            <span>
+                              {formatAmount(token.other_balance, locale)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {tTokenHoldings('tooltip.address')}
+                            </span>
+                            <span className="break-all font-mono">
+                              {token.token_address}
+                            </span>
                           </div>
-                        </div>
-                        <div className="flex flex-1 flex-col">
-                          <TokenDonutChart
-                            title={token.symbol}
-                            slices={token.holdings}
-                          />
-                        </div>
-                      </section>
-                    );
-                  })}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    {showSymbolSubtitle ? (
+                      <CardDescription className="text-1 uppercase tracking-wide text-muted-foreground">
+                        {token.symbol}
+                      </CardDescription>
+                    ) : null}
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 rounded-none border-border/70 px-1.5 py-0.5 text-1 font-normal text-muted-foreground"
+                  >
+                    {getTokenTypeLabel(token.type)}
+                  </Badge>
                 </div>
               </div>
-            </div>
-          ) : null}
-        </>
-      ) : null}
+              <div className="flex flex-1 flex-col">
+                <TokenDonutChart title={token.symbol} slices={token.holdings} />
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-      {showPayingSpacesTab && showPayingSpaces ? (
-        <PayingSpacesDashboard spaceSlug={spaceSlug} />
-      ) : null}
+export function SpaceGovernanceCharts({ spaceSlug }: { spaceSlug: string }) {
+  const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
+    useAccessTokenReady();
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const portalStyles = useSpaceAccentPortalStyles();
+  const spaceAccent = (
+    portalStyles as Record<string, string | number | undefined>
+  )['--space-accent'];
+  const chartStyle = {
+    ...SPACE_CHART_PALETTE_STYLE,
+    ...(typeof spaceAccent === 'string' && spaceAccent
+      ? { '--space-accent': spaceAccent }
+      : null),
+  } as React.CSSProperties;
+  const authReady = !isAuthLoading && accessTokenReady;
+  const authKey = isAuthenticated ? 'auth' : 'anon';
+  const {
+    data: activityData,
+    error: activityError,
+    isLoading: activityLoadingRaw,
+  } = useSWR(
+    authReady ? ['space-overview-activity-home', spaceSlug, authKey] : null,
+    fetchOverviewActivity(spaceSlug, getAccessToken),
+    { revalidateOnFocus: true, refreshInterval: 120_000 },
+  );
+  const activityLoading = !authReady || activityLoadingRaw;
 
-      {activeFilter === 'energy' && showEnergyWidget ? (
-        <section className="flex flex-col gap-1">
-          <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
-          <CardDescription>
-            {tTokenHoldings('energy.description')}
-          </CardDescription>
+  if (activityLoading) return null;
+  if (activityError) {
+    return (
+      <p className="text-1 text-muted-foreground" style={chartStyle}>
+        {tTokenHoldings('activity.error')}
+      </p>
+    );
+  }
+  if (!activityData) return null;
+
+  return (
+    <div
+      className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+      style={chartStyle}
+    >
+      <MembersEvolutionWidget
+        monthly={activityData.members.monthly}
+        locale={locale}
+      />
+      <ProposalsPieWidget data={activityData.proposals} />
+    </div>
+  );
+}
+
+export function HomeTokenHoldingsDashboard({
+  spaceSlug,
+}: {
+  spaceSlug: string;
+}) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const showPayingSpaces = isPayingSpacesDashboardEnabled({ slug: spaceSlug });
+
+  return (
+    <div className="flex flex-col gap-8">
+      {showPayingSpaces ? (
+        <section className="flex flex-col gap-4">
+          <DashboardSectionTitle>
+            {tTokenHoldings('filters.payingSpaces')}
+          </DashboardSectionTitle>
+          <PayingSpacesDashboard spaceSlug={spaceSlug} />
         </section>
       ) : null}
     </div>

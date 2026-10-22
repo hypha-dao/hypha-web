@@ -113,4 +113,9 @@ export interface Message {
   mentionedUserIds?: string[];
   /** Hypha signal-team system notice parsed from structured Matrix content. */
   signalTeamNotice?: SignalTeamNotice;
+  /**
+   * Specialist who answered an @AI Agents mention (`org.hypha.agent_specialist`).
+   * One of the competency catalog ids.
+   */
+  agentSpecialistId?: string;
 }

@@ -29,6 +29,7 @@ export const ChatHead = ({
           isLoading={isLoading}
           avatarSrc={creator?.avatar}
           userName={displayName}
+          personId={creator?.type === 'space' ? undefined : creator?.id}
         />
         <div className="flex justify-between items-center w-full">
           <div className="flex-col gap-y-2">

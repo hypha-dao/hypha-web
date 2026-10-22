@@ -1,10 +1,45 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { ArrowLeft, PanelRightClose, Settings } from 'lucide-react';
-import { useSidebar } from '@hypha-platform/ui';
+import type { ComponentType, ReactNode } from 'react';
+import {
+  ArrowLeft,
+  Circle,
+  Globe2,
+  PanelRightClose,
+  Settings,
+  Target,
+} from 'lucide-react';
+import {
+  CountBadge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  useSidebar,
+} from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+
+type RoomChoiceIcon = ComponentType<{
+  className?: string;
+  strokeWidth?: number;
+  'aria-hidden'?: boolean;
+}>;
+
+const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
+  space: Circle,
+  ecosystem: Target,
+  public: Globe2,
+};
+
+type RoomChoiceOption = {
+  value: string;
+  label: string;
+  /** Unread message count for this channel. */
+  unreadCount?: number;
+  unreadCountIsCapped?: boolean;
+};
 
 type HumanChatPanelHeaderProps = {
   title?: string;
@@ -17,6 +52,19 @@ type HumanChatPanelHeaderProps = {
    * Same target as the former settings control on the tab row.
    */
   notificationSettingsHref?: string | null;
+  /** One room name, in the same box as the space and ecosystem choice. */
+  mark?: string;
+  /** Icon-only title. Hover shows the label (network room). */
+  iconTitle?: string;
+  /** Sits before the title — e.g. peer space icons on a direct chat. */
+  titleStart?: ReactNode;
+  /** Two rooms that sit side by side, such as a space and its ecosystem. */
+  roomChoice?: {
+    value: string;
+    options: RoomChoiceOption[];
+    ariaLabel: string;
+    onChange: (next: string) => void;
+  };
 };
 
 export function HumanChatPanelHeader({
@@ -25,6 +73,10 @@ export function HumanChatPanelHeader({
   onBack,
   trailingStart,
   notificationSettingsHref,
+  mark,
+  iconTitle,
+  titleStart,
+  roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
   const router = useRouter();
@@ -40,7 +92,7 @@ export function HumanChatPanelHeader({
           <button
             type="button"
             onClick={onBack}
-            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="flex h-[36px] w-[36px] items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label={t('backToSpaceChat')}
           >
             <ArrowLeft className="craft-icon" />
@@ -53,7 +105,7 @@ export function HumanChatPanelHeader({
               setOpen(false);
               setOpenMobile(false);
             }}
-            className="flex size-9 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="flex h-[36px] w-[36px] items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
@@ -70,7 +122,7 @@ export function HumanChatPanelHeader({
               setOpenMobile(false);
               router.push(notificationSettingsHref);
             }}
-            className="flex size-9 shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
@@ -82,7 +134,89 @@ export function HumanChatPanelHeader({
         {displayDescription && (
           <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
-        {displayTitle ? (
+        {titleStart}
+        {mark && !roomChoice ? (
+          <span className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background">
+            {mark}
+          </span>
+        ) : null}
+        {roomChoice ? (
+          <TooltipProvider delayDuration={200}>
+            <div
+              role="group"
+              aria-label={roomChoice.ariaLabel}
+              className="inline-flex shrink-0 border border-foreground"
+            >
+              {roomChoice.options.map((option) => {
+                const selected = roomChoice.value === option.value;
+                const Icon = ROOM_CHOICE_ICONS[option.value];
+                const unread = option.unreadCount ?? 0;
+                const unreadLabel =
+                  unread > 0
+                    ? option.unreadCountIsCapped || unread >= 100
+                      ? t('channelUnreadCappedAria', { channel: option.label })
+                      : t('channelUnreadAria', {
+                          channel: option.label,
+                          count: unread,
+                        })
+                    : option.label;
+                return (
+                  <Tooltip key={option.value}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-pressed={selected}
+                        aria-label={unreadLabel}
+                        onClick={() => roomChoice.onChange(option.value)}
+                        className={cn(
+                          'relative inline-flex h-[36px] w-[36px] items-center justify-center',
+                          selected
+                            ? 'bg-foreground text-background'
+                            : 'bg-background text-foreground',
+                        )}
+                      >
+                        {Icon ? (
+                          <Icon
+                            className="h-4 w-4"
+                            strokeWidth={1.5}
+                            aria-hidden
+                          />
+                        ) : (
+                          <span className="px-2 text-1">{option.label}</span>
+                        )}
+                        {unread > 0 ? (
+                          <CountBadge
+                            count={unread}
+                            capped={option.unreadCountIsCapped}
+                            size="sm"
+                            className="absolute -right-1 -top-1 z-10"
+                          />
+                        ) : null}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {option.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
+        ) : iconTitle ? (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="inline-flex h-[36px] w-[36px] items-center justify-center border border-foreground bg-foreground text-background"
+                  aria-label={iconTitle}
+                >
+                  <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{iconTitle}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : displayTitle ? (
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
             {displayTitle}
           </span>

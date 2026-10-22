@@ -3,10 +3,11 @@
 import { ActivateSpacesFormValues } from './validation';
 import {
   useActivateSpacesMutation,
+  HYPHA_ACTIVATION_PER_MONTH,
   HYPHA_PRICE_USD,
 } from '@hypha-platform/core/client';
 
-const HYPHA_PER_MONTH = 44;
+const HYPHA_PER_MONTH = HYPHA_ACTIVATION_PER_MONTH;
 
 export const useActivateSpaces = ({
   spaces,

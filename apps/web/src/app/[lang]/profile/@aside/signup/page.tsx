@@ -1,62 +1,33 @@
 'use client';
 
-import { ProposalOverlayShell, SignupPanel } from '@hypha-platform/epics';
-import React, { useEffect, useState } from 'react';
-import { useCreateProfile } from '@web/hooks/use-create-profile';
+import { SignupFlow, type SignupFlowValues } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams } from 'next/navigation';
-import { LoadingBackdrop } from '@hypha-platform/ui';
-import { useTranslations } from 'next-intl';
+import { useCreateProfile } from '@web/hooks/use-create-profile';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function SignupPage() {
-  const tAgreementFlow = useTranslations('AgreementFlow');
-  const tProfileSignup = useTranslations('Profile.signup');
   const { createProfile, isCreating, error } = useCreateProfile();
   const { user, isLoading } = useAuthentication();
-  const { lang } = useParams();
-  const [walletAddress, setWalletAddress] = useState<string | undefined>(
-    user?.wallet?.address,
-  );
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (user?.wallet?.address) {
-      setWalletAddress(user.wallet.address);
-    }
-  }, [user?.wallet?.address]);
+    setMounted(true);
+  }, []);
 
-  const handleSave = async (values: any) => {
-    try {
-      if (!walletAddress) {
-        throw new Error(
-          'Wallet address is required. Please connect your wallet first.',
-        );
-      }
-      await createProfile({
-        ...values,
-        address: walletAddress,
-      });
-    } catch (error) {
-      console.error('Error creating profile:', error);
-      throw error;
-    }
-  };
-
-  return (
-    <ProposalOverlayShell>
-      <LoadingBackdrop
-        showKeepWindowOpenMessage={true}
-        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
-        fullHeight={true}
-        isLoading={isLoading || !user?.wallet?.address}
-        message={<span>{tProfileSignup('loading')}</span>}
-      >
-        <SignupPanel
-          closeUrl={`/${lang}/profile`}
-          onSave={handleSave}
-          isCreating={isCreating}
-          error={error}
-        />
-      </LoadingBackdrop>
-    </ProposalOverlayShell>
+  const flow = (
+    <SignupFlow
+      email={user?.email}
+      walletAddress={user?.wallet?.address}
+      authLoading={isLoading}
+      isCreating={isCreating}
+      error={error}
+      onComplete={async (values: SignupFlowValues) => {
+        await createProfile(values);
+      }}
+    />
   );
+
+  if (!mounted) return flow;
+  return createPortal(flow, document.body);
 }

@@ -110,7 +110,7 @@ export function NetworkAddLocationButton({
           disabled={!isAuthenticated}
           title={!isAuthenticated ? tCommon('signIn') : undefined}
         >
-          <MapPinIcon className="size-3.5 shrink-0" aria-hidden />
+          <MapPinIcon className="size-3 shrink-0" aria-hidden />
           {t('addLocation')}
         </Button>
       </DialogTrigger>

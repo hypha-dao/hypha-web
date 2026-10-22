@@ -59,6 +59,74 @@ function readVisualUrlsFromToolOutput(
   );
 }
 
+function readPartialVisualUrls(output: unknown): {
+  logoUrl: string | null;
+  bannerUrl: string | null;
+} {
+  if (!output || typeof output !== 'object') {
+    return { logoUrl: null, bannerUrl: null };
+  }
+  const value = output as Record<string, unknown> & {
+    preview?: Record<string, unknown>;
+    create_payload?: Record<string, unknown>;
+  };
+  if (value.ok === false) return { logoUrl: null, bannerUrl: null };
+  const roots = [value, value.preview, value.create_payload].filter(
+    (root): root is Record<string, unknown> =>
+      Boolean(root) && typeof root === 'object',
+  );
+  let logoUrl: string | null = null;
+  let bannerUrl: string | null = null;
+  for (const root of roots) {
+    if (!logoUrl) {
+      logoUrl = isHttpImageUrl(root.logo_url)
+        ? root.logo_url.trim()
+        : isHttpImageUrl(root.logoUrl)
+        ? root.logoUrl.trim()
+        : null;
+    }
+    if (!bannerUrl) {
+      bannerUrl = isHttpImageUrl(root.lead_image_url)
+        ? root.lead_image_url.trim()
+        : isHttpImageUrl(root.leadImageUrl)
+        ? root.leadImageUrl.trim()
+        : isHttpImageUrl(root.leadImage)
+        ? root.leadImage.trim()
+        : null;
+    }
+  }
+  return { logoUrl, bannerUrl };
+}
+
+function isVisualToolPart(part: MessagePart) {
+  const type = typeof part.type === 'string' ? part.type : '';
+  if (type === 'tool-generate_space_visual_assets') return true;
+  if (type === 'tool-create_space_from_onboarding') return true;
+  return (
+    type === 'dynamic-tool' &&
+    (part as { toolName?: unknown }).toolName === 'generate_space_visual_assets'
+  );
+}
+
+/** Logo and banner from one assistant message, including a partial result. */
+export function generatedVisualsFromParts(parts: MessagePart[] | undefined): {
+  logoUrl: string | null;
+  bannerUrl: string | null;
+} | null {
+  let logoUrl: string | null = null;
+  let bannerUrl: string | null = null;
+  for (const part of parts ?? []) {
+    if (!part || typeof part !== 'object') continue;
+    if (!isVisualToolPart(part)) continue;
+    if (part.state && part.state !== 'output-available') continue;
+    const urls = readPartialVisualUrls(part.output);
+    if (urls.logoUrl) logoUrl = urls.logoUrl;
+    if (urls.bannerUrl) bannerUrl = urls.bannerUrl;
+  }
+  if (!logoUrl && !bannerUrl) return null;
+  return { logoUrl, bannerUrl };
+}
+
 /** Recover the latest confirmed logo + banner URLs from onboarding chat tool output. */
 export function extractOnboardingVisualAssetsFromMessages(
   messages: MessageWithParts[],

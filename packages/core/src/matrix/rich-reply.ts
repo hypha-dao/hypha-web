@@ -3,6 +3,7 @@
 import { EventType, MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
+import { isAiSpecialistId } from '../people/ai-specialist-routing';
 import type { Message, MessageMediaBundleItem } from './types';
 import { parseMentionUserIdsFromWireContent } from './mentions';
 import {
@@ -22,6 +23,9 @@ export const HYPHA_SPOILER_FIELD = 'org.hypha.spoiler';
  */
 export const HYPHA_MEDIA_BUNDLE_FIELD = 'org.hypha.media_bundle';
 
+/** Specialist id on an AI Agents reply. One catalog id, not a second Matrix user. */
+export const HYPHA_AGENT_SPECIALIST_FIELD = 'org.hypha.agent_specialist';
+
 export type HyphaMediaBundleItemWire = {
   msgtype: 'm.file' | 'm.image' | 'm.audio';
   url: string;
@@ -37,6 +41,13 @@ export type HyphaMediaBundleItemWire = {
 };
 
 export const RICH_REPLY_PREVIEW_MAX = 280;
+
+function readAgentSpecialistId(
+  content: Record<string, unknown>,
+): string | undefined {
+  const raw = content[HYPHA_AGENT_SPECIALIST_FIELD];
+  return typeof raw === 'string' && isAiSpecialistId(raw) ? raw : undefined;
+}
 
 /** Single-line reply excerpt (Discord-style): first line only, then optional char cap. */
 export const REPLY_PREVIEW_LINE_MAX = 120;
@@ -296,6 +307,7 @@ export function messageFromRoomMessageEvent(
     [key: string]: unknown;
   };
   const mentionedUserIds = parseMentionUserIdsFromWireContent(content);
+  const agentSpecialistId = readAgentSpecialistId(content);
   const msgtypeRaw = content.msgtype;
   const isMedia =
     msgtypeRaw === 'm.file' ||
@@ -478,6 +490,7 @@ export function messageFromRoomMessageEvent(
       spoiler: spoilerVal === true,
       mediaBundle,
       ...(mentionedUserIds ? { mentionedUserIds } : {}),
+      ...(agentSpecialistId ? { agentSpecialistId } : {}),
     };
   }
 
@@ -492,6 +505,7 @@ export function messageFromRoomMessageEvent(
     inReplyToSender,
     inReplyToBodyPreview,
     ...(mentionedUserIds ? { mentionedUserIds } : {}),
+    ...(agentSpecialistId ? { agentSpecialistId } : {}),
     ...(signalTeamNoticeField
       ? { signalTeamNotice: signalTeamNoticeField }
       : {}),

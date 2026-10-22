@@ -50,6 +50,13 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | `fetch_org_memory_asset` | Fetch one memory asset by `space_slug` + `asset_key` (text/PDF/image/video modes). |
 | `get_token_holdings_by_space_slug` | Token holdings/treasury distribution for a space by slug. |
 | `get_documents_by_space_slug` | Paginated documents/proposals/agreements list with optional filters. |
+| `get_member_intelligence` | Authenticated member bundle: orientation, counts, guidance, attention, spaces, proposals, signals, notifications, connections, wallet. |
+| `get_member_spaces` | Spaces the authenticated member belongs to. |
+| `get_member_proposals` | Proposals and discussions in the member's spaces. |
+| `get_member_signals` | Active signals in the member's spaces. |
+| `get_member_notifications` | Attention items plus the personal guidance narrative. |
+| `get_member_connections` | People who share a space with the member, plus a chat space slug. |
+| `get_member_wallet` | Wallet address and preferred currency for the member. |
 
 ### Notes
 

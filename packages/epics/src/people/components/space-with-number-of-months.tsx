@@ -13,6 +13,10 @@ import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
 import { useFormContext } from 'react-hook-form';
 import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
 import { useTranslations } from 'next-intl';
+import {
+  WalletAmountBlock,
+  WalletFlowLabel,
+} from '../../common/wallet-flow-card';
 
 type SpaceWithMonthsValue = {
   spaceId: number;
@@ -25,6 +29,7 @@ type SpaceWithNumberOfMonthsFieldProps = {
   value?: SpaceWithMonthsValue;
   onChange?: (value: SpaceWithMonthsValue) => void;
   name?: string;
+  appearance?: 'default' | 'wallet';
 };
 
 type SpaceOption = { avatarUrl?: string | null; value: string; label: string };
@@ -35,11 +40,12 @@ export const SpaceWithNumberOfMonthsField = ({
   value,
   onChange,
   name,
+  appearance = 'default',
 }: SpaceWithNumberOfMonthsFieldProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const [selected, setSelected] = useState<Space | null>(null);
-  const [months, setMonths] = useState<string>('');
+  const [months, setMonths] = useState<string>('3');
 
   const { setValue, trigger } = useFormContext();
 
@@ -204,6 +210,73 @@ export const SpaceWithNumberOfMonthsField = ({
     [selected, onChange, name, setValue, trigger],
   );
 
+  const spacePicker = (
+    <Combobox
+      options={options}
+      placeholder={tAgreementFlow(
+        'plugins.spaceWithMonths.selectSpacePlaceholder',
+      )}
+      searchPlaceholder={tSpaces('search')}
+      onChange={handleSpaceChange}
+      renderOption={(option) => (
+        <>
+          <Image
+            src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+            alt={option.label}
+            width={24}
+            height={24}
+            className="rounded-full"
+          />
+          <span>{option.label}</span>
+        </>
+      )}
+      renderValue={(option) =>
+        option ? (
+          <div className="flex items-center gap-2 truncate">
+            <Image
+              src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+              alt={option.label}
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+            <span className="truncate">{option.label}</span>
+          </div>
+        ) : (
+          tAgreementFlow('plugins.spaceWithMonths.findSpace')
+        )
+      }
+    />
+  );
+
+  if (appearance === 'wallet') {
+    return (
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <WalletFlowLabel>
+            {tAgreementFlow('plugins.spaceWithMonths.selectSpace')}
+          </WalletFlowLabel>
+          {spacePicker}
+        </div>
+        <div className="flex flex-col gap-2">
+          <WalletFlowLabel>
+            {tAgreementFlow('plugins.spaceWithMonths.numberOfMonths')}
+          </WalletFlowLabel>
+          <WalletAmountBlock
+            id={name ? `${name}-months` : 'activate-months'}
+            amount={months}
+            onAmountChange={handleMonthsChange}
+            amountLabel={tAgreementFlow(
+              'plugins.spaceWithMonths.numberOfMonths',
+            )}
+            integer
+            presets={[1, 3, 6, 12]}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col gap-5 w-full">
@@ -211,42 +284,7 @@ export const SpaceWithNumberOfMonthsField = ({
           <span className="text-2 text-neutral-11 w-full">
             {tAgreementFlow('plugins.spaceWithMonths.selectSpace')}
           </span>
-          <Combobox
-            options={options}
-            placeholder={tAgreementFlow(
-              'plugins.spaceWithMonths.selectSpacePlaceholder',
-            )}
-            searchPlaceholder={tSpaces('search')}
-            onChange={handleSpaceChange}
-            renderOption={(option) => (
-              <>
-                <Image
-                  src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-                  alt={option.label}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
-                <span>{option.label}</span>
-              </>
-            )}
-            renderValue={(option) =>
-              option ? (
-                <div className="flex items-center gap-2 truncate">
-                  <Image
-                    src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-                    alt={option.label}
-                    width={24}
-                    height={24}
-                    className="rounded-full"
-                  />
-                  <span className="truncate">{option.label}</span>
-                </div>
-              ) : (
-                tAgreementFlow('plugins.spaceWithMonths.findSpace')
-              )
-            }
-          />
+          {spacePicker}
         </div>
         <div className="flex w-full justify-between items-center">
           <span className="text-2 text-neutral-11 w-full">

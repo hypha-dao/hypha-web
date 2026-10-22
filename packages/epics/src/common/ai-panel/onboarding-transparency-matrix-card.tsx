@@ -116,7 +116,7 @@ export function OnboardingTransparencyMatrixCard({
   };
 
   return (
-    <div className="rounded-lg border border-border/80 bg-background/90 p-4 shadow-sm">
+    <div className="border border-border bg-background p-4">
       <p className="mb-1 text-sm font-medium text-foreground">
         {step === 'discoverability'
           ? tAi('onboardingTransparencyDiscoverabilityTitle')
@@ -128,7 +128,7 @@ export function OnboardingTransparencyMatrixCard({
           : tAi('onboardingTransparencyActivityHint')}
       </p>
       {step === 'discoverability' ? (
-        <p className="mb-4 rounded-lg border border-accent-8/20 bg-accent-2/30 px-3 py-2 text-xs leading-relaxed text-foreground">
+        <p className="mb-4 border border-border bg-neutral-2 px-3 py-2 text-xs leading-relaxed text-foreground">
           {tAi('onboardingTransparencyBenefit')}
         </p>
       ) : null}
@@ -155,7 +155,7 @@ export function OnboardingTransparencyMatrixCard({
         ) : (
           <>
             {selectedDiscoverability != null ? (
-              <p className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <p className="border border-border bg-neutral-2 px-3 py-2 text-xs text-muted-foreground">
                 {tAi('onboardingTransparencyDiscoverabilityChosen', {
                   level:
                     discoverabilityOptions.find(

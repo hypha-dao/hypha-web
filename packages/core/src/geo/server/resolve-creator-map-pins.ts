@@ -1,0 +1,386 @@
+import 'server-only';
+
+import { people } from '@hypha-platform/storage-postgres';
+import { and, inArray, isNull, notLike, or, sql } from 'drizzle-orm';
+
+import type { DbConfig } from '../../server';
+import { SPACE_ACTOR_SUB_PREFIX } from '../../people/server/space-actor-person';
+import {
+  hasSpaceMapLocation,
+  isNullIsland,
+  parseCoordinateInput,
+} from '../location';
+import type { GeocodeResult } from '../validation';
+import { searchNominatim } from './nominatim';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+/**
+ * Nominatim allows one request at a time. A burst is rejected, and those
+ * failures used to leave the map with only the spaces that already had
+ * coordinates.
+ */
+const GEOCODE_CONCURRENCY = 1;
+const GEOCODE_GAP_MS = 1_100;
+/**
+ * The map is already on screen. This stream keeps filling pins until the
+ * route's time limit, instead of stopping after a handful of places.
+ */
+const GEOCODE_BUDGET_MS = 55_000;
+
+export type CreatorMapSpace = {
+  id: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  /** Written place name, used when the space has no coordinates yet. */
+  locationLabel?: string | null;
+  creatorAddress?: string | null;
+  /** On-chain members, used only when the space and its creator have no place. */
+  memberAddresses?: readonly string[] | null;
+};
+
+export type FallbackLocationSource = 'space' | 'creator' | 'member';
+
+export type FallbackLocation = {
+  spaceId: number;
+  location: string;
+  source: FallbackLocationSource;
+};
+
+export type CreatorPersonRow = {
+  address: string | null;
+  location: string | null;
+  sub: string | null;
+};
+
+export function normalizeCreatorAddress(
+  value: string | null | undefined,
+): string | null {
+  const trimmed = value?.trim().toLowerCase() ?? '';
+  if (!/^0x[0-9a-f]{40}$/.test(trimmed)) {
+    return null;
+  }
+  if (trimmed === ZERO_ADDRESS) {
+    return null;
+  }
+  return trimmed;
+}
+
+export function isSpaceActorSub(sub: string | null | undefined): boolean {
+  return (
+    typeof sub === 'string' &&
+    sub.toLowerCase().startsWith(SPACE_ACTOR_SUB_PREFIX)
+  );
+}
+
+function locationByAddressFrom(
+  peopleRows: readonly CreatorPersonRow[],
+): Map<string, string> {
+  const locationByAddress = new Map<string, string>();
+  for (const row of peopleRows) {
+    if (isSpaceActorSub(row.sub)) {
+      continue;
+    }
+    const address = normalizeCreatorAddress(row.address);
+    const location = row.location?.trim() ?? '';
+    if (!address || location.length < 2) {
+      continue;
+    }
+    if (!locationByAddress.has(address)) {
+      locationByAddress.set(address, location);
+    }
+  }
+  return locationByAddress;
+}
+
+function memberLocation(
+  space: CreatorMapSpace,
+  locationByAddress: ReadonlyMap<string, string>,
+): string | null {
+  const creator = normalizeCreatorAddress(space.creatorAddress);
+  const addresses = [...(space.memberAddresses ?? [])]
+    .map((address) => normalizeCreatorAddress(address))
+    .filter(
+      (address): address is string => address != null && address !== creator,
+    )
+    .sort();
+  for (const address of addresses) {
+    const location = locationByAddress.get(address);
+    if (location) return location;
+  }
+  return null;
+}
+
+function spacePlaceName(space: CreatorMapSpace): string | null {
+  const label = space.locationLabel?.trim() ?? '';
+  return label.length >= 2 ? label : null;
+}
+
+/**
+ * One explainable place for each space that has no coordinates of its own.
+ * The space's own place name wins, then the creator's profile, then the
+ * first other member, by wallet address, who has a profile location.
+ * Space-actor rows are skipped.
+ */
+export function chooseFallbackLocations(
+  spaces: readonly CreatorMapSpace[],
+  peopleRows: readonly CreatorPersonRow[],
+): FallbackLocation[] {
+  const locationByAddress = locationByAddressFrom(peopleRows);
+  const chosen: FallbackLocation[] = [];
+  for (const space of spaces) {
+    if (hasSpaceMapLocation(space)) {
+      continue;
+    }
+    const ownPlace = spacePlaceName(space);
+    if (ownPlace) {
+      chosen.push({
+        spaceId: space.id,
+        location: ownPlace,
+        source: 'space',
+      });
+      continue;
+    }
+    const creator = normalizeCreatorAddress(space.creatorAddress);
+    const creatorLocation = creator
+      ? locationByAddress.get(creator) ?? null
+      : null;
+    if (creatorLocation) {
+      chosen.push({
+        spaceId: space.id,
+        location: creatorLocation,
+        source: 'creator',
+      });
+      continue;
+    }
+    const fromMember = memberLocation(space, locationByAddress);
+    if (fromMember) {
+      chosen.push({
+        spaceId: space.id,
+        location: fromMember,
+        source: 'member',
+      });
+    }
+  }
+  return chosen;
+}
+
+/**
+ * Location text to geocode for each space that has no coordinates of its own.
+ * A creator is the on-chain deployer when that wallet belongs to a human
+ * profile. Space-actor rows and people with no location are skipped.
+ */
+export function creatorLocationQueries(
+  spaces: readonly CreatorMapSpace[],
+  peopleRows: readonly CreatorPersonRow[],
+): Map<number, string> {
+  return new Map(
+    chooseFallbackLocations(spaces, peopleRows).map((row) => [
+      row.spaceId,
+      row.location,
+    ]),
+  );
+}
+
+/** Space place names first, then creators, then members. */
+export function geocodeOrder(choices: readonly FallbackLocation[]): string[] {
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+  for (const source of ['space', 'creator', 'member'] as const) {
+    for (const choice of choices) {
+      if (choice.source !== source || seen.has(choice.location)) continue;
+      seen.add(choice.location);
+      ordered.push(choice.location);
+    }
+  }
+  return ordered;
+}
+
+/** A profile that already stores "latitude, longitude" needs no geocoder. */
+export function coordinatesFromLocationText(
+  location: string,
+): { latitude: number; longitude: number } | null {
+  const parts = location
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length !== 2) return null;
+  const latitude = parseCoordinateInput(parts[0] ?? '');
+  const longitude = parseCoordinateInput(parts[1] ?? '');
+  if (latitude == null || longitude == null) return null;
+  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+  if (isNullIsland(latitude, longitude)) return null;
+  return { latitude, longitude };
+}
+
+async function mapPool<T, R>(
+  items: readonly T[],
+  limit: number,
+  deadlineAt: number,
+  fn: (item: T) => Promise<R>,
+): Promise<Array<R | undefined>> {
+  const results: Array<R | undefined> = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length && Date.now() < deadlineAt) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await fn(items[index]!);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () =>
+    worker(),
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+function addressesToResolve(spaces: readonly CreatorMapSpace[]): string[] {
+  const wanted = new Set<string>();
+  for (const space of spaces) {
+    if (hasSpaceMapLocation(space)) continue;
+    const creator = normalizeCreatorAddress(space.creatorAddress);
+    if (creator) wanted.add(creator);
+    for (const member of space.memberAddresses ?? []) {
+      const address = normalizeCreatorAddress(member);
+      if (address) wanted.add(address);
+    }
+  }
+  return [...wanted];
+}
+
+function pinsForLocation(
+  choices: readonly FallbackLocation[],
+  location: string,
+  coordinates: { latitude: number; longitude: number },
+): Record<number, { latitude: number; longitude: number }> {
+  const pins: Record<number, { latitude: number; longitude: number }> = {};
+  for (const choice of choices) {
+    if (choice.location !== location) continue;
+    pins[choice.spaceId] = coordinates;
+  }
+  return pins;
+}
+
+/**
+ * Geocode a space's own place name, then the deployer, then a member, for
+ * spaces that have no coordinates of their own. The result is a pin lookup
+ * only. It does not update space rows. `onPins` fires as each place
+ * resolves so a map can draw those pins without waiting for the rest.
+ */
+export async function resolveCreatorMapCoordinates(
+  spaces: readonly CreatorMapSpace[],
+  { db, signal }: DbConfig & { signal?: AbortSignal },
+  geocode: (
+    query: string,
+    limit?: number,
+  ) => Promise<GeocodeResult[]> = searchNominatim,
+  onPins?: (
+    pins: Record<number, { latitude: number; longitude: number }>,
+  ) => void,
+): Promise<Record<number, { latitude: number; longitude: number }>> {
+  const wanted = addressesToResolve(spaces);
+  const peopleRows =
+    wanted.length === 0
+      ? []
+      : await db
+          .select({
+            address: people.address,
+            location: people.location,
+            sub: people.sub,
+          })
+          .from(people)
+          .where(
+            and(
+              inArray(sql`upper(${people.address})`, [
+                ...wanted.map((address) => address.toUpperCase()),
+              ]),
+              or(
+                isNull(people.sub),
+                notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
+              ),
+            ),
+          );
+
+  const choices = chooseFallbackLocations(spaces, peopleRows);
+  const coordinatesByLocation = new Map<
+    string,
+    { latitude: number; longitude: number }
+  >();
+  const uniqueLocations = geocodeOrder(choices).filter((location) => {
+    const parsed = coordinatesFromLocationText(location);
+    if (!parsed) return true;
+    coordinatesByLocation.set(location, parsed);
+    onPins?.(pinsForLocation(choices, location, parsed));
+    return false;
+  });
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  signal?.addEventListener('abort', abortFromCaller);
+  if (signal?.aborted) controller.abort();
+  const budgetTimer = setTimeout(() => controller.abort(), GEOCODE_BUDGET_MS);
+  const lookup =
+    geocode === searchNominatim
+      ? async (query: string, limit?: number) => {
+          const started = Date.now();
+          try {
+            return await searchNominatim(query, limit, controller.signal);
+          } finally {
+            const wait = GEOCODE_GAP_MS - (Date.now() - started);
+            if (wait > 0 && !controller.signal.aborted) {
+              await new Promise<void>((resolve) => {
+                const timer = setTimeout(resolve, wait);
+                controller.signal.addEventListener(
+                  'abort',
+                  () => {
+                    clearTimeout(timer);
+                    resolve();
+                  },
+                  { once: true },
+                );
+              });
+            }
+          }
+        }
+      : geocode;
+
+  try {
+    await mapPool(
+      uniqueLocations,
+      GEOCODE_CONCURRENCY,
+      Date.now() + GEOCODE_BUDGET_MS,
+      async (location) => {
+        if (controller.signal.aborted) return;
+        try {
+          const [match] = await lookup(location, 1);
+          if (!match) {
+            return;
+          }
+          const coordinates = {
+            latitude: match.latitude,
+            longitude: match.longitude,
+          };
+          coordinatesByLocation.set(location, coordinates);
+          onPins?.(pinsForLocation(choices, location, coordinates));
+        } catch (error) {
+          console.error('[resolveCreatorMapCoordinates] geocode failed', {
+            error,
+          });
+        }
+      },
+    );
+  } finally {
+    clearTimeout(budgetTimer);
+    signal?.removeEventListener('abort', abortFromCaller);
+  }
+
+  const pins: Record<number, { latitude: number; longitude: number }> = {};
+  for (const choice of choices) {
+    const coordinates = coordinatesByLocation.get(choice.location);
+    if (coordinates) {
+      pins[choice.spaceId] = coordinates;
+    }
+  }
+  return pins;
+}

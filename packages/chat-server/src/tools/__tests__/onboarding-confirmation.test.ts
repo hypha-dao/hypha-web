@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  agreedToGeneratedVisuals,
   hasOnboardingConfirmation,
   hasRecentVisualGenerationRequest,
   resolveLatestVisualGenerationIntent,
@@ -53,6 +54,21 @@ describe('onboarding confirmation helpers', () => {
         'generate a logo please',
       ]),
     ).toBe(true);
+  });
+
+  it('treats yes after a logo offer as a request to generate', () => {
+    expect(
+      agreedToGeneratedVisuals(
+        'yes',
+        'Would you like me to create a logo and a banner for Treetop?',
+      ),
+    ).toBe(true);
+    expect(
+      agreedToGeneratedVisuals(
+        'yes',
+        'Amsterdam it is, so Treetop has a home.',
+      ),
+    ).toBe(false);
   });
 
   it('ignores negated visual generation requests', () => {

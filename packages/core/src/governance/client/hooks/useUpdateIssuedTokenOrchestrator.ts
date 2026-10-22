@@ -29,6 +29,7 @@ import {
 } from './whitelist-address-diff';
 import { diffWhitelistSpaceIds } from './whitelist-space-diff';
 import { TokenUpdateData } from '../../types';
+import { parseCapitalKey } from '../../../network/capitals';
 import type { Space } from '../../../space/types';
 import { getAddress, isAddress } from 'viem';
 
@@ -127,6 +128,8 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   tokenPrice?: number;
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
+  /** One form of capital. Empty when the token does not name one. */
+  capital?: string | null;
   enableProposalAutoMinting?: boolean;
   enableLimitedSupply?: boolean;
   /** UI toggle for token price; not in schemaCreateAgreementWeb2 but always on form payload */
@@ -591,6 +594,7 @@ export const useUpdateIssuedTokenOrchestrator = ({
         referencePrice: arg.referencePrice ?? arg.tokenPrice,
         referenceCurrency: arg.referenceCurrency,
         archiveToken: arg.archiveToken,
+        capital: parseCapitalKey(arg.capital),
         enableProposalAutoMinting: arg.enableProposalAutoMinting,
         enableAdvancedTransferControls:
           arg.enableAdvancedTransferControls === true,

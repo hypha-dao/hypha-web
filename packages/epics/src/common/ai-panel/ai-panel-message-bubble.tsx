@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
-import { Copy, Sparkles, User } from 'lucide-react';
+import { Copy, User } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
+import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
@@ -54,6 +55,7 @@ type AiPanelMessageBubbleProps = {
   /** Signed-in Hypha profile photo for user bubbles. */
   userAvatarUrl?: string | null;
   userDisplayName?: string | null;
+  userPersonId?: number;
   /** Space logo (or other brand mark) for assistant bubbles — not letter initials. */
   assistantAvatarUrl?: string | null;
 };
@@ -556,6 +558,7 @@ export function AiPanelMessageBubble({
   suppressWalletSignaturePrompt = false,
   userAvatarUrl,
   userDisplayName,
+  userPersonId,
   assistantAvatarUrl,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
@@ -907,31 +910,29 @@ export function AiPanelMessageBubble({
               avatarSrc={userAvatarUrl?.trim() || undefined}
               userName={userDisplayName?.trim() || undefined}
               className="h-full w-full rounded-full"
+              personId={userPersonId}
             />
           </div>
         )
-      ) : (
+      ) : assistantAvatarSrc && !assistantImageFailed ? (
         <div
           className={cn(
             'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-full border-0 bg-transparent',
             alignSingleLine ? 'mt-0' : 'mt-px',
           )}
         >
-          {assistantAvatarSrc && !assistantImageFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN
-            <img
-              src={assistantAvatarSrc}
-              alt=""
-              className="h-full w-full object-cover"
-              onError={() => setAssistantImageFailed(true)}
-            />
-          ) : (
-            <Sparkles
-              className="size-3.5 text-muted-foreground"
-              strokeWidth={1.25}
-            />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN */}
+          <img
+            src={assistantAvatarSrc}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={() => setAssistantImageFailed(true)}
+          />
         </div>
+      ) : (
+        <MemberHomeMark
+          className={cn('h-8 w-8', alignSingleLine ? 'mt-0' : 'mt-px')}
+        />
       )}
       <div
         className={cn(
@@ -949,13 +950,13 @@ export function AiPanelMessageBubble({
         <div
           className={cn(
             // Transcript on the panel ground — no dialogue box or grey well.
-            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none border-0 bg-transparent px-0 py-0.5 text-sm leading-snug text-foreground shadow-none',
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-none border-0 bg-transparent px-0 py-0.5 text-[13px] leading-[1.35] text-foreground shadow-none',
           )}
         >
           {hasVisibleText && (
             <div className="flex h-fit w-full min-w-0 flex-col gap-1">
               {useSectionAccordion ? (
-                <div className="flex flex-col gap-1.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0">
+                <div className="flex flex-col gap-1 break-words text-[13px] leading-[1.35] text-foreground/95 [&_p]:m-0">
                   {markdownSections.map((section, sectionIndex) => {
                     const isOpen =
                       sectionIndex === 0 || openSections[sectionIndex] === true;
@@ -1070,7 +1071,7 @@ export function AiPanelMessageBubble({
               ) : (
                 <div
                   className={cn(
-                    'space-y-0.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0',
+                    'space-y-0.5 break-words text-[13px] leading-[1.35] text-foreground/95 [&_p]:m-0',
                     showExpandToggle && !expanded && 'line-clamp-6',
                   )}
                 >

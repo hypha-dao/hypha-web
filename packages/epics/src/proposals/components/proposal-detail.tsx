@@ -50,6 +50,8 @@ import { parseExchangeDetailsFromDescription } from '../../governance/utils/exch
 import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange-details-block';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
+import { ProposalDiscussionChat } from './proposal-discussion-chat';
+
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 import {
@@ -458,8 +460,16 @@ type ProposalDetailProps = ProposalHeadProps & {
   spaceSlug: string;
   label?: string;
   documentSlug: string;
+  /** Matrix room for discussion under the proposal body. */
+  chatRoomId?: string | null;
+  /**
+   * True once the document fetch has settled. Until then `chatRoomId` may
+   * still be missing, and the discussion must not create a replacement room.
+   */
+  chatRoomResolved?: boolean;
   dbTokens?: DbToken[];
   authToken?: string | null;
+
   onAccept?: () => Promise<void>;
   onReject?: () => Promise<void>;
   onCheckProposalExpiration?: () => Promise<void>;
@@ -493,6 +503,8 @@ export const ProposalDetail = ({
   spaceSlug,
   label,
   documentSlug,
+  chatRoomId,
+  chatRoomResolved,
   dbTokens,
   authToken,
   onAccept,
@@ -1289,6 +1301,15 @@ export const ProposalDetail = ({
         attachments={attachments || []}
         label={tProposalDetails('labels.attachments')}
       />
+      {documentSlug ? (
+        <ProposalDiscussionChat
+          documentSlug={documentSlug}
+          title={title}
+          initialChatRoomId={chatRoomId}
+          chatRoomResolved={chatRoomResolved}
+          spaceSlug={spaceSlug}
+        />
+      ) : null}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}

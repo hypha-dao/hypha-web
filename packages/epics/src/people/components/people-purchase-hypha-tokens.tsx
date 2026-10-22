@@ -35,15 +35,56 @@ import { TokenPayoutField } from '../../agreements/plugins/components/common/tok
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
 import { useTranslations } from 'next-intl';
+import {
+  BlockchainErrorText,
+  isBlockchainErrorMessage,
+  isInsufficientBalanceErrorMessage,
+} from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
+import {
+  formatWalletAmount,
+  WalletAmountBlock,
+  WalletFlowCard,
+  WalletFlowLabel,
+} from '../../common/wallet-flow-card';
 
 interface PeoplePurchaseHyphaTokensProps {
   personSlug: string;
   spaces: Space[];
   closePanelUrl?: string;
+  appearance?: 'default' | 'wallet';
 }
 
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
+
+/** Nice USDC chip ladder; filtered/extended by available balance. */
+const WALLET_USDC_AMOUNT_LADDER = [
+  1, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000,
+] as const;
+
+function walletUsdcPresets(balance: number): number[] {
+  if (!Number.isFinite(balance) || balance <= 0) return [];
+
+  const roundedAvailable =
+    balance >= 10
+      ? Math.floor(balance / 10) * 10
+      : Math.floor(balance * 100) / 100;
+
+  const values = new Set<number>(
+    WALLET_USDC_AMOUNT_LADDER.filter(
+      (value) => value > 0 && value <= balance + 1e-9,
+    ),
+  );
+  if (roundedAvailable > 0 && roundedAvailable <= balance + 1e-9) {
+    values.add(roundedAvailable);
+  }
+
+  return [...values].sort((left, right) => left - right);
+}
 
 const schema = purchaseSchema.extend({ buyer: z.string() });
 type FormValues = z.infer<typeof schema>;
@@ -52,16 +93,19 @@ export const PeoplePurchaseHyphaTokens = ({
   personSlug,
   spaces,
   closePanelUrl,
+  appearance = 'default',
 }: PeoplePurchaseHyphaTokensProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tModalAside = useTranslations('ModalAside');
+  const tWallet = useTranslations('MyWallet');
   const router = useRouter();
   const { lang } = useParams<{ lang: string }>();
   const { person, isLoading: isPersonLoading } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
-  const { manualUpdate } = useUserAssets({
+  const { assets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
   });
@@ -165,7 +209,8 @@ export const PeoplePurchaseHyphaTokens = ({
     resolver,
     defaultValues: {
       payout: {
-        amount: '',
+        // Same default as other wallet amount fields (buy space tokens, redeem).
+        amount: '1',
         token: PAYMENT_TOKEN?.address ?? '',
       },
       recipient: RECIPIENT_SPACE_ADDRESS,
@@ -198,7 +243,18 @@ export const PeoplePurchaseHyphaTokens = ({
   const calculatedHypha = !isNaN(parsedAmount)
     ? parsedAmount / HYPHA_PRICE_USD
     : 0;
-
+  const paymentBalance = useMemo(() => {
+    const match = assets.find(
+      (asset) =>
+        asset.address?.toLowerCase() === PAYMENT_TOKEN?.address.toLowerCase() ||
+        asset.symbol.toUpperCase() === 'USDC',
+    );
+    return match?.value ?? 0;
+  }, [assets]);
+  const paymentEnough =
+    !Number.isFinite(parsedAmount) ||
+    parsedAmount <= 0 ||
+    parsedAmount <= paymentBalance + 1e-9;
   const handlePurchase = async (data: FormValues) => {
     try {
       if (!PAYMENT_TOKEN?.address) {
@@ -238,22 +294,25 @@ export const PeoplePurchaseHyphaTokens = ({
           errorMessage = tActions(
             'purchaseHypha.form.errors.smartWalletNotConnected',
           );
-        } else if (
-          error.message.includes('ERC20: transfer amount exceeds balance')
-        ) {
+        } else if (isInsufficientBalanceErrorMessage(error.message)) {
           errorMessage = 'insufficient_funds';
         } else if (error.message.includes('Execution reverted with reason:')) {
           const match = error.message.match(
             /Execution reverted with reason: (.*?)\./,
           );
-          errorMessage =
+          const reason =
             match && match[1]
               ? extractRevertReason(match[1])
               : tActions('purchaseHypha.form.errors.contractExecutionFailed');
+          errorMessage = isInsufficientBalanceErrorMessage(reason)
+            ? 'insufficient_funds'
+            : reason;
         } else if (error.message.includes('user rejected')) {
           errorMessage = tActions(
             'purchaseHypha.form.errors.transactionRejected',
           );
+        } else if (isBlockchainErrorMessage(error.message)) {
+          errorMessage = error.message;
         }
       }
       form.setError('root', { message: errorMessage });
@@ -271,58 +330,104 @@ export const PeoplePurchaseHyphaTokens = ({
   };
 
   if (!spaces || spaces.length === 0) {
-    return (
+    const empty = (
       <div className="text-error text-sm">
         {tActions('purchaseHypha.form.errors.noValidSpaces')}
       </div>
     );
+    return appearance === 'wallet' ? (
+      <WalletFlowCard title={tModalAside('buyHyphaTokens')} framed={false}>
+        {empty}
+      </WalletFlowCard>
+    ) : (
+      empty
+    );
   }
 
-  return (
+  const wallet = appearance === 'wallet';
+  const receiveLine = tActions('purchaseHypha.form.receiveHyphaTokens', {
+    amount: formatCurrencyValue(calculatedHypha),
+    price: formatCurrencyValue(HYPHA_PRICE_USD),
+  });
+
+  const formBody = (
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={form.handleSubmit(handlePurchase)}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
       >
-        <div className="flex flex-col gap-5 w-full">
-          <Separator />
-          <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-            <div className="flex gap-1">
-              <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+        <div className="flex w-full flex-col gap-4">
+          {wallet ? null : <Separator />}
+          {wallet ? (
+            <div className="flex flex-col gap-3">
+              <WalletFlowLabel>
                 {tAgreementFlow('plugins.buyHyphaTokens.purchaseAmount')}
-              </label>
-              <RequirementMark className="text-2" />
+              </WalletFlowLabel>
+              <FormField
+                control={form.control}
+                name="payout.amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <WalletAmountBlock
+                        id="buy-hypha-amount"
+                        amount={field.value ?? ''}
+                        onAmountChange={field.onChange}
+                        amountLabel={tAgreementFlow(
+                          'plugins.buyHyphaTokens.purchaseAmount',
+                        )}
+                        symbol={PAYMENT_TOKEN?.symbol ?? 'USDC'}
+                        presets={walletUsdcPresets(paymentBalance)}
+                        holding={{
+                          label: tWallet('available'),
+                          amount: formatWalletAmount(paymentBalance),
+                          symbol: PAYMENT_TOKEN?.symbol ?? 'USDC',
+                          enough: paymentEnough,
+                        }}
+                        hint={receiveLine}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div className="flex flex-col gap-2 grow min-w-0">
-              <div className="flex md:justify-end">
-                <FormField
-                  control={form.control}
-                  name="payout.amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <TokenPayoutField
-                          value={form.getValues('payout')}
-                          onChange={(val) => form.setValue('payout', val)}
-                          tokens={tokens}
-                          readOnlyDropdown={true}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          ) : (
+            <div className="flex w-full flex-col gap-4 md:flex-row md:items-start">
+              <div className="flex gap-1">
+                <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max md:items-center md:pt-1">
+                  {tAgreementFlow('plugins.buyHyphaTokens.purchaseAmount')}
+                </label>
+                <RequirementMark className="text-2" />
+              </div>
+              <div className="flex min-w-0 grow flex-col gap-2">
+                <div className="flex md:justify-end">
+                  <FormField
+                    control={form.control}
+                    name="payout.amount"
+                    render={() => (
+                      <FormItem>
+                        <FormControl>
+                          <TokenPayoutField
+                            value={form.getValues('payout')}
+                            onChange={(val) => form.setValue('payout', val)}
+                            tokens={tokens}
+                            readOnlyDropdown={true}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <div className="text-sm text-neutral-500">
-            {tActions('purchaseHypha.form.receiveHyphaTokens', {
-              amount: formatCurrencyValue(calculatedHypha),
-              price: formatCurrencyValue(HYPHA_PRICE_USD),
-            })}
-          </div>
-          <Separator />
+          )}
+          {wallet ? null : (
+            <div className="text-sm text-neutral-500">{receiveLine}</div>
+          )}
+          {wallet ? null : <Separator />}
           <RecipientField
             label={tAgreementFlow('plugins.buyHyphaTokens.hyphaSentTo')}
             members={buyerMember}
@@ -331,7 +436,7 @@ export const PeoplePurchaseHyphaTokens = ({
             showTabs={false}
             name="buyer"
           />
-          <Separator />
+          {wallet ? null : <Separator />}
           <RecipientField
             label={tAgreementFlow('plugins.buyHyphaTokens.usdcPaidTo')}
             members={[]}
@@ -341,8 +446,10 @@ export const PeoplePurchaseHyphaTokens = ({
             showTabs={false}
           />
         </div>
-        <Separator />
-        <div className="flex gap-2 justify-end">
+        {wallet ? null : <Separator />}
+        <div
+          className={wallet ? 'flex flex-col gap-2' : 'flex justify-end gap-2'}
+        >
           {isInvesting ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
@@ -353,40 +460,41 @@ export const PeoplePurchaseHyphaTokens = ({
               {tActions('purchaseHypha.form.success.purchased')}
             </div>
           ) : (
-            <Button type="submit" disabled={isInvesting}>
+            <Button
+              type="submit"
+              className={wallet ? 'w-full' : undefined}
+              disabled={isInvesting}
+            >
               {tActions('purchaseHypha.form.actions.buy')}
             </Button>
           )}
         </div>
-        {form.formState.errors.root && (
-          <div className="text-2 text-foreground">
-            {form.formState.errors.root.message === 'insufficient_funds' ? (
-              <>
-                {tAgreementFlow(
-                  'buyHyphaTokensForm.insufficientFunds.walletBalanceInsufficient',
-                )}{' '}
-                {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.please')}{' '}
-                <span
-                  onClick={fundWallet}
-                  className="font-bold cursor-pointer text-accent-9 underline"
-                >
-                  {tAgreementFlow(
-                    'buyHyphaTokensForm.insufficientFunds.topUpWith',
-                    {
-                      token: PAYMENT_TOKEN?.symbol ?? 'USDC',
-                    },
-                  )}
-                </span>{' '}
-                {tAgreementFlow(
-                  'buyHyphaTokensForm.insufficientFunds.toProceed',
-                )}
-              </>
-            ) : (
-              form.formState.errors.root.message
-            )}
-          </div>
-        )}
+        {form.formState.errors.root &&
+          (form.formState.errors.root.message === 'insufficient_funds' ? (
+            <InsufficientFundsHint
+              onBuyUsdc={() => {
+                void fundWallet();
+              }}
+              buyHyphaHref={buyHyphaTokensHref({
+                lang,
+                appearance,
+                personSlug,
+              })}
+            />
+          ) : (
+            <BlockchainErrorText
+              message={form.formState.errors.root.message ?? ''}
+            />
+          ))}
       </form>
     </Form>
+  );
+
+  if (!wallet) return formBody;
+
+  return (
+    <WalletFlowCard title={tModalAside('buyHyphaTokens')} framed={false}>
+      {formBody}
+    </WalletFlowCard>
   );
 };

@@ -62,7 +62,8 @@ export type RoomSpaceContext =
       spaceId: number;
       spaceSlug: string;
       coherenceId: number;
-    };
+    }
+  | { kind: 'direct' };
 
 // ── Hand-off contract to #2470's dispatch() ───────────────────────────────
 //
@@ -89,7 +90,10 @@ export interface ChatNotificationEvent {
   payload: {
     /** Raw message body. #2470's delivery layer sanitises/truncates for push/email. */
     body: string;
-    /** Matrix user ids explicitly mentioned. `[]` for `chat.message`. */
+    /**
+     * Matrix user ids to notify as a mention. Explicit `@` mentions, plus the other
+     * person in a private message. `[]` for a plain `chat.message`.
+     */
     mentionedMatrixUserIds: string[];
     /** `origin_server_ts` of the Matrix event (ms since epoch). */
     occurredAt: number;

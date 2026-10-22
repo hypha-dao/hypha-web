@@ -1,12 +1,8 @@
 'use client';
 
+import { ErrorAlert } from '@hypha-platform/ui';
 import {
-  ErrorAlert,
-  Tabs,
-  ScrollableTabsList,
-  TabsTrigger,
-} from '@hypha-platform/ui';
-import {
+  COHERENCE_SIGNAL_TYPES,
   Coherence,
   collectExistingTags,
   filterSignals,
@@ -33,6 +29,11 @@ import {
   writeStoredSignalViewMode,
 } from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
+import {
+  parseSignalPriorityFilters,
+  parseSignalTypeFilters,
+  SignalBoardFilters,
+} from './signal-board-filters';
 import { SignalViewControls } from './signal-view-controls';
 import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -44,77 +45,14 @@ export type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
-  priorityFilter?: 'all' | 'critical' | 'high' | 'medium' | 'low';
   humanChatEnabled?: boolean;
   useMembers: UseMembers;
 };
-
-type PriorityFilterTabItem = {
-  value: string;
-  label: string;
-  count?: number | null;
-};
-
-function PriorityFilterTabs({
-  items,
-  defaultValue,
-  queryKey,
-}: {
-  items: PriorityFilterTabItem[];
-  defaultValue: string;
-  queryKey: string;
-}) {
-  const format = useFormatter();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentValue = React.useMemo(() => {
-    const raw = searchParams.get(queryKey);
-    if (!raw) return defaultValue;
-    return items.some((item) => item.value === raw) ? raw : defaultValue;
-  }, [defaultValue, items, queryKey, searchParams]);
-
-  const handleValueChange = React.useCallback(
-    (nextValue: string) => {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      if (nextValue === defaultValue) {
-        nextParams.delete(queryKey);
-      } else {
-        nextParams.set(queryKey, nextValue);
-      }
-      const query = nextParams.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [defaultValue, pathname, queryKey, router, searchParams],
-  );
-
-  return (
-    <Tabs value={currentValue} onValueChange={handleValueChange}>
-      <ScrollableTabsList triggerVariant="switch">
-        {items.map((item) => (
-          <TabsTrigger key={item.value} value={item.value} variant="switch">
-            <span className="inline-flex items-center gap-1">
-              <span>{item.label}</span>
-              {typeof item.count === 'number' && Number.isFinite(item.count) ? (
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(item.count)})
-                </span>
-              ) : null}
-            </span>
-          </TabsTrigger>
-        ))}
-      </ScrollableTabsList>
-    </Tabs>
-  );
-}
 
 export function CoherenceBlock({
   lang,
   spaceSlug,
   order,
-  priorityFilter = 'all',
   humanChatEnabled = false,
   useMembers,
 }: CoherenceBlockProps) {
@@ -209,28 +147,34 @@ export function CoherenceBlock({
     includeArchived: !hideArchived,
     orderBy: order,
   });
+  const typeFilters = React.useMemo(
+    () => parseSignalTypeFilters(searchParams.get('type')),
+    [searchParams],
+  );
+  const priorityFilters = React.useMemo(
+    () => parseSignalPriorityFilters(searchParams.get('priority')),
+    [searchParams],
+  );
   const filteredSignals = React.useMemo(() => {
-    const byPriority = (signals ?? []).filter((signal) =>
-      priorityFilter === 'all' ? true : signal.priority === priorityFilter,
-    );
-    return filterSignals(byPriority, deferredBoardFilters, {
+    const byTypeAndPriority = (signals ?? []).filter((signal) => {
+      const matchesPriority =
+        priorityFilters.length === 0 ||
+        priorityFilters.some((priority) => priority === signal.priority);
+      const matchesType =
+        typeFilters.length === 0 ||
+        typeFilters.includes(
+          signal.type as (typeof COHERENCE_SIGNAL_TYPES)[number],
+        );
+      return matchesPriority && matchesType;
+    });
+    return filterSignals(byTypeAndPriority, deferredBoardFilters, {
       currentPersonId: person?.id,
     });
-  }, [deferredBoardFilters, person?.id, priorityFilter, signals]);
+  }, [deferredBoardFilters, person?.id, priorityFilters, signals, typeFilters]);
   const existingTags = React.useMemo(
     () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
     [signals],
   );
-  const priorityCounts = React.useMemo(() => {
-    const items = signals ?? [];
-    return {
-      all: items.length,
-      critical: items.filter((signal) => signal.priority === 'critical').length,
-      high: items.filter((signal) => signal.priority === 'high').length,
-      medium: items.filter((signal) => signal.priority === 'medium').length,
-      low: items.filter((signal) => signal.priority === 'low').length,
-    };
-  }, [signals]);
 
   const refresh = React.useCallback(async () => {
     await refreshSignals();
@@ -253,10 +197,7 @@ export function CoherenceBlock({
     if (humanChatEnabled && humanChatOpen && mode === 'coherence' && slug) {
       return slug;
     }
-    if (!humanChatEnabled) {
-      return searchParams.get('signal')?.trim() ?? null;
-    }
-    return null;
+    return searchParams.get('signal')?.trim() || null;
   }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
 
   const acknowledgingSlugRef = React.useRef<string | null>(null);
@@ -266,7 +207,9 @@ export function CoherenceBlock({
       if (
         !slug ||
         !person?.id ||
-        !(signal.assigneeIds ?? []).includes(person.id)
+        !(Array.isArray(signal.assigneeIds) ? signal.assigneeIds : []).includes(
+          person.id,
+        )
       ) {
         return;
       }
@@ -341,6 +284,7 @@ export function CoherenceBlock({
   const handleClearPriorityFilter = React.useCallback(() => {
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete('priority');
+    nextParams.delete('type');
     const query = nextParams.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, {
       scroll: false,
@@ -353,44 +297,16 @@ export function CoherenceBlock({
     humanChatEnabled,
     humanChatOpen,
     hideArchived,
-    priorityFilter,
+    priorityFilters,
+    typeFilters,
     activeCoherenceSlug: coherenceSlug,
+    onOpenSignalChat: humanChatEnabled ? handleSignalClick : undefined,
     onRevealArchivedSignal: handleRevealArchivedSignal,
     onClearPriorityFilter: handleClearPriorityFilter,
     onRefreshSignals: refresh,
   });
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
-
-  const priorityTabs = (
-    <PriorityFilterTabs
-      queryKey="priority"
-      defaultValue="all"
-      items={[
-        { value: 'all', label: t('all'), count: priorityCounts.all },
-        {
-          value: 'critical',
-          label: t('priorities.critical'),
-          count: priorityCounts.critical,
-        },
-        {
-          value: 'high',
-          label: t('priorities.high'),
-          count: priorityCounts.high,
-        },
-        {
-          value: 'medium',
-          label: t('priorities.medium'),
-          count: priorityCounts.medium,
-        },
-        {
-          value: 'low',
-          label: t('priorities.low'),
-          count: priorityCounts.low,
-        },
-      ]}
-    />
-  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -404,36 +320,40 @@ export function CoherenceBlock({
           ) : null}
         </h1>
       </header>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 max-w-full">{priorityTabs}</div>
-        <SignalViewControls
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          hideArchived={hideArchived}
-          onHideArchivedChange={setHideArchived}
-          workflowSettingsHref={workflowSettingsHref}
-          createSignalHref={
-            canMutate ? `/${lang}/dho/${spaceSlug}/coherence/new-signal` : null
-          }
-          className="lg:shrink-0"
-        />
-      </div>
-      {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
-      <SignalSection
-        basePath={chatBasePath}
-        web3SpaceId={space?.web3SpaceId ?? 0}
-        signals={filteredSignals}
-        leadImage={space?.leadImage ?? undefined}
-        isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
-        viewMode={viewMode}
-        refresh={refresh}
-        onSignalClick={onSignalClick}
-        activeSignalSlug={activeSignalSlug}
+      <SignalBoardFilters
+        typeFilters={typeFilters}
+        priorityFilters={priorityFilters}
         boardFilters={boardFilters}
         onBoardFiltersChange={handleBoardFiltersChange}
         existingTags={existingTags}
         members={spaceMembers}
         currentPersonId={person?.id}
+        controls={
+          <SignalViewControls
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            hideArchived={hideArchived}
+            onHideArchivedChange={setHideArchived}
+            workflowSettingsHref={workflowSettingsHref}
+            createSignalHref={
+              canMutate
+                ? `/${lang}/dho/${spaceSlug}/coherence/new-signal`
+                : null
+            }
+            className="shrink-0"
+          />
+        }
+      />
+      {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
+      <SignalSection
+        basePath={chatBasePath}
+        web3SpaceId={space?.web3SpaceId ?? 0}
+        signals={filteredSignals}
+        isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
+        viewMode={viewMode}
+        refresh={refresh}
+        onSignalClick={onSignalClick}
+        activeSignalSlug={activeSignalSlug}
       />
     </div>
   );

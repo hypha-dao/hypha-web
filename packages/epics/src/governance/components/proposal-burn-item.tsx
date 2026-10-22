@@ -62,7 +62,12 @@ export const ProposalBurnItem = ({
               </>
             ) : person ? (
               <>
-                <PersonAvatar avatarSrc={person?.avatarUrl} size="md" />
+                <PersonAvatar
+                  avatarSrc={person?.avatarUrl}
+                  size="md"
+                  shape="circle"
+                  personId={person?.id}
+                />
                 <div className="text-1 w-full">
                   {person?.name} {person?.surname}
                 </div>

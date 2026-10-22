@@ -1,0 +1,152 @@
+/* Cinema card — media bleeds edge-to-edge; footer CTAs always stay inside. */
+.exchange-card {
+  display: flex;
+  min-height: min-content;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.exchange-stage {
+  position: relative;
+  flex: 0 0 auto;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.exchange-stage > img,
+.exchange-stage > video,
+.exchange-stage > .exchange-embed,
+.exchange-stage > .exchange-file {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border: 0;
+  object-fit: cover;
+  object-position: center;
+  background: #000;
+}
+
+.exchange-stage > .exchange-embed {
+  background: #000;
+}
+
+.exchange-doc {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--foreground) 6%, var(--background));
+}
+
+.exchange-play {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #fff;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(8px);
+}
+
+.exchange-play:hover {
+  background: color-mix(in srgb, #000 72%, transparent);
+}
+
+.exchange-view {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.exchange-view:hover {
+  background: color-mix(in srgb, #000 72%, transparent);
+}
+
+.exchange-view-next {
+  top: 2.625rem;
+}
+
+.exchange-play svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-left: 1px;
+}
+
+.exchange-title {
+  letter-spacing: -0.02em;
+}
+
+.exchange-meta {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.875rem 0.25rem;
+}
+
+.exchange-meta-media {
+  flex: 0 1 auto;
+}
+
+.exchange-footer {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.exchange-footer > * {
+  min-width: 0;
+}
+
+.exchange-footer .exchange-cta-primary,
+.exchange-footer .exchange-cta-secondary {
+  height: 2.25rem;
+  width: 100%;
+  justify-content: center;
+  padding-inline: 0.5rem;
+}
+
+.exchange-footer .exchange-cta-visit {
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline: 0.375rem;
+  white-space: nowrap;
+  font-size: var(--font-size-1, 0.75rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neutral-11, var(--muted-foreground));
+  text-decoration: none;
+}
+
+.exchange-footer .exchange-cta-visit:hover {
+  color: var(--foreground);
+}

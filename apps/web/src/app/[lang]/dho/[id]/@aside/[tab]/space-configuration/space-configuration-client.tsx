@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  parseCapitalKeys,
   type Space,
   useJwt,
   useMe,
@@ -12,6 +13,7 @@ import {
   SchemaCreateSpaceForm,
   ProposalOverlayShell,
   SpaceForm,
+  type SpaceCapitalSelection,
   getNetworkMapReturnPath,
   isNetworkAddLocationReturn,
   getSignalWorkflowReturnPath,
@@ -111,6 +113,36 @@ export function SpaceConfigurationClient({
     [searchParams],
   );
   const [isRefreshingCaches, setIsRefreshingCaches] = React.useState(false);
+  const [capitals, setCapitals] = React.useState<SpaceCapitalSelection>({
+    seeks: [],
+    offers: [],
+  });
+
+  React.useEffect(() => {
+    if (!jwt || !spaceSlug) return;
+    let cancelled = false;
+    void (async () => {
+      const response = await fetch(
+        `/api/v1/network/space-capitals?spaceSlug=${encodeURIComponent(
+          spaceSlug,
+        )}`,
+        { headers: { Authorization: `Bearer ${jwt}` } },
+      );
+      if (!response.ok || cancelled) return;
+      const body = (await response.json()) as {
+        seeks?: unknown;
+        offers?: unknown;
+      };
+      if (cancelled) return;
+      setCapitals({
+        seeks: parseCapitalKeys(body.seeks),
+        offers: parseCapitalKeys(body.offers),
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [jwt, spaceSlug]);
 
   const isBusy =
     isLoadingJwt ||
@@ -206,7 +238,10 @@ export function SpaceConfigurationClient({
 
         const result = await updateSpaceConfiguration({
           id: space.id,
-          data: normalizedUpdatedSpace,
+          data: {
+            ...normalizedUpdatedSpace,
+            exchangeCapitals: capitals,
+          },
         });
 
         setIsRefreshingCaches(true);
@@ -244,6 +279,7 @@ export function SpaceConfigurationClient({
       space,
       spaceSlug,
       updateSpaceConfiguration,
+      capitals,
     ],
   );
 
@@ -297,6 +333,8 @@ export function SpaceConfigurationClient({
             initialParentSpaceId={space.parentId ?? null}
             spaceId={space.id}
             spaceSlug={spaceSlug}
+            capitals={capitals}
+            onCapitalsChange={setCapitals}
           />
         ) : (
           <div aria-hidden="true" className="min-h-px" />

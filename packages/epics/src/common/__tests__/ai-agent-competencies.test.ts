@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  agentMemoryIsCurrent,
   detectAiAgentsForQuestion,
   resolveMobilizedAgentsForAssistantMessage,
 } from '../ai-agent-competencies';
@@ -18,6 +19,18 @@ describe('detectAiAgentsForQuestion', () => {
       'What signals should we create or share next?',
     );
     expect(agents.map((agent) => agent.id)).toContain('governance');
+  });
+});
+
+describe('agentMemoryIsCurrent', () => {
+  const now = new Date('2026-10-16T12:00:00.000Z').getTime();
+
+  it('keeps an agent used once within six months', () => {
+    expect(agentMemoryIsCurrent('2026-05-01T00:00:00.000Z', now)).toBe(true);
+  });
+
+  it('drops an agent whose last use is older than six months', () => {
+    expect(agentMemoryIsCurrent('2026-04-01T00:00:00.000Z', now)).toBe(false);
   });
 });
 

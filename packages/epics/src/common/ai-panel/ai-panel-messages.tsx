@@ -51,6 +51,8 @@ type AiPanelMessagesProps = {
   /** `quiet` drops avatar and bubble frames — onboarding screen only. */
   chrome?: 'default' | 'quiet';
   suggestionItems: readonly AiPanelSuggestionItem[];
+  /** Opening line when the thread is still empty. */
+  welcomeText?: string;
   /** Large suggestion cards below welcome — only before the user sends a message. */
   showInlineSuggestions?: boolean;
   onSuggestionSelect?: (text: string) => void;
@@ -58,6 +60,7 @@ type AiPanelMessagesProps = {
   /** Signed-in profile photo for user bubbles. */
   userAvatarUrl?: string | null;
   userDisplayName?: string | null;
+  userPersonId?: number;
   /** Active space logo for assistant bubbles. */
   assistantAvatarUrl?: string | null;
   isStreaming?: boolean;
@@ -84,10 +87,12 @@ export function AiPanelMessages({
   messages,
   chrome = 'default',
   suggestionItems,
+  welcomeText,
   showInlineSuggestions = false,
   onSuggestionSelect,
   userAvatarUrl,
   userDisplayName,
+  userPersonId,
   assistantAvatarUrl,
   isStreaming = false,
   onActionReplySelect,
@@ -154,7 +159,16 @@ export function AiPanelMessages({
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
-  }, [messages, isStreaming]);
+  }, [
+    messages,
+    isStreaming,
+    showSetupJourneyPicker,
+    showLocationPicker,
+    showActivationPicker,
+    showTransparencyPicker,
+    showEntryMethodPicker,
+    showVotingMethodPicker,
+  ]);
 
   const displayMessages =
     messages.length > 0
@@ -166,7 +180,7 @@ export function AiPanelMessages({
             parts: [
               {
                 type: 'text' as const,
-                text: t('welcome'),
+                text: welcomeText ?? t('welcome'),
               },
             ],
           },
@@ -175,7 +189,7 @@ export function AiPanelMessages({
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-2"
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-2"
     >
       <div className="flex flex-col gap-2">
         {displayMessages.map((msg, index) => (
@@ -185,6 +199,7 @@ export function AiPanelMessages({
             message={msg}
             userAvatarUrl={userAvatarUrl}
             userDisplayName={userDisplayName}
+            userPersonId={userPersonId}
             assistantAvatarUrl={assistantAvatarUrl}
             mobilizedAgents={
               msg.role === 'assistant' && msg.id !== 'welcome'

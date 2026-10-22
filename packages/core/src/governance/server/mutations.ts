@@ -23,6 +23,8 @@ import {
   buildUpdateTokenInputPatchFromTokenUpdateData,
   omitUndefinedValues,
 } from './token-update-apply';
+import { parseCapitalKey } from '../../network/capitals';
+import { writeTokenCapital } from '../../network/capital-columns';
 
 export const createAgreement = async (
   { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,
@@ -108,6 +110,10 @@ export const createToken = async (
       referenceCurrency: input.referenceCurrency || null,
     })
     .returning();
+  const capital = parseCapitalKey(input.capital);
+  if (token?.id != null && capital) {
+    await writeTokenCapital(db, token.id, capital);
+  }
   return token;
 };
 
@@ -163,8 +169,12 @@ export const updateToken = async (
   }
 
   // Map archiveToken to archived column; omit derived fields not in DB schema
-  const { archiveToken, agreementWeb3IdUpdate, ...restWithoutDerivedFields } =
-    rest;
+  const {
+    archiveToken,
+    agreementWeb3IdUpdate,
+    capital,
+    ...restWithoutDerivedFields
+  } = rest;
   const updateDataRaw = {
     ...restWithoutDerivedFields,
     ...(address !== undefined && { address }),
@@ -191,6 +201,10 @@ export const updateToken = async (
 
   if (!updated) {
     throw new Error('Failed to update token');
+  }
+
+  if (capital !== undefined) {
+    await writeTokenCapital(db, tokenToUpdate.id, capital);
   }
 
   return updated;

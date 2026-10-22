@@ -3,12 +3,12 @@ import React, { ChangeEvent, useRef, useState } from 'react';
 import {
   FileText,
   Image as ImageIcon,
+  Upload,
   X,
   File as FileIcon,
 } from 'lucide-react';
 import { Button } from '../button';
 import { Separator } from '../separator';
-import { Link2Icon } from '@radix-ui/react-icons';
 
 type AttachmentInput = string | { name: string; url: string };
 
@@ -18,6 +18,25 @@ interface AddAttachmentProps {
   value?: (File | AttachmentInput)[];
   defaultAttachments?: AttachmentInput[];
   label?: React.ReactNode;
+  /** Comma-separated input accept list, for example `image/png,.pdf`. */
+  accept?: string;
+  maxFiles?: number;
+  maxBytes?: number;
+}
+
+function fileMatchesAccept(file: File, accept: string) {
+  const rules = accept
+    .split(',')
+    .map((rule) => rule.trim().toLowerCase())
+    .filter(Boolean);
+  if (rules.length === 0) return true;
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  return rules.some((rule) => {
+    if (rule.startsWith('.')) return name.endsWith(rule);
+    if (rule.endsWith('/*')) return type.startsWith(rule.slice(0, -1));
+    return type === rule;
+  });
 }
 
 export const AddAttachment: React.FC<AddAttachmentProps> = ({
@@ -26,6 +45,9 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   value,
   defaultAttachments,
   label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)',
+  accept,
+  maxFiles,
+  maxBytes,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -53,8 +75,16 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   }, [value, defaultAttachments]);
 
   const handleUpload = (files: FileList) => {
-    const newFiles = Array.from(files);
-    const updated = [...attachments, ...newFiles];
+    const incoming = Array.from(files).filter((file) => {
+      if (accept && !fileMatchesAccept(file, accept)) return false;
+      if (maxBytes != null && file.size > maxBytes) return false;
+      return true;
+    });
+    const room =
+      maxFiles == null
+        ? incoming
+        : incoming.slice(0, Math.max(0, maxFiles - attachments.length));
+    const updated = [...attachments, ...room];
     setAttachments(updated);
     onChange?.(updated);
     if (inputRef.current) {
@@ -126,19 +156,22 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
 
   return (
     <div className="flex w-full min-w-0 max-w-full flex-col items-end">
-      <Button
-        variant="ghost"
-        colorVariant="accent"
+      <button
         type="button"
         onClick={handleClick}
-        className="h-auto w-full min-w-0 max-w-full justify-start whitespace-normal text-left text-accent-11 hover:bg-accent-3 hover:text-neutral-12 [&_svg]:shrink-0 [&_svg]:text-accent-11 hover:[&_svg]:text-neutral-12"
+        className="flex w-full min-w-0 max-w-full items-start gap-2 px-0.5 py-1.5 text-left text-2 leading-snug text-neutral-11 transition-colors hover:text-foreground"
       >
-        <Link2Icon />
-        <span className="min-w-0 flex-1 break-words text-left">{label}</span>
+        <Upload
+          className="mt-0.5 size-4 shrink-0"
+          strokeWidth={1.5}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1 break-words">{label}</span>
         <input
           ref={inputRef}
           type="file"
           className="hidden"
+          accept={accept}
           multiple
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
             if (e.target.files) {
@@ -146,7 +179,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
             }
           }}
         />
-      </Button>
+      </button>
 
       <div className="mt-4 w-full min-w-0 max-w-full space-y-2">
         {existingAttachments.map((file, idx) => (

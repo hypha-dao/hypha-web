@@ -74,6 +74,7 @@ const AddressProfile = ({ address }: { address: `0x${string}` }) => {
         userName={name ?? undefined}
         size="sm"
         shape="circle"
+        personId={person?.id}
       />
       <span className="font-medium text-neutral-12">
         {name ?? shortAddr(address)}

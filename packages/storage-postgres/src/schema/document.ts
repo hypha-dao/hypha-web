@@ -39,8 +39,11 @@ export const documents = pgTable(
       .default([]),
     web3ProposalId: integer('web3_proposal_id'),
     label: text('label'),
+    /** Matrix room for in-context discussion on the proposal overlay. */
+    chatRoomId: text('chat_room_id'),
     ...commonDateFields,
   },
+
   (table) => [
     index('search_index_documents').using(
       'gin',

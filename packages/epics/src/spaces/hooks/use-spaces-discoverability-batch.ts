@@ -11,6 +11,58 @@ import { publicClient, getSpaceVisibility } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useMemberWeb3SpaceIds } from './use-member-web3-space-ids';
 
+const DISCOVERABILITY_CHUNK = 80;
+
+function discoverabilityFromResult(
+  visibility: unknown,
+): TransparencyLevel | undefined {
+  if (visibility == null) return undefined;
+  const value =
+    typeof visibility === 'object' &&
+    visibility !== null &&
+    'discoverability' in visibility
+      ? (visibility as { discoverability: unknown }).discoverability
+      : Array.isArray(visibility)
+      ? visibility[0]
+      : undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? (parsed as TransparencyLevel) : undefined;
+}
+
+/** One multicall per chunk. A separate eth_call per space stalled the network list. */
+async function fetchDiscoverabilityBatch(ids: number[]) {
+  const chunks: number[][] = [];
+  for (let index = 0; index < ids.length; index += DISCOVERABILITY_CHUNK) {
+    chunks.push(ids.slice(index, index + DISCOVERABILITY_CHUNK));
+  }
+  const parts = await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const response = await publicClient.multicall({
+          allowFailure: true,
+          contracts: chunk.map((spaceId) =>
+            getSpaceVisibility({ spaceId: BigInt(spaceId) }),
+          ),
+        });
+        return response.map((result, index) => ({
+          spaceId: chunk[index]!,
+          discoverability:
+            result.status === 'success'
+              ? discoverabilityFromResult(result.result)
+              : undefined,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch space discoverability', error);
+        return chunk.map((spaceId) => ({
+          spaceId,
+          discoverability: undefined as TransparencyLevel | undefined,
+        }));
+      }
+    }),
+  );
+  return parts.flat();
+}
+
 export function useSpacesDiscoverabilityBatch({
   spaces,
 }: {
@@ -27,35 +79,8 @@ export function useSpacesDiscoverabilityBatch({
 
   const { data, isLoading } = useSWR(
     spaceIds.length > 0 ? ['batch-discoverability', spaceIds] : null,
-    async ([_, ids]) => {
-      const results = await Promise.all(
-        ids.map(async (spaceId) => {
-          try {
-            const visibility = await publicClient.readContract(
-              getSpaceVisibility({ spaceId: BigInt(spaceId) }),
-            );
-            const discoverabilityValue =
-              'discoverability' in visibility
-                ? visibility.discoverability
-                : (visibility as unknown as [bigint, bigint])[0];
-            return {
-              spaceId,
-              discoverability: Number(
-                discoverabilityValue,
-              ) as TransparencyLevel,
-            };
-          } catch (error) {
-            console.error(
-              `Failed to fetch discoverability for space ${spaceId}:`,
-              error,
-            );
-            return { spaceId, discoverability: undefined };
-          }
-        }),
-      );
-      return results;
-    },
-    { revalidateOnFocus: true },
+    ([_, ids]) => fetchDiscoverabilityBatch(ids),
+    { revalidateOnFocus: false },
   );
 
   const discoverabilityMap = useMemo(() => {

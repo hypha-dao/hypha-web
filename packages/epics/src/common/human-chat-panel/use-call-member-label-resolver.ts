@@ -26,7 +26,7 @@ type UseCallMemberLabelResolverParams = {
   roomId: string | null | undefined;
   spaceSlug: string | null | undefined;
   unknownMemberLabel: string;
-  useMembers?: UseMembers;
+  useMembers: UseMembers;
 };
 
 /**
@@ -43,10 +43,10 @@ export function useCallMemberLabelResolver({
   const { person: me } = useMe();
   const currentUserId = client?.getUserId?.() ?? null;
 
-  const { persons: spaceMembersResult } = useMembers?.({
+  const { persons: spaceMembersResult } = useMembers({
     spaceSlug: spaceSlug ?? undefined,
     paginationDisabled: true,
-  }) ?? { persons: undefined };
+  });
   const spaceMembers = useMemo(
     () => spaceMembersResult?.data ?? [],
     [spaceMembersResult?.data],

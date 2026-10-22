@@ -14,7 +14,8 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import { Plus } from 'lucide-react';
+import { Download } from 'lucide-react';
+import { DealCreateFab } from './deal-create-fab';
 import { FilterBar } from './filter-bar';
 import { SavedViewsMenu } from './saved-views-menu';
 import { PipelineSummary } from './pipeline-summary';
@@ -72,7 +73,7 @@ export function TrackPage({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 pb-8">
+    <div className="relative flex min-w-0 flex-col gap-4 pb-16">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <Link
@@ -81,14 +82,32 @@ export function TrackPage({
           >
             ← {t('backToBoard')}
           </Link>
-          <h2 className="text-4 font-medium text-neutral-12">
+          <h1 className="craft-page-title text-6 font-medium">
             {t('trackTitle', { swimlane })}
-          </h2>
+          </h1>
         </div>
-        <Button type="button" onClick={() => setNewOpen(true)}>
-          <Plus className="mr-1 size-4" />
-          {t('newDeal.create')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void exportDealsToXlsx(
+                filtered,
+                `${spaceSlug}-${swimlane}-deals`,
+                probabilities,
+              );
+            }}
+          >
+            <Download className="mr-1 size-3.5" />
+            {t('exportXlsx')}
+          </Button>
+          <SavedViewsMenu
+            spaceSlug={spaceSlug}
+            filters={filters}
+            onApply={setFilters}
+          />
+        </div>
       </div>
 
       <FilterBar
@@ -97,20 +116,7 @@ export function TrackPage({
         onChange={setFilters}
         useMembers={useMembers}
         countryFocus={countryFocus}
-        onExport={() => {
-          void exportDealsToXlsx(
-            filtered,
-            `${spaceSlug}-${swimlane}-deals`,
-            probabilities,
-          );
-        }}
-        savedViewsSlot={
-          <SavedViewsMenu
-            spaceSlug={spaceSlug}
-            filters={filters}
-            onApply={setFilters}
-          />
-        }
+        lockedSwimlane={swimlane}
       />
 
       <PipelineSummary deals={filtered} probabilities={probabilities} />
@@ -136,6 +142,7 @@ export function TrackPage({
         </PipelineLaneSection>
       )}
 
+      <DealCreateFab onClick={() => setNewOpen(true)} />
       <NewDealDialog
         spaceSlug={spaceSlug}
         useMembers={useMembers}

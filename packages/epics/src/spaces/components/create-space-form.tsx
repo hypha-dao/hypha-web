@@ -63,6 +63,10 @@ import {
 import { PipelineRegionSettings } from '../../pipeline/components/pipeline-region-settings';
 import { PipelineProbabilitySettings } from '../../pipeline/components/pipeline-probability-settings';
 import {
+  SpaceCapitalsFields,
+  type SpaceCapitalSelection,
+} from './space-capitals-fields';
+import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
 } from './space-location-picker';
@@ -97,6 +101,9 @@ export type CreateSpaceFormProps = {
   spaceSlug?: string;
   enableNetworkMap?: boolean;
   slugIncorrectMessage?: string;
+  /** What this space seeks and offers back. Several forms of capital at once. */
+  capitals?: SpaceCapitalSelection;
+  onCapitalsChange?: (next: SpaceCapitalSelection) => void;
   onSubmit: (
     values: SchemaCreateSpaceForm,
     organisationSpaces?: Space[],
@@ -145,6 +152,8 @@ export const SpaceForm = ({
   spaceSlug,
   enableNetworkMap = false,
   slugIncorrectMessage,
+  capitals,
+  onCapitalsChange,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
@@ -689,6 +698,14 @@ export const SpaceForm = ({
               </FormItem>
             )}
           />
+          {onCapitalsChange ? (
+            <SpaceCapitalsFields
+              seeks={capitals?.seeks ?? []}
+              offers={capitals?.offers ?? []}
+              disabled={isLoading}
+              onChange={onCapitalsChange}
+            />
+          ) : null}
           {showLocationPicker ? (
             <>
               <Separator />

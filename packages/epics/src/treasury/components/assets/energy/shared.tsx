@@ -96,6 +96,7 @@ export const EnergyPersonCard = ({
         size="md"
         shape="circle"
         isLoading={isLoading}
+        personId={person?.id}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-2 font-medium tracking-tight text-foreground">

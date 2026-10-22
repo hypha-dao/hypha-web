@@ -42,6 +42,7 @@ import { integrationClients } from './integration-client';
 import { integrationGrants } from './integration-grant';
 import { integrationActions } from './integration-action';
 import { notificationProcessedEvents } from './notification-processed-events';
+import { spaceMemberInvites } from './space-member-invite';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -72,6 +73,7 @@ export * from './integration-client';
 export * from './integration-grant';
 export * from './integration-action';
 export * from './notification-processed-events';
+export * from './space-member-invite';
 
 export const schema = {
   documents,
@@ -112,4 +114,5 @@ export const schema = {
   integrationGrants,
   integrationActions,
   notificationProcessedEvents,
+  spaceMemberInvites,
 };

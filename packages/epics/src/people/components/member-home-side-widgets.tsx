@@ -1,0 +1,355 @@
+'use client';
+
+import { useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { MessageSquare, Phone, Video } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Button } from '@hypha-platform/ui';
+import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
+import type { Locale } from '@hypha-platform/i18n';
+import type { MemberIntelligence } from '@hypha-platform/core/client';
+import { useDisplayCurrency, useUserAssets } from '../../treasury/hooks';
+import type { AssetItem } from '../../treasury/hooks/use-user-assets';
+import { PersonAvatar } from './person-avatar';
+import { HomeWave } from './member-home-wave';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
+
+type HomeConnection = MemberIntelligence['connections'][number];
+
+function Widget({
+  title,
+  busy = false,
+  children,
+  action,
+  className,
+}: {
+  title: string;
+  busy?: boolean;
+  children: ReactNode;
+  action?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      aria-busy={busy || undefined}
+      className={cn(
+        'flex w-full min-w-0 flex-col border border-border bg-background p-4',
+        className,
+      )}
+    >
+      <h2
+        className="text-3"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {title}
+      </h2>
+      <div className="mt-3">{children}</div>
+      {busy && action ? (
+        <HomeWave className="mt-4 h-10 w-full" delayMs={80} />
+      ) : (
+        action
+      )}
+    </section>
+  );
+}
+
+function WidgetAction({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <Button asChild className="mt-4 w-full text-sm">
+      <Link href={href}>{children}</Link>
+    </Button>
+  );
+}
+
+function AssetMark({ icon, symbol }: { icon: string; symbol: string }) {
+  const [failed, setFailed] = useState(false);
+  const letter = symbol.trim().slice(0, 1).toUpperCase();
+  if (!icon || failed) {
+    return (
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center bg-neutral-4 text-1 text-foreground">
+        {letter}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={icon}
+      alt=""
+      className="h-5 w-5 shrink-0 rounded-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function MainAssets({ assets, lang }: { assets: AssetItem[]; lang: Locale }) {
+  const main = assets.filter((asset) => asset.value > 0).slice(0, 3);
+  if (main.length === 0) return null;
+  return (
+    <ul className="mt-4 flex flex-col gap-2">
+      {main.map((asset) => (
+        <li
+          key={`${asset.slug}:${asset.symbol}:${asset.address ?? ''}`}
+          className="flex items-center gap-2"
+        >
+          <AssetMark icon={asset.icon} symbol={asset.symbol} />
+          <span className="min-w-0 flex-1 truncate text-1">{asset.symbol}</span>
+          <span className="shrink-0 text-1 tabular-nums">
+            {formatCurrencyValue(asset.value, lang)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function personLabel(
+  person: {
+    name: string | null;
+    surname: string | null;
+    nickname: string | null;
+  },
+  fallback: string,
+) {
+  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
+  return full || person.nickname || fallback;
+}
+
+export function MemberHomeWalletWidget({
+  lang,
+  personSlug,
+  hasAddress,
+  isHomeLoading,
+}: {
+  lang: Locale;
+  personSlug?: string;
+  hasAddress: boolean;
+  isHomeLoading: boolean;
+}) {
+  const t = useTranslations('MemberHome');
+  const {
+    balance,
+    assets,
+    isLoading: isBalanceLoading,
+  } = useUserAssets({
+    personSlug,
+  });
+  const { formatFromUsd } = useDisplayCurrency();
+  const showBalance = hasAddress && !isHomeLoading && !isBalanceLoading;
+
+  return (
+    <Widget
+      title={t('wallet')}
+      busy={isHomeLoading || (hasAddress && isBalanceLoading)}
+      action={
+        <WidgetAction href={`/${lang}/my-wallet`}>
+          {t('openMyWallet')}
+        </WidgetAction>
+      }
+    >
+      {isHomeLoading ? (
+        <div aria-hidden>
+          <HomeWave style={{ height: 28, width: '9rem' }} />
+          <ul className="mt-4 flex flex-col gap-2">
+            {Array.from({ length: 3 }, (_, index) => (
+              <li key={index} className="flex items-center gap-2">
+                <HomeWave
+                  className="h-5 w-5 shrink-0 rounded-full"
+                  delayMs={index * 70}
+                />
+                <HomeWave className="h-3 w-16" delayMs={index * 70 + 40} />
+                <HomeWave
+                  className="ml-auto h-3 w-12"
+                  delayMs={index * 70 + 80}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : showBalance ? (
+        <div>
+          <p
+            className="text-3 leading-none tracking-[-0.02em] tabular-nums"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {formatFromUsd(balance)}
+          </p>
+          <MainAssets assets={assets} lang={lang} />
+        </div>
+      ) : hasAddress ? (
+        <HomeWave delayMs={40} style={{ height: 36, width: '9rem' }} />
+      ) : (
+        <p className="text-1 text-neutral-11">{t('walletEmpty')}</p>
+      )}
+    </Widget>
+  );
+}
+
+export function MemberHomeSpacesWidget({
+  lang,
+  busy = false,
+  children,
+}: {
+  lang: Locale;
+  busy?: boolean;
+  children: ReactNode;
+}) {
+  const t = useTranslations('MemberHome');
+
+  return (
+    <Widget
+      title={t('recentSpaces')}
+      busy={busy}
+      action={
+        <WidgetAction href={`/${lang}/my-spaces`}>
+          {t('openMySpaces')}
+        </WidgetAction>
+      }
+    >
+      {children}
+    </Widget>
+  );
+}
+
+const CONNECTIONS_PREVIEW = 5;
+
+export function MemberHomeConnectionsWidget({
+  lang,
+  people,
+  isLoading,
+  fallbackName,
+  onChat,
+  onCall,
+  onVideo,
+}: {
+  lang: Locale;
+  people: HomeConnection[];
+  isLoading: boolean;
+  fallbackName: string;
+  onChat?: (person: HomeConnection) => Promise<boolean>;
+  onCall?: (person: HomeConnection) => Promise<boolean>;
+  onVideo?: (person: HomeConnection) => Promise<boolean>;
+}) {
+  const t = useTranslations('MemberHome');
+  const visiblePeople = people.slice(0, CONNECTIONS_PREVIEW);
+
+  return (
+    <Widget title={t('connections')} busy={isLoading}>
+      {isLoading ? (
+        <ul className="flex flex-col gap-3" aria-hidden>
+          {Array.from({ length: 3 }, (_, index) => (
+            <li key={index} className="flex items-center gap-2">
+              <HomeWave
+                className="h-8 w-8 shrink-0 rounded-full"
+                delayMs={index * 80}
+              />
+              <div className="grid min-w-0 flex-1 gap-1.5">
+                <HomeWave className="h-3 w-28" delayMs={index * 80 + 40} />
+                <HomeWave className="h-3 w-16" delayMs={index * 80 + 80} />
+              </div>
+              <div className="flex shrink-0 gap-1">
+                {Array.from({ length: 3 }, (__, action) => (
+                  <HomeWave
+                    key={action}
+                    className="h-8 w-8"
+                    delayMs={index * 80 + action * 40}
+                  />
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : people.length === 0 ? (
+        <p className="text-1 text-neutral-11">{t('noConnections')}</p>
+      ) : (
+        <div className="@container">
+          <ul className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2">
+            {visiblePeople.map((person) => {
+              const name = personLabel(person, fallbackName);
+              const label = t('sharedSpaces', {
+                count: person.sharedSpaceCount,
+              });
+              return (
+                <li
+                  key={person.id}
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
+                >
+                  <button
+                    type="button"
+                    title={`${name}. ${label}`}
+                    aria-label={t('chatPerson', { name })}
+                    className="flex min-w-0 items-center gap-2 text-left hover:underline"
+                    onClick={() => {
+                      void onChat?.(person);
+                    }}
+                  >
+                    <PersonAvatar
+                      avatarSrc={person.avatarUrl ?? undefined}
+                      userName={name}
+                      size="md"
+                      shape="circle"
+                      className="shrink-0"
+                      personId={person.id}
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col items-stretch gap-1 overflow-hidden">
+                      <span className="block truncate text-1">{name}</span>
+                      {isPersonRole(person.primaryOrientation) ? (
+                        <PersonRoleBadge role={person.primaryOrientation} />
+                      ) : null}
+                    </span>
+                  </button>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      colorVariant="neutral"
+                      aria-label={t('callPerson', { name })}
+                      onClick={() => {
+                        void onCall?.(person);
+                      }}
+                    >
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      colorVariant="neutral"
+                      aria-label={t('videoPerson', { name })}
+                      onClick={() => {
+                        void onVideo?.(person);
+                      }}
+                    >
+                      <Video className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      colorVariant="neutral"
+                      aria-label={t('chatPerson', { name })}
+                      onClick={() => {
+                        void onChat?.(person);
+                      }}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+      {!isLoading && people.length > CONNECTIONS_PREVIEW ? (
+        <WidgetAction href={`/${lang}/messages`}>{t('seeMore')}</WidgetAction>
+      ) : null}
+    </Widget>
+  );
+}

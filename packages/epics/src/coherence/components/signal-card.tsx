@@ -25,7 +25,14 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  CalendarDays,
+  FilePlus,
+  Globe2,
+  Pencil,
+} from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -41,6 +48,11 @@ import {
 } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
+import { SignalIndicativeAmounts } from './signal-indicative-amounts';
+import { SignalCategoryTag } from './signal-category-tag';
+import { SignalVideoPlayer } from './signal-video-player';
+import { resolveSignalVideo } from '../utils/signal-video';
 
 /**
  * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
@@ -54,7 +66,6 @@ type SignalCardProps = {
   refresh: () => Promise<void>;
   onOpenConversation?: () => void;
   className?: string;
-  leadImage?: string;
   isActive?: boolean;
 };
 
@@ -62,10 +73,12 @@ function SignalCardComponent({
   isLoading,
   title,
   description,
+  type,
   priority,
   slug,
   createdAt,
   tags,
+  indicativePayouts = [],
   archived,
   messages = 0,
   roomId,
@@ -76,7 +89,9 @@ function SignalCardComponent({
   refresh,
   onOpenConversation,
   className,
-  leadImage: _leadImage,
+  leadImage,
+  videoUrl,
+  sharedWithNetwork = false,
   isActive = false,
 }: SignalCardProps & Coherence) {
   const { jwt: authToken } = useJwt();
@@ -169,6 +184,20 @@ function SignalCardComponent({
     }
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
+  const handleTurnIntoProposal = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!params.lang || !params.id) return;
+    stageSignalAsContributionProposal({
+      title,
+      description,
+      payouts: indicativePayouts,
+    });
+    router.push(
+      `/${params.lang}/dho/${params.id}/agreements/create/propose-contribution`,
+    );
+  };
+
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
   if (hasPersonSlot) {
     metaParts.push({
@@ -208,6 +237,8 @@ function SignalCardComponent({
     });
   }
 
+  const video = resolveSignalVideo(videoUrl);
+
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -223,14 +254,31 @@ function SignalCardComponent({
   return (
     <Card
       className={cn(
-        'craft-card-interactive group relative flex h-full w-full min-h-0 flex-col',
+        'craft-card-interactive group relative flex h-auto w-full min-h-0 flex-col',
         !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         className,
       )}
     >
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
-        <div className="flex flex-1 flex-col px-3.5 pb-3 pt-3">
+        {video ? (
+          <div className="relative aspect-video w-full overflow-hidden bg-neutral-3">
+            <SignalVideoPlayer video={video} title={title} />
+          </div>
+        ) : leadImage ? (
+          <img
+            src={leadImage}
+            alt=""
+            className="block w-full object-cover"
+            style={{ height: 160 }}
+          />
+        ) : null}
+        <div
+          className={cn(
+            'flex flex-1 flex-col px-3.5 pb-3',
+            video || leadImage ? 'pt-2.5' : 'pt-3',
+          )}
+        >
           {/* Own row above the title. Collapsed until hover, focus, or selection
               so the buttons never paint over the type. */}
           <div
@@ -373,6 +421,20 @@ function SignalCardComponent({
               </div>
             </div>
 
+            <div className="flex flex-wrap items-center gap-1.5 pl-3.5">
+              <SignalCategoryTag type={type} />
+              {sharedWithNetwork ? (
+                <span
+                  className="inline-flex size-6 items-center justify-center border border-border text-muted-foreground"
+                  title={tSignalCard('sharedWithNetwork')}
+                  aria-label={tSignalCard('sharedWithNetwork')}
+                >
+                  <Globe2 className="size-3.5" strokeWidth={1.25} aria-hidden />
+                </span>
+              ) : null}
+              <SignalIndicativeAmounts payouts={indicativePayouts} />
+            </div>
+
             {tags?.length > 0 ? (
               <SignalTagBadges
                 tags={tags}
@@ -396,6 +458,21 @@ function SignalCardComponent({
             refresh={refresh}
             disabled={isLoading || Boolean(archived)}
           />
+          {!archived ? (
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              className={SIGNAL_CARD_ICON_BUTTON_CLASS}
+              disabled={isLoading}
+              aria-label={t('turnIntoProposal')}
+              title={t('turnIntoProposal')}
+              onClick={handleTurnIntoProposal}
+              onKeyDown={stopCardActivationKey}
+            >
+              <FilePlus className="h-4 w-4" strokeWidth={1.25} aria-hidden />
+            </Button>
+          ) : null}
           {onOpenConversation && !archived ? (
             <Button
               variant="ghost"

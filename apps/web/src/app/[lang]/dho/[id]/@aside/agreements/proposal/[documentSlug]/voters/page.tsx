@@ -38,6 +38,7 @@ export default function VotersOverlay() {
         <div className="flex gap-5 justify-between">
           <ProposalHead
             creator={{
+              id: document?.creator?.id ?? document?.creatorId,
               avatar: document?.creator?.avatarUrl || '',
               name: document?.creator?.name || '',
               surname: document?.creator?.surname || '',

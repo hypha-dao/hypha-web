@@ -4,6 +4,7 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
 import { ButtonCopyUserId } from './button-copy-user-id';
@@ -17,9 +18,12 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useMe,
 } from '@hypha-platform/core/client';
+
+/** Same field the member home and space dashboards use when there is no banner yet. */
+const DEFAULT_PROFILE_LEAD_IMAGE = '/brand/strategy-mycelium.png';
 import { useParams } from 'next/navigation';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
-import { useFormatter, useTranslations } from 'next-intl';
+import { isPersonRole, PersonRoleBadge } from './person-badges';
 
 export type MemberType = {
   avatar: string;
@@ -38,6 +42,7 @@ interface PersonHeadProps {
   links: string[];
   location: string;
   email: string;
+  primaryOrientation?: 'member' | 'builder' | 'investor' | null;
   onExportEmbeddedWallet?: () => void;
   exportEmbeddedWallet?: boolean;
 }
@@ -55,6 +60,7 @@ export const PersonHead = ({
   links,
   location,
   email,
+  primaryOrientation,
   onExportEmbeddedWallet,
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
@@ -135,10 +141,16 @@ export const PersonHead = ({
 
   const displayName =
     `${self.name} ${self.surname}`.trim() || tProfile('profilePage');
+  const roleSource = isSelfView
+    ? me?.primaryOrientation ?? primaryOrientation
+    : primaryOrientation;
+  const role = isPersonRole(roleSource) ? roleSource : null;
 
   const rawLead = self.background?.trim();
   const heroBannerHref =
-    rawLead && isSafeImageUrl(rawLead) ? rawLead : DEFAULT_SPACE_LEAD_IMAGE;
+    rawLead && isSafeImageUrl(rawLead) && rawLead !== DEFAULT_SPACE_LEAD_IMAGE
+      ? rawLead
+      : DEFAULT_PROFILE_LEAD_IMAGE;
 
   const rawAvatar = self.avatar?.trim();
   const accentLogoHref =
@@ -194,7 +206,7 @@ export const PersonHead = ({
             defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
             links={self.links}
             leadImageUrl={heroBannerHref}
-            defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+            defaultLeadImageSrc={DEFAULT_PROFILE_LEAD_IMAGE}
             descriptionLabel={tCommon('spaceBannerDescriptionAria', {
               title: displayName,
             })}
@@ -202,6 +214,12 @@ export const PersonHead = ({
             footerLeading={footerMeta}
           />
         </Skeleton>
+
+        {isPersonRole(role) ? (
+          <div>
+            <PersonRoleBadge role={role} />
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap justify-end gap-2">
           {isOwnProfile && (

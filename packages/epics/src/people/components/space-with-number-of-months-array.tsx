@@ -17,6 +17,7 @@ interface SpaceWithNumberOfMonthsFieldArrayProps {
   spaces: Space[];
   organisationSpaces?: Space[];
   name?: string;
+  appearance?: 'default' | 'wallet';
 }
 
 interface SpaceFieldError extends FieldError {
@@ -28,6 +29,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   spaces,
   organisationSpaces = [],
   name = 'spaces',
+  appearance = 'default',
 }: SpaceWithNumberOfMonthsFieldArrayProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const {
@@ -41,7 +43,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
 
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    append({ spaceId: 0, months: 0 });
+    append({ spaceId: 0, months: 3 });
   };
 
   const handleRemoveLastField = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -84,6 +86,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
                           value={value}
                           onChange={onChange}
                           name={`${name}.${index}`}
+                          appearance={appearance}
                         />
                       </FormControl>
                       {spaceError?.spaceId?.message && (
@@ -104,18 +107,28 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
           </div>
         ))}
 
-        <div className="flex justify-end w-full gap-1">
+        <div
+          className={
+            appearance === 'wallet'
+              ? 'flex w-full flex-col gap-2'
+              : 'flex w-full justify-end gap-1'
+          }
+        >
           <Button
-            className="w-fit"
+            className={appearance === 'wallet' ? 'w-full' : 'w-fit'}
             onClick={handleRemoveLastField}
-            variant="ghost"
+            variant={appearance === 'wallet' ? 'outline' : 'ghost'}
             disabled={fields.length <= 1}
             colorVariant="error"
           >
             <MinusIcon />
             {tAgreementFlow('plugins.spaceWithMonths.removeSpace')}
           </Button>
-          <Button className="w-fit" onClick={handleAddField} variant="ghost">
+          <Button
+            className={appearance === 'wallet' ? 'w-full' : 'w-fit'}
+            onClick={handleAddField}
+            variant={appearance === 'wallet' ? 'outline' : 'ghost'}
+          >
             <PlusIcon />
             {tAgreementFlow('plugins.spaceWithMonths.addSpace')}
           </Button>

@@ -9,11 +9,36 @@ import { CreateSpaceInput, UpdateSpaceInput } from '../types';
 import { eq } from 'drizzle-orm';
 import { DatabaseInstance } from '@hypha-platform/core/server';
 import { spaces } from '@hypha-platform/storage-postgres';
+import { parseCapitalKeys } from '../../network/capitals';
+import { writeSpaceCapitals } from '../../network/exchange-capitals';
+
+function takeExchangeCapitals<
+  T extends { exchangeCapitals?: { seeks: string[]; offers: string[] } },
+>(
+  input: T,
+): {
+  capitals: {
+    seeks: ReturnType<typeof parseCapitalKeys>;
+    offers: ReturnType<typeof parseCapitalKeys>;
+  } | null;
+  rest: Omit<T, 'exchangeCapitals'>;
+} {
+  const { exchangeCapitals, ...rest } = input;
+  if (!exchangeCapitals) return { capitals: null, rest };
+  return {
+    capitals: {
+      seeks: parseCapitalKeys(exchangeCapitals.seeks),
+      offers: parseCapitalKeys(exchangeCapitals.offers),
+    },
+    rest,
+  };
+}
 
 export const createSpace = async (
   { title, slug: maybeSlug, ...rest }: CreateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
+  const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
   const slug = maybeSlug || slugify(title, { lower: true });
   const normalizedLocation = normalizeSpaceLocationFields({
     latitude: rest.latitude,
@@ -31,7 +56,7 @@ export const createSpace = async (
     .values({
       title,
       slug,
-      ...rest,
+      ...spaceFields,
       ...normalizedLocation,
       ...locatedAtPatch,
     })
@@ -39,6 +64,10 @@ export const createSpace = async (
 
   if (!newSpace) {
     throw new Error('Failed to create space');
+  }
+
+  if (capitals) {
+    await writeSpaceCapitals(db, newSpace.id, capitals);
   }
 
   return newSpace;
@@ -86,14 +115,19 @@ export const updateSpaceBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
+  const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
   const [updatedSpace] = await db
     .update(spaces)
-    .set(applyLocationFieldsIfPresent(rest))
+    .set(applyLocationFieldsIfPresent(spaceFields))
     .where(eq(spaces.slug, slug))
     .returning();
 
   if (!updatedSpace) {
     throw new Error('Failed to update space');
+  }
+
+  if (capitals) {
+    await writeSpaceCapitals(db, updatedSpace.id, capitals);
   }
 
   return updatedSpace;
@@ -103,7 +137,8 @@ export const updateSpaceById = async (
   { id, ...rest }: { id: number } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  return await db.transaction(async (tx) => {
+  const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
+  const result = await db.transaction(async (tx) => {
     const [originalSpace] = await tx
       .select()
       .from(spaces)
@@ -117,7 +152,7 @@ export const updateSpaceById = async (
 
     const [updatedSpace] = await tx
       .update(spaces)
-      .set(applyLocationFieldsIfPresent(rest))
+      .set(applyLocationFieldsIfPresent(spaceFields))
       .where(eq(spaces.id, id))
       .returning();
 
@@ -127,6 +162,10 @@ export const updateSpaceById = async (
 
     return { originalSpace, updatedSpace };
   });
+  if (capitals) {
+    await writeSpaceCapitals(db, id, capitals);
+  }
+  return result;
 };
 
 function hasArchivedSpaceFlag(flags: unknown): boolean {
@@ -138,7 +177,8 @@ export const updateSpaceConfigurationById = async (
   { id, ...rest }: { id: number } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  return db.transaction(async (tx) => {
+  const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
+  const result = await db.transaction(async (tx) => {
     const [originalSpace] = await tx
       .select()
       .from(spaces)
@@ -149,10 +189,12 @@ export const updateSpaceConfigurationById = async (
       throw new Error('Failed to update space: not found');
     }
 
-    const nextFlags = rest.flags ?? originalSpace.flags;
+    const nextFlags = spaceFields.flags ?? originalSpace.flags;
     const wasArchived = hasArchivedSpaceFlag(originalSpace.flags);
     const willBeArchived = hasArchivedSpaceFlag(nextFlags);
-    const normalizedRest = willBeArchived ? { ...rest, parentId: null } : rest;
+    const normalizedRest = willBeArchived
+      ? { ...spaceFields, parentId: null }
+      : spaceFields;
 
     if (!wasArchived && willBeArchived) {
       const reparentTo = originalSpace.parentId ?? null;
@@ -216,6 +258,10 @@ export const updateSpaceConfigurationById = async (
 
     return { originalSpace, updatedSpace };
   });
+  if (capitals) {
+    await writeSpaceCapitals(db, id, capitals);
+  }
+  return result;
 };
 
 /**

@@ -1,0 +1,54 @@
+import {
+  getMemberIntelligence,
+  resolveMemberCaller,
+} from '@hypha-platform/core/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
+  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    // Same caller as the member MCP: Privy user id → people.sub, then that
+    // row's own database. Do not reuse a numeric id from a different connection.
+    const caller = await resolveMemberCaller(authToken);
+    if (!caller?.person.id) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const rawConnections = request.nextUrl.searchParams.get('connections');
+    const requested =
+      rawConnections == null ? undefined : Number(rawConnections);
+    const connectionQuery = request.nextUrl.searchParams.get('q')?.trim();
+    const intelligence = await getMemberIntelligence(
+      {
+        personId: caller.person.id,
+        connectionLimit:
+          requested != null && Number.isFinite(requested)
+            ? requested
+            : undefined,
+        connectionQuery: connectionQuery
+          ? connectionQuery.slice(0, 80)
+          : undefined,
+      },
+      { db: caller.db },
+    );
+    if (!intelligence) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(intelligence, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch (error) {
+    console.error('Error loading member intelligence:', error);
+    return NextResponse.json(
+      { error: 'Failed to load member intelligence' },
+      { status: 500 },
+    );
+  }
+}

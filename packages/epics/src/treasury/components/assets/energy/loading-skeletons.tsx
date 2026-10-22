@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 /**
- * Energy loading placeholders. Uses pulse blocks directly — the shared UI
- * `Skeleton` only paints when `loading` is set, which is easy to miss.
+ * Energy loading placeholders. Chart bars keep their own shape. Text lines
+ * only light the top edge, the same sweep as the rest of the app.
  */
 
 function Pulse({
@@ -18,10 +19,10 @@ function Pulse({
   style?: React.CSSProperties;
 }) {
   return (
-    <div
-      className={cn('motion-safe:animate-pulse rounded-md bg-muted', className)}
-      style={delayMs ? { ...style, animationDelay: `${delayMs}ms` } : style}
-      aria-hidden
+    <Wave
+      className={cn('rounded-md', className)}
+      delayMs={delayMs}
+      style={style}
     />
   );
 }

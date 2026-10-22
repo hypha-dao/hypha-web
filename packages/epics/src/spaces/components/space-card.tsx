@@ -43,8 +43,8 @@ const customCardHeaderStyles: React.CSSProperties = {
 export const SpaceCard: React.FC<SpaceCardProps> = ({
   description,
   icon,
-  members = 0,
-  agreements = 0,
+  members,
+  agreements,
   isLoading = false,
   title,
   leadImage,
@@ -132,13 +132,17 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             <div className="craft-meta flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
               <Skeleton loading={isLoading} height="16px" width="72px">
                 <span>
-                  <span className="text-foreground/80">{members}</span>{' '}
+                  <span className="text-foreground/80">
+                    {members == null ? '—' : members}
+                  </span>{' '}
                   {tCommon('Members')}
                 </span>
               </Skeleton>
               <Skeleton loading={isLoading} height="16px" width="72px">
                 <span>
-                  <span className="text-foreground/80">{agreements}</span>{' '}
+                  <span className="text-foreground/80">
+                    {agreements == null ? '—' : agreements}
+                  </span>{' '}
                   {tCommon('Agreements')}
                 </span>
               </Skeleton>

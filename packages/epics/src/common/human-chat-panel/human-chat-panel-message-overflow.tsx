@@ -533,13 +533,15 @@ export function HumanChatPanelMessageOverflow({
               {deleteError}
             </p>
           ) : null}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteBusy}>
+          <AlertDialogFooter className="gap-2 sm:space-x-0">
+            <AlertDialogCancel disabled={deleteBusy} className="h-10">
               {t('contextDeleteCancel')}
             </AlertDialogCancel>
             <Button
               type="button"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="default"
+              colorVariant="error"
+              className="h-10"
               disabled={deleteBusy}
               onClick={() => void confirmDelete()}
             >

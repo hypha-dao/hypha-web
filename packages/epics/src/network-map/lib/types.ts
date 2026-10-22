@@ -20,12 +20,19 @@ export type NetworkGlobeMapProps = {
   /** When false, omit the map stage (toolbar stays mounted for chrome state). */
   showStage?: boolean;
   /**
+   * Directory is still settling. Keep the map frame and skip the empty-world
+   * message so the loader matches the overview that follows.
+   */
+  isResolving?: boolean;
+  /**
    * When set, the map moves to this projection. Overview uses `flat`.
    * Clearing it leaves the current projection alone.
    */
   alignProjection?: NetworkMapProjectionMode;
   /** Fired when the corner control changes globe or flat. */
   onProjectionModeChange?: (mode: NetworkMapProjectionMode) => void;
+  /** A single dot. The page shows that space on the right. */
+  onSpaceSelect?: (space: Space) => void;
 };
 
 export const NETWORK_MAP_LAYER_IDS = ['land', 'water', 'grid'] as const;
