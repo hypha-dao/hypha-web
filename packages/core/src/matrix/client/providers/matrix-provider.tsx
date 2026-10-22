@@ -53,6 +53,7 @@ import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
 import { isAutoJoinGroupInvite } from '../../group-room';
+import type { HyphaRoomType } from '../../room-types';
 import {
   createBotOwnedRoomAction,
   ensureDirectPairRoomAction,
@@ -88,102 +89,6 @@ function retryMatrixClientSync(client: MatrixSdk.MatrixClient): void {
   };
   if (typeof clientWithRetry.retryImmediately === 'function') {
     clientWithRetry.retryImmediately();
-  }
-}
-
-function latestReceiptEvent(room: MatrixSdk.Room) {
-  const events = room.getLiveTimeline().getEvents();
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index];
-    if (!event) continue;
-    if (event.getType() !== MatrixSdk.EventType.RoomMessage) continue;
-    const id = event.getId();
-    if (!id || id.startsWith('~')) continue;
-    if (event.status) continue;
-    return event;
-  }
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index];
-    if (!event) continue;
-    const id = event.getId();
-    if (!id || id.startsWith('~')) continue;
-    if (event.status) continue;
-    return event;
-  }
-  return null;
-}
-
-function siblingDirectRoomIds(
-  client: MatrixSdk.MatrixClient,
-  otherUserId: string,
-  winnerRoomId: string,
-) {
-  const selfId = client.getUserId();
-  const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
-  const otherKey = otherUserId.trim().toLowerCase();
-  if (!selfId || !otherKey) return [] as string[];
-  const siblings: string[] = [];
-  for (const room of client.getRooms()) {
-    if (room.roomId === winnerRoomId) continue;
-    if (room.getMyMembership() !== 'join') continue;
-    let members: { userId: string }[] = [];
-    try {
-      members = room.getJoinedMembers();
-    } catch {
-      continue;
-    }
-    const others = members.filter((member) => {
-      if (!member.userId || member.userId === selfId) return false;
-      if (botId && member.userId === botId) return false;
-      const local = member.userId.replace(/^@/, '').split(':')[0] ?? '';
-      return !/hypha[_-]bot/i.test(local);
-    });
-    if (others.length !== 1) continue;
-    if ((others[0]?.userId ?? '').toLowerCase() !== otherKey) continue;
-    siblings.push(room.roomId);
-  }
-  return siblings;
-}
-
-/** Read receipts are per user. The earlier pair room stays, but it stops counting. */
-function markEarlierDirectRoomsRead(
-  client: MatrixSdk.MatrixClient,
-  candidateRoomIds: readonly string[],
-  winnerRoomId: string,
-  otherUserId?: string,
-) {
-  const seen = new Set<string>();
-  const roomIds = [
-    ...candidateRoomIds,
-    ...(otherUserId
-      ? siblingDirectRoomIds(client, otherUserId, winnerRoomId)
-      : []),
-  ];
-  for (const roomId of roomIds) {
-    if (!roomId || roomId === winnerRoomId || seen.has(roomId)) continue;
-    seen.add(roomId);
-    const room = client.getRoom(roomId);
-    if (!room || room.getMyMembership() !== 'join') continue;
-    const event = latestReceiptEvent(room);
-    const eventId = event?.getId();
-    if (!event || !eventId) continue;
-    void client
-      .setRoomReadMarkers(roomId, eventId, event)
-      .then(() => {
-        if (typeof room.setUnreadNotificationCount === 'function') {
-          room.setUnreadNotificationCount(
-            MatrixSdk.NotificationCountType.Total,
-            0,
-          );
-          room.setUnreadNotificationCount(
-            MatrixSdk.NotificationCountType.Highlight,
-            0,
-          );
-        }
-      })
-      .catch((error) => {
-        console.warn('Failed to mark an earlier direct room read', error);
-      });
   }
 }
 
@@ -664,7 +569,7 @@ interface MatrixContextType {
   connectionRetryFailed: boolean;
   createRoom: (
     title: string,
-    options?: { grantCreatorPl100?: boolean },
+    options?: { grantCreatorPl100?: boolean; roomType?: HyphaRoomType },
   ) => Promise<{ roomId: string }>;
   /**
    * Open the one direct room for this pair. Both people are joined into the
@@ -674,7 +579,6 @@ interface MatrixContextType {
   ensureDirectRoom: (
     otherUserId: string,
     title: string,
-    candidateRoomIds: string[],
   ) => Promise<{ roomId: string }>;
   /**
    * Join these people into an existing group room. Invite-only rooms stay
@@ -1251,7 +1155,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [client]);
 
   const createRoom = React.useCallback(
-    async (title: string, options?: { grantCreatorPl100?: boolean }) => {
+    async (
+      title: string,
+      options?: { grantCreatorPl100?: boolean; roomType?: HyphaRoomType },
+    ) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
@@ -1264,6 +1171,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         grantPl100ToMatrixUserId: options?.grantCreatorPl100
           ? userId
           : undefined,
+        roomType: options?.roomType,
       });
       if (!created) {
         throw new Error('Failed to create room');
@@ -1334,7 +1242,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const ensureDirectRoom = React.useCallback(
-    async (otherUserId: string, title: string, candidateRoomIds: string[]) => {
+    async (otherUserId: string, title: string) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
@@ -1345,14 +1253,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const ensured = await ensureDirectPairRoomAction({
         matrixUserId: userId,
         otherMatrixUserId: otherUserId,
-        candidateRoomIds,
         title,
       });
       if (!ensured) {
         throw new Error('Failed to open the direct room');
       }
       const { roomId } = ensured;
-      markEarlierDirectRoomsRead(client, candidateRoomIds, roomId, otherUserId);
       for (let i = 0; i < 200; i++) {
         if (client.getRoom(roomId)) {
           return { roomId };

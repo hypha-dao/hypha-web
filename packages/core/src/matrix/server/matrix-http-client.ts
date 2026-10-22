@@ -218,6 +218,24 @@ export async function matrixGetPowerLevels(
   return readMatrixJson(res);
 }
 
+/** `type` of `m.room.create`, or null when the room was created without one. */
+export async function matrixGetRoomType(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<string | null> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/m.room.create/`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const content = await readMatrixJson<{ type?: unknown }>(res);
+  return typeof content.type === 'string' && content.type.trim()
+    ? content.type.trim()
+    : null;
+}
+
 const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
@@ -277,6 +295,7 @@ export async function matrixCreateRoom(
   name: string,
   accessToken: string,
   homeserver: string,
+  roomType?: string,
 ): Promise<string> {
   const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
@@ -288,6 +307,7 @@ export async function matrixCreateRoom(
       name: name.trim().slice(0, 120) || 'Conversation',
       preset: 'private_chat',
       visibility: 'private',
+      ...(roomType ? { creation_content: { type: roomType } } : {}),
     }),
   });
   const data = await readMatrixJson<{ room_id?: string }>(res);
@@ -418,6 +438,7 @@ export async function matrixCreateAliasedRoom(
   roomAliasName: string,
   accessToken: string,
   homeserver: string,
+  roomType?: string,
 ): Promise<string> {
   const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
@@ -430,6 +451,7 @@ export async function matrixCreateAliasedRoom(
       preset: 'private_chat',
       visibility: 'private',
       room_alias_name: roomAliasName,
+      ...(roomType ? { creation_content: { type: roomType } } : {}),
     }),
   });
   const data = await readMatrixJson<{ room_id?: string }>(res);

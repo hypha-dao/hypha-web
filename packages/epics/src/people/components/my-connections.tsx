@@ -16,6 +16,7 @@ import {
   type Room,
 } from 'matrix-js-sdk';
 import {
+  HYPHA_ROOM_TYPES,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   useJwt,
@@ -750,12 +751,90 @@ export function conversationUnreadSnapshot(client: MatrixClient) {
   );
 }
 
+/**
+ * TEMP (#2566): one table row per Matrix room, to see which rooms the Messages
+ * list and the unread badge are built from. Run `__hyphaRoomAudit()` in the
+ * browser console (also exposes `__hyphaRoomAudit.rows`).
+ */
+function roomAuditRows(client: MatrixClient) {
+  const selfId = client.getUserId();
+  const botId = botUserId();
+  const orphans = new Set(
+    orphanedDirectRoomIds(
+      directPairHintsFromClient(client),
+      rememberedRoomByOther(client),
+    ),
+  );
+  return client.getRooms().map((room) => {
+    const members = room
+      .getMembers()
+      .filter((m) => m.membership === 'join' || m.membership === 'invite');
+    const humans = members.filter(
+      (m) => m.userId !== botId && !isHyphaBot(m.userId, m.name),
+    );
+    const create = room.currentState.getStateEvents(EventType.RoomCreate, '');
+    const createContent = (
+      Array.isArray(create) ? create[0] : create
+    )?.getContent() as { type?: string } | undefined;
+    const row = conversationCache.get(room.roomId)?.row ?? null;
+    const listed = row
+      ? row.kind === 'person' || isPeopleListGroup(row)
+      : false;
+    const counted = row ? !orphans.has(row.roomId) : false;
+    return {
+      roomId: room.roomId,
+      membership: room.getMyMembership(),
+      name: room.name,
+      alias: room.getCanonicalAlias() ?? '',
+      createType: createContent?.type ?? '(none)',
+      spaceParents: room.currentState
+        .getStateEvents('m.space.parent')
+        .map((e) => e.getStateKey())
+        .join(','),
+      humans: humans.map((m) => m.userId.replace(/:.*/, '')).join(' '),
+      humanCount: humans.length,
+      hasSelf: humans.some((m) => m.userId === selfId),
+      rememberedSignal: isRememberedSignalThreadRoom(room.roomId),
+      rememberedGroup: isRememberedGroupChatRoom(room.roomId),
+      cachedKind: row ? row.kind : '(null = hidden)',
+      listed,
+      unread: row?.unread ?? 0,
+      countedInBadge: counted ? (row?.unread ?? 0) : 0,
+      phantom: Boolean(row && !listed && counted && row.unread > 0),
+      lastTs: row?.lastTs ? new Date(row.lastTs).toISOString() : '',
+    };
+  });
+}
+
+function installRoomAudit(client: MatrixClient) {
+  if (typeof window === 'undefined') return;
+  const audit = () => {
+    const rows = roomAuditRows(client);
+    console.groupCollapsed(`[room-audit] ${rows.length} rooms`);
+    console.table(rows);
+    console.info(
+      '[room-audit] badge =',
+      conversationUnreadSnapshot(client),
+      '| listed unread =',
+      rows.filter((r) => r.listed).reduce((n, r) => n + r.countedInBadge, 0),
+      '| phantom rooms =',
+      rows.filter((r) => r.phantom).map((r) => r.roomId),
+    );
+    console.groupEnd();
+    (audit as unknown as { rows: unknown }).rows = rows;
+    return rows;
+  };
+  (window as unknown as { __hyphaRoomAudit: typeof audit }).__hyphaRoomAudit =
+    audit;
+}
+
 /** Keep a listener on the shared room summaries and fill any room still missing. */
 export function attachConversationList(
   client: MatrixClient,
   onChange: () => void,
 ) {
   useConversationClient(client);
+  installRoomAudit(client);
   conversationListeners.add(onChange);
   listenForConversationRows(client);
   enqueueConversationRooms(client, []);
@@ -1314,7 +1393,9 @@ export function MyConnections({
       avatarUrl: row.avatarUrl,
     }));
     try {
-      const { roomId } = await createRoom(title);
+      const { roomId } = await createRoom(title, {
+        roomType: HYPHA_ROOM_TYPES.group,
+      });
       const memberIds = selectedPeople.flatMap((row) => {
         const mxid = personIdToMatrixUserId[row.person.id]?.trim();
         return mxid ? [mxid] : [];
