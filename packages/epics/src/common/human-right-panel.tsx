@@ -2415,6 +2415,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [mentionCandidates, mentionDisplayOverride, resolveMemberLabel],
   );
 
+  const composerMentionCandidates = useMemo(
+    () =>
+      mentionCandidates.map((candidate) => {
+        if (candidate.agentIcon || candidate.rowKey === 'agent') {
+          return candidate;
+        }
+        const resolved = mentionLabelByUserId.get(candidate.userId)?.trim();
+        if (!resolved || resolved === candidate.displayLabel) return candidate;
+        return { ...candidate, displayLabel: resolved };
+      }),
+    [mentionCandidates, mentionLabelByUserId],
+  );
+
   const duplicateSanitizedDisplayKeys = useMemo(
     () => computeDuplicateSanitizedDisplayKeys(mentionLabelByUserId),
     [mentionLabelByUserId],
@@ -5843,7 +5856,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 value={input}
                 onChange={setInput}
                 onSend={handleSend}
-                mentionCandidates={mentionCandidates}
+                mentionCandidates={composerMentionCandidates}
                 mentionPickerEnabled={mentionPickerEnabled}
                 composerLocked={chatComposerLocked}
                 composerLockedMessage={chatComposerLockedMessage}

@@ -528,9 +528,26 @@ function insertAtCaret(
 
 const MAX_MENTION_SUGGESTIONS = 24;
 
+function mentionSearchLabel(
+  candidate: ChatMentionCandidate,
+  resolved: ReadonlyMap<string, string>,
+) {
+  return (resolved.get(candidate.userId) ?? candidate.displayLabel).trim();
+}
+
+function labelRank(label: string, query: string): 'start' | 'contains' | null {
+  if (!label) return null;
+  if (label.startsWith(query)) return 'start';
+  const words = label.split(/[\s._'-]+/);
+  if (words.some((word) => word.startsWith(query))) return 'start';
+  if (label.includes(query)) return 'contains';
+  return null;
+}
+
 function filterMentionCandidates(
   all: ChatMentionCandidate[],
   query: string,
+  resolved: ReadonlyMap<string, string> = new Map(),
 ): ChatMentionCandidate[] {
   const q = query.trim().toLowerCase();
   if (!q) {
@@ -539,8 +556,9 @@ function filterMentionCandidates(
 
   const starts: ChatMentionCandidate[] = [];
   const contains: ChatMentionCandidate[] = [];
+  const pending: ChatMentionCandidate[] = [];
   for (const m of all) {
-    const label = m.displayLabel.toLowerCase();
+    const label = mentionSearchLabel(m, resolved).toLowerCase();
     const prompts = [
       m.prompt?.toLowerCase() ?? '',
       ...(m.skills ?? []).map((skill) => skill.prompt.toLowerCase()),
@@ -549,29 +567,31 @@ function filterMentionCandidates(
     const local = m.userId.startsWith('@')
       ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
       : '';
-    if (
-      label.startsWith(q) ||
+    const idStarts =
       prompts.some((prompt) => prompt.startsWith(q)) ||
       id.startsWith(`@${q}`) ||
       id.startsWith(q) ||
-      (local && local.startsWith(q))
-    ) {
-      if (starts.length < MAX_MENTION_SUGGESTIONS) {
-        starts.push(m);
-      }
+      Boolean(local && local.startsWith(q));
+    const idContains =
+      prompts.some((prompt) => prompt.includes(q)) || id.includes(q);
+    const rank =
+      labelRank(label, q) ??
+      (idStarts ? 'start' : idContains ? 'contains' : null);
+    if (rank === 'start') {
+      if (starts.length < MAX_MENTION_SUGGESTIONS) starts.push(m);
+    } else if (rank === 'contains') {
+      if (contains.length < MAX_MENTION_SUGGESTIONS) contains.push(m);
     } else if (
-      contains.length < MAX_MENTION_SUGGESTIONS &&
-      (label.includes(q) ||
-        prompts.some((prompt) => prompt.includes(q)) ||
-        id.includes(q))
+      q.length <= 2 &&
+      pending.length < MAX_MENTION_SUGGESTIONS &&
+      !resolved.has(m.userId) &&
+      looksLikeTechnicalMatrixDisplayName(m.displayLabel, m.userId)
     ) {
-      contains.push(m);
+      pending.push(m);
     }
-    if (starts.length >= MAX_MENTION_SUGGESTIONS) {
-      break;
-    }
+    if (starts.length >= MAX_MENTION_SUGGESTIONS) break;
   }
-  return [...starts, ...contains].slice(0, MAX_MENTION_SUGGESTIONS);
+  return [...starts, ...contains, ...pending].slice(0, MAX_MENTION_SUGGESTIONS);
 }
 
 function AgentSkillMentionIcon({ icon }: { icon?: ChatMentionAgentIcon }) {
@@ -716,6 +736,15 @@ export function HumanChatPanelChatBar({
   );
   const [atActive, setAtActive] = useState(0);
   const atTokenRef = useRef<ReturnType<typeof getActiveAtToken>>(null);
+  const resolvedMentionLabelsRef = useRef(new Map<string, string>());
+  const [mentionLabelEpoch, setMentionLabelEpoch] = useState(0);
+  const rememberMentionLabel = useCallback((userId: string, label: string) => {
+    const name = label.trim();
+    if (!userId || !name) return;
+    if (resolvedMentionLabelsRef.current.get(userId) === name) return;
+    resolvedMentionLabelsRef.current.set(userId, name);
+    setMentionLabelEpoch((epoch) => epoch + 1);
+  }, []);
 
   const activeAtPick =
     atOpen && atSuggestions.length > 0
@@ -894,12 +923,16 @@ export function HumanChatPanelChatBar({
         setAtActive(0);
         return;
       }
-      const sug = filterMentionCandidates(mentionCandidates, tok.query);
+      const sug = filterMentionCandidates(
+        mentionCandidates,
+        tok.query,
+        resolvedMentionLabelsRef.current,
+      );
       setAtSuggestions(sug);
       setAtActive(0);
       setAtOpen(sug.length > 0);
     },
-    [mentionCandidates, atMentionInteractable],
+    [mentionCandidates, atMentionInteractable, mentionLabelEpoch],
   );
 
   useEffect(() => {
@@ -2113,6 +2146,7 @@ export function HumanChatPanelChatBar({
                     matrixFallbackAvatarUrl={m.avatarUrl}
                     privySub={m.privySub}
                     isActive={idx === atActive}
+                    onLabelResolved={rememberMentionLabel}
                     onPickResolved={(resolved) => applyAtChoice(m, resolved)}
                   />
                 ),
@@ -2299,7 +2333,7 @@ export function HumanChatPanelChatBar({
               onOpenChange={setEmojiPickerOpen}
               onEmojiSelect={insertEmoji}
               ariaLabel={t('emojiPickerComposer')}
-              align="end"
+              align="start"
             >
               <button
                 type="button"

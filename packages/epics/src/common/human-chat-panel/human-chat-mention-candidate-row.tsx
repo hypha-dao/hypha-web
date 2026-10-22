@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -19,6 +20,8 @@ export type MentionCandidateRowProps = {
    * Use this for the composer token so it matches the dropdown.
    */
   onPickResolved?: (resolvedDisplayForComposer: string) => void;
+  /** Report the name shown in the row so `@` search can match it. */
+  onLabelResolved?: (matrixUserId: string, label: string) => void;
 };
 
 /**
@@ -33,6 +36,7 @@ export function HumanChatMentionCandidateRow({
   isActive,
   onPick,
   onPickResolved,
+  onLabelResolved,
 }: MentionCandidateRowProps) {
   const {
     resolvedLabel: resolvedName,
@@ -44,6 +48,12 @@ export function HumanChatMentionCandidateRow({
     displayLabel: matrixFallbackLabel,
     privySub,
   });
+
+  useEffect(() => {
+    const name = resolvedName.trim();
+    if (!name || !matrixUserId) return;
+    onLabelResolved?.(matrixUserId, name);
+  }, [matrixUserId, onLabelResolved, resolvedName]);
 
   const avatarSrc = avatarUrl?.trim() || matrixFallbackAvatarUrl || undefined;
 
