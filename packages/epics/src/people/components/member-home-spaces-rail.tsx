@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -26,7 +27,11 @@ import {
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
-import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
+import {
+  isCoherencePath,
+  SPACES_RAIL_ID,
+  useSpacesRailControl,
+} from './spaces-rail-control';
 import { HomeWave } from './member-home-wave';
 import './member-home-spaces-rail.css';
 
@@ -161,6 +166,8 @@ export function MemberHomeSpacesRail({
   persistOnWide?: boolean;
 }) {
   const t = useTranslations('MemberHome');
+  const pathname = usePathname() ?? '';
+  const columnOnNarrow = isCoherencePath(pathname);
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
@@ -299,7 +306,8 @@ export function MemberHomeSpacesRail({
                   href={`/${lang}/my-spaces`}
                   aria-label={t('openMySpaces')}
                   className={cn(
-                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11 xl:mt-1',
+                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
+                    rowOnNarrow ? 'xl:mt-1' : 'mt-1',
                     'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   )}
                   style={{ width: RAIL_ICON, height: RAIL_ICON }}
@@ -327,53 +335,58 @@ export function MemberHomeSpacesRail({
     );
   }
 
-  // Home (`persistOnWide`): vertical column always; MenuTop circle toggles it
-  // below `xl`. Other screens: horizontal strip below `xl`, hidden on wide.
-  const rowOnNarrow = !persistOnWide;
+  // Below `xl` the bar is a horizontal row, except Coherence, which keeps a
+  // vertical column. Home keeps that column once the bottom menu is gone.
   if (!canToggle) {
     return (
-      <div className={railShellClass(persistOnWide, true)}>
-        {rail(rowOnNarrow)}
+      <div className={railShellClass(persistOnWide, true, columnOnNarrow)}>
+        {rail(!columnOnNarrow)}
       </div>
     );
   }
 
   return (
-    <SpacesRailHandle persistOnWide={persistOnWide}>
-      {rail(rowOnNarrow)}
+    <SpacesRailHandle
+      persistOnWide={persistOnWide}
+      columnOnNarrow={columnOnNarrow}
+    >
+      {rail(!columnOnNarrow)}
     </SpacesRailHandle>
   );
 }
 
-function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
-  if (persistOnWide) {
-    return cn(
-      // Home: vertical left column. Narrow: only when MenuTop circle is open.
-      'h-full w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
-      visibleOnNarrow ? 'flex' : 'hidden xl:flex',
-    );
-  }
+function railShellClass(
+  persistOnWide: boolean,
+  visibleOnNarrow: boolean,
+  columnOnNarrow: boolean,
+) {
   return cn(
-    // Other screens: collapsible top row below xl.
-    'sticky top-0 z-10 h-[44px] w-full shrink-0 flex-row overflow-hidden border-b border-border bg-background',
-    'xl:static xl:z-auto xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
+    'shrink-0 overflow-hidden bg-background',
+    columnOnNarrow
+      ? 'h-full min-h-0 w-full flex-col'
+      : 'sticky top-0 z-10 h-[44px] w-full flex-row border-b border-border xl:static xl:z-auto xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
     visibleOnNarrow ? 'flex' : 'hidden',
-    'xl:hidden',
+    columnOnNarrow ? 'xl:hidden' : persistOnWide ? 'xl:flex' : 'xl:hidden',
   );
 }
 
 function SpacesRailHandle({
   children,
   persistOnWide = false,
+  columnOnNarrow = false,
 }: {
   children: ReactNode;
   persistOnWide?: boolean;
+  columnOnNarrow?: boolean;
 }) {
   const { open, register } = useSpacesRailControl();
   useLayoutEffect(() => register(), [register]);
   if (!open && !persistOnWide) return null;
   return (
-    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide, open)}>
+    <div
+      id={SPACES_RAIL_ID}
+      className={railShellClass(persistOnWide, open, columnOnNarrow)}
+    >
       {children}
     </div>
   );

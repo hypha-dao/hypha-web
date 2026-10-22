@@ -140,11 +140,12 @@ export function ConnectedMenuTop({
 
   const secondaryLeading = aiChatEnabled ? <AiPanelTrigger /> : leadingAction;
   const { active: spacesRailActive } = useSpacesRailControl();
+  const onHome = /\/(?:home|my-dashboard)\/?$/.test(pathname ?? '');
   const resolvedLeadingAction =
     spacesRailActive || secondaryLeading ? (
       <div
         className={`flex items-center gap-1.5 sm:gap-2${
-          secondaryLeading ? '' : ' xl:hidden'
+          secondaryLeading || onHome ? '' : ' xl:hidden'
         }`}
       >
         <SpacesRailTopToggle />

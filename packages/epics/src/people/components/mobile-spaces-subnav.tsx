@@ -7,7 +7,7 @@ import useSWR from 'swr';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 
 /**
- * Vertical spaces rail (same as home) for messages, wallet, space, and network.
+ * Spaces rail for messages, wallet, space, and network.
  * Fetches membership so those screens can switch space without living on home.
  */
 export function MobileSpacesSubnav({

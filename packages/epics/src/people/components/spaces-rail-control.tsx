@@ -9,8 +9,10 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { usePathname } from 'next/navigation';
 import { Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 import { APP_CHROME_ICON_TRIGGER } from '../../common/chrome-radius';
 
@@ -80,18 +82,31 @@ export function SpacesRailProvider({ children }: { children: ReactNode }) {
   );
 }
 
+function isHomePath(pathname: string) {
+  return /\/(?:home|my-dashboard)\/?$/.test(pathname);
+}
+
+/** Coherence keeps a vertical spaces column on mobile. Other screens use a row. */
+export function isCoherencePath(pathname: string) {
+  return /\/coherence(?:\/|$)/.test(pathname);
+}
+
 /**
- * MenuTop circle (next to Hypha) below `xl`.
- * Home: toggles the vertical spaces column. Other screens: horizontal strip.
+ * Circle in the top bar, to the left of Hypha.
+ * Mobile: every screen that has a spaces list. Desktop: Home only.
  */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
+  const pathname = usePathname() ?? '';
   const t = useTranslations('MemberHome');
   if (!active) return null;
   return (
     <button
       type="button"
-      className={`${APP_CHROME_ICON_TRIGGER} xl:hidden`}
+      className={cn(
+        APP_CHROME_ICON_TRIGGER,
+        !isHomePath(pathname) && 'xl:hidden',
+      )}
       aria-label={t('spacesRail')}
       aria-expanded={open}
       aria-controls={SPACES_RAIL_ID}
