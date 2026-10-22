@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
 import {
@@ -47,7 +47,11 @@ import {
   SIGNAL_BOARD_SELECT_TEXT_CLASS,
   SIGNAL_FILTER_MULTI_SELECT_CLASS,
 } from '../coherence/utils/signal-tag-badge-styles';
-import { resolveSignalVideo } from '../coherence/utils/signal-video';
+import {
+  resolveSignalVideo,
+  signalVideoPoster,
+  vimeoPosterId,
+} from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import {
   FUND_SPACE_DIALOG_CONTENT_CLASS,
@@ -122,12 +126,6 @@ function plainText(value: string) {
   return out.replace(/\s+/g, ' ').trim();
 }
 
-function embedPoster(src: string, kind: string): string | null {
-  if (kind !== 'youtube') return null;
-  const id = src.split('/').filter(Boolean).pop()?.split('?')[0];
-  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
-}
-
 function withAutoplay(src: string) {
   return `${src}${src.includes('?') ? '&' : '?'}autoplay=1`;
 }
@@ -148,8 +146,32 @@ function ExchangeMedia({
   const fileRef = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [vimeoPoster, setVimeoPoster] = useState<string | null>(null);
   const video = resolveSignalVideo(videoUrl);
   const image = !failed && src ? src : null;
+  const vimeoId = video ? vimeoPosterId(video) : null;
+
+  useEffect(() => {
+    if (!vimeoId || image) return;
+    const controller = new AbortController();
+    const load = async () => {
+      const response = await fetch(
+        `/api/v1/video-poster?id=${encodeURIComponent(vimeoId)}`,
+        { signal: controller.signal },
+      );
+      if (!response.ok) return;
+      const body = (await response.json()) as { thumbnail?: unknown };
+      if (typeof body.thumbnail === 'string' && body.thumbnail) {
+        setVimeoPoster(body.thumbnail);
+      }
+    };
+    void load().catch((error: unknown) => {
+      if (controller.signal.aborted) return;
+      console.error('[ExchangeMedia] vimeo poster failed', error);
+    });
+    return () => controller.abort();
+  }, [image, vimeoId]);
+
   if (!video && !image && !document) return null;
 
   const play = (event: MouseEvent<HTMLButtonElement>) => {
@@ -159,16 +181,14 @@ function ExchangeMedia({
     if (video?.kind === 'file') void fileRef.current?.play();
   };
   const poster =
-    video && video.kind !== 'file'
-      ? embedPoster(video.src, video.kind) ?? image
-      : null;
+    image ?? (video ? signalVideoPoster(video) ?? vimeoPoster : null);
 
   return (
     <div className="exchange-stage">
       {video?.kind === 'file' ? (
         <video
           ref={fileRef}
-          src={video.src}
+          src={image ? video.src : `${video.src}#t=0.5`}
           poster={image ?? undefined}
           playsInline
           preload="auto"
@@ -176,7 +196,10 @@ function ExchangeMedia({
           controls={playing}
           onLoadedMetadata={(event) => {
             const el = event.currentTarget;
-            if (el.currentTime < 0.05) el.currentTime = 0.05;
+            const mark = image ? 0.05 : 0.5;
+            if (el.duration > mark && el.currentTime < mark) {
+              el.currentTime = mark;
+            }
           }}
           onClick={(event) => event.stopPropagation()}
         />

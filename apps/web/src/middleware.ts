@@ -25,6 +25,9 @@ const UPLOADTHING_INGEST_HOST = 'https://*.ingest.uploadthing.com';
 /** Signal videos pasted as a YouTube or Vimeo link. `frame-src` blocks the embed otherwise. */
 const SIGNAL_VIDEO_FRAME_HOSTS =
   'https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com';
+/** Still frames shown before play. Without these, the card stays a black box. */
+const SIGNAL_VIDEO_POSTER_HOSTS =
+  'https://i.ytimg.com https://img.youtube.com https://i.vimeocdn.com';
 
 /** OpenAI Realtime API (WebRTC / client secrets) — onboarding voice discovery Phase 2. */
 const OPENAI_REALTIME_CONNECT_SOURCES =
@@ -108,7 +111,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "default-src 'self'",
       `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live https://apis.google.com https://accounts.google.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com",
-      `img-src 'self' ${imageSrc}`,
+      `img-src 'self' ${imageSrc} ${SIGNAL_VIDEO_POSTER_HOSTS}`,
       `media-src ${mediaSrc}`,
       "font-src 'self' https://fonts.gstatic.com https://vercel.live",
       // Allow PDF previews for Space Memory (UploadThing URLs); 'none' blocks <object> and triggers console CSP noise.

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { resolveSignalVideo } from '../../utils/signal-video';
+import {
+  resolveSignalVideo,
+  signalVideoPoster,
+  vimeoPosterId,
+} from '../../utils/signal-video';
 
 describe('resolveSignalVideo', () => {
   it('embeds a youtube watch link', () => {
@@ -23,6 +27,21 @@ describe('resolveSignalVideo', () => {
       kind: 'file',
       src: 'https://cdn.example.com/clip.mp4',
     });
+  });
+
+  it('uses the youtube thumbnail when the card has no image', () => {
+    const video = resolveSignalVideo(
+      'https://www.youtube.com/watch?v=abc123XYZ_0',
+    );
+    expect(video && signalVideoPoster(video)).toBe(
+      'https://i.ytimg.com/vi/abc123XYZ_0/hqdefault.jpg',
+    );
+  });
+
+  it('reads a vimeo id for its thumbnail', () => {
+    const video = resolveSignalVideo('https://vimeo.com/1231830761');
+    expect(video && vimeoPosterId(video)).toBe('1231830761');
+    expect(video && signalVideoPoster(video)).toBeNull();
   });
 
   it('ignores a page that is not a video', () => {

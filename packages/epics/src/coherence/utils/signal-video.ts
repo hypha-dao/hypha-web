@@ -33,6 +33,21 @@ function isDirectVideo(url: URL): boolean {
   return /\.(mp4|webm|ogg|mov)(\b|$)/i.test(url.pathname);
 }
 
+/** Still image for a YouTube embed. Vimeo thumbnails come from oEmbed. */
+export function signalVideoPoster(video: SignalVideoEmbed): string | null {
+  if (video.kind !== 'youtube') return null;
+  const id = video.src.split('/').filter(Boolean).pop()?.split('?')[0];
+  if (!id) return null;
+  return `https://i.ytimg.com/vi/${decodeURIComponent(id)}/hqdefault.jpg`;
+}
+
+/** Numeric Vimeo id from an embed URL, for the oEmbed thumbnail. */
+export function vimeoPosterId(video: SignalVideoEmbed): string | null {
+  if (video.kind !== 'vimeo') return null;
+  const id = video.src.split('/').filter(Boolean).pop()?.split('?')[0] ?? '';
+  return /^\d+$/.test(id) ? id : null;
+}
+
 /** Turn a pasted video link into something the signal detail can play. */
 export function resolveSignalVideo(
   raw: string | null | undefined,
