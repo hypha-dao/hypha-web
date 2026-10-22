@@ -11,7 +11,6 @@ import {
   type MatrixClient,
   type Room,
 } from 'matrix-js-sdk';
-import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
 import type { Locale } from '@hypha-platform/i18n';
 import { Wave } from '@hypha-platform/ui';
@@ -267,7 +266,6 @@ export function MemberHomeClosest({
 }: MemberHomeClosestProps) {
   const t = useTranslations('MemberHome');
   const router = useRouter();
-  const { closeCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const matrix = useMatrix();
   const [messageCounts, setMessageCounts] = useState<Map<number, number>>(
     () => new Map(),
@@ -500,23 +498,11 @@ export function MemberHomeClosest({
               <Link
                 href={`/${lang}/messages`}
                 aria-label={t('seeMore')}
-                className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12 xl:hidden"
+                className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12"
                 style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
               >
                 {t('sensingMore', { count: rest })}
               </Link>
-              <button
-                type="button"
-                aria-label={t('seeMore')}
-                className="hidden items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12 xl:flex"
-                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
-                onClick={() => {
-                  closeCoherenceChat();
-                  openHumanChatPanel();
-                }}
-              >
-                {t('sensingMore', { count: rest })}
-              </button>
             </li>
           ) : null}
         </ul>
