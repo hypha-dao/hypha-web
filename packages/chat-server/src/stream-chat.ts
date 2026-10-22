@@ -89,7 +89,7 @@ export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
 /** Default chat model. A small model drops the home instructions. */
-const DEFAULT_OPENROUTER_CHAT_MODEL = 'anthropic/claude-sonnet-5.5';
+const DEFAULT_OPENROUTER_CHAT_MODEL = 'deepseek/deepseek-v4.1-flash';
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
