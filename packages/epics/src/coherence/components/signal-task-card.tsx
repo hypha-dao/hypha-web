@@ -52,13 +52,31 @@ type SignalTaskCardProps = {
   showDescriptionPreview?: boolean;
 };
 
+/** Linear HTML-ish strip — avoid `/<[^>]*>/` (CodeQL ReDoS on uncontrolled copy). */
 function plainSignalDescription(value: string | null | undefined) {
-  const text = (value ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/\s+/g, ' ')
+  const raw = value ?? '';
+  let out = '';
+  let index = 0;
+  while (index < raw.length) {
+    const open = raw.indexOf('<', index);
+    if (open === -1) {
+      out += raw.slice(index);
+      break;
+    }
+    out += raw.slice(index, open);
+    const close = raw.indexOf('>', open + 1);
+    if (close === -1) {
+      out += raw.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&NBSP;', ' ')
+    .replaceAll(/\s+/g, ' ')
     .trim();
-  return text;
 }
 
 export const SignalTaskCard = React.memo(function SignalTaskCard({
