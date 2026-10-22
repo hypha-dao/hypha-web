@@ -27,6 +27,10 @@ import {
 } from '../../common/get-path-function';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+import {
+  isMessagesOrSpacesNavHref,
+  shouldShowMessagesAndSpacesNav,
+} from './app-nav-visibility';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: ProfileUseAuthentication;
@@ -211,6 +215,13 @@ export const ConnectedButtonProfile = ({
     console.log('Delete profile');
   };
 
+  const visibleNavItems = useMemo(() => {
+    if (shouldShowMessagesAndSpacesNav(person?.primaryOrientation)) {
+      return navItems;
+    }
+    return navItems.filter((item) => !isMessagesOrSpacesNavHref(item.href));
+  }, [navItems, person?.primaryOrientation]);
+
   return (
     <ButtonProfile
       address={user?.wallet?.address}
@@ -231,7 +242,7 @@ export const ConnectedButtonProfile = ({
       }
       onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
-      navItems={navItems}
+      navItems={visibleNavItems}
       showNetworkFeedback={showNetworkFeedback}
       trailingBeforeProfile={trailingBeforeProfile}
       compact={compact}

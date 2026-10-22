@@ -50,6 +50,7 @@ import {
   type HomeView,
 } from './member-home-view';
 import { useConversationUnreadCount } from './my-connections';
+import { shouldShowMessagesAndSpacesNav } from './app-nav-visibility';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 import { useSpacesRailControl } from './spaces-rail-control';
 
@@ -165,6 +166,9 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
+  const showMessagesAndSpaces = shouldShowMessagesAndSpacesNav(
+    person?.primaryOrientation,
+  );
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
     pathname === `/${lang}/my-dashboard/` ||
@@ -561,7 +565,9 @@ export function MobileTabBar({
             className="mx-auto grid max-w-lg items-end px-1"
             style={{
               height: TAB_BAR_PX,
-              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+              gridTemplateColumns: showMessagesAndSpaces
+                ? 'repeat(5, minmax(0, 1fr))'
+                : 'repeat(3, minmax(0, 1fr))',
             }}
           >
             <TabLink
@@ -571,14 +577,18 @@ export function MobileTabBar({
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
-            <TabLink
-              href={connectionsHref}
-              label={t('chat')}
-              active={connectionsActive}
-              badge={unreadCount}
-              onClick={() => setCreateOpen(false)}
-              icon={<MessagesSquare className={iconClass} strokeWidth={1.25} />}
-            />
+            {showMessagesAndSpaces ? (
+              <TabLink
+                href={connectionsHref}
+                label={t('chat')}
+                active={connectionsActive}
+                badge={unreadCount}
+                onClick={() => setCreateOpen(false)}
+                icon={
+                  <MessagesSquare className={iconClass} strokeWidth={1.25} />
+                }
+              />
+            ) : null}
             <TabLink
               href={walletHref}
               label={t('myWallet')}
@@ -589,13 +599,15 @@ export function MobileTabBar({
                 <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
               }
             />
-            <TabLink
-              href={spacesHref}
-              label={t('mySpaces')}
-              active={spacesActive}
-              onClick={() => setCreateOpen(false)}
-              icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
-            />
+            {showMessagesAndSpaces ? (
+              <TabLink
+                href={spacesHref}
+                label={t('mySpaces')}
+                active={spacesActive}
+                onClick={() => setCreateOpen(false)}
+                icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
+              />
+            ) : null}
             <TabLink
               href={networkHref}
               label={t('network')}
