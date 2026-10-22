@@ -3,7 +3,6 @@ import {
   getNetworkDirectorySpaces,
   getNetworkGrowth,
   resolveCreatorMapCoordinates,
-  listNetworkSpaceRanks,
   readSpaceCapitals,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
@@ -39,7 +38,7 @@ export default async function Index(props: PageProps) {
     <div className="w-full min-w-0">
       <Suspense
         fallback={
-          <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:py-9">
+          <Container className="flex min-w-0 flex-col gap-4 pt-2 pb-3 sm:pt-3 sm:pb-4 lg:pt-3 lg:pb-5">
             <NetworkIndexFallback view={searchParams?.view} />
           </Container>
         }
@@ -66,36 +65,31 @@ async function NetworkSpaces(props: PageProps) {
 
   let spaces: Space[] = [];
   let networkGrowth: NetworkGrowth | null = null;
-  const [spacesResult, growthResult, ranksResult, capitalsResult] =
-    await Promise.all([
-      getNetworkDirectorySpaces(
-        { db },
-        {
-          search: query?.trim() || undefined,
-          parentOnly: false,
-          omitArchived: true,
-        },
-      ).catch((error: unknown) => {
-        console.error('Failed to fetch spaces:', error);
-        return [] as Space[];
-      }),
-      enableNetworkMap
-        ? getNetworkGrowth({ db }).catch((error: unknown) => {
-            console.error('Failed to load network growth:', error);
-            return null;
-          })
-        : Promise.resolve(null),
-      listNetworkSpaceRanks({ db }).catch((error: unknown) => {
-        console.error('Failed to load network ranks:', error);
-        return [];
-      }),
-      enableNetworkMap
-        ? readSpaceCapitals(db).catch((error: unknown) => {
-            console.error('Failed to load space capitals:', error);
-            return new Map();
-          })
-        : Promise.resolve(new Map()),
-    ]);
+  const [spacesResult, growthResult, capitalsResult] = await Promise.all([
+    getNetworkDirectorySpaces(
+      { db },
+      {
+        search: query?.trim() || undefined,
+        parentOnly: false,
+        omitArchived: true,
+      },
+    ).catch((error: unknown) => {
+      console.error('Failed to fetch spaces:', error);
+      return [] as Space[];
+    }),
+    enableNetworkMap
+      ? getNetworkGrowth({ db }).catch((error: unknown) => {
+          console.error('Failed to load network growth:', error);
+          return null;
+        })
+      : Promise.resolve(null),
+    enableNetworkMap
+      ? readSpaceCapitals(db).catch((error: unknown) => {
+          console.error('Failed to load space capitals:', error);
+          return new Map();
+        })
+      : Promise.resolve(new Map()),
+  ]);
   spaces = spacesResult;
   networkGrowth = growthResult;
 
@@ -134,7 +128,6 @@ async function NetworkSpaces(props: PageProps) {
       enableNetworkMap={enableNetworkMap}
       networkGrowth={networkGrowth}
       creatorMapPins={creatorMapPins}
-      networkRanks={ranksResult}
       spaceCapitals={spaceCapitals}
     />
   );

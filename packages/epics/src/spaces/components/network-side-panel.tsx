@@ -13,11 +13,12 @@ import {
   getCategoryGroupLabel,
   parseCapitalKeys,
   type Space,
-  type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
-import { NetworkRanking } from '../../network-exchange';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { FundASpaceFlow } from '../../wallet/components/fund-a-space-flow';
+import {
+  FUND_SPACE_DIALOG_CONTENT_CLASS,
+  FundASpaceFlow,
+} from '../../wallet/components/fund-a-space-flow';
 
 function stripTags(value: string) {
   let out = '';
@@ -96,16 +97,12 @@ export function NetworkSidePanel({
   circles = [],
   capitals,
   onClose,
-  onSelectRank,
-  ranks,
 }: {
   lang: Locale;
   selectedSpace: Space | null;
   circles?: Space[];
   capitals?: { seeks: string[]; offers: string[] } | null;
   onClose: () => void;
-  onSelectRank: (rank: NetworkSpaceRank) => void;
-  ranks: NetworkSpaceRank[];
 }) {
   const t = useTranslations('NetworkExchange');
   const tCommon = useTranslations('Common');
@@ -279,17 +276,9 @@ export function NetworkSidePanel({
           </div>
         </section>
       ) : null}
-      {ranks.length > 0 ? (
-        <section className="border-t border-border p-4">
-          <NetworkRanking lang={lang} ranks={ranks} onSelect={onSelectRank} />
-        </section>
-      ) : null}
       <Dialog open={fundOpen} onOpenChange={setFundOpen}>
-        <DialogContent className="max-w-lg gap-4">
-          <DialogTitle
-            className="pr-8 text-4"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
+        <DialogContent className={FUND_SPACE_DIALOG_CONTENT_CLASS}>
+          <DialogTitle className="sr-only">
             {tWallet('shortcuts.fundSpace')}
           </DialogTitle>
           {fundOpen ? (

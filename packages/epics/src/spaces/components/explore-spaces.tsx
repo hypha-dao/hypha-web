@@ -12,7 +12,6 @@ import {
   spaceMatchesCategoryGroups,
   splitTokensByNetworkSpaces,
   type NetworkGrowth,
-  type NetworkSpaceRank,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
@@ -24,7 +23,6 @@ import {
 } from '../../network-map';
 import {
   NETWORK_RIGHT_PANEL_CLASS,
-  NetworkRanking,
   NetworkSectionHeader,
 } from '../../network-exchange';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -63,7 +61,6 @@ interface ExploreSpacesProps {
   creatorMapPins?: Readonly<
     Record<number, { latitude: number; longitude: number }>
   >;
-  networkRanks?: NetworkSpaceRank[];
   spaceCapitals?: Record<string, { seeks: string[]; offers: string[] }>;
 }
 
@@ -175,7 +172,6 @@ export function ExploreSpaces({
   enableNetworkMap = false,
   networkGrowth = null,
   creatorMapPins,
-  networkRanks = [],
   spaceCapitals,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
@@ -378,10 +374,6 @@ export function ExploreSpaces({
     () => spaces.find((space) => space.id === selectedSpaceId) ?? null,
     [spaces, selectedSpaceId],
   );
-  const selectRank = React.useCallback((rank: { spaceId: number }) => {
-    setSelectedSpaceId(rank.spaceId);
-  }, []);
-
   const renderMapToolbar = React.useCallback(
     () => (
       <NetworkControlStrip
@@ -440,9 +432,6 @@ export function ExploreSpaces({
     !enableNetworkMap || view === 'list' || view === 'overview';
   const showMapStage = view === 'map' || view === 'overview';
   const showSpacesList = view === 'list' || view === 'overview';
-  // Ranking stays in the data layer. The tab is hidden until it is ready to show.
-  const showRanking = false;
-
   const pageTitle = (
     <>
       <div className="xl:hidden">
@@ -529,8 +518,6 @@ export function ExploreSpaces({
             offers: [],
           }
         }
-        onSelectRank={selectRank}
-        ranks={showRanking ? [] : networkRanks}
       />
     ) : null;
 
@@ -558,15 +545,6 @@ export function ExploreSpaces({
               alignProjection={view === 'overview' ? 'flat' : undefined}
               onSpaceSelect={(space) => setSelectedSpaceId(space.id)}
             />
-            {showRanking ? (
-              <div className="mt-6">
-                <NetworkRanking
-                  lang={lang}
-                  ranks={networkRanks}
-                  onSelect={selectRank}
-                />
-              </div>
-            ) : null}
             <div className={cn(!showSpacesList && 'hidden')}>
               {listMetaRow}
               {spacesListContent}
@@ -574,13 +552,6 @@ export function ExploreSpaces({
           </>
         ) : (
           <>
-            <div>
-              <NetworkRanking
-                lang={lang}
-                ranks={networkRanks}
-                onSelect={selectRank}
-              />
-            </div>
             {listMetaRow}
             {spacesListContent}
           </>
@@ -593,7 +564,7 @@ export function ExploreSpaces({
   // sticky right rail can sit flush with the needs / exchange layout.
   if (showSidePanel) {
     return (
-      <div className="@container min-w-0 px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5 xl:py-9">
+      <div className="@container min-w-0 px-3 pt-2 pb-3 sm:px-4 sm:pt-3 sm:pb-4 lg:px-5 lg:pt-3 lg:pb-5">
         <div className="flex min-w-0 flex-col gap-4 @4xl:flex-row @4xl:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-4">{mainColumn}</div>
           <aside className={cn(NETWORK_RIGHT_PANEL_CLASS, '@4xl:!w-[320px]')}>
@@ -606,7 +577,7 @@ export function ExploreSpaces({
 
   return (
     <div className="@container min-w-0">
-      <Container className="flex min-w-0 flex-col gap-9 py-3 sm:py-4 lg:py-5 xl:py-9">
+      <Container className="flex min-w-0 flex-col gap-4 pt-2 pb-3 sm:pt-3 sm:pb-4 lg:pt-3 lg:pb-5">
         {mainColumn}
       </Container>
     </div>
