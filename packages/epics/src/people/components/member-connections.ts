@@ -369,12 +369,84 @@ export function supersededDirectRoomIds(rows: readonly ConversationRow[]) {
   return losers;
 }
 
+export type DirectPairRoomHint = {
+  roomId: string;
+  otherUserId: string;
+  lastTs: number;
+};
+
+/**
+ * Live Matrix rooms that look like 1:1 DMs (one human other, not a signal
+ * thread). Used when conversation-row cache is incomplete so an older Gerardo
+ * room still gets marked read.
+ */
+export function collectDirectPairRoomHints(
+  rooms: readonly {
+    roomId: string;
+    membership: string;
+    lastTs: number;
+    otherUserIds: readonly string[];
+    signalThread?: boolean;
+  }[],
+): DirectPairRoomHint[] {
+  const hints: DirectPairRoomHint[] = [];
+  for (const room of rooms) {
+    if (room.membership !== 'join') continue;
+    if (room.signalThread) continue;
+    if (room.otherUserIds.length !== 1) continue;
+    const otherUserId = room.otherUserIds[0];
+    if (!otherUserId) continue;
+    hints.push({
+      roomId: room.roomId,
+      otherUserId,
+      lastTs: room.lastTs,
+    });
+  }
+  return hints;
+}
+
+/**
+ * Older pair rooms once a later (or remembered) room exists for the same person.
+ */
+export function orphanedDirectRoomIds(
+  hints: readonly DirectPairRoomHint[],
+  rememberedRoomIdByOther?: ReadonlyMap<string, string>,
+) {
+  const byOther = new Map<string, DirectPairRoomHint[]>();
+  for (const hint of hints) {
+    const key = hint.otherUserId.toLowerCase();
+    const bucket = byOther.get(key) ?? [];
+    bucket.push(hint);
+    byOther.set(key, bucket);
+  }
+  const orphans: string[] = [];
+  for (const [otherKey, bucket] of byOther) {
+    if (bucket.length < 2) continue;
+    const remembered = rememberedRoomIdByOther?.get(otherKey);
+    const keep =
+      (remembered &&
+        bucket.find((room) => room.roomId === remembered)?.roomId) ||
+      [...bucket].sort((a, b) => b.lastTs - a.lastTs)[0]?.roomId;
+    if (!keep) continue;
+    for (const room of bucket) {
+      if (room.roomId !== keep) orphans.push(room.roomId);
+    }
+  }
+  return orphans;
+}
+
 /**
  * Messages tab total: one conversation per person. Earlier pair rooms stay out
  * even when Matrix still reports them unread.
  */
-export function conversationUnreadTotal(rows: readonly ConversationRow[]) {
-  const losers = new Set(supersededDirectRoomIds(rows));
+export function conversationUnreadTotal(
+  rows: readonly ConversationRow[],
+  extraOrphanRoomIds?: readonly string[],
+) {
+  const losers = new Set([
+    ...supersededDirectRoomIds(rows),
+    ...(extraOrphanRoomIds ?? []),
+  ]);
   let total = 0;
   for (const row of rows) {
     if (losers.has(row.roomId)) continue;

@@ -57,7 +57,10 @@ import {
   unreadRoomsMissingFromMembers,
   STALE_CONNECTION_MS,
   connectionActivityTs,
+  collectDirectPairRoomHints,
   conversationUnreadTotal,
+  orphanedDirectRoomIds,
+  readRememberedDirectRoom,
   suggestConnections,
   supersededDirectRoomIds,
   type ConnectionSuggestion,
@@ -227,13 +230,9 @@ function conversationRowFromRoom(
     return null;
   }
   const last = lastRoomMessage(room, selfId);
-  // A long timeline means this room was already opened. The sync payload
-  // already carries its unread total; walking every event blocks the list.
-  const unread =
-    timeline.length > 80 &&
-    typeof room.getUnreadNotificationCount === 'function'
-      ? room.getUnreadNotificationCount()
-      : countIncomingUnreadMessages(room, selfId, isHyphaBot);
+  // Always walk real incoming messages. The SDK notification total still
+  // counts hidden call/signal notices, which inflated the Messages badge.
+  const unread = countIncomingUnreadMessages(room, selfId, isHyphaBot);
 
   return {
     roomId: room.roomId,
@@ -337,16 +336,86 @@ function scheduleSupersededDirectRead() {
   }, 400);
 }
 
-async function markSupersededDirectRoomsRead() {
-  const client = conversationClient;
-  if (!client) return;
+function directPairHintsFromClient(client: MatrixClient) {
+  const selfId = client.getUserId();
+  const botId = botUserId();
+  const rooms = client.getRooms().map((room) => {
+    let members: { userId: string; name?: string; rawDisplayName?: string }[] =
+      [];
+    try {
+      members = room.getJoinedMembers();
+    } catch {
+      members = [];
+    }
+    const others = members
+      .filter((member) => {
+        if (!member.userId || member.userId === selfId) return false;
+        if (member.userId === botId) return false;
+        return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
+      })
+      .map((member) => member.userId);
+    const signalThread =
+      isRememberedSignalThreadRoom(room.roomId) ||
+      room
+        .getLiveTimeline()
+        .getEvents()
+        .slice(-12)
+        .some(
+          (event) =>
+            event.getType() === EventType.RoomMessage &&
+            eventContentIsSignalThread(
+              event.getContent() as Record<string, unknown> | null,
+            ),
+        );
+    return {
+      roomId: room.roomId,
+      membership: room.getMyMembership(),
+      lastTs:
+        typeof room.getLastActiveTimestamp === 'function'
+          ? room.getLastActiveTimestamp()
+          : 0,
+      otherUserIds: others,
+      signalThread,
+    };
+  });
+  return collectDirectPairRoomHints(rooms);
+}
+
+function rememberedRoomByOther(client: MatrixClient) {
+  const selfId = client.getUserId();
+  const map = new Map<string, string>();
+  if (!selfId) return map;
+  for (const hint of directPairHintsFromClient(client)) {
+    const key = hint.otherUserId.toLowerCase();
+    if (map.has(key)) continue;
+    const remembered = readRememberedDirectRoom(selfId, hint.otherUserId);
+    if (remembered) map.set(key, remembered);
+  }
+  return map;
+}
+
+function orphanDirectRoomIdsForClient(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
     const row = conversationCache.get(room.roomId)?.row;
     if (row) rows.push(row);
   }
+  return [
+    ...new Set([
+      ...supersededDirectRoomIds(rows),
+      ...orphanedDirectRoomIds(
+        directPairHintsFromClient(client),
+        rememberedRoomByOther(client),
+      ),
+    ]),
+  ];
+}
+
+async function markSupersededDirectRoomsRead() {
+  const client = conversationClient;
+  if (!client) return;
   let marked = false;
-  for (const roomId of supersededDirectRoomIds(rows)) {
+  for (const roomId of orphanDirectRoomIdsForClient(client)) {
     const cachedUnread = conversationCache.get(roomId)?.row?.unread ?? 0;
     const room = client.getRoom(roomId);
     if (!room || room.getMyMembership() !== 'join') continue;
@@ -354,11 +423,20 @@ async function markSupersededDirectRoomsRead() {
       typeof room.getUnreadNotificationCount === 'function'
         ? room.getUnreadNotificationCount(NotificationCountType.Total)
         : 0;
-    if (cachedUnread <= 0 && syncUnread <= 0) continue;
+    const incomingUnread = countIncomingUnreadMessages(
+      room,
+      client.getUserId(),
+      isHyphaBot,
+    );
+    if (cachedUnread <= 0 && syncUnread <= 0 && incomingUnread <= 0) continue;
     const event = latestReceiptEvent(room);
     const eventId = event?.getId();
     if (!event || !eventId) continue;
-    if (supersededReadEventIds.get(roomId) === eventId && syncUnread <= 0) {
+    if (
+      supersededReadEventIds.get(roomId) === eventId &&
+      syncUnread <= 0 &&
+      incomingUnread <= 0
+    ) {
       continue;
     }
     supersededReadEventIds.set(roomId, eventId);
@@ -663,7 +741,13 @@ export function conversationUnreadSnapshot(client: MatrixClient) {
     const row = conversationCache.get(room.roomId)?.row;
     if (row) rows.push(row);
   }
-  return conversationUnreadTotal(rows);
+  return conversationUnreadTotal(
+    rows,
+    orphanedDirectRoomIds(
+      directPairHintsFromClient(client),
+      rememberedRoomByOther(client),
+    ),
+  );
 }
 
 /** Keep a listener on the shared room summaries and fill any room still missing. */

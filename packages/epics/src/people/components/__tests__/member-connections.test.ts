@@ -8,6 +8,7 @@ import {
   groupRowsForConnections,
   memberRowsForConnections,
   messagePreview,
+  orphanedDirectRoomIds,
   previewWithNames,
   suggestConnections,
   supersededDirectRoomIds,
@@ -271,6 +272,43 @@ describe('conversationUnreadTotal', () => {
     ]);
 
     expect(total).toBe(1);
+  });
+
+  it('also drops membership-detected orphan rooms', () => {
+    const total = conversationUnreadTotal(
+      [
+        room({
+          roomId: '!older',
+          kind: 'person',
+          otherUserId: '@gerardo:matrix',
+          lastTs: 10,
+          unread: 3,
+        }),
+      ],
+      ['!older'],
+    );
+    expect(total).toBe(0);
+  });
+});
+
+describe('orphanedDirectRoomIds', () => {
+  it('keeps the remembered room when both pair rooms exist', () => {
+    const orphans = orphanedDirectRoomIds(
+      [
+        {
+          roomId: '!older',
+          otherUserId: '@gerardo:matrix',
+          lastTs: 50,
+        },
+        {
+          roomId: '!later',
+          otherUserId: '@Gerardo:matrix',
+          lastTs: 20,
+        },
+      ],
+      new Map([['@gerardo:matrix', '!later']]),
+    );
+    expect(orphans).toEqual(['!older']);
   });
 });
 

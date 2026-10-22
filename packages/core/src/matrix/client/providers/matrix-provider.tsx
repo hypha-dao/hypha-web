@@ -113,14 +113,53 @@ function latestReceiptEvent(room: MatrixSdk.Room) {
   return null;
 }
 
+function siblingDirectRoomIds(
+  client: MatrixSdk.MatrixClient,
+  otherUserId: string,
+  winnerRoomId: string,
+) {
+  const selfId = client.getUserId();
+  const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
+  const otherKey = otherUserId.trim().toLowerCase();
+  if (!selfId || !otherKey) return [] as string[];
+  const siblings: string[] = [];
+  for (const room of client.getRooms()) {
+    if (room.roomId === winnerRoomId) continue;
+    if (room.getMyMembership() !== 'join') continue;
+    let members: { userId: string }[] = [];
+    try {
+      members = room.getJoinedMembers();
+    } catch {
+      continue;
+    }
+    const others = members.filter((member) => {
+      if (!member.userId || member.userId === selfId) return false;
+      if (botId && member.userId === botId) return false;
+      const local = member.userId.replace(/^@/, '').split(':')[0] ?? '';
+      return !/hypha[_-]bot/i.test(local);
+    });
+    if (others.length !== 1) continue;
+    if ((others[0]?.userId ?? '').toLowerCase() !== otherKey) continue;
+    siblings.push(room.roomId);
+  }
+  return siblings;
+}
+
 /** Read receipts are per user. The earlier pair room stays, but it stops counting. */
 function markEarlierDirectRoomsRead(
   client: MatrixSdk.MatrixClient,
   candidateRoomIds: readonly string[],
   winnerRoomId: string,
+  otherUserId?: string,
 ) {
   const seen = new Set<string>();
-  for (const roomId of candidateRoomIds) {
+  const roomIds = [
+    ...candidateRoomIds,
+    ...(otherUserId
+      ? siblingDirectRoomIds(client, otherUserId, winnerRoomId)
+      : []),
+  ];
+  for (const roomId of roomIds) {
     if (!roomId || roomId === winnerRoomId || seen.has(roomId)) continue;
     seen.add(roomId);
     const room = client.getRoom(roomId);
@@ -1313,7 +1352,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Failed to open the direct room');
       }
       const { roomId } = ensured;
-      markEarlierDirectRoomsRead(client, candidateRoomIds, roomId);
+      markEarlierDirectRoomsRead(client, candidateRoomIds, roomId, otherUserId);
       for (let i = 0; i < 200; i++) {
         if (client.getRoom(roomId)) {
           return { roomId };
