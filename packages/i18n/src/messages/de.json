@@ -526,7 +526,7 @@
     "hyphaToken": "Hypha (HYPHA)",
     "share": "Teilen",
     "post": "Veröffentlichen",
-    "whatHappened": "Was ist passiert?",
+    "whatHappened": "Beschreibung",
     "shareNeedPrompt": "Teile einen Bedarf mit dem Netzwerk.",
     "videoFile": "Video",
     "videoFileHint": "MP4, WebM oder QuickTime. 16 MB.",
@@ -561,7 +561,7 @@
     "filterOptionSearch": "Suchen",
     "signalTypes": "Signaltypen",
     "signalTitle": "Titel",
-    "signalTitleHint": "Kurzer Name für dieses Signal",
+    "signalTitleHint": "Signaltitel",
     "exchangeSummary": "{count, plural, one {# Signal} other {# Signale}} in {spaces, plural, one {# Space} other {# Spaces}}",
     "openProject": "Projekt öffnen"
   },
