@@ -11,6 +11,7 @@ import {
   type SignalBoardFilters as BoardFilters,
 } from '@hypha-platform/core/client';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
+import { signalTypeIcon, SignalTypeIcon } from './signal-type-icon';
 import { SignalMenuFilters, SignalTitleSearch } from './signal-filter-bar';
 import {
   SIGNAL_BOARD_SELECT_TEXT_CLASS,
@@ -71,9 +72,11 @@ export function parseSignalPriorityFilters(
 
 function FilterTag({
   label,
+  type,
   onRemove,
 }: {
   label: string;
+  type?: string;
   onRemove: () => void;
 }) {
   const t = useTranslations('CoherenceTab');
@@ -82,8 +85,11 @@ function FilterTag({
       type="button"
       onClick={onRemove}
       aria-label={t('removeFilter', { label })}
-      className="inline-flex h-6 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
+      className="inline-flex h-8 items-center gap-1.5 border border-border bg-background px-2 text-2 text-foreground hover:border-foreground"
     >
+      {type ? (
+        <SignalTypeIcon type={type} className="size-3.5 shrink-0" />
+      ) : null}
       <span>{label}</span>
       <X className="size-3 shrink-0" strokeWidth={1.25} aria-hidden />
     </button>
@@ -242,6 +248,7 @@ export function SignalBoardFilters({
                     options={COHERENCE_SIGNAL_TYPES.map((type) => ({
                       value: type,
                       label: t(`types.${type}` as 'types.Need'),
+                      icon: signalTypeIcon(type),
                     }))}
                     value={[...typeFilters]}
                     allowCreate={false}
@@ -326,6 +333,7 @@ export function SignalBoardFilters({
           {typeFilters.map((type) => (
             <FilterTag
               key={type}
+              type={type}
               label={t(`types.${type}` as 'types.Need')}
               onRemove={() =>
                 writeParam(

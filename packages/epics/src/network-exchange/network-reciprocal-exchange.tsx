@@ -5,17 +5,11 @@ import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
 import {
   ArrowUpRight,
-  BookOpen,
   FileText,
-  Flame,
-  Layers,
-  Lightbulb,
   ListFilter,
-  Megaphone,
   Play,
-  Receipt,
-  TriangleAlert,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import './network-exchange-card.css';
 import { useLocale, useTranslations } from 'next-intl';
@@ -44,6 +38,11 @@ import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { compactIndicativeAmount } from '../coherence/components/signal-indicative-amounts';
 import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
+import {
+  signalTypeIcon,
+  SignalTypeBadge,
+  SignalSpaceName,
+} from '../coherence/components/signal-type-icon';
 import {
   SIGNAL_BOARD_SELECT_TEXT_CLASS,
   SIGNAL_FILTER_MULTI_SELECT_CLASS,
@@ -75,33 +74,6 @@ function typeLabel(
   if (type === 'Insight') return t('filterInsight');
   if (type === 'Action') return t('filterAction');
   return t('filterImpact');
-}
-
-function badgeClass(type: NetworkFieldSignalKind) {
-  if (type === 'Risk') return 'bg-error-3 text-error-11';
-  if (type === 'Tension') return 'bg-warning-3 text-warning-11';
-  if (type === 'Action' || type === 'Opportunity') {
-    return 'bg-foreground/10 text-foreground';
-  }
-  if (type === 'Need') return 'bg-foreground text-background';
-  return 'bg-neutral-3 text-foreground';
-}
-
-function TypeIcon({ type }: { type: NetworkFieldSignalKind }) {
-  const className = 'size-3 shrink-0';
-  if (type === 'Need') return <Megaphone className={className} aria-hidden />;
-  if (type === 'Resource') return <Layers className={className} aria-hidden />;
-  if (type === 'Opportunity') {
-    return <ArrowUpRight className={className} aria-hidden />;
-  }
-  if (type === 'Insight')
-    return <Lightbulb className={className} aria-hidden />;
-  if (type === 'Tension') return <Flame className={className} aria-hidden />;
-  if (type === 'Risk') {
-    return <TriangleAlert className={className} aria-hidden />;
-  }
-  if (type === 'Action') return <Receipt className={className} aria-hidden />;
-  return <BookOpen className={className} aria-hidden />;
 }
 
 function capitalKey(value: string | null): CapitalKey | null {
@@ -150,6 +122,16 @@ function plainText(value: string) {
   return out.replace(/\s+/g, ' ').trim();
 }
 
+function embedPoster(src: string, kind: string): string | null {
+  if (kind !== 'youtube') return null;
+  const id = src.split('/').filter(Boolean).pop()?.split('?')[0];
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+function withAutoplay(src: string) {
+  return `${src}${src.includes('?') ? '&' : '?'}autoplay=1`;
+}
+
 function ExchangeMedia({
   src,
   videoUrl,
@@ -176,6 +158,10 @@ function ExchangeMedia({
     setPlaying(true);
     if (video?.kind === 'file') void fileRef.current?.play();
   };
+  const poster =
+    video && video.kind !== 'file'
+      ? embedPoster(video.src, video.kind) ?? image
+      : null;
 
   return (
     <div className="exchange-stage">
@@ -194,12 +180,14 @@ function ExchangeMedia({
           }}
           onClick={(event) => event.stopPropagation()}
         />
-      ) : video ? (
+      ) : video && playing ? (
         <SignalVideoPlayer
-          video={video}
+          video={{ ...video, src: withAutoplay(video.src) }}
           title={alt}
           className="exchange-embed"
         />
+      ) : poster ? (
+        <img src={poster} alt="" />
       ) : image ? (
         <img src={image} alt={alt} onError={() => setFailed(true)} />
       ) : document ? (
@@ -216,7 +204,7 @@ function ExchangeMedia({
           </span>
         </a>
       ) : null}
-      {video?.kind === 'file' && !playing ? (
+      {video && !playing ? (
         <button
           type="button"
           className="exchange-play"
@@ -253,9 +241,11 @@ function isFieldKind(
 
 function FilterTag({
   label,
+  icon: Icon,
   onRemove,
 }: {
   label: string;
+  icon?: LucideIcon;
   onRemove: () => void;
 }) {
   const t = useTranslations('NetworkExchange');
@@ -264,8 +254,11 @@ function FilterTag({
       type="button"
       onClick={onRemove}
       aria-label={t('removeFilter', { label })}
-      className="inline-flex h-6 items-center gap-1.5 border border-border bg-background px-2 text-1 text-foreground hover:border-foreground"
+      className="inline-flex h-8 items-center gap-1.5 border border-border bg-background px-2 text-2 text-foreground hover:border-foreground"
     >
+      {Icon ? (
+        <Icon className="size-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+      ) : null}
       <span>{label}</span>
       <X className="size-3 shrink-0" strokeWidth={1.25} aria-hidden />
     </button>
@@ -288,6 +281,7 @@ function ExchangeFilters({
   const typeOptions = NETWORK_FIELD_KINDS.map((kind) => ({
     value: kind,
     label: typeLabel(kind, t),
+    icon: signalTypeIcon(kind),
   }));
   const capitalOptions = CAPITALS.map((key) => ({
     value: key,
@@ -500,6 +494,7 @@ export function NetworkReciprocalExchange({
                   <FilterTag
                     key={kind}
                     label={typeLabel(kind, t)}
+                    icon={signalTypeIcon(kind)}
                     onRemove={() =>
                       setTypes(types.filter((value) => value !== kind))
                     }
@@ -578,15 +573,10 @@ export function NetworkReciprocalExchange({
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={cn(
-                              'inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
-                              badgeClass(signal.type),
-                            )}
-                          >
-                            <TypeIcon type={signal.type} />
-                            {typeLabel(signal.type, t)}
-                          </span>
+                          <SignalTypeBadge
+                            type={signal.type}
+                            label={typeLabel(signal.type, t)}
+                          />
                           <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
                             {picked ? (
                               <span aria-hidden>{CAPITAL_MARK[picked]}</span>
@@ -618,9 +608,7 @@ export function NetworkReciprocalExchange({
                             {signal.title}
                           </Link>
                         </h2>
-                        <p className="truncate text-1 uppercase tracking-[0.14em] text-neutral-11">
-                          {signal.spaceTitle}
-                        </p>
+                        <SignalSpaceName name={signal.spaceTitle} />
                         {story ? (
                           <p
                             className={cn(

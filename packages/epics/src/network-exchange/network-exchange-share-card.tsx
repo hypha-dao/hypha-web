@@ -2,40 +2,31 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowUpRight,
-  BookOpen,
-  Camera,
-  FileText,
-  Flame,
-  Landmark,
-  Layers,
-  Lightbulb,
-  Megaphone,
-  Receipt,
-  TriangleAlert,
-  Video,
-} from 'lucide-react';
-import { EXCHANGE_SIGNAL_CAPITALS_KEY } from './exchange-draft-keys';
+import { Camera, FileText, Landmark, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AddAttachment, Button } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   CAPITALS,
   NETWORK_FIELD_KINDS,
+  revalidateCoherences,
   useAttachmentUpload,
+  useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMe,
+  useSpaceBySlug,
   type CapitalKey,
+  type IndicativePayout,
   type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { WalletFlowLabel } from '../common/wallet-flow-card';
 import { CAPITAL_MARK } from './capital-marks';
 import {
-  appendIndicativePayoutParams,
   LinkedTreasuryAmountField,
   type LinkedTreasuryPayout,
 } from './linked-treasury-amount';
+import { SignalTypeIcon } from '../coherence/components/signal-type-icon';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
 import {
@@ -45,7 +36,6 @@ import {
   SIGNAL_IMAGE_LIMIT,
   SIGNAL_MEDIA_MAX_BYTES,
   uploadSignalFiles,
-  writeSignalCreateMedia,
 } from '../coherence/utils/signal-media';
 
 function typeLabel(
@@ -77,27 +67,35 @@ function shareHeading(
     : t('shareExchangeTitle', { type: label });
 }
 
-function TypeIcon({ type }: { type: NetworkFieldSignalKind }) {
-  const className = 'size-4 shrink-0';
-  if (type === 'Need') return <Megaphone className={className} aria-hidden />;
-  if (type === 'Resource') return <Layers className={className} aria-hidden />;
-  if (type === 'Opportunity') {
-    return <ArrowUpRight className={className} aria-hidden />;
+/** Complete amount-and-token pairs. `null` when a row is only half filled. */
+function completePayouts(
+  rows: readonly LinkedTreasuryPayout[],
+): IndicativePayout[] | null {
+  const payouts: IndicativePayout[] = [];
+  for (const row of rows) {
+    const amount = row.amount.trim();
+    const token = row.token.trim();
+    if (!amount && !token) continue;
+    const amountOk = /^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0;
+    const tokenOk = /^0x[a-fA-F0-9]{40}$/.test(token);
+    if (!amountOk || !tokenOk) return null;
+    payouts.push({ amount, token });
   }
-  if (type === 'Insight')
-    return <Lightbulb className={className} aria-hidden />;
-  if (type === 'Tension') return <Flame className={className} aria-hidden />;
-  if (type === 'Risk') {
-    return <TriangleAlert className={className} aria-hidden />;
-  }
-  if (type === 'Action') return <Receipt className={className} aria-hidden />;
-  return <BookOpen className={className} aria-hidden />;
+  return payouts;
+}
+
+async function resolveSpaceId(slug: string, known?: number) {
+  if (typeof known === 'number' && known > 0) return known;
+  const response = await fetch(`/api/v1/spaces/${slug}`);
+  if (!response.ok) return null;
+  const body = (await response.json()) as { id?: unknown };
+  return typeof body.id === 'number' && body.id > 0 ? body.id : null;
 }
 
 /**
- * Compact create tile for the reciprocal exchange rail. Collects the fields
- * the create-signal form needs, then opens that form with them prefilled and
- * share-with-network already on.
+ * Compact create tile for the reciprocal exchange rail. Saves the signal in
+ * the chosen space, shared with the network, then opens that space's signal
+ * list.
  */
 export function NetworkExchangeShareCard({
   lang,
@@ -111,14 +109,18 @@ export function NetworkExchangeShareCard({
 }) {
   const t = useTranslations('NetworkExchange');
   const tSignals = useTranslations('CoherenceTab');
+  const tAgreement = useTranslations('AgreementFlow');
   const router = useRouter();
   const { jwt } = useJwt();
+  const { person } = useMe();
+  const { createCoherence } = useCoherenceMutationsWeb2Rsc(jwt);
   const { upload: uploadSignalMedia } = useAttachmentUpload({
     authorizationToken: jwt ?? undefined,
   });
   const touched = useRef(false);
   const spaces = useMemberNamedSpaces();
   const [spaceSlug, setSpaceSlug] = useState('');
+  const { space } = useSpaceBySlug(spaceSlug);
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [capitals, setCapitals] = useState<CapitalKey[]>([]);
@@ -178,6 +180,19 @@ export function NetworkExchangeShareCard({
       setNote(tSignals('signalFormVideoHint'));
       return;
     }
+    const indicativePayouts = completePayouts(payouts);
+    if (indicativePayouts === null) {
+      setNote(tAgreement('tokenPayoutFieldArray.enterAmountAndToken'));
+      return;
+    }
+    if (!jwt || !person?.id) {
+      setNote(
+        tSignals.has('editSignalMissingAuth')
+          ? tSignals('editSignalMissingAuth')
+          : 'Your session expired. Please sign in again before saving.',
+      );
+      return;
+    }
     setSaving(true);
     setNote(null);
     try {
@@ -193,29 +208,41 @@ export function NetworkExchangeShareCard({
         mediaKind === 'video' && /^https?:\/\//i.test(video)
           ? video.slice(0, 2000)
           : '';
-      writeSignalCreateMedia({
-        images: uploadedImages,
-        documents: uploadedDocuments,
-        ...(linkedVideo ? { videoUrl: linkedVideo } : {}),
-      });
-      const params = new URLSearchParams();
-      params.set('type', kind);
-      params.set('sharedWithNetwork', '1');
-      params.set('title', headline.slice(0, 50));
-      params.set('description', body.slice(0, 4000));
-      if (linkedVideo) params.set('video', linkedVideo);
-      appendIndicativePayoutParams(params, payouts);
-      if (capitals.length > 0 && typeof window !== 'undefined') {
-        window.sessionStorage.setItem(
-          EXCHANGE_SIGNAL_CAPITALS_KEY,
-          JSON.stringify(capitals),
-        );
+      const spaceId = await resolveSpaceId(spaceSlug, space?.id);
+      if (!spaceId) {
+        throw new Error('space');
       }
-      router.push(
-        `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
+      await createCoherence({
+        creatorId: person.id,
+        spaceId,
+        type: kind,
+        priority: 'medium',
+        title: headline.slice(0, 50),
+        description: body.slice(0, 4000),
+        archived: false,
+        tags: [],
+        assigneeIds: [person.id],
+        indicativePayouts,
+        leadImage: uploadedImages[0]?.url ?? null,
+        videoUrl: linkedVideo || null,
+        attachments: [...uploadedImages, ...uploadedDocuments],
+        sharedWithNetwork: true,
+        ...(capitals.length > 0 ? { capitals } : {}),
+      });
+      await revalidateCoherences(spaceSlug);
+      router.refresh();
+      router.push(`/${lang}/dho/${spaceSlug}/coherence`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const uploadFailed =
+        message === 'upload' || message.toLowerCase().includes('upload');
+      setNote(
+        uploadFailed
+          ? tSignals('signalFormUploadFailed')
+          : tSignals.has('editSignalSaveFailed')
+          ? tSignals('editSignalSaveFailed')
+          : 'Could not save signal changes. Please try again.',
       );
-    } catch {
-      setNote(tSignals('signalFormUploadFailed'));
       setSaving(false);
     }
   };
@@ -237,7 +264,7 @@ export function NetworkExchangeShareCard({
           <div className="flex flex-col gap-1.5">
             <WalletFlowLabel>{t('chooseSignalType')}</WalletFlowLabel>
             <div
-              className="grid grid-cols-2 gap-1"
+              className="flex flex-wrap gap-1.5"
               role="group"
               aria-label={t('chooseSignalType')}
             >
@@ -250,14 +277,17 @@ export function NetworkExchangeShareCard({
                     aria-pressed={selected}
                     onClick={() => setChosenType(option)}
                     className={cn(
-                      'inline-flex items-center gap-1 border px-1.5 py-1 text-left text-1 uppercase tracking-[0.06em]',
+                      'inline-flex h-8 items-center gap-1.5 border bg-background px-2 text-2 text-foreground',
                       selected
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border bg-background text-foreground hover:border-foreground',
+                        ? 'border-foreground'
+                        : 'border-border hover:border-foreground',
                     )}
                   >
-                    <TypeIcon type={option} />
-                    <span className="truncate">{typeLabel(option, t)}</span>
+                    <SignalTypeIcon
+                      type={option}
+                      className="size-3.5 shrink-0"
+                    />
+                    <span>{typeLabel(option, t)}</span>
                   </button>
                 );
               })}

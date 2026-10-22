@@ -13,6 +13,10 @@ import {
 import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import { compactIndicativeAmount } from '../coherence/components/signal-indicative-amounts';
+import {
+  SignalSpaceName,
+  SignalTypeBadge,
+} from '../coherence/components/signal-type-icon';
 import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
@@ -38,15 +42,6 @@ function typeLabel(
   if (type === 'Insight') return t('filterInsight');
   if (type === 'Action') return t('filterAction');
   return t('filterImpact');
-}
-
-function badgeClass(type: NetworkFieldSignalKind) {
-  if (type === 'Risk') return 'bg-error-3 text-error-11';
-  if (type === 'Tension') return 'bg-warning-3 text-warning-11';
-  if (type === 'Action' || type === 'Opportunity') {
-    return 'bg-foreground/10 text-foreground';
-  }
-  return 'bg-neutral-3 text-foreground';
 }
 
 function capitalKey(value: string | null): CapitalKey | null {
@@ -306,14 +301,10 @@ export function NetworkFieldBoard({
                       )}
                     >
                       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                        <span
-                          className={cn(
-                            'px-2 py-0.5 text-1',
-                            badgeClass(signal.type),
-                          )}
-                        >
-                          {typeLabel(signal.type, t)}
-                        </span>
+                        <SignalTypeBadge
+                          type={signal.type}
+                          label={typeLabel(signal.type, t)}
+                        />
                         <span className="text-1 text-neutral-11">
                           {whenLabel(signal.updatedAt, dateLocale)}
                         </span>
@@ -332,9 +323,7 @@ export function NetworkFieldBoard({
                         >
                           {signal.title}
                         </h2>
-                        <p className="text-1 uppercase text-neutral-11">
-                          {signal.spaceTitle}
-                        </p>
+                        <SignalSpaceName name={signal.spaceTitle} />
                       </div>
                       <div
                         className={cn(

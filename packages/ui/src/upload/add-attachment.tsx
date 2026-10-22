@@ -3,12 +3,12 @@ import React, { ChangeEvent, useRef, useState } from 'react';
 import {
   FileText,
   Image as ImageIcon,
+  Upload,
   X,
   File as FileIcon,
 } from 'lucide-react';
 import { Button } from '../button';
 import { Separator } from '../separator';
-import { Link2Icon } from '@radix-ui/react-icons';
 
 type AttachmentInput = string | { name: string; url: string };
 
@@ -156,15 +156,17 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
 
   return (
     <div className="flex w-full min-w-0 max-w-full flex-col items-end">
-      <Button
-        variant="ghost"
-        colorVariant="accent"
+      <button
         type="button"
         onClick={handleClick}
-        className="h-auto w-full min-w-0 max-w-full justify-start whitespace-normal text-left text-accent-11 hover:bg-accent-3 hover:text-neutral-12 [&_svg]:shrink-0 [&_svg]:text-accent-11 hover:[&_svg]:text-neutral-12"
+        className="flex w-full min-w-0 max-w-full items-start gap-2 px-0.5 py-1.5 text-left text-2 leading-snug text-neutral-11 transition-colors hover:text-foreground"
       >
-        <Link2Icon />
-        <span className="min-w-0 flex-1 break-words text-left">{label}</span>
+        <Upload
+          className="mt-0.5 size-4 shrink-0"
+          strokeWidth={1.5}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1 break-words">{label}</span>
         <input
           ref={inputRef}
           type="file"
@@ -177,7 +179,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
             }
           }}
         />
-      </Button>
+      </button>
 
       <div className="mt-4 w-full min-w-0 max-w-full space-y-2">
         {existingAttachments.map((file, idx) => (

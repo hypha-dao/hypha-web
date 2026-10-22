@@ -19,6 +19,10 @@ import { resolveDateFnsLocale } from '../utils/date-fns-locale';
 import { CAPITAL_MARK } from './capital-marks';
 import { NetworkRightColumn } from './network-right-cards';
 import {
+  SignalSpaceName,
+  SignalTypeBadge,
+} from '../coherence/components/signal-type-icon';
+import {
   NetworkCapitalFilters,
   NetworkLiveSearch,
   NetworkSectionHeader,
@@ -41,12 +45,6 @@ function kindLabel(
   if (kind === 'Insight') return t('filterInsight');
   if (kind === 'Action') return t('filterAction');
   return t('filterImpact');
-}
-
-function badgeClass(type: NetworkOpenNeedKind) {
-  if (type === 'Tension') return 'bg-warning-4 text-warning-12';
-  if (type === 'Risk') return 'bg-error-3 text-error-12';
-  return 'bg-foreground text-background';
 }
 
 function whenLabel(
@@ -180,14 +178,10 @@ export function NetworkNeedsBoard({
                       onClick={() => setSelectedSlug(need.slug)}
                     >
                       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                        <span
-                          className={cn(
-                            'px-2 py-0.5 text-[10px]',
-                            badgeClass(need.type),
-                          )}
-                        >
-                          {kindLabel(need.type, t)}
-                        </span>
+                        <SignalTypeBadge
+                          type={need.type}
+                          label={kindLabel(need.type, t)}
+                        />
                         <span className="inline-flex items-center gap-1 text-1 text-neutral-11">
                           {capital ? (
                             <span aria-hidden>{CAPITAL_MARK[capital]}</span>
@@ -205,9 +199,7 @@ export function NetworkNeedsBoard({
                       </div>
                       <div className="flex flex-1 flex-col gap-2 p-4">
                         <h2 className="text-3 leading-snug">{need.title}</h2>
-                        <p className="text-1 uppercase text-neutral-11">
-                          {need.spaceTitle}
-                        </p>
+                        <SignalSpaceName name={need.spaceTitle} />
                         <div className="flex gap-3 text-1">
                           <Link
                             href={`/${lang}/network/exchange?type=Action`}

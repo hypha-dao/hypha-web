@@ -1,7 +1,7 @@
 /* Cinema card — media bleeds edge-to-edge; footer CTAs always stay inside. */
 .exchange-card {
   display: flex;
-  min-height: 0;
+  min-height: min-content;
   flex-direction: column;
   overflow: hidden;
 }
@@ -29,19 +29,8 @@
   background: #000;
 }
 
-/*
- * YouTube/Vimeo letterbox inside the iframe. Scale past the stage so the
- * picture covers the frame with no white or black side bars.
- */
 .exchange-stage > .exchange-embed {
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  transform: translate(-50%, -50%) scale(1.55);
-  transform-origin: center center;
+  background: #000;
 }
 
 .exchange-doc {
@@ -59,15 +48,16 @@
 .exchange-play {
   position: absolute;
   z-index: 1;
-  left: 12px;
-  bottom: 12px;
+  top: 50%;
+  left: 50%;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid color-mix(in srgb, #fff 28%, transparent);
-  background: color-mix(in srgb, #000 55%, transparent);
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  background: color-mix(in srgb, #000 45%, transparent);
   color: #fff;
+  transform: translate(-50%, -50%);
   backdrop-filter: blur(8px);
 }
 
@@ -76,8 +66,9 @@
 }
 
 .exchange-play svg {
-  width: 14px;
-  height: 14px;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-left: 1px;
 }
 
 .exchange-title {
@@ -86,11 +77,9 @@
 
 .exchange-meta {
   display: flex;
-  min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 0.35rem;
-  overflow: hidden;
   padding: 0.75rem 0.875rem 0.25rem;
 }
 
