@@ -538,6 +538,7 @@ function priorityRoomIds(
       for (let index = roomIds.length - 1; index >= 0; index -= 1) {
         const room = client.getRoom(roomIds[index] ?? '');
         if (room?.getMyMembership() !== 'join') continue;
+        if (room.getType() !== HYPHA_ROOM_TYPES.dm) continue;
         found.set(matrixUserId.toLowerCase(), room.roomId);
         break;
       }
@@ -547,6 +548,7 @@ function priorityRoomIds(
     const selfId = client.getUserId();
     for (const room of client.getRooms()) {
       if (room.getMyMembership() !== 'join') continue;
+      if (room.getType() !== HYPHA_ROOM_TYPES.dm) continue;
       const joined =
         typeof room.getJoinedMemberCount === 'function'
           ? room.getJoinedMemberCount()
@@ -772,9 +774,18 @@ function useConversationClient(client: MatrixClient) {
   cancelConversationPump();
 }
 
-/** True while rooms are still being summarised or the first sync has not finished. */
-export function conversationRowsPending() {
-  return conversationQueue.length > 0 || conversationPump != null;
+/**
+ * True while any joined room has not been summarised yet. Judged from the
+ * cache itself, so there is no gap between the first sync and the queue filling.
+ */
+export function conversationRowsPending(client: MatrixClient) {
+  if (conversationQueue.length > 0 || conversationPump != null) return true;
+  return client
+    .getRooms()
+    .some(
+      (room) =>
+        room.getMyMembership() === 'join' && !conversationIsFresh(client, room),
+    );
 }
 
 export function conversationRowsSnapshot(client: MatrixClient) {
@@ -1216,7 +1227,7 @@ export function MyConnections({
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
       }
-      setRowsPending(conversationRowsPending());
+      setRowsPending(conversationRowsPending(client));
     });
   }, [client]);
 
