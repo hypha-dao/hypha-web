@@ -16,9 +16,8 @@ import { searchNominatim } from './nominatim';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const GEOCODE_CONCURRENCY = 4;
 /**
- * Text places are looked up after the directory is already loaded. A few
- * seconds covers the creator places first, then member places. Longer than
- * this and the page waits on the geocoder instead of the map.
+ * Text places are looked up after the map is already on screen. Creators
+ * go first, then members. The page itself does not wait for this.
  */
 const GEOCODE_BUDGET_MS = 8_000;
 
@@ -228,18 +227,35 @@ function addressesToResolve(spaces: readonly CreatorMapSpace[]): string[] {
   return [...wanted];
 }
 
+function pinsForLocation(
+  choices: readonly FallbackLocation[],
+  location: string,
+  coordinates: { latitude: number; longitude: number },
+): Record<number, { latitude: number; longitude: number }> {
+  const pins: Record<number, { latitude: number; longitude: number }> = {};
+  for (const choice of choices) {
+    if (choice.location !== location) continue;
+    pins[choice.spaceId] = coordinates;
+  }
+  return pins;
+}
+
 /**
  * Geocode deployer, then member, locations for spaces that have no
  * coordinates of their own. The result is a pin lookup only. It does not
- * update space rows.
+ * update space rows. `onPins` fires as each place resolves so a map can
+ * draw those pins without waiting for the rest.
  */
 export async function resolveCreatorMapCoordinates(
   spaces: readonly CreatorMapSpace[],
-  { db }: DbConfig,
+  { db, signal }: DbConfig & { signal?: AbortSignal },
   geocode: (
     query: string,
     limit?: number,
   ) => Promise<GeocodeResult[]> = searchNominatim,
+  onPins?: (
+    pins: Record<number, { latitude: number; longitude: number }>,
+  ) => void,
 ): Promise<Record<number, { latitude: number; longitude: number }>> {
   const wanted = addressesToResolve(spaces);
   if (wanted.length === 0) {
@@ -274,9 +290,13 @@ export async function resolveCreatorMapCoordinates(
     const parsed = coordinatesFromLocationText(location);
     if (!parsed) return true;
     coordinatesByLocation.set(location, parsed);
+    onPins?.(pinsForLocation(choices, location, parsed));
     return false;
   });
   const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  signal?.addEventListener('abort', abortFromCaller);
+  if (signal?.aborted) controller.abort();
   const budgetTimer = setTimeout(() => controller.abort(), GEOCODE_BUDGET_MS);
   const lookup =
     geocode === searchNominatim
@@ -296,10 +316,12 @@ export async function resolveCreatorMapCoordinates(
           if (!match) {
             return;
           }
-          coordinatesByLocation.set(location, {
+          const coordinates = {
             latitude: match.latitude,
             longitude: match.longitude,
-          });
+          };
+          coordinatesByLocation.set(location, coordinates);
+          onPins?.(pinsForLocation(choices, location, coordinates));
         } catch (error) {
           console.error('[resolveCreatorMapCoordinates] geocode failed', {
             error,
@@ -309,6 +331,7 @@ export async function resolveCreatorMapCoordinates(
     );
   } finally {
     clearTimeout(budgetTimer);
+    signal?.removeEventListener('abort', abortFromCaller);
   }
 
   const pins: Record<number, { latitude: number; longitude: number }> = {};

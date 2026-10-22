@@ -248,6 +248,35 @@ describe('resolveCreatorMapCoordinates', () => {
     expect(geocode).not.toHaveBeenCalled();
   });
 
+  it('reports a pin as soon as its place resolves', async () => {
+    const batches: Array<
+      Record<number, { latitude: number; longitude: number }>
+    > = [];
+    const geocode = vi
+      .fn()
+      .mockResolvedValue([
+        { label: 'Lisbon', latitude: 38.7, longitude: -9.1 },
+      ]);
+    const db = fakeDb([
+      {
+        address: deployer,
+        location: 'Lisbon',
+        sub: 'did:privy:creator',
+      },
+    ]);
+
+    await resolveCreatorMapCoordinates(
+      [{ id: 12, creatorAddress: deployer }],
+      { db: db as never },
+      geocode,
+      (pins) => {
+        batches.push(pins);
+      },
+    );
+
+    expect(batches).toEqual([{ 12: { latitude: 38.7, longitude: -9.1 } }]);
+  });
+
   it('omits a space when the creator location does not geocode', async () => {
     const geocode = vi.fn().mockResolvedValue([]);
     const db = fakeDb([

@@ -44,6 +44,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { readClientSearchParams } from '../read-client-search-params';
+import { useDeferredMapPins } from './use-deferred-map-pins';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -55,8 +56,9 @@ interface ExploreSpacesProps {
   enableNetworkMap?: boolean;
   networkGrowth?: NetworkGrowth | null;
   /**
-   * Display-only pins from a geocoded creator location. Missing entries fall
-   * back to a deterministic pin. Neither is written onto the space.
+   * Display-only pins already resolved before paint. Later creator and
+   * member places arrive from `useDeferredMapPins` and are not written
+   * onto the space.
    */
   creatorMapPins?: Readonly<
     Record<number, { latitude: number; longitude: number }>
@@ -186,6 +188,12 @@ export function ExploreSpaces({
       void loadLandGeo();
     }
   }, [enableNetworkMap]);
+
+  const deferredMapPins = useDeferredMapPins(spaces, enableNetworkMap);
+  const resolvedMapPins = React.useMemo(
+    () => ({ ...creatorMapPins, ...deferredMapPins }),
+    [creatorMapPins, deferredMapPins],
+  );
 
   const nonArchivedSpaces = React.useMemo(
     () => spaces.filter((space) => !isSpaceArchived(space)),
@@ -338,7 +346,7 @@ export function ExploreSpaces({
           spaceId: space.id,
           latitude: space.latitude,
           longitude: space.longitude,
-          creatorCoordinates: creatorMapPins?.[space.id] ?? null,
+          creatorCoordinates: resolvedMapPins[space.id] ?? null,
         });
         // Only real places: the space, then its creator, then another member.
         // No hashed / random scatter — empty locations stay off the map.
@@ -352,7 +360,7 @@ export function ExploreSpaces({
           },
         ];
       }),
-    [creatorMapPins, selectedSpaces],
+    [resolvedMapPins, selectedSpaces],
   );
 
   const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';

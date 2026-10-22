@@ -2,7 +2,6 @@ import { Locale } from '@hypha-platform/i18n';
 import {
   getNetworkDirectorySpaces,
   getNetworkGrowth,
-  resolveCreatorMapCoordinates,
   readSpaceCapitals,
   parseCategoryGroupFilterParam,
   sortSpacesByOrder,
@@ -93,18 +92,6 @@ async function NetworkSpaces(props: PageProps) {
   spaces = spacesResult;
   networkGrowth = growthResult;
 
-  // A space keeps its own coordinates. One with none uses its creator's
-  // profile place, then another member's. Geocoding is capped so a slow
-  // lookup cannot hold the page.
-  const creatorMapPins = enableNetworkMap
-    ? await resolveCreatorMapCoordinates(spaces, { db }).catch(
-        (error: unknown) => {
-          console.error('Failed to resolve creator map pins:', error);
-          return {};
-        },
-      )
-    : {};
-
   const spaceCapitals = enableNetworkMap
     ? Object.fromEntries(
         [...capitalsResult.entries()].map(([id, value]) => [String(id), value]),
@@ -128,7 +115,6 @@ async function NetworkSpaces(props: PageProps) {
       uniqueCategoryGroups={uniqueCategoryGroups}
       enableNetworkMap={enableNetworkMap}
       networkGrowth={networkGrowth}
-      creatorMapPins={creatorMapPins}
       spaceCapitals={spaceCapitals}
     />
   );
