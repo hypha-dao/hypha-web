@@ -1702,59 +1702,63 @@ export const CreateSignalForm = ({
             ) : null}
 
             <section className="flex flex-col gap-6 border-t border-border pt-8">
-              <div
-                role="group"
-                aria-label={`${t('signalFormImage')}, ${t(
-                  'signalFormMediaVideo',
-                )}`}
-                className="flex gap-2"
-              >
-                {(
-                  [
-                    {
-                      kind: 'images' as const,
-                      label: t('signalFormImage'),
-                      Icon: Camera,
-                    },
-                    {
-                      kind: 'video' as const,
-                      label: t('signalFormMediaVideo'),
-                      Icon: Video,
-                    },
-                  ] as const
-                ).map(({ kind, label, Icon }) => {
-                  const selected = mediaKind === kind;
-                  return (
-                    <button
-                      key={kind}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={isMutating}
-                      onClick={() => {
-                        mediaChoiceTouched.current = true;
-                        setMediaKind(kind);
-                      }}
-                      style={{ width: 112, height: 112 }}
-                      className={cn(
-                        'flex flex-col items-center justify-center gap-2 border px-2',
-                        selected
-                          ? 'border-foreground bg-foreground text-background'
-                          : 'border-border bg-background text-foreground hover:bg-neutral-2',
-                      )}
-                    >
-                      <Icon className="size-5" strokeWidth={1.5} aria-hidden />
-                      <span className="text-center text-1 leading-tight">
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {t('signalFormMedia')}
+                </p>
+                <div
+                  role="group"
+                  aria-label={t('signalFormMedia')}
+                  className="flex gap-2"
+                >
+                  {(
+                    [
+                      {
+                        kind: 'images' as const,
+                        label: t('signalFormImage'),
+                        Icon: Camera,
+                      },
+                      {
+                        kind: 'video' as const,
+                        label: t('signalFormMediaVideo'),
+                        Icon: Video,
+                      },
+                    ] as const
+                  ).map(({ kind, label, Icon }) => {
+                    const selected = mediaKind === kind;
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={isMutating}
+                        onClick={() => {
+                          mediaChoiceTouched.current = true;
+                          setMediaKind(kind);
+                        }}
+                        style={{ width: 112, height: 112 }}
+                        className={cn(
+                          'flex flex-col items-center justify-center gap-2 border px-2',
+                          selected
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                        )}
+                      >
+                        <Icon
+                          className="size-5"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
+                        <span className="text-center text-1 leading-tight">
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               {mediaKind === 'images' ? (
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {t('signalFormImage')}
-                  </p>
                   <AddAttachment
                     accept={SIGNAL_IMAGE_ACCEPT}
                     maxFiles={Math.max(
