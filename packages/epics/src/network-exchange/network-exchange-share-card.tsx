@@ -264,7 +264,7 @@ export function NetworkExchangeShareCard({
           <div className="flex flex-col gap-1.5">
             <WalletFlowLabel>{t('chooseSignalType')}</WalletFlowLabel>
             <div
-              className="flex flex-wrap gap-1.5"
+              className="flex flex-wrap gap-1"
               role="group"
               aria-label={t('chooseSignalType')}
             >
@@ -277,7 +277,7 @@ export function NetworkExchangeShareCard({
                     aria-pressed={selected}
                     onClick={() => setChosenType(option)}
                     className={cn(
-                      'inline-flex h-8 items-center gap-1.5 border bg-background px-2 text-2 text-foreground',
+                      'inline-flex h-8 items-center border bg-background px-2 text-1 text-foreground',
                       selected
                         ? 'border-foreground'
                         : 'border-border hover:border-foreground',
@@ -285,7 +285,7 @@ export function NetworkExchangeShareCard({
                   >
                     <SignalTypeIcon
                       type={option}
-                      className="size-3.5 shrink-0"
+                      className="mr-1 size-3 shrink-0"
                     />
                     <span>{typeLabel(option, t)}</span>
                   </button>
