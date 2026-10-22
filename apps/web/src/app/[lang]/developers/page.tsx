@@ -15,7 +15,7 @@ export default async function DevelopersPage({ params }: PageProps) {
   const base = `/${lang}/developers`;
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <h1 className="text-5 font-semibold text-foreground">
+      <h1 className="[font-family:var(--font-family-heading)] text-5 font-semibold text-foreground">
         Integrate with Hypha
       </h1>
       <p className="text-2 text-muted-foreground">
@@ -26,7 +26,9 @@ export default async function DevelopersPage({ params }: PageProps) {
       </p>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-3 font-semibold text-foreground">Start here</h2>
+        <h2 className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
+          Start here
+        </h2>
         <ul className="list-disc pl-5 text-2">
           <li>
             <Link className="underline" href={`${base}/clients/new`}>
@@ -44,7 +46,9 @@ export default async function DevelopersPage({ params }: PageProps) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-3 font-semibold text-foreground">Resources</h2>
+        <h2 className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
+          Resources
+        </h2>
         <ul className="list-disc pl-5 text-2 text-muted-foreground">
           {PLACEHOLDERS.map((label) => (
             <li key={label}>
@@ -55,7 +59,7 @@ export default async function DevelopersPage({ params }: PageProps) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-3 font-semibold text-foreground">
+        <h2 className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
           Before you go live: identity provider checklist
         </h2>
         <ul className="list-disc pl-5 text-2 text-muted-foreground">

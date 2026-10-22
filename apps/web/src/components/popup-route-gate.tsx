@@ -48,7 +48,7 @@ export function PopupHeader() {
   );
   if (!isPopup) return null;
   return (
-    <header className="flex h-14 shrink-0 items-center justify-center gap-3 border-b border-border px-4">
+    <header className="flex h-14 shrink-0 items-center justify-center gap-3 border-b border-border bg-page-background px-4">
       <Logo width={96} />
       {client?.logoUrl && (
         <>

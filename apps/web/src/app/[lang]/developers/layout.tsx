@@ -24,7 +24,7 @@ export default async function DevelopersLayout({
       >
         Work in progress: this developer area is early and will change.
       </div>
-      <nav className="flex gap-4 text-2 font-medium">
+      <nav className="flex gap-4 border-b border-border pb-3 text-2 font-medium">
         <Link href={base}>Overview</Link>
         <Link href={`${base}/clients`}>My clients</Link>
         <Link href={`${base}/clients/new`}>Register a client</Link>

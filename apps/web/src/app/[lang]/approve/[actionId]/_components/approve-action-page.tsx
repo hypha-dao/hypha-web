@@ -108,7 +108,7 @@ const SignVote: FC<SignVoteProps> = ({ sign, authToken, onDone }) => {
   return (
     <>
       <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-      <p className="text-3 font-semibold text-foreground">
+      <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
         {t('signingTitle')}
       </p>
       <p className="max-w-md text-2 text-muted-foreground">
@@ -297,14 +297,14 @@ export const ApproveActionPage: FC<{
       {state.step === 'loading' && (
         <>
           <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-          <p className="text-3 font-semibold text-foreground">
+          <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
             {t('loadingTitle')}
           </p>
         </>
       )}
       {state.step === 'signed-out' && (
         <>
-          <p className="text-3 font-semibold text-foreground">
+          <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
             {t('signInTitle')}
           </p>
           <p className="max-w-md text-2 text-muted-foreground">
@@ -316,7 +316,7 @@ export const ApproveActionPage: FC<{
       {state.step === 'not-found' && (
         <>
           <XCircle className="h-10 w-10 text-destructive" />
-          <p className="text-3 font-semibold text-foreground">
+          <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
             {t('notFoundTitle')}
           </p>
           <p className="max-w-md text-2 text-muted-foreground">
@@ -330,7 +330,7 @@ export const ApproveActionPage: FC<{
       {state.step === 'error' && (
         <>
           <XCircle className="h-10 w-10 text-destructive" />
-          <p className="text-3 font-semibold text-foreground">
+          <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
             {t('errorTitle')}
           </p>
           <p className="max-w-md text-2 text-muted-foreground">
@@ -340,7 +340,7 @@ export const ApproveActionPage: FC<{
       )}
       {state.step === 'review' && (
         <>
-          <p className="text-3 font-semibold text-foreground">
+          <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
             {t('reviewTitle')}
           </p>
           <p className="max-w-md text-2 text-muted-foreground">
@@ -356,7 +356,7 @@ export const ApproveActionPage: FC<{
                   name: state.action.client.name,
                 })}
           </p>
-          <dl className="w-full max-w-md divide-y divide-border rounded-md border border-border text-left">
+          <dl className="w-full max-w-md divide-y divide-border rounded-none border border-border text-left">
             {state.action.summary.lines.map((line) => (
               <div key={line.label} className="flex justify-between gap-4 p-3">
                 <dt className="text-2 text-muted-foreground">{line.label}</dt>
@@ -393,7 +393,7 @@ export const ApproveActionPage: FC<{
           ) : (
             <XCircle className="h-10 w-10 text-destructive" />
           )}
-          <p className="text-3 font-semibold text-foreground">
+          <p className="[font-family:var(--font-family-heading)] text-3 font-semibold text-foreground">
             {finalCopy[state.outcome].title}
           </p>
           <p className="max-w-md text-2 text-muted-foreground">

@@ -146,7 +146,9 @@ export function ClientList() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-4 font-semibold text-foreground">My clients</h2>
+          <h2 className="[font-family:var(--font-family-heading)] text-4 font-semibold text-foreground">
+            My clients
+          </h2>
           <Link href={`/${lang}/developers/clients/new`}>
             <Button>Register a client</Button>
           </Link>
