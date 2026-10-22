@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { WORLD_MAP_OUTLINE } from './world-map-outline';
+
 type NetworkLoadingGridProps = {
   count?: number;
   cardGridClassName?: string;
@@ -119,8 +121,8 @@ const MAP_PINS: MapPin[] = [
 ];
 
 /**
- * Map plane drawn like the directory: continent outlines, cluster pins, and
- * corner chrome — not a blank shimmer box.
+ * Map plane for the directory wait: the world outline, then small pins.
+ * The coastline is drawn up front so the mask is a map, not a blank box.
  */
 export function NetworkMapWave({ className }: { className?: string }) {
   return (
@@ -133,67 +135,39 @@ export function NetworkMapWave({ className }: { className?: string }) {
     >
       <Wave className="absolute inset-0 opacity-40" text={false} />
       <svg
-        viewBox="0 0 100 50"
+        viewBox="0 0 1000 500"
         preserveAspectRatio="xMidYMid meet"
-        className="absolute inset-0 h-full w-full text-neutral-7"
+        className="absolute inset-0 h-full w-full text-neutral-8"
       >
-        {/* Simplified land silhouettes — hairline continents on the ocean plane. */}
-        <g
-          fill="color-mix(in srgb, var(--foreground) 4%, transparent)"
+        <path
+          d={WORLD_MAP_OUTLINE}
+          fill="color-mix(in srgb, var(--foreground) 5%, transparent)"
           stroke="currentColor"
-          strokeWidth="0.35"
+          strokeWidth="1.25"
           strokeLinejoin="round"
-        >
-          <path d="M8 18c2-4 7-7 14-6 5 1 9 4 11 8 1 3-1 7-4 9-4 3-10 4-15 2-4-2-7-7-6-13z" />
-          <path d="M22 30c2-1 5 1 6 5 1 5-1 10-4 13-3 2-7 1-9-2-2-4-1-9 1-12 1-2 3-3 6-4z" />
-          <path d="M46 16c3-2 7-2 10 0 3 2 4 6 3 9-2 4-6 6-10 5-4-1-6-5-5-9 0-2 1-4 2-5z" />
-          <path d="M48 28c3-1 6 1 8 5 2 5 1 11-2 14-3 2-7 2-9-1-3-4-2-9 0-13 1-2 2-4 3-5z" />
-          <path d="M58 14c6-3 14-3 20 0 5 2 9 7 10 13 0 5-3 9-8 11-7 3-16 2-22-2-4-3-6-8-5-13 1-4 3-7 5-9z" />
-          <path d="M78 34c3-1 6 0 8 3 2 3 2 7 0 9-3 3-7 3-10 1-2-2-3-5-2-8 1-2 2-4 4-5z" />
-          <path d="M88 28c2-1 4 0 5 2 1 2 0 4-2 5-2 1-4 0-5-2 0-2 0-4 2-5z" />
-        </g>
+        />
       </svg>
 
-      {MAP_PINS.map((pin) => {
-        const px =
-          pin.size === 'lg'
-            ? 28
-            : pin.size === 'md'
-            ? 22
-            : pin.size === 'sm'
-            ? 18
-            : 8;
-        return (
-          <span
-            key={`${pin.x}-${pin.y}-${pin.size}`}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-          >
-            {pin.size === 'dot' ? (
-              <Wave
-                className="size-2 rounded-full"
-                delayMs={pin.delayMs}
-                text={false}
-              />
-            ) : (
-              <span className="relative grid place-items-center">
-                <Wave
-                  className="rounded-full"
-                  delayMs={pin.delayMs}
-                  text={false}
-                  style={{ width: px + 8, height: px + 8, opacity: 0.35 }}
-                />
-                <Wave
-                  className="absolute rounded-full"
-                  delayMs={pin.delayMs + 40}
-                  text={false}
-                  style={{ width: px, height: px }}
-                />
-              </span>
+      {MAP_PINS.map((pin) => (
+        <span
+          key={`${pin.x}-${pin.y}-${pin.size}`}
+          className="absolute -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+        >
+          <Wave
+            className={cn(
+              'rounded-full',
+              pin.size === 'lg'
+                ? 'size-2.5'
+                : pin.size === 'md'
+                ? 'size-2'
+                : 'size-1.5',
             )}
-          </span>
-        );
-      })}
+            delayMs={pin.delayMs}
+            text={false}
+          />
+        </span>
+      ))}
 
       <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
         <Wave className="h-2.5 w-16" delayMs={560} />
