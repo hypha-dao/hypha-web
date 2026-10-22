@@ -245,6 +245,7 @@ function conversationRowFromRoom(
     unread,
     memberCount: members.length,
     otherUserId: other?.userId ?? null,
+    roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,

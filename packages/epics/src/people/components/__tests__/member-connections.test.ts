@@ -195,6 +195,25 @@ describe('memberRowsForConnections', () => {
 });
 
 describe('supersededDirectRoomIds', () => {
+  it('prefers the DM-typed room over a later untyped two-person room', () => {
+    const losers = supersededDirectRoomIds([
+      room({
+        roomId: '!space-room',
+        kind: 'person',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 20,
+      }),
+      room({
+        roomId: '!dm',
+        kind: 'person',
+        otherUserId: '@gerardo:matrix',
+        lastTs: null,
+        roomType: 'io.hypha.room.dm',
+      }),
+    ]);
+    expect(losers).toEqual(['!space-room']);
+  });
+
   it('keeps the later room for a person and returns the earlier one', () => {
     const losers = supersededDirectRoomIds([
       room({

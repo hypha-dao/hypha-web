@@ -1,4 +1,5 @@
 import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
+import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
 
 export type ConnectionListPerson = {
@@ -30,6 +31,8 @@ export type ConversationRow = {
   memberCount: number;
   otherUserId: string | null;
   kind: 'person' | 'group';
+  /** `m.room.create` type, when the room was created with one. */
+  roomType?: string | null;
   /** Up to two other members, used as the group icon. */
   faces?: GroupFace[];
   /** Remembered as a group chat, even if the room was later renamed. */
@@ -346,7 +349,15 @@ function directRoomByMatrixId(rows: readonly ConversationRow[]) {
     if (row.signalThread || row.kind !== 'person' || !row.otherUserId) continue;
     const key = row.otherUserId.toLowerCase();
     const current = rooms.get(key);
-    if (!current || (row.lastTs ?? 0) >= (current.lastTs ?? 0)) {
+    // A room typed as a DM is the conversation, even when an older untyped
+    // two-person room (space, signal) has a more recent message.
+    const rowIsDm = row.roomType === HYPHA_ROOM_TYPES.dm;
+    const currentIsDm = current?.roomType === HYPHA_ROOM_TYPES.dm;
+    if (
+      !current ||
+      (rowIsDm && !currentIsDm) ||
+      (rowIsDm === currentIsDm && (row.lastTs ?? 0) >= (current.lastTs ?? 0))
+    ) {
       rooms.set(key, row);
     }
   }
