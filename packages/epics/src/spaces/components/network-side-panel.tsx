@@ -250,29 +250,34 @@ export function NetworkSidePanel({
               <CapitalList keys={offers} empty={t('noneYet')} />
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4">
+          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_auto] items-stretch gap-2 border-t border-border px-4 py-4">
             <Button
               type="button"
-              className="h-10 w-fit"
+              className="h-10 w-full justify-center"
+              onClick={() => setFundOpen(true)}
+            >
+              {t('resource')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="h-10 w-full justify-center"
               onClick={openSpaceRoom}
             >
               {t('connect')}
             </Button>
             {spaceHref ? (
-              <Button asChild className="h-10 w-fit">
-                <Link href={spaceHref}>
-                  {t('visit')}
-                  <ArrowUpRight className="size-3.5" aria-hidden />
-                </Link>
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              className="h-10 w-fit"
-              onClick={() => setFundOpen(true)}
-            >
-              {t('resource')}
-            </Button>
+              <Link
+                href={spaceHref}
+                className="inline-flex h-10 items-center gap-1 px-2 text-1 uppercase tracking-[0.12em] text-neutral-11 hover:text-foreground"
+              >
+                {t('visit')}
+                <ArrowUpRight className="size-3.5" aria-hidden />
+              </Link>
+            ) : (
+              <span />
+            )}
           </div>
         </section>
       ) : null}

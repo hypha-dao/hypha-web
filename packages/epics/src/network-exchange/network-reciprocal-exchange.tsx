@@ -167,7 +167,7 @@ function ExchangeMedia({
         <SignalVideoPlayer
           video={video}
           title={alt}
-          className="exchange-embed object-cover"
+          className="exchange-embed"
         />
       ) : image ? (
         <img src={image} alt={alt} onError={() => setFailed(true)} />
@@ -578,17 +578,13 @@ export function NetworkReciprocalExchange({
                             fontFamily: 'var(--font-family-heading)',
                           }}
                         >
-                          {hasMedia ? (
-                            <Link
-                              href={signalHref}
-                              className="hover:underline"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {signal.title}
-                            </Link>
-                          ) : (
-                            signal.title
-                          )}
+                          <Link
+                            href={signalHref}
+                            className="hover:underline"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {signal.title}
+                          </Link>
                         </h2>
                         <p className="truncate text-1 uppercase tracking-[0.14em] text-neutral-11">
                           {signal.spaceTitle}
@@ -597,7 +593,7 @@ export function NetworkReciprocalExchange({
                           <p
                             className={cn(
                               'text-2 leading-relaxed text-neutral-11',
-                              hasMedia ? 'line-clamp-1' : 'line-clamp-4',
+                              hasMedia ? 'line-clamp-1' : 'line-clamp-3',
                             )}
                           >
                             {story}
@@ -626,40 +622,11 @@ export function NetworkReciprocalExchange({
                             {payout}
                           </p>
                         ) : null}
-                        {!hasMedia ? (
-                          <Link
-                            href={signalHref}
-                            className="mt-auto self-start text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            {t('openSignal')}
-                          </Link>
-                        ) : null}
                       </div>
                       <div className="exchange-footer">
                         <Button
                           type="button"
-                          className="h-10 w-fit"
-                          disabled={opening || !signal.spaceSlug}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openRoom(signal);
-                          }}
-                        >
-                          {t('connect')}
-                        </Button>
-                        <Button asChild className="h-10 w-fit">
-                          <Link
-                            href={getDhoPathOverview(lang, signal.spaceSlug)}
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            {t('visit')}
-                            <ArrowUpRight className="size-3.5" aria-hidden />
-                          </Link>
-                        </Button>
-                        <Button
-                          type="button"
-                          className="h-10 w-fit"
+                          className="exchange-cta-primary"
                           onClick={(event) => {
                             event.stopPropagation();
                             setFundSpace({
@@ -670,6 +637,27 @@ export function NetworkReciprocalExchange({
                         >
                           {t('resource')}
                         </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          colorVariant="neutral"
+                          className="exchange-cta-secondary"
+                          disabled={opening || !signal.spaceSlug}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openRoom(signal);
+                          }}
+                        >
+                          {t('connect')}
+                        </Button>
+                        <Link
+                          href={getDhoPathOverview(lang, signal.spaceSlug)}
+                          className="exchange-cta-visit"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {t('visit')}
+                          <ArrowUpRight className="size-3.5" aria-hidden />
+                        </Link>
                       </div>
                     </article>
                   </li>

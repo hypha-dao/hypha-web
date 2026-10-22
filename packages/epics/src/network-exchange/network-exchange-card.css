@@ -1,7 +1,7 @@
-/* Fixed card height — media fills leftover space; footer never overlaps. */
+/* Cinema card — media bleeds edge-to-edge; CTAs sit in a clear hierarchy. */
 .exchange-card {
   display: flex;
-  height: 18rem;
+  height: 20.5rem;
   flex-direction: column;
   overflow: hidden;
 }
@@ -9,10 +9,10 @@
 .exchange-stage {
   position: relative;
   flex: 1 1 0%;
-  min-height: 0;
+  min-height: 10.5rem;
   width: 100%;
   overflow: hidden;
-  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  background: #000;
 }
 
 .exchange-stage > img,
@@ -23,8 +23,22 @@
   display: block;
   width: 100%;
   height: 100%;
+  border: 0;
   object-fit: cover;
+  object-position: center;
   background: #000;
+}
+
+/* Crop letterboxed embeds so the frame fills the stage. */
+.exchange-stage > .exchange-embed {
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%) scale(1.28);
+  transform-origin: center center;
 }
 
 .exchange-doc {
@@ -46,11 +60,16 @@
   bottom: 12px;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
-  background: var(--background);
-  color: var(--foreground);
+  width: 40px;
+  height: 40px;
+  border: 1px solid color-mix(in srgb, #fff 28%, transparent);
+  background: color-mix(in srgb, #000 55%, transparent);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.exchange-play:hover {
+  background: color-mix(in srgb, #000 72%, transparent);
 }
 
 .exchange-play svg {
@@ -66,9 +85,9 @@
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.35rem;
   overflow: hidden;
-  padding: 0.625rem 0.75rem 0;
+  padding: 0.75rem 0.875rem 0.25rem;
 }
 
 .exchange-meta-media {
@@ -80,10 +99,39 @@
 }
 
 .exchange-footer {
-  display: flex;
+  display: grid;
   flex-shrink: 0;
-  flex-wrap: wrap;
-  align-items: center;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) auto;
+  align-items: stretch;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem 0.75rem;
+  padding: 0.625rem 0.875rem 0.875rem;
+}
+
+.exchange-footer > * {
+  min-width: 0;
+}
+
+.exchange-footer .exchange-cta-primary,
+.exchange-footer .exchange-cta-secondary {
+  height: 2.5rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.exchange-footer .exchange-cta-visit {
+  display: inline-flex;
+  height: 2.5rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+  font-size: var(--font-size-1, 0.75rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neutral-11, var(--muted-foreground));
+  text-decoration: none;
+}
+
+.exchange-footer .exchange-cta-visit:hover {
+  color: var(--foreground);
 }
