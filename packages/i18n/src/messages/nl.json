@@ -4512,6 +4512,7 @@
     "signalFormImageHint": "JPEG, PNG, WebP of GIF. Meerdere tegelijk. 16 MB per stuk.",
     "signalFormVideo": "Videolink",
     "signalFormMediaVideo": "Video",
+    "signalFormMedia": "Afbeeldingen of video",
     "signalFormVideoHint": "Plak een YouTube-, Vimeo- of directe videolink. Het bestand blijft waar het is en het signaal speelt het af.",
     "signalFormAttachments": "Documenten",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint of tekst. Meerdere tegelijk. 16 MB per stuk.",

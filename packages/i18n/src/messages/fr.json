@@ -3934,6 +3934,7 @@
     "signalFormImageHint": "JPEG, PNG, WebP ou GIF. Plusieurs à la fois. 16 Mo chacun.",
     "signalFormVideo": "Lien vidéo",
     "signalFormMediaVideo": "Vidéo",
+    "signalFormMedia": "Images ou vidéo",
     "signalFormVideoHint": "Collez un lien YouTube, Vimeo ou un lien direct. Le fichier reste là où il est, et le signal le lit.",
     "signalFormAttachments": "Documents",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint ou texte. Plusieurs à la fois. 16 Mo chacun.",

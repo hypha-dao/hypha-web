@@ -317,7 +317,7 @@ export function NetworkExchangeShareCard({
             placeholder={t('signalTitleHint')}
             aria-label={t('signalTitle')}
             onChange={(event) => setTitle(event.target.value)}
-            className="h-9 w-full border border-border bg-background px-2.5 text-2 outline-none"
+            className="h-10 min-h-10 w-full border border-border bg-background px-3 text-2 outline-none"
           />
         </div>
 
@@ -367,11 +367,10 @@ export function NetworkExchangeShareCard({
         </div>
 
         <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>{tSignals('signalFormMedia')}</WalletFlowLabel>
           <div
             role="group"
-            aria-label={`${tSignals('signalFormImage')}, ${tSignals(
-              'signalFormMediaVideo',
-            )}`}
+            aria-label={tSignals('signalFormMedia')}
             className="grid grid-cols-2 gap-1"
           >
             {(
@@ -425,7 +424,7 @@ export function NetworkExchangeShareCard({
               placeholder="https://"
               aria-label={tSignals('signalFormVideo')}
               onChange={(event) => setVideoUrl(event.target.value)}
-              className="h-9 w-full border border-border bg-background px-2.5 text-2 outline-none"
+              className="h-10 min-h-10 w-full border border-border bg-background px-3 text-2 outline-none"
             />
           ) : null}
         </div>
@@ -473,7 +472,7 @@ export function NetworkExchangeShareCard({
           onClick={() => {
             void share();
           }}
-          className="h-9 w-full"
+          className="h-10 min-h-10 w-full px-2"
         >
           {t('share')}
         </Button>

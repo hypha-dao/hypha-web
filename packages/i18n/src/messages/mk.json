@@ -4493,6 +4493,7 @@
     "signalFormImageHint": "JPEG, PNG, WebP или GIF. Неколку одеднаш. По 16 MB.",
     "signalFormVideo": "Видео врска",
     "signalFormMediaVideo": "Видео",
+    "signalFormMedia": "Слики или видео",
     "signalFormVideoHint": "Залепете врска од YouTube, Vimeo или директно видео. Датотеката останува каде што е, а сигналот ја пушта.",
     "signalFormAttachments": "Документи",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint или текст. Неколку одеднаш. По 16 MB.",

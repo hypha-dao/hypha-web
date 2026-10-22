@@ -4511,6 +4511,7 @@
     "signalFormImageHint": "JPEG, PNG, WebP eller GIF. Flere om gangen. 16 MB hver.",
     "signalFormVideo": "Videolenke",
     "signalFormMediaVideo": "Video",
+    "signalFormMedia": "Bilder eller video",
     "signalFormVideoHint": "Lim inn en YouTube-, Vimeo- eller direkte videolenke. Filen blir der den er, og signalet spiller den av.",
     "signalFormAttachments": "Dokumenter",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint eller tekst. Flere om gangen. 16 MB hver.",

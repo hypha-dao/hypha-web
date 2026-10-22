@@ -73,7 +73,7 @@ export function MemberSpaceSelect({
       emptyListMessage={emptyLabel}
       disabled={disabled || isEmpty}
       allowEmptyChoice={false}
-      className="h-11 w-full bg-neutral-2 font-semibold md:w-full"
+      className="h-10 min-h-10 w-full bg-neutral-2 font-semibold md:w-full"
       renderOption={(option) => (
         <SpaceMark title={option.label} logoUrl={option.avatarUrl} />
       )}
