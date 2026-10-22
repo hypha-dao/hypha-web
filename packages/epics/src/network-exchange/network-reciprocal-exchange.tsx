@@ -1017,10 +1017,40 @@ export function NetworkReciprocalExchange({
                 };
                 const story = plainText(signal.description);
                 const chosen = signal.slug === selected?.slug;
-                const hasMedia = Boolean(
+                const signalImages =
+                  signal.images.length > 0
+                    ? signal.images
+                    : signal.leadImage
+                    ? [{ url: signal.leadImage, name: signal.title }]
+                    : [];
+                const signalDocuments =
+                  signal.documents.length > 0
+                    ? signal.documents
+                    : signal.document
+                    ? [signal.document]
+                    : [];
+                const hasSignalVisual = Boolean(
                   resolveSignalVideo(signal.videoUrl) ||
-                    signal.leadImage ||
-                    signal.document,
+                    signalImages.length > 0,
+                );
+                // A text-only card uses the space header so the row stays even.
+                const cardImages =
+                  signalImages.length > 0
+                    ? signalImages
+                    : !hasSignalVisual &&
+                      signalDocuments.length === 0 &&
+                      signal.spaceLeadImage
+                    ? [
+                        {
+                          url: signal.spaceLeadImage,
+                          name: signal.spaceTitle,
+                        },
+                      ]
+                    : [];
+                const hasMedia = Boolean(
+                  hasSignalVisual ||
+                    cardImages.length > 0 ||
+                    signalDocuments.length > 0,
                 );
                 const signalHref = `/${lang}/dho/${signal.spaceSlug}/coherence?signal=${signal.slug}`;
                 const dueLabel = signal.dueAt
@@ -1039,21 +1069,9 @@ export function NetworkReciprocalExchange({
                       onClick={() => setSelectedSlug(signal.slug)}
                     >
                       <ExchangeMedia
-                        images={
-                          signal.images.length > 0
-                            ? signal.images
-                            : signal.leadImage
-                            ? [{ url: signal.leadImage, name: signal.title }]
-                            : []
-                        }
+                        images={cardImages}
                         videoUrl={signal.videoUrl}
-                        documents={
-                          signal.documents.length > 0
-                            ? signal.documents
-                            : signal.document
-                            ? [signal.document]
-                            : []
-                        }
+                        documents={signalDocuments}
                         alt={signal.title}
                         playLabel={t('fieldVideo')}
                       />
