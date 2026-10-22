@@ -1286,9 +1286,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const pending = matrixRef.current
         .createRoom(title, { roomType: HYPHA_ROOM_TYPES.signal })
         .then((result) => {
-        createdRoomBySlugRef.current.set(slug, result.roomId);
-        return result;
-      });
+          createdRoomBySlugRef.current.set(slug, result.roomId);
+          return result;
+        });
       createRoomInFlightRef.current.set(slug, pending);
       const clearInFlight = () => {
         if (createRoomInFlightRef.current.get(slug) === pending) {
