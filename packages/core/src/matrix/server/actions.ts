@@ -122,7 +122,17 @@ export async function getMatrixUserIdsByPersonIdsAction(
   if (!authToken) {
     throw new Error('authToken is required for matrix user id batch lookup');
   }
-  return findMatrixUserIdsByPersonIds({ personIds, environment }, { db });
+  const rows = await findMatrixUserIdsByPersonIds(
+    { personIds, environment },
+    { db },
+  );
+  // TEMP (#2566): which listed people have a Matrix account.
+  console.info('[matrix-ids]', {
+    requested: personIds.length,
+    found: rows.length,
+    missing: personIds.filter((id) => !rows.some((row) => row.personId === id)),
+  });
+  return rows;
 }
 
 /**

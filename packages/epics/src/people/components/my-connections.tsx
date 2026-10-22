@@ -158,11 +158,22 @@ function lastRoomMessage(room: Room, selfId: string | null) {
   };
 }
 
+/** TEMP (#2566): why a room has no conversation row. Read by `__hyphaRoomAudit()`. */
+const rowSkipReasons = new Map<string, string>();
+
+function skipRow(room: Room, reason: string): null {
+  rowSkipReasons.set(room.roomId, reason);
+  return null;
+}
+
 function conversationRowFromRoom(
   client: MatrixClient,
   room: Room,
 ): ConversationRow | null {
-  if (room.getMyMembership() !== 'join') return null;
+  rowSkipReasons.delete(room.roomId);
+  if (room.getMyMembership() !== 'join') {
+    return skipRow(room, `membership=${room.getMyMembership()}`);
+  }
   const botId = botUserId();
   const selfId = client.getUserId();
   const knownMembers = room
@@ -179,12 +190,21 @@ function conversationRowFromRoom(
     return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
   });
   const others = members.filter((member) => member.userId !== selfId);
-  if (others.length === 0) return null;
+  if (others.length === 0) {
+    return skipRow(
+      room,
+      `no other humans (members known: ${knownMembers.length}, joined: ${
+        room.getJoinedMemberCount?.() ?? '?'
+      })`,
+    );
+  }
 
   const kind = others.length === 1 ? 'person' : 'group';
   // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
   // rooms are not private messages.
-  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) return null;
+  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
+    return skipRow(room, `1:1 but type=${room.getType() ?? '(none)'}`);
+  }
   const other = others.length === 1 ? others[0] : undefined;
   const name =
     (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
@@ -195,7 +215,7 @@ function conversationRowFromRoom(
     looksLikeHyphaBot(room.name) ||
     looksLikeHyphaBot(name)
   ) {
-    return null;
+    return skipRow(room, 'bot');
   }
   const mxc =
     kind === 'person'
@@ -231,7 +251,7 @@ function conversationRowFromRoom(
     isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
   if (signalThread) {
     rememberSignalThreadRooms([room.roomId], { quiet: true });
-    return null;
+    return skipRow(room, 'signal thread');
   }
   const last = lastRoomMessage(room, selfId);
   // Always walk real incoming messages. The SDK notification total still
@@ -248,6 +268,7 @@ function conversationRowFromRoom(
     unread,
     memberCount: members.length,
     otherUserId: other?.userId ?? null,
+    roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,
@@ -634,7 +655,19 @@ function pumpConversationRooms(limit: number) {
     cachedConversation(client, room);
     done += 1;
   }
-  if (done > 0) notifyConversationListeners();
+  if (done > 0 || conversationQueue.length === 0) {
+    notifyConversationListeners();
+  }
+  if (conversationQueue.length === 0) {
+    // TEMP (#2566)
+    const rows = conversationRowsSnapshot(client);
+    console.info('[conv-list] pump drained', {
+      rooms: client.getRooms().length,
+      cached: conversationCache.size,
+      rows: rows.length,
+      dmRows: rows.filter((row) => row.roomType === HYPHA_ROOM_TYPES.dm).length,
+    });
+  }
   scheduleConversationPump();
 }
 
@@ -739,6 +772,11 @@ function useConversationClient(client: MatrixClient) {
   cancelConversationPump();
 }
 
+/** True while rooms are still being summarised or the first sync has not finished. */
+export function conversationRowsPending() {
+  return conversationQueue.length > 0 || conversationPump != null;
+}
+
 export function conversationRowsSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
@@ -809,6 +847,11 @@ function roomAuditRows(client: MatrixClient) {
       rememberedSignal: isRememberedSignalThreadRoom(room.roomId),
       rememberedGroup: isRememberedGroupChatRoom(room.roomId),
       cachedKind: row ? row.kind : '(null = hidden)',
+      skipReason: rowSkipReasons.get(room.roomId) ?? '',
+      roomType: room.getType() ?? '(none)',
+      timelineEvents: room.getLiveTimeline().getEvents().length,
+      cached: conversationCache.has(room.roomId),
+      queued: conversationQueue.includes(room.roomId),
       listed,
       unread: row?.unread ?? 0,
       countedInBadge: counted ? row?.unread ?? 0 : 0,
@@ -868,6 +911,15 @@ export function prioritizeConversationRooms(
   if (matrixUserIds.length === 0) return;
   useConversationClient(client);
   const roomIds = priorityRoomIds(client, matrixUserIds);
+  // TEMP (#2566): which rooms are summarised first for the listed people.
+  console.info(
+    '[conv-list] priority rooms',
+    roomIds.map((id) => ({
+      roomId: id,
+      name: client.getRoom(id)?.name,
+      type: client.getRoom(id)?.getType() ?? '(none)',
+    })),
+  );
   enqueueConversationRooms(client, roomIds);
   pumpConversationRooms(
     Math.min(SYNC_ROOM_BUDGET, Math.max(roomIds.length, 1)),
@@ -961,6 +1013,7 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [synced, setSynced] = useState(false);
+  const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [picking, setPicking] = useState(false);
@@ -1000,12 +1053,13 @@ export function MyConnections({
   const needle = query.trim().toLowerCase();
   const listed =
     needle && searchDirectory != null ? searchDirectory : connections;
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: [
-      ...listed.map((person) => person.id),
-      ...(home?.person.id != null ? [home.person.id] : []),
-    ],
-  });
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds: [
+        ...listed.map((person) => person.id),
+        ...(home?.person.id != null ? [home.person.id] : []),
+      ],
+    });
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
   const visibleMatrixKey = useMemo(
@@ -1150,6 +1204,7 @@ export function MyConnections({
     if (!client) {
       setRows([]);
       setSynced(false);
+      setRowsPending(true);
       return;
     }
     return attachConversationList(client, () => {
@@ -1161,6 +1216,7 @@ export function MyConnections({
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
       }
+      setRowsPending(conversationRowsPending());
     });
   }, [client]);
 
@@ -1195,6 +1251,39 @@ export function MyConnections({
       ...directoryRows,
     ];
   }, [home?.person.id, listed, personIdToMatrixUserId, rows, t]);
+
+  // TEMP (#2566): what the Messages list has to work with right now.
+  useEffect(() => {
+    console.info('[messages-list]', {
+      synced,
+      rowsPending,
+      matrixIdsLoading,
+      matrixClientRooms: client?.getRooms().length ?? 0,
+      conversationRows: rows.length,
+      dmRows: rows.filter((row) => row.roomType === HYPHA_ROOM_TYPES.dm).length,
+      people: members.length,
+      peopleWithRoom: members.filter((row) => row.roomId).length,
+      peopleWithPreview: members.filter((row) => row.preview).length,
+    });
+    console.table(
+      members.slice(0, 20).map((row) => ({
+        name: row.name,
+        mxid: personIdToMatrixUserId[row.person.id] ?? '(none)',
+        roomId: row.roomId ?? '(no row)',
+        preview: row.preview.slice(0, 30),
+        lastTs: row.lastTs ? new Date(row.lastTs).toISOString() : '',
+        unread: row.unread,
+      })),
+    );
+  }, [
+    client,
+    matrixIdsLoading,
+    members,
+    personIdToMatrixUserId,
+    rows,
+    rowsPending,
+    synced,
+  ]);
 
   const memberPersonIds = useMemo(
     () => members.map((row) => row.person.id),
@@ -1646,6 +1735,7 @@ export function MyConnections({
               locale={locale}
               justNow={t('justNow')}
               noMessage={t('noMessage')}
+              previewLoading={!synced || rowsPending || matrixIdsLoading}
               youLabel={(message) => t('youWrote', { message })}
               unreadLabel={(count) => t('unread', { count })}
               selectLabel={(name) => t('selectMember', { name })}
@@ -1717,6 +1807,7 @@ function MemberList({
   locale,
   justNow,
   noMessage,
+  previewLoading,
   youLabel,
   unreadLabel,
   selectLabel,
@@ -1730,6 +1821,8 @@ function MemberList({
   locale: string;
   justNow: string;
   noMessage: string;
+  /** Rooms are still loading, so a missing conversation is not yet "empty". */
+  previewLoading: boolean;
   youLabel: (message: string) => string;
   unreadLabel: (count: number) => string;
   selectLabel: (name: string) => string;
@@ -1744,6 +1837,7 @@ function MemberList({
       </h2>
       <ul>
         {rows.map((row) => {
+          const loadingPreview = !row.roomId && previewLoading;
           const preview = row.preview
             ? row.mine
               ? youLabel(row.preview)
@@ -1811,9 +1905,18 @@ function MemberList({
                     ) : null}
                   </span>
                   <span className="mt-0.5 flex items-center justify-between gap-3">
-                    <span className="min-w-0 flex-1 truncate text-1 text-muted-foreground">
-                      {preview}
-                    </span>
+                    {loadingPreview ? (
+                      <span
+                        role="status"
+                        aria-busy="true"
+                        aria-label="Loading"
+                        className="my-0.5 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5"
+                      />
+                    ) : (
+                      <span className="min-w-0 flex-1 truncate text-1 text-muted-foreground">
+                        {preview}
+                      </span>
+                    )}
                     {row.unread > 0 ? (
                       <span
                         className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"

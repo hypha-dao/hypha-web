@@ -30,6 +30,8 @@ export type ConversationRow = {
   memberCount: number;
   otherUserId: string | null;
   kind: 'person' | 'group';
+  /** `m.room.create` type, when the room was created with one. */
+  roomType?: string | null;
   /** Up to two other members, used as the group icon. */
   faces?: GroupFace[];
   /** Remembered as a group chat, even if the room was later renamed. */
