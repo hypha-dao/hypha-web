@@ -1,7 +1,7 @@
 'use client';
 
 import { hasSpaceMapLocation, type Space } from '@hypha-platform/core/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export type DeferredMapPin = { latitude: number; longitude: number };
 
@@ -21,34 +21,73 @@ function isPin(value: unknown): value is DeferredMapPin {
  * name, then the creator, then another member, are looked up after paint.
  * Each resolved pin is merged in.
  */
+function pinRequestKey(space: Space): string | null {
+  if (hasSpaceMapLocation(space)) return null;
+  const locationLabel = space.locationLabel?.trim() ?? '';
+  const creatorAddress = space.creatorAddress?.trim() ?? '';
+  const members = space.memberAddresses?.length ?? 0;
+  if (!locationLabel && !creatorAddress && members === 0) return null;
+  return `${space.id}|${locationLabel}|${creatorAddress}|${members}`;
+}
+
 export function useDeferredMapPins(
   spaces: readonly Space[],
   enabled: boolean,
 ): Readonly<Record<number, DeferredMapPin>> {
   const [pins, setPins] = useState<Record<number, DeferredMapPin>>({});
+  const pinsRef = useRef(pins);
+  pinsRef.current = pins;
+  const spacesRef = useRef(spaces);
+  spacesRef.current = spaces;
+  const startedRef = useRef(new Set<string>());
+  const abortRef = useRef<AbortController | null>(null);
+  const childrenRef = useRef(new Set<AbortController>());
+  const pendingKey = useMemo(
+    () =>
+      spaces
+        .map((space) => pinRequestKey(space))
+        .filter((key): key is string => key != null)
+        .join('\n'),
+    [spaces],
+  );
 
   useEffect(() => {
     if (!enabled) return;
-    const pending = spaces.flatMap((space) => {
-      if (hasSpaceMapLocation(space)) return [];
-      const locationLabel = space.locationLabel?.trim() ?? '';
-      const creatorAddress = space.creatorAddress?.trim() ?? '';
-      const memberAddresses = space.memberAddresses ?? [];
-      if (!locationLabel && !creatorAddress && memberAddresses.length === 0) {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    return () => {
+      controller.abort();
+      abortRef.current = null;
+      childrenRef.current.forEach((child) => child.abort());
+      childrenRef.current.clear();
+      startedRef.current = new Set();
+    };
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const parent = abortRef.current;
+    if (!parent || parent.signal.aborted) return;
+    const pending = spacesRef.current.flatMap((space) => {
+      const key = pinRequestKey(space);
+      if (!key || startedRef.current.has(key) || pinsRef.current[space.id]) {
         return [];
       }
+      startedRef.current.add(key);
       return [
         {
           id: space.id,
-          locationLabel: locationLabel || null,
-          creatorAddress: creatorAddress || null,
-          memberAddresses,
+          locationLabel: space.locationLabel?.trim() || null,
+          creatorAddress: space.creatorAddress?.trim() || null,
+          memberAddresses: space.memberAddresses ?? [],
         },
       ];
     });
     if (pending.length === 0) return;
 
     const controller = new AbortController();
+    childrenRef.current.add(controller);
+    if (parent.signal.aborted) controller.abort();
     const chunks: Array<typeof pending> = [];
     for (let index = 0; index < pending.length; index += 80) {
       chunks.push(pending.slice(index, index + 80));
@@ -111,8 +150,13 @@ export function useDeferredMapPins(
       console.error('[useDeferredMapPins] failed to load map pins', error);
     });
 
-    return () => controller.abort();
-  }, [enabled, spaces]);
+    return () => {
+      if (abortRef.current?.signal.aborted) {
+        controller.abort();
+        childrenRef.current.delete(controller);
+      }
+    };
+  }, [enabled, pendingKey]);
 
   return pins;
 }

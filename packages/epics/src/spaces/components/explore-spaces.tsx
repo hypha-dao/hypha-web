@@ -44,6 +44,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { readClientSearchParams } from '../read-client-search-params';
+import {
+  applyDirectoryCensus,
+  useDeferredDirectoryCensus,
+} from './use-deferred-directory-census';
 import { useDeferredMapPins } from './use-deferred-map-pins';
 
 interface ExploreSpacesProps {
@@ -189,15 +193,29 @@ export function ExploreSpaces({
     }
   }, [enableNetworkMap]);
 
-  const deferredMapPins = useDeferredMapPins(spaces, enableNetworkMap);
+  const { byWeb3Id: directoryCensus, settled: censusSettled } =
+    useDeferredDirectoryCensus(spaces);
+  const directorySpaces = React.useMemo(
+    () =>
+      spaces.map((space) =>
+        applyDirectoryCensus(
+          space,
+          typeof space.web3SpaceId === 'number'
+            ? directoryCensus[space.web3SpaceId]
+            : undefined,
+        ),
+      ),
+    [directoryCensus, spaces],
+  );
+  const deferredMapPins = useDeferredMapPins(directorySpaces, enableNetworkMap);
   const resolvedMapPins = React.useMemo(
     () => ({ ...creatorMapPins, ...deferredMapPins }),
     [creatorMapPins, deferredMapPins],
   );
 
   const nonArchivedSpaces = React.useMemo(
-    () => spaces.filter((space) => !isSpaceArchived(space)),
-    [spaces],
+    () => directorySpaces.filter((space) => !isSpaceArchived(space)),
+    [directorySpaces],
   );
 
   const listedSpaces = React.useMemo(
@@ -334,10 +352,13 @@ export function ExploreSpaces({
     [pathname],
   );
 
-  const sortedSpaces = React.useMemo(
-    () => sortSpacesByOrder(selectedSpaces, order ?? 'mostmembers'),
-    [selectedSpaces, order],
-  );
+  const sortedSpaces = React.useMemo(() => {
+    const rank = order ?? 'mostmembers';
+    // Member and agreement order waits until the census finishes, so cards
+    // do not jump to the top as each batch arrives.
+    if (!censusSettled && rank !== 'mostrecent') return selectedSpaces;
+    return sortSpacesByOrder(selectedSpaces, rank);
+  }, [censusSettled, order, selectedSpaces]);
 
   const mapSpaces = React.useMemo(
     () =>
@@ -380,8 +401,8 @@ export function ExploreSpaces({
     null,
   );
   const selectedSpace = React.useMemo(
-    () => spaces.find((space) => space.id === selectedSpaceId) ?? null,
-    [spaces, selectedSpaceId],
+    () => directorySpaces.find((space) => space.id === selectedSpaceId) ?? null,
+    [directorySpaces, selectedSpaceId],
   );
   const renderMapToolbar = React.useCallback(
     () => (
@@ -397,7 +418,7 @@ export function ExploreSpaces({
           view === 'map' || view === 'overview' ? (
             <NetworkAddLocationButton
               lang={lang}
-              spaces={spaces}
+              spaces={directorySpaces}
               isAuthenticated={isAuthenticated}
               className="!h-8 !min-h-8 gap-1.5 !px-2.5 !text-xs !leading-none font-medium shadow-none"
             />
@@ -405,7 +426,7 @@ export function ExploreSpaces({
         }
       />
     ),
-    [lang, spaces, isAuthenticated, view, setView],
+    [lang, directorySpaces, isAuthenticated, view, setView],
   );
 
   const categoryFilters =
@@ -493,6 +514,7 @@ export function ExploreSpaces({
     <NetworkCensus
       lang={lang}
       isLoading={showSpacesSkeleton}
+      figuresLoading={!censusSettled}
       spaces={{
         total: selectedSpaces.length + privateSpaces.length,
         publicCount: selectedSpaces.length,

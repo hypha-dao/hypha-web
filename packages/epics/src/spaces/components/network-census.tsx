@@ -95,6 +95,7 @@ function StatColumn({
 export function NetworkCensus({
   lang,
   isLoading,
+  figuresLoading = false,
   spaces,
   members,
   agreements,
@@ -103,6 +104,8 @@ export function NetworkCensus({
 }: {
   lang: Locale;
   isLoading: boolean;
+  /** Member and agreement totals are still arriving from the chain. */
+  figuresLoading?: boolean;
   spaces: CensusFigures;
   members: CensusFigures;
   agreements: CensusFigures;
@@ -121,6 +124,7 @@ export function NetworkCensus({
         })
       : null;
 
+  const countsLoading = isLoading || figuresLoading;
   const columns = [
     {
       value: isLoading ? null : spaces.total,
@@ -130,21 +134,21 @@ export function NetworkCensus({
       reserveSplit: true,
     },
     {
-      value: isLoading ? null : members.total,
+      value: countsLoading ? null : members.total,
       label: tCommon('Members'),
-      split: isLoading
+      split: countsLoading
         ? null
         : split(members.publicCount, members.privateCount),
-      isLoading,
+      isLoading: countsLoading,
       reserveSplit: true,
     },
     {
-      value: isLoading ? null : agreements.total,
+      value: countsLoading ? null : agreements.total,
       label: tCommon('Agreements'),
-      split: isLoading
+      split: countsLoading
         ? null
         : split(agreements.publicCount, agreements.privateCount),
-      isLoading,
+      isLoading: countsLoading,
       reserveSplit: true,
     },
     {

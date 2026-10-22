@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { isSpaceArchived } from '../../utils';
-import { attachNetworkCensusCounts } from '../network-directory-census';
+import {
+  attachNetworkCensusCounts,
+  directoryCensusFromCalls,
+} from '../network-directory-census';
 
 const address = (suffix: string) =>
   `0x${suffix.padStart(40, '0')}` as `0x${string}`;
@@ -40,5 +43,52 @@ describe('attachNetworkCensusCounts', () => {
     expect(attached[3]).toMatchObject({ documentCount: 2 });
     expect(attached[3]).not.toHaveProperty('memberCount');
     expect(isSpaceArchived(attached[3]!)).toBe(false);
+  });
+});
+
+describe('directoryCensusFromCalls', () => {
+  const member = address('ab');
+
+  it('keeps a failed member read off the empty-space rule', () => {
+    const row = directoryCensusFromCalls(
+      7,
+      { status: 'failure' },
+      { status: 'success', result: [[1n], []] },
+    );
+    expect(row.memberCount).toBeNull();
+    expect(row.memberAddresses).toEqual([]);
+    expect(row.documentCount).toBe(1);
+  });
+
+  it('marks a successful empty member list as zero', () => {
+    const row = directoryCensusFromCalls(
+      7,
+      {
+        status: 'success',
+        result: [0, 0, 0, [], [], 0, 0, 0, member],
+      },
+      { status: 'success', result: [[], []] },
+    );
+    expect(row).toMatchObject({
+      memberCount: 0,
+      memberAddresses: [],
+      documentCount: 0,
+      creatorAddress: member,
+    });
+  });
+
+  it('returns members and the creator from a successful read', () => {
+    const row = directoryCensusFromCalls(
+      7,
+      {
+        status: 'success',
+        result: [0, 0, 0, [], [member], 0, 0, 0, member],
+      },
+      undefined,
+    );
+    expect(row.memberCount).toBe(1);
+    expect(row.memberAddresses).toEqual([member]);
+    expect(row.documentCount).toBeNull();
+    expect(row.creatorAddress).toBe(member);
   });
 });

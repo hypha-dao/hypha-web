@@ -9,7 +9,12 @@ export * from './serialize-space-members-roster-for-json';
 export * from './queries';
 export { mapDbSpaceToSpace } from './map-db-space';
 export { getNetworkGrowth } from './network-growth';
-export { getNetworkDirectorySpaces } from './network-directory';
+export {
+  getNetworkDirectorySpaces,
+  readNetworkDirectoryCensus,
+} from './network-directory';
+export { directoryCensusFromCalls } from './network-directory-census';
+export type { DirectoryCensusRow } from './network-directory-census';
 export type { NetworkGrowth } from '../network-growth';
 export * from './organizational-guidance';
 export * from './mutations';
