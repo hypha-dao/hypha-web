@@ -71,7 +71,7 @@ export default async function Index(props: PageProps) {
 
   return (
     <div className="w-full min-w-0">
-      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:py-9">
+      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
         <div className="flex flex-col gap-4 xl:hidden">
           {mobileTitle}
           <Suspense fallback={null}>
