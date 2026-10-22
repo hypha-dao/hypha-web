@@ -15,7 +15,10 @@ vi.mock('@hypha-platform/storage-postgres', async () => {
 });
 
 import {
+  chooseFallbackLocations,
+  coordinatesFromLocationText,
   creatorLocationQueries,
+  geocodeOrder,
   normalizeCreatorAddress,
   resolveCreatorMapCoordinates,
   type CreatorPersonRow,
@@ -89,6 +92,81 @@ describe('creatorLocationQueries', () => {
     expect(queries.size).toBe(0);
   });
 
+  it('uses another member when the creator has no place', () => {
+    const member = '0x4444444444444444444444444444444444444444';
+    const laterMember = '0x5555555555555555555555555555555555555555';
+    const rows: CreatorPersonRow[] = [
+      {
+        address: deployer,
+        location: '  ',
+        sub: 'did:privy:creator',
+      },
+      {
+        address: member.toUpperCase(),
+        location: 'Nairobi',
+        sub: 'did:privy:member',
+      },
+      {
+        address: laterMember,
+        location: 'Tokyo',
+        sub: 'did:privy:later',
+      },
+    ];
+    const queries = creatorLocationQueries(
+      [
+        {
+          id: 9,
+          creatorAddress: deployer,
+          memberAddresses: [laterMember, member, deployer],
+        },
+      ],
+      rows,
+    );
+    expect([...queries.entries()]).toEqual([[9, 'Nairobi']]);
+    expect(
+      chooseFallbackLocations(
+        [
+          {
+            id: 9,
+            creatorAddress: deployer,
+            memberAddresses: [laterMember, member],
+          },
+        ],
+        rows,
+      )[0]?.source,
+    ).toBe('member');
+  });
+
+  it('keeps the creator place ahead of a member place', () => {
+    const member = '0x4444444444444444444444444444444444444444';
+    const choices = chooseFallbackLocations(
+      [
+        {
+          id: 8,
+          creatorAddress: deployer,
+          memberAddresses: [member],
+        },
+        {
+          id: 9,
+          memberAddresses: [member],
+        },
+      ],
+      [
+        ...people,
+        {
+          address: member,
+          location: 'Nairobi',
+          sub: 'did:privy:member',
+        },
+      ],
+    );
+    expect(choices.map((choice) => [choice.spaceId, choice.source])).toEqual([
+      [8, 'creator'],
+      [9, 'member'],
+    ]);
+    expect(geocodeOrder(choices)).toEqual(['Lisbon, Portugal', 'Nairobi']);
+  });
+
   it('skips space actors, blank locations, and unknown deployers', () => {
     const queries = creatorLocationQueries(
       [
@@ -144,6 +222,30 @@ describe('resolveCreatorMapCoordinates', () => {
 
     expect(pins).toEqual({ 12: { latitude: 38.7, longitude: -9.1 } });
     expect(geocode).toHaveBeenCalledWith('Lisbon', 1);
+  });
+
+  it('reads a coordinate pair from the profile without calling the geocoder', async () => {
+    const geocode = vi.fn();
+    const db = fakeDb([
+      {
+        address: deployer,
+        location: '52.3, 4.9',
+        sub: 'did:privy:creator',
+      },
+    ]);
+
+    const pins = await resolveCreatorMapCoordinates(
+      [{ id: 12, creatorAddress: deployer }],
+      { db: db as never },
+      geocode,
+    );
+
+    expect(coordinatesFromLocationText('52.3, 4.9')).toEqual({
+      latitude: 52.3,
+      longitude: 4.9,
+    });
+    expect(pins).toEqual({ 12: { latitude: 52.3, longitude: 4.9 } });
+    expect(geocode).not.toHaveBeenCalled();
   });
 
   it('omits a space when the creator location does not geocode', async () => {

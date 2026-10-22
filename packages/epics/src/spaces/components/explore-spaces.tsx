@@ -340,7 +340,7 @@ export function ExploreSpaces({
           longitude: space.longitude,
           creatorCoordinates: creatorMapPins?.[space.id] ?? null,
         });
-        // Only real places: the space's own coordinates, or the creator's.
+        // Only real places: the space, then its creator, then another member.
         // No hashed / random scatter — empty locations stay off the map.
         if (!pin) return [];
         if (pin.source === 'space') return [space];

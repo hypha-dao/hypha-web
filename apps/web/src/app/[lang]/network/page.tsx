@@ -94,7 +94,8 @@ async function NetworkSpaces(props: PageProps) {
   networkGrowth = growthResult;
 
   // A space keeps its own coordinates. One with none uses its creator's
-  // location. Geocoding is capped so a slow lookup cannot hold the page.
+  // profile place, then another member's. Geocoding is capped so a slow
+  // lookup cannot hold the page.
   const creatorMapPins = enableNetworkMap
     ? await resolveCreatorMapCoordinates(spaces, { db }).catch(
         (error: unknown) => {
