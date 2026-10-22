@@ -85,7 +85,8 @@ export const PeopleTransferForm = ({
 
   useScrollToErrors(form, formRef);
 
-  const { lang } = useParams();
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params.lang === 'string' ? params.lang : 'en';
 
   const handleTransfer = async (data: FormValues) => {
     try {
