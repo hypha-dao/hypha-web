@@ -391,7 +391,7 @@ export function ExploreSpaces({
               lang={lang}
               spaces={spaces}
               isAuthenticated={isAuthenticated}
-              className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
+              className="!h-8 !min-h-8 gap-1.5 !px-2.5 !text-xs !leading-none font-medium shadow-none"
             />
           ) : null
         }

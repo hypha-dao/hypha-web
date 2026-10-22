@@ -57,7 +57,7 @@ export function NetworkMapViewToggle({
           variant="switch"
           className={segmentedTriggerClass}
         >
-          <MapOverListIcon className="size-3.5 shrink-0" />
+          <MapOverListIcon className="size-3 shrink-0" />
           {t('overviewView')}
         </TabsTrigger>
         <TabsTrigger
@@ -65,7 +65,7 @@ export function NetworkMapViewToggle({
           variant="switch"
           className={segmentedTriggerClass}
         >
-          <LayoutList className="size-3.5 shrink-0" aria-hidden />
+          <LayoutList className="size-3 shrink-0" aria-hidden />
           {t('listView')}
         </TabsTrigger>
         <TabsTrigger
@@ -73,7 +73,7 @@ export function NetworkMapViewToggle({
           variant="switch"
           className={segmentedTriggerClass}
         >
-          <Map className="size-3.5 shrink-0" aria-hidden />
+          <Map className="size-3 shrink-0" aria-hidden />
           {t('mapView')}
         </TabsTrigger>
       </TabsList>
