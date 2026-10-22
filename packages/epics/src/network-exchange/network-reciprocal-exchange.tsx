@@ -938,7 +938,7 @@ function ExchangeFilters({
                 });
               }}
             >
-              <SelectTrigger className="h-10 min-h-10 w-full">
+              <SelectTrigger className="h-10 min-h-10 w-full py-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
