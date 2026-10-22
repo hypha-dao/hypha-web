@@ -19,6 +19,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  MultiSelect,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -30,9 +31,16 @@ import { useHumanChatPanel } from '../common/human-chat-panel-context';
 import { useOpenSpacePublicChat } from '../common/use-open-space-public-chat';
 import { compactIndicativeAmount } from '../coherence/components/signal-indicative-amounts';
 import { SignalVideoPlayer } from '../coherence/components/signal-video-player';
+import {
+  SIGNAL_BOARD_SELECT_TEXT_CLASS,
+  SIGNAL_FILTER_MULTI_SELECT_CLASS,
+} from '../coherence/utils/signal-tag-badge-styles';
 import { resolveSignalVideo } from '../coherence/utils/signal-video';
 import { resolveDateFnsLocale } from '../utils/date-fns-locale';
-import { FundASpaceFlow } from '../wallet/components/fund-a-space-flow';
+import {
+  FUND_SPACE_DIALOG_CONTENT_CLASS,
+  FundASpaceFlow,
+} from '../wallet/components/fund-a-space-flow';
 import { CAPITAL_MARK } from './capital-marks';
 import { NetworkExchangeShareCard } from './network-exchange-share-card';
 import { NETWORK_RIGHT_PANEL_CLASS } from './network-right-cards';
@@ -146,11 +154,16 @@ function ExchangeMedia({
           src={video.src}
           poster={image ?? undefined}
           playsInline
-          preload="metadata"
+          preload="auto"
+          muted={!playing}
           controls={playing}
+          onLoadedMetadata={(event) => {
+            const el = event.currentTarget;
+            if (el.currentTime < 0.05) el.currentTime = 0.05;
+          }}
           onClick={(event) => event.stopPropagation()}
         />
-      ) : video && playing ? (
+      ) : video ? (
         <SignalVideoPlayer
           video={video}
           title={alt}
@@ -171,10 +184,8 @@ function ExchangeMedia({
             {document.name}
           </span>
         </a>
-      ) : video ? (
-        <div className="absolute inset-0 bg-neutral-3" aria-hidden />
       ) : null}
-      {video && !playing ? (
+      {video?.kind === 'file' && !playing ? (
         <button
           type="button"
           className="exchange-play"
@@ -207,12 +218,6 @@ function isFieldKind(
     typeof value === 'string' &&
     (NETWORK_FIELD_KINDS as readonly string[]).includes(value)
   );
-}
-
-function toggleValue<T>(list: T[], value: T) {
-  return list.includes(value)
-    ? list.filter((item) => item !== value)
-    : [...list, value];
 }
 
 function FilterTag({
@@ -249,6 +254,15 @@ function ExchangeFilters({
 }) {
   const t = useTranslations('NetworkExchange');
   const active = types.length > 0 || capitals.length > 0;
+  const typeOptions = NETWORK_FIELD_KINDS.map((kind) => ({
+    value: kind,
+    label: typeLabel(kind, t),
+  }));
+  const capitalOptions = CAPITALS.map((key) => ({
+    value: key,
+    label: `${CAPITAL_MARK[key]} ${t(`capitals.${key}`)}`,
+  }));
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -258,8 +272,8 @@ function ExchangeFilters({
           title={t('filterSignals')}
           aria-pressed={active}
           className={cn(
-            'inline-flex h-10 w-10 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
-            active ? 'border-foreground text-foreground' : 'border-border',
+            'inline-flex h-6 w-6 shrink-0 items-center justify-center border bg-background text-muted-foreground hover:text-foreground',
+            active ? 'border-foreground text-foreground' : 'border-border/70',
           )}
         >
           <ListFilter className="craft-icon" strokeWidth={1.25} aria-hidden />
@@ -268,64 +282,66 @@ function ExchangeFilters({
       <PopoverContent
         align="end"
         collisionPadding={16}
-        className="w-80 rounded-none border-border bg-background p-0 text-foreground shadow-none"
+        onPointerDownOutside={(event) => {
+          const target = event.target;
+          if (
+            target instanceof Element &&
+            target.closest(
+              '[data-radix-popper-content-wrapper], [role="listbox"]',
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
+        className="narrow-scrollbar max-h-[var(--radix-popover-content-available-height,70dvh)] w-80 overflow-y-auto overscroll-contain rounded-none border-border bg-background p-0 text-foreground shadow-none"
       >
-        <div className="flex flex-col gap-3 px-3 py-3">
-          <div className="flex flex-col gap-2">
-            <p className="text-1 font-medium uppercase tracking-[0.12em] text-neutral-11">
-              {t('signalTypes')}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {NETWORK_FIELD_KINDS.map((kind) => {
-                const selected = types.includes(kind);
-                return (
-                  <button
-                    key={kind}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() => onTypes(toggleValue(types, kind))}
-                    className={cn(
-                      'border px-2 py-1 text-1 uppercase tracking-[0.08em]',
-                      selected
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border bg-background text-foreground hover:border-foreground',
-                    )}
-                  >
-                    {typeLabel(kind, t)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-1 font-medium uppercase tracking-[0.12em] text-neutral-11">
+        <div className="grid gap-3 border-b border-border px-3 py-3">
+          <label className="grid gap-1">
+            <span className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+              {t('filterType')}
+            </span>
+            <MultiSelect
+              options={typeOptions}
+              value={[...types]}
+              allowCreate={false}
+              allowToggleAll={false}
+              showFullSelection
+              placeholder={t('filterTypesPlaceholder')}
+              searchPlaceholder={t('filterOptionSearch')}
+              textClassName={SIGNAL_BOARD_SELECT_TEXT_CLASS}
+              className={cn(
+                SIGNAL_BOARD_SELECT_TEXT_CLASS,
+                SIGNAL_FILTER_MULTI_SELECT_CLASS,
+              )}
+              onValueChange={(values) =>
+                onTypes(
+                  NETWORK_FIELD_KINDS.filter((kind) => values.includes(kind)),
+                )
+              }
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-1 uppercase tracking-[0.12em] text-neutral-11">
               {t('formOfCapital')}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {CAPITALS.map((key) => {
-                const selected = capitals.includes(key);
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() => onCapitals(toggleValue(capitals, key))}
-                    className={cn(
-                      'border px-2 py-1 text-1 uppercase tracking-[0.08em]',
-                      selected
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border bg-background text-foreground hover:border-foreground',
-                    )}
-                  >
-                    <span aria-hidden className="mr-1">
-                      {CAPITAL_MARK[key]}
-                    </span>
-                    {t(`capitals.${key}`)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            </span>
+            <MultiSelect
+              options={capitalOptions}
+              value={[...capitals]}
+              allowCreate={false}
+              allowToggleAll={false}
+              showFullSelection
+              placeholder={t('filterCapitalsPlaceholder')}
+              searchPlaceholder={t('filterOptionSearch')}
+              textClassName={SIGNAL_BOARD_SELECT_TEXT_CLASS}
+              className={cn(
+                SIGNAL_BOARD_SELECT_TEXT_CLASS,
+                SIGNAL_FILTER_MULTI_SELECT_CLASS,
+              )}
+              onValueChange={(values) =>
+                onCapitals(CAPITALS.filter((key) => values.includes(key)))
+              }
+            />
+          </label>
         </div>
         {active ? (
           <div className="flex justify-end border-t border-border px-3 py-2">
@@ -510,7 +526,7 @@ export function NetworkReciprocalExchange({
                   <li key={signal.slug} className="flex">
                     <article
                       className={cn(
-                        'exchange-card flex w-full cursor-pointer flex-col border bg-background',
+                        'exchange-card w-full cursor-pointer border bg-background',
                         chosen ? 'border-foreground' : 'border-border',
                       )}
                       onClick={() => setSelectedSlug(signal.slug)}
@@ -524,143 +540,136 @@ export function NetworkReciprocalExchange({
                       />
                       <div
                         className={cn(
-                          'exchange-body',
+                          'exchange-meta',
                           hasMedia
-                            ? 'exchange-body-media'
-                            : 'exchange-body-text',
+                            ? 'exchange-meta-media'
+                            : 'exchange-meta-text',
                         )}
                       >
-                        <div
-                          className={cn(
-                            'flex min-h-0 flex-1 flex-col gap-1.5 px-3',
-                            hasMedia ? 'pt-2.5' : 'pt-3',
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={cn(
-                                'shrink-0 px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
-                                badgeClass(signal.type),
-                              )}
-                            >
-                              {typeLabel(signal.type, t)}
-                            </span>
-                            <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
-                              {picked ? (
-                                <span aria-hidden>{CAPITAL_MARK[picked]}</span>
-                              ) : null}
-                              {picked
-                                ? t('capitalStatus', {
-                                    capital: t(`capitals.${picked}`),
-                                    status: when,
-                                  })
-                                : when}
-                            </span>
-                          </div>
-                          <h2
+                        <div className="flex items-center justify-between gap-2">
+                          <span
                             className={cn(
-                              'exchange-title font-medium leading-snug',
-                              hasMedia
-                                ? 'line-clamp-1 text-3'
-                                : 'line-clamp-2 text-4',
+                              'shrink-0 px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
+                              badgeClass(signal.type),
                             )}
-                            style={{
-                              fontFamily: 'var(--font-family-heading)',
-                            }}
                           >
-                            {hasMedia ? (
-                              <Link
-                                href={signalHref}
-                                className="hover:underline"
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                {signal.title}
-                              </Link>
-                            ) : (
-                              signal.title
-                            )}
-                          </h2>
-                          <p className="truncate text-1 uppercase tracking-[0.14em] text-neutral-11">
-                            {signal.spaceTitle}
-                          </p>
-                          {story ? (
-                            <p
-                              className={cn(
-                                'text-2 leading-relaxed text-neutral-11',
-                                hasMedia ? 'line-clamp-1' : 'line-clamp-4',
-                              )}
-                            >
-                              {story}
-                            </p>
-                          ) : null}
-                          {!hasMedia && impactCard ? (
-                            <p className="flex flex-wrap gap-x-4 gap-y-1 text-1 text-neutral-11">
-                              <Link
-                                href={`/${lang}/network/exchange?type=Action`}
-                                className="hover:text-foreground"
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                {t('proofsOfAction', { count: proofs.action })}
-                              </Link>
-                              <Link
-                                href={`/${lang}/network/exchange?type=Impact`}
-                                className="hover:text-foreground"
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                {t('proofsOfImpact', { count: proofs.impact })}
-                              </Link>
-                            </p>
-                          ) : null}
-                          {!hasMedia && !impactCard && payout ? (
-                            <p className="font-mono text-2 text-foreground">
-                              {payout}
-                            </p>
-                          ) : null}
-                          {!hasMedia ? (
+                            {typeLabel(signal.type, t)}
+                          </span>
+                          <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
+                            {picked ? (
+                              <span aria-hidden>{CAPITAL_MARK[picked]}</span>
+                            ) : null}
+                            {picked
+                              ? t('capitalStatus', {
+                                  capital: t(`capitals.${picked}`),
+                                  status: when,
+                                })
+                              : when}
+                          </span>
+                        </div>
+                        <h2
+                          className={cn(
+                            'exchange-title font-medium leading-snug',
+                            hasMedia
+                              ? 'line-clamp-1 text-3'
+                              : 'line-clamp-2 text-4',
+                          )}
+                          style={{
+                            fontFamily: 'var(--font-family-heading)',
+                          }}
+                        >
+                          {hasMedia ? (
                             <Link
                               href={signalHref}
-                              className="mt-auto self-start text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
+                              className="hover:underline"
                               onClick={(event) => event.stopPropagation()}
                             >
-                              {t('openSignal')}
+                              {signal.title}
                             </Link>
-                          ) : null}
-                        </div>
-                        <div className="mt-auto flex shrink-0 flex-wrap items-center gap-2 px-3 pb-3 pt-2">
-                          <Button
-                            type="button"
-                            className="h-10 w-fit"
-                            disabled={opening || !signal.spaceSlug}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openRoom(signal);
-                            }}
+                          ) : (
+                            signal.title
+                          )}
+                        </h2>
+                        <p className="truncate text-1 uppercase tracking-[0.14em] text-neutral-11">
+                          {signal.spaceTitle}
+                        </p>
+                        {story ? (
+                          <p
+                            className={cn(
+                              'text-2 leading-relaxed text-neutral-11',
+                              hasMedia ? 'line-clamp-1' : 'line-clamp-4',
+                            )}
                           >
-                            {t('connect')}
-                          </Button>
-                          <Button asChild className="h-10 w-fit">
+                            {story}
+                          </p>
+                        ) : null}
+                        {!hasMedia && impactCard ? (
+                          <p className="flex flex-wrap gap-x-4 gap-y-1 text-1 text-neutral-11">
                             <Link
-                              href={getDhoPathOverview(lang, signal.spaceSlug)}
+                              href={`/${lang}/network/exchange?type=Action`}
+                              className="hover:text-foreground"
                               onClick={(event) => event.stopPropagation()}
                             >
-                              {t('visit')}
-                              <ArrowUpRight className="size-3.5" aria-hidden />
+                              {t('proofsOfAction', { count: proofs.action })}
                             </Link>
-                          </Button>
-                          <Button
-                            type="button"
-                            className="h-10 w-fit"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setFundSpace({
-                                slug: signal.spaceSlug,
-                                title: signal.spaceTitle,
-                              });
-                            }}
+                            <Link
+                              href={`/${lang}/network/exchange?type=Impact`}
+                              className="hover:text-foreground"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {t('proofsOfImpact', { count: proofs.impact })}
+                            </Link>
+                          </p>
+                        ) : null}
+                        {!hasMedia && !impactCard && payout ? (
+                          <p className="font-mono text-2 text-foreground">
+                            {payout}
+                          </p>
+                        ) : null}
+                        {!hasMedia ? (
+                          <Link
+                            href={signalHref}
+                            className="mt-auto self-start text-1 uppercase tracking-[0.14em] text-foreground underline-offset-4 hover:underline"
+                            onClick={(event) => event.stopPropagation()}
                           >
-                            {t('resource')}
-                          </Button>
-                        </div>
+                            {t('openSignal')}
+                          </Link>
+                        ) : null}
+                      </div>
+                      <div className="exchange-footer">
+                        <Button
+                          type="button"
+                          className="h-10 w-fit"
+                          disabled={opening || !signal.spaceSlug}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openRoom(signal);
+                          }}
+                        >
+                          {t('connect')}
+                        </Button>
+                        <Button asChild className="h-10 w-fit">
+                          <Link
+                            href={getDhoPathOverview(lang, signal.spaceSlug)}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {t('visit')}
+                            <ArrowUpRight className="size-3.5" aria-hidden />
+                          </Link>
+                        </Button>
+                        <Button
+                          type="button"
+                          className="h-10 w-fit"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setFundSpace({
+                              slug: signal.spaceSlug,
+                              title: signal.spaceTitle,
+                            });
+                          }}
+                        >
+                          {t('resource')}
+                        </Button>
                       </div>
                     </article>
                   </li>
@@ -689,11 +698,8 @@ export function NetworkReciprocalExchange({
           if (!next) setFundSpace(null);
         }}
       >
-        <DialogContent className="max-w-lg gap-4">
-          <DialogTitle
-            className="pr-8 text-4"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
+        <DialogContent className={FUND_SPACE_DIALOG_CONTENT_CLASS}>
+          <DialogTitle className="sr-only">
             {tWallet('shortcuts.fundSpace')}
           </DialogTitle>
           {fundSpace ? (
