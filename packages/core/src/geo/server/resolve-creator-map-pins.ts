@@ -14,23 +14,31 @@ import type { GeocodeResult } from '../validation';
 import { searchNominatim } from './nominatim';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const GEOCODE_CONCURRENCY = 4;
 /**
- * Text places are looked up after the map is already on screen. Creators
- * go first, then members. The page itself does not wait for this.
+ * Nominatim allows one request at a time. A burst is rejected, and those
+ * failures used to leave the map with only the spaces that already had
+ * coordinates.
  */
-const GEOCODE_BUDGET_MS = 8_000;
+const GEOCODE_CONCURRENCY = 1;
+const GEOCODE_GAP_MS = 1_100;
+/**
+ * The map is already on screen. This stream keeps filling pins until the
+ * route's time limit, instead of stopping after a handful of places.
+ */
+const GEOCODE_BUDGET_MS = 55_000;
 
 export type CreatorMapSpace = {
   id: number;
   latitude?: number | null;
   longitude?: number | null;
+  /** Written place name, used when the space has no coordinates yet. */
+  locationLabel?: string | null;
   creatorAddress?: string | null;
   /** On-chain members, used only when the space and its creator have no place. */
   memberAddresses?: readonly string[] | null;
 };
 
-export type FallbackLocationSource = 'creator' | 'member';
+export type FallbackLocationSource = 'space' | 'creator' | 'member';
 
 export type FallbackLocation = {
   spaceId: number;
@@ -102,10 +110,16 @@ function memberLocation(
   return null;
 }
 
+function spacePlaceName(space: CreatorMapSpace): string | null {
+  const label = space.locationLabel?.trim() ?? '';
+  return label.length >= 2 ? label : null;
+}
+
 /**
  * One explainable place for each space that has no coordinates of its own.
- * The creator's profile wins. Otherwise the first other member, by wallet
- * address, who has a profile location. Space-actor rows are skipped.
+ * The space's own place name wins, then the creator's profile, then the
+ * first other member, by wallet address, who has a profile location.
+ * Space-actor rows are skipped.
  */
 export function chooseFallbackLocations(
   spaces: readonly CreatorMapSpace[],
@@ -115,6 +129,15 @@ export function chooseFallbackLocations(
   const chosen: FallbackLocation[] = [];
   for (const space of spaces) {
     if (hasSpaceMapLocation(space)) {
+      continue;
+    }
+    const ownPlace = spacePlaceName(space);
+    if (ownPlace) {
+      chosen.push({
+        spaceId: space.id,
+        location: ownPlace,
+        source: 'space',
+      });
       continue;
     }
     const creator = normalizeCreatorAddress(space.creatorAddress);
@@ -158,11 +181,11 @@ export function creatorLocationQueries(
   );
 }
 
-/** Creator places first, then member places, so the short budget prefers creators. */
+/** Space place names first, then creators, then members. */
 export function geocodeOrder(choices: readonly FallbackLocation[]): string[] {
   const ordered: string[] = [];
   const seen = new Set<string>();
-  for (const source of ['creator', 'member'] as const) {
+  for (const source of ['space', 'creator', 'member'] as const) {
     for (const choice of choices) {
       if (choice.source !== source || seen.has(choice.location)) continue;
       seen.add(choice.location);
@@ -241,10 +264,10 @@ function pinsForLocation(
 }
 
 /**
- * Geocode deployer, then member, locations for spaces that have no
- * coordinates of their own. The result is a pin lookup only. It does not
- * update space rows. `onPins` fires as each place resolves so a map can
- * draw those pins without waiting for the rest.
+ * Geocode a space's own place name, then the deployer, then a member, for
+ * spaces that have no coordinates of their own. The result is a pin lookup
+ * only. It does not update space rows. `onPins` fires as each place
+ * resolves so a map can draw those pins without waiting for the rest.
  */
 export async function resolveCreatorMapCoordinates(
   spaces: readonly CreatorMapSpace[],
@@ -258,28 +281,27 @@ export async function resolveCreatorMapCoordinates(
   ) => void,
 ): Promise<Record<number, { latitude: number; longitude: number }>> {
   const wanted = addressesToResolve(spaces);
-  if (wanted.length === 0) {
-    return {};
-  }
-
-  const peopleRows = await db
-    .select({
-      address: people.address,
-      location: people.location,
-      sub: people.sub,
-    })
-    .from(people)
-    .where(
-      and(
-        inArray(sql`upper(${people.address})`, [
-          ...wanted.map((address) => address.toUpperCase()),
-        ]),
-        or(
-          isNull(people.sub),
-          notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
-        ),
-      ),
-    );
+  const peopleRows =
+    wanted.length === 0
+      ? []
+      : await db
+          .select({
+            address: people.address,
+            location: people.location,
+            sub: people.sub,
+          })
+          .from(people)
+          .where(
+            and(
+              inArray(sql`upper(${people.address})`, [
+                ...wanted.map((address) => address.toUpperCase()),
+              ]),
+              or(
+                isNull(people.sub),
+                notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`),
+              ),
+            ),
+          );
 
   const choices = chooseFallbackLocations(spaces, peopleRows);
   const coordinatesByLocation = new Map<
@@ -300,8 +322,27 @@ export async function resolveCreatorMapCoordinates(
   const budgetTimer = setTimeout(() => controller.abort(), GEOCODE_BUDGET_MS);
   const lookup =
     geocode === searchNominatim
-      ? (query: string, limit?: number) =>
-          searchNominatim(query, limit, controller.signal)
+      ? async (query: string, limit?: number) => {
+          const started = Date.now();
+          try {
+            return await searchNominatim(query, limit, controller.signal);
+          } finally {
+            const wait = GEOCODE_GAP_MS - (Date.now() - started);
+            if (wait > 0 && !controller.signal.aborted) {
+              await new Promise<void>((resolve) => {
+                const timer = setTimeout(resolve, wait);
+                controller.signal.addEventListener(
+                  'abort',
+                  () => {
+                    clearTimeout(timer);
+                    resolve();
+                  },
+                  { once: true },
+                );
+              });
+            }
+          }
+        }
       : geocode;
 
   try {

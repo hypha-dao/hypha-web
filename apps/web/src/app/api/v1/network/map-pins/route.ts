@@ -10,11 +10,12 @@ const bodySchema = z.object({
     .array(
       z.object({
         id: z.number().int().positive(),
+        locationLabel: z.string().max(500).nullable().optional(),
         creatorAddress: z.string().nullable().optional(),
-        memberAddresses: z.array(z.string()).max(400).optional(),
+        memberAddresses: z.array(z.string().max(80)).max(5000).optional(),
       }),
     )
-    .max(500),
+    .max(100),
 });
 
 const RATE_LIMIT_WINDOW_MS = 60_000;

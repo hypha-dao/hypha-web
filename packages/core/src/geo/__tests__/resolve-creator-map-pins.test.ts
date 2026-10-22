@@ -167,6 +167,24 @@ describe('creatorLocationQueries', () => {
     expect(geocodeOrder(choices)).toEqual(['Lisbon, Portugal', 'Nairobi']);
   });
 
+  it('uses the space place name before a creator or member profile', () => {
+    const choices = chooseFallbackLocations(
+      [
+        {
+          id: 3,
+          locationLabel: 'Berlin',
+          creatorAddress: deployer,
+          memberAddresses: ['0x4444444444444444444444444444444444444444'],
+        },
+      ],
+      people,
+    );
+    expect(choices).toEqual([
+      { spaceId: 3, location: 'Berlin', source: 'space' },
+    ]);
+    expect(geocodeOrder(choices)).toEqual(['Berlin']);
+  });
+
   it('skips space actors, blank locations, and unknown deployers', () => {
     const queries = creatorLocationQueries(
       [
@@ -275,6 +293,25 @@ describe('resolveCreatorMapCoordinates', () => {
     );
 
     expect(batches).toEqual([{ 12: { latitude: 38.7, longitude: -9.1 } }]);
+  });
+
+  it('geocodes a space place name when the space has no coordinates', async () => {
+    const geocode = vi.fn().mockResolvedValue([
+      {
+        label: 'Berlin',
+        latitude: 52.5,
+        longitude: 13.4,
+      },
+    ]);
+
+    const pins = await resolveCreatorMapCoordinates(
+      [{ id: 4, locationLabel: 'Berlin' }],
+      { db: fakeDb([]) as never },
+      geocode,
+    );
+
+    expect(geocode).toHaveBeenCalledWith('Berlin', 1);
+    expect(pins).toEqual({ 4: { latitude: 52.5, longitude: 13.4 } });
   });
 
   it('omits a space when the creator location does not geocode', async () => {

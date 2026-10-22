@@ -17,8 +17,9 @@ function isPin(value: unknown): value is DeferredMapPin {
 }
 
 /**
- * Spaces that already have coordinates stay on the map. Creator and member
- * places are looked up after paint, and each resolved pin is merged in.
+ * Spaces that already have coordinates stay on the map. A written place
+ * name, then the creator, then another member, are looked up after paint.
+ * Each resolved pin is merged in.
  */
 export function useDeferredMapPins(
   spaces: readonly Space[],
@@ -30,12 +31,16 @@ export function useDeferredMapPins(
     if (!enabled) return;
     const pending = spaces.flatMap((space) => {
       if (hasSpaceMapLocation(space)) return [];
+      const locationLabel = space.locationLabel?.trim() ?? '';
       const creatorAddress = space.creatorAddress?.trim() ?? '';
       const memberAddresses = space.memberAddresses ?? [];
-      if (!creatorAddress && memberAddresses.length === 0) return [];
+      if (!locationLabel && !creatorAddress && memberAddresses.length === 0) {
+        return [];
+      }
       return [
         {
           id: space.id,
+          locationLabel: locationLabel || null,
           creatorAddress: creatorAddress || null,
           memberAddresses,
         },
@@ -44,44 +49,60 @@ export function useDeferredMapPins(
     if (pending.length === 0) return;
 
     const controller = new AbortController();
-    const run = async () => {
-      const response = await fetch('/api/v1/network/map-pins', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spaces: pending }),
-        signal: controller.signal,
-      });
-      if (!response.ok || !response.body) return;
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      while (!controller.signal.aborted) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        const batch: Record<number, DeferredMapPin> = {};
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(trimmed);
-          } catch {
+    const chunks: Array<typeof pending> = [];
+    for (let index = 0; index < pending.length; index += 80) {
+      chunks.push(pending.slice(index, index + 80));
+    }
+    const applyLines = (buffer: string, flush: boolean) => {
+      const lines = buffer.split('\n');
+      const rest = flush ? '' : lines.pop() ?? '';
+      const batch: Record<number, DeferredMapPin> = {};
+      for (const line of flush ? lines.concat(rest ? [rest] : []) : lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(trimmed);
+        } catch {
+          continue;
+        }
+        if (!parsed || typeof parsed !== 'object') continue;
+        for (const [id, pin] of Object.entries(parsed)) {
+          const spaceId = Number(id);
+          if (!Number.isInteger(spaceId) || spaceId <= 0 || !isPin(pin)) {
             continue;
           }
-          if (!parsed || typeof parsed !== 'object') continue;
-          for (const [id, pin] of Object.entries(parsed)) {
-            const spaceId = Number(id);
-            if (!Number.isInteger(spaceId) || spaceId <= 0 || !isPin(pin)) {
-              continue;
-            }
-            batch[spaceId] = pin;
-          }
+          batch[spaceId] = pin;
         }
-        if (Object.keys(batch).length === 0) continue;
+      }
+      if (Object.keys(batch).length > 0) {
         setPins((current) => ({ ...current, ...batch }));
+      }
+      return rest;
+    };
+    const run = async () => {
+      for (const chunk of chunks) {
+        if (controller.signal.aborted) return;
+        const response = await fetch('/api/v1/network/map-pins', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spaces: chunk }),
+          signal: controller.signal,
+        });
+        if (!response.ok || !response.body) continue;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (!controller.signal.aborted) {
+          const { done, value } = await reader.read();
+          if (done) {
+            buffer += decoder.decode();
+            applyLines(buffer, true);
+            break;
+          }
+          buffer += decoder.decode(value, { stream: true });
+          buffer = applyLines(buffer, false);
+        }
       }
     };
 
