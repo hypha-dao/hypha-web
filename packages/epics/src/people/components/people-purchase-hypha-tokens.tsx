@@ -56,6 +56,31 @@ interface PeoplePurchaseHyphaTokensProps {
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 
+/** Nice USDC chip ladder; filtered/extended by available balance. */
+const WALLET_USDC_AMOUNT_LADDER = [
+  1, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000,
+] as const;
+
+function walletUsdcPresets(balance: number): number[] {
+  if (!Number.isFinite(balance) || balance <= 0) return [];
+
+  const roundedAvailable =
+    balance >= 10
+      ? Math.floor(balance / 10) * 10
+      : Math.floor(balance * 100) / 100;
+
+  const values = new Set<number>(
+    WALLET_USDC_AMOUNT_LADDER.filter(
+      (value) => value > 0 && value <= balance + 1e-9,
+    ),
+  );
+  if (roundedAvailable > 0 && roundedAvailable <= balance + 1e-9) {
+    values.add(roundedAvailable);
+  }
+
+  return [...values].sort((left, right) => left - right);
+}
+
 const schema = purchaseSchema.extend({ buyer: z.string() });
 type FormValues = z.infer<typeof schema>;
 
@@ -179,7 +204,8 @@ export const PeoplePurchaseHyphaTokens = ({
     resolver,
     defaultValues: {
       payout: {
-        amount: '',
+        // Same default as other wallet amount fields (buy space tokens, redeem).
+        amount: '1',
         token: PAYMENT_TOKEN?.address ?? '',
       },
       recipient: RECIPIENT_SPACE_ADDRESS,
@@ -224,21 +250,6 @@ export const PeoplePurchaseHyphaTokens = ({
     !Number.isFinite(parsedAmount) ||
     parsedAmount <= 0 ||
     parsedAmount <= paymentBalance + 1e-9;
-  const defaultUsdcAmount = useMemo(() => {
-    if (!Number.isFinite(paymentBalance) || paymentBalance < 10) return 0;
-    return Math.floor(paymentBalance / 10) * 10;
-  }, [paymentBalance]);
-
-  useEffect(() => {
-    if (appearance !== 'wallet' || defaultUsdcAmount <= 0) return;
-    const current = form.getValues('payout.amount')?.trim() ?? '';
-    if (current !== '') return;
-    form.setValue('payout.amount', String(defaultUsdcAmount), {
-      shouldDirty: false,
-      shouldValidate: true,
-    });
-  }, [appearance, defaultUsdcAmount, form]);
-
   const handlePurchase = async (data: FormValues) => {
     try {
       if (!PAYMENT_TOKEN?.address) {
@@ -361,22 +372,7 @@ export const PeoplePurchaseHyphaTokens = ({
                           'plugins.buyHyphaTokens.purchaseAmount',
                         )}
                         symbol={PAYMENT_TOKEN?.symbol ?? 'USDC'}
-                        presets={[
-                          ...new Set(
-                            [
-                              10,
-                              25,
-                              50,
-                              100,
-                              250,
-                              500,
-                              defaultUsdcAmount,
-                            ].filter(
-                              (value) =>
-                                value > 0 && value <= paymentBalance + 1e-9,
-                            ),
-                          ),
-                        ].sort((left, right) => left - right)}
+                        presets={walletUsdcPresets(paymentBalance)}
                         holding={{
                           label: tWallet('available'),
                           amount: formatWalletAmount(paymentBalance),
