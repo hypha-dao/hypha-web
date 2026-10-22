@@ -12,7 +12,7 @@ import {
   type MemberEnergyHomeResponse,
 } from '@hypha-platform/core/client';
 import { Button, Dialog, DialogContent, DialogTitle } from '@hypha-platform/ui';
-import { copyToClipboard } from '@hypha-platform/ui-utils';
+import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 
 function formatKwh(value: number | null, missing: string) {
   if (value == null || !Number.isFinite(value)) return missing;
@@ -231,15 +231,21 @@ export function useMemberEnergyCommunities(
   };
 }
 
-export function MemberHomeEnergyPanel({ personSlug }: { personSlug: string }) {
+export function MemberHomeEnergyPanel({
+  personSlug,
+  className,
+}: {
+  personSlug: string;
+  className?: string;
+}) {
   const { communities } = useMemberEnergyCommunities(personSlug);
   if (communities.length === 0) return null;
 
   return (
-    <>
+    <div className={cn('flex flex-col gap-4', className)}>
       {communities.map((community) => (
         <EnergyCommunityCard key={community.spaceSlug} community={community} />
       ))}
-    </>
+    </div>
   );
 }

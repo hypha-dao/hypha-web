@@ -377,88 +377,84 @@ export function MemberHome({
               </div>
             </section>
 
-            <div>
-              <MemberHomeWalletWidget
-                lang={lang}
-                personSlug={home?.person.slug}
-                hasAddress={Boolean(home?.wallet.address)}
-                isHomeLoading={home == null}
-              />
-            </div>
-            <div>
-              <Tile
-                title={t('notifications')}
-                count={
-                  home && home.counts.notifications > 0
-                    ? home.counts.notifications
-                    : undefined
-                }
-                busy={home == null}
-              >
-                <ResourceList
-                  isLoading={home == null}
-                  empty={t('noNotifications')}
-                  maxItems={5}
-                  markSize={24}
-                  items={
-                    home
-                      ? [...home.notifications]
-                          .sort((left, right) => {
-                            const leftAt = left.at ?? '';
-                            const rightAt = right.at ?? '';
-                            if (leftAt !== rightAt) {
-                              return leftAt < rightAt ? 1 : -1;
-                            }
-                            return left.id < right.id ? -1 : 1;
-                          })
-                          .flatMap((item) => {
-                            const match = queue.find(
-                              (entry) =>
-                                entry.kind === item.kind &&
-                                entry.slug === item.targetSlug,
-                            );
-                            return [
-                              {
-                                id: item.id,
-                                kind: item.kind,
-                                title: item.title,
-                                detail: item.detail,
-                                icon: item.spaceLogo ?? null,
-                                href:
-                                  item.kind === 'signal'
-                                    ? getSignalPath(
-                                        lang,
-                                        item.spaceSlug,
-                                        item.targetSlug,
-                                      )
-                                    : getProposalPath(
-                                        lang,
-                                        item.spaceSlug,
-                                        item.targetSlug,
+            <MemberHomeWalletWidget
+              lang={lang}
+              personSlug={home?.person.slug}
+              hasAddress={Boolean(home?.wallet.address)}
+              isHomeLoading={home == null}
+            />
+            <Tile
+              title={t('notifications')}
+              count={
+                home && home.counts.notifications > 0
+                  ? home.counts.notifications
+                  : undefined
+              }
+              busy={home == null}
+            >
+              <ResourceList
+                isLoading={home == null}
+                empty={t('noNotifications')}
+                maxItems={5}
+                markSize={24}
+                items={
+                  home
+                    ? [...home.notifications]
+                        .sort((left, right) => {
+                          const leftAt = left.at ?? '';
+                          const rightAt = right.at ?? '';
+                          if (leftAt !== rightAt) {
+                            return leftAt < rightAt ? 1 : -1;
+                          }
+                          return left.id < right.id ? -1 : 1;
+                        })
+                        .flatMap((item) => {
+                          const match = queue.find(
+                            (entry) =>
+                              entry.kind === item.kind &&
+                              entry.slug === item.targetSlug,
+                          );
+                          return [
+                            {
+                              id: item.id,
+                              kind: item.kind,
+                              title: item.title,
+                              detail: item.detail,
+                              icon: item.spaceLogo ?? null,
+                              href:
+                                item.kind === 'signal'
+                                  ? getSignalPath(
+                                      lang,
+                                      item.spaceSlug,
+                                      item.targetSlug,
+                                    )
+                                  : getProposalPath(
+                                      lang,
+                                      item.spaceSlug,
+                                      item.targetSlug,
+                                    ),
+                              ...(match
+                                ? {
+                                    onSelect: () =>
+                                      setFocusKey(
+                                        `${match.kind}:${match.slug}`,
                                       ),
-                                ...(match
-                                  ? {
-                                      onSelect: () =>
-                                        setFocusKey(
-                                          `${match.kind}:${match.slug}`,
-                                        ),
-                                    }
-                                  : {}),
-                              },
-                            ];
-                          })
-                      : []
-                  }
-                />
-                {home && home.notifications.length > 5 ? (
-                  <Button asChild className="mt-4 w-full text-sm">
-                    <Link href={`/${lang}/home/notifications`}>
-                      {t('seeMoreNotifications')}
-                    </Link>
-                  </Button>
-                ) : null}
-              </Tile>
-            </div>
+                                  }
+                                : {}),
+                            },
+                          ];
+                        })
+                    : []
+                }
+              />
+              {home && home.notifications.length > 5 ? (
+                <Button asChild className="mt-4 w-full text-sm">
+                  <Link href={`/${lang}/home/notifications`}>
+                    {t('seeMoreNotifications')}
+                  </Link>
+                </Button>
+              ) : null}
+            </Tile>
           </aside>
           <main
             className={cn(
@@ -577,9 +573,10 @@ export function MemberHome({
               <MemberHomeInviteBanners lang={lang} invites={home.invites} />
             ) : null}
             {home?.person.slug ? (
-              <div className={cn(showField && 'max-xl:hidden')}>
-                <MemberHomeEnergyPanel personSlug={home.person.slug} />
-              </div>
+              <MemberHomeEnergyPanel
+                personSlug={home.person.slug}
+                className={cn(showField && 'max-xl:hidden')}
+              />
             ) : null}
             {home == null ? (
               <section
@@ -628,37 +625,32 @@ export function MemberHome({
               </section>
             ) : null}
 
-            <div>
-              <AttentionNeeded
-                lang={lang}
-                home={home}
-                queue={attentionQueue}
-                onSelect={setFocusKey}
-              />
-            </div>
-
-            <div className="grid gap-4">
-              <MemberHomeConnectionsWidget
-                lang={lang}
-                people={home?.connections ?? []}
-                isLoading={home == null}
+            <AttentionNeeded
+              lang={lang}
+              home={home}
+              queue={attentionQueue}
+              onSelect={setFocusKey}
+            />
+            <MemberHomeConnectionsWidget
+              lang={lang}
+              people={home?.connections ?? []}
+              isLoading={home == null}
+              fallbackName={memberFallback}
+              onChat={home ? openChat : undefined}
+              onCall={home ? openCall : undefined}
+              onVideo={home ? openVideo : undefined}
+            />
+            {home ? (
+              <MemberHomePeople
+                people={home.connections}
+                chatSpaceSlug={home.chatSpaceSlug}
                 fallbackName={memberFallback}
-                onChat={home ? openChat : undefined}
-                onCall={home ? openCall : undefined}
-                onVideo={home ? openVideo : undefined}
+                extraPersonIds={reachIds}
+                onOpenChatReady={onOpenChatReady}
+                onOpenCallReady={onOpenCallReady}
+                onOpenVideoReady={onOpenVideoReady}
               />
-              {home ? (
-                <MemberHomePeople
-                  people={home.connections}
-                  chatSpaceSlug={home.chatSpaceSlug}
-                  fallbackName={memberFallback}
-                  extraPersonIds={reachIds}
-                  onOpenChatReady={onOpenChatReady}
-                  onOpenCallReady={onOpenCallReady}
-                  onOpenVideoReady={onOpenVideoReady}
-                />
-              ) : null}
-            </div>
+            ) : null}
           </aside>
           {showEnergy && home?.person.slug ? (
             <div className="flex shrink-0 flex-col gap-4 px-5 py-4 xl:hidden">
