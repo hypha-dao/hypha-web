@@ -11,6 +11,8 @@ export const HYPHA_ROOM_TYPES = {
   group: 'io.hypha.room.group',
   /** Discussion room of one signal (`coherences.room_id`). */
   signal: 'io.hypha.room.signal',
+  /** Discussion room of one proposal (`documents.chat_room_id`). */
+  proposal: 'io.hypha.room.proposal',
   /** Members-only room of a space (`spaces.chat_room_id`). */
   space: 'io.hypha.room.space',
   /** Public room of a space (`hypha-public-<slug>`). */

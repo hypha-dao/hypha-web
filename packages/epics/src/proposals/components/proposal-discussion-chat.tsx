@@ -14,6 +14,7 @@ import {
 } from 'matrix-js-sdk';
 import {
   firstLineForReplyPreview,
+  HYPHA_ROOM_TYPES,
   Message,
   stripMatrixReplyFallback,
   useAgreementMutationsWeb2Rsc,
@@ -372,6 +373,7 @@ export function ProposalDiscussionChat({
           : tRef.current('discussion.roomTitleFallback');
         const created = await createRoomRef.current(roomTitle, {
           grantCreatorPl100: true,
+          roomType: HYPHA_ROOM_TYPES.proposal,
         });
         const canonicalId = await joinRoomRef.current(created.roomId);
         roomIdRef.current = canonicalId;
