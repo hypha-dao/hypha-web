@@ -154,8 +154,8 @@ export function MemberHomeSpacesRail({
   /** Fill the left menu column instead of sitting as its own rail. */
   embedded?: boolean;
   /**
-   * Home only. Below `xl` the column still follows the bottom menu.
-   * On the wide layout, where that menu is gone, the column stays open.
+   * Home only. The column follows the top-bar circle at every width,
+   * including the wide layout where the bottom menu is gone. It starts closed.
    */
   persistOnWide?: boolean;
 }) {
@@ -313,9 +313,8 @@ export function MemberHomeSpacesRail({
     );
   }
 
-  // A 44px column on every screen. Home keeps it once the bottom menu is gone.
   if (!canToggle) {
-    return <div className={railShellClass(persistOnWide, true)}>{rail}</div>;
+    return <div className={railShellClass(persistOnWide)}>{rail}</div>;
   }
 
   return (
@@ -323,11 +322,10 @@ export function MemberHomeSpacesRail({
   );
 }
 
-function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
+function railShellClass(showOnWide: boolean) {
   return cn(
-    'h-full min-h-0 w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
-    visibleOnNarrow ? 'flex' : 'hidden',
-    persistOnWide ? 'xl:flex' : 'xl:hidden',
+    'flex h-full min-h-0 w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
+    showOnWide ? null : 'xl:hidden',
   );
 }
 
@@ -340,9 +338,9 @@ function SpacesRailHandle({
 }) {
   const { open, register } = useSpacesRailControl();
   useLayoutEffect(() => register(), [register]);
-  if (!open && !persistOnWide) return null;
+  if (!open) return null;
   return (
-    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide, open)}>
+    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide)}>
       {children}
     </div>
   );
